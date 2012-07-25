@@ -1,4 +1,4 @@
-# $HeadURL $
+# $HeadURL:  $
 ''' AccountingCacheCommand
  
   The AccountingCacheCommand class is a command module that collects command 
@@ -6,35 +6,30 @@
   
 '''
 
-from datetime                                     import datetime, timedelta
+from datetime import datetime, timedelta
 
-from DIRAC                                        import gLogger, S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.Command.Command   import Command
-#from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
-#from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
-
+from DIRAC                                                  import S_OK, S_ERROR
+from DIRAC.AccountingSystem.Client.ReportsClient            import ReportsClient
+from DIRAC.Core.DISET.RPCClient                             import RPCClient
+from DIRAC.ResourceStatusSystem.Command.Command             import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
+from DIRAC.ResourceStatusSystem.Utilities                   import CSHelpers 
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
-
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 ################################################################################
 ################################################################################
 
 class TransferQualityByDestSplittedCommand( Command ):
-  
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
 
   def __init__( self, args = None, clients = None ):
     
     super( TransferQualityByDestSplittedCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
+#    if 'ResourceStatusClient' in self.APIs:
+#      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+#    else:
+#      self.rsClient = ResourceStatusClient() 
 
     if 'ReportsClient' in self.APIs:
       self.rClient = self.APIs[ 'ReportsClient' ]
@@ -46,7 +41,9 @@ class TransferQualityByDestSplittedCommand( Command ):
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
   
-  def doCommand( self, sources = None, SEs = None ):
+    self.rClient.rpcClient = self.rgClient
+  
+  def doCommand( self ):
     """ 
     Returns transfer quality using the DIRAC accounting system for every SE 
     for the last self.args[0] hours 
@@ -60,73 +57,85 @@ class TransferQualityByDestSplittedCommand( Command ):
       
     """
 
-#    super( TransferQualityByDestSplitted_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
 
-#    try:
-
-    if SEs is None:
-      meta = { 'columns' : 'StorageElementName' }
-      SEs = self.rsClient.getStorageElement( meta = meta )
-      if not SEs[ 'OK' ]:
-        return SEs 
-      SEs = [ se[0] for se in SEs[ 'Value' ] ]
-    
-    if sources is None:
-      meta = { 'columns' : 'SiteName' }
-      sources = self.rsClient.getSite( meta = meta )      
-      if not sources[ 'OK' ]:
-        return sources
-      sources = [ s[0] for s in sources[ 'Value' ] ]
+    sites = None
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+    if sites is None:      
+#FIXME: pointing to the CSHelper instead     
+#      meta = { 'columns' : 'SiteName' }
+#      sources = self.rsClient.getSite( meta = meta )      
+#      if not sources[ 'OK' ]:
+#        return sources
+#      sources = [ s[0] for s in sources[ 'Value' ] ]
+      sites = CSHelpers.getSites()      
+      if not sites['OK']:
+        return sites
+      
+      sites = sites[ 'Value' ]
+      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]  
+      
+    ses = None
+    if 'ses' in self.args:
+      ses = self.args[ 'ses' ]
+    if ses is None:
+#FIXME: pointing to the CSHelper instead      
+#      meta = { 'columns' : 'StorageElementName' }
+#      ses = self.rsClient.getStorageElement( meta = meta )
+#      if not ses[ 'OK' ]:
+#        return ses 
+#      ses = [ se[0] for se in ses[ 'Value' ] ]
+      ses = CSHelpers.getStorageElements()      
+      if not ses['OK']:
+        return ses
+      
+      ses = ses[ 'Value' ]
+      #ses = [ se[ 0 ] for se in ses[ 'Value' ] ]  
+#    if sources is None:
+#      meta = { 'columns' : 'SiteName' }
+#      sources = self.rsClient.getSite( meta = meta )      
+#      if not sources[ 'OK' ]:
+#        return sources
+#      sources = [ s[0] for s in sources[ 'Value' ] ]
   
-    if not sources + SEs:
-      return S_ERROR( 'Sources + SEs is empty' )
-    
-    self.rClient.rpcClient = self.rgClient
+    if not sites + ses:
+      return S_ERROR( 'Sites + SEs is empty' )
 
     toD   = datetime.utcnow()
-    fromD = toD - timedelta( hours = self.args[ 0 ] )
+    fromD = toD - timedelta( hours = hours )
 
-    qualityAll = self.rClient.getReport( 'DataOperation', 'Quality', 
-                                                  fromD, toD, 
-                                                  { 'OperationType':'putAndRegister', 
-                                                    'Source': sources + SEs, 
-                                                    'Destination': sources + SEs 
-                                                  }, 
-                                                  'Destination' )
+    qualityAll = self.rClient.getReport( 'DataOperation', 'Quality', fromD, toD, 
+                                          { 'OperationType' : 'putAndRegister', 
+                                            'Source'        : sites + ses, 
+                                            'Destination'   : sites + ses 
+                                           }, 'Destination' )
       
     if not qualityAll[ 'OK' ]:
       return qualityAll
-      
     qualityAll    = qualityAll[ 'Value' ]
-    listOfDestSEs = qualityAll[ 'data' ].keys()
-    plotGran      = qualityAll[ 'granularity' ]
-    singlePlots   = {}
     
-    for SE in listOfDestSEs:
+    if not 'data' in qualityAll:
+      return S_ERROR( 'Missing data key' )
+    if not 'granularity' in qualityAll:
+      return S_ERROR( 'Missing granularity key' )
+    
+    singlePlots = {}
+    for se, value in qualityAll[ 'data' ].items():
       plot                  = {}
-      plot[ 'data' ]        = { SE: qualityAll[ 'data' ][ SE ] }
-      plot[ 'granularity' ] = plotGran
-      singlePlots[ SE ]     = plot
+      plot[ 'data' ]        = { se: value }
+      plot[ 'granularity' ] = qualityAll[ 'granularity' ]
+      singlePlots[ se ]     = plot
     
-    res = S_OK( { 'DataOperation' : singlePlots } )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( singlePlots )
 
 ################################################################################
 ################################################################################
 
 class TransferQualityByDestSplittedSiteCommand( Command ):
   
-#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]   
-
   def __init__( self, args = None, clients = None ):
     
     super( TransferQualityByDestSplittedSiteCommand, self ).__init__( args, clients )
@@ -146,7 +155,9 @@ class TransferQualityByDestSplittedSiteCommand( Command ):
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
   
-  def doCommand( self, sources = None, SEs = None ):
+    self.rClient.rpcClient = self.rgClient
+  
+  def doCommand( self ):
     """ 
     Returns transfer quality using the DIRAC accounting system for every SE
     of a single site for the last self.args[0] hours 
@@ -159,91 +170,105 @@ class TransferQualityByDestSplittedSiteCommand( Command ):
     :returns:
       
     """
-   
-#    super( TransferQualityByDestSplittedSite_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-#    try:
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
       
-    if SEs is None:
-      SEs = self.rsClient.getStorageElement( meta = {'columns': 'StorageElementName' })
-      if not SEs[ 'OK' ]:
-        return SEs 
-      SEs = [ se[0] for se in SEs[ 'Value' ] ]
-    
-    if sources is None:
-      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
-      if not sources[ 'OK' ]:
-        return sources 
-      sources = [ si[0] for si in sources[ 'Value' ] ]
-    
-    if not sources + SEs:
-      return S_ERROR( 'Sources + SEs is empty' )
-    
-    self.rClient.rpcClient = self.rgClient
+    sites = None
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+    if sites is None:      
+#FIXME: pointing to the CSHelper instead     
+#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
+#      if not sources[ 'OK' ]:
+#        return sources 
+#      sources = [ si[0] for si in sources[ 'Value' ] ]
+      sites = CSHelpers.getSites()      
+      if not sites['OK']:
+        return sites
+      sites = sites[ 'Value' ]      
+      
+    ses = None
+    if 'ses' in self.args:
+      ses = self.args[ 'ses' ]
+    if ses is None:
+#FIXME: pointing to the CSHelper instead      
+#      meta = { 'columns' : 'StorageElementName' }
+#      ses = self.rsClient.getStorageElement( meta = meta )
+#      if not ses[ 'OK' ]:
+#        return ses 
+#      ses = [ se[0] for se in ses[ 'Value' ] ]
+      ses = CSHelpers.getStorageElements()      
+      if not ses['OK']:
+        return ses
+      
+      ses = ses[ 'Value' ]      
+          
+    if not sites + ses:
+      return S_ERROR( 'Sites + SEs is empty' )
  
-    fromD = datetime.utcnow() - timedelta( hours = self.args[ 0 ] )
+    fromD = datetime.utcnow() - timedelta( hours = hours )
     toD   = datetime.utcnow()
 
-    qualityAll = self.rClient.getReport( 'DataOperation', 'Quality', 
-                                                    fromD, toD, 
-                                                    {'OperationType':'putAndRegister', 
-                                                     'Source':sources + SEs, 
-                                                     'Destination':sources + SEs 
-                                                     }, 
-                                                     'Destination' )
+    qualityAll = self.rClient.getReport( 'DataOperation', 'Quality', fromD, toD, 
+                                         { 'OperationType' : 'putAndRegister', 
+                                           'Source'        : sites + ses, 
+                                           'Destination'   : sites + ses 
+                                          }, 'Destination' )
     if not qualityAll[ 'OK' ]:
       return qualityAll 
-      
     qualityAll = qualityAll[ 'Value' ]
+    
+    if not 'data' in qualityAll:
+      return S_ERROR( 'Missing data key' )
     listOfDest = qualityAll[ 'data' ].keys()
+    
+    if not 'granularity' in qualityAll:
+      return S_ERROR( 'Missing granularity key' )
+    plotGran = qualityAll[ 'granularity' ]
     
     storSitesWeb = self.rsClient.getMonitoredsStatusWeb( 'StorageElement', 
                                                          { 'StorageElementName': listOfDest }, 0, 300 )
-    
     if not storSitesWeb[ 'OK' ]:
       return storSitesWeb 
-      
-    storSitesWeb  = storSitesWeb[ 'Value' ][ 'Records' ]
+    storSitesWeb = storSitesWeb[ 'Value' ]   
+    
+    if not 'Records' in storSitesWeb:
+      return S_ERROR( 'Missing Records key' )  
+    storSitesWeb  = storSitesWeb[ 'Records' ]
+    
     SESiteMapping = {}
     siteSEMapping = {}
     
+    #FIXME: this is very likely going to explode sooner or later...
     for r in storSitesWeb:
-      sites               = r[ 2 ].split( ' ' )[ :-1 ]
+      sites                   = r[ 2 ].split( ' ' )[ :-1 ]
       SESiteMapping[ r[ 0 ] ] = sites
       
-    for SE in SESiteMapping.keys():
-      for site in SESiteMapping[ SE ]:
+    for se in SESiteMapping.keys():
+      for site in SESiteMapping[ se ]:
         try:
           l = siteSEMapping[ site ]
-          l.append( SE )
+          l.append( se )
           siteSEMapping[ site ] = l
         except KeyError:
-          siteSEMapping[ site ] = [ SE ]
+          siteSEMapping[ site ] = [ se ]
    
-    plotGran = qualityAll[ 'granularity' ]
     singlePlots = {}
     
+    #FIXME: refactor it
     for site in siteSEMapping.keys():
       plot           = {}
       plot[ 'data' ] = {}
       for SE in siteSEMapping[site]:
-        plot[ 'data' ][ SE ] = qualityAll[ 'data' ][ SE ]
+        plot[ 'data' ][ se ] = qualityAll[ 'data' ][ se ]
       plot[ 'granularity' ] = plotGran
     
       singlePlots[ site ] = plot
     
-    res = S_OK( { 'DataOperation': singlePlots } )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
-
+    return S_OK( singlePlots )
+  
 ################################################################################
 ################################################################################
 
@@ -350,17 +375,10 @@ class TransferQualityByDestSplittedSiteCommand( Command ):
 ################################################################################
 
 class FailedTransfersBySourceSplittedCommand( Command ):
-  
-#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
 
   def __init__( self, args = None, clients = None ):
     
     super( FailedTransfersBySourceSplittedCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
 
     if 'ReportsClient' in self.APIs:
       self.rClient = self.APIs[ 'ReportsClient' ]
@@ -372,7 +390,9 @@ class FailedTransfersBySourceSplittedCommand( Command ):
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
   
-  def doCommand( self, sources = None, SEs = None ):
+    self.rClient.rpcClient = self.rgClient
+  
+  def doCommand( self):
     """ 
     Returns failed transfer using the DIRAC accounting system for every SE 
     for the last self.args[0] hours 
@@ -385,83 +405,81 @@ class FailedTransfersBySourceSplittedCommand( Command ):
     :returns:
       
     """
-  
-#    super( FailedTransfersBySourceSplitted_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-#    try:
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
       
-    if SEs is None:
-      meta = { 'columns' : 'StorageElementName' }
-      SEs = self.rsClient.getStorageElement( meta = meta)
-      if not SEs[ 'OK' ]:
-        return SEs 
-      SEs = [ se[0] for se in SEs[ 'Value' ] ]
-    
-    if sources is None:
-      meta = { 'columns' : 'SiteName' }
-      sources = self.rsClient.getSite( meta = meta )      
-      if not sources[ 'OK' ]:
-        return sources 
-      sources = [ si[0] for si in sources[ 'Value' ] ]
+    sites = None
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+    if sites is None:      
+#FIXME: pointing to the CSHelper instead     
+#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
+#      if not sources[ 'OK' ]:
+#        return sources 
+#      sources = [ si[0] for si in sources[ 'Value' ] ]
+      sites = CSHelpers.getSites()      
+      if not sites['OK']:
+        return sites
+      sites = sites[ 'Value' ]      
+      
+    ses = None
+    if 'ses' in self.args:
+      ses = self.args[ 'ses' ]
+    if ses is None:
+#FIXME: pointing to the CSHelper instead      
+#      meta = { 'columns' : 'StorageElementName' }
+#      ses = self.rsClient.getStorageElement( meta = meta )
+#      if not ses[ 'OK' ]:
+#        return ses 
+#      ses = [ se[0] for se in ses[ 'Value' ] ]
+      ses = CSHelpers.getStorageElements()      
+      if not ses['OK']:
+        return ses
+      
+      ses = ses[ 'Value' ]      
+          
+    if not sites + ses:
+      return S_ERROR( 'Sites + SEs is empty' )
 
-    if not sources + SEs:
-      return S_ERROR( 'Sources + SEs is empty' )
-
-    self.rClient.rpcClient = self.rgClient
-
-    fromD = datetime.utcnow()-timedelta( hours = self.args[ 0 ] )
+    fromD = datetime.utcnow()-timedelta( hours = hours )
     toD   = datetime.utcnow()
 
-    ft_source = self.rClient.getReport( 'DataOperation', 'FailedTransfers', 
-                                                   fromD, toD, 
-                                                   { 'OperationType':'putAndRegister', 
-                                                     'Source': sources + SEs, 
-                                                     'Destination': sources + SEs,
-                                                     'FinalStatus':[ 'Failed' ] 
-                                                    }, 
-                                                    'Source' )
-    if not ft_source[ 'OK' ]:
-      return ft_source
-      
-    ft_source = ft_source[ 'Value' ]
-    listOfSources = ft_source[ 'data' ].keys()   
-    plotGran      = ft_source[ 'granularity' ]
-    singlePlots   = {}
+    failedTransfers = self.rClient.getReport( 'DataOperation', 'FailedTransfers', fromD, toD, 
+                                              { 'OperationType' : 'putAndRegister', 
+                                                'Source'        : sites + ses, 
+                                                'Destination'   : sites + ses,
+                                                'FinalStatus'   : [ 'Failed' ] 
+                                               }, 'Source' )
+    if not failedTransfers[ 'OK' ]:
+      return failedTransfers
+    failedTransfers = failedTransfers[ 'Value' ]
     
-    for source in listOfSources:
-      if source in sources:
+    if not 'data' in failedTransfers:
+      return S_ERROR( 'Missing data key' )
+    if not 'granularity' in failedTransfers:
+      return S_ERROR( 'Missing granularity key' )
+    
+    singlePlots = {}
+    
+    for source, value in failedTransfers[ 'data' ].items():
+      if source in sites:
         plot                  = {}
-        plot[ 'data' ]        = { source: ft_source[ 'data' ][ source ] }
-        plot[ 'granularity' ] = plotGran
+        plot[ 'data' ]        = { source: value }
+        plot[ 'granularity' ] = failedTransfers[ 'granularity' ]
         singlePlots[ source ] = plot
     
-    res = S_OK( { 'DataOperation': singlePlots } )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( singlePlots )
 
 ################################################################################
 ################################################################################
 
 class SuccessfullJobsBySiteSplittedCommand( Command ):
-  
-#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
 
   def __init__( self, args = None, clients = None ):
     
     super( SuccessfullJobsBySiteSplittedCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
 
     if 'ReportsClient' in self.APIs:
       self.rClient = self.APIs[ 'ReportsClient' ]
@@ -472,8 +490,10 @@ class SuccessfullJobsBySiteSplittedCommand( Command ):
       self.rgClient = self.APIs[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
+    
+    self.rClient.rpcClient = self.rgClient
   
-  def doCommand( self, sites = None ):
+  def doCommand( self ):
     """ 
     Returns successfull jobs using the DIRAC accounting system for every site 
     for the last self.args[0] hours 
@@ -485,68 +505,62 @@ class SuccessfullJobsBySiteSplittedCommand( Command ):
       
     """
 
-#    super( SuccessfullJobsBySiteSplitted_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
 
-#    try:
-
-    if sites is None:
-      sites = self.rsClient.getSite( meta = {'columns': 'SiteName' })
+    sites = None
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+    if sites is None:      
+#FIXME: pointing to the CSHelper instead     
+#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
+#      if not sources[ 'OK' ]:
+#        return sources 
+#      sources = [ si[0] for si in sources[ 'Value' ] ]
+      sites = CSHelpers.getSites()      
       if not sites['OK']:
-        return sites 
-      sites = [ si[0] for si in sites['Value'] ]
+        return sites
+      sites = sites[ 'Value' ]
     
     if not sites:
       return S_ERROR( 'Sites is empty' )
-    
-    self.rClient.rpcClient = self.rgClient
 
-    fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
+    fromD = datetime.utcnow()-timedelta( hours = hours )
     toD   = datetime.utcnow()
 
-    succ_jobs = self.rClient.getReport('Job', 'NumberOfJobs', fromD, toD, 
-                                        {'FinalStatus':['Done'], 'Site':sites}, 'Site')
-    if not succ_jobs['OK']:
-      return succ_jobs 
-
-    succ_jobs   = succ_jobs['Value']
-    listOfSites = succ_jobs['data'].keys()   
-    plotGran    = succ_jobs['granularity']
+    successfulJobs = self.rClient.getReport( 'Job', 'NumberOfJobs', fromD, toD, 
+                                             { 'FinalStatus' : [ 'Done' ], 
+                                               'Site'        : sites
+                                             }, 'Site' )
+    if not successfulJobs[ 'OK' ]:
+      return successfulJobs 
+    successfulJobs = successfulJobs[ 'Value' ]
+    
+    if not 'data' in successfulJobs:
+      return S_ERROR( 'Missing data key' ) 
+    if not 'granularity' in successfulJobs:
+      return S_ERROR( 'Missing granularity key' )   
+    
     singlePlots = {}
     
-    for site in listOfSites:
+    for site, value in successfulJobs[ 'data' ].items():
       if site in sites:
-        plot = {}
-        plot['data'] = {site: succ_jobs['data'][site]}
-        plot['granularity'] = plotGran
-        singlePlots[site] = plot
+        plot                  = {}
+        plot[ 'data' ]        = { site: value }
+        plot[ 'granularity' ] = successfulJobs[ 'granularity' ]
+        singlePlots[ site ]   = plot
     
-    res = S_OK( { 'Job' : singlePlots } )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( { 'Job' : singlePlots } )
 
 ################################################################################
 ################################################################################
 
 class FailedJobsBySiteSplittedCommand( Command ):
-  
-#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
 
   def __init__( self, args = None, clients = None ):
     
     super( FailedJobsBySiteSplittedCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
 
     if 'ReportsClient' in self.APIs:
       self.rClient = self.APIs[ 'ReportsClient' ]
@@ -557,8 +571,10 @@ class FailedJobsBySiteSplittedCommand( Command ):
       self.rgClient = self.APIs[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
+
+    self.rClient.rpcClient = self.rgClient
   
-  def doCommand(self, sites = None):
+  def doCommand( self ):
     """ 
     Returns failed jobs using the DIRAC accounting system for every site 
     for the last self.args[0] hours 
@@ -569,69 +585,63 @@ class FailedJobsBySiteSplittedCommand( Command ):
     :returns:
       
     """
+
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
+
+    sites = None
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+    if sites is None:      
+#FIXME: pointing to the CSHelper instead     
+#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
+#      if not sources[ 'OK' ]:
+#        return sources 
+#      sources = [ si[0] for si in sources[ 'Value' ] ]
+      sites = CSHelpers.getSites()      
+      if not sites[ 'OK' ]:
+        return sites
+      sites = sites[ 'Value' ]
     
-#    super( FailedJobsBySiteSplitted_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
-
-#    try:
-
-    if sites is None:
-      sites = self.rsClient.getSite( meta = {'columns' : 'SiteName'} )      
-      if not sites['OK']:
-        return sites 
-      sites = [ si[0] for si in sites['Value'] ]
-
     if not sites:
       return S_ERROR( 'Sites is empty' )
 
-    self.rClient.rpcClient = self.rgClient
-
-    fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
+    fromD = datetime.utcnow() - timedelta( hours = hours )
     toD   = datetime.utcnow()
 
-    failed_jobs = self.rClient.getReport('Job', 'NumberOfJobs', fromD, toD, 
-                                          {'FinalStatus':['Failed'], 'Site':sites}, 'Site')
-    if not failed_jobs['OK']:
-      return failed_jobs 
-      
-    failed_jobs = failed_jobs['Value']   
-    listOfSites = failed_jobs['data'].keys()   
-    plotGran    = failed_jobs['granularity']
+    failedJobs = self.rClient.getReport( 'Job', 'NumberOfJobs', fromD, toD, 
+                                         { 'FinalStatus' : [ 'Failed' ], 
+                                            'Site'        : sites
+                                         }, 'Site' )
+    if not failedJobs[ 'OK' ]:
+      return failedJobs 
+    failedJobs = failedJobs[ 'Value' ]
+    
+    if not 'data' in failedJobs:
+      return S_ERROR( 'Missing data key' )   
+    if not 'granularity' in failedJobs:
+      return S_ERROR( 'Missing granularity key' )   
+    
     singlePlots = {}
     
-    for site in listOfSites:
+    for site, value in failedJobs[ 'data' ].items():
       if site in sites:
-        plot = {}
-        plot['data'] = {site: failed_jobs['data'][site]}
-        plot['granularity'] = plotGran
-        singlePlots[site] = plot
+        plot                  = {}
+        plot[ 'data' ]        = { site: value }
+        plot[ 'granularity' ] = failedJobs[ 'granularity' ]
+        singlePlots[ site ]   = plot
     
-    res = S_OK( { 'Job': singlePlots } )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( singlePlots )
 
 ################################################################################
 ################################################################################
 
-class SuccessfullPilotsBySiteSplittedCommand(Command):
-  
-#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
+class SuccessfullPilotsBySiteSplittedCommand( Command ):
 
   def __init__( self, args = None, clients = None ):
     
     super( SuccessfullPilotsBySiteSplittedCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
 
     if 'ReportsClient' in self.APIs:
       self.rClient = self.APIs[ 'ReportsClient' ]
@@ -642,8 +652,10 @@ class SuccessfullPilotsBySiteSplittedCommand(Command):
       self.rgClient = self.APIs[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
+
+    self.rClient.rpcClient = self.rgClient
   
-  def doCommand(self, sites = None):
+  def doCommand( self ):
     """ 
     Returns successfull pilots using the DIRAC accounting system for every site 
     for the last self.args[0] hours 
@@ -654,69 +666,63 @@ class SuccessfullPilotsBySiteSplittedCommand(Command):
     :returns:
       
     """
+
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
+
+    sites = None
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+    if sites is None:      
+#FIXME: pointing to the CSHelper instead     
+#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
+#      if not sources[ 'OK' ]:
+#        return sources 
+#      sources = [ si[0] for si in sources[ 'Value' ] ]
+      sites = CSHelpers.getSites()      
+      if not sites[ 'OK' ]:
+        return sites
+      sites = sites[ 'Value' ]
     
-#    super( SuccessfullPilotsBySiteSplitted_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
-
-#    try:
-
-    if sites is None:
-      sites = self.rsClient.getSite( meta = {'columns':'SiteName'} )      
-      if not sites['OK']:
-        return sites 
-      sites = [ si[0] for si in sites['Value'] ]
-
     if not sites:
       return S_ERROR( 'Sites is empty' )
 
-    self.rClient.rpcClient = self.rgClient
-    
-    fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
+    fromD = datetime.utcnow()-timedelta( hours = hours )
     toD   = datetime.utcnow()
 
-    succ_pilots = self.rClient.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
-                                        {'GridStatus':['Done'], 'Site':sites}, 'Site')
-    if not succ_pilots['OK']:
-      return succ_pilots 
-      
-    succ_pilots = succ_pilots['Value']
-    listOfSites = succ_pilots['data'].keys()   
-    plotGran    = succ_pilots['granularity']
+    succesfulPilots = self.rClient.getReport( 'Pilot', 'NumberOfPilots', fromD, toD, 
+                                              { 'GridStatus' : [ 'Done' ], 
+                                                'Site'       : sites 
+                                              }, 'Site' )
+    if not succesfulPilots[ 'OK' ]:
+      return succesfulPilots 
+    succesfulPilots = succesfulPilots[ 'Value' ]
+    
+    if not 'data' in succesfulPilots:
+      return S_ERROR( 'Missing data key' )
+    if not 'granularity' in succesfulPilots:
+      return S_ERROR( 'Missing granularity key' )   
+    
     singlePlots = {}
     
-    for site in listOfSites:
+    for site, value in succesfulPilots[ 'data' ].items():
       if site in sites:
-        plot = {}
-        plot['data']        = { site: succ_pilots['data'][site] }
-        plot['granularity'] = plotGran
-        singlePlots[site]   = plot
+        plot                    = {}
+        plot[ 'data' ]          = { site: value }
+        plot[ 'granularity' ]   = succesfulPilots[ 'granularity' ]
+        singlePlots[ site ]     = plot
     
-    res = S_OK( { 'Pilot' : singlePlots } )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( singlePlots )
 
 ################################################################################
 ################################################################################
 
-class FailedPilotsBySiteSplittedCommand(Command):
-  
-#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
+class FailedPilotsBySiteSplittedCommand( Command ):
 
   def __init__( self, args = None, clients = None ):
     
     super( FailedPilotsBySiteSplittedCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
 
     if 'ReportsClient' in self.APIs:
       self.rClient = self.APIs[ 'ReportsClient' ]
@@ -727,8 +733,10 @@ class FailedPilotsBySiteSplittedCommand(Command):
       self.rgClient = self.APIs[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
+ 
+    self.rClient.rpcClient = self.rgClient
   
-  def doCommand(self, sites = None):
+  def doCommand( self ):
     """ 
     Returns failed jobs using the DIRAC accounting system for every site 
     for the last self.args[0] hours 
@@ -740,69 +748,63 @@ class FailedPilotsBySiteSplittedCommand(Command):
       
     """
 
-#    super( FailedPilotsBySiteSplitted_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
 
-#    try:    
-
-    if sites is None:
-      sites = self.rsClient.getSite( meta = {'columns': 'SiteName'} )      
-      if not sites['OK']:
-        return sites 
-      sites = [ si[0] for si in sites['Value'] ]
+    sites = None
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+    if sites is None:      
+#FIXME: pointing to the CSHelper instead     
+#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
+#      if not sources[ 'OK' ]:
+#        return sources 
+#      sources = [ si[0] for si in sources[ 'Value' ] ]
+      sites = CSHelpers.getSites()      
+      if not sites[ 'OK' ]:
+        return sites
+      sites = sites[ 'Value' ]
     
     if not sites:
-      return S_ERROR( 'Sites is empty' )    
-    
-    self.rClient.rpcClient = self.rgClient
+      return S_ERROR( 'Sites is empty' )
 
-    fromD = datetime.utcnow()-timedelta(hours = self.args[0])
+    fromD = datetime.utcnow() - timedelta( hours = hours )
     toD   = datetime.utcnow()
 
-    failed_pilots = self.rClient.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
-                                          {'GridStatus':['Aborted'], 'Site':sites}, 'Site')
-    if not failed_pilots['OK']:
-      return failed_pilots 
-      
-    failed_pilots = failed_pilots['Value']   
-    listOfSites   = failed_pilots['data'].keys() 
-    plotGran      = failed_pilots['granularity']    
-    singlePlots   = {}
-
-    for site in listOfSites:
-      if site in sites:
-        plot = {}
-        plot['data']        = { site: failed_pilots['data'][site] }
-        plot['granularity'] = plotGran
-        singlePlots[site]   = plot
+    failedPilots = self.rClient.getReport( 'Pilot', 'NumberOfPilots', fromD, toD, 
+                                            { 'GridStatus' : [ 'Aborted' ], 
+                                             'Site'       : sites
+                                            }, 'Site' )
+    if not failedPilots[ 'OK' ]:
+      return failedPilots 
+    failedPilots = failedPilots[ 'Value' ]
+       
+    if not 'data' in failedPilots:
+      return S_ERROR( 'Missing data key' )
+    if not 'granularity' in failedPilots:
+      return S_ERROR( 'Missing granularity key' ) 
     
-    res = S_OK( { 'Pilot': singlePlots } )
+    singlePlots = {}
 
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    for site, value in failedPilots[ 'data' ].items():
+      if site in sites:
+        plot                  = {}
+        plot[ 'data' ]        = { site: value }
+        plot[ 'granularity' ] = failedPilots[ 'granularity' ] 
+        singlePlots[ site ]   = plot
+    
+    return S_OK( singlePlots )
 
 ################################################################################
 ################################################################################
 
-class SuccessfullPilotsByCESplittedCommand(Command):
-
-#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
+class SuccessfullPilotsByCESplittedCommand( Command ):
 
   def __init__( self, args = None, clients = None ):
     
-    super( FailedPilotsBySiteSplittedCommand, self ).__init__( args, clients )
+    super( SuccessfullPilotsByCESplittedCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
-
     if 'ReportsClient' in self.APIs:
       self.rClient = self.APIs[ 'ReportsClient' ]
     else:
@@ -812,8 +814,10 @@ class SuccessfullPilotsByCESplittedCommand(Command):
       self.rgClient = self.APIs[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
+
+    self.rClient.rpcClient = self.rgClient
   
-  def doCommand(self, CEs = None):
+  def doCommand( self ):
     """ 
     Returns successfull pilots using the DIRAC accounting system for every CE 
     for the last self.args[0] hours 
@@ -824,70 +828,65 @@ class SuccessfullPilotsByCESplittedCommand(Command):
     :returns:
       
     """
+
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
+
+    ces = None
+    if 'ces' in self.args:
+      ces = self.args[ 'ces' ] 
+    if ces is None:      
+#FIXME: pointing to the CSHelper instead     
+#      meta = {'columns':'ResourceName'}
+#      CEs = self.rsClient.getResource( resourceType = [ 'CE','CREAMCE' ], meta = meta )
+#      if not CEs['OK']:
+#        return CEs 
+#      CEs = [ ce[0] for ce in CEs['Value'] ]
+     
+      ces = CSHelpers.getComputingElements()      
+      if not ces[ 'OK' ]:
+        return ces
+      ces = ces[ 'Value' ]
     
-#    super( SuccessfullPilotsByCESplitted_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
-
-#    try:
-
-    if CEs is None:
-      meta = {'columns':'ResourceName'}
-      CEs = self.rsClient.getResource( resourceType = [ 'CE','CREAMCE' ], meta = meta )
-      if not CEs['OK']:
-        return CEs 
-      CEs = [ ce[0] for ce in CEs['Value'] ]
-
-    if not CEs:
+    if not ces:
       return S_ERROR( 'CEs is empty' )
 
-    self.rClient.rpcClient = self.rgClient
-
-    fromD = datetime.utcnow() - timedelta(hours = self.args[0])
+    fromD = datetime.utcnow() - timedelta( hours = hours )
     toD   = datetime.utcnow()
 
-    succ_pilots = self.rClient.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
-                                          {'GridStatus':['Done'], 'GridCE':CEs}, 'GridCE')
-    if not succ_pilots['OK']:
-      return succ_pilots 
-      
-    succ_pilots = succ_pilots['Value']
-    listOfCEs   = succ_pilots['data'].keys()    
-    plotGran    = succ_pilots['granularity']
+    successfulPilots = self.rClient.getReport( 'Pilot', 'NumberOfPilots', fromD, toD, 
+                                          { 'GridStatus' : [ 'Done' ], 
+                                            'GridCE'     : ces
+                                          }, 'GridCE' )
+    if not successfulPilots[ 'OK' ]:
+      return successfulPilots 
+    successfulPilots = successfulPilots[ 'Value' ]
+    
+    if not 'data' in successfulPilots:
+      return S_ERROR( 'Missing data key' )
+    if not 'granularity' in successfulPilots:
+      return S_ERROR( 'Missing granularity key' )    
+    
     singlePlots = {}
     
-    for CE in listOfCEs:
-      if CE in CEs:
-        plot = {}
-        plot['data'] = {CE: succ_pilots['data'][CE]}
-        plot['granularity'] = plotGran
-        singlePlots[CE] = plot
+    for ce, value in successfulPilots[ 'data' ].items():
+      if ce in ces:
+        plot                  = {}
+        plot[ 'data' ]        = { ce : value }
+        plot[ 'granularity' ] = successfulPilots[ 'granularity' ]
+        singlePlots[ ce ]     = plot
     
-    res = S_OK( { 'Pilot': singlePlots } )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( singlePlots )
 
 ################################################################################
 ################################################################################
 
-class FailedPilotsByCESplittedCommand(Command):
-  
-#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
+class FailedPilotsByCESplittedCommand( Command ):
 
   def __init__( self, args = None, clients = None ):
     
     super( FailedPilotsByCESplittedCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
 
     if 'ReportsClient' in self.APIs:
       self.rClient = self.APIs[ 'ReportsClient' ]
@@ -898,8 +897,10 @@ class FailedPilotsByCESplittedCommand(Command):
       self.rgClient = self.APIs[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
+
+    self.rClient.rpcClient = self.rgClient
   
-  def doCommand(self, CEs = None):
+  def doCommand( self ):
     """ 
     Returns failed pilots using the DIRAC accounting system for every CE 
     for the last self.args[0] hours 
@@ -911,68 +912,64 @@ class FailedPilotsByCESplittedCommand(Command):
       
     """
 
-#    super( FailedPilotsByCESplitted_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
 
-#    try:
-
-    if CEs is None:
-      CEs = self.rsClient.getResource( resourceType = [ 'CE','CREAMCE' ], meta = {'columns': 'ResourceName'})     
-      if not CEs['OK']:
-        return CEs 
-      CEs = [ ce[0] for ce in CEs['Value'] ]
+    ces = None
+    if 'ces' in self.args:
+      ces = self.args[ 'ces' ] 
+    if ces is None:      
+#FIXME: pointing to the CSHelper instead     
+#      meta = {'columns':'ResourceName'}
+#      CEs = self.rsClient.getResource( resourceType = [ 'CE','CREAMCE' ], meta = meta )
+#      if not CEs['OK']:
+#        return CEs 
+#      CEs = [ ce[0] for ce in CEs['Value'] ]
+     
+      ces = CSHelpers.getComputingElements()      
+      if not ces[ 'OK' ]:
+        return ces
+      ces = ces[ 'Value' ]
     
-    if not CEs:
-      return S_ERROR( 'CEs is empty' )    
-    
-    self.rClient.rpcClient = self.rgClient
+    if not ces:
+      return S_ERROR( 'CEs is empty' )
 
-    fromD = datetime.utcnow()-timedelta(hours = self.args[0])
+    fromD = datetime.utcnow() - timedelta( hours = hours )
     toD   = datetime.utcnow()
 
-    failed_pilots = self.rClient.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
-                                            {'GridStatus':['Aborted'], 'GridCE':CEs}, 'GridCE')
-    if not failed_pilots['OK']:
-      return failed_pilots
-
-    failed_pilots = failed_pilots['Value']
-    listOfCEs     = failed_pilots['data'].keys()
-    plotGran      = failed_pilots['granularity']
+    failedPilots = self.rClient.getReport( 'Pilot', 'NumberOfPilots', fromD, toD, 
+                                            { 'GridStatus' : [ 'Aborted' ], 
+                                              'GridCE'     : ces 
+                                            }, 'GridCE' )
+    if not failedPilots[ 'OK' ]:
+      return failedPilots
+    failedPilots = failedPilots[ 'Value' ]
+    
+    if not 'data' in failedPilots:
+      return S_ERROR( 'Missing data key' )
+    if not 'granularity' in failedPilots:
+      return S_ERROR( 'Missing granularity key' )
+    
     singlePlots   = {}
 
-    for CE in listOfCEs:
-      if CE in CEs:
-        plot = {}
-        plot['data']        = { CE : failed_pilots['data'][CE] } 
-        plot['granularity'] = plotGran
-        singlePlots[CE]     = plot
+    for ce, value in failedPilots[ 'data' ].items():
+      if ce in ces:
+        plot                  = {}
+        plot[ 'data' ]        = { ce : value } 
+        plot[ 'granularity' ] = failedPilots[ 'granularity' ]
+        singlePlots[ ce ]     = plot
     
-    res = S_OK( { 'Pilot': singlePlots } )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( singlePlots )
 
 ################################################################################
 ################################################################################
 
-class RunningJobsBySiteSplittedCommand(Command):
-  
-#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
+class RunningJobsBySiteSplittedCommand( Command ):
 
   def __init__( self, args = None, clients = None ):
     
     super( RunningJobsBySiteSplittedCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
 
     if 'ReportsClient' in self.APIs:
       self.rClient = self.APIs[ 'ReportsClient' ]
@@ -983,8 +980,10 @@ class RunningJobsBySiteSplittedCommand(Command):
       self.rgClient = self.APIs[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
+
+    self.rClient.rpcClient = self.rgClient
   
-  def doCommand(self, sites = None):
+  def doCommand( self ):
     """ 
     Returns running and runned jobs, querying the WMSHistory  
     for the last self.args[0] hours 
@@ -996,52 +995,51 @@ class RunningJobsBySiteSplittedCommand(Command):
       
     """
 
-#    super( RunningJobsBySiteSplitted_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
 
-#    try:
-
-    if sites is None:
-      sites = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
-      if not sites['OK']:
-        return sites 
-      sites = [ si[0] for si in sites['Value'] ]
+    sites = None
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+    if sites is None:      
+#FIXME: pointing to the CSHelper instead     
+#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
+#      if not sources[ 'OK' ]:
+#        return sources 
+#      sources = [ si[0] for si in sources[ 'Value' ] ]
+      sites = CSHelpers.getSites()      
+      if not sites[ 'OK' ]:
+        return sites
+      sites = sites[ 'Value' ]
     
     if not sites:
-      return S_ERROR( 'Sites is empty' )
-    
-    self.rClient.rpcClient = self.rgClient
+      return S_ERROR( 'Sites is empty' )   
 
-    fromD = datetime.utcnow()-timedelta(hours = self.args[0])
+    fromD = datetime.utcnow() - timedelta( hours = hours )
     toD   = datetime.utcnow()
 
-    run_jobs = self.rClient.getReport('WMSHistory', 'NumberOfJobs', fromD, toD, 
+    runJobs = self.rClient.getReport( 'WMSHistory', 'NumberOfJobs', fromD, toD, 
                                        {}, 'Site')
-    if not run_jobs['OK']:
-      return run_jobs 
-
-    run_jobs    = run_jobs['Value']
-    listOfSites = run_jobs['data'].keys()
-    plotGran    = run_jobs['granularity']
+    if not runJobs[ 'OK' ]:
+      return runJobs 
+    runJobs    = runJobs[ 'Value' ]
+    
+    if not 'data' in runJobs:
+      return S_ERROR( 'Missing data key' )
+    if not 'granularity' in runJobs:
+      return S_ERROR( 'Missing granularity key' )
+    
     singlePlots = {}
     
-    for site in listOfSites:
+    for site, value in runJobs[ 'data' ].items():
       if site in sites:
-        plot = {}
-        plot['data'] = {site: run_jobs['data'][site]}
-        plot['granularity'] = plotGran
-        singlePlots[site] = plot
+        plot                  = {}
+        plot[ 'data' ]        = { site: value }
+        plot[ 'granularity' ] = runJobs[ 'granularity' ]
+        singlePlots[ site ]   = plot
     
-    res = S_OK( { 'WMSHistory' : singlePlots } )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( singlePlots )
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
