@@ -33,6 +33,9 @@ class DTPolicy( PolicyBase ):
     status = status[ 'Value' ]
     result = {}
 
+    if not status:
+      return S_ERROR( 'Expecting a dictionary' )
+
     if not 'DT' in status:
       return S_ERROR( 'Expecting "DT" key on dictionary' )
 
