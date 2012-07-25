@@ -5,6 +5,9 @@
 
 '''
 
+from DIRAC.Core.DISET.RPCClient                             import RPCClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+
 __RCSID__  = '$Id: $'
 
 class PilotsClient( object ):
@@ -13,7 +16,7 @@ class PilotsClient( object ):
   """
 
   def __init__( self ):
-    self.gate = PrivatePilotsClient()
+    self.gate = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     
   def getPilotsSimpleEff( self, granularity, name, siteName = None, 
                           RPCWMSAdmin = None  ):  
@@ -34,27 +37,16 @@ class PilotsClient( object ):
     :return: { PilotsEff : Good | Fair | Poor | Idle | Bad }
       
     """
-    return self.gate.getPilotsSimpleEff( granularity, name, siteName = siteName, 
-                                         RPCWMSAdmin = RPCWMSAdmin )
 
-################################################################################
-
-class PrivatePilotsClient( object ):
-
-  def getPilotsSimpleEff( self, granularity, name, siteName = None, 
-                          RPCWMSAdmin = None ):
-
-    if RPCWMSAdmin is not None:
-      RPC = RPCWMSAdmin
-    else:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient( "WorkloadManagement/WMSAdministrator" )
+    #FIXME: return S_OK / S_ERROR !!!
 
     if granularity == 'Site':
-      res = RPC.getPilotSummaryWeb( { 'GridSite' : name }, [], 0, 300 )
+      res = self.gate.getPilotSummaryWeb( { 'GridSite' : name }, [], 0, 300 )
+      
     elif granularity == 'Resource':
+      
       if siteName is None:
-        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+        
         rsClient = ResourceStatusClient()
         siteName = rsClient.getGeneralName( granularity, name, 'Site' )
         if not siteName[ 'OK' ]:
@@ -65,7 +57,8 @@ class PrivatePilotsClient( object ):
           return {}
         siteName = siteName['Value']
 
-      res = RPC.getPilotSummaryWeb( { 'ExpandSite' : siteName }, [], 0, 50 )
+      res = self.gate.getPilotSummaryWeb( { 'ExpandSite' : siteName }, [], 0, 50 )
+    
     else:
       return {}
 
@@ -105,6 +98,6 @@ class PrivatePilotsClient( object ):
 
     except IndexError:
       return {}
-         
+             
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
