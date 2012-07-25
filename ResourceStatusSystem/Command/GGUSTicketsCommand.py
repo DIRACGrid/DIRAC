@@ -34,8 +34,8 @@ class GGUSTicketsOpen( Command ):
     
     super( GGUSTicketsOpen, self ).__init__( args, clients )
     
-    if 'GGUSTicketsClient' in self.APIs:
-      self.gClient = self.APIs[ 'GGUSTicketsClient' ]
+    if 'GGUSTicketsClient' in self.apis:
+      self.gClient = self.apis[ 'GGUSTicketsClient' ]
     else:
       self.gClient = GGUSTicketsClient() 
   
@@ -47,7 +47,7 @@ class GGUSTicketsOpen( Command ):
     """
     
 #    super( GGUSTickets_Open, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.apis = initAPIs( self.__APIs__, self.apis )
 
     if not 'name' in self.args:
       return S_ERROR( '"name" not found in self.args')
@@ -80,8 +80,8 @@ class GGUSTicketsLink( Command ):
     
     super( GGUSTicketsLink, self ).__init__( args, clients )
     
-    if 'GGUSTicketsClient' in self.APIs:
-      self.gClient = self.APIs[ 'GGUSTicketsClient' ]
+    if 'GGUSTicketsClient' in self.apis:
+      self.gClient = self.apis[ 'GGUSTicketsClient' ]
     else:
       self.gClient = GGUSTicketsClient() 
   
@@ -94,7 +94,7 @@ class GGUSTicketsLink( Command ):
     """
     
 #    super( GGUSTickets_Link, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.apis = initAPIs( self.__APIs__, self.apis )
 
     if not 'name' in self.args:
       return S_ERROR( '"name" not found in self.args')
@@ -130,8 +130,8 @@ class GGUSTicketsInfo( Command ):
     
     super( GGUSTicketsInfo, self ).__init__( args, clients )
     
-    if 'GGUSTicketsClient' in self.APIs:
-      self.gClient = self.APIs[ 'GGUSTicketsClient' ]
+    if 'GGUSTicketsClient' in self.apis:
+      self.gClient = self.apis[ 'GGUSTicketsClient' ]
     else:
       self.gClient = GGUSTicketsClient() 
   
@@ -144,7 +144,7 @@ class GGUSTicketsInfo( Command ):
     """
     
 #    super( GGUSTickets_Info, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.apis = initAPIs( self.__APIs__, self.apis )
 
     if not 'name' in self.args:
       return S_ERROR( '"name" not found in self.args')

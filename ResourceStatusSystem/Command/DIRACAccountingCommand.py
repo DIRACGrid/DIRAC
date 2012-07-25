@@ -30,13 +30,13 @@ class DIRACAccountingCommand( Command ):
     
     super( DIRACAccountingCommand, self ).__init__( args, clients )
     
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
   
@@ -61,7 +61,7 @@ class DIRACAccountingCommand( Command ):
     """
     
 #    super( DIRACAccounting_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.apis = initAPIs( self.__APIs__, self.apis )
     self.rClient.rpcClient = self.rgClient
 
 #    try:
@@ -118,13 +118,13 @@ class TransferQualityCommand( Command ):
     
     super( TransferQualityCommand, self ).__init__( args, clients )
     
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
@@ -145,7 +145,7 @@ class TransferQualityCommand( Command ):
       {'Result': None | a float between 0.0 and 100.0}
     """
 #    super( TransferQuality_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+#    self.apis = initAPIs( self.__APIs__, self.apis )    
     self.rClient.rpcClient = self.rgClient
 
 #    try:
@@ -211,12 +211,12 @@ class TransferQualityCommand( Command ):
 #    """
 #    
 #    super(TransferQualityCached_Command, self).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )  
+#    self.apis = initAPIs( self.__APIs__, self.apis )  
 #      
 #    name = self.args[1]
 #    
 #    try:
-#      res = self.APIs[ 'ResourceManagementClient' ].getCachedResult(name, 'TransferQualityEverySEs', 'TQ', 'NULL')
+#      res = self.apis[ 'ResourceManagementClient' ].getCachedResult(name, 'TransferQualityEverySEs', 'TQ', 'NULL')
 #      if res == []:
 #        return {'Result':None}
 #    except:
@@ -238,8 +238,8 @@ class CachedPlotCommand( Command ):
     
     super( CachedPlotCommand, self ).__init__( args, clients )
     
-    if 'ResourceManagementClient' in self.APIs:
-      self.rmClient = self.APIs[ 'ResourceManagementClient' ]
+    if 'ResourceManagementClient' in self.apis:
+      self.rmClient = self.apis[ 'ResourceManagementClient' ]
     else:
       self.rmClient = ResourceManagementClient() 
   
@@ -261,7 +261,7 @@ class CachedPlotCommand( Command ):
     """
 
 #    super( CachedPlot_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs ) 
+#    self.apis = initAPIs( self.__APIs__, self.apis ) 
       
 #    try:  
       
@@ -311,8 +311,8 @@ class TransferQualityFromCachedPlotCommand( Command ):
     
     super( TransferQualityFromCachedPlotCommand, self ).__init__( args, clients )
     
-    if 'ResourceManagementClient' in self.APIs:
-      self.rmClient = self.APIs[ 'ResourceManagementClient' ]
+    if 'ResourceManagementClient' in self.apis:
+      self.rmClient = self.apis[ 'ResourceManagementClient' ]
     else:
       self.rmClient = ResourceManagementClient() 
   
@@ -330,7 +330,7 @@ class TransferQualityFromCachedPlotCommand( Command ):
     """
     
 #    super(TransferQualityFromCachedPlot_Command, self).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )     
+#    self.apis = initAPIs( self.__APIs__, self.apis )     
 
 #    try:
 

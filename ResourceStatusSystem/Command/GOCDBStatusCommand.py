@@ -25,8 +25,8 @@ class GOCDBStatusCommand( Command ):
     
     super( GOCDBStatusCommand, self ).__init__( args, clients )
     
-    if 'GOCDBClient' in self.APIs:
-      self.gClient = self.APIs[ 'GOCDBClient' ]
+    if 'GOCDBClient' in self.apis:
+      self.gClient = self.apis[ 'GOCDBClient' ]
     else:
       self.gClient = GOCDBClient() 
   
@@ -132,8 +132,8 @@ class GOCDBStatusCommand( Command ):
 #    
 #    super( DTCachedCommand, self ).__init__( args, clients )
 #    
-#    if 'ResourceManagementClient' in self.APIs:
-#      self.rmClient = self.APIs[ 'ResourceManagementClient' ]
+#    if 'ResourceManagementClient' in self.apis:
+#      self.rmClient = self.apis[ 'ResourceManagementClient' ]
 #    else:
 #      self.rmClient = ResourceManagementClient() 
 #  
@@ -309,8 +309,8 @@ class GOCDBStatusCommand( Command ):
 #    
 #    super( DTInfoCachedCommand, self ).__init__( args, clients )
 #    
-#    if 'ResourceManagementClient' in self.APIs:
-#      self.rmClient = self.APIs[ 'ResourceManagementClient' ]
+#    if 'ResourceManagementClient' in self.apis:
+#      self.rmClient = self.apis[ 'ResourceManagementClient' ]
 #    else:
 #      self.rmClient = ResourceManagementClient() 
 #  
@@ -330,7 +330,7 @@ class GOCDBStatusCommand( Command ):
 #    timeFormat = "%Y-%m-%d %H:%M"
 #    
 ##    super(DTInfo_Cached_Command, self).doCommand()
-##    self.APIs = initAPIs( self.__APIs__, self.APIs )     
+##    self.apis = initAPIs( self.__APIs__, self.apis )     
 #
 ##    try:
 #

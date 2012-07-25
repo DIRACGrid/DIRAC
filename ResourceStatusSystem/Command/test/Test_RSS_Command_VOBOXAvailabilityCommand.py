@@ -59,7 +59,7 @@ class VOBOXAvailabilityCommand_Success( VOBOXAvailabilityCommand_TestCase ):
     
     command = self.testClass()  
     self.assertEqual( {}, command.args )      
-    self.assertEqual( {}, command.APIs )
+    self.assertEqual( {}, command.apis )
     
   def test_doCommand( self ):  
     ''' tests the doCommand method

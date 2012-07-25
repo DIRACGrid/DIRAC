@@ -1,4 +1,4 @@
-# $HeadURL $
+# $HeadURL:  $
 ''' Command
 
   Base class for all commands.
@@ -7,23 +7,22 @@
 
 from DIRAC import S_OK
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 class Command( object ):
-  """ 
+  ''' 
     The Command class is a simple base class for all the commands
     for interacting with the clients
-  """
+  '''
 
   def __init__( self, args = None, clients = None ):
     
     self.args            = ( 1 and args ) or {}      
-    self.APIs            = ( 1 and clients ) or {}
+    self.apis            = ( 1 and clients ) or {}
 
-  #to be extended by real commands
   def doCommand( self ):
-    """ Before use, call at least `setArgs`.
-    """
+    ''' To be extended by real commands
+    '''
     
     return S_OK( { 'Result' : None } )
     

@@ -28,8 +28,8 @@ class PilotsStatsCommand( Command ):
     
     super( PilotsStatsCommand, self ).__init__( args, clients )
     
-    if 'PilotsClient' in self.APIs:
-      self.pClient = self.APIs[ 'PilotsClient' ]
+    if 'PilotsClient' in self.apis:
+      self.pClient = self.apis[ 'PilotsClient' ]
     else:
       self.pClient = PilotsClient()     
 
@@ -62,8 +62,8 @@ class PilotsEffCommand( Command ):
     
     super( PilotsEffCommand, self ).__init__( args, clients )
     
-    if 'PilotsClient' in self.APIs:
-      self.pClient = self.APIs[ 'PilotsClient' ]
+    if 'PilotsClient' in self.apis:
+      self.pClient = self.apis[ 'PilotsClient' ]
     else:
       self.pClient = PilotsClient()  
 
@@ -73,7 +73,7 @@ class PilotsEffCommand( Command ):
     """
     
 #    super( PilotsEff_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.apis = initAPIs( self.__APIs__, self.apis )
 
 #    try:
       
@@ -99,13 +99,13 @@ class PilotsEffSimpleCommand( Command ):
     
     super( PilotsEffSimpleCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    if 'ResourceStatusClient' in self.apis:
+      self.rsClient = self.apis[ 'ResourceStatusClient' ]
     else:
       self.rsClient = ResourceStatusClient()      
     
-    if 'PilotsClient' in self.APIs:
-      self.pClient = self.APIs[ 'PilotsClient' ]
+    if 'PilotsClient' in self.apis:
+      self.pClient = self.apis[ 'PilotsClient' ]
     else:
       self.pClient = PilotsClient()  
 
@@ -125,7 +125,7 @@ class PilotsEffSimpleCommand( Command ):
     """
     
 #    super( PilotsEffSimple_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+#    self.apis = initAPIs( self.__APIs__, self.apis )    
 
 #    try:
 
@@ -167,13 +167,13 @@ class PilotsEffSimpleCachedCommand( Command ):
     
     super( PilotsEffSimpleCachedCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    if 'ResourceStatusClient' in self.apis:
+      self.rsClient = self.apis[ 'ResourceStatusClient' ]
     else:
       self.rsClient = ResourceStatusClient()      
     
-    if 'ResourceManagementClient' in self.APIs:
-      self.rmClient = self.APIs[ 'ResourceManagementClient' ]
+    if 'ResourceManagementClient' in self.apis:
+      self.rmClient = self.apis[ 'ResourceManagementClient' ]
     else:
       self.emClient = ResourceManagementClient()  
 
@@ -193,7 +193,7 @@ class PilotsEffSimpleCachedCommand( Command ):
     """
     
 #    super( PilotsEffSimpleCached_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+#    self.apis = initAPIs( self.__APIs__, self.apis )    
 
 #    try:
 

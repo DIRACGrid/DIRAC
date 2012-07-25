@@ -28,8 +28,8 @@ class JobsStatsCommand( Command ):
     
     super( JobsStatsCommand, self ).__init__( args, clients )
     
-    if 'JobsClient' in self.APIs:
-      self.jClient = self.APIs[ 'JobsClient' ]
+    if 'JobsClient' in self.apis:
+      self.jClient = self.apis[ 'JobsClient' ]
     else:
       self.jClient = JobsClient()  
   
@@ -49,7 +49,7 @@ class JobsStatsCommand( Command ):
     """
 
 #    super(JobsStats_Command, self).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.apis = initAPIs( self.__APIs__, self.apis )
       
 #    try:
 
@@ -75,8 +75,8 @@ class JobsEffCommand( Command ):
     
     super( JobsEffCommand, self ).__init__( args, clients )
     
-    if 'JobsClient' in self.APIs:
-      self.jClient = self.APIs[ 'JobsClient' ]
+    if 'JobsClient' in self.apis:
+      self.jClient = self.apis[ 'JobsClient' ]
     else:
       self.jClient = JobsClient()  
   
@@ -96,7 +96,7 @@ class JobsEffCommand( Command ):
     """
     
 #    super(JobsEff_Command, self).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+#    self.apis = initAPIs( self.__APIs__, self.apis )    
 
 #    try:
       
@@ -120,8 +120,8 @@ class SystemChargeCommand( Command ):
     
     super( SystemChargeCommand, self ).__init__( args, clients )
     
-    if 'JobsClient' in self.APIs:
-      self.jClient = self.APIs[ 'JobsClient' ]
+    if 'JobsClient' in self.apis:
+      self.jClient = self.apis[ 'JobsClient' ]
     else:
       self.jClient = JobsClient()  
   
@@ -136,7 +136,7 @@ class SystemChargeCommand( Command ):
     """
     
 #    super(SystemCharge_Command, self).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs ) 
+#    self.apis = initAPIs( self.__APIs__, self.apis ) 
      
 #    try:
       
@@ -162,13 +162,13 @@ class JobsEffSimpleCommand( Command ):
     
     super( JobsEffSimpleCommand, self ).__init__( args, clients )
     
-    if 'JobsClient' in self.APIs:
-      self.jClient = self.APIs[ 'JobsClient' ]
+    if 'JobsClient' in self.apis:
+      self.jClient = self.apis[ 'JobsClient' ]
     else:
       self.jClient = JobsClient()  
       
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    if 'ResourceStatusClient' in self.apis:
+      self.rsClient = self.apis[ 'ResourceStatusClient' ]
     else:
       self.rsClient = ResourceStatusClient()  
   
@@ -188,7 +188,7 @@ class JobsEffSimpleCommand( Command ):
     """
     
 #    super (JobsEffSimple_Command, self).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.apis = initAPIs( self.__APIs__, self.apis )
 
 #    try:
     
@@ -229,13 +229,13 @@ class JobsEffSimpleCachedCommand( Command ):
     
     super( JobsEffSimpleCachedCommand, self ).__init__( args, clients )
           
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    if 'ResourceStatusClient' in self.apis:
+      self.rsClient = self.apis[ 'ResourceStatusClient' ]
     else:
       self.rsClient = ResourceStatusClient()  
   
-    if 'ResourceManagementClient' in self.APIs:
-      self.rmClient = self.APIs[ 'ResourceManagementClient' ]
+    if 'ResourceManagementClient' in self.apis:
+      self.rmClient = self.apis[ 'ResourceManagementClient' ]
     else:
       self.rmClient = ResourceManagementClient()   
   
@@ -255,7 +255,7 @@ class JobsEffSimpleCachedCommand( Command ):
     """
     
 #    super(JobsEffSimpleCached_Command, self).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.apis = initAPIs( self.__APIs__, self.apis )
       
 #    try:  
       

@@ -25,13 +25,13 @@ class JobsEffSimpleEveryOneCommand( Command ):
     
     super( JobsEffSimpleEveryOneCommand, self ).__init__( args, clients )
 
-    if 'JobsClient' in self.APIs:
-      self.jClient = self.APIs[ 'JobsClient' ]
+    if 'JobsClient' in self.apis:
+      self.jClient = self.apis[ 'JobsClient' ]
     else:
       self.jClient = JobsClient() 
     
-    if 'WMSAdministrator' in self.APIs:
-      self.wClient = self.APIs[ 'WMSAdministrator' ]
+    if 'WMSAdministrator' in self.apis:
+      self.wClient = self.apis[ 'WMSAdministrator' ]
     else:
       self.wClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     
@@ -87,13 +87,13 @@ class PilotsEffSimpleEverySitesCommand( Command ):
     
     super( PilotsEffSimpleEverySitesCommand, self ).__init__( args, clients )
 
-    if 'PilotsClient' in self.APIs:
-      self.pClient = self.APIs[ 'PilotsClient' ]
+    if 'PilotsClient' in self.apis:
+      self.pClient = self.apis[ 'PilotsClient' ]
     else:
       self.pClient = PilotsClient() 
     
-    if 'WMSAdministrator' in self.APIs:
-      self.wClient = self.APIs[ 'WMSAdministrator' ]
+    if 'WMSAdministrator' in self.apis:
+      self.wClient = self.apis[ 'WMSAdministrator' ]
     else:
       self.wClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
 
@@ -155,21 +155,21 @@ class PilotsEffSimpleEverySitesCommand( Command ):
 #      {'SiteName': {TQ : 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
 #    """
 #
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.apis = initAPIs( self.__APIs__, self.apis )
 #
 #    if SEs is None:
-#      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns' : 'StorageElementName' })
+#      SEs = self.apis[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns' : 'StorageElementName' })
 #      if not SEs['OK']:
 #      else:
 #        SEs = SEs['Value']
 #
-#    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+#    self.apis[ 'ReportsClient' ].rpcClient = self.apis[ 'ReportGenerator' ]
 #
 #    fromD = datetime.datetime.utcnow() - datetime.timedelta( hours = 2 )
 #    toD = datetime.datetime.utcnow()
 #
 #    try:
-#      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', fromD, toD,
+#      qualityAll = self.apis[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', fromD, toD,
 #                                         {'OperationType':'putAndRegister',
 #                                          'Destination':SEs}, 'Channel' )
 #      if not qualityAll['OK']:
@@ -225,8 +225,8 @@ class DTEverySitesCommand( Command ):
     
     super( DTEverySitesCommand, self ).__init__( args, clients )
 
-    if 'GOCDBClient' in self.APIs:
-      self.gClient = self.APIs[ 'GOCDBClient' ]
+    if 'GOCDBClient' in self.apis:
+      self.gClient = self.apis[ 'GOCDBClient' ]
     else:
       self.gClient = GOCDBClient() 
 
@@ -314,8 +314,8 @@ class DTEveryResourcesCommand( Command ):
     
     super( DTEveryResourcesCommand, self ).__init__( args, clients )
     
-    if 'GOCDBClient' in self.APIs:
-      self.gClient = self.APIs[ 'GOCDBClient' ]
+    if 'GOCDBClient' in self.apis:
+      self.gClient = self.apis[ 'GOCDBClient' ]
     else:
       self.gClient = GOCDBClient() 
 

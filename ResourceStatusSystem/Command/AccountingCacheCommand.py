@@ -26,18 +26,18 @@ class TransferQualityByDestSplittedCommand( Command ):
     
     super( TransferQualityByDestSplittedCommand, self ).__init__( args, clients )
     
-#    if 'ResourceStatusClient' in self.APIs:
-#      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+#    if 'ResourceStatusClient' in self.apis:
+#      self.rsClient = self.apis[ 'ResourceStatusClient' ]
 #    else:
 #      self.rsClient = ResourceStatusClient() 
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
   
@@ -140,18 +140,18 @@ class TransferQualityByDestSplittedSiteCommand( Command ):
     
     super( TransferQualityByDestSplittedSiteCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    if 'ResourceStatusClient' in self.apis:
+      self.rsClient = self.apis[ 'ResourceStatusClient' ]
     else:
       self.rsClient = ResourceStatusClient() 
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
   
@@ -291,27 +291,27 @@ class TransferQualityByDestSplittedSiteCommand( Command ):
 #    """
 #  
 #    super( TransferQualityBySourceSplittedSite_Command, self ).doCommand()
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.apis = initAPIs( self.__APIs__, self.apis )
 #
 #    if SEs is None:
-#      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName' )
+#      SEs = self.apis[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName' )
 #      if not SEs[ 'OK' ]:
 #      else:
 #        SEs = SEs[ 'Value' ]
 #    
 #    if sources is None:
-#      sources = self.APIs[ 'ResourceStatusClient' ].getSitesList()
+#      sources = self.apis[ 'ResourceStatusClient' ].getSitesList()
 #      if not sources[ 'OK' ]:
 #      else:
 #        sources = sources[ 'Value' ]
 #    
-#    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+#    self.apis[ 'ReportsClient' ].rpcClient = self.apis[ 'ReportGenerator' ]
 #
 #    fromD = datetime.utcnow()-timedelta( hours = self.args[ 0 ] )
 #    toD = datetime.utcnow()
 #
 #    try:
-#      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', fromD, toD, 
+#      qualityAll = self.apis[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', fromD, toD, 
 #                                          { 'OperationType':'putAndRegister', 
 #                                            'Source': sources + SEs, 'Destination': sources + SEs }, 
 #                                          'Destination')
@@ -326,7 +326,7 @@ class TransferQualityByDestSplittedSiteCommand( Command ):
 #    listOfDest = qualityAll[ 'data' ].keys()
 #    
 #    try:
-#      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300)
+#      storSitesWeb = self.apis[ 'ResourceStatusClient' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300)
 #    except:
 #      gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
 #      return {}
@@ -380,13 +380,13 @@ class FailedTransfersBySourceSplittedCommand( Command ):
     
     super( FailedTransfersBySourceSplittedCommand, self ).__init__( args, clients )
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
   
@@ -481,13 +481,13 @@ class SuccessfullJobsBySiteSplittedCommand( Command ):
     
     super( SuccessfullJobsBySiteSplittedCommand, self ).__init__( args, clients )
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
     
@@ -562,13 +562,13 @@ class FailedJobsBySiteSplittedCommand( Command ):
     
     super( FailedJobsBySiteSplittedCommand, self ).__init__( args, clients )
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
 
@@ -643,13 +643,13 @@ class SuccessfullPilotsBySiteSplittedCommand( Command ):
     
     super( SuccessfullPilotsBySiteSplittedCommand, self ).__init__( args, clients )
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
 
@@ -724,13 +724,13 @@ class FailedPilotsBySiteSplittedCommand( Command ):
     
     super( FailedPilotsBySiteSplittedCommand, self ).__init__( args, clients )
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
  
@@ -805,13 +805,13 @@ class SuccessfullPilotsByCESplittedCommand( Command ):
     
     super( SuccessfullPilotsByCESplittedCommand, self ).__init__( args, clients )
     
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
 
@@ -888,13 +888,13 @@ class FailedPilotsByCESplittedCommand( Command ):
     
     super( FailedPilotsByCESplittedCommand, self ).__init__( args, clients )
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
 
@@ -971,13 +971,13 @@ class RunningJobsBySiteSplittedCommand( Command ):
     
     super( RunningJobsBySiteSplittedCommand, self ).__init__( args, clients )
 
-    if 'ReportsClient' in self.APIs:
-      self.rClient = self.APIs[ 'ReportsClient' ]
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
     else:
       self.rClient = ReportsClient() 
 
-    if 'ReportGenerator' in self.APIs:
-      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
     else:
       self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
 

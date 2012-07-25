@@ -20,8 +20,8 @@ class RSPeriodsCommand( Command ):
     
     super( RSPeriodsCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    if 'ResourceStatusClient' in self.apis:
+      self.rsClient = self.apis[ 'ResourceStatusClient' ]
     else:
       self.rsClient = ResourceStatusClient()      
 
@@ -62,8 +62,8 @@ class ServiceStatsCommand( Command ):
     
     super( ServiceStatsCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    if 'ResourceStatusClient' in self.apis:
+      self.rsClient = self.apis[ 'ResourceStatusClient' ]
     else:
       self.rsClient = ResourceStatusClient()   
 
@@ -105,8 +105,8 @@ class ResourceStatsCommand( Command ):
     
     super( ResourceStatsCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    if 'ResourceStatusClient' in self.apis:
+      self.rsClient = self.apis[ 'ResourceStatusClient' ]
     else:
       self.rsClient = ResourceStatusClient()  
 
@@ -148,8 +148,8 @@ class StorageElementsStatsCommand( Command ):
     
     super( StorageElementsStatsCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    if 'ResourceStatusClient' in self.apis:
+      self.rsClient = self.apis[ 'ResourceStatusClient' ]
     else:
       self.rsClient = ResourceStatusClient()  
 
@@ -202,8 +202,8 @@ class MonitoredStatusCommand( Command ):
     
     super( MonitoredStatusCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    if 'ResourceStatusClient' in self.apis:
+      self.rsClient = self.apis[ 'ResourceStatusClient' ]
     else:
       self.rsClient = ResourceStatusClient()  
 
