@@ -97,7 +97,7 @@ class PilotDirector:
       self.log = gLogger.getSubLogger( '%sPilotDirector/%s' % ( self.gridMiddleware, submitPool ) )
 
     self.pilot = DIRAC_PILOT
-    self.submitPoolOption = '-o /Resources/Computing/CEDefaults/SubmitPool=%' % submitPool
+    self.submitPoolOption = '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % submitPool
     self.extraPilotOptions = []
     self.installVersion = DIRAC_VERSION
     self.installProject = DIRAC_PROJECT
