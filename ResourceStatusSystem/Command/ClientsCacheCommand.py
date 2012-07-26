@@ -207,170 +207,170 @@ class PilotsEffSimpleEverySitesCommand( Command ):
 ################################################################################
 ################################################################################
 
-class DTEverySitesCommand( Command ):
-
-  #FIXME: write propper docstrings
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( DTEverySitesCommand, self ).__init__( args, clients )
-
-    if 'GOCDBClient' in self.apis:
-      self.gClient = self.apis[ 'GOCDBClient' ]
-    else:
-      self.gClient = GOCDBClient() 
-
-  def doCommand( self ):
-    """ 
-    Returns downtimes information for all the sites in input.
-        
-    :params:
-      :attr:`sites`: list of site names (when not given, take every site)
-    
-    :returns:
-      {'SiteName': {'SEVERITY': 'OUTAGE'|'AT_RISK', 
-                    'StartDate': 'aDate', ...} ... }
-    """
-
-    sites = None
-
-    if 'sites' in self.args:
-      sites = self.args[ 'sites' ] 
-    
-    if sites is None:
-      #FIXME: we do not get them from RSS DB anymore, from CS now.
-      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
-      sites = CSHelpers.getSites()      
-      if not sites[ 'OK' ]:
-        return sites
-      sites = sites[ 'Value' ]
-      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]  
-      
-#    if sites is None:
-#      GOC_sites = self.rsClient.getGridSite( meta = { 'columns' : 'GridSiteName' })
-#      if not GOC_sites['OK']:
-#        return GOC_sites
-#      GOC_sites = [ gs[0] for gs in GOC_sites['Value'] ]
+#class DTEverySitesCommand( Command ):
+#
+#  #FIXME: write propper docstrings
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( DTEverySitesCommand, self ).__init__( args, clients )
+#
+#    if 'GOCDBClient' in self.apis:
+#      self.gClient = self.apis[ 'GOCDBClient' ]
 #    else:
-#      GOC_sites = [ getGOCSiteName( x )[ 'Value' ] for x in sites ]
-
-    gocSites = []
-    for site in sites:
-      
-      gocSite = getGOCSiteName( site )
-      if not gocSite[ 'OK' ]:
-        return gocSite
-      
-      gocSites.append( gocSite[ 'Value' ] )   
-
-#    gocSites = [ getGOCSiteName( x )[ 'Value' ] for x in sites ]
-
-    resGOC = self.gClient.getStatus( 'Site', gocSites, None, 120 )
-    if not resGOC[ 'OK' ]:
-      return resGOC
-      
-    resGOC = resGOC[ 'Value' ]
-
-    if resGOC == None:
-      resGOC = []
-
-    results = {}
-
-    for dt_ID in resGOC:
-        
-#      try:
-          
-      dt                  = {}
-      dt[ 'ID' ]          = dt_ID
-      dt[ 'StartDate' ]   = resGOC[ dt_ID ][ 'FORMATED_START_DATE' ]
-      dt[ 'EndDate' ]     = resGOC[ dt_ID ][ 'FORMATED_END_DATE' ]
-      dt[ 'Severity' ]    = resGOC[ dt_ID ][ 'SEVERITY' ]
-      dt[ 'Description' ] = resGOC[ dt_ID ][ 'DESCRIPTION' ].replace( '\'', '' )
-      dt[ 'Link' ]        = resGOC[ dt_ID ][ 'GOCDB_PORTAL_URL' ]
-        
-      diracNames = getDIRACSiteName( resGOC[ dt_ID ][ 'SITENAME' ] )
-          
-      if not diracNames[ 'OK' ]:
-        return diracNames
-          
-      for diracName in diracNames[ 'Value' ]:
-        results[ '%s %s' % ( dt_ID.split()[0], diracName ) ] = dt
-
-# FIXME: why does it fail ?            
-#      except KeyError:
-#        continue
-
-    return S_OK( results )        
-
-################################################################################
-################################################################################
-
-class DTEveryResourcesCommand( Command ):
-
-  #FIXME: write propper docstrings
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( DTEveryResourcesCommand, self ).__init__( args, clients )
-    
-    if 'GOCDBClient' in self.apis:
-      self.gClient = self.apis[ 'GOCDBClient' ]
-    else:
-      self.gClient = GOCDBClient() 
-
-  def doCommand( self ):
-    """ 
-    Returns downtimes information for all the resources in input.
-        
-    :params:
-      :attr:`sites`: list of resource names (when not given, take every resource)
-    
-    :returns:
-      {'ResourceName': {'SEVERITY': 'OUTAGE'|'AT_RISK', 
-                    'StartDate': 'aDate', ...} ... }
-    """
-
-    resources = None
-    if 'resources' in self.args:
-      resources = self.args[ 'resources' ] 
-    
-    if resources is None:
-
-      #FIXME: we do not get them from RSS DB anymore, from CS now.
-#      meta = { 'columns' : 'ResourceName' }
-#      resources = self.rsClient.getResource( meta = meta )
-#      if not resources['OK']:
+#      self.gClient = GOCDBClient() 
+#
+#  def doCommand( self ):
+#    """ 
+#    Returns downtimes information for all the sites in input.
+#        
+#    :params:
+#      :attr:`sites`: list of site names (when not given, take every site)
+#    
+#    :returns:
+#      {'SiteName': {'SEVERITY': 'OUTAGE'|'AT_RISK', 
+#                    'StartDate': 'aDate', ...} ... }
+#    """
+#
+#    sites = None
+#
+#    if 'sites' in self.args:
+#      sites = self.args[ 'sites' ] 
+#    
+#    if sites is None:
+#      #FIXME: we do not get them from RSS DB anymore, from CS now.
+#      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
+#      sites = CSHelpers.getSites()      
+#      if not sites[ 'OK' ]:
+#        return sites
+#      sites = sites[ 'Value' ]
+#      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]  
+#      
+##    if sites is None:
+##      GOC_sites = self.rsClient.getGridSite( meta = { 'columns' : 'GridSiteName' })
+##      if not GOC_sites['OK']:
+##        return GOC_sites
+##      GOC_sites = [ gs[0] for gs in GOC_sites['Value'] ]
+##    else:
+##      GOC_sites = [ getGOCSiteName( x )[ 'Value' ] for x in sites ]
+#
+#    gocSites = []
+#    for site in sites:
+#      
+#      gocSite = getGOCSiteName( site )
+#      if not gocSite[ 'OK' ]:
+#        return gocSite
+#      
+#      gocSites.append( gocSite[ 'Value' ] )   
+#
+##    gocSites = [ getGOCSiteName( x )[ 'Value' ] for x in sites ]
+#
+#    resGOC = self.gClient.getStatus( 'Site', gocSites, None, 120 )
+#    if not resGOC[ 'OK' ]:
+#      return resGOC
+#      
+#    resGOC = resGOC[ 'Value' ]
+#
+#    if resGOC == None:
+#      resGOC = []
+#
+#    results = {}
+#
+#    for dt_ID in resGOC:
+#        
+##      try:
+#          
+#      dt                  = {}
+#      dt[ 'ID' ]          = dt_ID
+#      dt[ 'StartDate' ]   = resGOC[ dt_ID ][ 'FORMATED_START_DATE' ]
+#      dt[ 'EndDate' ]     = resGOC[ dt_ID ][ 'FORMATED_END_DATE' ]
+#      dt[ 'Severity' ]    = resGOC[ dt_ID ][ 'SEVERITY' ]
+#      dt[ 'Description' ] = resGOC[ dt_ID ][ 'DESCRIPTION' ].replace( '\'', '' )
+#      dt[ 'Link' ]        = resGOC[ dt_ID ][ 'GOCDB_PORTAL_URL' ]
+#        
+#      diracNames = getDIRACSiteName( resGOC[ dt_ID ][ 'SITENAME' ] )
+#          
+#      if not diracNames[ 'OK' ]:
+#        return diracNames
+#          
+#      for diracName in diracNames[ 'Value' ]:
+#        results[ '%s %s' % ( dt_ID.split()[0], diracName ) ] = dt
+#
+## FIXME: why does it fail ?            
+##      except KeyError:
+##        continue
+#
+#    return S_OK( results )        
+#
+#################################################################################
+#################################################################################
+#
+#class DTEveryResourcesCommand( Command ):
+#
+#  #FIXME: write propper docstrings
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( DTEveryResourcesCommand, self ).__init__( args, clients )
+#    
+#    if 'GOCDBClient' in self.apis:
+#      self.gClient = self.apis[ 'GOCDBClient' ]
+#    else:
+#      self.gClient = GOCDBClient() 
+#
+#  def doCommand( self ):
+#    """ 
+#    Returns downtimes information for all the resources in input.
+#        
+#    :params:
+#      :attr:`sites`: list of resource names (when not given, take every resource)
+#    
+#    :returns:
+#      {'ResourceName': {'SEVERITY': 'OUTAGE'|'AT_RISK', 
+#                    'StartDate': 'aDate', ...} ... }
+#    """
+#
+#    resources = None
+#    if 'resources' in self.args:
+#      resources = self.args[ 'resources' ] 
+#    
+#    if resources is None:
+#
+#      #FIXME: we do not get them from RSS DB anymore, from CS now.
+##      meta = { 'columns' : 'ResourceName' }
+##      resources = self.rsClient.getResource( meta = meta )
+##      if not resources['OK']:
+##        return resources
+##      resources = [ re[0] for re in resources['Value'] ]
+#      resources = CSHelpers.getResources()      
+#      if not resources[ 'OK' ]:
 #        return resources
-#      resources = [ re[0] for re in resources['Value'] ]
-      resources = CSHelpers.getResources()      
-      if not resources[ 'OK' ]:
-        return resources
-      resources = resources[ 'Value' ]
-      #resources = [ resource[ 0 ] for resource in resources[ 'Value' ] ]  
-      
-
-    resGOC = self.gClient.getStatus( 'Resource', resources, None, 120 )
-    
-    if not resGOC['OK']:
-      return resGOC
-    resGOC = resGOC['Value']
-
-    if resGOC == None:
-      resGOC = []
-
-    res = {}
-
-    for dt_ID in resGOC:
-      dt                   = {}
-      dt[ 'ID' ]           = dt_ID
-      dt[ 'StartDate' ]    = resGOC[ dt_ID ][ 'FORMATED_START_DATE' ]
-      dt[ 'EndDate' ]      = resGOC[ dt_ID ][ 'FORMATED_END_DATE' ]
-      dt[ 'Severity' ]     = resGOC[ dt_ID ][ 'SEVERITY' ]
-      dt[ 'Description' ]  = resGOC[ dt_ID ][ 'DESCRIPTION' ].replace( '\'', '' )
-      dt[ 'Link' ]         = resGOC[ dt_ID ][ 'GOCDB_PORTAL_URL' ]
-      res[ dt_ID ] = dt
-
-    return S_OK( res )
+#      resources = resources[ 'Value' ]
+#      #resources = [ resource[ 0 ] for resource in resources[ 'Value' ] ]  
+#      
+#
+#    resGOC = self.gClient.getStatus( 'Resource', resources, None, 120 )
+#    
+#    if not resGOC['OK']:
+#      return resGOC
+#    resGOC = resGOC['Value']
+#
+#    if resGOC == None:
+#      resGOC = []
+#
+#    res = {}
+#
+#    for dt_ID in resGOC:
+#      dt                   = {}
+#      dt[ 'ID' ]           = dt_ID
+#      dt[ 'StartDate' ]    = resGOC[ dt_ID ][ 'FORMATED_START_DATE' ]
+#      dt[ 'EndDate' ]      = resGOC[ dt_ID ][ 'FORMATED_END_DATE' ]
+#      dt[ 'Severity' ]     = resGOC[ dt_ID ][ 'SEVERITY' ]
+#      dt[ 'Description' ]  = resGOC[ dt_ID ][ 'DESCRIPTION' ].replace( '\'', '' )
+#      dt[ 'Link' ]         = resGOC[ dt_ID ][ 'GOCDB_PORTAL_URL' ]
+#      res[ dt_ID ] = dt
+#
+#    return S_OK( res )
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
