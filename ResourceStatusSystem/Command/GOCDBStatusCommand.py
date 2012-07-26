@@ -6,11 +6,11 @@ import urllib2
 
 from datetime import datetime
 
-from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
-from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-from DIRAC.ResourceStatusSystem.Utilities.Utils                 import convertTime
+from DIRAC                                        import S_OK, S_ERROR
+from DIRAC.Core.LCG.GOCDBClient                   import GOCDBClient
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName
+from DIRAC.ResourceStatusSystem.Command.Command   import Command
+from DIRAC.ResourceStatusSystem.Utilities.Utils   import convertTime
 
 __RCSID__ = '$Id:  $'
 

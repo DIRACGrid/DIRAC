@@ -6,14 +6,11 @@
   
 '''
 
-from DIRAC                                                      import gLogger, S_OK, S_ERROR
+from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-#from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
-#from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 from DIRAC.ResourceStatusSystem.Client.PilotsClient             import PilotsClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient 
-
 
 __RCSID__ = '$Id:  $'
 
@@ -21,8 +18,6 @@ __RCSID__ = '$Id:  $'
 ################################################################################
 
 class PilotsStatsCommand( Command ):
-
-#  __APIs__ = [ 'PilotsClient' ]
 
   def __init__( self, args = None, clients = None ):
     
@@ -38,25 +33,12 @@ class PilotsStatsCommand( Command ):
     Return getPilotStats from Pilots Client
     """
     
-#    try:
-      
-    res = self.pClient.getPilotsStats( self.args[0], self.args[1], self.args[2] )
-      
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return self.pClient.getPilotsStats( self.args[0], self.args[1], self.args[2] )
 
 ################################################################################
 ################################################################################
 
 class PilotsEffCommand( Command ):
-
-#  __APIs__ = [ 'PilotsClient' ]
 
   def __init__( self, args = None, clients = None ):
     
@@ -71,29 +53,13 @@ class PilotsEffCommand( Command ):
     """
     Return getPilotsEff from Pilots Client
     """
-    
-#    super( PilotsEff_Command, self ).doCommand()
-#    self.apis = initAPIs( self.__APIs__, self.apis )
-
-#    try:
-      
-    res = self.pClient.getPilotsEff( self.args[0], self.args[1], self.args[2] )
-       
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res
-  
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+          
+    return self.pClient.getPilotsEff( self.args[0], self.args[1], self.args[2] )
 
 ################################################################################
 ################################################################################
 
 class PilotsEffSimpleCommand( Command ):
-
-#  __APIs__ = [ 'ResourceStatusClient', 'PilotsClient' ]
 
   def __init__( self, args = None, clients = None ):
     
@@ -109,7 +75,7 @@ class PilotsEffSimpleCommand( Command ):
     else:
       self.pClient = PilotsClient()  
 
-  def doCommand( self, RSClientIn = None ):
+  def doCommand( self ):
     """
     Returns simple pilots efficiency
 
@@ -123,45 +89,49 @@ class PilotsEffSimpleCommand( Command ):
         'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
       }
     """
+
+    if not 'element' in self.args:
+      return S_ERROR( 'element is missing' )
+    element = self.args[ 'element' ]    
+
+    #FIXME: maybe a Service or a Resource as well ??
+    if element != 'Site':
+      return S_ERROR( 'Expecting a Site' )
     
-#    super( PilotsEffSimple_Command, self ).doCommand()
-#    self.apis = initAPIs( self.__APIs__, self.apis )    
+    if not 'name' in self.args:
+      return S_ERROR( 'name is missing' )
+    name = self.args[ 'name' ]  
 
-#    try:
+#    if element == 'Service':
+#      name = self.rsClient.getGeneralName( element, name, 'Site' )
+#      name        = name[ 'Value' ][ 0 ]
+#      element = 'Site'
+#    elif element in [ 'Site', 'Resource' ]:
+#      pass
+#      #name        = self.args[1]
+#      #granularity = element
+#    else:
+#      return S_ERROR( '%s is not a valid granularity' % element )
 
-    if self.args[ 0 ] == 'Service':
-      name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )
-      name        = name[ 'Value' ][ 0 ]
-      granularity = 'Site'
-    elif self.args[0] in [ 'Site', 'Resource' ]:
-      name        = self.args[1]
-      granularity = self.args[0]
+    results = self.pClient.getPilotsSimpleEff( element, name )
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]
+
+    #FIXME: looks to me like not all branches are ever accessed    
+    if results is None:
+      results = 'Idle'
+    elif results[ name ] is None:
+      results = 'Idle'
     else:
-      return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
+      results = results[ name ] 
 
-    res = self.pClient.getPilotsSimpleEff( granularity, name )
-    if res is None:
-      res = 'Idle'
-    elif res[ name ] is None:
-      res = 'Idle'
-    else:
-      res = res[ name ] 
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return S_OK( res )
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( results )
 
 ################################################################################
 ################################################################################
 
 class PilotsEffSimpleCachedCommand( Command ):
-
-#  __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
 
   def __init__( self, args = None, clients = None ):
     
@@ -192,11 +162,6 @@ class PilotsEffSimpleCachedCommand( Command ):
       }
     """
     
-#    super( PilotsEffSimpleCached_Command, self ).doCommand()
-#    self.apis = initAPIs( self.__APIs__, self.apis )    
-
-#    try:
-
     if self.args[0] == 'Service':
       name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )
       name        = name[ 'Value' ][ 0 ]
@@ -224,14 +189,7 @@ class PilotsEffSimpleCachedCommand( Command ):
       else:
         res = S_OK( res[ 0 ] )
 
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
     return res
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
