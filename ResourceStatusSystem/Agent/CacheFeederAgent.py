@@ -50,19 +50,19 @@ class CacheFeederAgent( AgentModule ):
                                        }
     #AccountingCacheCommand
     self.commands[ 'AccountingCache' ] = {
-                                          'TransferQualityByDestSplitted'     : { 'hours' : 2 },
-                                          'FailedTransfersBySourceSplitted'   : { 'hours' : 2 },
-                                          'TransferQualityByDestSplittedSite' : { 'hours' : 24 },
-                                          'SuccessfullJobsBySiteSplitted'     : { 'hours' : 24 },
-                                          'FailedJobsBySiteSplitted'          : { 'hours' : 24 },
-                                          'SuccessfullPilotsBySiteSplitted'   : { 'hours' : 24 },
-                                          'FailedPilotsBySiteSplitted'        : { 'hours' : 24 },
-                                          'SuccessfullPilotsByCESplitted'     : { 'hours' : 24 },
-                                          'FailedPilotsByCESplitted'          : { 'hours' : 24 },
-                                          'RunningJobsBySiteSplitted'         : { 'hours' : 24 },
-                                          'RunningJobsBySiteSplitted'         : { 'hours' : 168 },
-                                          'RunningJobsBySiteSplitted'         : { 'hours' : 720 },
-                                          'RunningJobsBySiteSplitted'         : { 'hours' : 8760 },    
+                                          'TransferQualityByDestSplitted'     : { 'hours' : 2, 'plotType' : 'Data' },
+                                          'FailedTransfersBySourceSplitted'   : { 'hours' : 2, 'plotType' : 'Data' },
+                                          'TransferQualityByDestSplittedSite' : { 'hours' : 24, 'plotType' : 'Data' },
+                                          'SuccessfullJobsBySiteSplitted'     : { 'hours' : 24, 'plotType' : 'Job' },
+                                          'FailedJobsBySiteSplitted'          : { 'hours' : 24, 'plotType' : 'Job' },
+                                          'SuccessfullPilotsBySiteSplitted'   : { 'hours' : 24, 'plotType' : 'Pilot' },
+                                          'FailedPilotsBySiteSplitted'        : { 'hours' : 24, 'plotType' : 'Pilot' },
+                                          'SuccessfullPilotsByCESplitted'     : { 'hours' : 24, 'plotType' : 'Pilot' },
+                                          'FailedPilotsByCESplitted'          : { 'hours' : 24, 'plotType' : 'Pilot' },
+                                          'RunningJobsBySiteSplitted'         : { 'hours' : 24, 'plotType' : 'Job' },
+                                          'RunningJobsBySiteSplitted'         : { 'hours' : 168, 'plotType' : 'Job' },
+                                          'RunningJobsBySiteSplitted'         : { 'hours' : 720, 'plotType' : 'Job' },
+                                          'RunningJobsBySiteSplitted'         : { 'hours' : 8760, 'plotType' : 'Job' },    
                                           }
     #VOBOXAvailability
     self.commands[ 'VOBOXAvailability' ] = {
@@ -171,6 +171,23 @@ class CacheFeederAgent( AgentModule ):
     system    = results[ 'system' ]
        
     return self.rmClient.addOrModifyVOBOXCache( site, system, serviceUp, machineUp ) 
+
+  def __logAccountingCacheResults( self, commandModule, commandName, results ):
+    
+    plotType = self.commands[ commandModule ][ commandName ][ 'plotType' ]  
+    hours    = self.commands[ commandModule ][ commandName ][ 'hours' ]
+
+    plotName = '%s_%s' % ( commandName, hours )
+
+    for name, value in results.items():
+
+      resQuery = self.rmClient.addOrModifyAccountingCache( self, name, plotType, 
+                                                           plotName, str( value ) )
+      
+      if not resQuery[ 'OK' ]:
+        return resQuery
+    
+    return S_OK()  
       
   def execute( self ):        
       
@@ -216,10 +233,13 @@ class CacheFeederAgent( AgentModule ):
     return extraArgs
 
   def logResults( self, commandModule, commandName, results ):
+
+    if commandModule == 'AccountingCache':
+      return self.__logAccountingCacheResults( commandModule, commandName, results ) 
        
     if commandModule == 'VOBOXAvailability':
       return self.__logVOBOXAvailabilityResults( results )  
-    
+
     return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
     
       
