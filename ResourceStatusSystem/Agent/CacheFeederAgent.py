@@ -158,7 +158,7 @@ class CacheFeederAgent( AgentModule ):
       
     for commandModule, commandValues in self.commands.items():
       
-      for commandName, commandArgs in self.commands.items():
+      for commandName, commandArgs in commandValues.items():
       
         extraArgs = self.getExtraArgs( commandName )  
         if not extraArgs[ 'OK' ]:
@@ -169,11 +169,11 @@ class CacheFeederAgent( AgentModule ):
         for extraArg in extraArgs:  
                     
           commandObject = commandArgs[ 'command' ]
-          commandObject.apis.update( extraArg )
+          commandObject.args.update( extraArg )
           
           results = commandObject.doCommand()
           
-          self.log.info( '%s/%s with %s' % ( commandModule, commandName, commandObject.apis ) )
+          self.log.info( '%s/%s with %s' % ( commandModule, commandName, commandObject.args ) )
           
           if not results[ 'OK' ]:
             self.log.error( results[ 'Message' ] )
