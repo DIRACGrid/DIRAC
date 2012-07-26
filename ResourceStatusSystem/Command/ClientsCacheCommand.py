@@ -241,7 +241,7 @@ class DTEverySitesCommand( Command ):
       #FIXME: we do not get them from RSS DB anymore, from CS now.
       #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
       sites = CSHelpers.getSites()      
-      if not sites['OK']:
+      if not sites[ 'OK' ]:
         return sites
       sites = sites[ 'Value' ]
       #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]  
@@ -254,7 +254,16 @@ class DTEverySitesCommand( Command ):
 #    else:
 #      GOC_sites = [ getGOCSiteName( x )[ 'Value' ] for x in sites ]
 
-    gocSites = [ getGOCSiteName( x )[ 'Value' ] for x in sites ]
+    gocSites = []
+    for site in sites:
+      
+      gocSite = getGOCSiteName( site )
+      if not gocSite[ 'OK' ]:
+        return gocSite
+      
+      gocSites.append( gocSite[ 'Value' ] )   
+
+#    gocSites = [ getGOCSiteName( x )[ 'Value' ] for x in sites ]
 
     resGOC = self.gClient.getStatus( 'Site', gocSites, None, 120 )
     if not resGOC[ 'OK' ]:

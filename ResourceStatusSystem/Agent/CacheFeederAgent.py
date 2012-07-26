@@ -7,7 +7,7 @@
 
 #from datetime import datetime
 
-from DIRAC                                                      import S_OK, gConfig
+from DIRAC                                                      import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.Client.ReportsClient                import ReportsClient
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
@@ -153,6 +153,24 @@ class CacheFeederAgent( AgentModule ):
                                   'spaceToken'         : spaceToken } )
     
     return S_OK( elementsToCheck )
+  
+  def __logVOBOXAvailabilityResults( self, results ):
+    
+    if not 'serviceUpTime' in results:
+      return S_ERROR( 'serviceUpTime key missing' )
+    if not 'machineUpTime' in results:
+      return S_ERROR( 'machineUpTime key missing' )
+    if not 'site' in results:
+      return S_ERROR( 'site key missing' )
+    if not 'system' in results:
+      return S_ERROR( 'system key missing' )
+    
+    serviceUp = results[ 'serviceUpTime' ]
+    machineUp = results[ 'machineUpTime' ]
+    site      = results[ 'site' ]
+    system    = results[ 'system' ]
+       
+    return self.rmClient.addOrModifyVOBOXCache( site, system, serviceUp, machineUp ) 
       
   def execute( self ):        
       
@@ -180,11 +198,12 @@ class CacheFeederAgent( AgentModule ):
             continue
           results = results[ 'Value' ]
           
-          print results
+          logResults = self.logResults( commandModule, commandName, results )
+          if not logResults[ 'OK' ]:
+            self.log.error( logResults[ 'Message' ] )
           
     return S_OK()  
          
-  
   def getExtraArgs( self, commandName ):
     
     extraArgs = S_OK( [ {} ])
@@ -195,6 +214,14 @@ class CacheFeederAgent( AgentModule ):
       extraArgs = self.__getSpaceTokenOccupancyCandidates()
     
     return extraArgs
+
+  def logResults( self, commandModule, commandName, results ):
+       
+    if commandModule == 'VOBOXAvailability':
+      return self.__logVOBOXAvailabilityResults( results )  
+    
+    return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
+    
       
 #  def execute2( self ):
 #
