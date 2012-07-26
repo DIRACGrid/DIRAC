@@ -430,6 +430,205 @@ class ResourceManagementClient( object ):
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self.__query( 'addIfNotThere', 'ClientCache', locals() )       
+
+  ##############################################################################
+  # DOWNTIME CACHE Methods
+
+  def insertDowntimeCache( self, iD, element, name, startDate, endDate, severity,
+                           description, dateEffective, lastCheckTime, meta = None ):
+    '''
+#FIXME: write proper docstring
+#    Inserts on ClientCache a new row with the arguments given.
+#    
+#    :Parameters:
+#      **name** - `string`
+#        name of an individual of the grid topology  
+#      **commandName** - `string`
+#        name of the command executed
+#      **opt_ID** - `string`
+#        optional ID (e.g. used for downtimes)
+#      **value** - `string`
+#        it is the type of result ( e.g. `Link`, `PE_S`... )
+#      **result** - `string`
+#        output of the command ( of value type )    
+#      **dateEffective** - `datetime`
+#        time-stamp from which the result is effective
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', 'DowntimeCache', locals() )
+
+  def updateDowntimeCache( self, iD, element, name, startDate, endDate, severity,
+                           description, dateEffective, lastCheckTime, meta = None ):
+    '''
+#FIXME: write proper docstring
+#    Inserts on ClientCache a new row with the arguments given.
+#    
+#    :Parameters:
+#      **name** - `string`
+#        name of an individual of the grid topology  
+#      **commandName** - `string`
+#        name of the command executed
+#      **opt_ID** - `string`
+#        optional ID (e.g. used for downtimes)
+#      **value** - `string`
+#        it is the type of result ( e.g. `Link`, `PE_S`... )
+#      **result** - `string`
+#        output of the command ( of value type )    
+#      **dateEffective** - `datetime`
+#        time-stamp from which the result is effective
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'DowntimeCache', locals() )
+
+  def selectDowntimeCache( self, iD = None, element = None, name = None, 
+                           startDate = None, endDate = None, severity = None,
+                           description = None, dateEffective = None, 
+                           lastCheckTime = None, meta = None ):
+    '''
+#FIXME: write proper docstring
+#    Inserts on ClientCache a new row with the arguments given.
+#    
+#    :Parameters:
+#      **name** - `string`
+#        name of an individual of the grid topology  
+#      **commandName** - `string`
+#        name of the command executed
+#      **opt_ID** - `string`
+#        optional ID (e.g. used for downtimes)
+#      **value** - `string`
+#        it is the type of result ( e.g. `Link`, `PE_S`... )
+#      **result** - `string`
+#        output of the command ( of value type )    
+#      **dateEffective** - `datetime`
+#        time-stamp from which the result is effective
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
+    return self.__query( 'select', 'DowntimeCache', locals() )
+
+  def deleteDowntimeCache( self, iD = None, element = None, name = None, 
+                           startDate = None, endDate = None, severity = None,
+                           description = None, dateEffective = None, 
+                           lastCheckTime = None, meta = None ):
+    '''
+#FIXME: write proper docstring
+#    Inserts on ClientCache a new row with the arguments given.
+#    
+#    :Parameters:
+#      **name** - `string`
+#        name of an individual of the grid topology  
+#      **commandName** - `string`
+#        name of the command executed
+#      **opt_ID** - `string`
+#        optional ID (e.g. used for downtimes)
+#      **value** - `string`
+#        it is the type of result ( e.g. `Link`, `PE_S`... )
+#      **result** - `string`
+#        output of the command ( of value type )    
+#      **dateEffective** - `datetime`
+#        time-stamp from which the result is effective
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'DowntimeCache', locals() )
+
+  #FIXME: should they be None or not ??
+  def addOrModifyDowntimeCache( self, iD = None, element = None, name = None, 
+                                startDate = None, endDate = None, severity = None,
+                                description = None, dateEffective = None, 
+                                lastCheckTime = None, meta = None ):
+    '''
+#FIXME: write proper docstring    
+#    Adds or updates-if-duplicated from AccountingCache
+##    Using `name`, `plotType` and `plotName` to query the database, 
+##    decides whether to insert or update the table.
+#    
+#    :Parameters:
+#      **name** - `string`
+#        name of an individual of the grid topology  
+#      **plotType** - `string`
+#        the plotType name (e.g. 'Pilot')
+#      **plotName** - `string`
+#        the plot name
+#      **result** - `string`
+#        command result
+#      **dateEffective** - `datetime`
+#        time-stamp from which the result is effective
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addOrModify', 'DowntimeCache', locals() )    
+  def addIfNotThereDowntimeCache( self, iD = None, element = None, name = None, 
+                                  startDate = None, endDate = None, severity = None,
+                                  description = None, dateEffective = None, 
+                                  lastCheckTime = None, meta = None ):
+    '''
+#FIXME: write proper docstring    
+#    Adds or updates-if-duplicated from AccountingCache
+##    Using `name`, `plotType` and `plotName` to query the database, 
+##    decides whether to insert or update the table.
+#    
+#    :Parameters:
+#      **name** - `string`
+#        name of an individual of the grid topology  
+#      **plotType** - `string`
+#        the plotType name (e.g. 'Pilot')
+#      **plotName** - `string`
+#        the plot name
+#      **result** - `string`
+#        command result
+#      **dateEffective** - `datetime`
+#        time-stamp from which the result is effective
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addIfNotThere', 'DowntimeCache', locals() )  
     
   ##############################################################################
   # POLICY RESULT Methods

@@ -44,6 +44,22 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Name', 'CommandName', 'Value' ]
                                 }
 
+  __tablesDB[ 'DownTimeCache' ] = { 'Fields' :
+                      {
+                       'DowntimeID'    : 'VARCHAR(64) NOT NULL',
+                       'Element'       : 'VARCHAR(32) NOT NULL',
+                       'Name'          : 'VARCHAR(64) NOT NULL',
+                       'StartDate'     : 'DATETIME NOT NULL',
+                       'EndDate'       : 'DATETIME NOT NULL',
+                       'Severity'      : 'VARCHAR(32) NOT NULL',
+                       'Description'   : 'VARCHAR(512) NOT NULL',
+                       'Link'          : 'VARCHAR(255) NOT NULL',       
+                       'DateEffective' : 'DATETIME NOT NULL',
+                       'LastCheckTime' : 'DATETIME NOT NULL'     
+                      },
+                      'PrimaryKey' : [ 'DowntimeID' ]
+                                }
+
   __tablesDB[ 'PolicyResult' ] = { 'Fields' : 
                       {
                        #'PolicyResultID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
