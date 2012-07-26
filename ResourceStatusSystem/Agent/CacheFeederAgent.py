@@ -44,10 +44,15 @@ class CacheFeederAgent( AgentModule ):
     #ClientsCacheCommand
     self.commands[ 'ClientsCache' ] = {
                                         'JobsEffSimpleEveryOne'     : {},
-                                        'PilotsEffSimpleEverySites' : {},
-                                        'DTEverySites'              : {},
-                                        'DTEveryResources'          : {}
+                                        'PilotsEffSimpleEverySites' : {}
                                        }
+
+    #DowntimeCommand
+    self.commands[ 'Downtime' ] = {    
+                                    'DowntimeSites'     : {},
+                                    'DowntimeResources' : {}
+                                  }
+                                        
     #AccountingCacheCommand
     self.commands[ 'AccountingCache' ] = {
                                           'TransferQualityByDestSplitted'     : { 'hours' : 2, 'plotType' : 'Data' },
@@ -181,13 +186,43 @@ class CacheFeederAgent( AgentModule ):
 
     for name, value in results.items():
 
-      resQuery = self.rmClient.addOrModifyAccountingCache( self, name, plotType, 
+      resQuery = self.rmClient.addOrModifyAccountingCache( name, plotType, 
                                                            plotName, str( value ) )
       
       if not resQuery[ 'OK' ]:
         return resQuery
     
     return S_OK()  
+
+  def __logDowntimeCacheResults( self, results ):
+  
+    for downtime in results:
+      
+      print downtime
+  
+#  def __logClientsCacheResults( self, commandModule, commandName, results ):
+#    
+#    for key in res.keys():
+#
+#      clientCache = ()
+#      if 'ID' in res[key].keys():
+#
+#        for value in res[key].keys():
+#          if value != 'ID':
+#            clientCache = ( key.split()[1], commandName, res[key]['ID'],
+#                            value, res[key][value], None, None )
+#
+#            resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
+#
+#      else:
+#        for value in res[key].keys():
+#          clientCache = ( key, commandName, None, value,
+#                          res[key][value], None, None )
+#
+#          resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
+#          
+#    
+#    return S_OK()
       
   def execute( self ):        
       
@@ -214,6 +249,10 @@ class CacheFeederAgent( AgentModule ):
             self.log.error( results[ 'Message' ] )
             continue
           results = results[ 'Value' ]
+
+          if not results:
+            self.log.info( 'Empty results' )
+            continue
           
           logResults = self.logResults( commandModule, commandName, results )
           if not logResults[ 'OK' ]:

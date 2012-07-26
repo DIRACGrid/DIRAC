@@ -3,11 +3,11 @@
 
 '''
 
-from DIRAC                                                  import S_OK
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping            import getGOCSiteName, getDIRACSiteName
-from DIRAC.Core.LCG.GOCDBClient                             import GOCDBClient
-from DIRAC.ResourceStatusSystem.Command.Command             import Command
-from DIRAC.ResourceStatusSystem.Utilities                   import CSHelpers
+from DIRAC                                       import S_OK
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getDIRACSiteName
+from DIRAC.Core.LCG.GOCDBClient                  import GOCDBClient
+from DIRAC.ResourceStatusSystem.Command.Command  import Command
+from DIRAC.ResourceStatusSystem.Utilities        import CSHelpers
 
 __RCSID__ = '$Id:  $'
 

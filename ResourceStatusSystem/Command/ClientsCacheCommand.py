@@ -7,9 +7,9 @@
 '''
 
 from DIRAC                                                  import S_OK
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping            import getGOCSiteName, getDIRACSiteName
-from DIRAC.Core.DISET.RPCClient                             import RPCClient
-from DIRAC.Core.LCG.GOCDBClient                             import GOCDBClient
+#from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping            import getGOCSiteName, getDIRACSiteName
+#from DIRAC.Core.DISET.RPCClient                             import RPCClient
+#from DIRAC.Core.LCG.GOCDBClient                             import GOCDBClient
 from DIRAC.ResourceStatusSystem.Client.JobsClient           import JobsClient
 from DIRAC.ResourceStatusSystem.Client.PilotsClient         import PilotsClient
 from DIRAC.ResourceStatusSystem.Command.Command             import Command
