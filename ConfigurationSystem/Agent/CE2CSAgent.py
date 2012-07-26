@@ -216,6 +216,9 @@ class CE2CSAgent( AgentModule ):
       return
     grids = result['Value']
 
+    changed = False
+    body = ""
+
     for grid in grids:
 
       gridSection = cfgPath( sitesSection, grid )
@@ -223,9 +226,6 @@ class CE2CSAgent( AgentModule ):
       if not result['OK']:
         return
       sites = result['Value']
-
-      changed = False
-      body = ""
 
       for site in sites:
   #      if site[-2:]!='ru':
