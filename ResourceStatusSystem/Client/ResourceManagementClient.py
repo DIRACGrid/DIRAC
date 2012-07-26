@@ -435,7 +435,7 @@ class ResourceManagementClient( object ):
   # DOWNTIME CACHE Methods
 
   def insertDowntimeCache( self, iD, element, name, startDate, endDate, severity,
-                           description, dateEffective, lastCheckTime, meta = None ):
+                           description, link, dateEffective, lastCheckTime, meta = None ):
     '''
 #FIXME: write proper docstring
 #    Inserts on ClientCache a new row with the arguments given.
@@ -466,7 +466,7 @@ class ResourceManagementClient( object ):
     return self.__query( 'insert', 'DowntimeCache', locals() )
 
   def updateDowntimeCache( self, iD, element, name, startDate, endDate, severity,
-                           description, dateEffective, lastCheckTime, meta = None ):
+                           description, link, dateEffective, lastCheckTime, meta = None ):
     '''
 #FIXME: write proper docstring
 #    Inserts on ClientCache a new row with the arguments given.
@@ -498,7 +498,7 @@ class ResourceManagementClient( object ):
 
   def selectDowntimeCache( self, iD = None, element = None, name = None, 
                            startDate = None, endDate = None, severity = None,
-                           description = None, dateEffective = None, 
+                           description = None, link = None, dateEffective = None, 
                            lastCheckTime = None, meta = None ):
     '''
 #FIXME: write proper docstring
@@ -531,7 +531,7 @@ class ResourceManagementClient( object ):
 
   def deleteDowntimeCache( self, iD = None, element = None, name = None, 
                            startDate = None, endDate = None, severity = None,
-                           description = None, dateEffective = None, 
+                           description = None, link = None, dateEffective = None, 
                            lastCheckTime = None, meta = None ):
     '''
 #FIXME: write proper docstring
@@ -565,7 +565,7 @@ class ResourceManagementClient( object ):
   #FIXME: should they be None or not ??
   def addOrModifyDowntimeCache( self, iD = None, element = None, name = None, 
                                 startDate = None, endDate = None, severity = None,
-                                description = None, dateEffective = None, 
+                                description = None, link = None, dateEffective = None, 
                                 lastCheckTime = None, meta = None ):
     '''
 #FIXME: write proper docstring    
@@ -598,7 +598,7 @@ class ResourceManagementClient( object ):
     return self.__query( 'addOrModify', 'DowntimeCache', locals() )    
   def addIfNotThereDowntimeCache( self, iD = None, element = None, name = None, 
                                   startDate = None, endDate = None, severity = None,
-                                  description = None, dateEffective = None, 
+                                  description = None, link = None, dateEffective = None, 
                                   lastCheckTime = None, meta = None ):
     '''
 #FIXME: write proper docstring    

@@ -67,7 +67,7 @@ class DowntimeSitesCommand( Command ):
     results = results[ 'Value' ]
     
     if results == None:
-      return results
+      return S_OK( results )
 
     downtimes = []
 
@@ -140,7 +140,7 @@ class DowntimeResourcesCommand( Command ):
     results = results[ 'Value' ]
 
     if results == None:
-      return results
+      return S_OK( results )
 
     downtimes = []
 

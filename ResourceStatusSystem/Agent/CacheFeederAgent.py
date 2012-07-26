@@ -179,6 +179,8 @@ class CacheFeederAgent( AgentModule ):
 
   def __logAccountingCacheResults( self, commandModule, commandName, results ):
     
+    #FIXME: check keys, probably faster with try / except
+    
     plotType = self.commands[ commandModule ][ commandName ][ 'plotType' ]  
     hours    = self.commands[ commandModule ][ commandName ][ 'hours' ]
 
@@ -194,12 +196,33 @@ class CacheFeederAgent( AgentModule ):
     
     return S_OK()  
 
-  def __logDowntimeCacheResults( self, results ):
+  def __logDowntimeResults( self, commandName, results ):
   
     for downtime in results:
       
-      print downtime
+      # This returns either Site or Resource
+      element = commandName.replace( 'Downtime', '' )[ :-1 ]
+      
+      try:
+        
+        iD          = downtime[ 'ID' ]
+        name        = downtime[ 'Name' ]
+        startDate   = downtime[ 'StartDate' ]
+        endDate     = downtime[ 'EndDate' ]
+        severity    = downtime[ 'Severity' ]
+        description = downtime[ 'Description' ] 
+        link        = downtime[ 'Link' ]
+                
+      except KeyError, e:
+        return S_ERROR( e )
   
+      resQuery = self.rmClient.addOrModifyDowntimeCache( iD, element, name, startDate, 
+                                                         endDate, severity, description )
+  
+      if not resQuery[ 'OK' ]:
+        return resQuery    
+  
+    return S_OK()  
 #  def __logClientsCacheResults( self, commandModule, commandName, results ):
 #    
 #    for key in res.keys():
@@ -278,6 +301,9 @@ class CacheFeederAgent( AgentModule ):
        
     if commandModule == 'VOBOXAvailability':
       return self.__logVOBOXAvailabilityResults( results )  
+
+    if commandModule == 'Downtime':
+      return self.__logDowntimeResults( results )  
 
     return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
     

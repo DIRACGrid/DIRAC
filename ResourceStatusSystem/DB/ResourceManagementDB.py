@@ -44,7 +44,7 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Name', 'CommandName', 'Value' ]
                                 }
 
-  __tablesDB[ 'DownTimeCache' ] = { 'Fields' :
+  __tablesDB[ 'DowntimeCache' ] = { 'Fields' :
                       {
                        'DowntimeID'    : 'VARCHAR(64) NOT NULL',
                        'Element'       : 'VARCHAR(32) NOT NULL',
