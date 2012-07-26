@@ -5,7 +5,8 @@
   modules.  
 '''
 
-from DIRAC                                               import gConfig, gLogger, S_OK
+from DIRAC                                import gConfig, gLogger, S_OK
+from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 __RCSID__ = '$Id:  $'
 
@@ -50,14 +51,40 @@ def getResources():
     Gets all resources
   '''
   #FIXME: to be implemented, and updated the syncrhonzer.
-  pass 
+  
+  resources = []
+  
+  ses = getStorageElements()
+  if ses[ 'OK' ]:
+    resources = resources + ses[ 'Value' ]
+  
+  fts = getFTS()
+  if fts[ 'OK' ]:
+    resources = resources + fts[ 'Value' ]
+  
+  fc = getFileCatalogs()
+  if fc[ 'OK' ]:
+    resources = resources + fc[ 'Value' ]
+  
+  ce = getComputingElements() 
+  if ce[ 'OK' ]:
+    resources = resources + ce[ 'Value' ]
+
+  return S_OK( resources )
 
 def getNodes():
   '''
     Gets all nodes
   '''
   #FIXME: to be implemented, and updated the syncrhonzer.
-  pass
+  
+  nodes = []
+  
+  queues = getQueues()
+  if queues[ 'OK' ]:
+    nodes = nodes + queues[ 'Value' ] 
+  
+  return S_OK( nodes )
 
 ################################################################################
 
@@ -80,6 +107,17 @@ def getFTS():
     
   ftsEndpoints = gConfig.getOptions( _basePath )
   return ftsEndpoints 
+
+def getSpaceTokens():
+  ''' Get Space Tokens '''
+  return  S_OK( ( 'LHCb_USER', 'LHCb-Disk', 'LHCb-Tape' ) )
+
+def getSpaceTokenEndpoints():
+  ''' Get Space Token Endpoints '''
+  
+  return Utils.getCSTree( 'Shares/Disk' )
+  
+  #return getTypedDictRootedAt(root="", relpath="/Resources/Shares/Disk")
 
 #def getVOMSEndpoints():
 #  ''' Get VOMS endpoints '''
