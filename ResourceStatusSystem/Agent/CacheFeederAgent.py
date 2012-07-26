@@ -217,7 +217,8 @@ class CacheFeederAgent( AgentModule ):
         return S_ERROR( e )
   
       resQuery = self.rmClient.addOrModifyDowntimeCache( iD, element, name, startDate, 
-                                                         endDate, severity, description )
+                                                         endDate, severity, description,
+                                                         link )
   
       if not resQuery[ 'OK' ]:
         return resQuery    
