@@ -265,10 +265,15 @@ class ResourceManagementDB( object ):
         if key in ( 'lastCheckTime', 'dateEffective' ):
           continue
         
+        if value is None:
+          continue
+        
         if value != selectDict[ key[0].upper() + key[1:] ]:
           newDateEffective = datetime.utcnow().replace( microsecond = 0 )   
+          break
       
-      params[ 'dateEffective' ] = newDateEffective              
+      if 'dateEffective' in params:
+        params[ 'dateEffective' ] = newDateEffective              
       
       userQuery  = self.update( params, meta )
 
