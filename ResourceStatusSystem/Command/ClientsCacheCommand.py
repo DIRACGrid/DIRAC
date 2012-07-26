@@ -30,11 +30,6 @@ class JobsEffSimpleEveryOneCommand( Command ):
     else:
       self.jClient = JobsClient() 
     
-    if 'WMSAdministrator' in self.apis:
-      self.wClient = self.apis[ 'WMSAdministrator' ]
-    else:
-      self.wClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    
   def doCommand( self ):
     """ 
     Returns simple jobs efficiency for all the sites in input.
@@ -61,7 +56,7 @@ class JobsEffSimpleEveryOneCommand( Command ):
       sites = sites[ 'Value' ]   
       #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
 
-    results = self.jClient.getJobsSimpleEff( sites, self.wClient )
+    results = self.jClient.getJobsSimpleEff( sites )
     if not results[ 'OK' ]:
       return results
     results = results[ 'Value' ]
@@ -91,11 +86,6 @@ class PilotsEffSimpleEverySitesCommand( Command ):
       self.pClient = self.apis[ 'PilotsClient' ]
     else:
       self.pClient = PilotsClient() 
-    
-    if 'WMSAdministrator' in self.apis:
-      self.wClient = self.apis[ 'WMSAdministrator' ]
-    else:
-      self.wClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
 
   def doCommand( self ):
     """ 
@@ -122,7 +112,7 @@ class PilotsEffSimpleEverySitesCommand( Command ):
       sites = sites[ 'Value' ]
       #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
 
-    results = self.pClient.getPilotsSimpleEff( 'Site', sites, None, self.wClient )
+    results = self.pClient.getPilotsSimpleEff( 'Site', sites, None )
     if not results[ 'OK' ]:
       return results
     results = results[ 'Value' ]

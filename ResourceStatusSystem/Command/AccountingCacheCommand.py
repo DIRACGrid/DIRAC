@@ -208,6 +208,8 @@ class TransferQualityByDestSplittedSiteCommand( Command ):
     if not sites + ses:
       return S_ERROR( 'Sites + SEs is empty' )
  
+    return S_ERROR( 'This guy is buggy, missing method on rsClient' )
+ 
     fromD = datetime.utcnow() - timedelta( hours = hours )
     toD   = datetime.utcnow()
 
