@@ -19,7 +19,7 @@ class PilotsClient( object ):
   def __init__( self ):
     self.gate = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     
-  def getPilotsSimpleEff( self, element, name, siteName = None, RPCWMSAdmin = None ):  
+  def getPilotsSimpleEff( self, element, name, siteName = None ):  
     """
     
     Return pilots simple efficiency of entity in args for periods
