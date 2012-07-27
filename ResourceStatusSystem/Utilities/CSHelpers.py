@@ -98,6 +98,15 @@ def getStorageElements():
   seNames = gConfig.getSections( _basePath )
   return seNames 
 
+def getSEToken( se ):
+  ''' 
+    Get StorageElement token 
+  '''
+  
+  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken'
+  
+  return gConfig.getValue( _basePath % se, '' )
+
 def getFTS():
   '''
     Gets all storage elements from /Resources/FTSEndpoints
