@@ -83,6 +83,7 @@ class Dirac:
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
     self.pPrint = pprint.PrettyPrinter()
     # Determine the default file catalog
+    self.defaultFileCatalog = ''
     defaultFC = gConfig.getValue( self.section + '/FileCatalog', [] )
     if not defaultFC:
       result = gConfig.getSections( 'Resources/FileCatalogs', listOrdered = True )
@@ -2640,7 +2641,7 @@ class Dirac:
       self.log.verbose( result['Value']['StandardOutput'] )
       stdout = result['Value']['StandardOutput']
       if printout:
-        print stdout 
+        print stdout
     else:
       self.log.info( 'No standard output available to print.' )
 
