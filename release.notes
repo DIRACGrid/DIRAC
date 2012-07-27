@@ -1,4 +1,4 @@
-[v6r5-pre7]
+[v6r5-pre8]
 
 NEW: Executor framework
 
@@ -74,6 +74,19 @@ NEW: SRM2Storage - added retry in the gfal calls
 NEW: added new FTSCleaningAgent cleaning up TransferDB tables
 FIX: DataLoggingClient and DataLoggingDB - tests moved to separate files
 CHANGE: request agents cleanup
+
+[v6r4p17]
+
+*Core
+FIX: dirac-configure - setup was not updated in dirac.cfg even with -F option
+FIX: RequestHandler - added fix for Missing ConnectionError
+
+*DMS
+FIX: dirac-dms-clean-directory - command fails with `KeyError: 'Replicas'`.
+
+*WMS
+FIX: SiteDirector - adapt to the new method in the Matcher getMatchingTaskQueue 
+FIX: SiteDirector - added all SubmitPools to TQ requests
 
 [v6r4p16]
 
