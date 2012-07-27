@@ -303,7 +303,7 @@ class SiteDirector( AgentModule ):
         ceDict['OwnerGroup'] = self.group
 
       # Get the number of eligible jobs for the target site/queue
-      result = taskQueueDB.getMatchingTaskQueues( ceDict )
+      result = rpcMatcher.getMatchingTaskQueues( ceDict )
       if not result['OK']:
         self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
         return result
