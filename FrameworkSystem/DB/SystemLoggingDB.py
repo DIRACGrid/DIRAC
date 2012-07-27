@@ -8,6 +8,7 @@
     getMessagesByFixedText()
     getMessages()
 """
+
 __RCSID__ = "$Id$"
 
 import re
@@ -19,8 +20,7 @@ from DIRAC                                     import gLogger, gConfig, S_OK, S_
 from DIRAC.Core.Base.DB                        import DB
 from DIRAC.Core.Utilities                      import Time, List
 
-DEBUG = 1
-
+DEBUG = 0
 
 ###########################################################
 class SystemLoggingDB( DB ):
@@ -181,6 +181,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
 
   def _checkTable( self ):
     """ Make sure the tables are created
+
     """
     # To fix the schema SubSystem points to System and not System points SubSystem
     result = self.__removeOldSchema()
@@ -296,7 +297,6 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
       tableString = conjunction.join( List.uniqueElements( tableDict.values() ) )
 
     self.log.debug( '__buildTableList:', 'tableString = "%s"' % tableString )
-
     return tableString
 
   def _queryDB( self, showFieldList = None, condDict = None, older = None,
@@ -645,4 +645,3 @@ if __name__ == '__main__':
     sys.exit( 0 )
 
   testSystemLoggingDB()
-

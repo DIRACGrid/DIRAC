@@ -25,11 +25,9 @@ class ErrorMessageMonitor( AgentModule ):
 
     self.notification = NotificationClient()
 
-    userString = self.am_getOption( "Reviewer", 'mseco' )
+    userList = self.am_getOption( "Reviewer", [] )
 
-    self.log.debug( "Users to be notified", ": " + userString )
-
-    userList = List.fromChar( userString, "," )
+    self.log.debug( "Users to be notified:", ', '.join( userList ) )
 
     mailList = []
     for user in userList:

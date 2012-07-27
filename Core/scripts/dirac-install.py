@@ -1264,6 +1264,7 @@ def createBashrc():
     bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
     if cliParams.useVersionsDir:
       bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
+      proPath = os.path.join( cliParams.basePath, 'pro' )
     logNOTICE( 'Creating %s' % bashrcFile )
     if not os.path.exists( bashrcFile ):
       lines = [ '# DIRAC bashrc file, used by service and agent run scripts to set environment',
@@ -1315,6 +1316,7 @@ def createCshrc():
     cshrcFile = os.path.join( cliParams.targetPath, 'cshrc' )
     if cliParams.useVersionsDir:
       cshrcFile = os.path.join( cliParams.basePath, 'cshrc' )
+      proPath = os.path.join( cliParams.basePath, 'pro' )
     logNOTICE( 'Creating %s' % cshrcFile )
     if not os.path.exists( cshrcFile ):
       lines = [ '# DIRAC cshrc file, used by clients to set up the environment',

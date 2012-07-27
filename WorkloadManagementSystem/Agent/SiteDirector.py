@@ -9,6 +9,7 @@
 
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, getVO, Registry, Operations, Resources
+from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
@@ -19,7 +20,7 @@ from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClie
 from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
-from DIRAC.Core.Utilities.Time                             import dateTime, second               
+from DIRAC.Core.Utilities.Time                             import dateTime, second
 import os, base64, bz2, tempfile, random, socket
 import DIRAC
 
@@ -70,14 +71,14 @@ class SiteDirector( AgentModule ):
         if 'NormalUser' in Registry.getPropertiesForGroup( group ):
           self.group = group
           break
-        
-    self.operations = Operations.Operations( vo=self.vo )
+
+    self.operations = Operations.Operations( vo = self.vo )
     self.genericPilotDN = self.operations.getValue( '/Pilot/GenericPilotDN', 'Unknown' )
     self.genericPilotUserName = self.genericPilotDN
     if not self.genericPilotUserName == 'Unknown':
       result = Registry.getUsernameForDN( self.genericPilotDN )
       if not result['OK']:
-        return S_ERROR('Invalid generic pilot DN: %s ' % self.genericPilotDN )
+        return S_ERROR( 'Invalid generic pilot DN: %s ' % self.genericPilotDN )
       self.genericPilotUserName = result['Value']
     self.genericPilotGroup = self.operations.getValue( '/Pilot/GenericPilotGroup', 'Unknown' )
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
@@ -87,7 +88,6 @@ class SiteDirector( AgentModule ):
     self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', 'INFO' )
     self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', MAX_PILOTS_TO_SUBMIT )
     self.maxJobsInFillMode = self.am_getOption( 'MaxJobsInFillMode', MAX_PILOTS_IN_FILLING_MODE )
-    
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
     self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 7200 )
 
@@ -106,17 +106,17 @@ class SiteDirector( AgentModule ):
     ces = None
     if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
       ces = self.am_getOption( 'CEs', [] )
-      
-    result = Resources.getQueues( community=self.vo, 
-                                  siteList=siteNames, 
-                                  ceList=ces, 
-                                  ceTypeList=ceTypes, 
-                                  mode='Direct')  
+
+    result = Resources.getQueues( community = self.vo,
+                                  siteList = siteNames,
+                                  ceList = ces,
+                                  ceTypeList = ceTypes,
+                                  mode = 'Direct' )
     if not result['OK']:
       return result
-    
+
     resourceDict = result['Value']
-    result = self.getQueues(resourceDict)
+    result = self.getQueues( resourceDict )
     if not result['OK']:
       return result
 
@@ -165,7 +165,7 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
-        qDict = ceDict.pop('Queues')
+        qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
           self.queueDict[queueName] = {}
@@ -237,17 +237,18 @@ class SiteDirector( AgentModule ):
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
     tqDict = { 'Setup':setup,
-               'CPUTime': 9999999  }
+               'CPUTime': 9999999,
+               'SubmitPool' : gConfig.getValue( "%s/SubmitPools" % getAgentSection( "WorkloadManagement/TaskQueueDirector" ), [] ) }
     if self.vo:
       tqDict['Community'] = self.vo
     if self.group:
       tqDict['OwnerGroup'] = self.group
     rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
-    result = rpcMatcher.matchAndGetTaskQueue( tqDict )
+    result = rpcMatcher.getMatchingTaskQueues( tqDict )
     if not result[ 'OK' ]:
       return result
     if not result['Value']:
-      self.log.verbose('No Waiting jobs suitable for the director')
+      self.log.verbose( 'No Waiting jobs suitable for the director' )
       return S_OK()
 
     # Check if the site is allowed in the mask
@@ -257,7 +258,7 @@ class SiteDirector( AgentModule ):
     siteMaskList = result['Value']
 
     queues = self.queueDict.keys()
-    random.shuffle(queues)
+    random.shuffle( queues )
     for queue in queues:
       ce = self.queueDict[queue]['CE']
       ceName = self.queueDict[queue]['CEName']
@@ -291,7 +292,7 @@ class SiteDirector( AgentModule ):
         continue
       ceInfoDict = result['CEInfoDict']
       self.log.verbose( "CE queue report: Waiting Jobs=%d, Running Jobs=%d, Submitted Jobs=%d, MaxTotalJobs=%d" % \
-                         (ceInfoDict['WaitingJobs'],ceInfoDict['RunningJobs'],ceInfoDict['SubmittedJobs'],ceInfoDict['MaxTotalJobs']) )
+                         ( ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'], ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
 
       totalSlots = result['Value']
 
@@ -320,16 +321,16 @@ class SiteDirector( AgentModule ):
       tqIDList = taskQueueDict.keys()
       for tq in taskQueueDict:
         totalTQJobs += taskQueueDict[tq]['Jobs']
-        
+
       pilotsToSubmit = min( totalSlots, totalTQJobs )
-      
+
       # Get the number of already waiting pilots for this queue
       totalWaitingPilots = 0
       if self.pilotWaitingFlag:
-        lastUpdateTime = dateTime() - self.pilotWaitingTime*second
-        
+        lastUpdateTime = dateTime() - self.pilotWaitingTime * second
+
         result = pilotAgentsDB.getCounters( 'PilotAgents' ,
-                                          ['Status'], 
+                                          ['Status'],
                                           {'DestinationSite':ceName,
                                            'Queue':queueName,
                                            'GridType':ceType,
@@ -342,9 +343,9 @@ class SiteDirector( AgentModule ):
           return result
         for row in result['Value']:
           if row[0]['Status'] in WAITING_PILOT_STATUS:
-            totalWaitingPilots += row[1]      
-                                               
-      pilotsToSubmit = min( totalSlots, totalTQJobs-totalWaitingPilots )
+            totalWaitingPilots += row[1]
+
+      pilotsToSubmit = min( totalSlots, totalTQJobs - totalWaitingPilots )
       self.log.verbose( 'Available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
                               ( totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
 
@@ -612,7 +613,7 @@ EOF
         continue
 
       #print "AT >>> pilotRefs", pilotRefs
-      
+
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
         self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
@@ -624,11 +625,11 @@ EOF
       stampedPilotRefs = []
       for pRef in pilotDict:
         if pilotDict[pRef]['PilotStamp']:
-          stampedPilotRefs.append(pRef+":::"+pilotDict[pRef]['PilotStamp'])
+          stampedPilotRefs.append( pRef + ":::" + pilotDict[pRef]['PilotStamp'] )
         else:
-          stampedPilotRefs = list( pilotRefs )  
+          stampedPilotRefs = list( pilotRefs )
           break
-      
+
       result = ce.getJobStatus( stampedPilotRefs )
       if not result['OK']:
         self.log.error( 'Failed to get pilots status from CE: %s' % result['Message'] )
@@ -796,4 +797,3 @@ EOF
       return result
 
     return S_OK()
-  
