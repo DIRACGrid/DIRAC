@@ -197,6 +197,8 @@ class TaskQueueDirector( AgentModule ):
     self.__checkSubmitPools()
 
     self.directorDict = getResourceDict()
+    #Add all submit pools
+    self.directorDict[ 'SubmitPool' ] = self.am_getOption( "SubmitPools" ) 
 
     rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
     result = rpcMatcher.getMatchingTaskQueues( self.directorDict )
