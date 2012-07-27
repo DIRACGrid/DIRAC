@@ -109,6 +109,7 @@ class TransformationCleaningAgent( AgentModule ):
     self.log.info( "Will remove logs found on storage element: %s" % self.logSE )
     ## enable/disable execution, should be using CS option Status?? with default value as 'Active'?? 
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
+    return S_OK()
     
   #############################################################################
   def execute( self ):
