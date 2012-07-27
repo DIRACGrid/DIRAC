@@ -24,6 +24,22 @@ class Synchronizer( object ):
     if rManagement is None:   
       self.rManagement = ResourceManagementClient.ResourceManagementClient()
   
+  def sync( self ):
+    
+    syncSites = self._syncSites()
+    if not syncSites[ 'OK' ]:
+      gLogger.error( syncSites[ 'Message' ] )
+      
+    syncResources = self._syncResources()
+    if not syncResources[ 'OK' ]:
+      gLogger.error( syncResources[ 'Message' ] )  
+  
+    syncNodes = self._syncNodes()
+    if not syncNodes[ 'OK' ]:
+      gLogger.error( syncNodes[ 'Message' ] )  
+  
+    return S_OK()
+  
   def _syncSites( self ):
     
     gLogger.debug( '-- Synchronizing sites --')
