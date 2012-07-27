@@ -5,10 +5,10 @@
 
 '''
 
-from datetime import datetime
+#from datetime import datetime
 
 from DIRAC                                              import gLogger, S_ERROR 
-from DIRAC.Core.DISET.RPCClient                         import RPCClient
+#from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
 __RCSID__ = '$Id:  $'
@@ -50,7 +50,8 @@ class ResourceManagementClient( object ):
     '''
     
     self.gate = ResourceManagementDB()
-    
+
+# FIXME: commented out duriing development    
 #    if not serviceIn:
 #      self.gate = RPCClient( "ResourceStatus/ResourceManagement" )    
 #    else:
@@ -86,7 +87,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'AccountingCache', locals() )
+    return self._query( 'insert', 'AccountingCache', locals() )
   def updateAccountingCache( self, name, plotType, plotName, result, 
                              dateEffective, lastCheckTime, meta = None ):
     '''
@@ -114,7 +115,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'update', 'AccountingCache', locals() )
+    return self._query( 'update', 'AccountingCache', locals() )
   def selectAccountingCache( self, name = None, plotType = None, plotName = None, 
                              result = None, dateEffective = None, 
                              lastCheckTime = None, meta = None ):
@@ -142,7 +143,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'select', 'AccountingCache', locals() )
+    return self._query( 'select', 'AccountingCache', locals() )
   def deleteAccountingCache( self, name = None, plotType = None, 
                              plotName = None, result = None, 
                              dateEffective = None, lastCheckTime = None, 
@@ -171,7 +172,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'AccountingCache', locals() )
+    return self._query( 'delete', 'AccountingCache', locals() )
   #FIXME: should they be None or not ??
   def addOrModifyAccountingCache( self, name = None, plotType = None, 
                                   plotName = None, result = None, 
@@ -204,7 +205,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addOrModify', 'AccountingCache', locals() )    
+    return self._query( 'addOrModify', 'AccountingCache', locals() )    
   def addIfNotThereAccountingCache( self, name = None, plotType = None, 
                                     plotName = None, result = None, 
                                     dateEffective = None, lastCheckTime = None,
@@ -236,7 +237,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addIfNotThere', 'AccountingCache', locals() )    
+    return self._query( 'addIfNotThere', 'AccountingCache', locals() )    
     
   ##############################################################################
   # CLIENT CACHE Methods
@@ -269,7 +270,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'ClientCache', locals() )
+    return self._query( 'insert', 'ClientCache', locals() )
   def updateClientCache( self, name, commandName, opt_ID, value, result,
                          dateEffective, lastCheckTime, meta = None ):
     '''
@@ -299,7 +300,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
-    return self.__query( 'update', 'ClientCache', locals() )
+    return self._query( 'update', 'ClientCache', locals() )
   def selectClientCache( self, name = None, commandName = None, opt_ID = None, 
                          value = None, result = None, dateEffective = None, 
                          lastCheckTime = None, meta = None ):
@@ -329,7 +330,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'select', 'ClientCache', locals() )
+    return self._query( 'select', 'ClientCache', locals() )
   def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
                          value = None, result = None, dateEffective = None, 
                          lastCheckTime = None, meta = None ):
@@ -359,7 +360,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'ClientCache', locals() )
+    return self._query( 'delete', 'ClientCache', locals() )
   def addOrModifyClientCache( self, name = None, commandName = None, opt_ID = None, 
                               value = None, result = None, dateEffective = None, 
                               lastCheckTime = None, meta = None ):
@@ -394,7 +395,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addOrModify', 'ClientCache', locals() )    
+    return self._query( 'addOrModify', 'ClientCache', locals() )    
   def addIfNotThereClientCache( self, name = None, commandName = None, opt_ID = None, 
                                 value = None, result = None, dateEffective = None, 
                                 lastCheckTime = None, meta = None ):
@@ -429,12 +430,12 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addIfNotThere', 'ClientCache', locals() )       
+    return self._query( 'addIfNotThere', 'ClientCache', locals() )       
 
   ##############################################################################
   # DOWNTIME CACHE Methods
 
-  def insertDowntimeCache( self, iD, element, name, startDate, endDate, severity,
+  def insertDowntimeCache( self, downtimeID, element, name, startDate, endDate, severity,
                            description, link, dateEffective, lastCheckTime, meta = None ):
     '''
 #FIXME: write proper docstring
@@ -463,9 +464,9 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'DowntimeCache', locals() )
+    return self._query( 'insert', 'DowntimeCache', locals() )
 
-  def updateDowntimeCache( self, iD, element, name, startDate, endDate, severity,
+  def updateDowntimeCache( self, downtimeID, element, name, startDate, endDate, severity,
                            description, link, dateEffective, lastCheckTime, meta = None ):
     '''
 #FIXME: write proper docstring
@@ -494,9 +495,9 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
-    return self.__query( 'update', 'DowntimeCache', locals() )
+    return self._query( 'update', 'DowntimeCache', locals() )
 
-  def selectDowntimeCache( self, iD = None, element = None, name = None, 
+  def selectDowntimeCache( self, downtimeID = None, element = None, name = None, 
                            startDate = None, endDate = None, severity = None,
                            description = None, link = None, dateEffective = None, 
                            lastCheckTime = None, meta = None ):
@@ -527,9 +528,9 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
-    return self.__query( 'select', 'DowntimeCache', locals() )
+    return self._query( 'select', 'DowntimeCache', locals() )
 
-  def deleteDowntimeCache( self, iD = None, element = None, name = None, 
+  def deleteDowntimeCache( self, downtimeID = None, element = None, name = None, 
                            startDate = None, endDate = None, severity = None,
                            description = None, link = None, dateEffective = None, 
                            lastCheckTime = None, meta = None ):
@@ -560,10 +561,10 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'DowntimeCache', locals() )
+    return self._query( 'delete', 'DowntimeCache', locals() )
 
   #FIXME: should they be None or not ??
-  def addOrModifyDowntimeCache( self, iD = None, element = None, name = None, 
+  def addOrModifyDowntimeCache( self, downtimeID = None, element = None, name = None, 
                                 startDate = None, endDate = None, severity = None,
                                 description = None, link = None, dateEffective = None, 
                                 lastCheckTime = None, meta = None ):
@@ -595,8 +596,8 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addOrModify', 'DowntimeCache', locals() )    
-  def addIfNotThereDowntimeCache( self, iD = None, element = None, name = None, 
+    return self._query( 'addOrModify', 'DowntimeCache', locals() )    
+  def addIfNotThereDowntimeCache( self, downtimeID = None, element = None, name = None, 
                                   startDate = None, endDate = None, severity = None,
                                   description = None, link = None, dateEffective = None, 
                                   lastCheckTime = None, meta = None ):
@@ -628,7 +629,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addIfNotThere', 'DowntimeCache', locals() )  
+    return self._query( 'addIfNotThere', 'DowntimeCache', locals() )  
     
   ##############################################################################
   # POLICY RESULT Methods
@@ -663,7 +664,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'PolicyResult', locals() ) 
+    return self._query( 'insert', 'PolicyResult', locals() ) 
   def updatePolicyResult( self, element, name, policyName, statusType,
                           status, reason, lastCheckTime, meta = None ):
     '''
@@ -695,7 +696,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'update', 'PolicyResult', locals() )
+    return self._query( 'update', 'PolicyResult', locals() )
   def selectPolicyResult( self, element = None, name = None, policyName = None, 
                           statusType = None, status = None, reason = None, 
                           lastCheckTime = None, meta = None ):
@@ -727,7 +728,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'select', 'PolicyResult', locals() )
+    return self._query( 'select', 'PolicyResult', locals() )
   def deletePolicyResult( self, element = None, name = None, 
                           policyName = None, statusType = None, status = None, 
                           reason = None, lastCheckTime = None, meta = None ):
@@ -759,7 +760,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'PolicyResult', locals() )
+    return self._query( 'delete', 'PolicyResult', locals() )
   def addOrModifyPolicyResult( self, element = None, name = None, 
                                policyName = None, statusType = None,
                                status = None, reason = None, dateEffective = None, 
@@ -799,7 +800,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addOrModify', 'PolicyResult', locals() )      
+    return self._query( 'addOrModify', 'PolicyResult', locals() )      
   def addIfNotTherePolicyResult( self, element = None, name = None, 
                                  policyName = None, statusType = None,
                                  status = None, reason = None, dateEffective = None, 
@@ -839,7 +840,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addIfNotThere', 'PolicyResult', locals() )     
+    return self._query( 'addIfNotThere', 'PolicyResult', locals() )     
     
   ##############################################################################
   # POLICY RESULT LOG Methods
@@ -874,7 +875,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'PolicyResultLog', locals() ) 
+    return self._query( 'insert', 'PolicyResultLog', locals() ) 
   def updatePolicyResultLog( self, element, name, policyName, statusType,
                              status, reason, lastCheckTime, meta = None ):
     '''
@@ -907,7 +908,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'update', 'PolicyResultLog', locals() )
+    return self._query( 'update', 'PolicyResultLog', locals() )
   def selectPolicyResultLog( self, element = None, name = None, 
                               policyName = None, statusType = None, status = None, 
                               reason = None, lastCheckTime = None, meta = None ):
@@ -939,7 +940,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'select', 'PolicyResultLog', locals() )
+    return self._query( 'select', 'PolicyResultLog', locals() )
   def deletePolicyResultLog( self, element = None, name = None, 
                              policyName = None, statusType = None, status = None, 
                              reason = None, lastCheckTime = None, meta = None ):
@@ -971,7 +972,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'PolicyResultLog', locals() )
+    return self._query( 'delete', 'PolicyResultLog', locals() )
   def addOrModifyPolicyResultLog( self, element = None, name = None, 
                                   policyName = None, statusType = None,
                                   status = None, reason = None, lastCheckTime = None, 
@@ -1004,11 +1005,11 @@ class ResourceManagementClient( object ):
     '''
 #    # Unused argument
 #    # pylint: disable-msg=W0613
-#    return self.__query( 'insert', 'PolicyResultLog', locals() )  
+#    return self._query( 'insert', 'PolicyResultLog', locals() )  
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addOrModify', 'PolicyResultLog', locals() )         
+    return self._query( 'addOrModify', 'PolicyResultLog', locals() )         
   def addIfNotTherePolicyResultLog( self, element = None, name = None, 
                                     policyName = None, statusType = None,
                                     status = None, reason = None, 
@@ -1041,11 +1042,11 @@ class ResourceManagementClient( object ):
     '''
 #    # Unused argument
 #    # pylint: disable-msg=W0613
-#    return self.__query( 'insert', 'PolicyResultLog', locals() )  
+#    return self._query( 'insert', 'PolicyResultLog', locals() )  
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addIfNotThere', 'PolicyResultLog', locals() )         
+    return self._query( 'addIfNotThere', 'PolicyResultLog', locals() )         
     
   ##############################################################################
   # SpaceTokenOccupancy CACHE Methods
@@ -1076,7 +1077,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'SpaceTokenOccupancyCache', locals() )
+    return self._query( 'insert', 'SpaceTokenOccupancyCache', locals() )
   def updateSpaceTokenOccupancyCache( self, site, token, total, guaranteed,
                                       free, lastCheckTime, meta = None ):
     '''
@@ -1104,7 +1105,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'update', 'SpaceTokenOccupancyCache', locals() )
+    return self._query( 'update', 'SpaceTokenOccupancyCache', locals() )
   def selectSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
                                       guaranteed = None, free = None, 
                                       lastCheckTime = None, meta = None ):
@@ -1132,7 +1133,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'select', 'SpaceTokenOccupancyCache', locals() )
+    return self._query( 'select', 'SpaceTokenOccupancyCache', locals() )
   def deleteSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
                                       guaranteed = None, free = None, 
                                       lastCheckTime = None, meta = None ):
@@ -1160,7 +1161,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'SpaceTokenOccupancyCache', locals() )  
+    return self._query( 'delete', 'SpaceTokenOccupancyCache', locals() )  
   def addOrModifySpaceTokenOccupancyCache( self, site = None, token = None, 
                                            total = None, guaranteed = None, 
                                            free = None, lastCheckTime = None, 
@@ -1194,7 +1195,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addOrModify', 'SpaceTokenOccupancyCache', locals() )        
+    return self._query( 'addOrModify', 'SpaceTokenOccupancyCache', locals() )        
   def addIfNotThereSpaceTokenOccupancyCache( self, site = None, token = None, 
                                              total = None, guaranteed = None, 
                                              free = None, lastCheckTime = None, 
@@ -1228,7 +1229,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addIfNotThere', 'SpaceTokenOccupancyCache', locals() ) 
+    return self._query( 'addIfNotThere', 'SpaceTokenOccupancyCache', locals() ) 
         
   ##############################################################################
   # USER REGISTRY CACHE Methods
@@ -1252,7 +1253,7 @@ class ResourceManagementClient( object ):
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'UserRegistryCache', locals() )
+    return self._query( 'insert', 'UserRegistryCache', locals() )
   def updateUserRegistryCache( self, login, name, email, meta = None ):
     '''
     Updates UserRegistryCache with the parameters given. By default, `login` 
@@ -1273,7 +1274,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'update', 'UserRegistryCache', locals() )
+    return self._query( 'update', 'UserRegistryCache', locals() )
   def selectUserRegistryCache( self, login = None, name = None, email = None, 
                             meta = None ):
     '''
@@ -1294,7 +1295,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'select', 'UserRegistryCache', locals() )
+    return self._query( 'select', 'UserRegistryCache', locals() )
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
                                meta = None ):                                            
     '''
@@ -1315,7 +1316,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'UserRegistryCache', locals() )
+    return self._query( 'delete', 'UserRegistryCache', locals() )
   def addOrModifyUserRegistryCache( self, login = None, name = None, 
                                     email = None, meta = None ):
     '''
@@ -1341,7 +1342,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addOrModify', 'UserRegistryCache', locals() )   
+    return self._query( 'addOrModify', 'UserRegistryCache', locals() )   
   def addIfNotThereUserRegistryCache( self, login = None, name = None, 
                                        email = None, meta = None ):
     '''
@@ -1367,7 +1368,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addIfNotThere', 'UserRegistryCache', locals() )   
+    return self._query( 'addIfNotThere', 'UserRegistryCache', locals() )   
 
   ##############################################################################
   # VOBOX CACHE Methods
@@ -1396,7 +1397,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'VOBOXCache', locals() )
+    return self._query( 'insert', 'VOBOXCache', locals() )
   def updateVOBOXCache( self, site, system, serviceUp, machineUp, 
                         lastCheckTime, meta = None ):
     '''
@@ -1422,7 +1423,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'update', 'VOBOXCache', locals() )
+    return self._query( 'update', 'VOBOXCache', locals() )
   def selectVOBOXCache( self, site = None, system = None, serviceUp = None, 
                         machineUp = None, lastCheckTime = None, meta = None ):
     '''
@@ -1447,7 +1448,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'select', 'VOBOXCache', locals() )
+    return self._query( 'select', 'VOBOXCache', locals() )
   def deleteVOBOXCache( self, site = None, system = None, serviceUp = None, 
                         machineUp = None, lastCheckTime = None, meta = None ):
     '''
@@ -1472,7 +1473,7 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'VOBOXCache', locals() )  
+    return self._query( 'delete', 'VOBOXCache', locals() )  
   def addOrModifyVOBOXCache( self, site = None, system = None, serviceUp = None, 
                              machineUp = None, lastCheckTime = None, meta = None ):
     '''
@@ -1502,7 +1503,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addOrModify', 'VOBOXCache', locals() )   
+    return self._query( 'addOrModify', 'VOBOXCache', locals() )   
   
   def addIfNotThereVOBOXCache( self, site = None, system = None, serviceUp = None, 
                                machineUp = None, lastCheckTime = None, meta = None ):
@@ -1533,7 +1534,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addIfNotThere', 'VOBOXCache', locals() )   
+    return self._query( 'addIfNotThere', 'VOBOXCache', locals() )   
 
 
 # THIS METHOD DOES NOT WORK AS EXPECTED 
@@ -1578,6 +1579,12 @@ class ResourceManagementClient( object ):
 
   ################################################################################
   # Protected methods
+
+  def _query( self, queryType, tableName, parameters ):
+    '''
+    It is a simple helper, this way inheriting classes can use it.
+    '''
+    return self.__query( queryType, tableName, parameters )
 
 #  def _insertElement( self, element, kwargs ):
 #    '''

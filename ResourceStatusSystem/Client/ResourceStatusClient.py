@@ -5,10 +5,10 @@
 
 '''
 
-from datetime import datetime#, timedelta
+#from datetime import datetime#, timedelta
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient                      import RPCClient        
+#from DIRAC.Core.DISET.RPCClient                      import RPCClient        
 #from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName            
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
 #from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node      
@@ -51,6 +51,7 @@ class ResourceStatusClient( object ):
       fails, then tries to connect to the Service :class:ResourceStatusHandler.
     '''
     self.gate = ResourceStatusDB()
+# FIXME: commented out duriing development    
 #    if not serviceIn:     
 #      self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
 #    else:
@@ -101,7 +102,7 @@ class ResourceStatusClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'insert', locals() )
+    return self._query( 'insert', locals() )
   def updateStatusElement( self, element, tableType, name, statusType, status, 
                            elementType, reason, dateEffective, lastCheckTime, 
                            tokenOwner, tokenExpiration, meta = None ):
@@ -142,7 +143,7 @@ class ResourceStatusClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'update', locals() )
+    return self._query( 'update', locals() )
   def selectStatusElement( self, element, tableType, name = None, statusType = None, 
                            status = None, elementType = None, reason = None, 
                            dateEffective = None, lastCheckTime = None, 
@@ -184,7 +185,7 @@ class ResourceStatusClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'select', locals() )
+    return self._query( 'select', locals() )
   def deleteStatusElement( self, element, tableType, name = None, statusType = None, 
                            status = None, elementType = None, reason = None, 
                            dateEffective = None, lastCheckTime = None, 
@@ -226,7 +227,7 @@ class ResourceStatusClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', locals() )
+    return self._query( 'delete', locals() )
   def addOrModifyStatusElement( self, element, tableType, name = None, 
                                 statusType = None, status = None, 
                                 elementType = None, reason = None, 
@@ -271,7 +272,7 @@ class ResourceStatusClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addOrModify', locals() )
+    return self._query( 'addOrModify', locals() )
   def addIfNotThereStatusElement( self, element, tableType, name = None, 
                                   statusType = None, status = None, 
                                   elementType = None, reason = None, 
@@ -316,7 +317,7 @@ class ResourceStatusClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self.__query( 'addIfNotThere', locals() )
+    return self._query( 'addIfNotThere', locals() )
 
   ##############################################################################
   # Protected methods - Use carefully !!
@@ -342,8 +343,13 @@ class ResourceStatusClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     return self.__extermineStatusElement( element, name, keepLogs )
-
-
+  
+  def _query( self, queryType, parameters ):
+    '''
+    It is a simple helper, this way inheriting classes can use it.
+    '''
+    return self.__query( queryType, parameters )
+  
   ##############################################################################
   # Private methods - where magic happens ;)
 
