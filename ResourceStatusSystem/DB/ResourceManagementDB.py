@@ -1,4 +1,4 @@
-# $HeadURL $
+# $HeadURL:  $
 ''' ResourceManagementDB
 
   Module that provides basic methods to access the ResourceManagementDB.
@@ -16,9 +16,9 @@ __RCSID__ = '$Id: $'
 class ResourceManagementDB( object ):
 
   # Written PrimaryKey as list on purpose !!
-  __tablesDB = {}
-  __tablesDB[ 'AccountingCache' ] = { 'Fields' : 
-                      {
+  _tablesDB = {}
+  _tablesDB[ 'AccountingCache' ] = { 'Fields' : 
+                     {
                        #'AccountingCacheID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                        'Name'          : 'VARCHAR(64) NOT NULL',
                        'PlotType'      : 'VARCHAR(16) NOT NULL',
@@ -30,7 +30,7 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Name', 'PlotType', 'PlotName' ]                                            
                                 }
 
-  __tablesDB[ 'ClientCache' ] = { 'Fields' :
+  _tablesDB[ 'ClientCache' ] = { 'Fields' :
                       {
                        #'ClientCacheID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                        'Name'          : 'VARCHAR(64) NOT NULL',
@@ -44,7 +44,7 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Name', 'CommandName', 'Value' ]
                                 }
 
-  __tablesDB[ 'DowntimeCache' ] = { 'Fields' :
+  _tablesDB[ 'DowntimeCache' ] = { 'Fields' :
                       {
                        'DowntimeID'    : 'VARCHAR(64) NOT NULL',
                        'Element'       : 'VARCHAR(32) NOT NULL',
@@ -60,7 +60,7 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'DowntimeID' ]
                                 }
 
-  __tablesDB[ 'PolicyResult' ] = { 'Fields' : 
+  _tablesDB[ 'PolicyResult' ] = { 'Fields' : 
                       {
                        #'PolicyResultID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                        'Element'       : 'VARCHAR(32) NOT NULL',
@@ -75,7 +75,7 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Element', 'Name', 'StatusType', 'PolicyName' ] 
                                 }
   
-  __tablesDB[ 'PolicyResultLog' ] = { 'Fields' : 
+  _tablesDB[ 'PolicyResultLog' ] = { 'Fields' : 
                       {
                        'PolicyResultLogID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                        'Element'           : 'VARCHAR(32) NOT NULL',
@@ -90,7 +90,7 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'PolicyResultLogID' ]
                                 }
 
-  __tablesDB[ 'SpaceTokenOccupancyCache' ] = { 'Fields' :
+  _tablesDB[ 'SpaceTokenOccupancyCache' ] = { 'Fields' :
                       {
                        #'SpaceTokenOccupancyCacheID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                        'Site'          : 'VARCHAR( 64 ) NOT NULL',
@@ -103,7 +103,7 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Site', 'Token' ]                                             
                                 } 
  
-  __tablesDB[ 'UserRegistryCache' ] = { 'Fields' : 
+  _tablesDB[ 'UserRegistryCache' ] = { 'Fields' : 
                       {
                        'Login' : 'VARCHAR(16)',
                        'Name'  : 'VARCHAR(64) NOT NULL',
@@ -112,7 +112,7 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Login' ]           
                                 }   
 
-  __tablesDB[ 'VOBOXCache' ] = { 'Fields' :
+  _tablesDB[ 'VOBOXCache' ] = { 'Fields' :
                       {
                        #'VOBOXCacheID'  : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                        'Site'          : 'VARCHAR( 64 ) NOT NULL',
@@ -124,8 +124,8 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Site', 'System' ]        
                                 }
   
-  __tablesLike  = {}
-  __likeToTable = {}
+  _tablesLike  = {}
+  _likeToTable = {}
   
   def __init__( self, maxQueueSize = 10, mySQL = None ):
     '''
@@ -428,11 +428,11 @@ class ResourceManagementDB( object ):
   
     # Avoids copying object.
     tables = {}
-    tables.update( self.__tablesDB )
+    tables.update( self._tablesDB )
     
-    for tableName, tableLike in self.__likeToTable.items():
+    for tableName, tableLike in self._likeToTable.items():
       
-      tables[ tableName ] = self.__tablesLike[ tableLike ]
+      tables[ tableName ] = self._tablesLike[ tableLike ]
        
     return tables
 

@@ -16,10 +16,10 @@ __RCSID__ = '$Id: $'
 class ResourceStatusDB( object ):
   
   # Written PrimaryKey as list on purpose !!
-  __tablesDB = {}
+  _tablesDB = {}
   
-  __tablesLike = {}
-  __tablesLike[ 'ElementStatus' ]    = { 'Fields' : 
+  _tablesLike = {}
+  _tablesLike[ 'ElementStatus' ]    = { 'Fields' : 
                     {
                      'Name'            : 'VARCHAR(64) NOT NULL',
                      'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT ""',
@@ -34,7 +34,7 @@ class ResourceStatusDB( object ):
                     'PrimaryKey' : [ 'Name', 'StatusType', 'ElementType' ]              
                                     }
     
-  __tablesLike[ 'ElementWithID' ]       = { 'Fields' : 
+  _tablesLike[ 'ElementWithID' ]       = { 'Fields' : 
                     {
                      'ID'              : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                      'Name'            : 'VARCHAR(64) NOT NULL',
@@ -50,7 +50,7 @@ class ResourceStatusDB( object ):
                     'PrimaryKey' : [ 'ID' ]                
                                     }
 
-  __likeToTable = { 
+  _likeToTable = { 
                     'SiteStatus'        : 'ElementStatus',
                     'SiteLog'           : 'ElementWithID',
                     'SiteHistory'       : 'ElementWithID',
@@ -383,11 +383,11 @@ class ResourceStatusDB( object ):
   
     # Avoids copying object.
     tables = {}
-    tables.update( self.__tablesDB )
+    tables.update( self._tablesDB )
     
-    for tableName, tableLike in self.__likeToTable.items():
+    for tableName, tableLike in self._likeToTable.items():
       
-      tables[ tableName ] = self.__tablesLike[ tableLike ]
+      tables[ tableName ] = self._tablesLike[ tableLike ]
        
     return tables
     
