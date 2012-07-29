@@ -364,10 +364,10 @@ class FileCatalogHandler(RequestHandler):
     return fcDB.fmeta.getFileUserMetadata(path, self.getRemoteCredentials())  
   
   types_findDirectoriesByMetadata = [ DictType ]
-  def export_findDirectoriesByMetadata(self,metaDict):
+  def export_findDirectoriesByMetadata(self,metaDict,path='/'):
     """ Find all the directories satisfying the given metadata set
     """
-    return fcDB.dmeta.findDirectoriesByMetadata(metaDict, self.getRemoteCredentials())
+    return fcDB.dmeta.findDirectoriesByMetadata(metaDict, path, self.getRemoteCredentials())
   
   types_findFilesByMetadata = [ DictType, StringTypes ]
   def export_findFilesByMetadata(self,metaDict,path='/'):

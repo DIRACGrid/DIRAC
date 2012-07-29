@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 ## py imports 
 import time
 ## DIRAC imports 
-from DIRAC import S_OK, S_ERROR, gMonitor
+from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
@@ -98,7 +98,7 @@ class RequestAgentBase( AgentModule ):
     self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", 300 ) )
     self.log.info("ProcessTask timeout = %d seconds" % self.__taskTimeout )
     ## request type
-    self.__requestType = self.am_getOption( "RequestType", None )
+    self.__requestType = self.am_getOption( "RequestType", self.__requestType )
     self.log.info( "Will process '%s' request type." % str( self.__requestType ) )
     ## shifter proxy
     self.am_setOption( "shifterProxy", "DataManager" )
