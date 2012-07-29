@@ -48,4 +48,4 @@ oFTSRequest.setTargetSE( targetSE )
 oFTSRequest.setFTSServer( server )
 result = oFTSRequest.monitor( untilTerminal = True, printOutput = True )
 if not result['OK']:
-  DIRAC.gLogger.error( 'Failed to issue FTS Request', result['Value'] )
+  DIRAC.gLogger.error( 'Failed to issue FTS Request', result['Message'] )
