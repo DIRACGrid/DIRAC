@@ -1,7 +1,6 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import sys
 import types
 import thread
 import DIRAC
@@ -10,7 +9,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import *
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 from DIRAC.Core.Security import CS
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 
@@ -34,7 +33,8 @@ class BaseClient:
 
   def __init__( self, serviceName, **kwargs ):
     if type( serviceName ) != types.StringType:
-      raise TypeError( "Service name expected to be a string. Received %s type %s" % ( str( serviceName ), type( serviceName ) ) )
+      raise TypeError( "Service name expected to be a string. Received %s type %s" %
+                       ( str( serviceName ), type( serviceName ) ) )
     self._destinationSrv = serviceName
     self.kwargs = kwargs
     self.__initStatus = S_OK()
@@ -135,7 +135,10 @@ class BaseClient:
       if self.KW_DELEGATED_GROUP in self.kwargs and self.kwargs[ self.KW_DELEGATED_GROUP ]:
         self.__extraCredentials = self.kwargs[ self.KW_DELEGATED_GROUP ]
       else:
-        self.__extraCredentials = CS.getDefaultUserGroup()
+        result = CS.findDefaultGroupForDN( self.kwargs[ self.KW_DELEGATED_DN ] )
+        if not result['OK']:
+          return result
+        self.__extraCredentials = result['Value']
       self.__extraCredentials = ( self.kwargs[ self.KW_DELEGATED_DN ], self.__extraCredentials )
     return S_OK()
 
@@ -275,7 +278,9 @@ and this is thread %s
       else:
         if self.KW_DELEGATED_DN in newKwargs:
           if CS.getUsernameForDN( newKwargs[ self.KW_DELEGATED_DN ] )[ 'OK' ]:
-            newKwargs[ self.KW_DELEGATED_GROUP ] = CS.getDefaultUserGroup()
+            result = CS.findDefaultGroupForDN( newKwargs[ self.KW_DELEGATED_DN ] )
+            if result['OK']:
+              newKwargs[ self.KW_DELEGATED_GROUP ] = result['Value']
           if CS.getHostnameForDN( newKwargs[ self.KW_DELEGATED_DN ] )[ 'OK' ]:
             newKwargs[ self.KW_DELEGATED_GROUP ] = self.VAL_EXTRA_CREDENTIALS_HOST
 
