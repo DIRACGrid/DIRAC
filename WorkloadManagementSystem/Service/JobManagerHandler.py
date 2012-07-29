@@ -110,8 +110,9 @@ class JobManagerHandler( RequestHandler ):
       if jobClassAd.isAttributeList( 'Parameters' ):
         parameterList = jobClassAd.getListFromExpression( 'Parameters' )
       else:
-        pStep = 0
+        pStep = 1
         pFactor = 1
+        pStart = 1
         nParameters = jobClassAd.getAttributeInt( 'Parameters' )
         if not nParameters:
           value = jobClassAd.get_expression( 'Parameters' )
@@ -161,8 +162,8 @@ class JobManagerHandler( RequestHandler ):
         if type( p ) == type ( ' ' ) and p.startswith('{'):
           newClassAd.insertAttributeInt( 'Parameter',str(p) )
         else:
-          newClassAd.insertAttributeString( 'Parameter',str(p) )
-        newClassAd.insertAttributeInt('ParameterNumber',n)
+          newClassAd.insertAttributeString( 'Parameter', str( p ) )
+        newClassAd.insertAttributeInt( 'ParameterNumber', n )
         newJDL = newClassAd.asJDL()
         jobDescList.append( newJDL )
     else:
@@ -416,7 +417,6 @@ class JobManagerHandler( RequestHandler ):
                                         application = 'Unknown', source = 'JobManager' )
 
     self.__sendNewJobsToMind( good_ids )
-
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR( 'Some jobs failed resetting' )
       if invalidJobList:
