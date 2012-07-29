@@ -1132,7 +1132,7 @@ def loadConfiguration():
       cliParams.externalsOnly = True
     elif o in ( '-T', '--Timeout' ):
       try:
-        cliParams.timeout = max( cliParams.timeout, float( v ) )
+        cliParams.timeout = max( cliParams.timeout, int( v ) )
         cliParams.timeout = min( cliParams.timeout, 3600 )
       except ValueError:
         pass
