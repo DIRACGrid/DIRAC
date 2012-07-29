@@ -137,7 +137,8 @@ class X509Chain:
     Get the list of extensions for a proxy
     """
     extList = []
-    extList.append( crypto.X509Extension( 'keyUsage', 'critical, digitalSignature, keyEncipherment, dataEncipherment' ) )
+    extList.append( crypto.X509Extension( 'keyUsage',
+                                          'critical, digitalSignature, keyEncipherment, dataEncipherment' ) )
     if diracGroup and type( diracGroup ) in self.__validExtensionValueTypes:
       extList.append( crypto.X509Extension( 'diracGroup', diracGroup ) )
     return extList
@@ -567,7 +568,10 @@ class X509Chain:
         return retVal
       diracGroup = retVal[ 'Value' ]
       if not diracGroup:
-        diracGroup = Registry.getDefaultUserGroup()
+        result = Registry.findDefaultGroupForDN( credDict['issuer'] )
+        if not result['OK']:
+          return result
+        diracGroup = result['Value']
       credDict[ 'group' ] = diracGroup
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
       retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )
