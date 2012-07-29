@@ -63,7 +63,7 @@ class TorqueComputingElement( ComputingElement ):
       self.ceConfigDict['BatchError'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
 
   #############################################################################
-  def makeProxyExecutableFile(self, executableFile, proxy):
+  def makeProxyExecutableFile( self, executableFile, proxy ):
     """ Make a single executable bundling together executableFile and proxy
     """
     compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace( '\n', '' )
@@ -98,9 +98,9 @@ shutil.rmtree( workingDirectory )
     wrapper = os.fdopen( fd, 'w' )
     wrapper.write( wrapperContent )
     wrapper.close()
-    
+
     return name
-    
+
 
   #############################################################################
   def submitJob( self, executableFile, proxy, localID ):
@@ -127,7 +127,7 @@ shutil.rmtree( workingDirectory )
     # recommended to transfer a proxy inside the executable if possible.
     if proxy:
       self.log.verbose( 'Setting up proxy for payload' )
-      submitFile = self.makeProxyExecutableFile(executableFile, proxy)
+      submitFile = self.makeProxyExecutableFile( executableFile, proxy )
 
     else: # no proxy
       submitFile = executableFile
@@ -200,89 +200,89 @@ shutil.rmtree( workingDirectory )
 
     return result
 
-  def getJobStatus(self,jobIDList):
+  def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
     jobDict = {}
     for job in jobIDList:
-      jobNumber = job.split('.')[0]
+      jobNumber = job.split( '.' )[0]
       jobDict[jobNumber] = job
-      
-    cmd = [ 'qstat',' '.join(jobIDList) ]
+
+    cmd = [ 'qstat', ' '.join( jobIDList ) ]
     result = systemCall( 10, cmd )
     if not result['OK']:
       return result
-    
+
     resultDict = {}
-    output = result['Value'][1].replace('\r','')
-    lines = output.split('\n')
+    output = result['Value'][1].replace( '\r', '' )
+    lines = output.split( '\n' )
     for job in jobDict:
       resultDict[jobDict[job]] = 'Unknown'
       for line in lines:
-        if line.find(job) != -1:
-          if line.find('Unknown') != -1:
+        if line.find( job ) != -1:
+          if line.find( 'Unknown' ) != -1:
             resultDict[jobDict[job]] = 'Unknown'
           else:
-            torqueStatus = line.split()[4]  
-            if torqueStatus in ['E','C']:
+            torqueStatus = line.split()[4]
+            if torqueStatus in ['E', 'C']:
               resultDict[jobDict[job]] = 'Done'
-            elif torqueStatus in ['R']:    
+            elif torqueStatus in ['R']:
               resultDict[jobDict[job]] = 'Running'
-            elif torqueStatus in ['S','W','Q','H','T']:    
+            elif torqueStatus in ['S', 'W', 'Q', 'H', 'T']:
               resultDict[jobDict[job]] = 'Waiting'
-              
-    return S_OK(resultDict)      
-  
-  def getJobOutput(self,jobID,localDir=None):
+
+    return S_OK( resultDict )
+
+  def getJobOutput( self, jobID, localDir = None ):
     """ Get the specified job standard output and error files. If the localDir is provided,
         the output is returned as file in this directory. Otherwise, the output is returned 
         as strings. 
-    """     
-    jobNumber = jobID.split('.')[0]
+    """
+    jobNumber = jobID.split( '.' )[0]
     # Find the output files
     outFile = ''
-    outNames = os.listdir(self.batchOutput)
+    outNames = os.listdir( self.batchOutput )
     for outName in outNames:
-      if outName.find(jobNumber) != -1:
-        outFile = os.path.join(self.batchOutput,outName)
+      if outName.find( jobNumber ) != -1:
+        outFile = os.path.join( self.batchOutput, outName )
         break
-    errFile = ''    
-    errNames = os.listdir(self.batchError)
+    errFile = ''
+    errNames = os.listdir( self.batchError )
     for errName in errNames:
-      if errName.find(jobNumber) != -1:  
-        errFile = os.path.join(self.batchError,errName)
+      if errName.find( jobNumber ) != -1:
+        errFile = os.path.join( self.batchError, errName )
         break
-      
+
     if localDir:
       if outFile:
-        doutFile = os.path.join(localDir,os.path.basename(outFile))
-        shutil.copyfile(outFile,doutFile)
+        doutFile = os.path.join( localDir, os.path.basename( outFile ) )
+        shutil.copyfile( outFile, doutFile )
       if errFile:
-        derrFile = os.path.join(localDir,os.path.basename(errFile))
-        shutil.copyfile(errFile,derrFile)   
-    
+        derrFile = os.path.join( localDir, os.path.basename( errFile ) )
+        shutil.copyfile( errFile, derrFile )
+
     # The result is OK, we can remove the output
     if self.removeOutput:
-      result = os.system('rm -f %s/*%s* %s/*%s*' % (self.batchOutput,jobNumber,self.batchError,jobNumber) )
-    
+      result = os.system( 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobNumber, self.batchError, jobNumber ) )
+
     if localDir:
       if outFile and errFile:
-        return S_OK((doutFile,derrFile))
+        return S_OK( ( doutFile, derrFile ) )
       else:
-        return S_ERROR('Output files not found')
+        return S_ERROR( 'Output files not found' )
     else:
       # Return the output as a string
       output = ''
       error = ''
       if outFile:
-        outputFile = open(outFile,'r')
+        outputFile = open( outFile, 'r' )
         output = outputFile.read()
         outputFile.close()
       if errFile:
-        outputFile = open(errFile,'r')
+        outputFile = open( errFile, 'r' )
         error = outputFile.read()
-        outputFile.close()    
+        outputFile.close()
 
-      return S_OK((output,error))
+      return S_OK( ( output, error ) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
