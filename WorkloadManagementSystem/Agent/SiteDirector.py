@@ -8,7 +8,7 @@
 """
 
 from DIRAC.Core.Base.AgentModule                           import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, getVO, Registry, Operations, Resources
+from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB, taskQueueDB
@@ -18,7 +18,6 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
 from DIRAC.Core.Security                                   import CS
-from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 import os, base64, bz2, tempfile, random, socket
@@ -57,13 +56,13 @@ class SiteDirector( AgentModule ):
   def beginExecution( self ):
 
     self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
-    self.vo = self.am_getOption( "Community", '' )
+    self.voName = self.am_getOption( "Community", '' )
 
     # Choose the group for which pilots will be submitted. This is a hack until
     # we will be able to match pilots to VOs.
     self.group = ''
-    if self.vo:
-      result = Registry.getGroupsForVO( self.vo )
+    if self.voName:
+      result = Registry.getGroupsForVO( self.voName )
       if not result['OK']:
         return result
       for group in result['Value']:
@@ -71,7 +70,7 @@ class SiteDirector( AgentModule ):
           self.group = group
           break
 
-    self.operations = Operations.Operations( vo = self.vo )
+    self.operations = Operations.Operations( vo = self.voName )
     self.genericPilotDN = self.operations.getValue( '/Pilot/GenericPilotDN', 'Unknown' )
     self.genericPilotUserName = self.genericPilotDN
     if not self.genericPilotUserName == 'Unknown':
@@ -106,7 +105,7 @@ class SiteDirector( AgentModule ):
     if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
       ces = self.am_getOption( 'CEs', [] )
 
-    result = Resources.getQueues( community = self.vo,
+    result = Resources.getQueues( community = self.voName,
                                   siteList = siteNames,
                                   ceList = ces,
                                   ceTypeList = ceTypes,
@@ -233,11 +232,12 @@ class SiteDirector( AgentModule ):
 
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
+    agentSection = getAgentSection( "WorkloadManagement/TaskQueueDirector" )
     tqDict = { 'Setup':setup,
                'CPUTime': 9999999,
-               'SubmitPool' : gConfig.getValue( "%s/SubmitPools" % getAgentSection( "WorkloadManagement/TaskQueueDirector" ), [] ) }
-    if self.vo:
-      tqDict['Community'] = self.vo
+               'SubmitPool' : gConfig.getValue( "%s/SubmitPools" % agentSection, [] ) }
+    if self.voName:
+      tqDict['Community'] = self.voName
     if self.group:
       tqDict['OwnerGroup'] = self.group
     result = taskQueueDB.getMatchingTaskQueues( tqDict )
@@ -288,7 +288,8 @@ class SiteDirector( AgentModule ):
         continue
       ceInfoDict = result['CEInfoDict']
       self.log.verbose( "CE queue report: Waiting Jobs=%d, Running Jobs=%d, Submitted Jobs=%d, MaxTotalJobs=%d" % \
-                         ( ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'], ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
+                         ( ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
+                           ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
 
       totalSlots = result['Value']
 
@@ -298,13 +299,13 @@ class SiteDirector( AgentModule ):
         self.log.info( 'Site not in the mask %s' % siteName )
         self.log.info( 'Removing "Site" from matching Dict' )
         del ceDict[ 'Site' ]
-      if self.vo:
-        ceDict['Community'] = self.vo
+      if self.voName:
+        ceDict['Community'] = self.voName
       if self.group:
         ceDict['OwnerGroup'] = self.group
 
       # Get the number of eligible jobs for the target site/queue
-      result = rpcMatcher.getMatchingTaskQueues( ceDict )
+      result = taskQueueDB.getMatchingTaskQueues( ceDict )
       if not result['OK']:
         self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
         return result
@@ -415,8 +416,6 @@ class SiteDirector( AgentModule ):
       return S_ERROR( 'Errors in compiling pilot options' )
     executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
     return S_OK( [ executable, pilotsToSubmit ] )
-    result = S_OK( executable )
-    return result
 
 #####################################################################################
   def __getPilotOptions( self, queue, pilotsToSubmit ):
@@ -510,7 +509,7 @@ class SiteDirector( AgentModule ):
     return [ pilotOptions, pilotsToSubmit ]
 
 #####################################################################################
-  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = '', httpProxy = '', pilotExecDir = '' ):
+  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = None, httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admixt the proxy if given
     """
 
