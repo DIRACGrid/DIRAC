@@ -21,7 +21,7 @@ import string, shutil, bz2, base64, tempfile
 
 CE_NAME = 'Torque'
 
-UsedParameters = [ 'ExecQueue', 'SharedArea', 'BatchOutput', 'BatchError' ]
+UsedParameters = [ 'ExecQueue', 'SharedArea', 'BatchOutput', 'BatchError', 'UserName' ]
 MandatoryParameters = [ 'Queue' ]
 
 class TorqueComputingElement( ComputingElement ):
@@ -42,6 +42,12 @@ class TorqueComputingElement( ComputingElement ):
     self.sharedArea = self.ceConfigDict['SharedArea']
     self.batchOutput = self.ceConfigDict['BatchOutput']
     self.batchError = self.ceConfigDict['BatchError']
+    self.userName = self.ceConfigDict['UserName']
+    self.removeOutput = True
+    if 'RemoveOutput' in self.ceParameters:
+      if self.ceParameters['RemoveOutput'].lower()  in ['no', 'false', '0']:
+        self.removeOutput = False
+
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -55,6 +61,9 @@ class TorqueComputingElement( ComputingElement ):
 
     if 'SharedArea' not in self.ceConfigDict:
       self.ceConfigDict['SharedArea'] = ''
+
+    if 'UserName' not in self.ceConfigDict:
+      self.ceConfigDict['UserName'] = ''
 
     if 'BatchOutput' not in self.ceConfigDict:
       self.ceConfigDict['BatchOutput'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
@@ -103,7 +112,7 @@ shutil.rmtree( workingDirectory )
 
 
   #############################################################################
-  def submitJob( self, executableFile, proxy, localID ):
+  def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
     """ Method to submit job, should be overridden in sub-class.
     """
 
@@ -141,18 +150,23 @@ shutil.rmtree( workingDirectory )
 
     self.log.verbose( 'CE submission command: %s' % ( cmd ) )
 
-    result = shellCall( 0, cmd, callbackFunction = self.sendOutput )
-    if not result['OK'] or result['Value'][0]:
-      self.log.warn( '===========>Torque CE result NOT OK' )
-      self.log.debug( result )
-      return S_ERROR( result['Value'] )
-    else:
-      self.log.debug( 'Torque CE result OK' )
+    batchIDList = []
+    for i in range( numberOfJobs ):
 
-    batchID = result['Value'][1]
+      result = shellCall( 0, cmd )
+      if not result['OK'] or result['Value'][0]:
+        self.log.warn( '===========>Torque CE result NOT OK' )
+        self.log.debug( result )
+        return S_ERROR( result['Value'] )
+      else:
+        self.log.debug( 'Torque CE result OK' )
 
-    self.submittedJobs += 1
-    return S_OK( batchID )
+      batchID = result['Value'][1].strip()
+      batchIDList.append( batchID )
+
+      self.submittedJobs += 1
+
+    return S_OK( batchIDList )
 
   #############################################################################
   def getDynamicInfo( self ):
@@ -162,6 +176,8 @@ shutil.rmtree( workingDirectory )
     result['SubmittedJobs'] = self.submittedJobs
 
     cmd = ["qstat", "-Q" , self.execQueue ]
+    if self.userName:
+      cmd = [ "qstat", "-u", self.userName, self.execQueue ]
 
     ret = systemCall( 10, cmd )
 
@@ -181,16 +197,31 @@ shutil.rmtree( workingDirectory )
       self.log.error( 'Failed qstat execution:', stderr )
       return S_ERROR( stderr )
 
-    matched = re.search( self.queue + "\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", stdout )
+    if self.userName:
+      # Parse qstat -u userName queueName
+      runningJobs = 0
+      waitingJobs = 0
+      lines = stdout.replace( '\r', '' ).split( '\n' )
+      for line in lines:
+        if not line:
+          continue
+        if line.find( self.userName ) != -1:
+          if 'R' == line.split( ' ' )[-2]:
+            runningJobs += 1
+          else:
+            # every other status to assimilate to Waiting
+            waitingJobs += 1
+    else:
+      # parse qstat -Q queueName
+      matched = re.search( self.queue + "\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", stdout )
+      if matched.groups < 6:
+        return S_ERROR( "Error retrieving information from qstat:" + stdout + stderr )
 
-    if matched.groups < 6:
-      return S_ERROR( "Error retrieving information from qstat:" + stdout + stderr )
-
-    try:
-      waitingJobs = int( matched.group( 5 ) )
-      runningJobs = int( matched.group( 6 ) )
-    except:
-      return S_ERROR( "Error retrieving information from qstat:" + stdout + stderr )
+      try:
+        waitingJobs = int( matched.group( 5 ) )
+        runningJobs = int( matched.group( 6 ) )
+      except  ValueError:
+        return S_ERROR( "Error retrieving information from qstat:" + stdout + stderr )
 
     result['WaitingJobs'] = waitingJobs
     result['RunningJobs'] = runningJobs
@@ -205,10 +236,12 @@ shutil.rmtree( workingDirectory )
     """
     jobDict = {}
     for job in jobIDList:
+      if not job:
+        continue
       jobNumber = job.split( '.' )[0]
       jobDict[jobNumber] = job
 
-    cmd = [ 'qstat', ' '.join( jobIDList ) ]
+    cmd = [ 'qstat' ] + jobIDList
     result = systemCall( 10, cmd )
     if not result['OK']:
       return result
