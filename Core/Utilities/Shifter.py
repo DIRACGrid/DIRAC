@@ -22,7 +22,6 @@ def getShifterProxy( shifterType, fileName = False ):
       os.makedirs( os.path.dirname( fileName ) )
     except OSError:
       pass
-  shifterSection = "Shifter/%s" % shifterType
   opsHelper = Operations()
   userName = opsHelper.getValue( cfgPath( 'Shifter', shifterType, 'User' ), '' )
   if not userName:
@@ -31,7 +30,11 @@ def getShifterProxy( shifterType, fileName = False ):
   if not result[ 'OK' ]:
     return result
   userDN = result[ 'Value' ][0]
-  userGroup = opsHelper.getValue( cfgPath( 'Shifter', shifterType, 'Group' ), CS.getDefaultUserGroup() )
+  result = CS.findDefaultGroupForDN( userDN )
+  if not result['OK']:
+    return result
+  defaultGroup = result['Value']
+  userGroup = opsHelper.getValue( cfgPath( 'Shifter', shifterType, 'Group' ), defaultGroup )
   vomsAttr = CS.getVOMSAttributeForGroup( userGroup )
   if vomsAttr:
     gLogger.info( "Getting VOMS [%s] proxy for shifter %s@%s (%s)" % ( vomsAttr, userName,
