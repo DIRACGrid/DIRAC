@@ -24,6 +24,7 @@ CHANGE: dirac-distribution - added global defaults flag and changed the flag to 
 FIX: Convert to string before trying to escape value in MySQL
 NEW: DISET Services - added PacketTimeout option
 NEW: SystemLoggingDB - updated to use the renewed MySQL interface and SQL schema
+NEW: Added support for multiple entries in /Registry/DefaultGroup, for multi-VO installations
 
 *RSS
 CHANGE: removed code execution from __init__
@@ -74,6 +75,21 @@ NEW: SRM2Storage - added retry in the gfal calls
 NEW: added new FTSCleaningAgent cleaning up TransferDB tables
 FIX: DataLoggingClient and DataLoggingDB - tests moved to separate files
 CHANGE: request agents cleanup
+
+[v6r4p18]
+
+*Configuration
+BUGFIX: CE2CSAgent.py - the default value must be set outside the loop
+
+*DMS
+NEW: dirac-dms-create-replication-request
+BUGFIX: dirac-dms-fts-submit, dirac-dms-fts-monitor - print out error messages
+
+*Resources
+BUGFIX: TorqueComputingElement.py, plus add UserName for shared Queues
+
+*WMS
+BUGFIX: JobManagerHandler - default value for pStart (to avoid Exception)
 
 [v6r4p17]
 
