@@ -11,7 +11,6 @@ from DIRAC.Core.Base.AgentModule                                import AgentModu
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
 from DIRAC.ResourceStatusSystem.Client.JobsClient               import JobsClient
-from DIRAC.ResourceStatusSystem.Client.PilotsClient             import PilotsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command.CommandCaller           import CommandCaller
@@ -87,7 +86,6 @@ class CacheFeederAgent( AgentModule ):
     #Reuse clients for the commands
     self.clients[ 'GOCDBClient' ]          = GOCDBClient()
     self.clients[ 'JobsClient' ]           = JobsClient()
-    self.clients[ 'PilotsClient' ]         = PilotsClient()
     self.clients[ 'ReportGenerator' ]      = RPCClient( 'Accounting/ReportGenerator' )
     self.clients[ 'ReportsClient' ]        = ReportsClient()
     self.clients[ 'ResourceStatusClient' ] = ResourceStatusClient()
