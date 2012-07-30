@@ -255,7 +255,7 @@ CHANGE: return back to the release web2012041601
 
 *Transformation
 FIX: TransformationCleaningAgent - protection from deleting requests with jobID 0 
-Ä
+
 [v6r3p6]
 
 *Core
