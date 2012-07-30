@@ -332,13 +332,13 @@ class SiteDirector( AgentModule ):
                                               'Status': WAITING_PILOT_STATUS },
                                             None, lastUpdateTime )
         if not result['OK']:
-          self.log.error( 'Fail to get Number of Waiting pilots', result['Message'] )
+          self.log.error( 'Failed to get Number of Waiting pilots', result['Message'] )
           totalWaitingPilots = 0
         else:
           totalWaitingPilots = result['Value']
           self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % tqIDList, totalWaitingPilots )
 
-      pilotsToSubmit = min( totalSlots, totalTQJobs - totalWaitingPilots )
+      pilotsToSubmit = max( 0, min( totalSlots, totalTQJobs-totalWaitingPilots ) )
       self.log.verbose( 'Available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
                               ( totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
 
@@ -460,7 +460,8 @@ class SiteDirector( AgentModule ):
 
     ownerDN = self.genericPilotDN
     ownerGroup = self.genericPilotGroup
-    result = gProxyManager.requestToken( ownerDN, ownerGroup, max( self.maxJobsInFillMode, pilotsToSubmit ) )
+    # Request token for maximum pilot efficiency
+    result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit * self.maxJobsInFillMode )
     if not result[ 'OK' ]:
       self.log.error( ERROR_TOKEN, result['Message'] )
       return [ None, None ]
