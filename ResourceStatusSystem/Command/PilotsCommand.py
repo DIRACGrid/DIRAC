@@ -9,7 +9,7 @@
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-from DIRAC.ResourceStatusSystem.Client.PilotsClient             import PilotsClient 
+#from DIRAC.ResourceStatusSystem.Client.PilotsClient             import PilotsClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient 
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -61,11 +61,11 @@ __RCSID__ = '$Id:  $'
 ################################################################################
 ################################################################################
 
-class PilotsEffSimpleCommand( Command ):
+class PilotsWMSCommand( Command ):
 
   def __init__( self, args = None, clients = None ):
     
-    super( PilotsEffSimpleCommand, self ).__init__( args, clients )
+    super( PilotsWMSCommand, self ).__init__( args, clients )
     
     if 'WMSAdministrator' in self.apis:
       self.wmsAdmin = self.apis[ 'WMSAdministrator' ]
@@ -74,17 +74,17 @@ class PilotsEffSimpleCommand( Command ):
 
   def doCommand( self ):
     """
-    Returns simple pilots efficiency
-
-    :attr:`args`:
-        - args[0]: string - should be a ValidElement
-
-        - args[1]: string - should be the name of the ValidElement
-
-    returns:
-      {
-        'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-      }
+#    Returns simple pilots efficiency
+#
+#    :attr:`args`:
+#        - args[0]: string - should be a ValidElement
+#
+#        - args[1]: string - should be the name of the ValidElement
+#
+#    returns:
+#      {
+#        'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+#      }
     """
 
     if not 'element' in self.args:
@@ -94,6 +94,13 @@ class PilotsEffSimpleCommand( Command ):
     if not 'siteName' in self.args:
       return S_ERROR( 'siteName is missing' )
     siteName = self.args[ 'siteName' ]  
+    
+    # If siteName is None, we take all sites
+    if siteName is None:
+      siteName = CSHelpers.getSites()      
+      if not siteName[ 'OK' ]:
+        return siteName
+      siteName = siteName[ 'Value' ]
 
     if element == 'Site':
       results = self.wmsAdmin.getPilotSummaryWeb( { 'GridSite' : siteName }, [], 0, 300 )
@@ -153,46 +160,46 @@ class PilotsEffSimpleCommand( Command ):
 ################################################################################
 ################################################################################
 
-class PilotsEffSimpleEverySitesCommand( Command ):
-
-  #FIXME: write propper docstrings
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( PilotsEffSimpleEverySitesCommand, self ).__init__( args, clients )
-
-    if 'PilotsClient' in self.apis:
-      self.pClient = self.apis[ 'PilotsClient' ]
-    else:
-      self.pClient = PilotsClient() 
-
-  def doCommand( self ):
-    """ 
-    Returns simple pilots efficiency for all the sites and resources in input.
-        
-    :params:
-      :attr:`sites`: list of site names (when not given, take every site)
-    
-    :returns:
-      {'SiteName':  {'PE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
-    """
-
-    sites = None
-
-    if 'sites' in self.args:
-      sites = self.args[ 'sites' ] 
-
-    if sites is None:
-      #FIXME: we do not get them from RSS DB anymore, from CS now.
-      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
-      sites = CSHelpers.getSites()      
-      if not sites[ 'OK' ]:
-        return sites
-      sites = sites[ 'Value' ]
-
-    results = self.pClient.getPilotsSimpleEff( 'Site', sites, None )
-    
-    return results
+#class PilotsEffSimpleEverySitesCommand( Command ):
+#
+#  #FIXME: write propper docstrings
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( PilotsEffSimpleEverySitesCommand, self ).__init__( args, clients )
+#
+#    if 'PilotsClient' in self.apis:
+#      self.pClient = self.apis[ 'PilotsClient' ]
+#    else:
+#      self.pClient = PilotsClient() 
+#
+#  def doCommand( self ):
+#    """ 
+#    Returns simple pilots efficiency for all the sites and resources in input.
+#        
+#    :params:
+#      :attr:`sites`: list of site names (when not given, take every site)
+#    
+#    :returns:
+#      {'SiteName':  {'PE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
+#    """
+#
+#    sites = None
+#
+#    if 'sites' in self.args:
+#      sites = self.args[ 'sites' ] 
+#
+#    if sites is None:
+#      #FIXME: we do not get them from RSS DB anymore, from CS now.
+#      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
+#      sites = CSHelpers.getSites()      
+#      if not sites[ 'OK' ]:
+#        return sites
+#      sites = sites[ 'Value' ]
+#
+#    results = self.pClient.getPilotsSimpleEff( 'Site', sites, None )
+#    
+#    return results
 
 ################################################################################
 ################################################################################
