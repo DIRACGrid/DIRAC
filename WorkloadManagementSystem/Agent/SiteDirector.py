@@ -18,6 +18,7 @@ from DIRAC                                                 import S_OK, S_ERROR,
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
+from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
@@ -305,7 +306,7 @@ class SiteDirector( AgentModule ):
         ceDict['OwnerGroup'] = self.group
 
       # Get the number of eligible jobs for the target site/queue
-      result = taskQueueDB.getMatchingTaskQueues( ceDict )
+      result = rpcMatcher.getMatchingTaskQueues( ceDict )
       if not result['OK']:
         self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
         return result
@@ -342,7 +343,7 @@ class SiteDirector( AgentModule ):
       # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
       pilotsToSubmit = min( self.maxPilotsToSubmit, pilotsToSubmit )
 
-      if pilotsToSubmit > 0:
+      while pilotsToSubmit > 0:
         self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
 
         bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
@@ -356,11 +357,13 @@ class SiteDirector( AgentModule ):
         if not result['OK']:
           return result
 
-        executable, pilotsToSubmit = result['Value']
-        result = ce.submitJob( executable, '', pilotsToSubmit )
+        executable, pilotSubmissionChunk = result['Value']
+        result = ce.submitJob( executable, '', pilotSubmissionChunk )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:' % queue, result['Message'] )
           continue
+        
+        pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
         # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
         # task queue priorities
         pilotList = result['Value']
@@ -468,10 +471,13 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-M %s' % min( numberOfUses, self.maxJobsInFillMode ) )
 
     # Since each pilot will execute min( numberOfUses, self.maxJobsInFillMode )
-    # with numberOfUses tokens we can submit at most:
-    #Ê   numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
+    # with numberOfUses tokens we can submit at most: 
+    #    numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
     # pilots
-    pilotsToSubmit = numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
+    newPilotsToSubmit = numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
+    if newPilotsToSubmit != pilotsToSubmit:
+      self.log.info( 'Number of pilots to submit is changed to %d after getting the proxy token' % newPilotsToSubmit )
+      pilotsToSubmit = newPilotsToSubmit
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
       pilotOptions.append( '-d' )
