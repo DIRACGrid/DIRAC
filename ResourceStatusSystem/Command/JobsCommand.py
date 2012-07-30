@@ -7,8 +7,9 @@
 '''
 
 from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-from DIRAC.ResourceStatusSystem.Client.JobsClient               import JobsClient
+#from DIRAC.ResourceStatusSystem.Client.JobsClient               import JobsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -112,16 +113,21 @@ __RCSID__ = '$Id:  $'
 ################################################################################
 ################################################################################
 
-class JobsEffSimpleCommand( Command ):
+class JobsWMSCommand( Command ):
   
   def __init__( self, args = None, clients = None ):
     
-    super( JobsEffSimpleCommand, self ).__init__( args, clients )
+    super( JobsWMSCommand, self ).__init__( args, clients )
+
+    if 'WMSAdministrator' in self.apis:
+      self.wmsAdmin = self.apis[ 'WMSAdministrator' ]
+    else:  
+      self.wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     
-    if 'JobsClient' in self.apis:
-      self.jClient = self.apis[ 'JobsClient' ]
-    else:
-      self.jClient = JobsClient()  
+#    if 'JobsClient' in self.apis:
+#      self.jClient = self.apis[ 'JobsClient' ]
+#    else:
+#      self.jClient = JobsClient()  
       
 #    if 'ResourceStatusClient' in self.apis:
 #      self.rsClient = self.apis[ 'ResourceStatusClient' ]
@@ -142,19 +148,40 @@ class JobsEffSimpleCommand( Command ):
         'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
       }
     """
+   
+    if not 'siteName' in self.args:
+      return S_ERROR( 'siteName is missing' )
+    siteName = self.args[ 'siteName' ]
     
-    if not 'element' in self.args:
-      return S_ERROR( 'element is missing' )
-    element = self.args[ 'element' ]
+    # If siteName is None, we take all sites
+    if siteName is None:
+      siteName = CSHelpers.getSites()      
+      if not siteName[ 'OK' ]:
+        return siteName
+      siteName = siteName[ 'Value' ]
     
-    #FIXME: maybe a Service as well ??
-    if element != 'Site':
-      return S_ERROR( 'Expecting site' )
+    results = self.wmsAdmin.getPilotSummaryWeb( { 'Site' : siteName }, [], 0, 500 )
+
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]
     
-    if not 'name' in self.args:
-      return S_ERROR( 'name is missing' )
-    name = self.args[ 'name' ]   
+    if not 'ParameterNames' in results:
+      return S_ERROR( 'Malformed result dictionary' )
+    params = results[ 'ParameterNames' ]
+    
+    if not 'Records' in results:
+      return S_ERROR( 'Malformed result dictionary' )
+    records = results[ 'Records' ]
+    
+    jobResults = [] 
        
+    for record in records:
+      
+      jobResults.append( dict( zip( params , record )) )
+    
+    return S_OK( jobResults )  
+           
 #    if element == 'Service':
 #      name    = self.rsClient.getGeneralName( element, name, 'Site' )    
 #      name    = name[ 'Value' ][ 0 ]
@@ -166,7 +193,7 @@ class JobsEffSimpleCommand( Command ):
 #    else:
 #      return S_ERROR( '%s is not a valid element' % element )
          
-    results = self.jClient.getJobsSimpleEff( name )
+#    results = self.jClient.getJobsSimpleEff( name )
 #    if not results[ 'OK' ]:
 #      return results
 #    results = results[ 'Value' ]
@@ -182,62 +209,62 @@ class JobsEffSimpleCommand( Command ):
 ################################################################################
 ################################################################################
 
-class JobsEffSimpleEveryOneCommand( Command ):
-
-  #FIXME: write propper docstrings
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( JobsEffSimpleEveryOneCommand, self ).__init__( args, clients )
-
-    if 'JobsClient' in self.apis:
-      self.jClient = self.apis[ 'JobsClient' ]
-    else:
-      self.jClient = JobsClient() 
-    
-  def doCommand( self ):
-    """ 
-    Returns simple jobs efficiency for all the sites in input.
-        
-    :params:
-      :attr:`sites`: list of site names (when not given, take every site)
-    
-    :returns:
-      {'SiteName': {'JE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
-    """
-
-    sites = None
-
-    if 'sites' in self.args:
-      sites = self.args[ 'sites' ] 
-
-    if sites is None:
-      #FIXME: we do not get them from RSS DB anymore, from CS now.
-      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
-      sites = CSHelpers.getSites()
-        
-      if not sites['OK']:
-        return sites
-      sites = sites[ 'Value' ]   
-      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
-
-    results = self.jClient.getJobsSimpleEff( sites )
-    
-    return results
-    
-#    if not results[ 'OK' ]:
-#      return results
-#    results = results[ 'Value' ]
-        
-#    if results is None:
-#      results = {}
-
-#    resToReturn = {}
-
-    #for site in results:
-    #  resToReturn[ site ] = results[ site ]
-
-#    return S_OK( resToReturn )   
+#class JobsEffSimpleEveryOneCommand( Command ):
+#
+#  #FIXME: write propper docstrings
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( JobsEffSimpleEveryOneCommand, self ).__init__( args, clients )
+#
+#    if 'JobsClient' in self.apis:
+#      self.jClient = self.apis[ 'JobsClient' ]
+#    else:
+#      self.jClient = JobsClient() 
+#    
+#  def doCommand( self ):
+#    """ 
+#    Returns simple jobs efficiency for all the sites in input.
+#        
+#    :params:
+#      :attr:`sites`: list of site names (when not given, take every site)
+#    
+#    :returns:
+#      {'SiteName': {'JE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
+#    """
+#
+#    sites = None
+#
+#    if 'sites' in self.args:
+#      sites = self.args[ 'sites' ] 
+#
+#    if sites is None:
+#      #FIXME: we do not get them from RSS DB anymore, from CS now.
+#      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
+#      sites = CSHelpers.getSites()
+#        
+#      if not sites['OK']:
+#        return sites
+#      sites = sites[ 'Value' ]   
+#      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
+#
+#    results = self.jClient.getJobsSimpleEff( sites )
+#    
+#    return results
+#    
+##    if not results[ 'OK' ]:
+##      return results
+##    results = results[ 'Value' ]
+#        
+##    if results is None:
+##      results = {}
+#
+##    resToReturn = {}
+#
+#    #for site in results:
+#    #  resToReturn[ site ] = results[ site ]
+#
+##    return S_OK( resToReturn )   
 
 ################################################################################
 ################################################################################ 

@@ -10,7 +10,6 @@ from DIRAC.AccountingSystem.Client.ReportsClient                import ReportsCl
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
-from DIRAC.ResourceStatusSystem.Client.JobsClient               import JobsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command.CommandCaller           import CommandCaller
@@ -48,7 +47,7 @@ class CacheFeederAgent( AgentModule ):
 
     #FIXME: missing logger
     #JobsCommand
-    self.commands[ 'Jobs' ] = [ { 'JobsEffSimpleEveryOne' : {} }]  
+    self.commands[ 'Jobs' ] = [ { 'JobsWMS' : { 'siteName' : None } }]  
     #FIXME: missing logger
     #PilotsCommand
     self.commands[ 'Pilots' ] = [ { 'PilotsWMS' : { 'element' : 'Site', 'siteName' : None } } ]
@@ -85,7 +84,6 @@ class CacheFeederAgent( AgentModule ):
     
     #Reuse clients for the commands
     self.clients[ 'GOCDBClient' ]          = GOCDBClient()
-    self.clients[ 'JobsClient' ]           = JobsClient()
     self.clients[ 'ReportGenerator' ]      = RPCClient( 'Accounting/ReportGenerator' )
     self.clients[ 'ReportsClient' ]        = ReportsClient()
     self.clients[ 'ResourceStatusClient' ] = ResourceStatusClient()
