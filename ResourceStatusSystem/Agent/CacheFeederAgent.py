@@ -5,8 +5,6 @@
 
 '''
 
-#from datetime import datetime
-
 from DIRAC                                                      import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.Client.ReportsClient                import ReportsClient
 from DIRAC.Core.Base.AgentModule                                import AgentModule
@@ -32,6 +30,13 @@ class CacheFeederAgent( AgentModule ):
   # Too many public methods
   # pylint: disable-msg=R0904  
 
+  def __init__( self, agentName, baseAgentName = False, properties = dict() ):
+    
+    AgentModule.__init__( self, agentName, baseAgentName, properties )
+    
+    self.commands = {}
+    self.clients  = {}    
+
   def initialize( self ):
 
     # Attribute defined outside __init__ 
@@ -39,47 +44,46 @@ class CacheFeederAgent( AgentModule ):
 
     self.rmClient = ResourceManagementClient()
     
-    self.commands = {}
-    
     #ClientsCacheCommand
-    self.commands[ 'ClientsCache' ] = {
-                                        'JobsEffSimpleEveryOne'     : {},
-                                        'PilotsEffSimpleEverySites' : {}
-                                       }
+    self.commands[ 'ClientsCache' ] = [
+                                        { 'JobsEffSimpleEveryOne'     : {} },
+                                        { 'PilotsEffSimpleEverySites' : {} }
+                                       ]
 
     #DowntimeCommand
-    self.commands[ 'Downtime' ] = {    
-                                    'DowntimeSites'     : {},
-                                    'DowntimeResources' : {}
-                                  }
+    self.commands[ 'Downtime' ] = [    
+                                    { 'DowntimeSites'     : {} },
+                                    { 'DowntimeResources' : {} }
+                                  ]
                                         
+    #FIXME: do not forget about hourly vs Always ...etc                                    
+                                                                      
     #AccountingCacheCommand
-    self.commands[ 'AccountingCache' ] = {
-                                          'TransferQualityByDestSplitted'     : { 'hours' : 2, 'plotType' : 'Data' },
-                                          'FailedTransfersBySourceSplitted'   : { 'hours' : 2, 'plotType' : 'Data' },
-                                          'TransferQualityByDestSplittedSite' : { 'hours' : 24, 'plotType' : 'Data' },
-                                          'SuccessfullJobsBySiteSplitted'     : { 'hours' : 24, 'plotType' : 'Job' },
-                                          'FailedJobsBySiteSplitted'          : { 'hours' : 24, 'plotType' : 'Job' },
-                                          'SuccessfullPilotsBySiteSplitted'   : { 'hours' : 24, 'plotType' : 'Pilot' },
-                                          'FailedPilotsBySiteSplitted'        : { 'hours' : 24, 'plotType' : 'Pilot' },
-                                          'SuccessfullPilotsByCESplitted'     : { 'hours' : 24, 'plotType' : 'Pilot' },
-                                          'FailedPilotsByCESplitted'          : { 'hours' : 24, 'plotType' : 'Pilot' },
-                                          'RunningJobsBySiteSplitted'         : { 'hours' : 24, 'plotType' : 'Job' },
-                                          'RunningJobsBySiteSplitted'         : { 'hours' : 168, 'plotType' : 'Job' },
-                                          'RunningJobsBySiteSplitted'         : { 'hours' : 720, 'plotType' : 'Job' },
-                                          'RunningJobsBySiteSplitted'         : { 'hours' : 8760, 'plotType' : 'Job' },    
-                                          }
+    self.commands[ 'AccountingCache' ] = [
+                                          {'TransferQualityByDestSplitted'    :{'hours' :2, 'plotType' :'Data' }},
+                                          {'FailedTransfersBySourceSplitted'  :{'hours' :2, 'plotType' :'Data' }},
+                                          {'TransferQualityByDestSplittedSite':{'hours' :24, 'plotType' :'Data' }},
+                                          {'SuccessfullJobsBySiteSplitted'    :{'hours' :24, 'plotType' :'Job' }},
+                                          {'FailedJobsBySiteSplitted'         :{'hours' :24, 'plotType' :'Job' }},
+                                          {'SuccessfullPilotsBySiteSplitted'  :{'hours' :24, 'plotType' :'Pilot' }},
+                                          {'FailedPilotsBySiteSplitted'       :{'hours' :24, 'plotType' :'Pilot' }},
+                                          {'SuccessfullPilotsByCESplitted'    :{'hours' :24, 'plotType' :'Pilot' }},
+                                          {'FailedPilotsByCESplitted'         :{'hours' :24, 'plotType' :'Pilot' }},
+                                          {'RunningJobsBySiteSplitted'        :{'hours' :24, 'plotType' :'Job' }},
+                                          {'RunningJobsBySiteSplitted'        :{'hours' :168, 'plotType' :'Job' }},
+                                          {'RunningJobsBySiteSplitted'        :{'hours' :720, 'plotType' :'Job' }},
+                                          {'RunningJobsBySiteSplitted'        :{'hours' :8760, 'plotType' :'Job' }},    
+                                          ]
     #VOBOXAvailability
-    self.commands[ 'VOBOXAvailability' ] = {
-                                            'VOBOXAvailability' : {}
-                                            }
+    self.commands[ 'VOBOXAvailability' ] = [
+                                            { 'VOBOXAvailability' : {} }
+                                            ]
     #SpaceTokenOccupancy
-    self.commands[ 'SpaceTokenOccupancy' ] = {
-                                              'SpaceTokenOccupancy' : {}
-                                              }
+    self.commands[ 'SpaceTokenOccupancy' ] = [
+                                              { 'SpaceTokenOccupancy' : {} }
+                                              ]
 
     #Reuse clients for the commands
-    self.clients = {}
     self.clients[ 'GOCDBClient' ]          = GOCDBClient()
     self.clients[ 'JobsClient' ]           = JobsClient()
     self.clients[ 'PilotsClient' ]         = PilotsClient()
@@ -90,11 +94,15 @@ class CacheFeederAgent( AgentModule ):
 
     cc = CommandCaller()
     
-    for commandModule, commandValues in self.commands.items():
+    for commandModule, commandList in self.commands.items():
       
       self.log.info( '%s module initialization' % commandModule )
       
-      for commandName, commandArgs in commandValues.items():
+      #for commandName, commandArgs in commandValues.items():
+      for commandDict in commandList:
+
+        commandName = commandDict.keys()[0]
+        commandArgs = commandDict[ commandName ]
 
         commandTuple  = ( '%sCommand' % commandModule, '%sCommand' % commandName )
         commandObject = cc.commandInvocation( commandTuple, pArgs = commandArgs,
@@ -105,13 +113,78 @@ class CacheFeederAgent( AgentModule ):
           return commandObject
         commandObject = commandObject[ 'Value' ]
         
-        self.commands[ commandModule ][ commandName ][ 'command' ] = commandObject
+        commandArgs[ 'command' ] = commandObject
+        #self.commands[ commandModule ][ commandName ][ 'command' ] = commandObject
         
         self.log.info( '%s loaded' % commandName )
 
     return S_OK()
 
-################################################################################
+  def execute( self ):        
+      
+    for commandModule, commandList in self.commands.items():
+      
+      for commandDict in commandList:
+      #for commandName, commandArgs in commandValues.items():
+      
+        commandName = commandDict.keys()[0]
+        commandArgs = commandDict[ commandName ]
+      
+        extraArgs = self.getExtraArgs( commandName )  
+        if not extraArgs[ 'OK' ]:
+          self.log.error( extraArgs[ 'Message' ] )
+          return extraArgs  
+        extraArgs = extraArgs[ 'Value' ]
+          
+        for extraArg in extraArgs:  
+                    
+          commandObject = commandArgs[ 'command' ]
+          commandObject.args.update( extraArg )
+          
+          results = commandObject.doCommand()
+          
+          self.log.info( '%s/%s with %s' % ( commandModule, commandName, commandObject.args ) )
+          
+          if not results[ 'OK' ]:
+            self.log.error( results[ 'Message' ] )
+            continue
+          results = results[ 'Value' ]
+
+          if not results:
+            self.log.info( 'Empty results' )
+            continue
+          
+          logResults = self.logResults( commandModule, commandName, results )
+          if not logResults[ 'OK' ]:
+            self.log.error( logResults[ 'Message' ] )
+          
+    return S_OK()  
+         
+  def getExtraArgs( self, commandName ):
+    
+    extraArgs = S_OK( [ {} ])
+    
+    if commandName == 'VOBOXAvailability':
+      extraArgs = self.__getVOBOXAvailabilityCandidates()
+    elif commandName == 'SpaceTokenOccupancy':
+      extraArgs = self.__getSpaceTokenOccupancyCandidates()
+    
+    return extraArgs
+
+  def logResults( self, commandModule, commandName, results ):
+
+    if commandModule == 'AccountingCache':
+      return self.__logAccountingCacheResults( commandModule, commandName, results ) 
+       
+    if commandModule == 'VOBOXAvailability':
+      return self.__logVOBOXAvailabilityResults( results )  
+
+    if commandModule == 'Downtime':
+      return self.__logDowntimeResults( commandName, results )  
+
+    return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
+
+  ## Private methods ###########################################################
 
   def __getVOBOXAvailabilityCandidates( self ):
     '''
@@ -248,65 +321,7 @@ class CacheFeederAgent( AgentModule ):
 #    
 #    return S_OK()
       
-  def execute( self ):        
-      
-    for commandModule, commandValues in self.commands.items():
-      
-      for commandName, commandArgs in commandValues.items():
-      
-        extraArgs = self.getExtraArgs( commandName )  
-        if not extraArgs[ 'OK' ]:
-          self.log.error( extraArgs[ 'Message' ] )
-          return extraArgs  
-        extraArgs = extraArgs[ 'Value' ]
-          
-        for extraArg in extraArgs:  
-                    
-          commandObject = commandArgs[ 'command' ]
-          commandObject.args.update( extraArg )
-          
-          results = commandObject.doCommand()
-          
-          self.log.info( '%s/%s with %s' % ( commandModule, commandName, commandObject.args ) )
-          
-          if not results[ 'OK' ]:
-            self.log.error( results[ 'Message' ] )
-            continue
-          results = results[ 'Value' ]
 
-          if not results:
-            self.log.info( 'Empty results' )
-            continue
-          
-          logResults = self.logResults( commandModule, commandName, results )
-          if not logResults[ 'OK' ]:
-            self.log.error( logResults[ 'Message' ] )
-          
-    return S_OK()  
-         
-  def getExtraArgs( self, commandName ):
-    
-    extraArgs = S_OK( [ {} ])
-    
-    if commandName == 'VOBOXAvailability':
-      extraArgs = self.__getVOBOXAvailabilityCandidates()
-    elif commandName == 'SpaceTokenOccupancy':
-      extraArgs = self.__getSpaceTokenOccupancyCandidates()
-    
-    return extraArgs
-
-  def logResults( self, commandModule, commandName, results ):
-
-    if commandModule == 'AccountingCache':
-      return self.__logAccountingCacheResults( commandModule, commandName, results ) 
-       
-    if commandModule == 'VOBOXAvailability':
-      return self.__logVOBOXAvailabilityResults( results )  
-
-    if commandModule == 'Downtime':
-      return self.__logDowntimeResults( results )  
-
-    return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
     
       
 #  def execute2( self ):
