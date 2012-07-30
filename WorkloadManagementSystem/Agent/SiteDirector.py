@@ -11,7 +11,7 @@ from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, getVO, Registry, Operations, Resources
 from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB, taskQueueDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
@@ -19,6 +19,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
 from DIRAC.Core.Security                                   import CS
+from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 import os, base64, bz2, tempfile, random, socket
@@ -239,7 +240,8 @@ class SiteDirector( AgentModule ):
       tqDict['Community'] = self.vo
     if self.group:
       tqDict['OwnerGroup'] = self.group
-    result = taskQueueDB.getMatchingTaskQueues( tqDict )
+    rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
+    result = rpcMatcher.getMatchingTaskQueues( tqDict )
     if not result[ 'OK' ]:
       return result
     if not result['Value']:
@@ -466,7 +468,7 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-M %s' % min( numberOfUses, self.maxJobsInFillMode ) )
 
     # Since each pilot will execute min( numberOfUses, self.maxJobsInFillMode )
-    # with numberOfUses tokens we can submit at most: 
+    # with numberOfUses tokens we can submit at most:
     #Ê   numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
     # pilots
     pilotsToSubmit = numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
