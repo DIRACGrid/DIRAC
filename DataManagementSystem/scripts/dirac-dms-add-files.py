@@ -67,7 +67,7 @@ exitCode = 0
 
 rm = ReplicaManager()
 for lfn in lfns:
-  if not os.path.exist( lfn['localfile'] ):
+  if not os.path.exists( lfn['localfile'] ):
     gLogger.error("File %s must exist locally"%lfn['localfile'])
     exitCode = 1
     continue
