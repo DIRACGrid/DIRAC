@@ -154,7 +154,7 @@ class CacheFeederAgent( AgentModule ):
             self.log.info( 'Empty results' )
             continue
           
-          logResults = self.logResults( commandModule, commandName, results )
+          logResults = self.logResults( commandModule, commandDict, results )
           if not logResults[ 'OK' ]:
             self.log.error( logResults[ 'Message' ] )
           
@@ -171,17 +171,18 @@ class CacheFeederAgent( AgentModule ):
     
     return extraArgs
 
-  def logResults( self, commandModule, commandName, results ):
+  def logResults( self, commandModule, commandDict, results ):
 
     if commandModule == 'AccountingCache':
-      return self.__logAccountingCacheResults( commandModule, commandName, results ) 
+      return self.__logAccountingCacheResults( commandModule, commandDict, results ) 
        
     if commandModule == 'VOBOXAvailability':
       return self.__logVOBOXAvailabilityResults( results )  
 
     if commandModule == 'Downtime':
-      return self.__logDowntimeResults( commandName, results )  
+      return self.__logDowntimeResults( commandDict, results )  
 
+    commandName = commandDict.keys()[ 0 ]
     return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
 
   ## Private methods ###########################################################
@@ -250,12 +251,14 @@ class CacheFeederAgent( AgentModule ):
        
     return self.rmClient.addOrModifyVOBOXCache( site, system, serviceUp, machineUp ) 
 
-  def __logAccountingCacheResults( self, commandModule, commandName, results ):
+  def __logAccountingCacheResults( self, commandModule, commandDict, results ):
     
     #FIXME: check keys, probably faster with try / except
+        
+    commandName = commandDict.keys()[ 0 ]
     
-    plotType = self.commands[ commandModule ][ commandName ][ 'plotType' ]  
-    hours    = self.commands[ commandModule ][ commandName ][ 'hours' ]
+    plotType = commandDict[ 'plotType' ]  
+    hours    = commandDict[ 'hours' ]
 
     plotName = '%s_%s' % ( commandName, hours )
 
@@ -269,7 +272,9 @@ class CacheFeederAgent( AgentModule ):
     
     return S_OK()  
 
-  def __logDowntimeResults( self, commandName, results ):
+  def __logDowntimeResults( self, commandDict, results ):
+  
+    commandName = commandDict.keys()[ 0 ]
   
     for downtime in results:
       
