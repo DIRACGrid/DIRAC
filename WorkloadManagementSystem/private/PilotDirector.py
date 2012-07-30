@@ -49,6 +49,7 @@ ERROR_GENERIC_CREDENTIALS = "Cannot find generic pilot credentials"
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
+from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
@@ -273,41 +274,6 @@ class PilotDirector:
 
     return ceMask
 
-  def __findGenericPilotCredentials( self, tqGroup, pilotDN = False, pilotGroup = False ):
-    if not pilotGroup:
-      vo = Registry.getVOForGroup( tqGroup )
-      if not vo:
-        return S_ERROR( "Group %s does not have a VO associated" % tqGroup )
-      result = Registry.getGroupsWithProperty( Properties.GENERIC_PILOT )
-      if not result[ 'OK' ]:
-        return result
-      groups = result[ 'Value' ]
-      if not groups:
-        return S_ERROR( "No group with %s property defined" % Properties.GENERIC_PILOT )
-      result = Registry.getGroupsForVO( vo )
-      if not result[ 'OK' ]:
-        return result
-      for voGroup in result[ 'Value' ]:
-        if voGroup in groups:
-          if pilotDN:
-            if pilotDN in Registry.getDNsInGroup( voGroup ):
-              return S_OK( ( pilotDN, pilotGroup ) ) )
-          else:
-            pilotGroup = voGroup
-            break
-      if not pilotGroup:
-        return S_ERROR( "No group for VO %s is a generic pilot group" % vo )
-    DNs = Registry.getDNsInGroup( pilotGroup )
-    if not DNs:
-      return S_ERROR( "No users in group %s" % pilotGroup )
-    if pilotDN:
-      if pilotDN not in DNs:
-        return S_ERROR( "DN %s does not have group %s" % ( pilotDN, pilotGroup ) )
-    else:
-      #HACK: We need to choose one DN. Whe choose the first one
-      pilotDN = DNs[0]
-    return S_OK( ( pilotDN, pilotGroup ) )
-
   def _getPilotOptions( self, taskQueueDict, pilotsToSubmit ):
 
     # Need to limit the maximum number of pilots to submit at once
@@ -338,9 +304,7 @@ class PilotDirector:
       self.log.verbose( 'Submitting generic pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
       if self.genericPilotGroup
       #ADRI: Find the generic group
-      result = self.__findGenericPilotCredentialsForGroup( taskQueueDict[ 'OwnerGroup' ],
-                                                           pilotGroup = self.genericPilotGroup,
-                                                           pilotDN = self.genericPilotDN )
+      result = findGenericPilotCredentials( group = taskQueueDict[ 'OwnerGroup' ] )
       if not result[ 'OK' ]:
         self.log.error( ERROR_GENERIC_CREDENTIALS, result[ 'Message' ] )
         return S_ERROR( ERROR_GENERIC_CREDENTIALS )

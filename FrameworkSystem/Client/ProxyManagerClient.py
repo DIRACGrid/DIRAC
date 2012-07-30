@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 import os
 import datetime
 import types
-from DIRAC.Core.Utilities import Time, ThreadSafe, DictCache
+from DIRAC.Core.Utilities import Time, ThreadSafe, DictCache, DIRACSingleton
 from DIRAC.Core.Security import Locations, CS, File, Properties
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request
@@ -22,6 +22,7 @@ gProxiesSync = ThreadSafe.Synchronizer()
 gVOMSProxiesSync = ThreadSafe.Synchronizer()
 
 class ProxyManagerClient:
+  __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__( self ):
     self.__usersCache = DictCache()

@@ -49,6 +49,8 @@ def getGroupsForUser( username ):
   return __getGroupsWithAttr( 'Users', username )
 
 def getGroupsForVO( vo ):
+  if getVO():
+    return gConfig.getSections( "%s/Groups" % gBaseSecuritySection )
   return __getGroupsWithAttr( 'VO', vo )
 
 def getGroupsWithProperty( propName ):
@@ -101,7 +103,9 @@ def getUsersInGroup( groupName, defaultValue = None ):
 def getDNsInGroup( groupName ):
   DNs = []
   for user in getUsersInGroup( groupName ):
-    DNs.extend( getDNForUsername( user ) )
+    result = getDNForUsername( user )
+    if result[ 'OK' ]:
+      DNs.extend( result[ 'Value' ] )
   return DNs
 
 def getPropertiesForGroup( groupName, defaultValue = None ):

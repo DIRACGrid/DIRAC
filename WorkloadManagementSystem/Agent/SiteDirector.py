@@ -13,6 +13,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSectio
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB, taskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
+from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
@@ -72,15 +73,10 @@ class SiteDirector( AgentModule ):
           self.group = group
           break
 
-    self.operations = Operations.Operations( vo = self.vo )
-    self.genericPilotDN = self.operations.getValue( '/Pilot/GenericPilotDN', 'Unknown' )
-    self.genericPilotUserName = self.genericPilotDN
-    if not self.genericPilotUserName == 'Unknown':
-      result = Registry.getUsernameForDN( self.genericPilotDN )
-      if not result['OK']:
-        return S_ERROR( 'Invalid generic pilot DN: %s ' % self.genericPilotDN )
-      self.genericPilotUserName = result['Value']
-    self.genericPilotGroup = self.operations.getValue( '/Pilot/GenericPilotGroup', 'Unknown' )
+    result = findGenericPilotCredentials( vo = self.vo )
+    if not result[ 'OK' ]:
+      return result
+    self.genericPilotDN, self.genericPilotGroup = result[ 'Value' ]
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
