@@ -16,7 +16,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceS
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP                import PEP
 
-__RCSID__  = '$Id: $'
+__RCSID__  = '$Id:  $'
 AGENT_NAME = 'ResourceStatus/ElementInspectorAgent'
 
 class ElementInspectorAgent( AgentModule ):
@@ -28,32 +28,52 @@ class ElementInspectorAgent( AgentModule ):
     the eligible ones and then evaluates their statuses with the PEP.
   '''
 
+  # Max number of worker threads by default
+  __maxNumberOfThreads = 5
+  # ElementType, to be defined among Site, Resource or Node
+  __elementType = None
+  # Inspection freqs, to be overwritten
+  __checkingFreqs = { '' : { 'Active' : 8, 'Bad' : 6, 'Probing' : 4, 'Banned' : 2 } }
+  # queue size limit to stop feeding
+  __limitQueueFeeder = 15
+  
+  def __init__( self, agentName, baseAgentName = False, properties = dict() ):
+    
+    AgentModule.__init__( self, agentName, baseAgentName, properties )   
+
+    # members initialization
+
+    self.maxNumberOfThreads = self.__maxNumberOfThreads
+    self.elementType        = self.__elementType
+    self.checkingFreqs      = self.__checkingFreqs
+    self.limitQueueFeeder   = self.__limitQueueFeeder
+    
+    self.elementsToBeChecked = None
+    self.threadPool          = None
+    self.rsClient            = None
+    self.clients             = {}
+
   def initialize( self ):
     
-    
-    
-    
-    self.maxNumberOfThreads  = 5
-#    self.maxNumberOfThreads  = self.am_getOption( 'maxThreadsInPool', 5 )
-    self.elementType         = 'Site'
-#    self.elementType         = self.am_getOption( 'elementType' )
+#    self.maxNumberOfThreads  = self.__maxNumberOfThreads
+    self.maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', self.maxNumberOfThreads )
+#    self.elementType         = self.am_getOption( 'elementType' )    
+    self.elementType        = self.am_getOption( 'elementType', self.elementType )
     #self.inspectionFreqs     = self.am_getOption( 'inspectionFreqs' )
-    self.inspectionFreqs = { '' : { 'Active'  : 8, 
-                                    'Bad'     : 6, 
-                                    'Probing' : 4, 
-                                    'Banned'  : 2 } }
-    
+    self.checkingFreqs      = self.am_getOption( 'checkingFreqs', self.checkingFreqs )
+    # If at the beginning of the execution there are limitQueueFeeder or more
+    # elements, we do not feed the queue.
+    #self.limitQueueFeeder    = 15
+    self.limitQueueFeeder   = self.am_getOption( 'limitQueueFeeder', self.limitQueueFeeder )      
     
     self.elementsToBeChecked = Queue.Queue()
     self.threadPool          = ThreadPool( self.maxNumberOfThreads,
                                            self.maxNumberOfThreads )
 
-    self.rsClient            = ResourceStatusClient()
+    self.rsClient = ResourceStatusClient()
 
-    self.clients             = { 
-                                 'ResourceStatusClient'     : self.rsClient,
-                                 'ResourceManagementClient' : ResourceManagementClient() 
-                               }
+    self.clients[ 'ResourceStatusClient' ]     = self.rsClient
+    self.clients[ 'ResourceManagementClient' ] = ResourceManagementClient() 
 
     # Do we really need multi-threading ?, most of the times there are few
     # entries to be checked !
@@ -63,6 +83,15 @@ class ElementInspectorAgent( AgentModule ):
     return S_OK()
   
   def execute( self ):
+    
+    # If there are elements in the queue to be processed, we wait ( we know how
+    # many elements in total we can have, so if there are more than 15% of them
+    # on the queue, we do not add anything ).    
+    
+    qsize = self.elementsToBeChecked.qsize() 
+    if qsize > self.limitQueueFeeder:
+      self.log.warn( 'Queue not empty ( %s > %s ), skipping feeding loop' % ( qsize, self.limitQueueFeeder ) )
+      return S_OK()
     
     # We get all the elements, then we filter.
     elements = self.rsClient.selectStatusElement( self.elementType, 'Status' )
@@ -78,14 +107,13 @@ class ElementInspectorAgent( AgentModule ):
       # Maybe an overkill, but this way I have never again to worry about order
       elemDict = dict( zip( elements[ 'Columns' ], element ) )
       
-      if not elemDict[ 'ElementType' ] in self.inspectionFreqs:
+      if not elemDict[ 'ElementType' ] in self.checkingFreqs:
         self.log.error( '"%s" not in inspectionFreqs' % elemDict[ 'ElementType' ] )
         continue
       
-      timeToNextCheck = self.inspectionFreqs[ elemDict[ 'ElementType' ] ][ elemDict[ 'Status' ] ]      
+      timeToNextCheck = self.checkingFreqs[ elemDict[ 'ElementType' ] ][ elemDict[ 'Status' ] ]      
       if utcnow - datetime.timedelta( minutes = timeToNextCheck ) > elemDict[ 'LastCheckTime' ]:
-        
-        
+               
         # We are not checking if the item is already on the queue or not. It may
         # be there, but in any case, it is not a big problem.
         
@@ -93,6 +121,7 @@ class ElementInspectorAgent( AgentModule ):
         for key, value in elemDict.items():
           lowerElementDict[ key[0].lower() + key[1:] ] = value
         
+        # We add lowerElementDict to the queue
         self.elementsToBeChecked.put( lowerElementDict )
         self.log.info( '%s # "%s" # "%s" # %s # %s' % ( elemDict[ 'Name' ], 
                                                         elemDict[ 'ElementType' ],
@@ -100,7 +129,6 @@ class ElementInspectorAgent( AgentModule ):
                                                         elemDict[ 'Status' ],
                                                         elemDict[ 'LastCheckTime' ]) )
        
-    
     # Measure size of the queue, more or less, to know how many threads should
     # we start !
     queueSize      = self.elementsToBeChecked.qsize()
