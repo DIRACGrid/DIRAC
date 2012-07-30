@@ -28,6 +28,7 @@ import random
 base_path = ''
 httpFlag = False
 httpPort = 9180
+httpPath = ''
 
 def purgeCacheDirectory(path):
   shutil.rmtree( path )
@@ -35,7 +36,7 @@ def purgeCacheDirectory(path):
 gRegister = DictCache(purgeCacheDirectory)
 
 def initializeStorageElementProxyHandler(serviceInfo):
-  global base_path, httpFlag, httpPort
+  global base_path, httpFlag, httpPort, httpPath
   cfgPath = serviceInfo['serviceSectionPath']
 
   base_path = gConfig.getValue( "%s/BasePath" % cfgPath, base_path )
@@ -51,6 +52,10 @@ def initializeStorageElementProxyHandler(serviceInfo):
   httpFlag = gConfig.getValue( "%s/HttpAccess" % cfgPath, False )
   if httpFlag:
     httpPath = '%s/httpCache' % base_path
+    httpPath = gConfig.getValue( "%s/HttpCache" % cfgPath, httpPath )
+    if not os.path.exists( httpPath ):
+      gLogger.info('Creating HTTP cache directory %s' % (httpPath) )
+      os.makedirs( httpPath )
     httpPort = gConfig.getValue( "%s/HttpPort" % cfgPath, 9180 )
     gLogger.info('Creating HTTP server thread, port:%d, path:%s' % (httpPort,httpPath) )
     httpThread = HttpThread( httpPort,httpPath )
@@ -216,12 +221,15 @@ class StorageElementProxyHandler(RequestHandler):
       return result
     
   def __prepareFileForHTTP(self,lfn,key):
+    
+    global httpPath
+    
     res = self.__prepareSecurityDetails()
     if not res['OK']:
       return res
   
     # Clear the local cache
-    getFileDir = "%s/httpCache/%s" % (base_path,key)
+    getFileDir = "%s/%s" % (httpPath,key)
     os.makedirs(getFileDir)
    
     # Get the file to the cache 
