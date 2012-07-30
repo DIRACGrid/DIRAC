@@ -36,9 +36,6 @@ ERROR_CLEAR_TIME = 60 * 60  # 1 hour
 ERROR_TICKET_TIME = 60 * 60  # 1 hour (added to the above)
 FROM_MAIL = "diracproject@gmail.com"
 
-PILOT_DN = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
-PILOT_GROUP = 'dirac_pilot'
-
 VIRTUAL_ORGANIZATION = 'dirac'
 
 ENABLE_LISTMATCH = 1
@@ -48,6 +45,7 @@ PRIVATE_PILOT_FRACTION = 0.5
 
 ERROR_PROXY = 'No proxy Available'
 ERROR_TOKEN = 'Invalid proxy token request'
+ERROR_GENERIC_CREDENTIALS = "Cannot find generic pilot credentials"
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
@@ -109,8 +107,8 @@ class PilotDirector:
     self.targetGrids = [ self.gridMiddleware ]
 
 
-    self.genericPilotDN = PILOT_DN
-    self.genericPilotGroup = PILOT_GROUP
+    self.genericPilotDN = ""
+    self.genericPilotGroup = ""
     self.enableListMatch = ENABLE_LISTMATCH
     self.listMatchDelay = LISTMATCH_DELAY
     self.listMatchCache = DictCache()
@@ -275,6 +273,41 @@ class PilotDirector:
 
     return ceMask
 
+  def __findGenericPilotCredentials( self, tqGroup, pilotDN = False, pilotGroup = False ):
+    if not pilotGroup:
+      vo = Registry.getVOForGroup( tqGroup )
+      if not vo:
+        return S_ERROR( "Group %s does not have a VO associated" % tqGroup )
+      result = Registry.getGroupsWithProperty( Properties.GENERIC_PILOT )
+      if not result[ 'OK' ]:
+        return result
+      groups = result[ 'Value' ]
+      if not groups:
+        return S_ERROR( "No group with %s property defined" % Properties.GENERIC_PILOT )
+      result = Registry.getGroupsForVO( vo )
+      if not result[ 'OK' ]:
+        return result
+      for voGroup in result[ 'Value' ]:
+        if voGroup in groups:
+          if pilotDN:
+            if pilotDN in Registry.getDNsInGroup( voGroup ):
+              return S_OK( ( pilotDN, pilotGroup ) ) )
+          else:
+            pilotGroup = voGroup
+            break
+      if not pilotGroup:
+        return S_ERROR( "No group for VO %s is a generic pilot group" % vo )
+    DNs = Registry.getDNsInGroup( pilotGroup )
+    if not DNs:
+      return S_ERROR( "No users in group %s" % pilotGroup )
+    if pilotDN:
+      if pilotDN not in DNs:
+        return S_ERROR( "DN %s does not have group %s" % ( pilotDN, pilotGroup ) )
+    else:
+      #HACK: We need to choose one DN. Whe choose the first one
+      pilotDN = DNs[0]
+    return S_OK( ( pilotDN, pilotGroup ) )
+
   def _getPilotOptions( self, taskQueueDict, pilotsToSubmit ):
 
     # Need to limit the maximum number of pilots to submit at once
@@ -303,10 +336,18 @@ class PilotDirector:
     else:
       #For generic jobs we'll submit mixture of generic and private pilots
       self.log.verbose( 'Submitting generic pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
-      ownerDN = self.genericPilotDN
-      ownerGroup = self.genericPilotGroup
-      result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
+      if self.genericPilotGroup
+      #ADRI: Find the generic group
+      result = self.__findGenericPilotCredentialsForGroup( taskQueueDict[ 'OwnerGroup' ],
+                                                           pilotGroup = self.genericPilotGroup,
+                                                           pilotDN = self.genericPilotDN )
       if not result[ 'OK' ]:
+        self.log.error( ERROR_GENERIC_CREDENTIALS, result[ 'Message' ] )
+        return S_ERROR( ERROR_GENERIC_CREDENTIALS )
+      ownerDN, ownerGroup = result[ 'Value' ]
+
+      result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
+      if result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
         return S_ERROR( ERROR_TOKEN )
       ( token, numberOfUses ) = result[ 'Value' ]

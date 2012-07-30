@@ -279,11 +279,9 @@ class ProxyDB( DB ):
     retVal = chain.loadChainFromString( delegatedPem )
     if not retVal[ 'OK' ]:
       return retVal
-    retVal = chain.isValidProxy()
+    retVal = chain.isValidProxy( ignoreDefault = True )
     if not retVal[ 'OK' ]:
       return retVal
-    if not retVal[ 'Value' ]:
-      return S_ERROR( "Chain received is not a valid proxy: %s" % retVal[ 'Message' ] )
 
     retVal = request.checkChain( chain )
     if not retVal[ 'OK' ]:
@@ -978,20 +976,20 @@ class ProxyDB( DB ):
     msgBody = """\
 Dear %s,
 
-  The proxy you uploaded to DIRAC will expire in aproximately %d days. The proxy 
+  The proxy you uploaded to DIRAC will expire in aproximately %d days. The proxy
   information is:
-  
+
   DN:    %s
-  Group: %s 
-  
-  If you plan on keep using this credentials please upload a newer proxy to 
+  Group: %s
+
+  If you plan on keep using this credentials please upload a newer proxy to
   DIRAC by executing:
-  
+
   $ dirac-proxy-init -UP -g %s
-  
-  If you have been issued different certificate, please make sure you have a 
+
+  If you have been issued different certificate, please make sure you have a
   proxy uploaded with that certificate.
-  
+
 Cheers,
  DIRAC's Proxy Manager
 """ % ( userName, daysLeft, userDN, userGroup, userGroup )
