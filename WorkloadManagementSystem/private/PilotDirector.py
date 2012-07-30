@@ -36,9 +36,6 @@ ERROR_CLEAR_TIME = 60 * 60  # 1 hour
 ERROR_TICKET_TIME = 60 * 60  # 1 hour (added to the above)
 FROM_MAIL = "diracproject@gmail.com"
 
-PILOT_DN = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
-PILOT_GROUP = 'dirac_pilot'
-
 VIRTUAL_ORGANIZATION = 'dirac'
 
 ENABLE_LISTMATCH = 1
@@ -48,9 +45,11 @@ PRIVATE_PILOT_FRACTION = 0.5
 
 ERROR_PROXY = 'No proxy Available'
 ERROR_TOKEN = 'Invalid proxy token request'
+ERROR_GENERIC_CREDENTIALS = "Cannot find generic pilot credentials"
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
+from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
@@ -109,8 +108,8 @@ class PilotDirector:
     self.targetGrids = [ self.gridMiddleware ]
 
 
-    self.genericPilotDN = PILOT_DN
-    self.genericPilotGroup = PILOT_GROUP
+    self.genericPilotDN = ""
+    self.genericPilotGroup = ""
     self.enableListMatch = ENABLE_LISTMATCH
     self.listMatchDelay = LISTMATCH_DELAY
     self.listMatchCache = DictCache()
@@ -303,10 +302,16 @@ class PilotDirector:
     else:
       #For generic jobs we'll submit mixture of generic and private pilots
       self.log.verbose( 'Submitting generic pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
-      ownerDN = self.genericPilotDN
-      ownerGroup = self.genericPilotGroup
-      result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
+      if self.genericPilotGroup
+      #ADRI: Find the generic group
+      result = findGenericPilotCredentials( group = taskQueueDict[ 'OwnerGroup' ] )
       if not result[ 'OK' ]:
+        self.log.error( ERROR_GENERIC_CREDENTIALS, result[ 'Message' ] )
+        return S_ERROR( ERROR_GENERIC_CREDENTIALS )
+      ownerDN, ownerGroup = result[ 'Value' ]
+
+      result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
+      if result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
         return S_ERROR( ERROR_TOKEN )
       ( token, numberOfUses ) = result[ 'Value' ]
