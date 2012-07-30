@@ -132,8 +132,8 @@ class ElementInspectorAgent( AgentModule ):
     # Measure size of the queue, more or less, to know how many threads should
     # we start !
     queueSize      = self.elementsToBeChecked.qsize()
-    # 30, could have been other number.. but it works reasonably well.
-    threadsToStart = max( min( self.maxNumberOfThreads, queueSize / 30 ), 1 ) 
+    # 30, could have been other number.. but it works reasonably well. ( +1 to get ceil )
+    threadsToStart = max( min( self.maxNumberOfThreads, ( queueSize / 30 ) + 1 ), 1 ) 
     threadsRunning = self.threadPool.numWorkingThreads()
     
     self.log.info( 'Needed %d threads to process %d elements' % ( threadsToStart, queueSize ) )
