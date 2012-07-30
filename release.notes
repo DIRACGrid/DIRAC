@@ -212,7 +212,7 @@ FIX: Added proper ProcessPool checks and finalisation
 
 *DataManagement
 FIX: don't set Files.Status to Failed for non-existign files, failover transfers won't go
-FIX: remove @classmethods here and there to unblock requestHolder
+FIX: remove classmethods here and there to unblock requestHolder
 CHANGE: RAB, TA: change task timeout: 180 and 600 (was 600 and 900 respectively)
 FIX: sorting replication tree by Ancestor, not hopAncestorgit add DataManagementSystem/Agent/TransferAgent.py
 NEW: TA: add finalize
@@ -369,7 +369,7 @@ FIX: Added proper ProcessPool checks and finalisation
 
 *DataManagement
 FIX: don't set Files.Status to Failed for non-existign files, failover transfers won't go
-FIX: remove @classmethods here and there to unblock requestHolder
+FIX: remove classmethods here and there to unblock requestHolder
 CHANGE: RAB, TA: change task timeout: 180 and 600 (was 600 and 900 respectively)
 FIX: sorting replication tree by Ancestor, not hopAncestorgit add DataManagementSystem/Agent/TransferAgent.py
 NEW: TA: add finalize
@@ -410,7 +410,7 @@ CHANGE: return back to the release web2012041601
 
 *Transformation
 FIX: TransformationCleaningAgent - protection from deleting requests with jobID 0 
-Ä
+
 [v6r3p6]
 
 *Core
