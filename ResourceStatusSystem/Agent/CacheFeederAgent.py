@@ -257,8 +257,8 @@ class CacheFeederAgent( AgentModule ):
         
     commandName = commandDict.keys()[ 0 ]
     
-    plotType = commandDict[ 'plotType' ]  
-    hours    = commandDict[ 'hours' ]
+    plotType = commandDict[ commandName ][ 'plotType' ]  
+    hours    = commandDict[ commandName ][ 'hours' ]
 
     plotName = '%s_%s' % ( commandName, hours )
 
