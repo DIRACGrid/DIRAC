@@ -18,7 +18,6 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
 from DIRAC.Core.Security                                   import CS
-from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 import os, base64, bz2, tempfile, random, socket
@@ -308,7 +307,7 @@ class SiteDirector( AgentModule ):
         ceDict['OwnerGroup'] = self.group
 
       # Get the number of eligible jobs for the target site/queue
-      result = rpcMatcher.getMatchingTaskQueues( ceDict )
+      result = taskQueueDB.getMatchingTaskQueues( ceDict )
       if not result['OK']:
         self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
         return result
