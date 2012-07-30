@@ -160,7 +160,7 @@ class JobsWMSCommand( Command ):
         return siteName
       siteName = siteName[ 'Value' ]
     
-    results = self.wmsAdmin.getPilotSummaryWeb( { 'Site' : siteName }, [], 0, 500 )
+    results = self.wmsAdmin.getSiteSummaryWeb( { 'Site' : siteName }, [], 0, 500 )
 
     if not results[ 'OK' ]:
       return results
