@@ -7,6 +7,7 @@
 '''
 
 from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.PilotsClient             import PilotsClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient 
@@ -66,15 +67,10 @@ class PilotsEffSimpleCommand( Command ):
     
     super( PilotsEffSimpleCommand, self ).__init__( args, clients )
     
-#    if 'ResourceStatusClient' in self.apis:
-#      self.rsClient = self.apis[ 'ResourceStatusClient' ]
-#    else:
-#      self.rsClient = ResourceStatusClient()      
-    
-    if 'PilotsClient' in self.apis:
-      self.pClient = self.apis[ 'PilotsClient' ]
-    else:
-      self.pClient = PilotsClient()  
+    if 'WMSAdministrator' in self.apis:
+      self.wmsAdmin = self.apis[ 'WMSAdministrator' ]
+    else:  
+      self.wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
 
   def doCommand( self ):
     """
@@ -94,14 +90,39 @@ class PilotsEffSimpleCommand( Command ):
     if not 'element' in self.args:
       return S_ERROR( 'element is missing' )
     element = self.args[ 'element' ]    
+   
+    if not 'siteName' in self.args:
+      return S_ERROR( 'siteName is missing' )
+    siteName = self.args[ 'siteName' ]  
 
-    #FIXME: maybe a Service or a Resource as well ??
-    if element != 'Site':
-      return S_ERROR( 'Expecting a Site' )
+    if element == 'Site':
+      results = self.wmsAdmin.getPilotSummaryWeb( { 'GridSite' : siteName }, [], 0, 300 )
+    elif element == 'Resource':
+      results = self.wmsAdmin.getPilotSummaryWeb( { 'ExpandSite' : siteName }, [], 0, 300 )      
+    else:
+      return S_ERROR( '%s is a wrong element' % element )  
+       
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]
     
-    if not 'name' in self.args:
-      return S_ERROR( 'name is missing' )
-    name = self.args[ 'name' ]  
+    if not 'ParameterNames' in results:
+      return S_ERROR( 'Malformed result dictionary' )
+    params = results[ 'ParameterNames' ]
+    
+    if not 'Records' in results:
+      return S_ERROR( 'Malformed result dictionary' )
+    records = results[ 'Records' ]
+    
+    pilotResults = [] 
+       
+    for record in records:
+      
+      pilotResults.append( dict( zip( params , record )) )
+    
+    return S_OK( pilotResults )  
+
+
 
 #    if element == 'Service':
 #      name = self.rsClient.getGeneralName( element, name, 'Site' )
@@ -114,10 +135,10 @@ class PilotsEffSimpleCommand( Command ):
 #    else:
 #      return S_ERROR( '%s is not a valid granularity' % element )
 
-    results = self.pClient.getPilotsSimpleEff( element, name )
-    if not results[ 'OK' ]:
-      return results
-    results = results[ 'Value' ]
+#    results = self.pClient.getPilotsSimpleEff( element, name )
+#    if not results[ 'OK' ]:
+#      return results
+#    results = results[ 'Value' ]
 
     #FIXME: looks to me like not all branches are ever accessed    
 #    if results is None:
@@ -127,7 +148,7 @@ class PilotsEffSimpleCommand( Command ):
 #    else:
 #      results = results[ name ] 
 
-    return S_OK( results )
+#    return S_OK( results )
 
 ################################################################################
 ################################################################################
@@ -168,25 +189,10 @@ class PilotsEffSimpleEverySitesCommand( Command ):
       if not sites[ 'OK' ]:
         return sites
       sites = sites[ 'Value' ]
-      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
 
     results = self.pClient.getPilotsSimpleEff( 'Site', sites, None )
     
     return results
-    
-    #if not results[ 'OK' ]:
-    #  return results
-    #results = results[ 'Value' ]
-    
-#    if results is None:
-#      results = []
-#
-#    resToReturn = {}
-#
-#    for site in results:
-#      resToReturn[ site ] = { 'PE_S' : results[ site ] }
-#
-#    return S_OK( resToReturn )
 
 ################################################################################
 ################################################################################
