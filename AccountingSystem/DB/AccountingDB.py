@@ -321,7 +321,7 @@ class AccountingDB( DB ):
     fieldsDict = {}
     bucketFieldsDict = {}
     inbufferDict = { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT' }
-    bucketIndexes = { 'startTimeIndex' : [ 'startTime' ], 'bucketLengthIndex' : [ 'bucketLength' ] } 
+    bucketIndexes = { 'startTimeIndex' : [ 'startTime' ], 'bucketLengthIndex' : [ 'bucketLength' ] }
     uniqueIndexFields = []
     for field in definitionKeyFields:
       bucketIndexes[ "%sIndex" % field[0] ] = [ field[0] ]
@@ -1005,7 +1005,7 @@ class AccountingDB( DB ):
         selectFields[ 0 ].append( "%s" )
         selectFields[ 1 ].append( key )
     selectFields[ 0 ] = ", ".join( selectFields[ 0 ] )
-    return self.__queryType( typeName, startTime, endTime, selectFields, 
+    return self.__queryType( typeName, startTime, endTime, selectFields,
                              condDict, False, orderFields, "type" )
 
   def retrieveBucketedData( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, connObj = False ):
@@ -1508,6 +1508,7 @@ class AccountingDB( DB ):
       rebucketedRecords = 0
       startQuery = time.time()
       startBlock = time.time()
+      numRecords = len( rawData )
       for entry in rawData:
         startT = entry[0]
         endT = entry[1]
@@ -1518,14 +1519,13 @@ class AccountingDB( DB ):
           return retVal
         rebucketedRecords += 1
         if rebucketedRecords % 1000 == 0:
-          numRecords = len( rawData )
           queryAvg = rebucketedRecords / float( time.time() - startQuery )
           blockAvg = 1000 / float( time.time() - startBlock )
           startBlock = time.time()
           perDone =  100 * rebucketedRecords / float ( numRecords )
-          expectedEnd = str( datetime.timedelta( seconds = int( numRecords / blockAvg ) ) )
+          expectedEnd = str( datetime.timedelta( seconds = int( ( numRecords - rebucketedRecords ) / blockAvg ) ) )
           self.log.info( "[REBUCKET] Rebucketed %.2f%% %s (%.2f r/s block %.2f r/s query | ETA %s )..." % ( perDone, typeName,
-                                                                                                            blockAvg, queryAvg, 
+                                                                                                            blockAvg, queryAvg,
                                                                                                             expectedEnd ) )
     #return self.__commitTransaction( connObj )
     connObj.close()

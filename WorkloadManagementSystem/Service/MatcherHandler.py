@@ -364,7 +364,13 @@ class MatcherHandler( RequestHandler ):
 
     credDict = self.getRemoteCredentials()
     #Check credentials if not generic pilot
-    if Properties.GENERIC_PILOT not in credDict[ 'properties' ]:
+    if Properties.GENERIC_PILOT in credDict[ 'properties' ]:
+      #You can only match groups in the same VO
+      vo = Registry.getVOForGroup( credDict[ 'group' ] )
+      result = Registry.getGroupsForVO( vo )
+      if result[ 'OK' ]:
+        resourceDict[ 'OwnerGroup' ] = result[ 'Value' ]
+    else:
       #If it's a private pilot, the DN has to be the same
       if Properties.PILOT in credDict[ 'properties' ]:
         gLogger.notice( "Setting the resource DN to the credentials DN" )
