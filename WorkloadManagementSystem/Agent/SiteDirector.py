@@ -11,7 +11,7 @@ from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, getVO, Registry, Operations, Resources
 from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB, taskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
@@ -33,7 +33,7 @@ WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 ERROR_TOKEN = 'Invalid proxy token request'
 MAX_PILOTS_TO_SUBMIT = 100
-MAX_PILOTS_IN_FILLING_MODE = 5
+MAX_JOBS_IN_FILLMODE = 5
 
 class SiteDirector( AgentModule ):
   """
@@ -52,7 +52,8 @@ class SiteDirector( AgentModule ):
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
     self.queueDict = {}
-
+    self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
+    self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
     return S_OK()
 
   def beginExecution( self ):
@@ -86,8 +87,8 @@ class SiteDirector( AgentModule ):
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
     self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', 'INFO' )
-    self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', MAX_PILOTS_TO_SUBMIT )
-    self.maxJobsInFillMode = self.am_getOption( 'MaxJobsInFillMode', MAX_PILOTS_IN_FILLING_MODE )
+    self.maxJobsInFillMode = self.am_getOption( 'MaxJobsInFillMode', self.maxJobsInFillMode )
+    self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', self.maxPilotsToSubmit )
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
     self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 7200 )
 
@@ -243,8 +244,7 @@ class SiteDirector( AgentModule ):
       tqDict['Community'] = self.vo
     if self.group:
       tqDict['OwnerGroup'] = self.group
-    rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
-    result = rpcMatcher.getMatchingTaskQueues( tqDict )
+    result = taskQueueDB.getMatchingTaskQueues( tqDict )
     if not result[ 'OK' ]:
       return result
     if not result['Value']:
@@ -328,22 +328,15 @@ class SiteDirector( AgentModule ):
       totalWaitingPilots = 0
       if self.pilotWaitingFlag:
         lastUpdateTime = dateTime() - self.pilotWaitingTime * second
-
-        result = pilotAgentsDB.getCounters( 'PilotAgents' ,
-                                          ['Status'],
-                                          {'DestinationSite':ceName,
-                                           'Queue':queueName,
-                                           'GridType':ceType,
-                                           'GridSite':siteName,
-                                           'TaskQueueID':tqIDList },
-                                           lastUpdateTime,
-                                           'LastUpdateTime' )
+        result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
+                                              'Status': WAITING_PILOT_STATUS },
+                                            None, lastUpdateTime )
         if not result['OK']:
-          self.log.error( 'Could not retrieve Pilot Agent counters', result['Message'] )
-          return result
-        for row in result['Value']:
-          if row[0]['Status'] in WAITING_PILOT_STATUS:
-            totalWaitingPilots += row[1]
+          self.log.error( 'Fail to get Number of Waiting pilots', result['Message'] )
+          totalWaitingPilots = 0
+        else:
+          totalWaitingPilots = result['Value']
+          self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % tqIDList, totalWaitingPilots )
 
       pilotsToSubmit = min( totalSlots, totalTQJobs - totalWaitingPilots )
       self.log.verbose( 'Available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
@@ -366,7 +359,7 @@ class SiteDirector( AgentModule ):
         if not result['OK']:
           return result
 
-        executable = result['Value']
+        executable, pilotsToSubmit = result['Value']
         result = ce.submitJob( executable, '', pilotsToSubmit )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:' % queue, result['Message'] )
@@ -424,12 +417,11 @@ class SiteDirector( AgentModule ):
     proxy = ''
     if bundleProxy:
       proxy = self.proxy
-    pilotOptions = self.__getPilotOptions( queue, pilotsToSubmit )
+    pilotOptions, pilotsToSubmit = self.__getPilotOptions( queue, pilotsToSubmit )
     if pilotOptions is None:
       return S_ERROR( 'Errors in compiling pilot options' )
     executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
-    result = S_OK( executable )
-    return result
+    return S_OK( [ executable, pilotsToSubmit ] )
 
 #####################################################################################
   def __getPilotOptions( self, queue, pilotsToSubmit ):
@@ -442,7 +434,7 @@ class SiteDirector( AgentModule ):
     setup = gConfig.getValue( "/DIRAC/Setup", "unknown" )
     if setup == 'unknown':
       self.log.error( 'Setup is not defined in the configuration' )
-      return None
+      return [ None, None ]
     pilotOptions.append( '-S %s' % setup )
     opsHelper = Operations.Operations( group = self.genericPilotGroup, setup = setup )
 
@@ -462,21 +454,26 @@ class SiteDirector( AgentModule ):
     diracVersion = opsHelper.getValue( "Pilot/Version", [] )
     if not diracVersion:
       self.log.error( 'Pilot/Version is not defined in the configuration' )
-      return None
+      return [ None, None ]
     #diracVersion is a list of accepted releases. Just take the first one
     pilotOptions.append( '-r %s' % diracVersion[0] )
 
     ownerDN = self.genericPilotDN
     ownerGroup = self.genericPilotGroup
-    result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit * self.maxJobsInFillMode )
+    result = gProxyManager.requestToken( ownerDN, ownerGroup, max( self.maxJobsInFillMode, pilotsToSubmit ) )
     if not result[ 'OK' ]:
       self.log.error( ERROR_TOKEN, result['Message'] )
-      return S_ERROR( ERROR_TOKEN )
+      return [ None, None ]
     ( token, numberOfUses ) = result[ 'Value' ]
     pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
     # Use Filling mode
-    pilotOptions.append( '-M %s' % self.maxJobsInFillMode )
+    pilotOptions.append( '-M %s' % min( numberOfUses, self.maxJobsInFillMode ) )
 
+    # Since each pilot will execute min( numberOfUses, self.maxJobsInFillMode )
+    # with numberOfUses tokens we can submit at most: 
+    #Ê   numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
+    # pilots
+    pilotsToSubmit = numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
       pilotOptions.append( '-d' )
@@ -514,7 +511,7 @@ class SiteDirector( AgentModule ):
 
     self.log.verbose( "pilotOptions: ", ' '.join( pilotOptions ) )
 
-    return pilotOptions
+    return [ pilotOptions, pilotsToSubmit ]
 
 #####################################################################################
   def __writePilotScript( self, workingDirectory, pilotOptions, proxy = '', httpProxy = '', pilotExecDir = '' ):
