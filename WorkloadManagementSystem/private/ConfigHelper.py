@@ -4,7 +4,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Operations
 from DIRAC.Core.Security import Properties
 
 
-def findGenericPilotCredentials( vo = False. group = False ):
+def findGenericPilotCredentials( vo = False, group = False ):
   if not group and not vo:
     return S_ERROR( "Need a group or a VO to determine the Generic pilot credentials" )
   if not vo:
