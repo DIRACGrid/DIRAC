@@ -1,3 +1,99 @@
+[v6r4p18]
+
+*Configuration
+BUGFIX: CE2CSAgent.py - the default value must be set outside the loop
+
+*DMS
+NEW: dirac-dms-create-replication-request
+BUGFIX: dirac-dms-fts-submit, dirac-dms-fts-monitor - print out error messages
+
+*Resources
+BUGFIX: TorqueComputingElement.py, plus add UserName for shared Queues
+
+*WMS
+BUGFIX: JobManagerHandler - default value for pStart (to avoid Exception)
+
+[v6r4p17]
+
+*Core
+FIX: dirac-configure - setup was not updated in dirac.cfg even with -F option
+FIX: RequestHandler - added fix for Missing ConnectionError
+
+*DMS
+FIX: dirac-dms-clean-directory - command fails with `KeyError: 'Replicas'`.
+
+*WMS
+FIX: SiteDirector - adapt to the new method in the Matcher getMatchingTaskQueue 
+FIX: SiteDirector - added all SubmitPools to TQ requests
+
+[v6r4p16]
+
+*Core:
+FIX: dirac-install - bashrc/cshrc were wrongly created when using versionsDir
+
+*Accounting
+CHANGE: Added new simpler and faster bucket insertion mechanism
+NEW: Added more info when rebucketing
+
+*WMS
+CHANGE: Matcher - refactored to take into account job limits when providing info to directors
+NEW: JoAgent - reports SubmitPool parameter if applicable
+FIX: Matcher - bad codition if invalid result
+
+[v6r4p15]
+
+*WMS
+FIX: gLitePilotDirector - fix the name of the MyProxy server to avoid crasehs of the gLite WMS
+
+*Transformation
+FIX: TaskManager - when the file is on many SEs, wrong results were generated
+
+[v6r4p13]
+
+*DMS
+FIX: dirac-admin-allow-se - added missing interpreter line
+
+[v6r4p12]
+
+*DMS
+CHANGE: RemovalTask - for DataManager shifter change creds after failure of removal with her/his proxy.
+
+*RSS
+NEW: Added RssConfiguration class
+FIX: ResourceManagementClient  - Fixed wrong method name
+
+[v6r4p11]
+
+*Core
+FIX: GGUSTicketsClient - GGUS SOAP URL updated
+
+*DMS
+BUGFIX: ReplicaManager - wrong for loop
+
+*RequestManagement
+BUGFIX: RequestClient - bug fix in finalizeRequest()
+
+*Transformation
+FIX: TaskManager - fix for correctly setting the sites (as list)
+
+[v6r4p10]
+
+*RequestManagement
+BUGFIX: RequestContainer - in addSubrequest() function
+
+*Resources
+BUGFIX: SRM2Storage - in checksum type evaluation
+
+*ResourceStatusSystem
+BUGFIX: InfoGetter - wrong import statement
+
+*WMS
+BUGFIX: SandboxMetadataDB - __init__() can not return a value
+
+[v6r4p9]
+
+*DMS
+
 [v6r4p8]
 
 Bring in fixes from v6r3p17
