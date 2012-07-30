@@ -39,9 +39,6 @@ class CacheFeederAgent( AgentModule ):
 
   def initialize( self ):
 
-    # Attribute defined outside __init__ 
-    # pylint: disable-msg=W0201
-
     self.rmClient = ResourceManagementClient()
     
     #ClientsCacheCommand
@@ -50,24 +47,18 @@ class CacheFeederAgent( AgentModule ):
 #                                        { 'PilotsEffSimpleEverySites' : {} }
 #                                       ]
 
+    #FIXME: missing logger
     #JobsCommand
-    self.commands[ 'Jobs' ] = [
-                                { 'JobsEffSimpleEveryOne'     : {} }
-                              ]  
-
+    self.commands[ 'Jobs' ] = [ { 'JobsEffSimpleEveryOne' : {} }]  
+    #FIXME: missing logger
     #PilotsCommand
-    self.commands[ 'Pilots' ] = [
-                                  { 'PilotsEffSimpleEverySites' : {} }
-                                ]
-
+    self.commands[ 'Pilots' ] = [ { 'PilotsWMS' : { 'element' : 'Site', 'siteName' : None } } ]
     #DowntimeCommand
     self.commands[ 'Downtime' ] = [    
                                     { 'DowntimeSites'     : {} },
                                     { 'DowntimeResources' : {} }
-                                  ]
-                                        
-    #FIXME: do not forget about hourly vs Always ...etc                                    
-                                                                      
+                                  ] 
+    #FIXME: do not forget about hourly vs Always ...etc                                                                       
     #AccountingCacheCommand
     self.commands[ 'AccountingCache' ] = [
                                           {'TransferQualityByDestSplitted'    :{'hours' :2, 'plotType' :'Data' }},
@@ -92,7 +83,7 @@ class CacheFeederAgent( AgentModule ):
     self.commands[ 'SpaceTokenOccupancy' ] = [
                                               { 'SpaceTokenOccupancy' : {} }
                                               ]
-
+    
     #Reuse clients for the commands
     self.clients[ 'GOCDBClient' ]          = GOCDBClient()
     self.clients[ 'JobsClient' ]           = JobsClient()
