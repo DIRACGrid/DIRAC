@@ -302,7 +302,7 @@ class PilotDirector:
     else:
       #For generic jobs we'll submit mixture of generic and private pilots
       self.log.verbose( 'Submitting generic pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
-      if self.genericPilotGroup
+      #if self.genericPilotGroup
       #ADRI: Find the generic group
       result = findGenericPilotCredentials( group = taskQueueDict[ 'OwnerGroup' ] )
       if not result[ 'OK' ]:
@@ -311,7 +311,7 @@ class PilotDirector:
       ownerDN, ownerGroup = result[ 'Value' ]
 
       result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
-      if result[ 'OK' ]:
+      if not result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
         return S_ERROR( ERROR_TOKEN )
       ( token, numberOfUses ) = result[ 'Value' ]
