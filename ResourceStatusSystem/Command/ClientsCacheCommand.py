@@ -6,126 +6,126 @@
   
 '''
 
-from DIRAC                                                  import S_OK
-#from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping            import getGOCSiteName, getDIRACSiteName
-#from DIRAC.Core.DISET.RPCClient                             import RPCClient
-#from DIRAC.Core.LCG.GOCDBClient                             import GOCDBClient
-from DIRAC.ResourceStatusSystem.Client.JobsClient           import JobsClient
-from DIRAC.ResourceStatusSystem.Client.PilotsClient         import PilotsClient
-from DIRAC.ResourceStatusSystem.Command.Command             import Command
-from DIRAC.ResourceStatusSystem.Utilities                   import CSHelpers
+#from DIRAC                                                  import S_OK
+##from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping            import getGOCSiteName, getDIRACSiteName
+##from DIRAC.Core.DISET.RPCClient                             import RPCClient
+##from DIRAC.Core.LCG.GOCDBClient                             import GOCDBClient
+##from DIRAC.ResourceStatusSystem.Client.JobsClient           import JobsClient
+#from DIRAC.ResourceStatusSystem.Client.PilotsClient         import PilotsClient
+#from DIRAC.ResourceStatusSystem.Command.Command             import Command
+#from DIRAC.ResourceStatusSystem.Utilities                   import CSHelpers
+#
+#__RCSID__ = '$Id:  $'
 
-__RCSID__ = '$Id:  $'
-
-class JobsEffSimpleEveryOneCommand( Command ):
-
-  #FIXME: write propper docstrings
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( JobsEffSimpleEveryOneCommand, self ).__init__( args, clients )
-
-    if 'JobsClient' in self.apis:
-      self.jClient = self.apis[ 'JobsClient' ]
-    else:
-      self.jClient = JobsClient() 
-    
-  def doCommand( self ):
-    """ 
-    Returns simple jobs efficiency for all the sites in input.
-        
-    :params:
-      :attr:`sites`: list of site names (when not given, take every site)
-    
-    :returns:
-      {'SiteName': {'JE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
-    """
-
-    sites = None
-
-    if 'sites' in self.args:
-      sites = self.args[ 'sites' ] 
-
-    if sites is None:
-      #FIXME: we do not get them from RSS DB anymore, from CS now.
-      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
-      sites = CSHelpers.getSites()
-        
-      if not sites['OK']:
-        return sites
-      sites = sites[ 'Value' ]   
-      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
-
-    results = self.jClient.getJobsSimpleEff( sites )
-    if not results[ 'OK' ]:
-      return results
-    results = results[ 'Value' ]
-        
-    if results is None:
-      results = []
-
-    resToReturn = {}
-
-    for site in results:
-      resToReturn[ site ] = { 'JE_S' : results[ site ] }
-
-    return S_OK( resToReturn ) 
+#class JobsEffSimpleEveryOneCommand( Command ):
+#
+#  #FIXME: write propper docstrings
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( JobsEffSimpleEveryOneCommand, self ).__init__( args, clients )
+#
+#    if 'JobsClient' in self.apis:
+#      self.jClient = self.apis[ 'JobsClient' ]
+#    else:
+#      self.jClient = JobsClient() 
+#    
+#  def doCommand( self ):
+#    """ 
+#    Returns simple jobs efficiency for all the sites in input.
+#        
+#    :params:
+#      :attr:`sites`: list of site names (when not given, take every site)
+#    
+#    :returns:
+#      {'SiteName': {'JE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
+#    """
+#
+#    sites = None
+#
+#    if 'sites' in self.args:
+#      sites = self.args[ 'sites' ] 
+#
+#    if sites is None:
+#      #FIXME: we do not get them from RSS DB anymore, from CS now.
+#      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
+#      sites = CSHelpers.getSites()
+#        
+#      if not sites['OK']:
+#        return sites
+#      sites = sites[ 'Value' ]   
+#      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
+#
+#    results = self.jClient.getJobsSimpleEff( sites )
+#    if not results[ 'OK' ]:
+#      return results
+#    results = results[ 'Value' ]
+#        
+#    if results is None:
+#      results = []
+#
+#    resToReturn = {}
+#
+#    for site in results:
+#      resToReturn[ site ] = { 'JE_S' : results[ site ] }
+#
+#    return S_OK( resToReturn ) 
 
 ################################################################################
 ################################################################################
 
-class PilotsEffSimpleEverySitesCommand( Command ):
-
-  #FIXME: write propper docstrings
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( PilotsEffSimpleEverySitesCommand, self ).__init__( args, clients )
-
-    if 'PilotsClient' in self.apis:
-      self.pClient = self.apis[ 'PilotsClient' ]
-    else:
-      self.pClient = PilotsClient() 
-
-  def doCommand( self ):
-    """ 
-    Returns simple pilots efficiency for all the sites and resources in input.
-        
-    :params:
-      :attr:`sites`: list of site names (when not given, take every site)
-    
-    :returns:
-      {'SiteName':  {'PE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
-    """
-
-    sites = None
-
-    if 'sites' in self.args:
-      sites = self.args[ 'sites' ] 
-
-    if sites is None:
-      #FIXME: we do not get them from RSS DB anymore, from CS now.
-      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
-      sites = CSHelpers.getSites()      
-      if not sites[ 'OK' ]:
-        return sites
-      sites = sites[ 'Value' ]
-      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
-
-    results = self.pClient.getPilotsSimpleEff( 'Site', sites, None )
-    if not results[ 'OK' ]:
-      return results
-    results = results[ 'Value' ]
-    
-    if results is None:
-      results = []
-
-    resToReturn = {}
-
-    for site in results:
-      resToReturn[ site ] = { 'PE_S' : results[ site ] }
-
-    return S_OK( resToReturn )
+#class PilotsEffSimpleEverySitesCommand( Command ):
+#
+#  #FIXME: write propper docstrings
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( PilotsEffSimpleEverySitesCommand, self ).__init__( args, clients )
+#
+#    if 'PilotsClient' in self.apis:
+#      self.pClient = self.apis[ 'PilotsClient' ]
+#    else:
+#      self.pClient = PilotsClient() 
+#
+#  def doCommand( self ):
+#    """ 
+#    Returns simple pilots efficiency for all the sites and resources in input.
+#        
+#    :params:
+#      :attr:`sites`: list of site names (when not given, take every site)
+#    
+#    :returns:
+#      {'SiteName':  {'PE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
+#    """
+#
+#    sites = None
+#
+#    if 'sites' in self.args:
+#      sites = self.args[ 'sites' ] 
+#
+#    if sites is None:
+#      #FIXME: we do not get them from RSS DB anymore, from CS now.
+#      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
+#      sites = CSHelpers.getSites()      
+#      if not sites[ 'OK' ]:
+#        return sites
+#      sites = sites[ 'Value' ]
+#      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
+#
+#    results = self.pClient.getPilotsSimpleEff( 'Site', sites, None )
+#    if not results[ 'OK' ]:
+#      return results
+#    results = results[ 'Value' ]
+#    
+#    if results is None:
+#      results = []
+#
+#    resToReturn = {}
+#
+#    for site in results:
+#      resToReturn[ site ] = { 'PE_S' : results[ site ] }
+#
+#    return S_OK( resToReturn )
 
 ################################################################################
 ################################################################################

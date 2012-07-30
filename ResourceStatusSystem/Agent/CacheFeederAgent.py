@@ -45,10 +45,20 @@ class CacheFeederAgent( AgentModule ):
     self.rmClient = ResourceManagementClient()
     
     #ClientsCacheCommand
-    self.commands[ 'ClientsCache' ] = [
-                                        { 'JobsEffSimpleEveryOne'     : {} },
-                                        { 'PilotsEffSimpleEverySites' : {} }
-                                       ]
+#    self.commands[ 'ClientsCache' ] = [
+##                                        { 'JobsEffSimpleEveryOne'     : {} },
+#                                        { 'PilotsEffSimpleEverySites' : {} }
+#                                       ]
+
+    #JobsCommand
+    self.commands[ 'Jobs' ] = [
+                                { 'JobsEffSimpleEveryOne'     : {} }
+                              ]  
+
+    #PilotsCommand
+    self.commands[ 'Pilots' ] = [
+                                  { 'PilotsEffSimpleEverySites' : {} }
+                                ]
 
     #DowntimeCommand
     self.commands[ 'Downtime' ] = [    
@@ -302,32 +312,6 @@ class CacheFeederAgent( AgentModule ):
         return resQuery    
   
     return S_OK()  
-#  def __logClientsCacheResults( self, commandModule, commandName, results ):
-#    
-#    for key in res.keys():
-#
-#      clientCache = ()
-#      if 'ID' in res[key].keys():
-#
-#        for value in res[key].keys():
-#          if value != 'ID':
-#            clientCache = ( key.split()[1], commandName, res[key]['ID'],
-#                            value, res[key][value], None, None )
-#
-#            resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
-#
-#      else:
-#        for value in res[key].keys():
-#          clientCache = ( key, commandName, None, value,
-#                          res[key][value], None, None )
-#
-#          resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
-#          
-#    
-#    return S_OK()
-      
-
-    
       
 #  def execute2( self ):
 #

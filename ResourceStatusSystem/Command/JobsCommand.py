@@ -11,101 +11,103 @@ from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.JobsClient               import JobsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+
 
 __RCSID__ = '$Id:  $'
 
 ################################################################################
 ################################################################################
 
-class JobsStatsCommand( Command ):
-  
-  def __init__( self, args = None, clients = None ):
-    
-    super( JobsStatsCommand, self ).__init__( args, clients )
-    
-    if 'JobsClient' in self.apis:
-      self.jClient = self.apis[ 'JobsClient' ]
-    else:
-      self.jClient = JobsClient()  
-  
-  def doCommand( self ):
-    """ 
-    Return getJobStats from Jobs Client  
-    
-   :attr:`args`: 
-     - args[0]: string: should be a ValidElement
-
-     - args[1]: string: should be the name of the ValidElement
-
-  returns:
-    {
-      'MeanProcessedJobs': X
-    }
-    """
-
-    return self.jClient.getJobsStats( self.args[0], self.args[1], self.args[2] )
+#class JobsStatsCommand( Command ):
+#  
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( JobsStatsCommand, self ).__init__( args, clients )
+#    
+#    if 'JobsClient' in self.apis:
+#      self.jClient = self.apis[ 'JobsClient' ]
+#    else:
+#      self.jClient = JobsClient()  
+#  
+#  def doCommand( self ):
+#    """ 
+#    Return getJobStats from Jobs Client  
+#    
+#   :attr:`args`: 
+#     - args[0]: string: should be a ValidElement
+#
+#     - args[1]: string: should be the name of the ValidElement
+#
+#  returns:
+#    {
+#      'MeanProcessedJobs': X
+#    }
+#    """
+#
+#    return self.jClient.getJobsStats( self.args[0], self.args[1], self.args[2] )
     
 ################################################################################
 ################################################################################
 
-class JobsEffCommand( Command ):
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( JobsEffCommand, self ).__init__( args, clients )
-    
-    if 'JobsClient' in self.apis:
-      self.jClient = self.apis[ 'JobsClient' ]
-    else:
-      self.jClient = JobsClient()  
-  
-  def doCommand( self ):
-    """ 
-    Return getJobsEff from Jobs Client  
-    
-   :attr:`args`: 
-       - args[0]: string: should be a ValidElement
-  
-       - args[1]: string: should be the name of the ValidElement
-
-    returns:
-      {
-        'JobsEff': X
-      }
-    """
-         
-    res = self.jClient.getJobsEff( self.args[0], self.args[1], self.args[2] )
-       
-    return S_OK( res )   
+#class JobsEffCommand( Command ):
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( JobsEffCommand, self ).__init__( args, clients )
+#    
+#    if 'JobsClient' in self.apis:
+#      self.jClient = self.apis[ 'JobsClient' ]
+#    else:
+#      self.jClient = JobsClient()  
+#  
+#  def doCommand( self ):
+#    """ 
+#    Return getJobsEff from Jobs Client  
+#    
+#   :attr:`args`: 
+#       - args[0]: string: should be a ValidElement
+#  
+#       - args[1]: string: should be the name of the ValidElement
+#
+#    returns:
+#      {
+#        'JobsEff': X
+#      }
+#    """
+#         
+#    res = self.jClient.getJobsEff( self.args[0], self.args[1], self.args[2] )
+#       
+#    return S_OK( res )   
 
 ################################################################################
 ################################################################################
 
-class SystemChargeCommand( Command ):
-  
-  def __init__( self, args = None, clients = None ):
-    
-    super( SystemChargeCommand, self ).__init__( args, clients )
-    
-    if 'JobsClient' in self.apis:
-      self.jClient = self.apis[ 'JobsClient' ]
-    else:
-      self.jClient = JobsClient()  
-  
-  def doCommand(self):
-    """ Returns last hour system charge, and the system charge of an hour before
-
-        returns:
-          {
-            'LastHour': n_lastHour
-            'anHourBefore': n_anHourBefore
-          }
-    """
-    
-      
-    res = self.jClient.getSystemCharge()
-
-    return S_OK( res )   
+#class SystemChargeCommand( Command ):
+#  
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( SystemChargeCommand, self ).__init__( args, clients )
+#    
+#    if 'JobsClient' in self.apis:
+#      self.jClient = self.apis[ 'JobsClient' ]
+#    else:
+#      self.jClient = JobsClient()  
+#  
+#  def doCommand(self):
+#    """ Returns last hour system charge, and the system charge of an hour before
+#
+#        returns:
+#          {
+#            'LastHour': n_lastHour
+#            'anHourBefore': n_anHourBefore
+#          }
+#    """
+#    
+#      
+#    res = self.jClient.getSystemCharge()
+#
+#    return S_OK( res )   
     
 ################################################################################
 ################################################################################
@@ -121,10 +123,10 @@ class JobsEffSimpleCommand( Command ):
     else:
       self.jClient = JobsClient()  
       
-    if 'ResourceStatusClient' in self.apis:
-      self.rsClient = self.apis[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient()  
+#    if 'ResourceStatusClient' in self.apis:
+#      self.rsClient = self.apis[ 'ResourceStatusClient' ]
+#    else:
+#      self.rsClient = ResourceStatusClient()  
   
   def doCommand( self ):
     """ 
@@ -165,20 +167,80 @@ class JobsEffSimpleCommand( Command ):
 #      return S_ERROR( '%s is not a valid element' % element )
          
     results = self.jClient.getJobsSimpleEff( name )
-    if not results[ 'OK' ]:
-      return results
-    results = results[ 'Value' ]
+#    if not results[ 'OK' ]:
+#      return results
+#    results = results[ 'Value' ]
      
     #FIXME: can it actually return None ? 
-    if results == None:
-      results = 'Idle'
-    else:
-      results = results[ name ] 
+#    if results == None:
+#      results = 'Idle'
+#    else:
+#      results = results[ name ] 
     
     return S_OK( results )
-   
+
 ################################################################################
 ################################################################################
+
+class JobsEffSimpleEveryOneCommand( Command ):
+
+  #FIXME: write propper docstrings
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( JobsEffSimpleEveryOneCommand, self ).__init__( args, clients )
+
+    if 'JobsClient' in self.apis:
+      self.jClient = self.apis[ 'JobsClient' ]
+    else:
+      self.jClient = JobsClient() 
+    
+  def doCommand( self ):
+    """ 
+    Returns simple jobs efficiency for all the sites in input.
+        
+    :params:
+      :attr:`sites`: list of site names (when not given, take every site)
+    
+    :returns:
+      {'SiteName': {'JE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
+    """
+
+    sites = None
+
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+
+    if sites is None:
+      #FIXME: we do not get them from RSS DB anymore, from CS now.
+      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
+      sites = CSHelpers.getSites()
+        
+      if not sites['OK']:
+        return sites
+      sites = sites[ 'Value' ]   
+      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
+
+    results = self.jClient.getJobsSimpleEff( sites )
+    
+    return results
+    
+#    if not results[ 'OK' ]:
+#      return results
+#    results = results[ 'Value' ]
+        
+#    if results is None:
+#      results = {}
+
+#    resToReturn = {}
+
+    #for site in results:
+    #  resToReturn[ site ] = results[ site ]
+
+#    return S_OK( resToReturn )   
+
+################################################################################
+################################################################################ 
 
 class JobsEffSimpleCachedCommand( Command ):
   

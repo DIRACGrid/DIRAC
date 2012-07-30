@@ -11,50 +11,51 @@ from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.PilotsClient             import PilotsClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient 
+from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
 __RCSID__ = '$Id:  $'
 
 ################################################################################
 ################################################################################
 
-class PilotsStatsCommand( Command ):
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( PilotsStatsCommand, self ).__init__( args, clients )
-    
-    if 'PilotsClient' in self.apis:
-      self.pClient = self.apis[ 'PilotsClient' ]
-    else:
-      self.pClient = PilotsClient()     
-
-  def doCommand( self ):
-    """
-    Return getPilotStats from Pilots Client
-    """
-    
-    return self.pClient.getPilotsStats( self.args[0], self.args[1], self.args[2] )
+#class PilotsStatsCommand( Command ):
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( PilotsStatsCommand, self ).__init__( args, clients )
+#    
+#    if 'PilotsClient' in self.apis:
+#      self.pClient = self.apis[ 'PilotsClient' ]
+#    else:
+#      self.pClient = PilotsClient()     
+#
+#  def doCommand( self ):
+#    """
+#    Return getPilotStats from Pilots Client
+#    """
+#    
+#    return self.pClient.getPilotsStats( self.args[0], self.args[1], self.args[2] )
 
 ################################################################################
 ################################################################################
 
-class PilotsEffCommand( Command ):
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( PilotsEffCommand, self ).__init__( args, clients )
-    
-    if 'PilotsClient' in self.apis:
-      self.pClient = self.apis[ 'PilotsClient' ]
-    else:
-      self.pClient = PilotsClient()  
-
-  def doCommand( self ):
-    """
-    Return getPilotsEff from Pilots Client
-    """
-          
-    return self.pClient.getPilotsEff( self.args[0], self.args[1], self.args[2] )
+#class PilotsEffCommand( Command ):
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( PilotsEffCommand, self ).__init__( args, clients )
+#    
+#    if 'PilotsClient' in self.apis:
+#      self.pClient = self.apis[ 'PilotsClient' ]
+#    else:
+#      self.pClient = PilotsClient()  
+#
+#  def doCommand( self ):
+#    """
+#    Return getPilotsEff from Pilots Client
+#    """
+#          
+#    return self.pClient.getPilotsEff( self.args[0], self.args[1], self.args[2] )
 
 ################################################################################
 ################################################################################
@@ -65,10 +66,10 @@ class PilotsEffSimpleCommand( Command ):
     
     super( PilotsEffSimpleCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.apis:
-      self.rsClient = self.apis[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient()      
+#    if 'ResourceStatusClient' in self.apis:
+#      self.rsClient = self.apis[ 'ResourceStatusClient' ]
+#    else:
+#      self.rsClient = ResourceStatusClient()      
     
     if 'PilotsClient' in self.apis:
       self.pClient = self.apis[ 'PilotsClient' ]
@@ -119,14 +120,73 @@ class PilotsEffSimpleCommand( Command ):
     results = results[ 'Value' ]
 
     #FIXME: looks to me like not all branches are ever accessed    
-    if results is None:
-      results = 'Idle'
-    elif results[ name ] is None:
-      results = 'Idle'
-    else:
-      results = results[ name ] 
+#    if results is None:
+#      results = 'Idle'
+#    elif results[ name ] is None:
+#      results = 'Idle'
+#    else:
+#      results = results[ name ] 
 
     return S_OK( results )
+
+################################################################################
+################################################################################
+
+class PilotsEffSimpleEverySitesCommand( Command ):
+
+  #FIXME: write propper docstrings
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( PilotsEffSimpleEverySitesCommand, self ).__init__( args, clients )
+
+    if 'PilotsClient' in self.apis:
+      self.pClient = self.apis[ 'PilotsClient' ]
+    else:
+      self.pClient = PilotsClient() 
+
+  def doCommand( self ):
+    """ 
+    Returns simple pilots efficiency for all the sites and resources in input.
+        
+    :params:
+      :attr:`sites`: list of site names (when not given, take every site)
+    
+    :returns:
+      {'SiteName':  {'PE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
+    """
+
+    sites = None
+
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+
+    if sites is None:
+      #FIXME: we do not get them from RSS DB anymore, from CS now.
+      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
+      sites = CSHelpers.getSites()      
+      if not sites[ 'OK' ]:
+        return sites
+      sites = sites[ 'Value' ]
+      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
+
+    results = self.pClient.getPilotsSimpleEff( 'Site', sites, None )
+    
+    return results
+    
+    #if not results[ 'OK' ]:
+    #  return results
+    #results = results[ 'Value' ]
+    
+#    if results is None:
+#      results = []
+#
+#    resToReturn = {}
+#
+#    for site in results:
+#      resToReturn[ site ] = { 'PE_S' : results[ site ] }
+#
+#    return S_OK( resToReturn )
 
 ################################################################################
 ################################################################################
