@@ -10,8 +10,6 @@ from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-
-
 class ConfigurationClient:
 
   def __init__( self, fileToLoadList = None ):
@@ -25,6 +23,9 @@ class ConfigurationClient:
 
   def loadCFG( self, cfg ):
     return gConfigurationData.mergeWithLocal( cfg )
+
+  def forceRefresh( self ):
+    return gRefresher.forceRefresh()
 
   def dumpLocalCFGToFile( self, fileName ):
     return gConfigurationData.dumpLocalCFGToFile( fileName )
