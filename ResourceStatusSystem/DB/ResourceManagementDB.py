@@ -30,41 +30,19 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Name', 'PlotType', 'PlotName' ]                                            
                                 }
 
-  _tablesDB[ 'ClientCache' ] = { 'Fields' :
-                      {
-                       #'ClientCacheID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
-                       'Name'          : 'VARCHAR(64) NOT NULL',
-                       'CommandName'   : 'VARCHAR(64) NOT NULL',
-                       'Opt_ID'        : 'VARCHAR(64)',
-                       'Value'         : 'VARCHAR(16) NOT NULL',
-                       'Result'        : 'VARCHAR(255) NOT NULL',        
-                       'DateEffective' : 'DATETIME NOT NULL',
-                       'LastCheckTime' : 'DATETIME NOT NULL'     
-                      },
-                      'PrimaryKey' : [ 'Name', 'CommandName', 'Value' ]
-                                }
-
-  _tablesDB[ 'PilotsCache' ] = { 'Fields' :
-                      {
-                       'Site'         : 'VARCHAR(64) NOT NULL',
-                       'CE'           : 'VARCHAR(64) NOT NULL',
-                       'Submitted'    : 'INTEGER NOT NULL DEFAULT 0',
-                       'PilotsPerJob' : 'DOUBLE NOT NULL DEFAULT 0',
-                       'PilotJobEff'  : 'DOUBLE NOT NULL DEFAULT 0',   
-                       'Status'       : 'VARCHAR(16) NOT NULL',             
-                      },
-                      'PrimaryKey' : [ 'Site', 'CE' ]
-                                }
-
-  _tablesDB[ 'JobsCache' ] = { 'Fields' :
-                      {
-                       'Site'       : 'VARCHAR(64) NOT NULL',
-                       'MaskStatus' : 'VARCHAR(32) NOT NULL',    
-                       'Efficiency' : 'DOUBLE NOT NULL DEFAULT 0',
-                       'Status'     : 'VARCHAR(16) NOT NULL',
-                      },
-                      'PrimaryKey' : [ 'Site' ]
-                                }
+#  _tablesDB[ 'ClientCache' ] = { 'Fields' :
+#                      {
+#                       #'ClientCacheID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+#                       'Name'          : 'VARCHAR(64) NOT NULL',
+#                       'CommandName'   : 'VARCHAR(64) NOT NULL',
+#                       'Opt_ID'        : 'VARCHAR(64)',
+#                       'Value'         : 'VARCHAR(16) NOT NULL',
+#                       'Result'        : 'VARCHAR(255) NOT NULL',        
+#                       'DateEffective' : 'DATETIME NOT NULL',
+#                       'LastCheckTime' : 'DATETIME NOT NULL'     
+#                      },
+#                      'PrimaryKey' : [ 'Name', 'CommandName', 'Value' ]
+#                                }
 
   _tablesDB[ 'DowntimeCache' ] = { 'Fields' :
                       {
@@ -80,6 +58,29 @@ class ResourceManagementDB( object ):
                        'LastCheckTime' : 'DATETIME NOT NULL'     
                       },
                       'PrimaryKey' : [ 'DowntimeID' ]
+                                }
+
+  _tablesDB[ 'JobCache' ] = { 'Fields' :
+                      {
+                       'Site'          : 'VARCHAR(64) NOT NULL',
+                       'MaskStatus'    : 'VARCHAR(32) NOT NULL',    
+                       'Efficiency'    : 'DOUBLE NOT NULL DEFAULT 0',
+                       'Status'        : 'VARCHAR(16) NOT NULL',
+                       'LastCheckTime' : 'DATETIME NOT NULL'                       
+                      },
+                      'PrimaryKey' : [ 'Site' ]
+                                }
+
+  _tablesDB[ 'PilotCache' ] = { 'Fields' :
+                      {
+                       'Site'          : 'VARCHAR(64) NOT NULL',
+                       'CE'            : 'VARCHAR(64) NOT NULL',
+                       'PilotsPerJob'  : 'DOUBLE NOT NULL DEFAULT 0',
+                       'PilotJobEff'   : 'DOUBLE NOT NULL DEFAULT 0',   
+                       'Status'        : 'VARCHAR(16) NOT NULL',
+                       'LastCheckTime' : 'DATETIME NOT NULL'                                    
+                      },
+                      'PrimaryKey' : [ 'Site', 'CE' ]
                                 }
 
   _tablesDB[ 'PolicyResult' ] = { 'Fields' : 
