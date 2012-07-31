@@ -839,17 +839,17 @@ def getSetupComponents():
       body = rfile.read()
       rfile.close()
       if body.find( 'dirac-service' ) != -1:
-        system, service = component.split( '_' )
+        system, service = component.split( '_' )[0:2]
         if not services.has_key( system ):
           services[system] = []
         services[system].append( service )
       elif body.find( 'dirac-agent' ) != -1:
-        system, agent = component.split( '_' )
+        system, agent = component.split( '_' )[0:2]
         if not agents.has_key( system ):
           agents[system] = []
         agents[system].append( agent )
       elif body.find( 'dirac-executor' ) != -1:
-        system, executor = component.split( '_' )
+        system, executor = component.split( '_' )[0:2]
         if not executors.has_key( system ):
           executors[system] = []
         executors[system].append( agent )
