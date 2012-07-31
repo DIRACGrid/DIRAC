@@ -75,6 +75,7 @@ NEW: Generic pilot identities are automatically selected by the TQD and the Site
 NEW: Generic pilot groups can have a VO that will be taken into account when selecting generic 
      credentials to submit pilots
 NEW: Generic pilots that belong to a VO can only match jobs from that VO
+NEW: StalledJobAgent - added rescheduling of jobs stuck in Matched or Rescheduled status
 
 *Transformation
 FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
