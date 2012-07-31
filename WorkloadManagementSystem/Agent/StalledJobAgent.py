@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Base.AgentModule                    import AgentModule
-from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, dateTime
+from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, dateTime, second
 from DIRAC                                          import S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job        import Job
@@ -61,6 +61,10 @@ class StalledJobAgent( AgentModule ):
 
     stalledTime = self.am_getOption( 'StalledTimeHours', 2 )
     failedTime = self.am_getOption( 'FailedTimeHours', 6 )
+    
+    self.matchedTime = self.am_getOption( 'MatchedTime', 1800 )
+    self.rescheduledTime = self.am_getOption( 'RescheduledTime', 120 )
+    
     self.log.verbose( 'StalledTime = %s cycles' % ( stalledTime ) )
     self.log.verbose( 'FailedTime = %s cycles' % ( failedTime ) )
 
@@ -83,6 +87,10 @@ class StalledJobAgent( AgentModule ):
     if not result['OK']:
       self.log.info( result['Message'] )
 
+    result = self.__kickStuckJobs( )
+    if not result['OK']:
+      self.log.info( result['Message'] )
+
     return S_OK( 'Stalled Job Agent cycle complete' )
 
   #############################################################################
@@ -92,10 +100,10 @@ class StalledJobAgent( AgentModule ):
     stalledCounter = 0
     runningCounter = 0
     result = self.jobDB.selectJobs( {'Status':'Running'} )
-    if not result['OK'] or not result['Value']:
-      self.log.warn( result )
+    if not result['OK']:
+      self.log.warn( result['Message'] )
       return result
-    else:
+    elif result['Value']:
       jobs = result['Value']
       self.log.info( '%s Running jobs will be checked for being stalled' % ( len( jobs ) ) )
       jobs.sort()
@@ -110,8 +118,8 @@ class StalledJobAgent( AgentModule ):
           self.log.verbose( result['Message'] )
           runningCounter += 1
 
-    self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' %
-                   ( len( jobs ), stalledCounter, runningCounter ) )
+      self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' %
+                     ( len( jobs ), stalledCounter, runningCounter ) )
     return S_OK()
 
   #############################################################################
@@ -126,9 +134,7 @@ class StalledJobAgent( AgentModule ):
 
     failedCounter = 0
 
-    if not result['OK'] or not result['Value']:
-      self.log.warn( result )
-    else:
+    if result['Value']:
       jobs = result['Value']
       self.log.info( '%s Stalled jobs will be checked for failure' % ( len( jobs ) ) )
 
@@ -174,7 +180,8 @@ class StalledJobAgent( AgentModule ):
       if not result['OK']:
         break
 
-    self.log.info( '%d jobs set to Failed' % failedCounter )
+    if failedCounter:
+      self.log.info( '%d jobs set to Failed' % failedCounter )
     if recoverCounter:
       self.log.info( '%d jobs properly Accounted' % recoverCounter )
     return S_OK( failedCounter )
@@ -412,4 +419,43 @@ class StalledJobAgent( AgentModule ):
 
     return startTime, endTime
 
+  def __kickStuckJobs(self):
+    """ Reschedule jobs stuck in initialization status Rescheduled, Matched
+    """
+    
+    message = ''
+    
+    checkTime = str( dateTime() - self.matchedTime * second )
+    result = self.jobDB.selectJobs( {'Status':'Matched'}, older = checkTime )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return result
+    
+    jobIDs = result['Value']
+    if jobIDs:
+      self.log.info( 'Rescheduling %d jobs stuck in Matched status' % len( jobIDs ) )
+      result = self.jobDB.rescheduleJobs(jobIDs)
+      if 'FailedJobs' in result:
+        message = 'Failed to reschedule %d jobs stuck in Matched status' % len( result['FailedJobs'] )
+      
+    checkTime = str( dateTime() - self.rescheduledTime * second )
+    result = self.jobDB.selectJobs( {'Status':'Rescheduled'}, older = checkTime )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return result
+    
+    jobIDs = result['Value']
+    if jobIDs:
+      self.log.info( 'Rescheduling %d jobs stuck in Rescheduled status' % len( jobIDs ) )
+      result = self.jobDB.rescheduleJobs(jobIDs)
+      if 'FailedJobs' in result:
+        if message:
+          message += '\n'
+        message += 'Failed to reschedule %d jobs stuck in Rescheduled status' % len( result['FailedJobs'] ) 
+    
+    if message:
+      return S_ERROR(message)
+    else:
+      return S_OK()
+   
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
