@@ -67,8 +67,7 @@ JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 JOB_DEPRECATED_ATTRIBUTES = [ 'UserPriority', 'SystemPriority' ]
 
 JOB_STATIC_ATTRIBUTES = [ 'JobID', 'JobType', 'DIRACSetup', 'JobGroup', 'JobSplitType', 'MasterJobID',
-                          'JobName', 'Owner', 'OwnerDN', 'OwnerGroup', 'SubmissionTime', 'VerifiedFlag',
-                          'RunNumber' ]
+                          'JobName', 'Owner', 'OwnerDN', 'OwnerGroup', 'SubmissionTime', 'VerifiedFlag' ]
 
 JOB_VARIABLE_ATTRIBUTES = [ 'Site', 'RescheduleTime', 'StartExecTime', 'EndExecTime', 'RescheduleCounter',
                            'DeletedFlag', 'KilledFlag', 'FailedFlag',
@@ -1304,7 +1303,7 @@ class JobDB( DB ):
     jobAttrNames.append( 'UserPriority' )
     jobAttrValues.append( priority )
 
-    for jdlName in 'JobName', 'JobType', 'JobGroup', 'RunNumber':
+    for jdlName in 'JobName', 'JobType', 'JobGroup':
       # Defaults are set by the DB.
       jdlValue = classAdJob.getAttributeString( jdlName )
       if jdlValue:
