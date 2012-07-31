@@ -44,6 +44,28 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Name', 'CommandName', 'Value' ]
                                 }
 
+  _tablesDB[ 'PilotsCache' ] = { 'Fields' :
+                      {
+                       'Site'         : 'VARCHAR(64) NOT NULL',
+                       'CE'           : 'VARCHAR(64) NOT NULL',
+                       'Submitted'    : 'INTEGER NOT NULL DEFAULT 0',
+                       'PilotsPerJob' : 'DOUBLE NOT NULL DEFAULT 0',
+                       'PilotJobEff'  : 'DOUBLE NOT NULL DEFAULT 0',   
+                       'Status'       : 'VARCHAR(16) NOT NULL',             
+                      },
+                      'PrimaryKey' : [ 'Site', 'CE' ]
+                                }
+
+  _tablesDB[ 'JobsCache' ] = { 'Fields' :
+                      {
+                       'Site'       : 'VARCHAR(64) NOT NULL',
+                       'MaskStatus' : 'VARCHAR(32) NOT NULL',    
+                       'Efficiency' : 'DOUBLE NOT NULL DEFAULT 0',
+                       'Status'     : 'VARCHAR(16) NOT NULL',
+                      },
+                      'PrimaryKey' : [ 'Site' ]
+                                }
+
   _tablesDB[ 'DowntimeCache' ] = { 'Fields' :
                       {
                        'DowntimeID'    : 'VARCHAR(64) NOT NULL',
