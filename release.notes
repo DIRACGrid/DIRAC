@@ -1,3 +1,8 @@
+[v6r4p19]
+
+*RMS
+FIX: RequestDBMySQL - optimized request selection query 
+
 [v6r4p18]
 
 *Configuration
