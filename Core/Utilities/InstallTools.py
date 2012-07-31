@@ -850,7 +850,7 @@ def getSetupComponents():
         agents[system].append( agent )
       elif body.find( 'dirac-executor' ) != -1:
         system, executor = component.split( '_' )
-        if not executorss.has_key( system ):
+        if not executors.has_key( system ):
           executors[system] = []
         executors[system].append( agent )
     except IOError:
