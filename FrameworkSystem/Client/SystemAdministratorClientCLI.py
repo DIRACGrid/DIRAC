@@ -427,7 +427,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           module = argss[i+1]
         if argss[i] == "-p":
           opt,value = argss[i+1].split('=')
-          specialOptions[opt] = value  
+          specialOptions[opt] = value           
+      if module == component:
+        module = ''
       
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
@@ -438,8 +440,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       hostSetup = result['Value']['Setup']
-      result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
-                                                   getCSExtensions(), hostSetup, specialOptions )
+      
+      # Install Module section if not yet there
+      if module:
+        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, module, 
+                                                     getCSExtensions(), hostSetup )
+        # Add component section with specific parameters only
+        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+                                                     getCSExtensions(), hostSetup, specialOptions, 
+                                                     addDefaultOptions = False )
+      else:  
+        # Install component section
+        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+                                                     getCSExtensions(), hostSetup, specialOptions )
+    
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
