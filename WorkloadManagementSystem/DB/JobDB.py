@@ -1665,11 +1665,14 @@ class JobDB( DB ):
     jobAttrNames.append( 'UserPriority' )
     jobAttrValues.append( priority )
 
-    site = classAdJob.getAttributeString( 'Site' )
-    if not site:
+    siteList = classAdJob.getListFromExpression( 'Site' )
+    if not siteList:
       site = 'ANY'
-    elif site.find( ',' ) > 0:
+    elif len(siteList) > 1:
       site = "Multiple"
+    else:
+      site = siteList[0]
+        
     jobAttrNames.append( 'Site' )
     jobAttrValues.append( site )
 
