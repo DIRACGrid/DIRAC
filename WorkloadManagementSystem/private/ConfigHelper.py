@@ -1,4 +1,4 @@
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Operations
 from DIRAC.Core.Security import Properties
@@ -12,14 +12,16 @@ def findGenericPilotCredentials( vo = False, group = False ):
     if not vo:
       return S_ERROR( "Group %s does not have a VO associated" % group )
   opsHelper = Operations.Operations( vo = vo )
-  pilotGroup = opsHelper.getValue( "Pilot/GenericGroup", "" )
-  pilotDN = opsHelper.getValue( "Pilot/GenericDN", "" )
+  pilotGroup = opsHelper.getValue( "Pilot/GenericPilotGroup", "" )
+  pilotDN = opsHelper.getValue( "Pilot/GenericPilotDN", "" )
   if pilotDN and pilotGroup:
+    gLogger.verbose( "Pilot credentials have been defined in the CS. Using %s@%s" % ( pilotDN, pilotGroup ) )
     result = gProxyManager.userHasProxy( pilotDN, pilotGroup, 86400 )
     if not result[ 'OK' ]:
       return S_ERROR( "%s@%s has no proxy uploaded to the ProxyManager" )
     return S_OK( ( pilotDN, pilotGroup ) )
   #Auto discover
+  gLogger.verbose( "Pilot credentials are not defined. Autodiscovering..." )
   if pilotGroup:
     pilotGroups = [ pilotGroup ]
   else:
@@ -47,11 +49,13 @@ def findGenericPilotCredentials( vo = False, group = False ):
         continue
       result = gProxyManager.userHasProxy( pilotDN, pilotGroup, 86400 )
       if result[ 'OK' ] and result[ 'Value' ]:
+        gLogger.verbose( "Discovered pilot credentials are %s@%s" % ( pilotDN, pilotGroup ) )
         return S_OK( ( pilotDN, pilotGroup ) )
     else:
       for DN in DNs:
         result = gProxyManager.userHasProxy( DN, pilotGroup, 86400 )
         if result[ 'OK' ] and result[ 'Value' ]:
+          gLogger.verbose( "Discovered pilot credentials are %s@%s" % ( DN, pilotGroup ) )
           return S_OK( ( DN, pilotGroup ) )
 
   if pilotDN:
