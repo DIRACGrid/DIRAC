@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [v6r5-pre10]
 
 NEW: Executor framework
@@ -89,6 +90,12 @@ NEW: SRM2Storage - added retry in the gfal calls
 NEW: added new FTSCleaningAgent cleaning up TransferDB tables
 FIX: DataLoggingClient and DataLoggingDB - tests moved to separate files
 CHANGE: request agents cleanup
+=======
+[v6r4p19]
+
+*RMS
+FIX: RequestDBMySQL - optimized request selection query 
+>>>>>>> rel-v6r4
 
 [v6r4p18]
 
@@ -185,7 +192,10 @@ BUGFIX: SandboxMetadataDB - __init__() can not return a value
 [v6r4p9]
 
 *DMS
+<<<<<<< HEAD
 CHANGE: FailoverTransfer - ensure the correct execution order of the subrequests
+=======
+>>>>>>> rel-v6r4
 
 [v6r4p8]
 
