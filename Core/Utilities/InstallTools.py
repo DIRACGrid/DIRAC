@@ -466,7 +466,8 @@ def addOptionToDiracCfg( option, value ):
 
 def addDefaultOptionsToCS( gConfig, componentType, systemName,
                            component, extensions, mySetup = setup,
-                           specialOptions = {}, overwrite = False ):
+                           specialOptions = {}, overwrite = False,
+                           addDefaultOptions = True ):
   """ Add the section with the component options to the CS
   """
   system = systemName.replace( 'System', '' )
@@ -497,7 +498,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
     return S_OK( 'Component options already exist' )
 
   # Add the component options now  
-  result = getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions )
+  result = getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions, addDefaultOptions )
   if not result['OK']:
     return result
   compCfg = result['Value']
@@ -562,7 +563,8 @@ def addCfgToComponentCfg( componentType, systemName, component, cfg ):
   gLogger.error( error )
   return S_ERROR( error )
 
-def getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions = {} ):
+def getComponentCfg( componentType, system, component, compInstance, extensions, 
+                     specialOptions = {}, addDefaultOptions = True ):
   """
   Get the CFG object of the component configuration
   """
@@ -576,30 +578,32 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   if "Module" in specialOptions:
     componentModule = specialOptions['Module']
 
-  extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
   compCfg = CFG()
-  for ext in extensionsDIRAC + ['DIRAC']:
-    cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
-    if os.path.exists( cfgTemplatePath ):
-      gLogger.notice( 'Loading configuration template', cfgTemplatePath )
-      # Look up the component in this template
-      loadCfg = CFG()
-      loadCfg.loadFromFile( cfgTemplatePath )
-      compCfg = loadCfg.mergeWith( compCfg )
+  
+  if addDefaultOptions:
+    extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
+    for ext in extensionsDIRAC + ['DIRAC']:
+      cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
+      if os.path.exists( cfgTemplatePath ):
+        gLogger.notice( 'Loading configuration template', cfgTemplatePath )
+        # Look up the component in this template
+        loadCfg = CFG()
+        loadCfg.loadFromFile( cfgTemplatePath )
+        compCfg = loadCfg.mergeWith( compCfg )
+  
+  
+    compPath = cfgPath( sectionName, componentModule )
+    if not compCfg.isSection( compPath ):
+      error = 'Can not find %s in template' % compPath
+      gLogger.error( error )
+      if exitOnError:
+        DIRAC.exit( -1 )
+      return S_ERROR( error )
 
+    compCfg = compCfg[sectionName][componentModule]
 
-  compPath = cfgPath( sectionName, componentModule )
-  if not compCfg.isSection( compPath ):
-    error = 'Can not find %s in template' % compPath
-    gLogger.error( error )
-    if exitOnError:
-      DIRAC.exit( -1 )
-    return S_ERROR( error )
-
-  compCfg = compCfg[sectionName][componentModule]
-
-  # Delete Dependencies section if any
-  compCfg.deleteKey( 'Dependencies' )
+    # Delete Dependencies section if any
+    compCfg.deleteKey( 'Dependencies' )
 
   sectionPath = cfgPath( 'Systems', system, compInstance, sectionName )
   cfg = __getCfg( sectionPath )
