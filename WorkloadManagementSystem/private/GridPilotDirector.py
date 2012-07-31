@@ -123,8 +123,9 @@ class GridPilotDirector( PilotDirector ):
     """
     taskQueueID = taskQueueDict['TaskQueueID']
     # ownerDN = taskQueueDict['OwnerDN']
-    ownerDN = proxy.getCredentials()['Value']['identity']
-
+    credDict = proxy.getCredentials()['Value']
+    ownerDN = credDict['identity']
+    ownerGroup = credDict[ 'group' ]
 
     if not self.resourceBrokers:
       # Since we can exclude RBs from the list, it may become empty
@@ -209,8 +210,6 @@ class GridPilotDirector( PilotDirector ):
     if pilotsToSubmit > pilotsPerJob:
       # Additional submissions are necessary, need to get a new token and iterate.
       pilotsToSubmit -= pilotsPerJob
-      ownerDN = self.genericPilotDN
-      ownerGroup = self.genericPilotGroup
       result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
       if not result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
