@@ -108,8 +108,6 @@ class PilotDirector:
     self.targetGrids = [ self.gridMiddleware ]
 
 
-    self.genericPilotDN = ""
-    self.genericPilotGroup = ""
     self.enableListMatch = ENABLE_LISTMATCH
     self.listMatchDelay = LISTMATCH_DELAY
     self.listMatchCache = DictCache()
@@ -191,8 +189,6 @@ class PilotDirector:
     self.errorMailAddress = gConfig.getValue( mySection + '/ErrorMailAddress'     , self.errorMailAddress )
     self.alarmMailAddress = gConfig.getValue( mySection + '/AlarmMailAddress'     , self.alarmMailAddress )
     self.mailFromAddress = gConfig.getValue( mySection + '/MailFromAddress'      , self.mailFromAddress )
-    self.genericPilotDN = gConfig.getValue( mySection + '/GenericPilotDN'       , self.genericPilotDN )
-    self.genericPilotGroup = gConfig.getValue( mySection + '/GenericPilotGroup'    , self.genericPilotGroup )
     self.privatePilotFraction = gConfig.getValue( mySection + '/PrivatePilotFraction' , self.privatePilotFraction )
 
     virtualOrganization = gConfig.getValue( mySection + '/VirtualOrganization' , '' )
@@ -302,7 +298,6 @@ class PilotDirector:
     else:
       #For generic jobs we'll submit mixture of generic and private pilots
       self.log.verbose( 'Submitting generic pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
-      #if self.genericPilotGroup
       #ADRI: Find the generic group
       result = findGenericPilotCredentials( group = taskQueueDict[ 'OwnerGroup' ] )
       if not result[ 'OK' ]:
