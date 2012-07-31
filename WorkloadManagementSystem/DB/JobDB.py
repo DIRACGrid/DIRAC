@@ -56,7 +56,7 @@ from DIRAC                                                   import S_OK, S_ERRO
 from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption
 from DIRAC.Core.Base.DB                                      import DB
-from DIRAC.Core.Security.CS                                  import getUsernameForDN, getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
 
 DEBUG = 0
@@ -1595,7 +1595,7 @@ class JobDB( DB ):
       return S_ERROR( 'Job ' + str( jobID ) + ' not found in the system' )
 
     if not resultDict['VerifiedFlag']:
-      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % ( 
+      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % (
                                                                              jobID,
                                                                              resultDict['Status'],
                                                                              resultDict['MinorStatus'] ) )
@@ -1672,7 +1672,7 @@ class JobDB( DB ):
       site = "Multiple"
     else:
       site = siteList[0]
-        
+
     jobAttrNames.append( 'Site' )
     jobAttrValues.append( site )
 

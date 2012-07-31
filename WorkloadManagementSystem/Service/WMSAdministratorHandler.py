@@ -27,8 +27,7 @@ from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.Core.Security.CS import getUsernameForDN
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
 
 import threading
 
@@ -137,7 +136,7 @@ class WMSAdministratorHandler(RequestHandler):
     else:
       msites = sites
     return jobDB.getSiteMaskLogging(msites)
-    
+
 ##############################################################################
   types_getSiteMaskSummary = [ ]
   def export_getSiteMaskSummary(self):
@@ -153,31 +152,31 @@ class WMSAdministratorHandler(RequestHandler):
     for grid in grids:
       result = gConfig.getSections('/Resources/Sites/%s' % grid)
       if not result['OK']:
-        return result  
+        return result
       sites += result['Value']
-      
+
     # Get the current mask status
     result = jobDB.getSiteMaskStatus()
-    siteDict = result['Value']  
+    siteDict = result['Value']
     for site in sites:
       if site not in siteDict:
         siteDict[site] = 'Unknown'
-        
-    return S_OK(siteDict)        
-    
+
+    return S_OK(siteDict)
+
 
 ##########################################################################################
   types_countPilots = [ DictType ]
   def export_countPilots( self, condDict, older=None, newer=None, timeStamp='SubmissionTime' ):
     return pilotDB.countPilots( condDict, older, newer, timeStamp )
-  
+
 ##############################################################################
   types_getCurrentPilotCounters = [ ]
   def export_getCurrentPilotCounters( self, attrDict={}):
     """ Get pilot counters per Status with attrDict selection. Final statuses are given for
         the last day.
     """
-    
+
     result = pilotDB.getCounters( 'PilotAgents',['Status'], attrDict, timeStamp='LastUpdateTime')
     if not result['OK']:
       return result
@@ -186,19 +185,19 @@ class WMSAdministratorHandler(RequestHandler):
                                    timeStamp='LastUpdateTime')
     if not resultDay['OK']:
       return resultDay
-         
+
     resultDict = {}
     for statusDict, count in result['Value']:
       status = statusDict['Status']
-      resultDict[status] = count 
+      resultDict[status] = count
       if status in FINAL_STATES:
         resultDict[status] = 0
         for statusDayDict,ccount in resultDay['Value']:
           if status == statusDayDict['Status']:
             resultDict[status] = ccount
-          break     
-        
-    return S_OK(resultDict) 
+          break
+
+    return S_OK(resultDict)
 
 ##########################################################################################
   types_addPilotTQReference = [ ListType, [IntType, LongType], StringTypes, StringTypes ]
@@ -225,16 +224,16 @@ class WMSAdministratorHandler(RequestHandler):
     """ Get the info about a given pilot job reference
     """
     return pilotDB.getPilotInfo(pilotReference)
-  
+
   ##############################################################################
-  types_selectPilots = [ DictType ] 
+  types_selectPilots = [ DictType ]
   def export_selectPilots(self,condDict):
     """ Select pilots given the selection conditions
     """
     return pilotDB.selectPilots(condDict)
-  
+
   ##############################################################################
-  types_storePilotOutput = [ StringTypes,StringTypes,StringTypes ] 
+  types_storePilotOutput = [ StringTypes,StringTypes,StringTypes ]
   def export_storePilotOutput(self,pilotReference,output,error):
     """ Store the pilot output and error
     """
@@ -265,8 +264,8 @@ class WMSAdministratorHandler(RequestHandler):
     gridType = pilotDict['GridType']
 
     return getPilotLoggingInfo( proxy, gridType, pilotReference )
-  
-  
+
+
 
   ##############################################################################
   types_getJobPilotOutput = [IntType]
@@ -336,8 +335,8 @@ class WMSAdministratorHandler(RequestHandler):
         gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
         return S_ERROR("Failed to get the pilot's owner proxy")
       proxy = ret['Value']
- 
-      pilotStamp = pilotDict['PilotStamp'] 
+
+      pilotStamp = pilotDict['PilotStamp']
       result = getPilotOutput( proxy, gridType, pilotReference, pilotStamp )
       if not result['OK']:
         return S_ERROR('Failed to get pilot output: '+result['Message'])
@@ -348,7 +347,7 @@ class WMSAdministratorHandler(RequestHandler):
       result = pilotDB.storePilotOutput(pilotReference,stdout,error)
       if not result['OK']:
         gLogger.error('Failed to store pilot output:',result['Message'])
-  
+
       resultDict = {}
       resultDict['StdOut'] = stdout
       resultDict['StdErr'] = error
@@ -467,23 +466,23 @@ class WMSAdministratorHandler(RequestHandler):
     if not result['OK']:
       if result['Message'].find('not found') == -1:
         return S_ERROR('Failed to get pilot: '+result['Message'])
-    else:    
-      pilots += result['Value']  
+    else:
+      pilots += result['Value']
     if not pilots:
       # Pilots were not found try to look in the Task Queue
       taskQueueID = 0
       result = taskQueueDB.getTaskQueueForJob( jobID )
       if result['OK'] and result['Value']:
         taskQueueID = result['Value']
-      if taskQueueID:  
+      if taskQueueID:
         result = pilotDB.getPilotsForTaskQueue( taskQueueID, limit=10 )
         if not result['OK']:
           return S_ERROR('Failed to get pilot: '+result['Message'])
-        pilots += result['Value']         
-    
+        pilots += result['Value']
+
     if not pilots:
       return S_ERROR( 'Failed to get pilot for Job %s' % jobID )
-    
+
     return pilotDB.getPilotInfo(pilotID=pilots)
 
   ##############################################################################
@@ -510,7 +509,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
     result = pilotDB.setPilotBenchmark(pilotRef,mark)
     return result
-  
+
   ##########################################################################################
   types_setAccountingFlag = [StringTypes]
   def export_setAccountingFlag(self,pilotRef,mark='True'):
@@ -534,10 +533,10 @@ class WMSAdministratorHandler(RequestHandler):
   def export_countPilots(self,condDict, older=None, newer=None, timeStamp='SubmissionTime'):
     """ Set the pilot agent status
     """
-    
+
     result = pilotDB.countPilots(condDict, older, newer, timeStamp )
     return result
-  
+
   ##########################################################################################
   types_getCounters = [ StringTypes, ListType, DictType ]
   def export_getCounters(self, table, keys, condDict, newer=None, timeStamp='SubmissionTime'):
@@ -546,4 +545,3 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = pilotDB.getCounters( table, keys, condDict, newer=newer, timeStamp=timeStamp )
     return result
-  

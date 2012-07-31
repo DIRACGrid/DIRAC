@@ -11,7 +11,7 @@ Script.initialize()
 from DIRAC                          import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List      import sortList
 from DIRAC.Core.Security.ProxyInfo  import getProxyInfo, formatProxyInfoAsString
-from DIRAC.Core.Security.CS         import getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry         import getDNForUsername
 
 import pprint, sys
 
@@ -136,9 +136,9 @@ class API:
 
   #############################################################################
   def _reportError( self, message, name = '', **kwargs ):
-    """Internal Function. Gets caller method name and arguments, formats the 
-       information and adds an error to the global error dictionary to be 
-       returned to the user. 
+    """Internal Function. Gets caller method name and arguments, formats the
+       information and adds an error to the global error dictionary to be
+       returned to the user.
     """
     className = name
     if not name:
