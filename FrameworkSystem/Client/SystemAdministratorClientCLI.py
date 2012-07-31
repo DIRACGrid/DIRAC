@@ -417,6 +417,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       system = argss[0]
       del argss[0]
       component = argss[0]
+      if '_' in component:
+        print "ERROR: component name can not contain '_' character"
+        return 
       del argss[0]
       
       specialOptions = {}
