@@ -4,7 +4,7 @@
 from suds        import WebFault
 from suds.client import Client
 
-from DIRAC import S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
 __RCSID__ = "$Id$"
 
@@ -14,14 +14,14 @@ class GGUSTicketsClient:
 
   def __init__( self ):
     # FIXME: Why all these are Attributes of the class and not local variables?
-    self.count            = {}
-    self.endDate          = None
-    self.gclient          = None
-    self.query            = ''
-    self.selectedTickets  = {}
-    self.siteName         = ''
-    self.startDate        = None
-    self.statusCount      = {}
+    self.count = {}
+    self.endDate = None
+    self.gclient = None
+    self.query = ''
+    self.selectedTickets = {}
+    self.siteName = ''
+    self.startDate = None
+    self.statusCount = {}
     self.shortDescription = {}
 
 ################################################################################
@@ -43,7 +43,8 @@ class GGUSTicketsClient:
     authInfo.password = "TicketInfo"
     self.gclient.set_options( soapheaders = authInfo )
     # prepare the query string:
-    self.query = '\'GHD_Affected Site\'=\"' + self.siteName + '\" AND \'GHD_Affected VO\'="lhcb"'
+    extension = CSGlobals.getCSExtensions()[0].lower()
+    self.query = '\'GHD_Affected Site\'=\"' + self.siteName + '\" AND \'GHD_Affected VO\'="%s"' % extension
     #self.query = '\'GHD_Affected Site\'=\"'+ self.siteName + '\"'
     self.startDate = startDate
     if self.startDate is not None:
@@ -69,7 +70,7 @@ class GGUSTicketsClient:
                                                       "show_columns_check[]=SHORT_DESCRIPTION&"\
                                                       "ticket=&"\
                                                       "supportunit=all&"\
-                                                      "vo=lhcb&"\
+                                                      "vo=%s&"\
                                                       "user=&"\
                                                       "keyword=&"\
                                                       "involvedsupporter=&"\
@@ -92,7 +93,7 @@ class GGUSTicketsClient:
                                                       "lm_date_month=2&"\
                                                       "lm_date_year=2010&"\
                                                       "orderticketsby=GHD_INT_REQUEST_ID&"\
-                                                      "orderhow=descending"
+                                                      "orderhow=descending" % extension
 
     # the query must be into a try block. Empty queries, though formally correct, raise an exception
     try:
@@ -114,11 +115,11 @@ class GGUSTicketsClient:
     for ticket in self.ticketList:
       id_ = ticket[3][0]
       if id_ not in self.selectedTickets.keys():
-        self.selectedTickets[id_]                     = {}
-        self.selectedTickets[id_]['status']           = ticket[0][0]
+        self.selectedTickets[id_] = {}
+        self.selectedTickets[id_]['status'] = ticket[0][0]
         self.selectedTickets[id_]['shortDescription'] = ticket[1][0]
-        self.selectedTickets[id_]['responsibleUnit']  = ticket[2][0]
-        self.selectedTickets[id_]['site']             = ticket[4][0]
+        self.selectedTickets[id_]['responsibleUnit'] = ticket[2][0]
+        self.selectedTickets[id_]['site'] = ticket[4][0]
     self.count = {}
     # group tickets in only 2 categories: open and terminal states
     # create a dictionary to store the short description only for tickets in open states:
