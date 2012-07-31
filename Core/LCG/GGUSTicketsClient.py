@@ -4,23 +4,18 @@
 from suds        import WebFault
 from suds.client import Client
 
+from DIRAC import S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
 __RCSID__ = "$Id$"
 
 class GGUSTicketsClient:
-  # FIXME: Why is this a class and not just few methods?
-
+  """ Just a class for dealing with the GGUS portal
+  """
 
   def __init__( self ):
-    # FIXME: Why all these are Attributes of the class and not local variables?
-    self.count = {}
-    self.endDate = None
-    self.gclient = None
-    self.query = ''
-    self.selectedTickets = {}
-    self.siteName = ''
-    self.startDate = None
+    """ c'tor
+    """
     self.statusCount = {}
     self.shortDescription = {}
 
@@ -32,30 +27,22 @@ class GGUSTicketsClient:
        @param startDate: starting date (optional)
        @param endDate: end date (optional)
     """
-    self.siteName = name
     self.statusCount = {}
     self.shortDescription = {}
 
     # create client instance using GGUS wsdl:
-    self.gclient = Client( "https://prod-ars.ggus.eu/arsys/WSDL/public/prod-ars/GGUS" )
-    authInfo = self.gclient.factory.create( "AuthenticationInfo" )
+    gclient = Client( "https://prod-ars.ggus.eu/arsys/WSDL/public/prod-ars/GGUS" )
+    authInfo = gclient.factory.create( "AuthenticationInfo" )
     authInfo.userName = "ticketinfo"
     authInfo.password = "TicketInfo"
-    self.gclient.set_options( soapheaders = authInfo )
+    gclient.set_options( soapheaders = authInfo )
     # prepare the query string:
     extension = CSGlobals.getCSExtensions()[0].lower()
-    self.query = '\'GHD_Affected Site\'=\"' + self.siteName + '\" AND \'GHD_Affected VO\'="%s"' % extension
-    #self.query = '\'GHD_Affected Site\'=\"'+ self.siteName + '\"'
-    self.startDate = startDate
-    if self.startDate is not None:
-# st = 'set the starting date as ', self.startDate
-# gLogger.info(st)
-      self.query = self.query + ' AND \'GHD_Date Of Creation\'>' + str( self.startDate )
-    self.endDate = endDate
-    if self.endDate is not None:
-# st = 'set the end date as ', self.endDate
-# gLogger.info(st)
-      self.query = self.query + ' AND \'GHD_Date Of Creation\'<' + str( self.endDate )
+    query = '\'GHD_Affected Site\'=\"' + name + '\" AND \'GHD_Affected VO\'="%s"' % extension
+    if startDate is not None:
+      query = query + ' AND \'GHD_Date Of Creation\'>' + str( startDate )
+    if endDate is not None:
+      query = query + ' AND \'GHD_Date Of Creation\'<' + str( endDate )
 
     # create the URL to get tickets relative to the site:
     # Updated from https://gus.fzk.de to https://ggus.eu 
@@ -75,7 +62,7 @@ class GGUSTicketsClient:
                                                       "keyword=&"\
                                                       "involvedsupporter=&"\
                                                       "assignto=&"\
-                                                      "affectedsite=" + self.siteName + "&"\
+                                                      "affectedsite=" + name + "&"\
                                                       "specattrib=0&"\
                                                       "status=open&"\
                                                       "priority=all&"\
@@ -93,11 +80,11 @@ class GGUSTicketsClient:
                                                       "lm_date_month=2&"\
                                                       "lm_date_year=2010&"\
                                                       "orderticketsby=GHD_INT_REQUEST_ID&"\
-                                                      "orderhow=descending" % extension
+                                                      "orderhow=descending" % ( extension, extension )
 
     # the query must be into a try block. Empty queries, though formally correct, raise an exception
     try:
-      self.ticketList = self.gclient.service.TicketGetList( self.query )
+      self.ticketList = gclient.service.TicketGetList( query )
       self.globalStatistics()
     except WebFault:
       self.statusCount['terminal'] = 0
@@ -111,16 +98,16 @@ class GGUSTicketsClient:
         Get some statistics about the tickets for the site: total number
         of tickets and number of ticket in different status
     '''
-    self.selectedTickets = {} # initialize the dictionary of tickets to return
+    selectedTickets = {} # initialize the dictionary of tickets to return
     for ticket in self.ticketList:
       id_ = ticket[3][0]
-      if id_ not in self.selectedTickets.keys():
-        self.selectedTickets[id_] = {}
-        self.selectedTickets[id_]['status'] = ticket[0][0]
-        self.selectedTickets[id_]['shortDescription'] = ticket[1][0]
-        self.selectedTickets[id_]['responsibleUnit'] = ticket[2][0]
-        self.selectedTickets[id_]['site'] = ticket[4][0]
-    self.count = {}
+      if id_ not in selectedTickets.keys():
+        selectedTickets[id_] = {}
+        selectedTickets[id_]['status'] = ticket[0][0]
+        selectedTickets[id_]['shortDescription'] = ticket[1][0]
+        selectedTickets[id_]['responsibleUnit'] = ticket[2][0]
+        selectedTickets[id_]['site'] = ticket[4][0]
+    count = {}
     # group tickets in only 2 categories: open and terminal states
     # create a dictionary to store the short description only for tickets in open states:
     openStates = ['assigned', 'in progress', 'new', 'on hold',
@@ -128,17 +115,17 @@ class GGUSTicketsClient:
     terminalStates = ['solved', 'unsolved', 'verified']
     self.statusCount['open'] = 0
     self.statusCount['terminal'] = 0
-    for id_ in self.selectedTickets.keys():
-      status = self.selectedTickets[id_]['status']
-      if status not in self.count.keys():
-        self.count[status] = 0
-      self.count[status] += 1
+    for id_ in selectedTickets.keys():
+      status = selectedTickets[id_]['status']
+      if status not in count.keys():
+        count[status] = 0
+      count[status] += 1
       if status in terminalStates:
         self.statusCount['terminal'] += 1
       elif status in openStates:
         self.statusCount['open'] += 1
         if id_ not in self.shortDescription.keys():
-          self.shortDescription[str( id_ )] = self.selectedTickets[id_]['shortDescription']
+          self.shortDescription[str( id_ )] = selectedTickets[id_]['shortDescription']
       else:
         pass
 # st = 'ERROR! GGUS status unknown: ', status
