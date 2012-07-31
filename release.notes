@@ -1,4 +1,4 @@
-[v6r5-pre11]
+[v6r5-pre12]
 
 NEW: Executor framework
 
@@ -25,13 +25,17 @@ FIX: Convert to string before trying to escape value in MySQL
 NEW: DISET Services - added PacketTimeout option
 NEW: SystemLoggingDB - updated to use the renewed MySQL interface and SQL schema
 NEW: Added support for multiple entries in /Registry/DefaultGroup, for multi-VO installations
+CHANGE: Component installation procedure updated to cope with components inheriting Modules
+CHANGE: InstallTools - use dirac- command in runit run scripts
 
 *Configuration
 CHANGE: By default return option and section lists ordered as in the CS
+NEW: ConfigurationClient - added function to refresh remote configuration
 
 *Framework
 FIX: Registry.findDefaultGroup will never return False
 CHANGE: ProxyManager does not accept proxies without explicit group
+CHANGE: SystemAdministratorHandler - force refreshing the configuration after new component setup
 
 *RSS
 CHANGE: removed code execution from __init__
