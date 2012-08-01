@@ -44,7 +44,10 @@ class CacheFeederAgent( AgentModule ):
     self.commands[ 'Jobs' ] = [ { 'JobsWMS' : { 'siteName' : None } }]  
     #FIXME: missing logger
     #PilotsCommand
-    self.commands[ 'Pilots' ] = [ { 'PilotsWMS' : { 'element' : 'Site', 'siteName' : None } } ]
+    self.commands[ 'Pilots' ] = [ 
+                                 { 'PilotsWMS' : { 'element' : 'Site', 'siteName' : None } },
+                                 { 'PilotsWMS' : { 'element' : 'Resource', 'siteName' : None } } 
+                                 ]
     #DowntimeCommand
     self.commands[ 'Downtime' ] = [    
                                     { 'DowntimeSites'     : {} },
