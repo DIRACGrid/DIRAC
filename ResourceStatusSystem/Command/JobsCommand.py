@@ -182,6 +182,87 @@ class JobsWMSCommand( Command ):
 ################################################################################
 ################################################################################
 
+class SuccessfullJobsBySiteSplittedCommand( Command ):
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( SuccessfullJobsBySiteSplittedCommand, self ).__init__( args, clients )
+
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
+    else:
+      self.rClient = ReportsClient() 
+
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
+    else:
+      self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
+    
+    self.rClient.rpcClient = self.rgClient
+  
+  def doCommand( self ):
+    """ 
+    Returns successfull jobs using the DIRAC accounting system for every site 
+    for the last self.args[0] hours 
+        
+    :params:
+      :attr:`sites`: list of sites (when not given, take every site)
+
+    :returns:
+      
+    """
+
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
+
+    sites = None
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+    if sites is None:      
+#FIXME: pointing to the CSHelper instead     
+#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
+#      if not sources[ 'OK' ]:
+#        return sources 
+#      sources = [ si[0] for si in sources[ 'Value' ] ]
+      sites = CSHelpers.getSites()      
+      if not sites['OK']:
+        return sites
+      sites = sites[ 'Value' ]
+    
+    if not sites:
+      return S_ERROR( 'Sites is empty' )
+
+    fromD = datetime.utcnow()-timedelta( hours = hours )
+    toD   = datetime.utcnow()
+
+    successfulJobs = self.rClient.getReport( 'Job', 'NumberOfJobs', fromD, toD, 
+                                             { 'FinalStatus' : [ 'Done' ], 
+                                               'Site'        : sites
+                                             }, 'Site' )
+    if not successfulJobs[ 'OK' ]:
+      return successfulJobs 
+    successfulJobs = successfulJobs[ 'Value' ]
+    
+    if not 'data' in successfulJobs:
+      return S_ERROR( 'Missing data key' ) 
+    if not 'granularity' in successfulJobs:
+      return S_ERROR( 'Missing granularity key' )   
+    
+    singlePlots = {}
+    
+    for site, value in successfulJobs[ 'data' ].items():
+      if site in sites:
+        plot                  = {}
+        plot[ 'data' ]        = { site: value }
+        plot[ 'granularity' ] = successfulJobs[ 'granularity' ]
+        singlePlots[ site ]   = plot
+    
+    return S_OK( singlePlots )
+  
+################################################################################
+################################################################################
+
 #class JobsEffSimpleEveryOneCommand( Command ):
 #
 #  #FIXME: write propper docstrings

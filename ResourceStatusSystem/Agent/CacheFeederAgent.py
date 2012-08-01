@@ -56,9 +56,6 @@ class CacheFeederAgent( AgentModule ):
     #FIXME: do not forget about hourly vs Always ...etc                                                                       
     #AccountingCacheCommand
     self.commands[ 'AccountingCache' ] = [
-#                                          {'TransferQualityByDestSplitted'    :{'hours' :2, 'plotType' :'Data' }},
-#                                          {'FailedTransfersBySourceSplitted'  :{'hours' :2, 'plotType' :'Data' }},
-#                                          {'TransferQualityByDestSplittedSite':{'hours' :24, 'plotType' :'Data' }},
                                           {'SuccessfullJobsBySiteSplitted'    :{'hours' :24, 'plotType' :'Job' }},
                                           {'FailedJobsBySiteSplitted'         :{'hours' :24, 'plotType' :'Job' }},
                                           {'SuccessfullPilotsBySiteSplitted'  :{'hours' :24, 'plotType' :'Pilot' }},
@@ -66,9 +63,9 @@ class CacheFeederAgent( AgentModule ):
                                           {'SuccessfullPilotsByCESplitted'    :{'hours' :24, 'plotType' :'Pilot' }},
                                           {'FailedPilotsByCESplitted'         :{'hours' :24, 'plotType' :'Pilot' }},
                                           {'RunningJobsBySiteSplitted'        :{'hours' :24, 'plotType' :'Job' }},
-                                          {'RunningJobsBySiteSplitted'        :{'hours' :168, 'plotType' :'Job' }},
-                                          {'RunningJobsBySiteSplitted'        :{'hours' :720, 'plotType' :'Job' }},
-                                          {'RunningJobsBySiteSplitted'        :{'hours' :8760, 'plotType' :'Job' }},    
+#                                          {'RunningJobsBySiteSplitted'        :{'hours' :168, 'plotType' :'Job' }},
+#                                          {'RunningJobsBySiteSplitted'        :{'hours' :720, 'plotType' :'Job' }},
+#                                          {'RunningJobsBySiteSplitted'        :{'hours' :8760, 'plotType' :'Job' }},    
                                           ]
 
     #Transfer
@@ -117,7 +114,6 @@ class CacheFeederAgent( AgentModule ):
         commandObject = commandObject[ 'Value' ]
         
         commandArgs[ 'command' ] = commandObject
-        #self.commands[ commandModule ][ commandName ][ 'command' ] = commandObject
         
         self.log.info( '%s loaded' % commandName )
 
@@ -128,7 +124,6 @@ class CacheFeederAgent( AgentModule ):
     for commandModule, commandList in self.commands.items():
       
       for commandDict in commandList:
-      #for commandName, commandArgs in commandValues.items():
       
         commandName = commandDict.keys()[0]
         commandArgs = commandDict[ commandName ]
@@ -164,20 +159,27 @@ class CacheFeederAgent( AgentModule ):
     return S_OK()  
          
   def getExtraArgs( self, commandName ):
+    # FIXME: do it by default on the command
+    '''
+      Some of the commands require a list of 
+    '''
     
     extraArgs = S_OK( [ {} ])
     
     if commandName == 'VOBOXAvailability':
-      extraArgs = self.__getVOBOXAvailabilityCandidates()
+      extraArgs = self.__getVOBOXAvailabilityElems()
     elif commandName == 'SpaceTokenOccupancy':
-      extraArgs = self.__getSpaceTokenOccupancyCandidates()
+      extraArgs = self.__getSpaceTokenOccupancyElems()
     
     return extraArgs
 
   def logResults( self, commandModule, commandDict, results ):
+    '''
+      Lazy method to run the appropiated method to log the results in the DB.
+    '''
 
     if commandModule == 'AccountingCache':
-      return self.__logAccountingCacheResults( commandModule, commandDict, results ) 
+      return self.__logAccountingCacheResults( commandDict, results ) 
        
     if commandModule == 'VOBOXAvailability':
       return self.__logVOBOXAvailabilityResults( results )  
@@ -186,10 +188,10 @@ class CacheFeederAgent( AgentModule ):
       return self.__logDowntimeResults( commandDict, results )  
     
     if commandModule == 'Jobs':
-      return self.__logJobsResults( commandDict, results )
+      return self.__logJobsResults( results )
 
     if commandModule == 'Pilots':
-      return self.__logPilotsResults( commandDict, results )
+      return self.__logPilotsResults( results )
 
     if commandModule == 'Transfer':
       return self.__logTransferResults( commandDict, results )
@@ -199,7 +201,8 @@ class CacheFeederAgent( AgentModule ):
 
   ## Private methods ###########################################################
 
-  def __getVOBOXAvailabilityCandidates( self ):
+  @staticmethod
+  def __getVOBOXAvailabilityElems():
     '''
     Gets the candidates to execute the command
     '''
@@ -214,7 +217,8 @@ class CacheFeederAgent( AgentModule ):
     # This may look stupid, but the Command is expecting a tuple
     return S_OK( [ { 'serviceURL' : el } for el in elementsToCheck ] )
   
-  def __getSpaceTokenOccupancyCandidates( self ):
+  @staticmethod
+  def __getSpaceTokenOccupancyElems():
     '''
     Gets the candidates to execute the command
     '''   
@@ -246,6 +250,9 @@ class CacheFeederAgent( AgentModule ):
     return S_OK( elementsToCheck )
   
   def __logVOBOXAvailabilityResults( self, results ):
+    '''
+      Save to database the results of the VOBOXAvailabilityCommand commands
+    '''
     
     if not 'serviceUpTime' in results:
       return S_ERROR( 'serviceUpTime key missing' )
@@ -263,10 +270,11 @@ class CacheFeederAgent( AgentModule ):
        
     return self.rmClient.addOrModifyVOBOXCache( site, system, serviceUp, machineUp ) 
 
-  def __logAccountingCacheResults( self, commandModule, commandDict, results ):
-    
-    #FIXME: check keys, probably faster with try / except
-        
+  def __logAccountingCacheResults( self, commandDict, results ):
+    '''
+      Save to database the results of the AccountingCacheCommand commands
+    '''
+           
     commandName = commandDict.keys()[ 0 ]
     
     plotType = commandDict[ commandName ][ 'plotType' ]  
@@ -285,6 +293,9 @@ class CacheFeederAgent( AgentModule ):
     return S_OK()  
 
   def __logDowntimeResults( self, commandDict, results ):
+    '''
+      Save to database the results of the DowntimeCommand commands
+    '''
   
     commandName = commandDict.keys()[ 0 ]
   
@@ -315,8 +326,11 @@ class CacheFeederAgent( AgentModule ):
   
     return S_OK()  
 
-  def __logJobsResults( self, commandDict, results ):
-    
+  def __logJobsResults( self, results ):
+    '''
+      Save to database the results of the JobsCommand commands
+    '''
+
     for jobResult in results:
       
       try:
@@ -337,7 +351,10 @@ class CacheFeederAgent( AgentModule ):
   
     return S_OK()  
     
-  def __logPilotsResults( self, commandDict, results ):
+  def __logPilotsResults( self, results ):
+    '''
+      Save to database the results of the PilotsCommand commands
+    '''
 
     for pilotResult in results:
       
@@ -361,6 +378,9 @@ class CacheFeederAgent( AgentModule ):
     return S_OK()  
 
   def __logTransferResults( self, commandDict, results ):
+    '''
+      Save to database the results of the TransferCommand commands
+    '''
 
     direction = commandDict[ 'direction' ]
     metric    = commandDict.keys()[0]
