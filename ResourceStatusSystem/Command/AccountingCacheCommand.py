@@ -12,7 +12,7 @@ from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.AccountingSystem.Client.ReportsClient            import ReportsClient
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command             import Command
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+#from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities                   import CSHelpers 
 
 __RCSID__ = '$Id:  $'
@@ -20,256 +20,256 @@ __RCSID__ = '$Id:  $'
 ################################################################################
 ################################################################################
 
-class TransferQualityByDestSplittedCommand( Command ):
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( TransferQualityByDestSplittedCommand, self ).__init__( args, clients )
-    
+#class TransferQualityByDestSplittedCommand( Command ):
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( TransferQualityByDestSplittedCommand, self ).__init__( args, clients )
+#    
+##    if 'ResourceStatusClient' in self.apis:
+##      self.rsClient = self.apis[ 'ResourceStatusClient' ]
+##    else:
+##      self.rsClient = ResourceStatusClient() 
+#
+#    if 'ReportsClient' in self.apis:
+#      self.rClient = self.apis[ 'ReportsClient' ]
+#    else:
+#      self.rClient = ReportsClient() 
+#
+#    if 'ReportGenerator' in self.apis:
+#      self.rgClient = self.apis[ 'ReportGenerator' ]
+#    else:
+#      self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
+#  
+#    self.rClient.rpcClient = self.rgClient
+#  
+#  def doCommand( self ):
+#    """ 
+#    Returns transfer quality using the DIRAC accounting system for every SE 
+#    for the last self.args[0] hours 
+#        
+#    :params:
+#      :attr:`sources`: list of source sites (when not given, take every site)
+#    
+#      :attr:`SEs`: list of storage elements (when not given, take every SE)
+#
+#    :returns:
+#      
+#    """
+#
+#    if not 'hours' in self.args:
+#      return S_ERROR( 'Number of hours not specified' )
+#    hours = self.args[ 'hours' ]
+#
+#    sites = None
+#    if 'sites' in self.args:
+#      sites = self.args[ 'sites' ] 
+#    if sites is None:      
+##FIXME: pointing to the CSHelper instead     
+##      meta = { 'columns' : 'SiteName' }
+##      sources = self.rsClient.getSite( meta = meta )      
+##      if not sources[ 'OK' ]:
+##        return sources
+##      sources = [ s[0] for s in sources[ 'Value' ] ]
+#      sites = CSHelpers.getSites()      
+#      if not sites['OK']:
+#        return sites
+#      
+#      sites = sites[ 'Value' ]
+#      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]  
+#      
+#    ses = None
+#    if 'ses' in self.args:
+#      ses = self.args[ 'ses' ]
+#    if ses is None:
+##FIXME: pointing to the CSHelper instead      
+##      meta = { 'columns' : 'StorageElementName' }
+##      ses = self.rsClient.getStorageElement( meta = meta )
+##      if not ses[ 'OK' ]:
+##        return ses 
+##      ses = [ se[0] for se in ses[ 'Value' ] ]
+#      ses = CSHelpers.getStorageElements()      
+#      if not ses['OK']:
+#        return ses
+#      
+#      ses = ses[ 'Value' ]
+#      #ses = [ se[ 0 ] for se in ses[ 'Value' ] ]  
+##    if sources is None:
+##      meta = { 'columns' : 'SiteName' }
+##      sources = self.rsClient.getSite( meta = meta )      
+##      if not sources[ 'OK' ]:
+##        return sources
+##      sources = [ s[0] for s in sources[ 'Value' ] ]
+#  
+#    if not sites + ses:
+#      return S_ERROR( 'Sites + SEs is empty' )
+#
+#    toD   = datetime.utcnow()
+#    fromD = toD - timedelta( hours = hours )
+#
+#    qualityAll = self.rClient.getReport( 'DataOperation', 'Quality', fromD, toD, 
+#                                          { 'OperationType' : 'putAndRegister', 
+#                                            'Source'        : sites + ses, 
+#                                            'Destination'   : sites + ses 
+#                                           }, 'Destination' )
+#      
+#    if not qualityAll[ 'OK' ]:
+#      return qualityAll
+#    qualityAll = qualityAll[ 'Value' ]
+#    
+#    if not 'data' in qualityAll:
+#      return S_ERROR( 'Missing data key' )
+#    if not 'granularity' in qualityAll:
+#      return S_ERROR( 'Missing granularity key' )
+#    
+#    singlePlots = {}
+#    for se, value in qualityAll[ 'data' ].items():
+#      plot                  = {}
+#      plot[ 'data' ]        = { se: value }
+#      plot[ 'granularity' ] = qualityAll[ 'granularity' ]
+#      singlePlots[ se ]     = plot
+#    
+#    return S_OK( singlePlots )
+#
+#################################################################################
+#################################################################################
+#
+#class TransferQualityByDestSplittedSiteCommand( Command ):
+#  
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( TransferQualityByDestSplittedSiteCommand, self ).__init__( args, clients )
+#    
 #    if 'ResourceStatusClient' in self.apis:
 #      self.rsClient = self.apis[ 'ResourceStatusClient' ]
 #    else:
 #      self.rsClient = ResourceStatusClient() 
-
-    if 'ReportsClient' in self.apis:
-      self.rClient = self.apis[ 'ReportsClient' ]
-    else:
-      self.rClient = ReportsClient() 
-
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis[ 'ReportGenerator' ]
-    else:
-      self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
-  
-    self.rClient.rpcClient = self.rgClient
-  
-  def doCommand( self ):
-    """ 
-    Returns transfer quality using the DIRAC accounting system for every SE 
-    for the last self.args[0] hours 
-        
-    :params:
-      :attr:`sources`: list of source sites (when not given, take every site)
-    
-      :attr:`SEs`: list of storage elements (when not given, take every SE)
-
-    :returns:
-      
-    """
-
-    if not 'hours' in self.args:
-      return S_ERROR( 'Number of hours not specified' )
-    hours = self.args[ 'hours' ]
-
-    sites = None
-    if 'sites' in self.args:
-      sites = self.args[ 'sites' ] 
-    if sites is None:      
-#FIXME: pointing to the CSHelper instead     
-#      meta = { 'columns' : 'SiteName' }
-#      sources = self.rsClient.getSite( meta = meta )      
-#      if not sources[ 'OK' ]:
-#        return sources
-#      sources = [ s[0] for s in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()      
-      if not sites['OK']:
-        return sites
-      
-      sites = sites[ 'Value' ]
-      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]  
-      
-    ses = None
-    if 'ses' in self.args:
-      ses = self.args[ 'ses' ]
-    if ses is None:
-#FIXME: pointing to the CSHelper instead      
-#      meta = { 'columns' : 'StorageElementName' }
-#      ses = self.rsClient.getStorageElement( meta = meta )
-#      if not ses[ 'OK' ]:
-#        return ses 
-#      ses = [ se[0] for se in ses[ 'Value' ] ]
-      ses = CSHelpers.getStorageElements()      
-      if not ses['OK']:
-        return ses
-      
-      ses = ses[ 'Value' ]
-      #ses = [ se[ 0 ] for se in ses[ 'Value' ] ]  
-#    if sources is None:
-#      meta = { 'columns' : 'SiteName' }
-#      sources = self.rsClient.getSite( meta = meta )      
-#      if not sources[ 'OK' ]:
-#        return sources
-#      sources = [ s[0] for s in sources[ 'Value' ] ]
-  
-    if not sites + ses:
-      return S_ERROR( 'Sites + SEs is empty' )
-
-    toD   = datetime.utcnow()
-    fromD = toD - timedelta( hours = hours )
-
-    qualityAll = self.rClient.getReport( 'DataOperation', 'Quality', fromD, toD, 
-                                          { 'OperationType' : 'putAndRegister', 
-                                            'Source'        : sites + ses, 
-                                            'Destination'   : sites + ses 
-                                           }, 'Destination' )
-      
-    if not qualityAll[ 'OK' ]:
-      return qualityAll
-    qualityAll    = qualityAll[ 'Value' ]
-    
-    if not 'data' in qualityAll:
-      return S_ERROR( 'Missing data key' )
-    if not 'granularity' in qualityAll:
-      return S_ERROR( 'Missing granularity key' )
-    
-    singlePlots = {}
-    for se, value in qualityAll[ 'data' ].items():
-      plot                  = {}
-      plot[ 'data' ]        = { se: value }
-      plot[ 'granularity' ] = qualityAll[ 'granularity' ]
-      singlePlots[ se ]     = plot
-    
-    return S_OK( singlePlots )
-
-################################################################################
-################################################################################
-
-class TransferQualityByDestSplittedSiteCommand( Command ):
-  
-  def __init__( self, args = None, clients = None ):
-    
-    super( TransferQualityByDestSplittedSiteCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.apis:
-      self.rsClient = self.apis[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
-
-    if 'ReportsClient' in self.apis:
-      self.rClient = self.apis[ 'ReportsClient' ]
-    else:
-      self.rClient = ReportsClient() 
-
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis[ 'ReportGenerator' ]
-    else:
-      self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
-  
-    self.rClient.rpcClient = self.rgClient
-  
-  def doCommand( self ):
-    """ 
-    Returns transfer quality using the DIRAC accounting system for every SE
-    of a single site for the last self.args[0] hours 
-        
-    :params:
-      :attr:`sources`: list of source sites (when not given, take every site)
-    
-      :attr:`SEs`: list of storage elements (when not given, take every SE)
-
-    :returns:
-      
-    """
-
-    if not 'hours' in self.args:
-      return S_ERROR( 'Number of hours not specified' )
-    hours = self.args[ 'hours' ]
-      
-    sites = None
-    if 'sites' in self.args:
-      sites = self.args[ 'sites' ] 
-    if sites is None:      
-#FIXME: pointing to the CSHelper instead     
-#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
-#      if not sources[ 'OK' ]:
-#        return sources 
-#      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()      
-      if not sites['OK']:
-        return sites
-      sites = sites[ 'Value' ]      
-      
-    ses = None
-    if 'ses' in self.args:
-      ses = self.args[ 'ses' ]
-    if ses is None:
-#FIXME: pointing to the CSHelper instead      
-#      meta = { 'columns' : 'StorageElementName' }
-#      ses = self.rsClient.getStorageElement( meta = meta )
-#      if not ses[ 'OK' ]:
-#        return ses 
-#      ses = [ se[0] for se in ses[ 'Value' ] ]
-      ses = CSHelpers.getStorageElements()      
-      if not ses['OK']:
-        return ses
-      
-      ses = ses[ 'Value' ]      
-          
-    if not sites + ses:
-      return S_ERROR( 'Sites + SEs is empty' )
- 
-    return S_ERROR( 'This guy is buggy, missing method on rsClient' )
- 
-    fromD = datetime.utcnow() - timedelta( hours = hours )
-    toD   = datetime.utcnow()
-
-    qualityAll = self.rClient.getReport( 'DataOperation', 'Quality', fromD, toD, 
-                                         { 'OperationType' : 'putAndRegister', 
-                                           'Source'        : sites + ses, 
-                                           'Destination'   : sites + ses 
-                                          }, 'Destination' )
-    if not qualityAll[ 'OK' ]:
-      return qualityAll 
-    qualityAll = qualityAll[ 'Value' ]
-    
-    if not 'data' in qualityAll:
-      return S_ERROR( 'Missing data key' )
-    listOfDest = qualityAll[ 'data' ].keys()
-    
-    if not 'granularity' in qualityAll:
-      return S_ERROR( 'Missing granularity key' )
-    plotGran = qualityAll[ 'granularity' ]
-    
-    storSitesWeb = self.rsClient.getMonitoredsStatusWeb( 'StorageElement', 
-                                                         { 'StorageElementName': listOfDest }, 0, 300 )
-    if not storSitesWeb[ 'OK' ]:
-      return storSitesWeb 
-    storSitesWeb = storSitesWeb[ 'Value' ]   
-    
-    if not 'Records' in storSitesWeb:
-      return S_ERROR( 'Missing Records key' )  
-    storSitesWeb  = storSitesWeb[ 'Records' ]
-    
-    SESiteMapping = {}
-    siteSEMapping = {}
-    
-    #FIXME: this is very likely going to explode sooner or later...
-    for r in storSitesWeb:
-      sites                   = r[ 2 ].split( ' ' )[ :-1 ]
-      SESiteMapping[ r[ 0 ] ] = sites
-      
-    for se in SESiteMapping.keys():
-      for site in SESiteMapping[ se ]:
-        try:
-          l = siteSEMapping[ site ]
-          l.append( se )
-          siteSEMapping[ site ] = l
-        except KeyError:
-          siteSEMapping[ site ] = [ se ]
-   
-    singlePlots = {}
-    
-    #FIXME: refactor it
-    for site in siteSEMapping.keys():
-      plot           = {}
-      plot[ 'data' ] = {}
-      for SE in siteSEMapping[site]:
-        plot[ 'data' ][ se ] = qualityAll[ 'data' ][ se ]
-      plot[ 'granularity' ] = plotGran
-    
-      singlePlots[ site ] = plot
-    
-    return S_OK( singlePlots )
+#
+#    if 'ReportsClient' in self.apis:
+#      self.rClient = self.apis[ 'ReportsClient' ]
+#    else:
+#      self.rClient = ReportsClient() 
+#
+#    if 'ReportGenerator' in self.apis:
+#      self.rgClient = self.apis[ 'ReportGenerator' ]
+#    else:
+#      self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
+#  
+#    self.rClient.rpcClient = self.rgClient
+#  
+#  def doCommand( self ):
+#    """ 
+#    Returns transfer quality using the DIRAC accounting system for every SE
+#    of a single site for the last self.args[0] hours 
+#        
+#    :params:
+#      :attr:`sources`: list of source sites (when not given, take every site)
+#    
+#      :attr:`SEs`: list of storage elements (when not given, take every SE)
+#
+#    :returns:
+#      
+#    """
+#
+#    if not 'hours' in self.args:
+#      return S_ERROR( 'Number of hours not specified' )
+#    hours = self.args[ 'hours' ]
+#      
+#    sites = None
+#    if 'sites' in self.args:
+#      sites = self.args[ 'sites' ] 
+#    if sites is None:      
+##FIXME: pointing to the CSHelper instead     
+##      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
+##      if not sources[ 'OK' ]:
+##        return sources 
+##      sources = [ si[0] for si in sources[ 'Value' ] ]
+#      sites = CSHelpers.getSites()      
+#      if not sites['OK']:
+#        return sites
+#      sites = sites[ 'Value' ]      
+#      
+#    ses = None
+#    if 'ses' in self.args:
+#      ses = self.args[ 'ses' ]
+#    if ses is None:
+##FIXME: pointing to the CSHelper instead      
+##      meta = { 'columns' : 'StorageElementName' }
+##      ses = self.rsClient.getStorageElement( meta = meta )
+##      if not ses[ 'OK' ]:
+##        return ses 
+##      ses = [ se[0] for se in ses[ 'Value' ] ]
+#      ses = CSHelpers.getStorageElements()      
+#      if not ses['OK']:
+#        return ses
+#      
+#      ses = ses[ 'Value' ]      
+#          
+#    if not sites + ses:
+#      return S_ERROR( 'Sites + SEs is empty' )
+# 
+#    return S_ERROR( 'This guy is buggy, missing method on rsClient' )
+# 
+#    fromD = datetime.utcnow() - timedelta( hours = hours )
+#    toD   = datetime.utcnow()
+#
+#    qualityAll = self.rClient.getReport( 'DataOperation', 'Quality', fromD, toD, 
+#                                         { 'OperationType' : 'putAndRegister', 
+#                                           'Source'        : sites + ses, 
+#                                           'Destination'   : sites + ses 
+#                                          }, 'Destination' )
+#    if not qualityAll[ 'OK' ]:
+#      return qualityAll 
+#    qualityAll = qualityAll[ 'Value' ]
+#    
+#    if not 'data' in qualityAll:
+#      return S_ERROR( 'Missing data key' )
+#    listOfDest = qualityAll[ 'data' ].keys()
+#    
+#    if not 'granularity' in qualityAll:
+#      return S_ERROR( 'Missing granularity key' )
+#    plotGran = qualityAll[ 'granularity' ]
+#    
+#    storSitesWeb = self.rsClient.getMonitoredsStatusWeb( 'StorageElement', 
+#                                                         { 'StorageElementName': listOfDest }, 0, 300 )
+#    if not storSitesWeb[ 'OK' ]:
+#      return storSitesWeb 
+#    storSitesWeb = storSitesWeb[ 'Value' ]   
+#    
+#    if not 'Records' in storSitesWeb:
+#      return S_ERROR( 'Missing Records key' )  
+#    storSitesWeb  = storSitesWeb[ 'Records' ]
+#    
+#    SESiteMapping = {}
+#    siteSEMapping = {}
+#    
+#    #FIXME: this is very likely going to explode sooner or later...
+#    for r in storSitesWeb:
+#      sites                   = r[ 2 ].split( ' ' )[ :-1 ]
+#      SESiteMapping[ r[ 0 ] ] = sites
+#      
+#    for se in SESiteMapping.keys():
+#      for site in SESiteMapping[ se ]:
+#        try:
+#          l = siteSEMapping[ site ]
+#          l.append( se )
+#          siteSEMapping[ site ] = l
+#        except KeyError:
+#          siteSEMapping[ site ] = [ se ]
+#   
+#    singlePlots = {}
+#    
+#    #FIXME: refactor it
+#    for site in siteSEMapping.keys():
+#      plot           = {}
+#      plot[ 'data' ] = {}
+#      for SE in siteSEMapping[site]:
+#        plot[ 'data' ][ se ] = qualityAll[ 'data' ][ se ]
+#      plot[ 'granularity' ] = plotGran
+#    
+#      singlePlots[ site ] = plot
+#    
+#    return S_OK( singlePlots )
   
 ################################################################################
 ################################################################################
@@ -376,103 +376,103 @@ class TransferQualityByDestSplittedSiteCommand( Command ):
 ################################################################################
 ################################################################################
 
-class FailedTransfersBySourceSplittedCommand( Command ):
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( FailedTransfersBySourceSplittedCommand, self ).__init__( args, clients )
-
-    if 'ReportsClient' in self.apis:
-      self.rClient = self.apis[ 'ReportsClient' ]
-    else:
-      self.rClient = ReportsClient() 
-
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis[ 'ReportGenerator' ]
-    else:
-      self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
-  
-    self.rClient.rpcClient = self.rgClient
-  
-  def doCommand( self):
-    """ 
-    Returns failed transfer using the DIRAC accounting system for every SE 
-    for the last self.args[0] hours 
-        
-    :params:
-      :attr:`sources`: list of source sites (when not given, take every site)
-    
-      :attr:`SEs`: list of storage elements (when not given, take every SE)
-
-    :returns:
-      
-    """
-
-    if not 'hours' in self.args:
-      return S_ERROR( 'Number of hours not specified' )
-    hours = self.args[ 'hours' ]
-      
-    sites = None
-    if 'sites' in self.args:
-      sites = self.args[ 'sites' ] 
-    if sites is None:      
-#FIXME: pointing to the CSHelper instead     
-#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
-#      if not sources[ 'OK' ]:
-#        return sources 
-#      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()      
-      if not sites['OK']:
-        return sites
-      sites = sites[ 'Value' ]      
-      
-    ses = None
-    if 'ses' in self.args:
-      ses = self.args[ 'ses' ]
-    if ses is None:
-#FIXME: pointing to the CSHelper instead      
-#      meta = { 'columns' : 'StorageElementName' }
-#      ses = self.rsClient.getStorageElement( meta = meta )
-#      if not ses[ 'OK' ]:
-#        return ses 
-#      ses = [ se[0] for se in ses[ 'Value' ] ]
-      ses = CSHelpers.getStorageElements()      
-      if not ses['OK']:
-        return ses
-      
-      ses = ses[ 'Value' ]      
-          
-    if not sites + ses:
-      return S_ERROR( 'Sites + SEs is empty' )
-
-    fromD = datetime.utcnow()-timedelta( hours = hours )
-    toD   = datetime.utcnow()
-
-    failedTransfers = self.rClient.getReport( 'DataOperation', 'FailedTransfers', fromD, toD, 
-                                              { 'OperationType' : 'putAndRegister', 
-                                                'Source'        : sites + ses, 
-                                                'Destination'   : sites + ses,
-                                                'FinalStatus'   : [ 'Failed' ] 
-                                               }, 'Source' )
-    if not failedTransfers[ 'OK' ]:
-      return failedTransfers
-    failedTransfers = failedTransfers[ 'Value' ]
-    
-    if not 'data' in failedTransfers:
-      return S_ERROR( 'Missing data key' )
-    if not 'granularity' in failedTransfers:
-      return S_ERROR( 'Missing granularity key' )
-    
-    singlePlots = {}
-    
-    for source, value in failedTransfers[ 'data' ].items():
-      if source in sites:
-        plot                  = {}
-        plot[ 'data' ]        = { source: value }
-        plot[ 'granularity' ] = failedTransfers[ 'granularity' ]
-        singlePlots[ source ] = plot
-    
-    return S_OK( singlePlots )
+#class FailedTransfersBySourceSplittedCommand( Command ):
+#
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( FailedTransfersBySourceSplittedCommand, self ).__init__( args, clients )
+#
+#    if 'ReportsClient' in self.apis:
+#      self.rClient = self.apis[ 'ReportsClient' ]
+#    else:
+#      self.rClient = ReportsClient() 
+#
+#    if 'ReportGenerator' in self.apis:
+#      self.rgClient = self.apis[ 'ReportGenerator' ]
+#    else:
+#      self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
+#  
+#    self.rClient.rpcClient = self.rgClient
+#  
+#  def doCommand( self):
+#    """ 
+#    Returns failed transfer using the DIRAC accounting system for every SE 
+#    for the last self.args[0] hours 
+#        
+#    :params:
+#      :attr:`sources`: list of source sites (when not given, take every site)
+#    
+#      :attr:`SEs`: list of storage elements (when not given, take every SE)
+#
+#    :returns:
+#      
+#    """
+#
+#    if not 'hours' in self.args:
+#      return S_ERROR( 'Number of hours not specified' )
+#    hours = self.args[ 'hours' ]
+#      
+#    sites = None
+#    if 'sites' in self.args:
+#      sites = self.args[ 'sites' ] 
+#    if sites is None:      
+##FIXME: pointing to the CSHelper instead     
+##      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
+##      if not sources[ 'OK' ]:
+##        return sources 
+##      sources = [ si[0] for si in sources[ 'Value' ] ]
+#      sites = CSHelpers.getSites()      
+#      if not sites['OK']:
+#        return sites
+#      sites = sites[ 'Value' ]      
+#      
+#    ses = None
+#    if 'ses' in self.args:
+#      ses = self.args[ 'ses' ]
+#    if ses is None:
+##FIXME: pointing to the CSHelper instead      
+##      meta = { 'columns' : 'StorageElementName' }
+##      ses = self.rsClient.getStorageElement( meta = meta )
+##      if not ses[ 'OK' ]:
+##        return ses 
+##      ses = [ se[0] for se in ses[ 'Value' ] ]
+#      ses = CSHelpers.getStorageElements()      
+#      if not ses['OK']:
+#        return ses
+#      
+#      ses = ses[ 'Value' ]      
+#          
+#    if not sites + ses:
+#      return S_ERROR( 'Sites + SEs is empty' )
+#
+#    fromD = datetime.utcnow()-timedelta( hours = hours )
+#    toD   = datetime.utcnow()
+#
+#    failedTransfers = self.rClient.getReport( 'DataOperation', 'FailedTransfers', fromD, toD, 
+#                                              { 'OperationType' : 'putAndRegister', 
+#                                                'Source'        : sites + ses, 
+#                                                'Destination'   : sites + ses,
+#                                                'FinalStatus'   : [ 'Failed' ] 
+#                                               }, 'Source' )
+#    if not failedTransfers[ 'OK' ]:
+#      return failedTransfers
+#    failedTransfers = failedTransfers[ 'Value' ]
+#    
+#    if not 'data' in failedTransfers:
+#      return S_ERROR( 'Missing data key' )
+#    if not 'granularity' in failedTransfers:
+#      return S_ERROR( 'Missing granularity key' )
+#    
+#    singlePlots = {}
+#    
+#    for source, value in failedTransfers[ 'data' ].items():
+#      if source in sites:
+#        plot                  = {}
+#        plot[ 'data' ]        = { source: value }
+#        plot[ 'granularity' ] = failedTransfers[ 'granularity' ]
+#        singlePlots[ source ] = plot
+#    
+#    return S_OK( singlePlots )
 
 ################################################################################
 ################################################################################
@@ -553,7 +553,7 @@ class SuccessfullJobsBySiteSplittedCommand( Command ):
         plot[ 'granularity' ] = successfulJobs[ 'granularity' ]
         singlePlots[ site ]   = plot
     
-    return S_OK( { 'Job' : singlePlots } )
+    return S_OK( singlePlots )
 
 ################################################################################
 ################################################################################

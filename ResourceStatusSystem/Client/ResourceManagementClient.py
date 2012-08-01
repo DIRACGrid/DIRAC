@@ -950,8 +950,8 @@ class ResourceManagementClient( object ):
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'TransferCache', locals() )
 
-  def addOrModifyTransferCache( self, site = None, maskStatus = None, efficiency = None, 
-                                status = None, lastCheckTime = None, meta = None ):
+  def addOrModifyTransferCache( self, elementName = None, direction = None, metric = None, 
+                                value = None, lastCheckTime = None, meta = None ):
     '''
 #FIXME: write proper docstring    
 #    Adds or updates-if-duplicated from AccountingCache
@@ -982,8 +982,8 @@ class ResourceManagementClient( object ):
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'TransferCache', locals() )
 
-  def addIfNotThereTransferCache( self, site = None, maskStatus = None, efficiency = None, 
-                                  status = None, lastCheckTime = None, meta = None ):
+  def addIfNotThereTransferCache( self, elementName = None, direction = None, metric = None, 
+                                  value = None, lastCheckTime = None, meta = None ):
     '''
 #FIXME: write proper docstring    
 #    Adds or updates-if-duplicated from AccountingCache

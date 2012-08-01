@@ -56,9 +56,9 @@ class CacheFeederAgent( AgentModule ):
     #FIXME: do not forget about hourly vs Always ...etc                                                                       
     #AccountingCacheCommand
     self.commands[ 'AccountingCache' ] = [
-                                          {'TransferQualityByDestSplitted'    :{'hours' :2, 'plotType' :'Data' }},
-                                          {'FailedTransfersBySourceSplitted'  :{'hours' :2, 'plotType' :'Data' }},
-                                          {'TransferQualityByDestSplittedSite':{'hours' :24, 'plotType' :'Data' }},
+#                                          {'TransferQualityByDestSplitted'    :{'hours' :2, 'plotType' :'Data' }},
+#                                          {'FailedTransfersBySourceSplitted'  :{'hours' :2, 'plotType' :'Data' }},
+#                                          {'TransferQualityByDestSplittedSite':{'hours' :24, 'plotType' :'Data' }},
                                           {'SuccessfullJobsBySiteSplitted'    :{'hours' :24, 'plotType' :'Job' }},
                                           {'FailedJobsBySiteSplitted'         :{'hours' :24, 'plotType' :'Job' }},
                                           {'SuccessfullPilotsBySiteSplitted'  :{'hours' :24, 'plotType' :'Pilot' }},
@@ -70,6 +70,15 @@ class CacheFeederAgent( AgentModule ):
                                           {'RunningJobsBySiteSplitted'        :{'hours' :720, 'plotType' :'Job' }},
                                           {'RunningJobsBySiteSplitted'        :{'hours' :8760, 'plotType' :'Job' }},    
                                           ]
+
+    #Transfer
+    self.commands[ 'Transfer' ] = [
+                                   { 'TransferQuality' : { 'hours' : 2, 'name' : None, 'direction' : 'Source' } }, 
+                                   { 'TransferQuality' : { 'hours' : 2, 'name' : None, 'direction' : 'Destination' } },
+                                   { 'TransferFailed'  : { 'hours' : 2, 'name' : None, 'direction' : 'Source' } },
+                                   { 'TransferFailed'  : { 'hours' : 2, 'name' : None, 'direction' : 'Destination' } },
+                                            ]
+    
     #VOBOXAvailability
     self.commands[ 'VOBOXAvailability' ] = [
                                             { 'VOBOXAvailability' : {} }
@@ -181,6 +190,9 @@ class CacheFeederAgent( AgentModule ):
 
     if commandModule == 'Pilots':
       return self.__logPilotsResults( commandDict, results )
+
+    if commandModule == 'Transfer':
+      return self.__logTransferResults( commandDict, results )
 
     commandName = commandDict.keys()[ 0 ]
     return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
@@ -342,6 +354,21 @@ class CacheFeederAgent( AgentModule ):
       
       resQuery = self.rmClient.addOrModifyPilotCache( site, cE, pilotsPerJob, 
                                                       pilotJobEff, status )
+      
+      if not resQuery[ 'OK' ]:
+        return resQuery    
+  
+    return S_OK()  
+
+  def __logTransferResults( self, commandDict, results ):
+
+    direction = commandDict[ 'direction' ]
+    metric    = commandDict.keys()[0]
+    
+    for elementName, transferResult in results.items():
+      
+      resQuery = self.rmClient.addOrModifyTransferCache( elementName, direction, 
+                                                         metric, transferResult )
       
       if not resQuery[ 'OK' ]:
         return resQuery    
