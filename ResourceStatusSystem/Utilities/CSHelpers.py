@@ -46,6 +46,33 @@ def getSites():
   sites = list( set ( sites ) )
   return S_OK( sites )
 
+def getDomainSites():
+  '''
+    Gets all sites from /Resources/Sites
+  '''
+
+  _basePath = 'Resources/Sites'
+  
+  sites = {}
+  
+  domainNames = gConfig.getSections( _basePath )
+  if not domainNames[ 'OK' ]:
+    return domainNames
+  domainNames = domainNames[ 'Value' ]
+  
+  for domainName in domainNames:
+    domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
+    if not domainSites[ 'OK' ]:
+      return domainSites
+    
+    domainSites = domainSites[ 'Value' ]
+    
+    sites[ domainName ] = domainSites  
+
+  # Remove duplicated ( just in case )
+  # sites = list( set ( sites ) )
+  return S_OK( sites )
+
 def getResources():
   '''
     Gets all resources
