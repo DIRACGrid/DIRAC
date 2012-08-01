@@ -12,11 +12,13 @@ from DIRAC.ResourceStatusSystem.Utilities         import CSHelpers
 
 __RCSID__ = '$Id:  $'  
 
-class TransferQualitySEsCommand( Command ):
+################################################################################
+
+class TransferQualityCommand( Command ):
 
   def __init__( self, args = None, clients = None ):
     
-    super( TransferQualitySEsCommand, self ).__init__( args, clients )
+    super( TransferQualityCommand, self ).__init__( args, clients )
     
     if 'ReportsClient' in self.apis:
       self.rClient = self.apis[ 'ReportsClient' ]
@@ -31,40 +33,231 @@ class TransferQualitySEsCommand( Command ):
     self.rClient.rpcClient = self.rgClient  
 
   def doCommand( self ):
-    """ 
-#    Returns transfer quality using the DIRAC accounting system for every SE 
-#        
-#    :params:
-#      :attr:`SEs`: list of storage elements (when not given, take every SE)
-#    
-#    :returns:
-#      {'SiteName': {TQ : 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
-    """
 
     if not 'hours' in self.args:
       return S_ERROR( 'Number of hours not specified' )
     hours = self.args[ 'hours' ]
 
-    if not 'seName' in self.args:
-      return S_ERROR( 'seName is missing' )
-    seName = self.args[ 'seName' ]
-    
-    # If seName is None, we take all StorageElements
-    if seName is None:
-      seName = CSHelpers.getStorageElements()      
-      if not seName[ 'OK' ]:
-        return seName
-      seName = seName[ 'Value' ]    
+    if not 'element' in self.args:
+      return S_ERROR( 'element is missing' )
+    element = self.args[ 'element' ]
 
-    if not isinstance( seName, list ):
-      seName = list( seName )
+    if element not in [ 'Site', 'Resource' ]:
+      return S_ERROR( 'element is not Site nor Resource' )
+
+    if not 'direction' in self.args:
+      return S_ERROR( 'element is missing' )
+    direction = self.args[ 'direction' ]
+
+    if direction not in [ 'Source', 'Destination' ]:
+      return S_ERROR( 'direction is not Source nor Destination' )
+
+    if not 'name' in self.args:
+      return S_ERROR( 'name is missing' )
+    name = self.args[ 'name' ]
+    
+    # If name is None, we take all Sites or StorageElements
+    if name is None:
+      
+      if element == 'Site':
+        name = CSHelpers.getSites()
+      else:  
+        name = CSHelpers.getStorageElements()
+              
+      if not name[ 'OK' ]:
+        return name
+      name = name[ 'Value' ]    
+
+    if not isinstance( name, list ):
+      name = list( name )
+
+    fromD = datetime.utcnow() - timedelta( hours = hours )
+    toD   = datetime.utcnow()
+
+    qualityDict = { 'OperationType' : 'putAndRegister' }
+    if direction == 'Source':
+      qualityDict[ 'Destination' ] = name      
+    else:
+      qualityDict[ 'Source' ] = name
+ 
+    qualityResults = self.rClient.getReport( 'DataOperation', 'Quality', fromD, toD,
+                                             qualityDict, direction )
+    if not qualityResults[ 'OK' ]:
+      return qualityResults
+    qualityResults = qualityResults[ 'Value' ]
+    
+    if not 'data' in qualityResults:
+      return S_ERROR( 'Missing data key' )
+    qualityResults = qualityResults[ 'data' ]
+
+    qualityMean = {}
+           
+    for element, elementDict in qualityResults.items():
+      
+      values = elementDict.values()
+      
+      if values:
+        qualityMean[ element ] = sum( values ) / len( values )        
+      else:     
+        qualityMean[ element ] = 0   
+           
+    return S_OK( qualityMean )  
+
+################################################################################
+
+class TransferFailedCommand( Command ):
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( TransferFailedCommand, self ).__init__( args, clients )
+    
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
+    else:
+      self.rClient = ReportsClient() 
+
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
+    else:
+      self.rgClient = RPCClient( 'Accounting/ReportGenerator' )       
+    
+    self.rClient.rpcClient = self.rgClient  
+
+  def doCommand( self ):
+
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
+
+    if not 'element' in self.args:
+      return S_ERROR( 'element is missing' )
+    element = self.args[ 'element' ]
+
+    if element not in [ 'Site', 'Resource' ]:
+      return S_ERROR( 'element is not Site nor Resource' )
+
+    if not 'direction' in self.args:
+      return S_ERROR( 'element is missing' )
+    direction = self.args[ 'direction' ]
+
+    if direction not in [ 'Source', 'Destination' ]:
+      return S_ERROR( 'direction is not Source nor Destination' )
+
+    if not 'name' in self.args:
+      return S_ERROR( 'name is missing' )
+    name = self.args[ 'name' ]
+    
+    # If name is None, we take all Sites or StorageElements
+    if name is None:
+      
+      if element == 'Site':
+        name = CSHelpers.getSites()
+      else:  
+        name = CSHelpers.getStorageElements()
+              
+      if not name[ 'OK' ]:
+        return name
+      name = name[ 'Value' ]    
+
+    if not isinstance( name, list ):
+      name = list( name )
+
+    fromD = datetime.utcnow() - timedelta( hours = hours )
+    toD   = datetime.utcnow()
+
+    qualityDict = { 'OperationType' : 'putAndRegister', 'FinalStatus' : [ 'Failed' ] }
+    if direction == 'Source':
+      qualityDict[ 'Destination' ] = name      
+    else:
+      qualityDict[ 'Source' ] = name
+ 
+    qualityResults = self.rClient.getReport( 'DataOperation', 'FailedTransfers', fromD, toD,
+                                             qualityDict, direction )
+    if not qualityResults[ 'OK' ]:
+      return qualityResults
+    qualityResults = qualityResults[ 'Value' ]
+    
+    if not 'data' in qualityResults:
+      return S_ERROR( 'Missing data key' )
+    qualityResults = qualityResults[ 'data' ]
+
+    qualityMean = {}
+           
+    for element, elementDict in qualityResults.items():
+      
+      if element == 'Suceeded':
+        # Sometimes it returns this element, which we do not want
+        continue
+       
+      values = elementDict.values()
+      
+      if values:
+        qualityMean[ element ] = sum( values ) / len( values )        
+      else:     
+        qualityMean[ element ] = 0   
+           
+    return S_OK( qualityMean )  
+
+################################################################################
+################################################################################
+
+#FIXME: the same data can be obtained with TransferQualityCommand and direction = Destination
+class TransferQualityChannelCommand( Command ):
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( TransferQualityChannelCommand, self ).__init__( args, clients )
+    
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis[ 'ReportsClient' ]
+    else:
+      self.rClient = ReportsClient() 
+
+    if 'ReportGenerator' in self.apis:
+      self.rgClient = self.apis[ 'ReportGenerator' ]
+    else:
+      self.rgClient = RPCClient( 'Accounting/ReportGenerator' )       
+    
+    self.rClient.rpcClient = self.rgClient  
+
+  def doCommand( self ):
+
+    if not 'hours' in self.args:
+      return S_ERROR( 'Number of hours not specified' )
+    hours = self.args[ 'hours' ]
+
+    if not 'element' in self.args:
+      return S_ERROR( 'element is missing' )
+    element = self.args[ 'element' ]
+
+    if element not in [ 'Site', 'Resource' ]:
+      return S_ERROR( 'element is not Site nor Resource' )
+
+    if not 'name' in self.args:
+      return S_ERROR( 'name is missing' )
+    name = self.args[ 'name' ]
+    
+    # If name is None, we take all Sites or StorageElements
+    if name is None:
+      
+      if element == 'Site':
+        name = CSHelpers.getSites()
+      else:  
+        name = CSHelpers.getStorageElements()
+              
+      if not name[ 'OK' ]:
+        return name
+      name = name[ 'Value' ]    
+
+    if not isinstance( name, list ):
+      name = list( name )
 
     fromD = datetime.utcnow() - timedelta( hours = hours )
     toD   = datetime.utcnow()
 
     qualityResults = self.rClient.getReport( 'DataOperation', 'Quality', fromD, toD,
                                              { 'OperationType' : 'putAndRegister',
-                                               'Destination'   : seName }, 
+                                               'Destination'   : name }, 
                                              'Channel' )
     if not qualityResults[ 'OK' ]:
       return qualityResults
@@ -79,7 +272,7 @@ class TransferQualitySEsCommand( Command ):
     for channel, quality in qualityResults.values():
 
       _source, destination = channel.split( ' -> ' )
-      if not destination in seName:
+      if not destination in name:
         # If we get a destination we do not have as input, we ignore it
         continue      
       if not destination in qualityMean:
@@ -94,7 +287,7 @@ class TransferQualitySEsCommand( Command ):
       else:     
         qualityMean[ destination ] = 0   
            
-    return S_OK( qualityMean )  
+    return S_OK( qualityMean )   
   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
