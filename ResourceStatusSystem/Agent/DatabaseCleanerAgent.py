@@ -100,7 +100,7 @@ class DatabaseCleanerAgent( AgentModule ):
       if not deleteResults[ 'OK' ]:
         self.log.error( deleteResults[ 'Message' ] )
         continue
-      self.log.info( deleteResults[ 'Value' ] )
+      self.log.info( 'Deleted %s entries' % deleteResults[ 'Value' ] )
     
     return S_OK()
 
@@ -123,7 +123,7 @@ class DatabaseCleanerAgent( AgentModule ):
       if not deleteResults[ 'OK' ]:
         self.log.error( deleteResults[ 'Message' ] )
         continue
-      self.log.info( deleteResults[ 'Value' ] )
+      self.log.info( 'Deleted %s entries' % deleteResults[ 'Value' ] )
     
     return S_OK()
 
