@@ -106,7 +106,7 @@ def select( rssDB, params, meta ):
     Method that transforms the RSS DB select into the MySQL getFields method.
   '''
 
-  accepted_keys = ( 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys' )
+  accepted_keys = ( 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys', 'older' )
 
   params = _capitalize( params )
   params = _discardNones( params )
@@ -154,10 +154,11 @@ def select( rssDB, params, meta ):
         newParams[ key ] = params[ key ]
          
     params = newParams   
-      
+     
   selectResult = rssDB.database.getFields( tableName, condDict = params, 
                                            outFields = outFields, limit = limit,
-                                           orderAttribute = order )
+                                           orderAttribute = order, older = field,
+                                           timeStamp = value )
   selectResult[ 'Columns' ] = outFields
   return selectResult
         
@@ -166,7 +167,7 @@ def delete( rssDB, params, meta ):
     Method that transforms the RSS DB delete into the MySQL 
   '''
     
-  accepted_keys = ( 'table' )
+  accepted_keys = ( 'table', 'older' )
 
   params = _capitalize( params )
   params = _discardNones( params )
@@ -186,8 +187,14 @@ def delete( rssDB, params, meta ):
   
   if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
+  
+  if 'older' in meta:
+    field, value = meta[ 'older' ]
+  else:
+    field, value = None, None  
 
-  return rssDB.database.deleteEntries( tableName, condDict = params )
+  return rssDB.database.deleteEntries( tableName, condDict = params, older = field,
+                                       timeStamp = value )
       
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
