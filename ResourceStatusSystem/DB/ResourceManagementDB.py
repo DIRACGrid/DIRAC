@@ -139,9 +139,10 @@ class ResourceManagementDB( object ):
  
   _tablesDB[ 'UserRegistryCache' ] = { 'Fields' : 
                       {
-                       'Login' : 'VARCHAR(16)',
-                       'Name'  : 'VARCHAR(64) NOT NULL',
-                       'Email' : 'VARCHAR(64) NOT NULL' 
+                       'Login'         : 'VARCHAR(16)',
+                       'Name'          : 'VARCHAR(64) NOT NULL',
+                       'Email'         : 'VARCHAR(64) NOT NULL',
+                       'LastCheckTime' : 'DATETIME NOT NULL'  
                       },
                       'PrimaryKey' : [ 'Login' ]           
                                 }   

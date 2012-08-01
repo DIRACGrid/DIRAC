@@ -1375,9 +1375,6 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'PolicyResult', locals() )
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
@@ -1415,9 +1412,6 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'PolicyResult', locals() )
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
@@ -1584,9 +1578,6 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self._query( 'insert', 'PolicyResultLog', locals() )  
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
@@ -1621,9 +1612,6 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self._query( 'insert', 'PolicyResultLog', locals() )  
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
@@ -1770,9 +1758,6 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'SpaceTokenOccupancyCache', locals() ) 
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
@@ -1804,9 +1789,6 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'SpaceTokenOccupancyCache', locals() ) 
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
@@ -1815,7 +1797,7 @@ class ResourceManagementClient( object ):
   ##############################################################################
   # USER REGISTRY CACHE Methods
 
-  def insertUserRegistryCache( self, login, name, email, meta = None ):
+  def insertUserRegistryCache( self, login, name, email, lastCheckTime, meta = None ):
     '''
     Inserts on UserRegistryCache a new row with the arguments given.
     
@@ -1826,6 +1808,8 @@ class ResourceManagementClient( object ):
         user's name
       **email** - `string`
         user's email
+      **lastCheckTime** - `datetime`
+        time-stamp from which the result is effective 
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
@@ -1835,7 +1819,7 @@ class ResourceManagementClient( object ):
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'insert', 'UserRegistryCache', locals() )
-  def updateUserRegistryCache( self, login, name, email, meta = None ):
+  def updateUserRegistryCache( self, login, name, email, lastCheckTime, meta = None ):
     '''
     Updates UserRegistryCache with the parameters given. By default, `login` 
     will be the parameter used to select the row.
@@ -1847,6 +1831,8 @@ class ResourceManagementClient( object ):
         user's name
       **email** - `string`
         user's email
+      **lastCheckTime** - `datetime`
+        time-stamp from which the result is effective  
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
@@ -1857,7 +1843,7 @@ class ResourceManagementClient( object ):
     # pylint: disable-msg=W0613
     return self._query( 'update', 'UserRegistryCache', locals() )
   def selectUserRegistryCache( self, login = None, name = None, email = None, 
-                            meta = None ):
+                               lastCheckTime = None, meta = None ):
     '''
     Gets from UserRegistryCache all rows that match the parameters given.
     
@@ -1868,6 +1854,8 @@ class ResourceManagementClient( object ):
         user's name
       **email** - `[, string, list]`
         user's email
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp from which the result is effective  
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
@@ -1878,7 +1866,7 @@ class ResourceManagementClient( object ):
     # pylint: disable-msg=W0613
     return self._query( 'select', 'UserRegistryCache', locals() )
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
-                               meta = None ):                                            
+                               lastCheckTime = None, meta = None ):                                            
     '''
     Deletes from UserRegistryCache all rows that match the parameters given.
     
@@ -1889,6 +1877,8 @@ class ResourceManagementClient( object ):
         user's name
       **email** - `[, string, list]`
         user's email
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp from which the result is effective  
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
@@ -1899,7 +1889,7 @@ class ResourceManagementClient( object ):
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'UserRegistryCache', locals() )
   def addOrModifyUserRegistryCache( self, login = None, name = None, 
-                                    email = None, meta = None ):
+                                    email = None, lastCheckTime = None, meta = None ):
     '''
     Using `login` to query the database, decides whether to insert or update 
     the table.
@@ -1911,21 +1901,20 @@ class ResourceManagementClient( object ):
         user's name
       **email** - `string`
         user's email
+      **lastCheckTime** - `datetime`
+        time-stamp from which the result is effective          
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'UserRegistryCache', locals() )   
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'UserRegistryCache', locals() )   
   def addIfNotThereUserRegistryCache( self, login = None, name = None, 
-                                       email = None, meta = None ):
+                                       email = None, lastCheckTime = None, meta = None ):
     '''
     Using `login` to query the database, decides whether to insert or update 
     the table.
@@ -1937,15 +1926,14 @@ class ResourceManagementClient( object ):
         user's name
       **email** - `string`
         user's email
+      **lastCheckTime** - `datetime`
+        time-stamp from which the result is effective  
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'UserRegistryCache', locals() )   
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
@@ -2078,9 +2066,6 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'VOBOXCache', locals() ) 
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
@@ -2109,9 +2094,6 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'VOBOXCache', locals() ) 
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
@@ -2166,36 +2148,7 @@ class ResourceManagementClient( object ):
     It is a simple helper, this way inheriting classes can use it.
     '''
     return self.__query( queryType, tableName, parameters )
-
-#  def _insertElement( self, element, kwargs ):
-#    '''
-#      Method that executes the insert method of the given element.
-#    '''
-#    fname = 'insert%s' % element
-#    fElem = getattr( self, fname )
-#    return fElem( **kwargs )
-#  def _updateElement( self, element, kwargs ): 
-#    '''
-#      Method that executes the update method of the given element.
-#    '''    
-#    fname = 'update%s' % element
-#    fElem = getattr( self, fname )
-#    return fElem( **kwargs )
-#  def _selectElement( self, element, kwargs ):
-#    '''
-#      Method that executes the get method of the given element.
-#    '''
-#    fname = 'select%s' % element
-#    fElem = getattr( self, fname )
-#    return fElem( **kwargs )
-#  def _deleteElement( self, element, kwargs ):
-#    '''
-#      Method that executes the delete method of the given element.
-#    '''    
-#    fname = 'delete%s' % element
-#    fElem = getattr( self, fname )
-#    return fElem( **kwargs )
-
+  
   ##############################################################################
   # Private methods
 
@@ -2224,36 +2177,6 @@ class ResourceManagementClient( object ):
     
     gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, parameters, meta ) )  
     return gateFunction( parameters, meta )
-
-#  def __addOrModifyElement( self, element, kwargs ):
-#    '''
-#      Method that executes update if the item is not new, otherwise inserts it
-#      on the element table.
-#    '''
-#    # Remove 'self' key added by locals() 
-#    del kwargs[ 'self' ]
-#          
-#    kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
-#    sqlQuery = self._selectElement( element, kwargs )   
-#    if not sqlQuery[ 'OK' ]:
-#      return sqlQuery
-#    
-#    # No meta used to insert or update    
-#    del kwargs[ 'meta' ]
-#    
-#    _now = datetime.utcnow().replace( microsecond = 0 ) 
-#    if 'lastCheckTime' in kwargs:
-#      kwargs[ 'lastCheckTime' ] = _now
-#    
-#    if sqlQuery[ 'Value' ]:             
-#      
-#      return self._updateElement( element, kwargs )
-#    else:
-#      # If we are inserting, we force dateEffective to be now
-#      if 'dateEffective' in kwargs:
-#        kwargs[ 'dateEffective' ] = _now
-#      
-#      return self._insertElement( element, kwargs ) 
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
