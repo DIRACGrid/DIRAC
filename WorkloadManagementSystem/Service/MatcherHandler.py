@@ -324,7 +324,10 @@ class MatcherHandler( RequestHandler ):
 
       for name in gTaskQueueDB.getMultiValueMatchFields():
         if classAdAgent.lookupAttribute( name ):
-          resourceDict[name] = classAdAgent.getAttributeString( name )
+          if name == 'SubmitPool':
+            resourceDict[name] = classAdAgent.getListFromExpression( name )      
+          else:
+            resourceDict[name] = classAdAgent.getAttributeString( name )
 
       # Check if a JobID is requested
       if classAdAgent.lookupAttribute( 'JobID' ):
@@ -333,7 +336,7 @@ class MatcherHandler( RequestHandler ):
       for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization' ):
         if classAdAgent.lookupAttribute( k ):
           resourceDict[ k ] = classAdAgent.getAttributeString( k )
-
+          
     else:
       for name in gTaskQueueDB.getSingleValueTQDefFields():
         if resourceDescription.has_key( name ):
