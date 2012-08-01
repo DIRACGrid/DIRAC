@@ -60,8 +60,10 @@ class DatabaseCleanerAgent( AgentModule ):
       by some reason that entry has not been updated.
     '''
         
-    caches = ( 'AccountingCache', 'DowntimeCache', 'JobCache', 'PilotsCache',
-               'TransferCache', 'VBOXCache', 'SpaceTokenOccupancy' )
+    #FIXME: this two are special caches 'AccountingCache', 'DowntimeCache'     
+    caches = ( 'JobCache', 'PilotCache', 'TransferCache', 'VOBOXCache', 
+               'SpaceTokenOccupancyCache' )
+    
     
     lastValidRecord = datetime.utcnow() - timedelta( hours = self.__maxCacheLifetime )
     
