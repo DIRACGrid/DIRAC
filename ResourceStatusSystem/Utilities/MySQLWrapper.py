@@ -154,11 +154,15 @@ def select( rssDB, params, meta ):
         newParams[ key ] = params[ key ]
          
     params = newParams   
+  
+  field, value = None, None
+  if 'older' in meta:
+    field, value = meta[ 'older' ]     
      
   selectResult = rssDB.database.getFields( tableName, condDict = params, 
                                            outFields = outFields, limit = limit,
-                                           orderAttribute = order, older = field,
-                                           timeStamp = value )
+                                           orderAttribute = order, older = value,
+                                           timeStamp = field )
   selectResult[ 'Columns' ] = outFields
   return selectResult
         
@@ -188,13 +192,12 @@ def delete( rssDB, params, meta ):
   if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
   
+  field, value = None, None  
   if 'older' in meta:
     field, value = meta[ 'older' ]
-  else:
-    field, value = None, None  
-
-  return rssDB.database.deleteEntries( tableName, condDict = params, older = field,
-                                       timeStamp = value )
+    
+  return rssDB.database.deleteEntries( tableName, condDict = params, older = value,
+                                       timeStamp = field )
       
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
