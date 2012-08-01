@@ -9,7 +9,6 @@
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-#from DIRAC.ResourceStatusSystem.Client.PilotsClient             import PilotsClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient 
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -125,37 +124,18 @@ class PilotsWMSCommand( Command ):
        
     for record in records:
       
-      pilotResults.append( dict( zip( params , record )) )
+      pilotDict = dict( zip( params , record ))
+      try:
+        pilotDict[ 'PilotsPerJob' ] = float( pilotDict[ 'PilotsPerJob' ] )
+        pilotDict[ 'PilotsJobEff' ] = float( pilotDict[ 'PilotsJobEff' ] )
+      except KeyError, e:
+        return S_ERROR( e ) 
+      except ValueError, e:
+        return S_ERROR( e )
+      
+      pilotResults.append( pilotDict )
     
-    return S_OK( pilotResults )  
-
-
-
-#    if element == 'Service':
-#      name = self.rsClient.getGeneralName( element, name, 'Site' )
-#      name        = name[ 'Value' ][ 0 ]
-#      element = 'Site'
-#    elif element in [ 'Site', 'Resource' ]:
-#      pass
-#      #name        = self.args[1]
-#      #granularity = element
-#    else:
-#      return S_ERROR( '%s is not a valid granularity' % element )
-
-#    results = self.pClient.getPilotsSimpleEff( element, name )
-#    if not results[ 'OK' ]:
-#      return results
-#    results = results[ 'Value' ]
-
-    #FIXME: looks to me like not all branches are ever accessed    
-#    if results is None:
-#      results = 'Idle'
-#    elif results[ name ] is None:
-#      results = 'Idle'
-#    else:
-#      results = results[ name ] 
-
-#    return S_OK( results )
+    return S_OK( pilotResults )
 
 ################################################################################
 ################################################################################

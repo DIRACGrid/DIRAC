@@ -38,12 +38,6 @@ class CacheFeederAgent( AgentModule ):
   def initialize( self ):
 
     self.rmClient = ResourceManagementClient()
-    
-    #ClientsCacheCommand
-#    self.commands[ 'ClientsCache' ] = [
-##                                        { 'JobsEffSimpleEveryOne'     : {} },
-#                                        { 'PilotsEffSimpleEverySites' : {} }
-#                                       ]
 
     #FIXME: missing logger
     #JobsCommand
@@ -178,6 +172,12 @@ class CacheFeederAgent( AgentModule ):
 
     if commandModule == 'Downtime':
       return self.__logDowntimeResults( commandDict, results )  
+    
+    if commandModule == 'Jobs':
+      return self.__logJobsResults( commandDict, results )
+
+    if commandModule == 'Pilots':
+      return self.__logPilotsResults( commandDict, results )
 
     commandName = commandDict.keys()[ 0 ]
     return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
@@ -295,6 +295,51 @@ class CacheFeederAgent( AgentModule ):
                                                          endDate, severity, description,
                                                          link )
   
+      if not resQuery[ 'OK' ]:
+        return resQuery    
+  
+    return S_OK()  
+
+  def __logJobsResults( self, commandDict, results ):
+    
+    for jobResult in results:
+      
+      try:
+        
+        site       = jobResult[ 'Site' ]
+        maskStatus = jobResult[ 'MaskStatus' ]
+        efficiency = jobResult[ 'Efficiency' ]
+        status     = jobResult[ 'Status' ]
+        
+      except KeyError, e:
+        return S_ERROR( e )  
+      
+      resQuery = self.rmClient.addOrModifyJobCache( site, maskStatus, efficiency, 
+                                                    status )
+
+      if not resQuery[ 'OK' ]:
+        return resQuery    
+  
+    return S_OK()  
+    
+  def __logPilotsResults( self, commandDict, results ):
+
+    for pilotResult in results:
+      
+      try:
+        
+        site         = pilotResult[ 'Site' ]
+        cE           = pilotResult[ 'CE' ]
+        pilotsPerJob = pilotResult[ 'PilotsPerJob' ]
+        pilotJobEff  = pilotResult[ 'PilotJobEff' ]
+        status       = pilotResult[ 'Status' ]
+        
+      except KeyError, e:
+        return S_ERROR( e )  
+      
+      resQuery = self.rmClient.addOrModifyPilotCache( site, cE, pilotsPerJob, 
+                                                      pilotJobEff, status )
+      
       if not resQuery[ 'OK' ]:
         return resQuery    
   

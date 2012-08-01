@@ -9,7 +9,6 @@
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-#from DIRAC.ResourceStatusSystem.Client.JobsClient               import JobsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -123,16 +122,6 @@ class JobsWMSCommand( Command ):
       self.wmsAdmin = self.apis[ 'WMSAdministrator' ]
     else:  
       self.wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    
-#    if 'JobsClient' in self.apis:
-#      self.jClient = self.apis[ 'JobsClient' ]
-#    else:
-#      self.jClient = JobsClient()  
-      
-#    if 'ResourceStatusClient' in self.apis:
-#      self.rsClient = self.apis[ 'ResourceStatusClient' ]
-#    else:
-#      self.rsClient = ResourceStatusClient()  
   
   def doCommand( self ):
     """ 
@@ -178,33 +167,17 @@ class JobsWMSCommand( Command ):
        
     for record in records:
       
-      jobResults.append( dict( zip( params , record )) )
+      jobDict = dict( zip( params , record ))
+      try:
+        jobDict[ 'Efficiency' ] = float( jobDict[ 'Efficiency' ] )
+      except KeyError, e:
+        return S_ERROR( e )
+      except ValueError, e:
+        return S_ERROR( e )  
+      
+      jobResults.append( jobDict )
     
     return S_OK( jobResults )  
-           
-#    if element == 'Service':
-#      name    = self.rsClient.getGeneralName( element, name, 'Site' )    
-#      name    = name[ 'Value' ][ 0 ]
-#      element = 'Site'
-#    elif element == 'Site':
-#      pass
-##      name        = self.args[1]
-##      granularity = self.args[0]
-#    else:
-#      return S_ERROR( '%s is not a valid element' % element )
-         
-#    results = self.jClient.getJobsSimpleEff( name )
-#    if not results[ 'OK' ]:
-#      return results
-#    results = results[ 'Value' ]
-     
-    #FIXME: can it actually return None ? 
-#    if results == None:
-#      results = 'Idle'
-#    else:
-#      results = results[ name ] 
-    
-    return S_OK( results )
 
 ################################################################################
 ################################################################################
