@@ -118,6 +118,8 @@ class DatabaseCleanerAgent( AgentModule ):
     
     for element in elements:
       
+      self.log.info( 'Inspecting %s%s' % ( element, tableType )  )
+      
       deleteResults = self.rsClient.deleteStatusElement( element, tableType, 
                                          meta = { 'older' : ( 'LastCheckTime', lastValidRecord ) })
       if not deleteResults[ 'OK' ]:
