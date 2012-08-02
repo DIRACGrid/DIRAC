@@ -28,7 +28,7 @@ specialOptions = {}
 def setModule( optVal ):
   global specialOptions,module
   specialOptions['Module'] = optVal
-  module = value
+  module = optVal
   return S_OK()
 
 def setSpecialOption( optVal ):
@@ -61,8 +61,8 @@ system = args[0]
 service = args[1]
 
 result = InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, service,
-                                             getCSExtensions(), 
-                                             specialOptions=specialOptions, 
+                                             getCSExtensions(),
+                                             specialOptions=specialOptions,
                                              overwrite = overwrite )
 if not result['OK']:
   print "ERROR:", result['Message']
