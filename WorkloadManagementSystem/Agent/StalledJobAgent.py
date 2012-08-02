@@ -34,7 +34,7 @@ class StalledJobAgent( AgentModule ):
   jobDB = None
   logDB = None
   matchedTime = 7200
-  rescheduledTime = 1200
+  rescheduledTime = 600
 
   #############################################################################
   def initialize( self ):
