@@ -106,7 +106,7 @@ def select( rssDB, params, meta ):
     Method that transforms the RSS DB select into the MySQL getFields method.
   '''
 
-  accepted_keys = ( 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys', 'older' )
+  accepted_keys = ( 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys', 'older', 'newer' )
 
   params = _capitalize( params )
   params = _discardNones( params )
@@ -155,14 +155,16 @@ def select( rssDB, params, meta ):
          
     params = newParams   
   
-  field, value = None, None
+  field, older, newer = None, None, None
   if 'older' in meta:
-    field, value = meta[ 'older' ]     
+    field, older = meta[ 'older' ]     
+  elif 'newer' in meta:
+    field, newer = meta[ 'newer' ]   
      
   selectResult = rssDB.database.getFields( tableName, condDict = params, 
                                            outFields = outFields, limit = limit,
-                                           orderAttribute = order, older = value,
-                                           timeStamp = field )
+                                           orderAttribute = order, older = older,
+                                           newer = newer, timeStamp = field )
   selectResult[ 'Columns' ] = outFields
   return selectResult
         
@@ -171,7 +173,7 @@ def delete( rssDB, params, meta ):
     Method that transforms the RSS DB delete into the MySQL 
   '''
     
-  accepted_keys = ( 'table', 'older' )
+  accepted_keys = ( 'table', 'older', 'newer' )
 
   params = _capitalize( params )
   params = _discardNones( params )
@@ -188,16 +190,18 @@ def delete( rssDB, params, meta ):
   if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
   
-  field, value = None, None  
+  field, older, newer = None, None, None  
   if 'older' in meta:
-    field, value = meta[ 'older' ]
+    field, older = meta[ 'older' ]
+  elif 'newer' in meta:
+    field, newer = meta[ 'newer' ]
 
   # Small secutiry measure, this prevents full table deletion.. by mistake I hope.
-  if not params and not field and not value:
+  if not params and not field and not ( older or newer ):
     return S_ERROR( 'Dude, you are going to delete the whole table %s' % tableName )
     
-  return rssDB.database.deleteEntries( tableName, condDict = params, older = value,
-                                       timeStamp = field )
+  return rssDB.database.deleteEntries( tableName, condDict = params, older = older,
+                                       newer = newer, timeStamp = field )
       
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
