@@ -47,10 +47,8 @@ class SummarizeLogsAgent( AgentModule ):
         sRes = self._logSelectedLogElement( element, selectedKey, selectedItem )
         if not sRes[ 'OK' ]:
           self.log.error( sRes[ 'Message' ] ) 
+          break
           
-
-        
-        
     return S_OK()
   
   def _selectLogElements( self, element ):
