@@ -61,7 +61,7 @@ class SummarizeLogsAgent( AgentModule ):
     
     # We do not want neither minutes, nor seconds nor microseconds
     thisHour = datetime.utcnow().replace( microsecond = 0 )
-    thisHour = thisHour.replace( second = 0 ).replace( minutes = 0 )
+    thisHour = thisHour.replace( second = 0 ).replace( minute = 0 )
     
     lastHour = thisHour - timedelta( hours = 1 )  
       
@@ -69,26 +69,26 @@ class SummarizeLogsAgent( AgentModule ):
                                                        meta = { 'newer' : ( 'LastCheckTime', lastHour ) } )
     if not selectResults[ 'OK' ]:
       return selectResults
-    selectResults = selectResults[ 'Value' ]
 
     selectedItems = {}       
     selectColumns = selectResults[ 'Columns' ]
+    selectResults = selectResults[ 'Value' ]
       
     for selectResult in selectResults:
       
       elementDict = dict( zip( selectColumns, selectResult ) )
       
-      if elementDict[ 'LastCheckTime' ] > str( thisHour ):
+      if elementDict[ 'LastCheckTime' ] > thisHour:
         continue
     
       key = ( elementDict[ 'Name' ], elementDict[ 'StatusType' ] )
     
       if not key in selectedItems:
-        selectedItems[ key ] = elementDict
+        selectedItems[ key ] = [ elementDict ]
       else:
         lastStatus = selectedItems[ key ][ -1 ][ 'Status' ]
         if lastStatus != elementDict[ 'Status' ]:
-          selectedItems[ key ] = elementDict
+          selectedItems[ key ].append( elementDict )
           
     return S_OK( selectedItems )        
   
@@ -104,9 +104,9 @@ class SummarizeLogsAgent( AgentModule ):
         
     selectedRes = self.rsClient.selectStatusElement( element, 'History', name, 
                                                      statusType, 
-                                                     meta = { 'columns' : 'Status' } )
+                                                     meta = { 'columns' : [ 'Status' ] } )
     
-    if not selectedRes[ 'OK ' ]:
+    if not selectedRes[ 'OK' ]:
       return selectedRes
     selectedRes = selectedRes[ 'Value' ]
         
