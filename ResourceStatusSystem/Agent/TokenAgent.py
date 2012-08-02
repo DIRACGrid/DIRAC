@@ -197,7 +197,10 @@ class TokenAgent( AgentModule ):
       if not resNotify[ 'OK' ]:
         self.log.error( resNotify[ 'Message' ] )
     
-    return self._notify( self.__adminMail, adminExpired, adminExpiring )                     
+    if adminExpired or adminExpiring:
+      return self._notify( self.__adminMail, adminExpired, adminExpiring )
+    
+    return S_OK()                     
       
   def _notify( self, tokenOwner, expired, expiring ):
     '''
