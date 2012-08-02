@@ -31,12 +31,16 @@ class SummarizeLogsAgent( AgentModule ):
   def execute( self ):
     
     elements = ( 'Site', 'Resource', 'Node' )
+       
+    # We do not want neither minutes, nor seconds nor microseconds
+    thisHour = datetime.utcnow().replace( microsecond = 0 )
+    thisHour = thisHour.replace( second = 0 ).replace( minute = 0 )   
         
     for element in elements:
     
       self.log.info( 'Summarizing %s' % element )
       
-      selectLogElements = self._selectLogElements( element )
+      selectLogElements = self._selectLogElements( element, thisHour )
       if not selectLogElements[ 'OK' ]:
         self.log.error( selectLogElements[ 'Message' ] )
         continue
@@ -44,24 +48,20 @@ class SummarizeLogsAgent( AgentModule ):
             
       for selectedKey, selectedItem in selectLogElements.items():
       
-        sRes = self._logSelectedLogElement( element, selectedKey, selectedItem )
+        sRes = self._logSelectedLogElement( element, selectedKey, selectedItem, thisHour )
         if not sRes[ 'OK' ]:
           self.log.error( sRes[ 'Message' ] ) 
           break
           
     return S_OK()
   
-  def _selectLogElements( self, element ):
+  def _selectLogElements( self, element, thisHour ):
     '''
       For a given element, selects all the entries on the <element>Log table
       with LastCheckTime > <lastHour>. It groups them by tuples of
       ( <name>, <statusType> ) and keeps only the statuses that represent
       a change in the status.
     '''
-    
-    # We do not want neither minutes, nor seconds nor microseconds
-    thisHour = datetime.utcnow().replace( microsecond = 0 )
-    thisHour = thisHour.replace( second = 0 ).replace( minute = 0 )
     
     lastHour = thisHour - timedelta( hours = 1 )  
       
@@ -92,7 +92,7 @@ class SummarizeLogsAgent( AgentModule ):
           
     return S_OK( selectedItems )        
   
-  def _logSelectedLogElement( self, element, selectedKey, selectedItem ):
+  def _logSelectedLogElement( self, element, selectedKey, selectedItem, thisHour ):
     '''
       Given an element, a selectedKey - which is a tuple ( <name>, <statusType> )
       and a list of dictionaries, this method inserts them. Before inserting
@@ -104,17 +104,21 @@ class SummarizeLogsAgent( AgentModule ):
         
     selectedRes = self.rsClient.selectStatusElement( element, 'History', name, 
                                                      statusType, 
-                                                     meta = { 'columns' : [ 'Status' ] } )
+                                                     meta = { 'columns' : [ 'Status', 'LastCheckTime' ] } )
     
     if not selectedRes[ 'OK' ]:
       return selectedRes
     selectedRes = selectedRes[ 'Value' ]
         
-    selectedStatus = None
+    selectedStatus = None, 
     if selectedRes:
+      
       # Get the last selectedRes, which will be the newest one. Each selectedRes
-      # is a tuple, in this case, containing only one element - Status.
-      selectedStatus = selectedRes[ -1 ][ 0 ]
+      # is a tuple, in this case, containing two elements - Status, LastCheckTime
+      selectedStatus, selectedLastTime  = selectedRes[ -1 ]
+      
+      if selectedLastTime > thisHour - timedelta( hours = 1 ):
+        return S_ERROR( 'Error, there are records on the History table of this time span' )     
         
     # If the first of the selected items has a different status than the latest
     # on the history, we add it.    
