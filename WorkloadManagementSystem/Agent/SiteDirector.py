@@ -234,9 +234,11 @@ class SiteDirector( AgentModule ):
 
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
+    # Oh, these hacks !
+    self.submitPools = gConfig.getValue( "%s/SubmitPools" % getAgentSection( "WorkloadManagement/TaskQueueDirector" ), [] )
     tqDict = { 'Setup':setup,
                'CPUTime': 9999999,
-               'SubmitPool' : gConfig.getValue( "%s/SubmitPools" % getAgentSection( "WorkloadManagement/TaskQueueDirector" ), [] ) }
+               'SubmitPool' : self.submitPools }
     if self.vo:
       tqDict['Community'] = self.vo
     if self.group:
@@ -304,6 +306,9 @@ class SiteDirector( AgentModule ):
         ceDict['Community'] = self.vo
       if self.group:
         ceDict['OwnerGroup'] = self.group
+      
+      # This is a hack to get rid of !
+      ceDict['SubmitPool'] = self.submitPools  
 
       # Get the number of eligible jobs for the target site/queue
       result = rpcMatcher.getMatchingTaskQueues( ceDict )
@@ -509,6 +514,10 @@ class SiteDirector( AgentModule ):
         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
       if 'CPUNormalizationFactor' in queueDict:
         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
+
+    # Hack
+    if self.submitPools:
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % ','.join( self.submitPools ) )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
