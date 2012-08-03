@@ -123,11 +123,13 @@ class JobState( object ):
 
 #Execute traces
 
+  right_commitCache = RIGHT_GET_INFO
   @RemoteMethod
-  def executeTrace( self, initialState, trace ):
+  def commitCache( self, initialState, cache, jobLog ):
     try:
       self.__checkType( initialState , types.DictType )
-      self.__checkType( trace , ( types.ListType, types.TupleType ) )
+      self.__checkType( cache , types.DictType )
+      self.__checkType( jobLog , ( types.ListType, types.TupleType ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     result = self.getAttributes( initialState.keys() )
@@ -137,30 +139,35 @@ class JobState( object ):
       return S_ERROR( "Initial state was different. Expected %s Received %s" % ( initialState, result[ 'Value' ] ) )
     gLogger.verbose( "Job %s: About to execute trace. Current state %s" % ( self.__jid, initialState ) )
 
-    for step in trace:
-      if type( step ) != types.TupleType or len( step ) < 2:
-        return S_ERROR( "Step %s is not properly formatted" % str( step ) )
-      if type( step[1] ) != types.TupleType:
-        return S_ERROR( "Step %s is not properly formatted" % str( step ) )
-      if len( step ) > 2 and type( step[2] ) != types.DictType:
-        return S_ERROR( "Step %s is not properly formatted" % str( step ) )
-      try:
-        fT = getattr( self, step[0] )
-      except AttributeError:
-        return S_ERROR( "Step %s has invalid method name" % str( step ) )
-      try:
-        gLogger.verbose( " Job %s: Trace step %s" % ( self.__jid, step ) )
-        args = step[1]
-        if len( step ) > 2:
-          kwargs = step[2]
-          fRes = fT( *args, **kwargs )
-        else:
-          fRes = fT( *args )
-      except Exception, excp:
-        gLogger.exception( "JobState cannot have exceptions like this!" )
-        return S_ERROR( "Step %s has had an exception! %s" % ( step , excp ) )
-      if not fRes[ 'OK' ]:
-        return S_ERROR( "Step %s has gotten error: %s" % ( step, fRes[ 'Message' ] ) )
+    data = { 'att': [], 'jobp': [], 'optp': [] }
+    for key in cache:
+      for dk in data:
+        if key.find( "%s." % dk ) == 0:
+          data[ dk ].append( ( key[ len( dk ) + 1:], cache[ key ] ) )
+
+    jobDB = JobState.__db.job
+    if data[ 'att' ]:
+      attN = [ t[0] for t in data[ 'att' ] ]
+      attV = [ t[1] for t in data[ 'att' ] ]
+      result = jobDB.setJobAttributes( self.__jid, attN, attV, update = True )
+      if not result[ 'OK' ]:
+        return result
+
+    if data[ 'jobp' ]:
+      result = jobDB.setJobParameters( self.__jid, data[ 'jobp' ] )
+      if not result[ 'OK' ]:
+        return result
+
+    for k,v in  data[ 'optp' ]:
+      result = jobDB.setJobOptParameter( self.__jid, k, v )
+      if not result[ 'OK' ]:
+        return result
+
+    logDB = JobState.__db.log
+    for record, updateTime, source in jobLog:
+      result = logDB.addLoggingRecord( self.__jid, date = updateTime, source = source, **record )
+      if not result[ 'OK' ]:
+        return result
 
     gLogger.info( "Job %s: Ended trace execution" % self.__jid )
     #We return a new initial state
@@ -175,6 +182,7 @@ class JobState( object ):
     if type( value ) not in tList:
       raise TypeError( "%s has wrong type. Has to be one of %s" % ( value, tList ) )
 
+  right_setStatus = RIGHT_GET_INFO
   @RemoteMethod
   def setStatus( self, majorStatus, minorStatus = None, appStatus = None, source = None, updateTime = None ):
     try:
@@ -196,6 +204,7 @@ class JobState( object ):
     return JobState.__db.log.addLoggingRecord( self.__jid, majorStatus, minorStatus, appStatus,
                                                  date = updateTime, source = source )
 
+  right_getMinorStatus = RIGHT_GET_INFO
   @RemoteMethod
   def setMinorStatus( self, minorStatus, source = None, updateTime = None ):
     try:
@@ -211,7 +220,6 @@ class JobState( object ):
     return JobState.__db.log.addLoggingRecord( self.__jid, minor = minorStatus,
                                                  date = updateTime, source = source )
 
-
   @RemoteMethod
   def getStatus( self ):
     result = JobState.__db.job.getJobAttributes( self.__jid, [ 'Status', 'MinorStatus' ] )
@@ -220,7 +228,7 @@ class JobState( object ):
     data = result[ 'Value' ]
     return S_OK( ( data[ 'Status' ], data[ 'MinorStatus' ] ) )
 
-
+  right_setAppStatus = RIGHT_GET_INFO
   @RemoteMethod
   def setAppStatus( self, appStatus, source = None, updateTime = None ):
     try:
@@ -236,6 +244,7 @@ class JobState( object ):
     return JobState.__db.log.addLoggingRecord( self.__jid, application = appStatus,
                                                  date = updateTime, source = source )
 
+  right_getAppStatus = RIGHT_GET_INFO
   @RemoteMethod
   def getAppStatus( self ):
     result = JobState.__db.job.getJobAttributes( self.__jid, [ 'ApplicationStatus' ] )
@@ -245,6 +254,7 @@ class JobState( object ):
 
 #Attributes
 
+  right_setAttribute = RIGHT_GET_INFO
   @RemoteMethod
   def setAttribute( self, name, value ):
     try:
@@ -254,6 +264,7 @@ class JobState( object ):
       return S_ERROR( str( excp ) )
     return JobState.__db.job.setJobAttribute( self.__jid, name, value )
 
+  right_setAttributes = RIGHT_GET_INFO
   @RemoteMethod
   def setAttributes( self, attDict ):
     try:
@@ -264,6 +275,7 @@ class JobState( object ):
     values = [ attDict[ key ] for key in keys ]
     return JobState.__db.job.setJobAttributes( self.__jid, keys, values )
 
+  right_getAttribute = RIGHT_GET_INFO
   @RemoteMethod
   def getAttribute( self, name ):
     try:
@@ -272,6 +284,7 @@ class JobState( object ):
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobAttribute( self.__jid, name )
 
+  right_getAttributes = RIGHT_GET_INFO
   @RemoteMethod
   def getAttributes( self, nameList = None ):
     try:
@@ -283,6 +296,7 @@ class JobState( object ):
 
 #Job parameters
 
+  right_setParameter = RIGHT_GET_INFO
   @RemoteMethod
   def setParameter( self, name, value ):
     try:
@@ -292,6 +306,7 @@ class JobState( object ):
       return S_ERROR( str( excp ) )
     return JobState.__db.job.setJobParameter( self.__jid, name, value )
 
+  right_setParameters = RIGHT_GET_INFO
   @RemoteMethod
   def setParameters( self, pDict ):
     try:
@@ -303,6 +318,7 @@ class JobState( object ):
       pList.append( ( name, pDict[ name ] ) )
     return JobState.__db.job.setJobParameters( self.__jid, pList )
 
+  right_getParameter = RIGHT_GET_INFO
   @RemoteMethod
   def getParameter( self, name ):
     try:
@@ -311,6 +327,7 @@ class JobState( object ):
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobParameter( self.__jid, name )
 
+  right_getParameters = RIGHT_GET_INFO
   @RemoteMethod
   def getParameters( self, nameList = None ):
     try:
@@ -323,6 +340,7 @@ class JobState( object ):
 
 #Optimizer parameters
 
+  right_setOptParameter = RIGHT_GET_INFO
   @RemoteMethod
   def setOptParameter( self, name, value ):
     try:
@@ -332,6 +350,7 @@ class JobState( object ):
       return S_ERROR( str( excp ) )
     return JobState.__db.job.setJobOptParameter( self.__jid, name, value )
 
+  right_setOptParameters = RIGHT_GET_INFO
   @RemoteMethod
   def setOptParameters( self, pDict ):
     try:
@@ -344,6 +363,7 @@ class JobState( object ):
         return result
     return S_OK()
 
+  right_removeOptParameters = RIGHT_GET_INFO
   @RemoteMethod
   def removeOptParameters( self, nameList ):
     if type( nameList ) in types.StringTypes:
@@ -358,6 +378,7 @@ class JobState( object ):
         return result
     return S_OK()
 
+  right_getOptParameter = RIGHT_GET_INFO
   @RemoteMethod
   def getOptParameter( self, name ):
     try:
@@ -366,6 +387,7 @@ class JobState( object ):
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobOptParameter( self.__jid, name )
 
+  right_getOptParameters = RIGHT_GET_INFO
   @RemoteMethod
   def getOptParameters( self, nameList = None ):
     try:
