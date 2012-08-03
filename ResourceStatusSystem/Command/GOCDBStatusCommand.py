@@ -10,7 +10,6 @@ from DIRAC                                        import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient                   import GOCDBClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Command.Command   import Command
-from DIRAC.ResourceStatusSystem.Utilities.Utils   import convertTime
 
 __RCSID__ = '$Id:  $'
 
@@ -113,8 +112,7 @@ class GOCDBStatusCommand( Command ):
     start_datetime         = datetime.strptime( _startSTR, _timeFormat )
           
     if start_datetime > now:
-      diff = convertTime( start_datetime - now, 'hours' )
-      dtResult[ 'DT' ] = dtResult[ 'DT' ] + " in " + str( diff ) + ' hours'
+      dtResult[ 'DT' ] = '%s in %s' % ( dtResult[ 'DT' ], start_datetime - now ) 
         
     return S_OK( dtResult )
    
