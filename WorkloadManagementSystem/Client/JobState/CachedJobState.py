@@ -256,9 +256,9 @@ class CachedJobState( object ):
     if majorStatus:
       record[ 'status' ] = majorStatus
     if minorStatus:
-      record[ 'minor' ] = majorStatus
-    if majorStatus:
-      record[ 'application' ] = majorStatus
+      record[ 'minor' ] = minorStatus
+    if appStatus:
+      record[ 'application' ] = appStatus
     if not record:
       return
     if not source:

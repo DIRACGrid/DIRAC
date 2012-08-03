@@ -206,7 +206,8 @@ class ModuleLoader( object ):
       if impData[0]:
         impData[0].close()
     except ImportError, excp:
-      if str( excp ).find( "No module named" ) == 0:
+      strExcp = str( excp )
+      if strExcp.find( "No module named" ) == 0 and strExcp.find( modName[0] ) == len( strExcp ) - len( modName[0] ):
         return S_OK()
       errMsg = "Can't load %s" % ".".join( modName )
       if not hideExceptions:
