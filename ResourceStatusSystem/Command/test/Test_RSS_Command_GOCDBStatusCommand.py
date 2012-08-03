@@ -148,7 +148,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
  
     self.assertEqual( True, res[ 'OK' ] )
     self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
-    self.assertEqual( 'OUTAGE in 2 hours', res[ 'Value' ][ 'DT' ] )
+    self.assertEqual( 'OUTAGE in 3:00:00', res[ 'Value' ][ 'DT' ] )
     self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )     
 
     newStartDate2 = datetime.strftime( datetime.now() + timedelta( hours = 2 ), "%Y-%m-%d %H:%M" )
@@ -182,7 +182,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
  
     self.assertEqual( True, res[ 'OK' ] )
     self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
-    self.assertEqual( 'OUTAGE in 2 hours', res[ 'Value' ][ 'DT' ] )
+    self.assertEqual( 'OUTAGE in 3:00:00', res[ 'Value' ][ 'DT' ] )
     self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )  
 
     newStartDate3 = datetime.strftime( datetime.now() - timedelta( days = 1 ), "%Y-%m-%d %H:%M" )
