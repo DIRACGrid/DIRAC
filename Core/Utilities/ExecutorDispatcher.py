@@ -639,8 +639,8 @@ class ExecutorDispatcher:
       self.__dispatchTask( taskId )
       return S_ERROR( errMsg )
     if self.__monitor:
-      self.__monitor.addMark( "taskTime-%s" % eType, time.time() - self.__tasks[ taskId ].sendTime )
-      self.__monitor.addMark( "tasks-%s" % eType, 1 )
+      self.__monitor.addMark( "taskTime-%s" % eTask.eType, time.time() - self.__tasks[ taskId ].sendTime )
+      self.__monitor.addMark( "tasks-%s" % eTask.eType, 1 )
     return S_OK( eTask.eType )
 
   def freezeTask( self, eId, taskId, freezeTime, taskObj = False ):
@@ -766,7 +766,7 @@ class ExecutorDispatcher:
     try:
       self.__tasks[ taskId ].sendTime = time.time()
     except KeyError:
-      return S_ERROR( "Task has been deleted" )
+      return S_ERROR( "Task %s has been deleted" % taskId )
     try:
       result = self.__cbHolder.cbSendTask( taskId, self.__tasks[ taskId ].taskObj, eId, eType )
     except:
@@ -782,8 +782,6 @@ class ExecutorDispatcher:
     self.__log.verbose( "Disconnecting executor" )
     self.removeExecutor( eId )
     return S_ERROR( "Exception while sending task to executor" )
-
-
 
 if __name__ == "__main__":
   def testExecState():

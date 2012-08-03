@@ -4,6 +4,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import *
 
 class JobState( object ):
 
@@ -376,10 +377,27 @@ class JobState( object ):
 
 #Other
 
+  right_resetJob = RIGHT_RESET
+  @RemoteMethod
+  def resetJob( self, source = "" ):
+    result = JobState.__db.job.setJobAttribute( self.__jid, "RescheduleCounter", -1 )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot set the RescheduleCounter for job %s: %s" % ( self.__jid, result[ 'Message' ] ) )
+    result = JobState.__db.tq.deleteJob( self.__jid )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot delete from TQ job %s: %s" % ( self.__jid, result[ 'Message' ] ) )
+    result = JobState.__db.job.rescheduleJob( self.__jid )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot reschedule in JobDB job %s: %s" % ( self.__jid, result[ 'Message' ] ) )
+    JobState.__db.log.addLoggingRecord( self.__jid, "Received", "", "", source = source )
+    return S_OK()
+
+  right_getInputData = RIGHT_GET_INFO
   @RemoteMethod
   def getInputData( self ):
     return JobState.__db.job.getInputData( self.__jid )
 
+  right_insertIntoTQ = RIGHT_CHANGE_STATUS
   @RemoteMethod
   def insertIntoTQ( self ):
     result = self.getManifest()

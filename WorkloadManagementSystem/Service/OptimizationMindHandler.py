@@ -130,8 +130,12 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       return S_OK( "WorkloadManagement/JobPath" )
     result = jobState.getOptParameter( 'OptimizerChain' )
     if not result[ 'OK' ]:
-      cls.log.error( "Could not get optimizer chain for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
-      return S_ERROR( "Couldn't get OptimizerChain: %s" % result[ 'Message' ] )
+      cls.log.error( "Could not get optimizer chain for job, auto resetting job", "%s: %s" % ( jid, result[ 'Message' ] ) )
+      result = jobState.resetJob()
+      if not result[ 'OK' ]:
+        cls.log.error( "Could not reset job", "%s: %s" % ( jid, result[ 'Message' ] ) )
+        return S_ERROR( "Cound not get OptimizationChain or reset job %s" % jid )
+      return S_OK( "WorkloadManagement/JobPath" )
     optChain = result[ 'Value' ]
     if minorStatus not in optChain:
       cls.log.error( "Next optimizer is not in the chain for job", "%s: %s not in %s" % ( jid, minorStatus, optChain ) )

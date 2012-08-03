@@ -58,7 +58,7 @@ class ExecutorMindHandler( RequestHandler ):
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     gLogger.notice( "Initializing Executor dispatcher" )
-    cls.__eDispatch = ExecutorDispatcher()
+    cls.__eDispatch = ExecutorDispatcher( cls.srv_getMonitor() )
     cls.__callbacks = ExecutorMindHandler.MindCallbacks( cls.__sendTask,
                                                          cls.exec_dispatch,
                                                          cls.__execDisconnected,

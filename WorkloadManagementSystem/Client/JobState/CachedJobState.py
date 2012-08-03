@@ -39,6 +39,9 @@ class CachedJobState( object ):
     self.dOnlyCache = False
     self.__jid = jid
     self.__jobState = JobState( jid )
+    self.__resetState( skipInitState = skipInitState )
+
+  def __resetState( self, skipInitState = False ):
     self.__cache = {}
     self.__trace = []
     self.__manifest = False
@@ -362,6 +365,14 @@ class CachedJobState( object ):
     return self.__cacheDict( 'optp', self.__jobState.getOptParameters, nameList )
 
 #Other
+
+  def resetJob( self, source = "" ):
+    """ Reset the job!
+    """
+    result = self.__jobState.resetJob( source = source )
+    if result[ 'OK' ]:
+      self.__resetState()
+    return result
 
   def getInputData( self ):
     return self.__cacheResult( "inputData" , self.__jobState.getInputData )
