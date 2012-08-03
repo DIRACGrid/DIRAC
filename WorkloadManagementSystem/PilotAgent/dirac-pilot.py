@@ -131,6 +131,7 @@ if os.environ.has_key( 'OSG_WN_TMP' ):
     installScript = os.path.join( path, installScriptName )
     if os.path.isfile( installScript ):
       try:
+        import shutil
         shutil.copy( installScript, os.path.join( os.environ['OSG_WN_TMP'], installScriptName ) )
       except Exception, x:
         print sys.executable
