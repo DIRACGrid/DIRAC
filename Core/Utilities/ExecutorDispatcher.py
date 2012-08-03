@@ -187,7 +187,7 @@ class ExecutorQueues:
     if type( eTypes ) not in ( types.ListType, types.TupleType ):
       eTypes = [ eTypes ]
     self.__lock.acquire()
-    for eType in eTypes:
+    for eType in reversed( eTypes ):
       try:
         taskId = self.__queues[ eType ].pop( 0 )
         del( self.__taskInQueue[ taskId ] )

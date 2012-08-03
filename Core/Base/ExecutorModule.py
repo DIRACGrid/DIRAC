@@ -137,7 +137,6 @@ class ExecutorModule( object ):
       raise Exception( "processTask does not return a return structure" )
     if not result[ 'OK' ]:
       return result
-
     #If there's a result, serialize it again!
     if result[ 'Value' ]:
       taskObj = result[ 'Value' ]
@@ -147,8 +146,17 @@ class ExecutorModule( object ):
       self.log.verbose( "Task %s: Cannot serialize: %s" % ( str( taskId ), result[ 'Message' ] ) )
       return result
     taskStub = result[ 'Value' ]
+    #Try fast track
+    fastTrackType = False
+    if not self.__freezeTime:
+      result = self.fastTrackDispatch( taskId, taskObj )
+      if not result[ 'OK' ]:
+        self.log.error( "FastTrackDispatch failed for job", "%s: %s" % ( taskId, result[ 'Message' ] ) )
+      else:
+        fastTrackType = result[ 'Value' ]
+
     #EOP
-    return S_OK( ( taskStub, self.__freezeTime ) )
+    return S_OK( ( taskStub, self.__freezeTime, fastTrackType ) )
 
   ####
   # Callable functions
@@ -159,6 +167,14 @@ class ExecutorModule( object ):
 
   def isTaskFrozen( self ):
     return self.__freezeTime
+
+
+  ###
+  #  Fast-track tasks
+  ###
+
+  def fastTrackDispatch( self, taskId, taskObj ):
+    return S_OK()
 
   ####
   # Need to overwrite this functions

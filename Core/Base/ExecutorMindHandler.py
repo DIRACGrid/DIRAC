@@ -18,9 +18,11 @@ class ExecutorMindHandler( RequestHandler ):
                                        'freezeTime' : ( types.IntType, types.LongType ) },
                       'TaskError' : { 'taskId': ( types.IntType, types.LongType ),
                                       'errorMsg' : types.StringType,
-                                      'taskStub' : types.StringType },
+                                      'taskStub' : types.StringType,
+                                      'eType' : types.StringType},
                       'ExecutorError' : { 'taskId': ( types.IntType, types.LongType ),
-                                          'errorMsg' : types.StringType } }
+                                          'errorMsg' : types.StringType,
+                                          'eType' : types.StringType } }
 
   class MindCallbacks( ExecutorDispatcherCallbacks ):
 
@@ -187,7 +189,7 @@ class ExecutorMindHandler( RequestHandler ):
     #TODO: Check the executor has privileges over the task
     self.__eDispatch.removeTask( msgObj.taskId )
     try:
-      self.exec_taskError( msgObj.taskId, taskObj, msgObj.errorMsg )
+      self.exec_taskError( msgObj.taskId, taskObj, msgObj.errorMsg, eType )
     except:
       gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
     return S_OK()

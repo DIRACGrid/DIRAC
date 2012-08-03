@@ -156,7 +156,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return CachedJobState.deserialize( taskStub )
 
   @classmethod
-  def exec_taskError( cls, jid, cachedJobState, errorMsg ):
+  def exec_taskError( cls, jid, cachedJobState, errorMsg, eType ):
     result = cachedJobState.commitChanges()
     if not result[ 'OK' ]:
       cls.log.error( "Cannot write changes to job %s: %s" % ( jid, result[ 'Message' ] ) )
@@ -168,5 +168,5 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     else:
       cls.log.error( "Could not get status of job %s: %s" % ( jid, result[ 'Message ' ] ) )
     cls.log.notice( "Job %s: Setting to Failed|%s" % ( jid, errorMsg ) )
-    return jobState.setStatus( "Failed", errorMsg )
+    return jobState.setStatus( "Failed", errorMsg, source = eType )
 
