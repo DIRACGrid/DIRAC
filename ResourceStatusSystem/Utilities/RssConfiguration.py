@@ -6,7 +6,7 @@
 '''
 
 from DIRAC                                               import S_OK
-
+from DIRAC.Core.Utilities                                import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ResourceStatusSystem.Utilities                import Utils
 
@@ -79,7 +79,8 @@ def getValidElements():
   
   result = Operations().getValue( '%s/GeneralConfig/ValidElements' % rssConfigPath )
   if result is not None:
-    return Utils.getTypedList( result )
+    return List.fromChar( result )
+    #return Utils.getTypedList( result )
   return _DEFAULTS  
 
 def getValidStatus():
