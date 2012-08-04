@@ -430,7 +430,11 @@ class MySQL:
     it returns an empty tuple if no matching rows are found
     return S_ERROR upon error
     """
-    self.log.verbose( '_query:', cmd )
+    if len( cmd ) > 512:
+      self.log.verbose( "Query of length %d truncated to 512 characters" % len (cmd ) )
+      self.log.verbose( '_query: %s ...' % cmd[:512] )
+    else:
+      self.log.verbose( '_query:', cmd )
 
     if gDebugFile:
       start = time.time()
