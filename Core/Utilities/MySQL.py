@@ -329,7 +329,7 @@ class MySQL:
       return S_ERROR( 'Invalid tableName argument' )
 
     cmd = 'SHOW TABLES'
-    retDict = self._query( cmd )
+    retDict = self._query( cmd, debug = True )
     if not retDict['OK']:
       return retDict
     if ( tableName, ) in retDict['Value']:
@@ -338,7 +338,7 @@ class MySQL:
         return S_ERROR( 'The requested table already exist' )
       else:
         cmd = 'DROP TABLE %s' % table
-        retDict = self._update( cmd )
+        retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
           return retDict
 
@@ -423,14 +423,20 @@ class MySQL:
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
 
-  def _query( self, cmd, conn = None ):
+  def _query( self, cmd, conn = None, debug = False ):
     """
     execute MySQL query command
     return S_OK structure with fetchall result as tuple
     it returns an empty tuple if no matching rows are found
     return S_ERROR upon error
     """
-    self.log.verbose( '_query:', cmd )
+    if debug:
+      self.logger.debug( '_query:', cmd )
+    else:
+      if self.logger._minLevel == self.logger.getLevelValue( 'DEBUG' ):
+        self.logger.verbose( '_query:', cmd )
+      else:
+        self.logger.verbose( '_query:', cmd[:min( len( cmd, 512 ) )] )
 
     if gDebugFile:
       start = time.time()
@@ -452,10 +458,17 @@ class MySQL:
 
       # Log the result limiting it to just 10 records
       if len( res ) <= 10:
-        self.log.verbose( '_query: returns', res )
+        if debug:
+          self.logger.debug( '_query: returns', res )
+        else:
+          self.logger.verbose( '_query: returns', res )
       else:
-        self.log.verbose( '_query: Total %d records returned' % len( res ) )
-        self.log.verbose( '_query: %s ...' % str( res[:10] ) )
+        if debug:
+          self.logger.debug( '_query: Total %d records returned' % len( res ) )
+          self.logger.debug( '_query: %s ...' % str( res[:10] ) )
+        else:
+          self.logger.verbose( '_query: Total %d records returned' % len( res ) )
+          self.logger.verbose( '_query: %s ...' % str( res[:10] ) )
 
       retDict = S_OK( res )
     except Exception , x:
@@ -474,12 +487,18 @@ class MySQL:
     return retDict
 
 
-  def _update( self, cmd, conn = None ):
+  def _update( self, cmd, conn = None, debug = False ):
     """ execute MySQL update command
         return S_OK with number of updated registers upon success
         return S_ERROR upon error
     """
-    self.log.verbose( '_update:', cmd )
+    if debug:
+      self.logger.debug( '_update:', cmd )
+    else:
+      if self.logger._minLevel == self.logger.getLevelValue( 'DEBUG' ):
+        self.logger.verbose( '_update:', cmd )
+      else:
+        self.logger.verbose( '_update:', cmd[:min( len( cmd, 512 ) )] )
 
     if gDebugFile:
       start = time.time()
@@ -493,7 +512,10 @@ class MySQL:
       cursor = connection.cursor()
       res = cursor.execute( cmd )
       connection.commit()
-      self.log.verbose( '_update:', res )
+      if debug:
+        self.log.debug( '_update:', res )
+      else:
+        self.log.verbose( '_update:', res )
       retDict = S_OK( res )
       if cursor.lastrowid:
         retDict[ 'lastRowId' ] = cursor.lastrowid
@@ -697,7 +719,7 @@ class MySQL:
 
         cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % ( 
                table, ',\n'.join( cmdList ), engine )
-        retDict = self._update( cmd )
+        retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
           return retDict
         self.log.info( 'Table %s created' % table )
@@ -870,7 +892,7 @@ class MySQL:
       return S_ERROR( x )
 
     cmd = 'SELECT %s, COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
-    res = self._query( cmd , connection )
+    res = self._query( cmd , connection, debug = True )
     if not res['OK']:
       return res
 
@@ -907,7 +929,7 @@ class MySQL:
       return S_ERROR( x )
 
     cmd = 'SELECT  DISTINCT( %s ) FROM %s %s ORDER BY %s' % ( attributeName, table, cond, attributeName )
-    res = self._query( cmd, connection )
+    res = self._query( cmd, connection, debug = True )
     if not res['OK']:
       return res
     attr_list = [ x[0] for x in res['Value'] ]
@@ -1068,7 +1090,7 @@ class MySQL:
       return S_ERROR( x )
 
     return self._query( 'SELECT %s FROM %s %s' %
-                        ( quotedOutFields, table, condition ), conn )
+                        ( quotedOutFields, table, condition ), conn, debug = True )
 
 #############################################################################
   def deleteEntries( self, tableName,
@@ -1096,7 +1118,7 @@ class MySQL:
     except Exception, x:
       return S_ERROR( x )
 
-    return self._update( 'DELETE FROM %s %s' % ( table, condition ), conn )
+    return self._update( 'DELETE FROM %s %s' % ( table, condition ), conn, debug = True )
 
 #############################################################################
   def updateFields( self, tableName, updateFields = None, updateValues = None,
@@ -1165,7 +1187,7 @@ class MySQL:
                                             updateValues[k] ) for k in range( len( updateFields ) ) ] )
 
     return self._update( 'UPDATE %s SET %s %s' %
-                         ( table, updateString, condition ), conn )
+                         ( table, updateString, condition ), conn, debug = True )
 
 #############################################################################
   def insertFields( self, tableName, inFields = None, inValues = None, conn = None, inDict = None ):
@@ -1222,7 +1244,7 @@ class MySQL:
                           % ( inFieldString, table ) )
 
     return self._update( 'INSERT INTO %s %s VALUES %s' %
-                         ( table, inFieldString, inValueString ), conn )
+                         ( table, inFieldString, inValueString ), conn, debug = True )
 
 #####################################################################################
 #
@@ -1235,7 +1257,6 @@ if __name__ == '__main__':
   from DIRAC.Core.Utilities import Time
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
-  gLogger.setLevel( 'VERBOSE' )
 
   if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
     gLogger.info( 'Unset pyhthon optimization "PYTHONOPTIMIZE"' )
