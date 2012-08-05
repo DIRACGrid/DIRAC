@@ -78,7 +78,9 @@ class JobAgent( AgentModule ):
     self.defaultLogLevel = self.am_getOption( 'DefaultLogLevel', 'info' )
     self.fillingMode = self.am_getOption( 'FillingModeFlag', False )
     self.stopOnApplicationFailure = self.am_getOption( 'StopOnApplicationFailure', True )
+    self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', 10 )
     self.jobCount = 0
+    self.matchFailedCount = 0
     #Timeleft
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
@@ -125,19 +127,33 @@ class JobAgent( AgentModule ):
     matchTime = time.time() - start
     self.log.info( 'MatcherTime = %.2f (s)' % ( matchTime ) )
 
+    self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', self.stopAfterFailedMatches )
+
     if not jobRequest['OK']:
       if re.search( 'No work available', jobRequest['Message'] ):
         self.log.info( 'Job request OK: %s' % ( jobRequest['Message'] ) )
+        self.matchFailedCount += 1
+        if self.matchFailedCount > self.stopAfterFailedMatches:
+          return S_ERROR( 'Nothing to do' )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "seconds timeout" ) != -1:
         self.log.error( jobRequest['Message'] )
+        self.matchFailedCount += 1
+        if self.matchFailedCount > self.stopAfterFailedMatches:
+          return S_ERROR( 'Nothing to do' )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "Pilot version does not match" ) != -1 :
         self.log.error( jobRequest['Message'] )
         return S_ERROR( jobRequest['Message'] )
       else:
         self.log.info( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
+        self.matchFailedCount += 1
+        if self.matchFailedCount > self.stopAfterFailedMatches:
+          return S_ERROR( 'Nothing to do' )
         return S_OK( jobRequest['Message'] )
+
+    # Reset the Counter
+    self.matchFailedCount = 0
 
     matcherInfo = jobRequest['Value']
     jobID = matcherInfo['JobID']
