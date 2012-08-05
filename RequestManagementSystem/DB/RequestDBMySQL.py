@@ -128,8 +128,6 @@ class RequestDBMySQL( DB ):
   def selectRequests( self, selectDict, limit = 100 ):
     """ Select requests according to specified criteria
     """
-
-    req = "SELECT RequestID, RequestName from Requests as S "
     condDict = {}
     older = None
     newer = None
@@ -140,13 +138,9 @@ class RequestDBMySQL( DB ):
         newer = value
       else:
         condDict[key] = value
+    self.getFields( 'Requests', ['RequestID', 'RequestName'], condDict = condDict, limit = limit,
+                    older = older, newer = newer, timeStamp = 'LastUpdate' )
 
-    condition = self.__buildCondition( condDict, older = older, newer = newer )
-    req += condition
-    if limit:
-      req += " LIMIT %d" % limit
-
-    result = self._query( req )
     if not result['OK']:
       return result
 
