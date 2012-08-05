@@ -869,6 +869,29 @@ class MySQL:
 #  Utility functions
 #
 ########################################################################################
+  def countEntries( self, table, condDict, older = None, newer = None, timeStamp = None, connection = False ):
+    """
+      Count the number of entries wit the given conditions
+    """
+    table = _quotedList( [table] )
+    if not table:
+      error = 'Invalid table argument'
+      self.log.debug( 'countEntries:', error )
+      return S_ERROR( error )
+
+    try:
+      cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp )
+    except Exception, x:
+      return S_ERROR( x )
+
+    cmd = 'SELECT COUNT(*) FROM %s %s' % ( table, cond )
+    res = self._query( cmd , connection, debug = True )
+    if not res['OK']:
+      return res
+
+    return S_OK( res['Value'][0][0] )
+
+########################################################################################
   def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False ):
     """ 
       Count the number of records on each distinct combination of AttrList, selected
