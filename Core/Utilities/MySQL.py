@@ -436,7 +436,7 @@ class MySQL:
       if self.logger._minLevel == self.logger.getLevelValue( 'DEBUG' ):
         self.logger.verbose( '_query:', cmd )
       else:
-        self.logger.verbose( '_query:', cmd[:min( len( cmd, 512 ) )] )
+        self.logger.verbose( '_query:', cmd[:min( len( cmd ) , 512 )] )
 
     if gDebugFile:
       start = time.time()
@@ -498,7 +498,7 @@ class MySQL:
       if self.logger._minLevel == self.logger.getLevelValue( 'DEBUG' ):
         self.logger.verbose( '_update:', cmd )
       else:
-        self.logger.verbose( '_update:', cmd[:min( len( cmd, 512 ) )] )
+        self.logger.verbose( '_update:', cmd[:min( len( cmd ) , 512 )] )
 
     if gDebugFile:
       start = time.time()
@@ -838,7 +838,7 @@ class MySQL:
       self.log.debug( '__getConnection: Got a connection from Queue' )
       if connection:
         try:
-          # This will try to reconect if the connection has timeout
+          # This will try to reconnect if the connection has timeout
           connection.ping( True )
         except:
           # if the ping fails try with a new connection from the Queue
@@ -1059,7 +1059,6 @@ class MySQL:
       N records can match the condition
       return S_OK( tuple(Field,Value) )
       if outFields == None all fields in "tableName" are returned
-      if inFields and inValues are None, no condition is imposed
       if limit is not False, the given limit is set
       inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
     """
