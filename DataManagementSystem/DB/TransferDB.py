@@ -21,13 +21,15 @@ import time
 import datetime
 import random
 ## from DIRAC
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR, Time
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import intListToString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ## it's a magic! 
-MAGIC_EPOC_NUMBER = 1270000000
+#ÊMAGIC_EPOC_NUMBER = 1270000000
+## This is a better one, using only datetime (DIRAC.Time) to avoid jumps when there is a change in time
+NEW_MAGIC_EPOCH_2K = 323322400
 
 ## create logger
 gLogger.initialize( "DMS", "/Databases/TransferDB/Test" )
@@ -51,13 +53,9 @@ class TransferDB( DB ):
 
   def __getFineTime( self ):
     """ 
-    TODO: shouldn't it return round( time.time() - MAGIC_EPOC_NUMBER, 3 ) ???
-    and what for are allthis calculations? :/
+      Return a "small" number of seconds with millisecond precision
     """
-    _date = datetime.datetime.utcnow()
-    epoc = time.mktime( _date.timetuple() ) - MAGIC_EPOC_NUMBER
-    time_order = round( epoc, 3 )
-    return time.time() - MAGIC_EPOC_NUMBER
+    return Time.to2K() - NEW_MAGIC_EPOCH_2K
 
   #################################################################################
   # These are the methods for managing the Channels table
@@ -1538,11 +1536,7 @@ class TransferDB( DB ):
     :param list idList: list of :table:.:tableID:
     :param list attrList: list of column names from :table:
     """
-    attrNames = ",".join( [ str( attr ) for attr in attrList ] )
-    attr_tmp_list = attrList
-    intIDList = ",".join( [ str( ID ) for ID in idList ] )
-    cmd = "SELECT %s,%s FROM %s WHERE %s IN (%s);" % ( tableID, attrNames, table, tableID, intIDList )
-    res = self._query( cmd )
+    res = self.getFields( table, outFields = [tableID] + attrList, condDict = {tableID:instIDList} )
     if not res['OK']:
       return res
     try:
@@ -1552,11 +1546,11 @@ class TransferDB( DB ):
         reqDict = {}
         reqDict[tableID] = rowID
         attrValues = retValues[1:]
-        for i in range( len( attr_tmp_list ) ):
+        for i in range( len( attrList ) ):
           try:
-            reqDict[attr_tmp_list[i]] = attrValues[i].tostring()
+            reqDict[attrList[i]] = attrValues[i].tostring()
           except Exception, error:
-            reqDict[attr_tmp_list[i]] = str( attrValues[i] )
+            reqDict[attrList[i]] = str( attrValues[i] )
         retDict[int( rowID )] = reqDict
       return S_OK( retDict )
     except Exception, error:
@@ -1564,92 +1558,31 @@ class TransferDB( DB ):
 
   def __selectFromTable( self, table, tableID, condDict, older, newer, orderAttribute, limit ):
     """ select something from table something
-
-    :TODO: should be moved to base class
     """
-    condition = self.__buildCondition( condDict, older, newer )
-
-    if orderAttribute:
-      orderType = None
-      orderField = orderAttribute
-      if orderAttribute.find( ':' ) != -1:
-        orderType = orderAttribute.split( ':' )[1].upper()
-        orderField = orderAttribute.split( ':' )[0]
-      condition = condition + ' ORDER BY ' + orderField
-      if orderType:
-        condition = condition + ' ' + orderType
-
-    if limit:
-      condition = condition + ' LIMIT ' + str( limit )
-
-    cmd = 'SELECT %s from %s %s' % ( tableID, table, condition )
-    res = self._query( cmd )
+    res = self.getFields( tableName, [tableID], condDict, limit, older = older, newer = newer, timeStamp = 'LastUpdateTime', orderAttribute )
     if not res['OK']:
       return res
     if not len( res['Value'] ):
       return S_OK( [] )
+
     return S_OK( map( self._to_value, res['Value'] ) )
-
-  def __buildCondition( self, condDict, older = None, newer = None ):
-    """ build SQL condition statement from provided condDict
-        and other extra conditions
-
-    :TODO: should be moved to base class
-    """
-    condition = ''
-    conjunction = "WHERE"
-    if condDict != None:
-      for attrName, attrValue in condDict.items():
-        condition = ' %s %s %s=\'%s\'' % ( condition,
-                                           conjunction,
-                                           str( attrName ),
-                                           str( attrValue ) )
-        conjunction = "AND"
-    if older:
-      condition = ' %s %s LastUpdateTime < \'%s\'' % ( condition,
-                                                 conjunction,
-                                                 str( older ) )
-      conjunction = "AND"
-
-    if newer:
-      condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
-                                                 conjunction,
-                                                 str( newer ) )
-    return condition
-
 
   def getDistinctRequestAttributes( self, attribute, condDict = None, older = None, newer = None ):
     """ Get distinct values of the Requests table attribute under specified conditions
     """
-    condDict = {} if not condDict else condDict
-    return self.__getDistinctTableAttributes( 'Requests', attribute, condDict, older, newer )
+    return self.getDistinctAttributeValues( 'Requests', attribute, condDict, older, newer, timeStamp = 'LastUpdateTime' )
 
   def getDistinctSubRequestAttributes( self, attribute, condDict = None, older = None, newer = None ):
     """ Get distinct values of SubRequests the table attribute under specified conditions
     """
-    condDict = {} if not condDict else condDict
-    return self.__getDistinctTableAttributes( 'SubRequests', attribute, condDict, older, newer )
+    return self.getDistinctAttributeValues( 'SubRequests', attribute, condDict, older, newer, timeStamp = 'LastUpdateTime' )
 
   def getDistinctFilesAttributes( self, attribute, condDict = None, older = None, newer = None ):
     """ Get distinct values of the Files  table attribute under specified conditions
     """
-    condDict = {} if not condDict else condDict
-    return self.__getDistinctTableAttributes( 'Files', attribute, condDict, older, newer )
+    return self.getDistinctAttributeValues( 'Files', attribute, condDict, older, newer, timeStamp = 'LastUpdateTime' )
 
   def getDistinctChannelsAttributes( self, attribute, condDict = None ):
     """ Get distinct values of the Channels table attribute under specified conditions
     """
-    condDict = {} if not condDict else condDict
-    return self.__getDistinctTableAttributes( 'Channels', attribute, condDict )
-
-  def __getDistinctTableAttributes( self, table, attribute, condDict = None, older = None, newer = None ):
-    """ Get distinct values of the table attribute under specified conditions
-    """
-    condDict = {} if not condDict else condDict
-    cmd = 'SELECT  DISTINCT(%s) FROM %s ORDER BY %s' % ( attribute, table, attribute )
-    cond = self.__buildCondition( condDict, older = older, newer = newer )
-    result = self._query( cmd + cond )
-    if not result['OK']:
-      return result
-    attr_list = [ x[0] for x in result['Value'] ]
-    return S_OK( attr_list )
+    return self.getDistinctAttributeValues( 'Channels', attribute, condDict, older, newer, timeStamp = 'LastUpdateTime' )
