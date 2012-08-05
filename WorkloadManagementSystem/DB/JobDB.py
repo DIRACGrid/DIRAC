@@ -157,71 +157,6 @@ class JobDB( DB ):
 
     return S_OK()
 
-  def __buildCondition( self, condDict, older = None, newer = None, timeStamp = 'LastUpdateTime' ):
-    """ build SQL condition statement from provided condDict
-        and other extra conditions
-    """
-    condition = ''
-    conjunction = "WHERE"
-
-    if condDict != None:
-      for attrName, attrValue in condDict.items():
-        ret = self._escapeString( attrName )
-        if not ret['OK']:
-          return ret
-        attrName = "`" + ret['Value'][1:-1] + "`"
-
-        if type( attrValue ) == types.ListType:
-          multiValueList = []
-          for x in attrValue:
-            ret = self._escapeString( x )
-            if not ret['OK']:
-              return ret
-            x = ret['Value']
-            multiValueList.append( x )
-          multiValue = ','.join( multiValueList )
-          condition = ' %s %s %s in (%s)' % ( condition,
-                                             conjunction,
-                                             attrName,
-                                             multiValue )
-        else:
-          ret = self._escapeString( attrValue )
-          if not ret['OK']:
-            return ret
-          attrValue = ret['Value']
-
-          condition = ' %s %s %s=%s' % ( condition,
-                                         conjunction,
-                                         attrName,
-                                         attrValue )
-        conjunction = "AND"
-
-    if older:
-      ret = self._escapeString( older )
-      if not ret['OK']:
-        return ret
-      older = ret['Value']
-
-      condition = ' %s %s %s < %s' % ( condition,
-                                       conjunction,
-                                       timeStamp,
-                                       older )
-      conjunction = "AND"
-
-    if newer:
-      ret = self._escapeString( newer )
-      if not ret['OK']:
-        return ret
-      newer = ret['Value']
-
-      condition = ' %s %s %s >= %s' % ( condition,
-                                        conjunction,
-                                        timeStamp,
-                                        newer )
-
-    return condition
-
-
 #############################################################################
   def getJobID( self ):
     """Get the next unique JobID and prepare the new job insertion
@@ -300,16 +235,9 @@ class JobDB( DB ):
                                 newer = None, timeStamp = 'LastUpdateTime' ):
     """ Get distinct values of the job attribute under specified conditions
     """
-    cmd = 'SELECT  DISTINCT(%s) FROM Jobs ORDER BY %s' % ( attribute, attribute )
+    return self.getDistinctAttributeValues( 'Jobs', attribute, condDict = condDict,
+                                              older = older, newer = newer, timeStamp = timeStamp )
 
-    cond = self.__buildCondition( condDict, older = older, newer = newer, timeStamp = timeStamp )
-
-    result = self._query( cmd + cond )
-    if not result['OK']:
-      return result
-
-    attr_list = [ x[0] for x in result['Value'] ]
-    return S_OK( attr_list )
 
 #############################################################################
   def getJobParameters( self, jobID, paramList = None ):
@@ -715,12 +643,7 @@ class JobDB( DB ):
     """ Get the number of jobs matching conditions specified by condDict and time limits
     """
     self.log.debug ( 'JobDB.countJobs: counting Jobs' )
-    cond = self.__buildCondition( condDict, older, newer, timeStamp )
-    cmd = ' SELECT count(JobID) from Jobs '
-    ret = self._query( cmd + cond )
-    if ret['OK']:
-      return S_OK( ret['Value'][0][0] )
-    return ret
+    return self.countEntries( 'Jobs', condDict, older = older, newer = newer, timeStamp = timeStamp )
 
 #############################################################################
   def selectJobs( self, condDict, older = None, newer = None, timeStamp = 'LastUpdateTime',
@@ -735,23 +658,9 @@ class JobDB( DB ):
 
     self.log.debug( 'JobDB.selectJobs: retrieving jobs.' )
 
-    condition = self.__buildCondition( condDict, older, newer, timeStamp )
+    res = self.getFields( 'Jobs', ['JobID'], condDict = condDict, limit = limit,
+                            older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute )
 
-    if orderAttribute:
-      orderType = None
-      orderField = orderAttribute
-      if orderAttribute.find( ':' ) != -1:
-        orderType = orderAttribute.split( ':' )[1].upper()
-        orderField = orderAttribute.split( ':' )[0]
-      condition = condition + ' ORDER BY ' + orderField
-      if orderType:
-        condition = condition + ' ' + orderType
-
-    if limit:
-      condition = condition + ' LIMIT ' + str( limit )
-
-    cmd = 'SELECT JobID from Jobs ' + condition
-    res = self._query( cmd )
     if not res['OK']:
       return res
 
@@ -1668,11 +1577,11 @@ class JobDB( DB ):
     siteList = classAdJob.getListFromExpression( 'Site' )
     if not siteList:
       site = 'ANY'
-    elif len(siteList) > 1:
+    elif len( siteList ) > 1:
       site = "Multiple"
     else:
       site = siteList[0]
-        
+
     jobAttrNames.append( 'Site' )
     jobAttrValues.append( site )
 
