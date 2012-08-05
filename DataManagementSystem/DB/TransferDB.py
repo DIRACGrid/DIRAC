@@ -656,8 +656,8 @@ class TransferDB( DB ):
 
   def getCompletedChannels( self, limit = 100 ):
     query = "SELECT DISTINCT FileID FROM Channel where Status = 'Done' AND FileID NOT IN ( SELECT FileID from Files ) LIMIT %s;" % limit
-    return self._query(query) 
-    
+    return self._query( query )
+
 
   #################################################################################
   # These are the methods for managing the FTSReq table
@@ -965,7 +965,7 @@ class TransferDB( DB ):
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
 
-  def getCountFileToFTS( self, interval=3600, status="Failed" ):
+  def getCountFileToFTS( self, interval = 3600, status = "Failed" ):
     """ get count of distinct FileIDs per Channel for Failed FileToFTS
 
     :param self: self reference
@@ -986,9 +986,9 @@ class TransferDB( DB ):
     ## query query to query :)
     query = self._query( query )
     if not query["OK"]:
-      return S_ERROR("TransferDB.getCountFailedFTSFiles: " % query["Message"] )
+      return S_ERROR( "TransferDB.getCountFailedFTSFiles: " % query["Message"] )
     ## return dict updated by dict created from query tuple :)
-    return S_OK( channelDict.update( dict(query["Value"]) ) )
+    return S_OK( channelDict.update( dict( query["Value"] ) ) )
 
   def getChannelObservedThroughput( self, interval ):
     """ create and return a dict holding summary info about FTS channels 
@@ -1009,14 +1009,14 @@ class TransferDB( DB ):
     channels = channels['Value']
 
     ## create empty channelDict
-    channelDict = dict.fromkeys( channels.keys(), None ) 
+    channelDict = dict.fromkeys( channels.keys(), None )
     ## fill with zeros 
     for channelID in channelDict:
       channelDict[channelID] = {}
-      channelDict[channelID]["Throughput"] =  0
-      channelDict[channelID]["Fileput"] = 0 
+      channelDict[channelID]["Throughput"] = 0
+      channelDict[channelID]["Fileput"] = 0
       channelDict[channelID]["SuccessfulFiles"] = 0
-      channelDict[channelID]["FailedFiles"] = 0 
+      channelDict[channelID]["FailedFiles"] = 0
 
     channelTimeDict = dict.fromkeys( channels.keys(), 0 )
 
@@ -1304,7 +1304,7 @@ class TransferDB( DB ):
                         str( lastMonitor ), complete, status, files, size ) )
     return S_OK( ftsReqs )
 
-  
+
   def cleanUp( self, gracePeriod = 60, limit = 10 ):
     """ delete completed FTS requests 
 
@@ -1321,10 +1321,10 @@ class TransferDB( DB ):
                                                                                                               limit ) ] ) )
     if not ftsReqs["OK"]:
       return ftsReqs
-    ftsReqs = [ item for item in ftsReqs["Value"] if None not in item ]    
-  
+    ftsReqs = [ item for item in ftsReqs["Value"] if None not in item ]
+
     delQueries = []
-    
+
     for ftsReqID, channelID in ftsReqs:
       fileIDs = self._query( "SELECT FileID from FileToFTS WHERE FTSReqID = %s AND ChannelID = %s;" % ( ftsReqID, channelID ) )
       if not fileIDs["OK"]:
@@ -1334,10 +1334,10 @@ class TransferDB( DB ):
         delQueries.append( "DELETE FROM FileToFTS WHERE FileID = %s and FTSReqID = %s;" % ( fileID, ftsReqID ) )
       delQueries.append( "DELETE FROM FTSReqLogging WHERE FTSReqID = %s;" % ftsReqID )
       delQueries.append( "DELETE FROM FTSReq WHERE FTSReqID = %s;" % ftsReqID )
-      
+
     channels = self._query( "".join( [ "SELECT FileID, ChannelID FROM Channel ",
-                                       "WHERE FileID NOT IN ( SELECT FileID FROM Files ) " 
-                                       "AND FileID NOT IN ( SELECT FileID FROM FileToFTS ) LIMIT %s;" % int(limit) ] ) )
+                                       "WHERE FileID NOT IN ( SELECT FileID FROM Files ) "
+                                       "AND FileID NOT IN ( SELECT FileID FROM FileToFTS ) LIMIT %s;" % int( limit ) ] ) )
     if not channels["OK"]:
       return channels
     channels = [ channel for channel in channels["Value"] if None not in channel ]
@@ -1347,7 +1347,7 @@ class TransferDB( DB ):
       delQueries.append( "DELETE FROM FileToCat WHERE FileID = %s and ChannelID = %s;" % channel )
 
 
-    return self._transaction( sorted(delQueries) )
+    return self._transaction( sorted( delQueries ) )
 
   def getAttributesForReqList( self, reqIDList, attrList = None ):
     """ Get attributes for the requests in the req ID list.
