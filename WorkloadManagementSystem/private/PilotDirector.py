@@ -314,7 +314,7 @@ class PilotDirector:
 
       pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
 
-      pilotsToSubmit = ( pilotsToSubmit - 1 ) / self.maxJobsInFillMode + 1
+      pilotsToSubmit = max( 1, ( pilotsToSubmit - 1 ) / self.maxJobsInFillMode + 1 )
 
       maxJobsInFillMode = int( numberOfUses / pilotsToSubmit )
     # Use Filling mode
