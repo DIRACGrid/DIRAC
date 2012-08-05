@@ -256,7 +256,7 @@ class MySQL:
 
     if debug:
       try:
-        debugFile = open( "%s.debug.log" % self.__dbName, "w" )
+        gDebugFile = open( "%s.debug.log" % self.__dbName, "w" )
       except IOError:
         pass
 
