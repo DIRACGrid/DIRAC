@@ -268,7 +268,7 @@ class JobAgent( AgentModule ):
         return self.__rescheduleFailedJob( jobID, errorMsg, self.stopOnApplicationFailure )
 
       self.log.verbose( 'Before %sCE submitJob()' % ( self.ceName ) )
-      submission = self.__submitJob( jobID, params, resourceParams, optimizerParams, jobJDL, proxyChain )
+      submission = self.__submitJob( jobID, params, ceDict, optimizerParams, jobJDL, proxyChain )
       if not submission['OK']:
         self.__report( jobID, 'Failed', submission['Message'] )
         return self.__finish( submission['Message'] )
