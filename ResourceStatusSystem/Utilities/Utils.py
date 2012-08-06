@@ -5,19 +5,11 @@
 
 '''
 
-import ast
-
 from DIRAC                                               import gConfig, S_OK
 from DIRAC.Core.Utilities                                import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 __RCSID__ = '$Id:  $'
-
-#def getTypedList( stringValue ):
-#  '''
-#  Returns a typed list from a csv
-#  '''
-#  return [ typedobj_of_string(e) for e in List.fromChar( stringValue ) ]
 
 id_fun = lambda x: x
 
@@ -79,19 +71,6 @@ def getCSTree( csPath = '' ):
     return S_OK( csTreeDict )
     
   return getCSTreeAsDict( csPath )  
-
-#def typedobj_of_string( stringVal ):
-#  '''
-#    Evaluates the string to return a typed object
-#  '''
-#  if stringVal == '_none_':
-#    return []
-#  if stringVal == '': #isinstance( s, str ):
-#    return [ stringVal ]
-#  try:
-#    return ast.literal_eval( stringVal )
-#  except (ValueError, SyntaxError): # Probably it's just a string
-#    return stringVal
 
 def configMatch( candidateParams, configParams ):
   '''
