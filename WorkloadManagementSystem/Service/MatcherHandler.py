@@ -50,7 +50,9 @@ def initializeMatcherHandler( serviceInfo ):
   gMonitor.registerActivity( 'matchTaskQueues', "Task queues checked per job",
                              'Matching', "task queues" , gMonitor.OP_MEAN, 300 )
   gMonitor.registerActivity( 'matchesDone', "Job Matches",
-                             'Matching', "matches" , gMonitor.OP_MEAN, 300 )
+                             'Matching', "matches" , gMonitor.OP_RATE, 300 )
+  gMonitor.registerActivity( 'matchesOK', "Job Matches",
+                             'Matching', "matches" , gMonitor.OP_RATE, 300 )
   gMonitor.registerActivity( 'numTQs', "Number of Task Queues",
                              'Matching', "tqsk queues" , gMonitor.OP_MEAN, 300 )
 
@@ -502,6 +504,8 @@ class MatcherHandler( RequestHandler ):
 
     result = self.selectJob( resourceDescription )
     gMonitor.addMark( "matchesDone" )
+    if result[ 'OK' ]:
+      gMonitor.addMark( "matchesOK" )
     return result
 
 ##############################################################################
