@@ -25,6 +25,10 @@ class Synchronizer( object ):
       self.rManagement = ResourceManagementClient.ResourceManagementClient()
   
   def sync( self ):
+    '''
+      Main synchronizer method. It syncs the three types of elements: Sites,
+      Resources and Nodes.
+    '''
     
     syncSites = self._syncSites()
     if not syncSites[ 'OK' ]:
@@ -38,9 +42,16 @@ class Synchronizer( object ):
     if not syncNodes[ 'OK' ]:
       gLogger.error( syncNodes[ 'Message' ] )  
   
+    #FIXME: also sync users
+    
     return S_OK()
   
+  ## Protected methods #########################################################
+  
   def _syncSites( self ):
+    '''
+      Sync sites: compares CS with DB and does the necessary modifications.
+    '''
     
     gLogger.debug( '-- Synchronizing sites --')
     
@@ -103,6 +114,10 @@ class Synchronizer( object ):
     return S_OK()  
   
   def _syncResources( self ):
+    '''
+      Sync resources: compares CS with DB and does the necessary modifications.
+      ( StorageElements, FTS, FileCatalogs and ComputingElements )
+    '''
     
     gLogger.debug( '-- Synchronizing Resources --' )
     
@@ -131,7 +146,10 @@ class Synchronizer( object ):
     return S_OK()
 
   def _syncNodes( self ):
-    
+    '''
+      Sync resources: compares CS with DB and does the necessary modifications.
+      ( Queues )
+    '''
     gLogger.debug( '-- Synchronizing Nodes --' )
   
     gLogger.debug( '-> Queues' )
@@ -141,69 +159,12 @@ class Synchronizer( object ):
     
     return S_OK()  
 
-  def __syncQueues( self ):
-
-    queuesCS = CSHelpers.getQueues()
-    if not queuesCS[ 'OK' ]:
-      return queuesCS
-    queuesCS = queuesCS[ 'Value' ]        
-    
-    gLogger.debug( '%s Queues found in CS' % len( queuesCS ) )
-    
-    queuesDB = self.rStatus.selectStatusElement( 'Node', 'Status', 
-                                                 elementType = 'Queue',
-                                                 meta = { 'columns' : [ 'name' ] } ) 
-    if not queuesDB[ 'OK' ]:
-      return queuesDB    
-    queuesDB = queuesDB[ 'Value' ]
-       
-    # ComputingElements that are in DB but not in CS
-    toBeDeleted = list( set( queuesDB ).intersection( set( queuesDB ) ) )
-    gLogger.debug( '%s Queues to be deleted' % len( toBeDeleted ) )
-       
-    # Delete storage elements
-    for queueName in toBeDeleted:
-      
-      deleteQuery = self.rStatus._extermineStatusElement( 'Node', queueName )
-      
-      gLogger.debug( '... %s' % queueName )
-      if not deleteQuery[ 'OK' ]:
-        return deleteQuery            
-    
-    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
-
-    queueTuple = self.rStatus.selectStatusElement( 'Node', 'Status', 
-                                                   elementType = 'Queue', 
-                                                   meta = { 'columns' : [ 'name', 'statusType' ] } ) 
-    if not queueTuple[ 'OK' ]:
-      return queueTuple   
-    queueTuple = queueTuple[ 'Value' ]        
-  
-    # For each ( se, statusType ) tuple not present in the DB, add it.
-    queueStatusTuples = [ ( se, statusType ) for se in queuesCS for statusType in statusTypes ]     
-    toBeAdded = list( set( queueStatusTuples ).difference( set( queueTuple ) ) )
-    
-    gLogger.debug( '%s Queue entries to be added' % len( toBeAdded ) )
-  
-    for queueTuple in toBeAdded:
-      
-      _name            = queueTuple[ 0 ]
-      _statusType      = queueTuple[ 1 ]
-      _status          = 'Banned'
-      _reason          = 'Synchronzed'
-      _elementType     = 'Queue'
-      
-      query = self.rStatus.addIfNotThereStatusElement( 'Node', 'Status', name = _name, 
-                                                       statusType = _statusType,
-                                                       status = _status,
-                                                       elementType = _elementType, 
-                                                       reason = _reason )
-      if not query[ 'OK' ]:
-        return query
-      
-    return S_OK()      
+  ## Private methods ###########################################################
 
   def __syncComputingElements( self ): 
+    '''
+      Sync CEs: compares CS with DB and does the necessary modifications.
+    '''
     
     cesCS = CSHelpers.getComputingElements()
     if not cesCS[ 'OK' ]:
@@ -266,7 +227,10 @@ class Synchronizer( object ):
     return S_OK()    
   
   def __syncFileCatalogs( self ): 
-    
+    '''
+      Sync FileCatalogs: compares CS with DB and does the necessary modifications.
+    '''
+        
     catalogsCS = CSHelpers.getFileCatalogs()
     if not catalogsCS[ 'OK' ]:
       return catalogsCS
@@ -328,7 +292,10 @@ class Synchronizer( object ):
     return S_OK()      
 
   def __syncFTS( self ): 
-    
+    '''
+      Sync FTS: compares CS with DB and does the necessary modifications.
+    '''
+        
     ftsCS = CSHelpers.getFTS()
     if not ftsCS[ 'OK' ]:
       return ftsCS
@@ -390,7 +357,10 @@ class Synchronizer( object ):
     return S_OK()      
  
   def __syncStorageElements( self ): 
-    
+    '''
+      Sync StorageElements: compares CS with DB and does the necessary modifications.
+    '''
+        
     sesCS = CSHelpers.getStorageElements()
     if not sesCS[ 'OK' ]:
       return sesCS
@@ -450,8 +420,76 @@ class Synchronizer( object ):
         return query
       
     return S_OK()  
+
+  def __syncQueues( self ):
+    '''
+      Sync Queues: compares CS with DB and does the necessary modifications.
+    '''
+
+    queuesCS = CSHelpers.getQueues()
+    if not queuesCS[ 'OK' ]:
+      return queuesCS
+    queuesCS = queuesCS[ 'Value' ]        
+    
+    gLogger.debug( '%s Queues found in CS' % len( queuesCS ) )
+    
+    queuesDB = self.rStatus.selectStatusElement( 'Node', 'Status', 
+                                                 elementType = 'Queue',
+                                                 meta = { 'columns' : [ 'name' ] } ) 
+    if not queuesDB[ 'OK' ]:
+      return queuesDB    
+    queuesDB = queuesDB[ 'Value' ]
+       
+    # ComputingElements that are in DB but not in CS
+    toBeDeleted = list( set( queuesDB ).intersection( set( queuesDB ) ) )
+    gLogger.debug( '%s Queues to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for queueName in toBeDeleted:
+      
+      deleteQuery = self.rStatus._extermineStatusElement( 'Node', queueName )
+      
+      gLogger.debug( '... %s' % queueName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
+    
+    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
+
+    queueTuple = self.rStatus.selectStatusElement( 'Node', 'Status', 
+                                                   elementType = 'Queue', 
+                                                   meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    if not queueTuple[ 'OK' ]:
+      return queueTuple   
+    queueTuple = queueTuple[ 'Value' ]        
+  
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    queueStatusTuples = [ ( se, statusType ) for se in queuesCS for statusType in statusTypes ]     
+    toBeAdded = list( set( queueStatusTuples ).difference( set( queueTuple ) ) )
+    
+    gLogger.debug( '%s Queue entries to be added' % len( toBeAdded ) )
+  
+    for queueTuple in toBeAdded:
+      
+      _name            = queueTuple[ 0 ]
+      _statusType      = queueTuple[ 1 ]
+      _status          = 'Banned'
+      _reason          = 'Synchronzed'
+      _elementType     = 'Queue'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Node', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       status = _status,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()      
   
   def _syncUsers( self ):
+    '''
+      Sync Users: compares CS with DB and does the necessary modifications.
+    '''    
     
     gLogger.debug( '-- Synchronizing users --')
     
