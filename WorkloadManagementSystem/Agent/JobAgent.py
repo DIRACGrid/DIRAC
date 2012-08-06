@@ -236,7 +236,7 @@ class JobAgent( AgentModule ):
     self.log.info( 'OwnerDN: %s JobGroup: %s' % ( ownerDN, jobGroup ) )
     self.jobCount += 1
     try:
-      jobReport = JobReport( jobID, 'JobAgent@%s' % siteName )
+      jobReport = JobReport( jobID, 'JobAgent@%s' % self.siteName )
       jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
       if self.gridCEQueue:
         jobReport.setJobParameter( 'GridCEQueue', self.gridCEQueue, sendFlag = False )
