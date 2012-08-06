@@ -236,7 +236,7 @@ class JobAgent( AgentModule ):
     self.log.info( 'OwnerDN: %s JobGroup: %s' % ( ownerDN, jobGroup ) )
     self.jobCount += 1
     try:
-      jobReport = JobReport( jobID, 'JobAgent@%s' % siteName )
+      jobReport = JobReport( jobID, 'JobAgent@%s' % self.siteName )
       jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
       if self.gridCEQueue:
         jobReport.setJobParameter( 'GridCEQueue', self.gridCEQueue, sendFlag = False )
@@ -268,7 +268,7 @@ class JobAgent( AgentModule ):
         return self.__rescheduleFailedJob( jobID, errorMsg, self.stopOnApplicationFailure )
 
       self.log.verbose( 'Before %sCE submitJob()' % ( self.ceName ) )
-      submission = self.__submitJob( jobID, params, resourceParams, optimizerParams, jobJDL, proxyChain )
+      submission = self.__submitJob( jobID, params, ceDict, optimizerParams, jobJDL, proxyChain )
       if not submission['OK']:
         self.__report( jobID, 'Failed', submission['Message'] )
         return self.__finish( submission['Message'] )
