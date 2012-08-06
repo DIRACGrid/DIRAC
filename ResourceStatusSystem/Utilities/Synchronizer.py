@@ -40,65 +40,6 @@ class Synchronizer( object ):
   
     return S_OK()
   
-  def _syncSitesOld( self ):
-    
-    gLogger.debug( '-- Synchronizing sites --')
-    
-    sitesCS = CSHelpers.getSites()
-    if not sitesCS[ 'OK' ]:
-      return sitesCS
-    sitesCS = sitesCS[ 'Value' ]
-    
-    gLogger.debug( '%s sites found in CS' % len( sitesCS ) )
-    
-    sitesDB = self.rStatus.selectStatusElement( 'Site', 'Status', 
-                                                meta = { 'columns' : [ 'name' ] } ) 
-    if not sitesDB[ 'OK' ]:
-      return sitesDB    
-    sitesDB = sitesDB[ 'Value' ]
-       
-    # Sites that are in DB but not in CS
-    toBeDeleted = list( set( sitesDB ).intersection( set( sitesCS ) ) )
-    gLogger.debug( '%s sites to be deleted' % len( toBeDeleted ) )
-    
-    # Delete sites
-    for siteName in toBeDeleted:
-      
-      deleteQuery = self.rStatus._extermineStatusElement( 'Site', siteName )
-      
-      gLogger.debug( '... %s' % siteName )
-      if not deleteQuery[ 'OK' ]:
-        return deleteQuery         
-
-    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Site' ]
-
-    sitesTuple = self.rStatus.selectStatusElement( 'Site', 'Status', 
-                                                   meta = { 'columns' : [ 'name', 'statusType' ] } ) 
-    if not sitesTuple[ 'OK' ]:
-      return sitesTuple   
-    sitesTuple = sitesTuple[ 'Value' ]
-    
-    # For each ( site, statusType ) tuple not present in the DB, add it.
-    siteStatusTuples = [ ( site, statusType ) for site in sitesCS for statusType in statusTypes ]     
-    toBeAdded = list( set( siteStatusTuples ).difference( set( sitesTuple ) ) )
-    
-    gLogger.debug( '%s site entries to be added' % len( toBeAdded ) )
-  
-    for siteTuple in toBeAdded:
-      
-      _name            = siteTuple[ 0 ]
-      _statusType      = siteTuple[ 1 ]
-      _status          = 'Banned'
-      _reason          = 'Synchronzed'
-      
-      query = self.rStatus.addIfNotThereStatusElement( 'Site', 'Status', name = _name, 
-                                                       statusType = _statusType, status = _status, 
-                                                       reason = _reason )
-      if not query[ 'OK' ]:
-        return query
-      
-    return S_OK()  
-
   def _syncSites( self ):
     
     gLogger.debug( '-- Synchronizing sites --')
@@ -154,8 +95,8 @@ class Synchronizer( object ):
         _reason          = 'Synchronzed'
       
         query = self.rStatus.addIfNotThereStatusElement( 'Site', 'Status', name = _name, 
-                                                       statusType = _statusType, status = _status, 
-                                                       elementType = _elementType, reason = _reason )
+                                                         statusType = _statusType, status = _status, 
+                                                         elementType = _elementType, reason = _reason )
         if not query[ 'OK' ]:
           return query
       
@@ -184,6 +125,8 @@ class Synchronizer( object ):
     computingElements = self.__syncComputingElements()
     if not computingElements[ 'OK' ]:
       gLogger.error( computingElements[ 'Message' ] )
+
+    #FIXME: VOMS
 
     return S_OK()
 

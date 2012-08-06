@@ -33,7 +33,7 @@ class ElementInspectorAgent( AgentModule ):
   # ElementType, to be defined among Site, Resource or Node
   __elementType = None
   # Inspection freqs, to be overwritten
-  __checkingFreqs = { '' : { 'Active' : 8, 'Bad' : 6, 'Probing' : 4, 'Banned' : 2 } }
+  __checkingFreqs = { 'LCG' : { 'Active' : 8, 'Bad' : 6, 'Probing' : 4, 'Banned' : 2 } }
   # queue size limit to stop feeding
   __limitQueueFeeder = 15
   
@@ -160,6 +160,12 @@ class ElementInspectorAgent( AgentModule ):
 ## Private methods #############################################################        
         
   def _execute( self, threadNumber ):
+    '''
+      Method run by the thread pool. It enters a loop until there are no elements
+      on the queue. On each iteration, it evaluates the policies for such element
+      and enforces the necessary actions. If there are no more elements in the
+      queue, the loop is finished.
+    '''
 
     tHeader = '%sJob%d' % ( '* '*30, threadNumber )
     

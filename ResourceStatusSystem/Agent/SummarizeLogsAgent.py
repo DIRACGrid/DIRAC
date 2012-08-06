@@ -30,6 +30,7 @@ class SummarizeLogsAgent( AgentModule ):
 
   def execute( self ):
     
+    #FIXME: probably this can be obtained from RssConfiguration instead
     elements = ( 'Site', 'Resource', 'Node' )
        
     # We do not want neither minutes, nor seconds nor microseconds
@@ -118,7 +119,7 @@ class SummarizeLogsAgent( AgentModule ):
       selectedStatus, selectedLastTime  = selectedRes[ -1 ]
       
       if selectedLastTime > thisHour - timedelta( hours = 1 ):
-        return S_ERROR( 'Error, there are records on the History table of this time span' )     
+        return S_ERROR( 'The agent has run once on this time span, skipping' )     
         
     # If the first of the selected items has a different status than the latest
     # on the history, we add it.    
