@@ -14,6 +14,9 @@ from DIRAC.ResourceStatusSystem.Utilities import MySQLWrapper, RssConfiguration
 __RCSID__ = '$Id: $'
 
 class ResourceStatusDB( object ):
+  '''
+    Class that defines the tables for the ResourceStatusDB on a python dictionary.
+  '''
   
   # Written PrimaryKey as list on purpose !!
   _tablesDB = {}
@@ -307,6 +310,9 @@ class ResourceStatusDB( object ):
     return self.__createTables()
 
   def _logRecord( self, params, meta, isUpdate ):
+    '''
+      Method that records every change on a LogTable, if activated on the CS.
+    '''
 
     if not self.recordLogs:
       return S_OK()

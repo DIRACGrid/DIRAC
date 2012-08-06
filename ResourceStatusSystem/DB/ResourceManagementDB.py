@@ -14,6 +14,9 @@ from DIRAC.ResourceStatusSystem.Utilities import MySQLWrapper
 __RCSID__ = '$Id: $'
 
 class ResourceManagementDB( object ):
+  '''
+    Class that defines the tables for the ResourceManagementDB on a python dictionary.
+  '''
 
   # Written PrimaryKey as list on purpose !!
   _tablesDB = {}
@@ -29,20 +32,6 @@ class ResourceManagementDB( object ):
                       },
                       'PrimaryKey' : [ 'Name', 'PlotType', 'PlotName' ]                                            
                                 }
-
-#  _tablesDB[ 'ClientCache' ] = { 'Fields' :
-#                      {
-#                       #'ClientCacheID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
-#                       'Name'          : 'VARCHAR(64) NOT NULL',
-#                       'CommandName'   : 'VARCHAR(64) NOT NULL',
-#                       'Opt_ID'        : 'VARCHAR(64)',
-#                       'Value'         : 'VARCHAR(16) NOT NULL',
-#                       'Result'        : 'VARCHAR(255) NOT NULL',        
-#                       'DateEffective' : 'DATETIME NOT NULL',
-#                       'LastCheckTime' : 'DATETIME NOT NULL'     
-#                      },
-#                      'PrimaryKey' : [ 'Name', 'CommandName', 'Value' ]
-#                                }
 
   _tablesDB[ 'DowntimeCache' ] = { 'Fields' :
                       {
@@ -85,7 +74,6 @@ class ResourceManagementDB( object ):
 
   _tablesDB[ 'PolicyResult' ] = { 'Fields' : 
                       {
-                       #'PolicyResultID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                        'Element'       : 'VARCHAR(32) NOT NULL',
                        'Name'          : 'VARCHAR(64) NOT NULL',
                        'PolicyName'    : 'VARCHAR(64) NOT NULL',
@@ -115,7 +103,6 @@ class ResourceManagementDB( object ):
 
   _tablesDB[ 'SpaceTokenOccupancyCache' ] = { 'Fields' :
                       {
-                       #'SpaceTokenOccupancyCacheID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                        'Site'          : 'VARCHAR( 64 ) NOT NULL',
                        'Token'         : 'VARCHAR( 64 ) NOT NULL',
                        'Total'         : 'INTEGER NOT NULL DEFAULT 0',                      
@@ -149,7 +136,6 @@ class ResourceManagementDB( object ):
 
   _tablesDB[ 'VOBOXCache' ] = { 'Fields' :
                       {
-                       #'VOBOXCacheID'  : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                        'Site'          : 'VARCHAR( 64 ) NOT NULL',
                        'System'        : 'VARCHAR( 64 ) NOT NULL',
                        'ServiceUp'     : 'INTEGER NOT NULL DEFAULT 0',
@@ -381,9 +367,6 @@ class ResourceManagementDB( object ):
        
     if selectQuery[ 'Value' ]:      
       return selectQuery
-
-#    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-#      params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
     
     return self.insert( params, meta )   
 
@@ -411,9 +394,6 @@ class ResourceManagementDB( object ):
       Method used by database tools to write the schema
     '''  
     return self.__createTables()
-
-  def _logRecord( self, params, meta ):
-    pass
 
   ## Private methods ###########################################################
 
