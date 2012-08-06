@@ -26,7 +26,7 @@ class ModuleLoader( object ):
   def getModules( self ):
     data = dict( self.__modules )
     for k in data:
-      data[ k ][ 'standalone' ] = len( data ) > 1
+      data[ k ][ 'standalone' ] = len( data ) == 1
     return data
 
   def loadModules( self, modulesList, hideExceptions = False ):
