@@ -87,6 +87,7 @@ class JobAgent( AgentModule ):
     self.gridCEQueue = gConfig.getValue( '/Resources/Computing/CEDefaults/GridCEQueue', '' )
     self.timeLeftError = ''
     self.scaledCPUTime = 0.0
+    self.pilotInfoReportedFlag = False
     return S_OK()
 
   #############################################################################
@@ -105,8 +106,6 @@ class JobAgent( AgentModule ):
         result = self.computingElement.setCPUTimeLeft( cpuTimeLeft = self.timeLeft )
         if not result['OK']:
           return self.__finish( result['Message'] )
-        ceJDL = self.computingElement.getJDL()
-        resourceJDL = ceJDL['Value']
       else:
         return self.__finish( 'Filling Mode is Disabled' )
 
@@ -119,11 +118,23 @@ class JobAgent( AgentModule ):
 
     self.log.info( available['Message'] )
 
-    ceJDL = self.computingElement.getJDL()
-    resourceJDL = ceJDL['Value']
-    self.log.verbose( resourceJDL )
+    result = self.computingElement.getJDL()
+    if not result['OK']:
+      return result
+    ceDict = result['Value']
+    
+    # Add pilot information
+    gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
+    if gridCE != 'Unknown':
+      ceDict['GridCE'] = gridCE
+    if not 'PilotReference' in ceDict:  
+      ceDict['PilotReference'] = str( self.pilotReference ) 
+    ceDict['PilotBenchmark'] = self.cpuFactor 
+    ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
+    
+    self.log.verbose( ceDict )
     start = time.time()
-    jobRequest = self.__requestJob( resourceJDL )
+    jobRequest = self.__requestJob( ceDict )
     matchTime = time.time() - start
     self.log.info( 'MatcherTime = %.2f (s)' % ( matchTime ) )
 
@@ -157,6 +168,7 @@ class JobAgent( AgentModule ):
 
     matcherInfo = jobRequest['Value']
     jobID = matcherInfo['JobID']
+    self.pilotInfoReportedFlag = matcherInfo.get( 'PilotInfoReportedFlag', False )
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
       if not matcherInfo.has_key( param ):
@@ -224,12 +236,14 @@ class JobAgent( AgentModule ):
     self.log.info( 'OwnerDN: %s JobGroup: %s' % ( ownerDN, jobGroup ) )
     self.jobCount += 1
     try:
-      self.__setJobParam( jobID, 'MatcherServiceTime', str( matchTime ) )
+      jobReport = JobReport( jobID, 'JobAgent@%s' % siteName )
+      jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
       if self.gridCEQueue:
-        self.__setJobParam( jobID, 'GridCEQueue', self.gridCEQueue )
-      self.__report( jobID, 'Matched', 'Job Received by Agent' )
-      self.__setJobSite( jobID, self.siteName )
-      self.__reportPilotInfo( jobID )
+        jobReport.setJobParameter( 'GridCEQueue', self.gridCEQueue, sendFlag = False )
+      jobReport.setJobStatus( 'Matched', 'Job Received by Agent' )
+      # self.__setJobSite( jobID, self.siteName )
+      if not self.pilotInfoReportedFlag:
+        self.__reportPilotInfo( jobID )
       result = self.__setupProxy( ownerDN, jobGroup )
       if not result[ 'OK' ]:
         return self.__rescheduleFailedJob( jobID, result[ 'Message' ], self.stopOnApplicationFailure )
@@ -240,12 +254,12 @@ class JobAgent( AgentModule ):
       saveJDL = self.__saveJobJDLRequest( jobID, jobJDL )
       #self.__report(jobID,'Matched','Job Prepared to Submit')
 
-      resourceParameters = self.__getJDLParameters( resourceJDL )
-      if not resourceParameters['OK']:
-        return resourceParameters
-      resourceParams = resourceParameters['Value']
+      #resourceParameters = self.__getJDLParameters( resourceJDL )
+      #if not resourceParameters['OK']:
+      #  return resourceParameters
+      #resourceParams = resourceParameters['Value']
 
-      software = self.__checkInstallSoftware( jobID, params, resourceParams )
+      software = self.__checkInstallSoftware( jobID, params, ceDict )
       if not software['OK']:
         self.log.error( 'Failed to install software for job %s' % ( jobID ) )
         errorMsg = software['Message']
@@ -539,12 +553,12 @@ class JobAgent( AgentModule ):
     return S_OK( jdlFileName )
 
   #############################################################################
-  def __requestJob( self, resourceJDL ):
+  def __requestJob( self, ceDict ):
     """Request a single job from the matcher service.
     """
     try:
       matcher = RPCClient( 'WorkloadManagement/Matcher', timeout = 600 )
-      result = matcher.requestJob( resourceJDL )
+      result = matcher.requestJob( ceDict )
       return result
     except Exception, x:
       self.log.exception( lException = x )
