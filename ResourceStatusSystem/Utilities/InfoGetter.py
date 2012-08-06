@@ -23,21 +23,16 @@ class InfoGetter:
     self.policies = copy.deepcopy( configModule.policiesMeta )
 
   def sanitizeDecissionParams( self, decissionParams ):
+    '''
+      Method that filters the input parameters. If the input parameter keys
+      are no present on the "params" tuple, are not taken into account.
+    '''
     
     # active is a hook to disable the policy / action if needed
     params = ( 'element', 'name', 'elemenType', 'statusType', 'status', 
                'reason', 'tokenOwner', 'active' )
     
     sanitizedParams = {} 
-#                       'element'     : None,
-#                       'name'        : None,
-#                       'elementType' : None,
-#                       'statusType'  : None,
-#                       'status'      : None,
-#                       #'formerStatus' : None,
-#                       'reason'      : None,
-#                       'tokenOwner'  : None
-#                      }
     
     for key in params:
       if key in decissionParams:
@@ -47,24 +42,42 @@ class InfoGetter:
     return sanitizedParams
 
   def getPoliciesThatApply( self, decissionParams ):
+    '''
+      Method that sanitizes the input parameters and returns the policies that
+      match them.
+    '''
 
     decissionParams = self.sanitizeDecissionParams( decissionParams )    
     
     return self.__getPoliciesThatApply(decissionParams)
 
   def getPolicyActionsThatApply( self, decissionParams ):
+    '''
+      Method that sanitizes the input parameters and returns the policies actions
+      that match them.
+    '''
 
     decissionParams = self.sanitizeDecissionParams( decissionParams )    
     
     return self.__getPolicyActionsThatApply( decissionParams )
 
   def getNotificationsThatApply( self, decissionParams, notificationAction ):
+    '''
+      Method that sanitizes the input parameters and returns the users that will
+      be notified.
+    '''
 
     decissionParams = self.sanitizeDecissionParams( decissionParams )
 
     return self.__getNotificationsThatApply( decissionParams, notificationAction )
 
+  ## Private methods ###########################################################
+
   def __getPoliciesThatApply( self, decissionParams ):
+    '''
+      Method that matches the input dictionary with the policies configuration in
+      the CS. It returns a list of policy dictionaries that matched.
+    '''
     
     #FIXME: allow policy filtering on Configurations, overwritten by CS 
     
@@ -98,6 +111,11 @@ class InfoGetter:
     return S_OK( policiesToBeLoaded )
 
   def __getPolicyActionsThatApply( self, decissionParams ):
+    '''
+      Method that matches the input dictionary with the policy actions 
+      configuration in the CS. It returns a list of policy actions names that 
+      matched.
+    '''
     
     policyActionsThatApply = []
     
@@ -116,6 +134,11 @@ class InfoGetter:
     return S_OK( policyActionsThatApply )
 
   def __getNotificationsThatApply( self, decissionParams, notificationAction ):
+    '''
+      Method that matches the input dictionary with the notifications 
+      configuration in the CS. It returns a list of notification dictionaries that 
+      matched.
+    '''
 
     notificationsThatApply = []
     
