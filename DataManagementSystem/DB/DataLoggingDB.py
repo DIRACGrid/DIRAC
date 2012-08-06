@@ -25,7 +25,8 @@ from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Base.DB import DB
 
 ## DIRAC epoc timestamp
-MAGIC_EPOC_NUMBER = 1270000000
+#ÊMAGIC_EPOC_NUMBER = 1270000000
+NEW_MAGIC_EPOCH_2K = 323322400
 
 #############################################################################
 class DataLoggingDB( DB ):
@@ -114,14 +115,11 @@ class DataLoggingDB( DB ):
       _date = Time.fromString( date )
 
     try:
-      time_order = Time.toEpoch( _date )
+      time_order = Time.to2K( _date ) - NEW_MAGIC_EPOCH_2K
     except AttributeError:
       gLogger.error( 'Wrong date argument given using current time stamp' )
       date = Time.dateTime()
-      time_order = Time.toEpoch( _date )
-
-    # Reduce to a smallest number and add more precision
-    time_order = time_order - MAGIC_EPOC_NUMBER + _date.microsecond / 1000000.
+      time_order = Time.to2K( date ) - NEW_MAGIC_EPOCH_2K
 
     inDict = { 'Status': status,
                'MinorStatus': minor,
