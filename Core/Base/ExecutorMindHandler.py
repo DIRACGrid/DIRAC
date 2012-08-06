@@ -1,7 +1,8 @@
 
-import types
+import types, pprint
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, ExecutorDispatcherCallbacks
 
@@ -69,6 +70,9 @@ class ExecutorMindHandler( RequestHandler ):
                                                          cls.exec_taskError )
     cls.__eDispatch.setCallbacks( cls.__callbacks )
     cls.__allowedClients = []
+    if cls.log.shown( "VERBOSE" ):
+      gThreadScheduler.setMinValidPeriod( 1 )
+      gThreadScheduler.addPeriodicTask( 10, lambda: cls.log.verbose( pprint.pformat( cls.__eDispatch._internals() ) ) )
 
   @classmethod
   def setAllowedClients( cls, aClients ):

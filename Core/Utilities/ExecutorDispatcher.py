@@ -18,10 +18,11 @@ class ExecutorState:
     self.__taskInExec = {}
 
   def _internals( self ):
-    return { 't2id' : dict( self.__typeToId ),
-             'maxT' : dict( self.__maxTasks ),
-             'task' : dict( self.__execTasks ),
-             'tine' : dict( self.__taskInExec ), }
+    return { 'type2id' : dict( self.__typeToId ),
+             'maxTasks' : dict( self.__maxTasks ),
+             'execTasks' : dict( self.__execTasks ),
+             'tasksInExec' : dict( self.__taskInExec ),
+             'locked' : self.__lock.locked() }
 
   def addExecutor( self, eId, eTypes, maxTasks = 1 ):
     self.__lock.acquire()
@@ -154,7 +155,8 @@ class ExecutorQueues:
   def _internals( self ):
     return { 'queues' : dict( self.__queues ),
              'lastUse' : dict( self.__lastUse ),
-             'taskInQueue' : dict( self.__taskInQueue ) }
+             'taskInQueue' : dict( self.__taskInQueue ),
+             'locked' : self.__lock.locked() }
 
   def getExecutorList( self ):
     return [ eType for eType in self.__queues ]
@@ -324,7 +326,13 @@ class ExecutorDispatcher:
     return { 'idMap' : dict( self.__idMap ),
              'execTypes' : dict( self.__execTypes ),
              'tasks' : sorted( self.__tasks ),
-             'freezer' : list( self.__taskFreezer ) }
+             'freezer' : list( self.__taskFreezer ),
+             'queues' : self.__queues._internals(),
+             'states' : self.__states._internals(),
+             'locked' : { 'exec' : self.__executorsLock.locked(),
+                          'tasks' : self.__tasksLock.locked(),
+                          'freezer' : self.__freezerLock.locked() },
+            }
 
   def setCallbacks( self, callbacksObj ):
     if not isinstance( callbacksObj, ExecutorDispatcherCallbacks ):
@@ -361,8 +369,13 @@ class ExecutorDispatcher:
                                              "Executors", "executors", self.__monitor.OP_MEAN, 300 )
             self.__monitor.registerActivity( "tasks-%s" % eType, "Tasks processed by %s" % eType,
                                              "Executors", "tasks", self.__monitor.OP_RATE, 300 )
+            self.__monitor.registerActivity( "tasks", "Tasks processed",
+                                             "Executors", "tasks", self.__monitor.OP_RATE, 300 )
             self.__monitor.registerActivity( "taskTime-%s" % eType, "Task processing time for %s" % eType,
                                              "Executors", "seconds", self.__monitor.OP_MEAN, 300 )
+            self.__monitor.registerActivity( "taskTime", "Task processing time",
+                                             "Executors", "seconds", self.__monitor.OP_MEAN, 300 )
+        self.__execTypes[ eType ] += 1
         self.__execTypes[ eType ] += 1
     finally:
       self.__executorsLock.release()
@@ -639,8 +652,11 @@ class ExecutorDispatcher:
       self.__dispatchTask( taskId )
       return S_ERROR( errMsg )
     if self.__monitor:
-      self.__monitor.addMark( "taskTime-%s" % eTask.eType, time.time() - self.__tasks[ taskId ].sendTime )
+      tTime = time.time() - self.__tasks[ taskId ].sendTime
+      self.__monitor.addMark( "taskTime-%s" % eTask.eType, tTime)
+      self.__monitor.addMark( "taskTime", tTime )
       self.__monitor.addMark( "tasks-%s" % eTask.eType, 1 )
+      self.__monitor.addMark( "tasks", 1 )
     return S_OK( eTask.eType )
 
   def freezeTask( self, eId, taskId, freezeTime, taskObj = False ):
@@ -688,6 +704,8 @@ class ExecutorDispatcher:
     if not result[ 'OK' ]:
       #Fill the executor
       self.__sendTaskToExecutor( eId )
+      #Remove the task
+      self.removeTask( taskId )
       return result
     #Up until here it's an executor error. From now on it can be a task error
     try:
