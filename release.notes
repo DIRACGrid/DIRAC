@@ -1,4 +1,4 @@
-[v6r5-pre12]
+[v6r5-pre14]
 
 NEW: Executor framework
 
@@ -27,6 +27,9 @@ NEW: SystemLoggingDB - updated to use the renewed MySQL interface and SQL schema
 NEW: Added support for multiple entries in /Registry/DefaultGroup, for multi-VO installations
 CHANGE: Component installation procedure updated to cope with components inheriting Modules
 CHANGE: InstallTools - use dirac- command in runit run scripts
+FIX: X509Chain - avoid a return of error when the group is not valid
+FIX: MySQL - reduce verbosity of log messages when high level methods are used
+CHANGE: Several DB classes have been updated to use the MySQL buildCondition method
 
 *Configuration
 CHANGE: By default return option and section lists ordered as in the CS
@@ -76,6 +79,10 @@ NEW: Generic pilot groups can have a VO that will be taken into account when sel
      credentials to submit pilots
 NEW: Generic pilots that belong to a VO can only match jobs from that VO
 NEW: StalledJobAgent - added rescheduling of jobs stuck in Matched or Rescheduled status
+NEW: JobAgent - stop after N failed matching attempts (nothing to do), use StopAfterFailedMatches option
+CHANGE: JobAgent - provide resource description as a dictionary to avoid extra JDL parsing by the Matcher
+CHANGE: Matcher - report pilot info once instead of sending it several times from the job
+CHANGE: Matcher - set the job site instead of making a separate call to JobStateUpdate
 
 *Transformation
 FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
@@ -94,6 +101,13 @@ NEW: SRM2Storage - added retry in the gfal calls
 NEW: added new FTSCleaningAgent cleaning up TransferDB tables
 FIX: DataLoggingClient and DataLoggingDB - tests moved to separate files
 CHANGE: request agents cleanup
+
+[v6r4p20]
+
+*WMS
+BUGFIX: PilotDirector, GridPilotDirector - make sure that at least 1 pilot is to be submitted
+BUGFIX: GridPilotDirector - bug on how pilots are counted when there is an error in the submit loop.
+BUGFIX: dirac-pilot - proper install script installation on OSG sites
 
 [v6r4p19]
 

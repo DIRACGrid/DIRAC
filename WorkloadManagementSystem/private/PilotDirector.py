@@ -275,7 +275,7 @@ class PilotDirector:
     # Need to limit the maximum number of pilots to submit at once
     # For generic pilots this is limited by the number of use of the tokens and the
     # maximum number of jobs in Filling mode, but for private Jobs we need an extra limitation:
-    pilotsToSubmit = min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) )
+    pilotsToSubmit = max( min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) ), 1 )
     pilotOptions = []
     privateIfGenericTQ = self.privatePilotFraction > random.random()
     privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
