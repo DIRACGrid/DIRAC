@@ -58,10 +58,20 @@ if len( args ) != 2:
 system = args[0]
 agent = args[1]
 
-result = InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, agent,
-                                             getCSExtensions(),
-                                             specialOptions=specialOptions,
-                                             overwrite = overwrite )
+if module:
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, module,
+                                               getCSExtensions(),
+                                               overwrite = overwrite )
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, agent,
+                                               getCSExtensions(),
+                                               specialOptions=specialOptions,
+                                               overwrite = overwrite,
+                                               addDefaultOptions = False )
+else:
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, agent,
+                                               getCSExtensions(),
+                                               specialOptions=specialOptions,
+                                               overwrite = overwrite )
 if not result['OK']:
   print "ERROR:", result['Message']
 else:

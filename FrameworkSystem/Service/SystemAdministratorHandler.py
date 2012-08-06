@@ -81,7 +81,9 @@ class SystemAdministratorHandler( RequestHandler ):
     """ Setup the specified component for running with the runsvdir daemon
         It implies installComponent
     """
-    return InstallTools.setupComponent( componentType, system, component, getCSExtensions(), componentModule )
+    result = InstallTools.setupComponent( componentType, system, component, getCSExtensions(), componentModule )
+    gConfig.forceRefresh()
+    return result
 
   types_addDefaultOptionsToComponentCfg = [ StringTypes, StringTypes ]
   def export_addDefaultOptionsToComponentCfg( self, componentType, system, component ):

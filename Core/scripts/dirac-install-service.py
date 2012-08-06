@@ -60,10 +60,20 @@ if len( args ) != 2:
 system = args[0]
 service = args[1]
 
-result = InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, service,
-                                             getCSExtensions(),
-                                             specialOptions=specialOptions,
-                                             overwrite = overwrite )
+if module:
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, module,
+                                               getCSExtensions(),
+                                               overwrite = overwrite )
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, service,
+                                               getCSExtensions(),
+                                               specialOptions=specialOptions,
+                                               overwrite = overwrite,
+                                               addDefaultOptions = False )
+else:
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, service,
+                                               getCSExtensions(),
+                                               specialOptions=specialOptions,
+                                               overwrite = overwrite )
 if not result['OK']:
   print "ERROR:", result['Message']
 else:

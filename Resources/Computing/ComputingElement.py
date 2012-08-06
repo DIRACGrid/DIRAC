@@ -8,6 +8,8 @@
      resource JDL for subsequent use during the matching process.
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight        import *
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
 from DIRAC.Core.Security                              import File
@@ -297,6 +299,7 @@ class ComputingElement:
     """
     # FIXME: need to take into account the possible requirements from the pilots,
     #        so far the cputime
+    ciInfoDict = {}
     result = self.getDynamicInfo()
     if not result['OK']:
       self.log.warn( 'Could not obtain CE dynamic information' )
@@ -306,8 +309,10 @@ class ComputingElement:
       runningJobs = result['RunningJobs']
       waitingJobs = result['WaitingJobs']
       submittedJobs = result['SubmittedJobs']
+      ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.__getParameters( 'MaxTotalJobs' )['Value'] )
+    ceInfoDict['MaxTotalJobs'] = maxTotalJobs
     waitingToRunningRatio = float( self.__getParameters( 'WaitingToRunningRatio' )['Value'] )
     # if there are no Running job we can submit to get at most 'MaxWaitingJobs'
     # if there are Running jobs we can increase this to get a ratio W / R 'WaitingToRunningRatio'
@@ -335,10 +340,9 @@ class ComputingElement:
         additionalJobs = maxWaitingJobs - waitingJobs
         if totalJobs + additionalJobs >= maxTotalJobs:
           additionalJobs = maxTotalJobs - totalJobs
-      #For SSH CE case	
+      #For SSH CE case  
       if int(self.__getParameters( 'MaxWaitingJobs')['Value']) == 0:
-        additionalJobs = maxTotalJobs - runningJobs
-        
+        additionalJobs = maxTotalJobs - runningJobs    
 
       result['Value'] = additionalJobs
 
@@ -351,6 +355,7 @@ class ComputingElement:
     # if totalCPU:
     #  message +=', TotalCPU=%s' %(totalCPU)
     result['Message'] = message
+    result['CEInfoDict'] = ceInfoDict
     return result
 
   #############################################################################
@@ -519,6 +524,37 @@ class ComputingElement:
       return S_OK( jdl )
     else:
       return S_ERROR( 'ClassAd job is not valid' )
+    
+  def getDescription( self ):
+    """ Get CE description as a dictionary
+    """  
+    
+    ceDict = {}
+    for option, value in self.ceParameters.items():
+      if type( option ) == type( [] ):
+        ceDict[option] = value
+      elif type( value ) == type( ' ' ):
+        tmpInt = self.__getInt( value )
+        if type( tmpInt ) == type( 1 ):
+          self.log.debug( 'Found CE integer attribute: %s = %s' % ( option, tmpInt ) )
+          ceDict[option] = tmpInt
+        else:
+          self.log.debug( 'Found string attribute: %s = %s' % ( option, value ) )
+          ceDict[option] = value
+      elif type( value ) == type( 1 ) or type( value ) == type( 1. ):
+        self.log.debug( 'Found integer attribute: %s = %s' % ( option, value ) )
+        ceDict[option] = value
+      else:
+        self.log.warn( 'Type of option %s = %s not determined' % ( option, value ) )
+
+    release = gConfig.getValue( '/LocalSite/ReleaseVersion', version )
+    ceDict['DIRACVersion'] = release
+    ceDict['ReleaseVersion'] = release
+    project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
+    if project:
+      ceDict['ReleaseProject'] = project
+      
+    return S_OK( ceDict )   
 
   #############################################################################
   def sendOutput( self, stdid, line ):

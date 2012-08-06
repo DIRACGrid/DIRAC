@@ -110,7 +110,7 @@ class JobManagerHandler( RequestHandler ):
       if jobClassAd.isAttributeList( 'Parameters' ):
         parameterList = jobClassAd.getListFromExpression( 'Parameters' )
       else:
-        pStep = 1
+        pStep = 0
         pFactor = 1
         pStart = 1
         nParameters = jobClassAd.getAttributeInt( 'Parameters' )
