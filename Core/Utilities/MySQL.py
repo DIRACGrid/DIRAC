@@ -433,7 +433,7 @@ class MySQL:
     if debug:
       self.logger.debug( '_query:', cmd )
     else:
-      if self.logger._minLevel == self.logger.getLevelValue( 'DEBUG' ):
+      if self.logger._minLevel == self.logger_logLevels.getLevelValue( 'DEBUG' ):
         self.logger.verbose( '_query:', cmd )
       else:
         self.logger.verbose( '_query:', cmd[:min( len( cmd ) , 512 )] )
@@ -495,7 +495,7 @@ class MySQL:
     if debug:
       self.logger.debug( '_update:', cmd )
     else:
-      if self.logger._minLevel == self.logger.getLevelValue( 'DEBUG' ):
+      if self.logger._minLevel == self.logger._logLevels.getLevelValue( 'DEBUG' ):
         self.logger.verbose( '_update:', cmd )
       else:
         self.logger.verbose( '_update:', cmd[:min( len( cmd ) , 512 )] )
