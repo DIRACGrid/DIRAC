@@ -72,7 +72,7 @@ class ExecutorMindHandler( RequestHandler ):
     cls.__allowedClients = []
     if cls.log.shown( "VERBOSE" ):
       gThreadScheduler.setMinValidPeriod( 1 )
-      gThreadScheduler.addPeriodicTask( 10, lambda: cls.log.verbose( pprint.pformat( cls.__eDispatch._internals() ) ) )
+      gThreadScheduler.addPeriodicTask( 10, lambda: cls.log.verbose( "== Internal state ==\n%s\n===========" % pprint.pformat( cls.__eDispatch._internals() ) ) )
 
   @classmethod
   def setAllowedClients( cls, aClients ):
