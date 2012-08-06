@@ -425,10 +425,14 @@ class MatcherHandler( RequestHandler ):
     pilotReference = resourceDict.get( 'PilotReference', '' )
     if pilotReference:
       if "PilotInfoReportedFlag" in resourceDict and not resourceDict['PilotInfoReportedFlag']:
-        result = gPilotAgentsDB.setPilotStatus( pRef, status = 'Running', 
-                                                gridSite = resourceDict.get( 'GridCE', 'Unknown' ),
-                                                destination = resourceDict.get( 'Site', 'Unknown' ),
-                                                benchmark = resourceDict.get( 'PilotBenchmark', 0.0 ) )
+        gridCE = resourceDict.get( 'GridCE', 'Unknown' )
+        site = destination = resourceDict.get( 'Site', 'Unknown' )
+        benchmark = benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
+        gLogger.verbose('Reporting pilto info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
+        result = gPilotAgentsDB.setPilotStatus( pRef, status = 'Running',
+                                                gridSite = gridCE,
+                                                destination = site,
+                                                benchmark = benchmark )
         if result['OK']:
           pilotInfoReported = True                                        
     
