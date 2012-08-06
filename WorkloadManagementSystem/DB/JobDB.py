@@ -59,7 +59,7 @@ from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.Core.Security.CS                                  import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
 
-DEBUG = 0
+DEBUG = False
 JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
               'Running', 'Stalled', 'Done', 'Completed', 'Failed']
 JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
@@ -77,8 +77,6 @@ JOB_VARIABLE_ATTRIBUTES = [ 'Site', 'RescheduleTime', 'StartExecTime', 'EndExecT
 JOB_DYNAMIC_ATTRIBUTES = [ 'LastUpdateTime', 'HeartBeatTime',
                            'Status', 'MinorStatus', 'ApplicationStatus', 'ApplicationNumStatus', 'CPUTime'
                           ]
-if DEBUG:
-  gDebugFile = open( "JobDB.debug.log", "w" )
 
 #############################################################################
 class JobDB( DB ):
@@ -87,7 +85,7 @@ class JobDB( DB ):
     """ Standard Constructor
     """
 
-    DB.__init__( self, 'JobDB', 'WorkloadManagement/JobDB', maxQueueSize )
+    DB.__init__( self, 'JobDB', 'WorkloadManagement/JobDB', maxQueueSize, debug = DEBUG )
 
     self.maxRescheduling = gConfig.getValue( self.cs_path + '/MaxRescheduling', 3 )
 
@@ -107,22 +105,6 @@ class JobDB( DB ):
 
     if DEBUG:
       result = self.dumpParameters()
-
-  def _query( self, cmd, conn = False ):
-    start = time.time()
-    ret = DB._query( self, cmd, conn )
-    if DEBUG:
-      print >> gDebugFile, time.time() - start, cmd.replace( '\n', '' )
-      gDebugFile.flush()
-    return ret
-
-  def _update( self, cmd, conn = False ):
-    start = time.time()
-    ret = DB._update( self, cmd, conn )
-    if DEBUG:
-      print >> gDebugFile, time.time() - start, cmd.replace( '\n', '' )
-      gDebugFile.flush()
-    return ret
 
   def dumpParameters( self ):
     """  Dump the JobDB connection parameters to the stdout
