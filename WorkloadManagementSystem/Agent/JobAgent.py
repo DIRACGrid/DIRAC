@@ -118,7 +118,7 @@ class JobAgent( AgentModule ):
 
     self.log.info( available['Message'] )
 
-    result = self.computingElement.getJDL()
+    result = self.computingElement.getDescription()
     if not result['OK']:
       return result
     ceDict = result['Value']
