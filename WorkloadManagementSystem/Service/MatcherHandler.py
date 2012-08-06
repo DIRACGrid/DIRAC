@@ -422,7 +422,7 @@ class MatcherHandler( RequestHandler ):
 
     # Update pilot information
     pilotInfoReported = False
-    pilotReference = resourceDict.get( 'PilotJobReference', '' )
+    pilotReference = resourceDict.get( 'PilotReference', '' )
     if pilotReference:
       if "PilotInfoReportedFlag" in resourceDict and not resourceDict['PilotInfoReportedFlag']:
         result = gPilotAgentsDB.setPilotStatus( pRef, status = 'Running', 

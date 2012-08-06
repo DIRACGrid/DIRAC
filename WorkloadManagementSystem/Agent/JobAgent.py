@@ -127,7 +127,8 @@ class JobAgent( AgentModule ):
     gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
     if gridCE != 'Unknown':
       ceDict['GridCE'] = gridCE
-    ceDict['PilotJobReference'] = str( self.pilotReference ) 
+    if not 'PilotReference' in ceDict:  
+      ceDict['PilotReference'] = str( self.pilotReference ) 
     ceDict['PilotBenchmark'] = self.cpuFactor 
     ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
     
