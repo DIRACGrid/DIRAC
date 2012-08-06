@@ -72,7 +72,7 @@ class CachedJobState( object ):
     self.__dirtyKeys.clear()
     #Save manifest
     if self.__manifest and self.__manifest.isDirty():
-      result = self.__jobState( self.__manifest )
+      result = self.__jobState.setManifest( self.__manifest )
       if not result[ 'OK' ]:
         self.cleanState()
         return result

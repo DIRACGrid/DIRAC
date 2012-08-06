@@ -118,10 +118,25 @@ class JobState( object ):
         return result
     manifestJDL = manifest.dumpAsJDL()
     if self.localAccess:
-      return self.__getDB().setJobJDL( self.__jid, manifestJDL )
+      return self.__retryFunction( 5, self.__getDB().setJobJDL, ( self.__jid, manifestJDL ) )
     return self._getStoreClient().setManifest( self.__jid, manifestJDL )
 
 #Execute traces
+
+  def __retryFunction( self, retries, functor, args = False, kwargs = False ):
+    retries = max( 1, retries )
+    if not args:
+      args = tuple()
+    if not kwargs:
+      kwargs = {}
+    while retries:
+      retries -= 1
+      result = functor( *args, **kwargs )
+      if result[ 'OK' ]:
+        return result
+      if retries == 0:
+        return result
+    return S_ERROR( "No more retries" )
 
   right_commitCache = RIGHT_GET_INFO
   @RemoteMethod
@@ -149,23 +164,28 @@ class JobState( object ):
     if data[ 'att' ]:
       attN = [ t[0] for t in data[ 'att' ] ]
       attV = [ t[1] for t in data[ 'att' ] ]
-      result = jobDB.setJobAttributes( self.__jid, attN, attV, update = True )
+      result = self.__retryFunction( 5, jobDB.setJobAttributes,
+                                     ( self.__jid, attN, attV ), { 'update' : True } )
       if not result[ 'OK' ]:
         return result
 
     if data[ 'jobp' ]:
-      result = jobDB.setJobParameters( self.__jid, data[ 'jobp' ] )
+      result = self.__retryFunction( 5, jobDB.setJobParameters, ( self.__jid, data[ 'jobp' ] ) )
       if not result[ 'OK' ]:
         return result
 
     for k,v in  data[ 'optp' ]:
-      result = jobDB.setJobOptParameter( self.__jid, k, v )
+      result = self.__retryFunction( 5, jobDB.setJobOptParameter, ( self.__jid, k, v ) )
       if not result[ 'OK' ]:
         return result
 
     logDB = JobState.__db.log
+    gLogger.verbose( "Adding logging records for %s" % self.__jid )
     for record, updateTime, source in jobLog:
-      result = logDB.addLoggingRecord( self.__jid, date = updateTime, source = source, **record )
+      gLogger.verbose( "Logging records for %s: %s %s %s" % ( self.__jid, record, updateTime, source ) )
+      record[ 'date' ] = updateTime
+      record[ 'source' ] = source
+      result = self.__retryFunction( 5, logDB.addLoggingRecord, ( self.__jid, ), record )
       if not result[ 'OK' ]:
         return result
 
@@ -448,7 +468,7 @@ class JobState( object ):
 
     jobPriority = reqCfg.getOption( 'UserPriority', 1 )
 
-    result = JobState.__db.tq.insertJob( self.__jid, jobReqDict, jobPriority )
+    result = self.__retryFunction( 2, JobState.__db.tq.insertJob, ( self.__jid, jobReqDict, jobPriority ) )
     if not result[ 'OK' ]:
       errMsg = result[ 'Message' ]
       # Force removing the job from the TQ if it was actually inserted
