@@ -577,16 +577,15 @@ class X509Chain:
                  'validGroup' : False,
                  'groupProperties' : [] }
     if self.__isProxy:
-      retVal = self.getDIRACGroup( ignoreDefault = ignoreDefault )
-      if not retVal[ 'OK' ]:
-        return retVal
-      diracGroup = retVal[ 'Value' ]
-      credDict[ 'group' ] = diracGroup
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
       retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )
       if retVal[ 'OK' ]:
         credDict[ 'username' ] = retVal[ 'Value' ]
         credDict[ 'validDN' ] = True
+      retVal = self.getDIRACGroup( ignoreDefault = ignoreDefault )
+      if retVal[ 'OK' ]:
+        diracGroup = retVal[ 'Value' ]
+        credDict[ 'group' ] = diracGroup
         retVal = Registry.getGroupsForUser( credDict[ 'username' ] )
         if retVal[ 'OK' ] and diracGroup in retVal[ 'Value' ]:
           credDict[ 'validGroup' ] = True
