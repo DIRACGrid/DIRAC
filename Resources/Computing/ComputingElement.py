@@ -524,6 +524,37 @@ class ComputingElement:
       return S_OK( jdl )
     else:
       return S_ERROR( 'ClassAd job is not valid' )
+    
+  def getDescription( self ):
+    """ Get CE description as a dictionary
+    """  
+    
+    ceDict = {}
+    for option, value in self.ceParameters.items():
+      if type( option ) == type( [] ):
+        ceDict[option] = value
+      elif type( value ) == type( ' ' ):
+        tmpInt = self.__getInt( value )
+        if type( tmpInt ) == type( 1 ):
+          self.log.debug( 'Found CE integer attribute: %s = %s' % ( option, tmpInt ) )
+          ceDict[option] = tmpInt
+        else:
+          self.log.debug( 'Found string attribute: %s = %s' % ( option, value ) )
+          ceDict[option] = value
+      elif type( value ) == type( 1 ) or type( value ) == type( 1. ):
+        self.log.debug( 'Found integer attribute: %s = %s' % ( option, value ) )
+        ceDict[option] = value
+      else:
+        self.log.warn( 'Type of option %s = %s not determined' % ( option, value ) )
+
+    release = gConfig.getValue( '/LocalSite/ReleaseVersion', version )
+    ceDict['DIRACVersion'] = release
+    ceDict['ReleaseVersion'] = release
+    project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
+    if project:
+      ceDict['ReleaseProject'] = project
+      
+    return S_OK( ceDict )   
 
   #############################################################################
   def sendOutput( self, stdid, line ):
