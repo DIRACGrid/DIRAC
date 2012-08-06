@@ -5,8 +5,6 @@
 
 '''
 
-#from datetime import datetime
-
 from DIRAC                                              import gLogger, S_ERROR 
 #from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
@@ -171,15 +169,14 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'AccountingCache', locals() )
-  #FIXME: should they be None or not ??
   def addOrModifyAccountingCache( self, name = None, plotType = None, 
                                   plotName = None, result = None, 
                                   dateEffective = None, lastCheckTime = None,
                                   meta = None ):
     '''
-    Adds or updates-if-duplicated from AccountingCache
-#    Using `name`, `plotType` and `plotName` to query the database, 
-#    decides whether to insert or update the table.
+    Adds or updates-if-duplicated to AccountingCache. Using `name`, `plotType` 
+    and `plotName` to query the database, decides whether to insert or update the 
+    table.
     
     :Parameters:
       **name** - `string`
@@ -209,9 +206,8 @@ class ResourceManagementClient( object ):
                                     dateEffective = None, lastCheckTime = None,
                                     meta = None ):
     '''
-    Adds or updates-if-duplicated from AccountingCache
-#    Using `name`, `plotType` and `plotName` to query the database, 
-#    decides whether to insert or update the table.
+    Adds if not there to AccountingCache. Using `name`, `plotType` and `plotName` 
+    to query the database, decides whether to insert or not.
     
     :Parameters:
       **name** - `string`
@@ -235,200 +231,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
-    return self._query( 'addIfNotThere', 'AccountingCache', locals() )    
-    
-#  ##############################################################################
-#  # CLIENT CACHE Methods
-#
-#  def insertClientCache( self, name, commandName, opt_ID, value, result,
-#                         dateEffective, lastCheckTime, meta = None ):
-#    '''
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument    
-#    # pylint: disable-msg=W0613
-#    return self._query( 'insert', 'ClientCache', locals() )
-#  def updateClientCache( self, name, commandName, opt_ID, value, result,
-#                         dateEffective, lastCheckTime, meta = None ):
-#    '''
-#    Updates ClientCache with the parameters given. By default, `name`, 
-#    `commandName` and `value` will be the parameters used to select the row.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument    
-#    # pylint: disable-msg=W0613
-#    return self._query( 'update', 'ClientCache', locals() )
-#  def selectClientCache( self, name = None, commandName = None, opt_ID = None, 
-#                         value = None, result = None, dateEffective = None, 
-#                         lastCheckTime = None, meta = None ):
-#    '''
-#    Gets from ClientCache all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **name** - `[, string, list]`
-#        name of an individual of the grid topology  
-#      **commandName** - `[, string, list]`
-#        name of the command executed
-#      **opt_ID** - `[, string, list]`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `[, string, list]`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `[, string, list]`
-#        output of the command ( of value type )    
-#      **dateEffective** - `[, datetime, list]`
-#        time-stamp from which this result is effective
-#      **lastCheckTime** - `[, datetime, list]`
-#        time-stamp setting last time this result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self._query( 'select', 'ClientCache', locals() )
-#  def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
-#                         value = None, result = None, dateEffective = None, 
-#                         lastCheckTime = None, meta = None ):
-#    '''
-#    Deletes from PolicyResult all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **name** - `[, string, list]`
-#        name of an individual of the grid topology  
-#      **commandName** - `[, string, list]`
-#        name of the command executed
-#      **opt_ID** - `[, string, list]`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `[, string, list]`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `[, string, list]`
-#        output of the command ( of value type )    
-#      **dateEffective** - `[, datetime, list]`
-#        time-stamp from which this result is effective
-#      **lastCheckTime** - `[, datetime, list]`
-#        time-stamp setting last time this result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self._query( 'delete', 'ClientCache', locals() )
-#  def addOrModifyClientCache( self, name = None, commandName = None, opt_ID = None, 
-#                              value = None, result = None, dateEffective = None, 
-#                              lastCheckTime = None, meta = None ):
-#    '''
-#    Using `name`, `commandName` and `value` to query the database, 
-#    decides whether to insert or update the table.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-##    # Unused argument
-##    # pylint: disable-msg=W0613
-##    return self.__addOrModifyElement( 'ClientCache', locals() )
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    meta = { 'onlyUniqueKeys' : True }
-#    return self._query( 'addOrModify', 'ClientCache', locals() )    
-#  def addIfNotThereClientCache( self, name = None, commandName = None, opt_ID = None, 
-#                                value = None, result = None, dateEffective = None, 
-#                                lastCheckTime = None, meta = None ):
-#    '''
-#    Using `name`, `commandName` and `value` to query the database, 
-#    decides whether to insert or update the table.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-##    # Unused argument
-##    # pylint: disable-msg=W0613
-##    return self.__addOrModifyElement( 'ClientCache', locals() )
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    meta = { 'onlyUniqueKeys' : True }
-#    return self._query( 'addIfNotThere', 'ClientCache', locals() )       
+    return self._query( 'addIfNotThere', 'AccountingCache', locals() )     
 
   ##############################################################################
   # DOWNTIME CACHE Methods
@@ -436,160 +239,182 @@ class ResourceManagementClient( object ):
   def insertDowntimeCache( self, downtimeID, element, name, startDate, endDate, severity,
                            description, link, dateEffective, lastCheckTime, meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Inserts on DowntimeCache a new row with the arguments given.
+    
+    :Parameters:
+      **downtimeID** - `string`
+        unique id for the downtime 
+      **element** - `string`
+        valid element in the topology ( Site, Resource, Node )
+      **name** - `string`
+        name of the element where the downtime applies
+      **startDate** - `datetime`
+        starting time for the downtime
+      **endDate** - `datetime`
+        ending time for the downtime    
+      **severity** - `string`
+        severity assigned by the gocdb
+      **description** - `string`
+        brief description of the downtime
+      **link** - `string`
+        url to the details    
+      **dateEffective** - `datetime`
+        time when the entry was created in this database  
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'insert', 'DowntimeCache', locals() )
-
   def updateDowntimeCache( self, downtimeID, element, name, startDate, endDate, severity,
                            description, link, dateEffective, lastCheckTime, meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Updates AccountingCache with the parameters given. By default, `downtimeID` will 
+    be the parameter used to select the row.
+    
+    :Parameters:
+      **downtimeID** - `string`
+        unique id for the downtime 
+      **element** - `string`
+        valid element in the topology ( Site, Resource, Node )
+      **name** - `string`
+        name of the element where the downtime applies
+      **startDate** - `datetime`
+        starting time for the downtime
+      **endDate** - `datetime`
+        ending time for the downtime    
+      **severity** - `string`
+        severity assigned by the gocdb
+      **description** - `string`
+        brief description of the downtime
+      **link** - `string`
+        url to the details    
+      **dateEffective** - `datetime`
+        time when the entry was created in this database  
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'update', 'DowntimeCache', locals() )
-
   def selectDowntimeCache( self, downtimeID = None, element = None, name = None, 
                            startDate = None, endDate = None, severity = None,
                            description = None, link = None, dateEffective = None, 
                            lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Gets from DowntimeCache all rows that match the parameters given.
+    
+    :Parameters:
+      **downtimeID** - [, `string`, `list`]
+        unique id for the downtime 
+      **element** - [, `string`, `list`]
+        valid element in the topology ( Site, Resource, Node )
+      **name** - [, `string`, `list`]
+        name of the element where the downtime applies
+      **startDate** - [, `datetime`, `list`]
+        starting time for the downtime
+      **endDate** - [, `datetime`, `list`]
+        ending time for the downtime    
+      **severity** - [, `string`, `list`]
+        severity assigned by the gocdb
+      **description** - [, `string`, `list`]
+        brief description of the downtime
+      **link** - [, `string`, `list`]
+        url to the details    
+      **dateEffective** - [, `datetime`, `list`]
+        time when the entry was created in this database  
+      **lastCheckTime** - [, `datetime`, `list`]
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'select', 'DowntimeCache', locals() )
-
   def deleteDowntimeCache( self, downtimeID = None, element = None, name = None, 
                            startDate = None, endDate = None, severity = None,
                            description = None, link = None, dateEffective = None, 
                            lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Deletes from DowntimeCache all rows that match the parameters given.
+    
+    :Parameters:
+      **downtimeID** - [, `string`, `list`]
+        unique id for the downtime 
+      **element** - [, `string`, `list`]
+        valid element in the topology ( Site, Resource, Node )
+      **name** - [, `string`, `list`]
+        name of the element where the downtime applies
+      **startDate** - [, `datetime`, `list`]
+        starting time for the downtime
+      **endDate** - [, `datetime`, `list`]
+        ending time for the downtime    
+      **severity** - [, `string`, `list`]
+        severity assigned by the gocdb
+      **description** - [, `string`, `list`]
+        brief description of the downtime
+      **link** - [, `string`, `list`]
+        url to the details    
+      **dateEffective** - [, `datetime`, `list`]
+        time when the entry was created in this database  
+      **lastCheckTime** - [, `datetime`, `list`]
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'DowntimeCache', locals() )
-
-  #FIXME: should they be None or not ??
   def addOrModifyDowntimeCache( self, downtimeID = None, element = None, name = None, 
                                 startDate = None, endDate = None, severity = None,
                                 description = None, link = None, dateEffective = None, 
                                 lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring    
-#    Adds or updates-if-duplicated from AccountingCache
-##    Using `name`, `plotType` and `plotName` to query the database, 
-##    decides whether to insert or update the table.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **plotType** - `string`
-#        the plotType name (e.g. 'Pilot')
-#      **plotName** - `string`
-#        the plot name
-#      **result** - `string`
-#        command result
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Adds or updates-if-duplicated to DowntimeCache. Using `downtimeID` to query 
+    the database, decides whether to insert or update the table.
+    
+    :Parameters:
+      **downtimeID** - `string`
+        unique id for the downtime 
+      **element** - `string`
+        valid element in the topology ( Site, Resource, Node )
+      **name** - `string`
+        name of the element where the downtime applies
+      **startDate** - `datetime`
+        starting time for the downtime
+      **endDate** - `datetime`
+        ending time for the downtime    
+      **severity** - `string`
+        severity assigned by the gocdb
+      **description** - `string`
+        brief description of the downtime
+      **link** - `string`
+        url to the details    
+      **dateEffective** - `datetime`
+        time when the entry was created in this database  
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()    
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
@@ -600,29 +425,35 @@ class ResourceManagementClient( object ):
                                   description = None, link = None, dateEffective = None, 
                                   lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring    
-#    Adds or updates-if-duplicated from AccountingCache
-##    Using `name`, `plotType` and `plotName` to query the database, 
-##    decides whether to insert or update the table.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **plotType** - `string`
-#        the plotType name (e.g. 'Pilot')
-#      **plotName** - `string`
-#        the plot name
-#      **result** - `string`
-#        command result
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Adds if not there to DowntimeCache. Using `downtimeID` to query the database, 
+    decides whether to insert or not.
+    
+    :Parameters:
+      **downtimeID** - `string`
+        unique id for the downtime 
+      **element** - `string`
+        valid element in the topology ( Site, Resource, Node )
+      **name** - `string`
+        name of the element where the downtime applies
+      **startDate** - `datetime`
+        starting time for the downtime
+      **endDate** - `datetime`
+        ending time for the downtime    
+      **severity** - `string`
+        severity assigned by the gocdb
+      **description** - `string`
+        brief description of the downtime
+      **link** - `string`
+        url to the details    
+      **dateEffective** - `datetime`
+        time when the entry was created in this database  
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()   
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
@@ -635,188 +466,154 @@ class ResourceManagementClient( object ):
   def insertJobCache( self, site, maskStatus, efficiency, status, lastCheckTime, 
                       meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Inserts on JobCache a new row with the arguments given.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site element 
+      **maskStatus** - `string`
+        maskStatus for the site
+      **efficiency** - `float`
+        job efficiency ( successful / total )
+      **status** - `string`
+        status for the site computed  
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'insert', 'JobCache', locals() )
-
   def updateJobCache( self, site, maskStatus, efficiency, status, lastCheckTime,
                       meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Updates JobCache with the parameters given. By default, `site` will 
+    be the parameter used to select the row.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site element 
+      **maskStatus** - `string`
+        maskStatus for the site
+      **efficiency** - `float`
+        job efficiency ( successful / total )
+      **status** - `string`
+        status for the site computed  
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'update', 'JobCache', locals() )
-
   def selectJobCache( self, site = None, maskStatus = None, efficiency = None, 
                       status = None, lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Gets from JobCache all rows that match the parameters given.
+    
+    :Parameters:
+      **site** - `[, string, list ]`
+        name of the site element 
+      **maskStatus** - `[, string, list ]`
+        maskStatus for the site
+      **efficiency** - `[, float, list ]`
+        job efficiency ( successful / total )
+      **status** - `[, string, list ]`
+        status for the site computed  
+      **lastCheckTime** - `[, datetime, list ]`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'select', 'JobCache', locals() )
-
   def deleteJobCache( self, site = None, maskStatus = None, efficiency = None, 
                       status = None, lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Deletes from JobCache all rows that match the parameters given.
+    
+    :Parameters:
+      **site** - `[, string, list ]`
+        name of the site element 
+      **maskStatus** - `[, string, list ]`
+        maskStatus for the site
+      **efficiency** - `[, float, list ]`
+        job efficiency ( successful / total )
+      **status** - `[, string, list ]`
+        status for the site computed  
+      **lastCheckTime** - `[, datetime, list ]`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'JobCache', locals() )
-  
-  #FIXME: should they be None or not ??
   def addOrModifyJobCache( self, site = None, maskStatus = None, efficiency = None, 
                            status = None, lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring    
-#    Adds or updates-if-duplicated from AccountingCache
-##    Using `name`, `plotType` and `plotName` to query the database, 
-##    decides whether to insert or update the table.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **plotType** - `string`
-#        the plotType name (e.g. 'Pilot')
-#      **plotName** - `string`
-#        the plot name
-#      **result** - `string`
-#        command result
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Adds or updates-if-duplicated to JobCache. Using `site` to query 
+    the database, decides whether to insert or update the table.
+    
+    :Parameters:
+      **site** - `[, string, list ]`
+        name of the site element 
+      **maskStatus** - `[, string, list ]`
+        maskStatus for the site
+      **efficiency** - `[, float, list ]`
+        job efficiency ( successful / total )
+      **status** - `[, string, list ]`
+        status for the site computed  
+      **lastCheckTime** - `[, datetime, list ]`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'JobCache', locals() )
-
-  #FIXME: should they be None or not ??
   def addIfNotThereJobCache( self, site = None, maskStatus = None,
                              efficiency = None, status = None, lastCheckTime = None, 
                              meta = None ):
     '''
-#FIXME: write proper docstring    
-#    Adds or updates-if-duplicated from AccountingCache
-##    Using `name`, `plotType` and `plotName` to query the database, 
-##    decides whether to insert or update the table.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **plotType** - `string`
-#        the plotType name (e.g. 'Pilot')
-#      **plotName** - `string`
-#        the plot name
-#      **result** - `string`
-#        command result
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Adds if not there to JobCache. Using `site` to query the database, 
+    decides whether to insert or not.
+    
+    :Parameters:
+      **site** - `[, string, list ]`
+        name of the site element 
+      **maskStatus** - `[, string, list ]`
+        maskStatus for the site
+      **efficiency** - `[, float, list ]`
+        job efficiency ( successful / total )
+      **status** - `[, string, list ]`
+        status for the site computed  
+      **lastCheckTime** - `[, datetime, list ]`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
@@ -829,191 +626,158 @@ class ResourceManagementClient( object ):
   def insertTransferCache( self, elementName, direction, metric, value, lastCheckTime,
                            meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Inserts on TransferCache a new row with the arguments given.
+    
+    :Parameters:
+      **elementName** - `string`
+        name of the element 
+      **direction** - `string`
+        the element taken as Source or Destination of the transfer
+      **metric** - `string`
+        measured quality of failed transfers
+      **value** - `float`
+        percentage  
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'insert', 'TransferCache', locals() )
-
   def updateTransferCache( self, elementName, direction, metric, value, lastCheckTime,
                            meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Updates TransferCache with the parameters given. By default, `elementName`,
+    `direction` and `metric` will be the parameter used to select the row.
+    
+    :Parameters:
+      **elementName** - `string`
+        name of the element 
+      **direction** - `string`
+        the element taken as Source or Destination of the transfer
+      **metric** - `string`
+        measured quality of failed transfers
+      **value** - `float`
+        percentage  
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'update', 'TransferCache', locals() )
-
   def selectTransferCache( self, elementName = None, direction = None, metric = None, 
                            value = None, lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Gets from TransferCache all rows that match the parameters given.
+    
+    :Parameters:
+      **elementName** - `[, string, list ]`
+        name of the element 
+      **direction** - `[, string, list ]`
+        the element taken as Source or Destination of the transfer
+      **metric** - `[, string, list ]`
+        measured quality of failed transfers
+      **value** - `[, float, list ]`
+        percentage  
+      **lastCheckTime** - `[, float, list ]`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'select', 'TransferCache', locals() )
-
   def deleteTransferCache( self, elementName = None, direction = None, metric = None, 
                            value = None, lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Deletes from TransferCache all rows that match the parameters given.
+    
+    :Parameters:
+      **elementName** - `[, string, list ]`
+        name of the element 
+      **direction** - `[, string, list ]`
+        the element taken as Source or Destination of the transfer
+      **metric** - `[, string, list ]`
+        measured quality of failed transfers
+      **value** - `[, float, list ]`
+        percentage  
+      **lastCheckTime** - `[, float, list ]`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'TransferCache', locals() )
-
   def addOrModifyTransferCache( self, elementName = None, direction = None, metric = None, 
                                 value = None, lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring    
-#    Adds or updates-if-duplicated from AccountingCache
-##    Using `name`, `plotType` and `plotName` to query the database, 
-##    decides whether to insert or update the table.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **plotType** - `string`
-#        the plotType name (e.g. 'Pilot')
-#      **plotName** - `string`
-#        the plot name
-#      **result** - `string`
-#        command result
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Adds or updates-if-duplicated to TransferCache. Using `elementName`, `direction`
+    and `metric` to query the database, decides whether to insert or update the table.
+    
+    :Parameters:
+      **elementName** - `string`
+        name of the element 
+      **direction** - `string`
+        the element taken as Source or Destination of the transfer
+      **metric** - `string`
+        measured quality of failed transfers
+      **value** - `float`
+        percentage  
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'TransferCache', locals() )
-
   def addIfNotThereTransferCache( self, elementName = None, direction = None, metric = None, 
                                   value = None, lastCheckTime = None, meta = None ):
     '''
-#FIXME: write proper docstring    
-#    Adds or updates-if-duplicated from AccountingCache
-##    Using `name`, `plotType` and `plotName` to query the database, 
-##    decides whether to insert or update the table.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **plotType** - `string`
-#        the plotType name (e.g. 'Pilot')
-#      **plotName** - `string`
-#        the plot name
-#      **result** - `string`
-#        command result
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Adds if not there to TransferCache. Using `elementName`, `direction` and `metric` 
+    to query the database, decides whether to insert or not.
+    
+    :Parameters:
+      **elementName** - `string`
+        name of the element 
+      **direction** - `string`
+        the element taken as Source or Destination of the transfer
+      **metric** - `string`
+        measured quality of failed transfers
+      **value** - `float`
+        percentage  
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addIfNotThere', 'TransferCache', locals() )
-
 
   ##############################################################################
   # PILOT CACHE Methods
@@ -1021,191 +785,168 @@ class ResourceManagementClient( object ):
   def insertPilotCache( self, site, cE, pilotsPerJob, pilotJobEff, status, lastCheckTime,
                         meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Inserts on PilotCache a new row with the arguments given.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site 
+      **cE** - `string`
+        name of the CE of 'Multiple' if all site CEs are considered
+      **pilotsPerJob** - `float`
+        measure calculated
+      **pilotJobEff** - `float`
+        percentage  
+      **status** - `string`
+        status of the CE / Site  
+      **lastCheckTime** - `datetime`
+        measure calculated
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'insert', 'PilotCache', locals() )
-
   def updatePilotCache( self, site, cE, pilotsPerJob, pilotJobEff, status, lastCheckTime, 
                         meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Updates PilotCache with the parameters given. By default, `site` and `cE`
+    will be the parameters used to select the row.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site 
+      **cE** - `string`
+        name of the CE of 'Multiple' if all site CEs are considered
+      **pilotsPerJob** - `float`
+        measure calculated
+      **pilotJobEff** - `float`
+        percentage  
+      **status** - `string`
+        status of the CE / Site  
+      **lastCheckTime** - `datetime`
+        measure calculated
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'update', 'PilotCache', locals() )
-
   def selectPilotCache( self, site = None, cE = None, pilotsPerJob = None, 
                         pilotJobEff = None, status = None, lastCheckTime = None,
                         meta = None ): 
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Gets from TransferCache all rows that match the parameters given.
+    
+    :Parameters:
+      **site** - `[, string, list ]`
+        name of the site 
+      **cE** - `[, string, list ]`
+        name of the CE of 'Multiple' if all site CEs are considered
+      **pilotsPerJob** - `[, float, list ]`
+        measure calculated
+      **pilotJobEff** - `[, float, list ]`
+        percentage  
+      **status** - `[, float, list ]`
+        status of the CE / Site  
+      **lastCheckTime** - `[, datetime, list ]`
+        measure calculated
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'select', 'PilotCache', locals() )
-
   def deletePilotCache( self, site = None, cE = None, pilotsPerJob = None, 
                         pilotJobEff = None, status = None, lastCheckTime = None,
                         meta = None ):
     '''
-#FIXME: write proper docstring
-#    Inserts on ClientCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **commandName** - `string`
-#        name of the command executed
-#      **opt_ID** - `string`
-#        optional ID (e.g. used for downtimes)
-#      **value** - `string`
-#        it is the type of result ( e.g. `Link`, `PE_S`... )
-#      **result** - `string`
-#        output of the command ( of value type )    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-    '''
+    Deletes from TransferCache all rows that match the parameters given.
+    
+    :Parameters:
+      **site** - `[, string, list ]`
+        name of the site 
+      **cE** - `[, string, list ]`
+        name of the CE of 'Multiple' if all site CEs are considered
+      **pilotsPerJob** - `[, float, list ]`
+        measure calculated
+      **pilotJobEff** - `[, float, list ]`
+        percentage  
+      **status** - `[, float, list ]`
+        status of the CE / Site  
+      **lastCheckTime** - `[, datetime, list ]`
+        measure calculated
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()    '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'PilotCache', locals() )
-  
-  #FIXME: should they be None or not ??
   def addOrModifyPilotCache( self, site = None, cE = None, pilotsPerJob = None, 
                              pilotJobEff = None, status = None, lastCheckTime = None,
                              meta = None ):
     '''
-#FIXME: write proper docstring    
-#    Adds or updates-if-duplicated from AccountingCache
-##    Using `name`, `plotType` and `plotName` to query the database, 
-##    decides whether to insert or update the table.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **plotType** - `string`
-#        the plotType name (e.g. 'Pilot')
-#      **plotName** - `string`
-#        the plot name
-#      **result** - `string`
-#        command result
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Adds or updates-if-duplicated to PilotCache. Using `site` and `cE`
+    to query the database, decides whether to insert or update the table.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site 
+      **cE** - `string`
+        name of the CE of 'Multiple' if all site CEs are considered
+      **pilotsPerJob** - `float`
+        measure calculated
+      **pilotJobEff** - `float`
+        percentage  
+      **status** - `string`
+        status of the CE / Site  
+      **lastCheckTime** - `datetime`
+        measure calculated
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'PilotCache', locals() )
-
-  #FIXME: should they be None or not ??
   def addIfNotTherePilotCache( self, site = None, cE = None, pilotsPerJob = None, 
                                pilotJobEff = None, status = None, lastCheckTime = None,
                                meta = None ):
     '''
-#FIXME: write proper docstring    
-#    Adds or updates-if-duplicated from AccountingCache
-##    Using `name`, `plotType` and `plotName` to query the database, 
-##    decides whether to insert or update the table.
-#    
-#    :Parameters:
-#      **name** - `string`
-#        name of an individual of the grid topology  
-#      **plotType** - `string`
-#        the plotType name (e.g. 'Pilot')
-#      **plotName** - `string`
-#        the plot name
-#      **result** - `string`
-#        command result
-#      **dateEffective** - `datetime`
-#        time-stamp from which the result is effective
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+    Adds if not there to PilotCache. Using `site` and `cE` to query the 
+    database, decides whether to insert or not.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site 
+      **cE** - `string`
+        name of the CE of 'Multiple' if all site CEs are considered
+      **pilotsPerJob** - `float`
+        measure calculated
+      **pilotJobEff** - `float`
+        percentage  
+      **status** - `string`
+        status of the CE / Site  
+      **lastCheckTime** - `datetime`
+        measure calculated
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
@@ -1347,8 +1088,8 @@ class ResourceManagementClient( object ):
                                status = None, reason = None, dateEffective = None, 
                                lastCheckTime = None, meta = None ):
     '''
-    Using `name`, `policyName` and `statusType` to query the database, 
-    decides whether to insert or update the table.
+    Adds or updates-if-duplicated to PolicyResult. Using `name`, `policyName` and 
+    `statusType` to query the database, decides whether to insert or update the table.
 
     :Parameters:
       **element** - `string`
@@ -1384,8 +1125,8 @@ class ResourceManagementClient( object ):
                                  status = None, reason = None, dateEffective = None, 
                                  lastCheckTime = None, meta = None ):
     '''
-    Using `name`, `policyName` and `statusType` to query the database, 
-    decides whether to insert or update the table.
+    Adds if not there to PolicyResult. Using `name`, `policyName` and `statusType` 
+    to query the database, decides whether to insert or not.
 
     :Parameters:
       **element** - `string`
@@ -1553,7 +1294,8 @@ class ResourceManagementClient( object ):
                                   status = None, reason = None, lastCheckTime = None, 
                                   meta = None ):
     '''
-    AddsOrModifies on PolicyResult a new row with the arguments given.
+    Adds or updates-if-duplicated to PolicyResultLog. Using `name`, `policyName`, 
+    'statusType` to query the database, decides whether to insert or update the table.
     
     :Parameters:
       **element** - `string`
@@ -1572,7 +1314,7 @@ class ResourceManagementClient( object ):
         decision that triggered the assigned status
       **lastCheckTime** - `datetime`
         time-stamp setting last time the policy result was checked
-      **meta** - `[,dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -1587,7 +1329,8 @@ class ResourceManagementClient( object ):
                                     status = None, reason = None, 
                                     lastCheckTime = None, meta = None ):
     '''
-    AddsIfNotThere on PolicyResult a new row with the arguments given.
+    Adds if not there to PolicyResult. Using `name`, `policyName` and `statusType` 
+    to query the database, decides whether to insert or not.
     
     :Parameters:
       **element** - `string`
@@ -1606,7 +1349,7 @@ class ResourceManagementClient( object ):
         decision that triggered the assigned status
       **lastCheckTime** - `datetime`
         time-stamp setting last time the policy result was checked
-      **meta** - `[,dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -1736,8 +1479,8 @@ class ResourceManagementClient( object ):
                                            free = None, lastCheckTime = None, 
                                            meta = None ):
     '''
-    Using `site` and `token` to query the database, decides whether to insert or 
-    update the table.
+    Adds or updates-if-duplicated to SpaceTokenOccupancyCache. Using `site` and `token` 
+    to query the database, decides whether to insert or update the table.
     
     :Parameters:
       **site** - `string`
@@ -1767,8 +1510,8 @@ class ResourceManagementClient( object ):
                                              free = None, lastCheckTime = None, 
                                              meta = None ):
     '''
-    Using `site` and `token` to query the database, decides whether to insert or 
-    update the table.
+    Adds if not there to PolicyResult. Using `site` and `token` to query the 
+    database, decides whether to insert or not.
     
     :Parameters:
       **site** - `string`
@@ -1891,8 +1634,8 @@ class ResourceManagementClient( object ):
   def addOrModifyUserRegistryCache( self, login = None, name = None, 
                                     email = None, lastCheckTime = None, meta = None ):
     '''
-    Using `login` to query the database, decides whether to insert or update 
-    the table.
+    Adds or updates-if-duplicated to UserRegistryCache. Using `login` to query 
+    the database, decides whether to insert or update the table.
     
     :Parameters:
       **login** - `string`
@@ -1914,10 +1657,10 @@ class ResourceManagementClient( object ):
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'UserRegistryCache', locals() )   
   def addIfNotThereUserRegistryCache( self, login = None, name = None, 
-                                       email = None, lastCheckTime = None, meta = None ):
+                                      email = None, lastCheckTime = None, meta = None ):
     '''
-    Using `login` to query the database, decides whether to insert or update 
-    the table.
+    Adds if not there to UserRegistryCache. Using `login` to query the 
+    database, decides whether to insert or not.
     
     :Parameters:
       **login** - `string`
@@ -1942,8 +1685,8 @@ class ResourceManagementClient( object ):
   ##############################################################################
   # VOBOX CACHE Methods
 
-  def insertVOBOXCache( self, site, system, serviceUp, machineUp, 
-                             lastCheckTime, meta = None ):
+  def insertVOBOXCache( self, site, system, serviceUp, machineUp, lastCheckTime, 
+                        meta = None ):
     '''
     Inserts on VOBOXCache a new row with the arguments given.
     
@@ -1967,8 +1710,8 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'insert', 'VOBOXCache', locals() )
-  def updateVOBOXCache( self, site, system, serviceUp, machineUp, 
-                        lastCheckTime, meta = None ):
+  def updateVOBOXCache( self, site, system, serviceUp, machineUp, lastCheckTime, 
+                        meta = None ):
     '''
     Updates VOBOXCache with the parameters given. By default, `site` and 
     `system` will be the parameters used to select the row.
@@ -2046,8 +1789,8 @@ class ResourceManagementClient( object ):
   def addOrModifyVOBOXCache( self, site = None, system = None, serviceUp = None, 
                              machineUp = None, lastCheckTime = None, meta = None ):
     '''
-    Using `site` and `system` to query the database, 
-    decides whether to insert or update the table.
+    Adds or updates-if-duplicated to VOBOXCache. Using `site` and `system` to query 
+    the database, decides whether to insert or update the table.
     
     :Parameters:
       **site** - `string`
@@ -2074,8 +1817,8 @@ class ResourceManagementClient( object ):
   def addIfNotThereVOBOXCache( self, site = None, system = None, serviceUp = None, 
                                machineUp = None, lastCheckTime = None, meta = None ):
     '''
-    Using `site` and `system` to query the database, 
-    decides whether to insert or update the table.
+    Adds if not there to VOBOXCache. Using `site` and `system` to query the 
+    database, decides whether to insert or not.
     
     :Parameters:
       **site** - `string`
@@ -2098,47 +1841,6 @@ class ResourceManagementClient( object ):
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addIfNotThere', 'VOBOXCache', locals() )   
-
-
-# THIS METHOD DOES NOT WORK AS EXPECTED 
-# __addOrModifyElement overwrittes the field lastCheckTime.
-# Anyway, this table is a pure insert / get / delete table. No updates foreseen.
- 
-#  def addOrModifyPolicyResultLog( self, granularity, name, policyName, statusType,
-#                                  status, reason, lastCheckTime ):
-#    '''
-#    Using `name`, `policyName` and `statusType` and `lastCheckTime` to query the 
-#    database, decides whether to insert or update the table.
-#    
-#    BE CAREFUL: lastCheckTime is on the UNIQUE_TOGETHER tuple. On the other hand,
-#    lastCheckTime is overwritten 
-#
-#    :Parameters:
-#      **granularity** - `string`
-#        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`  
-#      **name** - `string`
-#        name of the element
-#      **policyName** - `string`
-#        name of the policy
-#      **statusType** - `string`
-#        it has to be a valid status type for the given granularity
-#      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`    
-#      **reason** - `string`
-#        decision that triggered the assigned status
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the policy result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'PolicyResultLog', locals() )  
 
   ################################################################################
   # Protected methods
