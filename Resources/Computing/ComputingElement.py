@@ -81,12 +81,17 @@ class ComputingElement:
     """
 
     # Collect global defaults first
-    result = self.__getCEParameters( '/Resources/Computing/CEDefaults' ) #can be overwritten by other sections
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-    result = self.__getCEParameters( '/Resources/Computing/%s' % self.ceName )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
+    result = gConfig.getSections( '/Resources/Computing' )
+    if result['OK'] and result['Value']:
+      ceSections = result['Value']
+      if 'CEDefaults' in ceSections:
+        result = self.__getCEParameters( '/Resources/Computing/CEDefaults' ) #can be overwritten by other sections
+        if not result['OK']:
+          self.log.warn( result['Message'] )
+      if self.ceName in ceSections:    
+        result = self.__getCEParameters( '/Resources/Computing/%s' % self.ceName )
+        if not result['OK']:
+          self.log.warn( result['Message'] )
 
     # Get local CE configuration
     localConfigDict = getCEConfigDict( self.ceName )
@@ -141,7 +146,8 @@ class ComputingElement:
     reqtSection = '/AgentJobRequirements'
     result = gConfig.getOptionsDict( reqtSection )
     if not result['OK']:
-      self.log.warn( result['Message'] )
+      if not 'does not exist' in result['Message']:
+        self.log.warn( result['Message'] )
       return S_OK( result['Message'] )
 
     reqsDict = result['Value']
