@@ -72,12 +72,15 @@
     _insert, _update methods when ever possible.
 
     buildCondition( self, condDict = None, older = None, newer = None,
-                      timeStamp = None, orderAttribute = None, limit = False ):
+                      timeStamp = None, orderAttribute = None, limit = False,
+                      greater = None, smaller = None ):
 
       Build SQL condition statement from provided condDict and other extra check on
       a specified time stamp.
       The conditions dictionary specifies for each attribute one or a List of possible
       values
+      greater and smaller are dictionaries in which the keys are the names of the fields, 
+      that are requested to be >= or < than the corresponding value.
       For compatibility with current usage it uses Exceptions to exit in case of 
       invalid arguments
 
@@ -869,7 +872,8 @@ class MySQL:
 #  Utility functions
 #
 ########################################################################################
-  def countEntries( self, table, condDict, older = None, newer = None, timeStamp = None, connection = False ):
+  def countEntries( self, table, condDict, older = None, newer = None, timeStamp = None, connection = False,
+                    greater = None, smaller = None ):
     """
       Count the number of entries wit the given conditions
     """
@@ -880,7 +884,8 @@ class MySQL:
       return S_ERROR( error )
 
     try:
-      cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp )
+      cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
+                                  greater = None, smaller = None )
     except Exception, x:
       return S_ERROR( x )
 
@@ -892,7 +897,8 @@ class MySQL:
     return S_OK( res['Value'][0][0] )
 
 ########################################################################################
-  def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False ):
+  def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False,
+                   greater = None, smaller = None ):
     """ 
       Count the number of records on each distinct combination of AttrList, selected
       with condition defined by condDict and time stamps
@@ -910,7 +916,8 @@ class MySQL:
       return S_ERROR( error )
 
     try:
-      cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp )
+      cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
+                                  greater = None, smaller = None )
     except Exception, x:
       return S_ERROR( x )
 
@@ -930,7 +937,8 @@ class MySQL:
 
 #########################################################################################
   def getDistinctAttributeValues( self, table, attribute, condDict = None, older = None,
-                                  newer = None, timeStamp = None, connection = False ):
+                                  newer = None, timeStamp = None, connection = False,
+                                  greater = None, smaller = None ):
     """
       Get distinct values of a table attribute under specified conditions
     """
@@ -947,7 +955,8 @@ class MySQL:
       return S_ERROR( error )
 
     try:
-      cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp )
+      cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
+                                  greater = None, smaller = None )
     except Exception, x:
       return S_ERROR( x )
 
@@ -960,11 +969,14 @@ class MySQL:
 
 #############################################################################
   def buildCondition( self, condDict = None, older = None, newer = None,
-                      timeStamp = None, orderAttribute = None, limit = False ):
+                      timeStamp = None, orderAttribute = None, limit = False,
+                      greater = None, smaller = None ):
     """ Build SQL condition statement from provided condDict and other extra check on
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
         values
+        greater and smaller are dictionaries in which the keys are the names of the fields, 
+        that are requested to be >= or < than the corresponding value.
         For compatibility with current usage it uses Exceptions to exit in case of 
         invalid arguments
     """
@@ -1035,6 +1047,47 @@ class MySQL:
                                              timeStamp,
                                              escapeInValue )
 
+    if type( greater ) == types.DictType:
+      for attrName, attrValue in greater.items():
+        attrName = _quotedList( [attrName] )
+        if not attrName:
+          error = 'Invalid greater argument'
+          self.log.warn( 'buildCondition:', error )
+          raise Exception( error )
+
+        retDict = self._escapeValues( [ attrValue ] )
+        if not retDict['OK']:
+          self.log.warn( 'buildCondition:', retDict['Message'] )
+          raise Exception( retDict['Message'] )
+        else:
+          escapeInValue = retDict['Value'][0]
+          condition = ' %s %s %s >= %s' % ( condition,
+                                             conjunction,
+                                             attrName,
+                                             escapeInValue )
+          conjunction = "AND"
+
+    if type( smaller ) == types.DictType:
+      for attrName, attrValue in smaller.items():
+        attrName = _quotedList( [attrName] )
+        if not attrName:
+          error = 'Invalid smaller argument'
+          self.log.warn( 'buildCondition:', error )
+          raise Exception( error )
+
+        retDict = self._escapeValues( [ attrValue ] )
+        if not retDict['OK']:
+          self.log.warn( 'buildCondition:', retDict['Message'] )
+          raise Exception( retDict['Message'] )
+        else:
+          escapeInValue = retDict['Value'][0]
+          condition = ' %s %s %s < %s' % ( condition,
+                                             conjunction,
+                                             attrName,
+                                             escapeInValue )
+          conjunction = "AND"
+
+
     orderList = []
     orderAttrList = orderAttribute
     if type( orderAttrList ) != types.ListType:
@@ -1063,6 +1116,7 @@ class MySQL:
           raise Exception( error )
       else:
         orderList.append( orderAttr )
+
     if orderList:
       condition = "%s ORDER BY %s" % ( condition, ', '.join( orderList ) )
 
@@ -1076,7 +1130,8 @@ class MySQL:
                  condDict = None,
                  limit = False, conn = None,
                  older = None, newer = None,
-                 timeStamp = None, orderAttribute = None ):
+                 timeStamp = None, orderAttribute = None,
+                 greater = None, smaller = None ):
     """
       Select "outFields" from "tableName" with condDict
       N records can match the condition
@@ -1107,7 +1162,8 @@ class MySQL:
 
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
-                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit )
+                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
+                        greater = None, smaller = None )
     except Exception, x:
       return S_ERROR( x )
 
@@ -1119,7 +1175,8 @@ class MySQL:
                      condDict = None,
                      limit = False, conn = None,
                      older = None, newer = None,
-                     timeStamp = None, orderAttribute = None ):
+                     timeStamp = None, orderAttribute = None,
+                     greater = None, smaller = None ):
     """
       Delete rows from "tableName" with
       N records can match the condition
@@ -1136,7 +1193,8 @@ class MySQL:
 
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
-                                       timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit )
+                                       timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
+                                       greater = None, smaller = None )
     except Exception, x:
       return S_ERROR( x )
 
@@ -1148,7 +1206,8 @@ class MySQL:
                     limit = False, conn = None,
                     updateDict = None,
                     older = None, newer = None,
-                    timeStamp = None, orderAttribute = None ):
+                    timeStamp = None, orderAttribute = None,
+                    greater = None, smaller = None ):
     """
       Update "updateFields" from "tableName" with "updateValues".
       updateDict alternative way to provide the updateFields and updateValues
@@ -1201,7 +1260,8 @@ class MySQL:
 
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
-                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit )
+                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
+                        greater = None, smaller = None )
     except Exception, x:
       return S_ERROR( x )
 
