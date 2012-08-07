@@ -418,12 +418,19 @@ class StalledJobAgent( AgentModule ):
 
     if type( startTime ) in types.StringTypes:
       startTime = fromString( startTime )
+      if startTime == None:
+        self.log.error( 'Wrong timestamp in DB', items[3] )
+        startTime = dateTime()
+
 
     endTime = dateTime()
     # status, minor, app, stime, source
     for items in logList:
       if items[0] == 'Stalled':
         endTime = fromString( items[3] )
+    if endTime == None:
+      self.log.error( 'Wrong timestamp in DB', items[3] )
+      endTime = dateTime()
 
     return startTime, endTime
 
