@@ -353,7 +353,8 @@ class MatcherHandler( RequestHandler ):
       if resourceDescription.has_key( 'JobID' ):
         resourceDict['JobID'] = resourceDescription['JobID']
 
-      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization' ):
+      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
+                 'PilotReference', 'PilotInfoReportedFlag', 'PilotBenchmark' ):
         if k in resourceDescription:
           resourceDict[ k ] = resourceDescription[ k ]
 
@@ -428,8 +429,8 @@ class MatcherHandler( RequestHandler ):
         gridCE = resourceDict.get( 'GridCE', 'Unknown' )
         site = destination = resourceDict.get( 'Site', 'Unknown' )
         benchmark = benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
-        gLogger.verbose('Reporting pilto info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
-        result = gPilotAgentsDB.setPilotStatus( pRef, status = 'Running',
+        gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
+        result = gPilotAgentsDB.setPilotStatus( pilotReference, status = 'Running',
                                                 gridSite = gridCE,
                                                 destination = site,
                                                 benchmark = benchmark )
