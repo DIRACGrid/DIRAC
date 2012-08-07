@@ -27,7 +27,7 @@ from DIRAC.Core.Utilities.List import intListToString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ## it's a magic! 
-#ÊMAGIC_EPOC_NUMBER = 1270000000
+# MAGIC_EPOC_NUMBER = 1270000000
 ## This is a better one, using only datetime (DIRAC.Time) to avoid jumps when there is a change in time
 NEW_MAGIC_EPOCH_2K = 323322400
 
@@ -1559,7 +1559,7 @@ class TransferDB( DB ):
   def __selectFromTable( self, table, tableID, condDict, older, newer, orderAttribute, limit ):
     """ select something from table something
     """
-    res = self.getFields( tableName, [tableID], condDict, limit, older = older, newer = newer, timeStamp = 'LastUpdateTime', orderAttribute )
+    res = self.getFields( tableName, [tableID], condDict, limit, older = older, newer = newer, timeStamp = 'LastUpdateTime', orderAttribute = orderAttribute )
     if not res['OK']:
       return res
     if not len( res['Value'] ):
