@@ -138,7 +138,7 @@ class RequestDBMySQL( DB ):
         newer = value
       else:
         condDict[key] = value
-    self.getFields( 'Requests', ['RequestID', 'RequestName'], condDict = condDict, limit = limit,
+    result = self.getFields( 'Requests', ['RequestID', 'RequestName'], condDict = condDict, limit = limit,
                     older = older, newer = newer, timeStamp = 'LastUpdate' )
 
     if not result['OK']:

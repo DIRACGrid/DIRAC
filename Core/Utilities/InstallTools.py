@@ -1452,7 +1452,7 @@ exec 2>&1
 #
 [ "%(componentType)s" = "agent" ] && renice 20 -p $$
 #
-exec $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(component)s %(componentCfg)s < /dev/null
+exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(component)s %(componentCfg)s < /dev/null
 """ % {'bashrc': os.path.join( instancePath, 'bashrc' ),
        'componentType': componentType,
        'system' : system,

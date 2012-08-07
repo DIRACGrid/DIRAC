@@ -109,7 +109,7 @@ class OptimizerExecutor( ExecutorModule ):
       #This is the last optimizer in the chain!
       result = jobState.setStatus( self.ex_getOption( 'WaitingStatus', 'Waiting' ),
                                    minorStatus = self.ex_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ),
-                                   appStatus = "",
+                                   appStatus = "Unknown",
                                    source = opName )
       if not result[ 'OK' ]:
         return result
