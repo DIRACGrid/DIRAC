@@ -25,7 +25,7 @@ class RequestClient( Client ):
     """
     Client.__init__( self )
     ## setup logger
-    self.log = gLogger.getSubLogger( "RequestManagement/RequestClient" ) 
+    self.log = gLogger.getSubLogger( "RequestManagement/RequestClient" )
 
     ## dict to store all RPC clients for easy reuse
     self.__requestRPCClientsDict = {}
@@ -40,7 +40,7 @@ class RequestClient( Client ):
     ## voboxes if any defined
     voBoxUrls = fromChar( PathFinder.getServiceURL( "RequestManagement/voBoxURLs" ) )
     if voBoxUrls:
-      self.__requestRPCClientsDict.setdefault( "voboxes", [] ) 
+      self.__requestRPCClientsDict.setdefault( "voboxes", [] )
       for voBoxURL in randomize( voBoxUrls ):
         self.__requestRPCClientsDict["voboxes"].append( self.__requestRPCClient( voBoxURL ) )
 
@@ -99,7 +99,7 @@ class RequestClient( Client ):
     """
     for client in self.__getClientsList( url, servicePriority ):
       yield client
-    
+
 
   ########################################################################
   #
@@ -116,17 +116,17 @@ class RequestClient( Client ):
     :param str url: URL for request RPC client
     """
     try:
-      for requestRPCClient in self.requestRPCClients( url, ["central"] ): 
+      for requestRPCClient in self.requestRPCClients( url, ["central"] ):
         thisURL = requestRPCClient.thisURL
-        self.log.verbose( "RequestClient.updateRequest: Attempting to update %s at %s." % ( requestName, 
+        self.log.verbose( "updateRequest: Attempting to update %s at %s." % ( requestName,
                                                                                             thisURL ) )
         return requestRPCClient.updateRequest( requestName, requestString )
     except Exception, error:
-      errMsg = "RequestClient.updateRequest: Exception while updating request: %s" % str(error)
+      errMsg = "updateRequest: Exception while updating request: %s" % str( error )
       self.log.exception( errMsg )
-      return S_ERROR( errMsg )
+      return S_ERROR( "RequestClient.%s" % errMsg )
     ## if we are there, no request RPC clients were defined 
-    return S_ERROR("RequestClient.updateRequest: Failed to update request, no RPC clients.")
+    return S_ERROR( "RequestClient.updateRequest: Failed to update request, no RPC clients." )
 
 
   def deleteRequest( self, requestName, url = "" ):
@@ -138,17 +138,17 @@ class RequestClient( Client ):
     :param str url: request RPC client URL 
     """
     try:
-      for requestRPCClient in self.requestRPCClients( url, ["central"] ): 
+      for requestRPCClient in self.requestRPCClients( url, ["central"] ):
         thisURL = requestRPCClient.thisURL
-        self.log.verbose( "RequestClient.deleteRequest: Attempting to delete %s at %s." % ( requestName, 
+        self.log.verbose( "deleteRequest: Attempting to delete %s at %s." % ( requestName,
                                                                                             thisURL ) )
         return requestRPCClient.deleteRequest( requestName )
     except Exception, error:
-      errMsg = "RequestClient.deleteRequest: Exception while deleting request: %s" % str(error)
-      self.log.exception( errMsg ) 
-      return S_ERROR( errMsg )
+      errMsg = "deleteRequest: Exception while deleting request: %s" % str( error )
+      self.log.exception( errMsg )
+      return S_ERROR( "RequestClient.%s" % errMsg )
     ## if we are there, no request RPC clients were defined 
-    return S_ERROR("RequestClient.deleteRequest: Failed to delete the request, no RPC clients.")
+    return S_ERROR( "RequestClient.deleteRequest: Failed to delete the request, no RPC clients." )
 
   def setRequestStatus( self, requestName, requestStatus, url = "" ):
     """ Set the status of a request. If url parameter is not present, the central 
@@ -162,16 +162,16 @@ class RequestClient( Client ):
     try:
       for requestRPCClient in self.requestRPCClients( url, ["central"] ):
         thisURL = requestRPCClient.thisURL
-        self.log.verbose( "RequestClient.setRequestStatus: Attempting to set %s to %s at %s." % ( requestName, 
+        self.log.verbose( "setRequestStatus: Attempting to set %s to %s at %s." % ( requestName,
                                                                                                   requestStatus,
                                                                                                   thisURL ) )
         return requestRPCClient.setRequestStatus( requestName, requestStatus )
     except Exception, error:
-      errMsg = "RequestClient.setRequestStatus: Exception while setting request status: %s" % str(error)
+      errMsg = "setRequestStatus: Exception while setting request status: %s" % str( error )
       self.log.exception( errMsg )
-      return S_ERROR( errMsg )
+      return S_ERROR( "RequestClient.%s" % errMsg )
     ## if we are there, no request RPC clients were defined 
-    return S_ERROR("RequestClient.setRequestStatus: Failed to set the request status, no RPC clients.")
+    return S_ERROR( "RequestClient.setRequestStatus: Failed to set the request status, no RPC clients." )
 
 
   def getRequestForJobs( self, jobID, url = "" ):
@@ -184,14 +184,14 @@ class RequestClient( Client ):
     """
     try:
       for requestRPCClient in self.requestRPCClients( url, ["central"] ):
-        self.log.verbose( "RequestClient.getRequestForJobs: Attempt to get request names for %d jobs." % len(jobID) )
+        self.log.verbose( "getRequestForJobs: Attempt to get request names for %d jobs." % len( jobID ) )
         return requestRPCClient.getRequestForJobs( jobID )
     except Exception, error:
-      errMsg = "RequestClient.getRequestForJobs: Exception while getting request names: %s" % str(error)
+      errMsg = "getRequestForJobs: Exception while getting request names: %s" % str( error )
       self.log.exception( errMsg )
-      return S_ERROR( errMsg )
+      return S_ERROR( "RequestClient.%s" % errMsg )
     ## if we are there, no request RPC clients were defined 
-    return S_ERROR("RequestClient.getRequestForJobs: Failed to get request for jobs, no RPC clients.")
+    return S_ERROR( "RequestClient.getRequestForJobs: Failed to get request for jobs, no RPC clients." )
 
 
   ##############################################################################
@@ -213,20 +213,20 @@ class RequestClient( Client ):
         thisURL = requestRPCClient.thisURL
         res = requestRPCClient.setRequest( requestName, requestString )
         if res['OK']:
-          self.log.info( "RequestClient.setRequest: request '%s' at %s set" % ( requestName, thisURL ) )
+          self.log.info( "setRequest: request '%s' at %s set" % ( requestName, thisURL ) )
           res["Server"] = thisURL
           return res
-        errMsg = "RequestClient.setRequest: failed setting request '%s' at %s: %s " % ( requestName, thisURL, res["Message"] )
+        errMsg = "setRequest: failed setting request '%s' at %s: %s " % ( requestName, thisURL, res["Message"] )
         self.log.error( errMsg )
     except Exception, error:
-      errMsg = "RequestClient.setRequest: Exception while setting request: %s" % str(error)
+      errMsg = "setRequest: Exception while setting request: %s" % str( error )
       self.log.exception( errMsg )
       return S_ERROR( errMsg )
     ## if we are there, no request RPC clients were defined 
-    errMsg = "RequestClient.setRequest: Failed setting request '%s', no RPC clients." % requestName
+    errMsg = "setRequest: Failed setting request '%s', no RPC clients." % requestName
     self.log.error( errMsg )
-    return S_ERROR( errMsg )
-    
+    return S_ERROR( 'RequestClient.%s' % errMsg )
+
   def getRequest( self, requestType, url = "" ):
     """ Get request from RequestDB. 
     First try client passed as parameter, then in order: local, central and at the end one of voboxes. 
@@ -238,28 +238,28 @@ class RequestClient( Client ):
     try:
       for requestRPCClient in self.requestRPCClients( url, [ "local", "central", "voboxes"] ):
         thisURL = requestRPCClient.thisURL
-        self.log.info( "RequestClient.getRequest: Attempting to get request.", "%s %s" % ( thisURL, 
+        self.log.info( "getRequest: Attempting to get request.", "%s %s" % ( thisURL,
                                                                                            requestType ) )
         res = requestRPCClient.getRequest( requestType )
         if res["OK"]:
           if not res["Value"]:
-            self.log.info( "RequestClient.getRequest: found no '%s' requests on RequestDB (%s)" % ( requestType, thisURL ) )
-          else:  
-            self.log.info( "RequestClient.getRequest: got '%s' request from RequestDB (%s)" % ( requestType, thisURL ) )
+            self.log.info( "getRequest: found no '%s' requests on RequestDB (%s)" % ( requestType, thisURL ) )
+          else:
+            self.log.info( "getRequest: got '%s' request from RequestDB (%s)" % ( requestType, thisURL ) )
             res['Value']['Server'] = thisURL
           return res
         else:
-          self.log.error( "RequestClient.getRequest: failed getting request of type '%s' from %s: %s" % ( requestType, 
-                                                                                                          thisURL, 
+          self.log.error( "getRequest: failed getting request of type '%s' from %s: %s" % ( requestType,
+                                                                                                          thisURL,
                                                                                                           res["Message"] ) )
     except Exception, error:
-      errMsg = "RequestClient.getRequest: Exception while getting request: %s" % str(error)
+      errMsg = "getRequest: Exception while getting request: %s" % str( error )
       self.log.exception( errMsg )
       return S_ERROR( errMsg )
     ## if we are there, no request RPC clients were defined 
-    errMsg = "RequestClient.getRequest: Failed fo get request of type '%s', no RPC clients." % requestType
+    errMsg = "getRequest: Failed fo get request of type '%s', no RPC clients." % requestType
     self.log.error( errMsg )
-    return S_ERROR( errMsg )
+    return S_ERROR( "RequestClient." % errMsg )
 
 
   def serveRequest( self, requestType = "", url = "" ):
@@ -282,15 +282,15 @@ class RequestClient( Client ):
         urlDict[thisURL] = {}
         res = requestRPCClient.getDBSummary()
         if res["OK"]:
-          self.log.info( "RequestClient.getDBSummary: Succeded getting request summary at %s" % thisURL)
+          self.log.info( "getDBSummary: Succeded getting request summary at %s" % thisURL )
           urlDict[url] = res["Value"]
         else:
-          errMsg = "RequestClient.getDBSummary: Failed getting request summary at %s: %s" % ( thisURL, res["Message"] ) 
+          errMsg = "getDBSummary: Failed getting request summary at %s: %s" % ( thisURL, res["Message"] )
           self.log.error( errMsg )
     except Exception, error:
-      errMsg = "RequestClient.getDBSummary: Exception while getting summary: %s" % str(error)
+      errMsg = "getDBSummary: Exception while getting summary: %s" % str( error )
       self.log.exception( errMsg )
-      return S_ERROR( errMsg )
+      return S_ERROR( "RequestClient.%s" % errMsg )
     return S_OK( urlDict )
 
   def getDigest( self, requestName, url = "" ):
@@ -302,8 +302,8 @@ class RequestClient( Client ):
     """
     for requestRPCClient in self.requestRPCClients( url, ["central"] ):
       return requestRPCClient.getDigest( requestName )
-    return S_ERROR("RequestClient.getDigest: no RPC clients.")
-    
+    return S_ERROR( "RequestClient.getDigest: no RPC clients." )
+
   def getCurrentExecutionOrder( self, requestName, url = "" ):
     """ Get the request execution order given a request name.
 
@@ -314,7 +314,7 @@ class RequestClient( Client ):
     for requestRPCClient in self.requestRPCClients( url, ["central"] ):
       return requestRPCClient.getCurrentExecutionOrder( requestName )
     return S_ERROR( "RequestClient.getCurrentExecutionOrder: no RPC clients." )
-    
+
   def getRequestStatus( self, requestName, url = "" ):
     """ Get the request status given a request name.
 
@@ -365,41 +365,41 @@ class RequestClient( Client ):
       if subRequestStatus == "Done":
         res = self.setRequestStatus( requestName, "Done", url )
         if not res["OK"]:
-          self.log.error( "RequestClient.finalizeRequest: Failed to set request status", url ) 
+          self.log.error( "finalizeRequest: Failed to set request status", url )
         # the request is completed, update the corresponding job status
         if jobID:
           monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
           res = monitorServer.getJobPrimarySummary( int( jobID ) )
           if not res["OK"] or not res["Value"]:
-            self.log.error( "RequestClient.finalizeRequest: Failed to get job status" )
+            self.log.error( "finalizeRequest: Failed to get job status" )
           else:
             jobStatus = res["Value"]["Status"]
             jobMinorStatus = res["Value"]["MinorStatus"]
             if jobMinorStatus == "Pending Requests":
               if jobStatus == "Completed":
-                self.log.info( "RequestClient.finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
+                self.log.info( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
                 res = stateServer.setJobStatus( jobID, "Done", "Requests done", "" )
                 if not res["OK"]:
                   self.log.error( "finalizeRequest: Failed to set job status" )
               elif jobStatus == "Failed":
-                self.log.info( "RequestClient.finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
+                self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
                 res = stateServer.setJobStatus( jobID, "", "Requests done", "" )
                 if not res["OK"]:
-                  self.log.error( "RequestClient.finalizeRequest: Failed to set job status" )
+                  self.log.error( "finalizeRequest: Failed to set job status" )
     else:
-      self.log.error( "RequestClient.finalizeRequest: failed to get request status at", url )
+      self.log.error( "finalizeRequest: failed to get request status at", url )
 
     # update the job pending request digest in any case since it is modified
-    self.log.info( "RequestClient.finalizeRequest: Updating request digest for job %d" % jobID )
+    self.log.info( "finalizeRequest: Updating request digest for job %d" % jobID )
     digest = self.getDigest( requestName, url )
     if digest["OK"]:
       digest = digest["Value"]
       self.log.verbose( digest )
       res = stateServer.setJobParameter( jobID, "PendingRequest", digest )
       if not res["OK"]:
-        self.log.error( "RequestClient.finalizeRequest: Failed to set job parameter" )
+        self.log.error( "finalizeRequest: Failed to set job parameter" )
     else:
-      self.log.error( "RequestClient.finalizeRequest: Failed to get request digest for %s: %s" % ( requestName, 
+      self.log.error( "finalizeRequest: Failed to get request digest for %s: %s" % ( requestName,
                                                                                                    digest["Message"] ) )
 
     return S_OK()
