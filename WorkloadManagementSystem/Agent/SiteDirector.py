@@ -643,6 +643,14 @@ EOF
           stampedPilotRefs = list( pilotRefs )
           break
 
+      result = ce.isProxyValid()
+      if not result['OK']:
+        result = gProxyManager.getPilotProxyFromDIRACGroup( self.genericPilotDN, self.genericPilotGroup, 600 )
+        if not result['OK']:
+          return result
+        self.proxy = result['Value']
+        ce.setProxy( self.proxy, 500 )
+
       result = ce.getJobStatus( stampedPilotRefs )
       if not result['OK']:
         self.log.error( 'Failed to get pilots status from CE: %s' % result['Message'] )
