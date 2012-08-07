@@ -200,7 +200,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         rDict = result['Value']
         for compType in rDict:
           for system in rDict[compType]:
-            for component in rDict[compType][system]:
+            components = rDict[compType][system].keys()
+            components.sort()
+            for component in components:
               record = []
               if rDict[compType][system][component]['Installed']:
                 module = str( rDict[compType][system][component]['Module'] )
