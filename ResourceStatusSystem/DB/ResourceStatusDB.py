@@ -34,7 +34,8 @@ class ResourceStatusDB( object ):
                      'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
                      'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
                     },
-                    'PrimaryKey' : [ 'Name', 'StatusType', 'ElementType' ]              
+                    #FIXME: elementType is needed to be part of the key ??
+                    'PrimaryKey' : [ 'Name', 'StatusType' ]#, 'ElementType' ]              
                                     }
     
   _tablesLike[ 'ElementWithID' ]       = { 'Fields' : 
