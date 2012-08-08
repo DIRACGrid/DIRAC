@@ -7,10 +7,11 @@
 
 __RCSID__ = '$Id:  $'
 
-from DIRAC                                import gLogger, S_OK
-from DIRAC.ResourceStatusSystem.Client    import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client    import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, RssConfiguration
+from DIRAC                                                 import gLogger, S_OK
+from DIRAC.ResourceStatusSystem.Client                     import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client                     import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Utilities                  import CSHelpers
+from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 class Synchronizer( object ):
   
@@ -23,6 +24,8 @@ class Synchronizer( object ):
       self.rStatus     = ResourceStatusClient.ResourceStatusClient()
     if rManagement is None:   
       self.rManagement = ResourceManagementClient.ResourceManagementClient()
+      
+    self.rssConfig = RssConfiguration()  
   
   def sync( self ):
     '''
@@ -83,7 +86,7 @@ class Synchronizer( object ):
         if not deleteQuery[ 'OK' ]:
           return deleteQuery         
 
-      statusTypes = RssConfiguration.getValidStatusTypes()[ 'Site' ]
+      statusTypes = self.rssConfig.getConfigStatusType( domainName )
 
       sitesTuple = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName, 
                                                      meta = { 'columns' : [ 'name', 'statusType' ] } ) 
@@ -193,7 +196,8 @@ class Synchronizer( object ):
       if not deleteQuery[ 'OK' ]:
         return deleteQuery            
     
-    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    statusTypes = self.rssConfig.getConfigStatusType( 'CE' )
 
     cesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
                                                  elementType = 'CE', 
@@ -258,7 +262,8 @@ class Synchronizer( object ):
       if not deleteQuery[ 'OK' ]:
         return deleteQuery            
     
-    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    statusTypes = self.rssConfig.getConfigStatusType( 'Catalog' )
 
     sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
                                                  elementType = 'Catalog', 
@@ -323,7 +328,8 @@ class Synchronizer( object ):
       if not deleteQuery[ 'OK' ]:
         return deleteQuery            
     
-    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    statusTypes = self.rssConfig.getConfigStatusType( 'FTS' )
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
     sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
                                                  elementType = 'FTS', 
@@ -388,7 +394,8 @@ class Synchronizer( object ):
       if not deleteQuery[ 'OK' ]:
         return deleteQuery            
     
-    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    statusTypes = self.rssConfig.getConfigStatusType( 'StorageElement' )
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
     sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
                                                  elementType = 'StorageElement', 
@@ -453,7 +460,8 @@ class Synchronizer( object ):
       if not deleteQuery[ 'OK' ]:
         return deleteQuery            
     
-    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
+    statusTypes = self.rssConfig.getConfigStatusType( 'Queue' )
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
 
     queueTuple = self.rStatus.selectStatusElement( 'Node', 'Status', 
                                                    elementType = 'Queue', 

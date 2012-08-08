@@ -1,4 +1,4 @@
-# $HeadURL $
+# $HeadURL:  $
 ''' RssConfiguration
 
   Module that collects utility functions.
@@ -10,9 +10,11 @@ from DIRAC.Core.Utilities                                import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ResourceStatusSystem.Utilities                import Utils
 
+__RCSID__ = '$Id:  $'
+
 ## RssConfiguration config path ################################################
 
-rssConfigPath = 'RSSConfiguration2'
+__rssConfigPath = 'RSSConfiguration2'
 
 ## RssConfiguration ############################################################
 
@@ -39,17 +41,17 @@ class RssConfiguration:
 
   def getConfigRecordLogs( self, default = 'Active' ):
     
-    return self.opsHelper.getValue( '%s/Config/RecordLogs' % rssConfigPath, default )
+    return self.opsHelper.getValue( '%s/Config/RecordLogs' % __rssConfigPath, default )
 
   def getConfigState( self, default = 'InActive' ):
     
-    return self.opsHelper.getValue( '%s/Config/State' % rssConfigPath, default )
+    return self.opsHelper.getValue( '%s/Config/State' % __rssConfigPath, default )
   
   def getConfigStatusType( self, elementType = None ):
     
     DEFAULTS = ( 'all', )
     
-    res = self.opsHelper.getOptionsDict( '%s/Config/StatusTypes' % rssConfigPath )
+    res = self.opsHelper.getOptionsDict( '%s/Config/StatusTypes' % __rssConfigPath )
     
     if res[ 'OK' ]:
           
@@ -65,7 +67,7 @@ class RssConfiguration:
 
 def getInspectionFreqs():
   '''
-  Returns from the OperationsHelper: <rssConfigPath>/InspectionFreqs
+  Returns from the OperationsHelper: <__rssConfigPath>/InspectionFreqs
   '''
   
   #result = Operations().getValue( 'RSSConfiguration/Logs/Record' )
@@ -79,40 +81,40 @@ def getInspectionFreqs():
 
 def getPolicies():
   '''
-  Returns from the OperationsHelper: <rssConfigPath>/Policies
+  Returns from the OperationsHelper: <__rssConfigPath>/Policies
   '''
   
-  return Utils.getCSTree( '%s/Policies' % rssConfigPath )
+  return Utils.getCSTree( '%s/Policies' % __rssConfigPath )
 
 ## RssConfiguration/PolicyActions ##############################################
 
 def getPolicyActions():
   '''
-  Returns from the OperationsHelper: <rssConfigPath>/PolicyActions
+  Returns from the OperationsHelper: <__rssConfigPath>/PolicyActions
   '''
   
-  return Utils.getCSTree( '%s/PolicyActions' % rssConfigPath )
+  return Utils.getCSTree( '%s/PolicyActions' % __rssConfigPath )
 
 ## RssConfiguration/Notifications ##############################################
 
 def getNotifications():
   '''
-  Returns from the OperationsHelper: <rssConfigPath>/Notification
+  Returns from the OperationsHelper: <__rssConfigPath>/Notification
   '''
   
-  return Utils.getCSTree( '%s/Notification' % rssConfigPath )
+  return Utils.getCSTree( '%s/Notification' % __rssConfigPath )
   
 ## RssConfiguration/GeneralConfig ##############################################
 
 def getValidElements():
   '''
-  Returns from the OperationsHelper: <rssConfigPath>/GeneralConfig/ValidElements
+  Returns from the OperationsHelper: <__rssConfigPath>/GeneralConfig/ValidElements
   '''
   #FIXME: no defaults. If it fails, I want to know it.
   #FIXME: return S_OK
   _DEFAULTS = ( 'Site', 'Resource', 'Node' )
   
-  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % rssConfigPath )
+  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % __rssConfigPath )
   if result is not None:
     return List.fromChar( result )
     #return Utils.getTypedList( result )
@@ -120,13 +122,13 @@ def getValidElements():
 
 def getValidStatus():
   '''
-  Returns from the OperationsHelper: <rssConfigPath>/GeneralConfig/Status
+  Returns from the OperationsHelper: <__rssConfigPath>/GeneralConfig/Status
   '''
   
   #FIXME: DEFAULTS hardcoded ??
   DEFAULTS = ( 'Banned', 'Probing', 'Bad', 'Active' )
   return S_OK( DEFAULTS )  
-#  result = Utils.getCSTree( '%s/GeneralConfig' % rssConfigPath )
+#  result = Utils.getCSTree( '%s/GeneralConfig' % __rssConfigPath )
 #  if not result[ 'OK' ]:
 #    return result
 #  result = result[ 'Value' ]
@@ -142,42 +144,42 @@ def getValidStatus():
 #  return DEFAULTS
 
 
-def getValidStatusTypes():
-  '''
-  Returns from the OperationsHelper: <rssConfigPath>/GeneralConfig/Resources
-  '''
-  #FIXME: no defaults. If it fails, I want to know it.
-  
-  #FIXME: return S_OK
-  
-  DEFAULTS = { 
-               'Site'          : ( '', ),
-               'Resource'      : ( '', ),
-               'Node'          : ( '', )
-#               'StorageElement': [ 'ReadAccess', 'WriteAccess', 
-#                                   'RemoveAccess', 'CheckAccess' ]
-              }
-  
-  #FIXME: it does not work with empty configuration
-#  opHelper = Operations()
+#def getValidStatusTypes():
+#  '''
+#  Returns from the OperationsHelper: <__rssConfigPath>/GeneralConfig/Resources
+#  '''
+#  #FIXME: no defaults. If it fails, I want to know it.
 #  
-#  sections = opHelper.getSections( '%s/GeneralConfig/Resources' % rssConfigPath )
-#  if not sections[ 'OK' ]:
-#    return DEFAULTS
+#  #FIXME: return S_OK
 #  
-#  result = {}
-#  for section in sections[ 'Value' ]:
-#    res = opHelper.getValue( '%s/GeneralConfig/Resources/%s/StatusType' % ( rssConfigPath, section ) )
-#    if res is None:
-#      if DEFAULTS.has_key( section ):
-#        result[ section ] = DEFAULTS[ section ]
-#      else:
-#        result[ section ] = []  
-#    else:
-#      result[ section ] = Utils.getTypedList( res )
-#      
-#  return result     
-  return DEFAULTS  
+#  DEFAULTS = { 
+#               'Site'          : ( '', ),
+#               'Resource'      : ( '', ),
+#               'Node'          : ( '', )
+##               'StorageElement': [ 'ReadAccess', 'WriteAccess', 
+##                                   'RemoveAccess', 'CheckAccess' ]
+#              }
+#  
+#  #FIXME: it does not work with empty configuration
+##  opHelper = Operations()
+##  
+##  sections = opHelper.getSections( '%s/GeneralConfig/Resources' % __rssConfigPath )
+##  if not sections[ 'OK' ]:
+##    return DEFAULTS
+##  
+##  result = {}
+##  for section in sections[ 'Value' ]:
+##    res = opHelper.getValue( '%s/GeneralConfig/Resources/%s/StatusType' % ( __rssConfigPath, section ) )
+##    if res is None:
+##      if DEFAULTS.has_key( section ):
+##        result[ section ] = DEFAULTS[ section ]
+##      else:
+##        result[ section ] = []  
+##    else:
+##      result[ section ] = Utils.getTypedList( res )
+##      
+##  return result     
+#  return DEFAULTS  
 
 #def getValidPolicyResult():
 #  '''
