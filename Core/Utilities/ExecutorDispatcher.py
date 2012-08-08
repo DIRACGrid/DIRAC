@@ -349,6 +349,8 @@ class ExecutorDispatcher:
 
   def __doPeriodicStuff( self ):
     self.__unfreezeTasks()
+    for eType in self.__execTypes:
+      self.__fillExecutors( eType )
     if not self.__monitor:
       return
     eTypes = self.__execTypes
