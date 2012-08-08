@@ -10,7 +10,11 @@ from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGette
 __RCSID__ = '$Id:  $'
 
 class SMSAction( BaseAction ):
-
+  '''
+    Action that sends a brief SMS to the user with a few keywords that will make
+    him run to his or her office.
+  '''
+  
   def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
     
     super( SMSAction, self ).__init__( decissionParams, enforcementResult, 
@@ -18,7 +22,10 @@ class SMSAction( BaseAction ):
     self.actionName = 'SMSAction'
     
   def run( self ):
-    
+    '''
+      Checks it has the parameters it needs and tries to send an sms to the users
+      that apply.
+    '''    
     # Minor security checks
     
     element = self.decissionParams[ 'element' ]

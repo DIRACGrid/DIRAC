@@ -10,6 +10,9 @@ from DIRAC import gLogger
 __RCSID__  = '$Id:  $'
 
 class BaseAction( object ):
+  '''
+    Base class for all actions. It defines a constructor an a run main method.
+  '''
   
   def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients ):
 
@@ -39,6 +42,9 @@ class BaseAction( object ):
     self.clients             = clients
 
   def run( self ):
+    '''
+      Method to be over written by the real actions
+    '''
     
     gLogger.info( '%s: you may want to overwrite this method' % self.actionName )
 

@@ -11,7 +11,7 @@ __RCSID__ = '$Id:  $'
 
 class LogPolicyResultAction( BaseAction ):
   '''
-    Action that register on the database a new entry per policy result in the
+    Action that registers on the database a new entry per policy result in the
     list singlePolicyResults.
   '''
 

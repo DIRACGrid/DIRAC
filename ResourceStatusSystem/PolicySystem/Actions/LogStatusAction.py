@@ -11,7 +11,7 @@ __RCSID__ = '$Id:  $'
 
 class LogStatusAction( BaseAction ):
   '''
-    Action that register on the database a new entry on the <element>Status table.
+    Action that registers on the database a new entry on the <element>Status table.
     It adds or modifies if the record exists on the table.
   '''
 

@@ -10,7 +10,11 @@ from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGette
 __RCSID__ = '$Id:  $'
 
 class EmailAction( BaseAction ):
-
+  '''
+    Action that sends an email with the information concerning the status and 
+    the policies run.
+  '''
+  
   def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
     
     super( EmailAction, self ).__init__( decissionParams, enforcementResult, 
@@ -18,6 +22,10 @@ class EmailAction( BaseAction ):
     self.actionName = 'EmailAction'
 
   def run( self ):
+    '''
+      Checks it has the parameters it needs and tries to send an email to the users
+      that apply.
+    '''    
     
     # Minor security checks
     
