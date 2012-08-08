@@ -29,7 +29,6 @@ def status_of_value( value ):
   To be refactored
   
   '''
-  #FIXME: Hack: rely on the order of values in ValidStatus
    
   for statusName, statusValue in statesInfo.items():
     

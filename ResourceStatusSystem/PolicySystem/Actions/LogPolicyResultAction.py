@@ -10,6 +10,10 @@ from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseActio
 __RCSID__ = '$Id:  $'
 
 class LogPolicyResultAction( BaseAction ):
+  '''
+    Action that register on the database a new entry per policy result in the
+    list singlePolicyResults.
+  '''
 
   def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
     
@@ -23,6 +27,10 @@ class LogPolicyResultAction( BaseAction ):
       self.rmClient = ResourceManagementClient()
 
   def run( self ):
+    '''
+      Checks it has the parameters it needs and tries to addOrModify in the 
+      database.
+    '''
   
     element = self.decissionParams[ 'element' ]
     if element is None:

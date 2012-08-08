@@ -10,6 +10,10 @@ from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseActio
 __RCSID__ = '$Id:  $'
 
 class LogStatusAction( BaseAction ):
+  '''
+    Action that register on the database a new entry on the <element>Status table.
+    It adds or modifies if the record exists on the table.
+  '''
 
   def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None):
     
@@ -23,7 +27,10 @@ class LogStatusAction( BaseAction ):
       self.rsClient = ResourceStatusClient()
 
   def run( self ):
-    
+    '''
+      Checks it has the parameters it needs and tries to addOrModify in the 
+      database.
+    '''
     # Minor security checks
     
     element = self.decissionParams[ 'element' ]

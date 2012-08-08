@@ -69,15 +69,12 @@ def getDomainSites():
     
     sites[ domainName ] = domainSites  
 
-  # Remove duplicated ( just in case )
-  # sites = list( set ( sites ) )
   return S_OK( sites )
 
 def getResources():
   '''
     Gets all resources
   '''
-  #FIXME: to be implemented, and updated the syncrhonzer.
   
   resources = []
   
@@ -103,7 +100,6 @@ def getNodes():
   '''
     Gets all nodes
   '''
-  #FIXME: to be implemented, and updated the syncrhonzer.
   
   nodes = []
   
