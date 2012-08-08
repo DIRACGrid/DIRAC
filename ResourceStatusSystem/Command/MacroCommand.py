@@ -12,8 +12,14 @@ from DIRAC.ResourceStatusSystem.Command.Command import Command
 __RCSID__ = '$Id:  $'
 
 class MacroCommand( Command ):
+  '''
+  As of today, it is not used.
+  '''
   
   def __init__( self ):
+    
+    super( MacroCommand, self ).__init__()
+    
     self.commands = None
     self.args     = None
     self.clients  = None

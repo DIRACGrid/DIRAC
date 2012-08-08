@@ -3,13 +3,13 @@
   
 '''
 
-from DIRAC.ResourceStatusSystem.Command.MacroCommand import MacroCommand
+#from DIRAC.ResourceStatusSystem.Command.MacroCommand import MacroCommand
 
 __RCSID__ = '$Id:  $'
 
-class TransferQualityOnSECommand( MacroCommand ):
-  
-  def doCommand(self):
+#class TransferQualityOnSECommand( MacroCommand ):
+#  
+#  def doCommand(self):
     #da decidere quali comandi
 #    from DIRAC.ResourceStatusSystem.Command.DIRACAccounting_Command import *
 #    command1 = DA1()
@@ -18,7 +18,7 @@ class TransferQualityOnSECommand( MacroCommand ):
 #    self.setCommands([command1, command2])
 #    
 #    return super(TransferQualityOnSE_Command, self).doCommand()
-    pass
+#    pass
 
 #from DIRAC.ResourceStatusSystem.Command.Command import Command
 #  
