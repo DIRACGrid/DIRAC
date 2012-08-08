@@ -54,19 +54,10 @@ class ResourceStatus( object ):
     
     '''
   
-    try:
-   
-      if self.__getMode():
-        return self.__getRSSStorageElementStatus( elementName, statusType, default )
-      else:
-        return self.__getCSStorageElementStatus( elementName, statusType, default )
-
-    except Exception, e:
-    
-      _msg = "Error getting StorageElement '%s', with statusType '%s'."
-      gLogger.error( _msg % ( elementName, statusType ) )
-      gLogger.exception( e )
-      return S_ERROR( _msg % ( elementName, statusType ) )  
+    if self.__getMode():
+      return self.__getRSSStorageElementStatus( elementName, statusType, default )
+    else:
+      return self.__getCSStorageElementStatus( elementName, statusType, default )
 
   def setStorageElementStatus( self, elementName, statusType, status, reason = None,
                                tokenOwner = None ):
@@ -85,19 +76,10 @@ class ResourceStatus( object ):
           S_OK( 'Unknown' ) 
     '''
   
-    try:
-    
-      if self.__getMode():
-        return self.__setRSSStorageElementStatus( elementName, statusType, status, reason, tokenOwner )
-      else:
-        return self.__setCSStorageElementStatus( elementName, statusType, status )
-
-    except Exception, e:
-    
-      _msg = "Error setting StorageElement '%s' status '%s', with statusType '%s'."
-      gLogger.error( _msg % ( elementName, status, statusType ) )
-      gLogger.exception( e )
-      return S_ERROR( _msg % ( elementName, status, statusType ) ) 
+    if self.__getMode():
+      return self.__setRSSStorageElementStatus( elementName, statusType, status, reason, tokenOwner )
+    else:
+      return self.__setCSStorageElementStatus( elementName, statusType, status )
 
 ################################################################################
 
@@ -110,10 +92,12 @@ class ResourceStatus( object ):
       # We are using the CS, we do not care about the cache.
       return { 'OK' : False, 'Message' : 'RSS flag is inactive' }
     
-    meta = { 'columns' : [ 'StorageElementName','StatusType','Status' ] }
-  
+
+    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }   
+    rawCache  = self.rssClient.selectStatusElement( 'Resource', 'Status', 
+                                                    elementType = 'StorageElement', 
+                                                    meta = meta )  
     #This returns S_OK( [['StatusType1','Status1'],['StatusType2','Status2']...]
-    rawCache = self.rssClient.getElementStatus( 'StorageElement', meta = meta )
     if not rawCache[ 'OK' ]:
       return rawCache
     
@@ -219,15 +203,14 @@ class ResourceStatus( object ):
     #Humm, seems cache did not work     
     gLogger.info( 'Cache miss with %s %s' % ( elementName, statusType ) )          
     
-    meta        = { 'columns' : [ 'StorageElementName','StatusType','Status' ] }
-    kwargs      = { 
-                    'elementName' : elementName,
-                    'statusType'  : statusType, 
-                    'meta'        : meta 
-                  }
-  
+    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
+
     #This returns S_OK( [['StatusType1','Status1'],['StatusType2','Status2']...]
-    res = self.rssClient.getElementStatus( 'StorageElement', **kwargs )
+    res = self.rssClient.selectStatusElement( 'Resource', 'Status', 
+                                              elementType = 'StorageElement',
+                                              name = elementName,
+                                              statusType = statusType, 
+                                              meta = meta )      
       
     if res[ 'OK' ] and res[ 'Value' ]:
       return S_OK( getDictFromList( res[ 'Value' ] ) )
@@ -311,17 +294,13 @@ class ResourceStatus( object ):
     '''
   
     expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
-  
-    kwargs = {
-              'status'          : status, 
-              'reason'          : reason,
-              'tokenOwner'      : tokenOwner, 
-              'tokenExpiration' : expiration 
-              }
-    
+      
     self.seCache.acquireLock()
     
-    res = self.rssClient.modifyElementStatus( 'StorageElement', elementName, statusType, **kwargs )
+    res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName, 
+                                              statusType = statusType, status = status,
+                                              reason = reason, tokenOwner = tokenOwner,
+                                              tokenExpiration = expiration )
     if res[ 'OK' ]:
       self.seCache.refreshCacheAndHistory()
     
@@ -329,7 +308,7 @@ class ResourceStatus( object ):
     self.seCache.releaseLock()
     
     if not res[ 'OK' ]:
-      _msg = 'Error updating StorageElement (%s,%s,%s)' % ( elementName, statusType, str( kwargs ))
+      _msg = 'Error updating StorageElement (%s,%s,%s)' % ( elementName, statusType, status )
       gLogger.warn( 'RSS: %s' % _msg )
     
     return res

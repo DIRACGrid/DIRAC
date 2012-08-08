@@ -12,6 +12,8 @@ import time
 from DIRAC                          import S_OK, S_ERROR 
 from DIRAC.Core.Utilities.DictCache import DictCache
 
+__RCSID__  = '$Id:  $'
+
 class RSSCache( object ):
   '''
     Cache with purgeThread integrated
