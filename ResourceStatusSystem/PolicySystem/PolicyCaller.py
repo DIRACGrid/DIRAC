@@ -6,9 +6,9 @@
   
 '''
 
-from DIRAC                                            import S_ERROR
-from DIRAC.ResourceStatusSystem.Utilities             import Utils
-from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
+from DIRAC                                import S_ERROR
+from DIRAC.ResourceStatusSystem.Utilities import Utils
+from DIRAC.ResourceStatusSystem.Command   import CommandCaller
 
 __RCSID__  = '$Id: $'
 
@@ -22,7 +22,7 @@ class PolicyCaller:
       Constructor
     '''
 
-    self.cCaller = CommandCaller()  
+    self.cCaller = CommandCaller  
     
     self.clients = {}
     if clients is not None: 
