@@ -16,7 +16,7 @@
 
 __RCSID__ = '$Id:  $'
 
-policiesMeta = {
+POLICIESMETA = {
             
   'DTOnGoingOnly' :
     {

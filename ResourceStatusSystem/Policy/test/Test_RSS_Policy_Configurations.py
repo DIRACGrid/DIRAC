@@ -34,9 +34,9 @@ class Configurations_Success( Configurations_TestCase ):
     ''' tests that the configuration does not have any funny key
     '''
     
-    self.assertEqual( True, hasattr( self.moduleTested, 'policiesMeta' ) )
+    self.assertEqual( True, hasattr( self.moduleTested, 'POLICIESMETA' ) )
     
-    policiesMeta = self.moduleTested.policiesMeta
+    policiesMeta = self.moduleTested.POLICIESMETA
     
     for _policyName, policyMeta in policiesMeta.items():
       

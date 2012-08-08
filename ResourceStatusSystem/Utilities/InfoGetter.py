@@ -20,7 +20,7 @@ class InfoGetter:
   def __init__( self ):
     
     configModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.Configurations' )
-    self.policies = copy.deepcopy( configModule.policiesMeta )
+    self.policies = copy.deepcopy( configModule.POLICIESMETA )
 
   def sanitizeDecissionParams( self, decissionParams ):
     '''
