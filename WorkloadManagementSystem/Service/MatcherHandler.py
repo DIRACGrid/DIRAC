@@ -53,9 +53,9 @@ def initializeMatcherHandler( serviceInfo ):
                              'Matching', "secs" , gMonitor.OP_MEAN, 300 )
   gMonitor.registerActivity( 'matchTaskQueues', "Task queues checked per job",
                              'Matching', "task queues" , gMonitor.OP_MEAN, 300 )
-  gMonitor.registerActivity( 'matchesDone', "Job Matches",
+  gMonitor.registerActivity( 'matchesDone', "Job Match Request",
                              'Matching', "matches" , gMonitor.OP_RATE, 300 )
-  gMonitor.registerActivity( 'matchesOK', "Job Matches",
+  gMonitor.registerActivity( 'matchesOK', "Matched jobs",
                              'Matching', "matches" , gMonitor.OP_RATE, 300 )
   gMonitor.registerActivity( 'numTQs', "Number of Task Queues",
                              'Matching', "tqsk queues" , gMonitor.OP_MEAN, 300 )
