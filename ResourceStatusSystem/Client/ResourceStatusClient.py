@@ -408,7 +408,7 @@ class ResourceStatusClient( object ):
       with the right table name. 
     '''
     # Functions we can call, just a light safety measure.
-    _gateFunctions = [ 'insert', 'update', 'select', 'delete', 'addOrModify', 'addIfNotThere' ] 
+    _gateFunctions = [ 'insert', 'update', 'select', 'delete', 'addOrModify', 'modify', 'addIfNotThere' ] 
     if not queryType in _gateFunctions:
       return S_ERROR( '"%s" is not a proper gate call' % queryType )
     

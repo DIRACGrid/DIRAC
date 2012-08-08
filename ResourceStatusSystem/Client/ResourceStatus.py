@@ -227,8 +227,11 @@ class ResourceStatus( object ):
       defList = [ [ el, statusType, default ] for el in elementName ]
       return S_OK( getDictFromList( defList ) )
 
+    if elementName == [ None ]:
+      elementName = [ '' ]
+
     _msg = "StorageElement '%s', with statusType '%s' is unknown for RSS."
-    return S_ERROR( _msg % ( elementName, statusType ) )
+    return S_ERROR( _msg % ( ','.join( elementName ), statusType ) )
 
   def __getCSStorageElementStatus( self, elementName, statusType, default ):
     '''
