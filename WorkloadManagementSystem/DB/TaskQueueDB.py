@@ -416,7 +416,6 @@ class TaskQueueDB( DB ):
       return result
     return S_OK()
 
-
   def __generateTQFindSQL( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
     """
       Find a task queue that has exactly the same requirements
@@ -461,10 +460,6 @@ class TaskQueueDB( DB ):
     result = self._update( sqlCmd, conn = connObj )
     if not result[ 'OK' ]:
       return result
-    numDisabled = result[ 'Value' ]
-    print "DISAVBLED", numDisabled
-    if not numDisabled:
-      return S_OK( { 'found' : False } )
     sqlCmd = "SELECT `tq_TaskQueues`.TQId FROM `tq_TaskQueues` WHERE"
     sqlCmd = "%s  %s AND Enabled = False" % ( sqlCmd, sqlCond )
     result = self._query( sqlCmd, conn = connObj )
