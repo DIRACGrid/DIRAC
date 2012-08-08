@@ -68,6 +68,10 @@ class CachedJobState( object ):
     if not result[ 'OK' ]:
       self.cleanState()
       return result
+    if not result[ 'Value' ]:
+      self.cleanState()
+      return S_ERROR( "Initial state was different" )
+    newState = result[ 'Value' ]
     self.__jobLog = []
     self.__dirtyKeys.clear()
     #Save manifest
@@ -75,6 +79,9 @@ class CachedJobState( object ):
       result = self.__jobState.setManifest( self.__manifest )
       if not result[ 'OK' ]:
         self.cleanState()
+        for i in range( 5 ):
+          if self.__jobState.rescheduleJob()[ 'OK' ]:
+            break
         return result
       self.__manifest.clearDirty()
     #Insert into TQ
@@ -82,10 +89,13 @@ class CachedJobState( object ):
       result = self.__jobState.insertIntoTQ()
       if not result[ 'OK' ]:
         self.cleanState()
+        for i in range( 5 ):
+          if self.__jobState.rescheduleJob()[ 'OK' ]:
+            break
         return result
       self.__insertIntoTQ = False
 
-    self.__initState = result[ 'Value' ]
+    self.__initState = newState
     self.__lastValidState = time.time()
     return S_OK( )
 

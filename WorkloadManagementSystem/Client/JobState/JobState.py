@@ -50,6 +50,10 @@ class JobState( object ):
       self.__getRPCFunctor = getRPCFunctor
     else:
       self.__getRPCFunctor = RPCClient
+    self.checkDBAccess()
+
+  @classmethod
+  def checkDBAccess( cls ):
     #Init DB if there
     if not JobState.__db.checked:
       JobState.__db.checked = True
@@ -151,7 +155,7 @@ class JobState( object ):
     if not result[ 'OK' ]:
       return result
     if not result[ 'Value' ] == initialState:
-      return S_ERROR( "Initial state was different. Expected %s Received %s" % ( initialState, result[ 'Value' ] ) )
+      return S_OK( False )
     gLogger.verbose( "Job %s: About to execute trace. Current state %s" % ( self.__jid, initialState ) )
 
     data = { 'att': [], 'jobp': [], 'optp': [] }
@@ -418,6 +422,39 @@ class JobState( object ):
     return JobState.__db.job.getJobOptParameters( self.__jid, nameList )
 
 #Other
+
+  @classmethod
+  def cleanTaskQueues( cls ):
+    result = JobState.__db.tq.enableAllTaskQueues()
+    if not result[ 'OK' ]:
+      return result
+    result = JobState.__db.tq.findOrphanJobs()
+    if not result[ 'OK' ]:
+      return result
+    for jid in result[ 'Value' ]:
+      result = JobState.__db.tq.deleteJob( jid )
+      if not result[ 'OK' ]:
+        gLogger.error( "Cannot delete from TQ job %s: %s" % ( jid, result[ 'Message' ] ) )
+        continue
+      result = JobState.__db.job.rescheduleJob( jid )
+      if not result[ 'OK' ]:
+        gLogger.error( "Cannot reschedule in JobDB job %s: %s" % ( jid, result[ 'Message' ] ) )
+        continue
+      JobState.__db.log.addLoggingRecord( jid, "Received", "", "", source = source )
+    return S_OK()
+
+
+  right_resetJob = RIGHT_RESCHEDULE
+  @RemoteMethod
+  def rescheduleJob( self, source = "" ):
+    result = JobState.__db.tq.deleteJob( self.__jid )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot delete from TQ job %s: %s" % ( self.__jid, result[ 'Message' ] ) )
+    result = JobState.__db.job.rescheduleJob( self.__jid )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot reschedule in JobDB job %s: %s" % ( self.__jid, result[ 'Message' ] ) )
+    JobState.__db.log.addLoggingRecord( self.__jid, "Received", "", "", source = source )
+    return S_OK()
 
   right_resetJob = RIGHT_RESET
   @RemoteMethod
