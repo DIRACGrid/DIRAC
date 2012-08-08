@@ -51,8 +51,6 @@ def initializeMatcherHandler( serviceInfo ):
 
   gMonitor.registerActivity( 'matchTime', "Job matching time",
                              'Matching', "secs" , gMonitor.OP_MEAN, 300 )
-  gMonitor.registerActivity( 'matchTaskQueues', "Task queues checked per job",
-                             'Matching', "task queues" , gMonitor.OP_MEAN, 300 )
   gMonitor.registerActivity( 'matchesDone', "Job Match Request",
                              'Matching', "matches" , gMonitor.OP_RATE, 300 )
   gMonitor.registerActivity( 'matchesOK', "Matched jobs",
@@ -62,7 +60,7 @@ def initializeMatcherHandler( serviceInfo ):
 
   gTaskQueueDB.recalculateTQSharesForAll()
   gThreadScheduler.addPeriodicTask( 120, gTaskQueueDB.recalculateTQSharesForAll )
-  gThreadScheduler.addPeriodicTask( 120, sendNumTaskQueues )
+  gThreadScheduler.addPeriodicTask( 60, sendNumTaskQueues )
 
   sendNumTaskQueues()
 

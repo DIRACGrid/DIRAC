@@ -13,7 +13,7 @@ from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities import List, DictCache
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
 
@@ -37,12 +37,23 @@ class TaskQueueDB( DB ):
     self.__maxMatchRetry = 3
     self.__jobPriorityBoundaries = ( 0.001, 10 )
     self.__groupShares = {}
+    self.__deleteTQWithDelay = DictCache( self.__deleteTQIfEmpty )
     self.__opsHelper = Operations()
     self.__ensureInsertionIsSingle = False
     self.__sharesCorrector = SharesCorrector( self.__opsHelper )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ] )
+
+  def enableAllTaskQueues( self ):
+    """ Enable all Task queues
+    """
+    return self.updateFields( "tq_TaskQueues", updateDict = { "Enabled" :"1" } )
+
+  def findOrphanJobs( self ):
+    """ Find jobs that are not in any task queue
+    """
+    return self._query( "select JobID from tq_Jobs WHERE TQId not in (SELECT TQId from tq_TaskQueues)" )
 
   def isSharesCorrectionEnabled( self ):
     return self.__getCSOption( "EnableSharesCorrection", False )
@@ -113,28 +124,6 @@ class TaskQueueDB( DB ):
         tablesToCreate[ tableName ] = self.__tablesDesc[ tableName ]
 
     return self._createTables( tablesToCreate )
-
-  def enableAllTaskQueues( self ):
-
-    result = self._getConnection()
-    if not result[ 'OK' ]:
-      return result
-    connObj = result[ 'Value' ]
-
-    result = self._query( 'SELECT TQId from `tq_TaskQueues`', conn = connObj )
-    if not result['OK']:
-      return result
-    for ( tqId, ) in result['Value']:
-      result = self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
-      if not result['OK']:
-        return result
-      if result['Value']:
-        continue
-      result = self.setTaskQueueState( tqId, enabled = True, connObj = connObj )
-      if not result['OK']:
-        return result
-
-    return S_OK()
 
   def getGroupsInTQs( self ):
     cmdSQL = "SELECT DISTINCT( OwnerGroup ) FROM `tq_TaskQueues`"
@@ -540,9 +529,7 @@ class TaskQueueDB( DB ):
         jobTQList = [ ( row[0], row[1] ) for row in retVal[ 'Value' ] ]
         if len( jobTQList ) == 0:
           gLogger.info( "Task queue %s seems to be empty, triggering a cleaning" % tqId )
-          result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup, connObj = connObj )
-          if not result[ 'OK' ]:
-            return result
+          self.__deleteTQWithDelay.add( tqId, 300, ( tqId, tqOwnerDN, tqOwnerGroup ) )
         while len( jobTQList ) > 0:
           jobId, tqId = jobTQList.pop( random.randint( 0, len( jobTQList ) - 1 ) )
           self.log.info( "Trying to extract job %s from TQ %s" % ( jobId, tqId ) )
@@ -746,16 +733,7 @@ class TaskQueueDB( DB ):
       return S_OK( False )
     retries = 10
     #Always return S_OK() because job has already been taken out from the TQ
-    while retries:
-      result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup, connObj = connObj )
-      if result[ 'OK' ]:
-        return S_OK( True )
-      if not result[ 'OK' ]:
-        if result[ 'Message' ].find( "try restarting transaction" ) == -1:
-          self.log.error( "Error on TQ deletion triggered by job deletion", "Job %s TQ %s : %s" % ( tqId, jobId, result[ 'Message' ] ) )
-          return S_OK( True )
-      retries -= 1
-    self.log.error( "Max retries when trying to delete TQ %s triggered by deletion of job %s" % ( tqId, jobId ) )
+    self.__deleteTQWithDelay.add( tqId, 300, ( tqId, tqOwnerDN, tqOwnerGroup ) )
     return S_OK( True )
 
   def getTaskQueueForJob( self, jobId, connObj = False ):
@@ -812,6 +790,20 @@ class TaskQueueDB( DB ):
     if len( data ) == 0:
       return S_OK( False )
     return S_OK( retVal[ 'Value' ][0] )
+
+  def __deleteTQIfEmpty( self, args ):
+    print "[ADRILETE] PRE"
+    ( tqId, tqOwnerDN, tqOwnerGroup ) = args
+    print "[ADRILETE] POST"
+    retries = 3
+    while retries:
+      retries -= 1
+      result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup )
+      if result[ 'OK' ]:
+        print "[ADRILETE] OK"        
+        return
+    gLogger.error( "Could not delete TQ %s: %s" % ( tqId, result[ 'Message' ] ) )
+
 
   def deleteTaskQueueIfEmpty( self, tqId, tqOwnerDN = False, tqOwnerGroup = False, connObj = False ):
     """
