@@ -452,34 +452,22 @@ class TaskQueueDB( DB ):
     return S_OK( " AND ".join( sqlCondList ) )
 
 
-  def __findAndDisableTaskQueue( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
+  def __findAndDisableTaskQueue( self, tqDefDict, skipDefinitionCheck = False, retries = 10, connObj = False ):
     """ Disable and find TQ
     """
-    result = self.__generateTQFindSQL( tqDefDict, skipDefinitionCheck = skipDefinitionCheck,
-                                       connObj = connObj )
-    if not result[ 'OK' ]:
-      return result
-    sqlCond = result[ 'Value' ]
-    sqlCmd = "UPDATE `tq_TaskQueues` SET Enabled = Enabled - 1 WHERE %s" % sqlCond
-    result = self._update( sqlCmd, conn = connObj )
-    if not result[ 'OK' ]:
-      return result
-    sqlCmd = "SELECT `tq_TaskQueues`.TQId FROM `tq_TaskQueues` WHERE"
-    sqlCmd = "%s %s" % ( sqlCmd, sqlCond )
-    result = self._query( sqlCmd, conn = connObj )
-    if not result[ 'OK' ]:
-      return S_ERROR( "Can't find task queue: %s" % result[ 'Message' ] )
-    tqs = [ row[0] for row in result[ 'Value' ] ]
-    if len( tqs ) == 0:
-      return S_OK( { 'found' : False } )
-    if len( tqs ) > 1:
-      gLogger.warn( "Found two task queues for the same requirements", self.__strDict( tqDefDict ) )
-      random.shuffle( tqs )
-      sqlCond = "TQId in ( %s )" % ", ".join( [ str( tqid ) for tqid in tqs[1:] ] )
-      result = self._update( "UPDATE `tq_TaskQueues` SET Enabled = Enabled + 1 WHERE %s" % sqlCond )
+    for i in range( retries ):
+      result = self.findTaskQueue( tqDefDict, skipDefinitionCheck = skipDefinitionCheck, connObj = connObj )
       if not result[ 'OK' ]:
-        gLogger.error( result[ 'Message' ] )
-    return S_OK( { 'found' : True, 'tqId' : tqs[0] } )
+        return result
+      data = result[ 'Value' ]
+      if not data[ 'found' ]:
+        return result
+      result = self._update( "UPDATE `tq_TaskQueues` SET Enabled = Enabled - 1 WHERE TQId = %d" % data[ 'tqId' ] )
+      if not result[ 'OK' ]:
+        return result
+      if result[ 'Value' ] > 0:
+        return S_OK( data )
+    return S_ERROR( "Could not disable TQ" )
 
   def findTaskQueue( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
     """
