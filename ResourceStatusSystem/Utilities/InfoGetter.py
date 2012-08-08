@@ -22,7 +22,8 @@ class InfoGetter:
     configModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.Configurations' )
     self.policies = copy.deepcopy( configModule.POLICIESMETA )
 
-  def sanitizeDecissionParams( self, decissionParams ):
+  @staticmethod
+  def sanitizeDecissionParams( decissionParams ):
     '''
       Method that filters the input parameters. If the input parameter keys
       are no present on the "params" tuple, are not taken into account.
@@ -79,8 +80,6 @@ class InfoGetter:
       the CS. It returns a list of policy dictionaries that matched.
     '''
     
-    #FIXME: allow policy filtering on Configurations, overwritten by CS 
-    
     policiesThatApply = []
     
     # Get policies configuration metadata from CS.
@@ -110,7 +109,8 @@ class InfoGetter:
        
     return S_OK( policiesToBeLoaded )
 
-  def __getPolicyActionsThatApply( self, decissionParams ):
+  @staticmethod
+  def __getPolicyActionsThatApply( decissionParams ):
     '''
       Method that matches the input dictionary with the policy actions 
       configuration in the CS. It returns a list of policy actions names that 
@@ -133,7 +133,8 @@ class InfoGetter:
                
     return S_OK( policyActionsThatApply )
 
-  def __getNotificationsThatApply( self, decissionParams, notificationAction ):
+  @staticmethod
+  def __getNotificationsThatApply( decissionParams, notificationAction ):
     '''
       Method that matches the input dictionary with the notifications 
       configuration in the CS. It returns a list of notification dictionaries that 
