@@ -14,7 +14,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities.RSSCache          import RSSCache 
 
-__RCSID__  = '$Id: $'
+__RCSID__  = '$Id:  $'
 
 class ResourceStatus( object ):
   '''
@@ -103,16 +103,16 @@ class ResourceStatus( object ):
     
     return S_OK( getCacheDictFromList( rawCache[ 'Value' ] ) )     
   
-  def __cacheMatch( self, resourceName, statusType ):
+  def __cacheMatch( self, resourceNames, statusTypes ):
     '''
       Method that given a resourceName and a statusType, gives the match with the
       cache. Both arguments can be None, String of list( String, ). Being string,
       if not present in the cache, there is no match.
       
       Keys in the cache are stored as:
-        <resourceName>#<statusType>
-        <resourceName>#<statusType>
-        <resourceName>#<statusType>
+        ( <resourceName>, <statusType> )
+        ( <resourceName>, <statusType> )
+        ( <resourceName>, <statusType> )
       so, we first need some processing to see which of all possible combinations
       of resourceName and statusType are in the cache. ( If any of them is None,
       it is interpreted as all ).  
@@ -124,46 +124,44 @@ class ResourceStatus( object ):
      
     cacheKeys = cacheKeys[ 'Value' ] 
       
-    elementCandidates = []
-    statusTCandidates = []
+    elementCandidates = cacheKeys
     
-    if resourceName:
-      if isinstance( resourceName, str ):
-        elementCandidates = [ cK for cK in cacheKeys if cK.startswith( '%s#' % resourceName ) ]
-        if not elementCandidates:
-          return S_ERROR( 'Resource %s not present in the cache' % resourceName )
-      else:
-        for eN in resourceName:
-          found = False
+    if resourceNames is not None:
+      
+      elementCandidates = []
+      
+      if isinstance( resourceNames, str ):       
+        resourceNames = [ resourceNames ]
+        
+      for resourceName in resourceNames:
+        found = False
           
-          for cK in cacheKeys:
+        for cK in cacheKeys:
           
-            if cK.startswith( '%s#' % eN ):
-              elementCandidates.append( cK )
-              found = True
+          if cK[ 0 ] == resourceName:
+            elementCandidates.append( cK )
+            found = True
             
-          if not found:
-            return S_ERROR( 'Resource %s not found in the cache' % eN )  
-    else:
-      elementCandidates = cacheKeys
+        if not found:
+          return S_ERROR( '%s not found in the cache' % resourceName )  
+    
+    statusTypeCandidates = elementCandidates 
     
     # now we loop over elementCandidates, saves lots of iterations.        
-    if statusType:
-      if isinstance( statusType, str ):
-        statusTCandidates = [ eC for eC in elementCandidates if eC.endswith( '#%s' % statusType ) ]
-        if not statusTCandidates:
-          return S_ERROR( 'StatusType %s not present in the cache' % statusType )
-      else:
-        for eC in elementCandidates:
-          for sT in statusType:  
-                    
-            if eC.endswith( '#%s' % sT ):
-              statusTCandidates.append( eC )
-            
-    else:
-      statusTCandidates = elementCandidates  
+    if statusTypes is not None:
+
+      statusTypeCandidates = []
       
-    return S_OK( statusTCandidates )   
+      if isinstance( statusTypes, str ):
+        statusTypes = [ statusTypes ]  
+               
+      for elementCandidate in elementCandidates:
+        for statusType in statusTypes:  
+                  
+          if elementCandidate[ 1 ] == statusType:  
+            statusTypeCandidates.append( elementCandidate )
+                  
+    return S_OK( statusTypeCandidates )   
 
   def __getFromCache( self, elementName, statusType ):
     '''
@@ -185,7 +183,7 @@ class ResourceStatus( object ):
       return S_ERROR( 'Empty cache for ( %s, %s )' % ( elementName, statusType ) )   
     
     # We undo the key into <resourceName> and <statusType>
-    fromList = [ key.split( '#' ) + [ value ] for key,value in cacheMatches.items() ]
+    fromList = [ list( key ) + [ value ] for key, value in cacheMatches.items() ]
     return S_OK( getDictFromList( fromList ) )
   
 ################################################################################
@@ -222,7 +220,7 @@ class ResourceStatus( object ):
     
       # sec check
       if statusType is None:
-        statusType = 'none'
+        statusType = ''
     
       defList = [ [ el, statusType, default ] for el in elementName ]
       return S_OK( getDictFromList( defList ) )
@@ -246,35 +244,35 @@ class ResourceStatus( object ):
     if statuses[ 'OK' ]:
       statuses = statuses[ 'Value' ][ 'StatusType' ]
     else:
-      statuses = [ 'Read', 'Write' ]  
+      statuses = [ 'ReadAccess', 'WriteAccess' ]  
     
-    r = {}
+    result = {}
     for element in elementName:
     
       if statusType is not None:
         # Added Allowed by default
-        res = gConfig.getOption( "%s/%s/%sAccess" % ( cs_path, element, statusType ), 'Allowed' )
+        res = gConfig.getOption( "%s/%s/%s" % ( cs_path, element, statusType ), 'Allowed' )
         if res[ 'OK' ] and res[ 'Value' ]:
-          r[ element ] = { statusType : res[ 'Value' ] }
+          result[ element ] = { statusType : res[ 'Value' ] }
         
       else:
         res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, element ) )
         if res[ 'OK' ] and res[ 'Value' ]:
-          r2 = {}
-          for k,v in res['Value'].items():
-            k = k.replace( 'Access', '' )
-            if k in statuses:
-              r2[ k ] = v
+          elementStatuses = {}
+          for elementStatusType, value in res[ 'Value' ].items():
+            #k = k.replace( 'Access', '' )
+            if elementStatusType in statuses:
+              elementStatuses[ elementStatusType ] = value
           
           # If there is no status defined in the CS, we add by default Read and 
           # Write as Allowed.
-          if r2 == {}:
-            r2 = { 'Read' : 'Allowed', 'Write' : 'Allowed' }
+          if elementStatuses == {}:
+            elementStatuses = { 'ReadAccess' : 'Allowed', 'WriteAccess' : 'Allowed' }
                 
-          r[ element ] = r2             
+          result[ element ] = elementStatuses             
     
-    if r:
-      return S_OK( r )
+    if result:
+      return S_OK( result )
                 
     if default is not None:
     
@@ -313,7 +311,8 @@ class ResourceStatus( object ):
     
     return res
 
-  def __setCSStorageElementStatus( self, elementName, statusType, status ):
+  @staticmethod
+  def __setCSStorageElementStatus( elementName, statusType, status ):
     '''
     Sets on the CS the StorageElements status
     '''
@@ -367,13 +366,14 @@ def getCacheDictFromList( rawList ):
   '''
   Auxiliar method that given a list returns a dictionary looking like:
   { 
-    <resourceName>#<statusType> : status,
-    <resourceName>#<statusType1> : status1
+    ( <resourceName>, <statusType> )  : status,
+    ( <resourceName>, <statusType1> ) : status1
     ...
   }
   '''
     
-  res = [ ( '%s#%s' % ( name, sType ), status ) for name, sType, status in rawList ]
+  #res = [ ( '%s#%s' % ( name, sType ), status ) for name, sType, status in rawList ]
+  res = [ ( ( name, sType ), status ) for name, sType, status in rawList ]
   return dict( res )  
   
 ################################################################################
