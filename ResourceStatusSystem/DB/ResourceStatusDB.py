@@ -5,11 +5,12 @@
 
 '''
 
-from datetime                             import datetime 
+from datetime                                              import datetime 
 
-from DIRAC                                import S_OK, S_ERROR 
-from DIRAC.Core.Base.DB                   import DB
-from DIRAC.ResourceStatusSystem.Utilities import MySQLWrapper, RssConfiguration
+from DIRAC                                                 import S_OK, S_ERROR 
+from DIRAC.Core.Base.DB                                    import DB
+from DIRAC.ResourceStatusSystem.Utilities                  import MySQLWrapper
+from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration 
 
 __RCSID__ = '$Id: $'
 
@@ -25,7 +26,7 @@ class ResourceStatusDB( object ):
   _tablesLike[ 'ElementStatus' ]    = { 'Fields' : 
                     {
                      'Name'            : 'VARCHAR(64) NOT NULL',
-                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT ""',
+                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT "all"',
                      'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
                      'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
@@ -42,7 +43,7 @@ class ResourceStatusDB( object ):
                     {
                      'ID'              : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                      'Name'            : 'VARCHAR(64) NOT NULL',
-                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT ""',
+                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT "all"',
                      'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
                      'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
@@ -87,7 +88,7 @@ class ResourceStatusDB( object ):
       self.database = DB( 'ResourceStatusDB', 
                           'ResourceStatus/ResourceStatusDB', maxQueueSize )  
 
-    self.recordLogs = RssConfiguration.getRecordLogs()
+    self.recordLogs = RssConfiguration().getConfigRecordLogs() == 'Active'
 
   ## SQL Methods ###############################################################
 

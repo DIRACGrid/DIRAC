@@ -10,22 +10,57 @@ from DIRAC.Core.Utilities                                import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ResourceStatusSystem.Utilities                import Utils
 
-## RssConfiguration/Logs #######################################################
+## RssConfiguration config path ################################################
 
 rssConfigPath = 'RSSConfiguration2'
 
-def getRecordLogs():
-  '''
-  Returns from the OperationsHelper: <rssConfigPath>/Logs/Record
-  '''
+## RssConfiguration ############################################################
 
-  #FIXME: return S_OK
+class RssConfiguration:
+  '''
   
-  result = Operations().getValue( '%s/Logs/Record' % rssConfigPath )
-  if result == 'Active':
-    return True
-  return False
+  RssConfiguration:
+  { 
+    Config:
+    { 
+      State      : Active | InActive,
+      RecordLogs : Active | InActive, 
+      StatusType :
+      { 
+        default       : all,
+        StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
+      }  
+    }
+  }          
+  
+  '''
+  def __init__( self ):
+    self.opsHelper = Operations() 
 
+  def getConfigRecordLogs( self, default = 'Active' ):
+    
+    return self.opsHelper.getValue( '%s/Config/RecordLogs' % rssConfigPath, default )
+
+  def getConfigState( self, default = 'InActive' ):
+    
+    return self.opsHelper.getValue( '%s/Config/State' % rssConfigPath, default )
+  
+  def getConfigStatusType( self, elementType = None ):
+    
+    DEFAULTS = ( 'all', )
+    
+    res = self.opsHelper.getOptionsDict( '%s/Config/StatusTypes' % rssConfigPath )
+    
+    if res[ 'OK' ]:
+          
+      if elementType in res[ 'Value' ]:
+        return List.fromChar( res[ 'Value' ][ elementType ] )
+      
+      if 'default' in res[ 'Value' ]:
+        return List.fromChar( res[ 'Value' ][ 'default' ] )
+        
+    return DEFAULTS
+ 
 ## RssConfiguration/InspectionFreqs ############################################
 
 def getInspectionFreqs():
