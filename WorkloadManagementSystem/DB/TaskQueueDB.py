@@ -266,7 +266,7 @@ class TaskQueueDB( DB ):
 
     return S_OK( tqMatchDict )
 
-  def __createTaskQueue( self, tqDefDict, priority = 1, enabled = False, connObj = False ):
+  def __createTaskQueue( self, tqDefDict, priority = 1, connObj = False ):
     """
     Create a task queue
       Returns S_OK( tqId ) / S_ERROR
@@ -284,7 +284,7 @@ class TaskQueueDB( DB ):
       sqlValues.append( tqDefDict[ field ] )
     #Insert the TQ Disabled
     sqlSingleFields.append( "Enabled" )
-    sqlValues.append( str( int( enabled ) ) )
+    sqlValues.append( "0" )
     cmd = "INSERT INTO tq_TaskQueues ( %s ) VALUES ( %s )" % ( ", ".join( sqlSingleFields ), ", ".join( [ str( v ) for v in sqlValues ] ) )
     result = self._update( cmd, conn = connObj )
     if not result[ 'OK' ]:
@@ -319,7 +319,7 @@ class TaskQueueDB( DB ):
     Delete all empty task queues
     """
     self.log.info( "Cleaning orphaned TQs" )
-    result = self._update( "DELETE FROM `tq_TaskQueues` WHERE Enabled AND TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )", conn = connObj )
+    result = self._update( "DELETE FROM `tq_TaskQueues` WHERE Enabled >= 1 AND TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )", conn = connObj )
     if not result[ 'OK' ]:
       return result
     for mvField in self.__multiValueDefFields:
@@ -330,7 +330,11 @@ class TaskQueueDB( DB ):
     return S_OK()
 
   def setTaskQueueState( self, tqId, enabled = True, connObj = False ):
-    upSQL = "UPDATE `tq_TaskQueues` SET Enabled=%d WHERE TQId=%d" % ( int( enabled ), tqId )
+    if enabled:
+      enabled = "+ 1"
+    else:
+      enabled = "- 1"
+    upSQL = "UPDATE `tq_TaskQueues` SET Enabled = Enabled %s WHERE TQId=%d" % ( enabled, tqId )
     result = self._update( upSQL, conn = connObj )
     if not result[ 'OK' ]:
       self.log.error( "Error setting TQ state", "TQ %s State %s: %s" % ( tqId, enabled, result[ 'Message' ] ) )
@@ -456,7 +460,7 @@ class TaskQueueDB( DB ):
     if not result[ 'OK' ]:
       return result
     sqlCond = result[ 'Value' ]
-    sqlCmd = "UPDATE `tq_TaskQueues` SET Enabled = False WHERE %s" % sqlCond
+    sqlCmd = "UPDATE `tq_TaskQueues` SET Enabled = Enabled - 1 WHERE %s" % sqlCond
     result = self._update( sqlCmd, conn = connObj )
     if not result[ 'OK' ]:
       return result
@@ -471,7 +475,10 @@ class TaskQueueDB( DB ):
     if len( tqs ) > 1:
       gLogger.warn( "Found two task queues for the same requirements", self.__strDict( tqDefDict ) )
       random.shuffle( tqs )
-      self.updateFields( "tq_TaskQueues", [ "Enabled" ], [ "0" ], { 'TQId' : tqs[1:] }, conn = connObj )
+      sqlCond = "TQId in ( %s )" % ", ".join( [ str( tqid ) for tqid in tqs[1:] ] )
+      result = self._update( "UPDATE `tq_TaskQueues` SET Enabled = Enabled + 1 WHERE %s" % sqlCond )
+      if not result[ 'OK' ]:
+        gLogger.error( result[ 'Message' ] )
     return S_OK( { 'found' : True, 'tqId' : tqs[0] } )
 
   def findTaskQueue( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
@@ -644,7 +651,7 @@ class TaskQueueDB( DB ):
     Generate the SQL needed to match a task queue
     """
     #Only enabled TQs
-    sqlCondList = [ "Enabled" ]
+    sqlCondList = [ "Enabled >= 1" ]
     sqlTables = { "tq_TaskQueues" : "tq" }
     #If OwnerDN and OwnerGroup are defined only use those combinations that make sense
     if 'OwnerDN' in tqMatchDict and 'OwnerGroup' in tqMatchDict:
@@ -835,7 +842,7 @@ class TaskQueueDB( DB ):
       if not data:
         return S_OK( False )
       tqOwnerDN, tqOwnerGroup = data
-    sqlCmd = "DELETE FROM `tq_TaskQueues` WHERE Enabled AND `tq_TaskQueues`.TQId = %s" % tqId
+    sqlCmd = "DELETE FROM `tq_TaskQueues` WHERE Enabled >= 1 AND `tq_TaskQueues`.TQId = %s" % tqId
     sqlCmd = "%s AND `tq_TaskQueues`.TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )" % sqlCmd
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
@@ -922,7 +929,7 @@ class TaskQueueDB( DB ):
       sqlSelectEntries.append( "`tq_TaskQueues`.%s" % field )
       sqlGroupEntries.append( "`tq_TaskQueues`.%s" % field )
     sqlCmd = "SELECT %s FROM `tq_TaskQueues`, `tq_Jobs`" % ", ".join( sqlSelectEntries )
-    sqlTQCond = "AND Enabled"
+    sqlTQCond = "AND Enabled >= 1"
     if tqIdList != False:
       if len( tqIdList ) == 0:
         return S_OK( {} )
