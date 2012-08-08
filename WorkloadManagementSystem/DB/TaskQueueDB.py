@@ -480,7 +480,7 @@ class TaskQueueDB( DB ):
     return S_OK( { 'found' : True, 'tqId' : data[0][0] } )
 
 
-  def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 10, numQueuesPerTry = 10, negativeCond = {} ):
+  def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 50, numQueuesPerTry = 10, negativeCond = {} ):
     """
     Match a job
     """
@@ -626,7 +626,8 @@ class TaskQueueDB( DB ):
     Generate the SQL needed to match a task queue
     """
     #Only enabled TQs
-    sqlCondList = [ "Enabled >= 1" ]
+    #sqlCondList = [ "Enabled >= 1" ]
+    sqlCondList = []
     sqlTables = { "tq_TaskQueues" : "tq" }
     #If OwnerDN and OwnerGroup are defined only use those combinations that make sense
     if 'OwnerDN' in tqMatchDict and 'OwnerGroup' in tqMatchDict:
