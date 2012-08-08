@@ -20,9 +20,6 @@ class DTPolicy( PolicyBase ):
       Bad if it is on WARNING status.
       
       Otherwise, it returns error.
-      #FIXME: use it or scratch it.
-      On top of that, it also returns the downtime end date ( which is not currently
-      used ).
     '''
     
     status = super( DTPolicy, self ).evaluate()
@@ -53,7 +50,7 @@ class DTPolicy( PolicyBase ):
     else:
       return S_ERROR( 'DT_Policy: GOCDB returned an unknown value for DT: "%s"' % status[ 'DT' ] )
 
-    result[ 'EndDate' ] = status[ 'EndDate' ]
+    #result[ 'EndDate' ] = status[ 'EndDate' ]
     result[ 'Reason' ]  = 'DownTime found: %s' % status[ 'DT' ]
     return S_OK( result )
 

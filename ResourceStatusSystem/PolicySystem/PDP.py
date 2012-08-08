@@ -77,7 +77,7 @@ class PDP:
             'Action': True|False,
             'Status': 'Active'|'Probing'|'Banned',
             'Reason': a reason
-            'EndDate: datetime.datetime (in a string)}
+            #'EndDate: datetime.datetime (in a string)}
     """
 
     policiesThatApply = self.iGetter.getPoliciesThatApply( self.decissionParams )
@@ -310,13 +310,13 @@ class PDP:
     concatenatedRes = reduce( catRes, worstResultsReasons, '' )
 
     # Handle EndDate
-    endDatePolicies = [ p for p in worstResults if p.has_key( 'EndDate' ) ]
+    # endDatePolicies = [ p for p in worstResults if p.has_key( 'EndDate' ) ]
 
     # Building and returning result
     res = {
            'Status'       : None,
            'Reason'       : None,
-           'EndDate'      : None,
+           #'EndDate'      : None,
            'PolicyAction' : None
            }
 
@@ -330,8 +330,8 @@ class PDP:
     if concatenatedRes != '': 
       res[ 'Reason' ]  = concatenatedRes
     
-    if endDatePolicies != []: 
-      res[ 'EndDate' ] = endDatePolicies[ 0 ][ 'EndDate' ]
+    # if endDatePolicies != []: 
+    #  res[ 'EndDate' ] = endDatePolicies[ 0 ][ 'EndDate' ]
     
     return S_OK( res )
 

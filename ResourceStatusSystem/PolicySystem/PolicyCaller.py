@@ -81,6 +81,10 @@ class PolicyCaller:
 
   @staticmethod
   def policyEvaluation( policy, command ):
+    '''
+    Method that given a policy and a command objects, assigns the second one as 
+    a member of the first and evaluates the policy.
+    '''
        
     policy.setCommand( command )
     evaluationResult = policy.evaluate()

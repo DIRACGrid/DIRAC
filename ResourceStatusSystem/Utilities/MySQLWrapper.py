@@ -117,8 +117,6 @@ def select( rssDB, params, meta ):
 
   tableName  = meta[ 'table' ]
   tablesList = rssDB.getTablesList()
-  if not tablesList[ 'OK' ]:
-    return tablesList
   
   if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
