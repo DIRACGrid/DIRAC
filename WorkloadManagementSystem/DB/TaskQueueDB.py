@@ -456,12 +456,12 @@ class TaskQueueDB( DB ):
     if not result[ 'OK' ]:
       return result
     sqlCond = result[ 'Value' ]
-    sqlCmd = "UPDATE `tq_TaskQueues` SET Enabled = 0 WHERE %s" % sqlCond
+    sqlCmd = "UPDATE `tq_TaskQueues` SET Enabled = False WHERE %s" % sqlCond
     result = self._update( sqlCmd, conn = connObj )
     if not result[ 'OK' ]:
       return result
     sqlCmd = "SELECT `tq_TaskQueues`.TQId FROM `tq_TaskQueues` WHERE"
-    sqlCmd = "%s  %s AND Enabled = False" % ( sqlCmd, sqlCond )
+    sqlCmd = "%s %s" % ( sqlCmd, sqlCond )
     result = self._query( sqlCmd, conn = connObj )
     if not result[ 'OK' ]:
       return S_ERROR( "Can't find task queue: %s" % result[ 'Message' ] )
