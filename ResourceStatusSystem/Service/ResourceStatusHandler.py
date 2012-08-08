@@ -202,6 +202,31 @@ class ResourceStatusHandler( RequestHandler ):
     self.__logResult( 'addOrModify', res )
     
     return res  
+
+  types_modify = [ dict, dict ]
+  def export_modify( self, params, meta ):
+    '''
+    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
+    not add neither processing nor validation. If you need to know more about
+    this method, you must keep reading on the database documentation.
+
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+
+    gLogger.info( 'modify: %s %s' % ( params, meta ) )
+    
+    res = db.modify( params, meta )
+    self.__logResult( 'modify', res )
+    
+    return res  
   
   types_addIfNotThere = [ dict, dict ]
   def export_addIfNotThere( self, params, meta ):

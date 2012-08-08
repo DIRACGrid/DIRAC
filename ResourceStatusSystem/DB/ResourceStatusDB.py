@@ -248,6 +248,61 @@ class ResourceStatusDB( object ):
     
     return userQuery      
 
+  def modify( self, params, meta ):
+    '''
+    Using the PrimaryKeys of the table, it looks for the record in the database.
+    If it is there, it is updated, if not, it does nothing. 
+    
+    :Parameters:
+      **params** - `dict`
+        arguments for the mysql query ( must match table columns ! ).
+
+      **meta** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+        
+    selectQuery = self.select( params, meta )
+    if not selectQuery[ 'OK' ]:
+      return selectQuery 
+             
+    if not selectQuery[ 'Value' ]:
+      return S_ERROR( 'Nothing to update for %s' % str( params ) )      
+      
+    columns = selectQuery[ 'Columns' ]
+    values  = selectQuery[ 'Value' ]
+      
+    if len( values ) != 1:
+      return S_ERROR( 'More than one value returned on addOrModify, please report !!' )
+
+    selectDict = dict( zip( columns, values[ 0 ] ) )
+      
+    newDateEffective = None
+      
+    for key, value in params.items():
+      if key in ( 'lastCheckTime', 'dateEffective' ):
+        continue
+
+      if value is None:
+        continue
+        
+      if value != selectDict[ key[0].upper() + key[1:] ]:
+        newDateEffective = datetime.utcnow().replace( microsecond = 0 ) 
+        break  
+      
+    if 'dateEffective' in params:
+      params[ 'dateEffective' ] = newDateEffective              
+      
+    userQuery = self.update( params, meta )
+    
+    logResult = self._logRecord( params, meta, True )
+    if not logResult[ 'OK' ]:
+      return logResult
+    
+    return userQuery
+
   def addIfNotThere( self, params, meta ):
     '''
     Using the PrimaryKeys of the table, it looks for the record in the database.

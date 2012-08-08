@@ -236,7 +236,8 @@ class ResourceStatusClient( object ):
                                 tokenOwner = None, tokenExpiration = None, 
                                 meta = None ):
     '''
-    Adds or updates-if-duplicated from <element><tableType>. 
+    Adds or updates-if-duplicated from <element><tableType> and also adds a log 
+    if flag is active.
     
     :Parameters:
       **element** - `string`
@@ -274,6 +275,49 @@ class ResourceStatusClient( object ):
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', locals() )
+  def modifyStatusElement( self, element, tableType, name = None, statusType = None, 
+                           status = None, elementType = None, reason = None, 
+                           dateEffective = None, lastCheckTime = None, tokenOwner = None, 
+                           tokenExpiration = None, meta = None ):
+    '''
+    Updates from <element><tableType> and also adds a log if flag is active. 
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+      **name** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the diferent elements in the same element
+        table.  
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self._query( 'modify', locals() )  
   def addIfNotThereStatusElement( self, element, tableType, name = None, 
                                   statusType = None, status = None, 
                                   elementType = None, reason = None, 
@@ -281,7 +325,8 @@ class ResourceStatusClient( object ):
                                   tokenOwner = None, tokenExpiration = None, 
                                   meta = None ):
     '''
-    Adds if-not-duplicated from <element><tableType>. 
+    Adds if-not-duplicated from <element><tableType> and also adds a log if flag 
+    is active. 
     
     :Parameters:
       **element** - `string`
