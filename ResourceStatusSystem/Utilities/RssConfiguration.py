@@ -14,7 +14,7 @@ __RCSID__ = '$Id:  $'
 
 ## RssConfiguration config path ################################################
 
-__rssConfigPath = 'RSSConfiguration2'
+_rssConfigPath = 'RSSConfiguration2'
 
 ## RssConfiguration ############################################################
 
@@ -41,17 +41,17 @@ class RssConfiguration:
 
   def getConfigRecordLogs( self, default = 'Active' ):
     
-    return self.opsHelper.getValue( '%s/Config/RecordLogs' % __rssConfigPath, default )
+    return self.opsHelper.getValue( '%s/Config/RecordLogs' % _rssConfigPath, default )
 
   def getConfigState( self, default = 'InActive' ):
     
-    return self.opsHelper.getValue( '%s/Config/State' % __rssConfigPath, default )
+    return self.opsHelper.getValue( '%s/Config/State' % _rssConfigPath, default )
   
   def getConfigStatusType( self, elementType = None ):
     
     DEFAULTS = ( 'all', )
     
-    res = self.opsHelper.getOptionsDict( '%s/Config/StatusTypes' % __rssConfigPath )
+    res = self.opsHelper.getOptionsDict( '%s/Config/StatusTypes' % _rssConfigPath )
     
     if res[ 'OK' ]:
           
@@ -67,7 +67,7 @@ class RssConfiguration:
 
 def getInspectionFreqs():
   '''
-  Returns from the OperationsHelper: <__rssConfigPath>/InspectionFreqs
+  Returns from the OperationsHelper: <_rssConfigPath>/InspectionFreqs
   '''
   
   #result = Operations().getValue( 'RSSConfiguration/Logs/Record' )
@@ -81,40 +81,40 @@ def getInspectionFreqs():
 
 def getPolicies():
   '''
-  Returns from the OperationsHelper: <__rssConfigPath>/Policies
+  Returns from the OperationsHelper: <_rssConfigPath>/Policies
   '''
   
-  return Utils.getCSTree( '%s/Policies' % __rssConfigPath )
+  return Utils.getCSTree( '%s/Policies' % _rssConfigPath )
 
 ## RssConfiguration/PolicyActions ##############################################
 
 def getPolicyActions():
   '''
-  Returns from the OperationsHelper: <__rssConfigPath>/PolicyActions
+  Returns from the OperationsHelper: <_rssConfigPath>/PolicyActions
   '''
   
-  return Utils.getCSTree( '%s/PolicyActions' % __rssConfigPath )
+  return Utils.getCSTree( '%s/PolicyActions' % _rssConfigPath )
 
 ## RssConfiguration/Notifications ##############################################
 
 def getNotifications():
   '''
-  Returns from the OperationsHelper: <__rssConfigPath>/Notification
+  Returns from the OperationsHelper: <_rssConfigPath>/Notification
   '''
   
-  return Utils.getCSTree( '%s/Notification' % __rssConfigPath )
+  return Utils.getCSTree( '%s/Notification' % _rssConfigPath )
   
 ## RssConfiguration/GeneralConfig ##############################################
 
 def getValidElements():
   '''
-  Returns from the OperationsHelper: <__rssConfigPath>/GeneralConfig/ValidElements
+  Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/ValidElements
   '''
   #FIXME: no defaults. If it fails, I want to know it.
   #FIXME: return S_OK
   _DEFAULTS = ( 'Site', 'Resource', 'Node' )
   
-  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % __rssConfigPath )
+  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % _rssConfigPath )
   if result is not None:
     return List.fromChar( result )
     #return Utils.getTypedList( result )
@@ -122,13 +122,13 @@ def getValidElements():
 
 def getValidStatus():
   '''
-  Returns from the OperationsHelper: <__rssConfigPath>/GeneralConfig/Status
+  Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/Status
   '''
   
   #FIXME: DEFAULTS hardcoded ??
   DEFAULTS = ( 'Banned', 'Probing', 'Bad', 'Active' )
   return S_OK( DEFAULTS )  
-#  result = Utils.getCSTree( '%s/GeneralConfig' % __rssConfigPath )
+#  result = Utils.getCSTree( '%s/GeneralConfig' % _rssConfigPath )
 #  if not result[ 'OK' ]:
 #    return result
 #  result = result[ 'Value' ]
@@ -146,7 +146,7 @@ def getValidStatus():
 
 #def getValidStatusTypes():
 #  '''
-#  Returns from the OperationsHelper: <__rssConfigPath>/GeneralConfig/Resources
+#  Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/Resources
 #  '''
 #  #FIXME: no defaults. If it fails, I want to know it.
 #  
@@ -163,13 +163,13 @@ def getValidStatus():
 #  #FIXME: it does not work with empty configuration
 ##  opHelper = Operations()
 ##  
-##  sections = opHelper.getSections( '%s/GeneralConfig/Resources' % __rssConfigPath )
+##  sections = opHelper.getSections( '%s/GeneralConfig/Resources' % _rssConfigPath )
 ##  if not sections[ 'OK' ]:
 ##    return DEFAULTS
 ##  
 ##  result = {}
 ##  for section in sections[ 'Value' ]:
-##    res = opHelper.getValue( '%s/GeneralConfig/Resources/%s/StatusType' % ( __rssConfigPath, section ) )
+##    res = opHelper.getValue( '%s/GeneralConfig/Resources/%s/StatusType' % ( _rssConfigPath, section ) )
 ##    if res is None:
 ##      if DEFAULTS.has_key( section ):
 ##        result[ section ] = DEFAULTS[ section ]
