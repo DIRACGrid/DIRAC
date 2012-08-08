@@ -311,6 +311,13 @@ class ExecutorDispatcher:
     self.__freezeOnFailedDispatch = True
     #If a task needs to go to an executor that has not connected. Freeze or forget the task?
     self.__freezeOnUnknownExecutor = True
+    if self.__monitor:
+      self.__monitor.registerActivity( "executors", "Executor reactors connected",
+                                       "Executors", "executors", self.__monitor.OP_MEAN, 300 )
+      self.__monitor.registerActivity( "tasks", "Tasks processed",
+                                       "Executors", "tasks", self.__monitor.OP_RATE, 300 )
+      self.__monitor.registerActivity( "taskTime", "Task processing time",
+                                       "Executors", "seconds", self.__monitor.OP_MEAN, 300 )
 
   def setFailedOnTooFrozen( self, value ):
     self.__failedOnTooFrozen = value
@@ -344,12 +351,13 @@ class ExecutorDispatcher:
     self.__unfreezeTasks()
     if not self.__monitor:
       return
-    eTypes = self.__execTypes.keys()
+    eTypes = self.__execTypes
     for eType in eTypes:
       try:
         self.__monitor.addMark( "executors-%s" % eType, self.__execTypes[ eType ] )
       except KeyError:
         pass
+    self.__monitor.addMark( "executors", len( self.__idMap ) )
 
   def addExecutor( self, eId, eTypes, maxTasks = 1 ):
     self.__log.verbose( "Adding new %s executor to the pool %s" % ( eId, ", ".join ( eTypes ) ) )
@@ -365,17 +373,12 @@ class ExecutorDispatcher:
         if eType not in self.__execTypes:
           self.__execTypes[ eType ] = 0
           if self.__monitor:
-            self.__monitor.registerActivity( "executors-%s" % eType, "%s executors connected" % eType,
+            self.__monitor.registerActivity( "executors-%s" % eType, "%s executor modules connected" % eType,
                                              "Executors", "executors", self.__monitor.OP_MEAN, 300 )
             self.__monitor.registerActivity( "tasks-%s" % eType, "Tasks processed by %s" % eType,
                                              "Executors", "tasks", self.__monitor.OP_RATE, 300 )
-            self.__monitor.registerActivity( "tasks", "Tasks processed",
-                                             "Executors", "tasks", self.__monitor.OP_RATE, 300 )
             self.__monitor.registerActivity( "taskTime-%s" % eType, "Task processing time for %s" % eType,
                                              "Executors", "seconds", self.__monitor.OP_MEAN, 300 )
-            self.__monitor.registerActivity( "taskTime", "Task processing time",
-                                             "Executors", "seconds", self.__monitor.OP_MEAN, 300 )
-        self.__execTypes[ eType ] += 1
         self.__execTypes[ eType ] += 1
     finally:
       self.__executorsLock.release()
