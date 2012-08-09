@@ -13,7 +13,7 @@ from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import systemCall, rootPath
 from DIRAC                                               import gConfig
-from DIRAC.Core.Security.Misc                            import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
 import os, sys, bz2, base64,tempfile
 from urlparse import urlparse
