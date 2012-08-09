@@ -132,18 +132,18 @@ def canonicalURL(url):
 
 # RPC utils
 
-#class RPCError(Exception):
-#  pass
-#
-#def unpack(dirac_value):
-#  if type(dirac_value) != dict:
-#    raise ValueError, "Not a DIRAC value."
-#  if 'OK' not in dirac_value.keys():
-#    raise ValueError, "Not a DIRAC value."
-#  try:
-#    return dirac_value['Value']
-#  except KeyError:
-#    raise RPCError, dirac_value['Message']
+class RPCError(Exception):
+  pass
+
+def unpack(dirac_value):
+  if type(dirac_value) != dict:
+    raise ValueError, "Not a DIRAC value."
+  if 'OK' not in dirac_value.keys():
+    raise ValueError, "Not a DIRAC value."
+  try:
+    return dirac_value['Value']
+  except KeyError:
+    raise RPCError, dirac_value['Message']
 
 #def protect2(f, *args, **kw):
 #  """Wrapper protect"""
@@ -226,17 +226,17 @@ def dictMatch(dict1, dict2):
 
 # XML utils
 
-#def xml_append(doc, tag, value_=None, elt_=None, **kw):
-#  new_elt = doc.createElement(tag)
-#  for k in kw:
-#    new_elt.setAttribute(k, str(kw[k]))
-#  if value_ != None:
-#    textnode = doc.createTextNode(str(value_))
-#    new_elt.appendChild(textnode)
-#  if elt_ != None:
-#    return elt_.appendChild(new_elt)
-#  else:
-#    return doc.documentElement.appendChild(new_elt)
+def xml_append(doc, tag, value_=None, elt_=None, **kw):
+  new_elt = doc.createElement(tag)
+  for k in kw:
+    new_elt.setAttribute(k, str(kw[k]))
+  if value_ != None:
+    textnode = doc.createTextNode(str(value_))
+    new_elt.appendChild(textnode)
+  if elt_ != None:
+    return elt_.appendChild(new_elt)
+  else:
+    return doc.documentElement.appendChild(new_elt)
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
