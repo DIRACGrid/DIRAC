@@ -46,13 +46,18 @@ def initializeJobManagerHandler( serviceInfo ):
 
 class JobManagerHandler( RequestHandler ):
 
+  __sendJobsToOptimizationMind = True
+
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     cls.msgClient = MessageClient( "WorkloadManagement/OptimizationMind" )
     result = cls.msgClient.connect( JobManager = True )
     if not result[ 'OK' ]:
+      # if we can not connect to the Mind do not attempt to send messages
+      cls.__sendJobsToOptimizationMind = False
       cls.log.error( "Cannot connect to OptimizationMind!", result[ 'Message' ] )
-    return result
+
+    return S_OK()
 
   def initialize( self ):
     credDict = self.getRemoteCredentials()
@@ -67,6 +72,8 @@ class JobManagerHandler( RequestHandler ):
     return S_OK()
 
   def __sendNewJobsToMind( self, jids ):
+    if not self.__sendJobsToOptimizationMind:
+      return
     result = self.msgClient.createMessage( "OptimizeJobs" )
     if not result[ 'OK' ]:
       self.log.error( "Cannot create Optimize message: %s" % result[ 'Message' ] )
@@ -153,14 +160,14 @@ class JobManagerHandler( RequestHandler ):
         return S_ERROR( 'The number of parametric jobs exceeded the limit of %d' % self.maxParametricJobs )
 
       jobDescList = []
-      nParam = len(parameterList) - 1
-      for n,p in enumerate(parameterList):
-        newJobDesc = jobDesc.replace('%s',str(p)).replace('%n',str(n).zfill(len(str(nParam))))
-        newClassAd = ClassAd(newJobDesc)
-        for attr in ['Parameters','ParameterStep','ParameterFactor']:
-          newClassAd.deleteAttribute(attr)
-        if type( p ) == type ( ' ' ) and p.startswith('{'):
-          newClassAd.insertAttributeInt( 'Parameter',str(p) )
+      nParam = len( parameterList ) - 1
+      for n, p in enumerate( parameterList ):
+        newJobDesc = jobDesc.replace( '%s', str( p ) ).replace( '%n', str( n ).zfill( len( str( nParam ) ) ) )
+        newClassAd = ClassAd( newJobDesc )
+        for attr in ['Parameters', 'ParameterStep', 'ParameterFactor']:
+          newClassAd.deleteAttribute( attr )
+        if type( p ) == type ( ' ' ) and p.startswith( '{' ):
+          newClassAd.insertAttributeInt( 'Parameter', str( p ) )
         else:
           newClassAd.insertAttributeString( 'Parameter', str( p ) )
         newClassAd.insertAttributeInt( 'ParameterNumber', n )
