@@ -145,17 +145,17 @@ def unpack(dirac_value):
   except KeyError:
     raise RPCError, dirac_value['Message']
 
-#def protect2(f, *args, **kw):
-#  """Wrapper protect"""
-#  try:
-#    ret = f(*args, **kw)
-#    if type(ret) == dict and ret['OK'] == False:
-#      print "function " + f.f.__name__ + " called with " + str( args )
-#      print "%s\n" % ret['Message']
-#    return ret
-#  except Exception as e:
-#    print "function " + str(f) + " called with " + str(args)
-#    raise e
+def protect2(f, *args, **kw):
+  """Wrapper protect"""
+  try:
+    ret = f(*args, **kw)
+    if type(ret) == dict and ret['OK'] == False:
+      print "function " + f.f.__name__ + " called with " + str( args )
+      print "%s\n" % ret['Message']
+    return ret
+  except Exception as e:
+    print "function " + str(f) + " called with " + str(args)
+    raise e
 
 # (Duck) type checking
 
