@@ -1,4 +1,4 @@
-[v6r5-pre15]
+[v6r5]
 
 NEW: Executor framework
 
@@ -30,6 +30,7 @@ CHANGE: InstallTools - use dirac- command in runit run scripts
 FIX: X509Chain - avoid a return of error when the group is not valid
 FIX: MySQL - reduce verbosity of log messages when high level methods are used
 CHANGE: Several DB classes have been updated to use the MySQL buildCondition method
+NEW: MySQL - provide support for greater and smaller arguments to all MySQL high level methods
 
 *Configuration
 CHANGE: By default return option and section lists ordered as in the CS
@@ -49,7 +50,7 @@ NEW: Log all policy results
 NEW: updated SSHComputingElement which allows multiple job submission
 FIX: SGETimeLeft - better parsing of the batch system commands output
 FIX: InProcessComputingElement - when starting a new job discard renewal of the previous proxy
-NEW: BOINCComputingElement - new CE clietn to work with the BOINC desktop grid infrastructure 
+NEW: BOINCComputingElement - new CE client to work with the BOINC desktop grid infrastructure 
 
 *WMS
 CHANGE: WMS Optimizers are now executors
@@ -84,6 +85,9 @@ NEW: JobAgent - stop after N failed matching attempts (nothing to do), use StopA
 CHANGE: JobAgent - provide resource description as a dictionary to avoid extra JDL parsing by the Matcher
 CHANGE: Matcher - report pilot info once instead of sending it several times from the job
 CHANGE: Matcher - set the job site instead of making a separate call to JobStateUpdate
+NEW: Matcher - added Matches done and matches OK statistics
+NEW: TaskQueue - don't delete fresh task queues. Wait 5 minutes to do so.
+CHANGE: Disabled TQs can also be matched, if no jobs are there, a retry will be triggered
 
 *Transformation
 FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
