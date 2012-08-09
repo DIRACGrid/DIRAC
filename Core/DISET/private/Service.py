@@ -94,15 +94,16 @@ class Service:
           gLogger.verbose( "Executing initialization function" )
           try:
             result = initFunc( dict( self._serviceInfoDict ) )
+            print result
           except Exception, excp:
-            gLogger.exception( "Exception while calling iniitalization function" )
-            return S_ERROR( "Exception while calling initialization funciton: %s" % str( excp ) )
-        if not isReturnStructure( result ):
-          return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
-        if not result[ 'OK' ]:
-          return S_ERROR( "Error while initializing %s: %s" % ( self._name, result[ 'Message' ] ) )
+            gLogger.exception( "Exception while calling initialization function" )
+            return S_ERROR( "Exception while calling initialization function: %s" % str( excp ) )
+          if not isReturnStructure( result ):
+            return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
+          if not result[ 'OK' ]:
+            return S_ERROR( "Error while initializing %s: %s" % ( self._name, result[ 'Message' ] ) )
     except Exception, e:
-      errMsg = "Exception while intializing %s" % self._name
+      errMsg = "Exception while initializing %s" % self._name
       gLogger.exception( errMsg )
       return S_ERROR( errMsg )
 
@@ -158,7 +159,7 @@ class Service:
     handlerName = handlerClass.__name__
     handlerInitMethods = self.__searchInitFunctions( handlerClass )
     try:
-      handlerInitMethods.append( getattr( self._svcData[ 'moduleObj' ], "initialize%s" % handlerName) )
+      handlerInitMethods.append( getattr( self._svcData[ 'moduleObj' ], "initialize%s" % handlerName ) )
     except AttributeError:
       gLogger.verbose( "Not found global initialization function for service" )
 
