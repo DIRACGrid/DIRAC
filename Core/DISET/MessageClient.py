@@ -44,7 +44,7 @@ class MessageClient( BaseClient ):
     return result[ 'Value' ]
 
   def createMessage( self, msgName ):
-    return self.__msgBroker.getMsgFactory().createMessage( self._serviceName, msgName )
+    return self.__msgBroker.getMsgFactory().createMessage( self.getServiceName(), msgName )
 
   def connect( self, **extraParams ):
     if extraParams:
