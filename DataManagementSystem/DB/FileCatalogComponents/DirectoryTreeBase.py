@@ -813,7 +813,7 @@ class DirectoryTreeBase:
           
     return S_OK({'Successful':successful,'Failed':failed}) 
   
-  def _rebuildStorageUsage( self ):
+  def _rebuildDirectoryUsage( self ):
     """ Recreate and replenish the Storage Usage tables
     """
     

@@ -542,6 +542,13 @@ class FileCatalogDB(DB):
     successful = res['Value']['Successful']
     queryTime = res['Value'].get('QueryTime',-1.)
     return S_OK( {'Successful':successful,'Failed':failed,'QueryTime':queryTime} )
+  
+  def rebuildDirectoryUsage(self):
+    """ Rebuild DirectoryUsage table from scratch
+    """
+    
+    result = self.dtree._rebuildDirectoryUsage
+    return result
     
   #######################################################################
   #

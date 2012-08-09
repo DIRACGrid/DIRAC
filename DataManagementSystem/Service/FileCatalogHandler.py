@@ -279,6 +279,11 @@ class FileCatalogHandler(RequestHandler):
   def export_getDirectorySize(self,lfns,long=False):
     """ Get the size of the supplied directory """
     return fcDB.getDirectorySize(lfns,long,self.getRemoteCredentials())
+  
+  types_rebuildDirectoryUsage = []
+  def export_rebuildDirectoryUsage(self):
+    """ Rebuild DirectoryUsage table from scratch """
+    return fcDB.rebuildDirectoryUsage()
 
   types_getDirectoryReplicas = [[ListType,DictType]+list(StringTypes)]
   def export_getDirectoryReplicas(self,lfns,allStatus=False):
