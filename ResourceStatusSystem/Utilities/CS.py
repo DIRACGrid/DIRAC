@@ -220,7 +220,7 @@ def getSpaceTokens():
 
 def getSpaceTokenEndpoints():
   ''' Get Space Token Endpoints '''
-  return getTypedDictRootedAt(root="", relpath="/Resources/Shares/Disk")
+  return getTypedDictRootedAtOperations(root="Disk", relpath="Shares")
 
 # CE functions ######################
 
