@@ -306,7 +306,7 @@ class FileManagerBase:
           if not res['OK']:
             gLogger.warn( "Failed to insert FC_DirectoryUsage", res['Message'] )
     return S_OK()
-
+    
   def _populateFileAncestors( self, lfns, connection = False ):
     connection = self._getConnection( connection )
     successful = {}

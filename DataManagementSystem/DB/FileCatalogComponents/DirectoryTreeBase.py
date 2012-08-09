@@ -676,6 +676,46 @@ class DirectoryTreeBase:
     successful = {}
     failed = {}
     for path in paths:
+      result = self.findDir(path)
+      if not result['OK']:
+        failed[path] = "Directory not found"
+        continue
+      if not result['Value']:
+        failed[path] = "Directory not found"
+        continue
+      dirID = result['Value']
+      
+      req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
+      req += "  WHERE S.SEID=D.SEID AND D.DirID=%d" % dirID
+      result = self.db._query(req,connection)       
+      if not result['OK']:
+        failed[path] = result['Message']
+      elif not result['Value']:
+        successful[path] = {}
+      elif result['Value'][0][0]:
+        seDict = {}
+        totalSize = 0
+        totalFiles = 0
+        for seName,seSize,seFiles in result['Value']:
+          seDict[seName] = {'Size':seSize,'Files':seFiles}
+          totalSize += seSize
+          totalFiles += seFiles
+        seDict['TotalSize'] = int(totalSize)
+        seDict['TotalFiles'] = int(totalFiles)  
+        successful[path] = seDict  
+      else:
+        successful[path] = {} 
+          
+    return S_OK({'Successful':successful,'Failed':failed})       
+  
+  
+  def _getDirectoryPhysicalSizeFromUsage_old(self,lfns,connection):
+    """ Get the total size of the requested directories
+    """
+    paths = lfns.keys()
+    successful = {}
+    failed = {}
+    for path in paths:
 
       if path == '/':
         req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
@@ -772,6 +812,107 @@ class DirectoryTreeBase:
         successful[path] = {} 
           
     return S_OK({'Successful':successful,'Failed':failed}) 
+  
+  def _rebuildStorageUsage( self ):
+    """ Recreate and replenish the Storage Usage tables
+    """
+    
+    req = "RENAME TABLE FC_DirectoryUsage TO FC_DirectoryUsage_backup"
+    result = self.db._update( req )
+    req = """CREATE TABLE `FC_DirectoryUsage_backup` (
+  `DirID` int(11) NOT NULL,
+  `SEID` int(11) NOT NULL,
+  `SESize` bigint(20) NOT NULL,
+  `SEFiles` bigint(20) NOT NULL,
+  `LastUpdate` datetime NOT NULL,
+  PRIMARY KEY (`DirID`,`SEID`),
+  KEY `DirID` (`DirID`),
+  KEY `SEID` (`SEID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 
+"""
+    result = self.db._update( req )
+    if not result['OK']:
+      return result
+    
+    result = self.__rebuildDirectoryUsageLeaves()
+    if not result['OK']:
+      return result
+    
+    result = self.db.dtree.findDir( '/' )
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR('Directory / not found')
+    dirID = result['Value']
+    result = self.__rebuildDirectoryUsage(dirID)
+    return result
+    
+  def __rebuildDirectoryUsageLeaves( self ):
+    """ Rebuild DirectoryUsage entries for directories having files
+    """  
+    
+    req = 'SELECT DirID FROM FC_Files'
+    result = self.db._query(req)
+    if not result['OK']:
+      return result
+    
+    dirIDs = [ x[0] for x in result['Value'] ]
+    insertFields = ['DirID','SEID','SESize','SEFiles','LastUpdate']
+    insertCount = 0
+    insertValues = []
+    for dirID in dirIDs:
+      req = "SELECT SUM(F.Size),COUNT(F.Size),R.SEID from FC_Files as F, FC_Replicas as R "
+      req += "WHERE F.FileID=R.FileID AND F.DirID=%d GROUP BY R.SEID" % int(dirID)
+      result = self.db._query( req )
+      if not result['OK']:
+        return result
+      if not result['Value']:
+        return S_ERROR('Empty directory')
+      seSize,seFiles,seID = result['Value'][0]       
+      insertValues.append([dirID,seID,seSize,seFiles,'UTC_TIMESTAMP()'])
+      insertCount += 1
+      if mod(insertCount,100) == 0:
+        result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )  
+        if not result['OK']:
+          return result
+        insertCount = 0
+    return S_OK()      
+    
+  def __rebuildDirectoryUsage( self, directoryID ):
+    """ Rebuild DirectoryUsage entries recursively for the given path
+    """  
+    result = self.getChildren( directoryID )
+    if not result['OK']:
+      return result
+    dirIDs = result['Value']
+    resultDict = {}
+    for dirID in dirIDs:
+      result = self.__rebuildDirectoryUsage( dirID )
+      if not result['OK']:
+        return result
+      dirDict = result['Value']
+      for seID in dirDict:
+        resultDict.setdefault(seID,{'Size':0,'Files':0})
+        resultDict[seID]['Size'] += dirDict[seID]['Size']
+        resultDict[seID]['Files'] += dirDict[seID]['Files']
+    
+    insertFields = ['DirID','SEID','SESize','SEFiles','LastUpdate']  
+    insertValues = []
+    for seID in resultDict:
+      size = resultDict[seID]['Size']
+      files = resultDict[seID]['Files']
+      req = "UPDATE FC_DirectoryUsage SET SESize=SESize+%d, SEFiles=SEFiles+%d WHERE DirID=%d AND SEID=%d"  
+      req = req % (size,files,directoryID,seID)
+      result = self.db._update( req )
+      if not result['OK']:
+        return result
+      if not result['Value']:
+        insertValues.append( [directoryID,seID,size,files] )
+    if insertValues:
+      result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )     
+      if not result['OK']:
+        return result
+    return S_OK(resultDict)  
   
   def getDirectoryCounters( self, connection = False ):
     """ Get the total number of directories
