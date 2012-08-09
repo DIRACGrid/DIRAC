@@ -32,6 +32,12 @@ class TransformationCleaningAgent( AgentModule ):
   """
   .. class:: TransformationCleaningAgent
 
+  :param ReplicaManger replicaManager: ReplicaManager instance
+  :param TransfromationClient transClient: TransfromationClient instance
+  :param RequestClient requestClient: RequestClient instance
+  :param FileCatalogClient metadataClient: FileCatalogClient instance
+  :param StorageUsageClient storageUsageClient: StorageUsageClient instance
+
   """
 
   def __init__( self, agentName, baseAgentName = False,	properties = dict() ):
@@ -527,6 +533,11 @@ class TransformationCleaningAgent( AgentModule ):
     if not allRemove:
       return S_ERROR( "Failed to remove all remnants from WMS" )
     self.log.info( "Successfully removed all tasks from the WMS" )
+
+    if not jobIDs:
+      self.log.info("JobIDs not present, unable to remove asociated requests.")
+      return S_OK()
+
     res = self.requestClient.getRequestForJobs( jobIDs )
     if not res['OK']:
       self.log.error( "Failed to get requestID for jobs.", res['Message'] )

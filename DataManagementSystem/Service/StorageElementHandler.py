@@ -83,10 +83,11 @@ class StorageElementHandler( RequestHandler ):
     port = self.getCSOption('Port','')
     if not port:
       return ''
-    
-    loc = fileID.find( port )
-    if loc >= 0:
-      fileID = fileID[loc + len( port ):]
+
+    if ":%s" % port in fileID:
+      loc = fileID.find( ":%s" % port )
+      if loc >= 0:
+        fileID = fileID[loc + len( ":%s" % port ):]
       
     serviceName = self.serviceInfoDict['serviceName']
     loc = fileID.find( serviceName )
@@ -99,7 +100,7 @@ class StorageElementHandler( RequestHandler ):
       
     if fileID.find( base_path ) == 0:
       return fileID
-    while fileID[0] == '/':
+    while fileID and fileID[0] == '/':
       fileID = fileID[1:]
     return os.path.join( base_path, fileID )
 
@@ -340,6 +341,7 @@ class StorageElementHandler( RequestHandler ):
   def export_removeDirectory( self, fileID, token ):
     """ Remove the given directory from the storage
     """
+
     dir_path = self.__resolveFileID( fileID )
     if not self.__confirmToken( token, fileID, 'x' ):
       return S_ERROR( 'Directory removal %s not authorized' % fileID )
