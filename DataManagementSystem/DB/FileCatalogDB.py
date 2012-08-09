@@ -547,7 +547,7 @@ class FileCatalogDB(DB):
     """ Rebuild DirectoryUsage table from scratch
     """
     
-    result = self.dtree._rebuildDirectoryUsage
+    result = self.dtree._rebuildDirectoryUsage()
     return result
     
   #######################################################################
