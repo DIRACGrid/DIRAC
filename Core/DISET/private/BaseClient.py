@@ -36,7 +36,7 @@ class BaseClient:
       raise TypeError( "Service name expected to be a string. Received %s type %s" %
                        ( str( serviceName ), type( serviceName ) ) )
     self._destinationSrv = serviceName
-    self._serviceName = serviceName.split( '/' )[-1]
+    self._serviceName = serviceName
     self.kwargs = kwargs
     self.__initStatus = S_OK()
     self.__idDict = {}
@@ -58,7 +58,7 @@ class BaseClient:
 
   def getDestinationService( self ):
     return self._destinationSrv
-  
+
   def getServiceName( self ):
     return self._serviceName
 
