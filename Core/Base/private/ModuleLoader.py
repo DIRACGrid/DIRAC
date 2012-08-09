@@ -26,7 +26,7 @@ class ModuleLoader( object ):
   def getModules( self ):
     data = dict( self.__modules )
     for k in data:
-      data[ k ][ 'standalone' ] = len( data ) > 1
+      data[ k ][ 'standalone' ] = len( data ) == 1
     return data
 
   def loadModules( self, modulesList, hideExceptions = False ):
@@ -206,7 +206,8 @@ class ModuleLoader( object ):
       if impData[0]:
         impData[0].close()
     except ImportError, excp:
-      if str( excp ).find( "No module named" ) == 0:
+      strExcp = str( excp )
+      if strExcp.find( "No module named" ) == 0 and strExcp.find( modName[0] ) == len( strExcp ) - len( modName[0] ):
         return S_OK()
       errMsg = "Can't load %s" % ".".join( modName )
       if not hideExceptions:

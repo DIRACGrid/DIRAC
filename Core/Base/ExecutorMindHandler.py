@@ -1,7 +1,8 @@
 
-import types
+import types, pprint
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, ExecutorDispatcherCallbacks
 
@@ -18,9 +19,11 @@ class ExecutorMindHandler( RequestHandler ):
                                        'freezeTime' : ( types.IntType, types.LongType ) },
                       'TaskError' : { 'taskId': ( types.IntType, types.LongType ),
                                       'errorMsg' : types.StringType,
-                                      'taskStub' : types.StringType },
+                                      'taskStub' : types.StringType,
+                                      'eType' : types.StringType},
                       'ExecutorError' : { 'taskId': ( types.IntType, types.LongType ),
-                                          'errorMsg' : types.StringType } }
+                                          'errorMsg' : types.StringType,
+                                          'eType' : types.StringType } }
 
   class MindCallbacks( ExecutorDispatcherCallbacks ):
 
@@ -58,7 +61,7 @@ class ExecutorMindHandler( RequestHandler ):
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     gLogger.notice( "Initializing Executor dispatcher" )
-    cls.__eDispatch = ExecutorDispatcher()
+    cls.__eDispatch = ExecutorDispatcher( cls.srv_getMonitor() )
     cls.__callbacks = ExecutorMindHandler.MindCallbacks( cls.__sendTask,
                                                          cls.exec_dispatch,
                                                          cls.__execDisconnected,
@@ -67,6 +70,9 @@ class ExecutorMindHandler( RequestHandler ):
                                                          cls.exec_taskError )
     cls.__eDispatch.setCallbacks( cls.__callbacks )
     cls.__allowedClients = []
+    if cls.log.shown( "VERBOSE" ):
+      gThreadScheduler.setMinValidPeriod( 1 )
+      gThreadScheduler.addPeriodicTask( 10, lambda: cls.log.verbose( "== Internal state ==\n%s\n===========" % pprint.pformat( cls.__eDispatch._internals() ) ) )
 
   @classmethod
   def setAllowedClients( cls, aClients ):
@@ -187,7 +193,7 @@ class ExecutorMindHandler( RequestHandler ):
     #TODO: Check the executor has privileges over the task
     self.__eDispatch.removeTask( msgObj.taskId )
     try:
-      self.exec_taskError( msgObj.taskId, taskObj, msgObj.errorMsg )
+      self.exec_taskError( msgObj.taskId, taskObj, msgObj.errorMsg, eType )
     except:
       gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
     return S_OK()
