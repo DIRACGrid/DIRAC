@@ -92,7 +92,11 @@ class Service:
       if self._handler[ 'init' ]:
         for initFunc in self._handler[ 'init' ]:
           gLogger.verbose( "Executing initialization function" )
-          result = initFunc( dict( self._serviceInfoDict ) )
+          try:
+            result = initFunc( dict( self._serviceInfoDict ) )
+          except Exception, excp:
+            gLogger.exception( "Exception while calling iniitalization function" )
+            return S_ERROR( "Exception while calling initialization funciton: %s" % str( excp ) )
         if not isReturnStructure( result ):
           return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
         if not result[ 'OK' ]:
