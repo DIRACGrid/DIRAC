@@ -3,10 +3,9 @@
 
 '''
 
-from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command.Command             import Command
-#from DIRAC.ResourceStatusSystem.Command.knownAPIs           import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities                   import RssConfiguration
 
 __RCSID__ = '$Id:  $'
