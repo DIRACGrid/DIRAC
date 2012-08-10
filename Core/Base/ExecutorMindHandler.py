@@ -181,6 +181,7 @@ class ExecutorMindHandler( RequestHandler ):
 
   auth_msg_TaskError = [ 'all' ]
   def msg_TaskError( self, msgObj ):
+    taskId = msgObj.taskId
     try:
       result = self.exec_deserializeTask( msgObj.taskStub )
     except Exception, excp:
@@ -194,7 +195,7 @@ class ExecutorMindHandler( RequestHandler ):
     #TODO: Check the executor has privileges over the task
     self.__eDispatch.removeTask( msgObj.taskId )
     try:
-      self.exec_taskError( msgObj.taskId, taskObj, msgObj.errorMsg, eType )
+      self.exec_taskError( msgObj.taskId, taskObj, msgObj.errorMsg )
     except:
       gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
     return S_OK()
