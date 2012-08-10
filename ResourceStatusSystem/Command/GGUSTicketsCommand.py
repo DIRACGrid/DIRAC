@@ -16,6 +16,34 @@ __RCSID__ = '$Id:  $'
 ################################################################################
 ################################################################################
 
+class GGUSTicketsCommand( Command ):
+  
+  def __init__( self, args = None, clients = None ):
+    
+    super( GGUSTicketsCommand, self ).__init__( args, clients )
+    
+    if 'GGUSTicketsClient' in self.apis:
+      self.gClient = self.apis[ 'GGUSTicketsClient' ]
+    else:
+      self.gClient = GGUSTicketsClient() 
+  
+  def doCommand( self ):
+    """ 
+    Return getTicketsList from GGUSTickets Client  
+    `args`: 
+      - args[0]: string: should be the name of the site
+    """
+    
+    if not 'name' in self.args:
+      return S_ERROR( '"name" not found in self.args' )
+    name = self.args[ 'name' ]
+
+    name    = getGOCSiteName( name )[ 'Value' ] 
+    return self.gClient.getTicketsList( name )
+
+################################################################################
+################################################################################
+
 class GGUSTicketsOpen( Command ):
   
   def __init__( self, args = None, clients = None ):
@@ -45,12 +73,12 @@ class GGUSTicketsOpen( Command ):
       return results
     results = results[ 'Value' ]
 
-    if not len( results ) > 0:
-      return S_ERROR( 'No tickets to open (0)' ) 
-    if not 'open' in results[ 0 ]:
-      return S_ERROR( 'Missing open key')
+#    if not len( results ) > 0:
+#      return S_ERROR( 'No tickets to open (0)' ) 
+    if not 'open' in results:
+      return S_ERROR( 'Missing open key' )
 
-    return  S_OK( results[ 0 ][ 'open' ] ) 
+    return  S_OK( results[ 'open' ] ) 
     
 ################################################################################
 ################################################################################
