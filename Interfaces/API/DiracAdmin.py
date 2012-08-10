@@ -1,8 +1,3 @@
-########################################################################
-# $HeadURL$
-# File :   DiracAdmin.py
-# Author : Stuart Paterson
-########################################################################
 """DIRAC Administrator API Class
 
 All administrative functionality is exposed through the DIRAC Admin API.  Examples include
@@ -11,11 +6,9 @@ site banning and unbanning, WMS proxy uploading etc.
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-Script.initialize()
-
-
 import DIRAC
+from DIRAC.Core.Utilities.PromptUser                          import promptUser
+from DIRAC.Core.Base.API                                      import API
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
@@ -30,7 +23,6 @@ from DIRAC.Core.Utilities.Grid                                import ldapSite, l
 from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSA
 
 import os, types
-import pprint
 
 voName = ''
 ret = getProxyInfo( disableVOMS = True )
@@ -39,18 +31,14 @@ if ret['OK'] and 'group' in ret['Value']:
 
 COMPONENT_NAME = '/Interfaces/API/DiracAdmin'
 
-class DiracAdmin:
+class DiracAdmin( API ):
 
   #############################################################################
   def __init__( self ):
     """Internal initialization of the DIRAC Admin API.
     """
-    self.log = gLogger.getSubLogger( 'DIRACAdminAPI' )
-    self.setup = gConfig.getValue( '/DIRAC/Setup', 'Unknown' )
-    self.section = COMPONENT_NAME
-    self.cvsVersion = 'CVS version ' + __RCSID__
-    self.diracInfo = 'DIRAC version v%dr%d build %d' \
-                       % ( DIRAC.majorVersion, DIRAC.minorVersion, DIRAC.patchLevel )
+    super( DiracAdmin, self ).__init__()
+
     self.csAPI = CSAPI()
 
     self.dbg = False
@@ -59,7 +47,6 @@ class DiracAdmin:
 
     self.scratchDir = gConfig.getValue( self.section + '/ScratchDir', '/tmp' )
     self.currentDir = os.getcwd()
-    self.pPrint = pprint.PrettyPrinter()
 
   #############################################################################
   def uploadProxy( self, group ):
@@ -476,12 +463,12 @@ class DiracAdmin:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or convertible integer for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or convertible integer for existing jobID' )
     elif type( jobID ) == type( [] ):
       try:
         jobID = [int( job ) for job in jobID]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or convertible integer for existing jobIDs' )
+        return self._errorReport( str( x ), 'Expected integer or convertible integer for existing jobIDs' )
 
     jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = 120 )
     result = jobManager.resetJob( jobID )
@@ -504,7 +491,7 @@ class DiracAdmin:
       directory = self.currentDir
 
     if not os.path.exists( directory ):
-      return self.__errorReport( 'Directory %s does not exist' % directory )
+      return self._errorReport( 'Directory %s does not exist' % directory )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
     result = wmsAdmin.getJobPilotOutput( jobID )
@@ -554,13 +541,13 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
     """
     if not type( gridReference ) == type( " " ):
-      return self.__errorReport( 'Expected string for pilot reference' )
+      return self._errorReport( 'Expected string for pilot reference' )
 
     if not directory:
       directory = self.currentDir
 
     if not os.path.exists( directory ):
-      return self.__errorReport( 'Directory %s does not exist' % directory )
+      return self._errorReport( 'Directory %s does not exist' % directory )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
     result = wmsAdmin.getPilotOutput( gridReference )
@@ -614,7 +601,7 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
     """
     if not type( gridReference ) == type( " " ):
-      return self.__errorReport( 'Expected string for pilot reference' )
+      return self._errorReport( 'Expected string for pilot reference' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
     result = wmsAdmin.getPilotInfo( gridReference )
@@ -632,7 +619,7 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
     """
     if type( gridReference ) not in types.StringTypes:
-      return self.__errorReport( 'Expected string for pilot reference' )
+      return self._errorReport( 'Expected string for pilot reference' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
     return wmsAdmin.getPilotLoggingInfo( gridReference )
@@ -654,7 +641,7 @@ class DiracAdmin:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
     result = wmsAdmin.getPilots( jobID )
@@ -728,13 +715,13 @@ class DiracAdmin:
         try:
           conditions[key] = str( value )
         except Exception, x:
-          return self.__errorReport( str( x ), 'Expected string for %s field' % key )
+          return self._errorReport( str( x ), 'Expected string for %s field' % key )
 
     try:
       requestStart = int( requestStart )
       limit = int( limit )
     except Exception, x:
-      return self.__errorReport( str( x ), 'Expected integer for %s field' % limit )
+      return self._errorReport( str( x ), 'Expected integer for %s field' % limit )
 
     self.log.verbose( 'Will select requests with the following conditions' )
     self.log.verbose( self.pPrint.pformat( conditions ) )
@@ -882,8 +869,8 @@ class DiracAdmin:
                         'in default list of protocols:\n%s' % ( protocol, protocol, ', '.join( defaultProtocols ) ) )
 
     modifiedCS = False
-    result = self._promptUser( 'Do you want to add the following default protocols:'
-                               ' %s for SE(s):\n%s' % ( ', '.join( protocolsList ), ', '.join( siteSEs ) ) )
+    result = promptUser( 'Do you want to add the following default protocols:'
+                         ' %s for SE(s):\n%s' % ( ', '.join( protocolsList ), ', '.join( siteSEs ) ) )
     if not result['OK']:
       return result
 
@@ -912,16 +899,6 @@ class DiracAdmin:
         print 'No modifications to CS required'
 
     return S_OK()
-
-  #############################################################################
-  def __errorReport( self, error, message = None ):
-    """Internal function to return errors and exit with an S_ERROR()
-    """
-    if not message:
-      message = error
-
-    self.log.warn( error )
-    return S_ERROR( message )
 
   #############################################################################
   def csSetOption( self, optionPath, optionValue ):
@@ -1044,52 +1021,6 @@ class DiracAdmin:
       return S_ERROR( 'Exceeded maximum SMS length of 160 characters' )
     notification = NotificationClient()
     return notification.sendSMS( userName, body, fromAddress )
-
-  #############################################################################
-  def _getCurrentUser( self ):
-    """Simple function to return current DIRAC username.
-    """
-    proxy = Locations.getProxyLocation()
-    if not proxy:
-      return S_ERROR( 'No proxy found in local environment' )
-    else:
-      self.log.verbose( 'Current proxy is %s' % proxy )
-
-    chain = X509Chain()
-    result = chain.loadProxyFromFile( proxy )
-    if not result[ 'OK' ]:
-      return result
-
-    result = chain.getIssuerCert()
-    if not result[ 'OK' ]:
-      return result
-    issuerCert = result[ 'Value' ]
-    dn = issuerCert.getSubjectDN()[ 'Value' ]
-    result = CS.getUsernameForDN( dn )
-    if not result[ 'OK' ]:
-      return result
-
-    return result
-
-  #############################################################################
-  def _promptUser( self, message ):
-    """Internal function to pretty print an object.
-    """
-    self.log.verbose( '%s %s' % ( message, '[yes/no] : ' ) )
-    response = raw_input( '%s %s' % ( message, '[yes/no] : ' ) )
-    responses = ['yes', 'y', 'n', 'no']
-    if not response.strip() or response == '\n':
-      self.log.info( 'Possible responses are: %s' % ( ', '.join( responses ) ) )
-      response = raw_input( '%s %s' % ( message, '[yes/no] : ' ) )
-
-    if not response.strip().lower() in responses:
-      self.log.info( 'Problem interpreting input "%s", assuming negative response.' % ( response ) )
-      return S_ERROR( response )
-
-    if response.strip().lower() == 'y' or response.strip().lower() == 'yes':
-      return S_OK( response )
-    else:
-      return S_ERROR( response )
 
   #############################################################################
   def getBDIISite( self, site, host = None ):
