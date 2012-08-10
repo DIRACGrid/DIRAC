@@ -90,12 +90,17 @@ class TransferQualityCommand( Command ):
            
     for element, elementDict in qualityResults.items():
       
+      if element in ( 'Suceeded', 'Total' ):
+        # Sometimes it returns this element, which we do not want
+        continue
+      
       values = elementDict.values()
       
+      #FIXME: will we get empty dictionaries ?
       if values:
         qualityMean[ element ] = sum( values ) / len( values )        
-      else:     
-        qualityMean[ element ] = 0   
+#      else:     
+#        qualityMean[ element ] = 0   
            
     return S_OK( qualityMean )  
 
@@ -177,7 +182,7 @@ class TransferFailedCommand( Command ):
            
     for element, elementDict in qualityResults.items():
       
-      if element == 'Suceeded':
+      if element in ( 'Suceeded', 'Total' ):
         # Sometimes it returns this element, which we do not want
         continue
        
