@@ -101,7 +101,7 @@ class GGUSTicketsClient:
     selectedTickets = {} # initialize the dictionary of tickets to return
     for ticket in ticketList:
       
-      _id               = ticket.GHD_REquest_ID
+      _id               = ticket.GHD_Request_ID
       _status           = ticket.GHD_Status
       _shortDescription = ticket.GHD_Short_Description
       
