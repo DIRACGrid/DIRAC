@@ -1,6 +1,9 @@
 # $HeadURL$
 """ GGUSTicketsClient class is a client for the GGUS Tickets DB.
 """
+
+import urllib2
+
 from suds        import WebFault
 from suds.client import Client
 
@@ -54,6 +57,8 @@ class GGUSTicketsClient:
     try:
       ticketList = self.gclient.service.TicketGetList( query )
     except WebFault, e:
+      return S_ERROR( e )
+    except urllib2.URLError, e:
       return S_ERROR( e )
     
     stats = self.globalStatistics( ticketList )
