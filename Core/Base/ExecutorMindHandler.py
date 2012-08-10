@@ -37,7 +37,7 @@ class ExecutorMindHandler( RequestHandler ):
       self.__allowedClients = []
 
     def cbSendTask( self, taskId, taskObj, eId, eType ):
-      return self.__sendTaskCB(  taskId, taskObj, eId, eType )
+      return self.__sendTaskCB( taskId, taskObj, eId, eType )
 
     def cbDispatch( self, taskId, taskObj, pathExecuted ):
       return self.__dispatchCB( taskId, taskObj, pathExecuted )
@@ -73,6 +73,7 @@ class ExecutorMindHandler( RequestHandler ):
     if cls.log.shown( "VERBOSE" ):
       gThreadScheduler.setMinValidPeriod( 1 )
       gThreadScheduler.addPeriodicTask( 10, lambda: cls.log.verbose( "== Internal state ==\n%s\n===========" % pprint.pformat( cls.__eDispatch._internals() ) ) )
+    return S_OK()
 
   @classmethod
   def setAllowedClients( cls, aClients ):
