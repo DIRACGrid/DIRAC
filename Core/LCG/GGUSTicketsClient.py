@@ -39,44 +39,17 @@ class GGUSTicketsClient:
     if endDate is not None:
       query = query + ' AND \'GHD_Date Of Creation\'<' + str( endDate )
 
-    # create the URL to get tickets relative to the site:
-    # Updated from https://gus.fzk.de to https://ggus.eu 
-    ggusURL = "https://ggus.eu/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&"\
-                                                      "show_columns_check[]=TICKET_TYPE&"\
-                                                      "show_columns_check[]=AFFECTED_VO&"\
-                                                      "show_columns_check[]=AFFECTED_SITE&"\
-                                                      "show_columns_check[]=RESPONSIBLE_UNIT&"\
-                                                      "show_columns_check[]=STATUS&"\
-                                                      "show_columns_check[]=DATE_OF_CREATION&"\
-                                                      "show_columns_check[]=LAST_UPDATE&"\
-                                                      "show_columns_check[]=SHORT_DESCRIPTION&"\
-                                                      "ticket=&"\
-                                                      "supportunit=all&"\
-                                                      "vo=lhcb&"\
-                                                      "user=&"\
-                                                      "keyword=&"\
-                                                      "involvedsupporter=&"\
-                                                      "assignto=&"\
-                                                      "affectedsite=" + siteName + "&"\
-                                                      "specattrib=0&"\
-                                                      "status=open&"\
-                                                      "priority=all&"\
-                                                      "typeofproblem=all&"\
-                                                      "mouarea=&"\
-                                                      "radiotf=1&"\
-                                                      "timeframe=any&"\
-                                                      "tf_date_day_s=&"\
-                                                      "tf_date_month_s=&"\
-                                                      "tf_date_year_s=&"\
-                                                      "tf_date_day_e=&"\
-                                                      "tf_date_month_e=&"\
-                                                      "tf_date_year_e=&"\
-                                                      "lm_date_day=12&"\
-                                                      "lm_date_month=2&"\
-                                                      "lm_date_year=2010&"\
-                                                      "orderticketsby=GHD_INT_REQUEST_ID&"\
-                                                      "orderhow=descending"
-
+    # create the URL to get tickets relative to the site ( opened only ! ): 
+    ggusURL = 'https://ggus.eu/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&\
+               show_columns_check[]=TICKET_TYPE&show_columns_check[]=AFFECTED_VO&show_columns_check[]=\
+               AFFECTED_SITE&show_columns_check[]=PRIORITY&show_columns_check[]=RESPONSIBLE_UNIT&show_\
+               columns_check[]=STATUS&show_columns_check[]=DATE_OF_CREATION&show_columns_check[]=LAST_UPDATE&\
+               show_columns_check[]=TYPE_OF_PROBLEM&show_columns_check[]=SUBJECT&ticket=&supportunit=all&su_\
+               hierarchy=all&vo=lhcb&user=&keyword=&involvedsupporter=&assignto=&affectedsite=%s\
+               &specattrib=0&status=open&priority=all&typeofproblem=all&ticketcategory=&mouarea=&technology_\
+               provider=&date_type=creation+date&radiotf=1&timeframe=any&untouched_date=&orderticketsby=GHD_\
+               INT_REQUEST_ID&orderhow=descending' % siteName
+    
     # the query must be into a try block. Empty queries, though formally correct, raise an exception
     try:
       ticketList = self.gclient.service.TicketGetList( query )
@@ -92,10 +65,11 @@ class GGUSTicketsClient:
 
 ################################################################################
   
-  def globalStatistics( self, ticketList ):
+  @staticmethod
+  def globalStatistics( ticketList ):
     '''
-        Get some statistics about the tickets for the site: total number
-        of tickets and number of ticket in different status
+      Get some statistics about the tickets for the site: total number
+      of tickets and number of ticket in different status
     '''
     
     selectedTickets = {} # initialize the dictionary of tickets to return
@@ -113,7 +87,7 @@ class GGUSTicketsClient:
     # group tickets in only 2 categories: open and terminal states
     # create a dictionary to store the short description only for tickets in open states:
     openStates     = [ 'assigned', 'in progress', 'new', 'on hold', 'reopened', 'waiting for reply' ]
-    terminalStates = [ 'solved', 'unsolved', 'verified' ]
+    terminalStates = [ 'solved', 'unsolved', 'verified', 'closed' ]
     
     statusCount = { 'open' : 0, 'terminal' : 0 }
     
