@@ -31,6 +31,7 @@ FIX: X509Chain - avoid a return of error when the group is not valid
 FIX: MySQL - reduce verbosity of log messages when high level methods are used
 CHANGE: Several DB classes have been updated to use the MySQL buildCondition method
 NEW: MySQL - provide support for greater and smaller arguments to all MySQL high level methods
+FIX: Service.py - check all return values from all initializers
 
 *Configuration
 CHANGE: By default return option and section lists ordered as in the CS

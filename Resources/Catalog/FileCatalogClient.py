@@ -20,9 +20,9 @@ class FileCatalogClient(Client):
       self.setServer(url)
     self.setTimeout(timeout)
     self.available = False
-    res = self.isOK()
-    if res['OK']:
-      self.available = res['Value']
+#    res = self.isOK()
+#    if res['OK']:
+#      self.available = res['Value']
 
   def isOK(self,rpc='',url='',timeout=120):
     if not self.available:
