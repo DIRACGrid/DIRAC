@@ -4,57 +4,40 @@
 from suds        import WebFault
 from suds.client import Client
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 
 __RCSID__ = "$Id$"
 
 class GGUSTicketsClient:
   # FIXME: Why is this a class and not just few methods?
 
-
   def __init__( self ):
-    # FIXME: Why all these are Attributes of the class and not local variables?
-    self.count            = {}
-    self.endDate          = None
-    self.gclient          = None
-    self.query            = ''
-    self.selectedTickets  = {}
-    self.siteName         = ''
-    self.startDate        = None
-    self.statusCount      = {}
-    self.shortDescription = {}
+    
+    # create client instance using GGUS wsdl:
+    self.gclient          = Client( "https://prod-ars.ggus.eu/arsys/WSDL/public/prod-ars/GGUS" )
+    authInfo = self.gclient.factory.create( "AuthenticationInfo" )
+    authInfo.userName     = "ticketinfo"
+    authInfo.password     = "TicketInfo"
+    self.gclient.set_options( soapheaders = authInfo )
 
 ################################################################################
 
-  def getTicketsList( self, name, startDate = None, endDate = None ):
+  def getTicketsList( self, siteName, startDate = None, endDate = None ):
     """ Return tickets of entity in name
        @param name: should be the name of the site
        @param startDate: starting date (optional)
        @param endDate: end date (optional)
     """
-    self.siteName = name
-    self.statusCount = {}
-    self.shortDescription = {}
 
-    # create client instance using GGUS wsdl:
-    self.gclient = Client( "https://prod-ars.ggus.eu/arsys/WSDL/public/prod-ars/GGUS" )
-    authInfo = self.gclient.factory.create( "AuthenticationInfo" )
-    authInfo.userName = "ticketinfo"
-    authInfo.password = "TicketInfo"
-    self.gclient.set_options( soapheaders = authInfo )
     # prepare the query string:
-    self.query = '\'GHD_Affected Site\'=\"' + self.siteName + '\" AND \'GHD_Affected VO\'="lhcb"'
-    #self.query = '\'GHD_Affected Site\'=\"'+ self.siteName + '\"'
-    self.startDate = startDate
-    if self.startDate is not None:
-# st = 'set the starting date as ', self.startDate
-# gLogger.info(st)
-      self.query = self.query + ' AND \'GHD_Date Of Creation\'>' + str( self.startDate )
-    self.endDate = endDate
-    if self.endDate is not None:
-# st = 'set the end date as ', self.endDate
-# gLogger.info(st)
-      self.query = self.query + ' AND \'GHD_Date Of Creation\'<' + str( self.endDate )
+    query = '\'GHD_Affected Site\'=\"' + siteName + '\" AND \'GHD_Affected VO\'="lhcb"'
+    
+    
+    if startDate is not None:
+      query = query + ' AND \'GHD_Date Of Creation\'>' + str( startDate )
+    
+    if endDate is not None:
+      query = query + ' AND \'GHD_Date Of Creation\'<' + str( endDate )
 
     # create the URL to get tickets relative to the site:
     # Updated from https://gus.fzk.de to https://ggus.eu 
@@ -74,7 +57,7 @@ class GGUSTicketsClient:
                                                       "keyword=&"\
                                                       "involvedsupporter=&"\
                                                       "assignto=&"\
-                                                      "affectedsite=" + self.siteName + "&"\
+                                                      "affectedsite=" + siteName + "&"\
                                                       "specattrib=0&"\
                                                       "status=open&"\
                                                       "priority=all&"\
@@ -96,52 +79,62 @@ class GGUSTicketsClient:
 
     # the query must be into a try block. Empty queries, though formally correct, raise an exception
     try:
-      self.ticketList = self.gclient.service.TicketGetList( self.query )
-      self.globalStatistics()
-    except WebFault:
-      self.statusCount['terminal'] = 0
-      self.statusCount['open'] = 0
-
-    return S_OK( ( self.statusCount, ggusURL, self.shortDescription ) )
+      ticketList = self.gclient.service.TicketGetList( query )
+    except WebFault, e:
+      return S_ERROR( e )
+    
+    stats = self.globalStatistics( ticketList )
+    if not stats[ 'OK' ]:
+      return stats
+    statusCount, shortDescription = stats[ 'Value' ]
+    
+    return S_OK( ( statusCount, ggusURL, shortDescription ) )
 
 ################################################################################
-  def globalStatistics( self ):
+  
+  def globalStatistics( self, ticketList ):
     '''
         Get some statistics about the tickets for the site: total number
         of tickets and number of ticket in different status
     '''
-    self.selectedTickets = {} # initialize the dictionary of tickets to return
-    for ticket in self.ticketList:
-      id_ = ticket[3][0]
-      if id_ not in self.selectedTickets.keys():
-        self.selectedTickets[id_]                     = {}
-        self.selectedTickets[id_]['status']           = ticket[0][0]
-        self.selectedTickets[id_]['shortDescription'] = ticket[1][0]
-        self.selectedTickets[id_]['responsibleUnit']  = ticket[2][0]
-        self.selectedTickets[id_]['site']             = ticket[4][0]
-    self.count = {}
+    
+    selectedTickets = {} # initialize the dictionary of tickets to return
+    for ticket in ticketList:
+      
+      _id               = ticket.GHD_REquest_ID
+      _status           = ticket.GHD_Status
+      _shortDescription = ticket.GHD_Short_Description
+      
+      selectedTickets[ _id ] = {
+                                'status'           : _status,
+                                'shortDescription' : _shortDescription,                               
+                                }      
+        
     # group tickets in only 2 categories: open and terminal states
     # create a dictionary to store the short description only for tickets in open states:
-    openStates = ['assigned', 'in progress', 'new', 'on hold',
-                  'reopened', 'waiting for reply']
-    terminalStates = ['solved', 'unsolved', 'verified']
-    self.statusCount['open'] = 0
-    self.statusCount['terminal'] = 0
-    for id_ in self.selectedTickets.keys():
-      status = self.selectedTickets[id_]['status']
-      if status not in self.count.keys():
-        self.count[status] = 0
-      self.count[status] += 1
+    openStates     = [ 'assigned', 'in progress', 'new', 'on hold', 'reopened', 'waiting for reply' ]
+    terminalStates = [ 'solved', 'unsolved', 'verified' ]
+    
+    statusCount = { 'open' : 0, 'terminal' : 0 }
+    
+    shortDescription = {}
+    
+    for ticketID, ticketValues in selectedTickets.items():
+      
+      status = ticketValues[ 'status' ]
+      
       if status in terminalStates:
-        self.statusCount['terminal'] += 1
+        statusCount[ 'terminal' ] += 1
       elif status in openStates:
-        self.statusCount['open'] += 1
-        if id_ not in self.shortDescription.keys():
-          self.shortDescription[str( id_ )] = self.selectedTickets[id_]['shortDescription']
+        statusCount[ 'open' ] += 1
+      
+        if ticketID not in shortDescription.keys():
+          shortDescription[ ticketID ] = ticketValues[ 'shortDescription' ]
+
       else:
-        pass
-# st = 'ERROR! GGUS status unknown: ', status
-# gLogger.error(st)
+        return S_ERROR( '%s is not a known GGUS status' % status )  
+         
+    return S_OK( ( statusCount, shortDescription ) ) 
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
