@@ -5,7 +5,7 @@
 
 '''
 
-from DIRAC                                                import gLogger, S_OK 
+from DIRAC                                                import gLogger, S_OK, S_ERROR 
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 from DIRAC.ResourceStatusSystem.PolicySystem              import Status
 from DIRAC.ResourceStatusSystem.Utilities                 import RssConfiguration
@@ -165,17 +165,23 @@ class PDP:
       if not 'Status' in policyInvocationResult:
         print policyInvocationResult
         gLogger.error( policyInvocationResult )
-        return policyInvocationResult
+        #FIXME: do a better handling that return S_ERROR
+        return S_ERROR( policyInvocationResult )
       
+      #FIXME: better handling for Uknown statuses
+      if policyInvocationResult[ 'Status' ] == 'Unknown':
+        gLogger.warn( policyInvocationResult )
+        continue
+        
       if not policyInvocationResult[ 'Status' ] in validStatus:
         print policyInvocationResult
         gLogger.error( policyInvocationResult )
-        return policyInvocationResult
+        return S_ERROR( policyInvocationResult )
 
       if not 'Reason' in policyInvocationResult:
         print policyInvocationResult
         gLogger.error( policyInvocationResult )
-        return policyInvocationResult
+        return S_ERROR( policyInvocationResult )
        
       policyInvocationResults.append( policyInvocationResult )
       
