@@ -51,16 +51,31 @@ class GGUSTicketsCommand( Command ):
 ################################################################################
 ################################################################################
 
-class GGUSTicketsSitesCommand( Command ):
+class GGUSTicketsMasterCommand( Command ):
   
   def __init__( self, args = None, clients = None ):
     
-    super( GGUSTicketsSitesCommand, self ).__init__( args, clients )
+    super( GGUSTicketsMasterCommand, self ).__init__( args, clients )
     
     if 'GGUSTicketsClient' in self.apis:
       self.gClient = self.apis[ 'GGUSTicketsClient' ]
     else:
       self.gClient = GGUSTicketsClient() 
+      
+    if 'ResourceManagementClient' in self.apis:
+      self.rmClient = self.apis[ 'ResourceManagementClient' ]
+    else:
+      self.rmClient = ResourceManagementClient()   
+  
+  def storeCommand( self, gocName, result ):
+       
+    ticketsCount, link, tickets = result
+    openTickets = ticketsCount[ 'open' ]
+      
+    resQuery = self.rmClient.addOrModifyGGUSTicketsCache( gocName, link, 
+                                                          openTickets, tickets ) 
+
+    return resQuery
   
   def doCommand( self ):
     """ 
@@ -68,6 +83,8 @@ class GGUSTicketsSitesCommand( Command ):
     `args`: 
       - args[0]: string: should be the name of the site
     """
+    
+    failed = []
     
     sites = CSHelpers.getSites()
     if not sites[ 'OK' ]:
@@ -80,23 +97,26 @@ class GGUSTicketsSitesCommand( Command ):
       
       gocName = getGOCSiteName( siteName )
       if not gocName[ 'OK' ]:
+        failed.append( gocName[ 'Message' ] )
         continue
       
       gocNames.append( gocName[ 'Value' ] )
        
     gocNames = list( set( gocNames ) )
     
-    results = {}
-    
     for gocName in gocNames:
        
       res = self.gClient.getTicketsList( gocName )
       if not res[ 'OK' ]:
+        failed.append( res[ 'Message' ] )
         continue
       res = res[ 'Value' ]
-      results[ gocName ] = res 
-            
-    return S_OK( results )
+       
+      storeCo = self.storeCommand( gocName, res )
+      if not storeCo[ 'OK' ]:
+        failed.append( storeCo[ 'Message' ] ) 
+       
+    return S_OK( failed )
 
 ################################################################################
 ################################################################################

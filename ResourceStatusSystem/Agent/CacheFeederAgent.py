@@ -44,7 +44,7 @@ class CacheFeederAgent( AgentModule ):
     self.commands[ 'Jobs' ] = [ { 'JobsWMS' : { 'siteName' : None } }]  
     #FIXME: missing logger
     
-    self.commands[ 'GGUSTickets' ] = [ { 'GGUSTicketsSites' : {} }]
+    self.commands[ 'GGUSTickets' ] = [ { 'GGUSTicketsMaster' : {} }]
     
     #PilotsCommand
     self.commands[ 'Pilots' ] = [ 
@@ -203,7 +203,7 @@ class CacheFeederAgent( AgentModule ):
       return self.__logSpaceTokenOccupancy( commandDict, commandObject, results )
     
     if commandModule == 'GGUSTickets':
-      return self.__logGGUSTickets( commandDict, commandObject, results )
+      return self.__logGGUSTickets( results )
 
     commandName = commandDict.keys()[ 0 ]
     return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
@@ -428,17 +428,10 @@ class CacheFeederAgent( AgentModule ):
 
   def __logGGUSTickets( self, results  ):
     
-    for gocSiteName, ggusResult in results.items():
-      
-      ticketsCount, link, tickets = ggusResult
-      openTickets = ticketsCount[ 'open' ]
-      
-      resQuery = self.rmClient.addOrModifyGGUSTicketsCache( gocSiteName, link, 
-                                                            openTickets, tickets ) 
-      if not resQuery[ 'OK' ]:
-        return resQuery
+    if results:
+      self.log.error( results )
     
-    return resQuery  
+    return S_OK()  
      
       
 #  def execute2( self ):
