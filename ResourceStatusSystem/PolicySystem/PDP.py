@@ -7,7 +7,6 @@
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR 
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
-#from DIRAC.ResourceStatusSystem.PolicySystem              import Status
 from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
 from DIRAC.ResourceStatusSystem.Utilities                 import RssConfiguration
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
@@ -30,7 +29,7 @@ class PDP:
     self.iGetter         = InfoGetter()
 
     self.decissionParams = {}  
-    self.rssMachine      = RSSMachine( None )
+    self.rssMachine      = RSSMachine( 'Unknown' )
 
   def setup( self, decissionParams = None ):
 
@@ -92,7 +91,6 @@ class PDP:
       return singlePolicyResults
     singlePolicyResults = singlePolicyResults[ 'Value' ]    
         
-    #policyCombinedResults = self._combinePoliciesResults( singlePolicyResults )
     policyCombinedResults = self._combineSinglePolicyResults( singlePolicyResults )
     if not policyCombinedResults[ 'OK' ]:
       return policyCombinedResults
@@ -104,30 +102,8 @@ class PDP:
     if not policyActionsThatApply[ 'OK' ]:
       return policyActionsThatApply
     policyActionsThatApply = policyActionsThatApply[ 'Value' ]
-
-#    if policyCombinedResults == {}:
-#      policyCombinedResults[ 'Action' ]     = False
-#      policyCombinedResults[ 'Reason' ]     = 'No policy results'
-#      policyCombinedResults[ 'PolicyType' ] = policyType
-#
-#    if policyCombinedResults.has_key( 'Status' ):
-#FIXME: it newStatus != status, do not apply actions ( done on the actions, individually,
-# it is up to them
-
-#    newstatus = policyCombinedResults[ 'Status' ]
-#
-#    if newstatus != self.decissionParams[ 'status' ] and self.decissionParams[ 'status' ] is not None: # Policies satisfy
-#        newPolicyType = self.iGetter.getNewPolicyType( self.__granularity, newstatus )
-#        policyType    = set( policyType ) & set( newPolicyType )
-#        
+           
     policyCombinedResults[ 'PolicyAction' ] = policyActionsThatApply
-#    else:
-#      policyCombinedResults[ 'PolicyAction' ] = []  
-#
-#      else:                          # Policies does not satisfy
-#        policyCombinedResults[ 'Action' ] = False
-#
-#      policyCombinedResults[ 'PolicyType' ] = policyType
 
     return S_OK( 
                 { 
@@ -185,47 +161,6 @@ class PDP:
       
     return S_OK( policyInvocationResults )   
     
-#  def _invocation2( self, granularity, name, status, policy, args, policies ):
-#    '''
-#      One by one, use the PolicyCaller to invoke the policies, and putting
-#      their results in `policyResults`. When the status is `Unknown`, invokes
-#      `self.__useOldPolicyRes`. Always returns a list, possibly empty.
-#    '''
-#
-#    policyResults = []
-#
-#    for pol in policies:
-#      
-#      pName     = pol[ 'Name' ]
-#      pModule   = pol[ 'Module' ]
-#      extraArgs = pol[ 'args' ]
-#      commandIn = pol[ 'commandIn' ]
-#      
-#      res = self.pCaller.policyInvocation( granularity = granularity, name = name,
-#                                           status = status, policy = policy, 
-#                                           args = args, pName = pName,
-#                                           pModule = pModule, extraArgs = extraArgs, 
-#                                           commandIn = commandIn )
-#
-#      # If res is empty, return immediately
-#      if not res: 
-#        return policyResults
-#
-#      if not res.has_key( 'Status' ):
-#        print('\n\n Policy result ' + str(res) + ' does not return "Status"\n\n')
-#        raise TypeError
-#
-#      # Else
-#      if res[ 'Status' ] == 'Unknown':
-#        res = self.__useOldPolicyRes( name = name, policyName = pName )
-#
-#      if res[ 'Status' ] not in ( 'Error', 'Unknown' ):
-#        policyResults.append( res )
-#      else:
-#        gLogger.warn( res )      
-#      
-#    return policyResults
-
 ################################################################################
 
   def _combineSinglePolicyResults( self, singlePolicyRes ):
@@ -237,9 +172,7 @@ class PDP:
       
       Order elements in list by state, being the lowest the most restrictive
       one in the hierarchy.
-      
-      
-      
+   
     '''
 
     # Dictionary to be returned
@@ -288,117 +221,6 @@ class PDP:
     policyCombined[ 'State' ] = nextState
     
     return S_OK( policyCombined )                             
-
-#  def _combinePoliciesResults( self, pol_results ):
-#    '''
-#    INPUT: list type
-#    OUTPUT: dict type
-#    * Compute a new status, and store it in variable newStatus, of type integer.
-#    * Make a list of policies that have the worst result.
-#    * Concatenate the Reason fields
-#    * Take the first EndDate field that exists (FIXME: Do something more clever)
-#    * Finally, return the result
-#    '''
-#    if pol_results == []: 
-#      return {}
-#
-#    pol_results.sort( key=Status.value_of_policy )
-#    newStatus = -1 # First, set an always invalid status
-#
-#    #FIXME: this whole method is ugly as hell... beautify it !
-#
-#    try:
-#      # We are in a special status, maybe forbidden transitions
-#      _prio, access_list, gofun = Status.statesInfo[ self.decissionParams[ 'status' ] ]
-#      if access_list != set():
-#        # Restrictions on transitions, checking if one is suitable:
-#        for polRes in pol_results:
-#          if Status.value_of_policy( polRes ) in access_list:
-#            newStatus = Status.value_of_policy( polRes )
-#            break
-#
-#        # No status from policies suitable, applying stategy and
-#        # returning result.
-#        if newStatus == -1:
-#          newStatusIndex = gofun( access_list )
-#          
-#          newStatus = Status.status_of_value( newStatusIndex )
-#          if not newStatus[ 'OK' ]:
-#            return newStatus
-#          newStatus = newStatus[ 'Value' ]         
-#          
-#          return S_OK( { 
-#                        'Status'       : newStatus,
-#                        'Reason'       : 'Status forced by PDP',
-#                        'EndDate'      : None,
-#                        'PolicyAction' : None 
-#                       })
-#
-#      else:
-#        # Special Status, but no restriction on transitions
-#        newStatus = Status.value_of_policy( pol_results[ 0 ] )
-#
-#    except KeyError:
-#      # We are in a "normal" status: All transitions are possible.
-#      newStatus = Status.value_of_policy( pol_results[ 0 ] )
-#
-#    # At this point, a new status has been chosen. newStatus is an
-#    # integer.
-#
-#    worstResults = [ p for p in pol_results
-#                     if Status.value_of_policy( p ) == newStatus ]
-#
-#    # Concatenate reasons
-#    def getReason( pol ):
-#      try:
-#        res = pol[ 'Reason' ]
-#      except KeyError:
-#        res = ''
-#      return res
-#
-#    worstResultsReasons = [ getReason( p ) for p in worstResults ]
-#
-#    def catRes( xVal, yVal ):
-#      '''
-#        Concatenate xVal and yVal.
-#      '''
-#      if xVal and yVal : 
-#        return xVal + ' |###| ' + yVal
-#      elif xVal or yVal:
-#        if xVal: 
-#          return xVal
-#        else: 
-#          return yVal
-#      else: 
-#        return ''
-#
-#    concatenatedRes = reduce( catRes, worstResultsReasons, '' )
-#
-#    # Handle EndDate
-#    # endDatePolicies = [ p for p in worstResults if p.has_key( 'EndDate' ) ]
-#
-#    # Building and returning result
-#    res = {
-#           'Status'       : None,
-#           'Reason'       : None,
-#           #'EndDate'      : None,
-#           'PolicyAction' : None
-#           }
-#
-#    newStatusValue = Status.status_of_value( newStatus )
-#    if not newStatusValue[ 'OK' ]:
-#      return newStatusValue
-#    newStatusValue = newStatusValue[ 'Value' ]  
-#    
-#    res[ 'Status' ] = newStatusValue
-#    
-#    if concatenatedRes != '': 
-#      res[ 'Reason' ]  = concatenatedRes
-#    
-#    # if endDatePolicies != []: 
-#    #  res[ 'EndDate' ] = endDatePolicies[ 0 ][ 'EndDate' ]
-#    
-#    return S_OK( res )
 
 ################################################################################
 
