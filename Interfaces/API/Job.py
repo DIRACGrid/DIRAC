@@ -26,11 +26,13 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Workflow.Parameter                            import *
-from DIRAC.Core.Workflow.Module                               import *
-from DIRAC.Core.Workflow.Step                                 import *
-from DIRAC.Core.Workflow.Workflow                             import *
-from DIRAC.Core.Workflow.WorkflowReader                       import *
+import os, types, re
+
+from DIRAC                                                    import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Workflow.Parameter                            import Parameter
+from DIRAC.Core.Workflow.Module                               import ModuleDefinition
+from DIRAC.Core.Workflow.Step                                 import StepDefinition
+from DIRAC.Core.Workflow.Workflow                             import Workflow
 from DIRAC.Core.Base.API                                      import API
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight                import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config                  import gConfig
@@ -40,17 +42,21 @@ from DIRAC.Core.Utilities.Subprocess                          import shellCall
 from DIRAC.Core.Utilities.List                                import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
-from DIRAC                                                    import gLogger
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 
 class Job( API ):
+  """ DIRAC jobs
+  """
 
   #############################################################################
 
   def __init__( self, script = None, stdout = 'std.out', stderr = 'std.err' ):
     """Instantiates the Workflow object and some default parameters.
     """
+
+    super( Job, self ).__init__()
+
     self.dbg = False
     if gConfig.getValue( self.section + '/LogLevel', 'DEBUG' ) == 'DEBUG':
       self.dbg = True
@@ -862,7 +868,7 @@ class Job( API ):
     self.log.info( '--------------------------------------' )
     #print self.workflow.parameters
     #print params.getParametersNames()
-    for name, props in paramsDict.items():
+    for name, _props in paramsDict.items():
       ptype = paramsDict[name]['type']
       value = paramsDict[name]['value']
       if showType:
@@ -978,6 +984,7 @@ class Job( API ):
     return resolvedIS
 
   #############################################################################
+  @staticmethod
   def __getScriptStep( self, name = 'Script' ):
     """Internal function. This method controls the definition for a script module.
     """
