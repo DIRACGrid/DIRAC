@@ -17,7 +17,6 @@
 __RCSID__ = "$Id$"
 
 import re, os, sys, time, shutil, types, tempfile, glob, tarfile
-import pprint
 import DIRAC
 
 from DIRAC.Core.Base.API                                 import API
@@ -82,11 +81,6 @@ class Dirac( API ):
       self.defaultFileCatalog = defaultFC
     if not self.defaultFileCatalog:
       self.defaultFileCatalog = 'FileCatalog'
-
-  def version( self ):
-    """ Report DIRAC version
-    """
-    return S_OK( DIRAC.buildVersion )
 
   #############################################################################
   # Repository specific methods
@@ -390,7 +384,7 @@ class Dirac( API ):
     return S_OK( 'Nothing to do' )
 
   #############################################################################
-  def runLocalAgent( self, jdl, jobDescription ):
+  def runLocalAgent( self, jdl ):
     """Internal function.  This method is equivalent to submit(job,mode='Agent').
        All output files are written to a <jobID> directory where <jobID> is the
        result of submission to the WMS.  Please note that the job must be eligible to the
@@ -419,6 +413,7 @@ class Dirac( API ):
 
     return result
 
+  @staticmethod
   def __forceLocal( self, job ):
     """Update Job description to avoid pilot submission by WMS
     """
@@ -591,6 +586,7 @@ class Dirac( API ):
       time.sleep( pollingTime )
 
   #############################################################################
+  @staticmethod
   def __getVOPolicyModule( self, module ):
     """ Utility to get the VO Policy module name
     """
@@ -1005,6 +1001,7 @@ class Dirac( API ):
     return S_OK( 'Execution completed successfully' )
 
   #############################################################################
+  @staticmethod
   def __printOutput( self, fd = None, message = '' ):
     """Internal callback function to return standard output when running locally.
     """
@@ -1185,7 +1182,7 @@ class Dirac( API ):
       replicaDict['Value']['Successful'].pop( lfn )
 
     lfnGroups = []
-    for sites, files in siteLfns.items():
+    for _sites, files in siteLfns.items():
       lists = breakListIntoChunks( files, maxFilesPerJob )
       lfnGroups.extend( lists )
 
@@ -2677,23 +2674,6 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def uploadProxy( self, proxy = False ):
-    """The uploadProxy will try to upload a proxy to the proxy manager service.
-
-       If not explicitly specified, the current proxy is taken.
-
-       Example Usage:
-
-       >>> print dirac.uploadProxy()
-       {'OK': True}
-
-       @param proxy: optional proxy
-       @type proxy: string
-       @return: S_OK,S_ERROR
-    """
-    return gProxyManager.uploadProxy( proxy )
-
-  #############################################################################
   def getJobJDL( self, jobID, printOutput = False ):
     """Simple function to retrieve the current JDL of an existing job in the
        workload management system.  The job JDL is converted to a dictionary
@@ -2724,33 +2704,6 @@ class Dirac( API ):
     if printOutput:
       print self.pPrint.pformat( result['Value'] )
 
-    return result
-
-  #############################################################################
-  def getLoggerMessages( self, logLevel = None, site = None, system = None, numberOfRecords = 10, printOutput = False ):
-    """Under Development, retrieve logging informations.
-    """
-    if not type( numberOfRecords ) == type( 1 ):
-      return self._errorReport( 'Expected integer for number of records' )
-    logger = LoggerClient()
-    conditions = {}
-    result = logger.getMessages( conds = conditions, maxRecords = numberOfRecords )
-    if printOutput:
-      print self.pPrint.pformat( result['Value'] )
-    return result
-
-  #############################################################################
-  def getLoggerSummary( self, numberOfRecords = 10, printOutput = False ):
-    """Under Development, retrieve logging informations.
-    """
-    if not type( numberOfRecords ) == type( 1 ):
-      return self._errorReport( 'Expected integer for number of records' )
-    logger = LoggerClient()
-    result = logger.getGroupedMessages( groupField = 'FixedTextString',
-                                        orderList = [['recordCount', 'DESC']],
-                                        maxRecords = numberOfRecords )
-    if printOutput:
-      print self.pPrint.pformat( result )
     return result
 
   #############################################################################
@@ -2792,7 +2745,6 @@ class Dirac( API ):
     """Internal function to print the DIRAC API version and related information.
     """
     self.log.info( '<=====%s=====>' % ( self.diracInfo ) )
-    self.log.verbose( self.cvsVersion )
     self.log.verbose( 'DIRAC is running at %s in setup %s' % ( DIRAC.siteName(), self.setup ) )
 
   def getConfigurationValue( self, option, default ):
