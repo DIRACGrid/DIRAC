@@ -44,7 +44,7 @@ class CacheFeederAgent( AgentModule ):
     self.commands[ 'Jobs' ] = [ { 'JobsWMS' : { 'siteName' : None } }]  
     #FIXME: missing logger
     
-    self.commands[ 'GGUSTickets' ] = [ { 'GGUSTickets' : {} }]
+    self.commands[ 'GGUSTickets' ] = [ { 'GGUSTicketsSites' : {} }]
     
     #PilotsCommand
     self.commands[ 'Pilots' ] = [ 
@@ -413,30 +413,33 @@ class CacheFeederAgent( AgentModule ):
 
   def __logSpaceTokenOccupancy( self, commandDict, commandObject, results ):
     
-    spaceToken         = commandObject.args[ 'spaceToken' ]
-    site               = commandObject.args[ 'spaceTokenEndpoint' ]
-    
-    token = spaceToken.split( '-' ).split( '_' )[ 1 ]
-    token = token[0].upper() + token[ 1: ]
-    storageElement = '%s-%s' % ( site, token )
-    
+    spaceToken  = commandObject.args[ 'spaceToken' ]
+    endpoint    = commandObject.args[ 'spaceTokenEndpoint' ]   
+
     total      = results[ 'total' ]
     guaranteed = results[ 'guaranteed' ]
     free       = results[ 'free' ]
     
-    resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( endpoint, spaceToken, 
-                                                                  storageElement, 
+    resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( endpoint, spaceToken,
                                                                   total, guaranteed, 
                                                                   free )
     
     return resQuery  
 
-  def __logGGUSTickets( self, commandDict, commandObject, results  ):
+  def __logGGUSTickets( self, results  ):
     
     for gocSiteName, ggusResult in results.items():
       
-      resQuery = 
+      ticketsCount, link, tickets = ggusResult
+      openTickets = ticketsCount[ 'open' ]
+      
+      resQuery = self.rmClient.addOrModifyGGUSTicketsCache( gocSiteName, link, 
+                                                            openTickets, tickets ) 
+      if not resQuery[ 'OK' ]:
+        return resQuery
     
+    return resQuery  
+     
       
 #  def execute2( self ):
 #
