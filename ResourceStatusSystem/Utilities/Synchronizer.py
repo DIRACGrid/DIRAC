@@ -105,7 +105,7 @@ class Synchronizer( object ):
         _name            = siteTuple[ 0 ]
         _elementType     = domainName
         _statusType      = siteTuple[ 1 ]
-        _status          = 'Banned'
+        _status          = 'Unknown'
         _reason          = 'Synchronzed'
       
         query = self.rStatus.addIfNotThereStatusElement( 'Site', 'Status', name = _name, 
@@ -216,7 +216,7 @@ class Synchronizer( object ):
       
       _name            = ceTuple[ 0 ]
       _statusType      = ceTuple[ 1 ]
-      _status          = 'Banned'
+      _status          = 'Unknown'
       _reason          = 'Synchronzed'
       _elementType     = 'CE'
       
@@ -282,7 +282,7 @@ class Synchronizer( object ):
       
       _name            = catalogTuple[ 0 ]
       _statusType      = catalogTuple[ 1 ]
-      _status          = 'Banned'
+      _status          = 'Unknown'
       _reason          = 'Synchronzed'
       _elementType     = 'Catalog'
       
@@ -348,7 +348,7 @@ class Synchronizer( object ):
       
       _name            = ftsTuple[ 0 ]
       _statusType      = ftsTuple[ 1 ]
-      _status          = 'Banned'
+      _status          = 'Unknown'
       _reason          = 'Synchronzed'
       _elementType     = 'FTS'
       
@@ -414,7 +414,7 @@ class Synchronizer( object ):
       
       _name            = seTuple[ 0 ]
       _statusType      = seTuple[ 1 ]
-      _status          = 'Banned'
+      _status          = 'Unknown'
       _reason          = 'Synchronzed'
       _elementType     = 'StorageElement'
       
@@ -480,7 +480,7 @@ class Synchronizer( object ):
       
       _name            = queueTuple[ 0 ]
       _statusType      = queueTuple[ 1 ]
-      _status          = 'Banned'
+      _status          = 'Unknown'
       _reason          = 'Synchronzed'
       _elementType     = 'Queue'
       
