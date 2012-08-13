@@ -89,7 +89,7 @@ class RSSMachine( StateMachine ):
       goes wrong. 
     '''
     
-    return self.levelOfState( policyResult[ 'State' ] ) 
+    return self.levelOfState( policyResult[ 'Status' ] ) 
   
   def getNextState( self, candidateState ):
     '''
