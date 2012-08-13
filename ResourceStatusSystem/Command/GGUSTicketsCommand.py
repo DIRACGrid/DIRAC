@@ -11,7 +11,7 @@ from DIRAC.Core.LCG.GGUSTicketsClient                           import GGUSTicke
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-from DIRAC.ResourceStatusSystem.Utiltities                      import CSHelpers
+from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
 
 __RCSID__ = '$Id:  $'
