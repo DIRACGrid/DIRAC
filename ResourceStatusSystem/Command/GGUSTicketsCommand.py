@@ -126,6 +126,10 @@ class GGUSTicketsCommand( Command ):
     
     for gocNameToQuery in gocNamesToQuery:
       
+      if gocNameToQuery is None:
+        self.metrics[ 'failed' ].append( 'None result' )
+        continue
+      
       result = self.doNew( gocNameToQuery )
       
       if not result[ 'OK' ]:
