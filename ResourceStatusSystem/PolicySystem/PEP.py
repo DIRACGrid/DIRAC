@@ -50,7 +50,7 @@ class PEP:
 
     resDecisions = self.pdp.takeDecision()
     if not resDecisions[ 'OK' ]:
-      gLogger.error( 'Something went wrong, not enforcing policies for %s' % decissionParams )
+      gLogger.error( 'PEP: Something went wrong, not enforcing policies for %s' % decissionParams )
       return resDecisions
     resDecisions = resDecisions[ 'Value' ]
     

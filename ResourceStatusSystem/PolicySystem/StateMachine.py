@@ -69,6 +69,7 @@ class RSSMachine( StateMachine ):
                    'Degraded' : State( 3 ),
                    'Probing'  : State( 2 ),
                    'Banned'   : State( 1, { 'Banned' : [ 'Banned', 'Probing' ] }, defState = 'Probing' ),
+                   'Error'    : State( 0 )
                   }
 
   def orderPolicyResults( self, policyResults ):

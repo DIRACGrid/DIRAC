@@ -131,31 +131,29 @@ class PDP:
       
       policyInvocationResult = self.pCaller.policyInvocation( decissionParams,
                                                               policyDict ) 
-      #FIXME: a faulty policy will crash all other policies !!
       if not policyInvocationResult[ 'OK' ]:
-        print policyInvocationResult
-        gLogger.error( policyInvocationResult )
-        return policyInvocationResult
+        # We should never enter this line ! Just in case there are policies
+        # missconfigured !
+        _msg = 'runPolicies no OK: %s' % policyInvocationResult
+        gLogger.error( _msg )
+        return S_ERROR( _msg )
        
-      #FIXME: check policy output here makes any sense ? YES
-      
       policyInvocationResult = policyInvocationResult[ 'Value' ]
       
       if not 'Status' in policyInvocationResult:
-        print policyInvocationResult
-        gLogger.error( policyInvocationResult )
-        #FIXME: do a better handling that return S_ERROR
-        return S_ERROR( policyInvocationResult )
+        _msg = 'runPolicies (no Status): %s' % policyInvocationResult
+        gLogger.error( _msg )
+        return S_ERROR( _msg )
         
-      if not policyInvocationResult[ 'Status' ] in validStatus + [ 'Unknown', 'Error' ]:
-        print policyInvocationResult
-        gLogger.error( policyInvocationResult )
-        return S_ERROR( policyInvocationResult )
+      if not policyInvocationResult[ 'Status' ] in validStatus:
+        _msg = 'runPolicies ( not valid status ) %s' % policyInvocationResult[ 'Status' ]
+        gLogger.error( _msg )
+        return S_ERROR( _msg )
 
       if not 'Reason' in policyInvocationResult:
-        print policyInvocationResult
-        gLogger.error( policyInvocationResult )
-        return S_ERROR( policyInvocationResult )
+        _msg = 'runPolicies (no Reason): %s' % policyInvocationResult
+        gLogger.error( _msg )
+        return S_ERROR( _msg )
        
       policyInvocationResults.append( policyInvocationResult )
       
