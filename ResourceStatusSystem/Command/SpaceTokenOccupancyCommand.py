@@ -10,6 +10,7 @@ import lcg_util
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
 __RCSID__ = '$Id:  $'
 
@@ -81,14 +82,28 @@ class SpaceTokenOccupancyCacheCommand( Command ):
       return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
     name = self.args[ 'name' ]
  
+    spaceToken = CSHelpers.getStorageElementSpaceToken( name )
+    if not spaceToken[ 'OK' ]:
+      return self.returnERROR( spaceToken )
+    spaceToken = spaceToken[ 'Value' ]
+ 
     meta = { 'columns' : [ 'Total', 'Free', 'Guaranteed' ] }
  
-    res = self.rmClient.selectSpaceTokenOccupancyCache( storageElement = name, 
+    endpoint = CSHelpers.getStorageElementEndpoint( name )
+    if not endpoint[ 'OK' ]:
+      return self.returnERROR( endpoint )
+    endpoint = endpoint[ 'Value' ]
+ 
+    res = self.rmClient.selectSpaceTokenOccupancyCache( endpoint = endpoint, 
+                                                        spaceToken = spaceToken, 
                                                         meta = meta )
     
     if not res[ 'OK' ]:
       return self.returnERROR( res )
     res = res[ 'Value' ]
+    
+    if not res[ 'Value' ]:
+      return S_OK( None )
     
     zippedRes = dict( zip( res[ 'Columns' ], res[ 'Value' ] ) )
     

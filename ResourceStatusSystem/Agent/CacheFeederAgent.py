@@ -248,8 +248,8 @@ class CacheFeederAgent( AgentModule ):
       for spaceToken in spaceTokens:
 
         elementsToCheck.append( { 'spaceTokenEndpoint' : siteDict[ 'Endpoint' ][0],
-                                  'spaceToken'         : spaceToken,
-                                  'site'               : site } )
+                                  'spaceToken'         : spaceToken
+                                } )
     
     return S_OK( elementsToCheck )
   
@@ -257,6 +257,9 @@ class CacheFeederAgent( AgentModule ):
     '''
       Save to database the results of the VOBOXAvailabilityCommand commands
     '''
+    
+    #FIXME: we need to delete entries in the database quite often, older than
+    # ~30 min.
     
     if not 'serviceUpTime' in results:
       return S_ERROR( 'serviceUpTime key missing' )
@@ -405,7 +408,7 @@ class CacheFeederAgent( AgentModule ):
   def __logSpaceTokenOccupancy( self, commandDict, commandObject, results ):
     
     spaceToken         = commandObject.args[ 'spaceToken' ]
-    site               = commandObject.args[ 'site' ]
+    site               = commandObject.args[ 'spaceTokenEndpoint' ]
     
     token = spaceToken.split( '-' ).split( '_' )[ 1 ]
     token = token[0].upper() + token[ 1: ]
@@ -415,7 +418,7 @@ class CacheFeederAgent( AgentModule ):
     guaranteed = results[ 'guaranteed' ]
     free       = results[ 'free' ]
     
-    resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( site, spaceToken, 
+    resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( endpoint, spaceToken, 
                                                                   storageElement, 
                                                                   total, guaranteed, 
                                                                   free )

@@ -103,14 +103,14 @@ class ResourceManagementDB( object ):
 
   _tablesDB[ 'SpaceTokenOccupancyCache' ] = { 'Fields' :
                       {
-                       'Site'           : 'VARCHAR( 64 ) NOT NULL',
+                       'Endpoint'       : 'VARCHAR( 64 ) NOT NULL',
                        'Token'          : 'VARCHAR( 64 ) NOT NULL',
                        'Total'          : 'INTEGER NOT NULL DEFAULT 0',                      
                        'Guaranteed'     : 'INTEGER NOT NULL DEFAULT 0',
                        'Free'           : 'INTEGER NOT NULL DEFAULT 0',                     
                        'LastCheckTime'  : 'DATETIME NOT NULL' 
                       },
-                      'PrimaryKey' : [ 'Site', 'Token' ]                                             
+                      'PrimaryKey' : [ 'Endpoint', 'Token' ]                                             
                                 } 
 
   _tablesDB[ 'TransferCache' ] = { 'Fields' :

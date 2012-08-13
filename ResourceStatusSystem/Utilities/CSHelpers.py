@@ -5,7 +5,7 @@
   modules.  
 '''
 
-from DIRAC                                import gConfig, gLogger, S_OK
+from DIRAC                                import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 __RCSID__ = '$Id:  $'
@@ -128,8 +128,33 @@ def getSEToken( se ):
   
   _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken'
   
+  #FIXME: return S_OK, S_ERROR
   return gConfig.getValue( _basePath % se, '' )
 
+def getStorageElementSpaceToken( storageElement ):
+  
+  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken' % storageElement
+  
+  res = gConfig.getValue( _basePath  )
+  if not res:
+    return S_ERROR( '%s not found' % _basePath )
+  return S_OK( res )
+
+def getStorageElementEndpoint( storageElement ):
+  
+  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1' % storageElement
+  
+  host  = gConfig.getValue( _basePath + '/Host' )
+  port  = gConfig.getValue( _basePath + '/Port' ) 
+  wsurl = gConfig.getValue( _basePath + '/WSUrl' )
+  
+  if host and port and wsurl:
+     
+    url = 'httpg://%s:%s/%s' % ( host, port, wsurl )
+    return S_OK( url )
+  
+  return S_ERROR( ( host, port, wsurl ) )
+  
 def getFTS():
   '''
     Gets all storage elements from /Resources/FTSEndpoints
