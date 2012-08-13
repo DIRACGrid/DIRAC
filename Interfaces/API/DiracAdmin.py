@@ -4,7 +4,6 @@ All administrative functionality is exposed through the DIRAC Admin API.  Exampl
 site banning and unbanning, WMS proxy uploading etc.
 
 """
-__RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Utilities.PromptUser                          import promptUser
@@ -16,8 +15,6 @@ from DIRAC.Core.DISET.RPCClient                               import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteCEMapping
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
-from DIRAC.Core.Security.X509Chain                            import X509Chain
-from DIRAC.Core.Security                                      import Locations, CS
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSA
@@ -32,6 +29,8 @@ if ret['OK'] and 'group' in ret['Value']:
 COMPONENT_NAME = '/Interfaces/API/DiracAdmin'
 
 class DiracAdmin( API ):
+  """ Administrative functionalities
+  """
 
   #############################################################################
   def __init__( self ):
@@ -129,7 +128,7 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
-  def getBannedSites( self, gridType = 'LCG', printOutput = False ):
+  def getBannedSites( self, gridType = [], printOutput = False ):
     """Retrieve current list of banned sites.
 
        Example usage:
@@ -150,11 +149,13 @@ class DiracAdmin( API ):
       return result
     sites = result['Value']
 
-    result = gConfig.getSections( '/Resources/Sites' )
-    if not result['OK']:
-      return result
-    grids = result['Value']
-    for grid in grids:
+    if not gridType:
+      result = gConfig.getSections( '/Resources/Sites' )
+      if not result['OK']:
+        return result
+      gridType = result['Value']
+
+    for grid in gridType:
       result = gConfig.getSections( '/Resources/Sites/%s' % grid )
       if not result['OK']:
         return result
@@ -310,6 +311,7 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
+  @staticmethod
   def __checkSiteIsValid( self, site ):
     """Internal function to check that a site name is valid.
     """
