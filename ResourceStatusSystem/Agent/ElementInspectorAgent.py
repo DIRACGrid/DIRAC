@@ -33,7 +33,7 @@ class ElementInspectorAgent( AgentModule ):
   # ElementType, to be defined among Site, Resource or Node
   __elementType = None
   # Inspection freqs, to be overwritten
-  __checkingFreqs = { 'LCG' : { 'Active' : 8, 'Bad' : 6, 'Probing' : 4, 'Banned' : 2 } }
+  __checkingFreqs = { 'LCG' : { 'Active' : 8, 'Degraded' : 6, 'Probing' : 4, 'Banned' : 2 } }
   # queue size limit to stop feeding
   __limitQueueFeeder = 15
   
