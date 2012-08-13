@@ -2,7 +2,7 @@
 ''' DTPolicy module
 '''
 
-from DIRAC                                              import S_OK, S_ERROR
+from DIRAC                                              import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
 __RCSID__ = '$Id:  $'
@@ -24,17 +24,27 @@ class DTPolicy( PolicyBase ):
     
     status = super( DTPolicy, self ).evaluate()
 
+    result = { 
+               'Status' : None,
+               'Reason' : None
+              }
+
     if not status[ 'OK' ]:
-      return status
+      result[ 'Status' ] = 'Error'
+      result[ 'Reason' ] = status[ 'Message' ]
+      return S_OK( result )
     
     status = status[ 'Value' ]
-    result = {}
 
     if not status:
-      return S_ERROR( 'Expecting a dictionary' )
+      result[ 'Status' ] = 'Error'
+      result[ 'Reason' ] = 'Expecting a dictionary'
+      return S_OK( result )
 
     if not 'DT' in status:
-      return S_ERROR( 'Expecting "DT" key on dictionary' )
+      result[ 'Status' ] = 'Error'
+      result[ 'Reason' ] = 'Expecting DT key in dictionary'
+      return S_OK( result )
 
     if status[ 'DT' ] == None:
       result[ 'Status' ] = 'Active'
@@ -45,11 +55,14 @@ class DTPolicy( PolicyBase ):
       result[ 'Status' ] = 'Banned'
       
     elif 'WARNING' in status['DT']:
-      result[ 'Status' ] = 'Bad'
+      result[ 'Status' ] = 'Degraded'
 
     else:
-      return S_ERROR( 'DT_Policy: GOCDB returned an unknown value for DT: "%s"' % status[ 'DT' ] )
-
+      _reason = 'DT_Policy: GOCDB returned an unknown value for DT: "%s"' % status[ 'DT' ]
+      result[ 'Status' ] = 'Error'
+      result[ 'Reason' ] = _reason
+      return S_OK( result )
+      
     #result[ 'EndDate' ] = status[ 'EndDate' ]
     result[ 'Reason' ]  = 'DownTime found: %s' % status[ 'DT' ]
     return S_OK( result )
