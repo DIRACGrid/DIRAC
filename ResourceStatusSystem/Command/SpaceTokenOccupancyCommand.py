@@ -81,14 +81,10 @@ class SpaceTokenOccupancyCacheCommand( Command ):
       return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
     name = self.args[ 'name' ]
  
-    try:
-      site, token = name.split( '-' )
-    except ValueError:
-      return S_OK( None )  
- 
     meta = { 'columns' : [ 'Total', 'Free', 'Guaranteed' ] }
  
-    res = self.rmClient.selectSpaceTokenOccupancyCache( site, token, meta = meta )
+    res = self.rmClient.selectSpaceTokenOccupancyCache( storageElement = name, 
+                                                        meta = meta )
     
     if not res[ 'OK' ]:
       return self.returnERROR( res )
