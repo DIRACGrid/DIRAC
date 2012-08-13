@@ -87,18 +87,18 @@ class PilotsWMSCommand( Command ):
     """
 
     if not 'element' in self.args:
-      return S_ERROR( 'element is missing' )
+      return self.returnERROR( S_ERROR( 'element is missing' ) )
     element = self.args[ 'element' ]    
    
     if not 'siteName' in self.args:
-      return S_ERROR( 'siteName is missing' )
+      return self.returnERROR( S_ERROR( 'siteName is missing' ) )
     siteName = self.args[ 'siteName' ]  
     
     # If siteName is None, we take all sites
     if siteName is None:
       siteName = CSHelpers.getSites()      
       if not siteName[ 'OK' ]:
-        return siteName
+        return self.returnERROR( siteName )
       siteName = siteName[ 'Value' ]
 
     if element == 'Site':
@@ -106,18 +106,18 @@ class PilotsWMSCommand( Command ):
     elif element == 'Resource':
       results = self.wmsAdmin.getPilotSummaryWeb( { 'ExpandSite' : siteName }, [], 0, 300 )      
     else:
-      return S_ERROR( '%s is a wrong element' % element )  
+      return self.returnERROR( S_ERROR( '%s is a wrong element' % element ) )  
        
     if not results[ 'OK' ]:
-      return results
+      return self.returnERROR( results )
     results = results[ 'Value' ]
     
     if not 'ParameterNames' in results:
-      return S_ERROR( 'Malformed result dictionary' )
+      return self.returnERROR( S_ERROR( 'Malformed result dictionary' ) )
     params = results[ 'ParameterNames' ]
     
     if not 'Records' in results:
-      return S_ERROR( 'Malformed result dictionary' )
+      return self.returnERROR( S_ERROR( 'Malformed result dictionary' ) )
     records = results[ 'Records' ]
     
     pilotResults = [] 
@@ -129,9 +129,9 @@ class PilotsWMSCommand( Command ):
         pilotDict[ 'PilotsPerJob' ] = float( pilotDict[ 'PilotsPerJob' ] )
         pilotDict[ 'PilotsJobEff' ] = float( pilotDict[ 'PilotsJobEff' ] )
       except KeyError, e:
-        return S_ERROR( e ) 
+        return self.returnERROR( S_ERROR( e ) ) 
       except ValueError, e:
-        return S_ERROR( e )
+        return self.returnERROR( S_ERROR( e ) )
       
       pilotResults.append( pilotDict )
     
@@ -223,7 +223,7 @@ class PilotsEffSimpleCachedCommand( Command ):
       name        = self.args[1]
       granularity = self.args[0]
     else:
-      return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
+      return self.returnERROR( S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) )
 
     clientDict = { 
                   'name'        : name,
@@ -241,6 +241,9 @@ class PilotsEffSimpleCachedCommand( Command ):
         res = S_OK( 'Idle' )
       else:
         res = S_OK( res[ 0 ] )
+
+    else:
+      res = self.returnERROR( res )
 
     return res
 

@@ -46,7 +46,7 @@ class DowntimeSitesCommand( Command ):
       #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
       sites = CSHelpers.getSites()      
       if not sites[ 'OK' ]:
-        return sites
+        return self.returnERROR( sites )
       sites = sites[ 'Value' ]
       
     gocSites = []
@@ -63,7 +63,7 @@ class DowntimeSitesCommand( Command ):
 
     results = self.gClient.getStatus( 'Site', gocSites, None, 120 )
     if not results[ 'OK' ]:
-      return results     
+      return self.returnERROR( results )     
     results = results[ 'Value' ]
     
     if results == None:
@@ -83,7 +83,7 @@ class DowntimeSitesCommand( Command ):
         
       diracNames = getDIRACSiteName( downDic[ 'SITENAME' ] )
       if not diracNames[ 'OK' ]:
-        return diracNames
+        return self.returnERROR( diracNames )
           
       for diracName in diracNames[ 'Value' ]:
         dt[ 'Name' ] = diracName
@@ -130,13 +130,13 @@ class DowntimeResourcesCommand( Command ):
 
       resources = CSHelpers.getResources()      
       if not resources[ 'OK' ]:
-        return resources
+        return self.returnERROR( resources )
       resources = resources[ 'Value' ]    
 
     results = self.gClient.getStatus( 'Resource', resources, None, 120 )
     
     if not results[ 'OK' ]:
-      return results
+      return self.returnERROR( results )
     results = results[ 'Value' ]
 
     if results == None:

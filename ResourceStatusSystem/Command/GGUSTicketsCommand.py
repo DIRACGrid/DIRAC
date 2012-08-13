@@ -35,11 +35,15 @@ class GGUSTicketsCommand( Command ):
     """
     
     if not 'name' in self.args:
-      return S_ERROR( '"name" not found in self.args' )
+      return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
     name = self.args[ 'name' ]
 
     name    = getGOCSiteName( name )[ 'Value' ] 
-    return self.gClient.getTicketsList( name )
+    res = self.gClient.getTicketsList( name )
+    if not res[ 'OK' ]:
+      res = self.returnERROR( res )
+      
+    return res  
 
 ################################################################################
 ################################################################################
@@ -63,20 +67,20 @@ class GGUSTicketsOpen( Command ):
     """
     
     if not 'name' in self.args:
-      return S_ERROR( '"name" not found in self.args' )
+      return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
     name = self.args[ 'name' ]
 
     name    = getGOCSiteName( name )[ 'Value' ] 
     results = self.gClient.getTicketsList( name )
         
     if not results[ 'OK' ]:
-      return results
+      return self.returnERROR( results )
     results = results[ 'Value' ]
 
 #    if not len( results ) > 0:
 #      return S_ERROR( 'No tickets to open (0)' ) 
     if not 'open' in results:
-      return S_ERROR( 'Missing open key' )
+      return self.returnERROR( S_ERROR( 'Missing open key' ) )
 
     return  S_OK( results[ 'open' ] ) 
     
@@ -103,7 +107,7 @@ class GGUSTicketsLink( Command ):
     """
 
     if not 'name' in self.args:
-      return S_ERROR( '"name" not found in self.args')
+      return self.returnERROR( S_ERROR( '"name" not found in self.args') )
     name = self.args[ 'name' ]
 
     name    = getGOCSiteName( name )[ 'Value' ] 
@@ -111,11 +115,11 @@ class GGUSTicketsLink( Command ):
     #if openTickets == 'Unknown':
     #  return { 'GGUS_Link':'Unknown' }
     if not results[ 'OK' ]:
-      return results
+      return self.returnERROR( results )
     results = results[ 'Value' ]
     
     if not len( results ) >= 1:
-      return S_ERROR( 'No tickets to open (1)' )
+      return self.returnERROR( S_ERROR( 'No tickets to open (1)' ) )
     
     return S_OK( results[ 1 ] ) 
     
@@ -142,7 +146,7 @@ class GGUSTicketsInfo( Command ):
     """
 
     if not 'name' in self.args:
-      return S_ERROR( '"name" not found in self.args' )
+      return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
     name = self.args[ 'name' ]
      
     name    = getGOCSiteName( name )[ 'Value' ] 
@@ -150,11 +154,11 @@ class GGUSTicketsInfo( Command ):
 #    if openTickets == 'Unknown':
 #      return { 'GGUS_Info' : 'Unknown' }
     if not results[ 'OK' ]:
-      return results
+      return self.returnERROR( results )
     results = results[ 'Value' ]
 
     if not len( results ) >= 2:
-      return S_ERROR( 'No tickets to open (2)')
+      return self.returnERROR( S_ERROR( 'No tickets to open (2)' ) )
     
     return S_OK( results[ 2 ] ) 
 

@@ -44,16 +44,16 @@ class GOCDBStatusCommand( Command ):
     ## INPUT PARAMETERS
     
     if not 'element' in self.args:
-      return S_ERROR( 'GOCDBStatusCommand: "element" not found in self.args' )
+      return self.returnERROR( S_ERROR( 'GOCDBStatusCommand: "element" not found in self.args' ) )
     element = self.args[ 'element' ]
     if element is None:
-      return S_ERROR( 'GOCDBStatusCommand: "element" should not not be None')
+      return self.returnERROR( S_ERROR( 'GOCDBStatusCommand: "element" should not not be None') )
     
     if not 'name' in self.args:
-      return S_ERROR( 'GOCDBStatusCommand: "name" not found in self.args' )
+      return self.returnERROR( S_ERROR( 'GOCDBStatusCommand: "name" not found in self.args' ) )
     name = self.args[ 'name' ]
     if name is None:
-      return S_ERROR( 'GOCDBStatusCommand: "name" should not be None' )
+      return self.returnERROR( S_ERROR( 'GOCDBStatusCommand: "name" should not be None' ) )
     
     hours = None
     if 'hours' in self.args:
@@ -62,17 +62,17 @@ class GOCDBStatusCommand( Command ):
     if element == 'Site':
       name = getGOCSiteName( name )
       if not name[ 'OK' ]:
-        return name
+        return self.returnERROR( name )
       name = name[ 'Value' ]
       
     #FIXME: check if that certainly works or not. Right now, no idea  
     try:
       resDTGOC = self.gClient.getStatus( element, name, None, hours )
     except urllib2.URLError:
-      return S_ERROR( 'URLError on getStatus with %s, %s, %s' % ( element, name, hours ) )  
+      return self.returnERROR(S_ERROR( 'URLError on getStatus with %s, %s, %s' % ( element, name, hours ) ) )  
 
     if not resDTGOC[ 'OK' ]:
-      return resDTGOC    
+      return self.returnERROR( resDTGOC )    
         
     resDTGOC = resDTGOC[ 'Value' ]
        

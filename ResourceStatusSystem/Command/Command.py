@@ -25,6 +25,16 @@ class Command( object ):
     '''
     
     return S_OK( { 'Result' : None } )
+  
+  def returnERROR( self, s_error ):
+    '''
+      Overwrites S_ERROR message with command name, much easier to debug
+    '''
+    
+    s_error[ 'Message' ] = '%s %s' % ( self.__class__.__name__, s_error[ 'Message' ] )
+    
+    return s_error
+    
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -8,6 +8,7 @@
 
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
+from DIRAC.AccountingSystem.Client.ReportsClient            import ReportsClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -139,28 +140,28 @@ class JobsWMSCommand( Command ):
     """
    
     if not 'siteName' in self.args:
-      return S_ERROR( 'siteName is missing' )
+      return self.returnERROR( S_ERROR( 'siteName is missing' ) )
     siteName = self.args[ 'siteName' ]
     
     # If siteName is None, we take all sites
     if siteName is None:
       siteName = CSHelpers.getSites()      
       if not siteName[ 'OK' ]:
-        return siteName
+        return self.returnERROR( siteName )
       siteName = siteName[ 'Value' ]
     
     results = self.wmsAdmin.getSiteSummaryWeb( { 'Site' : siteName }, [], 0, 500 )
 
     if not results[ 'OK' ]:
-      return results
+      return self.returnERROR( results )
     results = results[ 'Value' ]
     
     if not 'ParameterNames' in results:
-      return S_ERROR( 'Malformed result dictionary' )
+      return self.returnERROR( S_ERROR( 'Malformed result dictionary' ) )
     params = results[ 'ParameterNames' ]
     
     if not 'Records' in results:
-      return S_ERROR( 'Malformed result dictionary' )
+      return self.returnERROR( S_ERROR( 'Malformed result dictionary' ) )
     records = results[ 'Records' ]
     
     jobResults = [] 
@@ -171,9 +172,9 @@ class JobsWMSCommand( Command ):
       try:
         jobDict[ 'Efficiency' ] = float( jobDict[ 'Efficiency' ] )
       except KeyError, e:
-        return S_ERROR( e )
+        return self.returnERROR( S_ERROR( e ) )
       except ValueError, e:
-        return S_ERROR( e )  
+        return self.returnERROR( S_ERROR( e ) )  
       
       jobResults.append( jobDict )
     

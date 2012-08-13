@@ -83,7 +83,8 @@ class ServiceStatsCommand( Command ):
 #    try:
       
     res = self.rsClient.getServiceStats( self.args[1] )#, statusType = None )# self.args[0], self.args[1] )['Value']
-    
+    if not res[ 'OK' ]:
+      return self.returnERROR( res )
 #    except Exception, e:
 #      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
 #      gLogger.exception( _msg )
@@ -126,7 +127,8 @@ class ResourceStatsCommand( Command ):
 #    try:
       
     res = self.rsClient.getResourceStats( self.args[0], self.args[1], statusType = None )
-    
+    if not res[ 'OK' ]:
+      return self.returnERROR( res )
 #    except Exception, e:
 #      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
 #      gLogger.exception( _msg )
@@ -175,10 +177,11 @@ class StorageElementsStatsCommand( Command ):
       granularity = self.args[0]
       name        = self.args[1]
     else:
-      return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
+      return self.returnERROR( S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) )
 
     res = self.rsClient.getStorageElementStats( granularity, name, statusType = None )
-      
+    if not res[ 'OK' ]:
+      return self.returnERROR( res )  
 #    except Exception, e:
 #      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
 #      gLogger.exception( _msg )
@@ -227,7 +230,7 @@ class MonitoredStatusCommand( Command ):
 
     if len( self.args ) == 3:
       if validElements.index( self.args[2] ) >= validElements.index( self.args[0] ):
-        return S_ERROR( 'Error in MonitoredStatus_Command' )
+        return self.returnERROR( S_ERROR( 'Error in MonitoredStatus_Command' ) )
       toBeFound = self.rsClient.getGeneralName( self.args[0], self.args[1], self.args[2] )[ 'Value' ]
     else:
       toBeFound = self.args[1]
@@ -240,12 +243,14 @@ class MonitoredStatusCommand( Command ):
       else:
         res = S_OK( None )  
 
+    else:
+      res = self.returnERROR( res )
 #    except Exception, e:
 #      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
 #      gLogger.exception( _msg )
 #      return S_ERROR( _msg )
 
-    return res
+    return res 
 
 #  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 

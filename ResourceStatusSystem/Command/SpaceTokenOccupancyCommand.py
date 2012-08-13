@@ -23,9 +23,9 @@ class SpaceTokenOccupancyCommand( Command ):
     '''
 
     if not 'spaceTokenEndpoint' in self.args:
-      return S_ERROR( '"spaceTokenEndpoint" not found in self.args' )
+      return self.returnERROR( S_ERROR( '"spaceTokenEndpoint" not found in self.args' ) )
     if not 'spaceToken' in self.args:
-      return S_ERROR( '"spaceToken" not found in self.args' )
+      return self.returnERROR( S_ERROR( '"spaceToken" not found in self.args' ) )
 
     spaceTokenEndpoint = self.args[ 'spaceTokenEndpoint' ] 
     spaceToken         = self.args[ 'spaceToken' ]
@@ -33,7 +33,7 @@ class SpaceTokenOccupancyCommand( Command ):
     occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )
            
     if occupancy[ 0 ] != 0:
-      return S_ERROR( occupancy )  
+      return self.returnERROR( S_ERROR( occupancy ) )  
     
     output     = occupancy[ 1 ][ 0 ]
     total      = float( output.get( 'totalsize',      '0' ) ) / 1e12 # Bytes to Terabytes

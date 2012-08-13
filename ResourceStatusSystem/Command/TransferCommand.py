@@ -35,18 +35,18 @@ class TransferQualityCommand( Command ):
   def doCommand( self ):
 
     if not 'hours' in self.args:
-      return S_ERROR( 'Number of hours not specified' )
+      return self.returnERROR( S_ERROR( 'Number of hours not specified' ) )
     hours = self.args[ 'hours' ]
 
     if not 'direction' in self.args:
-      return S_ERROR( 'element is missing' )
+      return self.returnERROR( S_ERROR( 'element is missing' ) )
     direction = self.args[ 'direction' ]
 
     if direction not in [ 'Source', 'Destination' ]:
-      return S_ERROR( 'direction is not Source nor Destination' )
+      return self.returnERROR( S_ERROR( 'direction is not Source nor Destination' ) )
 
     if not 'name' in self.args:
-      return S_ERROR( 'name is missing' )
+      return self.returnERROR( S_ERROR( 'name is missing' ) )
     name = self.args[ 'name' ]
     
     # If name is None, we take all Sites or StorageElements
@@ -54,12 +54,12 @@ class TransferQualityCommand( Command ):
       
       sites = CSHelpers.getSites()
       if not sites[ 'OK' ]:
-        return sites
+        return self.returnERROR( sites )
       sites = sites[ 'Value' ]
   
       ses = CSHelpers.getStorageElements()
       if not ses[ 'OK' ]:
-        return ses
+        return self.returnERROR( ses )
       ses = ses[ 'Value' ]
       
       name = sites + ses        
@@ -79,11 +79,11 @@ class TransferQualityCommand( Command ):
     qualityResults = self.rClient.getReport( 'DataOperation', 'Quality', fromD, toD,
                                              qualityDict, direction )
     if not qualityResults[ 'OK' ]:
-      return qualityResults
+      return self.returnERROR( qualityResults )
     qualityResults = qualityResults[ 'Value' ]
     
     if not 'data' in qualityResults:
-      return S_ERROR( 'Missing data key' )
+      return self.returnERROR( S_ERROR( 'Missing data key' ) )
     qualityResults = qualityResults[ 'data' ]
 
     qualityMean = {}
@@ -127,18 +127,18 @@ class TransferFailedCommand( Command ):
   def doCommand( self ):
 
     if not 'hours' in self.args:
-      return S_ERROR( 'Number of hours not specified' )
+      return self.returnERROR( S_ERROR( 'Number of hours not specified' ) )
     hours = self.args[ 'hours' ]
 
     if not 'direction' in self.args:
-      return S_ERROR( 'element is missing' )
+      return self.returnERROR( S_ERROR( 'element is missing' ) )
     direction = self.args[ 'direction' ]
 
     if direction not in [ 'Source', 'Destination' ]:
-      return S_ERROR( 'direction is not Source nor Destination' )
+      return self.returnERROR( S_ERROR( 'direction is not Source nor Destination' ) )
 
     if not 'name' in self.args:
-      return S_ERROR( 'name is missing' )
+      return self.returnERROR( S_ERROR( 'name is missing' ) )
     name = self.args[ 'name' ]
     
     # If name is None, we take all Sites or StorageElements
@@ -146,12 +146,12 @@ class TransferFailedCommand( Command ):
       
       sites = CSHelpers.getSites()
       if not sites[ 'OK' ]:
-        return sites
+        return self.returnERROR( sites )
       sites = sites[ 'Value' ]
   
       ses = CSHelpers.getStorageElements()
       if not ses[ 'OK' ]:
-        return ses
+        return self.returnERROR( ses )
       ses = ses[ 'Value' ]
       
       name = sites + ses     
@@ -171,11 +171,11 @@ class TransferFailedCommand( Command ):
     qualityResults = self.rClient.getReport( 'DataOperation', 'FailedTransfers', fromD, toD,
                                              qualityDict, direction )
     if not qualityResults[ 'OK' ]:
-      return qualityResults
+      return self.returnERROR( qualityResults )
     qualityResults = qualityResults[ 'Value' ]
     
     if not 'data' in qualityResults:
-      return S_ERROR( 'Missing data key' )
+      return self.returnERROR( S_ERROR( 'Missing data key' ) )
     qualityResults = qualityResults[ 'data' ]
 
     qualityMean = {}
@@ -190,8 +190,8 @@ class TransferFailedCommand( Command ):
       
       if values:
         qualityMean[ element ] = sum( values ) / len( values )        
-      else:     
-        qualityMean[ element ] = 0   
+#      else:     
+#        qualityMean[ element ] = 0   
            
     return S_OK( qualityMean )  
 
@@ -220,18 +220,18 @@ class TransferQualityChannelCommand( Command ):
   def doCommand( self ):
 
     if not 'hours' in self.args:
-      return S_ERROR( 'Number of hours not specified' )
+      return self.returnERROR( S_ERROR( 'Number of hours not specified' ) )
     hours = self.args[ 'hours' ]
 
     if not 'element' in self.args:
-      return S_ERROR( 'element is missing' )
+      return self.returnERROR( S_ERROR( 'element is missing' ) )
     element = self.args[ 'element' ]
 
     if element not in [ 'Site', 'Resource' ]:
-      return S_ERROR( 'element is not Site nor Resource' )
+      return self.returnERROR( S_ERROR( 'element is not Site nor Resource' ) )
 
     if not 'name' in self.args:
-      return S_ERROR( 'name is missing' )
+      return self.returnERROR( S_ERROR( 'name is missing' ) )
     name = self.args[ 'name' ]
     
     # If name is None, we take all Sites or StorageElements
@@ -257,11 +257,11 @@ class TransferQualityChannelCommand( Command ):
                                                'Destination'   : name }, 
                                              'Channel' )
     if not qualityResults[ 'OK' ]:
-      return qualityResults
+      return self.returnERROR( qualityResults )
     qualityResults = qualityResults[ 'Value' ]
     
     if not 'data' in qualityResults:
-      return S_ERROR( 'Missing data key' )
+      return self.returnERROR( S_ERROR( 'Missing data key' ) )
     qualityResults = qualityResults[ 'data' ]
 
     qualityMean = {}
@@ -281,8 +281,8 @@ class TransferQualityChannelCommand( Command ):
       
       if values:
         qualityMean[ destination ] = sum( values ) / len( values )        
-      else:     
-        qualityMean[ destination ] = 0   
+#      else:     
+#        qualityMean[ destination ] = 0   
            
     return S_OK( qualityMean )   
   

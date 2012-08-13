@@ -33,7 +33,7 @@ class VOBOXAvailabilityCommand( Command ):
     ## INPUT PARAMETERS
     
     if not 'serviceURL' in self.args:
-      return S_ERROR( '"serviceURL" not found in self.args' )
+      return self.returnERROR( S_ERROR( '"serviceURL" not found in self.args' ) )
     serviceURL   = self.args[ 'serviceURL' ]
     
     ##
@@ -42,7 +42,7 @@ class VOBOXAvailabilityCommand( Command ):
     resPing = pinger.ping()
     
     if not resPing[ 'OK' ]:
-      return resPing 
+      return self.returnERROR( resPing ) 
       
     serviceUpTime = resPing[ 'Value' ].get( 'service uptime', 0 )
     machineUpTime = resPing[ 'Value' ].get( 'host uptime', 0 )
@@ -52,7 +52,7 @@ class VOBOXAvailabilityCommand( Command ):
     try:
       system, service = parsed[ 2 ].strip( '/' ).split( '/' )
     except ValueError:
-      return S_ERROR( '"%s" seems to be a malformed url' % serviceURL )  
+      return self.returnERROR( S_ERROR( '"%s" seems to be a malformed url' % serviceURL ) )  
       
     res = { 
            'serviceUpTime' : serviceUpTime,
