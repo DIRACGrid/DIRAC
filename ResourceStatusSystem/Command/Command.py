@@ -17,23 +17,58 @@ class Command( object ):
 
   def __init__( self, args = None, clients = None ):
     
-    self.args            = ( 1 and args ) or {}      
-    self.apis            = ( 1 and clients ) or {}
+    self.args       = ( 1 and args ) or {}      
+    self.apis       = ( 1 and clients ) or {}
+    self.masterMode = False
+    self.metrics    = { 'successful' : 0, 'total' : 0, 'processed' : 0, 'failed' : [] }
 
+  def doNew( self, masterParams = None ):
+    ''' To be extended by real commands
+    '''   
+    return S_OK( { 'Result' : None } )
+  
+  def doCache( self ):
+    ''' To be extended by real commands
+    '''
+    return S_OK( { 'Result' : None } )
+
+  def doMaster( self ):
+    ''' To be extended by real commands
+    '''
+    return S_OK( self.metrics )   
+      
   def doCommand( self ):
     ''' To be extended by real commands
     '''
     
-    return S_OK( { 'Result' : None } )
-  
-  def returnERROR( self, s_error ):
+    if self.masterMode:
+      self.returnSObj( self.doMaster() )
+          
+    result = self.doCache()
+    if not result[ 'OK' ]:
+      return self.returnERROR( result )
+    if result[ 'Value' ]:
+      return result
+    
+    return self.returnSObj( self.doNew() )
+      
+  def returnERROR( self, s_obj ):
     '''
       Overwrites S_ERROR message with command name, much easier to debug
     '''
     
-    s_error[ 'Message' ] = '%s %s' % ( self.__class__.__name__, s_error[ 'Message' ] )
+    s_obj[ 'Message' ] = '%s %s' % ( self.__class__.__name__, s_obj[ 'Message' ] )
+    return s_obj
+  
+  def returnSObj( self, s_obj ):
+    '''
+      Overwrites S_ERROR message with command name, much easier to debug
+    '''
     
-    return s_error
+    if s_obj[ 'OK' ]:
+      return s_obj
+    
+    return self.returnERROR( s_obj )
     
     
 ################################################################################

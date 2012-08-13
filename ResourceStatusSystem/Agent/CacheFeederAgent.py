@@ -115,6 +115,7 @@ class CacheFeederAgent( AgentModule ):
           self.log.error( 'Error initializing %s' % commandName )
           return commandObject
         commandObject = commandObject[ 'Value' ]
+        commandObject.masterMode = True
         
         commandArgs[ 'command' ] = commandObject
         
