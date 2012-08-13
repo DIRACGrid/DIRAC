@@ -43,15 +43,15 @@ class GGUSTicketsClient:
       query = query + ' AND \'GHD_Date Of Creation\'<' + str( endDate )
 
     # create the URL to get tickets relative to the site ( opened only ! ): 
-    ggusURL = 'https://ggus.eu/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&\
-               show_columns_check[]=TICKET_TYPE&show_columns_check[]=AFFECTED_VO&show_columns_check[]=\
-               AFFECTED_SITE&show_columns_check[]=PRIORITY&show_columns_check[]=RESPONSIBLE_UNIT&show_\
-               columns_check[]=STATUS&show_columns_check[]=DATE_OF_CREATION&show_columns_check[]=LAST_UPDATE&\
-               show_columns_check[]=TYPE_OF_PROBLEM&show_columns_check[]=SUBJECT&ticket=&supportunit=all&su_\
-               hierarchy=all&vo=lhcb&user=&keyword=&involvedsupporter=&assignto=&affectedsite=%s\
-               &specattrib=0&status=open&priority=all&typeofproblem=all&ticketcategory=&mouarea=&technology_\
-               provider=&date_type=creation+date&radiotf=1&timeframe=any&untouched_date=&orderticketsby=GHD_\
-               INT_REQUEST_ID&orderhow=descending' % siteName
+    ggusURL = 'https://ggus.eu/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&'
+    ggusURL += 'show_columns_check[]=TICKET_TYPE&show_columns_check[]=AFFECTED_VO&show_columns_check[]='
+    ggusURL += 'AFFECTED_SITE&show_columns_check[]=PRIORITY&show_columns_check[]=RESPONSIBLE_UNIT&show_'
+    ggusURL += 'columns_check[]=STATUS&show_columns_check[]=DATE_OF_CREATION&show_columns_check[]=LAST_UPDATE&'
+    ggusURL += 'show_columns_check[]=TYPE_OF_PROBLEM&show_columns_check[]=SUBJECT&ticket=&supportunit=all&su_'
+    ggusURL += 'hierarchy=all&vo=lhcb&user=&keyword=&involvedsupporter=&assignto=&affectedsite=%s' % siteName
+    ggusURL += '&specattrib=0&status=open&priority=all&typeofproblem=all&ticketcategory=&mouarea=&technology_'
+    ggusURL += 'provider=&date_type=creation+date&radiotf=1&timeframe=any&untouched_date=&orderticketsby=GHD_'
+    ggusURL += 'INT_REQUEST_ID&orderhow=descending'
     
     # the query must be into a try block. Empty queries, though formally correct, raise an exception
     try:
