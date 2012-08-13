@@ -56,7 +56,11 @@ class GGUSTicketsCommand( Command ):
       return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
     name = self.args[ 'name' ]
      
-    gocName = getGOCSiteName( name )[ 'Value' ]
+    gocName = getGOCSiteName( name )
+    if not gocName[ 'OK' ]:
+      return self.returnERROR( gocName )
+    gocName = gocName[ 'Value' ]
+    
     result = self.gClient.getTicketsList( gocName )
     if not result[ 'OK' ]:
       return self.returnERROR( result )
