@@ -105,7 +105,6 @@ class ResourceManagementDB( object ):
                       {
                        'Site'           : 'VARCHAR( 64 ) NOT NULL',
                        'Token'          : 'VARCHAR( 64 ) NOT NULL',
-                       'StorageElement' : 'VARCHAR( 64 ) NOT NULL',
                        'Total'          : 'INTEGER NOT NULL DEFAULT 0',                      
                        'Guaranteed'     : 'INTEGER NOT NULL DEFAULT 0',
                        'Free'           : 'INTEGER NOT NULL DEFAULT 0',                     
