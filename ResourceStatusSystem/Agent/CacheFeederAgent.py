@@ -428,8 +428,12 @@ class CacheFeederAgent( AgentModule ):
 
   def __logGGUSTickets( self, results  ):
     
-    if results:
-      self.log.error( results )
+    failed, metrics = results
+    
+    self.log.info( 'Updated %s of %s' % ( metrics[ 'successful' ], metrics[ 'total' ] ) )
+    if failed:
+      self.log.warn( 'Failed %s' % len( failed ) )   
+      self.log.warn( failed )
     
     return S_OK()  
      

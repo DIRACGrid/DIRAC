@@ -237,6 +237,12 @@ class ResourceManagementClient( object ):
   # GGUSTickets CACHE Methods
   #FIXME: only one method
 
+  def selectGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None, 
+                              tickets = None, lastCheckTime = None, meta = None ):
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self._query( 'select', 'GGUSTicketsCache', locals() )
+
   def deleteGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None, 
                               tickets = None, lastCheckTime = None, meta = None ):
     # Unused argument

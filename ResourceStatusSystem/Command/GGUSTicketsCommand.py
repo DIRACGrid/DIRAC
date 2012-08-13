@@ -29,44 +29,12 @@ class GGUSTicketsCommand( Command ):
       self.gClient = self.apis[ 'GGUSTicketsClient' ]
     else:
       self.gClient = GGUSTicketsClient() 
-  
-  def doCommand( self ):
-    """ 
-    Return getTicketsList from GGUSTickets Client  
-    `args`: 
-      - args[0]: string: should be the name of the site
-    """
-    
-    if not 'name' in self.args:
-      return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
-    name = self.args[ 'name' ]
-     
-    gocName = getGOCSiteName( name )[ 'Value' ]
-    res = self.gClient.getTicketsList( gocName )
-    if not res[ 'OK' ]:
-      return self.returnERROR( res )
-            
-    return res  
 
-################################################################################
-################################################################################
-
-class GGUSTicketsMasterCommand( Command ):
-  
-  def __init__( self, args = None, clients = None ):
-    
-    super( GGUSTicketsMasterCommand, self ).__init__( args, clients )
-    
-    if 'GGUSTicketsClient' in self.apis:
-      self.gClient = self.apis[ 'GGUSTicketsClient' ]
-    else:
-      self.gClient = GGUSTicketsClient() 
-      
     if 'ResourceManagementClient' in self.apis:
       self.rmClient = self.apis[ 'ResourceManagementClient' ]
     else:
-      self.rmClient = ResourceManagementClient()   
-  
+      self.rmClient = ResourceManagementClient()  
+
   def storeCommand( self, gocName, result ):
        
     ticketsCount, link, tickets = result
@@ -84,7 +52,39 @@ class GGUSTicketsMasterCommand( Command ):
       - args[0]: string: should be the name of the site
     """
     
-    failed = []
+    if not 'name' in self.args:
+      return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
+    name = self.args[ 'name' ]
+     
+    gocName = getGOCSiteName( name )[ 'Value' ]
+    result = self.gClient.getTicketsList( gocName )
+    if not result[ 'OK' ]:
+      return self.returnERROR( result )
+             
+    storeRes = self.storeCommand( gocName, result[ 'Value' ] )
+    if not storeRes[ 'OK' ]:
+      return self.returnERROR( storeRes )
+    
+    return S_OK( result )  
+
+################################################################################
+################################################################################
+
+class GGUSTicketsMasterCommand( GGUSTicketsCommand ):
+  
+  def __init__( self, args = None, clients = None ):
+    
+    super( GGUSTicketsMasterCommand, self ).__init__( args, clients )
+    
+    self.failed  = []
+    self.metrics = { 'successful' : 0, 'total' : 0, 'processed' : 0 }
+  
+  def doCommand( self ):
+    """ 
+    Return getTicketsList from GGUSTickets Client  
+    `args`: 
+      - args[0]: string: should be the name of the site
+    """
     
     sites = CSHelpers.getSites()
     if not sites[ 'OK' ]:
@@ -97,26 +97,33 @@ class GGUSTicketsMasterCommand( Command ):
       
       gocName = getGOCSiteName( siteName )
       if not gocName[ 'OK' ]:
-        failed.append( gocName[ 'Message' ] )
+        self.failed.append( gocName[ 'Message' ] )
         continue
       
       gocNames.append( gocName[ 'Value' ] )
-       
-    gocNames = list( set( gocNames ) )
+  
+    self.metrics[ 'total' ] = len( gocNames )
+           
+    resQuery = self.rmClient.selectGGUSTicketsCache( meta = { 'columns' : [ 'GocSite' ] } )
+    if not resQuery[ 'OK' ]:
+      return self.returnERROR( resQuery )
+    resQuery = resQuery[ 'Value' ]
     
-    for gocName in gocNames:
+    gocNamesToQuery = set( gocNames ).difference( set( resQuery ) )   
+
+    self.metrics[ 'processed' ] = len( gocNamesToQuery )
+    
+    for gocNameToQuery in gocNamesToQuery:
+      
+      self.args[ 'name' ] = gocNameToQuery
+      result = super( GGUSTicketsMasterCommand, self ).doCommand()
+      
+      if not result[ 'OK' ]:
+        self.failed.append( result )
+      else:
+        self.metrics[ 'successful' ] += 1  
        
-      res = self.gClient.getTicketsList( gocName )
-      if not res[ 'OK' ]:
-        failed.append( res[ 'Message' ] )
-        continue
-      res = res[ 'Value' ]
-       
-      storeCo = self.storeCommand( gocName, res )
-      if not storeCo[ 'OK' ]:
-        failed.append( storeCo[ 'Message' ] ) 
-       
-    return S_OK( failed )
+    return S_OK( ( self.failed, self.metrics ) )
 
 ################################################################################
 ################################################################################
@@ -131,6 +138,24 @@ class GGUSTicketsCacheCommand( Command ):
       self.rmClient = self.apis[ 'ResourceManagementClient' ]
     else:
       self.rmClient = ResourceManagementClient() 
+
+  def doCommand( self ):
+    """ 
+    Return getTicketsList from GGUSTickets Client  
+    `args`: 
+      - args[0]: string: should be the name of the site
+    """
+    
+    if not 'name' in self.args:
+      return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
+    name = self.args[ 'name' ]
+     
+    gocName = getGOCSiteName( name )[ 'Value' ]
+    result = self.rmClient.selectGGUSTicketsCache( gocSite = gocName )
+    if not result[ 'OK' ]:
+      return self.returnERROR( result )
+             
+    return result  
 
 ################################################################################
 ################################################################################

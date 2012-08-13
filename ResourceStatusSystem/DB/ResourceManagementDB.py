@@ -52,12 +52,12 @@ class ResourceManagementDB( object ):
   _tablesDB[ 'GGUSTicketsCache' ] = { 'Fields' :
                       {
                        'GocSite'       : 'VARCHAR(64) NOT NULL',
-                       'Link'          : 'VARCHAR(512) NOT NULL',    
+                       'Link'          : 'VARCHAR(1024) NOT NULL',    
                        'OpenTickets'   : 'INTEGER NOT NULL DEFAULT 0',
-                       'Tickets'       : 'VARCHAR(512) NOT NULL',
+                       'Tickets'       : 'VARCHAR(1024) NOT NULL',
                        'LastCheckTime' : 'DATETIME NOT NULL'                       
                       },
-                      'PrimaryKey' : [ 'Site' ]
+                      'PrimaryKey' : [ 'GocSite' ]
                                 }
 
   _tablesDB[ 'JobCache' ] = { 'Fields' :
