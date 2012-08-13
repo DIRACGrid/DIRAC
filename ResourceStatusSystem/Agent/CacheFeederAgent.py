@@ -138,11 +138,11 @@ class CacheFeederAgent( AgentModule ):
                     
           commandObject = commandArgs[ 'command' ]
           commandObject.args.update( extraArg )
-          
-          results = commandObject.doCommand()
-          
+
           self.log.info( '%s/%s with %s' % ( commandModule, commandName, commandObject.args ) )
           
+          results = commandObject.doCommand()
+                    
           if not results[ 'OK' ]:
             self.log.error( results[ 'Message' ] )
             continue
@@ -247,7 +247,7 @@ class CacheFeederAgent( AgentModule ):
       
       for spaceToken in spaceTokens:
 
-        elementsToCheck.append( { 'spaceTokenEndpoint' : siteDict[ 'Endpoint' ],
+        elementsToCheck.append( { 'spaceTokenEndpoint' : siteDict[ 'Endpoint' ][0],
                                   'spaceToken'         : spaceToken,
                                   'site'               : site } )
     
@@ -389,7 +389,8 @@ class CacheFeederAgent( AgentModule ):
     commandName = commandDict.keys()[ 0 ]
 
     direction = commandDict[ commandName ][ 'direction' ]
-    metric    = commandDict[ commandName ].keys()[0]
+    #metric    = commandDict[ commandName ].keys()[0]
+    metric    = commandName.replace( 'Transfer', '' )
     
     for elementName, transferResult in results.items():
       
