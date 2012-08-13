@@ -1363,8 +1363,8 @@ class ResourceManagementClient( object ):
   ##############################################################################
   # SpaceTokenOccupancy CACHE Methods
 
-  def insertSpaceTokenOccupancyCache( self, site, token, total, guaranteed,
-                                      free, lastCheckTime, meta = None ):
+  def insertSpaceTokenOccupancyCache( self, site, token, storageElement, total, 
+                                      guaranteed, free, lastCheckTime, meta = None ):
     '''
     Inserts on SpaceTokenOccupancyCache a new row with the arguments given.
     
@@ -1373,6 +1373,8 @@ class ResourceManagementClient( object ):
         name of the space token site  
       **token** - `string`
         name of the token
+      **storageElement** - `string`
+        computed name of the StorageElement  
       **total** - `integer`
         total terabytes
       **guaranteed** - `integer`
@@ -1390,8 +1392,8 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'insert', 'SpaceTokenOccupancyCache', locals() )
-  def updateSpaceTokenOccupancyCache( self, site, token, total, guaranteed,
-                                      free, lastCheckTime, meta = None ):
+  def updateSpaceTokenOccupancyCache( self, site, token, storageElement, total, 
+                                      guaranteed, free, lastCheckTime, meta = None ):
     '''
     Updates SpaceTokenOccupancyCache with the parameters given. By default, 
     `site` and `token` will be the parameters used to select the row.
@@ -1401,6 +1403,8 @@ class ResourceManagementClient( object ):
         name of the space token site  
       **token** - `string`
         name of the token
+      **storageElement** - `string`
+        computed name of the StorageElement  
       **total** - `integer`
         total terabytes
       **guaranteed** - `integer`
@@ -1418,7 +1422,8 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'update', 'SpaceTokenOccupancyCache', locals() )
-  def selectSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
+  def selectSpaceTokenOccupancyCache( self, site = None, token = None, 
+                                      storageElement = None, total = None, 
                                       guaranteed = None, free = None, 
                                       lastCheckTime = None, meta = None ):
     '''
@@ -1429,6 +1434,8 @@ class ResourceManagementClient( object ):
         name of the space token site  
       **token** - `[, string, list]`
         name of the token
+      **storageElement** - [, `string`, `list`]
+        computed name of the StorageElement  
       **total** - `[, integer, list]`
         total terabytes
       **guaranteed** - `[, integer, list]`
@@ -1446,7 +1453,8 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'select', 'SpaceTokenOccupancyCache', locals() )
-  def deleteSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
+  def deleteSpaceTokenOccupancyCache( self, site = None, token = None, 
+                                      storageElement = None, total = None, 
                                       guaranteed = None, free = None, 
                                       lastCheckTime = None, meta = None ):
     '''
@@ -1457,6 +1465,8 @@ class ResourceManagementClient( object ):
         name of the space token site  
       **token** - `[, string, list]`
         name of the token
+      **storageElement** - [, `string`, `list`]
+        computed name of the StorageElement  
       **total** - `[, integer, list]`
         total terabytes
       **guaranteed** - `[, integer, list]`
@@ -1475,9 +1485,9 @@ class ResourceManagementClient( object ):
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'SpaceTokenOccupancyCache', locals() )  
   def addOrModifySpaceTokenOccupancyCache( self, site = None, token = None, 
-                                           total = None, guaranteed = None, 
-                                           free = None, lastCheckTime = None, 
-                                           meta = None ):
+                                           storageElement = None, total = None, 
+                                           guaranteed = None, free = None, 
+                                           lastCheckTime = None, meta = None ):
     '''
     Adds or updates-if-duplicated to SpaceTokenOccupancyCache. Using `site` and `token` 
     to query the database, decides whether to insert or update the table.
@@ -1487,6 +1497,8 @@ class ResourceManagementClient( object ):
         name of the space token site  
       **token** - `string`
         name of the token
+      **storageElement** - [, `string`, `list`]
+        computed name of the StorageElement    
       **total** - `integer`
         total terabytes
       **guaranteed** - `integer`
@@ -1506,9 +1518,9 @@ class ResourceManagementClient( object ):
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'SpaceTokenOccupancyCache', locals() )        
   def addIfNotThereSpaceTokenOccupancyCache( self, site = None, token = None, 
-                                             total = None, guaranteed = None, 
-                                             free = None, lastCheckTime = None, 
-                                             meta = None ):
+                                             storageElement = None, total = None, 
+                                             guaranteed = None, free = None, 
+                                             lastCheckTime = None, meta = None ):
     '''
     Adds if not there to PolicyResult. Using `site` and `token` to query the 
     database, decides whether to insert or not.
@@ -1518,6 +1530,8 @@ class ResourceManagementClient( object ):
         name of the space token site  
       **token** - `string`
         name of the token
+      **storageElement** - [, `string`, `list`]
+        computed name of the StorageElement    
       **total** - `integer`
         total terabytes
       **guaranteed** - `integer`

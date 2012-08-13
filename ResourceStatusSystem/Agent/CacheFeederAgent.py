@@ -152,7 +152,7 @@ class CacheFeederAgent( AgentModule ):
             self.log.info( 'Empty results' )
             continue
           
-          logResults = self.logResults( commandModule, commandDict, results )
+          logResults = self.logResults( commandModule, commandDict, commandObject, results )
           if not logResults[ 'OK' ]:
             self.log.error( logResults[ 'Message' ] )
           
@@ -173,7 +173,7 @@ class CacheFeederAgent( AgentModule ):
     
     return extraArgs
 
-  def logResults( self, commandModule, commandDict, results ):
+  def logResults( self, commandModule, commandDict, commandObject, results ):
     '''
       Lazy method to run the appropiated method to log the results in the DB.
     '''
@@ -195,6 +195,9 @@ class CacheFeederAgent( AgentModule ):
 
     if commandModule == 'Transfer':
       return self.__logTransferResults( commandDict, results )
+    
+    if commandModule == 'SpaceTokenOccupancy':
+      return self.__logSpaceTokenOccupancy( commandDict, commandObject, results )
 
     commandName = commandDict.keys()[ 0 ]
     return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
@@ -235,7 +238,7 @@ class CacheFeederAgent( AgentModule ):
 
     elementsToCheck = []
 
-    for siteDict in spaceEndpoints.values():
+    for site, siteDict in spaceEndpoints.items():
       
       if not isinstance( siteDict, dict ):
         continue
@@ -245,7 +248,8 @@ class CacheFeederAgent( AgentModule ):
       for spaceToken in spaceTokens:
 
         elementsToCheck.append( { 'spaceTokenEndpoint' : siteDict[ 'Endpoint' ],
-                                  'spaceToken'         : spaceToken } )
+                                  'spaceToken'         : spaceToken,
+                                  'site'               : site } )
     
     return S_OK( elementsToCheck )
   
@@ -382,8 +386,10 @@ class CacheFeederAgent( AgentModule ):
       Save to database the results of the TransferCommand commands
     '''
 
-    direction = commandDict[ 'direction' ]
-    metric    = commandDict.keys()[0]
+    commandName = commandDict.keys()[ 0 ]
+
+    direction = commandDict[ commandName ][ 'direction' ]
+    metric    = commandDict[ commandName ].keys()[0]
     
     for elementName, transferResult in results.items():
       
@@ -394,6 +400,26 @@ class CacheFeederAgent( AgentModule ):
         return resQuery    
   
     return S_OK()  
+
+  def __logSpaceTokenOccupancy( self, commandDict, commandObject, results ):
+    
+    spaceToken         = commandObject.args[ 'spaceToken' ]
+    site               = commandObject.args[ 'site' ]
+    
+    token = spaceToken.split( '-' ).split( '_' )[ 1 ]
+    token = token[0].upper() + token[ 1: ]
+    storageElement = '%s-%s' % ( site, token )
+    
+    total      = results[ 'total' ]
+    guaranteed = results[ 'guaranteed' ]
+    free       = results[ 'free' ]
+    
+    resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( site, spaceToken, 
+                                                                  storageElement, 
+                                                                  total, guaranteed, 
+                                                                  free )
+    
+    return resQuery  
       
 #  def execute2( self ):
 #
