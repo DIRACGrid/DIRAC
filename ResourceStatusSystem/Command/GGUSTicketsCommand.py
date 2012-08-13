@@ -78,8 +78,11 @@ class GGUSTicketsSitesCommand( Command ):
     
     for siteName in sites:
       
-      gocName = getGOCSiteName( siteName )[ 'Value' ]
-      gocNames.append( gocName )
+      gocName = getGOCSiteName( siteName )
+      if not gocName[ 'OK' ]:
+        continue
+      
+      gocNames.append( gocName[ 'Value' ] )
        
     gocNames = list( set( gocNames ) )
     
