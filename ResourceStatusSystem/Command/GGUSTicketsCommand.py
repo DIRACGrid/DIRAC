@@ -45,22 +45,28 @@ class GGUSTicketsCommand( Command ):
 
     return resQuery
   
-  def doCommand( self ):
+  def doCommand( self, masterParams = None ):
     """ 
     Return getTicketsList from GGUSTickets Client  
     `args`: 
       - args[0]: string: should be the name of the site
     """
     
-    if not 'name' in self.args:
-      return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
-    name = self.args[ 'name' ]
-     
-    gocName = getGOCSiteName( name )
-    if not gocName[ 'OK' ]:
-      return self.returnERROR( gocName )
-    gocName = gocName[ 'Value' ]
+    if masterParams is not None:
     
+      gocName = masterParams
+      
+    else:
+      
+      if not 'name' in self.args:
+        return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
+      name = self.args[ 'name' ]
+     
+      gocName = getGOCSiteName( name )
+      if not gocName[ 'OK' ]:
+        return self.returnERROR( gocName )
+      gocName = gocName[ 'Value' ]
+      
     result = self.gClient.getTicketsList( gocName )
     if not result[ 'OK' ]:
       return self.returnERROR( result )
@@ -83,7 +89,7 @@ class GGUSTicketsMasterCommand( GGUSTicketsCommand ):
     self.failed  = []
     self.metrics = { 'successful' : 0, 'total' : 0, 'processed' : 0 }
   
-  def doCommand( self ):
+  def doCommand( self, masterParams = None ):
     """ 
     Return getTicketsList from GGUSTickets Client  
     `args`: 
@@ -119,8 +125,7 @@ class GGUSTicketsMasterCommand( GGUSTicketsCommand ):
     
     for gocNameToQuery in gocNamesToQuery:
       
-      self.args[ 'name' ] = gocNameToQuery
-      result = super( GGUSTicketsMasterCommand, self ).doCommand()
+      result = super( GGUSTicketsMasterCommand, self ).doCommand( gocNameToQuery )
       
       if not result[ 'OK' ]:
         self.failed.append( result )
