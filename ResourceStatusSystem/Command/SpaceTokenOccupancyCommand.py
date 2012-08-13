@@ -93,6 +93,7 @@ class SpaceTokenOccupancyCacheCommand( Command ):
     if not endpoint[ 'OK' ]:
       return self.returnERROR( endpoint )
     endpoint = endpoint[ 'Value' ]
+    endpoint = endpoint.replace( 'SFN=?', '' )
  
     res = self.rmClient.selectSpaceTokenOccupancyCache( endpoint = endpoint, 
                                                         spaceToken = spaceToken, 
