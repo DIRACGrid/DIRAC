@@ -49,6 +49,17 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'DowntimeID' ]
                                 }
 
+  _tablesDB[ 'GGUSTicketsCache' ] = { 'Fields' :
+                      {
+                       'GocSite'       : 'VARCHAR(64) NOT NULL',
+                       'Link'          : 'VARCHAR(512) NOT NULL',    
+                       'OpenTickets'   : 'INTEGER NOT NULL DEFAULT 0',
+                       'Tickets'       : 'VARCHAR(512) NOT NULL',
+                       'LastCheckTime' : 'DATETIME NOT NULL'                       
+                      },
+                      'PrimaryKey' : [ 'Site' ]
+                                }
+
   _tablesDB[ 'JobCache' ] = { 'Fields' :
                       {
                        'Site'          : 'VARCHAR(64) NOT NULL',

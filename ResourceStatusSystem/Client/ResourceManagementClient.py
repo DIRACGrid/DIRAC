@@ -234,6 +234,24 @@ class ResourceManagementClient( object ):
     return self._query( 'addIfNotThere', 'AccountingCache', locals() )     
 
   ##############################################################################
+  # GGUSTickets CACHE Methods
+  #FIXME: only one method
+
+  def deleteGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None, 
+                              tickets = None, lastCheckTime = None, meta = None ):
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self._query( 'delete', 'GGUSTicketsCache', locals() )
+
+  def addOrModifyGGUSTicketsCache( self, gocSite = None, link = None, 
+                                   openTickets = None, tickets = None, 
+                                   lastCheckTime = None, meta = None ):
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self._query( 'addOrModify', 'GGUSTicketsCache', locals() )    
+
+  ##############################################################################
   # DOWNTIME CACHE Methods
 
   def insertDowntimeCache( self, downtimeID, element, name, startDate, endDate, severity,

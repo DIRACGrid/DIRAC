@@ -43,6 +43,9 @@ class CacheFeederAgent( AgentModule ):
     #JobsCommand
     self.commands[ 'Jobs' ] = [ { 'JobsWMS' : { 'siteName' : None } }]  
     #FIXME: missing logger
+    
+    self.commands[ 'GGUSTickets' ] = [ { 'GGUSTickets' : {} }]
+    
     #PilotsCommand
     self.commands[ 'Pilots' ] = [ 
                                  { 'PilotsWMS' : { 'element' : 'Site', 'siteName' : None } },
@@ -198,6 +201,9 @@ class CacheFeederAgent( AgentModule ):
     
     if commandModule == 'SpaceTokenOccupancy':
       return self.__logSpaceTokenOccupancy( commandDict, commandObject, results )
+    
+    if commandModule == 'GGUSTickets':
+      return self.__logGGUSTickets( commandDict, commandObject, results )
 
     commandName = commandDict.keys()[ 0 ]
     return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
@@ -424,6 +430,13 @@ class CacheFeederAgent( AgentModule ):
                                                                   free )
     
     return resQuery  
+
+  def __logGGUSTickets( self, commandDict, commandObject, results  ):
+    
+    for gocSiteName, ggusResult in results.items():
+      
+      resQuery = 
+    
       
 #  def execute2( self ):
 #
