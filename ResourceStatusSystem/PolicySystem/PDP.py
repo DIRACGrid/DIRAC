@@ -7,7 +7,7 @@
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR 
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
-from DIRAC.ResourceStatusSystem.PolicySystem              import Status
+#from DIRAC.ResourceStatusSystem.PolicySystem              import Status
 from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
 from DIRAC.ResourceStatusSystem.Utilities                 import RssConfiguration
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter

@@ -5,10 +5,11 @@
 
 '''
 
-from DIRAC                                               import S_OK
-from DIRAC.Core.Utilities                                import List
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ResourceStatusSystem.Utilities                import Utils
+from DIRAC                                                import S_OK
+from DIRAC.Core.Utilities                                 import List
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
+from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
+from DIRAC.ResourceStatusSystem.Utilities                 import Utils
 
 __RCSID__ = '$Id:  $'
 
@@ -121,27 +122,9 @@ def getValidElements():
   return _DEFAULTS  
 
 def getValidStatus():
-  '''
-  Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/Status
-  '''
-  
-  #FIXME: DEFAULTS hardcoded ??
-  DEFAULTS = ( 'Banned', 'Probing', 'Bad', 'Active' )
-  return S_OK( DEFAULTS )  
-#  result = Utils.getCSTree( '%s/GeneralConfig' % _rssConfigPath )
-#  if not result[ 'OK' ]:
-#    return result
-#  result = result[ 'Value' ]
-#  
-#  if not 'Status' in result:
-#    return S_ERROR( 'RssConfiguration: No "Status" section' )
-  
-#  return S_OK( result[ 'Status' ] )
-  
-#  result = Operations().getValue( 'RSSConfiguration/GeneralConfig/Status' )
-#  if result is not None:
-#    return Utils.getTypedList( result )
-#  return DEFAULTS
+
+  validStatus = RSSMachine().getStates()
+  return S_OK( validStatus )
 
 
 #def getValidStatusTypes():

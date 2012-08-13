@@ -11,7 +11,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 __RCSID__ = '$Id:  $'
 
-id_fun = lambda x: x
+#id_fun = lambda x: x
 
 def voimport( base_mod ):
   '''
