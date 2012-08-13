@@ -123,7 +123,7 @@ def getValidElements():
 
 def getValidStatus():
 
-  validStatus = RSSMachine().getStates()
+  validStatus = RSSMachine( None ).getStates()
   return S_OK( validStatus )
 
 
