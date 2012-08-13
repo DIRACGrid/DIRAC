@@ -69,22 +69,14 @@ class GGUSTicketsSitesCommand( Command ):
       - args[0]: string: should be the name of the site
     """
     
-    if not 'name' in self.args:
-      return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
-    name = self.args[ 'name' ]
-
-    if name is None:
-      name = CSHelpers.getSites()
-      if not name[ 'OK' ]:
-        return self.returnERROR( name )
-      name = name[ 'Value' ]
-
-    if not isinstance( name, list ):
-      name = [ name ]
+    sites = CSHelpers.getSites()
+    if not sites[ 'OK' ]:
+      return self.returnERROR( sites )
+    sites = sites[ 'Value' ]
 
     gocNames = []
     
-    for siteName in name:
+    for siteName in sites:
       
       gocName = getGOCSiteName( siteName )[ 'Value' ]
       gocNames.append( gocName )
