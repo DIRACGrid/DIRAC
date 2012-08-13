@@ -984,7 +984,7 @@ class Job( API ):
     return resolvedIS
 
   #############################################################################
-  @staticmethod
+  @classmethod
   def __getScriptStep( self, name = 'Script' ):
     """Internal function. This method controls the definition for a script module.
     """

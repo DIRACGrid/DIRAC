@@ -411,7 +411,7 @@ class Dirac( API ):
 
     return result
 
-  @staticmethod
+  @classmethod
   def __forceLocal( self, job ):
     """Update Job description to avoid pilot submission by WMS
     """
@@ -584,7 +584,7 @@ class Dirac( API ):
       time.sleep( pollingTime )
 
   #############################################################################
-  @staticmethod
+  @classmethod
   def __getVOPolicyModule( self, module ):
     """ Utility to get the VO Policy module name
     """
@@ -999,7 +999,7 @@ class Dirac( API ):
     return S_OK( 'Execution completed successfully' )
 
   #############################################################################
-  @staticmethod
+  @classmethod
   def __printOutput( self, fd = None, message = '' ):
     """Internal callback function to return standard output when running locally.
     """

@@ -311,7 +311,7 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
-  @staticmethod
+  @classmethod
   def __checkSiteIsValid( self, site ):
     """Internal function to check that a site name is valid.
     """
