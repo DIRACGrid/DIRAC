@@ -198,7 +198,7 @@ class PDP:
     policyResults = self.rssMachine.orderPolicyResults( singlePolicyRes )
         
     # Get according to the RssMachine the next state, given a candidate    
-    candidateState = policyResults[ 0 ][ 'State' ]
+    candidateState = policyResults[ 0 ][ 'Status' ]
     nextState      = self.rssMachine.getNextState( candidateState )
     
     if not nextState[ 'OK' ]:
@@ -215,10 +215,10 @@ class PDP:
     # If the RssMachine accepts the candidate, just concatenate the reasons
     for policyRes in policyResults:
       
-      if policyRes[ 'State' ] == nextState:
+      if policyRes[ 'Status' ] == nextState:
         policyCombined[ 'Reason' ] += '%s ###' % policyRes[ 'Reason' ]  
         
-    policyCombined[ 'State' ] = nextState
+    policyCombined[ 'Status' ] = nextState
     
     return S_OK( policyCombined )                             
 
