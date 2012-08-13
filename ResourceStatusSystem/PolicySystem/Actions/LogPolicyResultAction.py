@@ -57,6 +57,9 @@ class LogPolicyResultAction( BaseAction ):
       policyName = singlePolicyResult[ 'Policy' ][ 'name' ]
       if policyName is None:
         return S_ERROR( 'policyName should not be None' )
+      
+      #Truncate reason to fit in database column
+      reason = ( reason[ :508 ] + '..') if len( reason ) > 508 else reason
     
       polUpdateRes = self.rmClient.addOrModifyPolicyResult( element = element, 
                                                             name = name,

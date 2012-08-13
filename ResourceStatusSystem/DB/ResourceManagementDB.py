@@ -79,7 +79,7 @@ class ResourceManagementDB( object ):
                        'PolicyName'    : 'VARCHAR(64) NOT NULL',
                        'StatusType'    : 'VARCHAR(16) NOT NULL DEFAULT ""',
                        'Status'        : 'VARCHAR(16) NOT NULL',
-                       'Reason'        : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
+                       'Reason'        : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
                        'DateEffective' : 'DATETIME NOT NULL',
                        'LastCheckTime' : 'DATETIME NOT NULL'
                       },
@@ -94,7 +94,7 @@ class ResourceManagementDB( object ):
                        'PolicyName'        : 'VARCHAR(64) NOT NULL',
                        'StatusType'        : 'VARCHAR(16) NOT NULL DEFAULT ""',
                        'Status'            : 'VARCHAR(8) NOT NULL',
-                       'Reason'            : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
+                       'Reason'            : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
                        'DateEffective'     : 'DATETIME NOT NULL',                       
                        'LastCheckTime'     : 'DATETIME NOT NULL'                                   
                       },

@@ -57,6 +57,9 @@ class LogStatusAction( BaseAction ):
     if reason is None:
       return S_ERROR( 'reason should not be None' )
     
+    #Truncate reason to fit in database column
+    reason = ( reason[ :508 ] + '..') if len( reason ) > 508 else reason
+    
     resLogUpdate = self.rsClient.addOrModifyStatusElement( element, 'Status',
                                                            name = name, statusType = statusType,
                                                            status = status, elementType = elementType,
