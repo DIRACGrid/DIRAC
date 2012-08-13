@@ -2,13 +2,15 @@
 ''' TransferQualityCommand module
 '''
 
-from datetime                                     import datetime, timedelta
+from datetime                                                   import datetime, timedelta
 
-from DIRAC                                        import S_OK, S_ERROR
-from DIRAC.AccountingSystem.Client.ReportsClient  import ReportsClient
-from DIRAC.Core.DISET.RPCClient                   import RPCClient
-from DIRAC.ResourceStatusSystem.Command.Command   import Command
-from DIRAC.ResourceStatusSystem.Utilities         import CSHelpers
+from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC.AccountingSystem.Client.ReportsClient                import ReportsClient
+from DIRAC.Core.DISET.RPCClient                                 import RPCClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Command.Command                 import Command
+from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+
 
 __RCSID__ = '$Id:  $'  
 
@@ -285,6 +287,46 @@ class TransferQualityChannelCommand( Command ):
 #        qualityMean[ destination ] = 0   
            
     return S_OK( qualityMean )   
+
+################################################################################
+
+class TransferCacheCommand( Command ):
+  
+  def __init__( self, args = None, clients = None ):
+    
+    super( TransferCacheCommand, self ).__init__( args, clients )
+    
+    if 'ResourceManagementClient' in self.apis:
+      self.rmClient = self.apis[ 'ResourceManagementClient' ]
+    else:
+      self.rmClient = ResourceManagementClient()   
+
+  def doCommand( self ):
+
+    if not 'direction' in self.args:
+      return self.returnERROR( S_ERROR( 'element is missing' ) )
+    direction = self.args[ 'direction' ]
+
+    if direction not in [ 'Source', 'Destination' ]:
+      return self.returnERROR( S_ERROR( 'direction is not Source nor Destination' ) )
+
+    if not 'name' in self.args:
+      return self.returnERROR( S_ERROR( 'name is missing' ) )
+    name = self.args[ 'name' ]
+
+    if not 'metric' in self.args:
+      return self.returnERROR( S_ERROR( 'metric is missing' ) )
+    metric = self.args[ 'metric' ]
+
+    meta = { 'columns' : [ 'Value' ] }
+    resQuery = self.rmClient.selectTransferCache( elementName = name, 
+                                                  direction = direction,
+                                                  metric = metric, meta = meta )
+    
+    if not resQuery[ 'OK' ]:
+      return self.returnERROR( resQuery )
+    
+    return resQuery
   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
