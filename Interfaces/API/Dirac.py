@@ -38,8 +38,6 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 from DIRAC.Core.Base.AgentReactor                        import AgentReactor
 from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
-from DIRAC.FrameworkSystem.Client.LoggerClient           import LoggerClient
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.Core.Utilities                                import Time
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 

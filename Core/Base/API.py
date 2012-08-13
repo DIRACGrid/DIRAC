@@ -1,7 +1,5 @@
 """ DIRAC API Base Class """
 
-__RCSID__ = "$Id$"
-
 from DIRAC                          import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List      import sortList
 from DIRAC.Core.Security.ProxyInfo  import getProxyInfo, formatProxyInfoAsString
