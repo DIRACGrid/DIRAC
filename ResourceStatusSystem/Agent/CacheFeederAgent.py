@@ -41,52 +41,53 @@ class CacheFeederAgent( AgentModule ):
 
     #FIXME: missing logger
     #JobsCommand
-    self.commands[ 'Jobs' ] = [ { 'JobsWMS' : { 'siteName' : None } }]  
+#    self.commands[ 'Jobs' ] = [ { 'JobsWMS' : { 'siteName' : None } }]  
     #FIXME: missing logger
     
-    self.commands[ 'GGUSTickets' ] = [ { 'GGUSTicketsMaster' : {} }]
+    self.commands[ 'GGUSTickets' ] = [ { 'GGUSTickets' : {} }]
     
     #PilotsCommand
-    self.commands[ 'Pilots' ] = [ 
-                                 { 'PilotsWMS' : { 'element' : 'Site', 'siteName' : None } },
-                                 { 'PilotsWMS' : { 'element' : 'Resource', 'siteName' : None } } 
-                                 ]
+#    self.commands[ 'Pilots' ] = [ 
+#                                 { 'PilotsWMS' : { 'element' : 'Site', 'siteName' : None } },
+#                                 { 'PilotsWMS' : { 'element' : 'Resource', 'siteName' : None } } 
+#                                 ]
     #DowntimeCommand
-    self.commands[ 'Downtime' ] = [    
-                                    { 'DowntimeSites'     : {} },
-                                    { 'DowntimeResources' : {} }
-                                  ] 
+#    self.commands[ 'Downtime' ] = [    
+#                                    { 'DowntimeSites'     : {} },
+#                                    { 'DowntimeResources' : {} }
+#                                  ] 
     #FIXME: do not forget about hourly vs Always ...etc                                                                       
     #AccountingCacheCommand
-    self.commands[ 'AccountingCache' ] = [
-                                          {'SuccessfullJobsBySiteSplitted'    :{'hours' :24, 'plotType' :'Job' }},
-                                          {'FailedJobsBySiteSplitted'         :{'hours' :24, 'plotType' :'Job' }},
-                                          {'SuccessfullPilotsBySiteSplitted'  :{'hours' :24, 'plotType' :'Pilot' }},
-                                          {'FailedPilotsBySiteSplitted'       :{'hours' :24, 'plotType' :'Pilot' }},
-                                          {'SuccessfullPilotsByCESplitted'    :{'hours' :24, 'plotType' :'Pilot' }},
-                                          {'FailedPilotsByCESplitted'         :{'hours' :24, 'plotType' :'Pilot' }},
-                                          {'RunningJobsBySiteSplitted'        :{'hours' :24, 'plotType' :'Job' }},
-#                                          {'RunningJobsBySiteSplitted'        :{'hours' :168, 'plotType' :'Job' }},
-#                                          {'RunningJobsBySiteSplitted'        :{'hours' :720, 'plotType' :'Job' }},
-#                                          {'RunningJobsBySiteSplitted'        :{'hours' :8760, 'plotType' :'Job' }},    
-                                          ]
+#    self.commands[ 'AccountingCache' ] = [
+#                                          {'SuccessfullJobsBySiteSplitted'    :{'hours' :24, 'plotType' :'Job' }},
+#                                          {'FailedJobsBySiteSplitted'         :{'hours' :24, 'plotType' :'Job' }},
+#                                          {'SuccessfullPilotsBySiteSplitted'  :{'hours' :24, 'plotType' :'Pilot' }},
+#                                          {'FailedPilotsBySiteSplitted'       :{'hours' :24, 'plotType' :'Pilot' }},
+#                                          {'SuccessfullPilotsByCESplitted'    :{'hours' :24, 'plotType' :'Pilot' }},
+#                                          {'FailedPilotsByCESplitted'         :{'hours' :24, 'plotType' :'Pilot' }},
+#                                          {'RunningJobsBySiteSplitted'        :{'hours' :24, 'plotType' :'Job' }},
+##                                          {'RunningJobsBySiteSplitted'        :{'hours' :168, 'plotType' :'Job' }},
+##                                          {'RunningJobsBySiteSplitted'        :{'hours' :720, 'plotType' :'Job' }},
+##                                          {'RunningJobsBySiteSplitted'        :{'hours' :8760, 'plotType' :'Job' }},    
+#                                          ]
 
     #Transfer
     self.commands[ 'Transfer' ] = [
-                                   { 'TransferQuality' : { 'hours' : 2, 'name' : None, 'direction' : 'Source' } }, 
-                                   { 'TransferQuality' : { 'hours' : 2, 'name' : None, 'direction' : 'Destination' } },
-                                   { 'TransferFailed'  : { 'hours' : 2, 'name' : None, 'direction' : 'Source' } },
-                                   { 'TransferFailed'  : { 'hours' : 2, 'name' : None, 'direction' : 'Destination' } },
+                                   { 'TransferCannel' : {} },                                   
+#                                   { 'TransferQuality' : { 'hours' : 2, 'name' : None, 'direction' : 'Source' } }, 
+#                                   { 'TransferQuality' : { 'hours' : 2, 'name' : None, 'direction' : 'Destination' } },
+#                                   { 'TransferFailed'  : { 'hours' : 2, 'name' : None, 'direction' : 'Source' } },
+#                                   { 'TransferFailed'  : { 'hours' : 2, 'name' : None, 'direction' : 'Destination' } },
                                             ]
     
     #VOBOXAvailability
-    self.commands[ 'VOBOXAvailability' ] = [
-                                            { 'VOBOXAvailability' : {} }
-                                            ]
+#    self.commands[ 'VOBOXAvailability' ] = [
+#                                            { 'VOBOXAvailability' : {} }
+#                                            ]
     #SpaceTokenOccupancy
-    self.commands[ 'SpaceTokenOccupancy' ] = [
-                                              { 'SpaceTokenOccupancy' : {} }
-                                              ]
+#    self.commands[ 'SpaceTokenOccupancy' ] = [
+#                                              { 'SpaceTokenOccupancy' : {} }
+#                                              ]
     
     #Reuse clients for the commands
     self.clients[ 'GOCDBClient' ]          = GOCDBClient()
@@ -429,12 +430,8 @@ class CacheFeederAgent( AgentModule ):
 
   def __logGGUSTickets( self, results  ):
     
-    failed, metrics = results
-    
-    self.log.info( 'Updated %s of %s' % ( metrics[ 'successful' ], metrics[ 'total' ] ) )
-    if failed:
-      self.log.warn( 'Failed %s' % len( failed ) )   
-      self.log.warn( failed )
+    if results[ 'failed' ]:   
+      self.log.warn( results[ 'failed' ] )
     
     return S_OK()  
      

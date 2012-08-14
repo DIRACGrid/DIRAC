@@ -13,7 +13,7 @@ from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
 __RCSID__ = '$Id:  $'  
 
-class TransferCommand( Command ):
+class TransferChannelCommand( Command ):
   
   def __init__( self, args = None, clients = None ):
     
@@ -55,6 +55,13 @@ class TransferCommand( Command ):
       return S_ERROR( 'Number of hours not specified' )
     hours = self.args[ 'hours' ]
 
+    if not 'direction' in self.args:
+      return S_ERROR( 'element is missing' )
+    direction = self.args[ 'direction' ]
+
+    if direction not in [ 'Source', 'Destination' ]:
+      return S_ERROR( 'direction is not Source nor Destination' )
+
     if not 'name' in self.args:
       return S_ERROR( 'name is missing' )
     name = self.args[ 'name' ]
@@ -66,25 +73,25 @@ class TransferCommand( Command ):
     if metric not in [ 'Quality', 'FailedTransfers' ]:
       return S_ERROR( 'metric is not Quality nor FailedTransfers' )
 
-    return S_OK( ( hours, name, metric ) )
+    return S_OK( ( hours, name, direction, metric ) )
   
   def doNew( self, masterParams = None ):
     
     if masterParams is not None:
-      hours, name, metric = masterParams
+      hours, name, direction, metric = masterParams
       
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
         return params
-      hours, name, metric = params[ 'Value' ] 
+      hours, name, direction, metric = params[ 'Value' ] 
       
     fromD = datetime.utcnow() - timedelta( hours = hours )
     toD   = datetime.utcnow()  
     
     transferDict = { 
                      'OperationType' : 'putAndRegister',
-                     'Destination'   : name
+                     direction   : name
                      }
 
     if metric == 'FailedTransfers':
@@ -156,10 +163,10 @@ class TransferCommand( Command ):
     elementNamesToQuery = set( elementNames ).difference( set( resQuery ) )
  
     for metric in [ 'Quality', 'FailedTransfers' ]:
-      #for elementNameToQuery in elementNamesToQuery: 
-      result = self.doNew( ( 2, elementNamesToQuery, metric )  ) 
-      if not result[ 'OK' ]:
-        self.metrics[ 'failed' ].append( result )
+      for direction in [ 'Source', 'Destination' ]: 
+        result = self.doNew( ( 2, elementNamesToQuery, direction, metric )  ) 
+        if not result[ 'OK' ]:
+          self.metrics[ 'failed' ].append( result )
        
     return S_OK( self.metrics )           
 
