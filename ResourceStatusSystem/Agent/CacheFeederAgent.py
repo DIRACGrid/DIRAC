@@ -72,22 +72,19 @@ class CacheFeederAgent( AgentModule ):
 #                                          ]
 
     #Transfer
-    self.commands[ 'Transfer' ] = [
-                                   { 'TransferCannel' : {} },                                   
+    self.commands[ 'Transfer' ] = [ { 'TransferChannel' : {} } ]                                   
 #                                   { 'TransferQuality' : { 'hours' : 2, 'name' : None, 'direction' : 'Source' } }, 
 #                                   { 'TransferQuality' : { 'hours' : 2, 'name' : None, 'direction' : 'Destination' } },
 #                                   { 'TransferFailed'  : { 'hours' : 2, 'name' : None, 'direction' : 'Source' } },
 #                                   { 'TransferFailed'  : { 'hours' : 2, 'name' : None, 'direction' : 'Destination' } },
-                                            ]
+#                                            ]
     
     #VOBOXAvailability
 #    self.commands[ 'VOBOXAvailability' ] = [
 #                                            { 'VOBOXAvailability' : {} }
 #                                            ]
     #SpaceTokenOccupancy
-#    self.commands[ 'SpaceTokenOccupancy' ] = [
-#                                              { 'SpaceTokenOccupancy' : {} }
-#                                              ]
+    self.commands[ 'SpaceTokenOccupancy' ] = [ { 'SpaceTokenOccupancy' : {} } ]
     
     #Reuse clients for the commands
     self.clients[ 'GOCDBClient' ]          = GOCDBClient()
@@ -133,33 +130,33 @@ class CacheFeederAgent( AgentModule ):
         commandName = commandDict.keys()[0]
         commandArgs = commandDict[ commandName ]
       
-        extraArgs = self.getExtraArgs( commandName )  
-        if not extraArgs[ 'OK' ]:
-          self.log.error( extraArgs[ 'Message' ] )
-          return extraArgs  
-        extraArgs = extraArgs[ 'Value' ]
+#        extraArgs = self.getExtraArgs( commandName )  
+#        if not extraArgs[ 'OK' ]:
+#          self.log.error( extraArgs[ 'Message' ] )
+#          return extraArgs  
+#        extraArgs = extraArgs[ 'Value' ]
           
-        for extraArg in extraArgs:  
+#        for extraArg in extraArgs:  
                     
-          commandObject = commandArgs[ 'command' ]
-          commandObject.args.update( extraArg )
+        commandObject = commandArgs[ 'command' ]
+#          commandObject.args.update( extraArg )
 
-          self.log.info( '%s/%s with %s' % ( commandModule, commandName, commandObject.args ) )
+        self.log.info( '%s/%s with %s' % ( commandModule, commandName, commandObject.args ) )
           
-          results = commandObject.doCommand()
+        results = commandObject.doCommand()
                     
-          if not results[ 'OK' ]:
-            self.log.error( results[ 'Message' ] )
-            continue
-          results = results[ 'Value' ]
+        if not results[ 'OK' ]:
+          self.log.error( results[ 'Message' ] )
+          continue
+        results = results[ 'Value' ]
 
-          if not results:
-            self.log.info( 'Empty results' )
-            continue
+        if not results:
+          self.log.info( 'Empty results' )
+          continue
           
-          logResults = self.logResults( commandModule, commandDict, commandObject, results )
-          if not logResults[ 'OK' ]:
-            self.log.error( logResults[ 'Message' ] )
+        logResults = self.logResults( commandModule, commandDict, commandObject, results )
+        if not logResults[ 'OK' ]:
+          self.log.error( logResults[ 'Message' ] )
           
     return S_OK()  
          
@@ -173,9 +170,9 @@ class CacheFeederAgent( AgentModule ):
     
     if commandName == 'VOBOXAvailability':
       extraArgs = self.__getVOBOXAvailabilityElems()
-    elif commandName == 'SpaceTokenOccupancy':
-      extraArgs = self.__getSpaceTokenOccupancyElems()
-    
+#    elif commandName == 'SpaceTokenOccupancy':
+#      extraArgs = self.__getSpaceTokenOccupancyElems()
+#    
     return extraArgs
 
   def logResults( self, commandModule, commandDict, commandObject, results ):
@@ -228,38 +225,38 @@ class CacheFeederAgent( AgentModule ):
     # This may look stupid, but the Command is expecting a tuple
     return S_OK( [ { 'serviceURL' : el } for el in elementsToCheck ] )
   
-  @staticmethod
-  def __getSpaceTokenOccupancyElems():
-    '''
-    Gets the candidates to execute the command
-    '''   
-          
-    spaceEndpoints = CSHelpers.getSpaceTokenEndpoints()
-    if not spaceEndpoints[ 'OK' ]:
-      return spaceEndpoints
-    spaceEndpoints = spaceEndpoints[ 'Value' ]
-    
-    spaceTokens = CSHelpers.getSpaceTokens() 
-    if not spaceTokens[ 'OK' ]:
-      return spaceTokens
-    spaceTokens = spaceTokens[ 'Value' ]
-
-    elementsToCheck = []
-
-    for site, siteDict in spaceEndpoints.items():
-      
-      if not isinstance( siteDict, dict ):
-        continue
-      if not siteDict.has_key( 'Endpoint' ):
-        continue
-      
-      for spaceToken in spaceTokens:
-
-        elementsToCheck.append( { 'spaceTokenEndpoint' : siteDict[ 'Endpoint' ][0],
-                                  'spaceToken'         : spaceToken
-                                } )
-    
-    return S_OK( elementsToCheck )
+#  @staticmethod
+#  def __getSpaceTokenOccupancyElems():
+#    '''
+#    Gets the candidates to execute the command
+#    '''   
+#          
+#    spaceEndpoints = CSHelpers.getSpaceTokenEndpoints()
+#    if not spaceEndpoints[ 'OK' ]:
+#      return spaceEndpoints
+#    spaceEndpoints = spaceEndpoints[ 'Value' ]
+#    
+#    spaceTokens = CSHelpers.getSpaceTokens() 
+#    if not spaceTokens[ 'OK' ]:
+#      return spaceTokens
+#    spaceTokens = spaceTokens[ 'Value' ]
+#
+#    elementsToCheck = []
+#
+#    for site, siteDict in spaceEndpoints.items():
+#      
+#      if not isinstance( siteDict, dict ):
+#        continue
+#      if not siteDict.has_key( 'Endpoint' ):
+#        continue
+#      
+#      for spaceToken in spaceTokens:
+#
+#        elementsToCheck.append( { 'spaceTokenEndpoint' : siteDict[ 'Endpoint' ][0],
+#                                  'spaceToken'         : spaceToken
+#                                } )
+#    
+#    return S_OK( elementsToCheck )
   
   def __logVOBOXAvailabilityResults( self, results ):
     '''
@@ -419,19 +416,24 @@ class CacheFeederAgent( AgentModule ):
 #    return S_OK()  
 
   def __logSpaceTokenOccupancy( self, commandDict, commandObject, results ):
-    
-    spaceToken  = commandObject.args[ 'spaceToken' ]
-    endpoint    = commandObject.args[ 'spaceTokenEndpoint' ]   
 
-    total      = results[ 'total' ]
-    guaranteed = results[ 'guaranteed' ]
-    free       = results[ 'free' ]
+    if results[ 'failed' ]:   
+      self.log.warn( results[ 'failed' ] )
     
-    resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( endpoint, spaceToken,
-                                                                  total, guaranteed, 
-                                                                  free )
+    return S_OK() 
     
-    return resQuery  
+#    spaceToken  = commandObject.args[ 'spaceToken' ]
+#    endpoint    = commandObject.args[ 'spaceTokenEndpoint' ]   
+#
+#    total      = results[ 'total' ]
+#    guaranteed = results[ 'guaranteed' ]
+#    free       = results[ 'free' ]
+#    
+#    resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( endpoint, spaceToken,
+#                                                                  total, guaranteed, 
+#                                                                  free )
+#    
+#    return resQuery  
 
   def __logGGUSTickets( self, results  ):
     

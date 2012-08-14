@@ -114,7 +114,7 @@ class GGUSTicketsCommand( Command ):
     resQuery = self.rmClient.selectGGUSTicketsCache( meta = { 'columns' : [ 'GocSite' ] } )
     if not resQuery[ 'OK' ]:
       return resQuery
-    resQuery = resQuery[ 'Value' ]
+    resQuery = [ element[0] for element in resQuery[ 'Value' ] ]
     
     gocNamesToQuery = set( gocNames ).difference( set( resQuery ) )   
     

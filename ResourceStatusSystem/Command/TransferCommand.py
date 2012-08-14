@@ -161,7 +161,7 @@ class TransferChannelCommand( Command ):
     sourceQuery = self.rmClient.selectTransferCache( meta = { 'columns' : [ 'SourceName' ] } )
     if not sourceQuery[ 'OK' ]:
       return sourceQuery
-    sourceQuery = sourceQuery[ 'Value' ]
+    sourceQuery = [ element[0] for element in sourceQuery[ 'Value' ] ]
     
     sourceElementsToQuery = list( set( elementNames ).difference( set( sourceQuery ) ) )
  
