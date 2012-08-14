@@ -17,7 +17,7 @@ class TransferChannelCommand( Command ):
   
   def __init__( self, args = None, clients = None ):
     
-    super( TransferCommand, self ).__init__( args, clients )
+    super( TransferChannelCommand, self ).__init__( args, clients )
     
     if 'ReportsClient' in self.apis:
       self.rClient = self.apis[ 'ReportsClient' ]
@@ -155,16 +155,16 @@ class TransferChannelCommand( Command ):
       
     elementNames = sites + ses   
 
-    resQuery = self.rmClient.selectTransferCache( meta = { 'columns' : [ 'ElementName' ] } )
-    if not resQuery[ 'OK' ]:
-      return resQuery
-    resQuery = resQuery[ 'Value' ]
+    sourceQuery = self.rmClient.selectTransferCache( meta = { 'columns' : [ 'SourceName' ] } )
+    if not sourceQuery[ 'OK' ]:
+      return sourceQuery
+    sourceQuery = sourceQuery[ 'Value' ]
     
-    elementNamesToQuery = set( elementNames ).difference( set( resQuery ) )
+    sourceElementsToQuery = set( elementNames ).difference( set( sourceQuery ) )
  
     for metric in [ 'Quality', 'FailedTransfers' ]:
       for direction in [ 'Source', 'Destination' ]: 
-        result = self.doNew( ( 2, elementNamesToQuery, direction, metric )  ) 
+        result = self.doNew( ( 2, sourceElementsToQuery, direction, metric )  ) 
         if not result[ 'OK' ]:
           self.metrics[ 'failed' ].append( result )
        

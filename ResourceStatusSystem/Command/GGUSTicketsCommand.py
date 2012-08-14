@@ -64,7 +64,7 @@ class GGUSTicketsCommand( Command ):
     if not result[ 'OK' ]:
       return result
              
-    ticketsCount, link, tickets = result
+    ticketsCount, link, tickets = result[ 'Value' ]
     openTickets = ticketsCount[ 'open' ]
     
     uniformResult = {}

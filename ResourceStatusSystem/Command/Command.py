@@ -20,7 +20,7 @@ class Command( object ):
     self.args       = ( 1 and args ) or {}      
     self.apis       = ( 1 and clients ) or {}
     self.masterMode = False
-    self.metrics    = { 'successful' : 0, 'total' : 0, 'processed' : 0, 'failed' : [] }
+    self.metrics    = { 'failed' : [] }
 
   def doNew( self, masterParams = None ):
     ''' To be extended by real commands
@@ -42,7 +42,7 @@ class Command( object ):
     '''
     
     if self.masterMode:
-      self.returnSObj( self.doMaster() )
+      return self.returnSObj( self.doMaster() )
           
     result = self.doCache()
     if not result[ 'OK' ]:
