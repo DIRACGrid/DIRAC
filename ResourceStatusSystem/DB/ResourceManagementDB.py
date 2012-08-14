@@ -126,13 +126,13 @@ class ResourceManagementDB( object ):
 
   _tablesDB[ 'TransferCache' ] = { 'Fields' :
                       {
-                       'ElementName'   : 'VARCHAR( 64 ) NOT NULL',
-                       'Direction'     : 'VARCHAR( 16 ) NOT NULL',
-                       'Metric'        : 'VARCHAR( 16 ) NOT NULL',
-                       'Value'         : 'DOUBLE NOT NULL DEFAULT 0',                     
-                       'LastCheckTime' : 'DATETIME NOT NULL' 
+                       'SourceName'      : 'VARCHAR( 64 ) NOT NULL',
+                       'DestinationName' : 'VARCHAR( 64 ) NOT NULL',
+                       'Metric'          : 'VARCHAR( 16 ) NOT NULL',
+                       'Value'           : 'DOUBLE NOT NULL DEFAULT 0',                     
+                       'LastCheckTime'   : 'DATETIME NOT NULL' 
                       },
-                      'PrimaryKey' : [ 'ElementName', 'Direction', 'Metric' ]                                             
+                      'PrimaryKey' : [ 'SourceName', 'DestinationName', 'Metric' ]                                             
                                 } 
  
   _tablesDB[ 'UserRegistryCache' ] = { 'Fields' : 

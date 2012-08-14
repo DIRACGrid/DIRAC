@@ -647,156 +647,158 @@ class ResourceManagementClient( object ):
   ##############################################################################
   # TRANSFER CACHE Methods
 
-  def insertTransferCache( self, elementName, direction, metric, value, lastCheckTime,
-                           meta = None ):
-    '''
-    Inserts on TransferCache a new row with the arguments given.
-    
-    :Parameters:
-      **elementName** - `string`
-        name of the element 
-      **direction** - `string`
-        the element taken as Source or Destination of the transfer
-      **metric** - `string`
-        measured quality of failed transfers
-      **value** - `float`
-        percentage  
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
-    return self._query( 'insert', 'TransferCache', locals() )
-  def updateTransferCache( self, elementName, direction, metric, value, lastCheckTime,
-                           meta = None ):
-    '''
-    Updates TransferCache with the parameters given. By default, `elementName`,
-    `direction` and `metric` will be the parameter used to select the row.
-    
-    :Parameters:
-      **elementName** - `string`
-        name of the element 
-      **direction** - `string`
-        the element taken as Source or Destination of the transfer
-      **metric** - `string`
-        measured quality of failed transfers
-      **value** - `float`
-        percentage  
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
-    return self._query( 'update', 'TransferCache', locals() )
-  def selectTransferCache( self, elementName = None, direction = None, metric = None, 
+#  def insertTransferCache( self, elementName, direction, metric, value, lastCheckTime,
+#                           meta = None ):
+#    '''
+#    Inserts on TransferCache a new row with the arguments given.
+#    
+#    :Parameters:
+#      **elementName** - `string`
+#        name of the element 
+#      **direction** - `string`
+#        the element taken as Source or Destination of the transfer
+#      **metric** - `string`
+#        measured quality of failed transfers
+#      **value** - `float`
+#        percentage  
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
+#    '''
+#    # Unused argument    
+#    # pylint: disable-msg=W0613
+#    return self._query( 'insert', 'TransferCache', locals() )
+#  def updateTransferCache( self, elementName, direction, metric, value, lastCheckTime,
+#                           meta = None ):
+#    '''
+#    Updates TransferCache with the parameters given. By default, `elementName`,
+#    `direction` and `metric` will be the parameter used to select the row.
+#    
+#    :Parameters:
+#      **elementName** - `string`
+#        name of the element 
+#      **direction** - `string`
+#        the element taken as Source or Destination of the transfer
+#      **metric** - `string`
+#        measured quality of failed transfers
+#      **value** - `float`
+#        percentage  
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
+#    '''
+#    # Unused argument    
+#    # pylint: disable-msg=W0613
+#    return self._query( 'update', 'TransferCache', locals() )
+  def selectTransferCache( self, sourceName = None, destinationName = None, metric = None, 
                            value = None, lastCheckTime = None, meta = None ):
     '''
-    Gets from TransferCache all rows that match the parameters given.
-    
-    :Parameters:
-      **elementName** - `[, string, list ]`
-        name of the element 
-      **direction** - `[, string, list ]`
-        the element taken as Source or Destination of the transfer
-      **metric** - `[, string, list ]`
-        measured quality of failed transfers
-      **value** - `[, float, list ]`
-        percentage  
-      **lastCheckTime** - `[, float, list ]`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
+#    Gets from TransferCache all rows that match the parameters given.
+#    
+#    :Parameters:
+#      **elementName** - `[, string, list ]`
+#        name of the element 
+#      **direction** - `[, string, list ]`
+#        the element taken as Source or Destination of the transfer
+#      **metric** - `[, string, list ]`
+#        measured quality of failed transfers
+#      **value** - `[, float, list ]`
+#        percentage  
+#      **lastCheckTime** - `[, float, list ]`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'select', 'TransferCache', locals() )
-  def deleteTransferCache( self, elementName = None, direction = None, metric = None, 
+  def deleteTransferCache( self, sourceName = None, destinationName = None, metric = None, 
                            value = None, lastCheckTime = None, meta = None ):
     '''
-    Deletes from TransferCache all rows that match the parameters given.
-    
-    :Parameters:
-      **elementName** - `[, string, list ]`
-        name of the element 
-      **direction** - `[, string, list ]`
-        the element taken as Source or Destination of the transfer
-      **metric** - `[, string, list ]`
-        measured quality of failed transfers
-      **value** - `[, float, list ]`
-        percentage  
-      **lastCheckTime** - `[, float, list ]`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
+#    Deletes from TransferCache all rows that match the parameters given.
+#    
+#    :Parameters:
+#      **elementName** - `[, string, list ]`
+#        name of the element 
+#      **direction** - `[, string, list ]`
+#        the element taken as Source or Destination of the transfer
+#      **metric** - `[, string, list ]`
+#        measured quality of failed transfers
+#      **value** - `[, float, list ]`
+#        percentage  
+#      **lastCheckTime** - `[, float, list ]`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'TransferCache', locals() )
-  def addOrModifyTransferCache( self, elementName = None, direction = None, metric = None, 
-                                value = None, lastCheckTime = None, meta = None ):
+  def addOrModifyTransferCache( self, sourceName = None, destinationName = None, 
+                                metric = None, value = None, lastCheckTime = None, 
+                                meta = None ):
     '''
-    Adds or updates-if-duplicated to TransferCache. Using `elementName`, `direction`
-    and `metric` to query the database, decides whether to insert or update the table.
-    
-    :Parameters:
-      **elementName** - `string`
-        name of the element 
-      **direction** - `string`
-        the element taken as Source or Destination of the transfer
-      **metric** - `string`
-        measured quality of failed transfers
-      **value** - `float`
-        percentage  
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
+#    Adds or updates-if-duplicated to TransferCache. Using `elementName`, `direction`
+#    and `metric` to query the database, decides whether to insert or update the table.
+#    
+#    :Parameters:
+#      **elementName** - `string`
+#        name of the element 
+#      **direction** - `string`
+#        the element taken as Source or Destination of the transfer
+#      **metric** - `string`
+#        measured quality of failed transfers
+#      **value** - `float`
+#        percentage  
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'TransferCache', locals() )
-  def addIfNotThereTransferCache( self, elementName = None, direction = None, metric = None, 
-                                  value = None, lastCheckTime = None, meta = None ):
+  def addIfNotThereTransferCache( self, sourceName = None, destinationName = None, 
+                                  metric = None, value = None, lastCheckTime = None, 
+                                  meta = None ):
     '''
-    Adds if not there to TransferCache. Using `elementName`, `direction` and `metric` 
-    to query the database, decides whether to insert or not.
-    
-    :Parameters:
-      **elementName** - `string`
-        name of the element 
-      **direction** - `string`
-        the element taken as Source or Destination of the transfer
-      **metric** - `string`
-        measured quality of failed transfers
-      **value** - `float`
-        percentage  
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
+#    Adds if not there to TransferCache. Using `elementName`, `direction` and `metric` 
+#    to query the database, decides whether to insert or not.
+#    
+#    :Parameters:
+#      **elementName** - `string`
+#        name of the element 
+#      **direction** - `string`
+#        the element taken as Source or Destination of the transfer
+#      **metric** - `string`
+#        measured quality of failed transfers
+#      **value** - `float`
+#        percentage  
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
