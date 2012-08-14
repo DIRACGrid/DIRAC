@@ -52,69 +52,73 @@ class DowntimeCommand( Command ):
     
     if 'name' not in self.args:
       return S_ERROR( '"name" not found in self.args' )
-    name = self.args[ 'name' ]      
+    elementName = self.args[ 'name' ]      
+    
+    if not isinstance( elementName, list ):
+      elementName = [ elementName ]
     
     if 'element' not in self.args:
       return S_ERROR( '"element" not found in self.args' )
     element = self.args[ 'element' ]
     
     if not element in [ 'Site', 'Resource' ]:
-      return S_ERROR( 'element is not Site nor Resource' )
-       
-    return S_OK( ( element, name ) )
-
-  def doNew( self, masterParams = None ):
+      return S_ERROR( 'element is not Site nor Resource' )   
     
-    if masterParams is not None:
-      element, elementNames = masterParams
-      
-    else:
-      params = self._prepareCommand()
-      if not params[ 'OK' ]:
-        return params
-      element, elementNames = params[ 'Value' ]
-      
     if element == 'Site':
-      
-      if not isinstance( elementNames, list ):
-        elementNames = [ elementNames ]
       
       gocSites = []
         
-      for siteName in elementNames:
+      for siteName in elementName:
         gocSite = getGOCSiteName( siteName )      
         if not gocSite[ 'OK' ]:
           #FIXME: not all sites are in GOC, only LCG sites. 
           #We have to filter them somehow.
           continue
           #return gocSite
-        gocSites.append( gocSite[ 'Value' ] )        
-      
-      elementNames = gocSites  
-        
-    results = self.gClient.getStatus( element, elementNames, None, 120 )        
-    if not results[ 'OK' ]:
-      return results
-    results = results[ 'Value' ]
-  
-    uniformResult = [] 
+        gocSites.append( gocSite[ 'Value' ] ) 
+       
+      elementName = gocSite
+       
+    return S_OK( ( element, elementName ) )
 
-    for downtime, downDic in results.items():
-
-      dt                  = {}
-      dt[ 'DowntimeID' ]  = downtime
-      dt[ 'Element' ]     = element
-      dt[ 'StartDate' ]   = downDic[ 'FORMATED_START_DATE' ]
-      dt[ 'EndDate' ]     = downDic[ 'FORMATED_END_DATE' ]
-      dt[ 'Severity' ]    = downDic[ 'SEVERITY' ]
-      dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
-      dt[ 'Link' ]        = downDic[ 'GOCDB_PORTAL_URL' ]
-      if element == 'Resource':
-        dt[ 'Name' ]        = downDic[ 'HOSTNAME' ]
-      else:
-        dt[ 'Name' ] = downDic[ 'SITENAME' ]
+  def doNew( self, masterParams = None ):
+    
+    if masterParams is not None:
+      element, elementNames = masterParams
+    else:
+      params = self._prepareCommand()
+      if not params[ 'OK' ]:
+        return params
+      element, elementNames = params[ 'Value' ]       
+    
+    uniformResult = []
+    
+    for elementName in elementNames:    
       
-      uniformResult.append( dt )  
+      results = self.gClient.getStatus( element, elementName, None, 120 )        
+      if not results[ 'OK' ]:
+        return results
+      results = results[ 'Value' ]
+
+      if results is None:
+        continue
+
+      for downtime, downDic in results.items():
+
+        dt                  = {}
+        dt[ 'DowntimeID' ]  = downtime
+        dt[ 'Element' ]     = element
+        dt[ 'StartDate' ]   = downDic[ 'FORMATED_START_DATE' ]
+        dt[ 'EndDate' ]     = downDic[ 'FORMATED_END_DATE' ]
+        dt[ 'Severity' ]    = downDic[ 'SEVERITY' ]
+        dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
+        dt[ 'Link' ]        = downDic[ 'GOCDB_PORTAL_URL' ]
+        if element == 'Resource':
+          dt[ 'Name' ]        = downDic[ 'HOSTNAME' ]
+        else:
+          dt[ 'Name' ] = downDic[ 'SITENAME' ]
+      
+        uniformResult.append( dt )  
           
     storeRes = self._storeCommand( uniformResult )
     if not storeRes[ 'OK' ]:
@@ -141,17 +145,26 @@ class DowntimeCommand( Command ):
     if not sites[ 'OK' ]:
       return sites
     sites = sites[ 'Value' ]
+
+    gocSites = []
+        
+    for siteName in sites:
+      gocSite = getGOCSiteName( siteName )      
+      if not gocSite[ 'OK' ]:
+        continue
+      gocSites.append( gocSite[ 'Value' ] ) 
+    sites = gocSite
     
     resources = CSHelpers.getResources()
     if not resources[ 'OK' ]:
       return resources
     resources = resources[ 'Value' ]
     
-    siteRes = self.doNew( 'Site', sites )
+    siteRes = self.doNew( ( 'Site', sites ) )
     if not siteRes[ 'OK' ]:
       self.metrics[ 'failed' ].append( siteRes[ 'Message' ] )
 
-    resourceRes = self.doNew( 'Resources', resources )
+    resourceRes = self.doNew( ( 'Resources', resources ) ) 
     if not resourceRes[ 'OK' ]:
       self.metrics[ 'failed' ].append( resourceRes[ 'Message' ] )
     
