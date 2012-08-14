@@ -44,6 +44,8 @@ class SpaceTokenOccupancyCommand( Command ):
 
   def _prepareCommand( self ):
 
+    #FIXME: policies will give name of storageElement !
+
     if not 'spaceTokenEndpoint' in self.args:
       return S_ERROR( '"spaceTokenEndpoint" not found in self.args' )
     spaceTokenEndpoint = self.args[ 'spaceTokenEndpoint' ]
@@ -124,7 +126,7 @@ class SpaceTokenOccupancyCommand( Command ):
       for spaceToken in spaceTokens:
         elementsToCheck.append( ( siteDict[ 'Endpoint' ][0], spaceToken ))
                                   
-    resQuery = self.rmClient.selectSpaceTokenOccupancyCache( meta = { 'columns' : [ 'Endpoint', 'SpaceToken' ] } )
+    resQuery = self.rmClient.selectSpaceTokenOccupancyCache( meta = { 'columns' : [ 'Endpoint', 'Token' ] } )
     if not resQuery[ 'OK' ]:
       return resQuery
     resQuery = resQuery[ 'Value' ]                                  

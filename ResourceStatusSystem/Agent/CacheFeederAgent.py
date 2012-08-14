@@ -52,7 +52,7 @@ class CacheFeederAgent( AgentModule ):
 #                                 { 'PilotsWMS' : { 'element' : 'Resource', 'siteName' : None } } 
 #                                 ]
     #DowntimeCommand
-#    self.commands[ 'Downtime' ] = [    
+    self.commands[ 'Downtime' ] = [ { 'Downtime' : {} } ]    
 #                                    { 'DowntimeSites'     : {} },
 #                                    { 'DowntimeResources' : {} }
 #                                  ] 
@@ -87,11 +87,12 @@ class CacheFeederAgent( AgentModule ):
     self.commands[ 'SpaceTokenOccupancy' ] = [ { 'SpaceTokenOccupancy' : {} } ]
     
     #Reuse clients for the commands
-    self.clients[ 'GOCDBClient' ]          = GOCDBClient()
-    self.clients[ 'ReportGenerator' ]      = RPCClient( 'Accounting/ReportGenerator' )
-    self.clients[ 'ReportsClient' ]        = ReportsClient()
-    self.clients[ 'ResourceStatusClient' ] = ResourceStatusClient()
-    self.clients[ 'WMSAdministrator' ]     = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+    self.clients[ 'GOCDBClient' ]              = GOCDBClient()
+    self.clients[ 'ReportGenerator' ]          = RPCClient( 'Accounting/ReportGenerator' )
+    self.clients[ 'ReportsClient' ]            = ReportsClient()
+    self.clients[ 'ResourceStatusClient' ]     = ResourceStatusClient()
+    self.clients[ 'ResourceManagementClient' ] = ResourceManagementClient()
+    self.clients[ 'WMSAdministrator' ]         = RPCClient( 'WorkloadManagement/WMSAdministrator' )
 
     cc = CommandCaller
     

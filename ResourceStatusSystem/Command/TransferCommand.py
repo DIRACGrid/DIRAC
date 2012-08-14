@@ -51,6 +51,8 @@ class TransferChannelCommand( Command ):
   
   def _prepareCommand( self ):
 
+    # Policies will not give so many details ! Must be defaults !
+
     if not 'hours' in self.args:
       return S_ERROR( 'Number of hours not specified' )
     hours = self.args[ 'hours' ]
