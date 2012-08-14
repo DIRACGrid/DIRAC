@@ -131,6 +131,16 @@ def getSEToken( se ):
   #FIXME: return S_OK, S_ERROR
   return gConfig.getValue( _basePath % se, '' )
 
+def getSEHost( se ):
+  ''' 
+    Get StorageElement token 
+  '''
+  
+  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/Host'
+  
+  #FIXME: return S_OK, S_ERROR
+  return gConfig.getValue( _basePath % se, '' )
+
 def getStorageElementSpaceToken( storageElement ):
   
   _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken' % storageElement

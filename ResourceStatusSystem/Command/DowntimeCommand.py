@@ -61,6 +61,10 @@ class DowntimeCommand( Command ):
       return S_ERROR( '"element" not found in self.args' )
     element = self.args[ 'element' ]
     
+    if 'elementType' not in self.args:
+      return S_ERROR( '"elementType" not found in self.args' )
+    elementType = self.args[ 'elementType' ]
+    
     if not element in [ 'Site', 'Resource' ]:
       return S_ERROR( 'element is not Site nor Resource' )   
     
@@ -78,8 +82,20 @@ class DowntimeCommand( Command ):
         gocSites.append( gocSite[ 'Value' ] ) 
        
       elementName = gocSite
+    
+    if elementType == 'StorageElement':
+      
+      seHosts = []
+      
+      for seName in elementName:
+        
+        seHost = CSHelpers.getSEHost( seName )
+        if seHost:
+          seHosts.append( seHost )
+      seHosts = list( set( seHosts ) )  
+      elementName = seHosts 
        
-    return S_OK( ( element, elementName ) )
+    return S_OK( ( element, elementName, elementType ) )
 
   def doNew( self, masterParams = None ):
     
@@ -89,7 +105,7 @@ class DowntimeCommand( Command ):
       params = self._prepareCommand()
       if not params[ 'OK' ]:
         return params
-      element, elementNames = params[ 'Value' ]       
+      element, elementNames, elementType = params[ 'Value' ]       
     
     uniformResult = []
     
@@ -128,10 +144,12 @@ class DowntimeCommand( Command ):
 
   def doCache( self ):
 
+    #FIX: elementNames may be different, depending on the type
+
     params = self._prepareCommand()
     if not params[ 'OK' ]:
       return params
-    element, elementNames = params[ 'Value' ]
+    element, elementNames, elementType = params[ 'Value' ]
     
     result = self.rmClient.selectDowntimeCache( element, elementNames )  
     if result[ 'OK' ]:
@@ -153,18 +171,40 @@ class DowntimeCommand( Command ):
       if not gocSite[ 'OK' ]:
         continue
       gocSites.append( gocSite[ 'Value' ] ) 
-    sites = gocSite
+    sites = gocSites
     
-    resources = CSHelpers.getResources()
-    if not resources[ 'OK' ]:
-      return resources
-    resources = resources[ 'Value' ]
+    resources = []
+  
+    sesHosts = []
+    ses = CSHelpers.getStorageElements()
+    if not ses[ 'OK' ]:
+      return ses
+      
+    for se in ses[ 'Value' ]:
+      seHost = CSHelpers.getSEHost( se )
+      if seHost:
+        sesHosts.append( seHost )
+      
+      
+    fts = CSHelpers.getFTS()
+    if fts[ 'OK' ]:
+      resources = resources + fts[ 'Value' ]
+    fc = CSHelpers.getFileCatalogs()
+    if fc[ 'OK' ]:
+      resources = resources + fc[ 'Value' ]
+    ce = CSHelpers.getComputingElements() 
+    if ce[ 'OK' ]:
+      resources = resources + ce[ 'Value' ]
     
-    siteRes = self.doNew( ( 'Site', sites ) )
+    siteRes = self.doNew( ( 'Site', sites, None ) )
     if not siteRes[ 'OK' ]:
       self.metrics[ 'failed' ].append( siteRes[ 'Message' ] )
 
-    resourceRes = self.doNew( ( 'Resources', resources ) ) 
+    sesRes = self.doNew( ( 'Resources', sesHosts, 'StorageElement' ) ) 
+    if not sesRes[ 'OK' ]:
+      self.metrics[ 'failed' ].append( sesRes[ 'Message' ] )
+
+    resourceRes = self.doNew( ( 'Resources', resources, None ) ) 
     if not resourceRes[ 'OK' ]:
       self.metrics[ 'failed' ].append( resourceRes[ 'Message' ] )
     
