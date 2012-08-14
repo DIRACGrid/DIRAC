@@ -397,21 +397,26 @@ class CacheFeederAgent( AgentModule ):
       Save to database the results of the TransferCommand commands
     '''
 
-    commandName = commandDict.keys()[ 0 ]
-
-    direction = commandDict[ commandName ][ 'direction' ]
-    #metric    = commandDict[ commandName ].keys()[0]
-    metric    = commandName.replace( 'Transfer', '' )
+    if results[ 'failed' ]:   
+      self.log.warn( results[ 'failed' ] )
     
-    for elementName, transferResult in results.items():
-      
-      resQuery = self.rmClient.addOrModifyTransferCache( elementName, direction, 
-                                                         metric, transferResult )
-      
-      if not resQuery[ 'OK' ]:
-        return resQuery    
-  
     return S_OK()  
+
+#    commandName = commandDict.keys()[ 0 ]
+#
+#    direction = commandDict[ commandName ][ 'direction' ]
+#    #metric    = commandDict[ commandName ].keys()[0]
+#    metric    = commandName.replace( 'Transfer', '' )
+#    
+#    for elementName, transferResult in results.items():
+#      
+#      resQuery = self.rmClient.addOrModifyTransferCache( elementName, direction, 
+#                                                         metric, transferResult )
+#      
+#      if not resQuery[ 'OK' ]:
+#        return resQuery    
+#  
+#    return S_OK()  
 
   def __logSpaceTokenOccupancy( self, commandDict, commandObject, results ):
     

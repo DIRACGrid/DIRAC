@@ -34,7 +34,7 @@ class TransferChannelCommand( Command ):
     if 'ResourceManagementClient' in self.apis:
       self.rmClient = self.apis[ 'ResourceManagementClient' ]
     else:
-      self.rmClient = ResourceManagementClient
+      self.rmClient = ResourceManagementClient()
   
   def _storeCommand( self, results ):
 
@@ -112,7 +112,10 @@ class TransferChannelCommand( Command ):
            
     for channel, elementDict in transferResults.items():
       
-      source, destination = channel.split( ' -> ' )
+      try:
+        source, destination = channel.split( ' -> ' )
+      except ValueError:
+        continue  
       
       channelDict = {}
       channelDict[ 'SourceName' ]      = source
@@ -160,7 +163,7 @@ class TransferChannelCommand( Command ):
       return sourceQuery
     sourceQuery = sourceQuery[ 'Value' ]
     
-    sourceElementsToQuery = set( elementNames ).difference( set( sourceQuery ) )
+    sourceElementsToQuery = list( set( elementNames ).difference( set( sourceQuery ) ) )
  
     for metric in [ 'Quality', 'FailedTransfers' ]:
       for direction in [ 'Source', 'Destination' ]: 
