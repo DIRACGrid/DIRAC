@@ -6,6 +6,8 @@
   
 '''
 
+import urllib2
+
 from DIRAC                                                      import S_ERROR, S_OK
 from DIRAC.Core.LCG.GGUSTicketsClient                           import GGUSTicketsClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
@@ -59,8 +61,12 @@ class GGUSTicketsCommand( Command ):
       if not gocName[ 'OK' ]:
         return gocName
       gocName = gocName[ 'Value' ] 
-      
-    result = self.gClient.getTicketsList( gocName )
+    
+    try:  
+      result = self.gClient.getTicketsList( gocName )
+    except urllib2.URLError, e:
+      return e  
+    
     if not result[ 'OK' ]:
       return result
              

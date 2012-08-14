@@ -309,35 +309,40 @@ class CacheFeederAgent( AgentModule ):
     '''
       Save to database the results of the DowntimeCommand commands
     '''
-  
-    commandName = commandDict.keys()[ 0 ]
-  
-    for downtime in results:
-      
-      # This returns either Site or Resource
-      element = commandName.replace( 'Downtime', '' )[ :-1 ]
-      
-      try:
-        
-        iD          = downtime[ 'ID' ]
-        name        = downtime[ 'Name' ]
-        startDate   = downtime[ 'StartDate' ]
-        endDate     = downtime[ 'EndDate' ]
-        severity    = downtime[ 'Severity' ]
-        description = downtime[ 'Description' ] 
-        link        = downtime[ 'Link' ]
-                
-      except KeyError, e:
-        return S_ERROR( e )
-  
-      resQuery = self.rmClient.addOrModifyDowntimeCache( iD, element, name, startDate, 
-                                                         endDate, severity, description,
-                                                         link )
-  
-      if not resQuery[ 'OK' ]:
-        return resQuery    
-  
+
+    if results[ 'failed' ]:   
+      self.log.warn( results[ 'failed' ] )
+    
     return S_OK()  
+  
+#    commandName = commandDict.keys()[ 0 ]
+#  
+#    for downtime in results:
+#      
+#      # This returns either Site or Resource
+#      element = commandName.replace( 'Downtime', '' )[ :-1 ]
+#      
+#      try:
+#        
+#        iD          = downtime[ 'ID' ]
+#        name        = downtime[ 'Name' ]
+#        startDate   = downtime[ 'StartDate' ]
+#        endDate     = downtime[ 'EndDate' ]
+#        severity    = downtime[ 'Severity' ]
+#        description = downtime[ 'Description' ] 
+#        link        = downtime[ 'Link' ]
+#                
+#      except KeyError, e:
+#        return S_ERROR( e )
+#  
+#      resQuery = self.rmClient.addOrModifyDowntimeCache( iD, element, name, startDate, 
+#                                                         endDate, severity, description,
+#                                                         link )
+#  
+#      if not resQuery[ 'OK' ]:
+#        return resQuery    
+#  
+#    return S_OK()  
 
   def __logJobsResults( self, results ):
     '''

@@ -100,7 +100,7 @@ class DowntimeCommand( Command ):
   def doNew( self, masterParams = None ):
     
     if masterParams is not None:
-      element, elementNames = masterParams
+      element, elementNames, elementType = masterParams
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
@@ -184,7 +184,7 @@ class DowntimeCommand( Command ):
       seHost = CSHelpers.getSEHost( se )
       if seHost:
         sesHosts.append( seHost )
-      
+    sesHosts = list( set( sesHosts ) )  
       
     fts = CSHelpers.getFTS()
     if fts[ 'OK' ]:
