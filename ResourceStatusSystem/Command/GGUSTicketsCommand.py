@@ -140,16 +140,16 @@ class GGUSTicketsCommand( Command ):
       return gocSites
     gocSites = gocSites[ 'Value' ]    
                
-    resQuery = self.rmClient.selectGGUSTicketsCache( meta = { 'columns' : [ 'GocSite' ] } )
-    if not resQuery[ 'OK' ]:
-      return resQuery
-    resQuery = [ element[0] for element in resQuery[ 'Value' ] ]
+#    resQuery = self.rmClient.selectGGUSTicketsCache( meta = { 'columns' : [ 'GocSite' ] } )
+#    if not resQuery[ 'OK' ]:
+#      return resQuery
+#    resQuery = [ element[0] for element in resQuery[ 'Value' ] ]
+#    
+#    gocNamesToQuery = set( gocSites ).difference( set( resQuery ) )   
     
-    gocNamesToQuery = set( gocSites ).difference( set( resQuery ) )   
+    gLogger.info( 'Processing %s' % gocSites )
     
-    gLogger.info( 'Processing %s' % gocNamesToQuery )
-    
-    for gocNameToQuery in gocNamesToQuery:
+    for gocNameToQuery in gocSites:
       
       if gocNameToQuery is None:
         self.metrics[ 'failed' ].append( 'None result' )
