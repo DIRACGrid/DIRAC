@@ -88,7 +88,7 @@ class GGUSTicketsCommand( Command ):
     try:  
       result = self.gClient.getTicketsList( gocName )
     except urllib2.URLError, e:
-      return S_ERROR( e )  
+      return S_ERROR( '%s %s' % ( gocName, e ) )  
     
     if not result[ 'OK' ]:
       return result
@@ -103,7 +103,7 @@ class GGUSTicketsCommand( Command ):
     uniformResult[ 'OpenTickets' ] = openTickets
     uniformResult[ 'Tickets' ]     = tickets
 
-    storeRes = self._storeCommand( uniformResult )
+    storeRes = self._storeCommand( [ uniformResult ] )
     if not storeRes[ 'OK' ]:
       return storeRes
     

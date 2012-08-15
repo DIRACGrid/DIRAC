@@ -106,20 +106,22 @@ class DowntimeCommand( Command ):
       Gets the parameters to run, either from the master method or from its
       own arguments.
       
-      For every elementName ( cannot process bulk queries.. ) contacts the 
-      gocdb client. The server is not very stable, so in case of failure tries
+      For every elementName, unless it is given a list, in which case it contacts 
+      the gocdb client. The server is not very stable, so in case of failure tries
       a second time.
       
       If there are downtimes, are recorded and then returned.
     '''
     
     if masterParams is not None:
-      element, elementName = masterParams
+      element, elementNames = masterParams
+      elementName = None
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
         return params
-      element, elementName = params[ 'Value' ]       
+      element, elementName = params[ 'Value' ]  
+      elementNames = [ elementName ]     
 
     startDate = datetime.utcnow() - timedelta( days = 2 )
           
@@ -145,6 +147,14 @@ class DowntimeCommand( Command ):
     for downtime, downDic in results.items():
 
       dt                  = {}
+      if element == 'Resource':
+        dt[ 'Name' ]        = downDic[ 'HOSTNAME' ]
+      else:
+        dt[ 'Name' ] = downDic[ 'SITENAME' ]
+      
+      if not dt[ 'Name' ] in elementNames:
+        continue
+      
       dt[ 'DowntimeID' ]  = downtime
       dt[ 'Element' ]     = element
       dt[ 'StartDate' ]   = downDic[ 'FORMATED_START_DATE' ]
@@ -152,11 +162,7 @@ class DowntimeCommand( Command ):
       dt[ 'Severity' ]    = downDic[ 'SEVERITY' ]
       dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
       dt[ 'Link' ]        = downDic[ 'GOCDB_PORTAL_URL' ]
-      if element == 'Resource':
-        dt[ 'Name' ]        = downDic[ 'HOSTNAME' ]
-      else:
-        dt[ 'Name' ] = downDic[ 'SITENAME' ]
-      
+     
       uniformResult.append( dt )  
       
     storeRes = self._storeCommand( uniformResult )
