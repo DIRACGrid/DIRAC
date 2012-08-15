@@ -175,7 +175,7 @@ class TransferChannelCommand( Command ):
       
     result = self.rmClient.selectTransferCache( sourceName, destinationName, metric )  
     if result[ 'OK' ]:
-      result = S_OK( [ dict( zip( result[ 'Columns' ], result[ 'Value' ] ) ) ] )
+      result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
            
     return result      
 

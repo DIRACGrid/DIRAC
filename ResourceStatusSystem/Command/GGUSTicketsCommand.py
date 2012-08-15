@@ -137,8 +137,8 @@ class GGUSTicketsCommand( Command ):
     
     result = self.rmClient.selectGGUSTicketsCache( gocSite = gocName )  
     if result[ 'OK' ]:
-      result = S_OK( [ dict( zip( result[ 'Columns' ], result[ 'Value' ] ) ) ] )
-           
+      result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
+                 
     return result  
 
   def doMaster( self ):

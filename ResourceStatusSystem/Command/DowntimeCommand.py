@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -68,9 +68,6 @@ class DowntimeCommand( Command ):
     if 'elementName' not in self.args:
       return S_ERROR( '"elementName" not found in self.args' )
     elementName = self.args[ 'elementName' ]      
-    
-    if not isinstance( elementName, list ):
-      elementName = [ elementName ]
     
     if 'element' not in self.args:
       return S_ERROR( '"element" not found in self.args' )
@@ -180,12 +177,12 @@ class DowntimeCommand( Command ):
     params = self._prepareCommand()
     if not params[ 'OK' ]:
       return params
-    element, elementNames = params[ 'Value' ]
+    element, elementName = params[ 'Value' ]
     
-    result = self.rmClient.selectDowntimeCache( element, elementNames )  
+    result = self.rmClient.selectDowntimeCache( element = element, name = elementName )  
     if result[ 'OK' ]:
-      result = S_OK( dict( zip( result[ 'Columns' ], result[ 'Value' ] ) ) )
-           
+      result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
+                 
     return result          
 
   def doMaster( self ):
