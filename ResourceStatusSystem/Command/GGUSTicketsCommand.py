@@ -77,13 +77,15 @@ class GGUSTicketsCommand( Command ):
     '''
     
     if masterParams is not None:
-      gocName = masterParams
+      gocNames = masterParams
+      gocName = None
       
     else:
       gocName = self._prepareCommand()
       if not gocName[ 'OK' ]:
         return gocName
-      gocName = gocName[ 'Value' ] 
+      gocName = gocName[ 'Value' ]
+      gocNames = [ gocName ] 
     
     try:  
       results = self.gClient.getTicketsList( gocName )
@@ -97,6 +99,9 @@ class GGUSTicketsCommand( Command ):
     uniformResult = []
     
     for gocSite, ggusResult in results.items():
+
+      if not gocSite in gocNames:
+        continue
       
       ggusDict = {}
       ggusDict[ 'GocSite' ] = gocSite
