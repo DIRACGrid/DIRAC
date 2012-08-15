@@ -7,9 +7,9 @@ import urllib2
 
 from datetime import datetime, timedelta
 
-from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName, getDIRACSiteName
+from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -18,8 +18,7 @@ __RCSID__ = '$Id:  $'
 
 class DowntimeCommand( Command ):
   '''
-    As the API provided by GOCDB is incomplete, this command will look little
-    bit terrible
+    Downtime "master" Command.    
   '''
 
   def __init__( self, args = None, clients = None ):
@@ -37,6 +36,9 @@ class DowntimeCommand( Command ):
       self.rmClient = ResourceManagementClient()
       
   def _storeCommand( self, result ):
+    '''
+      Stores the results of doNew method on the database.
+    '''
 
     for dt in result:
       
@@ -53,10 +55,19 @@ class DowntimeCommand( Command ):
     return S_OK()
   
   def _prepareCommand( self ):
+    '''
+      DowntimeCommand requires three arguments:
+      - elementName : <str>
+      - element : Site / Resource
+      - elementType: <str>  
+      
+      If the elements are Site(s), we need to get their GOCDB names. They may
+      not have, so we ignore them if they do not have.
+    '''
     
-    if 'name' not in self.args:
-      return S_ERROR( '"name" not found in self.args' )
-    elementName = self.args[ 'name' ]      
+    if 'elementName' not in self.args:
+      return S_ERROR( '"elementName" not found in self.args' )
+    elementName = self.args[ 'elementName' ]      
     
     if not isinstance( elementName, list ):
       elementName = [ elementName ]
@@ -72,100 +83,98 @@ class DowntimeCommand( Command ):
     if not element in [ 'Site', 'Resource' ]:
       return S_ERROR( 'element is not Site nor Resource' )   
     
+    # Transform DIRAC site names into GOCDB topics
     if element == 'Site':
+
+      gocSite = getGOCSiteName( elementName )
+      if not gocSite[ 'OK' ]:
+        return gocSite
+      elementName = gocSite[ 'Value' ]
+          
+    # The DIRAC se names mean nothing on the grid, but their hosts do mean.
+    elif elementType == 'StorageElement':
       
-      gocSites = []
-        
-      for siteName in elementName:
-        gocSite = getGOCSiteName( siteName )      
-        if not gocSite[ 'OK' ]:
-          #FIXME: not all sites are in GOC, only LCG sites. 
-          #We have to filter them somehow.
-          continue
-          #return gocSite
-        gocSites.append( gocSite[ 'Value' ] ) 
-       
-      elementName = gocSite
-    
-    if elementType == 'StorageElement':
-      
-      seHosts = []
-      
-      for seName in elementName:
-        
-        seHost = CSHelpers.getSEHost( seName )
-        if seHost:
-          seHosts.append( seHost )
-      seHosts = list( set( seHosts ) )  
-      elementName = seHosts 
-       
-    return S_OK( ( element, elementName, elementType ) )
+      seHost = CSHelpers.getSEHost( elementName )
+      if not seHost:
+        return S_ERROR( 'No seHost for %s' % elementName )
+      elementName = seHost
+             
+    return S_OK( ( element, elementName ) )
 
   def doNew( self, masterParams = None ):
+    '''
+      Gets the parameters to run, either from the master method or from its
+      own arguments.
+      
+      For every elementName ( cannot process bulk queries.. ) contacts the 
+      gocdb client. The server is not very stable, so in case of failure tries
+      a second time.
+      
+      If there are downtimes, are recorded and then returned.
+    '''
     
     if masterParams is not None:
-      element, elementNames, elementType = masterParams
+      element, elementName = masterParams
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
         return params
-      element, elementNames, elementType = params[ 'Value' ]       
-    
-    uniformResult = []
-    
+      element, elementName = params[ 'Value' ]       
+
     startDate = datetime.utcnow() - timedelta( days = 2 )
-    
-    for elementName in elementNames:    
-      
+          
+    try:
+      results = self.gClient.getStatus( element, elementName, startDate, 120 )
+    except urllib2.URLError:
       try:
+        #Let's give it a second chance..
         results = self.gClient.getStatus( element, elementName, startDate, 120 )
-      except urllib2.URLError:
-        try:
-          #Let's give it a second chance..
-          results = self.gClient.getStatus( element, elementName, startDate, 120 )
-        except urllib2.URLError, e:
-          return S_ERROR( e )
+      except urllib2.URLError, e:
+        return S_ERROR( e )
                   
-      if not results[ 'OK' ]:
-        return results
-      results = results[ 'Value' ]
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]
 
-      if results is None:
-        continue
+    if results is None:
+      return S_OK( [] )
 
-      for downtime, downDic in results.items():
-
-        dt                  = {}
-        dt[ 'DowntimeID' ]  = downtime
-        dt[ 'Element' ]     = element
-        dt[ 'StartDate' ]   = downDic[ 'FORMATED_START_DATE' ]
-        dt[ 'EndDate' ]     = downDic[ 'FORMATED_END_DATE' ]
-        dt[ 'Severity' ]    = downDic[ 'SEVERITY' ]
-        dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
-        dt[ 'Link' ]        = downDic[ 'GOCDB_PORTAL_URL' ]
-        if element == 'Resource':
-          dt[ 'Name' ]        = downDic[ 'HOSTNAME' ]
-        else:
-          dt[ 'Name' ] = downDic[ 'SITENAME' ]
+    uniformResult = []
       
-        uniformResult.append( dt )  
+    # Humanize the results into a dictionary, not the most optimal, but readable
+    for downtime, downDic in results.items():
+
+      dt                  = {}
+      dt[ 'DowntimeID' ]  = downtime
+      dt[ 'Element' ]     = element
+      dt[ 'StartDate' ]   = downDic[ 'FORMATED_START_DATE' ]
+      dt[ 'EndDate' ]     = downDic[ 'FORMATED_END_DATE' ]
+      dt[ 'Severity' ]    = downDic[ 'SEVERITY' ]
+      dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
+      dt[ 'Link' ]        = downDic[ 'GOCDB_PORTAL_URL' ]
+      if element == 'Resource':
+        dt[ 'Name' ]        = downDic[ 'HOSTNAME' ]
+      else:
+        dt[ 'Name' ] = downDic[ 'SITENAME' ]
       
-      # Do now wait to have all them, the GOC portal is higly unstable !
-      # As soon as we have results, we record them    
-      storeRes = self._storeCommand( [ dt ] )
-      if not storeRes[ 'OK' ]:
-        return storeRes
+      uniformResult.append( dt )  
+      
+    storeRes = self._storeCommand( uniformResult )
+    if not storeRes[ 'OK' ]:
+      return storeRes
            
     return S_OK( uniformResult )            
 
   def doCache( self ):
-
-    #FIX: elementNames may be different, depending on the type
-
+    '''
+      Method that reads the cache table and tries to read from it. It will 
+      return a list of dictionaries if there are results.
+    '''
+    
     params = self._prepareCommand()
     if not params[ 'OK' ]:
       return params
-    element, elementNames, elementType = params[ 'Value' ]
+    element, elementNames = params[ 'Value' ]
     
     result = self.rmClient.selectDowntimeCache( element, elementNames )  
     if result[ 'OK' ]:
@@ -174,212 +183,65 @@ class DowntimeCommand( Command ):
     return result          
 
   def doMaster( self ):
-    
-    sites = CSHelpers.getSites()
-    if not sites[ 'OK' ]:
-      return sites
-    sites = sites[ 'Value' ]
-
-    gocSites = []
+    '''
+      Master method, which looks little bit spaguetti code, sorry !
+      - It gets all sites and transforms them into gocSites.
+      - It gets all the storage elements and transforms them into their hosts
+      - It gets the fts, the ces and file catalogs.
+    '''
         
-    for siteName in sites:
-      gocSite = getGOCSiteName( siteName )      
-      if not gocSite[ 'OK' ]:
-        continue
-      gocSites.append( gocSite[ 'Value' ] ) 
-    sites = gocSites
-    
-    resources = []
+    gocSites = CSHelpers.getGOCSites()
+    if not gocSites[ 'OK' ]:
+      return gocSites
+    gocSites = gocSites[ 'Value' ]
   
-    sesHosts = []
-    ses = CSHelpers.getStorageElements()
-    if not ses[ 'OK' ]:
-      return ses
-      
-    for se in ses[ 'Value' ]:
-      seHost = CSHelpers.getSEHost( se )
-      if seHost:
-        sesHosts.append( seHost )
-    sesHosts = list( set( sesHosts ) )  
-      
-    fts = CSHelpers.getFTS()
-    if fts[ 'OK' ]:
-      resources = resources + fts[ 'Value' ]
-    fc = CSHelpers.getFileCatalogs()
-    if fc[ 'OK' ]:
-      resources = resources + fc[ 'Value' ]
+    sesHosts = CSHelpers.getStorageElementsHosts()
+    if not sesHosts[ 'OK' ]:
+      return sesHosts      
+    sesHosts = sesHosts[ 'Value' ]  
+    
+    resources = []      
+              
+    #
+    #
+    #FIXME: file catalogs need also to use their hosts
+    # something similar applies to FTS Channels
+    #
+    #fts = CSHelpers.getFTS()
+    #if fts[ 'OK' ]:
+    #  resources = resources + fts[ 'Value' ]
+    #fc = CSHelpers.getFileCatalogs()
+    #if fc[ 'OK' ]:
+    #  resources = resources + fc[ 'Value' ]
+    
     ce = CSHelpers.getComputingElements() 
     if ce[ 'OK' ]:
       resources = resources + ce[ 'Value' ]
     
-    siteRes = self.doNew( ( 'Site', sites, None ) )
-    if not siteRes[ 'OK' ]:
-      self.metrics[ 'failed' ].append( siteRes[ 'Message' ] )
+    # doNew calls
+    
+    gLogger.info( 'Processing %s' % gocSites )
+    
+    for gocSite in gocSites:
+      siteRes = self.doNew( ( 'Site', gocSite ) )
+      if not siteRes[ 'OK' ]:
+        self.metrics[ 'failed' ].append( siteRes[ 'Message' ] )
 
-    sesRes = self.doNew( ( 'Resource', sesHosts, 'StorageElement' ) ) 
-    if not sesRes[ 'OK' ]:
-      self.metrics[ 'failed' ].append( sesRes[ 'Message' ] )
+    gLogger.info( 'Processing %s' % sesHosts )
 
-    resourceRes = self.doNew( ( 'Resource', resources, None ) ) 
-    if not resourceRes[ 'OK' ]:
-      self.metrics[ 'failed' ].append( resourceRes[ 'Message' ] )
+    for seHost in sesHosts:
+      sesRes = self.doNew( ( 'Resource', seHost ) ) 
+      if not sesRes[ 'OK' ]:
+        self.metrics[ 'failed' ].append( sesRes[ 'Message' ] )
+
+    gLogger.info( 'Processing %s' % resources )
+
+    for resource in resources:
+      resourceRes = self.doNew( ( 'Resource', resource ) ) 
+      if not resourceRes[ 'OK' ]:
+        self.metrics[ 'failed' ].append( resourceRes[ 'Message' ] )
     
     return S_OK( self.metrics )
 
 ################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-
-#class DowntimeSitesCommand( Command ):
-#
-#  #FIXME: write propper docstrings
-#
-#  def __init__( self, args = None, clients = None ):
-#    
-#    super( DowntimeSitesCommand, self ).__init__( args, clients )
-#
-#    if 'GOCDBClient' in self.apis:
-#      self.gClient = self.apis[ 'GOCDBClient' ]
-#    else:
-#      self.gClient = GOCDBClient() 
-#
-#  def doCommand( self ):
-#    """ 
-#    Returns downtimes information for all the sites in input.
-#        
-#    :params:
-#      :attr:`sites`: list of site names (when not given, take every site)
-#    
-#    :returns:
-#      {'SiteName': {'SEVERITY': 'OUTAGE'|'AT_RISK', 
-#                    'StartDate': 'aDate', ...} ... }
-#    """
-#
-#    sites = None
-#
-#    if 'sites' in self.args:
-#      sites = self.args[ 'sites' ] 
-#    
-#    if sites is None:
-#      #FIXME: we do not get them from RSS DB anymore, from CS now.
-#      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
-#      sites = CSHelpers.getSites()      
-#      if not sites[ 'OK' ]:
-#        return self.returnERROR( sites )
-#      sites = sites[ 'Value' ]
-#      
-#    gocSites = []
-#    for site in sites:
-#      
-#      gocSite = getGOCSiteName( site )      
-#      if not gocSite[ 'OK' ]:
-#        #FIXME: not all sites are in GOC, only LCG sites. We have to filter them
-#        # somehow.
-#        continue
-#        #return gocSite
-#      
-#      gocSites.append( gocSite[ 'Value' ] )   
-#
-#    results = self.gClient.getStatus( 'Site', gocSites, None, 120 )
-#    if not results[ 'OK' ]:
-#      return self.returnERROR( results )     
-#    results = results[ 'Value' ]
-#    
-#    if results == None:
-#      return S_OK( results )
-#
-#    downtimes = []
-#
-#    for downtime, downDic in results.items():
-#        
-#      dt                  = {}
-#      dt[ 'ID' ]          = downtime
-#      dt[ 'StartDate' ]   = downDic[ 'FORMATED_START_DATE' ]
-#      dt[ 'EndDate' ]     = downDic[ 'FORMATED_END_DATE' ]
-#      dt[ 'Severity' ]    = downDic[ 'SEVERITY' ]
-#      dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
-#      dt[ 'Link' ]        = downDic[ 'GOCDB_PORTAL_URL' ]
-#        
-#      diracNames = getDIRACSiteName( downDic[ 'SITENAME' ] )
-#      if not diracNames[ 'OK' ]:
-#        return self.returnERROR( diracNames )
-#          
-#      for diracName in diracNames[ 'Value' ]:
-#        dt[ 'Name' ] = diracName
-#        downtimes.append( dt )        
-#
-#    return S_OK( downtimes )        
-#
-#################################################################################
-#################################################################################
-#
-#class DowntimeResourcesCommand( Command ):
-#
-#  #FIXME: write propper docstrings
-#
-#  def __init__( self, args = None, clients = None ):
-#    
-#    super( DowntimeResourcesCommand, self ).__init__( args, clients )
-#    
-#    if 'GOCDBClient' in self.apis:
-#      self.gClient = self.apis[ 'GOCDBClient' ]
-#    else:
-#      self.gClient = GOCDBClient() 
-#
-#  def doCommand( self ):
-#    """ 
-#    Returns downtimes information for all the resources in input.
-#        
-#    :params:
-#      :attr:`sites`: list of resource names (when not given, take every resource)
-#    
-#    :returns:
-#      {'ResourceName': {'SEVERITY': 'OUTAGE'|'AT_RISK', 
-#                    'StartDate': 'aDate', ...} ... }
-#    """
-#
-#    resources = None
-#    if 'resources' in self.args:
-#      resources = self.args[ 'resources' ] 
-#    
-#    if resources is None:
-#
-#      #FIXME: we do not get them from RSS DB anymore, from CS now.
-##      resources = self.rsClient.getResource( meta = { 'columns' : 'ResourceName' } )
-#
-#      resources = CSHelpers.getResources()      
-#      if not resources[ 'OK' ]:
-#        return self.returnERROR( resources )
-#      resources = resources[ 'Value' ]    
-#
-#    results = self.gClient.getStatus( 'Resource', resources, None, 120 )
-#    
-#    if not results[ 'OK' ]:
-#      return self.returnERROR( results )
-#    results = results[ 'Value' ]
-#
-#    if results == None:
-#      return S_OK( results )
-#
-#    downtimes = []
-#
-#    for downtime, downDic in results.items():
-#
-#      dt                  = {}
-#      dt[ 'ID' ]          = downtime
-#      dt[ 'StartDate' ]   = downDic[ 'FORMATED_START_DATE' ]
-#      dt[ 'EndDate' ]     = downDic[ 'FORMATED_END_DATE' ]
-#      dt[ 'Severity' ]    = downDic[ 'SEVERITY' ]
-#      dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
-#      dt[ 'Link' ]        = downDic[ 'GOCDB_PORTAL_URL' ]
-#      dt[ 'Name' ]        = downDic[ 'HOSTNAME' ]
-#        
-#      downtimes.append( dt )
-#
-#    return S_OK( downtimes )
-#
-#################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

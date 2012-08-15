@@ -7,7 +7,7 @@
 
 import lcg_util
 
-from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -29,7 +29,10 @@ class SpaceTokenOccupancyCommand( Command ):
       self.rmClient = ResourceManagementClient()
 
   def _storeCommand( self, results ):
-
+    '''
+      Stores the results of doNew method on the database.
+    '''
+    
     for result in results:
       
       resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( result[ 'Endpoint' ], 
@@ -43,24 +46,43 @@ class SpaceTokenOccupancyCommand( Command ):
     return S_OK()  
 
   def _prepareCommand( self ):
-
-    #FIXME: policies will give name of storageElement !
-
-    if not 'spaceTokenEndpoint' in self.args:
-      return S_ERROR( '"spaceTokenEndpoint" not found in self.args' )
-    spaceTokenEndpoint = self.args[ 'spaceTokenEndpoint' ]
+    '''
+      SpaceTokenOccupancy requires one argument:
+      - elementName : <str>
     
-    if not 'spaceToken' in self.args:
-      return S_ERROR( '"spaceToken" not found in self.args' )
-    spaceToken         = self.args[ 'spaceToken' ]
+      Given a (storage)elementName, we calculate its endpoint and spaceToken,
+      which are used to query the srm interface.
+    '''
 
-    return S_OK( ( spaceTokenEndpoint, spaceToken ) )
+    if not 'elementName' in self.args:
+      return S_ERROR( '"elementName" not found in self.args' )
+    elementName = self.args[ 'elementName' ]
+    
+    endpoint = CSHelpers.getStorageElementEndpoint( elementName )
+    if not endpoint[ 'OK' ]:
+      return endpoint
+    endpoint = endpoint[ 'Value' ]
+    
+    spaceToken = CSHelpers.getStorageElementSpaceToken( elementName )
+    if not spaceToken[ 'OK' ]:
+      return spaceToken
+    spaceToken = spaceToken[ 'Value']
+  
+    return S_OK( ( endpoint, spaceToken ) )
 
   def doNew( self, masterParams = None ):
-    
+    '''
+      Gets the parameters to run, either from the master method or from its
+      own arguments.
+      
+      It queries the srm interface, and hopefully it will not crash. Out of the
+      results, we keep totalsize, guaranteedsuze, and unusedsize.
+      
+      Then, they are recorded and returned.
+    '''   
+     
     if masterParams is not None:
       spaceTokenEndpoint, spaceToken = masterParams
-      
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
@@ -70,9 +92,7 @@ class SpaceTokenOccupancyCommand( Command ):
     occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )
     if occupancy[ 0 ] != 0:
       return S_ERROR( occupancy )
-    output     = occupancy[ 1 ][ 0 ]
-
-    uniformResult = [] 
+    output = occupancy[ 1 ][ 0 ]
 
     sTokenDict = {} 
     sTokenDict[ 'Endpoint' ]   = spaceTokenEndpoint
@@ -80,16 +100,18 @@ class SpaceTokenOccupancyCommand( Command ):
     sTokenDict[ 'Total' ]      = float( output.get( 'totalsize', '0' ) ) / 1e12 # Bytes to Terabytes
     sTokenDict[ 'Guaranteed' ] = float( output.get( 'guaranteedsize', '0' ) ) / 1e12
     sTokenDict[ 'Free' ]       = float( output.get( 'unusedsize', '0' ) ) / 1e12                       
-                       
-    uniformResult.append( sTokenDict )
     
-    storeRes = self._storeCommand( uniformResult )
+    storeRes = self._storeCommand( [ sTokenDict ] )
     if not storeRes[ 'OK' ]:
       return storeRes
            
-    return S_OK( uniformResult )                                 
+    return S_OK( [ sTokenDict ] )                                 
 
   def doCache( self ):
+    '''
+      Method that reads the cache table and tries to read from it. It will 
+      return a list of dictionaries if there are results.   
+    '''
     
     params = self._prepareCommand()
     if not params[ 'OK' ]:
@@ -103,11 +125,12 @@ class SpaceTokenOccupancyCommand( Command ):
     return result    
 
   def doMaster( self ):
-
-    spaceEndpoints = CSHelpers.getSpaceTokenEndpoints()
-    if not spaceEndpoints[ 'OK' ]:
-      return spaceEndpoints
-    spaceEndpoints = spaceEndpoints[ 'Value' ]
+    '''
+      Master method. Gets all endpoints from the storage elements and all 
+      the spaceTokens. Could have taken from Shares/Disk as well. 
+      It queries for all their possible combinations, unless there are records
+      in the database for those combinations, which then are not queried. 
+    '''
     
     spaceTokens = CSHelpers.getSpaceTokens() 
     if not spaceTokens[ 'OK' ]:
@@ -116,24 +139,25 @@ class SpaceTokenOccupancyCommand( Command ):
 
     elementsToCheck = []
 
-    for siteDict in spaceEndpoints.values():
-      
-      if not isinstance( siteDict, dict ):
-        continue
-      if not siteDict.has_key( 'Endpoint' ):
-        continue
-      
-      for spaceToken in spaceTokens:
-        elementsToCheck.append( ( siteDict[ 'Endpoint' ][0], spaceToken ))
-                                  
-    resQuery = self.rmClient.selectSpaceTokenOccupancyCache( meta = { 'columns' : [ 'Endpoint', 'Token' ] } )
-    if not resQuery[ 'OK' ]:
-      return resQuery
-    resQuery = resQuery[ 'Value' ]                                  
+    seEndpoints = CSHelpers.getStorageElementEndpoints()
+    if not seEndpoints[ 'OK' ]:
+      return seEndpoints
+    seEndpoints = seEndpoints[ 'Value' ]   
 
-    elementsToQuery = list( set( elementsToCheck ).difference( set( resQuery ) ) )
+    for seEndpoint in seEndpoints:
+      for spaceToken in spaceTokens:
+        elementsToCheck.append( ( seEndpoint, spaceToken ) )
+                                  
+#    resQuery = self.rmClient.selectSpaceTokenOccupancyCache( meta = { 'columns' : [ 'Endpoint', 'Token' ] } )
+#    if not resQuery[ 'OK' ]:
+#      return resQuery
+#    resQuery = resQuery[ 'Value' ]                                  
+#
+#    elementsToQuery = list( set( elementsToCheck ).difference( set( resQuery ) ) )
     
-    for elementToQuery in elementsToQuery:
+    gLogger.info( 'Processing %s' % elementsToCheck )
+    
+    for elementToQuery in elementsToCheck:
 
       result = self.doNew( elementToQuery  ) 
       if not result[ 'OK' ]:
@@ -142,141 +166,4 @@ class SpaceTokenOccupancyCommand( Command ):
     return S_OK( self.metrics )
       
 ################################################################################
-
-#  def doCommand( self ):
-#    '''
-#    Run the command.
-#    '''
-#
-#    if not 'spaceTokenEndpoint' in self.args:
-#      return self.returnERROR( S_ERROR( '"spaceTokenEndpoint" not found in self.args' ) )
-#    if not 'spaceToken' in self.args:
-#      return self.returnERROR( S_ERROR( '"spaceToken" not found in self.args' ) )
-#
-#    spaceTokenEndpoint = self.args[ 'spaceTokenEndpoint' ] 
-#    spaceToken         = self.args[ 'spaceToken' ]
-#         
-#    occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )
-#           
-#    if occupancy[ 0 ] != 0:
-#      return self.returnERROR( S_ERROR( occupancy ) )  
-#    
-#    output     = occupancy[ 1 ][ 0 ]
-#    total      = float( output.get( 'totalsize',      '0' ) ) / 1e12 # Bytes to Terabytes
-#    guaranteed = float( output.get( 'guaranteedsize', '0' ) ) / 1e12
-#    free       = float( output.get( 'unusedsize',     '0' ) ) / 1e12
-#      
-#    result = S_OK( 
-#                  { 
-#                   'total'      : total, 
-#                   'free'       : free, 
-#                   'guaranteed' : guaranteed 
-#                   } 
-#                  )
-#
-#    return result
-#
-#class SpaceTokenOccupancyCommand2( Command ):
-#  '''
-#  Uses lcg_util to query status of endpoint for a given token.
-#  ''' 
-#
-#  def doCommand( self ):
-#    '''
-#    Run the command.
-#    '''
-#
-#    if not 'spaceTokenEndpoint' in self.args:
-#      return self.returnERROR( S_ERROR( '"spaceTokenEndpoint" not found in self.args' ) )
-#    if not 'spaceToken' in self.args:
-#      return self.returnERROR( S_ERROR( '"spaceToken" not found in self.args' ) )
-#
-#    spaceTokenEndpoint = self.args[ 'spaceTokenEndpoint' ] 
-#    spaceToken         = self.args[ 'spaceToken' ]
-#         
-#    occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )
-#           
-#    if occupancy[ 0 ] != 0:
-#      return self.returnERROR( S_ERROR( occupancy ) )  
-#    
-#    output     = occupancy[ 1 ][ 0 ]
-#    total      = float( output.get( 'totalsize',      '0' ) ) / 1e12 # Bytes to Terabytes
-#    guaranteed = float( output.get( 'guaranteedsize', '0' ) ) / 1e12
-#    free       = float( output.get( 'unusedsize',     '0' ) ) / 1e12
-#      
-#    result = S_OK( 
-#                  { 
-#                   'total'      : total, 
-#                   'free'       : free, 
-#                   'guaranteed' : guaranteed 
-#                   } 
-#                  )
-#
-#    return result
-#
-#class SpaceTokenOccupancyCacheCommand( Command ):
-#  '''
-#    Cache command that reads from the StorageTokenOccupancyCache table
-#  ''' 
-#
-#  def __init__( self, args = None, clients = None ):
-#    
-#    super( SpaceTokenOccupancyCacheCommand, self ).__init__( args, clients )
-#
-#    if 'ResourceManagementClient' in self.apis:
-#      self.rmClient = self.apis[ 'ResourceManagementClient' ]
-#    else:  
-#      self.rmClient = ResourceManagementClient()
-#
-#  def doCommand( self ):
-#    '''
-#    Run the command.
-#    '''
-#
-#    if not 'elementType' in self.args:
-#      return self.returnERROR( S_ERROR( '"elementType" not found in self.args' ) )
-#    elementType = self.args[ 'elementType' ]
-#    
-#    if not elementType == 'StorageElement':
-#      return self.returnERROR( S_ERROR( 'Expecting StorageElement, not %s' % elementType ) )
-#    
-#    if not 'name' in self.args:
-#      return self.returnERROR( S_ERROR( '"name" not found in self.args' ) )
-#    name = self.args[ 'name' ]
-# 
-#    spaceToken = CSHelpers.getStorageElementSpaceToken( name )
-#    if not spaceToken[ 'OK' ]:
-#      return self.returnERROR( spaceToken )
-#    spaceToken = spaceToken[ 'Value' ]
-# 
-#    meta = { 'columns' : [ 'Total', 'Free', 'Guaranteed' ] }
-# 
-#    endpoint = CSHelpers.getStorageElementEndpoint( name )
-#    if not endpoint[ 'OK' ]:
-#      return self.returnERROR( endpoint )
-#    endpoint = endpoint[ 'Value' ]
-#    endpoint = endpoint.replace( 'SFN=?', '' )
-# 
-#    res = self.rmClient.selectSpaceTokenOccupancyCache( endpoint = endpoint, 
-#                                                        spaceToken = spaceToken, 
-#                                                        meta = meta )
-#    
-#    if not res[ 'OK' ]:
-#      return self.returnERROR( res )
-#    res = res[ 'Value' ]
-#    
-#    if not res[ 'Value' ]:
-#      return S_OK( None )
-#    
-#    zippedRes = dict( zip( res[ 'Columns' ], res[ 'Value' ] ) )
-#    
-#    result = { 
-#              'total'      : zippedRes[ 'Total' ], 
-#              'free'       : zippedRes[ 'Free' ], 
-#              'guaranteed' : zippedRes[ 'Guaranteed' ] 
-#              }   
-#    
-#    return S_OK( result )
-#
-#################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

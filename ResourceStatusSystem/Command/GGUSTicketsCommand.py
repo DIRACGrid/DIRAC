@@ -8,7 +8,7 @@
 
 import urllib2
 
-from DIRAC                                                      import S_ERROR, S_OK
+from DIRAC                                                      import gLogger, S_ERROR, S_OK
 from DIRAC.Core.LCG.GGUSTicketsClient                           import GGUSTicketsClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -18,6 +18,9 @@ from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 __RCSID__ = '$Id:  $'
 
 class GGUSTicketsCommand( Command ):
+  '''
+    GGUSTickets "master" Command
+  '''
   
   def __init__( self, args = None, clients = None ):
     
@@ -34,24 +37,44 @@ class GGUSTicketsCommand( Command ):
       self.rmClient = ResourceManagementClient()  
 
   def _storeCommand( self, result ):
-          
-    resQuery = self.rmClient.addOrModifyGGUSTicketsCache( result[ 'GocSite' ], 
-                                                          result[ 'Link' ],
-                                                          result[ 'OpenTickets' ],
-                                                          result[ 'Tickets' ] ) 
-    return resQuery
+    '''
+      Stores the results of doNew method on the database.
+    '''
+    
+    for ggus in result:      
+      resQuery = self.rmClient.addOrModifyGGUSTicketsCache( ggus[ 'GocSite' ], 
+                                                            ggus[ 'Link' ],
+                                                            ggus[ 'OpenTickets' ],
+                                                            ggus[ 'Tickets' ] ) 
+      if not resQuery[ 'OK' ]:
+        return resQuery
+    return S_OK()
   
   def _prepareCommand( self ):
+    '''
+      GGUSTicketsCommand requires one arguments:
+      - elementName : <str>
+      
+      GGUSTickets are associated with gocDB names, so we have to transform the
+      diracSiteName into a gocSiteName.
+    '''    
 
-    if not 'name' in self.args:
-      return S_ERROR( '"name" not found in self.args' )
-    name = self.args[ 'name' ]
+    if not 'elementName' in self.args:
+      return S_ERROR( '"elementName" not found in self.args' )
+    name = self.args[ 'elementName' ]
      
-    gocName = getGOCSiteName( name )
-  
-    return S_OK( gocName )
+    return getGOCSiteName( name )
 
   def doNew( self, masterParams = None ):
+    '''
+      Gets the parameters to run, either from the master method or from its
+      own arguments.
+      
+      For every elementName ( cannot process bulk queries.. ) contacts the 
+      ggus client. The server is not very stable, so we protect against crashes.
+      
+      If there are ggus tickets, are recorded and then returned.    
+    '''
     
     if masterParams is not None:
       gocName = masterParams
@@ -65,7 +88,7 @@ class GGUSTicketsCommand( Command ):
     try:  
       result = self.gClient.getTicketsList( gocName )
     except urllib2.URLError, e:
-      return e  
+      return S_ERROR( e )  
     
     if not result[ 'OK' ]:
       return result
@@ -84,9 +107,13 @@ class GGUSTicketsCommand( Command ):
     if not storeRes[ 'OK' ]:
       return storeRes
     
-    return S_OK( uniformResult )
+    return S_OK( [ uniformResult ] )
   
   def doCache( self ):
+    '''
+      Method that reads the cache table and tries to read from it. It will 
+      return a list of dictionaries if there are results.
+    '''
 
     gocName = self._prepareCommand()
     if not gocName[ 'OK' ]:
@@ -95,34 +122,32 @@ class GGUSTicketsCommand( Command ):
     
     result = self.rmClient.selectGGUSTicketsCache( gocSite = gocName )  
     if result[ 'OK' ]:
-      result = S_OK( dict( zip( result[ 'Columns' ], result[ 'Value' ] ) ) )
+      result = S_OK( [ dict( zip( result[ 'Columns' ], result[ 'Value' ] ) ) ] )
            
     return result  
 
   def doMaster( self ):
-    
-    sites = CSHelpers.getSites()
-    if not sites[ 'OK' ]:
-      return sites
-    sites = sites[ 'Value' ]
+    '''
+      Master method, which looks little bit spaguetti code, sorry !
+      - It gets all gocSites.
+      
+      As there is no bulk query, it compares with what we have on the database.
+      It queries a portion of them.
+    '''
 
-    gocNames = []
-    
-    for siteName in sites:
-      
-      gocName = getGOCSiteName( siteName )
-      if not gocName[ 'OK' ]:
-        self.metrics[ 'failed' ].append( gocName[ 'Message' ] )
-        continue
-      
-      gocNames.append( gocName[ 'Value' ] )
-           
+    gocSites = CSHelpers.getGOCSites()
+    if not gocSites[ 'OK' ]:
+      return gocSites
+    gocSites = gocSites[ 'Value' ]    
+               
     resQuery = self.rmClient.selectGGUSTicketsCache( meta = { 'columns' : [ 'GocSite' ] } )
     if not resQuery[ 'OK' ]:
       return resQuery
     resQuery = [ element[0] for element in resQuery[ 'Value' ] ]
     
-    gocNamesToQuery = set( gocNames ).difference( set( resQuery ) )   
+    gocNamesToQuery = set( gocSites ).difference( set( resQuery ) )   
+    
+    gLogger.info( 'Processing %s' % gocNamesToQuery )
     
     for gocNameToQuery in gocNamesToQuery:
       
