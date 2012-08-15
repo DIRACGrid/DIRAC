@@ -1340,18 +1340,17 @@ class JobDB( DB ):
     if systemConfig and systemConfig.lower() != 'any':
       # FIXME: need to reformulate in a VO independent mode
       # Get the LHCb Platforms that are compatible with the requested systemConfig
+      platformReqs = [systemConfig]
       result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
       if result['OK'] and result['Value']:
-        platforms = result['Value']
-        lhcbPlatforms = [systemConfig]
+        platforms = result['Value'] 
         for platform in platforms:
-          if systemConfig in [ x.strip() for x in platforms[platform].split( ',' ) ]:
-            lhcbPlatforms.append( platform )
-        if lhcbPlatforms:
-          classAdReq.insertAttributeVectorString( 'LHCbPlatforms', lhcbPlatforms )
-        else:
-          error = 'No compatible Platform found for %s' % systemConfig
-
+          if systemConfig in [ x.strip() for x in platforms[platform].split( ',' ) ] and platform != systemConfig:
+            platformReqs.append( platform )
+        classAdReq.insertAttributeVectorString( 'LHCbPlatforms', platformReqs )    
+      else: 
+        error = "OS compatibility info not found"
+      
     if error:
 
       retVal = S_ERROR( error )
