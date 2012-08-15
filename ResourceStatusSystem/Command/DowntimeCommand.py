@@ -174,13 +174,15 @@ class DowntimeCommand( Command ):
     dtDate = datetime.now()     
     if hours:
       dtDate = dtDate + timedelta( hours = hours )
-           
+
+    result = None           
     for dt in uniformResult:
       
       if ( dt[ 'StartDate' ] < str( dtDate ) ) and ( dt[ 'EndDate' ] > str( dtDate ) ):
-        return S_OK( [ dt ] )        
+        result = dt
+        break        
            
-    return S_OK( [] )            
+    return S_OK( result )            
 
   def doCache( self ):
     '''
