@@ -71,7 +71,7 @@ class TransferChannelCommand( Command ):
     hours = self.args[ 'hours' ]
 
     if not 'direction' in self.args:
-      return S_ERROR( 'element is missing' )
+      return S_ERROR( 'direction is missing' )
     direction = self.args[ 'direction' ]
 
     if direction not in [ 'Source', 'Destination' ]:
@@ -166,8 +166,14 @@ class TransferChannelCommand( Command ):
     if not params[ 'OK' ]:
       return params
     _hours, direction, name, metric = params[ 'Value' ] 
+    
+    sourceName, destinationName = None, None
+    if direction == 'Source':
+      sourceName = name
+    if direction == 'Destination':  
+      destinationName = name
       
-    result = self.rmClient.selectTransferCache( name, direction, metric )  
+    result = self.rmClient.selectTransferCache( sourceName, destinationName, direction, metric )  
     if result[ 'OK' ]:
       result = S_OK( [ dict( zip( result[ 'Columns' ], result[ 'Value' ] ) ) ] )
            

@@ -49,7 +49,7 @@ class GGUSTicketsClient:
     
     query = '\'GHD_Affected VO\'="lhcb"'
     if siteName is not None:
-      query += ' \'GHD_Affected Site\'=\"' + siteName
+      query += ' AND \'GHD_Affected Site\'=\"' + siteName + '\"'
     
     if startDate is not None:
       query = query + ' AND \'GHD_Date Of Creation\'>' + str( startDate )
