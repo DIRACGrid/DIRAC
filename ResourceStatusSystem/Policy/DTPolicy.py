@@ -36,25 +36,15 @@ class DTPolicy( PolicyBase ):
     
     status = status[ 'Value' ]
 
-    if not status:
-      result[ 'Status' ] = 'Error'
-      result[ 'Reason' ] = 'Expecting a dictionary'
-      return S_OK( result )
-
-    if not 'DT' in status:
-      result[ 'Status' ] = 'Error'
-      result[ 'Reason' ] = 'Expecting DT key in dictionary'
-      return S_OK( result )
-
-    if status[ 'DT' ] == None:
+    if status is None:
       result[ 'Status' ] = 'Active'
       result[ 'Reason' ] = 'No DownTime announced'
       return S_OK( result )
-    
-    elif 'OUTAGE' in status[ 'DT' ]:
+
+    elif status[ 'Severity' ] == 'OUTAGE':
       result[ 'Status' ] = 'Banned'
       
-    elif 'WARNING' in status['DT']:
+    elif status[ 'Severity' ] == 'WARNING':
       result[ 'Status' ] = 'Degraded'
 
     else:
