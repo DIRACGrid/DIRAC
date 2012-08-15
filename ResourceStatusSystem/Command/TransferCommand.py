@@ -165,7 +165,7 @@ class TransferChannelCommand( Command ):
     params = self._prepareCommand()
     if not params[ 'OK' ]:
       return params
-    _hours, direction, name, metric = params[ 'Value' ] 
+    _hours, name, direction, metric = params[ 'Value' ] 
     
     sourceName, destinationName = None, None
     if direction == 'Source':
