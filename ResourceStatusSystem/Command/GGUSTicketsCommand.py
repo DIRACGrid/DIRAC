@@ -107,16 +107,14 @@ class GGUSTicketsCommand( Command ):
       ggusDict[ 'GocSite' ] = gocSite
       ggusDict[ 'Link' ]    = ggusResult[ 'URL' ]
       
-      descriptions = []
+      del ggusResult[ 'URL' ]
       
-      for key, ggusPriorities in ggusResult.items():
-        
-        if key == 'URL':
-          continue
-        descriptions.append( ggusPriorities )        
-      
-      ggusDict[ 'Tickets' ]     = descriptions
-      ggusDict[ 'OpenTickets' ] = len( descriptions )  
+      openTickets = 0
+      for priorityDict in ggusResult.values():
+        openTickets += len( priorityDict )
+            
+      ggusDict[ 'Tickets' ]     = ggusResult
+      ggusDict[ 'OpenTickets' ] = openTickets  
       
       uniformResult.append( ggusDict )
 
