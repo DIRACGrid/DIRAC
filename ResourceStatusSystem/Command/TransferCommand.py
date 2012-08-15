@@ -187,7 +187,7 @@ class TransferChannelCommand( Command ):
     if not result[ 'OK' ]:
       return result
     
-    result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
+    result = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
 
     # Compute mean of all transfer channels
     value = 0
