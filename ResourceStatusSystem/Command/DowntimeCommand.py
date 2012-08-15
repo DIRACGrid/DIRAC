@@ -79,6 +79,10 @@ class DowntimeCommand( Command ):
     
     if not element in [ 'Site', 'Resource' ]:
       return S_ERROR( 'element is not Site nor Resource' )   
+
+    hours = None
+    if 'hours' in self.args:
+      hours = self.args[ 'hours' ]
     
     # Transform DIRAC site names into GOCDB topics
     if element == 'Site':
@@ -96,7 +100,7 @@ class DowntimeCommand( Command ):
         return S_ERROR( 'No seHost for %s' % elementName )
       elementName = seHost
              
-    return S_OK( ( element, elementName ) )
+    return S_OK( ( element, elementName, hours ) )
 
   def doNew( self, masterParams = None ):
     '''
@@ -117,7 +121,7 @@ class DowntimeCommand( Command ):
       params = self._prepareCommand()
       if not params[ 'OK' ]:
         return params
-      element, elementName = params[ 'Value' ]  
+      element, elementName, hours = params[ 'Value' ]  
       elementNames = [ elementName ]     
 
     startDate = datetime.utcnow() - timedelta( days = 2 )
@@ -165,8 +169,18 @@ class DowntimeCommand( Command ):
     storeRes = self._storeCommand( uniformResult )
     if not storeRes[ 'OK' ]:
       return storeRes
+    
+    # We return only one downtime, if its ongoind at dtDate
+    dtDate = datetime.now()     
+    if hours:
+      dtDate = dtDate + timedelta( hours = hours )
            
-    return S_OK( uniformResult )            
+    for dt in uniformResult:
+      
+      if ( dt[ 'StartDate' ] < str( dtDate ) ) and ( dt[ 'EndDate' ] > str( dtDate ) ):
+        return S_OK( [ dt ] )        
+           
+    return S_OK( [] )            
 
   def doCache( self ):
     '''
@@ -177,11 +191,23 @@ class DowntimeCommand( Command ):
     params = self._prepareCommand()
     if not params[ 'OK' ]:
       return params
-    element, elementName = params[ 'Value' ]
+    element, elementName, hours = params[ 'Value' ]
     
     result = self.rmClient.selectDowntimeCache( element = element, name = elementName )  
     if result[ 'OK' ]:
-      result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
+      uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
+
+    # We return only one downtime, if its ongoind at dtDate
+    dtDate = datetime.now()     
+    if hours:
+      dtDate = dtDate + timedelta( hours = hours )
+           
+    for dt in uniformResult:
+      
+      if ( dt[ 'StartDate' ] < str( dtDate ) ) and ( dt[ 'EndDate' ] > str( dtDate ) ):
+        return S_OK( [ dt ] )        
+           
+    return S_OK( [] )   
                  
     return result          
 
