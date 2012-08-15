@@ -105,9 +105,9 @@ class GGUSTicketsCommand( Command ):
       
       ggusDict = {}
       ggusDict[ 'GocSite' ] = gocSite
-      ggusDict[ 'Link' ]    = ggusResult.get( 'URL' )
+      ggusDict[ 'Link' ]    = ggusResult[ 'URL' ]
       
-      descriptions = [ ggusTuple[ 1 ] for ggusTuple in ggusResult.values() ]
+      descriptions = [ ggusTuple[ 1 ] for key, ggusTuple in ggusResult.items() if key != 'URL' ]
       
       ggusDict[ 'Tickets' ]     = descriptions
       ggusDict[ 'OpenTickets' ] = len( descriptions )  
