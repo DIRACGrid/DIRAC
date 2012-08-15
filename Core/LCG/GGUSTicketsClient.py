@@ -14,6 +14,17 @@ __RCSID__ = "$Id$"
 class GGUSTicketsClient:
   # FIXME: Why is this a class and not just few methods?
 
+  # create the URL to get tickets relative to the site ( opened only ! ): 
+  ggusURL = 'https://ggus.eu/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&'
+  ggusURL += 'show_columns_check[]=TICKET_TYPE&show_columns_check[]=AFFECTED_VO&show_columns_check[]='
+  ggusURL += 'AFFECTED_SITE&show_columns_check[]=PRIORITY&show_columns_check[]=RESPONSIBLE_UNIT&show_'
+  ggusURL += 'columns_check[]=STATUS&show_columns_check[]=DATE_OF_CREATION&show_columns_check[]=LAST_UPDATE&'
+  ggusURL += 'show_columns_check[]=TYPE_OF_PROBLEM&show_columns_check[]=SUBJECT&ticket=&supportunit=all&su_'
+  ggusURL += 'hierarchy=all&vo=lhcb&user=&keyword=&involvedsupporter=&assignto=&affectedsite=%s' #% siteName
+  ggusURL += '&specattrib=0&status=open&priority=all&typeofproblem=all&ticketcategory=&mouarea=&technology_'
+  ggusURL += 'provider=&date_type=creation+date&radiotf=1&timeframe=any&untouched_date=&orderticketsby=GHD_'
+  ggusURL += 'INT_REQUEST_ID&orderhow=descending' 
+
   def __init__( self ):
     
     # create client instance using GGUS wsdl:
@@ -25,7 +36,7 @@ class GGUSTicketsClient:
 
 ################################################################################
 
-  def getTicketsList( self, siteName, startDate = None, endDate = None ):
+  def getTicketsList( self, siteName = None, startDate = None, endDate = None ):
     """ Return tickets of entity in name
        @param name: should be the name of the site
        @param startDate: starting date (optional)
@@ -33,25 +44,18 @@ class GGUSTicketsClient:
     """
 
     # prepare the query string:
-    query = '\'GHD_Affected Site\'=\"' + siteName + '\" AND \'GHD_Affected VO\'="lhcb"'
     
+    #query = '\'GHD_Affected Site\'=\"' + siteName + '\" AND \'GHD_Affected VO\'="lhcb"'
+    
+    query = '\'GHD_Affected VO\'="lhcb"'
+    if siteName is not None:
+      query += ' \'GHD_Affected Site\'=\"' + siteName
     
     if startDate is not None:
       query = query + ' AND \'GHD_Date Of Creation\'>' + str( startDate )
     
     if endDate is not None:
       query = query + ' AND \'GHD_Date Of Creation\'<' + str( endDate )
-
-    # create the URL to get tickets relative to the site ( opened only ! ): 
-    ggusURL = 'https://ggus.eu/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&'
-    ggusURL += 'show_columns_check[]=TICKET_TYPE&show_columns_check[]=AFFECTED_VO&show_columns_check[]='
-    ggusURL += 'AFFECTED_SITE&show_columns_check[]=PRIORITY&show_columns_check[]=RESPONSIBLE_UNIT&show_'
-    ggusURL += 'columns_check[]=STATUS&show_columns_check[]=DATE_OF_CREATION&show_columns_check[]=LAST_UPDATE&'
-    ggusURL += 'show_columns_check[]=TYPE_OF_PROBLEM&show_columns_check[]=SUBJECT&ticket=&supportunit=all&su_'
-    ggusURL += 'hierarchy=all&vo=lhcb&user=&keyword=&involvedsupporter=&assignto=&affectedsite=%s' % siteName
-    ggusURL += '&specattrib=0&status=open&priority=all&typeofproblem=all&ticketcategory=&mouarea=&technology_'
-    ggusURL += 'provider=&date_type=creation+date&radiotf=1&timeframe=any&untouched_date=&orderticketsby=GHD_'
-    ggusURL += 'INT_REQUEST_ID&orderhow=descending'
     
     # the query must be into a try block. Empty queries, though formally correct, raise an exception
     try:
@@ -61,59 +65,43 @@ class GGUSTicketsClient:
     except urllib2.URLError, e:
       return S_ERROR( e )
     
-    stats = self.globalStatistics( ticketList )
-    if not stats[ 'OK' ]:
-      return stats
-    statusCount, shortDescription = stats[ 'Value' ]
-    
-    return S_OK( ( statusCount, ggusURL, shortDescription ) )
+    return self.globalStatistics( ticketList )
 
 ################################################################################
   
-  @staticmethod
-  def globalStatistics( ticketList ):
+  def globalStatistics( self, ticketList ):
     '''
       Get some statistics about the tickets for the site: total number
       of tickets and number of ticket in different status
     '''
     
-    selectedTickets = {} # initialize the dictionary of tickets to return
+    # initialize the dictionary of tickets to return
+    selectedTickets = {} 
+
+    #openStates = [ 'assigned', 'in progress', 'new', 'on hold', 'reopened', 'waiting for reply' ]    
+    terminalStates = [ 'solved', 'unsolved', 'verified', 'closed' ]
+    
     for ticket in ticketList:
       
+      _site             = ticket.GHD_Affected_Site
       _id               = ticket.GHD_Request_ID
       _status           = ticket.GHD_Status
       _shortDescription = ticket.GHD_Short_Description
+      _priority         = ticket.GHD_Priority
       
-      selectedTickets[ _id ] = {
-                                'status'           : _status,
-                                'shortDescription' : _shortDescription,                               
-                                }      
+      # We do not want closed tickets
+      if _status in terminalStates:
+        continue
+    
+      if not _site in selectedTickets:
+        selectedTickets[ _site ] = { 'URL' : self.ggusURL % _site }
+      
+      if not _priority in selectedTickets[ _site ]:
+        selectedTickets[ _site ][ _priority ] = []  
+       
+      selectedTickets[ _site ][ _priority ].append( ( _id, _shortDescription ) ) 
+    
+    return S_OK( selectedTickets )
         
-    # group tickets in only 2 categories: open and terminal states
-    # create a dictionary to store the short description only for tickets in open states:
-    openStates     = [ 'assigned', 'in progress', 'new', 'on hold', 'reopened', 'waiting for reply' ]
-    terminalStates = [ 'solved', 'unsolved', 'verified', 'closed' ]
-    
-    statusCount = { 'open' : 0, 'terminal' : 0 }
-    
-    shortDescription = {}
-    
-    for ticketID, ticketValues in selectedTickets.items():
-      
-      status = ticketValues[ 'status' ]
-      
-      if status in terminalStates:
-        statusCount[ 'terminal' ] += 1
-      elif status in openStates:
-        statusCount[ 'open' ] += 1
-      
-        if ticketID not in shortDescription.keys():
-          shortDescription[ ticketID ] = ticketValues[ 'shortDescription' ]
-
-      else:
-        return S_ERROR( '%s is not a known GGUS status' % status )  
-         
-    return S_OK( ( statusCount, shortDescription ) ) 
-
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
