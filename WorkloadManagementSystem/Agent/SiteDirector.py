@@ -223,7 +223,9 @@ class SiteDirector( AgentModule ):
             self.platforms.append(platform)
             
           if not "Platform" in self.queueDict[queueName]['ParametersDict'] and platform:
-            self.queueDict[queueName]['ParametersDict']['Platform'] = platform  
+            result = Resources.getDIRACPlatform( platform )
+            if result['OK']:
+              self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value']  
 
     return S_OK()
 
@@ -261,7 +263,10 @@ class SiteDirector( AgentModule ):
     if self.group:
       tqDict['OwnerGroup'] = self.group
     rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
-    tqDict['LHCbPlatform'] = Resources.getCompatiblePlatforms( self.platforms )
+    result = Resources.getCompatiblePlatforms( self.platforms )
+    if not result['OK']:
+      return result
+    tqDict['LHCbPlatform'] = result['Value']
     self.log.verbose( 'Checking overall TQ availability with requirements' )
     self.log.verbose( tqDict )
     result = rpcMatcher.getMatchingTaskQueues( tqDict )
@@ -329,9 +334,6 @@ class SiteDirector( AgentModule ):
       
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools  
-      
-      if "Platform" in ceDict:
-        ceDict["Platform"] = Resources.getCompatiblePlatforms( ceDict["Platform"] )
 
       # Get the number of eligible jobs for the target site/queue
       result = rpcMatcher.getMatchingTaskQueues( ceDict )
