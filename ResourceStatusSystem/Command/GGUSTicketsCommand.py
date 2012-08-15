@@ -107,23 +107,18 @@ class GGUSTicketsCommand( Command ):
       ggusDict[ 'GocSite' ] = gocSite
       ggusDict[ 'Link' ]    = ggusResult[ 'URL' ]
       
-      descriptions = [ ggusTuple[ 1 ] for key, ggusTuple in ggusResult.items() if key != 'URL' ]
+      descriptions = []
+      
+      for key, ggusPriorities in ggusResult.items():
+        
+        if key == 'URL':
+          continue
+        descriptions.append( ggusPriorities )        
       
       ggusDict[ 'Tickets' ]     = descriptions
       ggusDict[ 'OpenTickets' ] = len( descriptions )  
       
       uniformResult.append( ggusDict )
-      
-             
-#    ticketsCount, link, tickets = result[ 'Value' ]
-#    openTickets = ticketsCount[ 'open' ]
-    
-#    uniformResult = {}
-#  
-#    uniformResult[ 'GocSite' ]     = gocName
-#    uniformResult[ 'Link' ]        = link
-#    uniformResult[ 'OpenTickets' ] = openTickets
-#    uniformResult[ 'Tickets' ]     = tickets
 
     storeRes = self._storeCommand( uniformResult )
     if not storeRes[ 'OK' ]:
