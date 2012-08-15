@@ -216,10 +216,14 @@ class SiteDirector( AgentModule ):
           elif "Platform" in ceDict:
             platform = ceDict['Platform']
           elif "OS" in ceDict:
+            architecture = ceDict.get( 'architecture', 'x86_64' )
             OS = ceDict['OS']
             platform = '_'.join([architecture,OS])
           if platform and not platform in self.platforms:
             self.platforms.append(platform)
+            
+          if not "Platform" in self.queueDict[queueName]['ParametersDict'] and platform:
+            self.queueDict[queueName]['ParametersDict']['Platform'] = platform  
 
     return S_OK()
 
@@ -325,6 +329,9 @@ class SiteDirector( AgentModule ):
       
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools  
+      
+      if "Platform" in ceDict:
+        ceDict["Platform"] = Resources.getCompatiblePlatforms( ceDict["Platform"] )
 
       # Get the number of eligible jobs for the target site/queue
       result = rpcMatcher.getMatchingTaskQueues( ceDict )
