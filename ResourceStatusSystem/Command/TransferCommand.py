@@ -173,7 +173,7 @@ class TransferChannelCommand( Command ):
     if direction == 'Destination':  
       destinationName = name
       
-    result = self.rmClient.selectTransferCache( sourceName, destinationName, direction, metric )  
+    result = self.rmClient.selectTransferCache( sourceName, destinationName, metric )  
     if result[ 'OK' ]:
       result = S_OK( [ dict( zip( result[ 'Columns' ], result[ 'Value' ] ) ) ] )
            
