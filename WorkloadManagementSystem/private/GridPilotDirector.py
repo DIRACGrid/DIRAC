@@ -195,14 +195,14 @@ class GridPilotDirector( PilotDirector ):
         pilotReference = self._getChildrenReferences( proxy, pilotReference, taskQueueID )
         submittedPilots += len( pilotReference )
         pilotAgentsDB.addPilotTQReference( pilotReference, taskQueueID, ownerDN,
-                      vomsGroup, resourceBroker, self.gridMiddleware,
+                      ownerGroup, resourceBroker, self.gridMiddleware,
                       pilotRequirements )
     else:
       for pilotReference, resourceBroker in submitRet:
         pilotReference = [pilotReference]
         submittedPilots += len( pilotReference )
         pilotAgentsDB.addPilotTQReference( pilotReference, taskQueueID, ownerDN,
-                      vomsGroup, resourceBroker, self.gridMiddleware, pilotRequirements )
+                      ownerGroup, resourceBroker, self.gridMiddleware, pilotRequirements )
 
     # add some sleep here
     time.sleep( 0.1 * submittedPilots )
