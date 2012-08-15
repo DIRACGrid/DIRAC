@@ -54,9 +54,9 @@ class SpaceTokenOccupancyCommand( Command ):
       which are used to query the srm interface.
     '''
 
-    if not 'elementName' in self.args:
-      return S_ERROR( '"elementName" not found in self.args' )
-    elementName = self.args[ 'elementName' ]
+    if not 'name' in self.args:
+      return S_ERROR( '"name" not found in self.args' )
+    elementName = self.args[ 'name' ]
     
     endpoint = CSHelpers.getStorageElementEndpoint( elementName )
     if not endpoint[ 'OK' ]:

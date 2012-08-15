@@ -57,7 +57,7 @@ class DowntimeCommand( Command ):
   def _prepareCommand( self ):
     '''
       DowntimeCommand requires three arguments:
-      - elementName : <str>
+      - name : <str>
       - element : Site / Resource
       - elementType: <str>  
       
@@ -65,9 +65,9 @@ class DowntimeCommand( Command ):
       not have, so we ignore them if they do not have.
     '''
     
-    if 'elementName' not in self.args:
-      return S_ERROR( '"elementName" not found in self.args' )
-    elementName = self.args[ 'elementName' ]      
+    if 'name' not in self.args:
+      return S_ERROR( '"name" not found in self.args' )
+    elementName = self.args[ 'name' ]      
     
     if 'element' not in self.args:
       return S_ERROR( '"element" not found in self.args' )

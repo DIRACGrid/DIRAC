@@ -77,9 +77,9 @@ class TransferChannelCommand( Command ):
     if direction not in [ 'Source', 'Destination' ]:
       return S_ERROR( 'direction is not Source nor Destination' )
 
-    if not 'elementName' in self.args:
-      return S_ERROR( '"elementName" is missing' )
-    name = self.args[ 'elementName' ]
+    if not 'name' in self.args:
+      return S_ERROR( '"name" is missing' )
+    name = self.args[ 'name' ]
 
     if not 'metric' in self.args:
       return S_ERROR( 'metric is missing' )

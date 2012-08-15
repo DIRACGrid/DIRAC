@@ -59,9 +59,9 @@ class GGUSTicketsCommand( Command ):
       diracSiteName into a gocSiteName.
     '''    
 
-    if not 'elementName' in self.args:
-      return S_ERROR( '"elementName" not found in self.args' )
-    name = self.args[ 'elementName' ]
+    if not 'name' in self.args:
+      return S_ERROR( '"name" not found in self.args' )
+    name = self.args[ 'name' ]
      
     return getGOCSiteName( name )
 
