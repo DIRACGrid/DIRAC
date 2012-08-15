@@ -153,8 +153,18 @@ class TransferChannelCommand( Command ):
     storeRes = self._storeCommand( uniformResult )
     if not storeRes[ 'OK' ]:
       return storeRes
+    
+    # Compute mean of all transfer channels
+    value = 0
+    for channelDict in uniformResult:
+      value += channelDict[ 'Value' ]  
+
+    if uniformResult:
+      value = float( value ) / len( uniformResult )
+    else:
+      value = None              
            
-    return S_OK( uniformResult )  
+    return S_OK( value )  
     
   def doCache( self ):
     '''
@@ -174,10 +184,22 @@ class TransferChannelCommand( Command ):
       destinationName = name
       
     result = self.rmClient.selectTransferCache( sourceName, destinationName, metric )  
-    if result[ 'OK' ]:
-      result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
+    if not result[ 'OK' ]:
+      return result
+    
+    result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
+
+    # Compute mean of all transfer channels
+    value = 0
+    for channelDict in result:
+      value += channelDict[ 'Value' ]  
+
+    if result:
+      value = float( value ) / len( result )
+    else:
+      value = None              
            
-    return result      
+    return S_OK( value )  
 
   def doMaster( self ):
     '''

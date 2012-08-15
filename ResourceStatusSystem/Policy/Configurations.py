@@ -22,7 +22,7 @@ POLICIESMETA = {
     {
       'description' : "Ongoing down-times",
       'module'      : 'DTPolicy',
-      'command'     : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
+      'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
       'args'        : None
     },
 
@@ -30,7 +30,7 @@ POLICIESMETA = {
     {
       'description' : "Ongoing and scheduled down-times",
       'module'      : 'DTPolicy',
-      'command'     : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
+      'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
       'args'        : { 'hours' : 12 },
     },
 

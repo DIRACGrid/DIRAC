@@ -194,22 +194,23 @@ class DowntimeCommand( Command ):
     element, elementName, hours = params[ 'Value' ]
     
     result = self.rmClient.selectDowntimeCache( element = element, name = elementName )  
-    if result[ 'OK' ]:
-      uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
+    if not result[ 'OK' ]:
+      return result
+    
+    uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
 
     # We return only one downtime, if its ongoind at dtDate
     dtDate = datetime.now()     
     if hours:
       dtDate = dtDate + timedelta( hours = hours )
            
+    result = None       
     for dt in uniformResult:
-      
       if ( dt[ 'StartDate' ] < str( dtDate ) ) and ( dt[ 'EndDate' ] > str( dtDate ) ):
-        return S_OK( [ dt ] )        
+        result = dt
+        break        
            
-    return S_OK( [] )   
-                 
-    return result          
+    return S_OK( result )       
 
   def doMaster( self ):
     '''
