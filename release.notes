@@ -1,3 +1,8 @@
+[v6r4p21]
+
+*Core
+BUGFIX: SGETimeLeft - take into account dd:hh:mm:ss format of the cpu consumed
+
 [v6r4p20]
 
 *WMS
