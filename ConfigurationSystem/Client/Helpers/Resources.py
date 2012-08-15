@@ -131,13 +131,45 @@ def getCompatiblePlatforms( originalPlatforms ):
   else:
     platforms = list( originalPlatforms )
     
+  platformDict = {}
+  result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+  if result['OK'] and result['Value']:
+    platformDict = result['Value'] 
+    for platform in platformDict:
+      platformDict[platform] = [ x.strip() for x in platformDict[platform].split( ',' ) ]
+  else:
+    return S_ERROR( 'OS compatibility info not found' )        
+
   resultList = list( platforms )
   for p in platforms:
-    tmpList = gConfig.getValue( '/Resources/Computing/OSCompatibility/%s' % p, [] )    
+    tmpList = platformDict.get( p, [] )
+    for pp in platformDict:
+      if p in platformDict[pp]:
+        tmpList.append( pp )
+        tmpList += platformDict[pp]
     if tmpList:
       resultList += tmpList
 
-  return uniqueElements( resultList )
+  return S_OK( uniqueElements( resultList ) )
+
+def getDIRACPlatform( platform ):
+  """ Get standard DIRAC platform compatible with the argument
+  """
+  platformDict = {}
+  result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+  if result['OK'] and result['Value']:
+    platformDict = result['Value'] 
+    for platform in platformDict:
+      platformDict[platform] = [ x.strip() for x in platformDict[platform].split( ',' ) ]
+  else:
+    return S_ERROR( 'OS compatibility info not found' )    
+      
+  resultPlatform = ''
+  for p in platformDict:
+    if platform in platformDict[p]:
+      resultPlatform = p    
+  
+  return S_OK( resultPlatform )
   
 def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
