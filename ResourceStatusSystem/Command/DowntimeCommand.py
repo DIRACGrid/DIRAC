@@ -206,7 +206,7 @@ class DowntimeCommand( Command ):
       return sesHosts      
     sesHosts = sesHosts[ 'Value' ]  
     
-    resources = []      
+    resources = sesHosts      
               
     #
     #
@@ -224,28 +224,17 @@ class DowntimeCommand( Command ):
     if ce[ 'OK' ]:
       resources = resources + ce[ 'Value' ]
     
-    # doNew calls
+    gLogger.info( 'Processing Sites: %s' % ( ', '.join( gocSites ) ) )
     
-    gLogger.info( 'Processing %s' % gocSites )
-    
-    for gocSite in gocSites:
-      siteRes = self.doNew( ( 'Site', gocSite ) )
-      if not siteRes[ 'OK' ]:
-        self.metrics[ 'failed' ].append( siteRes[ 'Message' ] )
+    siteRes = self.doNew( ( 'Site', gocSites ) )
+    if not siteRes[ 'OK' ]:
+      self.metrics[ 'failed' ].append( siteRes[ 'Message' ] )
 
-    gLogger.info( 'Processing %s' % sesHosts )
+    gLogger.info( 'Processing Resources: %s' % ( ', '.join( resources ) ) )
 
-    for seHost in sesHosts:
-      sesRes = self.doNew( ( 'Resource', seHost ) ) 
-      if not sesRes[ 'OK' ]:
-        self.metrics[ 'failed' ].append( sesRes[ 'Message' ] )
-
-    gLogger.info( 'Processing %s' % resources )
-
-    for resource in resources:
-      resourceRes = self.doNew( ( 'Resource', resource ) ) 
-      if not resourceRes[ 'OK' ]:
-        self.metrics[ 'failed' ].append( resourceRes[ 'Message' ] )
+    resourceRes = self.doNew( ( 'Resource', resources ) ) 
+    if not resourceRes[ 'OK' ]:
+      self.metrics[ 'failed' ].append( resourceRes[ 'Message' ] )
     
     return S_OK( self.metrics )
 
