@@ -120,7 +120,7 @@ class SpaceTokenOccupancyCommand( Command ):
       
     result = self.rmClient.selectSpaceTokenOccupancyCache( spaceTokenEndpoint, spaceToken )
     if result[ 'OK' ]:
-      result = S_OK( [ dict( zip( result[ 'Columns' ], result[ 'Value' ] ) ) ] )
+      result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
            
     return result    
 
