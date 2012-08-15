@@ -93,7 +93,11 @@ scheduling info:            (Collecting of scheduler job information is turned o
         if match:
           cpuList = match.groups()[0].split( ':' )
         try:
-          newcpu = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2][:-1] )
+          newcpu = 0.
+          if len( cpuList ) == 3:
+            newcpu = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2] )
+          elif len( cpuList ) == 4:
+            newcpu = ( ( float( cpuList[0] ) * 24 + float( cpuList[1] ) ) * 60 + float( cpuList[2] ) ) * 60 + float( cpuList[3] )              
           if not cpu or newcpu > cpu:
             cpu = newcpu
         except ValueError:
