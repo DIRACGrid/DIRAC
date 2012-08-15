@@ -391,6 +391,7 @@ class SiteDirector( AgentModule ):
         result = ce.submitJob( executable, '', pilotSubmissionChunk )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:' % queue, result['Message'] )
+          pilotsToSubmit = 0
           continue
         
         pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
