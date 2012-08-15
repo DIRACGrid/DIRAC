@@ -224,13 +224,13 @@ class DowntimeCommand( Command ):
     if ce[ 'OK' ]:
       resources = resources + ce[ 'Value' ]
     
-    gLogger.info( 'Processing Sites: %s' % ( ', '.join( gocSites ) ) )
+    gLogger.info( 'Processing Sites: %s' % ', '.join( gocSites ) )
     
     siteRes = self.doNew( ( 'Site', gocSites ) )
     if not siteRes[ 'OK' ]:
       self.metrics[ 'failed' ].append( siteRes[ 'Message' ] )
 
-    gLogger.info( 'Processing Resources: %s' % ( ', '.join( resources ) ) )
+    gLogger.info( 'Processing Resources: %s' % ', '.join( resources ) )
 
     resourceRes = self.doNew( ( 'Resource', resources ) ) 
     if not resourceRes[ 'OK' ]:

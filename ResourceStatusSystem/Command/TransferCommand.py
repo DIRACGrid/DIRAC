@@ -201,7 +201,7 @@ class TransferChannelCommand( Command ):
 #    sourceQuery = [ element[0] for element in sourceQuery[ 'Value' ] ]
 #    
 #    sourceElementsToQuery = list( set( elementNames ).difference( set( sourceQuery ) ) )
-    gLogger.info( 'Processing %s' % ( ', '.join( elementNames ) ) )
+    gLogger.info( 'Processing %s' % ', '.join( elementNames ) )
  
     for metric in [ 'Quality', 'FailedTransfers' ]:
       for direction in [ 'Source', 'Destination' ]: 
