@@ -5,8 +5,9 @@
   modules.  
 '''
 
-from DIRAC                                import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.Utilities import Utils
+from DIRAC                                       import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.ResourceStatusSystem.Utilities        import Utils
 
 __RCSID__ = '$Id:  $'
 
@@ -45,6 +46,26 @@ def getSites():
   # Remove duplicated ( just in case )
   sites = list( set ( sites ) )
   return S_OK( sites )
+
+def getGOCSites( diracSites = None ):
+  
+  if diracSites is None:
+    diracSites = getSites()
+    if not diracSites[ 'OK' ]:
+      return diracSites
+    diracSites = diracSites[ 'Value' ]
+  
+  gocSites = []
+
+  for diracSite in diracSites:
+    gocSite = getGOCSiteName( diracSite )      
+    if not gocSite[ 'OK' ]:
+      continue
+    gocSites.append( gocSite[ 'Value' ] ) 
+  
+  return S_OK( list( set( gocSites ) ) )  
+    
+    
 
 def getDomainSites():
   '''
@@ -121,6 +142,24 @@ def getStorageElements():
   seNames = gConfig.getSections( _basePath )
   return seNames 
 
+def getStorageElementsHosts( seNames = None ):
+  
+  seHosts = []
+  
+  if seNames is None:
+    seNames = getStorageElements()
+    if not seNames[ 'OK' ]:
+      return seNames
+    seNames = seNames[ 'Value' ]
+  
+  for seName in seNames:
+    
+    seHost = getSEHost( seName )
+    if seHost:
+      seHosts.append( seHost )
+      
+  return S_OK( list( set( seHosts ) ) )    
+  
 def getSEToken( se ):
   ''' 
     Get StorageElement token 
@@ -161,9 +200,29 @@ def getStorageElementEndpoint( storageElement ):
   if host and port and wsurl:
      
     url = 'httpg://%s:%s/%s' % ( host, port, wsurl )
+    url = url.replace( '?SFN=', '' )
     return S_OK( url )
   
   return S_ERROR( ( host, port, wsurl ) )
+
+def getStorageElementEndpoints( storageElements = None ):
+  
+  if storageElements is None:
+    storageElements = getStorageElements()
+    if not storageElements[ 'OK' ]:
+      return storageElements
+    storageElements = storageElements[ 'Value' ]
+
+  storageElementEndpoints = []
+  
+  for se in storageElements:
+    
+    seEndpoint = getStorageElementEndpoint( se )
+    if not seEndpoint[ 'OK' ]:
+      continue
+    storageElementEndpoints.append( seEndpoint[ 'Value' ] )
+  
+  return S_OK( list( set( storageElementEndpoints ) ) )     
   
 def getFTS():
   '''
