@@ -86,28 +86,45 @@ class GGUSTicketsCommand( Command ):
       gocName = gocName[ 'Value' ] 
     
     try:  
-      result = self.gClient.getTicketsList( gocName )
+      results = self.gClient.getTicketsList( gocName )
     except urllib2.URLError, e:
       return S_ERROR( '%s %s' % ( gocName, e ) )  
     
-    if not result[ 'OK' ]:
-      return result
-             
-    ticketsCount, link, tickets = result[ 'Value' ]
-    openTickets = ticketsCount[ 'open' ]
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]
     
-    uniformResult = {}
-  
-    uniformResult[ 'GocSite' ]     = gocName
-    uniformResult[ 'Link' ]        = link
-    uniformResult[ 'OpenTickets' ] = openTickets
-    uniformResult[ 'Tickets' ]     = tickets
+    uniformResult = []
+    
+    for gocSite, ggusResult in results.items():
+      
+      ggusDict = {}
+      ggusDict[ 'GocSite' ] = gocSite
+      ggusDict[ 'Link' ]    = ggusResult.get( 'URL' )
+      
+      descriptions = [ ggusTuple[ 1 ] for ggusTuple in ggusResult.values() ]
+      
+      ggusDict[ 'Tickets' ]     = descriptions
+      ggusDict[ 'OpenTickets' ] = len( descriptions )  
+      
+      uniformResult.append( ggusDict )
+      
+             
+#    ticketsCount, link, tickets = result[ 'Value' ]
+#    openTickets = ticketsCount[ 'open' ]
+    
+#    uniformResult = {}
+#  
+#    uniformResult[ 'GocSite' ]     = gocName
+#    uniformResult[ 'Link' ]        = link
+#    uniformResult[ 'OpenTickets' ] = openTickets
+#    uniformResult[ 'Tickets' ]     = tickets
 
-    storeRes = self._storeCommand( [ uniformResult ] )
+    storeRes = self._storeCommand( uniformResult )
     if not storeRes[ 'OK' ]:
       return storeRes
     
-    return S_OK( [ uniformResult ] )
+    return S_OK( uniformResult )
   
   def doCache( self ):
     '''
@@ -147,18 +164,18 @@ class GGUSTicketsCommand( Command ):
 #    
 #    gocNamesToQuery = set( gocSites ).difference( set( resQuery ) )   
     
-    gLogger.info( 'Processing %s' % gocSites )
+    gLogger.info( 'Processing %s' % ', '.join( gocSites ) )
     
-    for gocNameToQuery in gocSites:
+#    for gocNameToQuery in gocSites:
       
-      if gocNameToQuery is None:
-        self.metrics[ 'failed' ].append( 'None result' )
-        continue
+#    if gocNameToQuery is None:
+#      self.metrics[ 'failed' ].append( 'None result' )
+#      continue
       
-      result = self.doNew( gocNameToQuery )
+    result = self.doNew( gocSites )
       
-      if not result[ 'OK' ]:
-        self.metrics[ 'failed' ].append( result )
+    if not result[ 'OK' ]:
+      self.metrics[ 'failed' ].append( result )
        
     return S_OK( self.metrics )    
 
