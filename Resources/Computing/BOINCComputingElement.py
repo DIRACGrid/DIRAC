@@ -58,11 +58,9 @@ class BOINCComputingElement( ComputingElement ):
         from suds.client import Client
         import logging
         logging.basicConfig(format="%(asctime)-15s %(message)s")
-
-        print self.wsdl
         self.BOINCClient = Client(self.wsdl)
-      except:
-        self.log.error( 'Creation of the soap client failed' )
+      except Exception,x:
+        self.log.error( 'Creation of the soap client failed: %s' % str( x ) )
         pass
 
 
@@ -73,8 +71,6 @@ class BOINCComputingElement( ComputingElement ):
     self.createClient( )
     # Check if the client is ready
     if not self.BOINCClient:
-      print self.BOINCClient
-      self.log.error( 'Soap client is not ready' )
       return S_ERROR( 'Soap client is not ready' )
     
     self.log.verbose( "Executable file path: %s" % executableFile )
@@ -141,8 +137,6 @@ EOF
       try:
 #  print jobID + "\n" + wrapperContent
 #  print self.BOINCClient
-        print "Check the value -----------------------"
-        print self.ceParameters['Platform']
         result = self.BOINCClient.service.submitJob( jobID, wrapperContent,self.ceParameters['Platform'] )
       except:
         self.log.error( 'Could not submit the pilot %s to the BOINC CE %s, communication failed!' % (jobID, self.wsdl ))
@@ -316,6 +310,7 @@ EOF
       self.log.verbose( "To delete file %s failed!" % fileName )
       pass
 
+# testing this
 if __name__ == "__main__":
 
   test_boinc = BOINCComputingElement( 12 )
