@@ -140,7 +140,7 @@ class DowntimeCommand( Command ):
     results = results[ 'Value' ]
 
     if results is None:
-      return S_OK( [] )
+      return S_OK( None )
 
     uniformResult = []
       
