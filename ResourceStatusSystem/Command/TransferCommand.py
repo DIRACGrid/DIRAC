@@ -1,5 +1,5 @@
 # $HeadURL:  $
-''' TransferQualityCommand module
+''' TransferCommand module
 '''
 
 from datetime                                                   import datetime, timedelta
@@ -13,14 +13,14 @@ from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
 __RCSID__ = '$Id:  $'  
 
-class TransferChannelCommand( Command ):
+class TransferCommand( Command ):
   '''
-    TransferChannel "master" Command
+    Transfer "master" Command
   '''
   
   def __init__( self, args = None, clients = None ):
     
-    super( TransferChannelCommand, self ).__init__( args, clients )
+    super( TransferCommand, self ).__init__( args, clients )
     
     if 'ReportsClient' in self.apis:
       self.rClient = self.apis[ 'ReportsClient' ]
