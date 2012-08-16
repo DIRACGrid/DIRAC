@@ -33,26 +33,26 @@ class CacheFeederAgent( AgentModule ):
     AgentModule.__init__( self, agentName, baseAgentName, properties )
     
     self.commands = {}
-    self.clients  = {}    
+    self.clients  = {} 
+    
+    self.rmClient = None   
 
   def initialize( self ):
 
     self.rmClient = ResourceManagementClient()
 
-    #FIXME: missing logger
-    #JobsCommand
-#    self.commands[ 'Jobs' ] = [ { 'JobsWMS' : { 'siteName' : None } }]  
-    #FIXME: missing logger
-    
-    self.commands[ 'GGUSTickets' ] = [ { 'GGUSTickets' : {} }]
+    self.commands[ 'Downtime' ]            = [ { 'Downtime'            : {} } ]
+    self.commands[ 'GGUSTickets' ]         = [ { 'GGUSTickets'         : {} } ]
+    self.commands[ 'Job' ]                 = [ { 'Job'                 : {} } ]
+    self.commands[ 'SpaceTokenOccupancy' ] = [ { 'SpaceTokenOccupancy' : {} } ]
+    self.commands[ 'Transfer' ]            = [ { 'TransferChannel'     : {} } ]
     
     #PilotsCommand
 #    self.commands[ 'Pilots' ] = [ 
 #                                 { 'PilotsWMS' : { 'element' : 'Site', 'siteName' : None } },
 #                                 { 'PilotsWMS' : { 'element' : 'Resource', 'siteName' : None } } 
 #                                 ]
-    #DowntimeCommand
-    self.commands[ 'Downtime' ] = [ { 'Downtime' : {} } ]    
+        
 
     #FIXME: do not forget about hourly vs Always ...etc                                                                       
     #AccountingCacheCommand
@@ -67,17 +67,12 @@ class CacheFeederAgent( AgentModule ):
 ##                                          {'RunningJobsBySiteSplitted'        :{'hours' :168, 'plotType' :'Job' }},
 ##                                          {'RunningJobsBySiteSplitted'        :{'hours' :720, 'plotType' :'Job' }},
 ##                                          {'RunningJobsBySiteSplitted'        :{'hours' :8760, 'plotType' :'Job' }},    
-#                                          ]
-
-    #Transfer
-    self.commands[ 'Transfer' ] = [ { 'TransferChannel' : {} } ]                                   
+#                                          ]                                  
     
     #VOBOXAvailability
 #    self.commands[ 'VOBOXAvailability' ] = [
 #                                            { 'VOBOXAvailability' : {} }
-#                                            ]
-    #SpaceTokenOccupancy
-    self.commands[ 'SpaceTokenOccupancy' ] = [ { 'SpaceTokenOccupancy' : {} } ]
+#   
     
     #Reuse clients for the commands
     self.clients[ 'GOCDBClient' ]              = GOCDBClient()
