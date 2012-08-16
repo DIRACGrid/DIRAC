@@ -115,7 +115,7 @@ class PilotCommand( Command ):
       pilotDict = dict( zip( params, record ) )
       
       pilotDict[ 'PilotsPerJob' ] = float( pilotDict[ 'PilotsPerJob' ] )
-      pilotDict[ 'PilotsJobEff' ] = float( pilotDict[ 'PilotsJobEff' ] )
+      pilotDict[ 'PilotJobEff' ]  = float( pilotDict[ 'PilotJobEff' ] )
       
       uniformResult.append( pilotDict )
     
