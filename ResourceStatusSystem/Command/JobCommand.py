@@ -1,22 +1,160 @@
 # $HeadURL:  $
-''' JobsCommand
+''' JobCommand
  
-  The Jobs_Command class is a command class to know about 
-  present jobs efficiency
+  The JobCommand class is a command class to know about present jobs efficiency
   
 '''
 
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
-from DIRAC.AccountingSystem.Client.ReportsClient            import ReportsClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
-
 __RCSID__ = '$Id:  $'
 
+class JobCommand( Command ):
+  '''
+    Job "master" Command.    
+  '''
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( JobCommand, self ).__init__( args, clients )
+
+    if 'WMSAdministrator' in self.apis:
+      self.wmsAdmin = self.apis[ 'WMSAdministrator' ]
+    else:  
+      self.wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+
+    if 'ResourceManagementClient' in self.apis:
+      self.rmClient = self.apis[ 'ResourceManagementClient' ]
+    else:
+      self.rmClient = ResourceManagementClient()
+
+  def _storeCommand( self, result ):
+    '''
+      Stores the results of doNew method on the database.
+    '''
+    
+    for jobDict in result:
+      
+      resQuery = self.rmClient.addOrModifyJobCache( jobDict[ 'Site' ], 
+                                                    jobDict[ 'MaskStatus' ], 
+                                                    jobDict[ 'Efficiency' ], 
+                                                    jobDict[ 'Status' ])
+      if not resQuery[ 'OK' ]:
+        return resQuery
+    return S_OK()
+  
+  def _prepareCommand( self ):
+    '''
+      JobCommand requires one arguments:
+      - name : <str>      
+    '''
+
+    if not 'name' in self.args:
+      return S_ERROR( '"name" not found in self.args' )
+    name = self.args[ 'name' ]
+     
+    return S_OK( name )
+  
+  def doNew( self, masterParams = None ):
+    '''
+      Gets the parameters to run, either from the master method or from its
+      own arguments.
+      
+      It contacts the WMSAdministrator with a list of site names, or a single 
+      site.
+      
+      If there are jobs, are recorded and then returned.    
+    '''
+    
+    if masterParams is not None:
+      name = masterParams
+    else:
+      params = self._prepareCommand()
+      if not params[ 'OK' ]:
+        return params
+      name = params[ 'Value' ]  
+      
+    # selectDict, sortList, startItem, maxItems  
+    results = self.wmsAdmin.getSiteSummaryWeb( { 'Site' : name }, [], 0, 500 )
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]    
+    
+    if not 'ParameterNames' in results:
+      return S_ERROR( 'Wrong result dictionary, missing "ParameterNames"' )
+    params = results[ 'ParameterNames' ]
+    
+    if not 'Records' in results:
+      return S_ERROR( 'Wrong formed result dictionary, missing "Records"' )
+    records = results[ 'Records' ]
+       
+    uniformResult = [] 
+       
+    for record in records:
+       
+      # This returns a dictionary with the following keys
+      # 'Site', 'GridType', 'Country', 'Tier', 'MaskStatus', 'Received', 
+      # 'Checking', 'Staging', 'Waiting', 'Matched', 'Running', 'Stalled', 
+      # 'Done', 'Completed', 'Failed', 'Efficiency', 'Status'   
+      jobDict = dict( zip( params , record ))
+
+      # We cast efficiency to a float
+      jobDict[ 'Efficiency' ] = float( jobDict[ 'Efficiency' ] )
+
+      uniformResult.append( jobDict )
+
+    storeRes = self._storeCommand( uniformResult )
+    if not storeRes[ 'OK' ]:
+      return storeRes
+    
+    return S_OK( uniformResult )   
+  
+  def doCache( self ):
+    '''
+      Method that reads the cache table and tries to read from it. It will 
+      return a list of dictionaries if there are results.
+    '''
+    
+    params = self._prepareCommand()
+    if not params[ 'OK' ]:
+      return params
+    name = params[ 'Value' ]
+    
+    result = self.rmClient.selectJobCache( name )  
+    if result[ 'OK' ]:
+      result = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
+      
+    return result
+             
+  def doMaster( self ):
+    '''
+      Master method.
+      
+      Gets all sites and calls doNew method.
+    '''
+    
+    siteNames = CSHelpers.getSites()      
+    if not siteNames[ 'OK' ]:
+      return siteNames
+    siteNames = siteNames[ 'Value' ]
+    
+    jobsResults = self.doNew( siteNames )
+    if not jobsResults[ 'OK' ]:
+      self.metrics[ 'failed' ].append( jobsResults[ 'Message' ] )
+      
+    return S_OK( self.metrics )          
+                 
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
 ################################################################################
 ################################################################################
 
@@ -180,87 +318,6 @@ class JobsWMSCommand( Command ):
     
     return S_OK( jobResults )  
 
-################################################################################
-################################################################################
-
-class SuccessfullJobsBySiteSplittedCommand( Command ):
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( SuccessfullJobsBySiteSplittedCommand, self ).__init__( args, clients )
-
-    if 'ReportsClient' in self.apis:
-      self.rClient = self.apis[ 'ReportsClient' ]
-    else:
-      self.rClient = ReportsClient() 
-
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis[ 'ReportGenerator' ]
-    else:
-      self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
-    
-    self.rClient.rpcClient = self.rgClient
-  
-  def doCommand( self ):
-    """ 
-    Returns successfull jobs using the DIRAC accounting system for every site 
-    for the last self.args[0] hours 
-        
-    :params:
-      :attr:`sites`: list of sites (when not given, take every site)
-
-    :returns:
-      
-    """
-
-    if not 'hours' in self.args:
-      return S_ERROR( 'Number of hours not specified' )
-    hours = self.args[ 'hours' ]
-
-    sites = None
-    if 'sites' in self.args:
-      sites = self.args[ 'sites' ] 
-    if sites is None:      
-#FIXME: pointing to the CSHelper instead     
-#      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
-#      if not sources[ 'OK' ]:
-#        return sources 
-#      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()      
-      if not sites['OK']:
-        return sites
-      sites = sites[ 'Value' ]
-    
-    if not sites:
-      return S_ERROR( 'Sites is empty' )
-
-    fromD = datetime.utcnow()-timedelta( hours = hours )
-    toD   = datetime.utcnow()
-
-    successfulJobs = self.rClient.getReport( 'Job', 'NumberOfJobs', fromD, toD, 
-                                             { 'FinalStatus' : [ 'Done' ], 
-                                               'Site'        : sites
-                                             }, 'Site' )
-    if not successfulJobs[ 'OK' ]:
-      return successfulJobs 
-    successfulJobs = successfulJobs[ 'Value' ]
-    
-    if not 'data' in successfulJobs:
-      return S_ERROR( 'Missing data key' ) 
-    if not 'granularity' in successfulJobs:
-      return S_ERROR( 'Missing granularity key' )   
-    
-    singlePlots = {}
-    
-    for site, value in successfulJobs[ 'data' ].items():
-      if site in sites:
-        plot                  = {}
-        plot[ 'data' ]        = { site: value }
-        plot[ 'granularity' ] = successfulJobs[ 'granularity' ]
-        singlePlots[ site ]   = plot
-    
-    return S_OK( singlePlots )
-  
 ################################################################################
 ################################################################################
 
