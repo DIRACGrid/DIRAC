@@ -164,7 +164,7 @@ class TransferCommand( Command ):
     else:
       value = None              
            
-    return S_OK( value )  
+    return S_OK( { 'Mean' : value, 'Name' : name } )  
     
   def doCache( self ):
     '''
@@ -199,7 +199,7 @@ class TransferCommand( Command ):
     else:
       value = None              
            
-    return S_OK( value )  
+    return S_OK( { 'Mean' : value, 'Name' : name } )  
 
   def doMaster( self ):
     '''
