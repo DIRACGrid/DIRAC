@@ -30,7 +30,7 @@ class InfoGetter:
     '''
     
     # active is a hook to disable the policy / action if needed
-    params = ( 'element', 'name', 'elemenType', 'statusType', 'status', 
+    params = ( 'element', 'name', 'elementType', 'statusType', 'status', 
                'reason', 'tokenOwner', 'active' )
     
     sanitizedParams = {} 
