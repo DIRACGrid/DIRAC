@@ -34,7 +34,6 @@ class PolicyBase( object ):
     if policyCommand is not None:
       self.command = policyCommand
 
-  # method to be extended by sub(real) policies
   def evaluate( self ):
     '''
     Before use, call at least `setArgs` and, alternatively,
@@ -44,8 +43,17 @@ class PolicyBase( object ):
     the command (if necessary) as it is provided and returns the results.
     '''
 
-    result = self.command.doCommand()
-    return result
+    commandResult = self.command.doCommand()
+    return self._evaluate( commandResult )
+  
+  @staticmethod  
+  def _evaluate( commandResult ):
+    '''
+      Method that will do the real processing of the policy, it has to be extended
+      on the real policies.
+    '''    
+    
+    return commandResult  
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

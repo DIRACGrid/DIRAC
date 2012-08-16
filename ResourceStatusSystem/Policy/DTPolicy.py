@@ -13,7 +13,8 @@ class DTPolicy( PolicyBase ):
     command parameters. 
   '''
 
-  def evaluate( self ):
+  @staticmethod
+  def _evaluate( commandResult ):
     '''
       It returns Active status if there is no downtime announced. 
       Banned if the element is in OUTAGE.
@@ -21,20 +22,18 @@ class DTPolicy( PolicyBase ):
       
       Otherwise, it returns error.
     '''
-    
-    status = super( DTPolicy, self ).evaluate()
 
     result = { 
                'Status' : None,
                'Reason' : None
               }
 
-    if not status[ 'OK' ]:
+    if not commandResult[ 'OK' ]:
       result[ 'Status' ] = 'Error'
-      result[ 'Reason' ] = status[ 'Message' ]
+      result[ 'Reason' ] = commandResult[ 'Message' ]
       return S_OK( result )
     
-    status = status[ 'Value' ]
+    status = commandResult[ 'Value' ]
 
     if status is None:
       result[ 'Status' ] = 'Active'

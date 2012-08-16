@@ -13,13 +13,13 @@ class AlwaysActivePolicy( PolicyBase ):
     always returns Active status.   
   '''
 
-  def evaluate( self ):
+  @staticmethod
+  def _evaluate( commandResult ):
     '''
       It returns Active status, evaluates the default command, but its output
       is completely ignored.
     '''
 
-    _policyResult = super( AlwaysActivePolicy, self ).evaluate()
     policyResult = { 
                      'Status' : 'Active', 
                      'Reason' : 'This is the AlwasyActive policy' 
