@@ -44,6 +44,7 @@ class CacheFeederAgent( AgentModule ):
     self.commands[ 'Downtime' ]            = [ { 'Downtime'            : {} } ]
     self.commands[ 'GGUSTickets' ]         = [ { 'GGUSTickets'         : {} } ]
     self.commands[ 'Job' ]                 = [ { 'Job'                 : {} } ]
+    self.commands[ 'Pilot' ]               = [ { 'Pilot'               : {} } ]    
     self.commands[ 'SpaceTokenOccupancy' ] = [ { 'SpaceTokenOccupancy' : {} } ]
     self.commands[ 'Transfer' ]            = [ { 'TransferChannel'     : {} } ]
     
