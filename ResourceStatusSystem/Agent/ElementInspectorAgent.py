@@ -32,9 +32,15 @@ class ElementInspectorAgent( AgentModule ):
   __maxNumberOfThreads = 5
   # ElementType, to be defined among Site, Resource or Node
   __elementType = None
-  # Inspection freqs, to be overwritten
-  __checkingFreqs = { 'LCG' : { 'Active' : 8, 'Degraded' : 6, 'Probing' : 4, 
-                                'Banned' : 2, 'Unknown' : 2, 'Error' : 4 } }
+  # Inspection freqs, defaults, the lower, the higher priority to be checked.
+  # Error state usually means there is a glitch somewhere, so it has the highest
+  # priority.
+  __checkingFreqs = { 'Default' : 
+                       { 
+                         'Active' : 15, 'Degraded' : 10, 'Probing' : 6, 
+                         'Banned' : 4,  'Unknown'  : 1,  'Error'   : 0 
+                         } 
+                     }
   # queue size limit to stop feeding
   __limitQueueFeeder = 15
   
@@ -56,16 +62,10 @@ class ElementInspectorAgent( AgentModule ):
 
   def initialize( self ):
     
-#    self.maxNumberOfThreads  = self.__maxNumberOfThreads
-    self.maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', self.maxNumberOfThreads )
-#    self.elementType         = self.am_getOption( 'elementType' )    
-    self.elementType        = self.am_getOption( 'elementType', self.elementType )
-    #self.inspectionFreqs     = self.am_getOption( 'inspectionFreqs' )
-    self.checkingFreqs      = self.am_getOption( 'checkingFreqs', self.checkingFreqs )
-    # If at the beginning of the execution there are limitQueueFeeder or more
-    # elements, we do not feed the queue.
-    #self.limitQueueFeeder    = 15
-    self.limitQueueFeeder   = self.am_getOption( 'limitQueueFeeder', self.limitQueueFeeder )      
+    self.maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', self.maxNumberOfThreads )   
+    self.elementType        = self.am_getOption( 'elementType',        self.elementType )
+    self.checkingFreqs      = self.am_getOption( 'checkingFreqs',      self.checkingFreqs )
+    self.limitQueueFeeder   = self.am_getOption( 'limitQueueFeeder',   self.limitQueueFeeder )      
     
     self.elementsToBeChecked = Queue.Queue()
     self.threadPool          = ThreadPool( self.maxNumberOfThreads,
@@ -76,18 +76,14 @@ class ElementInspectorAgent( AgentModule ):
     self.clients[ 'ResourceStatusClient' ]     = self.rsClient
     self.clients[ 'ResourceManagementClient' ] = ResourceManagementClient() 
 
-    # Do we really need multi-threading ?, most of the times there are few
-    # entries to be checked !
-    #for _i in xrange( self.maxNumberOfThreads ):
-    #  self.threadPool.generateJobAndQueueIt( self._executeCheck, args = ( None, ) )
-
     return S_OK()
   
   def execute( self ):
     
     # If there are elements in the queue to be processed, we wait ( we know how
     # many elements in total we can have, so if there are more than 15% of them
-    # on the queue, we do not add anything ).    
+    # on the queue, we do not add anything ), but the threads are running and
+    # processing items from the queue on background.    
     
     qsize = self.elementsToBeChecked.qsize() 
     if qsize > self.limitQueueFeeder:
@@ -105,20 +101,22 @@ class ElementInspectorAgent( AgentModule ):
     # filter elements by Type
     for element in elements[ 'Value' ]:
       
-      # Maybe an overkill, but this way I have never again to worry about order
+      # Maybe an overkill, but this way I have NEVER again to worry about order
+      # of elements returned by mySQL on tuples
       elemDict = dict( zip( elements[ 'Columns' ], element ) )
       
       if not elemDict[ 'ElementType' ] in self.checkingFreqs:
-        self.log.error( '"%s" not in inspectionFreqs' % elemDict[ 'ElementType' ] )
-        continue
-      
-      timeToNextCheck = self.checkingFreqs[ elemDict[ 'ElementType' ] ][ elemDict[ 'Status' ] ]      
+        self.log.warn( '"%s" not in inspectionFreqs, getting default' % elemDict[ 'ElementType' ] )
+        timeToNextCheck = self.checkingFreqs[ 'Default' ][ elemDict[ 'Status' ] ]
+      else:
+        timeToNextCheck = self.checkingFreqs[ elemDict[ 'ElementType' ] ][ elemDict[ 'Status' ] ]
+              
       if utcnow - datetime.timedelta( minutes = timeToNextCheck ) > elemDict[ 'LastCheckTime' ]:
                
         # We are not checking if the item is already on the queue or not. It may
         # be there, but in any case, it is not a big problem.
         
-        lowerElementDict = { 'element' : 'Site' }
+        lowerElementDict = { 'element' : self.elementType }
         for key, value in elemDict.items():
           lowerElementDict[ key[0].lower() + key[1:] ] = value
         
