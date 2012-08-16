@@ -127,7 +127,7 @@ class JobCommand( Command ):
     
     result = self.rmClient.selectJobCache( name )  
     if result[ 'OK' ]:
-      result = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
+      result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
       
     return result
              
