@@ -77,9 +77,9 @@ class SSH:
           return S_OK( ( 0, child.before, '' ) )
         else:
           return S_ERROR( ( -1, child.before, '' ) )
-      except Exception,x:
-        res = (-1 ,'Encountered exception %s: %s'%(Exception,str(x)))
-        return S_ERROR(res)
+      except Exception, x:
+        res = ( -1 , 'Encountered exception %s: %s' % ( Exception, str( x ) ) )
+        return S_ERROR( res )
     else:
       # Try passwordless login
       result = shellCall( timeout, command )
@@ -94,7 +94,7 @@ class SSH:
     if type( cmdSeq ) == type( [] ):
       command = ' '.join( cmdSeq )
 
-    command = "ssh -l %s %s '%s'" % ( self.user, self.host, command )
+    command = "ssh -q -l %s %s '%s'" % ( self.user, self.host, command )
     return self.__ssh_call( command, timeout )
 
   def scpCall( self, timeout, localFile, destinationPath, upload = True ):
@@ -250,7 +250,7 @@ shutil.rmtree( workingDirectory )
     batchIDList = []
     lines = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
     for line in lines:
-      batchIDList.append(line.split("<")[1].split(">")[0])
+      batchIDList.append( line.split( "<" )[1].split( ">" )[0] )
     self.submittedJobs += 1
 
     return S_OK( batchIDList )
@@ -285,11 +285,11 @@ shutil.rmtree( workingDirectory )
 
     waitingJobs = 0
     runningJobs = 0
-    lines = stdout.split("\n")
+    lines = stdout.split( "\n" )
     for line in lines:
-      if line.count("PEND") or line.count('PSUSP'):
+      if line.count( "PEND" ) or line.count( 'PSUSP' ):
         waitingJobs += 1
-      if line.count("RUN") or line.count('USUSP'):
+      if line.count( "RUN" ) or line.count( 'USUSP' ):
         runningJobs += 1
 
     result['WaitingJobs'] = waitingJobs
@@ -306,19 +306,19 @@ shutil.rmtree( workingDirectory )
 
     resultDict = {}
     ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
-    
-    for jobList in breakListIntoChunks(jobIDList,100):
+
+    for jobList in breakListIntoChunks( jobIDList, 100 ):
       jobDict = {}
       for job in jobList:
-        jobNumber = job.split('.')[0]
+        jobNumber = job.split( '.' )[0]
         if jobNumber:
           jobDict[jobNumber] = job
-      
+
       cmd = [ 'bjobs', ' '.join( jobList ) ]
       result = ssh.sshCall( 100, cmd )
       if not result['OK']:
         return result
-  
+
       output = result['Value'][1].replace( '\r', '' )
       lines = output.split( '\n' )
       for job in jobDict:
@@ -331,9 +331,9 @@ shutil.rmtree( workingDirectory )
               lsfStatus = line.split()[2]
               if lsfStatus in ['DONE', 'EXIT']:
                 resultDict[jobDict[job]] = 'Done'
-              elif lsfStatus in ['RUN','SSUSP']:
+              elif lsfStatus in ['RUN', 'SSUSP']:
                 resultDict[jobDict[job]] = 'Running'
-              elif lsfStatus in ['PEND','PSUSP']:
+              elif lsfStatus in ['PEND', 'PSUSP']:
                 resultDict[jobDict[job]] = 'Waiting'
 
     return S_OK( resultDict )

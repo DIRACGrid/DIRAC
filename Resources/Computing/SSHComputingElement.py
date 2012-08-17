@@ -7,7 +7,7 @@
 """ SSH (Virtual) Computing Element: For a given list of ip/cores pair it will send jobs
     directly through ssh
     It's still under development & debugging,
-""" 
+"""
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -64,7 +64,7 @@ class SSH:
         # Passwordless login, get the output
         return S_OK( ( 0, child.before, '' ) )
 
-        
+
       if self.password:
         child.sendline( self.password )
         child.expect( pexpect.EOF )
@@ -76,7 +76,7 @@ class SSH:
       result = shellCall( timeout, command )
 #      print ( "!!! SSH command: %s returned %s\n" % (command, result) )
       if result['Value'][0] == 255:
-        return S_ERROR ( (-1, 'Cannot connect to host %s' % self.host, '') )
+        return S_ERROR ( ( -1, 'Cannot connect to host %s' % self.host, '' ) )
       return result
 
 
@@ -88,7 +88,7 @@ class SSH:
     if type( cmdSeq ) == type( [] ):
       command = ' '.join( cmdSeq )
 
-    command = "ssh -l %s %s '%s'" % ( self.user, self.host, command )
+    command = "ssh -q -l %s %s '%s'" % ( self.user, self.host, command )
     return self.__ssh_call( command, timeout )
 
   def scpCall( self, timeout, localFile, destinationPath, upload = True ):
@@ -140,7 +140,7 @@ class SSHComputingElement( ComputingElement ):
   def reset( self ):
 
     self.queue = self.ceParameters['Queue']
-    self.sshScript = os.path.join( rootPath,"DIRAC", "Resources", "Computing", "scripts", "sshce" )
+    self.sshScript = os.path.join( rootPath, "DIRAC", "Resources", "Computing", "scripts", "sshce" )
     if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
       self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
     self.execQueue = self.ceParameters['ExecQueue']
@@ -156,15 +156,15 @@ class SSHComputingElement( ComputingElement ):
     if 'SSHPassword' in self.ceParameters:
       self.sshPassword = self.ceParameters['SSHPassword']
     self.sshHost = []
-    
-    for host in self.ceParameters['SSHHost'].strip().split(','):
-      self.sshHost.append(host.strip())
-      self.log.verbose('Registered host:%s; uploading script.' % host.strip())
-      ssh = SSH( self.sshUser, host.strip().split("/")[0], self.sshPassword )
-      result = ssh.scpCall( 10, self.sshScript, '' )      
+
+    for host in self.ceParameters['SSHHost'].strip().split( ',' ):
+      self.sshHost.append( host.strip() )
+      self.log.verbose( 'Registered host:%s; uploading script.' % host.strip() )
+      ssh = SSH( self.sshUser, host.strip().split( "/" )[0], self.sshPassword )
+      result = ssh.scpCall( 10, self.sshScript, '' )
       if ( result['OK'] ):
-        ssh.sshCall(10, "chmod +x ~/sshce; mkdir -p %s; mkdir -p %s" % ( self.infoArea, self.executableArea ) )
-    
+        ssh.sshCall( 10, "chmod +x ~/sshce; mkdir -p %s; mkdir -p %s" % ( self.infoArea, self.executableArea ) )
+
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -178,26 +178,26 @@ class SSHComputingElement( ComputingElement ):
   def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
     """ Method to submit job
     """
-    max=0;    
-    best="N/A";
-    
+    max = 0;
+    best = "N/A";
+
     for host in self.sshHost:
-      thost=host.split("/")
-      runningJobs=self.getUnitDynamicInfo(thost[0])
-      
-      if (runningJobs >= 0):        
-        if ( max <= int(thost[1]) - int(runningJobs) ):
-          max=int(thost[1]) - int(runningJobs)
-          best=thost[0];     
+      thost = host.split( "/" )
+      runningJobs = self.getUnitDynamicInfo( thost[0] )
+
+      if ( runningJobs >= 0 ):
+        if ( max <= int( thost[1] ) - int( runningJobs ) ):
+          max = int( thost[1] ) - int( runningJobs )
+          best = thost[0];
 
     if best == "N/A":
       return S_ERROR( "No online node found on queue" )
-    
+
     return self.submitJobReal ( best, executableFile, proxy, numberOfJobs )
-    
-    
+
+
   def submitJobReal( self, host, executableFile, proxy, numberOfJobs = 1 ):
-    
+
 #    self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, 0755 )
@@ -252,19 +252,19 @@ shutil.rmtree( workingDirectory )
     os.chmod( submitFile, stat.S_IRUSR | stat.S_IXUSR )
     sFile = os.path.basename( submitFile )
     result = ssh.scpCall( 10, submitFile, '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) )
-    
+
 #    self.log.verbose( '***%s %s %s SCP: %s, %s/%s : %s\n' % (  self.sshUser, host, self.sshPassword, submitFile, self.executableArea, os.path.basename( submitFile ), result ) )
-    
+
     # submit submitFile directly to host
     # rm la final
-    rnd = random.randint(200,5000)
+    rnd = random.randint( 200, 5000 )
     cmd = "~/sshce run_job %s/%s %s_%s %s" % \
-	(  self.executableArea, os.path.basename( submitFile ), host, rnd, self.infoArea )
+	( self.executableArea, os.path.basename( submitFile ), host, rnd, self.infoArea )
 
 #    self.log.verbose( '*** CE submission command: %s\n' %  cmd )
 
     result = ssh.sshCall( 10, cmd )
-    
+
 #    if not result['OK'] or result['Value'][0] != 0:
     if not result['OK']:
       self.log.warn( '===========> SSH CE result NOT OK' )
@@ -272,14 +272,14 @@ shutil.rmtree( workingDirectory )
       return S_ERROR( result['Value'] )
     else:
       self.log.debug( 'SSH CE result OK' )
-      
+
 #    self.log.verbose ( ' **** ce.submitjob, sshCall returned : %s\n' % result )
 
     stampDict = {}
 
     batchID = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
-    stampDict[batchID[0]] = '%s_%s' % (host, rnd) 
-    
+    stampDict[batchID[0]] = '%s_%s' % ( host, rnd )
+
     result = S_OK ( batchID )
     result['PilotStampDict'] = stampDict
 
@@ -290,16 +290,16 @@ shutil.rmtree( workingDirectory )
   #############################################################################
   def getUnitDynamicInfo( self, hostAddress ):
     ssh = SSH( self.sshUser, hostAddress, self.sshPassword )
-    cmd = ["~/sshce dynamic_info %s"  % self.infoArea ]
+    cmd = ["~/sshce dynamic_info %s" % self.infoArea ]
     ret = ssh.sshCall( 10, cmd )
 
     if not ret['OK']:
       self.log.error( 'Timeout', ret['Message'] )
-      return -1
+      return - 1
 
     return ret['Value'][1]
-    
-    
+
+
   def getDynamicInfo( self ):
     """ Method to return information on running and pending jobs.
     """
@@ -309,50 +309,50 @@ shutil.rmtree( workingDirectory )
     result['WaitingJobs'] = 0
 
     for host in self.sshHost:
-      thost=host.split("/")
+      thost = host.split( "/" )
 
-      runningJobs = self.getUnitDynamicInfo(thost[0])
-      if (runningJobs > -1):
-        result['RunningJobs'] += int(runningJobs)
+      runningJobs = self.getUnitDynamicInfo( thost[0] )
+      if ( runningJobs > -1 ):
+        result['RunningJobs'] += int( runningJobs )
 
     self.log.verbose( 'Waiting Jobs: ', 0 )
     self.log.verbose( 'Running Jobs: ', result['RunningJobs'] )
 
     return result
 
-  def getJobStatus (self, jobIDList):
-    wnDict={}
-    
+  def getJobStatus ( self, jobIDList ):
+    wnDict = {}
+
     self.log.verbose ( 'getJobStatus (jobIDList) ; jobIDList = %s' % jobIDList )
     for job in jobIDList:
-      jobStamp=job.split(':::')[1]
-      if not jobStamp.split('_')[0] in wnDict:
-        wnDict[jobStamp.split('_')[0]]=[]
-      wnDict[jobStamp.split('_')[0]].append(jobStamp)
+      jobStamp = job.split( ':::' )[1]
+      if not jobStamp.split( '_' )[0] in wnDict:
+        wnDict[jobStamp.split( '_' )[0]] = []
+      wnDict[jobStamp.split( '_' )[0]].append( jobStamp )
 
 #    print (' !! wnDict : %s \n    ' % wnDict )
-    resultDict={}
-        
-    for elem in wnDict:        
- 
-      tmpDict=self.getUnitJobStatus( wnDict[elem], elem )['Value']
+    resultDict = {}
+
+    for elem in wnDict:
+
+      tmpDict = self.getUnitJobStatus( wnDict[elem], elem )['Value']
     #  self.log.verbose(' !!!! getUnitJobStatus(%s, %s) => %s\n' % (wnDict[elem],elem, tmpDict) )
       for item in tmpDict:
-        resultDict[item]=tmpDict[item]
+        resultDict[item] = tmpDict[item]
     #    self.log.verbose(' !!!! resultDict[%s]= tmpDict[%s] ; tmpdict value: (%s)\n' % ( item, item,tmpDict[item]) )
-      
+
 #    self.log.verbose(' !!! getJobStatus will return: %s\n' % S_OK ( resultDict ) )  
     return S_OK( resultDict )
-    
+
   def getUnitJobStatus( self, jobIDList, host ):
     """ Get the status information for the given list of jobs
     """
 #    self.log.verbose( '*** getUnitJobStatus %s - %s\n' % ( jobIDList, host) )
-    
+
     resultDict = {}
     ssh = SSH( self.sshUser, host, self.sshPassword )
-    
-    cmd = [ '~/sshce job_status %s' % self.infoArea, '#'.join(jobIDList) ]
+
+    cmd = [ '~/sshce job_status %s' % self.infoArea, '#'.join( jobIDList ) ]
     result = ssh.sshCall( 10, cmd )
 
     if not result['OK']:
@@ -363,14 +363,14 @@ shutil.rmtree( workingDirectory )
 
     lines = output.split( '#' )
     for line in lines:
-      jbundle=line.split('-')
-      if ( len(jbundle) == 2 ):
+      jbundle = line.split( '-' )
+      if ( len( jbundle ) == 2 ):
         if jbundle[1] in ['D']:
           resultDict[jbundle[0]] = 'Done'
         elif jbundle[1] in ['R']:
           resultDict[jbundle[0]] = 'Running'
       #self.log.verbose ( ' **** ce.getUnitJobStatus %s, job %s status %s\n %s' % ( host, jbundle[0], resultDict[jbundle[0]], resultDict ) )                  
-    
+
 #    self.log.verbose( ' !!! getUnitJobStatus will return : %s\n' % resultDict )
     return S_OK( resultDict )
 
@@ -381,10 +381,10 @@ shutil.rmtree( workingDirectory )
     """
     jobPid = jobID.split( ':::' )[0]
     jobStamp = jobID.split( ':::' )[1]
-    self.log.verbose( '!! getJobOutput, jobStamp=%s  jobID %s\n' % (jobStamp, jobID) )
-    
+    self.log.verbose( '!! getJobOutput, jobStamp=%s  jobID %s\n' % ( jobStamp, jobID ) )
+
     host = jobStamp.split( '_' )[0]
-    
+
     if not localDir:
       tempDir = tempfile.mkdtemp()
     else:
