@@ -14,6 +14,11 @@ from DIRAC.ResourceStatusSystem.Utilities                  import CSHelpers
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 class Synchronizer( object ):
+  '''
+  Every time there is a successful write on the CS, Synchronizer().sync() is 
+  executed. It updates the database with the values on the CS.
+  
+  '''
   
   def __init__( self, rStatus = None, rManagement = None ):
     
@@ -86,13 +91,13 @@ class Synchronizer( object ):
         if not deleteQuery[ 'OK' ]:
           return deleteQuery         
 
-      statusTypes = self.rssConfig.getConfigStatusType( domainName )
-
-      sitesTuple = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName, 
-                                                     meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+      sitesTuple  = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName, 
+                                                      meta = { 'columns' : [ 'name', 'statusType' ] } ) 
       if not sitesTuple[ 'OK' ]:
         return sitesTuple   
       sitesTuple = sitesTuple[ 'Value' ]
+
+      statusTypes = self.rssConfig.getConfigStatusType( domainName )
     
       # For each ( site, statusType ) tuple not present in the DB, add it.
       siteStatusTuples = [ ( site, statusType ) for site in sitesCS for statusType in statusTypes ]     
@@ -102,15 +107,12 @@ class Synchronizer( object ):
   
       for siteTuple in toBeAdded:
       
-        _name            = siteTuple[ 0 ]
-        _elementType     = domainName
-        _statusType      = siteTuple[ 1 ]
-        _status          = 'Unknown'
-        _reason          = 'Synchronzed'
-      
-        query = self.rStatus.addIfNotThereStatusElement( 'Site', 'Status', name = _name, 
-                                                         statusType = _statusType, status = _status, 
-                                                         elementType = _elementType, reason = _reason )
+        query = self.rStatus.addIfNotThereStatusElement( 'Site', 'Status', 
+                                                         name = siteTuple[ 0 ], 
+                                                         statusType = siteTuple[ 1 ], 
+                                                         status = 'Unknown', 
+                                                         elementType = domainName, 
+                                                         reason = 'Synchronized' )
         if not query[ 'OK' ]:
           return query
       

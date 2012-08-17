@@ -242,8 +242,6 @@ def getSpaceTokenEndpoints():
   ''' Get Space Token Endpoints '''
   
   return Utils.getCSTree( 'Shares/Disk' )
-  
-  #return getTypedDictRootedAt(root="", relpath="/Resources/Shares/Disk")
 
 #def getVOMSEndpoints():
 #  ''' Get VOMS endpoints '''

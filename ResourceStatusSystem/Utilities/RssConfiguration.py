@@ -41,16 +41,26 @@ class RssConfiguration:
     self.opsHelper = Operations() 
 
   def getConfigRecordLogs( self, default = 'Active' ):
+    '''
+      Gets from <pathToRSSConfiguration>/Config the value of RecordLogs
+    '''
     
     return self.opsHelper.getValue( '%s/Config/RecordLogs' % _rssConfigPath, default )
 
   def getConfigState( self, default = 'InActive' ):
+    '''
+      Gets from <pathToRSSConfiguration>/Config the value of State
+    '''
     
     return self.opsHelper.getValue( '%s/Config/State' % _rssConfigPath, default )
   
   def getConfigStatusType( self, elementType = None ):
+    '''
+      Gets all the status types per elementType, if not given, it takes default
+      from CS. If not, hardcoded variable DEFAULT.
+    '''
     
-    DEFAULTS = ( 'all', )
+    _DEFAULTS = ( 'all', )
     
     res = self.opsHelper.getOptionsDict( '%s/Config/StatusTypes' % _rssConfigPath )
     
@@ -62,21 +72,22 @@ class RssConfiguration:
       if 'default' in res[ 'Value' ]:
         return List.fromChar( res[ 'Value' ][ 'default' ] )
         
-    return DEFAULTS
+    return _DEFAULTS
  
 ## RssConfiguration/InspectionFreqs ############################################
 
-def getInspectionFreqs():
-  '''
-  Returns from the OperationsHelper: <_rssConfigPath>/InspectionFreqs
-  '''
-  
-  #result = Operations().getValue( 'RSSConfiguration/Logs/Record' )
-  #if result == 'Active':
-  #  return True
-  
-  #FIXME: Return S_OK
-  return { 'Site' : { '' : { 'Active' : 2, 'Bad' : 2, 'Probing' : 2, 'Banned' : 2 } } }
+# NOT USED !
+#def getInspectionFreqs():
+#  '''
+#  Returns from the OperationsHelper: <_rssConfigPath>/InspectionFreqs
+#  '''
+#  
+#  #result = Operations().getValue( 'RSSConfiguration/Logs/Record' )
+#  #if result == 'Active':
+#  #  return True
+#  
+#  #XME: Return S_OK
+#  return { 'Site' : { '' : { 'Active' : 2, 'Bad' : 2, 'Probing' : 2, 'Banned' : 2 } } }
 
 ## RssConfiguration/Policies ###################################################
 
@@ -111,17 +122,17 @@ def getValidElements():
   '''
   Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/ValidElements
   '''
-  #FIXME: no defaults. If it fails, I want to know it.
-  #FIXME: return S_OK
   _DEFAULTS = ( 'Site', 'Resource', 'Node' )
   
-  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % _rssConfigPath )
-  if result is not None:
-    return List.fromChar( result )
-    #return Utils.getTypedList( result )
+#  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % _rssConfigPath )
+#  if result is not None:
+#    return List.fromChar( result )
   return _DEFAULTS  
 
 def getValidStatus():
+  '''
+  Returns a list of statuses as were defined on the RSS(State)Machine  
+  '''
 
   validStatus = RSSMachine( None ).getStates()
   return S_OK( validStatus )

@@ -1,4 +1,7 @@
-## $HeadURL $
+'''
+  Old CS module. Still here to be recycled.
+'''
+# 
 #''' CS
 # 
 #  This module offers "helpers" to access the CS, and do some processing.
@@ -12,7 +15,7 @@
 #from DIRAC.Core.Utilities                                import List
 #from DIRAC.ResourceStatusSystem.Utilities                import Utils
 #
-#__RCSID__  = '$Id: $'
+__RCSID__  = '$Id: $'
 #
 #g_BaseRegistrySection   = '/Registry'
 #g_BaseResourcesSection  = '/Resources'
@@ -42,35 +45,6 @@
 #
 #    opts = Operations().getOptionsDict( path )
 #    secs = Operations().getSections( path )
-#
-#    if not opts[ 'OK' ]:
-#      raise CSError, opts[ 'Message' ]
-#    if not secs[ 'OK' ]:
-#      raise CSError, secs[ 'Message' ]
-#
-#    opts = opts[ 'Value' ]
-#    secs = secs[ 'Value' ]
-#
-#    for k in opts:
-#      if opts[ k ].find( "," ) > -1:
-#        retval[ k ] = [ Utils.typedobj_of_string(e) for e in List.fromChar(opts[k]) ]
-#      else:
-#        retval[ k ] = Utils.typedobj_of_string( opts[ k ] )
-#    for i in secs:
-#      retval[ i ] = getTypedDictRootedAt( path + "/" + i )
-#    return retval
-#
-#  return getTypedDictRootedAt( root + "/" + relpath )
-#
-#def getTypedDictRootedAt( relpath = "", root = g_BaseConfigSection ):
-#  '''Gives the configuration rooted at path in a Python dict. The
-#  result is a Python dictionnary that reflects the structure of the
-#  config file.'''
-#  def getTypedDictRootedAt( path ):
-#    retval = {}
-#
-#    opts = gConfig.getOptionsDict( path )
-#    secs = gConfig.getSections( path )
 #
 #    if not opts[ 'OK' ]:
 #      raise CSError, opts[ 'Message' ]
@@ -183,21 +157,6 @@
 #  return [n for n in node if n != ""]                   # Filter empty string
 #
 ## Storage Elements functions ########
-#
-#def getSEs():
-#  ''' Get StorageElements '''
-#  
-#  ses = gConfig.getSections( '/Resources/StorageElements' )
-#  if ses[ 'OK' ]:
-#    return ses[ 'Value' ]
-#  return []
-##  return Utils.unpack(gConfig.getSections("/Resources/StorageElements"))
-#
-#def getSEHost( SE ):
-#  ''' Get StorageElement host '''
-#  return gConfig.getValue('%s/StorageElements/%s/AccessProtocol.1/Host'
-#                          % (g_BaseResourcesSection, SE), "")
-#
 #def getSENodes():
 #  ''' Get StorageElement nodes '''
 #  nodes = [getSEHost(SE) for SE in getSEs()]
@@ -207,20 +166,6 @@
 #  ''' Get StorageElement status '''
 #  return gConfig.getValue("%s/StorageElements/%s/%s" %
 #                           (g_BaseResourcesSection, SE, accessType), "")
-#
-#def getSEToken(SE):
-#  ''' Get StorageElement token '''
-#  return gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken" % SE, "")
-#
-## Space Tokens functions ############
-#
-#def getSpaceTokens():
-#  ''' Get Space Tokens '''
-#  return ["LHCb_USER", "LHCb-Disk", "LHCb-Tape"]
-#
-#def getSpaceTokenEndpoints():
-#  ''' Get Space Token Endpoints '''
-#  return getTypedDictRootedAt(root="", relpath="/Resources/Shares/Disk")
 #
 ## CE functions ######################
 #
