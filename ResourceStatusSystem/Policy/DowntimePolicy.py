@@ -1,5 +1,5 @@
 # $HeadURL:  $
-''' DTPolicy module
+''' DowntimePolicy module
 '''
 
 from DIRAC                                              import S_OK
@@ -7,10 +7,10 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
 __RCSID__ = '$Id:  $'
 
-class DTPolicy( PolicyBase ):
+class DowntimePolicy( PolicyBase ):
   '''
-    The DTPolicy checks for downtimes, scheduled or ongoing, depending on the
-    command parameters. 
+    The DowntimePolicy checks for downtimes, scheduled or ongoing, depending on 
+    the command parameters. 
   '''
 
   @staticmethod
