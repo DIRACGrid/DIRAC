@@ -219,7 +219,7 @@ class Synchronizer( object ):
       _name            = ceTuple[ 0 ]
       _statusType      = ceTuple[ 1 ]
       _status          = 'Unknown'
-      _reason          = 'Synchronzed'
+      _reason          = 'Synchronized'
       _elementType     = 'CE'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
@@ -285,7 +285,7 @@ class Synchronizer( object ):
       _name            = catalogTuple[ 0 ]
       _statusType      = catalogTuple[ 1 ]
       _status          = 'Unknown'
-      _reason          = 'Synchronzed'
+      _reason          = 'Synchronized'
       _elementType     = 'Catalog'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
@@ -351,7 +351,7 @@ class Synchronizer( object ):
       _name            = ftsTuple[ 0 ]
       _statusType      = ftsTuple[ 1 ]
       _status          = 'Unknown'
-      _reason          = 'Synchronzed'
+      _reason          = 'Synchronized'
       _elementType     = 'FTS'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
@@ -417,7 +417,7 @@ class Synchronizer( object ):
       _name            = seTuple[ 0 ]
       _statusType      = seTuple[ 1 ]
       _status          = 'Unknown'
-      _reason          = 'Synchronzed'
+      _reason          = 'Synchronized'
       _elementType     = 'StorageElement'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
@@ -483,7 +483,7 @@ class Synchronizer( object ):
       _name            = queueTuple[ 0 ]
       _statusType      = queueTuple[ 1 ]
       _status          = 'Unknown'
-      _reason          = 'Synchronzed'
+      _reason          = 'Synchronized'
       _elementType     = 'Queue'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Node', 'Status', name = _name, 
