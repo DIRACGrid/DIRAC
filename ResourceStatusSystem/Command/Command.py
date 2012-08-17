@@ -16,11 +16,14 @@ class Command( object ):
   '''
 
   def __init__( self, args = None, clients = None ):
-    
-    self.args       = ( 1 and args ) or {}      
+          
     self.apis       = ( 1 and clients ) or {}
     self.masterMode = False
+    self.onlyCache  = False
     self.metrics    = { 'failed' : [] }
+    self.args       = { 'onlyCache' : False }
+    _args = ( 1 and args ) or {}
+    self.args.update( _args )
 
   def doNew( self, masterParams = None ):
     ''' To be extended by real commands
@@ -47,7 +50,9 @@ class Command( object ):
     result = self.doCache()
     if not result[ 'OK' ]:
       return self.returnERROR( result )
-    if result[ 'Value' ]:
+    # We may be interested on running the commands only from the cache,
+    # without requesting new values. 
+    if result[ 'Value' ] or self.args[ 'onlyCache' ]:
       return result
     
     return self.returnSObj( self.doNew() )
