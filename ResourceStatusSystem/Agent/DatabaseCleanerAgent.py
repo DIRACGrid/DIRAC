@@ -72,6 +72,8 @@ class DatabaseCleanerAgent( AgentModule ):
       by some reason that entry has not been updated.
     '''    
     
+    self.log.info( 'Cleaning cache entries older than %s minutes' % self.maxCacheLifetime )
+    
     lastValidRecord = datetime.utcnow() - timedelta( minutes = self.maxCacheLifetime )
     
     for cache in self.__cacheNames:
@@ -88,7 +90,10 @@ class DatabaseCleanerAgent( AgentModule ):
       if not deleteResults[ 'OK' ]:
         self.log.error( deleteResults[ 'Message' ] )
         continue
-      self.log.info( 'Deleted %s entries' % deleteResults[ 'Value' ] )
+      if deleteResults[ 'Value' ]:
+        self.log.info( 'Deleted %s entries' % deleteResults[ 'Value' ] )
+      else:
+        self.log.info( '... nothing to delete')
     
     return S_OK()
 
@@ -97,6 +102,8 @@ class DatabaseCleanerAgent( AgentModule ):
       Method that deletes all entries older than now - lifeTime ( days ) for all
       the elementType tables for a given tableType ( History / Log )
     '''
+    
+    self.log.info( 'Cleaning %s entries older than %s days' % ( tableType, lifeTime ) )
     
     #It is hard-coded, mainly because there are no more tables going to be added
     #to the schema for a long time.
@@ -114,7 +121,10 @@ class DatabaseCleanerAgent( AgentModule ):
       if not deleteResults[ 'OK' ]:
         self.log.error( deleteResults[ 'Message' ] )
         continue
-      self.log.info( 'Deleted %s entries' % deleteResults[ 'Value' ] )
+      if deleteResults[ 'Value' ]:
+        self.log.info( 'Deleted %s entries' % deleteResults[ 'Value' ] )
+      else:
+        self.log.info( '... nothing to delete')
     
     return S_OK()
 
