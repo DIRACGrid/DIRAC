@@ -19,8 +19,8 @@ class DatabaseCleanerAgent( AgentModule ):
     history tables on the ResourceStatusDB. 
   '''
 
-  # Max number of hours for the cache tables
-  __maxCacheLifetime = 2
+  # Max number of minutes for the cache tables, 60 minutes by default
+  __maxCacheLifetime = 60
   
   # Max number of days for the history tables
   __maxHistoryLifetime = 60
@@ -28,14 +28,26 @@ class DatabaseCleanerAgent( AgentModule ):
   # Max number of days for the log tables
   __maxLogLifetime = 20
 
+  # List of caches to be processed
+  __cacheNames =  ( 'DowntimeCache', 'GGUSTicketsCache', 'JobCache', 
+                    'PilotCache', 'TransferCache', 'SpaceTokenOccupancyCache' )
+
   def __init__( self, agentName, baseAgentName = False, properties = dict() ):
     
     AgentModule.__init__( self, agentName, baseAgentName, properties ) 
+    
+    self.maxCacheLifetime   = self.__maxCacheLifetime
+    self.maxHistoryLifetime = self.__maxHistoryLifetime
+    self.maxLogLifetime     = self.__maxLogLifetime
     
     self.rsClient = None
     self.rmClient = None
 
   def initialize( self ):
+    
+    self.maxCacheLifetime   = self.am_getOption( 'maxCacheLifetime', self.maxCacheLifetime ) 
+    self.maxHistoryLifetime = self.am_getOption( 'maxHistoryLifetime', self.maxHistoryLifetime )
+    self.maxLogLifetime     = self.am_getOption( 'maxLogLifetime', self.maxLogLifetime )
     
     self.rsClient = ResourceStatusClient()
     self.rmClient = ResourceManagementClient()
@@ -45,8 +57,8 @@ class DatabaseCleanerAgent( AgentModule ):
   def execute( self ):
 
     self._cleanCaches()
-    self._cleanStatusTable( 'History', self.__maxHistoryLifetime )
-    self._cleanStatusTable( 'Log', self.__maxLogLifetime )
+    self._cleanStatusTable( 'History', self.maxHistoryLifetime )
+    self._cleanStatusTable( 'Log',     self.maxLogLifetime )
     
     return S_OK()
     
@@ -58,37 +70,13 @@ class DatabaseCleanerAgent( AgentModule ):
       entries with a LastCheckTime parameter older than now - X( hours ). On theory,
       there should not be any parameter to be deleted. If there are, it means that
       by some reason that entry has not been updated.
-    '''
-        
-    #FIXME: this two are special caches 'AccountingCache', 'DowntimeCache'     
-    caches = ( 'JobCache', 'PilotCache', 'TransferCache', 'VOBOXCache', 
-               'SpaceTokenOccupancyCache' )
+    '''    
     
+    lastValidRecord = datetime.utcnow() - timedelta( minutes = self.maxCacheLifetime )
     
-    lastValidRecord = datetime.utcnow() - timedelta( hours = self.__maxCacheLifetime )
-    
-    for cache in caches:
+    for cache in self.__cacheNames:
 
       self.log.info( 'Inspecting %s' % cache )
-      
-      selectCache = 'select%s' % cache
-      
-      if not hasattr( self.rmClient, selectCache ):
-        self.log.warn( '%s not found' % selectCache )
-        continue
-      
-      selectMethod = getattr( self.rmClient, selectCache )
-      
-      selectResults = selectMethod( meta = { 'older' : ( 'LastCheckTime', lastValidRecord ) } )
-      if not selectResults[ 'OK' ]:
-        self.log.error( selectResults[ 'Message' ] )
-        continue
-      selectResults = selectResults[ 'Value' ]
-      
-      if selectResults:
-        self.log.warn( 'It seems there are non updated records' )
-        for selectResult in selectResults:
-          self.log.warn( selectResult )
       
       deleteCache = 'delete%s' % cache
       if not hasattr( self.rmClient, deleteCache ):
@@ -115,13 +103,14 @@ class DatabaseCleanerAgent( AgentModule ):
     elements = ( 'Site', 'Resource', 'Node' )
     
     lastValidRecord = datetime.utcnow() - timedelta( days = lifeTime )
+    meta            = { 'older' : ( 'LastCheckTime', lastValidRecord ) }
     
     for element in elements:
       
       self.log.info( 'Inspecting %s%s' % ( element, tableType )  )
       
       deleteResults = self.rsClient.deleteStatusElement( element, tableType, 
-                                         meta = { 'older' : ( 'LastCheckTime', lastValidRecord ) })
+                                                         meta = meta )
       if not deleteResults[ 'OK' ]:
         self.log.error( deleteResults[ 'Message' ] )
         continue
