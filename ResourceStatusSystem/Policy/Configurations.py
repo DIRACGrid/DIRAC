@@ -31,7 +31,7 @@ POLICIESMETA = {
       'description' : "Ongoing and scheduled down-times",
       'module'      : 'DTPolicy',
       'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
-      'args'        : { 'hours' : 12, 'onlyCache' : True },
+      'args'        : { 'hours' : 12, 'onlyCache' : False },
     },
 
   'AlwaysActive' :
