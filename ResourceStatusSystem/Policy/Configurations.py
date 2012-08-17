@@ -18,20 +18,20 @@ __RCSID__ = '$Id:  $'
 
 POLICIESMETA = {
             
-  'DTOnGoingOnly' :
-    {
-      'description' : "Ongoing down-times",
-      'module'      : 'DTPolicy',
-      'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
-      'args'        : None
-    },
+#  'DTOnGoingOnly' :
+#    {
+#      'description' : "Ongoing down-times",
+#      'module'      : 'DTPolicy',
+#      'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
+#      'args'        : None
+#    },
 
   'DTScheduled' :
     {
       'description' : "Ongoing and scheduled down-times",
       'module'      : 'DTPolicy',
       'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
-      'args'        : { 'hours' : 12 },
+      'args'        : { 'hours' : 12, 'onlyCache' : True },
     },
 
   'AlwaysActive' :
