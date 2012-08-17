@@ -84,7 +84,7 @@ class SSH:
     if type( cmdSeq ) == type( [] ):
       command = ' '.join( cmdSeq )
 
-    command = "ssh -l %s %s '%s'" % ( self.user, self.host, command )
+    command = "ssh -q -l %s %s '%s'" % ( self.user, self.host, command )
     return self.__ssh_call( command, timeout )
 
   def scpCall( self, timeout, localFile, destinationPath, upload = True ):
@@ -221,7 +221,7 @@ shutil.rmtree( workingDirectory )
     result = ssh.scpCall( 10, submitFile, '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) )
     # submit submitFile to the batch system
     cmd = "source %(geEnv)s;i=0; while [ $i -lt %(numberOfJobs)d ]; do qsub -o %(output)s -e %(error)s -q %(queue)s -N DIRACPilot %(submitOptions)s %(executable)s; let i=i+1; done; rm -f %(executable)s" % \
-      { 'geEnv': self.geEnv,\
+      { 'geEnv': self.geEnv, \
        'numberOfJobs': numberOfJobs, \
        'output': self.batchOutput, \
        'error': self.batchError, \
@@ -244,12 +244,12 @@ shutil.rmtree( workingDirectory )
     listJobs = []
     batchIDList = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
     for i in batchIDList:
-      jobNum = string.split(i)[2]
-      listJobs.append(jobNum)
+      jobNum = string.split( i )[2]
+      listJobs.append( jobNum )
     self.submittedJobs += 1
-    self.log.debug("************************ List of Jobs submitted: ************************")
-    self.log.debug(listJobs) 
-    return S_OK(listJobs)
+    self.log.debug( "************************ List of Jobs submitted: ************************" )
+    self.log.debug( listJobs )
+    return S_OK( listJobs )
 
   #############################################################################
   def getDynamicInfo( self ):
@@ -259,7 +259,7 @@ shutil.rmtree( workingDirectory )
     result['SubmittedJobs'] = self.submittedJobs
 
     ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
-    cmd1 = ("source %s")%(self.geEnv)
+    cmd1 = ( "source %s" ) % ( self.geEnv )
     cmd = [cmd1, ";" , "qstat"]
     ret = ssh.sshCall( 10, cmd )
 
@@ -279,31 +279,31 @@ shutil.rmtree( workingDirectory )
       return S_ERROR( stderr )
     waitingJobs = 0
     runningJobs = 0
-        
-    if len(stdout): 
+
+    if len( stdout ):
       lines = stdout.split( '\n' )
       for line in lines:
         if not line.strip():
           continue
         sub = '--------------------'
         if sub in line:
-          self.log.debug("Line ---")
+          self.log.debug( "Line ---" )
         else:
           jobStatus = line.split()[4]
           if jobStatus in ['Tt', 'Tr']:
-            doneJobs  = 'Done'
+            doneJobs = 'Done'
           elif jobStatus in ['Rr', 'r']:
-            runningJobs = runningJobs + 1 
+            runningJobs = runningJobs + 1
           elif jobStatus in ['qw', 'h']:
             waitingJobs = waitingJobs + 1
-           
-   
+
+
     result['WaitingJobs'] = waitingJobs
     result['RunningJobs'] = runningJobs
 
     self.log.verbose( 'Waiting Jobs: ', waitingJobs )
     self.log.verbose( 'Running Jobs: ', runningJobs )
- 
+
 
     return result
 
@@ -312,17 +312,17 @@ shutil.rmtree( workingDirectory )
     """
     resultDict = {}
     ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
-    for jobList in breakListIntoChunks(jobIDList,100):
+    for jobList in breakListIntoChunks( jobIDList, 100 ):
       jobDict = {}
       for job in jobList:
-        jobNumber = job.split('.')[0]
+        jobNumber = job.split( '.' )[0]
         if jobNumber:
           jobDict[jobNumber] = job
-      cmd = ("source %s; qstat")%(self.geEnv)
+      cmd = ( "source %s; qstat" ) % ( self.geEnv )
       result = ssh.sshCall( 10, cmd )
       if not result['OK']:
         return result
-  
+
       output = result['Value'][1].replace( '\r', '' )
       lines = output.split( '\n' )
       for job in jobDict:
@@ -342,18 +342,18 @@ shutil.rmtree( workingDirectory )
                 resultDict[jobDict[job]] = 'Waiting'
           else:
             if resultDict[jobDict[job]] == 'Unknown':
-              cmd = ("ls -la  %s/*%s*")%(self.batchOutput,job)
+              cmd = ( "ls -la  %s/*%s*" ) % ( self.batchOutput, job )
               result = ssh.sshCall( 10, cmd )
-              subS = ("No such file or directory")
+              subS = ( "No such file or directory" )
               if subS in result['Value']:
-                self.log.debug ("Output no ready")
+                self.log.debug ( "Output no ready" )
               else:
-                resultDict[jobDict[job]] = 'Done' 
+                resultDict[jobDict[job]] = 'Done'
             else:
               continue
- 
-    self.log.debug("Result dict: ")
-    self.log.debug(resultDict)
+
+    self.log.debug( "Result dict: " )
+    self.log.debug( resultDict )
     return S_OK( resultDict )
 
   def getJobOutput( self, jobID, localDir = None ):
