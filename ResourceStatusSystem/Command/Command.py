@@ -21,19 +21,20 @@ class Command( object ):
     self.masterMode = False
     self.onlyCache  = False
     self.metrics    = { 'failed' : [] }
+    
     self.args       = { 'onlyCache' : False }
-    _args = ( 1 and args ) or {}
+    _args           = ( 1 and args ) or {}
     self.args.update( _args )
 
   def doNew( self, masterParams = None ):
     ''' To be extended by real commands
     '''   
-    return S_OK( { 'Result' : None } )
+    return S_OK( ( self.args, masterParams ) )
   
   def doCache( self ):
     ''' To be extended by real commands
     '''
-    return S_OK( { 'Result' : None } )
+    return S_OK( self.args )
 
   def doMaster( self ):
     ''' To be extended by real commands
@@ -74,7 +75,6 @@ class Command( object ):
       return s_obj
     
     return self.returnERROR( s_obj )
-    
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

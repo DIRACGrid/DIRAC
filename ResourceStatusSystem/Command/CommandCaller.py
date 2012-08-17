@@ -23,10 +23,13 @@ def commandInvocation( commandTuple, pArgs = None, decissionParams = None, clien
     
   if commandTuple is None:
     return S_OK( None )
-    
+  
+  # decission params can be a dictionary passed with all the element parameters
+  # used mostly by the PDP to inject all relevant information  
   if decissionParams is None:
     decissionParams = {}
       
+  # arguments hardcoded on Configurations.py for the policy
   if pArgs is None:
     pArgs = {}  
     

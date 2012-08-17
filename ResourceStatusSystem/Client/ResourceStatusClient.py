@@ -5,13 +5,9 @@
 
 '''
 
-#from datetime import datetime#, timedelta
-
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-#from DIRAC.Core.DISET.RPCClient                      import RPCClient        
-#from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName            
+#from DIRAC.Core.DISET.RPCClient                      import RPCClient                   
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
-#from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node      
 from DIRAC.ResourceStatusSystem.Utilities            import RssConfiguration  
 
 __RCSID__ = '$Id:  $'
@@ -74,7 +70,7 @@ class ResourceStatusClient( object ):
         it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Resource` | `Node`
       **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]  
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]  
       **name** - `string`
         name of the individual of class element  
       **statusType** - `string`
@@ -115,7 +111,7 @@ class ResourceStatusClient( object ):
         it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Resource` | `Node`
       **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]          
       **name** - `string`
         name of the individual of class element  
       **statusType** - `string`
@@ -157,7 +153,7 @@ class ResourceStatusClient( object ):
         it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Resource` | `Node`
       **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]          
       **name** - `[, string, list]`
         name of the individual of class element  
       **statusType** - `[, string, list]`
@@ -199,7 +195,7 @@ class ResourceStatusClient( object ):
         it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Resource` | `Node`
       **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]          
       **name** - `[, string, list]`
         name of the individual of class element  
       **statusType** - `[, string, list]`
@@ -244,7 +240,7 @@ class ResourceStatusClient( object ):
         it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Resource` | `Node`
       **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]          
       **name** - `string`
         name of the individual of class element  
       **statusType** - `string`
@@ -287,7 +283,7 @@ class ResourceStatusClient( object ):
         it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Resource` | `Node`
       **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]          
       **name** - `string`
         name of the individual of class element  
       **statusType** - `string`
@@ -333,7 +329,7 @@ class ResourceStatusClient( object ):
         it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Resource` | `Node`
       **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]          
       **name** - `string`
         name of the individual of class element  
       **statusType** - `string`
@@ -372,8 +368,7 @@ class ResourceStatusClient( object ):
     '''
     Deletes from <element>Status,
                  <element>History              
-                 <element>Log,  
-                 <element>ScheduledStatus 
+                 <element>Log  
      all rows with `elementName`. It removes all the entries, logs, etc..
     Use with common sense !
     
@@ -443,7 +438,7 @@ class ResourceStatusClient( object ):
       on the value of keepLogs - deleting all matches of `name`.
     '''
   
-    tableTypes = [ 'Status', 'Scheduled', 'History' ]
+    tableTypes = [ 'Status', 'History' ]
     if keepLogs == False:
       tableTypes.append( 'Log' )
     
@@ -455,70 +450,6 @@ class ResourceStatusClient( object ):
 
     return S_OK()
         
-#################################################################################
-## CS VALID ELEMENTS
-#  
-#  def getValidElements( self ):
-#    '''
-#    Gets ValidElement from Operations: RSSConfiguration/GeneralConfig/Granularity
-#    
-#    :Parameters: `None`
-#    
-#    :return: S_OK()
-#    '''
-#    validElements = RssConfiguration.getValidElements()   
-#    return S_OK( validElements )
-#  def getValidStatuses( self ):
-#    '''
-#    Gets ValidStatus from Operations: RSSConfiguration/GeneralConfig/Status
-#    
-#    :Parameters: `None`
-#    
-#    :return: S_OK()
-#    '''    
-#    validStatus = RssConfiguration.getValidStatus()
-#    return S_OK( validStatus )
-#  def getValidStatusTypes( self ):  
-#    '''
-#    Gets ValidStatusTypes from Operations: RSSConfiguration/GeneralConfig/Resources
-#    
-#    :Parameters: `None`
-#    
-#    :return: S_OK()
-#    '''    
-#    validStatusTypes = RssConfiguration.getValidStatusTypes()
-#    return S_OK( validStatusTypes )
-#  def getValidSiteTypes( self ):
-#    '''
-#    Gets ValidSiteTypes from Operations: RSSConfiguration/GeneralConfig/SiteType
-#    
-#    :Parameters: `None`
-#    
-#    :return: S_OK()
-#    '''    
-#    validSiteTypes = RssConfiguration.getValidSiteTypes()
-#    return S_OK( validSiteTypes )
-#  def getValidServiceTypes( self ):
-#    '''
-#    Gets ValidServiceTypes from Operations: RSSConfiguration/GeneralConfig/ServiceType
-#    
-#    :Parameters: `None`
-#    
-#    :return: S_OK()
-#    '''    
-#    validServiceTypes = RssConfiguration.getValidServiceTypes()
-#    return S_OK( validServiceTypes ) 
-#  def getValidResourceTypes( self ):
-#    '''
-#    Gets ValidResourceTypes from Operations: RSSConfiguration/GeneralConfig/ResourceType
-#    
-#    :Parameters: `None`
-#    
-#    :return: S_OK()
-#    '''    
-#    validResourceTypes = RssConfiguration.getValidResourceTypes()
-#    return S_OK( validResourceTypes )
-#
 #################################################################################
 ## EXTENDED FUNCTIONS
 
@@ -1535,27 +1466,7 @@ class ResourceStatusClient( object ):
 #      return res
 #    
 #    return updateSQLQuery  
-#  
-#################################################################################
-## remove PRIVATE FUNCTIONS
-#  
-#  def __removeElement( self, element, elementName ):
-#  
-#    tables = [ 'ScheduledStatus', 'Status', 'History' ]
-#    for table in tables:
-#      
-#      rDict = { 'elementName' : elementName, 'element' : element }
-#      
-#      sqlQuery = self._deleteElement( 'Element%s' % table, rDict )
-#      if not sqlQuery[ 'OK' ]:
-#        return sqlQuery
-#    
-#    _elementName = '%sName' % ( element[0].lower() + element[1:])
-#    rDict = { _elementName : elementName }
-#    sqlQuery = self._deleteElement( element, rDict )
 #
-#    return sqlQuery   
-#  
 #################################################################################
 ## stats PRIVATE FUNCTIONS      
 #     
@@ -1576,40 +1487,5 @@ class ResourceStatusClient( object ):
 #    count['Total'] = sum( count.values() )
 #    return S_OK( count ) 
 
-################################################################################
-# Getter functions
-
-#  def _insertElement( self, elementTable, paramsDict ):
-#    '''
-#      Method that executes the insert method of the given element.
-#    '''    
-#    fname = 'insert%s' % elementTable
-#    fElem = getattr( self, fname )
-#    return fElem( **paramsDict )
-#
-#  def _updateElement( self, elementTable, paramsDict ):
-#    '''
-#      Method that executes the update method of the given element.
-#    '''        
-#    fname = 'update%s' % elementTable
-#    fElem = getattr( self, fname )
-#    return fElem( **paramsDict )
-#
-#  def _selectElement( self, elementTable, paramsDict ):
-#    '''
-#      Method that executes the get method of the given element.
-#    '''
-#    fname = 'select%s' % elementTable
-#    fElem = getattr( self, fname )
-#    return fElem( **paramsDict )
-#  
-#  def _deleteElement( self, elementTable, paramsDict ): 
-#    '''
-#      Method that executes the delete method of the given element.
-#    '''        
-#    fname = 'delete%s' % elementTable
-#    fElem = getattr( self, fname )
-#    return fElem( **paramsDict )     
-    
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    

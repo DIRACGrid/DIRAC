@@ -59,15 +59,12 @@ class ResourceStatusDB( object ):
                     'SiteStatus'        : 'ElementStatus',
                     'SiteLog'           : 'ElementWithID',
                     'SiteHistory'       : 'ElementWithID',
-                    'SiteScheduled'     : 'ElementWithID',
                     'ResourceStatus'    : 'ElementStatus',
                     'ResourceLog'       : 'ElementWithID',
                     'ResourceHistory'   : 'ElementWithID',
-                    'ResourceScheduled' : 'ElementWithID',
                     'NodeStatus'        : 'ElementStatus',
                     'NodeLog'           : 'ElementWithID',
-                    'NodeHistory'       : 'ElementWithID',      
-                    'NodeScheduled'     : 'ElementWithID'             
+                    'NodeHistory'       : 'ElementWithID'            
                    }
 
 # No idea whether they make sense or not
