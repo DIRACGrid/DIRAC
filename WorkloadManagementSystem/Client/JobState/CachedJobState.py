@@ -34,7 +34,7 @@ class CachedJobState( object ):
     now = time.time()
     if graceTime <= 0 or now - self.__lastValidState > graceTime:
       self.__lastValidState = now
-      result =  self.__jobState.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime" ] )
+      result = self.__jobState.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime" ] )
       if not result[ 'OK' ]:
         return result
       currentState = result[ 'Value' ]
@@ -97,7 +97,7 @@ class CachedJobState( object ):
 
     self.__initState = newState
     self.__lastValidState = time.time()
-    return S_OK( )
+    return S_OK()
 
   def serialize( self ):
     if self.__manifest:
@@ -255,7 +255,7 @@ class CachedJobState( object ):
       manifest = jobManifest
     manifest.setDirty()
     self.__manifest = manifest
-    self.__manifest.clearDirty()
+    # self.__manifest.clearDirty()
     return S_OK()
 
 # Attributes
