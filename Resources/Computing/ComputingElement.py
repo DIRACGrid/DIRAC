@@ -230,6 +230,11 @@ class ComputingElement:
         self.ceParameters[key] = int( self.ceParameters[key] )
       if key in FLOAT_PARAMETERS:
         self.ceParameters[key] = float( self.ceParameters[key] )
+        
+      # LHCb legacy fix  
+      if key == "Platform":
+        self.ceParameters['LHCbPlatform'] = self.ceParameters[key]  
+        
     self.reset()
     return S_OK()
 
