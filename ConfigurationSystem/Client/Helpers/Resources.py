@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
-
+from DIRAC.Core.Utilities.List                          import uniqueElements
 import re
 
 gBaseResourcesSection = "/Resources"
@@ -123,6 +123,54 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
 
   return S_OK( resultDict )
 
+def getCompatiblePlatforms( originalPlatforms ):
+  """ Get a list of platforms compatible with the given list 
+  """
+  if type( originalPlatforms ) == type( ' ' ):
+    platforms = [originalPlatforms]
+  else:
+    platforms = list( originalPlatforms )
+    
+  platformDict = {}
+  result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+  if result['OK'] and result['Value']:
+    platformDict = result['Value'] 
+    for platform in platformDict:
+      platformDict[platform] = [ x.strip() for x in platformDict[platform].split( ',' ) ]
+  else:
+    return S_ERROR( 'OS compatibility info not found' )        
+
+  resultList = list( platforms )
+  for p in platforms:
+    tmpList = platformDict.get( p, [] )
+    for pp in platformDict:
+      if p in platformDict[pp]:
+        tmpList.append( pp )
+        tmpList += platformDict[pp]
+    if tmpList:
+      resultList += tmpList
+
+  return S_OK( uniqueElements( resultList ) )
+
+def getDIRACPlatform( platform ):
+  """ Get standard DIRAC platform compatible with the argument
+  """
+  platformDict = {}
+  result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+  if result['OK'] and result['Value']:
+    platformDict = result['Value'] 
+    for platform in platformDict:
+      platformDict[platform] = [ x.strip() for x in platformDict[platform].split( ',' ) ]
+  else:
+    return S_ERROR( 'OS compatibility info not found' )    
+      
+  resultPlatform = ''
+  for p in platformDict:
+    if platform in platformDict[p]:
+      resultPlatform = p    
+  
+  return S_OK( resultPlatform )
+  
 def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
   """

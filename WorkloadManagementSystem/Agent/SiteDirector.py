@@ -79,7 +79,8 @@ class SiteDirector( AgentModule ):
     if not result[ 'OK' ]:
       return result
     self.genericPilotDN, self.genericPilotGroup = result[ 'Value' ]
-    
+   
+    self.platforms = [] 
     self.defaultSubmitPools = ''
     if self.vo:
       self.defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
@@ -109,7 +110,6 @@ class SiteDirector( AgentModule ):
     ces = None
     if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
       ces = self.am_getOption( 'CEs', [] )
-
     result = Resources.getQueues( community = self.vo,
                                   siteList = siteNames,
                                   ceList = ces,
@@ -117,7 +117,6 @@ class SiteDirector( AgentModule ):
                                   mode = 'Direct' )
     if not result['OK']:
       return result
-
     resourceDict = result['Value']
     result = self.getQueues( resourceDict )
     if not result['OK']:
@@ -211,6 +210,23 @@ class SiteDirector( AgentModule ):
           if 'BundleProxy' in self.queueDict[queueName]['ParametersDict']:
             self.queueDict[queueName]['BundleProxy'] = True
 
+          platform = ''
+          if "Platform" in self.queueDict[queueName]['ParametersDict']:
+            platform = self.queueDict[queueName]['ParametersDict']['Platform']
+          elif "Platform" in ceDict:
+            platform = ceDict['Platform']
+          elif "OS" in ceDict:
+            architecture = ceDict.get( 'architecture', 'x86_64' )
+            OS = ceDict['OS']
+            platform = '_'.join([architecture,OS])
+          if platform and not platform in self.platforms:
+            self.platforms.append(platform)
+            
+          if not "Platform" in self.queueDict[queueName]['ParametersDict'] and platform:
+            result = Resources.getDIRACPlatform( platform )
+            if result['OK']:
+              self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value']  
+
     return S_OK()
 
   def execute( self ):
@@ -247,6 +263,12 @@ class SiteDirector( AgentModule ):
     if self.group:
       tqDict['OwnerGroup'] = self.group
     rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
+    result = Resources.getCompatiblePlatforms( self.platforms )
+    if not result['OK']:
+      return result
+    tqDict['LHCbPlatform'] = result['Value']
+    self.log.verbose( 'Checking overall TQ availability with requirements' )
+    self.log.verbose( tqDict )
     result = rpcMatcher.getMatchingTaskQueues( tqDict )
     if not result[ 'OK' ]:
       return result
@@ -369,6 +391,7 @@ class SiteDirector( AgentModule ):
         result = ce.submitJob( executable, '', pilotSubmissionChunk )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:' % queue, result['Message'] )
+          pilotsToSubmit = 0
           continue
         
         pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
@@ -818,3 +841,4 @@ EOF
       return result
 
     return S_OK()
+  
