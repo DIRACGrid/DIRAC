@@ -259,7 +259,7 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     
     if len(argss) < 3:
-      print "Error: unsufficient number of arguments"
+      print "Error: insufficient number of arguments"
     
     lfn = argss[0]
     lfn = self.getPath(lfn)
@@ -443,7 +443,7 @@ File Catalog Client $Revision: 1.17 $Date:
       localCache=argss[3]
     try:
       dirac = Dirac()
-      result = dirac.replicate(lfn,se,sourceSE,printOutput=True)      
+      result = dirac.replicateFile(lfn,se,sourceSE,printOutput=True)      
       if not result['OK']:
         print 'Error: %s' %(result['Message'])
       elif not result['Value']:
@@ -1072,15 +1072,23 @@ File Catalog Client $Revision: 1.17 $Date:
           result =  self.fc.getDirectorySize(path,long)          
           if result['OK']:
             if result['Value']['Successful']:
-              print "Logical Size:",int_with_commas(result['Value']['Successful'][path]['LogicalSize'])
+              print "Logical Size:",int_with_commas(result['Value']['Successful'][path]['LogicalSize']), \
+                    "Files:",result['Value']['Successful'][path]['LogicalFiles'], \
+                    "Directories:",result['Value']['Successful'][path]['LogicalDirectories']
               if long:
                 if "PhysicalSize" in result['Value']['Successful'][path]:
                   print "Physical Size:"
-                  total = result['Value']['Successful'][path]['PhysicalSize']['Total']
-                  for se,size in result['Value']['Successful'][path]['PhysicalSize'].items():
-                    if se != "Total":
-                      print se.rjust(20),':',int_with_commas(size)
-                  print 'Total'.rjust(20),':',int_with_commas(total)   
+                  totalSize = result['Value']['Successful'][path]['PhysicalSize']['TotalSize']
+                  totalFiles = result['Value']['Successful'][path]['PhysicalSize']['TotalFiles'] 
+                  for se,sdata in result['Value']['Successful'][path]['PhysicalSize'].items():
+                    if not se.startswith("Total"):
+                      size = sdata['Size']
+                      nfiles = sdata['Files']
+                      print se.rjust(20),':',int_with_commas(size).ljust(25),"Files:",nfiles
+                  print '='*60
+                  print 'Total'.rjust(20),':',int_with_commas(totalSize).ljust(25),"Files:",totalFiles  
+              if "QueryTime" in result['Value']:
+                print "Query time %.2f sec" % result['Value']['QueryTime']
             else:
               print "Directory size failed:", result['Value']['Failed'][path]
           else:
@@ -1109,31 +1117,34 @@ File Catalog Client $Revision: 1.17 $Date:
         print "ERROR:",result['Message']
     except Exception, x:
       print "guid failed: ", x   
- 
+
 ##################################################################################
 #  Metadata methods
       
   def do_meta(self,args):
-    """ Metadata related operation
+    """ Metadata related operations
     
-        usage:
-          meta index <metaname> <metatype>  - add new metadata index. Possible types are:
-                                              'int', 'float', 'string', 'date'
-          meta set <directory> <metaname> <metavalue> - set metadata value for directory
-          meta get [-e] [<directory>] - get metadata for the given directory
+        |sage:
+          meta index [-d|-f|-r] <metaname> [<metatype>]  - add new metadata index. Possible types are:
+                                                           'int', 'float', 'string', 'date';
+                                                         -d  directory metadata
+                                                         -f  file metadata
+                                                         -r  remove the specified metadata index
+          meta set <path> <metaname> <metavalue> - set metadata value for directory or file
+          meta remove <path> <metaname>  - remove metadata value for directory or file
+          meta get [-e] [<path>] - get metadata for the given directory or file
           meta tags <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
-                                                       the metadata selection
-          meta metaset <metaset_name> <key>=<value> [<key>=<value>]
+                                                        the metadata selection
           meta show - show all defined metadata indice
-
-    """     
+    
+    """    
     argss = args.split()
     option = argss[0]
     del argss[0]
     if option == 'set':
-      return self.metaSet(argss)
+      return self.setMeta(argss)
     elif option == 'get':
-      return self.metaGet(argss)  
+      return self.getMeta(argss)  
     elif option[:3] == 'tag':
       return self.metaTag(argss)    
     elif option == 'index':
@@ -1142,6 +1153,8 @@ File Catalog Client $Revision: 1.17 $Date:
       return self.registerMetaset(argss)
     elif option == 'show':
       return self.showMeta()
+    elif option == 'remove' or option == "rm":
+      return self.removeMeta(argss) 
     else:
       print "Unknown option:",option  
       
@@ -1150,9 +1163,25 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     
     argString = " ".join(argss)
-        
-      
-  def metaSet(self,argss):
+            
+  def removeMeta(self,argss):
+    """ Remove the specified metadata for a directory or file
+    """    
+    apath = argss[0]
+    path = self.getPath(apath)
+    if len(argss) < 2:
+      print "Error: no metadata is specified for removal"
+      return
+    
+    metadata = argss[1:]
+    result = self.fc.removeMetadata(path,metadata)
+    if not result['OK']:
+      print "Error:", result['Message']
+      if "FailedMetadata" in result:
+        for meta,error in result['FailedMetadata']:
+          print meta,';',error
+     
+  def setMeta(self,argss):
     """ Set metadata value for a directory
     """      
     if len(argss) != 3:
@@ -1172,7 +1201,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if not result['OK']:
       print ("Error: %s" % result['Message'])     
       
-  def metaGet(self,argss):
+  def getMeta(self,argss):
     """ Get metadata for the given directory
     """            
     expandFlag = False
@@ -1191,7 +1220,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if path == '.':
       path = self.cwd
     elif path[0] != '/':
-      path = self.cwd+'/'+path
+      path = self.getPath(path)
       
     if not dirFlag:
       # Have to decide if it is a file or not
@@ -1203,35 +1232,35 @@ File Catalog Client $Revision: 1.17 $Date:
       dirFlag = not result['Value']['Successful'][path]        
         
     if dirFlag:    
-            result = self.fc.getDirectoryMetadata(path)      
+      result = self.fc.getDirectoryMetadata(path)      
+      if not result['OK']:
+        print ("Error: %s" % result['Message']) 
+        return
+      if result['Value']:
+        metaDict = result['MetadataOwner']
+        metaTypeDict = result['MetadataType']
+        for meta,value in result['Value'].items():
+          setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
+          prefix = ''
+          if setFlag:
+            prefix = "+"
+          if metaDict[meta] == 'ParentMetadata':
+            prefix += "*"
+            print (prefix+meta).rjust(20),':',value
+          elif metaDict[meta] == 'OwnMetadata':
+            prefix += "!"
+            print (prefix+meta).rjust(20),':',value   
+          else:
+            print meta.rjust(20),':',value 
+          if setFlag and expandFlag:
+            result = self.fc.getMetadataSet(value,expandFlag)
             if not result['OK']:
               print ("Error: %s" % result['Message']) 
               return
-            if result['Value']:
-              metaDict = result['MetadataOwner']
-              metaTypeDict = result['MetadataType']
-              for meta,value in result['Value'].items():
-                setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
-                prefix = ''
-                if setFlag:
-                  prefix = "+"
-                if metaDict[meta] == 'ParentMetadata':
-                  prefix += "*"
-                  print (prefix+meta).rjust(20),':',value
-                elif metaDict[meta] == 'OwnMetadata':
-                  prefix += "!"
-                  print (prefix+meta).rjust(20),':',value   
-                else:
-                  print meta.rjust(20),':',value 
-                if setFlag and expandFlag:
-                  result = self.fc.getMetadataSet(value,expandFlag)
-                  if not result['OK']:
-                    print ("Error: %s" % result['Message']) 
-                    return
-                  for m,v in result['Value'].items():
-                    print " "*10,m.rjust(20),':',v      
-            else:
-              print "No metadata defined for directory"   
+            for m,v in result['Value'].items():
+              print " "*10,m.rjust(20),':',v      
+      else:
+        print "No metadata defined for directory"   
     else:
       result = self.fc.getFileUserMetadata(path)      
       if not result['OK']:
@@ -1312,13 +1341,33 @@ File Catalog Client $Revision: 1.17 $Date:
   def registerMeta(self,argss):
     """ Add metadata field. 
     """
- 
+
     if len(argss) < 2:
       print "Unsufficient number of arguments"
       return
-    mname = argss[0] 
+
+    fdType = '-d'
+    removeFlag = False
+    if argss[0].lower() in ['-d','-f']:
+      fdType = argss[0]
+      del argss[0]
+    if argss[0].lower() == '-r':
+      removeFlag = True
+      del argss[0]
+
+    if len(argss) < 2 and not removeFlag:
+      print "Unsufficient number of arguments"
+      return
+
+    mname = argss[0]
+    if removeFlag:
+      result = self.fc.deleteMetadataField(mname)
+      if not result['OK']:
+        print "Error:", result['Message']
+      return
+
     mtype = argss[1]
-    
+
     if mtype.lower()[:3] == 'int':
       rtype = 'INT'
     elif mtype.lower()[:7] == 'varchar':
@@ -1326,21 +1375,21 @@ File Catalog Client $Revision: 1.17 $Date:
     elif mtype.lower() == 'string':
       rtype = 'VARCHAR(128)'
     elif mtype.lower() == 'float':
-      rtype = 'FLOAT'  
+      rtype = 'FLOAT'
     elif mtype.lower() == 'date':
       rtype = 'DATETIME'
     elif mtype.lower() == 'metaset':
-      rtype = 'MetaSet'  
+      rtype = 'MetaSet'
     else:
       print "Error: illegal metadata type %s" % mtype
-      return  
-        
-    result =  self.fc.addMetadataField(mname,rtype)
+      return
+
+    result =  self.fc.addMetadataField(mname,rtype,fdType)
     if not result['OK']:
       print ("Error: %s" % result['Message'])
     else:
-      print "Added metadata field %s of type %s" % (mname,mtype)        
-  
+      print "Added metadata field %s of type %s" % (mname,mtype)   
+ 
   def registerMetaset(self,argss):
     """ Add metadata set
     """
@@ -1361,40 +1410,52 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
     
-        usage: find <meta_name>=<meta_value> [<meta_name>=<meta_value>]
+        usage: find <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
-    
-    if args[0] == '{':
-      metaDict = eval(args)
+   
+    argss = args.split()
+    path = argss[0]
+    path = self.getPath(path)
+    del argss[0]
+ 
+    if argss[0][0] == '{':
+      metaDict = eval(argss[0])
     else:  
-      metaDict = self.__createQuery(args)
+      metaDict = self.__createQuery(' '.join(argss))
       print "Query:",metaDict
           
-    result = self.fc.findFilesByMetadata(metaDict)
+    result = self.fc.findFilesByMetadata(metaDict,path)
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return 
-    for dir in result['Value']:
-      print dir  
+    if result['Value']:
+      for dir in result['Value']:
+        print dir
+    else:
+      print "No matching data found"      
+    if "QueryTime" in result:
+      print "QueryTime %.2f sec" % result['QueryTime']  
       
   def __createQuery(self,args):
     """ Create the metadata query out of the command line arguments
     """    
     argss = args.split()
     result = self.fc.getMetadataFields()
+
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return None
     if not result['Value']:
       print "Error: no metadata fields defined"
       return None
-    typeDict = result['Value']
+    typeDict = result['Value']['FileMetaFields']
+    typeDict.update(result['Value']['DirectoryMetaFields'])
     metaDict = {}
     contMode = False
     for arg in argss:
       if not contMode:
         operation = ''
-        for op in ['>','<','>=','<=','!=','=']:
+        for op in ['>=','<=','>','<','!=','=']:
           if arg.find(op) != -1:
             operation = op
             break
@@ -1484,6 +1545,19 @@ File Catalog Client $Revision: 1.17 $Date:
         metaDict[name] = mvalue         
     
     return metaDict 
+
+  def do_stats( self, args ):
+    """ Get the catalog statistics
+    
+        Usage:
+          stats
+    """
+    result = self.fc.getCatalogCounters()
+    if not result['OK']:
+      print ("Error: %s" % result['Message']) 
+      return 
+    for key in result['Value']:
+      print key.rjust(15),':',result['Value'][key]  
       
   def do_exit(self, args):
     """ Exit the shell.
@@ -1514,3 +1588,4 @@ if __name__ == "__main__":
       cli.cmdloop()  
     else:
       print "Unknown catalog type", catype
+      

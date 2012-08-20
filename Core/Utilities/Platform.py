@@ -85,8 +85,10 @@ def getPlatformString():
   if platformTuple[0] == 'Linux':
     try:
       import subprocess
-      spStdout = subprocess.Popen( [ '/sbin/ldconfig', '--print-cache' ], stdout = subprocess.PIPE ).stdout
+      sp = subprocess.Popen( [ '/sbin/ldconfig', '--print-cache' ], stdout = subprocess.PIPE )
+      spStdout = sp.stdout
     except:
+      sp = None
       spStdout = os.popen( '/sbin/ldconfig --print-cache', 'r' )
     ldre = re.compile( ".*=> (.*/libc\.so\..*$)" )
     libs = []
@@ -94,6 +96,11 @@ def getPlatformString():
       reM = ldre.match( line )
       if reM:
         libs.append( reM.groups()[0] )
+    if sp:
+      if 'terminate' in dir( sp ):
+        sp.terminate()
+        sp.wait()
+
     if not libs:
       # get version of higher libc installed
       if platform.machine().find( '64' ) != -1:

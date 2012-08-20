@@ -85,7 +85,7 @@ class SSH:
     if type( cmdSeq ) == type( [] ):
       command = ' '.join( cmdSeq )
 
-    command = "ssh -l %s %s '%s'" % ( self.user, self.host, command )
+    command = "ssh -q -l %s %s '%s'" % ( self.user, self.host, command )
     return self.__ssh_call( command, timeout )
 
   def scpCall( self, timeout, localFile, destinationPath, upload = True ):
@@ -297,19 +297,19 @@ shutil.rmtree( workingDirectory )
 
     resultDict = {}
     ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
-    
-    for jobList in breakListIntoChunks(jobIDList,100):
+
+    for jobList in breakListIntoChunks( jobIDList, 100 ):
       jobDict = {}
       for job in jobList:
-        jobNumber = job.split('.')[0]
+        jobNumber = job.split( '.' )[0]
         if jobNumber:
           jobDict[jobNumber] = job
-      
+
       cmd = [ 'qstat', ' '.join( jobList ) ]
       result = ssh.sshCall( 10, cmd )
       if not result['OK']:
         return result
-  
+
       output = result['Value'][1].replace( '\r', '' )
       lines = output.split( '\n' )
       for job in jobDict:

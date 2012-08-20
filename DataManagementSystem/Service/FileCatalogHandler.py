@@ -17,11 +17,16 @@ from types import *
 fcDB = False
 
 def initializeFileCatalogHandler(serviceInfo):
+  
   global fcDB
-  fcDB = FileCatalogDB()
+  
   serviceCS = serviceInfo ['serviceSectionPath']
+  
+  # Instantiate the requested database
+  dbLocation = gConfig.getValue('%s/Database' % serviceCS,'DataManagement/FileCatalogDB')
+  fcDB = FileCatalogDB(dbLocation)
+  
   databaseConfig = {}
-
   # Obtain the plugins to be used for DB interaction
   gLogger.info("Initializing with FileCatalog with following managers:")
   defaultManagers = {  'UserGroupManager'  : 'UserAndGroupManagerDB',
@@ -285,38 +290,66 @@ class FileCatalogHandler(RequestHandler):
   # Administrative database operations
   #
 
-  types_getCatalogContents = []
-  def export_getCatalogContents(self):
+  types_getCatalogCounters = []
+  def export_getCatalogCounters(self):
     """ Get the number of registered directories, files and replicas in various tables """
-    return fcDB.getCatalogContents(self.getRemoteCredentials())
+    return fcDB.getCatalogCounters(self.getRemoteCredentials())
 
   ########################################################################
   # Metadata Catalog Operations
   #
 
   types_addMetadataField = [ StringTypes, StringTypes ]
-  def export_addMetadataField(self, fieldName, fieldType ):
+  def export_addMetadataField(self, fieldName, fieldType, metaType='-d' ):
     """ Add a new metadata field of the given type
     """
-    return fcDB.dmeta.addMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
+    if metaType.lower() == "-d":
+      return fcDB.dmeta.addMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
+    elif metaType.lower() == "-f":
+      return fcDB.fmeta.addMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
+    else:
+      return S_ERROR('Unknown metadata type %s' % metaType)
 
   types_deleteMetadataField = [ StringTypes ]
   def export_deleteMetadataField(self, fieldName ):
     """ Delete the metadata field 
     """
-    return fcDB.dmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )
+    result = fcDB.dmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )
+    error = ''
+    if not result['OK']:
+      error = result['Message']
+    result = fcDB.fmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )  
+    if not result['OK']:
+      if error:
+        result["Message"] = error + "; " + result["Message"] 
+        
+    return result    
   
   types_getMetadataFields = [ ]
   def export_getMetadataFields(self):
     """ Get all the metadata fields
     """
-    return fcDB.dmeta.getMetadataFields(self.getRemoteCredentials())
+    resultDir = fcDB.dmeta.getMetadataFields(self.getRemoteCredentials())
+    if not resultDir['OK']:
+      return resultDir
+    resultFile = fcDB.fmeta.getFileMetadataFields(self.getRemoteCredentials())
+    if not resultFile['OK']:
+      return resultFile
+    
+    resultDict = {'DirectoryMetaFields':resultDir['Value'],'FileMetaFields':resultFile['Value']}
+    return  S_OK(resultDict)
 
   types_setMetadata = [ StringTypes, DictType ]
   def export_setMetadata(self, path, metadatadict ):
     """ Set metadata parameter for the given path
     """
     return fcDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
+  
+  types_removeMetadata = [ StringTypes, ListType ]
+  def export_removeMetadata(self, path, metadata ):
+    """ Remove the specified metadata for the given path
+    """
+    return fcDB.removeMetadata( path, metadata, self.getRemoteCredentials() )
   
   types_getDirectoryMetadata = [ StringTypes ]
   def export_getDirectoryMetadata(self,path):
@@ -331,16 +364,16 @@ class FileCatalogHandler(RequestHandler):
     return fcDB.fmeta.getFileUserMetadata(path, self.getRemoteCredentials())  
   
   types_findDirectoriesByMetadata = [ DictType ]
-  def export_findDirectoriesByMetadata(self,metaDict):
+  def export_findDirectoriesByMetadata(self,metaDict,path='/'):
     """ Find all the directories satisfying the given metadata set
     """
-    return fcDB.dmeta.findDirectoriesByMetadata(metaDict, self.getRemoteCredentials())
+    return fcDB.dmeta.findDirectoriesByMetadata(metaDict, path, self.getRemoteCredentials())
   
-  types_findFilesByMetadata = [ DictType ]
-  def export_findFilesByMetadata(self,metaDict):
+  types_findFilesByMetadata = [ DictType, StringTypes ]
+  def export_findFilesByMetadata(self,metaDict,path='/'):
     """ Find all the files satisfying the given metadata set
     """
-    return fcDB.dmeta.findFilesByMetadata(metaDict, self.getRemoteCredentials())
+    return fcDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
   
   types_getCompatibleMetadata = [ DictType ]
   def export_getCompatibleMetadata(self,metaDict):

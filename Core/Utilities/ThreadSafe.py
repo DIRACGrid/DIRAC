@@ -4,16 +4,15 @@ __RCSID__ = "$Id$"
 import threading
 
 class Synchronizer:
-  """ Class enapsulating a lock
+  """ Class encapsulating a lock
   allowing it to be used as a synchronizing
   decorator making the call thread-safe"""
 
   def __init__( self, lockName = "", recursive = False ):
+    from DIRAC.Core.Utilities.LockRing import LockRing
     self.__lockName = lockName
-    if recursive:
-      self.__lock = threading.RLock()
-    else:
-      self.__lock = threading.Lock()
+    self.__lr = LockRing()
+    self.__lock = self.__lr.getLock( lockName, recursive = recursive )
 
   def __call__( self, funcToCall ):
     def lockedFunc( *args, **kwargs ):
@@ -27,10 +26,10 @@ class Synchronizer:
           print "UNLOCKING", self.__lockName
         self.__lock.release()
     return lockedFunc
-  
+
   def lock(self):
     return self.__lock.acquire()
-  
+
   def unlock(self):
     return self.__lock.release()
 
@@ -40,7 +39,9 @@ class WORM:
   Write One - Read Many
   """
   def __init__( self, maxReads = 10 ):
-    self.__lock = threading.Lock()
+    from DIRAC.Core.Utilities.LockRing import LockRing
+    self.__lr = LockRing()
+    self.__lock = self.__lr.getLock()
     self.__maxReads = maxReads
     self.__semaphore = threading.Semaphore( maxReads )
 

@@ -1,23 +1,27 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__  = "$Id:  $"
-AGENT_NAME = 'ResourceStatus/SSInspectorAgent'
+''' SSInspectorAgent
 
-import Queue, time
+  This agent inspect Sites, and evaluates policies that apply.
 
-from DIRAC                                                  import gLogger, S_OK, S_ERROR
+'''
+
+import Queue
+import time
+
+from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
-
-from DIRAC.ResourceStatusSystem.Utilities import CS
+from DIRAC.ResourceStatusSystem.Utilities                   import CS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
+__RCSID__  = '$Id:  $'
+AGENT_NAME = 'ResourceStatus/SSInspectorAgent'
+
 class SSInspectorAgent( AgentModule ):
-  """
+  '''
     The SSInspector agent ( SiteInspectorAgent ) is one of the four
     InspectorAgents of the RSS.
 
@@ -26,15 +30,21 @@ class SSInspectorAgent( AgentModule ):
 
     If you want to know more about the SSInspectorAgent, scroll down to the
     end of the file.
-  """
+  '''
+
+  # Too many public methods
+  # pylint: disable-msg=R0904
 
   def initialize( self ):
 
+    # Attribute defined outside __init__
+    # pylint: disable-msg=W0201
+
     try:
-      self.rsClient            = ResourceStatusClient()
-      self.SitesFreqs       = CS.getTypedDictRootedAt("CheckingFreqs/SitesFreqs")
-      self.SitesToBeChecked = Queue.Queue()
-      self.SiteNamesInCheck = []
+      self.rsClient         = ResourceStatusClient()
+      self.sitesFreqs       = CS.getTypedDictRootedAtOperations( 'CheckingFreqs/SitesFreqs' )
+      self.sitesToBeChecked = Queue.Queue()
+      self.siteNamesInCheck = []
 
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
       self.threadPool         = ThreadPool( self.maxNumberOfThreads,
@@ -50,69 +60,65 @@ class SSInspectorAgent( AgentModule ):
 
     except Exception:
       errorStr = "SSInspectorAgent initialization"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
-
-################################################################################
-################################################################################
 
   def execute( self ):
 
     try:
-
-#      kwargs = { 'meta' : { 'columns' : ['SiteName', 'StatusType', 'Status', 'FormerStatus',\
-#                               'SiteType', 'TokenOwner'] } }
 
       kwargs = { 'meta' : {} }
       kwargs['meta']['columns'] = [ 'SiteName', 'StatusType', 'Status',
                                     'FormerStatus', 'SiteType', 'TokenOwner']
       kwargs[ 'tokenOwner' ]    = 'RS_SVC'
 
-      resQuery = self.rsClient.getStuffToCheck( 'Site', self.SitesFreqs, **kwargs )
+      resQuery = self.rsClient.getStuffToCheck( 'Site', self.sitesFreqs, **kwargs )
+      if not resQuery[ 'OK' ]:
+        self.log.error( resQuery[ 'Message' ] )
+        return resQuery
 
-      gLogger.info( 'Found %d candidates to be checked.' % len( resQuery[ 'Value' ] ) )
+      resQuery = resQuery[ 'Value' ]      
+      self.log.info( 'Found %d candidates to be checked.' % len( resQuery ) )
 
-      for siteTuple in resQuery[ 'Value' ]:
+      for siteTuple in resQuery:
 
-        #THIS IS IMPORTANT !!
-        #Ignore all elements with token != RS_SVC
-#        if siteTuple[ 5 ] != 'RS_SVC':
-#          continue
-
-        if ( siteTuple[ 0 ],siteTuple[ 1 ] ) in self.SiteNamesInCheck:
-          gLogger.info( '%s(%s) discarded, already on the queue' % ( siteTuple[ 0 ],siteTuple[ 1 ] ) )
+        if ( siteTuple[ 0 ], siteTuple[ 1 ] ) in self.siteNamesInCheck:
+          self.log.info( '%s(%s) discarded, already on the queue' % ( siteTuple[ 0 ],siteTuple[ 1 ] ) )
           continue
 
         resourceL = [ 'Site' ] + siteTuple
 
-        self.SiteNamesInCheck.insert( 0, ( siteTuple[ 0 ], siteTuple[ 1 ] ) )
-        self.SitesToBeChecked.put( resourceL )
+        self.siteNamesInCheck.insert( 0, ( siteTuple[ 0 ], siteTuple[ 1 ] ) )
+        self.sitesToBeChecked.put( resourceL )
 
       return S_OK()
 
     except Exception, x:
       errorStr = where( self, self.execute )
-      gLogger.exception( errorStr, lException = x )
+      self.log.exception( errorStr, lException = x )
       return S_ERROR( errorStr )
 
-################################################################################
-################################################################################
-
   def finalize( self ):
-    if self.SiteNamesInCheck:
+    '''
+      Method executed at the end of the last cycle. It waits until the queue
+      is empty.
+    '''
+    if self.siteNamesInCheck:
       _msg = "Wait for queue to get empty before terminating the agent (%d tasks)"
-      _msg = _msg % len( self.SiteNamesInCheck )
-      gLogger.info( _msg )
-      while self.SiteNamesInCheck:
+      _msg = _msg % len( self.siteNamesInCheck )
+      self.log.info( _msg )
+      while self.siteNamesInCheck:
         time.sleep( 2 )
-      gLogger.info( "Queue is empty, terminating the agent..." )
+      self.log.info( "Queue is empty, terminating the agent..." )
     return S_OK()
 
 ################################################################################
-################################################################################
 
   def _executeCheck( self, _arg ):
-
+    '''
+      Method executed by the threads in the pool. Picks one element from the
+      common queue, and enforces policies on that element.
+    '''
     # Init the APIs beforehand, and reuse them.
     __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'GGUSTicketsClient' ]
     clients = knownAPIs.initAPIs( __APIs__, {} )
@@ -121,7 +127,7 @@ class SSInspectorAgent( AgentModule ):
 
     while True:
 
-      toBeChecked  = self.SitesToBeChecked.get()
+      toBeChecked  = self.sitesToBeChecked.get()
 
       pepDict = { 'granularity'  : toBeChecked[ 0 ],
                   'name'         : toBeChecked[ 1 ],
@@ -133,24 +139,24 @@ class SSInspectorAgent( AgentModule ):
 
       try:
 
-        gLogger.info( "Checking Site %s, with type/status: %s/%s" % \
+        self.log.info( "Checking Site %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
 
         pepRes = pep.enforce( **pepDict )
         if pepRes.has_key( 'PolicyCombinedResult' ) and pepRes[ 'PolicyCombinedResult' ].has_key( 'Status' ):
           pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
           if pepStatus != pepDict[ 'status' ]:
-            gLogger.info( 'Updated Site %s (%s) from %s to %s' %
+            self.log.info( 'Updated Site %s (%s) from %s to %s' %
                           ( pepDict['name'], pepDict['statusType'], pepDict['status'], pepStatus ))
 
         # remove from InCheck list
-        self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
+        self.siteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
 
       except Exception:
-        gLogger.exception( "SSInspector._executeCheck Checking Site %s, with type/status: %s/%s" % \
+        self.log.exception( "SSInspector._executeCheck Checking Site %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
         try:
-          self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
+          self.siteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
 

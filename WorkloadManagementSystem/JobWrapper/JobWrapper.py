@@ -23,6 +23,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry              import getVOForGroup
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
+from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
 from DIRAC.Core.Utilities.Subprocess                                import systemCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
@@ -257,7 +258,7 @@ class JobWrapper:
     """The main execution method of the Job Wrapper
     """
     self.log.info( 'Job Wrapper is starting execution phase for job %s' % ( self.jobID ) )
-    os.environ['DIRACJOBID'] = str(self.jobID)
+    os.environ['DIRACJOBID'] = str( self.jobID )
     os.environ['DIRACROOT'] = self.localSiteRoot
     self.log.verbose( 'DIRACROOT = %s' % ( self.localSiteRoot ) )
     os.environ['DIRACPYTHON'] = sys.executable
@@ -382,9 +383,25 @@ class JobWrapper:
       else:
         outputs = threadResult['Value']
 
-    if watchdog.checkError:
-      self.__report( 'Failed', watchdog.checkError, sendFlag = True )
+    if EXECUTION_RESULT.has_key( 'CPU' ):
+      self.log.info( 'EXECUTION_RESULT[CPU] in JobWrapper execute', str( EXECUTION_RESULT['CPU'] ) )
 
+
+    if watchdog.checkError:
+      # In this case, the Watchdog has killed the Payload and the ExecutionThread can not get the CPU statistics
+      # os.times only reports for waited children
+      # Take the CPU from the last value recorded by the Watchdog
+      self.__report( 'Failed', watchdog.checkError, sendFlag = True )
+      if EXECUTION_RESULT.has_key( 'CPU' ):
+        if 'LastUpdateCPU(s)' in watchdog.currentStats:
+          EXECUTION_RESULT['CPU'][0] = 0
+          EXECUTION_RESULT['CPU'][0] = 0
+          EXECUTION_RESULT['CPU'][0] = 0
+          EXECUTION_RESULT['CPU'][0] = watchdog.currentStats['LastUpdateCPU(s)']
+
+    if watchdog.currentStats:
+      self.log.info( 'Statistics collected by the Watchdog:\n ',
+                        '\n  '.join( ['%s: %s' % items for items in watchdog.currentStats.items() ] ) )
     if outputs:
       status = threadResult['Value'][0]
       #Send final heartbeat of a configurable number of lines here
@@ -458,6 +475,7 @@ class JobWrapper:
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
     #TODO: normalize CPU consumed via scale factor
+    self.log.info( 'EXECUTION_RESULT[CPU] in __getCPU', str( EXECUTION_RESULT['CPU'] ) )
     utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
     self.log.verbose( "Total CPU time consumed = %s" % ( cpuTime ) )
@@ -840,7 +858,7 @@ class JobWrapper:
         fileGUID = pfnGUID[localfile]
         self.log.verbose( 'Found GUID for file from POOL XML catalogue %s' % localfile )
 
-      outputSEList = List.randomize( outputSE )
+      outputSEList = self.__getSortedSEList( outputSE )
       upload = failoverTransfer.transferAndRegisterFile( localfile, outputFilePath, lfn,
                                                          outputSEList, fileGUID, self.defaultCatalog )
       if upload['OK']:
@@ -860,7 +878,7 @@ class JobWrapper:
         missing.append( outputFile )
         continue
 
-      failoverSEs = List.randomize( self.defaultFailoverSE )
+      failoverSEs = self.__getSortedSEList( self.defaultFailoverSE )
       targetSE = outputSEList[0]
       result = failoverTransfer.transferAndRegisterFileFailover( localfile, outputFilePath,
                                                                  lfn, targetSE, failoverSEs,
@@ -906,6 +924,30 @@ class JobWrapper:
     return S_OK( 'OutputData uploaded successfully' )
 
   #############################################################################
+  def __getSortedSEList( self, seList ):
+    """ Randomize SE, putting first those that are Local/Close to the Site
+    """
+    if not seList:
+      return seList
+
+    localSEs = []
+    otherSEs = []
+    siteSEs = []
+    seMapping = getSEsForSite( DIRAC.siteName() )
+
+    if seMapping['OK'] and seMapping['Value']:
+      siteSEs = seMapping['Value']
+
+    for seName in seList:
+      if seName in siteSEs:
+        localSEs.append( seName )
+      else:
+        otherSEs.append( seName )
+
+    return List.randomize( localSEs ) + List.randomize( otherSEs )
+
+
+  #############################################################################
   def __getLFNfromOutputFile( self, outputFile, outputPath = '' ):
     """Provides a generic convention for VO output data
        files if no path is specified.
@@ -920,13 +962,13 @@ class JobWrapper:
       basePath = '/' + vo + '/user/' + initial + '/' + self.owner
       if outputPath:
         # If output path is given, append it to the user path and put output files in this directory
-        if outputPath.startswith('/'):
+        if outputPath.startswith( '/' ):
           outputPath = outputPath[1:]
-      else:  
+      else:
         # By default the output path is constructed from the job id 
-        subdir = str( self.jobID / 1000 )      
+        subdir = str( self.jobID / 1000 )
         outputPath = subdir + '/' + str( self.jobID )
-      lfn = os.path.join( basePath, outputPath, os.path.basename( localfile ) )  
+      lfn = os.path.join( basePath, outputPath, os.path.basename( localfile ) )
     else:
       # if LFN is given, take it as it is
       localfile = os.path.basename( outputFile.replace( "LFN:", "" ) )
@@ -1053,10 +1095,13 @@ class JobWrapper:
     if not 'CPU' in EXECUTION_RESULT:
       # If the payload has not started execution (error with input data, SW, SB,...)
       # Execution result is not filled use self.initialTiming
+      self.log.info( 'EXECUTION_RESULT[CPU] missing in sendWMSAccounting' )
       finalStat = os.times()
       EXECUTION_RESULT['CPU'] = []
       for i in range( len( finalStat ) ):
         EXECUTION_RESULT['CPU'].append( finalStat[i] - self.initialTiming[i] )
+
+    self.log.info( 'EXECUTION_RESULT[CPU] in sendWMSAccounting', str( EXECUTION_RESULT['CPU'] ) )
 
     utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
@@ -1250,6 +1295,8 @@ class ExecutionThread( threading.Thread ):
     EXECUTION_RESULT['CPU'] = []
     for i in range( len( finalStat ) ):
       EXECUTION_RESULT['CPU'].append( finalStat[i] - initialStat[i] )
+    gLogger.info( 'EXECUTION_RESULT[CPU] after Execution of spObject.systemCall', str( EXECUTION_RESULT['CPU'] ) )
+    gLogger.info( 'EXECUTION_RESULT[Thread] after Execution of spObject.systemCall', str( EXECUTION_RESULT['Thread'] ) )
 
   #############################################################################
   def getCurrentPID( self ):

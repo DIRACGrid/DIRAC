@@ -1,10 +1,10 @@
 
 import os
-import threading
 import cStringIO
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List, Time
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -306,13 +306,13 @@ class TransferRelay( TransferClient ):
       self.errMsg( "Could not send header", result[ 'Message' ] )
       return result
     self.infoMsg( "Starting to receive data from service" )
-    srvTransport = result[ 'Value' ]
+    trid, srvTransport = result[ 'Value' ]
     srvFileHelper = FileHelper( srvTransport )
     srvFileHelper.setDirection( "receive" )
     sIO = cStringIO.StringIO()
     result = srvFileHelper.networkToDataSink( sIO, self.__transferBytesLimit )
     if not result[ 'OK' ]:
-      self.errMsg( "Could receive data from server", result[ 'Message' ] )
+      self.errMsg( "Could not receive data from server", result[ 'Message' ] )
       srvTransport.close()
       sIO.close()
       return result
@@ -387,7 +387,7 @@ class TransferRelay( TransferClient ):
 class MessageForwarder:
 
   def __init__( self, msgBroker ):
-    self.__inOutLock = threading.Lock()
+    self.__inOutLock = LockRing().getLock()
     self.__msgBroker = msgBroker
     self.__byClient = {}
     self.__srvToCliTrid = {}

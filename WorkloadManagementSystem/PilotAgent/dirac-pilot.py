@@ -61,9 +61,10 @@ class CliParams:
     self.userDN = ""
     self.maxCycles = CliParams.MAX_CYCLES
     self.flavour = 'DIRAC'
-    self.gridVersion = '2010-11-20'
+    self.gridVersion = '2012-02-20'
     self.pilotReference = ''
     self.releaseVersion = ''
+    self.releaseProject = ''
 
 cliParams = CliParams()
 
@@ -121,6 +122,26 @@ pilotRootPath = os.path.dirname( pilotScript )
 rootPath = os.getcwd()
 
 installScriptName = 'dirac-install.py'
+
+rootPath = os.getcwd()
+
+if os.environ.has_key( 'OSG_WN_TMP' ):
+  os.chdir( os.environ['OSG_WN_TMP'] )
+  for path in ( pilotRootPath, rootPath ):
+    installScript = os.path.join( path, installScriptName )
+    if os.path.isfile( installScript ):
+      try:
+        import shutil
+        shutil.copy( installScript, os.path.join( os.environ['OSG_WN_TMP'], installScriptName ) )
+      except Exception, x:
+        print sys.executable
+        print sys.version
+        print os.uname()
+        print x
+        raise x
+      break
+
+rootPath = os.getcwd()
 
 for path in ( pilotRootPath, rootPath ):
   installScript = os.path.join( path, installScriptName )
@@ -212,6 +233,7 @@ for o, v in optList:
     cliParams.pythonVersion = v
   elif o in ( '-l', '--project' ):
     installOpts.append( "-l '%s'" % v )
+    cliParams.releaseProject = v
   elif o == '-n' or o == '--name':
     configureOpts.append( '-n "%s"' % v )
     cliParams.site = v
@@ -292,6 +314,10 @@ if os.environ.has_key( 'PBS_JOBID' ):
   pilotRef = os.environ['PBS_JOBID']
   cliParams.queueName = os.environ['PBS_QUEUE']
 
+if os.environ.has_key( 'JOB_ID' ):
+    cliParams.flavour = 'SSHGE'
+    pilotRef = os.environ['JOB_ID']
+
 # This is the CREAM direct submission case  
 if os.environ.has_key( 'CREAM_JOBID' ):
   cliParams.flavour = 'CREAM'
@@ -348,6 +374,8 @@ if cliParams.ceName:
   configureOpts.append( '-o /LocalSite/GridCE=%s' % cliParams.ceName )
 if cliParams.releaseVersion:
   configureOpts.append( '-o /LocalSite/ReleaseVersion=%s' % cliParams.releaseVersion )
+if cliParams.releaseProject:
+  configureOpts.append( '-o /LocalSite/ReleaseProject=%s' % cliParams.releaseProject )
 
 ###
 # Set the platform if defined
@@ -586,6 +614,7 @@ if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
   else:
     logERROR( "There was an error calling dirac-wms-get-queue-normalization" )
 
+
   retCode, queueLength = executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % CE )
   if not retCode:
     queueLength = queueLength.strip().split( ' ' )
@@ -596,6 +625,9 @@ if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
       logERROR( 'Failed to get Normalized length of the Queue' )
   else:
     logERROR( "There was an error calling dirac-wms-get-normalized-queue-length" )
+
+# Instead of using the Average reported by the Site, determine a Normalization
+os.system( "dirac-wms-cpu-normalization -U" )
 
 #
 # further local configuration

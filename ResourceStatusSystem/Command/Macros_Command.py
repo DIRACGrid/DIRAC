@@ -1,6 +1,13 @@
+# $HeadURL $
+''' MacrosCommand 
+  
+'''
+
 from DIRAC.ResourceStatusSystem.Command.MacroCommand import MacroCommand
 
-class TransferQualityOnSE_Command(MacroCommand):
+__RCSID__ = '$Id: $'
+
+class TransferQualityOnSE_Command( MacroCommand ):
   
   def doCommand(self):
     #da decidere quali comandi
@@ -12,20 +19,7 @@ class TransferQualityOnSE_Command(MacroCommand):
 #    
 #    return super(TransferQualityOnSE_Command, self).doCommand()
     pass
-  
-  
 
-
-
-
-
-
-
-
-
-
-  
-  
 #from DIRAC.ResourceStatusSystem.Command.Command import Command
 #  
 #class ProvaMacro_Command(MacroCommand):
@@ -46,3 +40,6 @@ class TransferQualityOnSE_Command(MacroCommand):
 #class provaCommand2(Command):
 #  def doCommand(self):
 #    print "comando 2"
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

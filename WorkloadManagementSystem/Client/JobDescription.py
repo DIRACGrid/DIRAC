@@ -1,10 +1,14 @@
+""" 
+"""
 
-import types
+__RCSID__ = "$Id$"
+
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 
 class JobDescription:
 
@@ -12,7 +16,7 @@ class JobDescription:
     self.__description = CFG()
     self.__dirty = False
 
-  def isDirty(self):
+  def isDirty( self ):
     return self.__dirty
 
   def loadDescription( self, dataString ):
@@ -43,7 +47,7 @@ class JobDescription:
     try:
       self.__description.loadFromBuffer( cfgString )
     except Exception, e:
-      return S_ERROR( "Can't load description from cfg: %s" % str(e) )
+      return S_ERROR( "Can't load description from cfg: %s" % str( e ) )
     return S_OK()
 
   def dumpDescriptionAsCFG( self ):
@@ -56,7 +60,7 @@ class JobDescription:
     """
     Check a numerical var
     """
-    initialVal = False
+    initialVal = 0
     if varName not in self.__description:
       varValue = gConfig.getValue( "/JobDescription/Default%s" % varName , defaultVal )
     else:
@@ -117,7 +121,7 @@ class JobDescription:
       return S_OK()
     varValue = self.__description[ varName ]
     if len( List.fromChar( varValue ) ) > maxNumber:
-      return S_ERROR( 'Number of Input Data Files (%s) greater than current limit: %s' % ( len( List.fromChar( varValue ) ) , maxNumber ) )
+      return S_ERROR( 'Number of Input Data Files (%s) greater than current limit: %s' % ( len( List.fromChar( varValue ) ), maxNumber ) )
     return S_OK()
 
   def setVarsFromDict( self, varDict ):
@@ -140,7 +144,8 @@ class JobDescription:
       return result
     allowedSubmitPools = []
     for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools = gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
+      allowedSubmitPools = gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
+                                                         option ),
                                              allowedSubmitPools )
     result = self.__checkMultiChoiceInDescription( "SubmitPools", allowedSubmitPools )
     if not result[ 'OK' ]:
@@ -152,7 +157,7 @@ class JobDescription:
     if not result[ 'OK' ]:
       return result
     result = self.__checkMultiChoiceInDescription( "JobType",
-                                                   gConfig.getValue( "/Operations/JobDescription/AllowedJobTypes",
+                                                   Operations().getValue( "JobDescription/AllowedJobTypes",
                                                                      [] ) )
     if not result[ 'OK' ]:
       #HACK to maintain backwards compatibility

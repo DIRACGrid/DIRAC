@@ -1,13 +1,16 @@
-################################################################################
-# $HeadURL:  $
-################################################################################
-__RCSID__ = "$Id:  $"
+# $HeadURL: $
+''' InfoGetter
+
+  Module used to map the policies with the CS.
+
+'''
 
 import copy
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAt
-from DIRAC.ResourceStatusSystem.Utilities    import Utils
-from DIRAC.ResourceStatusSystem              import views_panels
+from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAtOperations
+from DIRAC.ResourceStatusSystem.Utilities    import RssConfiguration, Utils
+
+__RCSID__ = '$Id: $'
 
 class InfoGetter:
   """ Class InfoGetter is in charge of getting information from the RSS Configurations
@@ -28,7 +31,7 @@ class InfoGetter:
         :params:
           :attr:`args`: a tuple. Can contain: 'policy', 'policyType', 'panel_info', 'view_info'
 
-          :attr:`granularity`: a ValidRes
+          :attr:`granularity`: a ValidElement
 
           :attr:`status`: a ValidStatus
 
@@ -117,7 +120,7 @@ class InfoGetter:
                  'ServiceType'  : serviceType,
                  'ResourceType' : resourceType }
 
-    pConfig = getTypedDictRootedAt("Policies")
+    pConfig = getTypedDictRootedAtOperations("Policies")
     pol_to_eval = (p for p in pConfig if Utils.dictMatch(argsdict, pConfig[p]))
     polToEval_Args = []
 
@@ -170,7 +173,7 @@ class InfoGetter:
                 'ServiceType'  : serviceType,
                 'ResourceType' : resourceType }
 
-    pTconfig = getTypedDictRootedAt("PolicyTypes")
+    pTconfig = RssConfiguration.getValidPolicyTypes()
     return (pt for pt in pTconfig if Utils.dictMatch(argsdict, pTconfig[pt]))
 
   def getNewPolicyType(self, granularity, newStatus):
@@ -194,7 +197,7 @@ class InfoGetter:
                 'ResourceType' : resourceType}
 
 
-    all_policies = getTypedDictRootedAt("Policies")
+    all_policies = getTypedDictRootedAtOperations("Policies")
     selected_policies = []
     for p in all_policies:
       if Utils.dictMatch(argsdict, all_policies[p]):
@@ -242,17 +245,7 @@ class InfoGetter:
   def __getViewPanels( self, granularity ):
     if granularity is None:
       granularity = 'Site'
-    return views_panels[granularity]
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
+    return RssConfiguration.views_panels[ granularity ]
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

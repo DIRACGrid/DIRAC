@@ -371,43 +371,51 @@ class DirectoryLevelTree(DirectoryTreeBase):
     
     return S_OK([ x[0] for x in result['Value'] ])
   
-  def getSubdirectoriesByID(self,dirID,level=0):
+  def getSubdirectoriesByID(self,dirID,requestString=False,includeParent=False):
     """ Get all the subdirectories of the given directory at a given level
     """
-    
-    if not level:
-      req = "SELECT Level FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
-      result = self.db._query(req)
-      if not result['OK']:
-        return result
-      if not result['Value']:
-        return S_ERROR('Directory %d not found' % dirID)
-      level = result['Value'][0][0]
-    
+
+    req = "SELECT Level FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
+    result = self.db._query(req)
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR('Directory %d not found' % dirID)
+    level = result['Value'][0][0]
+
     sPaths = []
-    req = "SELECT Level,DirID FROM FC_DirectoryLevelTree AS F1"
+    if requestString:
+      req = "SELECT DirID FROM FC_DirectoryLevelTree"
+    else:
+      req = "SELECT Level,DirID FROM FC_DirectoryLevelTree"
     if level > 0:
+      req += " AS F1"
       for i in range(1,level+1):
         sPaths.append('LPATH%d' % i)
-      pathString = ','.join(sPaths)  
-      req = "SELECT Level,DirID FROM FC_DirectoryLevelTree AS F1"
+      pathString = ','.join(sPaths)
       req += " JOIN (SELECT %s FROM FC_DirectoryLevelTree WHERE DirID=%d) AS F2 ON " % (pathString,dirID)
       sPaths = []
       for i in range(1,level+1):
         sPaths.append('F1.LPATH%d=F2.LPATH%d' % (i,i))
-      pString = ' AND '.join(sPaths)  
-      req += "%s AND F1.Level > %d" % (pString,level)
-   
+      pString = ' AND '.join(sPaths)
+      if includeParent:
+        req += "%s AND F1.Level >= %d" % (pString,level)
+      else:
+        req += "%s AND F1.Level > %d" % (pString,level)
+
+    if requestString:
+      return S_OK(req)
+
     result = self.db._query(req)
     if not result['OK']:
       return result
     if not result['Value']:
       return S_OK({})
-    
+
     resDict = {}
     for row in result['Value']:
       resDict[row[1]] = row[0]
-      
+
     return S_OK(resDict)
   
   def getAllSubdirectoriesByID(self,dirList):
@@ -453,5 +461,4 @@ class DirectoryLevelTree(DirectoryTreeBase):
     
     result = self.getSubdirectoriesByID(dirID,level)
     return result
-    
     

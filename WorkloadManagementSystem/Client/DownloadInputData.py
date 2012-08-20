@@ -99,13 +99,13 @@ class DownloadInputData:
       size = reps['Size']
       guid = reps['GUID' ]
       downloadReplicas[lfn] = {'SE':[], 'Size':size, 'GUID':guid}
-      for se in diskSEs:
-        if se in reps:
-          downloadReplicas[lfn]['SE'].append( ( se, reps[se] ) )
+      for seName in diskSEs:
+        if seName in reps:
+          downloadReplicas[lfn]['SE'].append( ( seName, reps[seName] ) )
       if not downloadReplicas[lfn]['SE']:
-        for se in tapeSEs:
-          if se in reps:
-            downloadReplicas[lfn]['SE'].append( ( se, reps[se] ) )
+        for seName in tapeSEs:
+          if seName in reps:
+            downloadReplicas[lfn]['SE'].append( ( seName, reps[seName] ) )
 
     totalSize = 0
     self.log.verbose( 'Replicas to download are:' )
@@ -151,16 +151,48 @@ class DownloadInputData:
     resolvedData = {}
     localSECount = 0
     for lfn in downloadReplicas.keys():
-      result = self.__getPFN( downloadReplicas[lfn]['PFN'],
-                              downloadReplicas[lfn]['SE'],
-                              downloadReplicas[lfn]['GUID'] )
+      pfn = downloadReplicas[lfn]['PFN']
+      seName = downloadReplicas[lfn]['SE']
+      guid = downloadReplicas[lfn]['GUID']
+      result = self.replicaManager.getStorageFileMetadata( [pfn], seName )
       if not result['OK']:
-        self.log.warn( 'Download of file from localSE failed with message:\n%s' % ( result ) )
-        result = self.__getLFN( lfn, downloadReplicas[lfn]['PFN'],
-                                downloadReplicas[lfn]['SE'],
-                                downloadReplicas[lfn]['GUID'] )
-        if not result['OK']:
-          self.log.warn( 'Download of file from any SE failed with message:\n%s' % ( result ) )
+        self.log.error( result['Message'] )
+        failedReplicas.append( lfn )
+        continue
+      if result['Value']['Failed']:
+        error = 'Could not get Storage Metadata from %s' % seName
+        self.log.error( error )
+        failedReplicas.append( lfn )
+        continue
+      metadata = result['Value']['Successful'][pfn]
+      if metadata['Lost']:
+        error = "PFN has been Lost by the StorageElement"
+        self.log.error( error , pfn )
+        failedReplicas.append( lfn )
+        continue
+      elif metadata['Unavailable']:
+        error = "PFN is declared Unavailable by the StorageElement"
+        self.log.error( error, pfn )
+        failedReplicas.append( lfn )
+        continue
+      elif seName in tapeSEs and not metadata['Cached']:
+        error = "PFN is no longer in StorageElement Cache"
+        self.log.error( error, pfn )
+        failedReplicas.append( lfn )
+        continue
+
+      self.log.info( 'Preliminary checks OK, download from LocalSE:', pfn )
+      result = self.__getPFN( pfn, seName, guid )
+      if not result['OK']:
+        self.log.warn( 'Download from localSE failed with message:\n%s' % ( result ) )
+        # if the replica was NOT on a Tape SE attempt a download from elsewhere
+        if seName not in tapeSEs:
+          self.log.info( 'Trying to download from any SE:', pfn )
+          result = self.__getLFN( lfn, pfn, seName, guid )
+          if not result['OK']:
+            self.log.warn( 'Download from any SE failed with message:\n%s' % ( result ) )
+            failedReplicas.append( lfn )
+        else:
           failedReplicas.append( lfn )
       else:
         localSECount += 1
@@ -211,12 +243,12 @@ class DownloadInputData:
       return S_OK( msg )
     else:
       msg = 'Not enough disk space available for download %s (including 3GB buffer) > %s bytes' \
-             % ( ( buffer + totalSize ), availableBytes )
+             % ( ( data + totalSize ), availableBytes )
       self.log.warn( msg )
       return S_ERROR( msg )
 
   #############################################################################
-  def __getLFN( self, lfn, pfn, se, guid ):
+  def __getLFN( self, lfn, pfn, seName, guid ):
     """ Download a local copy of a single LFN from the specified Storage Element.
         This is used as a last resort to attempt to retrieve the file.  The Replica
         Manager will perform an LFC lookup to refresh the stored result.
@@ -244,14 +276,14 @@ class DownloadInputData:
     localFile = os.path.join( downloadDir, fileName )
     if os.path.exists( localFile ):
       self.log.verbose( 'File %s exists in current directory' % ( fileName ) )
-      fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':se, 'pfn':pfn, 'guid':guid, 'path':localFile}
+      fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':seName, 'pfn':pfn, 'guid':guid, 'path':localFile}
       return S_OK( fileDict )
     else:
       self.log.warn( 'File does not exist in local directory after download' )
       return S_ERROR( 'OK download result but file missing in current directory' )
 
   #############################################################################
-  def __getPFN( self, pfn, se, guid ):
+  def __getPFN( self, pfn, seName, guid ):
     """ Download a local copy of a single PFN from the specified Storage Element.
     """
     if not pfn:
@@ -262,7 +294,7 @@ class DownloadInputData:
       self.log.verbose( 'File already %s exists in current directory' % ( fileName ) )
       fileDict = { 'turl':'LocalData',
                    'protocol':'LocalData',
-                   'se':se,
+                   'se':seName,
                    'pfn':pfn,
                    'guid':guid,
                    'path': os.path.join( os.getcwd(), fileName )}
@@ -277,7 +309,7 @@ class DownloadInputData:
       downloadDir = self.inputDataDirectory
     self.counter += 1
 
-    result = self.replicaManager.getStorageFile( pfn, se, localPath = downloadDir, singleFile = True )
+    result = self.replicaManager.getStorageFile( pfn, seName, localPath = downloadDir, singleFile = True )
     if not result['OK']:
       self.log.warn( 'Problem getting PFN %s:\n%s' % ( pfn, result ) )
       return result
@@ -286,7 +318,7 @@ class DownloadInputData:
     localFile = os.path.join( downloadDir, fileName )
     if os.path.exists( localFile ):
       self.log.verbose( 'File %s exists in current directory' % ( fileName ) )
-      fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':se, 'pfn':pfn, 'guid':guid, 'path':localFile}
+      fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':seName, 'pfn':pfn, 'guid':guid, 'path':localFile}
       return S_OK( fileDict )
     else:
       self.log.warn( 'File does not exist in local directory after download' )

@@ -1,15 +1,21 @@
-""" DIRAC.ResourceStatusSystem.Policy.Configurations Module
+# $HeadURL $
+''' Configurations
 
-    collects everything needed to configure policies
-"""
-
-__RCSID__ = "$Id: "
+  Collects everything needed to configure policies.
+  
+'''
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
 
-pp = CS.getTypedDictRootedAt("PolicyParameters")
+__RCSID__ = '$Id: $'
+
+#pp = CS.getTypedDictRootedAt( 'PolicyParameters' )
+
+def getPolicyParameters():
+  return CS.getTypedDictRootedAtOperations( 'PolicyParameters' )
 
 Policies = {
+            
   'DT_OnGoing_Only' :
     {
       'Description' : "Ongoing down-times",
@@ -24,7 +30,7 @@ Policies = {
       'module'          : 'DT_Policy',
       'commandInNewRes' : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
       'commandIn'       : ( 'GOCDBStatus_Command', 'DTCached_Command' ),
-      'args'            : ( pp["DTinHours"], ),
+      'args'            : ( 12, ),#Hacked to avoid executing code( pp["DTinHours"], ),
       'Site_Panel'      : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
                                          'args': None}},],
       'Resource_Panel'  : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
@@ -37,4 +43,8 @@ Policies = {
       'commandIn'   : None,
       'args'        : None
     }
+            
   }
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -81,12 +81,17 @@ class ComputingElement:
     """
 
     # Collect global defaults first
-    result = self.__getCEParameters( '/Resources/Computing/CEDefaults' ) #can be overwritten by other sections
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-    result = self.__getCEParameters( '/Resources/Computing/%s' % self.ceName )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
+    result = gConfig.getSections( '/Resources/Computing' )
+    if result['OK'] and result['Value']:
+      ceSections = result['Value']
+      if 'CEDefaults' in ceSections:
+        result = self.__getCEParameters( '/Resources/Computing/CEDefaults' ) #can be overwritten by other sections
+        if not result['OK']:
+          self.log.warn( result['Message'] )
+      if self.ceName in ceSections:    
+        result = self.__getCEParameters( '/Resources/Computing/%s' % self.ceName )
+        if not result['OK']:
+          self.log.warn( result['Message'] )
 
     # Get local CE configuration
     localConfigDict = getCEConfigDict( self.ceName )
@@ -141,7 +146,8 @@ class ComputingElement:
     reqtSection = '/AgentJobRequirements'
     result = gConfig.getOptionsDict( reqtSection )
     if not result['OK']:
-      self.log.warn( result['Message'] )
+      if not 'does not exist' in result['Message']:
+        self.log.warn( result['Message'] )
       return S_OK( result['Message'] )
 
     reqsDict = result['Value']
@@ -224,6 +230,11 @@ class ComputingElement:
         self.ceParameters[key] = int( self.ceParameters[key] )
       if key in FLOAT_PARAMETERS:
         self.ceParameters[key] = float( self.ceParameters[key] )
+        
+      # LHCb legacy fix  
+      if key == "Platform":
+        self.ceParameters['LHCbPlatform'] = self.ceParameters[key]  
+        
     self.reset()
     return S_OK()
 
@@ -299,6 +310,7 @@ class ComputingElement:
     """
     # FIXME: need to take into account the possible requirements from the pilots,
     #        so far the cputime
+    ciInfoDict = {}
     result = self.getDynamicInfo()
     if not result['OK']:
       self.log.warn( 'Could not obtain CE dynamic information' )
@@ -308,8 +320,10 @@ class ComputingElement:
       runningJobs = result['RunningJobs']
       waitingJobs = result['WaitingJobs']
       submittedJobs = result['SubmittedJobs']
+      ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.__getParameters( 'MaxTotalJobs' )['Value'] )
+    ceInfoDict['MaxTotalJobs'] = maxTotalJobs
     waitingToRunningRatio = float( self.__getParameters( 'WaitingToRunningRatio' )['Value'] )
     # if there are no Running job we can submit to get at most 'MaxWaitingJobs'
     # if there are Running jobs we can increase this to get a ratio W / R 'WaitingToRunningRatio'
@@ -337,6 +351,9 @@ class ComputingElement:
         additionalJobs = maxWaitingJobs - waitingJobs
         if totalJobs + additionalJobs >= maxTotalJobs:
           additionalJobs = maxTotalJobs - totalJobs
+      #For SSH CE case  
+      if int(self.__getParameters( 'MaxWaitingJobs')['Value']) == 0:
+        additionalJobs = maxTotalJobs - runningJobs    
 
       result['Value'] = additionalJobs
 
@@ -349,6 +366,7 @@ class ComputingElement:
     # if totalCPU:
     #  message +=', TotalCPU=%s' %(totalCPU)
     result['Message'] = message
+    result['CEInfoDict'] = ceInfoDict
     return result
 
   #############################################################################
@@ -508,11 +526,46 @@ class ComputingElement:
 
     release = gConfig.getValue( '/LocalSite/ReleaseVersion', version )
     self.classAd.insertAttributeString( 'DIRACVersion', release )
+    self.classAd.insertAttributeString( 'ReleaseVersion', release )
+    project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
+    if project:
+      self.classAd.insertAttributeString( 'ReleaseProject', project )
     if self.classAd.isOK():
       jdl = self.classAd.asJDL()
       return S_OK( jdl )
     else:
       return S_ERROR( 'ClassAd job is not valid' )
+    
+  def getDescription( self ):
+    """ Get CE description as a dictionary
+    """  
+    
+    ceDict = {}
+    for option, value in self.ceParameters.items():
+      if type( option ) == type( [] ):
+        ceDict[option] = value
+      elif type( value ) == type( ' ' ):
+        tmpInt = self.__getInt( value )
+        if type( tmpInt ) == type( 1 ):
+          self.log.debug( 'Found CE integer attribute: %s = %s' % ( option, tmpInt ) )
+          ceDict[option] = tmpInt
+        else:
+          self.log.debug( 'Found string attribute: %s = %s' % ( option, value ) )
+          ceDict[option] = value
+      elif type( value ) == type( 1 ) or type( value ) == type( 1. ):
+        self.log.debug( 'Found integer attribute: %s = %s' % ( option, value ) )
+        ceDict[option] = value
+      else:
+        self.log.warn( 'Type of option %s = %s not determined' % ( option, value ) )
+
+    release = gConfig.getValue( '/LocalSite/ReleaseVersion', version )
+    ceDict['DIRACVersion'] = release
+    ceDict['ReleaseVersion'] = release
+    project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
+    if project:
+      ceDict['ReleaseProject'] = project
+      
+    return S_OK( ceDict )   
 
   #############################################################################
   def sendOutput( self, stdid, line ):

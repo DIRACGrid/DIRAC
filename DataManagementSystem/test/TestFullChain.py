@@ -1,8 +1,8 @@
-import unittest,types,time
+import unittest, types, time
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
-import time
+
 
 class FullChainTestCase(unittest.TestCase):
   """ Base class for the TransferDB test cases

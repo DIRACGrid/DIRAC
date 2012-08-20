@@ -26,19 +26,15 @@ import DIRAC
 # Some reasonable Defaults
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
-DIRAC_VERSION = 'Production'
-DIRAC_VERSION = 'HEAD'
+DIRAC_VERSION = 'Integration'
+DIRAC_PROJECT = ''
 DIRAC_INSTALLATION = ''
 
 MAX_JOBS_IN_FILLMODE = 2
 
 ERROR_CLEAR_TIME = 60 * 60  # 1 hour
 ERROR_TICKET_TIME = 60 * 60  # 1 hour (added to the above)
-FROM_MAIL = "lhcb-dirac@cern.ch"
-
-PILOT_DN = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson'
-PILOT_DN = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
-PILOT_GROUP = 'lhcb_pilot'
+FROM_MAIL = "diracproject@gmail.com"
 
 VIRTUAL_ORGANIZATION = 'dirac'
 
@@ -49,13 +45,16 @@ PRIVATE_PILOT_FRACTION = 0.5
 
 ERROR_PROXY = 'No proxy Available'
 ERROR_TOKEN = 'Invalid proxy token request'
+ERROR_GENERIC_CREDENTIALS = "Cannot find generic pilot credentials"
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
+from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
+from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup, getPropertiesForGroup
-
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations   import Operations
 
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DictCache
@@ -97,9 +96,11 @@ class PilotDirector:
       self.log = gLogger.getSubLogger( '%sPilotDirector/%s' % ( self.gridMiddleware, submitPool ) )
 
     self.pilot = DIRAC_PILOT
+    self.submitPoolOption = '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % submitPool
     self.extraPilotOptions = []
     self.installVersion = DIRAC_VERSION
-    self.installInstallation = DIRAC_INSTALLATION
+    self.installProject = DIRAC_PROJECT
+    self.installation = DIRAC_INSTALLATION
 
     self.virtualOrganization = VIRTUAL_ORGANIZATION
     self.install = DIRAC_INSTALL
@@ -107,8 +108,6 @@ class PilotDirector:
     self.targetGrids = [ self.gridMiddleware ]
 
 
-    self.genericPilotDN = PILOT_DN
-    self.genericPilotGroup = PILOT_GROUP
     self.enableListMatch = ENABLE_LISTMATCH
     self.listMatchDelay = LISTMATCH_DELAY
     self.listMatchCache = DictCache()
@@ -132,12 +131,11 @@ class PilotDirector:
     self.configureFromSection( csSection )
     self.reloadConfiguration( csSection, submitPool )
 
-    setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    section = cfgPath( 'Operations', self.virtualOrganization, setup, 'Versions' )
-    self.installVersion = gConfig.getValue( cfgPath( section, 'PilotVersion' ),
-                                         self.installVersion )
-    self.installInstallation = gConfig.getValue( cfgPath( section, 'PilotInstallation' ),
-                                         self.installInstallation )
+    # Get the defaults for the Setup where the Director is running
+    opsHelper = Operations()
+    self.installVersion = opsHelper.getValue( cfgPath( 'Pilot', 'Version' ), [ self.installVersion ] )[0]
+    self.installProject = opsHelper.getValue( cfgPath( 'Pilot', 'Project' ), self.installProject )
+    self.installation = opsHelper.getValue( cfgPath( 'Pilot', 'Installation' ), self.installation )
 
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
@@ -146,8 +144,10 @@ class PilotDirector:
     self.log.info( ' Install script: ', self.install )
     self.log.info( ' Pilot script:   ', self.pilot )
     self.log.info( ' Install Ver:    ', self.installVersion )
-    if self.installInstallation:
-      self.log.info( ' Installation:        ', self.installInstallation )
+    if self.installProject:
+      self.log.info( ' Project:        ', self.installProject )
+    if self.installation:
+      self.log.info( ' Installation:   ', self.installation )
     if self.extraPilotOptions:
       self.log.info( ' Extra Options:   ', ' '.join( self.extraPilotOptions ) )
     self.log.info( ' ListMatch:      ', self.enableListMatch )
@@ -172,10 +172,13 @@ class PilotDirector:
       reload from CS
     """
     self.pilot = gConfig.getValue( mySection + '/PilotScript'          , self.pilot )
+    #TODO: Remove this DIRACVersion after 06/2012
     self.installVersion = gConfig.getValue( mySection + '/DIRACVersion'         , self.installVersion )
+    self.installVersion = gConfig.getValue( mySection + '/Version'         , self.installVersion )
     self.extraPilotOptions = gConfig.getValue( mySection + '/ExtraPilotOptions'    , self.extraPilotOptions )
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
-    self.installInstallation = gConfig.getValue( mySection + '/Installation'        , self.installInstallation )
+    self.installProject = gConfig.getValue( mySection + '/Project'        , self.installProject )
+    self.installation = gConfig.getValue( mySection + '/Installation'        , self.installation )
     self.maxJobsInFillMode = gConfig.getValue( mySection + '/MaxJobsInFillMode'    , self.maxJobsInFillMode )
     self.targetGrids = gConfig.getValue( mySection + '/TargetGrids'    , self.targetGrids )
 
@@ -186,8 +189,6 @@ class PilotDirector:
     self.errorMailAddress = gConfig.getValue( mySection + '/ErrorMailAddress'     , self.errorMailAddress )
     self.alarmMailAddress = gConfig.getValue( mySection + '/AlarmMailAddress'     , self.alarmMailAddress )
     self.mailFromAddress = gConfig.getValue( mySection + '/MailFromAddress'      , self.mailFromAddress )
-    self.genericPilotDN = gConfig.getValue( mySection + '/GenericPilotDN'       , self.genericPilotDN )
-    self.genericPilotGroup = gConfig.getValue( mySection + '/GenericPilotGroup'    , self.genericPilotGroup )
     self.privatePilotFraction = gConfig.getValue( mySection + '/PrivatePilotFraction' , self.privatePilotFraction )
 
     virtualOrganization = gConfig.getValue( mySection + '/VirtualOrganization' , '' )
@@ -271,10 +272,10 @@ class PilotDirector:
 
   def _getPilotOptions( self, taskQueueDict, pilotsToSubmit ):
 
-    # Need to limit the maximum number of pilots to submit at once 
-    # For generic pilots this is limited by the number of use of the tokens and the 
+    # Need to limit the maximum number of pilots to submit at once
+    # For generic pilots this is limited by the number of use of the tokens and the
     # maximum number of jobs in Filling mode, but for private Jobs we need an extra limitation:
-    pilotsToSubmit = min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) )
+    pilotsToSubmit = max( min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) ), 1 )
     pilotOptions = []
     privateIfGenericTQ = self.privatePilotFraction > random.random()
     privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
@@ -297,8 +298,13 @@ class PilotDirector:
     else:
       #For generic jobs we'll submit mixture of generic and private pilots
       self.log.verbose( 'Submitting generic pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
-      ownerDN = self.genericPilotDN
-      ownerGroup = self.genericPilotGroup
+      #ADRI: Find the generic group
+      result = findGenericPilotCredentials( group = taskQueueDict[ 'OwnerGroup' ] )
+      if not result[ 'OK' ]:
+        self.log.error( ERROR_GENERIC_CREDENTIALS, result[ 'Message' ] )
+        return S_ERROR( ERROR_GENERIC_CREDENTIALS )
+      ownerDN, ownerGroup = result[ 'Value' ]
+
       result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
       if not result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
@@ -308,7 +314,7 @@ class PilotDirector:
 
       pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
 
-      pilotsToSubmit = ( pilotsToSubmit - 1 ) / self.maxJobsInFillMode + 1
+      pilotsToSubmit = max( 1, ( pilotsToSubmit - 1 ) / self.maxJobsInFillMode + 1 )
 
       maxJobsInFillMode = int( numberOfUses / pilotsToSubmit )
     # Use Filling mode
@@ -319,19 +325,34 @@ class PilotDirector:
     # Setup.
     pilotOptions.append( '-S %s' % taskQueueDict['Setup'] )
     # CS Servers
-    csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
+    csServers = gConfig.getServersList()
+    if len( csServers ) > 3:
+      # Remove the master
+      master = gConfigurationData.getMasterServer()
+      if master in csServers:
+        csServers.remove( master )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
     # DIRAC Extensions
     extensionsList = getCSExtensions()
     if extensionsList:
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
-    # Requested version of DIRAC
-    pilotOptions.append( '-r %s' % self.installVersion )
+    #Get DIRAC version and project, There might be global Setup defaults and per VO/Setup defaults (from configure)
+    opsHelper = Operations( group = taskQueueDict['OwnerGroup'], setup = taskQueueDict['Setup'] )
+    # Requested version of DIRAC (it can be a list, so we take the fist one)
+    version = opsHelper.getValue( cfgPath( 'Pilot', 'Version' ) , [ self.installVersion ] )[0]
+    pilotOptions.append( '-r %s' % version )
     # Requested Project to install
-    if self.installInstallation:
-      pilotOptions.append( '-V %s' % self.installInstallation )
+    installProject = opsHelper.getValue( cfgPath( 'Pilot', 'Project' ) , self.installProject )
+    if installProject:
+      pilotOptions.append( '-l %s' % installProject )
+    installation = opsHelper.getValue( cfgPath( 'Pilot', 'Installation' ), self.installation )
+    if installation:
+      pilotOptions.append( "-V %s" % installation )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
+
+    if self.submitPoolOption not in self.extraPilotOptions:
+      pilotOptions.append( self.submitPoolOption )
 
     if self.extraPilotOptions:
       pilotOptions.extend( self.extraPilotOptions )
@@ -389,6 +410,7 @@ class PilotDirector:
     """
      To be overwritten if a given Pilot does not require a full proxy
     """
+    self.log.info( "Downloading %s@%s proxy" % ( ownerDN, ownerGroup ) )
     return gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft )
 
   def exceptionCallBack( self, threadedJob, exceptionInfo ):

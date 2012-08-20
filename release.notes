@@ -1,3 +1,871 @@
+[v6r5p1]
+
+*Core
+BUGFIX: ExecutorMindHandler - return S_OK() in the initializeHandler
+FIX: OptimizationMindHandler - if the manifest is not dirty it will not be updated by the Mind
+
+*Configuration
+NEW: Resources helper - added getCompatiblePlatform(), getDIRACPlatform() methods
+
+*Resources
+FIX: SSHComputingElement - add -q option to ssh command to avoid banners in the output
+FIX: BOINCComputingElement - removed debugging printout
+FIX: ComputingElement - use Platform CS option which will be converted to LHCbPlatform for legacy compatibility
+
+*DMS
+FIX: RequestAgentBase - lowering loglevel from ALWAYS to INFO to avoid flooding SystemLogging
+
+*WMS:
+FIX: SiteDirector - provide CE platform parameter when interrogating the TQ
+FIX: GridPilotDirector - publish pilot OwnerGroup rather than VOMS role
+FIX: WMSUtilities - add new error string into the parsing of the job output retrieval
+
+[v6r5]
+
+NEW: Executor framework
+
+*Core
+NEW: MySQL.py - added Test case for Time.dateTime time stamps
+NEW: MySQL.py - insertFields and updateFields can get values via Lists or Dicts
+NEW: DataIntegrityDB - use the new methods from MySQL and add test cases
+NEW: DataIntegrityHandler - check connection to DB and create tables (or update their schema)
+NEW: DataLoggingDB - use the new methods from MySQL and add test cases
+NEW: DataLoggingHandler - check connection to DB and create tables (or update their schema)
+FIX: ProcessPool - killing stuck workers after timeout
+CHANGE: DB will throw a RuntimeException instead of a sys.exit in case it can't contact the DB
+CHANGE: Several improvements on DISET
+CHANGE: Fixed all DOS endings to UNIX
+CHANGE: Agents, Services and Executors know how to react to CSSection/Module and react accordingly
+NEW: install tools are updated to deal with executors
+FIX: dirac-install - add -T/--Timeout option to define timeout for distribution downloads
+NEW: dirac-install - added possibility of defining dirac-install's global defaults by command line switch
+BUGFIX: avoid PathFinder.getServiceURL and use Client class ( DataLoggingClient,LfcFileCatalogProxyClient ) 
+FIX: MySQL - added TIMESTAMPADD and TIMESTAMPDIFF to special values not to be scaped by MySQL
+NEW: ObjectLoader utility
+CHANGE: dirac-distribution - added global defaults flag and changed the flag to -M or --defaultsURL
+FIX: Convert to string before trying to escape value in MySQL
+NEW: DISET Services - added PacketTimeout option
+NEW: SystemLoggingDB - updated to use the renewed MySQL interface and SQL schema
+NEW: Added support for multiple entries in /Registry/DefaultGroup, for multi-VO installations
+CHANGE: Component installation procedure updated to cope with components inheriting Modules
+CHANGE: InstallTools - use dirac- command in runit run scripts
+FIX: X509Chain - avoid a return of error when the group is not valid
+FIX: MySQL - reduce verbosity of log messages when high level methods are used
+CHANGE: Several DB classes have been updated to use the MySQL buildCondition method
+NEW: MySQL - provide support for greater and smaller arguments to all MySQL high level methods
+FIX: Service.py - check all return values from all initializers
+
+*Configuration
+CHANGE: By default return option and section lists ordered as in the CS
+NEW: ConfigurationClient - added function to refresh remote configuration
+
+*Framework
+FIX: Registry.findDefaultGroup will never return False
+CHANGE: ProxyManager does not accept proxies without explicit group
+CHANGE: SystemAdministratorHandler - force refreshing the configuration after new component setup
+
+*RSS
+CHANGE: removed code execution from __init__
+CHANGE: removed unused methods
+NEW: Log all policy results 
+
+*Resources
+NEW: updated SSHComputingElement which allows multiple job submission
+FIX: SGETimeLeft - better parsing of the batch system commands output
+FIX: InProcessComputingElement - when starting a new job discard renewal of the previous proxy
+NEW: BOINCComputingElement - new CE client to work with the BOINC desktop grid infrastructure 
+
+*WMS
+CHANGE: WMS Optimizers are now executors
+CHANGE: SandboxStoreClient can directly access the DB if available
+CHANGE: Moved JobDescription and improved into JobManifest
+FIX: typo in JobLoggingDB
+NEW: JobState/CachedJobState allow access to the Job via DB/JobStateSync Service automatically
+BUGFIX: DownloadInputData - when not enough disk space, message was using "buffer" while it should be using "data"
+FIX: the sandboxmetadataDB explosion when using the sandboxclient without direct access to the DB
+NEW: Added support for reset/reschedule in the OptimizationMind
+CHANGE: Whenever a DB is not properly initialized it will raise a catchable RuntimeError exception 
+        instead of silently returning
+FIX: InputDataResolution - just quick mod for easier extensibility, plus removed some LHCb specific stuff
+NEW: allow jobids in a file in dirac-wms-job-get-output
+NEW: JobManager - zfill in %n parameter substitution to allow alphabetical sorting
+NEW: Directors - added checking of the TaskQueue limits when getting eligible queues
+CHANGE: Natcher - refactor to simpify the logic, introduced Limiter class
+CHANGE: Treat MaxCPUTime and CPUTime the same way in the JDL to avoid confusion
+NEW: SiteDirector - added options PilotScript, MaxPilotsToSubmit, MaxJobsInFillMode
+BUGFIX: StalledJobAgent - use cpuNormalization as float, not string 
+FIX: Don't kill an executor if a task has been taken out from it
+NEW: dirac-boinc-pilot - pilot script to be used on the BOINC volunteer nodes
+FIX: SiteDirector - better handling of tokens and filling mode 
+NEW: Generic pilot identities are automatically selected by the TQD and the SiteDirector 
+     if not explicitly defined in /Pilot/GenericDN and GenericGroup
+NEW: Generic pilot groups can have a VO that will be taken into account when selecting generic 
+     credentials to submit pilots
+NEW: Generic pilots that belong to a VO can only match jobs from that VO
+NEW: StalledJobAgent - added rescheduling of jobs stuck in Matched or Rescheduled status
+BUGFIX: StalledJobAgent - default startTime and endTime to "now", avoid None value
+NEW: JobAgent - stop after N failed matching attempts (nothing to do), use StopAfterFailedMatches option
+CHANGE: JobAgent - provide resource description as a dictionary to avoid extra JDL parsing by the Matcher
+CHANGE: Matcher - report pilot info once instead of sending it several times from the job
+CHANGE: Matcher - set the job site instead of making a separate call to JobStateUpdate
+NEW: Matcher - added Matches done and matches OK statistics
+NEW: TaskQueue - don't delete fresh task queues. Wait 5 minutes to do so.
+CHANGE: Disabled TQs can also be matched, if no jobs are there, a retry will be triggered
+
+*Transformation
+FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
+     plus few minor corrections (e.g. logger messages)
+FIX: TransformationCLI - take into accout possible failures in resetFile command     
+
+*Accounting
+NEW: AccountingDB - added retrieving RAW records for internal stuff
+FIX: AccountingDB - fixed some logic for readonly cases
+CHANGE: Added new simpler and faster bucket insertion mechanism
+NEW: Added more info when rebucketing
+FIX: Calculate the rebucket ETA using remaining records to be processed instead of the total records to be processed
+FIX: Plots with no data still carry the plot name
+
+*DMS
+NEW: SRM2Storage - added retry in the gfal calls
+NEW: added new FTSCleaningAgent cleaning up TransferDB tables
+FIX: DataLoggingClient and DataLoggingDB - tests moved to separate files
+CHANGE: request agents cleanup
+
+*RMS
+CHANGE: Stop using RequestAgentMixIn in the request agents
+
+[v6r4p21]
+
+*Core
+BUGFIX: SGETimeLeft - take into account dd:hh:mm:ss format of the cpu consumed
+
+[v6r4p20]
+
+*WMS
+BUGFIX: PilotDirector, GridPilotDirector - make sure that at least 1 pilot is to be submitted
+BUGFIX: GridPilotDirector - bug on how pilots are counted when there is an error in the submit loop.
+BUGFIX: dirac-pilot - proper install script installation on OSG sites
+
+[v6r4p19]
+
+*RMS
+FIX: RequestDBMySQL - optimized request selection query 
+
+[v6r4p18]
+
+*Configuration
+BUGFIX: CE2CSAgent.py - the default value must be set outside the loop
+
+*DMS
+NEW: dirac-dms-create-replication-request
+BUGFIX: dirac-dms-fts-submit, dirac-dms-fts-monitor - print out error messages
+
+*Resources
+BUGFIX: TorqueComputingElement.py, plus add UserName for shared Queues
+
+*WMS
+BUGFIX: JobManagerHandler - default value for pStart (to avoid Exception)
+
+[v6r4p17]
+
+*Core
+FIX: dirac-configure - setup was not updated in dirac.cfg even with -F option
+FIX: RequestHandler - added fix for Missing ConnectionError
+
+*DMS
+FIX: dirac-dms-clean-directory - command fails with `KeyError: 'Replicas'`.
+
+*WMS
+FIX: SiteDirector - adapt to the new method in the Matcher getMatchingTaskQueue 
+FIX: SiteDirector - added all SubmitPools to TQ requests
+
+[v6r4p16]
+
+*Core:
+FIX: dirac-install - bashrc/cshrc were wrongly created when using versionsDir
+
+*Accounting
+CHANGE: Added new simpler and faster bucket insertion mechanism
+NEW: Added more info when rebucketing
+
+*WMS
+CHANGE: Matcher - refactored to take into account job limits when providing info to directors
+NEW: JoAgent - reports SubmitPool parameter if applicable
+FIX: Matcher - bad codition if invalid result
+
+[v6r4p15]
+
+*WMS
+FIX: gLitePilotDirector - fix the name of the MyProxy server to avoid crasehs of the gLite WMS
+
+*Transformation
+FIX: TaskManager - when the file is on many SEs, wrong results were generated
+
+[v6r4p13]
+
+*DMS
+FIX: dirac-admin-allow-se - added missing interpreter line
+
+[v6r4p12]
+
+*DMS
+CHANGE: RemovalTask - for DataManager shifter change creds after failure of removal with her/his proxy.
+
+*RSS
+NEW: Added RssConfiguration class
+FIX: ResourceManagementClient  - Fixed wrong method name
+
+[v6r4p11]
+
+*Core
+FIX: GGUSTicketsClient - GGUS SOAP URL updated
+
+*DMS
+BUGFIX: ReplicaManager - wrong for loop
+
+*RequestManagement
+BUGFIX: RequestClient - bug fix in finalizeRequest()
+
+*Transformation
+FIX: TaskManager - fix for correctly setting the sites (as list)
+
+[v6r4p10]
+
+*RequestManagement
+BUGFIX: RequestContainer - in addSubrequest() function
+
+*Resources
+BUGFIX: SRM2Storage - in checksum type evaluation
+
+*ResourceStatusSystem
+BUGFIX: InfoGetter - wrong import statement
+
+*WMS
+BUGFIX: SandboxMetadataDB - __init__() can not return a value
+
+[v6r4p9]
+
+*DMS
+CHANGE: FailoverTransfer - ensure the correct execution order of the subrequests
+
+[v6r4p8]
+
+Bring in fixes from v6r3p17
+
+*Core:
+FIX: Don't have the __init__ return True for all DBs
+NEW: Added more protection for exceptions thrown in callbacks for the ProcessPool
+FIX: Operations will now look in 'Defaults' instead of 'Default'
+
+*DataManagement:
+FIX: Put more protection in StrategyHandler for neither channels  not throughput read out of TransferDB
+FIX: No JobIDs supplied in getRequestForJobs function for RequestDBMySQL taken into account
+FIX: Fix on getRequestStatus
+CHANGE: RequestClient proper use of getRequestStatus in finalizeRequest
+CHANGE: Refactored RequestDBFile
+
+[v6r4p7]
+
+*WorkloadManagement
+FIX: SandboxMetadataDB won't explode DIRAC when there's no access to the DB 
+CHANGE: Whenever a DB fails to initialize it raises a catchable exception instead of just returning silently
+
+*DataManagement
+CHANGE: Added Lost and Unavailable to the file metadata
+
+[v6r4p6]
+
+Bring fixes from v6r4p6
+
+[v6r4p5]
+
+*Configuration
+NEW: Added function to generate Operations CS paths
+
+*Core
+FIX: Added proper ProcessPool checks and finalisation
+
+*DataManagement
+FIX: don't set Files.Status to Failed for non-existign files, failover transfers won't go
+FIX: remove classmethods here and there to unblock requestHolder
+CHANGE: RAB, TA: change task timeout: 180 and 600 (was 600 and 900 respectively)
+FIX: sorting replication tree by Ancestor, not hopAncestorgit add DataManagementSystem/Agent/TransferAgent.py
+NEW: TA: add finalize
+CHANGE: TransferAgent: add AcceptableFailedFiles to StrategyHandler to ban FTS channel from scheduling
+FIX: if there is no failed files, put an empty dict
+
+
+*RSS
+FIX: RSS is setting Allowed but the StorageElement checks for Active
+
+*Workflows
+FIX: Part of WorfklowTask rewritten to fix some issues and allow 'ANY' as site
+
+*Transformation
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+[v6r4p4]
+
+*Core
+FIX: Platform.py - check if Popen.terminate is available (only from 2.6)
+
+[v6r4p3]
+
+*Core
+FIX: ProcessPool with watchdog and timeouts - applied in v6r3 first
+
+[v6r4p2]
+
+*StorageManagement
+BUGFIX: StorageElement - staging is a Read operation and should be allowed as such
+
+*WMS
+BUGFIX: InProcessComputingElement, JobAgent - proper return status code from the job wrapper
+
+*Core
+FIX: Platform - manage properly the case of exception in the ldconfig execution
+
+[v6r4p1]
+
+*DMS
+FIX: TransferDB.getChannelObservedThroughput - the channelDict was created in a wrong way
+
+*RSS
+FIX: ResourceStatus was not returning Allowed by default
+
+[v6r4]
+
+*Core
+FIX: dirac-install-db.py: addDatabaseOptionsToCS has added a new keyed argument
+NEW: SGETimeLeft.py: Support for SGE backend
+FIX: If several extensions are installed, merge ConfigTemplate.cfg
+NEW: Service framework - added monitoring of file descriptors open
+NEW: Service framework - Reduced handshake timeout to prevent stuck threads
+NEW: MySQL class with new high level methods - buildCondition,insertFields,updateFields
+     deleteEntries, getFields, getCounters, getDistinctAttributeValues
+FIX: ProcessPool - fixes in the locking mechanism with LockRing, stopping workers when the
+     parent process is finished     
+FIX: Added more locks to the LockRing
+NEW: The installation tools are updated to install components by name with the components module specified as an option
+
+*DMS
+FIX: TransferDB.py - speed up the Throughput determination
+NEW: dirac-dms-add-files: script similar to dirac-dms-remove-files, 
+     allows for 1 file specification on the command line, using the usual dirac-dms-add-file options, 
+     but also can take a text file in input to upload a bunch of files. Exit code is 0 only if all 
+     was fine and is different for every error found. 
+NEW: StorageElementProxy- support for data downloading with http protocol from arbitrary storage, 
+     needed for the web data download
+BUGFIX: FileCatalogCLI - replicate operation does a proper replica registration ( closes #5 )     
+FIX: ReplicaManager - __cleanDirectory now working and thus dirac-dms-clean-directory
+
+*WMS
+NEW: CPU normalization script to run a quick test in the pilot, used by the JobWrapper
+     to report the CPU consumption to the accounting
+FIX: StalledJobAgent - StalledTimeHours and FailedTimeHours are read each cycle, refer to the 
+     Watchdog heartBeat period (should be renamed); add NormCPUTime to Accounting record
+NEW: SiteDirector - support for the operation per VO in multi-VO installations
+FIX: StalledJobAgent - get ProcessingType from JDL if defined
+BUGFIX: dirac-wms-job-peek - missing printout in the command
+NEW: SiteDirector - take into account the number of already waiting pilots when evaluating the number of pilots to submit
+FIX: properly report CPU usage when the Watchdog kill the payload.
+
+*RSS
+BUGFIX: Result in ClientCache table is a varchar, but the method was getting a datetime
+NEW: CacheFeederAgent - VOBOX and SpaceTokenOccupancy commands added (ported from LHCbDIRAC)
+CHANGE: RSS components get operational parameters from the Operations handler
+
+*DataManagement
+FIX: if there is no failed files, put an empty dict
+
+*Transformation
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+[v6r3p19]
+
+*WMS
+FIX: gLitePilotDirector - fix the name of the MyProxy server to avoid crashes of the gLite WMS
+
+[v6r3p18]
+
+*Resources
+BUGFIX: SRM2Storage - in checksum type evaluation
+
+[v6r3p17]
+
+*DataManagement
+FIX: Fixes issues #783 and #781. Bugs in ReplicaManager removePhisicalReplica and getFilesFromDirectory
+FIX: Return S_ERROR if missing jobid arguments
+NEW: Checksum can be verified during FTS and SRM2Storage 
+
+[v6r3p16]
+
+*DataManagement
+FIX: better monitoring of FTS channels 
+FIX: Handle properly None value for channels and bandwidths
+
+*Core
+FIX: Properly calculate the release notes if there are newer releases in the release.notes file
+
+[v6r3p15]
+
+*DataManagement
+FIX: if there is no failed files, put an empty dict
+
+*Transformation
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+
+[v6r3p14]
+
+* Core
+
+BUGFIX: ProcessPool.py: clean processing and finalisation
+BUGFIX: Pfn.py: don't check for 'FileName' in pfnDict
+
+* DMS
+
+NEW: dirac-dms-show-fts-status.py: script showing last hour history for FTS channels
+NEW: TransferDBMonitoringHandler.py: new function exporting FST channel queues
+BUGFIX: TransferAgent.py,RemovalAgent.py,RegistrationAgent.py - unlinking of temp proxy files, corection of values sent to gMonitor
+BUGFIX: StrategyHandler - new config option 'AcceptableFailedFiles' to unblock scheduling for channels if problematic transfers occured for few files
+NEW: TransferAgent,RemovalAgent,RegistrationAgent - new confing options for setting timeouts for tasks and ProcessPool finalisation
+BUGFIX: ReplicaManager.py - reverse sort of LFNs when deleting files and directories to avoid blocks
+NEW: moved StrategyHandler class def to separate file under DMS/private
+
+* TMS
+
+FIX: TransformationCleaningAgent.py: some refactoring, new way of disabling/enabline execution by 'EnableFlag' config option
+
+[v6r3p13]
+
+*Core
+FIX: Added proper ProcessPool checks and finalisation
+
+*DataManagement
+FIX: don't set Files.Status to Failed for non-existign files, failover transfers won't go
+FIX: remove classmethods here and there to unblock requestHolder
+CHANGE: RAB, TA: change task timeout: 180 and 600 (was 600 and 900 respectively)
+FIX: sorting replication tree by Ancestor, not hopAncestorgit add DataManagementSystem/Agent/TransferAgent.py
+NEW: TA: add finalize
+CHANGE: TransferAgent: add AcceptableFailedFiles to StrategyHandler to ban FTS channel from scheduling
+
+[v6r3p12]
+
+*Core
+FIX: Platform.py - check if Popen.terminate is available (only from 2.6)
+
+[v6r3p11]
+
+*Core
+FIX: ProcessPool with watchdog and timeouts
+
+[v6r3p10]
+
+*StorageManagement
+BUGFIX: StorageElement - staging is a Read operation and should be allowed as such
+
+*WMS
+BUGFIX: InProcessComputingElement, JobAgent - proper return status code from the job wrapper
+
+*Core
+FIX: Platform - manage properly the case of exception in the ldconfig execution
+
+[v6r3p9]
+
+*DMS
+FIX: TransferDB.getChannelObservedThroughput - the channelDict was created in a wrong way
+
+[v6r3p8]
+
+*Web
+CHANGE: return back to the release web2012041601
+
+[v6r3p7]
+
+*Transformation
+FIX: TransformationCleaningAgent - protection from deleting requests with jobID 0 
+
+[v6r3p6]
+
+*Core
+FIX: dirac-install-db - proper key argument (follow change in InstallTools)
+FIX: ProcessPool - release all locks every time WorkignProcess.run is executed, more fixes to come
+FIX: dirac-configure - for Multi-Community installations, all vomsdir/vomses files are now created
+
+*WMS
+NEW: SiteDirector - add pilot option with CE name to allow matching of SAM jobs.
+BUGFIX: dirac-pilot - SGE batch ID was overwriting the CREAM ID
+FIX: PilotDirector - protect the CS master if there are at least 3 slaves
+NEW: Watchdog - set LocalJobID in the SGE case
+
+[v6r3p5]
+
+*Core:
+BUGFIX: ProcessPool - bug making TaskAgents hang after max cycles
+BUGFIX: Graphs - proper handling plots with data containing empty string labels
+FIX: GateWay - transfers were using an old API
+FIX: GateWay - properly calculate the gateway URL
+BUGFIX: Utilities/Pfn.py - bug in pfnunparse() when concatenating Path and FileName
+
+*Accounting
+NEW: ReportGenerator - make AccountingDB readonly
+FIX: DataCache - set daemon the datacache thread
+BUGFIX: BasePlotter - proper handling of the Petabyte scale data
+
+*DMS:
+BUGFIX: TransferAgent, RegistrationTask - typos 
+
+[v6r3p4]
+
+*DMS:
+BUGFIX: TransferAgent - wrong value for failback in TA:execute
+
+[v6r3p3]
+
+*Configuration
+BUGFIX: Operations helper - typo
+
+*DMS:
+FIX: TransferAgent - change the way of redirecting request to task
+
+[v6r3p2]
+
+*DMS
+FIX: FTSRequest - updating metadata for accouting when finalizing FTS requests
+
+*Core
+FIX: DIRAC/__init__.py - default version is set to v6r3
+
+[v6r3p1]
+
+*WMS
+CHANGE: Use ResourcesStatus and Resources helpers in the InputDataAgent logic
+
+*Configuration
+NEW: added getStorageElementOptions in Resources helper
+
+*DMS
+FIX: resourceStatus object created in TransferAgent instead of StrategyHandler
+
+[v6r3]
+
+*Core
+NEW: Added protections due to the process pool usage in the locking logic
+
+*Resources
+FIX: LcgFileCatalogClient - reduce the number of retries: LFC_CONRETRY = 5 to 
+     avoid combined catalog to be stuck on a faulty LFC server
+     
+*RSS
+BUGFIX: ResourceStatus - reworked helper to keep DB connections     
+
+*DMS
+BUGFIX: ReplicaManager::CatalogBase::_callFileCatalogFcnSingleFile() - wrong argument
+
+*RequestManagement
+FIX: TaskAgents - set timeOut for task to 10 min (15 min)
+NEW: TaskAgents - fill in Error fields in case of failing operations
+
+*Interfaces
+BUGFIX: dirac-wms-select-jobs - wrong use of the Dirac API
+
+[v6r2p9]
+
+*Core
+FIX: dirac-configure - make use of getSEsForSite() method to determine LocalSEs
+
+*WMS
+NEW: DownloadInputData,InputDataByProtocol - check Files on Tape SEs are on Disk cache 
+     before Download or getturl calls from Wrapper
+CHANGE: Matcher - add Stalled to "Running" Jobs when JobLimits are applied   
+CHANGE: JobDB - allow to specify required platform as Platform JDL parameter,
+        the specified platform is taken into account even without /Resources/Computing/OSCompatibility section
+
+*DMS
+CHANGE: dirac-admin-allow(ban)-se - removed lhcb-grid email account by default, 
+        and added switch to avoid sending email
+FIX: TaskAgents - fix for non-existing files
+FIX: change verbosity in failoverReplication 
+FIX: FileCatalog - remove properly metadata indices 
+BUGFIX: FileManagerBase - bugfix in the descendants evaluation logic  
+FIX: TransferAgent and TransferTask - update Files.Status to Failed when ReplicaManager.replicateAndRegister 
+     will fail completely; when no replica is available at all.
+
+*Core
+FIX: dirac-pilot - default lcg bindings version set to 2012-02-20
+
+[v6r2p8]
+
+*DMS:
+CHANGE: TransferAgent - fallback to task execution if replication tree is not found
+
+[v6r2p7]
+
+*WMS
+BUGFIX: SiteDirector - wrong CS option use: BundleProxy -> HttpProxy
+FIX: SiteDirector - use short lines in compressed/encoded files in the executable
+     python script
+
+[v6r2p6]
+
+*DataManagement
+FIX: Bad logic in StrategyHandler:MinimiseTotalWait
+
+*Core
+CHANGE: updated GGUS web portal URL
+
+*RSS
+BUGFIX: meta key cannot be reused, it is popped from dictionary
+
+*Framework
+FIX: The Gateway service does not have a handler
+NEW: ConfingTemplate entry for Gateway
+FIX: distribution notes allow for word wrap
+
+*WorkloadManagement
+FIX: avoid unnecessary call if no LFN is left in one of the SEs
+FIX: When Uploading job outputs, try first Local SEs, if any
+
+
+[v6r2p5]
+
+*RSS
+BUGFIX: several minor bug fixes
+
+*RequestManagement
+BUGFIX: RequestDBMySQL - removed unnecessary request type check
+
+*DMS
+BUGFIX: FileCatalogClienctCLI - wrong evaluation of the operation in the find command
+NEW: FileCatalog - added possibility to remove specified metadata for a given path 
+BUGFIX: ReplicaManager - wrong operation order causing failure of UploadLogFile module
+
+*Core
+NEW: dirac-install - generate cshrc DIRAC environment setting file for the (t)csh 
+
+*Interfaces
+CHANGE: Job - added InputData to each element in the ParametricInputData
+
+*WMS
+CHANGE: dirac-jobexec - pass ParametericInputData to the workflow as a semicolon separated string
+
+[v6r2p4]
+
+*WMS
+BUGFIX: StalledJobAgent - protection against jobs with no PilotReference in their parameters
+BUGFIX: WMSAdministratorHandler - wrong argument type specification for getPilotInfo method
+
+*StorageManagement
+BUGFIX: RequestFinalizationAgent - no method existence check when calling RPC method
+
+[v6r2p3]
+
+*WMS
+CHANGE: Matcher - fixed the credentials check in requestJob() to simplify it
+
+*ConfigurationSystem
+CHANGE: Operations helper - fix that allow no VO to be defined for components that do not need it
+
+*Core
+BUGFIX: InstallTools - when applying runsvctrl to a list of components make sure that the config server is treated first and the sysadmin service - last
+        
+[v6r2p2]
+
+*WMS
+BUGFIX: Matcher - restored logic for checking private pilot asking for a given DN for belonging to the same group with JOB_SHARING property.
+
+[v6r2p1]
+
+*RequestManagementSystem
+BUGFIX: RequestCleaningAgent - missing import of the "second" interval definition 
+
+[v6r2]
+
+*General
+FIX: replaced use of exec() python statement in favor of object method execution
+
+*Accounting
+CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 (closes #457)
+
+*Core
+CHANGE: Pfn.py - pfnparse function rewritten for speed up and mem usage, unit test case added
+FIX: DISET Clients are now thread-safe. Same clients used twice in different threads was not 
+closing the previous connection
+NEW: reduce wait times in DISET protocol machinery to improve performance    
+NEW: dirac-fix-mysql-script command to fix the mysql start-up script for the given installation
+FIX: TransferClient closes connections properly
+FIX: DISET Clients are now thread-safe. Same client used twice in different threads will not close the previous connection
+CHANGE: Beautification and reduce wait times to improve performance
+NEW: ProcessPool - added functionality to kill all children processes properly when destroying ProcessPool objects
+NEW: CS Helper for LocalSite section, with gridEnv method
+NEW: Grid module will use Local.gridEnv if nothing passed in the arguments
+CHANGE: Add deprecated sections in the CS Operations helper to ease the transition
+FIX: dirac-install - execute dirac-fix-mysql-script, if available, to fix the mysql.server startup script
+FIX: dirac-distribution - Changed obsoleted tar.list file URL
+FIX: typo in dirac-admin-add-host in case of error
+CHANGE: dirac-admin-allow(ban)-se - use diracAdmin.sendMail() instead of NotificationClient.sendMail()
+
+*Framework
+BUGFIX: UserProfileDB - no more use of "type" variable as it is a reserved keyword 
+
+*RequestManagement:
+FIX: RequestDBFile - more consistent treatment of requestDB Path
+FIX: RequestMySQL - Execution order is evaluated based on not Done state of subrequests
+NEW: RequestCleaningAgent - resetting Assigned requests to Waiting after a configurable period of time
+
+*RSS
+CHANGE: RSS Action now inherits from a base class, and Actions are more homogeneous, they all take a uniform set of arguments. The name of modules has been changed from PolType to Action as well.
+FIX: CacheFeederAgent - too verbose messages moved to debug instead of info level
+BUGFIX: fixed a bug preventing RSS clients to connect to the services     
+FIX: Proper services synchronization
+FIX: Better handling of exceptions due to timeouts in GOCDBClient   
+FIX: RSS.Notification emails are sent again
+FIX: Commands have been modified to return S_OK, S_ERROR inside the Result dict. This way, policies get a S_ERROR / S_OK object. CacheFeederAgent has been updated accordingly.
+FIX: allow clients, if db connection fails, to reconnect ( or at least try ) to the servers.
+CHANGE: access control using CS Authentication options. Default is SiteManager, and get methods are all.
+BUGFIX: MySQLMonkey - properly escaped all parameters of the SQL queries, other fixes.
+NEW: CleanerAgent renamed to CacheCleanerAgent
+NEW: Updated RSS scripts, to set element statuses and / or tokens.
+NEW: Added a new script, dirac-rss-synch
+BUGFIX: Minor bugfixes spotted on the Web development
+FIX: Removed useless decorator from RSS handlers
+CHANGE: ResourceStatus helper tool moved to RSS/Client directory, no RSS objects created if the system is InActive
+CHANGE: Removed ClientFastDec decorator, using a more verbose alternative.
+CHANGE: Removed useless usage of **kwargs on helper functions.  
+NEW: added getSESitesList method to RSSClient      
+FIX: _checkFloat() checks INTEGERS, not datetimes
+
+*DataManagement
+CHANGE: refactoring of DMS agents executing requests, allow requests from arbitrary users
+NEW: DFC - allow to specify multiple replicas, owner, mode when adding files
+CHANGE: DFC - optimization of the directory size evaluation
+NEW: Added CREATE TEMPORARY TABLES privilege to FileCatalogDB
+CHANGE: DFC - getCatalogCounters() update to show numbers of directories
+NEW: lfc_dfc_copy script to migrate data from LFC to DFC
+FIX: dirac-dms-user-lfns - fixed the case when the baseDir is specified
+FIX: FTS testing scripts were using sys.argv and getting confused if options are passed
+NEW: DFC - use DirectoryUsage tables for the storage usage evaluations
+NEW: DFC - search by metadata can be limited to a given directory subtree
+NEW: DFC - search by both directory and file indexed metadata
+BUGFIX: DFC - avoid crash if no directories or files found in metadata query
+NEW: DFC FileCatalogHandler - define database location in the configuration
+NEW: DFC - new FileCatalogFactory class, possibility to use named DFC services
+FIX: FTSMonitor, FTSRequest - fixes in handling replica registration, setting registration requests in FileToCat table for later retry
+FIX: Failover registration request in the FTS agents.      
+FIX: FTSMonitor - enabled to register new replicas if even the corresponding request were removed from the RequestManagement 
+FIX: StorageElement - check if SE has been properly initialized before executing any method     
+CHANGE: LFC client getReplica() - make use of the new bulk method lfc.lfc_getreplicasl()
+FIX: LFC client - protect against getting None in lfc.lfc_readdirxr( oDirectory, "" )  
+FIX: add extra protection in dump method of StorageElement base class
+CHANGE: FailoverTransfer - create subrequest per catalog if more than one catalog
+
+*Interface
+NEW: Job.py - added method to handle the parametric parameters in the workflow. They are made available to the workflow_commons via the key 'GenericParameters'.
+FIX: Dirac.py - fix some type checking things
+FIX: Dirac.py - the addFile() method can now register to more than 1 catalog.
+
+*WMS
+FIX: removed dependency of the JobSchedulingAgent on RSS. Move the getSiteTier functionality to a new CS Helper.
+FIX: WMSAdministratorHandler - Replace StringType by StringTypes in the export methods argument type
+FIX: JobAgent - Set explicitly UseServerCertificate to "no" for the job executable
+NEW: dirac-pilot - change directory to $OSG_WN_TMP on OSG sites
+FIX: SiteDirector passes jobExecDir to pilot, this defaults to "." for CREAM CEs. It can be set in the CS. It will not make use of $TMPDIR in this case.
+FIX: Set proper project and release version to the SiteDirector     
+NEW: Added "JobDelay" option for the matching, refactored and added CS options to the matcher
+FIX: Added installation as an option to the pilots and random MyProxyServer
+NEW: Support for parametric jobs with parameters that can be of List type
+
+*Resources
+NEW: Added SSH Grid Engine Computing Element
+NEW: Added SSH Computing Element
+FIX: make sure lfc client will not try to connect for several days
+
+*Transformation
+FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to zero if "force" flag and    the new status is "unused"
+NEW: TransformationDB - added support for dictionary in metadata for the InputDataQuery mechanism     
+
+[v6r1p13]
+
+*WMS
+FIX: JobSchedulingAgent - backported from v6r2 use of Resources helper
+
+[v6r1p12]
+
+*Accounting
+FIX: Properly delete cached plots
+
+*Core
+FIX: dirac-install - run externals post install after generating the versions dir
+
+[v6r1p11]
+
+*Core
+NEW: dirac-install - caches locally the externals and the grid bundle
+FIX: dirac-distribution - properly generate releasehistory and releasenotes
+
+[v6r1p10]
+
+*WorloadManagement
+FIX: JobAgent - set UseServerCertificate option "no" for the job executable
+
+[v6r1p9]
+
+*Core
+FIX: dirac-configure - set the proper /DIRAC/Hostname when defining /LocalInstallation/Host
+
+*DataManagement
+FIX: dirac-dms-user-lfns - fixed the case when the baseDir is specified
+BUGFIX: dirac-dms-remove-files - fixed crash in case of returned error report in a form of dictionary 
+
+[v6r1p8]
+
+*Web
+FIX: restored Run panel in the production monitor
+
+*Resources
+FIX: FileCatalog - do not check existence of the catalog client module file
+
+[v6r1p7]
+
+*Web
+BUGFIX: fixed scroll bar in the Monitoring plots view
+
+[v6r1p6]
+
+*Core
+FIX: TransferClient closes connections properly
+
+[v6r1p5]
+
+*Core
+FIX: DISET Clients are now thread-safe. Same clients used twice in different threads was not 
+     closing the previous connection
+NEW: reduce wait times in DISET protocol machinery to improve performance   
+
+[v6r1p4]
+
+*RequestManagement
+BUGFIX: RequestContainer - in isSubRequestDone() treat special case for subrequests with files
+
+*Transformation
+BUGFIX: TransformationCleaningAgent - do not clear requests for tasks with no associated jobs
+
+[v6r1p3]
+
+*Framework
+NEW: Pass the monitor down to the request RequestHandler
+FIX: Define the service location for the monitor
+FIX: Close some connections that DISET was leaving open
+
+[v6r1p2]
+
+*WorkloadManagement
+BUGFIX: JobSchedulingAgent - use getSiteTiers() with returned direct value and not S_OK
+
+*Transformation
+BUGFIX: Uniform use of the TaskManager in the RequestTaskAgent and WorkflowTaskAgent
+
 [v6r1p1]
 
 *RSS
@@ -63,6 +931,13 @@ BUGFIX: RequestContainer.isSubrequestDone() - return 0 if Done check fails
 
 *DataManagement
 NEW: FileCatalog - possibility to configure multiple FileCatalog services of the same type
+
+[v6r0p4]
+
+*Framework
+NEW: Pass the monitor down to the request RequestHandler
+FIX: Define the service location for the monitor
+FIX: Close some connections that DISET was leaving open
 
 [v6r0p3]
 

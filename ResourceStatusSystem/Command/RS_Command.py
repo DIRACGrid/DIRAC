@@ -1,19 +1,14 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
-RS_Command
-"""
+''' RS_Command
 
-__RCSID__ = "$Id:  $"
+'''
 
-from DIRAC                                            import gLogger
-
+from DIRAC                                            import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command       import Command
 from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes
-from DIRAC.ResourceStatusSystem.Utilities             import Utils
-from DIRAC.ResourceStatusSystem                       import ValidRes
+from DIRAC.ResourceStatusSystem.Utilities             import RssConfiguration, Utils
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
@@ -26,9 +21,9 @@ class RSPeriods_Command( Command ):
     """
     Return getPeriods from ResourceStatus Client
 
-    - args[0] should be a ValidRes
+    - args[0] should be a ValidElement
 
-    - args[1] should be the name of the ValidRes
+    - args[1] should be the name of the ValidElement
 
     - args[2] should be the present status
 
@@ -39,12 +34,15 @@ class RSPeriods_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
-      res = self.APIs[ 'ResourceStatusClient' ].getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )['Value']
-    except:
-      gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
-      return {'Result':'Unknown'}
+      
+      res = self.APIs[ 'ResourceStatusClient' ].getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )
+    
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
-    return {'Result':res}
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -65,7 +63,7 @@ class ServiceStats_Command( Command ):
 
     :params:
       :attr:`args`: a tuple
-        - args[1]: a ValidRes
+        - args[1]: a ValidElement
 
         - args[0]: should be the name of the Site
 
@@ -77,16 +75,15 @@ class ServiceStats_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
+      
       res = self.APIs[ 'ResourceStatusClient' ].getServiceStats( self.args[1] )#, statusType = None )# self.args[0], self.args[1] )['Value']
-    except:
-      gLogger.exception( "ServiceStats: Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
-      return {'Result':'Unknown'}
+    
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
-    if not res[ 'OK' ]:
-      gLogger.error( "ServiceStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
-      return { 'Result' : None }
-
-    return { 'Result' : res[ 'Value' ] }
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -107,7 +104,7 @@ class ResourceStats_Command( Command ):
 
     :params:
       :attr:`args`: a tuple
-        - `args[0]` string, a ValidRes. Should be in ('Site', 'Service')
+        - `args[0]` string, a ValidElement. Should be in ('Site', 'Service')
 
         - `args[1]` should be the name of the Site or Service
 
@@ -119,16 +116,15 @@ class ResourceStats_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
+      
       res = self.APIs[ 'ResourceStatusClient' ].getResourceStats( self.args[0], self.args[1], statusType = None )
-    except:
-      gLogger.exception( "ResourceStats: Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
-      return {'Result':'Unknown'}
+    
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
-    if not res[ 'OK' ]:
-      gLogger.error( "ResourceStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
-      return { 'Result' : None }
-
-    return { 'Result' : res[ 'Value' ] }
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -160,26 +156,25 @@ class StorageElementsStats_Command( Command ):
     super( StorageElementsStats_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    if self.args[0] == 'Service':
-      granularity = 'Site'
-      name        = self.args[1].split( '@' )[1]
-    elif self.args[0] in [ 'Site', 'Resource' ]:
-      granularity = self.args[0]
-      name        = self.args[1]
-    else:
-      raise InvalidRes, Utils.where( self, self.doCommand )
-
     try:
+
+      if self.args[0] == 'Service':
+        granularity = 'Site'
+        name        = self.args[1].split( '@' )[1]
+      elif self.args[0] in [ 'Site', 'Resource' ]:
+        granularity = self.args[0]
+        name        = self.args[1]
+      else:
+        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
+
       res = self.APIs[ 'ResourceStatusClient' ].getStorageElementStats( granularity, name, statusType = None )
-    except:
-      gLogger.exception( "StorageElementsStats: Exception when calling ResourceStatusClient for %s %s" % ( granularity, name ) )
-      return {'Result':'Unknown'}
+      
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
-    if not res[ 'OK' ]:
-      gLogger.error( "StorageElementsStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], granularity, name ) )
-      return { 'Result' : None }
-
-    return { 'Result' : res[ 'Value' ] }
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -200,9 +195,9 @@ class MonitoredStatus_Command( Command ):
 
     :params:
       :attr:`args`: a tuple
-        - `args[0]`: string          - should be a ValidRes
-        - `args[1]`: string          - should be the name of the ValidRes
-        - `args[2]`: optional string - a ValidRes (get status of THIS ValidRes
+        - `args[0]`: string          - should be a ValidElement
+        - `args[1]`: string          - should be the name of the ValidElement
+        - `args[2]`: optional string - a ValidElement (get status of THIS ValidElement
           for name in args[1], will call getGeneralName)
 
     :returns:
@@ -213,25 +208,31 @@ class MonitoredStatus_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
+
+      validElements = RssConfiguration.getValidElements()
+
       if len( self.args ) == 3:
-        if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
-          raise InvalidRes, Utils.where( self, self.doCommand )
-        toBeFound = Utils.unpack(self.APIs[ 'ResourceStatusClient' ].getGeneralName(
-            self.args[0], self.args[1], self.args[2] ))[0]
+        if validElements.index( self.args[2] ) >= validElements.index( self.args[0] ):
+          return { 'Result' : S_ERROR( 'Error in MonitoredStatus_Command' ) }
+        toBeFound = self.APIs[ 'ResourceStatusClient' ].getGeneralName( 
+                      self.args[0], self.args[1], self.args[2] )[ 'Value' ]
       else:
         toBeFound = self.args[1]
 
-      statuses  = Utils.unpack(self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus(
-          self.args[0], toBeFound ))[0]
+      res = self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[2], toBeFound )
+      if res[ 'OK' ]:
+        res = res[ 'Value' ]
+        if res:
+          res = S_OK( res[ 0 ][ 0 ] )
+        else:
+          res = S_OK( None )  
 
-    except InvalidRes:
-      gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
-      return {'Result':'Unknown'}
-    except IndexError:
-      gLogger.warn( "No value for getMonitoredStatus of %s/%s" % ( self.args[0], self.args[1] ) )
-      return {'Result':'Unknown'}
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
-    return { 'Result':statuses[0] }
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 

@@ -2,9 +2,9 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/LHCbDIRAC/trunk/LHCbDIRAC/TransformationSystem/scripts/dirac-transformation-archive.py $
+# $HeadURL$
 ########################################################################
-__RCSID__ = "$Id: dirac-transformation-archive.py 29046 2010-10-05 16:27:16Z acsmith $"
+__RCSID__ = "$Id$"
 
 import sys
 if len( sys.argv ) < 2:

@@ -1,35 +1,29 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
+''' PEP
+
   Module used for enforcing policies. Its class is used for:
     1. invoke a PDP and collects results
     2. enforcing results by:
        a. saving result on a DB
        b. raising alarms
        c. other....
-"""
-from DIRAC.ResourceStatusSystem.Utilities                          import Utils
+'''
 
-from DIRAC.ResourceStatusSystem                                    import ValidRes, ValidStatus, ValidStatusTypes, \
-    ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC                                                       import S_ERROR
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient      import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient  import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP                 import PDP
+from DIRAC.ResourceStatusSystem.Utilities                        import RssConfiguration, Utils
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions               import InvalidRes, InvalidStatus, \
-    InvalidResourceType, InvalidServiceType, InvalidSiteType
-
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient        import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient    import ResourceManagementClient
-
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.Empty_PolType import EmptyPolTypeActions
-
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP                   import PDP
+__RCSID__  = '$Id: $'
 
 class PEP:
-  """
+  '''
   PEP (Policy Enforcement Point) initialization
 
   :params:
-    :attr:`granularity`       : string - a ValidRes (optional)
+    :attr:`granularity`       : string - a ValidElement (optional)
     :attr:`name`              : string - optional name (e.g. of a site)
     :attr:`status`            : string - optional status
     :attr:`formerStatus`      : string - optional former status
@@ -41,13 +35,13 @@ class PEP:
       [
         {
           'PolicyType': a PolicyType
-          'Granularity': a ValidRes (optional)
+          'Granularity': a ValidElement (optional)
         }
       ]
-  """
+  '''
 
-  def __init__( self, pdp = None, clients = {} ):
-    """
+  def __init__( self, pdp = None, clients = None ):
+    '''
     Enforce policies, using a PDP  (Policy Decision Point), based on
 
      self.__granularity (optional)
@@ -65,94 +59,123 @@ class PEP:
      :params:
        :attr:`pdp`       : a custom PDP object (optional)
        :attr:`clients`   : a dictionary containing modules corresponding to clients.
-    """
-    try:
-      self.rsAPI = clients[ 'ResourceStatusClient' ]
-    except ValueError:
-      self.rsAPI = ResourceStatusClient()
-    try:
-      self.rmAPI = clients[ 'ResourceManagementClient' ]
-    except ValueError:
-      self.rmAPI = ResourceManagementClient()
+    '''
+    
+    if clients is None:
+      clients = {}
+    
+    try:             
+      self.rsClient = clients[ 'ResourceStatusClient' ]
+    except KeyError: 
+      self.rsClient = ResourceStatusClient()
+    try:             
+      self.rmClient = clients[ 'ResourceManagementClient' ]
+    except KeyError: 
+      self.rmClient = ResourceManagementClient()
 
     self.clients = clients
-
-    if pdp is None:
+    if not pdp:
       self.pdp = PDP( **clients )
 
-################################################################################
-
   def enforce( self, granularity = None, name = None, statusType = None,
-                status = None, formerStatus = None, reason = None, siteType = None,
-                serviceType = None, resourceType = None, tokenOwner = None,
-                useNewRes = False, knownInfo = None  ):
-
-    ###################
-    #  real ban flag  #
-    ###################
+               status = None, formerStatus = None, reason = None, 
+               siteType = None, serviceType = None, resourceType = None, 
+               tokenOwner = None, useNewRes = False, knownInfo = None  ):
+    '''
+      Enforce policies for given set of keyworkds. To be better explained.
+    '''
+  
+    ##  real ban flag  #########################################################
 
     realBan = False
     if tokenOwner is not None:
       if tokenOwner == 'RS_SVC':
         realBan = True
 
-    ################
-    # policy setup #
-    ################
+    ## sanitize input ##########################################################
+    ## IS IT REALLY NEEDED ??
+    
+    validElements = RssConfiguration.getValidElements()    
+    if granularity is not None and granularity not in validElements:
+      return S_ERROR( 'Granularity "%s" not valid' % granularity )
 
-    granularity = Utils.assignOrRaise( granularity, ValidRes, InvalidRes, self, self.__init__ )
-    try:
-      statusType   = Utils.assignOrRaise( statusType, ValidStatusTypes[ granularity ]['StatusType'], \
-                                            InvalidStatus, self, self.enforce )
-    except KeyError:
-      statusType = "''" # "strange" default value returned by CS
+    validStatusTypes = RssConfiguration.getValidStatusTypes()
+    if statusType is not None and statusType not in validStatusTypes[ granularity ]['StatusType']:
+      return S_ERROR( 'StatusType "%s" not valid' % statusType )
+    
+    validStatus = RssConfiguration.getValidStatus()
+    if status is not None and status not in validStatus:
+      return S_ERROR( 'Status "%s" not valid' % status )
 
-    status       = Utils.assignOrRaise( status, ValidStatus, InvalidStatus, self, self.enforce )
-    formerStatus = Utils.assignOrRaise( formerStatus, ValidStatus, InvalidStatus, self, self.enforce )
-    siteType     = Utils.assignOrRaise( siteType, ValidSiteType, InvalidSiteType, self, self.enforce )
-    serviceType  = Utils.assignOrRaise( serviceType, ValidServiceType, InvalidServiceType, self, self.enforce )
-    resourceType = Utils.assignOrRaise( resourceType, ValidResourceType, InvalidResourceType, self, self.enforce )
+    validStatus = RssConfiguration.getValidStatus()
+    if formerStatus is not None and formerStatus not in validStatus:
+      return S_ERROR( 'FormerStatus "%s" not valid' % formerStatus )
 
-    self.pdp.setup(granularity = granularity, name = name,
+    validSiteTypes = RssConfiguration.getValidSiteTypes()
+    if siteType is not None and siteType not in validSiteTypes:
+      return S_ERROR( 'SiteType "%s" not valid' % siteType )
+
+    validServiceTypes = RssConfiguration.getValidServiceTypes()
+    if serviceType is not None and serviceType not in validServiceTypes:
+      return S_ERROR( 'ServiceType "%s" not valid' % serviceType )
+
+    validResourceTypes = RssConfiguration.getValidResourceTypes() 
+    if resourceType is not None and resourceType not in validResourceTypes:
+      return S_ERROR( 'ResourceType "%s" not valid' % resourceType )
+    
+    ## policy setup ############################################################  
+
+    self.pdp.setup( granularity = granularity, name = name, 
                     statusType = statusType, status = status,
-                    formerStatus = formerStatus, reason = reason, siteType = siteType,
-                    serviceType = serviceType, resourceType = resourceType,
-                    useNewRes = useNewRes )
+                    formerStatus = formerStatus, reason = reason, 
+                    siteType = siteType, serviceType = serviceType, 
+                    resourceType = resourceType, useNewRes = useNewRes )
 
-    ###################
-    # policy decision #
-    ###################
+    ## policy decision #########################################################
 
     resDecisions = self.pdp.takeDecision( knownInfo = knownInfo )
 
-    res          = resDecisions[ 'PolicyCombinedResult' ]
+    ## record all results before doing anything else    
+    for resP in resDecisions[ 'SinglePolicyResults' ]:
+      
+      if not resP.has_key( 'OLD' ):       
+        self.clients[ "rmClient" ].insertPolicyResultLog( granularity, name,
+                                                          resP[ 'PolicyName' ], 
+                                                          statusType,
+                                                          resP[ 'Status' ], 
+                                                          resP[ 'Reason' ], now )
+        
+      else:
+        gLogger.warn( 'OLD: %s' % resP )
+        
+    res          = resDecisions[ 'PolicyCombinedResult' ] 
     actionBaseMod = "DIRAC.ResourceStatusSystem.PolicySystem.Actions"
 
     # Security mechanism in case there is no PolicyType returned
     if res == {}:
-      EmptyPolTypeActions( granularity, name, resDecisions, res )
+      EmptyAction(granularity, name, statusType, resDecisions).run()
 
     else:
       policyType   = res[ 'PolicyType' ]
 
       if 'Resource_PolType' in policyType:
-        m = Utils.voimport(actionBaseMod + ".Resource_PolType")
-        m.ResourcePolTypeActions( granularity, name, statusType,
-                                  resDecisions, self.rsAPI, self.rmAPI )
+        action = Utils.voimport( '%s.ResourceAction' % actionBaseMod )
+        action.ResourceAction(granularity, name, statusType, resDecisions,
+                         rsClient=self.rsClient,
+                         rmClient=self.rmClient).run()
 
       if 'Alarm_PolType' in policyType:
-        m = Utils.voimport(actionBaseMod + ".Alarm_PolType")
-
-        m.AlarmPolType(name, res, statusType, self.clients,
-                       Granularity = granularity,
-                       SiteType = siteType,
-                       ServiceType = serviceType,
-                       ResourceType = resourceType)
-
+        action = Utils.voimport( '%s.AlarmAction' % actionBaseMod )
+        action.AlarmAction(granularity, name, statusType, resDecisions,
+                       Clients=self.clients,
+                       Params={"Granularity"  : granularity,
+                               "SiteType"     : siteType,
+                               "ServiceType"  : serviceType,
+                               "ResourceType" : resourceType}).run()
 
       if 'RealBan_PolType' in policyType and realBan:
-        m = Utils.voimport(actionBaseMod + ".RealBan_PolType")
-        m.RealBanPolTypeActions(granularity, name, res)
+        action = Utils.voimport( '%s.RealBanAction' % actionBaseMod )
+        action.RealBanAction(granularity, name, resDecisions).run()
 
     return resDecisions
 

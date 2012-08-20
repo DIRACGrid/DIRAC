@@ -185,7 +185,11 @@ class CREAMComputingElement( ComputingElement ):
     idFile = os.fdopen( fd, 'w' )
     idFile.write( '##CREAMJOBS##' )
     for id in jobIDList:
-      idFile.write( '\n' + id )
+      if ":::" in id:
+        ref,stamp = id.split(':::')
+      else:
+        ref = id  
+      idFile.write( '\n' + ref )
     idFile.close()
 
     cmd = ['glite-ce-job-status', '-n', '-i', '%s' % idFileName ]

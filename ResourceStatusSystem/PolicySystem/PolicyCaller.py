@@ -1,17 +1,31 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
+''' PolicyCaller
+
   Module used for calling policies. Its class is used for invoking
-  real policies, based on the policy name
-"""
-from DIRAC import gLogger
+  real policies, based on the policy name.
+  
+'''
+
+from DIRAC                                            import gLogger
 from DIRAC.ResourceStatusSystem.Utilities             import Utils
 from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
 
+__RCSID__  = '$Id: $'
+
 class PolicyCaller:
+  '''
+    PolicyCaller loads policies, sets commands and runs them.
+  '''
+  
   def __init__( self, commandCallerIn = None, **clients ):
-    self.cc      = commandCallerIn if commandCallerIn != None else CommandCaller()
+    '''
+      Constructor
+    '''
+ 
+    if commandCallerIn is None:
+      commandCallerIn = CommandCaller()  
+    
+    self.cCaller = commandCallerIn 
     self.clients = clients
 
 ################################################################################
@@ -19,7 +33,7 @@ class PolicyCaller:
   def policyInvocation( self, granularity = None, name = None,
                         status = None, policy = None, args = None, pName = None,
                         pModule = None, extraArgs = None, commandIn = None ):
-    """
+    '''
     Invokes a policy:
 
     1. If :attr:`policy` is None, import the policy module specified
@@ -33,45 +47,53 @@ class PolicyCaller:
     3. If commandIn is specified (normally it is), use
     :meth:`DIRAC.ResourceStatusSystem.Command.CommandCaller.CommandCaller.setCommandObject`
     to get a command object
-    """
+    '''
 
-    p = policy
-    a = args
+    if not policy:
 
-    if not p:
       try:
-        policyModule = Utils.voimport("DIRAC.ResourceStatusSystem.Policy." + pModule)
+      
+        policyModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.%s' % pModule )
+        
       except ImportError:
-        gLogger.warn("Unable to import a policy module named %s, falling back on AlwaysFalse_Policy." % pModule)
-        policyModule = __import__("DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy",
-                                  globals(), locals(), ['*'])
-        pModule = "AlwaysFalse_Policy"
+        _msg = 'Unable to import a policy module named %s, falling back on AlwaysFalse_Policy.' % pModule
+        gLogger.warn( _msg )
+        policyModule = __import__( 'DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy',
+                                   globals(), locals(), ['*'] )
+        pModule = 'AlwaysFalse_Policy'
+        
       try:
-        p = getattr(policyModule, pModule)()
+        
+        policy = getattr( policyModule, pModule )()
+        
       except AttributeError as exc:
         print policyModule, pModule
         raise exc
 
-    if not a:
-      a = (granularity, name)
+    if not args:
+      args = ( granularity, name )
 
     if extraArgs:
-      a = a + tuple(extraArgs)
+      args = args + tuple( extraArgs )
 
     if commandIn:
-      commandIn = self.cc.setCommandObject( commandIn )
+      commandIn = self.cCaller.setCommandObject( commandIn )
       for clientName, clientInstance in self.clients.items():
-        self.cc.setAPI( commandIn, clientName, clientInstance )
+        
+        self.cCaller.setAPI( commandIn, clientName, clientInstance )
 
-    res = self._innerEval(p, a, commandIn = commandIn)
+    res = self._innerEval( policy, args, commandIn = commandIn )
     # Just adding the PolicyName to the result of the evaluation of the policy
-    res['PolicyName'] = pName
+    res[ 'PolicyName' ] = pName
     return res
 
-  def _innerEval(self, policy, arguments, commandIn = None):
-    """Policy evaluation"""
-    policy.setArgs(arguments)
-    policy.setCommand(commandIn)
+  def _innerEval( self, policy, arguments, commandIn = None ):
+    '''
+      Policy evaluation
+    '''
+    
+    policy.setArgs( arguments )
+    policy.setCommand( commandIn )
     return policy.evaluate()
 
 ################################################################################

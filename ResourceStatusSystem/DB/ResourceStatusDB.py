@@ -1,10 +1,14 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceStatusDB
+
+  Module that provides basic methods to access the ResourceStatusDB.
+
+'''
 
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
 from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckDBExecution, ValidateDBTypes
+
+__RCSID__ = '$Id: $'
 
 class ResourceStatusDB( object ):
   """
@@ -78,17 +82,17 @@ class ResourceStatusDB( object ):
       maxQueueSize = 10
 
     if 'DBin' in kwargs.keys():
-      DBin = kwargs[ 'DBin' ]
-      if isinstance( DBin, list ):
+      dbIn = kwargs[ 'DBin' ]
+      if isinstance( dbIn, list ):
         from DIRAC.Core.Utilities.MySQL import MySQL
-        self.db = MySQL( 'localhost', DBin[ 0 ], DBin[ 1 ], 'ResourceStatusDB' )
+        self.db = MySQL( 'localhost', dbIn[ 0 ], dbIn[ 1 ], 'ResourceStatusDB' )
       else:
-        self.db = DBin
+        self.db = dbIn
     else:
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
    
-    self.mm    = MySQLMonkey( self )  
+    self.mm = MySQLMonkey( self )  
 
   @CheckDBExecution
   @ValidateDBTypes
@@ -246,10 +250,10 @@ class ResourceStatusDB( object ):
 ##    Set LastCheckTime to 0 to monitored(s)
 ##
 ##    :params:
-##      :attr:`monitoreds`: string, or a list of strings where each is a ValidRes:
+##      :attr:`monitoreds`: string, or a list of strings where each is a ValidElement:
 ##      which granularity has to be set to be checked
 ##
-##      :attr:`granularity`: string, a ValidRes: from who this set comes
+##      :attr:`granularity`: string, a ValidElement: from who this set comes
 ##
 ##      :attr:`name`: string, name of Site or Resource
 ##    """
@@ -274,7 +278,7 @@ class ResourceStatusDB( object ):
 ##          if type( serviceName ) is not list:
 ##            serviceName = [ serviceName ]
 ##          if serviceName != []:
-###            raise RSSDBException, where( self, self.setMonitoredToBeChecked ) + " No services for site %s" %name
+###            raise Exception, where( self, self.setMonitoredToBeChecked ) + " No services for site %s" %name
 ###          else:
 ##            serviceName = [ x[0] for x in serviceName ]
 ##            self.updateServiceStatus( serviceName = serviceName, lastCheckTime = znever )
@@ -290,7 +294,7 @@ class ResourceStatusDB( object ):
 ##          if type( resourceName ) is not list:
 ##            resourceName = [ resourceName ]
 ##          if resourceName != []:
-##            #raise RSSDBException, where( self, self.setMonitoredToBeChecked ) + " No resources for site %s" %name
+##            #raise Exception, where( self, self.setMonitoredToBeChecked ) + " No resources for site %s" %name
 ##          #else:
 ##            resourceName = [ x[0] for x in resourceName ]
 ##            self.updateResourceStatus( resourceName = resourceName, lastCheckTime = znever )
@@ -307,7 +311,7 @@ class ResourceStatusDB( object ):
 ##          if type( resourceName ) is not list:
 ##            resourceName = [ resourceName ]
 ##          if resourceName != []:
-##         #   raise RSSDBException, where( self, self.setMonitoredToBeChecked ) + " No resources for service %s" %name
+##         #   raise Exception, where( self, self.setMonitoredToBeChecked ) + " No resources for service %s" %name
 ##         # else:
 ##            resourceName = [ x[0] for x in resourceName ]
 ##            self.updateResourceStatus( resourceName = resourceName, lastCheckTime = znever )
@@ -339,7 +343,7 @@ class ResourceStatusDB( object ):
 ##            SEName = [ SEName ]
 ##          if SEName == []:
 ##            pass
-###            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No storage elements for resource %s" %name
+###            raise Exception, where(self, self.setMonitoredToBeChecked) + "No storage elements for resource %s" %name
 ##          else:
 ##            SEName = [ x[0] for x in SEName ]
 ##            self.updateStorageElementStatus( storageElementName = SEName, lastCheckTime = znever )
@@ -355,7 +359,7 @@ class ResourceStatusDB( object ):
 ##            SEName = [ SEName ]
 ##          if SEName != []:
 ##            #pass
-###            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No storage elements for service %s" %name
+###            raise Exception, where(self, self.setMonitoredToBeChecked) + "No storage elements for service %s" %name
 ##          #else:
 ##            SEName = [ x[0] for x in SEName ]
 ##            self.updateStorageElementStatus( storageElementName = SEName, lastCheckTime = znever )

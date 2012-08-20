@@ -1,10 +1,11 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' PilotsClient
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+  Module to get pilots stats.
+
+'''
+
+__RCSID__  = '$Id: $'
 
 class PilotsClient( object ):
   """ 
@@ -22,9 +23,9 @@ class PilotsClient( object ):
     
     :Parameters:
       **granularity** - `string`
-        should be a ValidRes (Site or Resource)
+        should be a ValidElement (Site or Resource)
       **name** - `string || list` 
-        name(s) of the ValidRes 
+        name(s) of the ValidElement 
       **siteName** - `[,string]`
         optional site name, in case granularity is `Resource` 
       **RPCWMSAdmin** - `[,RPCClient]`
@@ -57,19 +58,22 @@ class PrivatePilotsClient( object ):
         rsClient = ResourceStatusClient()
         siteName = rsClient.getGeneralName( granularity, name, 'Site' )
         if not siteName[ 'OK' ]:
-          raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res[ 'Message' ]
+          print res[ 'Message' ]
+          return {}
+  
         if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
           return {}
         siteName = siteName['Value']
 
       res = RPC.getPilotSummaryWeb( { 'ExpandSite' : siteName }, [], 0, 50 )
     else:
-      raise InvalidRes, where( self, self.getPilotsSimpleEff )
+      return {}
 
     if not res['OK']:
-      raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res['Message']
-    else:
-      res = res['Value']['Records']
+      print res[ 'Message' ]
+      return {}
+    
+    res = res['Value']['Records']
 
     if len(res) == 0:
       return {}

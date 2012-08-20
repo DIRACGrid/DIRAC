@@ -13,17 +13,17 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Security import Properties, CS
 
-class SandboxMetadataDB(DB):
+class SandboxMetadataDB( DB ):
 
   def __init__( self, maxQueueSize = 10 ):
     DB.__init__( self, 'SandboxMetadataDB', 'WorkloadManagement/SandboxMetadataDB', maxQueueSize )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
-      raise Exception( "Can't create tables: %s" % result[ 'Message' ])
+      raise RuntimeError( "Can't create tables: %s" % result[ 'Message' ] )
     self.__assignedSBGraceDays = 0
     self.__unassignedSBGraceDays = 15
 
-  def __initializeDB(self):
+  def __initializeDB( self ):
     """
     Create the tables
     """
@@ -157,12 +157,11 @@ class SandboxMetadataDB(DB):
     sqlCond = [ "%s=%s" % ( key, condDict[ key ] ) for key in condDict ]
     return self._update( "UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE %s" % " AND ".join( sqlCond ) )
 
-  def assignSandboxesToEntities( self, entitiesToSandboxList, requesterName, requesterGroup, ownerName = "", ownerGroup = "" ):
+  def assignSandboxesToEntities( self, enDict, requesterName, requesterGroup, enSetup, ownerName = "", ownerGroup = "" ):
     """
     Assign jobs to entities
     """
-    sbIds = []
-    assigned = 0
+
     if ownerName or ownerGroup:
       requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
       if Properties.JOB_ADMINISTRATOR in requesterProps:
@@ -170,6 +169,29 @@ class SandboxMetadataDB(DB):
           requesterName = ownerName
         if ownerGroup:
           requesterGroup = ownerGroup
+
+    entitiesToSandboxList = []
+    for entityId in enDict:
+      for sbTuple in enDict[ entityId ]:
+        if type( sbTuple ) not in ( types.TupleType, types.ListType ):
+          return S_ERROR( "Entry for entity %s is not a itterable of tuples/lists" % entityId )
+        if len( sbTuple ) != 2:
+          return S_ERROR( "SB definition is not ( SBLocation, Type )! It's '%s'" % str( sbTuple ) )
+        SBLocation = sbTuple[0]
+        if SBLocation.find( "SB:" ) != 0:
+          return S_ERROR( "%s doesn't seem to be a sandbox" % SBLocation )
+        SBLocation = SBLocation[3:]
+        splitted = List.fromChar( SBLocation, "|" )
+        if len( splitted ) < 2:
+          return S_ERROR( "SB Location has to have SEName|SEPFN form" )
+        SEName = splitted[0]
+        SEPFN = ":".join( splitted[1:] )
+        entitiesToSandboxList.append( ( entityId, enSetup, sbTuple[1], SEName, SEPFN ) )
+    if not entitiesToSandboxList:
+      return S_OK()
+
+    sbIds = []
+    assigned = 0
     for entityId, entitySetup, SBType, SEName, SEPFN in entitiesToSandboxList:
       result = self.getSandboxId( SEName, SEPFN, requesterName, requesterGroup )
       insertValues = []
@@ -196,12 +218,12 @@ class SandboxMetadataDB(DB):
     if not result[ 'OK' ]:
       return result
     return S_OK( assigned )
-  
+
   def __filterEntitiesByRequester( self, entitiesList, entitiesSetup, requesterName, requesterGroup ):
     """
     Given a list of entities and a requester, return the ones that the requester is allowed to modify
     """
-    sqlCond = [ "s.OwnerId=o.OwnerId" , "s.SBId=e.SBId", "e.EntitySetup=%s" %  entitiesSetup ]
+    sqlCond = [ "s.OwnerId=o.OwnerId" , "s.SBId=e.SBId", "e.EntitySetup=%s" % entitiesSetup ]
     requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
     if Properties.JOB_ADMINISTRATOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
@@ -214,7 +236,7 @@ class SandboxMetadataDB(DB):
     else:
       return S_ERROR( "Not authorized to access sandbox" )
     for i in range( len( entitiesList ) ):
-    
+
       entitiesList[i] = self._escapeString( entitiesList[ i ] )[ 'Value' ]
     if len( entitiesList ) == 1:
       sqlCond.append( "e.EntityId = %s" % entitiesList[0] )
@@ -246,7 +268,7 @@ class SandboxMetadataDB(DB):
       if not ids:
         return S_OK( 0 )
       sqlCond = [ "EntitySetup = %s" % escapedSetup ]
-      sqlCond.append( "EntityId in ( %s )" % ", ".join ( [ "'%s'" % str(eid) for eid in ids ] ) )
+      sqlCond.append( "EntityId in ( %s )" % ", ".join ( [ "'%s'" % str( eid ) for eid in ids ] ) )
       sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE %s" % " AND ".join( sqlCond )
       result = self._update( sqlCmd )
       if not result[ 'OK' ]:
@@ -295,7 +317,7 @@ class SandboxMetadataDB(DB):
     """
     Delete sandboxes
     """
-    sqlSBList = ", ".join( [ str(sbid) for sbid in SBIdList ] )
+    sqlSBList = ", ".join( [ str( sbid ) for sbid in SBIdList ] )
     for table in ( 'sb_SandBoxes', 'sb_EntityMapping' ):
       sqlCmd = "DELETE FROM `%s` WHERE SBId IN ( %s )" % ( table, sqlSBList )
       result = self._update( sqlCmd )

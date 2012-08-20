@@ -9,7 +9,7 @@ import GSI
 import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 # Not Used
 # def _proxyExtensionList( ):
@@ -156,7 +156,10 @@ class X509Certificate:
         return S_OK( ext.get_value() )
     if ignoreDefault:
       return S_OK( False )
-    return S_OK( CS.getDefaultUserGroup() )
+    result = self.getSubjectDN()
+    if not result[ 'OK' ]:
+      return result
+    return Registry.findDefaultGroupForDN( result['Value'] )
 
   def hasVOMSExtensions( self ):
     """

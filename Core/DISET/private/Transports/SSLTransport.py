@@ -4,8 +4,8 @@ __RCSID__ = "$Id$"
 import os
 import types
 import time
-import threading
 import GSI
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -18,7 +18,7 @@ GSI.SSL.set_thread_safe()
 
 class SSLTransport( BaseTransport ):
 
-  __readWriteLock = threading.Lock()
+  __readWriteLock = LockRing().getLock()
 
   def __init__( self, *args, **kwargs ):
     self.__writesDone = 0
@@ -27,8 +27,8 @@ class SSLTransport( BaseTransport ):
 
   def __lock( self, timeout = 1000 ):
     while self.__locked and timeout:
-      time.sleep( 0.1 )
-      timeout -= 0.1
+      time.sleep( 0.005 )
+      timeout -= 0.005
     if not timeout:
       return False
     SSLTransport.__readWriteLock.acquire()
@@ -126,9 +126,9 @@ class SSLTransport( BaseTransport ):
         try:
           return S_OK( self.oSocket.recv( bufSize ) )
         except GSI.SSL.WantReadError:
-          time.sleep( 0.1 )
+          time.sleep( 0.001 )
         except GSI.SSL.WantWriteError:
-          time.sleep( 0.1 )
+          time.sleep( 0.001 )
         except GSI.SSL.ZeroReturnError:
           return S_OK( "" )
         except Exception, e:
@@ -171,9 +171,9 @@ class SSLTransport( BaseTransport ):
           if sent > 0:
             sentBytes += sent
         except GSI.SSL.WantWriteError:
-          time.sleep( 0.1 )
+          time.sleep( 0.001 )
         except GSI.SSL.WantReadError:
-          time.sleep( 0.1 )
+          time.sleep( 0.001 )
         except Exception, e:
           return S_ERROR( "Error while sending: %s" % str( e ) )
       return S_OK( sentBytes )

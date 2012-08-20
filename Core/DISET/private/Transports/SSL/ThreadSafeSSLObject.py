@@ -2,11 +2,11 @@
 __RCSID__ = "$Id$"
 
 import GSI
-import threading
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 class ThreadSafeSSLObject:
-  cLock = threading.RLock()
+  cLock = LockRing().getLock()
   def __init__( self, object ):
     self.cObject = object
   def __getattr__( self, name ):
@@ -25,7 +25,7 @@ class ThreadSafeSSLObject:
 class _MagicMethod:
   # some magic to bind a method to an object
   # supports "nested" methods (e.g. examples.getStateName)
-  def __init__(self, cLock, method, name ):
+  def __init__( self, cLock, method, name ):
     self.sFunctionName = name
     self.cMethod = method
     self.cLock = cLock
@@ -41,7 +41,7 @@ class _MagicMethod:
       self.cLock.release()
     else:
       self.cLock.release()
-  def __call__(self, *args):
+  def __call__( self, *args ):
     self.lock()
     try:
       try:

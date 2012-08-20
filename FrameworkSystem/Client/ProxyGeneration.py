@@ -27,7 +27,7 @@ class CLIParams:
   stdinPasswd = False
   userPasswd = ""
   checkClock = True
-
+  embedDefaultGroup = True
 
   def setProxyLifeTime( self, arg ):
     try:
