@@ -304,7 +304,7 @@ def getTier1WithAttachedTier2(gridName='', siteName=''):
 
       t2SE = t2SE['Value']
       if len(t2SE) > 0:
-        if found1SE(t1SE, t2SE):
+        if isOneSEFound(t1SE, t2SE):
           if site not in tier1andTier2Maps:
             tier1andTier2Maps[site] = []
           tier1andTier2Maps[site] += [tier2]
@@ -350,7 +350,7 @@ def getTier1WithTier2(gridName='', siteName=''):
   return S_OK(tier1andTier2Maps)
 
 #############################################################################
-def found1SE(se1, se2):
+def isOneSEFound(se1, se2):
   """
   It compares two list which contains different SEs. The two list not have to be identical,
   because we never attach a Tier2 all the SEs which provided by a Tier1.
