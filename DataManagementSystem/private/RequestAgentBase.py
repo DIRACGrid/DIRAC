@@ -392,7 +392,7 @@ class RequestAgentBase( AgentModule ):
           self.log.info("No free slots available in processPool, will wait 2 seconds to proceed...")
           time.sleep(2)
         else:
-          self.log.always("spawning task %s for request %s" % ( taskID, requestDict["requestName"] ) )
+          self.log.info("spawning task %s for request %s" % ( taskID, requestDict["requestName"] ) )
           enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
                                                            kwargs = requestDict,
                                                            taskID = requestDict["requestName"],
