@@ -1,3 +1,25 @@
+[v6r5p1]
+
+*Core
+BUGFIX: ExecutorMindHandler - return S_OK() in the initializeHandler
+FIX: OptimizationMindHandler - if the manifest is not dirty it will not be updated by the Mind
+
+*Configuration
+NEW: Resources helper - added getCompatiblePlatform(), getDIRACPlatform() methods
+
+*Resources
+FIX: SSHComputingElement - add -q option to ssh command to avoid banners in the output
+FIX: BOINCComputingElement - removed debugging printout
+FIX: ComputingElement - use Platform CS option which will be converted to LHCbPlatform for legacy compatibility
+
+*DMS
+FIX: RequestAgentBase - lowering loglevel from ALWAYS to INFO to avoid flooding SystemLogging
+
+*WMS:
+FIX: SiteDirector - provide CE platform parameter when interrogating the TQ
+FIX: GridPilotDirector - publish pilot OwnerGroup rather than VOMS role
+FIX: WMSUtilities - add new error string into the parsing of the job output retrieval
+
 [v6r5]
 
 NEW: Executor framework
