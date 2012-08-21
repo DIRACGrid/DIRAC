@@ -45,12 +45,13 @@ class SSH:
 
     if expectFlag:
       ssh_newkey = 'Are you sure you want to continue connecting'
-      child = pexpect.spawn( command, timeout = timeout )
-
-      i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
-      if i == 0: # Timeout        
-          return S_OK( ( -1, child.before, 'SSH login failed' ) )
-      elif i == 1: # SSH does not have the public key. Just accept it.
+      try:
+        child = pexpect.spawn( command, timeout = timeout )
+  
+        i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
+        if i == 0: # Timeout        
+            return S_OK( ( -1, child.before, 'SSH login failed' ) )
+        elif i == 1: # SSH does not have the public key. Just accept it.
           child.sendline ( 'yes' )
           child.expect ( 'password: ' )
           i = child.expect( [pexpect.TIMEOUT, 'password: '] )
@@ -60,17 +61,20 @@ class SSH:
             child.sendline( password )
             child.expect( pexpect.EOF )
             return S_OK( ( 0, child.before, '' ) )
-      elif i == 2:
-        # Passwordless login, get the output
-        return S_OK( ( 0, child.before, '' ) )
-
-
-      if self.password:
-        child.sendline( self.password )
-        child.expect( pexpect.EOF )
-        return S_OK( ( 0, child.before, '' ) )
-      else:
-        return S_ERROR( ( -1, child.before, '' ) )
+        elif i == 2:
+          # Passwordless login, get the output
+          return S_OK( ( 0, child.before, '' ) )
+  
+  
+        if self.password:
+          child.sendline( self.password )
+          child.expect( pexpect.EOF )
+          return S_OK( ( 0, child.before, '' ) )
+        else:
+          return S_ERROR( ( -1, child.before, '' ) )
+      except Exception, x:
+        res = ( -1 , 'Encountered exception %s: %s' % ( Exception, str( x ) ) )
+        return S_ERROR( res )  
     else:
       # Try passwordless login
       result = shellCall( timeout, command )
