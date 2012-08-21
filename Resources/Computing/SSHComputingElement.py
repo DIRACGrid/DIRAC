@@ -83,7 +83,6 @@ class SSH:
         return S_ERROR ( ( -1, 'Cannot connect to host %s' % self.host, '' ) )
       return result
 
-
   def sshCall( self, timeout, cmdSeq ):
     """ Execute remote command via a ssh remote call
     """
@@ -92,8 +91,26 @@ class SSH:
     if type( cmdSeq ) == type( [] ):
       command = ' '.join( cmdSeq )
 
-    command = "ssh -q -l %s %s '%s'" % ( self.user, self.host, command )
-    return self.__ssh_call( command, timeout )
+    pattern = "'===><==='"
+    command = 'ssh -q -l %s %s "echo %s;%s"' % ( self.user, self.host, pattern, command )    
+    result = self.__ssh_call( command, timeout )    
+    if not result['OK']:
+      return result
+    
+    # Take the output only after the predefined pattern
+    ind = result['Value'][1].find('===><===')
+    if ind == -1:
+      return result
+
+    status,output,error = result['Value']
+    output = output[ind+8:]
+    if output.startswith('\r'):
+      output = output[1:]
+    if output.startswith('\n'):
+      output = output[1:]  
+      
+    result['Value'] = ( status,output,error )
+    return result
 
   def scpCall( self, timeout, localFile, destinationPath, upload = True ):
     """ Execute scp copy
