@@ -98,13 +98,9 @@ class SSH:
 
     pattern = "'===><==='"
     command = 'ssh -q %s -l %s %s "echo %s;%s"' % ( key, self.user, self.host, pattern, command )    
-
-    print "AT >>> ssh command", command
-
+    gLogger.debug( "SSH command %s" % command )
     result = self.__ssh_call( command, timeout )    
-
-    print "AT >>> result", result
-
+    gLogger.debug( "SSH command result %s" % str( result ) )
     if not result['OK']:
       return result
     
@@ -126,7 +122,6 @@ class SSH:
   def scpCall( self, timeout, localFile, destinationPath, upload = True ):
     """ Execute scp copy
     """
-
     key = ''
     if self.key:
       key = ' -i %s ' % self.key
@@ -135,11 +130,8 @@ class SSH:
       command = "scp %s %s %s@%s:%s" % ( key, localFile, self.user, self.host, destinationPath )
     else:
       command = "scp %s %s@%s:%s %s" % ( key, self.user, self.host, destinationPath, localFile )
-
-    print "AT >>> scp command", command
-
+    gLogger.debug( "SCP command %s" % command )
     return self.__ssh_call( command, timeout )
-
 
 class SSHComputingElement( ComputingElement ):
 
@@ -471,7 +463,7 @@ shutil.rmtree( workingDirectory )
 
     # The result is OK, we can remove the output
     if self.removeOutput:
-      result = ssh.sshCall( 10, 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobNumber, self.batchError, jobNumber ) )
+      result = ssh.sshCall( 10, 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobStamp, self.batchError, jobStamp ) )
 
     if localDir:
       return S_OK( ( '%s/%s.out' % ( tempDir, jobStamp ), '%s/%s.err' % ( tempDir, jobStamp ) ) )
