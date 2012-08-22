@@ -25,12 +25,20 @@ MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSH:
 
-  def __init__( self, user, host, password = None, key = None ):
+  def __init__( self, user = None, host = None, password = None, key = None, parameters = {} ):
 
     self.user = user
+    if not user:
+      self.user = parameters.get( 'SSHUser', '' )
     self.host = host
+    if not host:
+      self.host = parameters.get( 'SSHHost', '' )
     self.password = password
+    if not password:
+      self.host = parameters.get( 'SSHPassword', '' )
     self.key = key
+    if not key:
+      self.key = parameters.get( 'SSHKey', '' )
 
   def __ssh_call( self, command, timeout ):
 
@@ -192,17 +200,12 @@ class SSHComputingElement( ComputingElement ):
     self.executableArea = self.ceParameters['ExecutableArea']
     if not self.executableArea.startswith( '/' ):
       self.executableArea = os.path.join( self.sharedArea, self.executableArea )
-    self.sshUser = self.ceParameters['SSHUser']
-    self.sshKey = self.ceParameters['SSHKey']
-    self.sshPassword = ''
-    if 'SSHPassword' in self.ceParameters:
-      self.sshPassword = self.ceParameters['SSHPassword']
+      
     self.sshHost = []
-
     for h in self.ceParameters['SSHHost'].strip().split( ',' ):
       host = h.strip().split('/')[0]
       self.log.verbose( 'Registerng host:%s; uploading script' % host )
-      ssh = SSH( self.sshUser, host, self.sshPassword, self.sshKey )
+      ssh = SSH( host = host, parameters = self.ceParameters )
       result = ssh.scpCall( 10, self.sshScript, self.sharedArea )
       if not result['OK']:
         self.log.warn( 'Failed uploading script: %s' % result['Message'][1] )
@@ -301,7 +304,7 @@ shutil.rmtree( workingDirectory )
     else: # no proxy
       submitFile = executableFile
 
-    ssh = SSH( self.sshUser, host, self.sshPassword, self.sshKey )
+    ssh = SSH( host = host, parameters = self.ceParameters )
     # Copy the executable
     os.chmod( submitFile, stat.S_IRUSR | stat.S_IXUSR )
     sFile = os.path.basename( submitFile )
@@ -343,7 +346,7 @@ shutil.rmtree( workingDirectory )
 
   #############################################################################
   def __getUnitDynamicInfo( self, hostAddress ):
-    ssh = SSH( self.sshUser, hostAddress, self.sshPassword, self.sshKey ) 
+    ssh = SSH( host = hostAddress, parameters = self.ceParameters ) 
     cmd = ["%s/sshce dynamic_info %s" % ( self.sharedArea, self.infoArea ) ]
     result = ssh.sshCall( 10, cmd )
 
@@ -409,7 +412,7 @@ shutil.rmtree( workingDirectory )
 #    self.log.verbose( '*** getUnitJobStatus %s - %s\n' % ( jobIDList, host) )
 
     resultDict = {}
-    ssh = SSH( self.sshUser, host, self.sshPassword, self.sshKey )
+    ssh = SSH( host = host, parameters = self.ceParameters )
 
     cmd = [ '%s/sshce job_status %s' % ( self.sharedArea, self.infoArea ), '#'.join( jobIDList ) ]
     result = ssh.sshCall( 10, cmd )
@@ -449,7 +452,7 @@ shutil.rmtree( workingDirectory )
     else:
       tempDir = localDir
 
-    ssh = SSH( self.sshUser, host, self.sshPassword, self.sshKey )
+    ssh = SSH( host = host, parameters = self.ceParameters )
     result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobStamp ), '%s/%s/std.out' % ( self.infoArea, jobStamp ), upload = False )
     if not result['OK']:
       return result

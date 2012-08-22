@@ -77,11 +77,6 @@ class SSHLSFComputingElement( ComputingElement ):
     self.batchOutput = self.ceParameters['BatchOutput']
     self.batchError = self.ceParameters['BatchError']
     self.executableArea = self.ceParameters['ExecutableArea']
-    self.sshUser = self.ceParameters['SSHUser']
-    self.sshHost = self.ceParameters['SSHHost']
-    self.sshPassword = ''
-    if 'SSHPassword' in self.ceParameters:
-      self.sshPassword = self.ceParameters['SSHPassword']
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
       self.submitOptions = self.ceParameters['SubmitOptions']
@@ -144,7 +139,7 @@ shutil.rmtree( workingDirectory )
     else: # no proxy
       submitFile = executableFile
 
-    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
+    ssh = SSH( parameters = self.ceParameters )
     # Copy the executable
     os.chmod( submitFile, stat.S_IRUSR | stat.S_IXUSR )
     sFile = os.path.basename( submitFile )
@@ -185,7 +180,7 @@ shutil.rmtree( workingDirectory )
     result = S_OK()
     result['SubmittedJobs'] = self.submittedJobs
 
-    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
+    ssh = SSH( parameters = self.ceParameters )
     cmd = ["bjobs", "-q" , self.execQueue , "-a" ]
     ret = ssh.sshCall( 100, cmd )
 
@@ -227,7 +222,7 @@ shutil.rmtree( workingDirectory )
     """
 
     resultDict = {}
-    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
+    ssh = SSH( parameters = self.ceParameters )
 
     for jobList in breakListIntoChunks( jobIDList, 100 ):
       jobDict = {}
@@ -272,7 +267,7 @@ shutil.rmtree( workingDirectory )
     else:
       tempDir = localDir
 
-    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
+    ssh = SSH( parameters = self.ceParameters )
     result = ssh.scpCall( 200, '%s/%s.out' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchOutput, jobNumber ), upload = False )
     if not result['OK']:
       return result
