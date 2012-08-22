@@ -65,7 +65,12 @@ class CliParams:
     self.pilotReference = ''
     self.releaseVersion = ''
     self.releaseProject = ''
-
+    # The following parmaters are added for BOINC computing element with virtual machine.
+    self.boincUserID = ''         #  The user ID in a BOINC computing element
+    self.boincHostPlatform = ''   # The os type of the host machine running the pilot, not the virtual machine
+    self.boincHostID = ''         # the host id in a  BOINC computing element
+    self.boincHostName = ''       # the host name of the host machine running the pilot, not the virtual machine
+    
 cliParams = CliParams()
 
 ###
@@ -338,9 +343,36 @@ if os.environ.has_key( 'SSHCE_JOBID' ):
   cliParams.flavour = 'SSH'
   pilotRef = os.environ['SSHCE_JOBID']    
 
+# This is for BOINC case
+if os.environ.has_key( 'BOINC_JOB_ID' ):
+  cliParams.flavour = 'BOINC'
+  pilotRef = os.environ['BOINC_JOB_ID']
+
+if cliParams.flavour == 'BOINC':
+  if os.environ.has_key('BOINC_USER_ID'):
+    cliParams.boincUserID = os.environ['BOINC_USER_ID']
+  if os.environ.has_key('BOINC_HOST_ID'):
+    cliParams.boincHostID = os.environ['BOINC_HOST_ID']
+  if os.environ.has_key('BOINC_HOST_PLATFORM'):
+    cliParams.boincHostPlatform = os.environ['BOINC_HOST_PLATFORM']
+  if os.environ.has_key('BOINC_HOST_NAME'):
+    cliParams.boincHostName = os.environ['BOINC_HOST_NAME']
+    
+logDEBUG( "Flavour: %s; pilot reference: %s " % ( cliParams.flavour, pilotRef ) )    
+
 configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 if pilotRef != 'Unknown':
   configureOpts.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
+  
+# add options for BOINc
+if cliParams.boincUserID:
+  configureOpts.append( '-o /LocalSite/BoincUserID=%s' % cliParams.boincUserID )
+if cliParams.boincHostID:
+  configureOpts.append( '-o /LocalSite/BoincHostID=%s' % cliParams.boincHostID)
+if cliParams.boincHostPlatform:
+  configureOpts.append( '-o /LocalSite/BoincHostPlatform=%s' % cliParams.boincHostPlatform)
+if cliParams.boincHostName:
+  configureOpts.append( '-o /LocalSite/BoincHostName=%s' % cliParams.boincHostName )  
 
 ###
 # Try to get the CE name
