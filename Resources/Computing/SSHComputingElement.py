@@ -25,11 +25,12 @@ MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSH:
 
-  def __init__( self, user, host, password = None ):
+  def __init__( self, user, host, password = None, key = None ):
 
     self.user = user
     self.host = host
     self.password = password
+    self.key = key
 
   def __ssh_call( self, command, timeout ):
 
@@ -56,7 +57,7 @@ class SSH:
           child.expect ( 'password: ' )
           i = child.expect( [pexpect.TIMEOUT, 'password: '] )
           if i == 0: # Timeout
-            return S_OK( ( -1, child.before + child.after, 'SSH login failed' ) )
+            return S_OK( ( -1, str( child.before ) + str( child.after ), 'SSH login failed' ) )
           elif i == 1:
             child.sendline( password )
             child.expect( pexpect.EOF )
@@ -91,9 +92,19 @@ class SSH:
     if type( cmdSeq ) == type( [] ):
       command = ' '.join( cmdSeq )
 
+    key = ''
+    if self.key:
+      key = ' -i %s ' % self.key
+
     pattern = "'===><==='"
-    command = 'ssh -q -l %s %s "echo %s;%s"' % ( self.user, self.host, pattern, command )    
+    command = 'ssh -q %s -l %s %s "echo %s;%s"' % ( key, self.user, self.host, pattern, command )    
+
+    print "AT >>> ssh command", command
+
     result = self.__ssh_call( command, timeout )    
+
+    print "AT >>> result", result
+
     if not result['OK']:
       return result
     
@@ -116,10 +127,17 @@ class SSH:
     """ Execute scp copy
     """
 
+    key = ''
+    if self.key:
+      key = ' -i %s ' % self.key
+
     if upload:
-      command = "scp %s %s@%s:%s" % ( localFile, self.user, self.host, destinationPath )
+      command = "scp %s %s %s@%s:%s" % ( key, localFile, self.user, self.host, destinationPath )
     else:
-      command = "scp %s@%s:%s %s" % ( self.user, self.host, destinationPath, localFile )
+      command = "scp %s %s@%s:%s %s" % ( key, self.user, self.host, destinationPath, localFile )
+
+    print "AT >>> scp command", command
+
     return self.__ssh_call( command, timeout )
 
 
@@ -149,14 +167,16 @@ class SSHComputingElement( ComputingElement ):
       self.ceParameters['SharedArea'] = ''
 
     if 'BatchOutput' not in self.ceParameters:
-      self.ceParameters['BatchOutput'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+      self.ceParameters['BatchOutput'] = 'data' 
 
     if 'BatchError' not in self.ceParameters:
-      self.ceParameters['BatchError'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+      self.ceParameters['BatchError'] = 'data' 
 
     if 'ExecutableArea' not in self.ceParameters:
-      self.ceParameters['ExecutableArea'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+      self.ceParameters['ExecutableArea'] = 'data' 
 
+    if 'InfoArea' not in self.ceParameters:
+      self.ceParameters['InfoArea'] = 'info'
 
   def reset( self ):
 
@@ -169,23 +189,40 @@ class SSHComputingElement( ComputingElement ):
     self.hostname = socket.gethostname()
     self.sharedArea = self.ceParameters['SharedArea']
     self.batchOutput = self.ceParameters['BatchOutput']
+    if not self.batchOutput.startswith( '/' ):
+      self.batchOutput = os.path.join( self.sharedArea, self.batchOutput )
     self.batchError = self.ceParameters['BatchError']
+    if not self.batchError.startswith( '/' ):
+      self.batchError = os.path.join( self.sharedArea, self.batchError )
     self.infoArea = self.ceParameters['InfoArea']
+    if not self.infoArea.startswith( '/' ):
+      self.infoArea = os.path.join( self.sharedArea, self.infoArea )
     self.executableArea = self.ceParameters['ExecutableArea']
+    if not self.executableArea.startswith( '/' ):
+      self.executableArea = os.path.join( self.sharedArea, self.executableArea )
     self.sshUser = self.ceParameters['SSHUser']
+    self.sshKey = self.ceParameters['SSHKey']
     self.sshPassword = ''
     if 'SSHPassword' in self.ceParameters:
       self.sshPassword = self.ceParameters['SSHPassword']
     self.sshHost = []
 
-    for host in self.ceParameters['SSHHost'].strip().split( ',' ):
-      self.sshHost.append( host.strip() )
-      self.log.verbose( 'Registered host:%s; uploading script.' % host.strip() )
-      ssh = SSH( self.sshUser, host.strip().split( "/" )[0], self.sshPassword )
-      result = ssh.scpCall( 10, self.sshScript, '' )
-      if ( result['OK'] ):
-        ssh.sshCall( 10, "chmod +x ~/sshce; mkdir -p %s; mkdir -p %s" % ( self.infoArea, self.executableArea ) )
+    for h in self.ceParameters['SSHHost'].strip().split( ',' ):
+      host = h.strip().split('/')[0]
+      self.log.verbose( 'Registerng host:%s; uploading script' % host )
+      ssh = SSH( self.sshUser, host, self.sshPassword, self.sshKey )
+      result = ssh.scpCall( 10, self.sshScript, self.sharedArea )
+      if not result['OK']:
+        self.log.warn( 'Failed uploading script: %s' % result['Message'][1] )
+        continue
+      self.log.verbose( 'Creating working directories on %s' % host )
+      ssh.sshCall( 10, "chmod +x %s/sshce; mkdir -p %s; mkdir -p %s" % ( self.sharedArea, self.infoArea, self.executableArea ) )
+      if not result['OK']:
+        self.log.warn( 'Failed creating working directories: %s' % result['Message'][1] )
+        continue
 
+      self.log.info( 'Host %s registered for usage' % host )
+      self.sshHost.append( h.strip() )
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -204,12 +241,16 @@ class SSHComputingElement( ComputingElement ):
 
     for host in self.sshHost:
       thost = host.split( "/" )
-      runningJobs = self.getUnitDynamicInfo( thost[0] )
+      hostName = thost[0]
+      maxHostJobs = 1
+      if len( thost ) > 1:
+        maxHostJobs = thost[1]
+      runningJobs = self.__getUnitDynamicInfo( hostName )
 
       if ( runningJobs >= 0 ):
-        if ( max <= int( thost[1] ) - int( runningJobs ) ):
-          max = int( thost[1] ) - int( runningJobs )
-          best = thost[0];
+        if ( max <= maxHostJobs - int( runningJobs ) ):
+          max = int( maxHostJobs ) - int( runningJobs )
+          best = hostName;
 
     if best == "N/A":
       return S_ERROR( "No online node found on queue" )
@@ -268,7 +309,7 @@ shutil.rmtree( workingDirectory )
     else: # no proxy
       submitFile = executableFile
 
-    ssh = SSH( self.sshUser, host, self.sshPassword )
+    ssh = SSH( self.sshUser, host, self.sshPassword, self.sshKey )
     # Copy the executable
     os.chmod( submitFile, stat.S_IRUSR | stat.S_IXUSR )
     sFile = os.path.basename( submitFile )
@@ -279,8 +320,8 @@ shutil.rmtree( workingDirectory )
     # submit submitFile directly to host
     # rm la final
     rnd = random.randint( 200, 5000 )
-    cmd = "~/sshce run_job %s/%s %s_%s %s" % \
-	( self.executableArea, os.path.basename( submitFile ), host, rnd, self.infoArea )
+    cmd = "%s/sshce run_job %s/%s %s_%s %s" % \
+  ( self.sharedArea, self.executableArea, os.path.basename( submitFile ), host, rnd, self.infoArea )
 
 #    self.log.verbose( '*** CE submission command: %s\n' %  cmd )
 
@@ -309,16 +350,21 @@ shutil.rmtree( workingDirectory )
     return result
 
   #############################################################################
-  def getUnitDynamicInfo( self, hostAddress ):
-    ssh = SSH( self.sshUser, hostAddress, self.sshPassword )
-    cmd = ["~/sshce dynamic_info %s" % self.infoArea ]
-    ret = ssh.sshCall( 10, cmd )
+  def __getUnitDynamicInfo( self, hostAddress ):
+    ssh = SSH( self.sshUser, hostAddress, self.sshPassword, self.sshKey ) 
+    cmd = ["%s/sshce dynamic_info %s" % ( self.sharedArea, self.infoArea ) ]
+    result = ssh.sshCall( 10, cmd )
 
-    if not ret['OK']:
-      self.log.error( 'Timeout', ret['Message'] )
-      return - 1
+    if not result['OK']:
+      self.log.warn( 'Timeout', result['Message'] )
+      return -1
 
-    return ret['Value'][1]
+    try:
+      value = int( result['Value'][1] )
+    except:
+      return -1
+
+    return value
 
 
   def getDynamicInfo( self ):
@@ -332,7 +378,7 @@ shutil.rmtree( workingDirectory )
     for host in self.sshHost:
       thost = host.split( "/" )
 
-      runningJobs = self.getUnitDynamicInfo( thost[0] )
+      runningJobs = self.__getUnitDynamicInfo( thost[0] )
       if ( runningJobs > -1 ):
         result['RunningJobs'] += int( runningJobs )
 
@@ -356,7 +402,7 @@ shutil.rmtree( workingDirectory )
 
     for elem in wnDict:
 
-      tmpDict = self.getUnitJobStatus( wnDict[elem], elem )['Value']
+      tmpDict = self.__getUnitJobStatus( wnDict[elem], elem )['Value']
     #  self.log.verbose(' !!!! getUnitJobStatus(%s, %s) => %s\n' % (wnDict[elem],elem, tmpDict) )
       for item in tmpDict:
         resultDict[item] = tmpDict[item]
@@ -365,15 +411,15 @@ shutil.rmtree( workingDirectory )
 #    self.log.verbose(' !!! getJobStatus will return: %s\n' % S_OK ( resultDict ) )  
     return S_OK( resultDict )
 
-  def getUnitJobStatus( self, jobIDList, host ):
+  def __getUnitJobStatus( self, jobIDList, host ):
     """ Get the status information for the given list of jobs
     """
 #    self.log.verbose( '*** getUnitJobStatus %s - %s\n' % ( jobIDList, host) )
 
     resultDict = {}
-    ssh = SSH( self.sshUser, host, self.sshPassword )
+    ssh = SSH( self.sshUser, host, self.sshPassword, self.sshKey )
 
-    cmd = [ '~/sshce job_status %s' % self.infoArea, '#'.join( jobIDList ) ]
+    cmd = [ '%s/sshce job_status %s' % ( self.sharedArea, self.infoArea ), '#'.join( jobIDList ) ]
     result = ssh.sshCall( 10, cmd )
 
     if not result['OK']:
@@ -411,7 +457,7 @@ shutil.rmtree( workingDirectory )
     else:
       tempDir = localDir
 
-    ssh = SSH( self.sshUser, host, self.sshPassword )
+    ssh = SSH( self.sshUser, host, self.sshPassword, self.sshKey )
     result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobStamp ), '%s/%s/std.out' % ( self.infoArea, jobStamp ), upload = False )
     if not result['OK']:
       return result
