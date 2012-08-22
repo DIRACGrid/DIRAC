@@ -432,7 +432,7 @@ class SiteDirector( AgentModule ):
             continue
           for pilot in pilotList:
             result = pilotAgentsDB.setPilotStatus( pilot, 'Submitted', ceName,
-                                                  'Successfuly submitted by the SiteDirector',
+                                                  'Successfully submitted by the SiteDirector',
                                                   siteName, queueName )
             if not result['OK']:
               self.log.error( 'Failed to set pilot status: %s' % result['Message'] )
