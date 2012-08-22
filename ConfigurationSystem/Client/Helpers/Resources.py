@@ -59,6 +59,22 @@ def getStorageElementOptions( seName ):
 
   return S_OK( options )
 
+def getQueue( site, ce, queue ):
+  """ Get parameters of the specified queue 
+  """
+  grid = site.split('.')[0]
+  result = gConfig.getOptionsDict( '/Resources/%s/%s/CEs/%s' % ( grid, site, ce ) )
+  if not result['OK']:
+    return result 
+  resultDict = result['Value']
+  result = gConfig.getOptionsDict( '/Resources/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
+  if not result['OK']:
+    return result
+  resultDict.update( result['Value'] )
+  resultDict['Queue'] = queue
+  
+  return S_OK( resultDict )
+
 def getQueues( siteList = None, ceList = None, ceTypeList = None, community = None, mode = None ):
   """ Get CE/queue options according to the specified selection
   """
