@@ -230,6 +230,11 @@ class TaskQueueDB( DB ):
           return self._escapeString( value )
         return S_OK( value )
 
+    # Confine the LHCbPlatform legacy option here, use Platform everywhere else
+    # until the LHCbPlatform is no more used in the TaskQueueDB
+    if 'Platform' in tqMatchDict and not "LHCbPlatform" in tqMatchDict:
+      tqMatchDict['LHCbPlatform'] = tqMatchDict['Platform']
+
     for field in self.__singleValueDefFields:
       if field not in tqMatchDict:
         if field in self.__mandatoryMatchFields:
