@@ -89,10 +89,10 @@ class JobCleaningAgent( AgentModule ):
     """
     if delay:
       gLogger.verbose( "Removing jobs with %s and older than %s" % ( condDict, delay ) )
-      result = self.jobDB.selectJobs( condDict, older = delay )
+      result = self.jobDB.selectJobs( condDict, older = delay, limit = self.maxJobsAtOnce )
     else:
       gLogger.verbose( "Removing jobs with %s " % condDict )
-      result = self.jobDB.selectJobs( condDict )
+      result = self.jobDB.selectJobs( condDict, limit = self.maxJobsAtOnce )
 
     if not result['OK']:
       return result
