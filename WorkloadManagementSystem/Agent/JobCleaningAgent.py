@@ -17,7 +17,7 @@ import DIRAC.Core.Utilities.Time as Time
 import string
 import time
 
-REMOVE_STATUS_DELAY = { 'Done':14,
+REMOVE_STATUS_DELAY = { 'Done':7,
                         'Killed':7,
                         'Failed':14 }
 
