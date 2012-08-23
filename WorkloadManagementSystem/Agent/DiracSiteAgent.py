@@ -176,9 +176,6 @@ class DiracSiteAgent( AgentModule ):
     if not ret['OK']:
       self.log.warn( ret['Message'] )
       return ret
-
-    ceJDL = ret['Value'].getJDL()
-    self.log.debug( 'CE jdl', ceJDL )
     return ret
 
   #############################################################################
