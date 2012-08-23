@@ -132,6 +132,12 @@ class JobAgent( AgentModule ):
     ceDict['PilotBenchmark'] = self.cpuFactor 
     ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
     
+    # Add possible job requirements
+    result = gConfig.getOptionsDict( '/AgentJobRequirements' )
+    if result['OK']:
+      requirementsDict = result['Value']
+      ceDict.update( requirementsDict )
+    
     self.log.verbose( ceDict )
     start = time.time()
     jobRequest = self.__requestJob( ceDict )
