@@ -132,6 +132,12 @@ class JobAgent( AgentModule ):
     ceDict['PilotBenchmark'] = self.cpuFactor 
     ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
     
+    # Add possible job requirements
+    result = gConfig.getOptionsDict( '/AgentJobRequirements' )
+    if result['OK']:
+      requirementsDict = result['Value']
+      ceDict.update( requirementsDict )
+    
     self.log.verbose( ceDict )
     start = time.time()
     jobRequest = self.__requestJob( ceDict )
@@ -240,6 +246,12 @@ class JobAgent( AgentModule ):
       jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
       if self.gridCEQueue:
         jobReport.setJobParameter( 'GridCEQueue', self.gridCEQueue, sendFlag = False )
+        
+      if os.environ.has_key( 'BOINC_JOB_ID' ):
+        # Report BOINC environment 
+        for p in ['BoincUserID','BoincHostID','BoincHostPlatform','BoincHostName']:
+          jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )  
+        
       jobReport.setJobStatus( 'Matched', 'Job Received by Agent' )
       # self.__setJobSite( jobID, self.siteName )
       if not self.pilotInfoReportedFlag:

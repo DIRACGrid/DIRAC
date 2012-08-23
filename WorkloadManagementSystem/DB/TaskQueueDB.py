@@ -177,6 +177,12 @@ class TaskQueueDB( DB ):
     """
     Check a task queue definition dict is valid
     """
+    
+    # Confine the LHCbPlatform legacy option here, use Platform everywhere else
+    # until the LHCbPlatform is no more used in the TaskQueueDB
+    if 'Platforms' in tqDefDict and not "LHCbPlatforms" in tqDefDict:
+      tqDefDict['LHCbPlatforms'] = tqDefDict['Platforms']
+    
     for field in self.__singleValueDefFields:
       if field not in tqDefDict:
         return S_ERROR( "Missing mandatory field '%s' in task queue definition" % field )
@@ -229,6 +235,11 @@ class TaskQueueDB( DB ):
         if escapeValues:
           return self._escapeString( value )
         return S_OK( value )
+
+    # Confine the LHCbPlatform legacy option here, use Platform everywhere else
+    # until the LHCbPlatform is no more used in the TaskQueueDB
+    if 'Platform' in tqMatchDict and not "LHCbPlatform" in tqMatchDict:
+      tqMatchDict['LHCbPlatform'] = tqMatchDict['Platform']
 
     for field in self.__singleValueDefFields:
       if field not in tqMatchDict:
