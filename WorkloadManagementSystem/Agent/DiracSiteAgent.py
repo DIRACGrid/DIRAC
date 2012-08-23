@@ -68,7 +68,7 @@ class DiracSiteAgent( AgentModule ):
                       'Site' : self.propertiesDict['/LocalSite/Site'],
                       'CPUTime' : 3000000,
 #                      'GridMiddleware' : '',
-#                      'LHCbPlatform' : '',
+#                      'Platform' : '',
 #                      'PilotType' : '',
 #                      'JobType' : '',
 #                      'OwnerGroup' : '',
