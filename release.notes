@@ -1,3 +1,31 @@
+[v6r6-pre1]
+
+*Core
+CHANGE: getDNForUsername helper mifrated from Core.Security.CS to Registry helper
+
+*WMS
+CHANGE: RunNumber job parameter was removed from all the relevant places ( JDL, JobDB, etc )
+NEW: dirac-pilot - add environment setting for SSH and BOINC CEs
+NEW: WMSAdministrator - get output for non-grid CEs if not yet in the DB
+NEW: JobAgent - job publishes BOINC parameters if any
+CHANGE: Get rid of LHCbPlatform everywhere except TaskQueueDB
+FIX: SiteDirector - provide list of sites to the Matcher in the initial query
+CHANGE: dirac-boinc-pilot dropped
+CHANGE: TaskQueueDirector does not depend on /LocalSite section any more
+
+*Resources
+FIX: SSHComputingElement - enabled multiple hosts in one queue, more debugging
+CHANGE: SSHXXX Computing Elements - define SSH class once in the SSHComputingElement
+NEW: SSHComputingElement - added option to define private key location
+CHANGE: Get rid of legacy methods in ComputingElement
+
+*Interfaces
+CHANGE: Removed Script.initialize() from the API initialization
+CHANGE: Some general API polishing
+
+*TS
+BUGFIX: TaskManager - bug fixed in treating tasks with input data
+
 [v6r5p1]
 
 *Core
