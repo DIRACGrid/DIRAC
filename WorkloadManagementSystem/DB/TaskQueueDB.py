@@ -723,7 +723,6 @@ class TaskQueueDB( DB ):
     Delete a job from the task queues
     Return S_OK( True/False ) / S_ERROR
     """
-    self.log.info( "Deleting job %s" % jobId )
     if not connObj:
       retVal = self._getConnection()
       if not retVal[ 'OK' ]:
@@ -736,6 +735,7 @@ class TaskQueueDB( DB ):
     if not data:
       return S_OK( False )
     tqId, tqOwnerDN, tqOwnerGroup = data[0]
+    self.log.info( "Deleting job %s" % jobId )
     retVal = self._update( "DELETE FROM `tq_Jobs` WHERE JobId = %s" % jobId, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete job from task queue %s: %s" % ( jobId, retVal[ 'Message' ] ) )
