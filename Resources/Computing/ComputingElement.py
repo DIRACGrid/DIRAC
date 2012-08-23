@@ -99,10 +99,7 @@ class ComputingElement:
     result = self.__getSiteParameters()
     if not result['OK']:
       self.log.warn( result['Message'] )
-    result = self.__getResourceRequirements()
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-
+   
     self._addCEConfigDefaults()
 
   def isValid( self ):
