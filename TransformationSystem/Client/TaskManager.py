@@ -366,12 +366,10 @@ class WorkflowTasks( TaskBase ):
   def _handleInputs( self, oJob, paramsDict ):
     """ set job inputs (+ metadata)
     """
-    try:
+    if paramsDict.has_key( 'InputData' ):
       if paramsDict['InputData']:
         self.log.verbose( 'Setting input data to %s' % paramsDict['InputData'] )
-        oJob.setInputData( paramsDict['InputData'], runNumber = paramsDict['RunNumber'] )
-    except KeyError:
-      pass
+        oJob.setInputData( paramsDict['InputData'] )
 
   def _handleRest( self, oJob, paramsDict ):
     """ add as JDL parameters all the other parameters that are not for inputs or destination 
