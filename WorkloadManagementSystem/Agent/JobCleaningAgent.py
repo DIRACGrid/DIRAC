@@ -18,8 +18,8 @@ import string
 import time
 
 REMOVE_STATUS_DELAY = { 'Done':7,
-                        'Killed':7,
-                        'Failed':14 }
+                        'Killed':1,
+                        'Failed':7 }
 
 class JobCleaningAgent( AgentModule ):
   """
