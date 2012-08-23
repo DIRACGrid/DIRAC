@@ -25,11 +25,20 @@ MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSH:
 
-  def __init__( self, user, host, password = None ):
+  def __init__( self, user = None, host = None, password = None, key = None, parameters = {} ):
 
     self.user = user
+    if not user:
+      self.user = parameters.get( 'SSHUser', '' )
     self.host = host
+    if not host:
+      self.host = parameters.get( 'SSHHost', '' )
     self.password = password
+    if not password:
+      self.host = parameters.get( 'SSHPassword', '' )
+    self.key = key
+    if not key:
+      self.key = parameters.get( 'SSHKey', '' )
 
   def __ssh_call( self, command, timeout ):
 
@@ -45,32 +54,36 @@ class SSH:
 
     if expectFlag:
       ssh_newkey = 'Are you sure you want to continue connecting'
-      child = pexpect.spawn( command, timeout = timeout )
-
-      i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
-      if i == 0: # Timeout        
-          return S_OK( ( -1, child.before, 'SSH login failed' ) )
-      elif i == 1: # SSH does not have the public key. Just accept it.
+      try:
+        child = pexpect.spawn( command, timeout = timeout )
+  
+        i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
+        if i == 0: # Timeout        
+            return S_OK( ( -1, child.before, 'SSH login failed' ) )
+        elif i == 1: # SSH does not have the public key. Just accept it.
           child.sendline ( 'yes' )
           child.expect ( 'password: ' )
           i = child.expect( [pexpect.TIMEOUT, 'password: '] )
           if i == 0: # Timeout
-            return S_OK( ( -1, child.before + child.after, 'SSH login failed' ) )
+            return S_OK( ( -1, str( child.before ) + str( child.after ), 'SSH login failed' ) )
           elif i == 1:
             child.sendline( password )
             child.expect( pexpect.EOF )
             return S_OK( ( 0, child.before, '' ) )
-      elif i == 2:
-        # Passwordless login, get the output
-        return S_OK( ( 0, child.before, '' ) )
-
-
-      if self.password:
-        child.sendline( self.password )
-        child.expect( pexpect.EOF )
-        return S_OK( ( 0, child.before, '' ) )
-      else:
-        return S_ERROR( ( -1, child.before, '' ) )
+        elif i == 2:
+          # Passwordless login, get the output
+          return S_OK( ( 0, child.before, '' ) )
+  
+  
+        if self.password:
+          child.sendline( self.password )
+          child.expect( pexpect.EOF )
+          return S_OK( ( 0, child.before, '' ) )
+        else:
+          return S_ERROR( ( -1, child.before, '' ) )
+      except Exception, x:
+        res = ( -1 , 'Encountered exception %s: %s' % ( Exception, str( x ) ) )
+        return S_ERROR( res )  
     else:
       # Try passwordless login
       result = shellCall( timeout, command )
@@ -78,7 +91,6 @@ class SSH:
       if result['Value'][0] == 255:
         return S_ERROR ( ( -1, 'Cannot connect to host %s' % self.host, '' ) )
       return result
-
 
   def sshCall( self, timeout, cmdSeq ):
     """ Execute remote command via a ssh remote call
@@ -88,19 +100,46 @@ class SSH:
     if type( cmdSeq ) == type( [] ):
       command = ' '.join( cmdSeq )
 
-    command = "ssh -q -l %s %s '%s'" % ( self.user, self.host, command )
-    return self.__ssh_call( command, timeout )
+    key = ''
+    if self.key:
+      key = ' -i %s ' % self.key
+
+    pattern = "'===><==='"
+    command = 'ssh -q %s -l %s %s "echo %s;%s"' % ( key, self.user, self.host, pattern, command )    
+    gLogger.debug( "SSH command %s" % command )
+    result = self.__ssh_call( command, timeout )    
+    gLogger.debug( "SSH command result %s" % str( result ) )
+    if not result['OK']:
+      return result
+    
+    # Take the output only after the predefined pattern
+    ind = result['Value'][1].find('===><===')
+    if ind == -1:
+      return result
+
+    status,output,error = result['Value']
+    output = output[ind+8:]
+    if output.startswith('\r'):
+      output = output[1:]
+    if output.startswith('\n'):
+      output = output[1:]  
+      
+    result['Value'] = ( status,output,error )
+    return result
 
   def scpCall( self, timeout, localFile, destinationPath, upload = True ):
     """ Execute scp copy
     """
+    key = ''
+    if self.key:
+      key = ' -i %s ' % self.key
 
     if upload:
-      command = "scp %s %s@%s:%s" % ( localFile, self.user, self.host, destinationPath )
+      command = "scp %s %s %s@%s:%s" % ( key, localFile, self.user, self.host, destinationPath )
     else:
-      command = "scp %s@%s:%s %s" % ( self.user, self.host, destinationPath, localFile )
+      command = "scp %s %s@%s:%s %s" % ( key, self.user, self.host, destinationPath, localFile )
+    gLogger.debug( "SCP command %s" % command )
     return self.__ssh_call( command, timeout )
-
 
 class SSHComputingElement( ComputingElement ):
 
@@ -128,14 +167,16 @@ class SSHComputingElement( ComputingElement ):
       self.ceParameters['SharedArea'] = ''
 
     if 'BatchOutput' not in self.ceParameters:
-      self.ceParameters['BatchOutput'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+      self.ceParameters['BatchOutput'] = 'data' 
 
     if 'BatchError' not in self.ceParameters:
-      self.ceParameters['BatchError'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+      self.ceParameters['BatchError'] = 'data' 
 
     if 'ExecutableArea' not in self.ceParameters:
-      self.ceParameters['ExecutableArea'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+      self.ceParameters['ExecutableArea'] = 'data' 
 
+    if 'InfoArea' not in self.ceParameters:
+      self.ceParameters['InfoArea'] = 'info'
 
   def reset( self ):
 
@@ -148,23 +189,35 @@ class SSHComputingElement( ComputingElement ):
     self.hostname = socket.gethostname()
     self.sharedArea = self.ceParameters['SharedArea']
     self.batchOutput = self.ceParameters['BatchOutput']
+    if not self.batchOutput.startswith( '/' ):
+      self.batchOutput = os.path.join( self.sharedArea, self.batchOutput )
     self.batchError = self.ceParameters['BatchError']
+    if not self.batchError.startswith( '/' ):
+      self.batchError = os.path.join( self.sharedArea, self.batchError )
     self.infoArea = self.ceParameters['InfoArea']
+    if not self.infoArea.startswith( '/' ):
+      self.infoArea = os.path.join( self.sharedArea, self.infoArea )
     self.executableArea = self.ceParameters['ExecutableArea']
-    self.sshUser = self.ceParameters['SSHUser']
-    self.sshPassword = ''
-    if 'SSHPassword' in self.ceParameters:
-      self.sshPassword = self.ceParameters['SSHPassword']
+    if not self.executableArea.startswith( '/' ):
+      self.executableArea = os.path.join( self.sharedArea, self.executableArea )
+      
     self.sshHost = []
+    for h in self.ceParameters['SSHHost'].strip().split( ',' ):
+      host = h.strip().split('/')[0]
+      self.log.verbose( 'Registerng host:%s; uploading script' % host )
+      ssh = SSH( host = host, parameters = self.ceParameters )
+      result = ssh.scpCall( 10, self.sshScript, self.sharedArea )
+      if not result['OK']:
+        self.log.warn( 'Failed uploading script: %s' % result['Message'][1] )
+        continue
+      self.log.verbose( 'Creating working directories on %s' % host )
+      ssh.sshCall( 10, "chmod +x %s/sshce; mkdir -p %s; mkdir -p %s" % ( self.sharedArea, self.infoArea, self.executableArea ) )
+      if not result['OK']:
+        self.log.warn( 'Failed creating working directories: %s' % result['Message'][1] )
+        continue
 
-    for host in self.ceParameters['SSHHost'].strip().split( ',' ):
-      self.sshHost.append( host.strip() )
-      self.log.verbose( 'Registered host:%s; uploading script.' % host.strip() )
-      ssh = SSH( self.sshUser, host.strip().split( "/" )[0], self.sshPassword )
-      result = ssh.scpCall( 10, self.sshScript, '' )
-      if ( result['OK'] ):
-        ssh.sshCall( 10, "chmod +x ~/sshce; mkdir -p %s; mkdir -p %s" % ( self.infoArea, self.executableArea ) )
-
+      self.log.info( 'Host %s registered for usage' % host )
+      self.sshHost.append( h.strip() )
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -183,12 +236,16 @@ class SSHComputingElement( ComputingElement ):
 
     for host in self.sshHost:
       thost = host.split( "/" )
-      runningJobs = self.getUnitDynamicInfo( thost[0] )
+      hostName = thost[0]
+      maxHostJobs = 1
+      if len( thost ) > 1:
+        maxHostJobs = thost[1]
+      runningJobs = self.__getUnitDynamicInfo( hostName )
 
       if ( runningJobs >= 0 ):
-        if ( max <= int( thost[1] ) - int( runningJobs ) ):
-          max = int( thost[1] ) - int( runningJobs )
-          best = thost[0];
+        if ( max <= maxHostJobs - int( runningJobs ) ):
+          max = int( maxHostJobs ) - int( runningJobs )
+          best = hostName;
 
     if best == "N/A":
       return S_ERROR( "No online node found on queue" )
@@ -247,7 +304,7 @@ shutil.rmtree( workingDirectory )
     else: # no proxy
       submitFile = executableFile
 
-    ssh = SSH( self.sshUser, host, self.sshPassword )
+    ssh = SSH( host = host, parameters = self.ceParameters )
     # Copy the executable
     os.chmod( submitFile, stat.S_IRUSR | stat.S_IXUSR )
     sFile = os.path.basename( submitFile )
@@ -258,8 +315,8 @@ shutil.rmtree( workingDirectory )
     # submit submitFile directly to host
     # rm la final
     rnd = random.randint( 200, 5000 )
-    cmd = "~/sshce run_job %s/%s %s_%s %s" % \
-	( self.executableArea, os.path.basename( submitFile ), host, rnd, self.infoArea )
+    cmd = "%s/sshce run_job %s/%s %s_%s %s" % \
+  ( self.sharedArea, self.executableArea, os.path.basename( submitFile ), host, rnd, self.infoArea )
 
 #    self.log.verbose( '*** CE submission command: %s\n' %  cmd )
 
@@ -288,16 +345,21 @@ shutil.rmtree( workingDirectory )
     return result
 
   #############################################################################
-  def getUnitDynamicInfo( self, hostAddress ):
-    ssh = SSH( self.sshUser, hostAddress, self.sshPassword )
-    cmd = ["~/sshce dynamic_info %s" % self.infoArea ]
-    ret = ssh.sshCall( 10, cmd )
+  def __getUnitDynamicInfo( self, hostAddress ):
+    ssh = SSH( host = hostAddress, parameters = self.ceParameters ) 
+    cmd = ["%s/sshce dynamic_info %s" % ( self.sharedArea, self.infoArea ) ]
+    result = ssh.sshCall( 10, cmd )
 
-    if not ret['OK']:
-      self.log.error( 'Timeout', ret['Message'] )
-      return - 1
+    if not result['OK']:
+      self.log.warn( 'Timeout', result['Message'] )
+      return -1
 
-    return ret['Value'][1]
+    try:
+      value = int( result['Value'][1] )
+    except:
+      return -1
+
+    return value
 
 
   def getDynamicInfo( self ):
@@ -311,7 +373,7 @@ shutil.rmtree( workingDirectory )
     for host in self.sshHost:
       thost = host.split( "/" )
 
-      runningJobs = self.getUnitDynamicInfo( thost[0] )
+      runningJobs = self.__getUnitDynamicInfo( thost[0] )
       if ( runningJobs > -1 ):
         result['RunningJobs'] += int( runningJobs )
 
@@ -335,7 +397,7 @@ shutil.rmtree( workingDirectory )
 
     for elem in wnDict:
 
-      tmpDict = self.getUnitJobStatus( wnDict[elem], elem )['Value']
+      tmpDict = self.__getUnitJobStatus( wnDict[elem], elem )['Value']
     #  self.log.verbose(' !!!! getUnitJobStatus(%s, %s) => %s\n' % (wnDict[elem],elem, tmpDict) )
       for item in tmpDict:
         resultDict[item] = tmpDict[item]
@@ -344,15 +406,15 @@ shutil.rmtree( workingDirectory )
 #    self.log.verbose(' !!! getJobStatus will return: %s\n' % S_OK ( resultDict ) )  
     return S_OK( resultDict )
 
-  def getUnitJobStatus( self, jobIDList, host ):
+  def __getUnitJobStatus( self, jobIDList, host ):
     """ Get the status information for the given list of jobs
     """
 #    self.log.verbose( '*** getUnitJobStatus %s - %s\n' % ( jobIDList, host) )
 
     resultDict = {}
-    ssh = SSH( self.sshUser, host, self.sshPassword )
+    ssh = SSH( host = host, parameters = self.ceParameters )
 
-    cmd = [ '~/sshce job_status %s' % self.infoArea, '#'.join( jobIDList ) ]
+    cmd = [ '%s/sshce job_status %s' % ( self.sharedArea, self.infoArea ), '#'.join( jobIDList ) ]
     result = ssh.sshCall( 10, cmd )
 
     if not result['OK']:
@@ -390,7 +452,7 @@ shutil.rmtree( workingDirectory )
     else:
       tempDir = localDir
 
-    ssh = SSH( self.sshUser, host, self.sshPassword )
+    ssh = SSH( host = host, parameters = self.ceParameters )
     result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobStamp ), '%s/%s/std.out' % ( self.infoArea, jobStamp ), upload = False )
     if not result['OK']:
       return result
@@ -404,7 +466,7 @@ shutil.rmtree( workingDirectory )
 
     # The result is OK, we can remove the output
     if self.removeOutput:
-      result = ssh.sshCall( 10, 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobNumber, self.batchError, jobNumber ) )
+      result = ssh.sshCall( 10, 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobStamp, self.batchError, jobStamp ) )
 
     if localDir:
       return S_OK( ( '%s/%s.out' % ( tempDir, jobStamp ), '%s/%s.err' % ( tempDir, jobStamp ) ) )

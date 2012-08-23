@@ -1346,7 +1346,7 @@ class JobDB( DB ):
         for platform in platforms:
           if systemConfig in [ x.strip() for x in platforms[platform].split( ',' ) ] and platform != systemConfig:
             platformReqs.append( platform )
-        classAdReq.insertAttributeVectorString( 'LHCbPlatforms', platformReqs )    
+        classAdReq.insertAttributeVectorString( 'Platforms', platformReqs )    
       else: 
         error = "OS compatibility info not found"
       

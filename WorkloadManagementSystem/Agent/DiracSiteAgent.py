@@ -68,7 +68,7 @@ class DiracSiteAgent( AgentModule ):
                       'Site' : self.propertiesDict['/LocalSite/Site'],
                       'CPUTime' : 3000000,
 #                      'GridMiddleware' : '',
-#                      'LHCbPlatform' : '',
+#                      'Platform' : '',
 #                      'PilotType' : '',
 #                      'JobType' : '',
 #                      'OwnerGroup' : '',
@@ -176,9 +176,6 @@ class DiracSiteAgent( AgentModule ):
     if not ret['OK']:
       self.log.warn( ret['Message'] )
       return ret
-
-    ceJDL = ret['Value'].getJDL()
-    self.log.debug( 'CE jdl', ceJDL )
     return ret
 
   #############################################################################
