@@ -354,7 +354,7 @@ class MatcherHandler( RequestHandler ):
         resourceDict['JobID'] = resourceDescription['JobID']
 
       for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
-                 'PilotReference', 'PilotInfoReportedFlag', 'PilotBenchmark' ):
+                 'PilotReference', 'PilotInfoReportedFlag', 'PilotBenchmark', 'Platform' ):
         if k in resourceDescription:
           resourceDict[ k ] = resourceDescription[ k ]
 
