@@ -1,10 +1,14 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-from DIRAC                                              import S_OK, S_ERROR, gConfig
+from DIRAC                                              import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.Core.Utilities.List                          import uniqueElements
 import re
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
+# the following methods must be moved here ...
+from DIRAC.Core.Utilities.SiteSEMapping                 import getSEsForSite, getSitesForSE
 
 gBaseResourcesSection = "/Resources"
 
@@ -124,21 +128,21 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
   return S_OK( resultDict )
 
 def getCompatiblePlatforms( originalPlatforms ):
-  """ Get a list of platforms compatible with the given list 
+  """ Get a list of platforms compatible with the given list
   """
   if type( originalPlatforms ) == type( ' ' ):
     platforms = [originalPlatforms]
   else:
     platforms = list( originalPlatforms )
-    
+
   platformDict = {}
   result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
   if result['OK'] and result['Value']:
-    platformDict = result['Value'] 
+    platformDict = result['Value']
     for platform in platformDict:
       platformDict[platform] = [ x.strip() for x in platformDict[platform].split( ',' ) ]
   else:
-    return S_ERROR( 'OS compatibility info not found' )        
+    return S_ERROR( 'OS compatibility info not found' )
 
   resultList = list( platforms )
   for p in platforms:
@@ -158,20 +162,21 @@ def getDIRACPlatform( platform ):
   platformDict = {}
   result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
   if result['OK'] and result['Value']:
-    platformDict = result['Value'] 
+    platformDict = result['Value']
     for platform in platformDict:
       platformDict[platform] = [ x.strip() for x in platformDict[platform].split( ',' ) ]
   else:
-    return S_ERROR( 'OS compatibility info not found' )    
-      
+    return S_ERROR( 'OS compatibility info not found' )
+
   resultPlatform = ''
   for p in platformDict:
     if platform in platformDict[p]:
-      resultPlatform = p    
-  
+      resultPlatform = p
+
   return S_OK( resultPlatform )
-  
+
 def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
   """
   return '/Resources/FileCatalogs/%s' % catalogName
+
