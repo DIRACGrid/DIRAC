@@ -1,7 +1,9 @@
-[v6r6-pre1]
+[v6r6-pre2]
 
 *Core
-CHANGE: getDNForUsername helper mifrated from Core.Security.CS to Registry helper
+CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
+NEW: SiteSEMapping - new utilities getSitesGroupedByTierLevel(), getTier1WithAttachedTier2(),
+     getTier1WithTier2
 
 *WMS
 CHANGE: RunNumber job parameter was removed from all the relevant places ( JDL, JobDB, etc )
