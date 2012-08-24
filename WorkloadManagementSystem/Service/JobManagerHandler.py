@@ -350,10 +350,13 @@ class JobManagerHandler( RequestHandler ):
     killJobList = []
     deleteJobList = []
     for jobID, sDict in result['Value'].items():
-      if sDict['Status'] in ['Running','Matched']:
+      if sDict['Status'] in ['Running','Matched','Stalled']:
         killJobList.append( jobID )
+      elif sDict['Status'] in ['Done','Failed']:
+        if not right == RIGHT_KILL:
+          deleteJobList.append( jobID )  
       else:
-        deleteJobList.append( jobID )  
+        deleteJobList.append( jobID )      
 
     bad_ids = []
     for jobID in killJobList:
