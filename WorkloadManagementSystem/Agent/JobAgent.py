@@ -147,7 +147,7 @@ class JobAgent( AgentModule ):
     self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', self.stopAfterFailedMatches )
 
     if not jobRequest['OK']:
-      if re.search( 'No work available', jobRequest['Message'] ):
+      if re.search( 'No match found', jobRequest['Message'] ):
         self.log.info( 'Job request OK: %s' % ( jobRequest['Message'] ) )
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
