@@ -580,13 +580,40 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
         usage:
 
-          update <version>
+          update <version> [ -r <rootPath> ] [ -g <lcgVersion> ]
+          
+              where rootPath - path to the DIRAC installation
+                    lcgVersion - version of the LCG bindings to install
     """
     argss = args.split()
     version = argss[0]
+    rootPath = ''
+    lcgVersion = ''
+    del argss[0]
+    try:
+      while len( argss ) > 0:
+        if argss[0] == '-r':
+          rootPath = argss[1]
+          del argss[0]
+          del argss[0]
+        elif argss[0] == '-g':
+          lcgVersion = argss[1]  
+          del argss[0]
+          del argss[0]
+    except Exception, x:
+      print "ERROR: wrong input:", str(x)
+      print """usage:
+
+          update <version> [ -r <rootPath> ] [ -g <lcgVersion> ]
+          
+              where rootPath - path to the DIRAC installation
+                    lcgVersion - version of the LCG bindings to install
+"""           
+      return  
+    
     client = SystemAdministratorClient( self.host, self.port )
     print "Software update can take a while, please wait ..."
-    result = client.updateSoftware( version )
+    result = client.updateSoftware( version, rootPath, lcgVersion )
     if not result['OK']:
       self.__errMsg( "Failed to update the software" )
       print result['Message']
