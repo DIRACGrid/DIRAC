@@ -296,63 +296,6 @@ if not os.path.isfile( installScript ):
     sys.exit( 1 )
 
 os.chmod( installScript, stat.S_IRWXU )
-    
-#############################################################################
-# Treat the OSG case    
-
-vo = cliParams.releaseProject.replace( 'DIRAC', '' ).upper()
-if not vo:
-  vo = 'DIRAC'
-
-osgDir = ''
-if os.environ.has_key( 'OSG_WN_TMP' ):
-  
-  # get the pilot reference
-  pilot = ''
-  if os.environ.has_key( 'GLITE_WMS_JOBID' ):
-    pilot = os.environ.has_key['GLITE_WMS_JOBID']
-  elif os.environ.has_key( 'EDG_WL_JOBID' ):
-    pilot = os.environ.has_key['EDG_WL_JOBID']
-  
-  jobDir = os.path.basename( pilot )
-  
-  osgDir = os.environ['OSG_WN_TMP']
-  # Make a separate directory per Project if it is defined
-  osgDir = os.path.join( osgDir, vo )
-  # get the pilot reference
-  pilot = ''
-  jobDir = ''
-  if os.environ.has_key( 'GLITE_WMS_JOBID' ):
-    pilot = os.environ.has_key['GLITE_WMS_JOBID']
-  elif os.environ.has_key( 'EDG_WL_JOBID' ):
-    pilot = os.environ.has_key['EDG_WL_JOBID']
-  if pilot:
-    jobDir = os.path.basename( pilot ) 
-  if not jobDir:
-    import random
-    jobDir = str( random.randint( 1000, 10000 ) )
-  osgDir = os.path.join( osgDir, jobDir )
-  
-  if not os.path.isdir(osgDir):
-    os.makedirs(osgDir)
-  os.chdir( osgDir )
-  try:
-    import shutil
-    shutil.copy( installScript, os.path.join( osgDir, installScriptName ) )
-  except Exception, x:
-    print sys.executable
-    print sys.version
-    print os.uname()
-    print x
-    raise x
-
-if os.environ.has_key( 'OSG_APP' ):
-  # Try to define it here although this will be only in the local shell environment
-  os.environ['VO_%s_SW_DIR' % vo] = os.path.join( 'OSG_APP', vo )
-
-if rootPath == originalRootPath:
-  # No special root path was requested
-  rootPath = os.getcwd()
 
 ######################################################################
 
@@ -400,6 +343,9 @@ if os.environ.has_key( 'GLITE_WMS_JOBID' ):
     cliParams.flavour = 'gLite'
     pilotRef = os.environ['GLITE_WMS_JOBID']
     
+if os.environ.has_key( 'OSG_WN_TMP' ):
+  cliParams.flavour = 'OSG'    
+    
 # Direct SSH tunnel submission    
 if os.environ.has_key( 'SSHCE_JOBID' ):
   cliParams.flavour = 'SSH'
@@ -440,7 +386,7 @@ if cliParams.boincHostName:
 # Try to get the CE name
 ###
 #cliParams.ceName = 'Local'
-if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
+if cliParams.flavour in ['LCG','gLite','OSG']:
   retCode, CE = executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE' )
   if not retCode:
     cliParams.ceName = CE.split( ':' )[0]
@@ -491,6 +437,42 @@ if cliParams.userGroup:
 
 if cliParams.userDN:
   configureOpts.append( '-o /AgentJobRequirements/OwnerDN="%s"' % cliParams.userDN )
+  
+#############################################################################
+# Treat the OSG case    
+
+osgDir = ''
+if cliParams.flavour == "OSG":
+  vo = cliParams.releaseProject.replace( 'DIRAC', '' ).upper()
+  if not vo:
+    vo = 'DIRAC'
+  osgDir = os.environ['OSG_WN_TMP']
+  # Make a separate directory per Project if it is defined
+  jobDir = os.path.basename( pilotRef ) 
+  if not jobDir:   # just in case
+    import random 
+    jobDir = str( random.randint( 1000, 10000 ) )
+  osgDir = os.path.join( osgDir, vo, jobDir ) 
+  if not os.path.isdir(osgDir):
+    os.makedirs(osgDir)
+  os.chdir( osgDir )
+  try:
+    import shutil
+    shutil.copy( installScript, os.path.join( osgDir, installScriptName ) )
+  except Exception, x:
+    print sys.executable
+    print sys.version
+    print os.uname()
+    print x
+    raise x
+
+if os.environ.has_key( 'OSG_APP' ):
+  # Try to define it here although this will be only in the local shell environment
+  os.environ['VO_%s_SW_DIR' % vo] = os.path.join( 'OSG_APP', vo )
+
+if rootPath == originalRootPath:
+  # No special root path was requested
+  rootPath = os.getcwd()  
 
 ###
 # Do the installation
@@ -689,7 +671,7 @@ if diskSpace < cliParams.minDiskSpace:
 # Get job CPU requirement and queue normalization
 #
 
-if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
+if cliParams.flavour in ['LCG','gLite','OSG']:
   logINFO( 'CE = %s' % CE )
   logINFO( 'LCG_SITE_CE = %s' % cliParams.ceName )
 
@@ -734,7 +716,7 @@ os.system( "dirac-wms-cpu-normalization -U" )
 inProcessOpts = ['-s /Resources/Computing/CEDefaults' ]
 inProcessOpts .append( '-o WorkingDirectory=%s' % rootPath )
 inProcessOpts .append( '-o GridCE=%s' % cliParams.ceName )
-if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
+if cliParams.flavour in ['LCG','gLite','OSG']:
   inProcessOpts .append( '-o GridCEQueue=%s' % CE )
 inProcessOpts .append( '-o LocalAccountString=%s' % localUser )
 inProcessOpts .append( '-o TotalCPUs=%s' % 1 )
