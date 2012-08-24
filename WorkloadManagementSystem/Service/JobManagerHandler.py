@@ -303,82 +303,69 @@ class JobManagerHandler( RequestHandler ):
     self.__sendNewJobsToMind( validJobList )
     return result
 
-
-###########################################################################
-  types_deleteJob = [  ]
-  def export_deleteJob( self, jobIDs ):
-    """  Delete jobs specified in the jobIDs list
+  def __deleteJob( self, jobID ):
+    """ Delete one job
     """
+    result = gJobDB.setJobStatus( jobID, 'Deleted', 'Checking accounting' )
+    if not result['OK']:
+      return result
 
-    jobList = self.__get_job_list( jobIDs )
-    if not jobList:
-      return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
+    result = gtaskQueueDB.deleteJob( jobID )
+    if not result['OK']:
+      gLogger.warn( 'Failed to delete job from the TaskQueue' )
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.__evaluate_rights( jobList,
-                                                                        RIGHT_DELETE )
+    return S_OK()
 
-    bad_ids = []
-    good_ids = []
-    for jobID in validJobList:
-      result = gJobDB.setJobStatus( jobID, 'Deleted', 'Checking accounting' )
+  def __killJob( self, jobID ):
+    """  Kill one job
+    """
+    result = gJobDB.setJobCommand( jobID, 'Kill' )
+    if not result['OK']:
+      return result
+    else:
+      gLogger.info( 'Job %d is marked for termination' % jobID )
+      result = gJobDB.setJobStatus( jobID, 'Killed', 'Marked for termination' )
       if not result['OK']:
-        bad_ids.append( jobID )
-      else:
-        good_ids.append( jobID )
-      #result = gJobDB.deleteJobFromQueue(jobID)
-      #if not result['OK']:
-      #  gLogger.warn('Failed to delete job from the TaskQueue (old)')
+        gLogger.warn( 'Failed to set job Killed status' )
       result = gtaskQueueDB.deleteJob( jobID )
       if not result['OK']:
         gLogger.warn( 'Failed to delete job from the TaskQueue' )
-
-    if invalidJobList or nonauthJobList:
-      result = S_ERROR( 'Some jobs failed deletion' )
-      if invalidJobList:
-        result['InvalidJobIDs'] = invalidJobList
-      if nonauthJobList:
-        result['NonauthorizedJobIDs'] = nonauthJobList
-      if bad_ids:
-        result['FailedJobIDs'] = bad_ids
-      return result
-
-    result = S_OK( validJobList )
-    result[ 'requireProxyUpload' ] = len( ownerJobList ) > 0 and self.__checkIfProxyUploadIsRequired()
-    return result
-
-###########################################################################
-  types_killJob = [  ]
-  def export_killJob( self, jobIDs ):
-    """  Kill jobs specified in the jobIDs list
-    """
-
-    jobList = self.__get_job_list( jobIDs )
+    
+    return S_OK()
+  
+  def __kill_delete_jobs( self, jobIDList, right ):
+    """  Kill or delete jobs as necessary
+    """ 
+    
+    jobList = self.__get_job_list( jobIDList )
     if not jobList:
       return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.__evaluate_rights( jobList,
-                                                                             RIGHT_KILL )
+    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.__evaluate_rights( jobList, right )
+    
+    # Get job status to see what is to be killed or deleted
+    result = gJobDB.getAttributesForJobList( validJobList, ['Status'] )
+    if not result['OK']:
+      return result
+    killJobList = []
+    deleteJobList = []
+    for jobID, sDict in result['Value'].items():
+      if sDict['Status'] in ['Running','Matched']:
+        killJobList.append( jobID )
+      else:
+        deleteJobList.append( jobID )  
 
     bad_ids = []
-    good_ids = []
-    for jobID in validJobList:
-      # kill jobID
-      result = gJobDB.setJobCommand( jobID, 'Kill' )
+    for jobID in killJobList:
+      result = self.__killJob( jobID )
       if not result['OK']:
         bad_ids.append( jobID )
-      else:
-        gLogger.info( 'Job %d is marked for termination' % jobID )
-        good_ids.append( jobID )
-        result = gJobDB.setJobStatus( jobID, 'Killed', 'Marked for termination' )
-        if not result['OK']:
-          gLogger.warn( 'Failed to set job status' )
-        #result = gJobDB.deleteJobFromQueue(jobID)
-        #if not result['OK']:
-        #  gLogger.warn('Failed to delete job from the TaskQueue (old)')
-        result = gtaskQueueDB.deleteJob( jobID )
-        if not result['OK']:
-          gLogger.warn( 'Failed to delete job from the TaskQueue' )
-
+        
+    for jobID in deleteJobList:
+      result = self.__deleteJob( jobID )
+      if not result['OK']:
+        bad_ids.append( jobID ) 
+        
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR( 'Some jobs failed deletion' )
       if invalidJobList:
@@ -392,6 +379,22 @@ class JobManagerHandler( RequestHandler ):
     result = S_OK( validJobList )
     result[ 'requireProxyUpload' ] = len( ownerJobList ) > 0 and self.__checkIfProxyUploadIsRequired()
     return result
+
+###########################################################################
+  types_deleteJob = [  ]
+  def export_deleteJob( self, jobIDs ):
+    """  Delete jobs specified in the jobIDs list
+    """
+
+    return self.__kill_delete_jobs( jobIDs, RIGHT_DELETE )
+
+###########################################################################
+  types_killJob = [  ]
+  def export_killJob( self, jobIDs ):
+    """  Kill jobs specified in the jobIDs list
+    """
+
+    return self.__kill_delete_jobs( jobIDs, RIGHT_KILL )
 
 ###########################################################################
   types_resetJob = [  ]
