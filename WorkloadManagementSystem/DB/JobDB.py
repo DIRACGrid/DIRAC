@@ -817,7 +817,7 @@ class JobDB( DB ):
     if not self._update( cmd )['OK']:
       result = S_ERROR( 'JobDB.setJobParameter: operation failed.' )
 
-    result = self._insert( 'JobParameters', ['JobID', 'Name', 'Value'], [jobID, key, value] )
+    result = self.insertFields( 'JobParameters', ['JobID', 'Name', 'Value'], [jobID, key, value] )
     if not result['OK']:
       result = S_ERROR( 'JobDB.setJobParameter: operation failed.' )
 
@@ -928,7 +928,7 @@ class JobDB( DB ):
     if not self._update( cmd )['OK']:
       result = S_ERROR( 'JobDB.setJobOptParameter: operation failed.' )
 
-    result = self._insert( 'OptimizerParameters', ['JobID', 'Name', 'Value'], [jobID, name, value] )
+    result = self.insertFields( 'OptimizerParameters', ['JobID', 'Name', 'Value'], [jobID, name, value] )
     if not result['OK']:
       return S_ERROR( 'JobDB.setJobOptParameter: operation failed.' )
 
@@ -1055,7 +1055,7 @@ class JobDB( DB ):
     if not res['OK']:
       return res
     connection = res['Value']
-    res = self._insert( 'JobJDLs' , ['OriginalJDL'], [jdl], connection )
+    res = self.insertFields( 'JobJDLs' , ['OriginalJDL'], [jdl], connection )
 
     cmd = 'SELECT LAST_INSERT_ID()'
     res = self._query( cmd, connection )
@@ -1174,7 +1174,7 @@ class JobDB( DB ):
       jobAttrNames.append( 'MinorStatus' )
       jobAttrValues.append( 'Error in JDL syntax' )
 
-      result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
+      result = self.insertFields( 'Jobs', jobAttrNames, jobAttrValues )
       if not result['OK']:
         return result
 
@@ -1262,7 +1262,7 @@ class JobDB( DB ):
     if not result['OK']:
       return result
 
-    result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
+    result = self.insertFields( 'Jobs', jobAttrNames, jobAttrValues )
     if not result['OK']:
       return result
 
