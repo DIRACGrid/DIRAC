@@ -124,28 +124,8 @@ except:
 pilotScriptName = os.path.basename( pilotScript )
 pilotRootPath = os.path.dirname( pilotScript )
 
-rootPath = os.getcwd()
-
 installScriptName = 'dirac-install.py'
-
-rootPath = os.getcwd()
-
-if os.environ.has_key( 'OSG_WN_TMP' ):
-  os.chdir( os.environ['OSG_WN_TMP'] )
-  for path in ( pilotRootPath, rootPath ):
-    installScript = os.path.join( path, installScriptName )
-    if os.path.isfile( installScript ):
-      try:
-        import shutil
-        shutil.copy( installScript, os.path.join( os.environ['OSG_WN_TMP'], installScriptName ) )
-      except Exception, x:
-        print sys.executable
-        print sys.version
-        print os.uname()
-        print x
-        raise x
-      break
-
+originalRootPath = os.getcwd()
 rootPath = os.getcwd()
 
 for path in ( pilotRootPath, rootPath ):
@@ -176,11 +156,6 @@ os.chmod( installScript, stat.S_IRWXU )
 ###
 # Option parsing
 ###
-
-
-# Flags not migrated from old dirac-pilot
-#   -r --repository=<rep>       Use <rep> as cvs repository              <--Not done
-#   -C --cvs                    Retrieve from CVS (implies -b) <--Not done
 
 cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
             ( 'd', 'debug', 'Set debug flag' ),
@@ -296,13 +271,98 @@ for o, v in optList:
     configureOpts.append( '-s "%s"' % v )
   elif o == '-c' or o == '--cert':
     configureOpts.append( '--UseServerCertificate' )
+    
+############################################################################
+# Locate installation script    
+for path in ( pilotRootPath, originalRootPath, rootPath ):
+  installScript = os.path.join( path, installScriptName )
+  if os.path.isfile( installScript ):
+    break    
+
+if not os.path.isfile( installScript ):
+  logERROR( "%s requires %s to exist in one of: %s, %s, %s" % ( pilotScriptName, installScriptName,
+                                                            pilotRootPath, originalRootPath, rootPath ) )
+  logINFO( "Trying to download it to %s..." % originalRootPath )
+  try:
+    remoteLocation = "http://lhcbproject.web.cern.ch/lhcbproject/dist/Dirac_project/dirac-install.py"
+    remoteFD = urllib2.urlopen( remoteLocation )
+    installScript = os.path.join( originalRootPath, installScriptName )
+    localFD = open( installScript, "w" )
+    localFD.write( remoteFD.read() )
+    localFD.close()
+    remoteFD.close()
+  except Exception, e:
+    logERROR( "Could not download %s..: %s" % ( remoteLocation, str( e ) ) )
+    sys.exit( 1 )
+
+os.chmod( installScript, stat.S_IRWXU )
+    
+#############################################################################
+# Treat the OSG case    
+
+vo = cliParams.releaseProject.replace( 'DIRAC', '' ).upper()
+if not vo:
+  vo = 'DIRAC'
+
+osgDir = ''
+if os.environ.has_key( 'OSG_WN_TMP' ):
+  
+  # get the pilot reference
+  pilot = ''
+  if os.environ.has_key( 'GLITE_WMS_JOBID' ):
+    pilot = os.environ.has_key['GLITE_WMS_JOBID']
+  elif os.environ.has_key( 'EDG_WL_JOBID' ):
+    pilot = os.environ.has_key['EDG_WL_JOBID']
+  
+  jobDir = os.path.basename( pilot )
+  
+  osgDir = os.environ['OSG_WN_TMP']
+  # Make a separate directory per Project if it is defined
+  osgDir = os.path.join( osgDir, vo )
+  # get the pilot reference
+  pilot = ''
+  jobDir = ''
+  if os.environ.has_key( 'GLITE_WMS_JOBID' ):
+    pilot = os.environ.has_key['GLITE_WMS_JOBID']
+  elif os.environ.has_key( 'EDG_WL_JOBID' ):
+    pilot = os.environ.has_key['EDG_WL_JOBID']
+  if pilot:
+    jobDir = os.path.basename( pilot ) 
+  if not jobDir:
+    import random
+    jobDir = str( random.randint( 1000, 10000 ) )
+  osgDir = os.path.join( osgDir, jobDir )
+  
+  if not os.path.isdir(osgDir):
+    os.makedirs(osgDir)
+  os.chdir( osgDir )
+  try:
+    import shutil
+    shutil.copy( installScript, os.path.join( osgDir, installScriptName ) )
+  except Exception, x:
+    print sys.executable
+    print sys.version
+    print os.uname()
+    print x
+    raise x
+
+if os.environ.has_key( 'OSG_APP' ):
+  # Try to define it here although this will be only in the local shell environment
+  os.environ['VO_%s_SW_DIR' % vo] = os.path.join( 'OSG_APP', vo )
+
+if rootPath == originalRootPath:
+  # No special root path was requested
+  rootPath = os.getcwd()
+
+######################################################################
 
 if cliParams.gridVersion:
   installOpts.append( "-g '%s'" % cliParams.gridVersion )
 
 if cliParams.pythonVersion:
   installOpts.append( '-i "%s"' % cliParams.pythonVersion )
-##
+  
+######################################################################
 # Attempt to determine the flavour
 ##
 
@@ -319,6 +379,7 @@ if os.environ.has_key( 'PBS_JOBID' ):
   pilotRef = os.environ['PBS_JOBID']
   cliParams.queueName = os.environ['PBS_QUEUE']
 
+# Grid Engine
 if os.environ.has_key( 'JOB_ID' ):
     cliParams.flavour = 'SSHGE'
     pilotRef = os.environ['JOB_ID']
@@ -339,6 +400,7 @@ if os.environ.has_key( 'GLITE_WMS_JOBID' ):
     cliParams.flavour = 'gLite'
     pilotRef = os.environ['GLITE_WMS_JOBID']
     
+# Direct SSH tunnel submission    
 if os.environ.has_key( 'SSHCE_JOBID' ):
   cliParams.flavour = 'SSH'
   pilotRef = os.environ['SSHCE_JOBID']    
@@ -737,5 +799,10 @@ diskSpace = fs[4] * fs[0] / 1024 / 1024
 logINFO( 'DiskSpace (MB) = %s' % diskSpace )
 ret = os.system( 'dirac-proxy-info' )
 
+# Do some cleanup
+if os.environ.has_key( 'OSG_WN_TMP' ) and osgDir:
+  os.chdir( originalRootPath )
+  import shutil
+  shutil.rmtree( osgDir )
 
 sys.exit( 0 )
