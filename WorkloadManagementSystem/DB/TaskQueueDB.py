@@ -26,11 +26,11 @@ class TaskQueueDB( DB ):
     random.seed()
     DB.__init__( self, 'TaskQueueDB', 'WorkloadManagement/TaskQueueDB', maxQueueSize )
     self.__multiValueDefFields = ( 'Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
-                                   'LHCbPlatforms', 'PilotTypes', 'SubmitPools', 'JobTypes' )
-    self.__multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'LHCbPlatform',
+                                   'Platforms', 'PilotTypes', 'SubmitPools', 'JobTypes' )
+    self.__multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'Platform',
                                      'PilotType', 'SubmitPool', 'JobType' )
     self.__bannedJobMatchFields = ( 'Site', )
-    self.__strictRequireMatchFields = ( 'SubmitPool', 'LHCbPlatform', 'PilotType' )
+    self.__strictRequireMatchFields = ( 'SubmitPool', 'Platform', 'PilotType' )
     self.__singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime' )
     self.__mandatoryMatchFields = ( 'Setup', 'CPUTime' )
     self.__defaultCPUSegments = maxCPUSegments
@@ -180,8 +180,8 @@ class TaskQueueDB( DB ):
     
     # Confine the LHCbPlatform legacy option here, use Platform everywhere else
     # until the LHCbPlatform is no more used in the TaskQueueDB
-    if 'Platforms' in tqDefDict and not "LHCbPlatforms" in tqDefDict:
-      tqDefDict['LHCbPlatforms'] = tqDefDict['Platforms']
+    if 'LHCbPlatforms' in tqDefDict and not "Platforms" in tqDefDict:
+      tqDefDict['Platforms'] = tqDefDict['LHCbPlatforms']
     
     for field in self.__singleValueDefFields:
       if field not in tqDefDict:
@@ -238,8 +238,8 @@ class TaskQueueDB( DB ):
 
     # Confine the LHCbPlatform legacy option here, use Platform everywhere else
     # until the LHCbPlatform is no more used in the TaskQueueDB
-    if 'Platform' in tqMatchDict and not "LHCbPlatform" in tqMatchDict:
-      tqMatchDict['LHCbPlatform'] = tqMatchDict['Platform']
+    if 'LHCbPlatform' in tqMatchDict and not "Platform" in tqMatchDict:
+      tqMatchDict['Platform'] = tqMatchDict['LHCbPlatform']
 
     for field in self.__singleValueDefFields:
       if field not in tqMatchDict:
@@ -723,7 +723,6 @@ class TaskQueueDB( DB ):
     Delete a job from the task queues
     Return S_OK( True/False ) / S_ERROR
     """
-    self.log.info( "Deleting job %s" % jobId )
     if not connObj:
       retVal = self._getConnection()
       if not retVal[ 'OK' ]:
@@ -736,6 +735,7 @@ class TaskQueueDB( DB ):
     if not data:
       return S_OK( False )
     tqId, tqOwnerDN, tqOwnerGroup = data[0]
+    self.log.info( "Deleting job %s" % jobId )
     retVal = self._update( "DELETE FROM `tq_Jobs` WHERE JobId = %s" % jobId, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete job from task queue %s: %s" % ( jobId, retVal[ 'Message' ] ) )
