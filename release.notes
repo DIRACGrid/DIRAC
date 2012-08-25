@@ -1,4 +1,4 @@
-[v6r6-pre2]
+[v6r6-pre3]
 
 *Core
 CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
@@ -7,6 +7,12 @@ NEW: SiteSEMapping - new utilities getSitesGroupedByTierLevel(), getTier1WithAtt
 
 *Framework
 NEW: SystemAdministratorClientCLI - possibility to define roothPath and lcgVersion when updating software
+
+*DMS
+NEW: FileCatalog - torage usage info stored in all the directories, not only those with files
+NEW: FileCatalog - added utility to rebuild storage usage info from scratch
+BUGFIX: FileCatalogClientCLI - in do_ls() check properly the path existence
+FIX: FileCatalogClientCLI - protection against non-existing getCatalogCounters method in the LFC client
 
 *WMS
 CHANGE: RunNumber job parameter was removed from all the relevant places ( JDL, JobDB, etc )
