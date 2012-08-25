@@ -902,13 +902,16 @@ File Catalog Client $Revision: 1.17 $Date:
     if not result['OK']:
       print "Error: can not verify path"
       return
-    elif result['Value']['Successful'][path]:
+    elif path in result['Value']['Successful']:
       result = self.fc.getFileMetadata(path)
       dList = DirectoryListing()
       fileDict = result['Value']['Successful'][path]
       dList.addFile(os.path.basename(path),fileDict,numericid)
       dList.printListing(reverse,timeorder)
-      return         
+      return   
+    else:
+      print "Error: path is not found"
+      return       
     
     # Get directory contents now
     try:
