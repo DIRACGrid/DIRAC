@@ -819,7 +819,7 @@ class DirectoryTreeBase:
     
     req = "RENAME TABLE FC_DirectoryUsage TO FC_DirectoryUsage_backup"
     result = self.db._update( req )
-    req = """CREATE TABLE `FC_DirectoryUsage_backup` (
+    req = """CREATE TABLE `FC_DirectoryUsage` (
   `DirID` int(11) NOT NULL,
   `SEID` int(11) NOT NULL,
   `SESize` bigint(20) NOT NULL,
@@ -850,7 +850,6 @@ class DirectoryTreeBase:
   def __rebuildDirectoryUsageLeaves( self ):
     """ Rebuild DirectoryUsage entries for directories having files
     """  
-    
     req = 'SELECT DirID FROM FC_Files'
     result = self.db._query(req)
     if not result['OK']:
@@ -869,13 +868,10 @@ class DirectoryTreeBase:
       if not result['Value']:
         return S_ERROR('Empty directory')
       seSize,seFiles,seID = result['Value'][0]       
-      insertValues.append([dirID,seID,seSize,seFiles,'UTC_TIMESTAMP()'])
-      insertCount += 1
-      if mod(insertCount,100) == 0:
-        result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )  
-        if not result['OK']:
-          return result
-        insertCount = 0
+      insertValues = [dirID,seID,seSize,seFiles,'UTC_TIMESTAMP()']
+      result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )  
+      if not result['OK']:
+        return result
     return S_OK()      
     
   def __rebuildDirectoryUsage( self, directoryID ):
@@ -907,11 +903,11 @@ class DirectoryTreeBase:
       if not result['OK']:
         return result
       if not result['Value']:
-        insertValues.append( [directoryID,seID,size,files] )
-    if insertValues:
-      result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )     
-      if not result['OK']:
-        return result
+        insertValues = [directoryID,seID,size,files] 
+        result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )     
+        if not result['OK']:
+          return result
+        
     return S_OK(resultDict)  
   
   def getDirectoryCounters( self, connection = False ):
