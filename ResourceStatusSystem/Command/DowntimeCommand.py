@@ -209,7 +209,7 @@ class DowntimeCommand( Command ):
            
     result = None       
     for dt in uniformResult:
-      if ( dt[ 'StartDate' ] < str( dtDate ) ) and ( dt[ 'EndDate' ] > str( dtDate ) ):
+      if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
         result = dt
         break        
            
