@@ -53,7 +53,7 @@ class DowntimePolicy( PolicyBase ):
       return S_OK( result )
       
     #result[ 'EndDate' ] = status[ 'EndDate' ]
-    result[ 'Reason' ]  = 'DownTime found: %s' % status[ 'DowntimeID' ]
+    result[ 'Reason' ]  = '%s %s' % ( status[ 'DowntimeID' ], status[ 'Description' ] )
     return S_OK( result )
 
 ################################################################################
