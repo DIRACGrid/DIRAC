@@ -116,6 +116,7 @@ class DowntimeCommand( Command ):
     
     if masterParams is not None:
       element, elementNames = masterParams
+      hours       = None
       elementName = None
     else:
       params = self._prepareCommand()
