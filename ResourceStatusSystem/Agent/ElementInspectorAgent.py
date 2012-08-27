@@ -180,7 +180,7 @@ class ElementInspectorAgent( AgentModule ):
         self.log.info( '%s DOWN' % tHeader )
         return S_OK()
       
-      self.log.info( '%s being processed' % element[ 'name' ] )
+      self.log.info( '%s ( %s ) being processed' % ( element[ 'name' ], element[ 'status' ] ) )
       
       resEnforce = pep.enforce( element )
       if not resEnforce[ 'OK' ]:
