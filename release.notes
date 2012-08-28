@@ -1,7 +1,18 @@
-[v6r6-pre1]
+[v6r6-pre3]
 
 *Core
-CHANGE: getDNForUsername helper mifrated from Core.Security.CS to Registry helper
+CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
+NEW: SiteSEMapping - new utilities getSitesGroupedByTierLevel(), getTier1WithAttachedTier2(),
+     getTier1WithTier2
+
+*Framework
+NEW: SystemAdministratorClientCLI - possibility to define roothPath and lcgVersion when updating software
+
+*DMS
+NEW: FileCatalog - torage usage info stored in all the directories, not only those with files
+NEW: FileCatalog - added utility to rebuild storage usage info from scratch
+BUGFIX: FileCatalogClientCLI - in do_ls() check properly the path existence
+FIX: FileCatalogClientCLI - protection against non-existing getCatalogCounters method in the LFC client
 
 *WMS
 CHANGE: RunNumber job parameter was removed from all the relevant places ( JDL, JobDB, etc )
@@ -12,6 +23,13 @@ CHANGE: Get rid of LHCbPlatform everywhere except TaskQueueDB
 FIX: SiteDirector - provide list of sites to the Matcher in the initial query
 CHANGE: dirac-boinc-pilot dropped
 CHANGE: TaskQueueDirector does not depend on /LocalSite section any more
+CHANGE: reduced default delays for JobCleaningAgent
+CHANGE: limit the number of jobs received by JobCleaningAgent
+CHANGE: JobDB - use insertFields instead of _insert
+CHANGE: Matcher, TaskQueueDB - switch to use Platform rather than LHCbPlatform retaining LHCbPlatform compatibility
+BUGFIX: Matcher - proper reporting pilot site and CE
+CHANGE: JobManager - improved job Killing/Deleting logic
+CHANGE: dirac-pilot - treat the OSG case when jobs on the same WN all run in the same directory
 
 *Resources
 FIX: SSHComputingElement - enabled multiple hosts in one queue, more debugging
