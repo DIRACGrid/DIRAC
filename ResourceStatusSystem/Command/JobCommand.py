@@ -79,8 +79,9 @@ class JobCommand( Command ):
         return params
       name = params[ 'Value' ]  
       
-    # selectDict, sortList, startItem, maxItems  
-    results = self.wmsAdmin.getSiteSummaryWeb( { 'Site' : name }, [], 0, 500 )
+    # selectDict, sortList, startItem, maxItems
+    # Returns statistics of Last day !  
+    results = self.wmsAdmin.getSiteSummaryWeb( { 'Site' : name }, [], 0, 0 )
     if not results[ 'OK' ]:
       return results
     results = results[ 'Value' ]    

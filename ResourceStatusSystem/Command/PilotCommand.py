@@ -90,7 +90,7 @@ class PilotCommand( Command ):
       # You should never see this error
       return S_ERROR( '"%s" is not  Site nor Resource' % element  )
       
-    wmsResults = self.wmsAdmin.getPilotSummaryWeb( wmsDict, [], 0, 300 )
+    wmsResults = self.wmsAdmin.getPilotSummaryWeb( wmsDict, [], 0, 0 )
 
     if not wmsResults[ 'OK' ]:
       return wmsResults
