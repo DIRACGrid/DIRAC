@@ -12,6 +12,7 @@ import cmd
 import commands
 import os.path
 import string
+import time
 from types  import *
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security import CS
@@ -1255,20 +1256,23 @@ File Catalog Client $Revision: 1.17 $Date:
       path = path[:-1]
     
     # Check if the target path is a file
-    result =  self.fc.isFile(path)      
+    result =  self.fc.isFile(path)
+    
+    print result 
+          
     if not result['OK']:
       print "Error: can not verify path"
       return
-    elif path in result['Value']['Successful']:
+    elif path in result['Value']['Successful'] and result['Value']['Successful'][path]:
       result = self.fc.getFileMetadata(path)
+      
+      print result
+      
       dList = DirectoryListing()
       fileDict = result['Value']['Successful'][path]
       dList.addFile(os.path.basename(path),fileDict,numericid)
       dList.printListing(reverse,timeorder)
-      return   
-    else:
-      print "Error: path is not found"
-      return       
+      return         
     
     # Get directory contents now
     try:
@@ -2136,6 +2140,24 @@ File Catalog Client $Revision: 1.17 $Date:
       return 
     for key in result['Value']:
       print key.rjust(15),':',result['Value'][key]  
+      
+  def do_rebuild( self, args ):
+    """ Rebuild auxiliary tables
+    
+        Usage:
+           rebuild <option>
+    """
+    
+    argss = args.split()
+    option = argss[0]
+    start = time.time()
+    result = self.fc.rebuildDirectoryUsage()
+    if not result['OK']:
+      print "Error:", result['Message']
+      return 
+      
+    total = time.time() - start
+    print "Directory storage info rebuilt in %.2f sec", total    
       
   def do_exit(self, args):
     """ Exit the shell.
