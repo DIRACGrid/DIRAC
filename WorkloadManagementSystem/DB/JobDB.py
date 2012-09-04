@@ -67,8 +67,7 @@ JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 JOB_DEPRECATED_ATTRIBUTES = [ 'UserPriority', 'SystemPriority' ]
 
 JOB_STATIC_ATTRIBUTES = [ 'JobID', 'JobType', 'DIRACSetup', 'JobGroup', 'JobSplitType', 'MasterJobID',
-                          'JobName', 'Owner', 'OwnerDN', 'OwnerGroup', 'SubmissionTime', 'VerifiedFlag',
-                          'RunNumber' ]
+                          'JobName', 'Owner', 'OwnerDN', 'OwnerGroup', 'SubmissionTime', 'VerifiedFlag' ]
 
 JOB_VARIABLE_ATTRIBUTES = [ 'Site', 'RescheduleTime', 'StartExecTime', 'EndExecTime', 'RescheduleCounter',
                            'DeletedFlag', 'KilledFlag', 'FailedFlag',
@@ -818,7 +817,7 @@ class JobDB( DB ):
     if not self._update( cmd )['OK']:
       result = S_ERROR( 'JobDB.setJobParameter: operation failed.' )
 
-    result = self._insert( 'JobParameters', ['JobID', 'Name', 'Value'], [jobID, key, value] )
+    result = self.insertFields( 'JobParameters', ['JobID', 'Name', 'Value'], [jobID, key, value] )
     if not result['OK']:
       result = S_ERROR( 'JobDB.setJobParameter: operation failed.' )
 
@@ -929,7 +928,7 @@ class JobDB( DB ):
     if not self._update( cmd )['OK']:
       result = S_ERROR( 'JobDB.setJobOptParameter: operation failed.' )
 
-    result = self._insert( 'OptimizerParameters', ['JobID', 'Name', 'Value'], [jobID, name, value] )
+    result = self.insertFields( 'OptimizerParameters', ['JobID', 'Name', 'Value'], [jobID, name, value] )
     if not result['OK']:
       return S_ERROR( 'JobDB.setJobOptParameter: operation failed.' )
 
@@ -1056,7 +1055,7 @@ class JobDB( DB ):
     if not res['OK']:
       return res
     connection = res['Value']
-    res = self._insert( 'JobJDLs' , ['OriginalJDL'], [jdl], connection )
+    res = self.insertFields( 'JobJDLs' , ['OriginalJDL'], [jdl], connection )
 
     cmd = 'SELECT LAST_INSERT_ID()'
     res = self._query( cmd, connection )
@@ -1175,7 +1174,7 @@ class JobDB( DB ):
       jobAttrNames.append( 'MinorStatus' )
       jobAttrValues.append( 'Error in JDL syntax' )
 
-      result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
+      result = self.insertFields( 'Jobs', jobAttrNames, jobAttrValues )
       if not result['OK']:
         return result
 
@@ -1195,7 +1194,7 @@ class JobDB( DB ):
     jobAttrNames.append( 'UserPriority' )
     jobAttrValues.append( priority )
 
-    for jdlName in 'JobName', 'JobType', 'JobGroup', 'RunNumber':
+    for jdlName in 'JobName', 'JobType', 'JobGroup':
       # Defaults are set by the DB.
       jdlValue = classAdJob.getAttributeString( jdlName )
       if jdlValue:
@@ -1263,7 +1262,7 @@ class JobDB( DB ):
     if not result['OK']:
       return result
 
-    result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
+    result = self.insertFields( 'Jobs', jobAttrNames, jobAttrValues )
     if not result['OK']:
       return result
 
@@ -1340,18 +1339,17 @@ class JobDB( DB ):
     if systemConfig and systemConfig.lower() != 'any':
       # FIXME: need to reformulate in a VO independent mode
       # Get the LHCb Platforms that are compatible with the requested systemConfig
+      platformReqs = [systemConfig]
       result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
       if result['OK'] and result['Value']:
-        platforms = result['Value']
-        lhcbPlatforms = [systemConfig]
+        platforms = result['Value'] 
         for platform in platforms:
-          if systemConfig in [ x.strip() for x in platforms[platform].split( ',' ) ]:
-            lhcbPlatforms.append( platform )
-        if lhcbPlatforms:
-          classAdReq.insertAttributeVectorString( 'LHCbPlatforms', lhcbPlatforms )
-        else:
-          error = 'No compatible Platform found for %s' % systemConfig
-
+          if systemConfig in [ x.strip() for x in platforms[platform].split( ',' ) ] and platform != systemConfig:
+            platformReqs.append( platform )
+        classAdReq.insertAttributeVectorString( 'Platforms', platformReqs )    
+      else: 
+        error = "OS compatibility info not found"
+      
     if error:
 
       retVal = S_ERROR( error )

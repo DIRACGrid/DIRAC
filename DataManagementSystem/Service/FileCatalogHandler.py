@@ -302,7 +302,12 @@ class FileCatalogHandler(RequestHandler):
   types_getCatalogCounters = []
   def export_getCatalogCounters( self ):
     """ Get the number of registered directories, files and replicas in various tables """
-    return gFileCatalogDB.getCatalogCounters( self.getRemoteCredentials() )
+    return gFileCatalogDB.getCatalogCounters(self.getRemoteCredentials())
+  
+  types_rebuildDirectoryUsage = []
+  def export_rebuildDirectoryUsage(self):
+    """ Rebuild DirectoryUsage table from scratch """
+    return fcDB.rebuildDirectoryUsage()
 
   ########################################################################
   # Metadata Catalog Operations

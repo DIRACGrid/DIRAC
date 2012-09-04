@@ -309,10 +309,8 @@ class FileManager(FileManagerBase):
       for seID,repID in repDict.items():
         lfns[lfn]['RepID'] = repID
         dirID = lfns[lfn]['DirID']
-        if not directorySESizeDict.has_key(dirID):
-          directorySESizeDict[dirID] = {}
-        if not directorySESizeDict[dirID].has_key(seID):
-          directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
+        directorySESizeDict.setdefault( dirID, {} )
+        directorySESizeDict[dirID].setdefault( seID, {'Files':0,'Size':0} )
         directorySESizeDict[dirID][seID]['Size'] += lfns[lfn]['Size']
         directorySESizeDict[dirID][seID]['Files'] += 1
 
