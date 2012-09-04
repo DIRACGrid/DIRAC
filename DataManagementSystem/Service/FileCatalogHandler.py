@@ -9,7 +9,7 @@
   :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service 
 """
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 ## imports
 from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType 
@@ -305,9 +305,10 @@ class FileCatalogHandler(RequestHandler):
     return gFileCatalogDB.getCatalogCounters(self.getRemoteCredentials())
   
   types_rebuildDirectoryUsage = []
-  def export_rebuildDirectoryUsage(self):
+  @staticmethod
+  def export_rebuildDirectoryUsage():
     """ Rebuild DirectoryUsage table from scratch """
-    return fcDB.rebuildDirectoryUsage()
+    return gFileCatalogDB.rebuildDirectoryUsage()
 
   ########################################################################
   # Metadata Catalog Operations
