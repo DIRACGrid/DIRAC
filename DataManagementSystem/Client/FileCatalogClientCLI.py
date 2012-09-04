@@ -902,13 +902,16 @@ File Catalog Client $Revision: 1.17 $Date:
     if not result['OK']:
       print "Error: can not verify path"
       return
-    elif result['Value']['Successful'][path]:
+    elif path in result['Value']['Successful']:
       result = self.fc.getFileMetadata(path)
       dList = DirectoryListing()
       fileDict = result['Value']['Successful'][path]
       dList.addFile(os.path.basename(path),fileDict,numericid)
       dList.printListing(reverse,timeorder)
-      return         
+      return   
+    else:
+      print "Error: path is not found"
+      return       
     
     # Get directory contents now
     try:
@@ -1552,7 +1555,13 @@ File Catalog Client $Revision: 1.17 $Date:
         Usage:
           stats
     """
-    result = self.fc.getCatalogCounters()
+    
+    try:
+      result = self.fc.getCatalogCounters()
+    except AttributeError, x:
+      print "Error: no statistics available for this type of catalog:", str(x)
+      return
+      
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return 

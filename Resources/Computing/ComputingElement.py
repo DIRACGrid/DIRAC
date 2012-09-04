@@ -42,7 +42,6 @@ class ComputingElement:
     self.ceType = ''
     #self.log.setLevel('debug') #temporary for debugging
     self.classAd = ClassAd( '[]' )
-    self.ceRequirementDict = {}
     self.ceParameters = {}
     self.proxy = ''
     self.valid = None
@@ -100,10 +99,7 @@ class ComputingElement:
     result = self.__getSiteParameters()
     if not result['OK']:
       self.log.warn( result['Message'] )
-    result = self.__getResourceRequirements()
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-
+   
     self._addCEConfigDefaults()
 
   def isValid( self ):
@@ -137,24 +133,6 @@ class ComputingElement:
       # if it does not exist or it can not be converted, take the default
       self.ceParameters['MaxTotalJobs'] = MAX_TOTAL_JOBS
 
-
-
-  #############################################################################
-  def __getResourceRequirements( self ):
-    """Adds resource requirements to the ClassAd.
-    """
-    reqtSection = '/AgentJobRequirements'
-    result = gConfig.getOptionsDict( reqtSection )
-    if not result['OK']:
-      if not 'does not exist' in result['Message']:
-        self.log.warn( result['Message'] )
-      return S_OK( result['Message'] )
-
-    reqsDict = result['Value']
-    self.ceRequirementDict.update( reqsDict )
-
-    return S_OK( 'Added requirements' )
-
   #############################################################################
   def __getInt( self, value ):
     """To deal with JDL integer values.
@@ -175,20 +153,6 @@ class ComputingElement:
   def __getSiteParameters( self ):
     """Adds site specific parameters to the resource ClassAd.
     """
-    osSection = '/Resources/Computing/OSCompatibility'
-    platforms = {}
-    result = gConfig.getOptionsDict( osSection )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-      # return S_ERROR(result['Message'])
-    else:
-      if not result['Value']:
-        self.log.warn( 'Could not obtain %s section from CS' % ( osSection ) )
-        # return S_ERROR('Could not obtain %s section from CS' %(osSection))
-      else:
-        platforms = result['Value']
-    self.log.debug( 'Platforms are %s' % ( platforms ) )
-
     section = '/LocalSite'
     options = gConfig.getOptionsDict( section )
     if not options['OK']:
@@ -203,11 +167,8 @@ class ComputingElement:
 
     for option, value in localSite.items():
       if option == 'Architecture':
-        self.ceParameters['LHCbPlatform'] = value
+        self.ceParameters['Platform'] = value
         self.ceParameters['Architecture'] = value
-        if value in platforms.keys():
-          compatiblePlatforms = platforms[value]
-          self.ceParameters['CompatiblePlatforms'] = compatiblePlatforms.split( ', ' )
       elif option == 'LocalSE':
         self.ceParameters['LocalSE'] = value.split( ', ' )
       else:
@@ -230,6 +191,7 @@ class ComputingElement:
         self.ceParameters[key] = int( self.ceParameters[key] )
       if key in FLOAT_PARAMETERS:
         self.ceParameters[key] = float( self.ceParameters[key] )
+        
     self.reset()
     return S_OK()
 
@@ -469,68 +431,6 @@ class ComputingElement:
     chain = retVal['Value']
     return chain.dumpAllToFile( payloadProxy )
 
-  #############################################################################
-  def getJDL( self ):
-    """Returns CE JDL as a string.
-    """
-
-    # Add the CE parameters
-    for option, value in self.ceParameters.items():
-      if type( option ) == type( [] ):
-        self.classAd.insertAttributeVectorString( option, value.split( ', ' ) )
-      elif type( value ) == type( ' ' ):
-        jdlInt = self.__getInt( value )
-        if type( jdlInt ) == type( 1 ):
-          self.log.debug( 'Found JDL integer attribute: %s = %s' % ( option, jdlInt ) )
-          self.classAd.insertAttributeInt( option, jdlInt )
-        else:
-          self.log.debug( 'Found string attribute: %s = %s' % ( option, value ) )
-          self.classAd.insertAttributeString( option, value )
-      elif type( value ) == type( 1 ):
-        self.log.debug( 'Found integer attribute: %s = %s' % ( option, value ) )
-        self.classAd.insertAttributeInt( option, value )
-      else:
-        self.log.warn( 'Type of option %s = %s not determined' % ( option, value ) )
-
-    # Add the CE requirements if any
-    requirements = ''
-    for option, value in self.ceRequirementDict.items():
-      if type( value ) == type( ' ' ):
-        jdlInt = self.__getInt( value )
-        if type( jdlInt ) == type( 1 ):
-          requirements += ' other.' + option + ' == %d &&' % ( jdlInt )
-          self.log.debug( 'Found JDL reqt integer attribute: %s = %s' % ( option, jdlInt ) )
-          self.classAd.insertAttributeInt( option, jdlInt )
-        else:
-          requirements += ' other.' + option + ' == "%s" &&' % ( value )
-          self.log.debug( 'Found string reqt attribute: %s = %s' % ( option, value ) )
-          self.classAd.insertAttributeString( option, value )
-      elif type( value ) == type( 1 ):
-        requirements += ' other.' + option + ' == %d &&' % ( value )
-        self.log.debug( 'Found integer reqt attribute: %s = %s' % ( option, value ) )
-        self.classAd.insertAttributeInt( option, value )
-      else:
-        self.log.warn( 'Could not determine type of:  %s = %s' % ( option, value ) )
-
-    if requirements:
-      if re.search( '&&$', requirements ):
-        requirements = requirements[:-3]
-      self.classAd.set_expression( 'Requirements', requirements )
-    else:
-      self.classAd.set_expression( 'Requirements', 'True' )
-
-    release = gConfig.getValue( '/LocalSite/ReleaseVersion', version )
-    self.classAd.insertAttributeString( 'DIRACVersion', release )
-    self.classAd.insertAttributeString( 'ReleaseVersion', release )
-    project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
-    if project:
-      self.classAd.insertAttributeString( 'ReleaseProject', project )
-    if self.classAd.isOK():
-      jdl = self.classAd.asJDL()
-      return S_OK( jdl )
-    else:
-      return S_ERROR( 'ClassAd job is not valid' )
-    
   def getDescription( self ):
     """ Get CE description as a dictionary
     """  

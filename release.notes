@@ -1,3 +1,71 @@
+[v6r6-pre3]
+
+*Core
+CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
+NEW: SiteSEMapping - new utilities getSitesGroupedByTierLevel(), getTier1WithAttachedTier2(),
+     getTier1WithTier2
+
+*Framework
+NEW: SystemAdministratorClientCLI - possibility to define roothPath and lcgVersion when updating software
+
+*DMS
+NEW: FileCatalog - torage usage info stored in all the directories, not only those with files
+NEW: FileCatalog - added utility to rebuild storage usage info from scratch
+BUGFIX: FileCatalogClientCLI - in do_ls() check properly the path existence
+FIX: FileCatalogClientCLI - protection against non-existing getCatalogCounters method in the LFC client
+
+*WMS
+CHANGE: RunNumber job parameter was removed from all the relevant places ( JDL, JobDB, etc )
+NEW: dirac-pilot - add environment setting for SSH and BOINC CEs
+NEW: WMSAdministrator - get output for non-grid CEs if not yet in the DB
+NEW: JobAgent - job publishes BOINC parameters if any
+CHANGE: Get rid of LHCbPlatform everywhere except TaskQueueDB
+FIX: SiteDirector - provide list of sites to the Matcher in the initial query
+CHANGE: dirac-boinc-pilot dropped
+CHANGE: TaskQueueDirector does not depend on /LocalSite section any more
+CHANGE: reduced default delays for JobCleaningAgent
+CHANGE: limit the number of jobs received by JobCleaningAgent
+CHANGE: JobDB - use insertFields instead of _insert
+CHANGE: Matcher, TaskQueueDB - switch to use Platform rather than LHCbPlatform retaining LHCbPlatform compatibility
+BUGFIX: Matcher - proper reporting pilot site and CE
+CHANGE: JobManager - improved job Killing/Deleting logic
+CHANGE: dirac-pilot - treat the OSG case when jobs on the same WN all run in the same directory
+
+*Resources
+FIX: SSHComputingElement - enabled multiple hosts in one queue, more debugging
+CHANGE: SSHXXX Computing Elements - define SSH class once in the SSHComputingElement
+NEW: SSHComputingElement - added option to define private key location
+CHANGE: Get rid of legacy methods in ComputingElement
+
+*Interfaces
+CHANGE: Removed Script.initialize() from the API initialization
+CHANGE: Some general API polishing
+
+*TS
+BUGFIX: TaskManager - bug fixed in treating tasks with input data
+
+[v6r5p1]
+
+*Core
+BUGFIX: ExecutorMindHandler - return S_OK() in the initializeHandler
+FIX: OptimizationMindHandler - if the manifest is not dirty it will not be updated by the Mind
+
+*Configuration
+NEW: Resources helper - added getCompatiblePlatform(), getDIRACPlatform() methods
+
+*Resources
+FIX: SSHComputingElement - add -q option to ssh command to avoid banners in the output
+FIX: BOINCComputingElement - removed debugging printout
+FIX: ComputingElement - use Platform CS option which will be converted to LHCbPlatform for legacy compatibility
+
+*DMS
+FIX: RequestAgentBase - lowering loglevel from ALWAYS to INFO to avoid flooding SystemLogging
+
+*WMS:
+FIX: SiteDirector - provide CE platform parameter when interrogating the TQ
+FIX: GridPilotDirector - publish pilot OwnerGroup rather than VOMS role
+FIX: WMSUtilities - add new error string into the parsing of the job output retrieval
+
 [v6r5]
 
 NEW: Executor framework
@@ -111,6 +179,11 @@ CHANGE: request agents cleanup
 
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
+
+[v6r4p21]
+
+*Core
+BUGFIX: SGETimeLeft - take into account dd:hh:mm:ss format of the cpu consumed
 
 [v6r4p20]
 

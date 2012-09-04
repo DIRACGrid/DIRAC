@@ -17,9 +17,9 @@ import DIRAC.Core.Utilities.Time as Time
 import string
 import time
 
-REMOVE_STATUS_DELAY = { 'Done':14,
-                        'Killed':7,
-                        'Failed':14 }
+REMOVE_STATUS_DELAY = { 'Done':7,
+                        'Killed':1,
+                        'Failed':7 }
 
 class JobCleaningAgent( AgentModule ):
   """
@@ -89,10 +89,10 @@ class JobCleaningAgent( AgentModule ):
     """
     if delay:
       gLogger.verbose( "Removing jobs with %s and older than %s" % ( condDict, delay ) )
-      result = self.jobDB.selectJobs( condDict, older = delay )
+      result = self.jobDB.selectJobs( condDict, older = delay, limit = self.maxJobsAtOnce )
     else:
       gLogger.verbose( "Removing jobs with %s " % condDict )
-      result = self.jobDB.selectJobs( condDict )
+      result = self.jobDB.selectJobs( condDict, limit = self.maxJobsAtOnce )
 
     if not result['OK']:
       return result

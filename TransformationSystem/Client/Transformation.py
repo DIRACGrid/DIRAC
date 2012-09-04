@@ -1,14 +1,9 @@
-######################################################################################################
-# $HeadURL $
-######################################################################################################
 __RCSID__ = "$Id$"
 
-#from DIRAC.Core.Base import Script
-#Script.parseCommandLine()
-
-import string, os, shutil, types, pprint
+import string, types
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
@@ -18,7 +13,10 @@ class Transformation( API ):
 
   #############################################################################
   def __init__( self, transID = 0, transClient = '' ):
-    API.__init__( self )
+    """ c'tor
+    """
+    super( Transformation, self ).__init__()
+
     self.paramTypes = { 'TransformationID'      : [types.IntType, types.LongType],
                           'TransformationName'    : types.StringTypes,
                           'Status'                : types.StringTypes,
@@ -163,7 +161,7 @@ class Transformation( API ):
       if hasattr( self, setterName ) and callable( getattr( self, setterName ) ):
         setter = getattr( self, setterName )
       if not setterName:
-        gLogger.error("Unable to invoke setter %s, it isn't a member function" % setterName )
+        gLogger.error( "Unable to invoke setter %s, it isn't a member function" % setterName )
         continue
       setter( paramValue )
     if printOutput:
@@ -228,10 +226,10 @@ class Transformation( API ):
       return S_ERROR()
     printOutput = kwds.pop( 'printOutput' )
     fcn = None
-    if hasattr( self.transClient, operation ) and callable( getattr( self.transClient, operation) ):
+    if hasattr( self.transClient, operation ) and callable( getattr( self.transClient, operation ) ):
       fcn = getattr( self.transClient, operation )
     if not fcn:
-      return S_ERROR("Unable to invoke %s, it isn't a member funtion of TransformationClient" )
+      return S_ERROR( "Unable to invoke %s, it isn't a member funtion of TransformationClient" )
     res = fcn( transID, *parms, **kwds )
     if printOutput:
       self._prettyPrint( res )
@@ -362,11 +360,11 @@ class Transformation( API ):
         return res
     plugin = self.paramValues['Plugin']
     checkPlugin = "_check%sPlugin" % plugin
-    fcn = None 
+    fcn = None
     if hasattr( self, checkPlugin ) and callable( getattr( self, checkPlugin ) ):
       fcn = getattr( self, checkPlugin )
     if not fcn:
-      return S_ERROR("Unable to invoke %s, it isn't a member function" % checkPlugin )
+      return S_ERROR( "Unable to invoke %s, it isn't a member function" % checkPlugin )
     res = fcn()
     return res
 
@@ -399,7 +397,7 @@ class Transformation( API ):
         if hasattr( self, setterName ) and callable( getattr( self, setterName ) ):
           setter = getattr( self, setterName )
         if not setter:
-          return S_ERROR("Unable to invoke %s, this function hasn't been implemented." % setterName )
+          return S_ERROR( "Unable to invoke %s, this function hasn't been implemented." % setterName )
         ses = paramValue.replace( ',', ' ' ).split()
         res = setter( ses )
         if not res['OK']:
@@ -420,18 +418,18 @@ class Transformation( API ):
     return S_OK()
 
   def __promptForParameter( self, parameter, choices = [], default = '', insert = True ):
-    res = self._promptUser( "Please enter %s" % parameter, choices = choices, default = default )
+    res = promptUser( "Please enter %s" % parameter, choices = choices, default = default )
     if not res['OK']:
       return self._errorReport( res )
     gLogger.info( "%s will be set to '%s'" % ( parameter, res['Value'] ) )
     paramValue = res['Value']
     if insert:
       setter = None
-      setterName = "set%s" % parameter 
+      setterName = "set%s" % parameter
       if hasattr( self, setterName ) and callable( getattr( self, setterName ) ):
         setter = getattr( self, setterName )
       if not setter:
-        return S_ERROR( "Unable to invoke %s, it isn't a member function of Tranferomation!" )
+        return S_ERROR( "Unable to invoke %s, it isn't a member function of Transformation!" )
       res = setter( paramValue )
       if not res['OK']:
         return res

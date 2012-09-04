@@ -22,91 +22,13 @@ from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import systemCall, rootPath
 from DIRAC                                               import gConfig
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
+from DIRAC.Resources.Computing.SSHComputingElement       import SSH 
 
 import os, sys, time, re, socket, stat, shutil
 import string, shutil, bz2, base64, tempfile
 
 CE_NAME = 'SSHLSF'
 MANDATORY_PARAMETERS = [ 'Queue' ]
-
-class SSH:
-
-  def __init__( self, user, host, password = None ):
-
-    self.user = user
-    self.host = host
-    self.password = password
-
-  def __ssh_call( self, command, timeout ):
-
-    try:
-      import pexpect
-      expectFlag = True
-    except:
-      from DIRAC import shellCall
-      expectFlag = False
-
-    if not timeout:
-      timeout = 999
-
-    if expectFlag:
-      ssh_newkey = 'Are you sure you want to continue connecting'
-      try:
-        child = pexpect.spawn( command, timeout = timeout )
-
-        i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
-        if i == 0: # Timeout
-            return S_OK( ( -1, child.before, 'SSH login failed' ) )
-        elif i == 1: # SSH does not have the public key. Just accept it.
-          child.sendline ( 'yes' )
-          child.expect ( 'password: ' )
-          i = child.expect( [pexpect.TIMEOUT, 'password: '] )
-          if i == 0: # Timeout
-            return S_OK( ( -1, child.before + child.after, 'SSH login failed' ) )
-          elif i == 1:
-            child.sendline( password )
-            child.expect( pexpect.EOF )
-            return S_OK( ( 0, child.before, '' ) )
-        elif i == 2:
-          # Passwordless login, get the output
-          return S_OK( ( 0, child.before, '' ) )
-
-        if self.password:
-          child.sendline( self.password )
-          child.expect( pexpect.EOF )
-          return S_OK( ( 0, child.before, '' ) )
-        else:
-          return S_ERROR( ( -1, child.before, '' ) )
-      except Exception,x:
-        res = (-1 ,'Encountered exception %s: %s'%(Exception,str(x)))
-        return S_ERROR(res)
-    else:
-      # Try passwordless login
-      result = shellCall( timeout, command )
-      return result
-
-
-  def sshCall( self, timeout, cmdSeq ):
-    """ Execute remote command via a ssh remote call
-    """
-
-    command = cmdSeq
-    if type( cmdSeq ) == type( [] ):
-      command = ' '.join( cmdSeq )
-
-    command = "ssh -l %s %s '%s'" % ( self.user, self.host, command )
-    return self.__ssh_call( command, timeout )
-
-  def scpCall( self, timeout, localFile, destinationPath, upload = True ):
-    """ Execute scp copy
-    """
-
-    if upload:
-      command = "scp %s %s@%s:%s" % ( localFile, self.user, self.host, destinationPath )
-    else:
-      command = "scp %s@%s:%s %s" % ( self.user, self.host, destinationPath, localFile )
-    return self.__ssh_call( command, timeout )
-
 
 class SSHLSFComputingElement( ComputingElement ):
 
@@ -155,11 +77,6 @@ class SSHLSFComputingElement( ComputingElement ):
     self.batchOutput = self.ceParameters['BatchOutput']
     self.batchError = self.ceParameters['BatchError']
     self.executableArea = self.ceParameters['ExecutableArea']
-    self.sshUser = self.ceParameters['SSHUser']
-    self.sshHost = self.ceParameters['SSHHost']
-    self.sshPassword = ''
-    if 'SSHPassword' in self.ceParameters:
-      self.sshPassword = self.ceParameters['SSHPassword']
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
       self.submitOptions = self.ceParameters['SubmitOptions']
@@ -222,7 +139,7 @@ shutil.rmtree( workingDirectory )
     else: # no proxy
       submitFile = executableFile
 
-    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
+    ssh = SSH( parameters = self.ceParameters )
     # Copy the executable
     os.chmod( submitFile, stat.S_IRUSR | stat.S_IXUSR )
     sFile = os.path.basename( submitFile )
@@ -250,7 +167,7 @@ shutil.rmtree( workingDirectory )
     batchIDList = []
     lines = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
     for line in lines:
-      batchIDList.append(line.split("<")[1].split(">")[0])
+      batchIDList.append( line.split( "<" )[1].split( ">" )[0] )
     self.submittedJobs += 1
 
     return S_OK( batchIDList )
@@ -263,7 +180,7 @@ shutil.rmtree( workingDirectory )
     result = S_OK()
     result['SubmittedJobs'] = self.submittedJobs
 
-    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
+    ssh = SSH( parameters = self.ceParameters )
     cmd = ["bjobs", "-q" , self.execQueue , "-a" ]
     ret = ssh.sshCall( 100, cmd )
 
@@ -285,11 +202,11 @@ shutil.rmtree( workingDirectory )
 
     waitingJobs = 0
     runningJobs = 0
-    lines = stdout.split("\n")
+    lines = stdout.split( "\n" )
     for line in lines:
-      if line.count("PEND") or line.count('PSUSP'):
+      if line.count( "PEND" ) or line.count( 'PSUSP' ):
         waitingJobs += 1
-      if line.count("RUN") or line.count('USUSP'):
+      if line.count( "RUN" ) or line.count( 'USUSP' ):
         runningJobs += 1
 
     result['WaitingJobs'] = waitingJobs
@@ -305,20 +222,20 @@ shutil.rmtree( workingDirectory )
     """
 
     resultDict = {}
-    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
-    
-    for jobList in breakListIntoChunks(jobIDList,100):
+    ssh = SSH( parameters = self.ceParameters )
+
+    for jobList in breakListIntoChunks( jobIDList, 100 ):
       jobDict = {}
       for job in jobList:
-        jobNumber = job.split('.')[0]
+        jobNumber = job.split( '.' )[0]
         if jobNumber:
           jobDict[jobNumber] = job
-      
+
       cmd = [ 'bjobs', ' '.join( jobList ) ]
       result = ssh.sshCall( 100, cmd )
       if not result['OK']:
         return result
-  
+
       output = result['Value'][1].replace( '\r', '' )
       lines = output.split( '\n' )
       for job in jobDict:
@@ -331,9 +248,9 @@ shutil.rmtree( workingDirectory )
               lsfStatus = line.split()[2]
               if lsfStatus in ['DONE', 'EXIT']:
                 resultDict[jobDict[job]] = 'Done'
-              elif lsfStatus in ['RUN','SSUSP']:
+              elif lsfStatus in ['RUN', 'SSUSP']:
                 resultDict[jobDict[job]] = 'Running'
-              elif lsfStatus in ['PEND','PSUSP']:
+              elif lsfStatus in ['PEND', 'PSUSP']:
                 resultDict[jobDict[job]] = 'Waiting'
 
     return S_OK( resultDict )
@@ -350,7 +267,7 @@ shutil.rmtree( workingDirectory )
     else:
       tempDir = localDir
 
-    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
+    ssh = SSH( parameters = self.ceParameters )
     result = ssh.scpCall( 200, '%s/%s.out' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchOutput, jobNumber ), upload = False )
     if not result['OK']:
       return result

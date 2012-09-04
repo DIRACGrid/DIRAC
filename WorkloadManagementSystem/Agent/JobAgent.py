@@ -132,6 +132,12 @@ class JobAgent( AgentModule ):
     ceDict['PilotBenchmark'] = self.cpuFactor 
     ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
     
+    # Add possible job requirements
+    result = gConfig.getOptionsDict( '/AgentJobRequirements' )
+    if result['OK']:
+      requirementsDict = result['Value']
+      ceDict.update( requirementsDict )
+    
     self.log.verbose( ceDict )
     start = time.time()
     jobRequest = self.__requestJob( ceDict )
@@ -141,17 +147,17 @@ class JobAgent( AgentModule ):
     self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', self.stopAfterFailedMatches )
 
     if not jobRequest['OK']:
-      if re.search( 'No work available', jobRequest['Message'] ):
+      if re.search( 'No match found', jobRequest['Message'] ):
         self.log.info( 'Job request OK: %s' % ( jobRequest['Message'] ) )
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
-          return S_ERROR( 'Nothing to do' )
+          return self.__finish( 'Nothing to do for more than %d cycles' %  self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "seconds timeout" ) != -1:
         self.log.error( jobRequest['Message'] )
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
-          return S_ERROR( 'Nothing to do' )
+          return self.__finish( 'Nothing to do for more than %d cycles' %  self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "Pilot version does not match" ) != -1 :
         self.log.error( jobRequest['Message'] )
@@ -160,7 +166,7 @@ class JobAgent( AgentModule ):
         self.log.info( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
-          return S_ERROR( 'Nothing to do' )
+          return self.__finish( 'Nothing to do for more than %d cycles' %  self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
 
     # Reset the Counter
@@ -240,6 +246,12 @@ class JobAgent( AgentModule ):
       jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
       if self.gridCEQueue:
         jobReport.setJobParameter( 'GridCEQueue', self.gridCEQueue, sendFlag = False )
+        
+      if os.environ.has_key( 'BOINC_JOB_ID' ):
+        # Report BOINC environment 
+        for p in ['BoincUserID','BoincHostID','BoincHostPlatform','BoincHostName']:
+          jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )  
+        
       jobReport.setJobStatus( 'Matched', 'Job Received by Agent' )
       # self.__setJobSite( jobID, self.siteName )
       if not self.pilotInfoReportedFlag:
