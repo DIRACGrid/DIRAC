@@ -114,10 +114,10 @@ class StorageElement:
     return S_OK( self.name )
 
   def getChecksumType( self ):
-    """ get local /Resources/StorageElements/SEName/ChecksumType option if defined or 
-        global /Resources/StorageElements/ChecksumType otherwise
+    """ get local /Resources/StorageElements/SEName/ChecksumType option if defined, otherwise 
+        global /Resources/StorageElements/ChecksumType
     """
-    return S_OK( str(gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLRE32" )).upper() 
+    return S_OK( str(gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" )).upper() 
                  if "ChecksumType" not in self.options else str(self.options["ChecksumType"]).upper() )
      
   def getStatus( self ):
