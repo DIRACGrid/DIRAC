@@ -204,9 +204,9 @@ class RequestDBFile( object ):
       try:
         jobID = int( jobID )
       except (TypeError, ValueError), error:
-        self.log.exception( 'Could not get JobID from Request: %s' % str(error) )
-      resDict = { 'RequestString' : selectedRequestString, 'RequestName' : selectedRequestName, 'JobID' : jobID }
-      return S_OK( resDict )
+        self.log.error( "getRequest: could not get JobID from Request, setting it to 0: %s" % str(error) )
+        jobID = 0
+      return S_OK( { "RequestString" : selectedRequestString, "RequestName" : selectedRequestName, "JobID" : jobID } )
     except Exception, x:
       errStr = "getRequest: Exception while getting request."
       self.log.exception( errStr, requestType, lException = x )
