@@ -278,30 +278,35 @@ class FileManagerBase:
 
   def _updateDirectoryUsage( self, directorySEDict, change, connection = False ):
     connection = self._getConnection( connection )
-    for dirID in sortList( directorySEDict.keys() ):
-      dirDict = directorySEDict[dirID]
+    for directoryID in sortList( directorySEDict.keys() ):
+      result = self.db.tree.getPathIDsByID( directoryID )
+      if not result['OK']:
+        return result
+      parentIDs = result['Value']
+      dirDict = directorySEDict[directoryID]
       for seID in sortList( dirDict.keys() ):
         seDict = dirDict[seID]
         files = seDict['Files']
         size = seDict['Size']
-        req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
-                                                         % ( change, size, change, files )
-        req += "WHERE DirID=%d AND SEID=%d;" % ( dirID, seID )
-        res = self.db._update( req )
-        if not res['OK']:
-          gLogger.warn( "Failed to update FC_DirectoryUsage", res['Message'] )
-        if res['Value']:
-          continue
-        if  change != '+':
-          gLogger.warn( "Decrement of usage for DirID,SEID that didnt exist", "%d %d" % ( dirID, seID ) )
-          continue
-        req = "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles, LastUpdate)"
-        req += " VALUES (%d, %d, %d, %d, UTC_TIMESTAMP());" % ( dirID, seID, size, files )
-        res = self.db._update( req )
-        if not res['OK']:
-          gLogger.warn( "Failed to insert FC_DirectoryUsage", res['Message'] )
+        for dirID in [directoryID] + parentIDs:
+          req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
+                                                           % ( change, size, change, files )
+          req += "WHERE DirID=%d AND SEID=%d;" % ( dirID, seID )
+          res = self.db._update( req )
+          if not res['OK']:
+            gLogger.warn( "Failed to update FC_DirectoryUsage", res['Message'] )
+          if res['Value']:
+            continue
+          if  change != '+':
+            gLogger.warn( "Decrement of usage for DirID,SEID that didnt exist", "%d %d" % ( dirID, seID ) )
+            continue
+          req = "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles, LastUpdate)"
+          req += " VALUES (%d, %d, %d, %d, UTC_TIMESTAMP());" % ( dirID, seID, size, files )
+          res = self.db._update( req )
+          if not res['OK']:
+            gLogger.warn( "Failed to insert FC_DirectoryUsage", res['Message'] )
     return S_OK()
-
+    
   def _populateFileAncestors( self, lfns, connection = False ):
     connection = self._getConnection( connection )
     successful = {}
@@ -310,6 +315,8 @@ class FileManagerBase:
       originalFileID = lfnDict['FileID']
       originalDepth = lfnDict.get( 'AncestorDepth', 1 )
       ancestors = lfnDict.get( 'Ancestors', [] )
+      if type( ancestors ) == type( ' ' ):
+        ancestors = [ancestors]
       if lfn in ancestors:
         ancestors.remove( lfn )
       if not ancestors:

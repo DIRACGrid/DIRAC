@@ -20,6 +20,7 @@ from DIRAC                                             import gConfig, gLogger, 
 from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB   import PilotAgentsDB
 from DIRAC                                             import gMonitor
 from DIRAC.Core.Utilities.ThreadScheduler              import gThreadScheduler
 from DIRAC.Core.Security                               import Properties
@@ -32,6 +33,7 @@ gTaskQueues = {}
 gJobDB = False
 gJobLoggingDB = False
 gTaskQueueDB = False
+gPilotAgentsDB = False
 
 def initializeMatcherHandler( serviceInfo ):
   """  Matcher Service initialization
@@ -40,23 +42,25 @@ def initializeMatcherHandler( serviceInfo ):
   global gJobDB
   global gJobLoggingDB
   global gTaskQueueDB
+  global gPilotAgentsDB
 
   gJobDB = JobDB()
   gJobLoggingDB = JobLoggingDB()
   gTaskQueueDB = TaskQueueDB()
+  gPilotAgentsDB = PilotAgentsDB()
 
   gMonitor.registerActivity( 'matchTime', "Job matching time",
                              'Matching', "secs" , gMonitor.OP_MEAN, 300 )
-  gMonitor.registerActivity( 'matchTaskQueues', "Task queues checked per job",
-                             'Matching', "task queues" , gMonitor.OP_MEAN, 300 )
-  gMonitor.registerActivity( 'matchesDone', "Job Matches",
-                             'Matching', "matches" , gMonitor.OP_MEAN, 300 )
+  gMonitor.registerActivity( 'matchesDone', "Job Match Request",
+                             'Matching', "matches" , gMonitor.OP_RATE, 300 )
+  gMonitor.registerActivity( 'matchesOK', "Matched jobs",
+                             'Matching', "matches" , gMonitor.OP_RATE, 300 )
   gMonitor.registerActivity( 'numTQs', "Number of Task Queues",
                              'Matching', "tqsk queues" , gMonitor.OP_MEAN, 300 )
 
   gTaskQueueDB.recalculateTQSharesForAll()
   gThreadScheduler.addPeriodicTask( 120, gTaskQueueDB.recalculateTQSharesForAll )
-  gThreadScheduler.addPeriodicTask( 120, sendNumTaskQueues )
+  gThreadScheduler.addPeriodicTask( 60, sendNumTaskQueues )
 
   sendNumTaskQueues()
 
@@ -324,7 +328,10 @@ class MatcherHandler( RequestHandler ):
 
       for name in gTaskQueueDB.getMultiValueMatchFields():
         if classAdAgent.lookupAttribute( name ):
-          resourceDict[name] = classAdAgent.getAttributeString( name )
+          if name == 'SubmitPool':
+            resourceDict[name] = classAdAgent.getListFromExpression( name )      
+          else:
+            resourceDict[name] = classAdAgent.getAttributeString( name )
 
       # Check if a JobID is requested
       if classAdAgent.lookupAttribute( 'JobID' ):
@@ -333,7 +340,7 @@ class MatcherHandler( RequestHandler ):
       for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization' ):
         if classAdAgent.lookupAttribute( k ):
           resourceDict[ k ] = classAdAgent.getAttributeString( k )
-
+          
     else:
       for name in gTaskQueueDB.getSingleValueTQDefFields():
         if resourceDescription.has_key( name ):
@@ -346,13 +353,12 @@ class MatcherHandler( RequestHandler ):
       if resourceDescription.has_key( 'JobID' ):
         resourceDict['JobID'] = resourceDescription['JobID']
 
-      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization' ):
+      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
+                 'PilotReference', 'PilotInfoReportedFlag', 'PilotBenchmark', 'LHCbPlatform' ):
         if k in resourceDescription:
           resourceDict[ k ] = resourceDescription[ k ]
 
     return resourceDict
-
-
 
   def selectJob( self, resourceDescription ):
     """ Main job selection function to find the highest priority job
@@ -415,6 +421,22 @@ class MatcherHandler( RequestHandler ):
           return S_ERROR( "Version check requested but expected project %s != received %s" % ( validProject,
                                                                                                resourceDict[ 'ReleaseProject' ] ) )
 
+    # Update pilot information
+    pilotInfoReported = False
+    pilotReference = resourceDict.get( 'PilotReference', '' )
+    if pilotReference:
+      if "PilotInfoReportedFlag" in resourceDict and not resourceDict['PilotInfoReportedFlag']:
+        gridCE = resourceDict.get( 'GridCE', 'Unknown' )
+        site = destination = resourceDict.get( 'Site', 'Unknown' )
+        benchmark = benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
+        gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
+        result = gPilotAgentsDB.setPilotStatus( pilotReference, status = 'Running',
+                                                gridSite = site,
+                                                destination = gridCE,
+                                                benchmark = benchmark )
+        if result['OK']:
+          pilotInfoReported = True                                        
+    
     #Check the site mask
     if not 'Site' in resourceDict:
       return S_ERROR( 'Missing Site Name in Resource JDL' )
@@ -463,7 +485,10 @@ class MatcherHandler( RequestHandler ):
         return result
       return S_ERROR( "Job %s is not in Waiting state" % str( jobID ) )
 
-    result = gJobDB.setJobStatus( jobID, status = 'Matched', minor = 'Assigned' )
+    attNames = ['Status','MinorStatus','ApplicationStatus','Site']
+    attValues = ['Matched','Assigned','Unknown',siteName]
+    result = gJobDB.setJobAttributes( jobID, attNames, attValues )
+    # result = gJobDB.setJobStatus( jobID, status = 'Matched', minor = 'Assigned' )
     result = gJobLoggingDB.addLoggingRecord( jobID,
                                            status = 'Matched',
                                            minor = 'Assigned',
@@ -495,8 +520,14 @@ class MatcherHandler( RequestHandler ):
     if self.__opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True ):
       self.__limiter.updateDelayCounters( siteName, jobID )
 
+    # Report pilot-job association
+    if pilotReference:
+      result = gPilotAgentsDB.setCurrentJobID( pilotReference, jobID )
+      result = gPilotAgentsDB.setJobForPilot( jobID, pilotReference, updateStatus=False )
+
     resultDict['DN'] = resAtt['Value']['OwnerDN']
     resultDict['Group'] = resAtt['Value']['OwnerGroup']
+    resultDict['PilotInfoReportedFlag'] = pilotInfoReported
     return S_OK( resultDict )
 
 ##############################################################################
@@ -508,6 +539,8 @@ class MatcherHandler( RequestHandler ):
 
     result = self.selectJob( resourceDescription )
     gMonitor.addMark( "matchesDone" )
+    if result[ 'OK' ]:
+      gMonitor.addMark( "matchesOK" )
     return result
 
 ##############################################################################

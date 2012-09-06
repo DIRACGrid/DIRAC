@@ -382,7 +382,7 @@ class CE2CSAgent( AgentModule ):
 
             try:
               rte = bdiice['GlueHostApplicationSoftwareRunTimeEnvironment']
-              if self.voName == 'lhcb':
+              if self.voName.lower() == 'lhcb':
                 if 'VO-lhcb-pilot' in rte:
                   newpilot = 'True'
                 else:

@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Base.AgentModule                    import AgentModule
-from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, dateTime
+from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, dateTime, second
 from DIRAC                                          import S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job        import Job
@@ -33,9 +33,8 @@ class StalledJobAgent( AgentModule ):
   """
   jobDB = None
   logDB = None
-
-  jobDB = None
-  logDB = None
+  matchedTime = 7200
+  rescheduledTime = 600
 
   #############################################################################
   def initialize( self ):
@@ -61,6 +60,10 @@ class StalledJobAgent( AgentModule ):
 
     stalledTime = self.am_getOption( 'StalledTimeHours', 2 )
     failedTime = self.am_getOption( 'FailedTimeHours', 6 )
+
+    self.matchedTime = self.am_getOption( 'MatchedTime', self.matchedTime )
+    self.rescheduledTime = self.am_getOption( 'RescheduledTime', self.rescheduledTime )
+
     self.log.verbose( 'StalledTime = %s cycles' % ( stalledTime ) )
     self.log.verbose( 'FailedTime = %s cycles' % ( failedTime ) )
 
@@ -73,7 +76,7 @@ class StalledJobAgent( AgentModule ):
 
     result = self.__markStalledJobs( stalledTime )
     if not result['OK']:
-      self.log.info( result['Message'] )
+      self.log.error( result['Message'] )
 
     #Note, jobs will be revived automatically during the heartbeat signal phase and
     #subsequent status changes will result in jobs not being selected by the
@@ -81,7 +84,11 @@ class StalledJobAgent( AgentModule ):
 
     result = self.__failStalledJobs( failedTime )
     if not result['OK']:
-      self.log.info( result['Message'] )
+      self.log.error( result['Message'] )
+
+    result = self.__kickStuckJobs()
+    if not result['OK']:
+      self.log.error( result['Message'] )
 
     return S_OK( 'Stalled Job Agent cycle complete' )
 
@@ -92,23 +99,23 @@ class StalledJobAgent( AgentModule ):
     stalledCounter = 0
     runningCounter = 0
     result = self.jobDB.selectJobs( {'Status':'Running'} )
-    if not result['OK'] or not result['Value']:
-      self.log.warn( result )
+    if not result['OK']:
       return result
-    else:
-      jobs = result['Value']
-      self.log.info( '%s Running jobs will be checked for being stalled' % ( len( jobs ) ) )
-      jobs.sort()
+    if not result['Value']:
+      return S_OK()
+    jobs = result['Value']
+    self.log.info( '%s Running jobs will be checked for being stalled' % ( len( jobs ) ) )
+    jobs.sort()
 #      jobs = jobs[:10] #for debugging
-      for job in jobs:
-        result = self.__getStalledJob( job, stalledTime )
-        if result['OK']:
-          self.log.verbose( 'Updating status to Stalled for job %s' % ( job ) )
-          self.__updateJobStatus( job, 'Stalled' )
-          stalledCounter += 1
-        else:
-          self.log.verbose( result['Message'] )
-          runningCounter += 1
+    for job in jobs:
+      result = self.__getStalledJob( job, stalledTime )
+      if result['OK']:
+        self.log.verbose( 'Updating status to Stalled for job %s' % ( job ) )
+        self.__updateJobStatus( job, 'Stalled' )
+        stalledCounter += 1
+      else:
+        self.log.verbose( result['Message'] )
+        runningCounter += 1
 
     self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' %
                    ( len( jobs ), stalledCounter, runningCounter ) )
@@ -121,14 +128,11 @@ class StalledJobAgent( AgentModule ):
 
     result = self.jobDB.selectJobs( {'Status':'Stalled'} )
     if not result['OK']:
-      self.log.error( result['Message'] )
       return result
 
     failedCounter = 0
 
-    if not result['OK'] or not result['Value']:
-      self.log.warn( result )
-    else:
+    if result['Value']:
       jobs = result['Value']
       self.log.info( '%s Stalled jobs will be checked for failure' % ( len( jobs ) ) )
 
@@ -143,6 +147,9 @@ class StalledJobAgent( AgentModule ):
                                              "Job stalled: pilot not running" )
             failedCounter += 1
             result = self.__sendAccounting( job )
+            if not result['OK']:
+              self.log.error( result['Message'] )
+              break
             continue
 
         result = self.__getLatestUpdateTime( job )
@@ -155,13 +162,15 @@ class StalledJobAgent( AgentModule ):
           self.__updateJobStatus( job, 'Failed', 'Stalling for more than %d sec' % failedTime )
           failedCounter += 1
           result = self.__sendAccounting( job )
+          if not result['OK']:
+            self.log.error( result['Message'] )
+            break
 
     recoverCounter = 0
 
     for minor in ["Job stalled: pilot not running", 'Stalling for more than %d sec' % failedTime]:
       result = self.jobDB.selectJobs( {'Status':'Failed', 'MinorStatus':  minor, 'AccountedFlag': 'False' } )
       if not result['OK']:
-        self.log.error( result['Message'] )
         return result
       if result['Value']:
         jobs = result['Value']
@@ -169,12 +178,14 @@ class StalledJobAgent( AgentModule ):
         for job in jobs:
           result = self.__sendAccounting( job )
           if not result['OK']:
+            self.log.error( result['Message'] )
             break
           recoverCounter += 1
       if not result['OK']:
         break
 
-    self.log.info( '%d jobs set to Failed' % failedCounter )
+    if failedCounter:
+      self.log.info( '%d jobs set to Failed' % failedCounter )
     if recoverCounter:
       self.log.info( '%d jobs properly Accounted' % recoverCounter )
     return S_OK( failedCounter )
@@ -184,17 +195,20 @@ class StalledJobAgent( AgentModule ):
     """ Get the job pilot status
     """
     result = self.jobDB.getJobParameter( jobID, 'Pilot_Reference' )
-    if result['OK'] and result['Value']:
-      pilotReference = result['Value']
-      wmsAdminClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-      result = wmsAdminClient.getPilotInfo( pilotReference )
-      if result['OK']:
-        pilotStatus = result['Value'][pilotReference]['Status']
-        return S_OK( pilotStatus )
-      else:
-        return S_ERROR( 'Failed to get the pilot status' )
-    else:
+    if not result['OK']:
+      return result
+    if not result['Value']:
       return S_ERROR( 'Failed to get the pilot reference' )
+
+    pilotReference = result['Value']
+    wmsAdminClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+    result = wmsAdminClient.getPilotInfo( pilotReference )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return S_ERROR( 'Failed to get the pilot status' )
+    pilotStatus = result['Value'][pilotReference]['Status']
+
+    return S_OK( pilotStatus )
 
 
   #############################################################################
@@ -222,8 +236,9 @@ class StalledJobAgent( AgentModule ):
     """ Returns the most recent of HeartBeatTime and LastUpdateTime
     """
     result = self.jobDB.getJobAttributes( job, ['HeartBeatTime', 'LastUpdateTime'] )
+    if not result['OK']:
+      self.log.error( result['Message'] )
     if not result['OK'] or not result['Value']:
-      self.log.warn( result )
       return S_ERROR( 'Could not get attributes for job %s' % job )
 
     self.log.verbose( result )
@@ -361,7 +376,7 @@ class StalledJobAgent( AgentModule ):
     lastHeartBeatTime = jobDict['StartExecTime']
     if lastHeartBeatTime == "None":
       lastHeartBeatTime = 0
-    
+
     if result['OK']:
       for name, value, heartBeatTime in result['Value']:
         if 'CPUConsumed' == name:
@@ -403,13 +418,59 @@ class StalledJobAgent( AgentModule ):
 
     if type( startTime ) in types.StringTypes:
       startTime = fromString( startTime )
+      if startTime == None:
+        self.log.error( 'Wrong timestamp in DB', items[3] )
+        startTime = dateTime()
+
 
     endTime = dateTime()
     # status, minor, app, stime, source
     for items in logList:
       if items[0] == 'Stalled':
         endTime = fromString( items[3] )
+    if endTime == None:
+      self.log.error( 'Wrong timestamp in DB', items[3] )
+      endTime = dateTime()
 
     return startTime, endTime
+
+  def __kickStuckJobs( self ):
+    """ Reschedule jobs stuck in initialization status Rescheduled, Matched
+    """
+
+    message = ''
+
+    checkTime = str( dateTime() - self.matchedTime * second )
+    result = self.jobDB.selectJobs( {'Status':'Matched'}, older = checkTime )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return result
+
+    jobIDs = result['Value']
+    if jobIDs:
+      self.log.info( 'Rescheduling %d jobs stuck in Matched status' % len( jobIDs ) )
+      result = self.jobDB.rescheduleJobs( jobIDs )
+      if 'FailedJobs' in result:
+        message = 'Failed to reschedule %d jobs stuck in Matched status' % len( result['FailedJobs'] )
+
+    checkTime = str( dateTime() - self.rescheduledTime * second )
+    result = self.jobDB.selectJobs( {'Status':'Rescheduled'}, older = checkTime )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return result
+
+    jobIDs = result['Value']
+    if jobIDs:
+      self.log.info( 'Rescheduling %d jobs stuck in Rescheduled status' % len( jobIDs ) )
+      result = self.jobDB.rescheduleJobs( jobIDs )
+      if 'FailedJobs' in result:
+        if message:
+          message += '\n'
+        message += 'Failed to reschedule %d jobs stuck in Rescheduled status' % len( result['FailedJobs'] )
+
+    if message:
+      return S_ERROR( message )
+    else:
+      return S_OK()
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

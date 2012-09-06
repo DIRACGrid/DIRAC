@@ -28,6 +28,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 
 import threading
 
@@ -324,7 +325,7 @@ class WMSAdministratorHandler(RequestHandler):
         resultDict['FileList'] = []
         return S_OK(resultDict)
       else:
-        return S_ERROR('Empty pilot output found')
+        gLogger.warn( 'Empty pilot output found for %s' % pilotReference )
 
     gridType = pilotDict['GridType']
     if gridType in ["LCG","gLite","CREAM"]:
@@ -356,7 +357,37 @@ class WMSAdministratorHandler(RequestHandler):
       resultDict['FileList'] = fileList
       return S_OK(resultDict)
     else:
-      return S_ERROR('Can not retrieve pilot output for the Grid %s ' % gridType)
+      # Instantiate the appropriate CE
+      ceFactory = ComputingElementFactory()
+      result = getQueue( pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'] )
+      if not result['OK']:
+        return result
+      queueDict = result['Value']
+      result = ceFactory.getCE( gridType, pilotDict['DestinationSite'], queueDict )
+      if not result['OK']:
+        return result
+      ce = result['Value']
+      ce.reset()
+      pilotStamp = pilotDict['PilotStamp']
+      pRef = pilotReference
+      if pilotStamp:
+        pRef = pRef + ':::' + pilotStamp
+      result = ce.getJobOutput( pRef )
+      if not result['OK']:
+        return result
+      stdout,error = result['Value']
+
+      result = pilotDB.storePilotOutput(pilotReference,stdout,error)
+      if not result['OK']:
+        gLogger.error('Failed to store pilot output:',result['Message'])
+
+      resultDict = {}
+      resultDict['StdOut'] = stdout
+      resultDict['StdErr'] = error
+      resultDict['OwnerDN'] = owner
+      resultDict['OwnerGroup'] = group
+      resultDict['FileList'] = []
+      return S_OK( resultDict )
 
   ##############################################################################
   types_getPilotSummary = []

@@ -200,7 +200,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         rDict = result['Value']
         for compType in rDict:
           for system in rDict[compType]:
-            for component in rDict[compType][system]:
+            components = rDict[compType][system].keys()
+            components.sort()
+            for component in components:
               record = []
               if rDict[compType][system][component]['Installed']:
                 module = str( rDict[compType][system][component]['Module'] )
@@ -427,7 +429,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           module = argss[i+1]
         if argss[i] == "-p":
           opt,value = argss[i+1].split('=')
-          specialOptions[opt] = value  
+          specialOptions[opt] = value           
+      if module == component:
+        module = ''
       
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
@@ -438,8 +442,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       hostSetup = result['Value']['Setup']
-      result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
-                                                   getCSExtensions(), hostSetup, specialOptions )
+      
+      # Install Module section if not yet there
+      if module:
+        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, module, 
+                                                     getCSExtensions(), hostSetup )
+        # Add component section with specific parameters only
+        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+                                                     getCSExtensions(), hostSetup, specialOptions, 
+                                                     addDefaultOptions = False )
+      else:  
+        # Install component section
+        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+                                                     getCSExtensions(), hostSetup, specialOptions )
+    
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
@@ -564,13 +580,40 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
         usage:
 
-          update <version>
+          update <version> [ -r <rootPath> ] [ -g <lcgVersion> ]
+          
+              where rootPath - path to the DIRAC installation
+                    lcgVersion - version of the LCG bindings to install
     """
     argss = args.split()
     version = argss[0]
+    rootPath = ''
+    lcgVersion = ''
+    del argss[0]
+    try:
+      while len( argss ) > 0:
+        if argss[0] == '-r':
+          rootPath = argss[1]
+          del argss[0]
+          del argss[0]
+        elif argss[0] == '-g':
+          lcgVersion = argss[1]  
+          del argss[0]
+          del argss[0]
+    except Exception, x:
+      print "ERROR: wrong input:", str(x)
+      print """usage:
+
+          update <version> [ -r <rootPath> ] [ -g <lcgVersion> ]
+          
+              where rootPath - path to the DIRAC installation
+                    lcgVersion - version of the LCG bindings to install
+"""           
+      return  
+    
     client = SystemAdministratorClient( self.host, self.port )
     print "Software update can take a while, please wait ..."
-    result = client.updateSoftware( version )
+    result = client.updateSoftware( version, rootPath, lcgVersion )
     if not result['OK']:
       self.__errMsg( "Failed to update the software" )
       print result['Message']

@@ -79,6 +79,13 @@ class SiteDirector( AgentModule ):
     if not result[ 'OK' ]:
       return result
     self.genericPilotDN, self.genericPilotGroup = result[ 'Value' ]
+   
+    self.platforms = [] 
+    self.sites = []
+    self.defaultSubmitPools = ''
+    if self.vo:
+      self.defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
+      
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
@@ -104,7 +111,6 @@ class SiteDirector( AgentModule ):
     ces = None
     if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
       ces = self.am_getOption( 'CEs', [] )
-
     result = Resources.getQueues( community = self.vo,
                                   siteList = siteNames,
                                   ceList = ces,
@@ -112,7 +118,6 @@ class SiteDirector( AgentModule ):
                                   mode = 'Direct' )
     if not result['OK']:
       return result
-
     resourceDict = result['Value']
     result = self.getQueues( resourceDict )
     if not result['OK']:
@@ -187,6 +192,24 @@ class SiteDirector( AgentModule ):
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
+          
+          platform = ''
+          if "Platform" in self.queueDict[queueName]['ParametersDict']:
+            platform = self.queueDict[queueName]['ParametersDict']['Platform']
+          elif "Platform" in ceDict:
+            platform = ceDict['Platform']
+          elif "OS" in ceDict:
+            architecture = ceDict.get( 'architecture', 'x86_64' )
+            OS = ceDict['OS']
+            platform = '_'.join([architecture,OS])
+          if platform and not platform in self.platforms:
+            self.platforms.append(platform)
+            
+          if not "Platform" in self.queueDict[queueName]['ParametersDict'] and platform:
+            result = Resources.getDIRACPlatform( platform )
+            if result['OK']:
+              self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value']  
+          
           ceQueueDict = dict( ceDict )
           ceQueueDict.update( self.queueDict[queueName]['ParametersDict'] )
           result = ceFactory.getCE( ceName = ce,
@@ -205,6 +228,9 @@ class SiteDirector( AgentModule ):
             return result
           if 'BundleProxy' in self.queueDict[queueName]['ParametersDict']:
             self.queueDict[queueName]['BundleProxy'] = True
+
+          if site not in self.sites:
+            self.sites.append( site )
 
     return S_OK()
 
@@ -236,11 +262,21 @@ class SiteDirector( AgentModule ):
     setup = CSGlobals.getSetup()
     tqDict = { 'Setup':setup,
                'CPUTime': 9999999,
-               'SubmitPool' : gConfig.getValue( "%s/SubmitPools" % getAgentSection( "WorkloadManagement/TaskQueueDirector" ), [] ) }
+               'SubmitPool' : self.defaultSubmitPools }
     if self.vo:
       tqDict['Community'] = self.vo
     if self.group:
       tqDict['OwnerGroup'] = self.group
+    
+    result = Resources.getCompatiblePlatforms( self.platforms )
+    if not result['OK']:
+      return result
+    tqDict['Platform'] = result['Value']
+    tqDict['Site'] = self.sites
+    
+    self.log.verbose( 'Checking overall TQ availability with requirements' )
+    self.log.verbose( tqDict )
+    
     rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
     result = rpcMatcher.getMatchingTaskQueues( tqDict )
     if not result[ 'OK' ]:
@@ -304,6 +340,9 @@ class SiteDirector( AgentModule ):
         ceDict['Community'] = self.vo
       if self.group:
         ceDict['OwnerGroup'] = self.group
+      
+      # This is a hack to get rid of !
+      ceDict['SubmitPool'] = self.defaultSubmitPools  
 
       # Get the number of eligible jobs for the target site/queue
       result = rpcMatcher.getMatchingTaskQueues( ceDict )
@@ -361,6 +400,7 @@ class SiteDirector( AgentModule ):
         result = ce.submitJob( executable, '', pilotSubmissionChunk )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:' % queue, result['Message'] )
+          pilotsToSubmit = 0
           continue
         
         pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
@@ -401,7 +441,7 @@ class SiteDirector( AgentModule ):
             continue
           for pilot in pilotList:
             result = pilotAgentsDB.setPilotStatus( pilot, 'Submitted', ceName,
-                                                  'Successfuly submitted by the SiteDirector',
+                                                  'Successfully submitted by the SiteDirector',
                                                   siteName, queueName )
             if not result['OK']:
               self.log.error( 'Failed to set pilot status: %s' % result['Message'] )
@@ -509,6 +549,10 @@ class SiteDirector( AgentModule ):
         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
       if 'CPUNormalizationFactor' in queueDict:
         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
+
+    # Hack
+    if self.defaultSubmitPools:
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' %  self.defaultSubmitPools )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
@@ -630,6 +674,14 @@ EOF
         else:
           stampedPilotRefs = list( pilotRefs )
           break
+
+      result = ce.isProxyValid()
+      if not result['OK']:
+        result = gProxyManager.getPilotProxyFromDIRACGroup( self.genericPilotDN, self.genericPilotGroup, 600 )
+        if not result['OK']:
+          return result
+        self.proxy = result['Value']
+        ce.setProxy( self.proxy, 500 )
 
       result = ce.getJobStatus( stampedPilotRefs )
       if not result['OK']:
@@ -798,3 +850,4 @@ EOF
       return result
 
     return S_OK()
+  

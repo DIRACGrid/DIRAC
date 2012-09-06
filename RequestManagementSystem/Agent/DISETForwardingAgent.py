@@ -13,14 +13,13 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RPCClient import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
-from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
 
 import time, os, re
 from types import *
 
 AGENT_NAME = 'RequestManagement/DISETForwardingAgent'
 
-class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
+class DISETForwardingAgent( AgentModule ):
 
   def initialize( self ):
 
@@ -152,6 +151,6 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
       gLogger.error( "DISETForwardingAgent.execute: Failed to update request to", self.local )
 
     if modified and jobID:
-      result = self.finalizeRequest( requestName, jobID, self.local )
+      result = self.RequestDBClient.finalizeRequest( requestName, jobID, self.local )
 
     return S_OK()

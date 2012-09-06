@@ -95,7 +95,9 @@ class PilotAgentsDB(DB):
 
 ##########################################################################################
   def setPilotStatus( self, pilotRef, status, destination=None,
-                      statusReason=None, gridSite=None, queue=None, updateTime=None, conn = False ):
+                      statusReason=None, gridSite=None, queue=None,
+                      benchmark=None, currentJob=None,
+                      updateTime=None, conn = False ):
     """ Set pilot job LCG status """
 
     setList = []
@@ -111,6 +113,10 @@ class PilotAgentsDB(DB):
       setList.append("GridSite='%s'" % gridSite)
     if queue:
       setList.append("Queue='%s'" % queue)
+    if benchmark:
+      setList.append("BenchMark='%s'" % float( benchmark ) )
+    if currentJob:
+      setList.append("CurrentJobID='%s'" % int( currentJob ) )
     if destination:
       setList.append("DestinationSite='%s'" % destination)
       if not gridSite:
@@ -257,7 +263,8 @@ class PilotAgentsDB(DB):
 
     parameters = ['PilotJobReference','OwnerDN','OwnerGroup','GridType','Broker',
                   'Status','DestinationSite','BenchMark','ParentID','OutputReady','AccountingSent',
-                  'SubmissionTime', 'PilotID', 'LastUpdateTime', 'TaskQueueID', 'GridSite','PilotStamp' ]
+                  'SubmissionTime', 'PilotID', 'LastUpdateTime', 'TaskQueueID', 'GridSite','PilotStamp',
+                  'Queue' ]
     if paramNames:
       parameters = paramNames
 
@@ -439,17 +446,18 @@ class PilotAgentsDB(DB):
         return []
 
 ##########################################################################################
-  def setJobForPilot(self,jobID,pilotRef,site=None):
+  def setJobForPilot(self,jobID,pilotRef,site=None,updateStatus=True):
     """ Store the jobID of the job executed by the pilot with reference pilotRef
     """
 
     pilotID = self.__getPilotID(pilotRef)
     if pilotID:
-      reason = 'Report from job %d' % int(jobID)
-      result = self.setPilotStatus(pilotRef,status='Running',statusReason=reason,
-                                   gridSite=site )
-      if not result['OK']:
-        return result
+      if updateStatus:
+        reason = 'Report from job %d' % int(jobID)
+        result = self.setPilotStatus(pilotRef,status='Running',statusReason=reason,
+                                     gridSite=site )
+        if not result['OK']:
+          return result
       req = "INSERT INTO JobToPilotMapping VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID,jobID)
       result = self._update(req)
       return result

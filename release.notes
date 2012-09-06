@@ -1,4 +1,72 @@
-[v6r5-pre11]
+[v6r6-pre3]
+
+*Core
+CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
+NEW: SiteSEMapping - new utilities getSitesGroupedByTierLevel(), getTier1WithAttachedTier2(),
+     getTier1WithTier2
+
+*Framework
+NEW: SystemAdministratorClientCLI - possibility to define roothPath and lcgVersion when updating software
+
+*DMS
+NEW: FileCatalog - torage usage info stored in all the directories, not only those with files
+NEW: FileCatalog - added utility to rebuild storage usage info from scratch
+BUGFIX: FileCatalogClientCLI - in do_ls() check properly the path existence
+FIX: FileCatalogClientCLI - protection against non-existing getCatalogCounters method in the LFC client
+
+*WMS
+CHANGE: RunNumber job parameter was removed from all the relevant places ( JDL, JobDB, etc )
+NEW: dirac-pilot - add environment setting for SSH and BOINC CEs
+NEW: WMSAdministrator - get output for non-grid CEs if not yet in the DB
+NEW: JobAgent - job publishes BOINC parameters if any
+CHANGE: Get rid of LHCbPlatform everywhere except TaskQueueDB
+FIX: SiteDirector - provide list of sites to the Matcher in the initial query
+CHANGE: dirac-boinc-pilot dropped
+CHANGE: TaskQueueDirector does not depend on /LocalSite section any more
+CHANGE: reduced default delays for JobCleaningAgent
+CHANGE: limit the number of jobs received by JobCleaningAgent
+CHANGE: JobDB - use insertFields instead of _insert
+CHANGE: Matcher, TaskQueueDB - switch to use Platform rather than LHCbPlatform retaining LHCbPlatform compatibility
+BUGFIX: Matcher - proper reporting pilot site and CE
+CHANGE: JobManager - improved job Killing/Deleting logic
+CHANGE: dirac-pilot - treat the OSG case when jobs on the same WN all run in the same directory
+
+*Resources
+FIX: SSHComputingElement - enabled multiple hosts in one queue, more debugging
+CHANGE: SSHXXX Computing Elements - define SSH class once in the SSHComputingElement
+NEW: SSHComputingElement - added option to define private key location
+CHANGE: Get rid of legacy methods in ComputingElement
+
+*Interfaces
+CHANGE: Removed Script.initialize() from the API initialization
+CHANGE: Some general API polishing
+
+*TS
+BUGFIX: TaskManager - bug fixed in treating tasks with input data
+
+[v6r5p1]
+
+*Core
+BUGFIX: ExecutorMindHandler - return S_OK() in the initializeHandler
+FIX: OptimizationMindHandler - if the manifest is not dirty it will not be updated by the Mind
+
+*Configuration
+NEW: Resources helper - added getCompatiblePlatform(), getDIRACPlatform() methods
+
+*Resources
+FIX: SSHComputingElement - add -q option to ssh command to avoid banners in the output
+FIX: BOINCComputingElement - removed debugging printout
+FIX: ComputingElement - use Platform CS option which will be converted to LHCbPlatform for legacy compatibility
+
+*DMS
+FIX: RequestAgentBase - lowering loglevel from ALWAYS to INFO to avoid flooding SystemLogging
+
+*WMS:
+FIX: SiteDirector - provide CE platform parameter when interrogating the TQ
+FIX: GridPilotDirector - publish pilot OwnerGroup rather than VOMS role
+FIX: WMSUtilities - add new error string into the parsing of the job output retrieval
+
+[v6r5]
 
 NEW: Executor framework
 
@@ -25,13 +93,22 @@ FIX: Convert to string before trying to escape value in MySQL
 NEW: DISET Services - added PacketTimeout option
 NEW: SystemLoggingDB - updated to use the renewed MySQL interface and SQL schema
 NEW: Added support for multiple entries in /Registry/DefaultGroup, for multi-VO installations
+CHANGE: Component installation procedure updated to cope with components inheriting Modules
+CHANGE: InstallTools - use dirac- command in runit run scripts
+FIX: X509Chain - avoid a return of error when the group is not valid
+FIX: MySQL - reduce verbosity of log messages when high level methods are used
+CHANGE: Several DB classes have been updated to use the MySQL buildCondition method
+NEW: MySQL - provide support for greater and smaller arguments to all MySQL high level methods
+FIX: Service.py - check all return values from all initializers
 
 *Configuration
 CHANGE: By default return option and section lists ordered as in the CS
+NEW: ConfigurationClient - added function to refresh remote configuration
 
 *Framework
 FIX: Registry.findDefaultGroup will never return False
 CHANGE: ProxyManager does not accept proxies without explicit group
+CHANGE: SystemAdministratorHandler - force refreshing the configuration after new component setup
 
 *RSS
 CHANGE: removed code execution from __init__
@@ -42,7 +119,7 @@ NEW: Log all policy results
 NEW: updated SSHComputingElement which allows multiple job submission
 FIX: SGETimeLeft - better parsing of the batch system commands output
 FIX: InProcessComputingElement - when starting a new job discard renewal of the previous proxy
-NEW: BOINCComputingElement - new CE clietn to work with the BOINC desktop grid infrastructure 
+NEW: BOINCComputingElement - new CE client to work with the BOINC desktop grid infrastructure 
 
 *WMS
 CHANGE: WMS Optimizers are now executors
@@ -71,6 +148,15 @@ NEW: Generic pilot identities are automatically selected by the TQD and the Site
 NEW: Generic pilot groups can have a VO that will be taken into account when selecting generic 
      credentials to submit pilots
 NEW: Generic pilots that belong to a VO can only match jobs from that VO
+NEW: StalledJobAgent - added rescheduling of jobs stuck in Matched or Rescheduled status
+BUGFIX: StalledJobAgent - default startTime and endTime to "now", avoid None value
+NEW: JobAgent - stop after N failed matching attempts (nothing to do), use StopAfterFailedMatches option
+CHANGE: JobAgent - provide resource description as a dictionary to avoid extra JDL parsing by the Matcher
+CHANGE: Matcher - report pilot info once instead of sending it several times from the job
+CHANGE: Matcher - set the job site instead of making a separate call to JobStateUpdate
+NEW: Matcher - added Matches done and matches OK statistics
+NEW: TaskQueue - don't delete fresh task queues. Wait 5 minutes to do so.
+CHANGE: Disabled TQs can also be matched, if no jobs are there, a retry will be triggered
 
 *Transformation
 FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
@@ -83,12 +169,28 @@ FIX: AccountingDB - fixed some logic for readonly cases
 CHANGE: Added new simpler and faster bucket insertion mechanism
 NEW: Added more info when rebucketing
 FIX: Calculate the rebucket ETA using remaining records to be processed instead of the total records to be processed
+FIX: Plots with no data still carry the plot name
 
 *DMS
 NEW: SRM2Storage - added retry in the gfal calls
 NEW: added new FTSCleaningAgent cleaning up TransferDB tables
 FIX: DataLoggingClient and DataLoggingDB - tests moved to separate files
 CHANGE: request agents cleanup
+
+*RMS
+CHANGE: Stop using RequestAgentMixIn in the request agents
+
+[v6r4p21]
+
+*Core
+BUGFIX: SGETimeLeft - take into account dd:hh:mm:ss format of the cpu consumed
+
+[v6r4p20]
+
+*WMS
+BUGFIX: PilotDirector, GridPilotDirector - make sure that at least 1 pilot is to be submitted
+BUGFIX: GridPilotDirector - bug on how pilots are counted when there is an error in the submit loop.
+BUGFIX: dirac-pilot - proper install script installation on OSG sites
 
 [v6r4p19]
 

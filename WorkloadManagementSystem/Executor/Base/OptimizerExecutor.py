@@ -109,7 +109,7 @@ class OptimizerExecutor( ExecutorModule ):
       #This is the last optimizer in the chain!
       result = jobState.setStatus( self.ex_getOption( 'WaitingStatus', 'Waiting' ),
                                    minorStatus = self.ex_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ),
-                                   appStatus = "",
+                                   appStatus = "Unknown",
                                    source = opName )
       if not result[ 'OK' ]:
         return result
@@ -158,3 +158,22 @@ class OptimizerExecutor( ExecutorModule ):
 
   def serializeTask( self, cjs ):
     return S_OK( cjs.serialize() )
+
+  def fastTrackDispatch( self, jid, jobState ):
+    self.log.verbose( "Trying to fastTrack job %s" % jid )
+    result = jobState.getStatus()
+    if not result[ 'OK' ]:
+      return S_ERROR( "Could not retrieve job status for %s: %s" % ( jid, result[ 'Message' ] ) )
+    status, minorStatus = result[ 'Value' ]
+    if status != "Checking":
+      self.log.info( "Job %s is not in checking state. Avoid fast track" % jid )
+      return S_OK()
+    result = jobState.getOptParameter( "OptimizerChain" )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Could not retrieve OptimizerChain for job %s: %s" % ( jid, result[ 'Message' ] ) )
+    optChain = result[ 'Value' ]
+    if minorStatus not in optChain:
+      self.log.info( "End of chain for job %s" % jid )
+      return S_OK()
+    self.log.info( "Fast track possible for %s to %s" % ( jid, minorStatus ) )
+    return S_OK( "WorkloadManagement/%s" % minorStatus )

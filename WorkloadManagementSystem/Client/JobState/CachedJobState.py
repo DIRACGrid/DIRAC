@@ -7,40 +7,19 @@ from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManife
 
 class CachedJobState( object ):
 
-  class TracedMethod( object ):
-
-    def __init__( self, functor ):
-      self.__functor = functor
-
-    #Black magic to map the unbound function received at TracedMethod.__init__ time
-    #to a JobState method with a proper self
-    def __get__( self, obj, type = None ):
-      return self.__class__( self.__functor.__get__( obj, type ) )
-
-    def __call__( self, *args, **kwargs ):
-      funcSelf = self.__functor.__self__
-      funcName = self.__functor.__name__
-      if not funcSelf.valid:
-        return S_ERROR( "CachedJobState( %d ) is not valid" % funcSelf.jid )
-      result = self.__functor( *args, **kwargs )
-      if result[ 'OK' ]:
-        if funcName in ( "setStatus", "setMinorStatus", "setAppStatus" ):
-          kwargs[ 'updateTime' ] = Time.dateTime()
-        if kwargs:
-          trace = ( funcName, args, kwargs )
-        else:
-          trace = ( funcName, args )
-        funcSelf._addTrace( trace )
-      return result
-
   log = gLogger.getSubLogger( "CachedJobState" )
 
   def __init__( self, jid, skipInitState = False ):
     self.dOnlyCache = False
     self.__jid = jid
     self.__jobState = JobState( jid )
+    self.cleanState( skipInitState = skipInitState )
+
+  def cleanState( self, skipInitState = False ):
     self.__cache = {}
-    self.__trace = []
+    self.__jobLog = []
+    self.__insertIntoTQ = False
+    self.__dirtyKeys = set()
     self.__manifest = False
     self.__initState = None
     self.__lastValidState = time.time()
@@ -55,7 +34,7 @@ class CachedJobState( object ):
     now = time.time()
     if graceTime <= 0 or now - self.__lastValidState > graceTime:
       self.__lastValidState = now
-      result =  self.__jobState.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime" ] )
+      result = self.__jobState.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime" ] )
       if not result[ 'OK' ]:
         return result
       currentState = result[ 'Value' ]
@@ -72,67 +51,92 @@ class CachedJobState( object ):
   def jid( self ):
     return self.__jid
 
-  def _addTrace( self, actionTuple, start = True ):
-    if start:
-      self.__trace.insert( 0, actionTuple )
-    else:
-      self.__trace.append( actionTuple )
-
-  def getTrace( self ):
-    return copy.copy( self.__trace )
+  def getDirtyKeys( self ):
+    return set( self.__dirtyKeys )
 
   def commitChanges( self ):
     if self.__initState == None:
       return S_ERROR( "CachedJobState( %d ) is not valid" % self.__jid )
-    if not self.__trace:
-      return S_OK()
-    trace = self.__trace
-    result = self.__jobState.executeTrace( self.__initState, trace )
+    changes = {}
+    for k in self.__dirtyKeys:
+      changes[ k ] = self.__cache[ k ]
+    result = self.__jobState.commitCache( self.__initState, changes, self.__jobLog )
     try:
       result.pop( 'rpcStub' )
     except KeyError:
       pass
-    trLen = len( self.__trace )
-    self.__trace = []
     if not result[ 'OK' ]:
-      self.__initState = None
-      self.__cache = {}
+      self.cleanState()
       return result
-    self.__initState = result[ 'Value' ]
+    if not result[ 'Value' ]:
+      self.cleanState()
+      return S_ERROR( "Initial state was different" )
+    newState = result[ 'Value' ]
+    self.__jobLog = []
+    self.__dirtyKeys.clear()
+    #Save manifest
+    if self.__manifest and self.__manifest.isDirty():
+      result = self.__jobState.setManifest( self.__manifest )
+      if not result[ 'OK' ]:
+        self.cleanState()
+        for i in range( 5 ):
+          if self.__jobState.rescheduleJob()[ 'OK' ]:
+            break
+        return result
+      self.__manifest.clearDirty()
+    #Insert into TQ
+    if self.__insertIntoTQ:
+      result = self.__jobState.insertIntoTQ()
+      if not result[ 'OK' ]:
+        self.cleanState()
+        for i in range( 5 ):
+          if self.__jobState.rescheduleJob()[ 'OK' ]:
+            break
+        return result
+      self.__insertIntoTQ = False
+
+    self.__initState = newState
     self.__lastValidState = time.time()
-    return S_OK( trLen )
+    return S_OK()
 
   def serialize( self ):
     if self.__manifest:
       manifest = ( self.__manifest.dumpAsCFG(), self.__manifest.isDirty() )
     else:
       manifest = None
-    return DEncode.encode( ( self.__jid, self.__cache, self.__trace, manifest, self.__initState ) )
+    return DEncode.encode( ( self.__jid, self.__cache, self.__jobLog, manifest,
+                             self.__initState, self.__insertIntoTQ, tuple( self.__dirtyKeys ) ) )
 
   @staticmethod
   def deserialize( stub ):
     dataTuple, slen = DEncode.decode( stub )
-    if len( dataTuple ) != 5:
+    if len( dataTuple ) != 7:
       return S_ERROR( "Invalid stub" )
     #jid
     if type( dataTuple[0] ) not in ( types.IntType, types.LongType ):
-      return S_ERROR( "Invalid stub" )
+      return S_ERROR( "Invalid stub 0" )
     #cache
     if type( dataTuple[1] ) != types.DictType:
-      return S_ERROR( "Invalid stub" )
+      return S_ERROR( "Invalid stub 1" )
     #trace
     if type( dataTuple[2] ) != types.ListType:
-      return S_ERROR( "Invalid stub" )
+      return S_ERROR( "Invalid stub 2" )
     #manifest
     tdt3 = type( dataTuple[3] )
     if tdt3 != types.NoneType and ( tdt3 != types.TupleType and len( dataTuple[3] ) != 2 ):
-      return S_ERROR( "Invalid stub" )
+      return S_ERROR( "Invalid stub 3" )
     #initstate
     if type( dataTuple[4] ) != types.DictType:
-      return S_ERROR( "Invalid stub" )
+      return S_ERROR( "Invalid stub 4" )
+    #Insert into TQ
+    if type( dataTuple[5] ) != types.BooleanType:
+      return S_ERROR( "Invalid stub 5" )
+    #Dirty Keys
+    if type( dataTuple[6] ) != types.TupleType:
+      return S_ERROR( "Invalid stub 6" )
     cjs = CachedJobState( dataTuple[0], skipInitState = True )
     cjs.__cache = dataTuple[1]
-    cjs.__trace = dataTuple[2]
+    cjs.__jobLog = dataTuple[2]
     dt3 = dataTuple[3]
     if dataTuple[3]:
       manifest = JobManifest()
@@ -145,7 +149,13 @@ class CachedJobState( object ):
         manifest.clearDirty()
       cjs.__manifest = manifest
     cjs.__initState = dataTuple[4]
+    cjs.__insertIntoTQ = dataTuple[5]
+    cjs.__dirtyKeys = set( dataTuple[6] )
     return S_OK( cjs )
+
+  def __cacheAdd( self, key, value ):
+    self.__cache[ key ] = value
+    self.__dirtyKeys.add( key )
 
   def __cacheExists( self, keyList ):
     if type( keyList ) in types.StringTypes:
@@ -222,7 +232,7 @@ class CachedJobState( object ):
     else:
       manifest = None
     return ( self.__jid, self.dOnlyCache, dict( self.__cache ),
-             tuple( self.__trace ), manifest, dict( self.__initState ) )
+             list( self.__jobLog ), manifest, dict( self.__initState ), list( self.__dirtyKeys ) )
 
 #
 # Manifest
@@ -238,62 +248,72 @@ class CachedJobState( object ):
 
   def setManifest( self, manifest ):
     if not isinstance( manifest, JobManifest ):
-      result = manifest.load( result[ 'Value' ] )
+      jobManifest = JobManifest()
+      result = jobManifest.load( str( manifest ) )
       if not result[ 'OK' ]:
         return result
-      manifest = result[ 'Value ']
-    manCFG = manifest.dumpAsCFG()
-    if self.__manifest and ( self.__manifest.dumpAsCFG() == manCFG and not manifest.isDirty() ):
-      return S_OK()
-    self._addTrace( ( "setManifest", ( manCFG, ) ), start = True )
+      manifest = jobManifest
+    manifest.setDirty()
     self.__manifest = manifest
-    self.__manifest.clearDirty()
+    # self.__manifest.clearDirty()
     return S_OK()
 
 # Attributes
 #
 
-  @TracedMethod
-  def setStatus( self, majorStatus, minorStatus = None, appStatus = None, source = None ):
-    self.__cache[ 'att.Status' ] = majorStatus
+  def __addLogRecord( self, majorStatus = None, minorStatus = None, appStatus = None, source = None ):
+    record = {}
+    if majorStatus:
+      record[ 'status' ] = majorStatus
     if minorStatus:
-      self.__cache[ 'att.MinorStatus' ] = minorStatus
+      record[ 'minor' ] = minorStatus
     if appStatus:
-      self.__cache[ 'att.AppStatus' ] = appStatus
+      record[ 'application' ] = appStatus
+    if not record:
+      return
+    if not source:
+      source = "Unknown"
+    self.__jobLog.append( ( record, Time.dateTime(), source ) )
+
+  def setStatus( self, majorStatus, minorStatus = None, appStatus = None, source = None ):
+    self.__cacheAdd( 'att.Status', majorStatus )
+    if minorStatus:
+      self.__cacheAdd( 'att.MinorStatus', minorStatus )
+    if appStatus:
+      self.__cacheAdd( 'att.ApplicationStatus', appStatus )
+    self.__addLogRecord( majorStatus, minorStatus, appStatus, source )
     return S_OK()
 
-  @TracedMethod
   def setMinorStatus( self, minorStatus, source = None ):
-    self.__cache[ 'att.MinorStatus' ] = minorStatus
+    self.__cacheAdd( 'att.MinorStatus', minorStatus )
+    self.__addLogRecord( minorStatus = minorStatus, source = source )
     return S_OK()
 
   def getStatus( self ):
     return self.__cacheResult( ( 'att.Status', 'att.MinorStatus' ), self.__jobState.getStatus )
 
-  @TracedMethod
   def setAppStatus( self, appStatus, source = None ):
-    self.__cache[ 'att.AppStatus' ] = appStatus
+    self.__cacheAdd( 'att.ApplicationStatus', appStatus )
+    self.__addLogRecord( appStatus = appStatus, source = source )
     return S_OK()
 
   def getAppStatus( self ):
-    return self.__cacheResult( 'att.AppStatus', self.__jobState.getAppStatus )
+    return self.__cacheResult( 'att.ApplicationStatus', self.__jobState.getAppStatus )
 #
 # Attribs
 #
 
-  @TracedMethod
   def setAttribute( self, name, value ):
     if type( name ) not in types.StringTypes:
       return S_ERROR( "Attribute name has to be a string" )
-    self.__cache[ "att.%s" % name ] = value
+    self.__cacheAdd( "att.%s" % name, value )
     return S_OK()
 
-  @TracedMethod
   def setAttributes( self, attDict ):
     if type( attDict ) != types.DictType:
       return S_ERROR( "Attributes has to be a dictionary and it's %s" % str( type( attDict ) ) )
     for key in attDict:
-      self.__cache[ 'att.%s' % key ] = attDict[ key ]
+      self.__cacheAdd( "att.%s" % key, attDict[ key ] )
     return S_OK()
 
   def getAttribute( self, name ):
@@ -304,19 +324,17 @@ class CachedJobState( object ):
 
 #Job params
 
-  @TracedMethod
   def setParameter( self, name, value ):
     if type( name ) not in types.StringTypes:
       return S_ERROR( "Job parameter name has to be a string" )
-    self.__cache[ 'jobp.%s' % name ] = value
+    self.__cacheAdd( 'jobp.%s' % name, value )
     return S_OK()
 
-  @TracedMethod
   def setParameters( self, pDict ):
     if type( pDict ) != types.DictType:
       return S_ERROR( "Job parameters has to be a dictionary" )
     for key in pDict:
-      self.__cache[ 'jobp.%s' % key ] = pDict[ key ]
+      self.__cacheAdd( 'jobp.%s' % key, pDict[ key ] )
     return S_OK()
 
   def getParameter( self, name ):
@@ -327,32 +345,17 @@ class CachedJobState( object ):
 
 #Optimizer params
 
-  @TracedMethod
   def setOptParameter( self, name, value ):
     if type( name ) not in types.StringTypes:
       return S_ERROR( "Optimizer parameter name has to be a string" )
-    self.__cache[ 'optp.%s' % name ] = value
+    self.__cacheAdd( 'optp.%s' % name, value )
     return S_OK()
 
-  @TracedMethod
   def setOptParameters( self, pDict ):
     if type( pDict ) != types.DictType:
       return S_ERROR( "Optimizer parameters has to be a dictionary" )
     for key in pDict:
-      self.__cache[ 'optp.%s' % key ] = pDict[ key ]
-    return S_OK()
-
-  @TracedMethod
-  def removeOptParameters( self, nameList ):
-    if type( nameList ) in types.StringTypes:
-      nameList = [ nameList ]
-    elif type( nameList ) not in ( types.ListType, types.TupleType ):
-      return S_ERROR( "A list of parameters is expected as an argument to removeOptParameters" )
-    for name in nameList:
-      try:
-        self.__cache.pop( "optp.%s" % name )
-      except KeyError:
-        pass
+      self.__cacheAdd( 'optp.%s' % key, pDict[ key ] )
     return S_OK()
 
   def getOptParameter( self, name ):
@@ -363,11 +366,19 @@ class CachedJobState( object ):
 
 #Other
 
+  def resetJob( self, source = "" ):
+    """ Reset the job!
+    """
+    result = self.__jobState.resetJob( source = source )
+    if result[ 'OK' ]:
+      self.__resetState()
+    return result
+
   def getInputData( self ):
     return self.__cacheResult( "inputData" , self.__jobState.getInputData )
 
-  @TracedMethod
   def insertIntoTQ( self ):
     if self.valid:
+      self.__insertIntoTQ = True
       return S_OK()
     return S_ERROR( "Cached state is invalid" )

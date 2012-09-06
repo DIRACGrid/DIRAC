@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
-
+from DIRAC.Core.Utilities.List                          import uniqueElements
 import re
 
 gBaseResourcesSection = "/Resources"
@@ -58,6 +58,22 @@ def getStorageElementOptions( seName ):
   options['TapeSE'] = tapeSE
 
   return S_OK( options )
+
+def getQueue( site, ce, queue ):
+  """ Get parameters of the specified queue 
+  """
+  grid = site.split('.')[0]
+  result = gConfig.getOptionsDict( '/Resources/%s/%s/CEs/%s' % ( grid, site, ce ) )
+  if not result['OK']:
+    return result 
+  resultDict = result['Value']
+  result = gConfig.getOptionsDict( '/Resources/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
+  if not result['OK']:
+    return result
+  resultDict.update( result['Value'] )
+  resultDict['Queue'] = queue
+  
+  return S_OK( resultDict )
 
 def getQueues( siteList = None, ceList = None, ceTypeList = None, community = None, mode = None ):
   """ Get CE/queue options according to the specified selection
@@ -123,6 +139,55 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
 
   return S_OK( resultDict )
 
+def getCompatiblePlatforms( originalPlatforms ):
+  """ Get a list of platforms compatible with the given list 
+  """
+  if type( originalPlatforms ) == type( ' ' ):
+    platforms = [originalPlatforms]
+  else:
+    platforms = list( originalPlatforms )
+    
+  platformDict = {}
+  result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+  if result['OK'] and result['Value']:
+    platformDict = result['Value'] 
+    for platform in platformDict:
+      platformDict[platform] = [ x.strip() for x in platformDict[platform].split( ',' ) ]
+  else:
+    return S_ERROR( 'OS compatibility info not found' )        
+
+  resultList = list( platforms )
+  for p in platforms:
+    tmpList = platformDict.get( p, [] )
+    for pp in platformDict:
+      if p in platformDict[pp]:
+        tmpList.append( pp )
+        tmpList += platformDict[pp]
+    if tmpList:
+      resultList += tmpList
+
+  return S_OK( uniqueElements( resultList ) )
+
+def getDIRACPlatform( platform ):
+  """ Get standard DIRAC platform compatible with the argument
+  """
+  platformDict = {}
+  result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+  if result['OK'] and result['Value']:
+    platformDict = result['Value'] 
+    for p in platformDict:
+      if p == platform:
+        return S_OK( platform ) 
+      platformDict[p] = [ x.strip() for x in platformDict[p].split( ',' ) ]
+  else:
+    return S_ERROR( 'OS compatibility info not found' )    
+      
+  for p in platformDict:
+    if platform in platformDict[p]:
+      return S_OK( p )
+  
+  return S_ERROR( 'No compatible DIRAC platform found for %s' % platform )
+  
 def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
   """
