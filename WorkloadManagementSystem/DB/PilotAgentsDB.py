@@ -30,7 +30,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from  DIRAC.Core.Security.CS import getUsernameForDN, getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from types import *
 import threading, datetime, time
 
@@ -95,8 +95,8 @@ class PilotAgentsDB(DB):
 
 ##########################################################################################
   def setPilotStatus( self, pilotRef, status, destination=None,
-                      statusReason=None, gridSite=None, queue=None, 
-                      benchmark=None, currentJob=None, 
+                      statusReason=None, gridSite=None, queue=None,
+                      benchmark=None, currentJob=None,
                       updateTime=None, conn = False ):
     """ Set pilot job LCG status """
 
@@ -112,17 +112,17 @@ class PilotAgentsDB(DB):
     if gridSite:
       setList.append("GridSite='%s'" % gridSite)
     if queue:
-      setList.append("Queue='%s'" % queue)  
+      setList.append("Queue='%s'" % queue)
     if benchmark:
-      setList.append("BenchMark='%s'" % float( benchmark ) )   
+      setList.append("BenchMark='%s'" % float( benchmark ) )
     if currentJob:
-      setList.append("CurrentJobID='%s'" % int( currentJob ) )     
+      setList.append("CurrentJobID='%s'" % int( currentJob ) )
     if destination:
-      setList.append("DestinationSite='%s'" % destination) 
+      setList.append("DestinationSite='%s'" % destination)
       if not gridSite:
         result = getSiteForCE(destination)
         if result['OK']:
-          gridSite = result['Value'] 
+          gridSite = result['Value']
           setList.append("GridSite='%s'" % gridSite)
 
     set_string = ','.join(setList)
@@ -335,7 +335,7 @@ class PilotAgentsDB(DB):
     if not gridSite:
       gridSite = 'Unknown'
 
-    req = "UPDATE PilotAgents SET DestinationSite='%s', GridSite='%s' WHERE PilotJobReference='%s'" 
+    req = "UPDATE PilotAgents SET DestinationSite='%s', GridSite='%s' WHERE PilotJobReference='%s'"
     req = req % (destination,gridSite,pilotRef)
     result = self._update(req, conn = conn)
     return result
@@ -348,7 +348,7 @@ class PilotAgentsDB(DB):
     req = "UPDATE PilotAgents SET BenchMark='%f' WHERE PilotJobReference='%s'" % (mark,pilotRef)
     result = self._update(req)
     return result
-  
+
 ##########################################################################################
   def setAccountingFlag(self,pilotRef,mark='True'):
     """ Set the pilot AccountingSent flag
@@ -356,7 +356,7 @@ class PilotAgentsDB(DB):
 
     req = "UPDATE PilotAgents SET AccountingSent='%s' WHERE PilotJobReference='%s'" % (mark,pilotRef)
     result = self._update(req)
-    return result  
+    return result
 
 ##########################################################################################
   def setPilotRequirements(self,pilotRef,requirements):
