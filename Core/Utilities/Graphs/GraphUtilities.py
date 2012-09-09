@@ -407,7 +407,6 @@ def makeDataFromCSV( csv ):
 
   graph_data = {}
   labels = flines[0].strip().split( ',' )
-
   if len( labels ) == 2:
     # simple plot data
     for line in flines:
@@ -416,11 +415,16 @@ def makeDataFromCSV( csv ):
         key, value = line.split( ',' )
         graph_data[key] = value
 
+  elif len( flines ) == 2:
+    values = flines[1].strip().split( ',' )
+    for key,value in zip(labels,values):
+      graph_data[key] = value
+
   elif len( labels ) > 2:
     # stacked graph data
     del labels[0]
     del flines[0]
-    for label in labels:
+    for label in labels:      
       plot_data = {}
       index = labels.index( label ) + 1
       for line in flines:
