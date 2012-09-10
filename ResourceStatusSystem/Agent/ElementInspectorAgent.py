@@ -106,7 +106,7 @@ class ElementInspectorAgent( AgentModule ):
       elemDict = dict( zip( elements[ 'Columns' ], element ) )
       
       if not elemDict[ 'ElementType' ] in self.checkingFreqs:
-        self.log.warn( '"%s" not in inspectionFreqs, getting default' % elemDict[ 'ElementType' ] )
+        #self.log.warn( '"%s" not in inspectionFreqs, getting default' % elemDict[ 'ElementType' ] )
         timeToNextCheck = self.checkingFreqs[ 'Default' ][ elemDict[ 'Status' ] ]
       else:
         timeToNextCheck = self.checkingFreqs[ elemDict[ 'ElementType' ] ][ elemDict[ 'Status' ] ]
