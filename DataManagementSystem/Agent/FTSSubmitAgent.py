@@ -61,8 +61,8 @@ class FTSSubmitAgent( AgentModule ):
       if self.cksmType and self.cksmType not in ( "ADLER32", "MD5", "SHA1" ):
         self.log.warn("unknown checksum type: %s, will use default %s" % ( self.cksmType, self.__defaultCksmType ) )
         self.cksmType = self.__defaultCksmType                      
-     
-        
+
+
     self.log.info( "checksum test is %s" % ( { True : "enabled using %s checksum" % self.cksmType,
                                                False : "disabled"}[self.cksmTest] ) )
       
