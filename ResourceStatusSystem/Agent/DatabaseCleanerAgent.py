@@ -23,7 +23,7 @@ class DatabaseCleanerAgent( AgentModule ):
   __maxCacheLifetime = 60
   
   # Max number of days for the history tables
-  __maxHistoryLifetime = 60
+  __maxHistoryLifetime = 10
 
   # Max number of days for the log tables
   __maxLogLifetime = 20
