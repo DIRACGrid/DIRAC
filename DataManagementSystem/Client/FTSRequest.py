@@ -187,6 +187,21 @@ class FTSRequest(object):
     if not res['OK']:
       self.log.error( "FTSRequest failed to get SRM Space Token for SourceSE", res['Message'] )
       return S_ERROR( "SourceSE does not support FTS transfers" )
+
+    if self.__cksmTest:
+      res = self.oSourceSE.getChecksumType()
+      if not res["OK"]:
+        self.log.error("Unable to get checksum type for SourceSE %s: %s" % ( self.sourceSE, 
+                                                                             res["Message"] ) )
+        cksmType = res["Value"]
+        if cksmType in ( "NONE", "NULL" ):
+          self.log.warn("Checksum type set to %s at SourceSE %s, disabling checksum test" % ( cksmType,
+                                                                                              self.sourceSE ) )
+          self.__cksmTest = False
+        elif cksmType != self.__cksmType:
+          self.log.warn("Checksum type mismatch, disabling checksum test")
+          self.__cksmTest = False
+          
     self.sourceToken = res['Value']
     self.sourceValid = True
     return S_OK()
@@ -243,7 +258,23 @@ class FTSRequest(object):
     res = self.__getSESpaceToken( self.oTargetSE )
     if not res['OK']:
       self.log.error( "FTSRequest failed to get SRM Space Token for TargetSE", res['Message'] )
-      return S_ERROR( "SourceSE does not support FTS transfers" )
+      return S_ERROR( "TargetSE does not support FTS transfers" )
+
+    ## check checksum types
+    if self.__cksmTest:
+      res = self.oTargetSE.getChecksumType()
+      if not res["OK"]:
+        self.log.error("Unable to get checksum type for TargetSE %s: %s" % ( self.targetSE, 
+                                                                             res["Message"] ) )
+        cksmType = res["Value"]
+        if cksmType in ( "NONE", "NULL" ):
+          self.log.warn("Checksum type set to %s at TargetSE %s, disabling checksum test" % ( cksmType,
+                                                                                              self.targetSE ) )
+          self.__cksmTest = False
+        elif cksmType != self.__cksmType:
+          self.log.warn("Checksum type mismatch, disabling checksum test")
+          self.__cksmTest = False
+
     self.targetToken = res['Value']
     self.targetValid = True
     return S_OK()

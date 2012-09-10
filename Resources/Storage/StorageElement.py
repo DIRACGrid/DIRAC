@@ -13,7 +13,7 @@
 __RCSID__ = "$Id$"
 
 
-from DIRAC                                              import gLogger, S_OK, S_ERROR
+from DIRAC                                              import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Storage.StorageFactory             import StorageFactory
 from DIRAC.Core.Utilities.Pfn                           import pfnparse
 from DIRAC.Core.Utilities.List                          import sortList
@@ -113,6 +113,13 @@ class StorageElement:
     gLogger.verbose( "StorageElement.getStorageElementName: The Storage Element name is %s." % self.name )
     return S_OK( self.name )
 
+  def getChecksumType( self ):
+    """ get local /Resources/StorageElements/SEName/ChecksumType option if defined, otherwise 
+        global /Resources/StorageElements/ChecksumType
+    """
+    return S_OK( str(gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" )).upper() 
+                 if "ChecksumType" not in self.options else str(self.options["ChecksumType"]).upper() )
+     
   def getStatus( self ):
     """
      Return Status of the SE, a dictionary with:
