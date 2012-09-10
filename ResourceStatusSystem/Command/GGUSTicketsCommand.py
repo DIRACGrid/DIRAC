@@ -77,8 +77,8 @@ class GGUSTicketsCommand( Command ):
     '''
     
     if masterParams is not None:
-      gocNames = masterParams
-      gocName = None
+      gocName  = masterParams
+      gocNames = [ gocName ]
       
     else:
       gocName = self._prepareCommand()
@@ -164,16 +164,16 @@ class GGUSTicketsCommand( Command ):
     
     gLogger.info( 'Processing %s' % ', '.join( gocSites ) )
     
-#    for gocNameToQuery in gocSites:
+    for gocNameToQuery in gocSites:
       
 #    if gocNameToQuery is None:
 #      self.metrics[ 'failed' ].append( 'None result' )
 #      continue
       
-    result = self.doNew( gocSites )
+      result = self.doNew( gocNameToQuery )
       
-    if not result[ 'OK' ]:
-      self.metrics[ 'failed' ].append( result )
+      if not result[ 'OK' ]:
+        self.metrics[ 'failed' ].append( result )
        
     return S_OK( self.metrics )    
 

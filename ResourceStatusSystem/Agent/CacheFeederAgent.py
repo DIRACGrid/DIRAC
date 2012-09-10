@@ -46,7 +46,7 @@ class CacheFeederAgent( AgentModule ):
     self.commands[ 'Job' ]                 = [ { 'Job'                 : {} } ]
     self.commands[ 'Pilot' ]               = [ { 'Pilot'               : {} } ]    
     self.commands[ 'SpaceTokenOccupancy' ] = [ { 'SpaceTokenOccupancy' : {} } ]
-    self.commands[ 'Transfer' ]            = [ { 'TransferChannel'     : {} } ]
+    self.commands[ 'Transfer' ]            = [ { 'Transfer'            : {} } ]
     
     #PilotsCommand
 #    self.commands[ 'Pilots' ] = [ 
@@ -158,32 +158,36 @@ class CacheFeederAgent( AgentModule ):
       Lazy method to run the appropiated method to log the results in the DB.
     '''
 
-    if commandModule == 'AccountingCache':
-      return self.__logAccountingCacheResults( commandDict, results ) 
-       
-    if commandModule == 'VOBOXAvailability':
-      return self.__logVOBOXAvailabilityResults( results )  
+    return self.__logAccountingCacheResults( commandDict, results )
 
-    if commandModule == 'Downtime':
-      return self.__logResults( results )  
-    
-    if commandModule == 'Jobs':
-      return self.__logJobsResults( results )
-
-    if commandModule == 'Pilots':
-      return self.__logPilotsResults( results )
-
-    if commandModule == 'Transfer':
-      return self.__logResults( results )
-    
-    if commandModule == 'SpaceTokenOccupancy':
-      return self.__logResults( results )
-    
-    if commandModule == 'GGUSTickets':
-      return self.__logResults( results )
-
-    commandName = commandDict.keys()[ 0 ]
-    return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
+#    if commandModule == 'AccountingCache':
+#      return self.__logAccountingCacheResults( commandDict, results ) 
+#       
+#    if commandModule == 'VOBOXAvailability':
+#      return self.__logVOBOXAvailabilityResults( results )  
+#
+#    if commandModule == 'Downtime':
+#      return self.__logResults( results )  
+#    
+#    if commandModule == 'Job':
+#      return self.__logResults( results )
+#      #return self.__logJobsResults( results )
+#
+#    if commandModule == 'Pilots':
+#      return self.__logResults( results )
+#      #return self.__logPilotsResults( results )
+#
+#    if commandModule == 'Transfer':
+#      return self.__logResults( results )
+#    
+#    if commandModule == 'SpaceTokenOccupancy':
+#      return self.__logResults( results )
+#    
+#    if commandModule == 'GGUSTickets':
+#      return self.__logResults( results )
+#
+#    commandName = commandDict.keys()[ 0 ]
+#    return S_ERROR( 'No log method for %s/%s' % ( commandModule, commandName ) )  
 
   ## Private methods ###########################################################
 
@@ -249,7 +253,7 @@ class CacheFeederAgent( AgentModule ):
     
     return S_OK()  
 
-  def __logJobsResults( self, results ):
+  def __logJobResults( self, results ):
     '''
       Save to database the results of the JobsCommand commands
     '''
