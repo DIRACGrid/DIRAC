@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
     keeping used connections in a python Queue for further reuse.
@@ -67,7 +64,7 @@
 
 
 
-    Some high level methods have been added to avoid the need to write SQL 
+    Some high level methods have been added to avoid the need to write SQL
     statement in most common cases. They should be used instead of low level
     _insert, _update methods when ever possible.
 
@@ -79,9 +76,9 @@
       a specified time stamp.
       The conditions dictionary specifies for each attribute one or a List of possible
       values
-      greater and smaller are dictionaries in which the keys are the names of the fields, 
+      greater and smaller are dictionaries in which the keys are the names of the fields,
       that are requested to be >= or < than the corresponding value.
-      For compatibility with current usage it uses Exceptions to exit in case of 
+      For compatibility with current usage it uses Exceptions to exit in case of
       invalid arguments
 
 
@@ -135,7 +132,7 @@
       for compatibility with other methods condDict keyed argument is added
 
 
-    getCounters( self, table, attrList, condDict = None, older = None, 
+    getCounters( self, table, attrList, condDict = None, older = None,
                  newer = None, timeStamp = None, connection = False ):
 
       Count the number of records on each distinct combination of AttrList, selected
@@ -155,7 +152,6 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                  import gLogger
 from DIRAC                                  import S_OK, S_ERROR
-from DIRAC                                  import Time
 
 import MySQLdb
 # This is for proper initialization of embeded server, it should only be called once
@@ -192,7 +188,7 @@ def _checkFields( inFields, inValues ):
 
   try:
     assert len( inFields ) == len( inValues )
-  except:
+  except AssertionError:
     return S_ERROR( 'Mismatch between inFields and inValues.' )
 
   return S_OK()
@@ -201,7 +197,7 @@ def _quotedList( fieldList = None ):
   """
     Quote a list of MySQL Field Names with "`"
     Return a comma separated list of quoted Field Names
-    
+
     To be use for Table and Field Names
   """
   if fieldList == None:
@@ -541,13 +537,13 @@ class MySQL:
 
 
   def _transaction( self, cmdList, conn = None ):
-    """ dummy transaction support 
+    """ dummy transaction support
 
     :param self: self reference
     :param list cmdList: list of queries to be executed within the transaction
-    :param MySQLDB.Connection conn: connection 
+    :param MySQLDB.Connection conn: connection
 
-    :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR 
+    :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR
     """
     if type( cmdList ) != ListType:
       return S_ERROR( "_transaction: wrong type (%s) for cmdList" % type( cmdList ) )
@@ -899,7 +895,7 @@ class MySQL:
 ########################################################################################
   def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False,
                    greater = None, smaller = None ):
-    """ 
+    """
       Count the number of records on each distinct combination of AttrList, selected
       with condition defined by condDict and time stamps
     """
@@ -970,14 +966,14 @@ class MySQL:
 #############################################################################
   def buildCondition( self, condDict = None, older = None, newer = None,
                       timeStamp = None, orderAttribute = None, limit = False,
-                      greater = None, smaller = None ):
+                      greater = None, smaller = None, offset = None ):
     """ Build SQL condition statement from provided condDict and other extra check on
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
         values
-        greater and smaller are dictionaries in which the keys are the names of the fields, 
+        greater and smaller are dictionaries in which the keys are the names of the fields,
         that are requested to be >= or < than the corresponding value.
-        For compatibility with current usage it uses Exceptions to exit in case of 
+        For compatibility with current usage it uses Exceptions to exit in case of
         invalid arguments
     """
     condition = ''
@@ -1121,7 +1117,10 @@ class MySQL:
       condition = "%s ORDER BY %s" % ( condition, ', '.join( orderList ) )
 
     if limit:
-      condition = "%s LIMIT %d" % ( condition, limit )
+      if offset:
+        condition = "%s LIMIT %d OFFSET %d" % ( condition, limit, offset )
+      else:
+        condition = "%s LIMIT %d" % ( condition, limit )
 
     return condition
 
