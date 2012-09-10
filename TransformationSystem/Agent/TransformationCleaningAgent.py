@@ -40,15 +40,16 @@ class TransformationCleaningAgent( AgentModule ):
 
   """
 
-  def __init__( self, agentName, baseAgentName = False,	properties = dict() ):
+  def __init__( self, agentName, loadName, baseAgentName = False,	properties = dict() ):
     """ c'tor
 
     :param self: self reference
     :param str agentName: name of agent
+    :param str loadName: name of module
     :param bool baseAgentName: whatever  
     :param dict properties: whatever else
     """
-    AgentModule.__init__( self, agentName, baseAgentName, properties )
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
     ## replica manager
     self.replicaManager = ReplicaManager()
     ## transformation client
