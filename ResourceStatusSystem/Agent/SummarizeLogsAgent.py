@@ -16,9 +16,9 @@ class SummarizeLogsAgent( AgentModule ):
   # Date format in database
   __dateFormat = '%Y-%m-%d %H:%M:%S'
     
-  def __init__( self, agentName, baseAgentName = False, properties = dict() ):
+  def __init__( self, agentName, loadName, baseAgentName = False, properties = {} ):
     
-    AgentModule.__init__( self, agentName, baseAgentName, properties ) 
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties ) 
     
     self.rsClient = None  
   

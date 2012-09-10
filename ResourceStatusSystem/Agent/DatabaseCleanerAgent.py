@@ -32,9 +32,9 @@ class DatabaseCleanerAgent( AgentModule ):
   __cacheNames =  ( 'DowntimeCache', 'GGUSTicketsCache', 'JobCache', 
                     'PilotCache', 'TransferCache', 'SpaceTokenOccupancyCache' )
 
-  def __init__( self, agentName, baseAgentName = False, properties = dict() ):
+  def __init__( self, agentName, loadName, baseAgentName = False, properties = {} ):
     
-    AgentModule.__init__( self, agentName, baseAgentName, properties ) 
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
     
     self.maxCacheLifetime   = self.__maxCacheLifetime
     self.maxHistoryLifetime = self.__maxHistoryLifetime

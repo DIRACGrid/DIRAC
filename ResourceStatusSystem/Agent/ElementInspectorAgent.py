@@ -44,9 +44,9 @@ class ElementInspectorAgent( AgentModule ):
   # queue size limit to stop feeding
   __limitQueueFeeder = 15
   
-  def __init__( self, agentName, baseAgentName = False, properties = dict() ):
+  def __init__( self, agentName, loadName, baseAgentName = False, properties = {} ):
     
-    AgentModule.__init__( self, agentName, baseAgentName, properties )   
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties ) 
 
     # members initialization
 

@@ -35,9 +35,9 @@ class TokenAgent( AgentModule ):
   # Admin mail
   __adminMail = None
 
-  def __init__( self, agentName, baseAgentName = False, properties = dict() ):
+  def __init__( self, agentName, loadName, baseAgentName = False, properties = {} ):
     
-    AgentModule.__init__( self, agentName, baseAgentName, properties ) 
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
     
     self.notifyHours = self.__notifyHours
     self.adminMail   = self.__adminMail

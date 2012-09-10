@@ -28,9 +28,9 @@ class CacheFeederAgent( AgentModule ):
   # Too many public methods
   # pylint: disable-msg=R0904  
 
-  def __init__( self, agentName, baseAgentName = False, properties = dict() ):
+  def __init__( self, agentName, loadName, baseAgentName = False, properties = {} ):
     
-    AgentModule.__init__( self, agentName, baseAgentName, properties )
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
     
     self.commands = {}
     self.clients  = {} 
