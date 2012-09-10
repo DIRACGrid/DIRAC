@@ -37,8 +37,8 @@ class ElementInspectorAgent( AgentModule ):
   # priority.
   __checkingFreqs = { 'Default' : 
                        { 
-                         'Active' : 15, 'Degraded' : 10, 'Probing' : 6, 
-                         'Banned' : 4,  'Unknown'  : 1,  'Error'   : 0 
+                         'Active' : 60, 'Degraded' : 30,  'Probing' : 30, 
+                         'Banned' : 30, 'Unknown'  : 15,  'Error'   : 15 
                          } 
                      }
   # queue size limit to stop feeding
