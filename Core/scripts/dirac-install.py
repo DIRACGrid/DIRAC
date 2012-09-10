@@ -111,9 +111,9 @@ class ReleaseConfig:
           fields = line.split( "+=" )
           opName = fields[0].strip()
           if opName in self.__data:
-            self.__data[ opName ] = "+=".join( fields[1:] ).strip()
+            self.__data[ opName ] += ', %s' % '+='.join( fields[1:] ).strip()
           else:
-            self.__data[ opName ].append( "+=".join( fields[1:] ).strip() )
+            self.__data[ opName ] = '+='.join( fields[1:] ).strip()
           continue
 
         if line.find( "=" ) > -1:
@@ -801,7 +801,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
         urlData += data
       data = remoteFD.read( 16384 )
       if count % 20 == 0:
-        print '\033[1D'+".",
+        print '\033[1D' + ".",
         sys.stdout.flush()
         progressBar = True
       count += 1
