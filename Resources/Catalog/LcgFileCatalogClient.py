@@ -8,7 +8,7 @@ from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalog
 from DIRAC.Core.Utilities.Time                                import fromEpoch
 from DIRAC.Core.Utilities.List                                import sortList, breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo, formatProxyInfoAsString
-from DIRAC.Core.Security.CS                                   import getDNForUsername, getVOMSAttributeForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getDNForUsername, getVOMSAttributeForGroup
 from stat import *
 import os, re, types, time
 

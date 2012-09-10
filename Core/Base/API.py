@@ -3,7 +3,7 @@
 from DIRAC                          import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List      import sortList
 from DIRAC.Core.Security.ProxyInfo  import getProxyInfo, formatProxyInfoAsString
-from DIRAC.Core.Security.CS         import getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry         import getDNForUsername
 from DIRAC.Core.Utilities.Version   import getCurrentVersion
 
 import pprint, sys
