@@ -158,11 +158,13 @@ class BaseReporter( DBUtils ):
       return retVal
     dataDict = self._groupByField( 0, retVal[ 'Value' ] )
     coarsestGranularity = self._getBucketLengthForTime( self._typeName, startTime )
+    print "[ADR] COARSEST GRANULARITY", coarsestGranularity
     #Transform!
     for keyField in dataDict:
       if metadataDict[ self._PARAM_CHECK_FOR_NONE ]:
         dataDict[ keyField ] = self._convertNoneToZero( dataDict[ keyField ] )
       if metadataDict[ self._PARAM_CONVERT_TO_GRANULARITY ] == "average":
+        print "[ADR] CONVERT TO AVERAGE!"
         dataDict[ keyField ] = self._averageToGranularity( coarsestGranularity, dataDict[ keyField ] )
       if metadataDict[ self._PARAM_CONVERT_TO_GRANULARITY ] == "sum":
         dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
