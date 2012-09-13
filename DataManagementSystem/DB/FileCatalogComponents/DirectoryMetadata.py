@@ -372,7 +372,7 @@ class DirectoryMetadata:
 
     insertValueList = []
     for dirID in dirList:
-      insertValueList.append( "( %d,'%s' )" % ( dirID, meta ) )
+      insertValueList.append( "( %d,'%s' )" % ( dirID, dirDict[dirID] ) )
 
     req = "INSERT INTO FC_Meta_%s (DirID,Value) VALUES %s" % ( metaname, ', '.join( insertValueList ) )
     result = self.db._update( req )
