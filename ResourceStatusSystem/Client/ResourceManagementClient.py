@@ -6,8 +6,7 @@
 '''
 
 from DIRAC                                              import gLogger, S_ERROR 
-#from DIRAC.Core.DISET.RPCClient                         import RPCClient
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+from DIRAC.Core.DISET.RPCClient                         import RPCClient
 
 __RCSID__ = '$Id:  $'
 
@@ -48,9 +47,7 @@ class ResourceManagementClient( object ):
     '''
         
     if not serviceIn:
-      self.gate = ResourceManagementDB()
-      # FIXME: commented out duriing development
-      #self.gate = RPCClient( "ResourceStatus/ResourceManagement" )    
+      self.gate = RPCClient( "ResourceStatus/ResourceManagement" )    
     else:
       self.gate = serviceIn    
 
