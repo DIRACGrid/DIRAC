@@ -25,7 +25,7 @@ from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Base.DB import DB
 
 ## DIRAC epoc timestamp
-#ÊMAGIC_EPOC_NUMBER = 1270000000
+#MAGIC_EPOC_NUMBER = 1270000000
 NEW_MAGIC_EPOCH_2K = 323322400
 
 #############################################################################

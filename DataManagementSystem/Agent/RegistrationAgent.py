@@ -38,14 +38,14 @@ class RegistrationAgent( RequestAgentBase ):
     shifterProxy = DataManager
 
   """
-  def __init__( self, agentName, baseAgentName = False, properties = dict() ):
+  def __init__( self, agentName, loadName, baseAgentName = False, properties = dict() ):
     """ agen c'tor
 
     :param self: self reference
     """
     self.setRequestType( "register" )
     self.setRequestTask( RegistrationTask )
-    RequestAgentBase.__init__( self, agentName, baseAgentName, properties )
+    RequestAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
     self.log.info("%s has been constructed" % agentName  )
     
   
