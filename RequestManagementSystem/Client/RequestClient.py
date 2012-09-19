@@ -119,7 +119,7 @@ class RequestClient( Client ):
       for requestRPCClient in self.requestRPCClients( url, ["central"] ):
         thisURL = requestRPCClient.thisURL
         self.log.verbose( "updateRequest: Attempting to update %s at %s." % ( requestName,
-                                                                                            thisURL ) )
+                                                                              thisURL ) )
         return requestRPCClient.updateRequest( requestName, requestString )
     except Exception, error:
       errMsg = "updateRequest: Exception while updating request: %s" % str( error )
@@ -141,7 +141,7 @@ class RequestClient( Client ):
       for requestRPCClient in self.requestRPCClients( url, ["central"] ):
         thisURL = requestRPCClient.thisURL
         self.log.verbose( "deleteRequest: Attempting to delete %s at %s." % ( requestName,
-                                                                                            thisURL ) )
+                                                                              thisURL ) )
         return requestRPCClient.deleteRequest( requestName )
     except Exception, error:
       errMsg = "deleteRequest: Exception while deleting request: %s" % str( error )
@@ -163,8 +163,8 @@ class RequestClient( Client ):
       for requestRPCClient in self.requestRPCClients( url, ["central"] ):
         thisURL = requestRPCClient.thisURL
         self.log.verbose( "setRequestStatus: Attempting to set %s to %s at %s." % ( requestName,
-                                                                                                  requestStatus,
-                                                                                                  thisURL ) )
+                                                                                    requestStatus,
+                                                                                    thisURL ) )
         return requestRPCClient.setRequestStatus( requestName, requestStatus )
     except Exception, error:
       errMsg = "setRequestStatus: Exception while setting request status: %s" % str( error )

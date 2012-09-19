@@ -36,7 +36,7 @@ except ImportError:
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
@@ -46,7 +46,7 @@ def initializeRequestProxyHandler( serviceInfo ):
   :param serviceInfo:
   """
   gLogger.info("Initalizing RequestProxyHandler")
-  gThreadScheduler.addPeriodicTask( 10, RequestProxyHandler.sweeper )  
+  gThreadScheduler.addPeriodicTask( 120, RequestProxyHandler.sweeper )  
   return S_OK()
 
 ########################################################################
@@ -68,27 +68,16 @@ class RequestProxyHandler( RequestHandler ):
 
     :param self: self reference
     """
-    #self.workDir = self.getCSOption( "WorkDirectory" )
-    #gLogger.notice( "WorkDirrectory           : %s" % self.workDir )
-    gLogger.notice( "CacheDirirectory         : %s" % self.cacheDir() )
-    gLogger.notice( "Master RequestManager URL: %s" % self.centralURL() )
+    gLogger.notice( "CacheDirectory: %s" % self.cacheDir() )
     return S_OK()
 
-  @classmethod
-  def centralURL( cls ):
-    """ get central RequestClient URL """
-    if not cls.__centralURL:
-      cls.__centralURL = PathFinder.getServiceURL( "RequestManagement/centralURL" )
-      if not cls.__centralURL:
-        raise RuntimeError("CS option for RequestManagement/centralURL is not set")
-    return cls.__centralURL
 
   @classmethod
-  def requestClient( cls ):
-    """ get request client """
-    if not cls.__requestClient:
-      cls.__requestClient = RequestClient()
-    return cls.__requestClient
+  def requestManager( cls ):
+    """ get request manager """
+    if not cls.__requestManager:
+      cls.__requestManager = RPCClient( "RequestManagement/RequestManager" )
+    return cls.__requestManager 
 
   @classmethod
   def cacheDir( cls ):
@@ -129,7 +118,7 @@ class RequestProxyHandler( RequestHandler ):
           requestName = cachedRequest.getAttribute("RequestName")["Value"]
           gLogger.always( requestName )
           gLogger.always( requestString )
-          setRequest = cls.requestClient().setRequest( requestName, requestString, cls.centralURL() )
+          setRequest = cls.requestManager().setRequest( requestName, requestString )
           if not setRequest["OK"]:
             gLogger.error("sweeper: unable to set request %s @ %s: %s" % ( requestName, 
                                                                            cls.centralURL(), 
@@ -186,7 +175,7 @@ class RequestProxyHandler( RequestHandler ):
       gLogger.error("setRequest: unable to forward %s: %s" % ( requestName, forwardable["Message"] ) )
       return forwardable
 
-    setRequest = self.requestClient().setRequest( requestName, requestString, self.centralURL() )
+    setRequest = self.requestManager().setRequest( requestName, requestString )
     if not setRequest["OK"]:
       gLogger.error("setReqeuest: unable to set request '%s' @ %s: %s" % ( requestName,
                                                                            self.centralURL(),
