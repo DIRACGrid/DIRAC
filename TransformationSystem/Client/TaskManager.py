@@ -140,7 +140,7 @@ class RequestTasks( TaskBase ):
       transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
       taskName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-      res = self.requestClient.getRequestInfo( taskName, 'RequestManagement/centralURL' )
+      res = self.requestClient.getRequestInfo( taskName )
       if res['OK']:
         taskNameIDs[taskName] = res['Value'][0]
       elif re.search( "Failed to retrieve RequestID for Request", res['Message'] ):
@@ -156,7 +156,7 @@ class RequestTasks( TaskBase ):
       taskID = taskDict['TaskID']
       oldStatus = taskDict['ExternalStatus']
       taskName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-      res = self.requestClient.getRequestStatus( taskName, 'RequestManagement/centralURL' )
+      res = self.requestClient.getRequestStatus( taskName )
       newStatus = ''
       if res['OK']:
         newStatus = res['Value']['RequestStatus']
@@ -183,7 +183,7 @@ class RequestTasks( TaskBase ):
     updateDict = {}
     for taskName in sortList( taskFiles.keys() ):
       lfnDict = taskFiles[taskName]
-      res = self.requestClient.getRequestFileStatus( taskName, lfnDict.keys(), 'RequestManagement/centralURL' )
+      res = self.requestClient.getRequestFileStatus( taskName, lfnDict.keys() )
       if not res['OK']:
         self.log.warn( "getSubmittedFileStatus: Failed to get files status for request", res['Message'] )
         continue
