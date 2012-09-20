@@ -40,22 +40,19 @@ class RequestClient( Client ):
   def requestManager( self, timeout = 120 ):
     """ facade for RequestManager RPC client """
     if not self.__requestManager:
-      self.__requestManager = RPCClient( "RequestManagement/RequestManager", timeout )
+      url = PathFinder.getServiceURL( "RequestManagement/RequestManager" )
+      if not url:
+        raise RuntimeError("RequestManagement/RequestManager URL is not set!")
+      self.__requestManager = RPCClient( url, timeout=timeout )
     return self.__requestManager
 
   def requestProxies( self, timeout = 120 ):
     """ get request proxies dict """
     if not self.__requestProxiesDict:
-      proxiesURLs = fromChar( PathFinder.getServiceURL( "RequestManagement/RequestProxiesURLs" ) )
+      proxiesURLs = fromChar( PathFinder.getServiceURL( "RequestManagement/RequestProxyURLs" ) )
       for proxyURL in randomize( proxiesURLs ):
-        self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout )      
+        self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout=timeout )      
     return self.__requestProxiesDict
-
-  def requestProxy( self, timeout = 120 ):
-    """ gat random request proxy RPC client """
-    proxies = self.requestProxies( timeout )
-    return random.choice( proxies.items() ) if proxies else ( None, None )
-
 
   ########################################################################
   #
