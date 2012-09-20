@@ -428,6 +428,12 @@ class SRM2Storage( StorageBase ):
         if urlDict['status'] == 0:
           self.log.debug( "getTransportURL: Obtained tURL for file. %s" % pathSURL )
           successful[pathSURL] = urlDict['turl']
+
+          ## ugly hack for CERN-EOS 
+          if 'xroot' in listProtocols:
+             successful[pathSURL] = successful[pathSURL].replace( "gsiftp://eoslhcbftp.cern.ch", 
+                                                                  "root://eoslhcb.cern.ch" )  
+
         elif urlDict['status'] == 2:
           errMessage = "getTransportURL: File does not exist."
           self.log.error( errMessage, pathSURL )
