@@ -54,13 +54,10 @@ class RequestProxyHandler( RequestHandler ):
   """
   .. class:: RequestProxyHandler
   
-  :param str centralURL: URL to central RequestManager handler
-  :param RequestClient masterReqClient: master RequestManager
-  :param str workDir: service WorkDirectory
+  :param RPCCLient requestManager: a RPCClient to RequestManager
   :param str cacheDir: os.path.join( workDir, "requestCache" )
   """
-  __centralURL = None
-  __requestClient = None
+  __requestManager = None
   __cacheDir = None
 
   def initialize( self ):
@@ -70,7 +67,6 @@ class RequestProxyHandler( RequestHandler ):
     """
     gLogger.notice( "CacheDirectory: %s" % self.cacheDir() )
     return S_OK()
-
 
   @classmethod
   def requestManager( cls ):
@@ -106,27 +102,24 @@ class RequestProxyHandler( RequestHandler ):
                                          [ os.path.join( cacheDir, requestName ) 
                                            for requestName in os.listdir( cacheDir ) ] ),
                                  key = os.path.getctime ) ][:10]
-      clientOK = True 
+      managerOK = True 
       ## set cached requests to the central RequestManager
       for cachedFile in cachedRequests:
         ## break if something went wrong last time
-        if not clientOK:
+        if not managerOK:
           break
         try:
           requestString = "".join( open( cachedFile, "r" ).readlines() )
           cachedRequest = RequestContainer( requestString )
           requestName = cachedRequest.getAttribute("RequestName")["Value"]
-          gLogger.always( requestName )
-          gLogger.always( requestString )
           setRequest = cls.requestManager().setRequest( requestName, requestString )
           if not setRequest["OK"]:
-            gLogger.error("sweeper: unable to set request %s @ %s: %s" % ( requestName, 
-                                                                           cls.centralURL(), 
-                                                                           setRequest["Message"] ) )
-            ## revert clientOK flag
-            clientOK = False
+            gLogger.error("sweeper: unable to set request %s @ RequestManager: %s" % ( requestName, 
+                                                                                       setRequest["Message"] ) )
+            ## revert managerOK flag
+            managerOK = False
             continue
-          gLogger.info("sweeper: successfully set request %s @ %s" % ( requestName, cls.centralURL() ) )
+          gLogger.info("sweeper: successfully set request %s @ RequestManager" % requestName  )
           os.unlink( cachedFile )
         except Exception, error:
           gLogger.exception( "sweeper: hit by exception %s" % str(error) )
@@ -177,9 +170,8 @@ class RequestProxyHandler( RequestHandler ):
 
     setRequest = self.requestManager().setRequest( requestName, requestString )
     if not setRequest["OK"]:
-      gLogger.error("setReqeuest: unable to set request '%s' @ %s: %s" % ( requestName,
-                                                                           self.centralURL(),
-                                                                           setRequest["Message"] ) )
+      gLogger.error("setReqeuest: unable to set request '%s' @ RequestManager: %s" % ( requestName,
+                                                                                       setRequest["Message"] ) )
       ## put request to the request file cache
       save = self.__saveRequest( requestName, requestString )
       if not save["OK"]:
