@@ -155,7 +155,7 @@ class BaseTransport:
       isKeepAlive = self.byteStream.find( BaseTransport.keepAliveMagic, 0, keepAliveMagicLen ) == 0
       #While not found the message length or the ka, keep receiving
       while iSeparatorPosition == -1 and not isKeepAlive:
-        retVal = self._read( 1024 )
+        retVal = self._read( self.packetSize )
         #If error return
         if not retVal[ 'OK' ]:
           return retVal
@@ -180,9 +180,9 @@ class BaseTransport:
       #Process the size and remove the msg length from the bytestream
       size = int( self.byteStream[ :iSeparatorPosition ] )
       self.byteStream = self.byteStream[ iSeparatorPosition + 1: ]
-      #Receive while there's still data to be received 
+      #Receive while there's still data to be received
       while len( self.byteStream ) < size:
-        retVal = self._read( size - len( self.byteStream ), skipReadyCheck = True )
+        retVal = self._read( min( self.packetSize, size - len( self.byteStream ) ), skipReadyCheck = True )
         if not retVal[ 'OK' ]:
           return retVal
         if not retVal[ 'Value' ]:

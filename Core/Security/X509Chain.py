@@ -230,7 +230,7 @@ class X509Chain:
     proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
     proxyCert.gmtime_adj_notBefore( -900 )
     proxyCert.gmtime_adj_notAfter( lifeTime )
-    proxyCert.sign( self.__keyObj, 'md5' )
+    proxyCert.sign( self.__keyObj, 'sha1' )
 
     proxyString = "%s%s" % ( crypto.dump_certificate( crypto.FILETYPE_PEM, proxyCert ),
                                crypto.dump_privatekey( crypto.FILETYPE_PEM, proxyKey ) )
