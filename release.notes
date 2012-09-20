@@ -1,18 +1,25 @@
-[v6r6-pre3]
+[v6r6-pre4]
 
 *Core
 CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
 NEW: SiteSEMapping - new utilities getSitesGroupedByTierLevel(), getTier1WithAttachedTier2(),
      getTier1WithTier2
+CHANGE: The DIRAC.Core.Security.CS is replaced by the Registry helper     
+BUGFIX: dirac-install - properly parse += in .cfg files
 
 *Framework
 NEW: SystemAdministratorClientCLI - possibility to define roothPath and lcgVersion when updating software
+
+*Accounting
+NEW: JobPlotter - added Normalized CPU plots to Job accounting
 
 *DMS
 NEW: FileCatalog - torage usage info stored in all the directories, not only those with files
 NEW: FileCatalog - added utility to rebuild storage usage info from scratch
 BUGFIX: FileCatalogClientCLI - in do_ls() check properly the path existence
 FIX: FileCatalogClientCLI - protection against non-existing getCatalogCounters method in the LFC client
+FIX: DMS Agents - properly call superclass constructor with loadName argument
+FIX: ReplicaManager - in removeFile() non-existent file is marked as failed
 
 *WMS
 CHANGE: RunNumber job parameter was removed from all the relevant places ( JDL, JobDB, etc )
@@ -31,11 +38,15 @@ BUGFIX: Matcher - proper reporting pilot site and CE
 CHANGE: JobManager - improved job Killing/Deleting logic
 CHANGE: dirac-pilot - treat the OSG case when jobs on the same WN all run in the same directory
 
+*RMS
+FIX: RequestDBFile - better exception handling in case no JobID supplied
+
 *Resources
 FIX: SSHComputingElement - enabled multiple hosts in one queue, more debugging
 CHANGE: SSHXXX Computing Elements - define SSH class once in the SSHComputingElement
 NEW: SSHComputingElement - added option to define private key location
 CHANGE: Get rid of legacy methods in ComputingElement
+NEW: enable definition of ChecksumType per SE
 
 *Interfaces
 CHANGE: Removed Script.initialize() from the API initialization
@@ -43,6 +54,7 @@ CHANGE: Some general API polishing
 
 *TS
 BUGFIX: TaskManager - bug fixed in treating tasks with input data
+FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
 
 [v6r5p1]
 
