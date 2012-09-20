@@ -1,3 +1,8 @@
+[v6r4p22]
+
+*DMS
+FIX: SRM2Storage - fix the problem with the CERN-EOS storage 
+
 [v6r4p21]
 
 *Core
