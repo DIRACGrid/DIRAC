@@ -535,9 +535,7 @@ class TransferAgent( RequestAgentBase ):
         self.log.error("execute: not able to process %s request" % requestDict["requestName"] )
         self.log.error("execute: FTS scheduling has failed and Task mode is disabled" ) 
         ## put request back to RequestClient
-        res = self.requestClient().updateRequest( requestDict["requestName"], 
-                                                  requestDict["requestString"], 
-                                                  requestDict["sourceServer"] )
+        res = self.requestClient().updateRequest( requestDict["requestName"], requestDict["requestString"] )
         if not res["OK"]:
           self.log.error( "execute: failed to update request %s: %s" % ( requestDict["requestName"], 
                                                                          res["Message"] ) )
@@ -747,14 +745,14 @@ class TransferAgent( RequestAgentBase ):
     ## if all subRequests are statuses = Done, 
     ## this will also set the Request status to Done
     requestString = requestObj.toXML()["Value"]
-    res = self.requestClient().updateRequest( requestName, requestString, requestDict["sourceServer"] )
+    res = self.requestClient().updateRequest( requestName, requestString )
     if not res["OK"]:
       self.log.error( "schedule: failed to update request", "%s %s" % ( requestName, res["Message"] ) )
       return res
 
     ## finalisation only if jobID is set
     if requestDict["jobID"]:
-      requestStatus = self.requestClient().getRequestStatus( requestName, requestDict["sourceServer"] )
+      requestStatus = self.requestClient().getRequestStatus( requestName )
       if not requestStatus["OK"]:
         self.log.error( "schedule: failed to get request status", "%s %s" % ( requestName, requestStatus["Message"] ) )
         return requestStatus
@@ -764,9 +762,7 @@ class TransferAgent( RequestAgentBase ):
       if ( requestStatus["SubRequestStatus"] not in ( "Waiting", "Assigned" ) ) and \
             ( requestStatus["RequestStatus"] == "Done" ):
         self.log.info( "schedule: will finalize request: %s" % requestName )
-        finalize = self.requestClient().finalizeRequest( requestName, 
-                                                         requestDict["jobID"], 
-                                                         requestDict["sourceServer"] )
+        finalize = self.requestClient().finalizeRequest( requestName, requestDict["jobID"] )
         if not finalize["OK"]:
           self.log.error("schedule: error in request finalization: %s" % finalize["Message"] )
           return finalize
