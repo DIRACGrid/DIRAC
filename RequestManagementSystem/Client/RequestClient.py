@@ -23,7 +23,7 @@ class RequestClient( Client ):
   :param dict requestProxiesDict: RPC client to ReqestProxy
   """
   __requestManager = None
-  __requestProxyDict = None
+  __requestProxiesDict = {}
 
   def __init__( self, useCertificates = False ):
     """c'tor
@@ -42,17 +42,21 @@ class RequestClient( Client ):
     if not self.__requestManager:
       url = PathFinder.getServiceURL( "RequestManagement/RequestManager" )
       if not url:
-        raise RuntimeError("RequestManagement/RequestManager URL is not set!")
+        raise RuntimeError("CS option RequestManagement/RequestManager URL is not set!")
       self.__requestManager = RPCClient( url, timeout=timeout )
     return self.__requestManager
 
   def requestProxies( self, timeout = 120 ):
     """ get request proxies dict """
     if not self.__requestProxiesDict:
+      self.__requestProxiesDict = {}
       proxiesURLs = fromChar( PathFinder.getServiceURL( "RequestManagement/RequestProxyURLs" ) )
+      if not proxiesURLs:
+        self.log.warn( "CS option RequestManagement/RequestProxyURLs is not set!")
       for proxyURL in randomize( proxiesURLs ):
-        self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout=timeout )      
-    return self.__requestProxiesDict
+        self.log.debug( "creating RequestProxy for url = %s" % proxyURL )
+        self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout=timeout )
+    return self.__requestProxiesDict 
 
   ########################################################################
   #
@@ -125,23 +129,24 @@ class RequestClient( Client ):
     setRequestMgr = self.requestManager().setRequest( requestName, requestString )
     if setRequestMgr["OK"]:
       return setRequestMgr
-    errorsDict["RequestManager"] = setRequest["Message"]
+    errorsDict["RequestManager"] = setRequestMgr["Message"]
     self.log.warn( "setRequest: unable to set request '%s' at RequestManager" % requestName )
-    for proxyURL, proxyClient in self.requestProxies().items():
+    proxies = self.requestProxies()
+    for proxyURL, proxyClient in proxies.items():
       self.log.debug( "setRequest: trying RequestProxy at %s" % proxyURL )
-      setRequest = proxyClient.setRequest( requestName, requestString )
-      if setRequest["OK"]:
-        if setRequest["Value"]["set"]:
+      setRequestProxy = proxyClient.setRequest( requestName, requestString )
+      if setRequestProxy["OK"]:
+        if setRequestProxy["Value"]["set"]:
           self.log.info( "setRequest: request '%s' successfully set using RequestProxy %s" % ( requestName, 
                                                                                                proxyURL ) )
-        elif setRequest["Value"]["save"]:
+        elif setRequestProxy["Value"]["saved"]:
           self.log.info( "setRequest: request '%s' successfully forwarded to RequestProxy %s" % ( requestName, 
                                                                                                   proxyURL ) )
-        return setRequest
+        return setRequestProxy
       else:
         self.log.warn( "setRequest: unable to set request using RequestProxy %s: %s" % ( proxyURL, 
-                                                                                         setRequest["Message"] ) )
-        errorsDict["RequestProxy(%s)" % proxyURL] = setRequest["Message"]
+                                                                                         setRequestProxy["Message"] ) )
+        errorsDict["RequestProxy(%s)" % proxyURL] = setRequestProxy["Message"]
     ## if we're here neither requestManager nor requestProxy were successfull
     self.log.error( "setRequest: unable to set request '%s'" % requestName )
     errorsDict["OK"] = False
