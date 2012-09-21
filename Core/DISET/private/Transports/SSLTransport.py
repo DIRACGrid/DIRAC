@@ -69,7 +69,8 @@ class SSLTransport( BaseTransport ):
   def close( self ):
     gLogger.debug( "Closing socket" )
     try:
-      self.oSocket.shutdown()
+      #self.oSocket.shutdown()
+      os.fsync( self.oSocket.fileno() )
       self.oSocket.close()
     except:
       pass
