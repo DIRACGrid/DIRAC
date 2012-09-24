@@ -1252,6 +1252,22 @@ File Catalog Client $Revision: 1.17 $Date:
       return self.removeMeta(argss) 
     else:
       print "Unknown option:",option  
+
+  # auto completion for ``meta``
+  # TODO: what's the doc for metaset?
+  _available_meta_cmd = ["set", "get", "tag", "tags", 
+                         "index", "metaset","show",
+                         "rm", "remove"]
+  def complete_meta(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+    if len(args) == 2 and (args[1] in self._available_meta_cmd):
+      # if 'register file' or 'register replica' exists,
+      # Don't need any auto completion
+      return result
+
+    result = [i for i in self._available_meta_cmd if i.startswith(text)]
+    return result
       
   def __processArgs(self,argss):
     """ Process the list of arguments to capture quoted strings
