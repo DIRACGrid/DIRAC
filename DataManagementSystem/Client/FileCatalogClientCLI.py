@@ -243,8 +243,16 @@ File Catalog Client $Revision: 1.17 $Date:
     option = argss[0]
     del argss[0]
     if option == 'file':
+      if (len(argss) < 4):
+        print self.do_register.__doc__
+        return
       return self.registerFile(argss)
     elif option == 'pfn' or option == "replica":
+      # TODO
+      # Is the __doc__ not complete ?
+      if (len(argss) != 3):
+        print self.do_register.__doc__
+        return
       return self.registerReplica(argss)
     else:
       print "Unknown option:",option
