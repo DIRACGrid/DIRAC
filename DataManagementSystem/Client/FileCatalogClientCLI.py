@@ -727,6 +727,19 @@ File Catalog Client $Revision: 1.17 $Date:
             print user.rjust(20),':',id
     else:
       print "Unknown option:",option
+
+  # completion for ``user``
+  _available_user_cmd = ['add', 'delete', 'show']
+  def complete_user(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+    if len(args) == 2 and (args[1] in self._available_user_cmd):
+      # if the sub command exists,
+      # Don't need any auto completion
+      return result
+
+    result = [i for i in self._available_user_cmd if i.startswith(text)]
+    return result
     
   def do_group(self,args):
     """ Group related commands
