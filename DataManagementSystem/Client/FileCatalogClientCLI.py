@@ -778,6 +778,18 @@ File Catalog Client $Revision: 1.17 $Date:
     else:
       print "Unknown option:",option  
   
+  # completion for ``group``
+  _available_group_cmd = ['add', 'delete', 'show']
+  def complete_group(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+    if len(args) == 2 and (args[1] in self._available_group_cmd):
+      # if the sub command exists,
+      # Don't need any auto completion
+      return result
+
+    result = [i for i in self._available_group_cmd if i.startswith(text)]
+    return result
   def registerUser(self,argss):
     """ Add new user to the File Catalog
     
