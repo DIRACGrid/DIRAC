@@ -709,11 +709,20 @@ File Catalog Client $Revision: 1.17 $Date:
           user show - show all users registered in the catalog
     """    
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_user.__doc__
+      return
     option = argss[0]
     del argss[0]
     if option == 'add':
+      if (len(argss)!=1):
+        print self.do_user.__doc__
+        return
       return self.registerUser(argss) 
     elif option == 'delete':
+      if (len(argss)!=1):
+        print self.do_user.__doc__
+        return
       return self.deleteUser(argss) 
     elif option == "show":
       result = self.fc.getUsers()
