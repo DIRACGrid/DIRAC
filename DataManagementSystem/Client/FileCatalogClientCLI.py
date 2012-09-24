@@ -348,6 +348,19 @@ File Catalog Client $Revision: 1.17 $Date:
       return self.removeDirectory(argss)    
     else:
       print "Error: illegal option %s" % option
+
+  # An Auto Completion For ``register``
+  _available_unregister_cmd = ['replica', 'file', 'dir', 'directory']
+  def complete_unregister(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+    if len(args) == 2 and (args[1] in self._available_unregister_cmd):
+      # if 'register file' or 'register replica' exists,
+      # Don't need any auto completion
+      return result
+
+    result = [i for i in self._available_unregister_cmd if i.startswith(text)]
+    return result
       
   def do_rmreplica(self,args):
     """ Remove LFN replica from the storage and from the File Catalog
