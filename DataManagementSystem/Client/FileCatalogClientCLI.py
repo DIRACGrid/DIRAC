@@ -338,13 +338,25 @@ File Catalog Client $Revision: 1.17 $Date:
           unregister dir <path>
     """        
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_unregister.__doc__
+      return
     option = argss[0]
     del argss[0]
     if option == 'replica':
+      if (len(argss) != 2):
+        print self.do_unregister.__doc__
+        return
       return self.removeReplica(argss)
     elif option == 'file': 
+      if (len(argss) != 1):
+        print self.do_unregister.__doc__
+        return
       return self.removeFile(argss)
     elif option == "dir" or option == "directory":
+      if (len(argss) != 1):
+        print self.do_unregister.__doc__
+        return
       return self.removeDirectory(argss)    
     else:
       print "Error: illegal option %s" % option
@@ -355,7 +367,7 @@ File Catalog Client $Revision: 1.17 $Date:
     result = []
     args = line.split()
     if len(args) == 2 and (args[1] in self._available_unregister_cmd):
-      # if 'register file' or 'register replica' exists,
+      # if 'unregister file' or 'unregister replica' and so on exists,
       # Don't need any auto completion
       return result
 
