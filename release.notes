@@ -56,6 +56,11 @@ CHANGE: Some general API polishing
 BUGFIX: TaskManager - bug fixed in treating tasks with input data
 FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
 
+[v6r5p2]
+
+*Web
+NES: includes DIRACWeb tag web2012092101
+
 [v6r5p1]
 
 *Core
