@@ -1219,7 +1219,7 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_meta(self,args):
     """ Metadata related operations
     
-        |sage:
+        Usage:
           meta index [-d|-f|-r] <metaname> [<metatype>]  - add new metadata index. Possible types are:
                                                            'int', 'float', 'string', 'date';
                                                          -d  directory metadata
@@ -1234,21 +1234,41 @@ File Catalog Client $Revision: 1.17 $Date:
     
     """    
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_meta.__doc__
+      return
     option = argss[0]
     del argss[0]
     if option == 'set':
+      if (len(argss) != 3):
+        print self.do_meta.__doc__
+        return
       return self.setMeta(argss)
     elif option == 'get':
       return self.getMeta(argss)  
     elif option[:3] == 'tag':
+      # TODO
+      if (len(argss) == 0):
+        print self.do_meta.__doc__
+        return
       return self.metaTag(argss)    
     elif option == 'index':
+      if (len(argss) < 1):
+        print self.do_meta.__doc__
+        return
       return self.registerMeta(argss)
     elif option == 'metaset':
+      # TODO
+      if (len(argss) == 0):
+        print self.do_meta.__doc__
+        return
       return self.registerMetaset(argss)
     elif option == 'show':
       return self.showMeta()
     elif option == 'remove' or option == "rm":
+      if (len(argss) != 2):
+        print self.do_meta.__doc__
+        return
       return self.removeMeta(argss) 
     else:
       print "Unknown option:",option  
