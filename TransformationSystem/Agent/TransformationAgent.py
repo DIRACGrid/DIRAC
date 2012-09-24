@@ -8,7 +8,7 @@ from DIRAC                                                      import gLogger, 
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager           import ReplicaManager
-import time, re
+import time, re, random
 
 AGENT_NAME = 'Transformation/TransformationAgent'
 
@@ -94,8 +94,13 @@ class TransformationAgent( AgentModule ):
     replicateOrRemove = transDict['Type'].lower() in ["replication", "removal"]
     # Limit the number of LFNs to be considered for replication or removal as they are treated individually
     if replicateOrRemove:
-      lfns = lfns[0:self.maxFiles - 1]
+      if len( lfns ) <= self.maxFiles:
+        firstFile = 0
+      else:
+        firstFile = int( random.uniform( 0, len( lfns ) - self.maxFiles ) )
+      lfns = lfns[firstFile:firstFile + self.maxFiles - 1]
     unusedFiles = len( lfns )
+
     # Check the data is available with replicas
     res = self.__getDataReplicas( transID, lfns, active = not replicateOrRemove )
     if not res['OK']:
