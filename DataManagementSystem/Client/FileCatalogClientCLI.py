@@ -237,6 +237,9 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_register.__doc__
+      return
     option = argss[0]
     del argss[0]
     if option == 'file':
