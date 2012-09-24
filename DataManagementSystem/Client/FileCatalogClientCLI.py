@@ -249,8 +249,15 @@ File Catalog Client $Revision: 1.17 $Date:
   # An Auto Completion For ``register``
   _available_register_cmd = ['file', 'replica']
   def complete_register(self, text, line, begidx, endidx):
-      result = [i for i in self._available_register_cmd if i.startswith(text)]
+    result = []
+    args = line.split()
+    if len(args) == 2 and (args[2] in self._available_register_cmd):
+      # if 'register file' or 'register replica' exists,
+      # Don't need any auto completion
       return result
+
+    result = [i for i in self._available_register_cmd if i.startswith(text)]
+    return result
   
   def do_add(self,args):
     """ Upload a new file to a SE and register in the File Catalog
