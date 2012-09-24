@@ -759,11 +759,20 @@ File Catalog Client $Revision: 1.17 $Date:
           group show - how all groups registered in the catalog
     """    
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_group.__doc__
+      return
     option = argss[0]
     del argss[0]
     if option == 'add':
+      if (len(argss)!=1):
+        print self.do_group.__doc__
+        return
       return self.registerGroup(argss) 
     elif option == 'delete':
+      if (len(argss)!=1):
+        print self.do_group.__doc__
+        return
       return self.deleteGroup(argss) 
     elif option == "show":
       result = self.fc.getGroups()
