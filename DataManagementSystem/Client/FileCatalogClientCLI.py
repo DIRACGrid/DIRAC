@@ -251,7 +251,7 @@ File Catalog Client $Revision: 1.17 $Date:
   def complete_register(self, text, line, begidx, endidx):
     result = []
     args = line.split()
-    if len(args) == 2 and (args[2] in self._available_register_cmd):
+    if len(args) == 2 and (args[1] in self._available_register_cmd):
       # if 'register file' or 'register replica' exists,
       # Don't need any auto completion
       return result
