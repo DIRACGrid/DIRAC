@@ -77,7 +77,7 @@ class TransformationAgent( AgentModule ):
       gLogger.error( "processTransformation: Failed to obtain input data: %s." % res['Message'] )
       return res
     transFiles = res['Value']
-    lfns = res['LFNs']
+    lfns = [f['LFN'] for f in res['Value']]
 
     if not lfns:
       gLogger.info( "processTransformation: No 'Unused' files found for transformation." )
