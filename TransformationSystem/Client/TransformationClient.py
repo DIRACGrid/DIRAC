@@ -86,21 +86,65 @@ class TransformationClient(Client,FileCatalogueBase):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     return rpcClient.addTransformation(transName,description,longDescription,type,plugin,agentType,fileMask,transformationGroup,groupSize,inheritedFrom,body,maxTasks,eventsPerTask,addFiles)    
 
-  def getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False,rpc='',url='',timeout=120):
+  def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate', orderAttribute = None, limit = 10000, extraParams = False, rpc = '', url = '', timeout = 120 ):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.getTransformations(condDict,older,newer,timeStamp,orderAttribute,limit,extraParams)
+
+    transformations = []
+    #getting transformations - incrementally
+    offsetToApply = 0
+    while True:
+      res = rpcClient.getTransformations( condDict, older, newer, timeStamp, orderAttribute, limit, extraParams,
+                                          offset = offsetToApply )
+      if not res['OK']:
+        return res
+      else:
+        if res['Value']:
+          transformations.append( res['Value'] )
+          offsetToApply += limit
+        if len( res['Value'] ) < limit:
+          break
+    return S_OK( transformations )
 
   def getTransformation(self,transName,extraParams=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     return rpcClient.getTransformation(transName,extraParams)
 
-  def getTransformationFiles(self,condDict={},older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None, rpc='',url='',timeout=120):
+  def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = 10000, rpc = '', url = '', timeout = 120 ):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout) 
-    return rpcClient.getTransformationFiles(condDict,older,newer,timeStamp,orderAttribute,limit)
+    transformationFiles = []
+    #getting transformationFiles - incrementally
+    offsetToApply = 0
+    while True:
+      res = rpcClient.getTransformationFiles( condDict, older, newer, timeStamp, orderAttribute, limit,
+                                              offset = offsetToApply )
+      if not res['OK']:
+        return res
+      else:
+        if res['Value']:
+          transformationFiles.append( res['Value'] )
+          offsetToApply += limit
+        if len( res['Value'] ) < limit:
+          break
+    return S_OK( transformationFiles )
 
-  def getTransformationTasks(self,condDict={},older=None, newer=None, timeStamp='CreationTime', orderAttribute=None, limit=None, inputVector=False,rpc='',url='',timeout=120):
+
+  def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime', orderAttribute = None, limit = 10000, inputVector = False, rpc = '', url = '', timeout = 120 ):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout) 
-    return rpcClient.getTransformationTasks(condDict,older, newer, timeStamp, orderAttribute, limit, inputVector)
+    transformationTasks = []
+    #getting transformationFiles - incrementally
+    offsetToApply = 0
+    while True:
+      res = rpcClient.getTransformationTasks( condDict, older, newer, timeStamp, orderAttribute, limit,
+                                              offset = offsetToApply )
+      if not res['OK']:
+        return res
+      else:
+        if res['Value']:
+          transformationTasks.append( res['Value'] )
+          offsetToApply += limit
+        if len( res['Value'] ) < limit:
+          break
+    return S_OK( transformationTasks )
 
   def setFileStatusForTransformation(self,transName,status,lfns,force=False,timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout) 
