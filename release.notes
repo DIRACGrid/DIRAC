@@ -59,7 +59,7 @@ FIX: TransformationCleaningAgent - properly call superclass constructor with loa
 [v6r5p2]
 
 *Web
-NES: includes DIRACWeb tag web2012092101
+NEW: includes DIRACWeb tag web2012092101
 
 [v6r5p1]
 
@@ -196,6 +196,11 @@ CHANGE: request agents cleanup
 
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
+
+[v6r4p23]
+
+*Web
+NEW: includes DIRACWeb tag web2012092101
 
 [v6r4p22]
 
