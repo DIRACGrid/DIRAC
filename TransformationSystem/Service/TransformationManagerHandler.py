@@ -2,12 +2,12 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-from DIRAC                                               import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                               import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
 from DIRAC.TransformationSystem.DB.TransformationDB      import TransformationDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-from types import *
+from types import StringTypes, StringType, IntType, LongType, ListType, DictType, TupleType
 
 transTypes = list( StringTypes ) + [IntType, LongType]
 
@@ -95,15 +95,18 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.deleteTransformationParameter( transName, paramName )
     return self._parseRes( res )
 
-  types_getTransformations = []
-  def export_getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate', orderAttribute = None, limit = None, extraParams = False ):
+  types_getTransformations = [DictType]
+  def export_getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate',
+                                 orderAttribute = None, limit = None, extraParams = False, offset = None ):
     res = database.getTransformations( condDict = condDict,
-                                  older = older,
-                                  newer = newer,
-                                  timeStamp = timeStamp,
-                                  orderAttribute = orderAttribute,
-                                  limit = limit,
-                                  extraParams = extraParams )
+                                       older = older,
+                                       newer = newer,
+                                       timeStamp = timeStamp,
+                                       orderAttribute = orderAttribute,
+                                       limit = limit,
+                                       extraParams = extraParams,
+                                       offset = offset
+                                       )
     return self._parseRes( res )
 
   types_getTransformation = [transTypes]
@@ -156,9 +159,12 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.getTransformationFilesCount( transName, field, selection = selection )
     return self._parseRes( res )
 
-  types_getTransformationFiles = []
-  def export_getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None ):
-    res = database.getTransformationFiles( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit, connection = False )
+  types_getTransformationFiles = [DictType]
+  def export_getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
+                                     orderAttribute = None, limit = None, offset = None ):
+    res = database.getTransformationFiles( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
+                                           orderAttribute = orderAttribute, limit = limit, offset = offset,
+                                           connection = False )
     return self._parseRes( res )
 
   ####################################################################
@@ -166,9 +172,12 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods to manipulate the TransformationTasks table
   #
 
-  types_getTransformationTasks = []
-  def export_getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime', orderAttribute = None, limit = None, inputVector = False ):
-    res = database.getTransformationTasks( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit, inputVector = inputVector )
+  types_getTransformationTasks = [DictType]
+  def export_getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
+                                     orderAttribute = None, limit = None, inputVector = False, offset = None ):
+    res = database.getTransformationTasks( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
+                                           orderAttribute = orderAttribute, limit = limit, inputVector = inputVector,
+                                           offset = offset )
     return self._parseRes( res )
 
   types_setTaskStatus = [transTypes, [ListType, IntType, LongType], StringTypes]
