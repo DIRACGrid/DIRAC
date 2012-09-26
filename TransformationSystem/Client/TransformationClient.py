@@ -93,13 +93,13 @@ class TransformationClient(Client,FileCatalogueBase):
     #getting transformations - incrementally
     offsetToApply = 0
     while True:
-      res = rpcClient.getTransformations( condDict, older, newer, timeStamp, orderAttribute, limit, extraParams,
-                                          offset = offsetToApply )
+      res = rpcClient.getTransformations( condDict, older, newer, timeStamp, orderAttribute, limit, extraParams, offsetToApply )
       if not res['OK']:
         return res
       else:
         if res['Value']:
-          transformations.append( res['Value'] )
+          for transformation in res['Value']:
+            transformations.append( transformation )
           offsetToApply += limit
         if len( res['Value'] ) < limit:
           break
@@ -115,13 +115,13 @@ class TransformationClient(Client,FileCatalogueBase):
     #getting transformationFiles - incrementally
     offsetToApply = 0
     while True:
-      res = rpcClient.getTransformationFiles( condDict, older, newer, timeStamp, orderAttribute, limit,
-                                              offset = offsetToApply )
+      res = rpcClient.getTransformationFiles( condDict, older, newer, timeStamp, orderAttribute, limit, offsetToApply )
       if not res['OK']:
         return res
       else:
         if res['Value']:
-          transformationFiles.append( res['Value'] )
+          for transformationFile in res['Value']:
+            transformationFiles.append( transformationFile )
           offsetToApply += limit
         if len( res['Value'] ) < limit:
           break
@@ -134,13 +134,13 @@ class TransformationClient(Client,FileCatalogueBase):
     #getting transformationFiles - incrementally
     offsetToApply = 0
     while True:
-      res = rpcClient.getTransformationTasks( condDict, older, newer, timeStamp, orderAttribute, limit,
-                                              offset = offsetToApply )
+      res = rpcClient.getTransformationTasks( condDict, older, newer, timeStamp, orderAttribute, limit, offsetToApply )
       if not res['OK']:
         return res
       else:
         if res['Value']:
-          transformationTasks.append( res['Value'] )
+          for transformationTask in res['Value']:
+            transformationTasks.append( transformationTask )
           offsetToApply += limit
         if len( res['Value'] ) < limit:
           break
