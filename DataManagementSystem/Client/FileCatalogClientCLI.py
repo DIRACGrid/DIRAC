@@ -600,6 +600,8 @@ File Catalog Client $Revision: 1.17 $Date:
     """            
     
     argss = args.split()    
+    if (len(argss) == 0):
+      print self.do_ancestorset.__doc__
     lfn = argss[0]
     if lfn[0] != '/':
       lfn = self.cwd + '/' + lfn
