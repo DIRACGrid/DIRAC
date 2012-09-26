@@ -1071,9 +1071,15 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     recursive = False
+    if (len(argss) == 0):
+      print self.do_chown.__doc__
+      return
     if argss[0] == '-R':
       recursive = True
       del argss[0]
+    if (len(argss) != 2):
+      print self.do_chown.__doc__
+      return
     owner = argss[0]
     path = argss[1]
     lfn = self.getPath(path)
