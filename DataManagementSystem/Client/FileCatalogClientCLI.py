@@ -512,7 +512,10 @@ File Catalog Client $Revision: 1.17 $Date:
 
         usage: replicas <lfn>
     """
-    apath = args.split()[0]
+    argss = args.split()
+    if (len(argss) == 0):
+      print self.do_replicas.__doc__
+    apath = argss[0]
     path = self.getPath(apath)
     print "lfn:",path
     try:
