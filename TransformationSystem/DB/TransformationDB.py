@@ -524,7 +524,7 @@ class TransformationDB( DB ):
         webList.append( rList )
         resultList.append( fDict )
     result = S_OK( resultList )
-    result['LFNs'] = originalFileIDs.values()
+    #result['LFNs'] = originalFileIDs.values()
     result['Records'] = webList
     result['ParameterNames'] = ['LFN'] + self.TRANSFILEPARAMS
     return result
