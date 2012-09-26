@@ -1233,7 +1233,11 @@ File Catalog Client $Revision: 1.17 $Date:
         usage: guid <lfn> 
     """      
     
-    path = args.split()[0]
+    argss = args.split()
+    if (len(argss) == 0):
+      print self.do_guid.__doc__
+      return
+    path = argss[0]
     lfn = self.getPath(path)
     try:
       result =  self.fc.getFileMetadata(path)
