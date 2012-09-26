@@ -134,6 +134,17 @@ CHANGE: request agents cleanup
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
 
+[v6r4p24]
+
+*Core
+NEW: MySQL - add 'offset' argument to the buildCondition()
+
+*Transformation
+FIX: TransformationAgent - randomize the LFNs for removal/replication case when large number of those
+CHANGE: TransformationClient(DB,Manager) - get transformation files in smaller chunks to
+        improve performance
+FIX: TransformationAgent(DB) - do not return redundant LFNs in getTransformationFiles()        
+
 [v6r4p22]
 
 *DMS
