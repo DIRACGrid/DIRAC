@@ -184,10 +184,10 @@ class TransformationDB( DB ):
     self.__updateTransformationLogging( transID, message, authorDN, connection = connection )
     return S_OK( transID )
 
-  def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None, extraParams = False, connection = False ):
+  def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None, extraParams = False, offset = None, connection = False ):
     """ Get parameters of all the Transformations with support for the web standard structure """
     connection = self.__getConnection( connection )
-    req = "SELECT %s FROM Transformations %s" % ( intListToString( self.TRANSPARAMS ), self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit ) )
+    req = "SELECT %s FROM Transformations %s" % ( intListToString( self.TRANSPARAMS ), self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit, offset = offset ) )
     res = self._query( req, connection )
     if not res['OK']:
       return res
@@ -475,7 +475,7 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None, connection = False ):
+  def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None, offset = None, connection = False ):
     """ Get files for the supplied transformations with support for the web standard structure """
     connection = self.__getConnection( connection )
     req = "SELECT %s FROM TransformationFiles" % ( intListToString( self.TRANSFILEPARAMS ) )
@@ -490,7 +490,7 @@ class TransformationDB( DB ):
           return res
         originalFileIDs, ignore = res['Value']
         condDict['FileID'] = originalFileIDs.keys()
-      req = "%s %s" % ( req, self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit ) )
+      req = "%s %s" % ( req, self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit, offset = offset ) )
     res = self._query( req, connection )
     if not res['OK']:
       return res
@@ -771,9 +771,9 @@ class TransformationDB( DB ):
   # These methods manipulate the TransformationTasks table
   #
 
-  def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime', orderAttribute = None, limit = None, inputVector = False, connection = False ):
+  def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime', orderAttribute = None, limit = None, inputVector = False, offset = None, connection = False ):
     connection = self.__getConnection( connection )
-    req = "SELECT %s FROM TransformationTasks %s" % ( intListToString( self.TASKSPARAMS ), self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit ) )
+    req = "SELECT %s FROM TransformationTasks %s" % ( intListToString( self.TASKSPARAMS ), self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit, offset = offset ) )
     res = self._query( req, connection )
     if not res['OK']:
       return res
