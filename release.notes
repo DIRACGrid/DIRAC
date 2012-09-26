@@ -56,10 +56,15 @@ CHANGE: Some general API polishing
 BUGFIX: TaskManager - bug fixed in treating tasks with input data
 FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
 
+[v6r5p3]
+
+*Transformation
+FIX: merged in patch v6r4p24
+
 [v6r5p2]
 
 *Web
-NES: includes DIRACWeb tag web2012092101
+NEW: includes DIRACWeb tag web2012092101
 
 [v6r5p1]
 
@@ -196,6 +201,22 @@ CHANGE: request agents cleanup
 
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
+
+[v6r4p24]
+
+*Core
+NEW: MySQL - add 'offset' argument to the buildCondition()
+
+*Transformation
+FIX: TransformationAgent - randomize the LFNs for removal/replication case when large number of those
+CHANGE: TransformationClient(DB,Manager) - get transformation files in smaller chunks to
+        improve performance
+FIX: TransformationAgent(DB) - do not return redundant LFNs in getTransformationFiles()    
+
+[v6r4p23]
+
+*Web
+NEW: includes DIRACWeb tag web2012092101
 
 [v6r4p22]
 
