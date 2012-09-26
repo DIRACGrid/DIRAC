@@ -487,6 +487,7 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     if len(args) < 2:
       print "Error: unsufficient number of arguments"
+      return
     lfn = argss[0]
     lfn = self.getPath(lfn)
     se = argss[1]
@@ -515,6 +516,7 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     if (len(argss) == 0):
       print self.do_replicas.__doc__
+      return
     apath = argss[0]
     path = self.getPath(apath)
     print "lfn:",path
@@ -602,6 +604,7 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()    
     if (len(argss) == 0):
       print self.do_ancestorset.__doc__
+      return 
     lfn = argss[0]
     if lfn[0] != '/':
       lfn = self.cwd + '/' + lfn
