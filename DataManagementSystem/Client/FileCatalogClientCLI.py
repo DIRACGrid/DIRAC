@@ -1583,6 +1583,9 @@ File Catalog Client $Revision: 1.17 $Date:
     """   
    
     argss = args.split()
+    if (len(argss) < 2):
+      print self.do_find.__doc__
+      return
     path = argss[0]
     path = self.getPath(path)
     del argss[0]
