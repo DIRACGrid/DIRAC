@@ -12,7 +12,7 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 from DIRAC.Core.Security import CS
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
-from DIRAC.Core.DISET.ThreadCredentials import ThreadCredentials
+from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 
 class BaseClient:
 
@@ -32,7 +32,7 @@ class BaseClient:
   KW_SKIP_CA_CHECK = "skipCACheck"
   KW_KEEP_ALIVE_LAPSE = "keepAliveLapse"
 
-  __threadCred = ThreadCredentials()
+  __threadConfig = ThreadConfig()
 
   def __init__( self, serviceName, **kwargs ):
     if type( serviceName ) != types.StringType:
@@ -139,7 +139,7 @@ class BaseClient:
     if self.KW_EXTRA_CREDENTIALS in self.kwargs:
       self.__extraCredentials = self.kwargs[ self.KW_EXTRA_CREDENTIALS ]
     #Are we delegating something?
-    delegatedDN, delegatedGroup = self.__threadCred.getID()
+    delegatedDN, delegatedGroup = self.__threadConfig.getID()
     if self.KW_DELEGATED_DN in self.kwargs and self.kwargs[ self.KW_DELEGATED_DN ]:
       delegatedDN = self.kwargs[ self.KW_DELEGATED_DN ]
     elif delegatedDN:
@@ -285,7 +285,7 @@ and this is thread %s
   def _getBaseStub( self ):
     newKwargs = dict( self.kwargs )
     #Set DN
-    tDN, tGroup = self.__threadCred.getID()
+    tDN, tGroup = self.__threadConfig.getID()
     if not self.KW_DELEGATED_DN in newKwargs:
       if tDN:
         newKwargs[ self.KW_DELEGATED_DN ] = tDN
