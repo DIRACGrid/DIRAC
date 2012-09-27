@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [v6r6-pre4]
 
 *Core
@@ -56,11 +55,10 @@ CHANGE: Some general API polishing
 *TS
 BUGFIX: TaskManager - bug fixed in treating tasks with input data
 FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
-=======
+
 [v6r5p4]
 
 FIX: merged in patch v6r4p25
->>>>>>> rel-v6r5
 
 [v6r5p3]
 
