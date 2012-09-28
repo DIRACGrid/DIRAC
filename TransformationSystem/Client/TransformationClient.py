@@ -5,7 +5,7 @@
 ########################################################################
 __RCSID__ = "$Id$"
 
-from DIRAC                                          import S_OK, S_ERROR
+from DIRAC                                          import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client                         import Client
 from DIRAC.Core.Utilities.List                      import breakListIntoChunks
 from DIRAC.Resources.Catalog.FileCatalogueBase      import FileCatalogueBase
@@ -97,6 +97,7 @@ class TransformationClient(Client,FileCatalogueBase):
       if not res['OK']:
         return res
       else:
+        gLogger.verbose( "Result for limit %d, offset %d: %d" % ( limit, offsetToApply, len( res['Value'] ) ) )
         if res['Value']:
           for transformation in res['Value']:
             transformations.append( transformation )
@@ -119,6 +120,7 @@ class TransformationClient(Client,FileCatalogueBase):
       if not res['OK']:
         return res
       else:
+        gLogger.verbose( "Result for limit %d, offset %d: %d" % ( limit, offsetToApply, len( res['Value'] ) ) )
         if res['Value']:
           for transformationFile in res['Value']:
             transformationFiles.append( transformationFile )
@@ -134,10 +136,11 @@ class TransformationClient(Client,FileCatalogueBase):
     #getting transformationFiles - incrementally
     offsetToApply = 0
     while True:
-      res = rpcClient.getTransformationTasks( condDict, older, newer, timeStamp, orderAttribute, limit, offsetToApply )
+      res = rpcClient.getTransformationTasks( condDict, older, newer, timeStamp, orderAttribute, limit, inputVector, offsetToApply )
       if not res['OK']:
         return res
       else:
+        gLogger.verbose( "Result for limit %d, offset %d: %d" % ( limit, offsetToApply, len( res['Value'] ) ) )
         if res['Value']:
           for transformationTask in res['Value']:
             transformationTasks.append( transformationTask )
