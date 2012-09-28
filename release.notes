@@ -56,6 +56,10 @@ CHANGE: Some general API polishing
 BUGFIX: TaskManager - bug fixed in treating tasks with input data
 FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
 
+[v6r5p5]
+
+FIX: merged in patch v6r4p26
+
 [v6r5p4]
 
 FIX: merged in patch v6r4p25
@@ -205,6 +209,12 @@ CHANGE: request agents cleanup
 
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
+
+[v6r4p26]
+
+*Transformation
+BUGFIX: TransformationClient - fixed calling sequence in rpcClient.getTransformationTasks()
+NEW: TransformationClient - added log messages in verbose level.
 
 [v6r4p25]
 

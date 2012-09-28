@@ -767,17 +767,11 @@ class TransformationDB( DB ):
   # These methods manipulate the TransformationTasks table
   #
 
-<<<<<<< HEAD
   def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
                               orderAttribute = None, limit = None, inputVector = False, connection = False ):
     connection = self.__getConnection( connection )
     req = "SELECT %s FROM TransformationTasks %s" % ( intListToString( self.TASKSPARAMS ),
                                                       self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit ) )
-=======
-  def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime', orderAttribute = None, limit = None, inputVector = False, offset = None, connection = False ):
-    connection = self.__getConnection( connection )
-    req = "SELECT %s FROM TransformationTasks %s" % ( intListToString( self.TASKSPARAMS ), self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit, offset = offset ) )
->>>>>>> rel-v6r4
     res = self._query( req, connection )
     if not res['OK']:
       return res
