@@ -55,9 +55,9 @@ class ObjectLoader( object ):
       if impData[0]:
         impData[0].close()
     except ImportError, excp:
-      if str( excp ).find( "No module named" ) == 0:
+      if str( excp ).find( "No module named %s" % modName[0] ) == 0:
         return S_OK( None )
-      errMsg = "Can't load %s" % ".".join( modName )
+      errMsg = "Can't load %s in %s" % ( ".".join( modName ), parentModule.__path__[0] )
       if not hideExceptions:
         gLogger.exception( errMsg )
       return S_ERROR( errMsg )
