@@ -969,12 +969,8 @@ class MySQL:
 
 #############################################################################
   def buildCondition( self, condDict = None, older = None, newer = None,
-<<<<<<< HEAD
                       timeStamp = None, orderAttribute = None, limit = False,
                       greater = None, smaller = None ):
-=======
-                      timeStamp = None, orderAttribute = None, limit = False, offset = None ):
->>>>>>> rel-v6r4
     """ Build SQL condition statement from provided condDict and other extra check on
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
