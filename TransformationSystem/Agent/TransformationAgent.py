@@ -1,4 +1,4 @@
-"""  TransformationAgent processes transformations found in the transformation database. 
+"""  TransformationAgent processes transformations found in the transformation database.
 """
 
 __RCSID__ = "$Id$"
@@ -63,7 +63,7 @@ class TransformationAgent( AgentModule ):
     return S_OK()
 
   def getTransformations( self ):
-    """ Obtain the transformations to be executed 
+    """ Obtain the transformations to be executed
     """
     transName = self.am_getOption( 'Transformation', 'All' )
     if transName == 'All':
@@ -88,36 +88,20 @@ class TransformationAgent( AgentModule ):
     """
 
     transID = transDict['TransformationID']
+    replicateOrRemove = transDict['Type'].lower() in ['replication', 'removal']
+
     # First get the LFNs associated to the transformation
-    res = self.transfClient.getTransformationFiles( condDict = {'TransformationID':transID, 'Status':'Unused'} )
-    if not res['OK']:
-      gLogger.error( "processTransformation: Failed to obtain input data: %s." % res['Message'] )
-      return res
-    transFiles = res['Value']
+    transFiles = self._getTransformationFiles()
+    if not transFiles['OK']:
+      return transFiles
+
+    transFiles = transFiles['Value']
     lfns = [ f['LFN'] for f in transFiles ]
 
-    if not lfns:
-      gLogger.info( "processTransformation: No 'Unused' files found for transformation." )
-      if transDict['Status'] == 'Flush':
-        res = self.transfClient.setTransformationParameter( transID, 'Status', 'Active' )
-        if not res['OK']:
-          gLogger.error( "processTransformation: Failed to update transformation status to 'Active': %s." % res['Message'] )
-        else:
-          gLogger.info( "processTransformation: Updated transformation status to 'Active'." )
-      return S_OK()
-    #Check if something new happened
-    if len( lfns ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush':
-      gLogger.info( "processTransformation: No new 'Unused' files found for transformation." )
-      return S_OK()
-
-    replicateOrRemove = transDict['Type'].lower() in ["replication", "removal"]
     # Limit the number of LFNs to be considered for replication or removal as they are treated individually
     if replicateOrRemove:
-      if len( lfns ) <= self.maxFiles:
-        firstFile = 0
-      else:
-        firstFile = int( random.uniform( 0, len( lfns ) - self.maxFiles ) )
-      lfns = lfns[firstFile:firstFile + self.maxFiles - 1]
+      lfns = self.__applyReduction( lfns )
+
     unusedFiles = len( lfns )
 
     # Check the data is available with replicas
@@ -175,6 +159,45 @@ class TransformationAgent( AgentModule ):
   # Internal methods used by the agent
   #
 
+  def _getTransformationFiles( self, transDict ):
+    """ get the data replicas for a certain transID
+    """
+
+    transID = transDict['TransformationID']
+
+    res = self.transfClient.getTransformationFiles( condDict = {'TransformationID':transID, 'Status':'Unused'} )
+    if not res['OK']:
+      gLogger.error( "processTransformation: Failed to obtain input data: %s." % res['Message'] )
+      return res
+    transFiles = res['Value']
+
+    if not transFiles:
+      gLogger.info( "processTransformation: No 'Unused' files found for transformation." )
+      if transDict['Status'] == 'Flush':
+        res = self.transfClient.setTransformationParameter( transID, 'Status', 'Active' )
+        if not res['OK']:
+          gLogger.error( "processTransformation: Failed to update transformation status to 'Active': %s." % res['Message'] )
+        else:
+          gLogger.info( "processTransformation: Updated transformation status to 'Active'." )
+      return S_OK()
+    #Check if something new happened
+    if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush':
+      gLogger.info( "processTransformation: No new 'Unused' files found for transformation." )
+      return S_OK()
+
+    return S_OK( transFiles )
+
+  def __applyReduction( self, lfns ):
+    """ eventually remove the number of files to be considered
+    """
+    if len( lfns ) <= self.maxFiles:
+      firstFile = 0
+    else:
+      firstFile = int( random.uniform( 0, len( lfns ) - self.maxFiles ) )
+    lfns = lfns[firstFile:firstFile + self.maxFiles - 1]
+
+    return lfns
+
   def __generatePluginObject( self, plugin ):
     """ This simply instantiates the TransformationPlugin class with the relevant plugin name
     """
@@ -193,7 +216,7 @@ class TransformationAgent( AgentModule ):
       return S_ERROR()
 
   def __getDataReplicas( self, transID, lfns, active = True ):
-    """ Get the replicas for the LFNs and check their statuses 
+    """ Get the replicas for the LFNs and check their statuses
     """
     startTime = time.time()
     if active:
