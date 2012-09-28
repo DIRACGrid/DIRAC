@@ -1,3 +1,9 @@
+[v6r4p26]
+
+*Transformation
+BUGFIX: TransformationClient - fixed calling sequence in rpcClient.getTransformationTasks()
+NEW: TransformationClient - added log messages in verbose level.
+
 [v6r4p25]
 
 *DMS
