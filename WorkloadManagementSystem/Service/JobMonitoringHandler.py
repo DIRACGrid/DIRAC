@@ -19,6 +19,9 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
+                                                                        RIGHT_DELETE, RIGHT_KILL, RIGHT_RESET, \
+                                                                        RIGHT_GET_INFO 
 import DIRAC.Core.Utilities.Time as Time
 
 # These are global instances of the DB classes
@@ -43,6 +46,17 @@ def initializeJobMonitoringHandler( serviceInfo ):
 
 class JobMonitoringHandler( RequestHandler ):
 
+  def initialize( self ):
+    
+    global jobDB
+    
+    credDict = self.getRemoteCredentials()
+    self.ownerDN = credDict['DN']
+    self.ownerGroup = credDict['group']
+    self.userProperties = credDict[ 'properties' ]
+    self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
+    self.jobPolicy.setJobDB( jobDB )
+    return S_OK()
 
 ##############################################################################
   types_getApplicationStates = []
