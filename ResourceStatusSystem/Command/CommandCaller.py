@@ -1,71 +1,55 @@
-# $HeadURL $
+# $HeadURL: $
 ''' CommandCaller
 
   Module that loads commands and executes them.
 
 '''
 
-from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.Utilities              import Utils
-from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
+import copy
+
+from DIRAC                                import S_ERROR, S_OK
+from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 __RCSID__ = '$Id: $'
 
-class CommandCaller:
-  """
-    Module used for calling policies. Its class is used for invoking
-    real policies, based on the policy name
-  """
+def commandInvocation( commandTuple, pArgs = None, decissionParams = None, clients = None ):
+  '''
+  Returns a command object, given commandTuple
 
-  def commandInvocation(self, granularity = None, name = None, command = None,
-                        args = None, comm = None, extraArgs = None):
+  :params:
+    `commandTuple`: a tuple, where commandTuple[0] is a module name and 
+    commandTuple[1] is a class name (inside the module)
+  '''
+    
+  if commandTuple is None:
+    return S_OK( None )
+  
+  # decission params can be a dictionary passed with all the element parameters
+  # used mostly by the PDP to inject all relevant information  
+  if decissionParams is None:
+    decissionParams = {}
+      
+  # arguments hardcoded on Configurations.py for the policy
+  if pArgs is None:
+    pArgs = {}  
+    
+  try:
+    cModule = commandTuple[ 0 ]
+    cClass  = commandTuple[ 1 ]
+    commandModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Command.' + cModule )
+  except ImportError:
+    return S_ERROR( "Import error for command %s." % ( cModule ) )
 
-    c = command if command else self.setCommandObject(comm)
-    a = (granularity, name) if not extraArgs else (granularity, name) + extraArgs
+  if not hasattr( commandModule, cClass ):
+    return S_ERROR( '%s has no %s' % ( cModule, cClass ) )
+    
+  # We merge decision parameters and policy arguments.
+  newArgs = copy.deepcopy( decissionParams )
+  newArgs.update( pArgs )
+      
+  commandObject = getattr( commandModule, cClass )( newArgs, clients ) 
 
-    res = self._innerCall(c, a)
-    return res
-
-################################################################################
-
-  def setCommandObject( self, comm ):
-    """
-    Returns a command object, given comm
-
-    :params:
-      `comm`: a tuple, where comm[0] is a module name and comm[1] is a class name (inside the module)
-    """
-    try:
-      cModule = comm[0]
-      cClass = comm[1]
-      commandModule = Utils.voimport("DIRAC.ResourceStatusSystem.Command." + cModule)
-    except ImportError:
-      gLogger.warn("Command %s/%s not found, using dummy command DoNothing_Command." % (cModule, cClass))
-      cClass = "DoNothing_Command"
-      commandModule = __import__("DIRAC.ResourceStatusSystem.Command.DoNothing_Command", globals(), locals(), ['*'])
-
-    c = getattr(commandModule, cClass)()
-
-    return c
-
-################################################################################
-
-  def setAPI( self, cObj, apiName, apiInstance ):
-    cObj.setAPI( apiName, apiInstance )
-
-################################################################################
-
-  def _innerCall(self, c, a):#, clientIn = None):
-    """ command call
-    """
-    clientsInvoker = ClientsInvoker()
-
-    c.setArgs(a)
-    clientsInvoker.setCommand(c)
-
-    res = clientsInvoker.doCommand()
-
-    return res
+  return S_OK( commandObject ) 
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

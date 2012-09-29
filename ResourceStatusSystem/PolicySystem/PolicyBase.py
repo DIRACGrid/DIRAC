@@ -5,11 +5,7 @@
   
 '''
 
-from DIRAC                                                  import gLogger 
-from DIRAC.ResourceStatusSystem.Command.ClientsInvoker      import ClientsInvoker
-from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
-from DIRAC.ResourceStatusSystem.Utilities                   import RssConfiguration
-
+from DIRAC.ResourceStatusSystem.Command.Command import Command
 
 __RCSID__  = '$Id: $'
 
@@ -24,70 +20,20 @@ class PolicyBase( object ):
     '''
     Constructor
     '''
-    self.args        = None
-    self.command     = None
-    self.commandName = None
-    self.knownInfo   = None
-    self.infoName    = None
-    self.result      = {}
+    
+    self.command = Command()
+    self.result  = {}
 
-  def setArgs( self, argsIn ):
-    '''
-    Set `self.args`.
-
-    :params:
-
-      :attr:`argsIn`: a tuple: (Module Command doesn't handle lists for now.)
-        - `args[0]` should be a ValidElement
-
-        - `args[1]` should be the name of the ValidElement
-    '''
-    self.args = argsIn
-
-    validElements = RssConfiguration.getValidElements()
-
-    if self.args[0] not in validElements:
-      gLogger.error( 'PolicyBase.setArgs got wrong ValidElement' )
-
-  def setCommand( self, commandIn = None ):
+  def setCommand( self, policyCommand ):
     '''
     Set `self.command`.
 
     :params:
       :attr:`commandIn`: a command object
     '''
-    self.command = commandIn
+    if policyCommand is not None:
+      self.command = policyCommand
 
-  def setCommandName( self, commandNameIn = None ):
-    '''
-    Set `self.commandName`, necessary when a command object is not provided with setCommand.
-
-    :params:
-      :attr:`commandNameIn`: a tuple containing the command module and class (as strings)
-    '''
-    self.commandName = commandNameIn
-
-  def setKnownInfo( self, knownInfoIn = None ):
-    '''
-    Set `self.knownInfo`. No command will be then invoked.
-
-    :params:
-
-      :attr:`knownInfoIn`: a dictionary
-    '''
-    self.knownInfo = knownInfoIn
-
-  def setInfoName( self, infoNameIn = None ):
-    '''
-    Set `self.infoName`.
-
-    :params:
-
-      :attr:`infoNameIn`: a string
-    '''
-    self.infoName = infoNameIn
-
-  # method to be extended by sub(real) policies
   def evaluate( self ):
     '''
     Before use, call at least `setArgs` and, alternatively,
@@ -97,32 +43,17 @@ class PolicyBase( object ):
     the command (if necessary) as it is provided and returns the results.
     '''
 
-    if self.knownInfo:
-      result = self.knownInfo
-    else:
-      if not self.command:
-        # use standard Command
-        cc = CommandCaller()
-        self.command = cc.setCommandObject( self.commandName )
-
-      clientsInvoker = ClientsInvoker()
-      clientsInvoker.setCommand( self.command )
-
-      self.command.setArgs( self.args )
-
-      result = clientsInvoker.doCommand()
-
-
-    if not self.infoName:
-      result = result[ 'Result' ]
-    else:
-      if self.infoName in result.keys():
-        result = result[ self.infoName ]
-      else:
-        gLogger.error( 'missing "infoName" in result' )
-        return None
-
-    return result
+    commandResult = self.command.doCommand()
+    return self._evaluate( commandResult )
+  
+  @staticmethod  
+  def _evaluate( commandResult ):
+    '''
+      Method that will do the real processing of the policy, it has to be extended
+      on the real policies.
+    '''    
+    
+    return commandResult  
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

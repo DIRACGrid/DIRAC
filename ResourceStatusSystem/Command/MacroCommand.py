@@ -1,4 +1,4 @@
-# $HeadURL $
+# $HeadURL:  $
 ''' MacroCommand 
   
   The MacroCommand class is a macro class for all the macro commands
@@ -9,11 +9,17 @@
 from DIRAC                                      import gLogger
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 class MacroCommand( Command ):
+  '''
+  As of today, it is not used.
+  '''
   
   def __init__( self ):
+    
+    super( MacroCommand, self ).__init__()
+    
     self.commands = None
     self.args     = None
     self.clients  = None
