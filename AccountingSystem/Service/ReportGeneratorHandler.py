@@ -215,7 +215,7 @@ class ReportGeneratorHandler( RequestHandler ):
       fileId = result[ 'Value' ]
     retVal = gDataCache.getPlotData( fileId )
     if not retVal[ 'OK' ]:
-      self.__sendErrorAsImg( result[ 'Message' ], fileHelper )
+      self.__sendErrorAsImg( retVal[ 'Message' ], fileHelper )
       return retVal
     retVal = fileHelper.sendData( retVal[ 'Value' ] )
     if not retVal[ 'OK' ]:

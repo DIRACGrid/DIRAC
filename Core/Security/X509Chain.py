@@ -230,7 +230,7 @@ class X509Chain:
     proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
     proxyCert.gmtime_adj_notBefore( -900 )
     proxyCert.gmtime_adj_notAfter( lifeTime )
-    proxyCert.sign( self.__keyObj, 'md5' )
+    proxyCert.sign( self.__keyObj, 'sha1' )
 
     proxyString = "%s%s" % ( crypto.dump_certificate( crypto.FILETYPE_PEM, proxyCert ),
                                crypto.dump_privatekey( crypto.FILETYPE_PEM, proxyKey ) )
@@ -592,11 +592,15 @@ class X509Chain:
           credDict[ 'groupProperties' ] = Registry.getPropertiesForGroup( diracGroup )
     else:
       retVal = Registry.getHostnameForDN( credDict['subject'] )
-      retVal[ 'group' ] = 'hosts'
       if retVal[ 'OK' ]:
+        credDict[ 'group' ] = 'hosts'
         credDict[ 'hostname' ] = retVal[ 'Value' ]
         credDict[ 'validDN' ] = True
         credDict[ 'validGroup' ] = True
+      retVal = Registry.getUsernameForDN( credDict[ 'subject' ] )
+      if retVal[ 'OK' ]:
+        credDict[ 'username' ] = retVal[ 'Value' ]
+        credDict[ 'validDN' ] = True
     return S_OK( credDict )
 
   def hash( self ):
