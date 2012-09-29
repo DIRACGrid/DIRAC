@@ -2,6 +2,9 @@
 
 FIX: merged in patch v6r4p27
 
+*Transformation
+BUGFIX: TransformationDB - StringType must be imported before it can be used
+
 [v6r5p5]
 
 FIX: merged in patch v6r4p26
