@@ -1667,7 +1667,7 @@ class ReplicaManager( CatalogToStorage ):
         fileDict = {destPfn:localFile}
 
       res = destStorageElement.replicateFile( fileDict, catalogueSize, singleFile = True )
-      if localFile:
+      if localFile and os.path.exists( localFile ):
         os.remove( localFile )
 
       if res['OK']:
