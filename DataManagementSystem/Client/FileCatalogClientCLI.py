@@ -237,14 +237,38 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_register.__doc__
+      return
     option = argss[0]
     del argss[0]
     if option == 'file':
+      if (len(argss) < 4):
+        print self.do_register.__doc__
+        return
       return self.registerFile(argss)
     elif option == 'pfn' or option == "replica":
+      # TODO
+      # Is the __doc__ not complete ?
+      if (len(argss) != 3):
+        print self.do_register.__doc__
+        return
       return self.registerReplica(argss)
     else:
       print "Unknown option:",option
+
+  # An Auto Completion For ``register``
+  _available_register_cmd = ['file', 'replica']
+  def complete_register(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+    if len(args) == 2 and (args[1] in self._available_register_cmd):
+      # if 'register file' or 'register replica' exists,
+      # Don't need any auto completion
+      return result
+
+    result = [i for i in self._available_register_cmd if i.startswith(text)]
+    return result
   
   def do_add(self,args):
     """ Upload a new file to a SE and register in the File Catalog
@@ -285,6 +309,9 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_get.__doc__
+      return
     lfn = argss[0]
     lfn = self.getPath(lfn)
     dir = ''
@@ -314,16 +341,41 @@ File Catalog Client $Revision: 1.17 $Date:
           unregister dir <path>
     """        
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_unregister.__doc__
+      return
     option = argss[0]
     del argss[0]
     if option == 'replica':
+      if (len(argss) != 2):
+        print self.do_unregister.__doc__
+        return
       return self.removeReplica(argss)
     elif option == 'file': 
+      if (len(argss) != 1):
+        print self.do_unregister.__doc__
+        return
       return self.removeFile(argss)
     elif option == "dir" or option == "directory":
+      if (len(argss) != 1):
+        print self.do_unregister.__doc__
+        return
       return self.removeDirectory(argss)    
     else:
       print "Error: illegal option %s" % option
+
+  # An Auto Completion For ``register``
+  _available_unregister_cmd = ['replica', 'file', 'dir', 'directory']
+  def complete_unregister(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+    if len(args) == 2 and (args[1] in self._available_unregister_cmd):
+      # if 'unregister file' or 'unregister replica' and so on exists,
+      # Don't need any auto completion
+      return result
+
+    result = [i for i in self._available_unregister_cmd if i.startswith(text)]
+    return result
       
   def do_rmreplica(self,args):
     """ Remove LFN replica from the storage and from the File Catalog
@@ -332,6 +384,8 @@ File Catalog Client $Revision: 1.17 $Date:
           rmreplica <lfn> <se>
     """        
     argss = args.split()
+    if (len(argss) != 2):
+      print self.do_rmreplica.__doc__
     lfn = argss[0]
     lfn = self.getPath(lfn)
     print "lfn:",lfn
@@ -433,6 +487,7 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     if len(args) < 2:
       print "Error: unsufficient number of arguments"
+      return
     lfn = argss[0]
     lfn = self.getPath(lfn)
     se = argss[1]
@@ -458,7 +513,11 @@ File Catalog Client $Revision: 1.17 $Date:
 
         usage: replicas <lfn>
     """
-    apath = args.split()[0]
+    argss = args.split()
+    if (len(argss) == 0):
+      print self.do_replicas.__doc__
+      return
+    apath = argss[0]
     path = self.getPath(apath)
     print "lfn:",path
     try:
@@ -543,6 +602,9 @@ File Catalog Client $Revision: 1.17 $Date:
     """            
     
     argss = args.split()    
+    if (len(argss) == 0):
+      print self.do_ancestorset.__doc__
+      return 
     lfn = argss[0]
     if lfn[0] != '/':
       lfn = self.cwd + '/' + lfn
@@ -575,6 +637,9 @@ File Catalog Client $Revision: 1.17 $Date:
     """            
     
     argss = args.split()
+    if (len(argss) == 0):
+      print self.do_ancestor.__doc__
+      return
     lfn = argss[0]
     if lfn[0] != '/':
       lfn = self.cwd + '/' + lfn
@@ -615,6 +680,9 @@ File Catalog Client $Revision: 1.17 $Date:
     """            
     
     argss = args.split()
+    if (len(argss) == 0):
+      print self.do_descendent.__doc__
+      return
     lfn = argss[0]
     if lfn[0] != '/':
       lfn = self.cwd + '/' + lfn
@@ -660,11 +728,20 @@ File Catalog Client $Revision: 1.17 $Date:
           user show - show all users registered in the catalog
     """    
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_user.__doc__
+      return
     option = argss[0]
     del argss[0]
     if option == 'add':
+      if (len(argss)!=1):
+        print self.do_user.__doc__
+        return
       return self.registerUser(argss) 
     elif option == 'delete':
+      if (len(argss)!=1):
+        print self.do_user.__doc__
+        return
       return self.deleteUser(argss) 
     elif option == "show":
       result = self.fc.getUsers()
@@ -678,6 +755,19 @@ File Catalog Client $Revision: 1.17 $Date:
             print user.rjust(20),':',id
     else:
       print "Unknown option:",option
+
+  # completion for ``user``
+  _available_user_cmd = ['add', 'delete', 'show']
+  def complete_user(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+    if len(args) == 2 and (args[1] in self._available_user_cmd):
+      # if the sub command exists,
+      # Don't need any auto completion
+      return result
+
+    result = [i for i in self._available_user_cmd if i.startswith(text)]
+    return result
     
   def do_group(self,args):
     """ Group related commands
@@ -688,11 +778,20 @@ File Catalog Client $Revision: 1.17 $Date:
           group show - how all groups registered in the catalog
     """    
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_group.__doc__
+      return
     option = argss[0]
     del argss[0]
     if option == 'add':
+      if (len(argss)!=1):
+        print self.do_group.__doc__
+        return
       return self.registerGroup(argss) 
     elif option == 'delete':
+      if (len(argss)!=1):
+        print self.do_group.__doc__
+        return
       return self.deleteGroup(argss) 
     elif option == "show":
       result = self.fc.getGroups()
@@ -707,6 +806,18 @@ File Catalog Client $Revision: 1.17 $Date:
     else:
       print "Unknown option:",option  
   
+  # completion for ``group``
+  _available_group_cmd = ['add', 'delete', 'show']
+  def complete_group(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+    if len(args) == 2 and (args[1] in self._available_group_cmd):
+      # if the sub command exists,
+      # Don't need any auto completion
+      return result
+
+    result = [i for i in self._available_group_cmd if i.startswith(text)]
+    return result
   def registerUser(self,argss):
     """ Add new user to the File Catalog
     
@@ -766,6 +877,9 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_group.__doc__
+      return
     path = argss[0] 
     if path.find('/') == 0:
       newdir = path
@@ -957,9 +1071,15 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     recursive = False
+    if (len(argss) == 0):
+      print self.do_chown.__doc__
+      return
     if argss[0] == '-R':
       recursive = True
       del argss[0]
+    if (len(argss) != 2):
+      print self.do_chown.__doc__
+      return
     owner = argss[0]
     path = argss[1]
     lfn = self.getPath(path)
@@ -985,9 +1105,15 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     recursive = False
+    if (len(argss) == 0):
+      print self.do_chgrp.__doc__
+      return
     if argss[0] == '-R':
       recursive = True
       del argss[0]
+    if (len(argss) != 2):
+      print self.do_chgrp.__doc__
+      return
     group = argss[0]
     path = argss[1]
     lfn = self.getPath(path)
@@ -1107,7 +1233,11 @@ File Catalog Client $Revision: 1.17 $Date:
         usage: guid <lfn> 
     """      
     
-    path = args.split()[0]
+    argss = args.split()
+    if (len(argss) == 0):
+      print self.do_guid.__doc__
+      return
+    path = argss[0]
     lfn = self.getPath(path)
     try:
       result =  self.fc.getFileMetadata(path)
@@ -1127,7 +1257,7 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_meta(self,args):
     """ Metadata related operations
     
-        |sage:
+        Usage:
           meta index [-d|-f|-r] <metaname> [<metatype>]  - add new metadata index. Possible types are:
                                                            'int', 'float', 'string', 'date';
                                                          -d  directory metadata
@@ -1142,24 +1272,60 @@ File Catalog Client $Revision: 1.17 $Date:
     
     """    
     argss = args.split()
+    if (len(argss)==0):
+      print self.do_meta.__doc__
+      return
     option = argss[0]
     del argss[0]
     if option == 'set':
+      if (len(argss) != 3):
+        print self.do_meta.__doc__
+        return
       return self.setMeta(argss)
     elif option == 'get':
       return self.getMeta(argss)  
     elif option[:3] == 'tag':
+      # TODO
+      if (len(argss) == 0):
+        print self.do_meta.__doc__
+        return
       return self.metaTag(argss)    
     elif option == 'index':
+      if (len(argss) < 1):
+        print self.do_meta.__doc__
+        return
       return self.registerMeta(argss)
     elif option == 'metaset':
+      # TODO
+      if (len(argss) == 0):
+        print self.do_meta.__doc__
+        return
       return self.registerMetaset(argss)
     elif option == 'show':
       return self.showMeta()
     elif option == 'remove' or option == "rm":
+      if (len(argss) != 2):
+        print self.do_meta.__doc__
+        return
       return self.removeMeta(argss) 
     else:
       print "Unknown option:",option  
+
+  # auto completion for ``meta``
+  # TODO: what's the doc for metaset?
+  _available_meta_cmd = ["set", "get", "tag", "tags", 
+                         "index", "metaset","show",
+                         "rm", "remove"]
+  def complete_meta(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+    if len(args) == 2 and (args[1] in self._available_meta_cmd):
+      # if 'register file' or 'register replica' exists,
+      # Don't need any auto completion
+      return result
+
+    result = [i for i in self._available_meta_cmd if i.startswith(text)]
+    return result
       
   def __processArgs(self,argss):
     """ Process the list of arguments to capture quoted strings
@@ -1417,6 +1583,9 @@ File Catalog Client $Revision: 1.17 $Date:
     """   
    
     argss = args.split()
+    if (len(argss) < 2):
+      print self.do_find.__doc__
+      return
     path = argss[0]
     path = self.getPath(path)
     del argss[0]
