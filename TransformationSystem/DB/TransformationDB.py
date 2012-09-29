@@ -10,7 +10,7 @@
 """
 
 import re, time, threading, copy
-from types import IntType, LongType, StringTypes, ListType, TupleType, DictType
+from types import IntType, LongType, StringTypes, ListType, TupleType, DictType, StringType
 
 from DIRAC                                                             import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                                import DB
