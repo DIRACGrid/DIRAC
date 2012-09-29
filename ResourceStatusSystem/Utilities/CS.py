@@ -216,7 +216,14 @@ def getSEToken(SE):
 
 def getSpaceTokens():
   ''' Get Space Tokens '''
-  return ["LHCb_USER", "LHCb-Disk", "LHCb-Tape"]
+  
+  spaceTokens = []
+  
+  ses = getSEs()
+  for se in ses:
+    sToken = getSEToken( se )
+    spaceTokens.append( sToken ) 
+  return list( set( spaceTokens ) )
 
 def getSpaceTokenEndpoints():
   ''' Get Space Token Endpoints '''
