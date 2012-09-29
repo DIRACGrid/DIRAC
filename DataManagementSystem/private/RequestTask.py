@@ -94,7 +94,6 @@ class RequestTask( object ):
   ## placeholder for Request owner group
   requestOwnerGroup = None
  
-
   ## operation dispatcher for SubRequests, 
   ## a dictonary 
   ## "operation" => methodToRun
@@ -105,7 +104,7 @@ class RequestTask( object ):
   ## monitoring dict
   __monitor = {} 
 
-  def __init__( self, requestString, requestName, executionOrder, jobID, sourceServer, configPath ):
+  def __init__( self, requestString, requestName, executionOrder, jobID, configPath ):
     """ c'tor
 
     :param self: self reference
@@ -166,8 +165,6 @@ class RequestTask( object ):
     self.jobID = jobID
     ## .. and execution order
     self.executionOrder = executionOrder
-    ## .. and source server URI
-    self.sourceServer = sourceServer
 
     ## save config path 
     self.__configPath = configPath
@@ -373,7 +370,7 @@ class RequestTask( object ):
         self.error( "handleReuqest: unable to get proxy for '%s'@'%s': %s" % ( ownerDN, 
                                                                                ownerGroup, 
                                                                                ownerProxyFile["Message"] ) )
-        update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
+        update = self.putBackRequest( self.requestName, self.requestString )
         if not update["OK"]:
           self.error( "handleRequest: error when updating request: %s" % update["Message"] )
           return update
@@ -398,10 +395,9 @@ class RequestTask( object ):
     if not ret["OK"]:
       self.error( "handleRequest: error during request processing: %s" % ret["Message"] )
       self.error( "handleRequest: will put original request back" )
-      update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
+      update = self.putBackRequest( self.requestName, self.requestString )
       if not update["OK"]:
         self.error( "handleRequest: error when putting back request: %s" % update["Message"] )
-          
     ## return at least
     return ret
 
@@ -470,14 +466,14 @@ class RequestTask( object ):
     ################################################
     #  Generate the new request string after operation
     newRequestString = self.requestObj.toXML()['Value']
-    update = self.putBackRequest( self.requestName, newRequestString, self.sourceServer )
+    update = self.putBackRequest( self.requestName, newRequestString )
     if not update["OK"]:
       self.error( "handleRequest: error when updating request: %s" % update["Message"] )
       return update
 
     ## get request status                
     if self.jobID:
-      requestStatus = self.requestClient().getRequestStatus( self.requestName, self.sourceServer )
+      requestStatus = self.requestClient().getRequestStatus( self.requestName )
       if not requestStatus["OK"]:
         return requestStatus
       requestStatus = requestStatus["Value"]
@@ -486,7 +482,7 @@ class RequestTask( object ):
       
       if ( requestStatus["RequestStatus"] == "Done" ) and ( requestStatus["SubRequestStatus"] not in ( "Waiting", "Assigned" ) ):
         self.debug("handleRequest: request is going to be finalised")
-        finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
+        finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID )
         if not finalize["OK"]:
           self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )
           return finalize
@@ -497,7 +493,7 @@ class RequestTask( object ):
     ## should return S_OK with monitor dict
     return S_OK( { "monitor" : self.monitor() } )
  
-  def putBackRequest( self, requestName, requestString, sourceServer ):
+  def putBackRequest( self, requestName, requestString ):
     """ put request back
 
     :param self: self reference
@@ -505,7 +501,7 @@ class RequestTask( object ):
     :param str requestString: XML-serilised request
     :param str sourceServer: request server URL
     """
-    update = self.requestClient().updateRequest( requestName, requestString, sourceServer )
+    update = self.requestClient().updateRequest( requestName, requestString )
     if not update["OK"]:
       self.error( "putBackRequest: error when updating request: %s" % update["Message"] )
       return update
