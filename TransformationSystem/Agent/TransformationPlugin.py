@@ -1,24 +1,31 @@
 """  TransformationPlugin is a class wrapping the supported transformation plugins
 """
-from DIRAC                                                               import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SiteSEMapping                                  import getSitesForSE, getSEsForSite
-from DIRAC.Core.Utilities.List                                           import breakListIntoChunks, sortList, uniqueElements, randomize
 import re
 
+from DIRAC                              import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE, getSEsForSite
+from DIRAC.Core.Utilities.List          import breakListIntoChunks, sortList, uniqueElements, randomize
+
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+
 class TransformationPlugin( object ):
+  """ A TransformationPlugin object should be instantiated by every transformation.
+  """
 
   def __init__( self, plugin, transClient = None, replicaManager = None ):
+    """ plugin name has to be passed in (no
+    """
     self.params = False
     self.data = False
     self.plugin = plugin
     self.files = False
     if transClient == None:
-      from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
       self.transClient = TransformationClient()
     else:
       self.transClient = transClient
+
     if replicaManager == None:
-      from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
       self.rm = ReplicaManager()
     else:
       self.rm = replicaManager
