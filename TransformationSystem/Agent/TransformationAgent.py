@@ -18,6 +18,7 @@ class TransformationAgent( AgentModule ):
     self.pluginLocation = self.am_getOption( 'PluginLocation', 'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.checkCatalog = self.am_getOption( 'CheckCatalog', 'yes' )
     self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
+    self.transformationTypes = self.am_getOption( 'TransformationTypes', [] )
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/ProductionManager
@@ -52,7 +53,10 @@ class TransformationAgent( AgentModule ):
     transName = self.am_getOption( 'Transformation', 'All' )
     if transName == 'All':
       gLogger.info( "%s.getTransformations: Initializing general purpose agent." % AGENT_NAME )
-      res = self.transDB.getTransformations( {'Status':['Active', 'Completing', 'Flush']}, extraParams = True )
+      transfDict = {'Status':['Active', 'Completing', 'Flush'] }
+      if self.transformationTypes:
+        transfDict['Type'] = self.transformationTypes
+      res = self.transDB.getTransformations( transfDict, extraParams = True )
       if not res['OK']:
         gLogger.error( "%s.getTransformations: Failed to get transformations." % AGENT_NAME, res['Message'] )
         return res
