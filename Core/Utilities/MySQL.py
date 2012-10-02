@@ -1121,7 +1121,10 @@ class MySQL:
       condition = "%s ORDER BY %s" % ( condition, ', '.join( orderList ) )
 
     if limit:
-      condition = "%s LIMIT %d" % ( condition, limit )
+      if offset:
+        condition = "%s LIMIT %d OFFSET %d" % ( condition, limit, offset )
+      else:
+        condition = "%s LIMIT %d" % ( condition, limit )
 
     return condition
 

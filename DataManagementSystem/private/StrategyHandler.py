@@ -213,7 +213,14 @@ class StrategyHandler( object ):
           tree = self.__simple( sourceSE, targetSEs )
         elif reStrategy.pattern == "Swarm":
           tree = self.__swarm( targetSEs[0], replicas.keys() )
-      
+   
+    ## sanity check for tree, just checking if all targetSEs are in
+    missing = set( targetSEs ) - set( [ rep["DestSE"] for rep in tree ] )
+    if missing:
+      msg = "wrong replication tree, missing %s targetSEs" % ",".join( [ tSE for tSE in missing ] )
+      self.log.error( "determineReplicationTree: %s" % msg )
+      return S_ERROR( msg )
+   
     # Now update the queues to reflect the chosen strategies
     for channelID in tree:
       self.channels[channelID]["Files"] += 1

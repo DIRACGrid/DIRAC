@@ -437,7 +437,7 @@ class ComputingElement:
     
     ceDict = {}
     for option, value in self.ceParameters.items():
-      if type( option ) == type( [] ):
+      if type( value ) == type( [] ):
         ceDict[option] = value
       elif type( value ) == type( ' ' ):
         tmpInt = self.__getInt( value )

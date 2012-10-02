@@ -407,7 +407,7 @@ if not useServerCert:
   result = getProxyInfo()
   if not result['OK']:
     DIRAC.gLogger.notice( 'No user proxy available' )
-    DIRAC.gLogger.notice( 'Create one using %s and execute again with -F option' % os.path.join( DIRAC.rootPath, 'scripts', 'dirac-proxy-init' ) )
+    DIRAC.gLogger.notice( 'Create one using %s and execute again with -x option' % os.path.join( DIRAC.rootPath, 'scripts', 'dirac-proxy-init' ) )
     sys.exit( 0 )
   else:
     Script.enableCS()

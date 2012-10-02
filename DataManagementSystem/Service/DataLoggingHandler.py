@@ -1,7 +1,12 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-""" DataLoggingHandler is the implementation of the Data Logging
+""" 
+    :mod: DataLoggingHandler
+    ========================
+
+     .. module: DataLoggingHandler
+     :synopsis: DataLoggingHandler is the implementation of the Data Logging
     service in the DISET framework.
 
     The following methods are available in the Service interface::
@@ -11,32 +16,30 @@
     * getFileLoggingInfo()
 
 """
+
 __RCSID__ = "$Id$"
 
 ## imports
-import os
-from types import StringType, ListType, TupleType, DictType
+from types import StringType, ListType, TupleType
 ## from DIRAC
-from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.DataManagementSystem.DB.DataLoggingDB import DataLoggingDB
-from DIRAC.ConfigurationSystem.Client import PathFinder
 
 ## global instance of the DataLoggingDB
-logDB = False
+gDataLoggingDB = False
 
 def initializeDataLoggingHandler( serviceInfo ):
   """ handler initialisation """
-  global logDB
-  logDB = DataLoggingDB()
+  global gDataLoggingDB
+  gDataLoggingDB = DataLoggingDB()
 
-  res = logDB._connect()
+  res = gDataLoggingDB._connect()
   if not res['OK']:
     return res
-  res = logDB._checkTable()
+  res = gDataLoggingDB._checkTable()
   if not res['OK'] and not res['Message'] == 'The requested table already exist':
     return res
-
   return S_OK()
 
 class DataLoggingHandler( RequestHandler ):
@@ -47,7 +50,8 @@ class DataLoggingHandler( RequestHandler ):
   """
 
   types_addFileRecord = [ [StringType, ListType], StringType, StringType, StringType, StringType ]
-  def export_addFileRecord( self, lfn, status, minor, date, source ):
+  @staticmethod
+  def export_addFileRecord( lfn, status, minor, date, source ):
     """ Add a logging record for the given file
     
     :param self: self reference
@@ -61,27 +65,26 @@ class DataLoggingHandler( RequestHandler ):
       lfns = [ lfn ]
     else:
       lfns = lfn
-    result = logDB.addFileRecord( lfns, status, minor, date, source )
-    return result
+    return gDataLoggingDB.addFileRecord( lfns, status, minor, date, source )
 
   types_addFileRecords = [ [ ListType, TupleType ] ]
-  def export_addFileRecords( self, fileTuples ):
+  @staticmethod
+  def export_addFileRecords( fileTuples ):
     """ Add a group of logging records
     """
-    result = logDB.addFileRecords( fileTuples )
-    return result
+    return gDataLoggingDB.addFileRecords( fileTuples )
 
   types_getFileLoggingInfo = [ StringType ]
-  def export_getFileLoggingInfo( self, lfn ):
+  @staticmethod
+  def export_getFileLoggingInfo( lfn ):
     """ Get the file logging information
     """
-    result = logDB.getFileLoggingInfo( lfn )
-    return result
-
+    return gDataLoggingDB.getFileLoggingInfo( lfn )
+  
   types_getUniqueStates = []
-  def export_getUniqueStates( self ):
+  @staticmethod
+  def export_getUniqueStates():
     """ Get all the unique states
     """
-    result = logDB.getUniqueStates()
-    return result
-
+    return gDataLoggingDB.getUniqueStates()
+  
