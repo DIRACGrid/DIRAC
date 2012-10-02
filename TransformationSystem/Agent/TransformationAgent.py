@@ -107,7 +107,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       transformations = res['Value']
       self._logInfo( "Obtained %d transformations to process" % len( transformations ), method = 'getTransformations' )
     else:
-      self._logInfo( "getTransformations: Initializing for transformation %s." % transName )
+      self._logInfo( "Initializing for transformation %s." % transName, method = "getTransformations" )
       res = self.transfClient.getTransformation( transName, extraParams = True )
       if not res['OK']:
         self._logError( "Failed to get transformation: %s." % res['Message'], method = 'getTransformations' )
@@ -144,7 +144,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     replicateOrRemove = transDict['Type'].lower() in ['replication', 'removal']
 
     # First get the LFNs associated to the transformation
-    transFiles = self._getTransformationFiles()
+    transFiles = self._getTransformationFiles( transDict )
     if not transFiles['OK']:
       return transFiles
 
