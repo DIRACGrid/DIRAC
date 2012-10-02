@@ -71,7 +71,9 @@ class BaseClient:
     if self.KW_SETUP in self.kwargs and self.kwargs[ self.KW_SETUP ]:
       self.setup = str( self.kwargs[ self.KW_SETUP ] )
     else:
-      self.setup = gConfig.getValue( "/DIRAC/Setup", "Test" )
+      self.setup = self.__threadConfig.getSetup()
+      if not self.setup:
+        self.setup = gConfig.getValue( "/DIRAC/Setup", "Test" )
     return S_OK()
 
   def __discoverVO( self ):
