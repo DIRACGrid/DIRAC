@@ -26,6 +26,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     :param dict properties: whatever else
     """
 
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
+
     #few parameters
     self.pluginLocation = self.am_getOption( 'PluginLocation',
                                              'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
