@@ -12,8 +12,8 @@ import sys
 import os
 import os.path
 
-from AbstractFileSystem import DFCFileSystem
-from DirectoryCompletion import DirectoryCompletion
+from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem
+from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
 class DirCompletion(cmd.Cmd):
 
