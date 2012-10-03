@@ -86,7 +86,7 @@ class TransformationClient(Client,FileCatalogueBase):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     return rpcClient.addTransformation(transName,description,longDescription,type,plugin,agentType,fileMask,transformationGroup,groupSize,inheritedFrom,body,maxTasks,eventsPerTask,addFiles)    
 
-  def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate', orderAttribute = None, limit = 10000, extraParams = False, rpc = '', url = '', timeout = 120 ):
+  def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate', orderAttribute = None, limit = 100, extraParams = False, rpc = '', url = '', timeout = 120 ):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
 
     transformations = []
