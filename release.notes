@@ -241,6 +241,16 @@ CHANGE: Stop using RequestAgentMixIn in the request agents
 *RSS
 NEW: CS.py - Space Tokens were hardcoded, now are obtained after scanning the StorageElements.
 
+*DMS
+FIX: SRM2Storage - removed hack for EOS (fixed server-side)
+
+*Transformation
+CHANGE: TransformationClient - limit to 100 the number of transformations in getTransformations()
+NEW: TransformationAgent - define the transformations type to use in the configuration
+
+*Interfacses
+FIX: Job.py -  fix for empty environmentDict (setExecutionEnv)
+
 [v6r4p26]
 
 *Transformation
