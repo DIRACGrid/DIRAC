@@ -94,16 +94,6 @@ class SRM2Storage( StorageBase ):
     #	GFAL_CKSM_MD5,
     #	GFAL_CKSM_SHA1    
     # GFAL_CKSM_NULL = 0
-<<<<<<< HEAD
-    self.checksumTypes = { "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, 
-                           "SHA1" : 4, "NONE" : 0, "NULL" : 0 }
-    if self.checksumType not in self.checksumTypes.values():
-      if str(self.checksumType).upper() in self.checksumTypes: 
-        self.log.debug("SRM2Storage: will use %s checksum" % self.checksumType )
-        self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
-      else:
-        self.log.warn("SRM2Storage: unknown checksum type %s, checksum test disabled" % self.checksumType )
-=======
     self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2,
                            "MD5" : 3, "SHA1" : 4, "NONE" : 0, "NULL" : 0 }
     if self.checksumType:
@@ -112,7 +102,6 @@ class SRM2Storage( StorageBase ):
         self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
       else:
         gLogger.warn( "SRM2Storage: unknown checksum type %s, checksum check disabled" )
->>>>>>> rel-v6r4
         ## GFAL_CKSM_NONE
         self.checksumType = 0
     else:
@@ -1528,13 +1517,8 @@ class SRM2Storage( StorageBase ):
       statDict.setdefault( "Checksum", "" )
       if "checksum" in urlDict and ( urlDict['checksum'] != '0x' ):
         statDict["Checksum"] = urlDict["checksum"]
-<<<<<<< HEAD
-        
-      if "locality" in urlDict: 
-=======
 
       if urlDict.has_key( 'locality' ):
->>>>>>> rel-v6r4
         urlLocality = urlDict['locality']
         if re.search( 'ONLINE', urlLocality ):
           statDict['Cached'] = 1
