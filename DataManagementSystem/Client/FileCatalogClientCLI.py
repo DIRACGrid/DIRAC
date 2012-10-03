@@ -412,7 +412,7 @@ File Catalog Client $Revision: 1.17 $Date:
   def complete_unregister(self, text, line, begidx, endidx):
     result = []
     args = line.split()
-    if len(args) == 2 and (args[1] in self._available_unregister_cmd):
+    if len(args) >= 2 and (args[1] in self._available_unregister_cmd):
       # if 'unregister file' or 'unregister replica' and so on exists,
       # try to do LFN auto completion.
       cur_path = ""
