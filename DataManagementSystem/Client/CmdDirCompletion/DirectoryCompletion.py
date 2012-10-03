@@ -2,6 +2,9 @@
 # -*- coding:utf-8 -*-
 # author: lintao
 
+import readline
+readline.set_completer_delims(' \t\n`~!@#$%^&*()=+[{]}\\|;:\'",<>/?')
+
 import os.path
 
 class DirectoryCompletion(object):
@@ -28,11 +31,13 @@ class DirectoryCompletion(object):
 
     path = self.generate_absolute(line, cwd)
     dirname = self.get_dirname(path)
+    filename = self.get_filename(path, dirname)
 
     result = list( self.fs.list_dir(dirname) )
 
-    if len(text) > 0:
-      result = [i for i in result if i.startswith(text)]
+    text = filename #+ text
+
+    result = [i for i in result if i.startswith(text)]
 
     return result 
 
@@ -61,6 +66,15 @@ class DirectoryCompletion(object):
         path = os.path.normpath( path ) + self.fs.seq
       else:
         path = os.path.normpath( os.path.dirname(path) ) + self.fs.seq
+    path = path.replace('//', '/')
+    return path
+
+  def get_filename(self, path, dirname):
+    if self.check_absolute(path):
+      if (path.endswith( self.fs.seq )):
+        path = ""
+      else:
+        path = os.path.normpath( os.path.basename(path) ) 
     path = path.replace('//', '/')
     return path
 
