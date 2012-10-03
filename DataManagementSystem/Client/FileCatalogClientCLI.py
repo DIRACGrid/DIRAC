@@ -433,6 +433,7 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     if (len(argss) != 2):
       print self.do_rmreplica.__doc__
+      return
     lfn = argss[0]
     lfn = self.getPath(lfn)
     print "lfn:",lfn
