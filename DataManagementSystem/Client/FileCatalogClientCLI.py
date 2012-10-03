@@ -19,7 +19,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Interfaces.API.Dirac import Dirac
 
-from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem
+from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
 def int_with_commas(i):
@@ -223,6 +223,9 @@ File Catalog Client $Revision: 1.17 $Date:
 
     self.dfc_fs = DFCFileSystem(self.fc)
     self.lfn_dc = DirectoryCompletion(self.dfc_fs)
+
+    self.ul_fs = UnixLikeFileSystem()
+    self.ul_dc = DirectoryCompletion(self.ul_fs)
 
   def getPath(self,apath):
 
@@ -1152,9 +1155,29 @@ File Catalog Client $Revision: 1.17 $Date:
       print self.do_lcd.__doc__
       return
     localDir = argss[0]
-    os.chdir(localDir)
-    newDir = os.getcwd()
-    print "Local directory: %s" % newDir
+    try:
+      os.chdir(localDir)
+      newDir = os.getcwd()
+      print "Local directory: %s" % newDir
+    except:
+      print "%s seems not a directory" % localDir
+
+  def complete_lcd(self, text, line, begidx, endidx):
+    # TODO
+    result = []
+    args = line.split()
+
+    # the first argument -- LFN.
+    if (1<=len(args)<=2):
+      # If last char is ' ',
+      # this can be a new parameter.
+      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+        cur_path = ""
+        if (len(args) == 2):
+          cur_path = args[1]
+        result = self.ul_dc.parse_text_line(text, cur_path, self.cwd)
+
+    return result
           
   def do_pwd(self,args):
     """ Print out the current directory
