@@ -21,6 +21,7 @@ class TransformationAgent( AgentModule ):
     self.checkCatalog = self.am_getOption( 'CheckCatalog', 'yes' )
     self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
     self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
+    self.transformationTypes = self.am_getOption( 'TransformationTypes', [] )
 
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
@@ -53,8 +54,11 @@ class TransformationAgent( AgentModule ):
     """
     transName = self.am_getOption( 'Transformation', 'All' )
     if transName == 'All':
-      gLogger.info( "getTransformations: Initializing general purpose agent." )
-      res = self.transDB.getTransformations( {'Status':self.transformationStatus}, extraParams = True )
+      gLogger.info( "%s.getTransformations: Initializing general purpose agent." % AGENT_NAME )
+      transfDict = {'Status':['Active', 'Completing', 'Flush'] }
+      if self.transformationTypes:
+        transfDict['Type'] = self.transformationTypes
+      res = self.transDB.getTransformations( transfDict, extraParams = True )
       if not res['OK']:
         gLogger.error( "getTransformations: Failed to get transformations: %s" % res['Message'] )
         return res
