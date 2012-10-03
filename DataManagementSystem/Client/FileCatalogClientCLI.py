@@ -1121,6 +1121,22 @@ File Catalog Client $Revision: 1.17 $Date:
     else:
       print 'Server failed to find the directory',newcwd
 
+  def complete_cd(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+
+    # the first argument -- LFN.
+    if (1<=len(args)<=2):
+      # If last char is ' ',
+      # this can be a new parameter.
+      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+        cur_path = ""
+        if (len(args) == 2):
+          cur_path = args[1]
+        result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
+
+    return result
+      
   def do_id(self,args):
     """ Get user identity
     """
