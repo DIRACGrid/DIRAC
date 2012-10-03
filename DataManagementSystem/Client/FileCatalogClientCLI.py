@@ -1373,6 +1373,27 @@ File Catalog Client $Revision: 1.17 $Date:
         return  
     except Exception, x:
       print "Exception:", str(x)    
+
+  def complete_chgrp(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+
+    index_counter = 0+1
+
+    if '-R' in args:
+      index_counter = 1+1
+
+    # the first argument -- LFN.
+    if ((1+index_counter) <=len(args)<= (2+index_counter)):
+      # If last char is ' ',
+      # this can be a new parameter.
+      if (len(args) == 1+index_counter) or (len(args)==2+index_counter and (not line.endswith(' '))):
+        cur_path = ""
+        if (len(args) == 2+index_counter):
+          cur_path = args[1+index_counter]
+        result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
+
+    return result
       
   def do_chmod(self,args):
     """ Change permissions of the given path
