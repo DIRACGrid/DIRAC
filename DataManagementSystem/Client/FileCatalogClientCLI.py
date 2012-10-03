@@ -1381,6 +1381,9 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     recursive = False
+    if (len(argss) < 2):
+      print self.do_chmod.__doc__
+      return
     if argss[0] == '-R':
       recursive = True
       del argss[0]
