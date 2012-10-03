@@ -270,7 +270,11 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
     if len(args) >= 2 and (args[1] in self._available_register_cmd):
       # if 'register file' or 'register replica' exists,
-      # Don't need any auto completion
+      # try to do LFN auto completion.
+      cur_path = ""
+      if (len(args) == 3):
+        cur_path = args[2]
+      result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
       return result
 
     result = [i for i in self._available_register_cmd if i.startswith(text)]
