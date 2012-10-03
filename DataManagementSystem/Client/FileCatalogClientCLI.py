@@ -270,11 +270,7 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
     if len(args) >= 2 and (args[1] in self._available_register_cmd):
       # if 'register file' or 'register replica' exists,
-      # try to do LFN auto completion.
-      cur_path = ""
-      if (len(args) == 3):
-        cur_path = args[2]
-      result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
+      # Don't need any auto completion
       return result
 
     result = [i for i in self._available_register_cmd if i.startswith(text)]
@@ -359,6 +355,22 @@ File Catalog Client $Revision: 1.17 $Date:
     else:
       print "File %s successfully downloaded" % lfn      
 
+  def complete_get(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+
+    # the first argument -- LFN.
+    if (1<=len(args)<=2):
+      # If last char is ' ',
+      # this can be a new parameter.
+      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+        cur_path = ""
+        if (len(args) == 2):
+          cur_path = args[1]
+        result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
+
+    return result
+
   def do_unregister(self,args):
     """ Unregister records in the File Catalog
     
@@ -398,7 +410,11 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
     if len(args) == 2 and (args[1] in self._available_unregister_cmd):
       # if 'unregister file' or 'unregister replica' and so on exists,
-      # Don't need any auto completion
+      # try to do LFN auto completion.
+      cur_path = ""
+      if (len(args) == 3):
+        cur_path = args[2]
+      result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
       return result
 
     result = [i for i in self._available_unregister_cmd if i.startswith(text)]
