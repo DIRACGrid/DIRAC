@@ -19,6 +19,9 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Interfaces.API.Dirac import Dirac
 
+from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem
+from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
+
 def int_with_commas(i):
   s = str(i)
   news = ''
@@ -218,6 +221,9 @@ File Catalog Client $Revision: 1.17 $Date:
     self.prompt = 'FC:'+self.cwd+'> '
     self.previous_cwd = '/'
 
+    self.dfc_fs = DFCFileSystem(self.fc)
+    self.lfn_dc = DirectoryCompletion(self.dfc_fs)
+
   def getPath(self,apath):
 
     if apath.find('/') == 0:
@@ -262,9 +268,13 @@ File Catalog Client $Revision: 1.17 $Date:
   def complete_register(self, text, line, begidx, endidx):
     result = []
     args = line.split()
-    if len(args) == 2 and (args[1] in self._available_register_cmd):
+    if len(args) >= 2 and (args[1] in self._available_register_cmd):
       # if 'register file' or 'register replica' exists,
-      # Don't need any auto completion
+      # try to do LFN auto completion.
+      cur_path = ""
+      if (len(args) == 3):
+        cur_path = args[2]
+      result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
       return result
 
     result = [i for i in self._available_register_cmd if i.startswith(text)]
