@@ -7,8 +7,8 @@ import sys
 import os
 import os.path
 
-from AbstractFileSystem import UnixLikeFileSystem
-from DirectoryCompletion import DirectoryCompletion
+from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import UnixLikeFileSystem
+from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
 class DirCompletion(cmd.Cmd):
 
