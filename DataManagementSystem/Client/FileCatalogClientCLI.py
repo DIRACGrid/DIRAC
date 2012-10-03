@@ -588,7 +588,7 @@ File Catalog Client $Revision: 1.17 $Date:
           replicate <LFN> <SE> [<SourceSE>]
     """
     argss = args.split()
-    if len(args) < 2:
+    if len(argss) < 2:
       print "Error: unsufficient number of arguments"
       return
     lfn = argss[0]
