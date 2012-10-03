@@ -1472,6 +1472,27 @@ File Catalog Client $Revision: 1.17 $Date:
         print "Failed to determine path type"        
     except Exception, x:
       print "Size failed: ", x
+
+  def complete_size(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+
+    index_counter = 0
+
+    if '-l' in args:
+      index_counter = 1
+
+    # the first argument -- LFN.
+    if ((1+index_counter) <=len(args)<= (2+index_counter)):
+      # If last char is ' ',
+      # this can be a new parameter.
+      if (len(args) == 1+index_counter) or (len(args)==2+index_counter and (not line.endswith(' '))):
+        cur_path = ""
+        if (len(args) == 2+index_counter):
+          cur_path = args[1+index_counter]
+        result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
+
+    return result
       
   def do_guid(self,args):
     """ Get the file GUID 
