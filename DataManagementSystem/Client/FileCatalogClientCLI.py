@@ -1305,6 +1305,28 @@ File Catalog Client $Revision: 1.17 $Date:
         print "Error:",result['Message']
     except Exception, x:
       print "Error:", str(x)
+
+  def complete_ls(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+
+    index_cnt = 0
+
+    if (len(args) > 1):
+      if ( args[1][0] == "-"):
+        index_cnt = 1
+
+    # the first argument -- LFN.
+    if (1+index_cnt<=len(args)<=2+index_cnt):
+      # If last char is ' ',
+      # this can be a new parameter.
+      if (len(args) == 1+index_cnt) or (len(args)==2+index_cnt and (not line.endswith(' '))):
+        cur_path = ""
+        if (len(args) == 2+index_cnt):
+          cur_path = args[1+index_cnt]
+        result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
+
+    return result
       
   def do_chown(self,args):
     """ Change owner of the given path
