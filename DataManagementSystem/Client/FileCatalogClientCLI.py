@@ -764,6 +764,23 @@ File Catalog Client $Revision: 1.17 $Date:
     except Exception, x:
       print "Exception while adding ancestors: ", str(x)                
                          
+  def complete_ancestorset(self, text, line, begidx, endidx):
+    result = []
+    args = line.split()
+
+    if ( len(args) == 1 ):
+      cur_path = ""
+    elif ( len(args) > 1 ):
+      # If the line ends with ' '
+      # this means a new parameter begin.
+      if line.endswith(' '):
+        cur_path = ""
+      else:
+        cur_path = args[-1]
+
+    result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
+
+    return result
       
   def do_ancestor(self,args):
     """ Get ancestors of the given file
