@@ -1575,12 +1575,28 @@ File Catalog Client $Revision: 1.17 $Date:
   _available_meta_cmd = ["set", "get", "tag", "tags", 
                          "index", "metaset","show",
                          "rm", "remove"]
+  _meta_cmd_need_lfn = ["set", "get",
+                        "rm", "remove"]
   def complete_meta(self, text, line, begidx, endidx):
     result = []
     args = line.split()
-    if len(args) == 2 and (args[1] in self._available_meta_cmd):
-      # if 'register file' or 'register replica' exists,
+    if len(args) >= 2 and (args[1] in self._available_meta_cmd):
+      # if the sub command is not in self._meta_cmd_need_lfn
       # Don't need any auto completion
+      if (args[1] in self._meta_cmd_need_lfn):
+        # TODO
+        if (len(args) == 2):
+          cur_path = ""
+        elif ( len(args) > 2 ):
+          # If the line ends with ' '
+          # this means a new parameter begin.
+          if line.endswith(' '):
+            cur_path = ""
+          else:
+            cur_path = args[-1]
+          
+        result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
+        pass
       return result
 
     result = [i for i in self._available_meta_cmd if i.startswith(text)]
