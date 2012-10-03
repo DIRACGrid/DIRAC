@@ -1147,7 +1147,11 @@ File Catalog Client $Revision: 1.17 $Date:
         usage:
           lcd <local_directory>
     """    
-    localDir = args.split()[0]
+    argss = args.split()
+    if (len(argss) != 1):
+      print self.do_lcd.__doc__
+      return
+    localDir = argss[0]
     os.chdir(localDir)
     newDir = os.getcwd()
     print "Local directory: %s" % newDir
