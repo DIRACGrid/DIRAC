@@ -156,7 +156,10 @@ class X509Certificate:
         return S_OK( ext.get_value() )
     if ignoreDefault:
       return S_OK( False )
-    return S_OK( CS.getDefaultUserGroup() )
+    result = self.getIssuerDN()
+    if not result['OK']:
+      return result
+    return CS.findDefaultGroupForDN( result['Value'] )
 
   def hasVOMSExtensions( self ):
     """
