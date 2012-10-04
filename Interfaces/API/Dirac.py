@@ -1624,7 +1624,7 @@ class Dirac:
     else:
       return self.__errorReport( 'Expected single string for LFN' )
 
-    dataLogging = RPCClient( 'DataManagement/DataLogging', timeout = 120 )
+    dataLogging = RPCClient( 'DataManagement/DataLogging' )
     result = dataLogging.getFileLoggingInfo( lfn )
     if not result['OK']:
       return self.__errorReport( 'Problem during getFileLoggingInfo call', result['Message'] )
@@ -1959,7 +1959,7 @@ class Dirac:
     elif type( jobID ) == types.IntType:
       jobID = [jobID]
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     statusDict = monitoring.getJobsStatus( jobID )
     minorStatusDict = monitoring.getJobsMinorStatus( jobID )
     siteDict = monitoring.getJobsSites( jobID )
@@ -2021,7 +2021,7 @@ class Dirac:
       jobID = [jobID]
 
     summary = {}
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     for job in jobID:
       result = monitoring.getInputData( job )
       if result['OK']:
@@ -2198,7 +2198,7 @@ class Dirac:
 
     self.log.verbose( 'Will select jobs with last update %s and following conditions' % date )
     self.log.verbose( self.pPrint.pformat( conditions ) )
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobs( conditions, date )
     if not result['OK']:
       self.log.warn( result['Message'] )
@@ -2250,7 +2250,7 @@ class Dirac:
     if type( jobID ) == type( 1 ):
       jobID = [jobID]
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobsSummary( jobID )
     if not result['OK']:
       self.log.warn( result['Message'] )
@@ -2457,7 +2457,7 @@ class Dirac:
 
     summary = {}
     for job in jobID:
-      monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+      monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
       result = monitoring.getJobHeartBeatData( job )
       summary[job] = {}
       if not result['OK']:
@@ -2507,7 +2507,7 @@ class Dirac:
       except Exception, x:
         return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobAttributes( jobID )
     if not result['OK']:
       return result
@@ -2544,7 +2544,7 @@ class Dirac:
     elif type( jobID ) == type( [] ):
       return self.__errorReport( 'Expected integer or string for jobID' )
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobParameters( jobID )
     if not result['OK']:
       return result
@@ -2583,7 +2583,7 @@ class Dirac:
     elif type( jobID ) == type( [] ):
       return self.__errorReport( 'Expected int or string, not list' )
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobLoggingInfo( jobID )
     if not result['OK']:
       self.log.warn( 'Could not retrieve logging information for job %s' % jobID )
@@ -2631,7 +2631,7 @@ class Dirac:
     elif type( jobID ) == type( [] ):
       return self.__errorReport( 'Expected int or string, not list' )
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobParameter( jobID, 'StandardOutput' )
     if not result['OK']:
       return self.__errorReport( result, 'Could not retrieve job attributes' )
@@ -2676,7 +2676,7 @@ class Dirac:
       self.log.verbose( 'Requested service should have CS path: %s' % ( section ) )
       serviceURL = getServiceURL( '%s/%s' % ( system, service ) )
       self.log.verbose( 'Service URL is: %s' % ( serviceURL ) )
-      client = RPCClient( '%s/%s' % ( system, service ), timeout = 120 )
+      client = RPCClient( '%s/%s' % ( system, service ) )
       result = client.ping()
       if result['OK']:
         result['Value']['service url'] = serviceURL
@@ -2727,7 +2727,7 @@ class Dirac:
       except Exception, x:
         return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobJDL( jobID )
     if not result['OK']:
       return result
