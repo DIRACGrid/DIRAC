@@ -10,26 +10,26 @@ Script.setUsageMessage( """
 Monitor the status of the given FTS request
 
 Usage:
-   %s <lfn|fileOfLFN> sourceSE targetSE guid server
+   %s <lfn|fileOfLFN> sourceSE targetSE server GUID
 """ % Script.scriptName )
 
 Script.parseCommandLine()
 
 
 from DIRAC.DataManagementSystem.Client.FTSRequest     import FTSRequest
+import DIRAC
 import os
 
 args = Script.getPositionalArgs()
 
 if not len( args ) == 5:
   Script.showHelp()
-  DIRAC.exit( -1 )
 else:
   inputFileName = args[0]
   sourceSE = args[1]
   targetSE = args[2]
-  guid = args[3]
-  server = args[4]
+  server = args[3]
+  guid = args[4]
 
 if not os.path.exists( inputFileName ):
   lfns = [inputFileName]
@@ -43,7 +43,9 @@ oFTSRequest = FTSRequest()
 for lfn in lfns:
   oFTSRequest.setLFN( lfn )
 oFTSRequest.setFTSGUID( guid )
-oFTSRequest.setFTSServer( server )
 oFTSRequest.setSourceSE( sourceSE )
 oFTSRequest.setTargetSE( targetSE )
-oFTSRequest.monitor( untilTerminal = True )
+oFTSRequest.setFTSServer( server )
+result = oFTSRequest.monitor( untilTerminal = True, printOutput = True )
+if not result['OK']:
+  DIRAC.gLogger.error( 'Failed to issue FTS Request', result['Message'] )

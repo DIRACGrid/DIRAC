@@ -51,14 +51,14 @@ class SRM2Storage( StorageBase ):
     #	GFAL_CKSM_MD5,
     #	GFAL_CKSM_SHA1    
     # GFAL_CKSM_NULL = 0
-    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, 
+    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2,
                            "MD5" : 3, "SHA1" : 4, "NONE" : 0, "NULL" : 0 }
     if self.checksumType:
-      if str(self.checksumType).upper() in self.checksumTypes: 
-        gLogger.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
+      if str( self.checksumType ).upper() in self.checksumTypes:
+        gLogger.debug( "SRM2Storage: will use %s checksum check" % self.checksumType )
         self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
       else:
-        gLogger.warn("SRM2Storage: unknown checksum type %s, checksum check disabled")
+        gLogger.warn( "SRM2Storage: unknown checksum type %s, checksum check disabled" )
         ## GFAL_CKSM_NONE
         self.checksumType = 0
 
@@ -736,7 +736,7 @@ class SRM2Storage( StorageBase ):
     if errCode == 0:
       gLogger.info( 'SRM2Storage.__putFile: Successfully put file to storage.' )
       ## checksum check? return!
-      if self.checksumType: 
+      if self.checksumType:
         return S_OK( sourceSize )
       ## else compare sizes
       res = self.__executeOperation( dest_url, 'getFileSize' )
@@ -763,18 +763,18 @@ class SRM2Storage( StorageBase ):
                         timeout, src_spacetokendesc, dest_spacetokendesc ):
 
     try:
-      errCode, errStr = self.lcg_util.lcg_cp4( src_url, 
-                                               dest_url, 
-                                               self.defaulttype, 
+      errCode, errStr = self.lcg_util.lcg_cp4( src_url,
+                                               dest_url,
+                                               self.defaulttype,
                                                srctype,
-                                               dsttype, 
-                                               self.nobdii, 
-                                               self.voName, 
-                                               nbstreams, 
+                                               dsttype,
+                                               self.nobdii,
+                                               self.voName,
+                                               nbstreams,
                                                self.conf_file,
-                                               self.insecure, 
-                                               self.verbose, 
-                                               timeout, 
+                                               self.insecure,
+                                               self.verbose,
+                                               timeout,
                                                src_spacetokendesc,
                                                dest_spacetokendesc,
                                                self.checksumType )
@@ -870,10 +870,10 @@ class SRM2Storage( StorageBase ):
     """ Executes the requested functionality with the supplied url
     """
     fcn = None
-    if hasattr( self, method ) and callable( getattr(self, method) ):
+    if hasattr( self, method ) and callable( getattr( self, method ) ):
       fcn = getattr( self, method )
     if not fcn:
-      return S_ERROR("Unable to invoke %s, it isn't a member funtion of SRM2Storage" % method )
+      return S_ERROR( "Unable to invoke %s, it isn't a member funtion of SRM2Storage" % method )
     res = fcn( url )
 
     if not res['OK']:
@@ -889,7 +889,7 @@ class SRM2Storage( StorageBase ):
           return S_ERROR( 'Wrong Return structure' )
       return S_ERROR( res['Value']['Failed'][url] )
     return S_OK( res['Value']['Successful'][url] )
-   
+
   ############################################################################################
   #
   # Directory based methods
@@ -1391,10 +1391,10 @@ class SRM2Storage( StorageBase ):
     statDict = self.__parse_stat( urlDict['stat'] )
     if statDict['File']:
 
-      statDict.setdefault("Checksum", "")
+      statDict.setdefault( "Checksum", "" )
       if "checksum" in urlDict and ( urlDict['checksum'] != '0x' ):
         statDict["Checksum"] = urlDict["checksum"]
-        
+
       if urlDict.has_key( 'locality' ):
         urlLocality = urlDict['locality']
         if re.search( 'ONLINE', urlLocality ):
@@ -1888,10 +1888,10 @@ class SRM2Storage( StorageBase ):
       In gfal, for every method (synchronous or asynchronous), you can define a sendreceive timeout and a connect timeout.
       The connect timeout sets the maximum amount of time a client accepts to wait before establishing a successful TCP connection to SRM (default 60 seconds).
       The sendreceive timeout, allows a client to set the maximum time the send
-      of a request to SRM can take (normally all send operations return immediately unless there is no free TCP buffer) 
+      of a request to SRM can take (normally all send operations return immediately unless there is no free TCP buffer)
       and the maximum time to receive a reply (a token for example). Default 0, i.e. no timeout.
       The srm timeout for asynchronous requests default to 3600 seconds
-    
+
       gfal_set_timeout_connect (int value)
 
       gfal_set_timeout_sendreceive (int value)
@@ -1899,11 +1899,11 @@ class SRM2Storage( StorageBase ):
       gfal_set_timeout_bdii (int value)
 
       gfal_set_timeout_srm (int value)
-      
+
     """
     gLogger.debug( "SRM2Storage.__gfal_exec: Performing %s." % method )
     fcn = None
-    if hasattr( self.gfal, method ) and callable( getattr( self.gfal, method) ):
+    if hasattr( self.gfal, method ) and callable( getattr( self.gfal, method ) ):
       fcn = getattr( self.gfal, method )
     if not fcn:
       return S_ERROR( "Unable to invoke %s for gfal, it isn't a member function" % method )
@@ -1918,7 +1918,7 @@ class SRM2Storage( StorageBase ):
       return S_ERROR( "%s%s" % ( errStr, errMessage ) )
     gLogger.debug( "SRM2Storage.__gfal_exec: Successfully performed %s." % method )
     return S_OK( gfalObject )
-    
+
   # These methods are for retrieving output information
 
   def __get_results( self, gfalObject ):

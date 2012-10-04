@@ -292,7 +292,7 @@ class RequestDBMySQL( DB ):
               'ExecutionOrder', 'SourceSE', 'TargetSE', 'Catalogue',
               'CreationTime', 'SubmissionTime', 'LastUpdate']
     # get the pending SubRequest sorted by ExecutionOrder and LastUpdate
-    req = "SELECT * from SubRequests WHERE Status IN ( 'Waiting', 'Assigned' ) ORDER BY ExecutionOrder, LastUpdate"
+    req = "SELECT RequestID, ExecutionOrder, Status, RequestType, LastUpdate from SubRequests WHERE Status IN ( 'Waiting', 'Assigned' ) ORDER BY ExecutionOrder, LastUpdate"
     # now get sorted list of RequestID (according to the above)
     req = "SELECT * from ( %s ) as T1 GROUP BY RequestID" % req
     # and get the 100 oldest ones of Type requestType
@@ -847,7 +847,7 @@ class RequestDBMySQL( DB ):
     """ Get the request names associated to the jobsIDs
     """
     if not jobIDs:
-      return S_ERROR("RequestDB: unable to select requests, no jobIDs supplied")
+      return S_ERROR( "RequestDB: unable to select requests, no jobIDs supplied" )
 
     req = "SELECT JobID,RequestName from Requests where JobID IN (%s);" % intListToString( jobIDs )
     res = self._query( req )
@@ -936,7 +936,7 @@ class RequestDBMySQL( DB ):
       elif "Done" in result:
         subRequestStatus = "Done"
 
-    return S_OK( { "RequestStatus" : requestStatus, 
+    return S_OK( { "RequestStatus" : requestStatus,
                    "SubRequestStatus" : subRequestStatus } )
 
   def getCurrentExecutionOrder( self, requestID ):

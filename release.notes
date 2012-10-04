@@ -1,3 +1,158 @@
+[v6r4p27]
+
+*RSS
+NEW: CS.py - Space Tokens were hardcoded, now are obtained after scanning the StorageElements.
+
+*DMS
+FIX: SRM2Storage - removed hack for EOS (fixed server-side)
+
+*Transformation
+CHANGE: TransformationClient - limit to 100 the number of transformations in getTransformations()
+NEW: TransformationAgent - define the transformations type to use in the configuration
+
+*Interfacses
+FIX: Job.py -  fix for empty environmentDict (setExecutionEnv)
+
+[v6r4p26]
+
+*Transformation
+BUGFIX: TransformationClient - fixed calling sequence in rpcClient.getTransformationTasks()
+NEW: TransformationClient - added log messages in verbose level.
+
+[v6r4p25]
+
+*DMS
+BUGFIX: StrategyHandler - sanity check for wrong replication tree 
+
+[v6r4p24]
+
+*Core
+NEW: MySQL - add 'offset' argument to the buildCondition()
+
+*Transformation
+FIX: TransformationAgent - randomize the LFNs for removal/replication case when large number of those
+CHANGE: TransformationClient(DB,Manager) - get transformation files in smaller chunks to
+        improve performance
+FIX: TransformationAgent(DB) - do not return redundant LFNs in getTransformationFiles()        
+
+[v6r4p22]
+
+*DMS
+FIX: SRM2Storage - fix the problem with the CERN-EOS storage 
+
+[v6r4p21]
+
+*Core
+BUGFIX: SGETimeLeft - take into account dd:hh:mm:ss format of the cpu consumed
+
+[v6r4p20]
+
+*WMS
+BUGFIX: PilotDirector, GridPilotDirector - make sure that at least 1 pilot is to be submitted
+BUGFIX: GridPilotDirector - bug on how pilots are counted when there is an error in the submit loop.
+BUGFIX: dirac-pilot - proper install script installation on OSG sites
+
+[v6r4p19]
+
+*RMS
+FIX: RequestDBMySQL - optimized request selection query 
+
+[v6r4p18]
+
+*Configuration
+BUGFIX: CE2CSAgent.py - the default value must be set outside the loop
+
+*DMS
+NEW: dirac-dms-create-replication-request
+BUGFIX: dirac-dms-fts-submit, dirac-dms-fts-monitor - print out error messages
+
+*Resources
+BUGFIX: TorqueComputingElement.py, plus add UserName for shared Queues
+
+*WMS
+BUGFIX: JobManagerHandler - default value for pStart (to avoid Exception)
+
+[v6r4p17]
+
+*Core
+FIX: dirac-configure - setup was not updated in dirac.cfg even with -F option
+FIX: RequestHandler - added fix for Missing ConnectionError
+
+*DMS
+FIX: dirac-dms-clean-directory - command fails with `KeyError: 'Replicas'`.
+
+*WMS
+FIX: SiteDirector - adapt to the new method in the Matcher getMatchingTaskQueue 
+FIX: SiteDirector - added all SubmitPools to TQ requests
+
+[v6r4p16]
+
+*Core:
+FIX: dirac-install - bashrc/cshrc were wrongly created when using versionsDir
+
+*Accounting
+CHANGE: Added new simpler and faster bucket insertion mechanism
+NEW: Added more info when rebucketing
+
+*WMS
+CHANGE: Matcher - refactored to take into account job limits when providing info to directors
+NEW: JoAgent - reports SubmitPool parameter if applicable
+FIX: Matcher - bad codition if invalid result
+
+[v6r4p15]
+
+*WMS
+FIX: gLitePilotDirector - fix the name of the MyProxy server to avoid crasehs of the gLite WMS
+
+*Transformation
+FIX: TaskManager - when the file is on many SEs, wrong results were generated
+
+[v6r4p13]
+
+*DMS
+FIX: dirac-admin-allow-se - added missing interpreter line
+
+[v6r4p12]
+
+*DMS
+CHANGE: RemovalTask - for DataManager shifter change creds after failure of removal with her/his proxy.
+
+*RSS
+NEW: Added RssConfiguration class
+FIX: ResourceManagementClient  - Fixed wrong method name
+
+[v6r4p11]
+
+*Core
+FIX: GGUSTicketsClient - GGUS SOAP URL updated
+
+*DMS
+BUGFIX: ReplicaManager - wrong for loop
+
+*RequestManagement
+BUGFIX: RequestClient - bug fix in finalizeRequest()
+
+*Transformation
+FIX: TaskManager - fix for correctly setting the sites (as list)
+
+[v6r4p10]
+
+*RequestManagement
+BUGFIX: RequestContainer - in addSubrequest() function
+
+*Resources
+BUGFIX: SRM2Storage - in checksum type evaluation
+
+*ResourceStatusSystem
+BUGFIX: InfoGetter - wrong import statement
+
+*WMS
+BUGFIX: SandboxMetadataDB - __init__() can not return a value
+
+[v6r4p9]
+
+*DMS
+
 [v6r4p8]
 
 Bring in fixes from v6r3p17
@@ -255,7 +410,7 @@ CHANGE: return back to the release web2012041601
 
 *Transformation
 FIX: TransformationCleaningAgent - protection from deleting requests with jobID 0 
-Ä
+
 [v6r3p6]
 
 *Core

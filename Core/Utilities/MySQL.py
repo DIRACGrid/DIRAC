@@ -843,7 +843,7 @@ class MySQL:
 
 #############################################################################
   def buildCondition( self, condDict = None, older = None, newer = None,
-                      timeStamp = None, orderAttribute = None, limit = False ):
+                      timeStamp = None, orderAttribute = None, limit = False, offset = None ):
     """ Build SQL condition statement from provided condDict and other extra check on
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
@@ -950,7 +950,10 @@ class MySQL:
       condition = "%s ORDER BY %s" % ( condition, ', '.join( orderList ) )
 
     if limit:
-      condition = "%s LIMIT %d" % ( condition, limit )
+      if offset:
+        condition = "%s LIMIT %d OFFSET %d" % ( condition, limit, offset )
+      else:
+        condition = "%s LIMIT %d" % ( condition, limit )
 
     return condition
 

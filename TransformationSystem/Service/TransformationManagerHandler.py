@@ -96,14 +96,15 @@ class TransformationManagerHandlerBase( RequestHandler ):
     return self._parseRes( res )
 
   types_getTransformations = []
-  def export_getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate', orderAttribute = None, limit = None, extraParams = False ):
+  def export_getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate', orderAttribute = None, limit = None, extraParams = False, offset = None ):
     res = database.getTransformations( condDict = condDict,
                                   older = older,
                                   newer = newer,
                                   timeStamp = timeStamp,
                                   orderAttribute = orderAttribute,
                                   limit = limit,
-                                  extraParams = extraParams )
+                                  extraParams = extraParams,
+                                  offset = offset )
     return self._parseRes( res )
 
   types_getTransformation = [transTypes]
@@ -157,8 +158,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
     return self._parseRes( res )
 
   types_getTransformationFiles = []
-  def export_getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None ):
-    res = database.getTransformationFiles( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit, connection = False )
+  def export_getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None, offset = None ):
+    res = database.getTransformationFiles( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit, offset = offset, connection = False )
     return self._parseRes( res )
 
   ####################################################################
@@ -167,8 +168,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
   #
 
   types_getTransformationTasks = []
-  def export_getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime', orderAttribute = None, limit = None, inputVector = False ):
-    res = database.getTransformationTasks( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit, inputVector = inputVector )
+  def export_getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime', orderAttribute = None, limit = None, inputVector = False, offset = None ):
+    res = database.getTransformationTasks( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit, inputVector = inputVector, offset = offset )
     return self._parseRes( res )
 
   types_setTaskStatus = [transTypes, [ListType, IntType, LongType], StringTypes]
