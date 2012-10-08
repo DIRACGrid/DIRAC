@@ -336,7 +336,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     if newLFNs:
       self._logVerbose( "Getting replicas for %d files from catalog" % len( newLFNs ),
                          method = '__getDataReplicas', transID = transID )
-      res = self.__getDataReplicasRM( self, transID, newLFNs, active = active )
+      res = self.__getDataReplicasRM( transID, newLFNs, active )
       if res['OK']:
         newReplicas = res['Value']
         self.lock.acquire()
