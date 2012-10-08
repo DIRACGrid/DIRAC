@@ -56,7 +56,7 @@ class TransformationAgentSuccess( AgentsTestCase ):
       self.mockTC.getTransformationFiles.return_value = getTFiles
 
       transDict = {'TransformationID': 123, 'Status': 'Stopped' }
-      res = self.ta._getTransformationFiles( transDict, self.mockTC )
+      res = self.ta._getTransformationFiles( transDict, {'TransformationClient': self.mockTC} )
 
       self.assertTrue( res['OK'] )
 
