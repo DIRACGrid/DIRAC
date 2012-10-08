@@ -1,22 +1,26 @@
-import unittest, datetime
+import unittest, datetime, sys
 
 from mock import Mock
 
-from DIRAC.ResourceStatusSystem.Agent.mock.AgentModule import AgentModule
+from DIRAC.ResourceStatusSystem.Agent.mock.AgentModule import AgentModule as mockAgentModule
 
 class AgentsTestCase( unittest.TestCase ):
   """ Base class for the Agents test cases
   """
   def setUp( self ):
     self.mockTC = Mock()
-
-    import DIRAC.TransformationSystem.Agent.TransformationAgent as mockedModule
-    mockedModule.TransformationAgent.__bases__ = ( AgentModule, )
-    self.ta = mockedModule.TransformationAgent( 'ta', 'ta' )
+    import DIRAC.Core.Base.AgentModule as moduleMocked
+    moduleMocked.AgentModule = mockAgentModule
+    from DIRAC.TransformationSystem.Agent.TransformationAgent import TransformationAgent
+#    import DIRAC.TransformationSystem.Agent.TransformationAgent as mockedModule
+#    mockedModule.TransformationAgent.__bases__ = ( mockAgentModule, mockedModule.TransformationAgent.__bases__[1] )
+    self.ta = TransformationAgent( 'ta', 'ta' )
     self.ta.transfClient = self.mockTC
 
 
   def tearDown( self ):
+    sys.modules.pop( 'DIRAC.Core.Base.AgentModule' )
+    sys.modules.pop( 'DIRAC.TransformationSystem.Agent.TransformationAgent' )
     pass
 
 class TransformationAgentSuccess( AgentsTestCase ):
@@ -52,7 +56,7 @@ class TransformationAgentSuccess( AgentsTestCase ):
       self.mockTC.getTransformationFiles.return_value = getTFiles
 
       transDict = {'TransformationID': 123, 'Status': 'Stopped' }
-      res = self.ta._getTransformationFiles( transDict )
+      res = self.ta._getTransformationFiles( transDict, self.mockTC )
 
       self.assertTrue( res['OK'] )
 
