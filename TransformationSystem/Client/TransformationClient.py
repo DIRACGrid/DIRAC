@@ -105,8 +105,7 @@ class TransformationClient(Client,FileCatalogueBase):
       else:
         gLogger.verbose( "Result for limit %d, offset %d: %d" % ( limit, offsetToApply, len( res['Value'] ) ) )
         if res['Value']:
-          for transformation in res['Value']:
-            transformations.append( transformation )
+          transformations = transformations + res['Value']
           offsetToApply += limit
         if len( res['Value'] ) < limit:
           break
@@ -132,8 +131,7 @@ class TransformationClient(Client,FileCatalogueBase):
       else:
         gLogger.verbose( "Result for limit %d, offset %d: %d" % ( limit, offsetToApply, len( res['Value'] ) ) )
         if res['Value']:
-          for transformationFile in res['Value']:
-            transformationFiles.append( transformationFile )
+          transformationFiles = transformationFiles + res['Value']
           offsetToApply += limit
         if len( res['Value'] ) < limit:
           break
@@ -158,8 +156,7 @@ class TransformationClient(Client,FileCatalogueBase):
       else:
         gLogger.verbose( "Result for limit %d, offset %d: %d" % ( limit, offsetToApply, len( res['Value'] ) ) )
         if res['Value']:
-          for transformationTask in res['Value']:
-            transformationTasks.append( transformationTask )
+          transformationTasks = transformationTasks + res['Value']
           offsetToApply += limit
         if len( res['Value'] ) < limit:
           break
