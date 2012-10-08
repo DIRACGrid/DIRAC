@@ -33,7 +33,7 @@ from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 ## replica manager
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 ## startegy handler
-from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler, StrategyHandlerChannelNotDefined
+from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler, SHGraphCreationError 
 ## task to be executed
 from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 ## from RMS
@@ -127,17 +127,18 @@ class TransferAgent( RequestAgentBase ):
   ## exectuon modes
   __executionMode = { "Tasks" : True, "FTS" : False }
 
-  def __init__( self, agentName, baseAgentName=False, properties=dict() ):
+  def __init__( self, agentName, loadName, baseAgentName=False, properties=dict() ):
     """ c'tor
      
     :param self: self reference
     :param str agentName: agent name
+    :param str loadName: module name
     :param str baseAgentName: base agent name
     :param dict properties: whatever else properties
     """
     self.setRequestType( "transfer" )
     self.setRequestTask( TransferTask )
-    RequestAgentBase.__init__( self, agentName, baseAgentName, properties )
+    RequestAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
 
     ## gMonitor stuff
     self.monitor.registerActivity( "Replicate and register", "Replicate and register operations", 
@@ -258,7 +259,28 @@ class TransferAgent( RequestAgentBase ):
     :param self: self reference
     """
     if not self.__strategyHandler:
-      self.__strategyHandler = StrategyHandler( self.configPath() )
+      try:
+        res = self.transferDB().getChannelQueues()
+        if not res["OK"]:
+          errStr = "strategyHandler: Failed to get channel queues from TransferDB."
+          self.log.error( errStr, res['Message'] )
+          return S_ERROR( errStr )
+        channels = res["Value"] or False
+        res = self.transferDB().getChannelObservedThroughput( self.__throughputTimescale )
+        if not res["OK"]:
+          errStr = "strategyHandler: Failed to get observed throughput from TransferDB."
+          self.log.error( errStr, res['Message'] )
+          return S_ERROR( errStr )
+        bandwidths = res["Value"] or False
+        res = self.transferDB().getCountFileToFTS(  self.__throughputTimescale, "Failed" )
+        if not res["OK"]:
+          errStr = "strategyHandler: Failed to get Failed files counters from TransferDB."
+          self.log.error( errStr, res['Message'] )
+          return S_ERROR( errStr )
+        failedFiles = res["Value"] or False
+        self.__strategyHandler = StrategyHandler( self.configPath(), channels, bandwidths, failedFiles )      
+      except SHGraphCreationError, error:
+        self.log.exception( "strategyHandler: %s" % str(error) )
     return self.__strategyHandler
 
   def setupStrategyHandler( self ):
@@ -273,30 +295,23 @@ class TransferAgent( RequestAgentBase ):
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     channels = res["Value"] or False
-
     res = self.transferDB().getChannelObservedThroughput( self.__throughputTimescale )
     if not res["OK"]:
       errStr = "setupStrategyHandler: Failed to get observed throughput from TransferDB."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     bandwidths = res["Value"] or False
-
     res = self.transferDB().getCountFileToFTS(  self.__throughputTimescale, "Failed" )
     if not res["OK"]:
       errStr = "setupStrategyHandler: Failed to get Failed files counters from TransferDB."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     failedFiles = res["Value"] or False
-
     ## neither channels nor bandwidths 
     if not ( channels and bandwidths ):
       return S_ERROR( "setupStrategyHandler: No active channels found for replication" )
-    
-    self.strategyHandler().setBandwiths( bandwidths )
-    self.strategyHandler().setChannels( channels )
-    self.strategyHandler().setFailedFiles( failedFiles )
+    self.strategyHandler().setup( channels, bandwidths, failedFiles )
     self.strategyHandler().reset()
-
     return S_OK()
 
   @staticmethod
@@ -534,9 +549,7 @@ class TransferAgent( RequestAgentBase ):
         self.log.error("execute: not able to process %s request" % requestDict["requestName"] )
         self.log.error("execute: FTS scheduling has failed and Task mode is disabled" ) 
         ## put request back to RequestClient
-        res = self.requestClient().updateRequest( requestDict["requestName"], 
-                                                  requestDict["requestString"], 
-                                                  requestDict["sourceServer"] )
+        res = self.requestClient().updateRequest( requestDict["requestName"], requestDict["requestString"] )
         if not res["OK"]:
           self.log.error( "execute: failed to update request %s: %s" % ( requestDict["requestName"], 
                                                                          res["Message"] ) )
@@ -589,18 +602,14 @@ class TransferAgent( RequestAgentBase ):
         self.log.error("executeFTS: operation %s for subrequest %s is not supported in FTS mode" % ( operation, 
                                                                                                      iSubRequest ) )
         return S_OK( False )
-    
-    try:
-      schedule = self.schedule( requestDict )
-      if schedule["OK"]:
-        self.log.info("executeFTS: request %s has been processed" % requestDict["requestName"] )
-      else:
-        self.log.error( schedule["Message"] )
-        return schedule 
-    except StrategyHandlerChannelNotDefined, error:
-      self.log.info( str(error) )
-      return S_OK( False )
-    
+     
+    schedule = self.schedule( requestDict )
+    if schedule["OK"]:
+      self.log.info("executeFTS: request %s has been processed" % requestDict["requestName"] )
+    else:
+      self.log.error( schedule["Message"] )
+      return schedule 
+
     return S_OK( True )
           
   def executeTask( self, requestDict ):
@@ -746,14 +755,14 @@ class TransferAgent( RequestAgentBase ):
     ## if all subRequests are statuses = Done, 
     ## this will also set the Request status to Done
     requestString = requestObj.toXML()["Value"]
-    res = self.requestClient().updateRequest( requestName, requestString, requestDict["sourceServer"] )
+    res = self.requestClient().updateRequest( requestName, requestString )
     if not res["OK"]:
       self.log.error( "schedule: failed to update request", "%s %s" % ( requestName, res["Message"] ) )
       return res
 
     ## finalisation only if jobID is set
     if requestDict["jobID"]:
-      requestStatus = self.requestClient().getRequestStatus( requestName, requestDict["sourceServer"] )
+      requestStatus = self.requestClient().getRequestStatus( requestName )
       if not requestStatus["OK"]:
         self.log.error( "schedule: failed to get request status", "%s %s" % ( requestName, requestStatus["Message"] ) )
         return requestStatus
@@ -763,9 +772,7 @@ class TransferAgent( RequestAgentBase ):
       if ( requestStatus["SubRequestStatus"] not in ( "Waiting", "Assigned" ) ) and \
             ( requestStatus["RequestStatus"] == "Done" ):
         self.log.info( "schedule: will finalize request: %s" % requestName )
-        finalize = self.requestClient().finalizeRequest( requestName, 
-                                                         requestDict["jobID"], 
-                                                         requestDict["sourceServer"] )
+        finalize = self.requestClient().finalizeRequest( requestName, requestDict["jobID"] )
         if not finalize["OK"]:
           self.log.error("schedule: error in request finalization: %s" % finalize["Message"] )
           return finalize
@@ -846,16 +853,14 @@ class TransferAgent( RequestAgentBase ):
                                                                                    len(waitingFileReplicas), 
                                                                                    str(waitingFileTargets) ) ) 
       ## get the replication tree at least
-      tree = self.strategyHandler().determineReplicationTree( sourceSE, 
-                                                              waitingFileTargets, 
-                                                              waitingFileReplicas,  
-                                                              waitingFileSize, 
-                                                              strategy )
+      tree = self.strategyHandler().replicationTree( waitingFileReplicas,  
+                                                     waitingFileTargets, 
+                                                     waitingFileSize, 
+                                                     strategy )
+      if not tree["OK"]:
+        self.log.error( "scheduleFiles: %s" % tree["Message"] ) 
+        return tree
 
-      if not tree["OK"] or not tree["Value"]:
-        self.log.error( "scheduleFiles: failed to determine replication tree: ", 
-                        tree["Message"] if "Message" in tree else "tree is empty")
-        raise StrategyHandlerChannelNotDefined( "FTS" )
       tree = tree["Value"]
       self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
  
