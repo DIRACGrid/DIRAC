@@ -94,6 +94,12 @@ class TransformationDB( DB ):
                           'CreationTime',
                           'LastUpdateTime']
 
+    self.ADDITIONALPARAMETERS = ['TransformationID',
+                                 'ParameterName',
+                                 'ParameterValue',
+                                 'ParameterType'
+                                 ]
+
   def getName( self ):
     """  Get the database name
     """
@@ -413,13 +419,14 @@ class TransformationDB( DB ):
     paramType = 'StringType'
     if type( paramValue ) in [IntType, LongType]:
       paramType = 'IntType'
-    req = "INSERT INTO AdditionalParameters (TransformationID,ParameterName,ParameterValue,ParameterType)"
-    req = req + " VALUES (%s,'%s',%s,'%s');" % ( transID, paramName, paramValue, paramType )
+    req = "INSERT INTO AdditionalParameters (%s) VALUES (%s,'%s',%s,'%s');" % ( ', '.join( self.ADDITIONALPARAMETERS ),
+                                                                                transID, paramName,
+                                                                                paramValue, paramType )
     return self._update( req, connection )
 
   def __getAdditionalParameters( self, transID, connection = False ):
-    req = "SELECT ParameterName,ParameterValue,ParameterType"
-    req = req + " FROM AdditionalParameters WHERE TransformationID = %d" % transID
+    req = "SELECT %s FROM AdditionalParameters WHERE TransformationID = %d" % ( ', '.join( self.ADDITIONALPARAMETERS ),
+                                                                               transID )
     res = self._query( req, connection )
     if not res['OK']:
       return res
