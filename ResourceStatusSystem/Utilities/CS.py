@@ -208,6 +208,7 @@ def getSpaceTokenEndpoints():
     SEs = {}
     for se in ses:
       SEs[ se ] = Operations().getOptionsDict( 'Shares/Disk/%s' % se )[ 'Value' ]
+    return SEs
   else:
     return getTypedDictRootedAt( root = "", relpath = "/Resources/Shares/Disk" )
 
