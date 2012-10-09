@@ -260,25 +260,7 @@ class TransferAgent( RequestAgentBase ):
     """
     if not self.__strategyHandler:
       try:
-        res = self.transferDB().getChannelQueues()
-        if not res["OK"]:
-          errStr = "strategyHandler: Failed to get channel queues from TransferDB."
-          self.log.error( errStr, res['Message'] )
-          return S_ERROR( errStr )
-        channels = res["Value"] or {}
-        res = self.transferDB().getChannelObservedThroughput( self.__throughputTimescale )
-        if not res["OK"]:
-          errStr = "strategyHandler: Failed to get observed throughput from TransferDB."
-          self.log.error( errStr, res['Message'] )
-          return S_ERROR( errStr )
-        bandwidths = res["Value"] or {}
-        res = self.transferDB().getCountFileToFTS(  self.__throughputTimescale, "Failed" )
-        if not res["OK"]:
-          errStr = "strategyHandler: Failed to get Failed files counters from TransferDB."
-          self.log.error( errStr, res['Message'] )
-          return S_ERROR( errStr )
-        failedFiles = res["Value"] or {}
-        self.__strategyHandler = StrategyHandler( self.configPath(), channels, bandwidths, failedFiles )      
+        self.__strategyHandler = StrategyHandler( self.configPath() )      
       except SHGraphCreationError, error:
         self.log.exception( "strategyHandler: %s" % str(error) )
     return self.__strategyHandler
