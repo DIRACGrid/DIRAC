@@ -11,7 +11,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
-from DIRAC.Core.Security.CS import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 
 RIGHT_GET_JOB = 'GetJob'
 RIGHT_GET_INFO = 'GetInfo'
@@ -76,9 +76,9 @@ class JobPolicy:
       ownerName = ''
       if result['OK']:
         ownerName = result['Value']
-        
+
       result = self.getJobPolicy( owner, group )
-      
+
       if self.userName and self.userName == ownerName and self.userGroup == group:
         result[ 'UserIsOwner' ] = True
       else:
@@ -111,11 +111,11 @@ class JobPolicy:
     if Properties.NORMAL_USER in self.userProperties:
       for r in PROPERTY_RIGHTS[ Properties.NORMAL_USER ]:
         permDict[ r ] = True
-        
+
     # Give permissions of the generic pilot
     if Properties.GENERIC_PILOT in self.userProperties:
       for r in PROPERTY_RIGHTS[ Properties.GENERIC_PILOT ]:
-        permDict[ r ] = True    
+        permDict[ r ] = True
 
     # Job Owner can do everything with his jobs
     result = getUsernameForDN(jobOwnerDN)

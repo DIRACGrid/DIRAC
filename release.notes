@@ -1,18 +1,36 @@
-[v6r6-pre3]
+[v6r6-pre5]
 
 *Core
 CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
 NEW: SiteSEMapping - new utilities getSitesGroupedByTierLevel(), getTier1WithAttachedTier2(),
      getTier1WithTier2
+CHANGE: The DIRAC.Core.Security.CS is replaced by the Registry helper     
+BUGFIX: dirac-install - properly parse += in .cfg files
+FIX: Graphs.Utilities - allow two lines input in makeDataFromCVS()
+FIX: Graphs - allow Graphs package usage if even matplotlib is not installed
+NEW: dirac-compile-externals will retrieve the Externals compilation scripts from it's new location in github (DIRACGrid/Externals)
+NEW: Possibility to define a thread-global credentials for DISET connections (for web framework)
 
 *Framework
 NEW: SystemAdministratorClientCLI - possibility to define roothPath and lcgVersion when updating software
+
+*Accounting
+NEW: JobPlotter - added Normalized CPU plots to Job accounting
+FIX: DBUtils - plots going to greater granularity
 
 *DMS
 NEW: FileCatalog - torage usage info stored in all the directories, not only those with files
 NEW: FileCatalog - added utility to rebuild storage usage info from scratch
 BUGFIX: FileCatalogClientCLI - in do_ls() check properly the path existence
 FIX: FileCatalogClientCLI - protection against non-existing getCatalogCounters method in the LFC client
+FIX: DMS Agents - properly call superclass constructor with loadName argument
+FIX: ReplicaManager - in removeFile() non-existent file is marked as failed
+FIX: Make several classes pylint compliant: DataIntegrityHandler, DataLoggingHandler,
+     FileCatalogHandler, StorageElementHandler, StorageElementProxyHandler, TransferDBMonitoringHandler
+FIX: LogUploadAgent - remove the OSError exception in __replicate()
+FIX: FileCatalogClientCLI - multiple check of proper command inputs,
+     automatic completion of several commands with subcommands
+FIX: dirac-admin-ban-se - allow to go over all options read/write/check for each SE      
 
 *WMS
 CHANGE: RunNumber job parameter was removed from all the relevant places ( JDL, JobDB, etc )
@@ -31,11 +49,23 @@ BUGFIX: Matcher - proper reporting pilot site and CE
 CHANGE: JobManager - improved job Killing/Deleting logic
 CHANGE: dirac-pilot - treat the OSG case when jobs on the same WN all run in the same directory
 
+*RMS
+FIX: RequestDBFile - better exception handling in case no JobID supplied
+FIX: RequestManagerHandler - make it pylint compliant
+NEW: RequestProxyHandler - is forwarding requests from voboxes to central RequestManager. 
+     If central RequestManager is down, requests are dumped into file cache and a separate thread 
+     running in background is trying to push them into the central. 
+CHANGE: Major revision of the code      
+
+*RSS
+NEW: CS.py - Space Tokens were hardcoded, now are obtained after scanning the StorageElements.
+
 *Resources
 FIX: SSHComputingElement - enabled multiple hosts in one queue, more debugging
 CHANGE: SSHXXX Computing Elements - define SSH class once in the SSHComputingElement
 NEW: SSHComputingElement - added option to define private key location
 CHANGE: Get rid of legacy methods in ComputingElement
+NEW: enable definition of ChecksumType per SE
 
 *Interfaces
 CHANGE: Removed Script.initialize() from the API initialization
@@ -43,6 +73,32 @@ CHANGE: Some general API polishing
 
 *TS
 BUGFIX: TaskManager - bug fixed in treating tasks with input data
+FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
+
+[v6r5p6]
+
+FIX: merged in patch v6r4p27
+
+*Transformation
+BUGFIX: TransformationDB - StringType must be imported before it can be used
+
+[v6r5p5]
+
+FIX: merged in patch v6r4p26
+
+[v6r5p4]
+
+FIX: merged in patch v6r4p25
+
+[v6r5p3]
+
+*Transformation
+FIX: merged in patch v6r4p24
+
+[v6r5p2]
+
+*Web
+NEW: includes DIRACWeb tag web2012092101
 
 [v6r5p1]
 
@@ -179,6 +235,53 @@ CHANGE: request agents cleanup
 
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
+
+[v6r4p27]
+
+*RSS
+NEW: CS.py - Space Tokens were hardcoded, now are obtained after scanning the StorageElements.
+
+*DMS
+FIX: SRM2Storage - removed hack for EOS (fixed server-side)
+
+*Transformation
+CHANGE: TransformationClient - limit to 100 the number of transformations in getTransformations()
+NEW: TransformationAgent - define the transformations type to use in the configuration
+
+*Interfacses
+FIX: Job.py -  fix for empty environmentDict (setExecutionEnv)
+
+[v6r4p26]
+
+*Transformation
+BUGFIX: TransformationClient - fixed calling sequence in rpcClient.getTransformationTasks()
+NEW: TransformationClient - added log messages in verbose level.
+
+[v6r4p25]
+
+*DMS
+BUGFIX: StrategyHandler - sanity check for wrong replication tree 
+
+[v6r4p24]
+
+*Core
+NEW: MySQL - add 'offset' argument to the buildCondition()
+
+*Transformation
+FIX: TransformationAgent - randomize the LFNs for removal/replication case when large number of those
+CHANGE: TransformationClient(DB,Manager) - get transformation files in smaller chunks to
+        improve performance
+FIX: TransformationAgent(DB) - do not return redundant LFNs in getTransformationFiles()    
+
+[v6r4p23]
+
+*Web
+NEW: includes DIRACWeb tag web2012092101
+
+[v6r4p22]
+
+*DMS
+FIX: SRM2Storage - fix the problem with the CERN-EOS storage 
 
 [v6r4p21]
 

@@ -7,7 +7,7 @@ from DIRAC                                                      import gLogger, 
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager           import ReplicaManager
-import time, re
+import time, re, random
 
 AGENT_NAME = 'Transformation/TransformationAgent'
 
@@ -21,6 +21,7 @@ class TransformationAgent( AgentModule ):
     self.checkCatalog = self.am_getOption( 'CheckCatalog', 'yes' )
     self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
     self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
+    self.transformationTypes = self.am_getOption( 'TransformationTypes', [] )
 
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
@@ -53,8 +54,11 @@ class TransformationAgent( AgentModule ):
     """
     transName = self.am_getOption( 'Transformation', 'All' )
     if transName == 'All':
-      gLogger.info( "getTransformations: Initializing general purpose agent." )
-      res = self.transDB.getTransformations( {'Status':self.transformationStatus}, extraParams = True )
+      gLogger.info( "%s.getTransformations: Initializing general purpose agent." % AGENT_NAME )
+      transfDict = {'Status':['Active', 'Completing', 'Flush'] }
+      if self.transformationTypes:
+        transfDict['Type'] = self.transformationTypes
+      res = self.transDB.getTransformations( transfDict, extraParams = True )
       if not res['OK']:
         gLogger.error( "getTransformations: Failed to get transformations: %s" % res['Message'] )
         return res
@@ -77,7 +81,7 @@ class TransformationAgent( AgentModule ):
       gLogger.error( "processTransformation: Failed to obtain input data: %s." % res['Message'] )
       return res
     transFiles = res['Value']
-    lfns = res['LFNs']
+    lfns = [ f['LFN'] for f in transFiles ]
 
     if not lfns:
       gLogger.info( "processTransformation: No 'Unused' files found for transformation." )
@@ -96,8 +100,13 @@ class TransformationAgent( AgentModule ):
     replicateOrRemove = transDict['Type'].lower() in ["replication", "removal"]
     # Limit the number of LFNs to be considered for replication or removal as they are treated individually
     if replicateOrRemove:
-      lfns = lfns[0:self.maxFiles - 1]
+      if len( lfns ) <= self.maxFiles:
+        firstFile = 0
+      else:
+        firstFile = int( random.uniform( 0, len( lfns ) - self.maxFiles ) )
+      lfns = lfns[firstFile:firstFile + self.maxFiles - 1]
     unusedFiles = len( lfns )
+
     # Check the data is available with replicas
     res = self.__getDataReplicas( transID, lfns, active = not replicateOrRemove )
     if not res['OK']:

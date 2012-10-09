@@ -42,6 +42,7 @@ reqStr = """<?xml version="1.0" encoding="UTF-8" ?>
              OwnerGroup="None"
              RequestName="testRequest"
              SourceComponent="None"
+             JobID="Unknown"
 />
 
 <TRANSFER_SUBREQUEST element_type="dictionary">
@@ -139,6 +140,13 @@ class RequestDBFileTests(unittest.TestCase):
     ## get status
     self.assertEqual( self.requestDB.getRequestStatus( "testRequest" ),
                       {'OK': True, 'Value': {'SubRequestStatus': 'Done', 'RequestStatus': 'Done'}} )
+
+  def test_02_getRequest( self ):
+    """ getRequest and JobID """
+    getRequest = self.requestDB.getRequest("transfer")
+    self.assertEqual( getRequest["OK"], True )
+    self.assertEqual( getRequest["Value"]["JobID"], 0 )
+    
 
 ## test exeution
 if __name__ == "__main__":

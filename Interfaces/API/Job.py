@@ -809,16 +809,17 @@ class Job( API ):
     if not type( environmentDict ) == type( {} ):
       return self._reportError( 'Expected dictionary of environment variables', **kwargs )
 
-    environment = []
-    for var, val in environmentDict.items():
-      try:
-        environment.append( '='.join( [str( var ), str( val )] ) )
-      except Exception:
-        return self._reportError( 'Expected string for environment variable key value pairs', **kwargs )
+    if environmentDict:
+      environment = []
+      for var, val in environmentDict.items():
+        try:
+          environment.append( '='.join( [str( var ), str( val )] ) )
+        except Exception:
+          return self._reportError( 'Expected string for environment variable key value pairs', **kwargs )
 
-    envStr = ';'.join( environment )
-    description = 'Env vars specified by user'
-    self._addParameter( self.workflow, 'ExecutionEnvironment', 'JDL', envStr, description )
+      envStr = ';'.join( environment )
+      description = 'Env vars specified by user'
+      self._addParameter( self.workflow, 'ExecutionEnvironment', 'JDL', envStr, description )
     return S_OK()
 
   #############################################################################

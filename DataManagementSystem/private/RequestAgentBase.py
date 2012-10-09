@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 ## py imports 
 import time
 ## DIRAC imports 
-from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
+from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
@@ -70,15 +70,16 @@ class RequestAgentBase( AgentModule ):
   ## read request holder 
   __requestHolder = dict()
 
-  def __init__( self, agentName, baseAgentName=False, properties=dict() ):
+  def __init__( self, agentName, loadName, baseAgentName=False, properties=dict() ):
     """ c'tor
 
     :param self: self reference
     :param str agentName: name of agent
+    :param str loadName: name of module
     :param bool baseAgentName: whatever  
     :param dict properties: whatever else
     """
-    AgentModule.__init__( self, agentName, baseAgentName, properties )
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
 
     ## save config path
     self.__configPath = PathFinder.getAgentSection( agentName )
@@ -162,7 +163,7 @@ class RequestAgentBase( AgentModule ):
       return S_OK()
     return S_ERROR("%s not found in requestHolder" % requestName )
 
-  def saveRequest( self, requestName, requestString, requestServer ):
+  def saveRequest( self, requestName, requestString ):
     """ put request into requestHolder
 
     :param cls: class reference
@@ -171,7 +172,7 @@ class RequestAgentBase( AgentModule ):
     :param str requestServer: server URL
     """
     if requestName not in self.__requestHolder:
-      self.__requestHolder.setdefault( requestName, ( requestString, requestServer ) )
+      self.__requestHolder.setdefault( requestName, requestString )
       return S_OK()
     return S_ERROR("saveRequest: request %s cannot be saved, it's already in requestHolder")
 
@@ -182,8 +183,8 @@ class RequestAgentBase( AgentModule ):
     :param str requestName: request's name
     """
     if requestName in self.__requestHolder:
-      requestString, requestServer = self.__requestHolder[requestName]
-      reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
+      requestString = self.__requestHolder[requestName]
+      reset = self.requestClient().updateRequest( requestName, requestString )
       if not reset["OK"]:
         self.log.error("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
       self.log.debug("resetRequest: request %s has been put back with its initial state" % requestName )
@@ -196,9 +197,8 @@ class RequestAgentBase( AgentModule ):
     :param self: self reference
     """
     self.log.info("resetAllRequests: will put %s back requests" % len(self.__requestHolder) )
-    for requestName, requestTuple  in self.__requestHolder.items():
-      requestString, requestServer = requestTuple
-      reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
+    for requestName, requestString in self.__requestHolder.items():
+      reset = self.requestClient().updateRequest( requestName, requestString )
       if not reset["OK"]:
         self.log.error("resetAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
         continue
@@ -300,14 +300,12 @@ class RequestAgentBase( AgentModule ):
 
       requestDict = { "requestString" : str,
                       "requestName" : str,
-                      "sourceServer" : str,
                       "executionOrder" : list,
                       "jobID" : int }
     """
     ## prepare requestDict
     requestDict = { "requestString" : None,
                     "requestName" : None,
-                    "sourceServer" : None,
                     "executionOrder" : None,
                     "jobID" : None }
     ## get request out of RequestClient
@@ -322,7 +320,6 @@ class RequestAgentBase( AgentModule ):
     ## store values
     requestDict["requestName"] = res["Value"]["RequestName"]
     requestDict["requestString"] = res["Value"]["RequestString"]
-    requestDict["sourceServer"] = res["Value"]["Server"]
     ## get JobID
     try:
       requestDict["jobID"] = int( res["Value"]["JobID"] )
@@ -331,17 +328,14 @@ class RequestAgentBase( AgentModule ):
                                                                                  str(exc) ) )
       requestDict["jobID"] = 0
     ## get the execution order
-    res = self.requestClient().getCurrentExecutionOrder( requestDict["requestName"],
-                                                         requestDict["sourceServer"] )
+    res = self.requestClient().getCurrentExecutionOrder( requestDict["requestName"] )
     if not res["OK"]:
       msg = "Can not get the execution order for request %s." % requestDict["requestName"]
       self.log.error( msg, res["Message"] )
       return res
     requestDict["executionOrder"] = res["Value"]
     ## save this request
-    self.saveRequest( requestDict["requestName"], 
-                      requestDict["requestString"], 
-                      requestDict["sourceServer"] )
+    self.saveRequest( requestDict["requestName"], requestDict["requestString"] ) 
     ## return requestDict at least
     return S_OK( requestDict )
 

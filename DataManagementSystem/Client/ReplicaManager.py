@@ -1667,7 +1667,7 @@ class ReplicaManager( CatalogToStorage ):
         fileDict = {destPfn:localFile}
 
       res = destStorageElement.replicateFile( fileDict, catalogueSize, singleFile = True )
-      if localFile:
+      if localFile and os.path.exists( localFile ):
         os.remove( localFile )
 
       if res['OK']:
@@ -1982,10 +1982,11 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, res['Message'] )
       return res
     successful = {}
+    failed = {}
     existingFiles = []
     for lfn, exists in res['Value']['Successful'].items():
       if not exists:
-        successful[lfn] = True
+        failed[lfn] = "File does not exist in the catalog"
       else:
         existingFiles.append( lfn )
     res = self.fileCatalogue.getReplicas( existingFiles, True )
@@ -1994,7 +1995,7 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, res['Message'] )
       return res
     lfnDict = res['Value']['Successful']
-    failed = res['Value']['Failed']
+    failed.update( res['Value']['Failed'] )
     for lfn, reason in failed.items():
       if reason == 'File has zero replicas':
         lfnDict[lfn] = {}

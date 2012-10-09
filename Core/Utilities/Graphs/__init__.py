@@ -12,8 +12,15 @@
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.Graphs.Graph import Graph
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
+
+matplotlib = True
+try:
+  from DIRAC.Core.Utilities.Graphs.Graph import Graph
+  from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
+except:
+  matplotlib = False
+  pass
+
 import time
 
 common_prefs = {
@@ -131,47 +138,48 @@ def graph( data, file, *args, **kw ):
   #print "AT >>>> writeGraph time",time.time()-start
   return DIRAC.S_OK({'plot':file})
 
-def __checkKW( kw ):
-  if 'watermark' not in kw:
-    kw[ 'watermark' ] = "%s/DIRAC/Core/Utilities/Graphs/Dwatermark.png" % DIRAC.rootPath
-  return kw
-
-def barGraph( data, file, *args, **kw ):
-  kw = __checkKW( kw )
-  graph( data, file, plot_type = 'BarGraph', statistics_line=True, *args, **kw )
-
-def lineGraph( data, file, *args, **kw ):
-  kw = __checkKW( kw )
-  graph( data, file, plot_type = 'LineGraph', statistics_line=True, *args, **kw )
-
-def cumulativeGraph( data, file, *args, **kw ):
-  kw = __checkKW( kw )
-  graph( data, file, plot_type = 'LineGraph', cumulate_data = True, *args, **kw )
-
-def pieGraph( data, file, *args, **kw ):
-  kw = __checkKW( kw )
-  prefs = {'xticks':False, 'yticks':False, 'legend_position':'right'}
-  graph( data, file, prefs, plot_type = 'PieGraph', *args, **kw )
-
-def qualityGraph( data, file, *args, **kw ):
-  kw = __checkKW( kw )
-  prefs = {'plot_axis_grid':False}
-  graph( data, file, prefs, plot_type = 'QualityMapGraph', *args, **kw )
-
-def textGraph( text, file, *args, **kw ):
-  kw = __checkKW( kw )
-  prefs = {'text_image':text}
-  graph( {}, file, prefs, *args, **kw )
-
-def histogram( data, file, bins, *args, **kw ):
-  try:
-    from pylab import hist
-  except:
-    print "No pylab module available"  
-    return 
-  kw = __checkKW( kw )
-  values,vbins,patches = hist(data,bins)
-  histo = dict(zip(vbins,values))
-  span = (max(data)-min(data))/float(bins)*0.95
-  kw = __checkKW( kw )
-  graph( histo, file, plot_type = 'BarGraph', span=span, statistics_line=True, *args, **kw )
+if matplotlib:
+  def __checkKW( kw ):
+    if 'watermark' not in kw:
+      kw[ 'watermark' ] = "%s/DIRAC/Core/Utilities/Graphs/Dwatermark.png" % DIRAC.rootPath
+    return kw
+  
+  def barGraph( data, file, *args, **kw ):
+    kw = __checkKW( kw )
+    graph( data, file, plot_type = 'BarGraph', statistics_line=True, *args, **kw )
+  
+  def lineGraph( data, file, *args, **kw ):
+    kw = __checkKW( kw )
+    graph( data, file, plot_type = 'LineGraph', statistics_line=True, *args, **kw )
+  
+  def cumulativeGraph( data, file, *args, **kw ):
+    kw = __checkKW( kw )
+    graph( data, file, plot_type = 'LineGraph', cumulate_data = True, *args, **kw )
+  
+  def pieGraph( data, file, *args, **kw ):
+    kw = __checkKW( kw )
+    prefs = {'xticks':False, 'yticks':False, 'legend_position':'right'}
+    graph( data, file, prefs, plot_type = 'PieGraph', *args, **kw )
+  
+  def qualityGraph( data, file, *args, **kw ):
+    kw = __checkKW( kw )
+    prefs = {'plot_axis_grid':False}
+    graph( data, file, prefs, plot_type = 'QualityMapGraph', *args, **kw )
+  
+  def textGraph( text, file, *args, **kw ):
+    kw = __checkKW( kw )
+    prefs = {'text_image':text}
+    graph( {}, file, prefs, *args, **kw )
+  
+  def histogram( data, file, bins, *args, **kw ):
+    try:
+      from pylab import hist
+    except:
+      print "No pylab module available"  
+      return 
+    kw = __checkKW( kw )
+    values,vbins,patches = hist(data,bins)
+    histo = dict(zip(vbins,values))
+    span = (max(data)-min(data))/float(bins)*0.95
+    kw = __checkKW( kw )
+    graph( histo, file, plot_type = 'BarGraph', span=span, statistics_line=True, *args, **kw )
