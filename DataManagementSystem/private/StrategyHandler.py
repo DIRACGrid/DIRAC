@@ -335,14 +335,19 @@ class StrategyHandler( object ):
             self.log.warn( "minimiseTotalWait: %s" % ftsChannel["Message"] )
             continue 
           ftsChannel = ftsChannel["Value"]
-          if ftsChannel.channelID in tree:
-            self.log.warn( "minimiseTotalWait: channel '%s' already used in tree, skipping" % ftsChannel.channelName )
-            continue
-          channels.append( ( ftsChannel, sourceSE, targetSE ) )  
+          channels.append( ( ftsChannel, sourceSE, targetSE ) )
       if not channels:
-        return S_ERROR("minimiseTotalWait: FTS channels between %s and %s not defined or already used" %\
-                         ( sourceSEs, targetSEs ) )
-      self.log.info("minimiseTotalWait: found %s candiate channels, checkign activity" % len( channels) )
+        return S_ERROR("minimiseTotalWait: FTS channels between %s and %s not defined" % ( ",".join(sourceSEs),
+                                                                                           ",".join(targetSEs) ) )
+      ## filter out already used channels 
+      channels = [ (channel, sourceSE, targetSE) for channel, sourseSE, targetSE in channels if channel.channelID not in tree ]
+      if not channels:
+        self.log.error("minimiseTotalWait: all FTS channels between %s and %s are already used in tree" % ( ",".join(sourceSEs),
+                                                                                                            ",".join(targetSEs) ) )
+        return S_ERROR("minimiseTotalWait: all FTS channels between %s and %s are already used in tree" % ( ",".join(sourceSEs),
+                                                                                                            ",".join(targetSEs) ) )
+
+      self.log.debug("minimiseTotalWait: found %s candiate channels, checking activity" % len( channels) )
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
                    if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"] 
                    and channel.status == "Active" and channel.timeToStart < float("inf") ]
@@ -409,13 +414,18 @@ class StrategyHandler( object ):
             self.log.warn( "dynamicThroughput: %s" % ftsChannel["Message"] )
             continue 
           ftsChannel = ftsChannel["Value"]
-          if ftsChannel.channelID in tree:
-            self.log.warn( "dynamicThroughput: channel '%s' already used in tree, skipping" % ftsChannel.channelName )
-            continue
-          channels.append( ( ftsChannel, sourceSE, targetSE ) )  
+          channels.append( ( ftsChannel, sourceSE, targetSE ) )
+      ## no candidate channels found
       if not channels:
-        return S_ERROR("dynamicThroughput: unable to find candidate FTS channels")
-      self.log.info("dynamicThroughput: found %s candidate channels, checking activity" % len(channels) )
+        return S_ERROR("dynamicThroughput: FTS channels between %s and %s are not defined" % ( ",".join(sourceSEs),
+                                                                                               ",".join(targetSEs) ) )
+      ## filter out already used channels
+      channels = [ (channel, sourceSE, targetSE) for channel, sourceSE, targetSE in channels if channel.channelID not in tree ]
+      if not channels:
+        return S_ERROR("dynamicThroughput: all FTS channels between %s and %s are already used in tree" % ( ",".join(sourceSEs),
+                                                                                                            ",".join(targetSEs) ) )
+      ## filter out non-active channels
+      self.log.debug("dynamicThroughput: found %s candidate channels, checking activity" % len(channels) )
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
                    if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"] 
                    and channel.status == "Active" and channel.timeToStart < float("inf") ]
