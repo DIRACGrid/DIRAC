@@ -207,7 +207,11 @@ class Graph(object):
       raise TypeError( "supplied argument should be a Node instance" )
     if node not in self:
       self.__nodes.append( node )
-      node.makeProperty( "graph", self, True )
+      if not hasattr( node, "graph" ):
+        node.makeProperty( "graph", self )
+      else:
+        node.graph = self
+
     for edge in node:
       if edge not in self:
         self.addEdge( edge )
@@ -223,7 +227,12 @@ class Graph(object):
     if edge.toNode not in self:
       self.addNode( edge.toNode )
     self.__edges.append( edge )
-    edge.makeProperty( "graph", self, True )
+    if not hasattr( edge, "graph" ): 
+      edge.makeProperty( "graph", self )
+    else:
+      edge.graph = self
+    ## remove duplicates if any
+    self.__edges = list( set( self.__edges ) )
       
   def reset( self ):
     """ set visited for all nodes to False """
@@ -233,6 +242,9 @@ class Graph(object):
       edge.visited = False
 
   def walkAll( self, nodeFcn=None, edgeFcn=None, res=None ):
+    """ wall all nodes excuting :nodeFcn: on each node and :edgeFcn: on each edge
+    result is a dict { Node : result from :nodeFcn:, Edge : result from edgeFcn }
+    """
     res = res if res else {}
     self.reset()
     for node in self.nodes():

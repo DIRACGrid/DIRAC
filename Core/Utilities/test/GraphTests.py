@@ -172,13 +172,22 @@ class GraphTests(unittest.TestCase):
 
   def setUp( self ):
     """ setup test case """
-    
+    self.nodes = [ Node("1"), Node("2"), Node("3") ]
+    self.edges = [ self.nodes[0].connect( self.nodes[1] ) ]
 
-    pass
+  def testGraph(self):
+    """ ctor nodes edges connect walk """
+    gr = Graph( "testGraph", self.nodes, self.edges )
+    ## nodes and edges 
+    for node in self.nodes:
+      self.assertEqual( node in gr, True )
+    for edge in self.edges:
+      self.assertEqual( edge in gr, True )
+    self.assertEqual( sorted(self.nodes), sorted( gr.nodes() ) )
+    self.assertEqual( sorted(self.edges), sorted( gr.edges() ) )
+      
+      
 
-  def tearDown( self ):
-    """ destroy test case """
-    pass
 
 ## test execution
 if __name__ == "__main__":
