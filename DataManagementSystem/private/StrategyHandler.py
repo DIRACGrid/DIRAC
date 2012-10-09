@@ -113,7 +113,7 @@ class StrategyHandler( object ):
   source files, their replicas and target storage elements.
   """
 
-  def __init__( self, configSection, bandwidths=None, channels=None, failedFiles=None ):
+  def __init__( self, configSection, channels=None, bandwidths=None, failedFiles=None ):
     """c'tor
 
     :param self: self reference

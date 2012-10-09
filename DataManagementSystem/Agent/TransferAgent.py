@@ -265,19 +265,19 @@ class TransferAgent( RequestAgentBase ):
           errStr = "strategyHandler: Failed to get channel queues from TransferDB."
           self.log.error( errStr, res['Message'] )
           return S_ERROR( errStr )
-        channels = res["Value"] or False
+        channels = res["Value"] 
         res = self.transferDB().getChannelObservedThroughput( self.__throughputTimescale )
         if not res["OK"]:
           errStr = "strategyHandler: Failed to get observed throughput from TransferDB."
           self.log.error( errStr, res['Message'] )
           return S_ERROR( errStr )
-        bandwidths = res["Value"] or False
+        bandwidths = res["Value"]
         res = self.transferDB().getCountFileToFTS(  self.__throughputTimescale, "Failed" )
         if not res["OK"]:
           errStr = "strategyHandler: Failed to get Failed files counters from TransferDB."
           self.log.error( errStr, res['Message'] )
           return S_ERROR( errStr )
-        failedFiles = res["Value"] or False
+        failedFiles = res["Value"]
         self.__strategyHandler = StrategyHandler( self.configPath(), channels, bandwidths, failedFiles )      
       except SHGraphCreationError, error:
         self.log.exception( "strategyHandler: %s" % str(error) )
@@ -294,19 +294,19 @@ class TransferAgent( RequestAgentBase ):
       errStr = "setupStrategyHandler: Failed to get channel queues from TransferDB."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    channels = res["Value"] or False
+    channels = res["Value"]
     res = self.transferDB().getChannelObservedThroughput( self.__throughputTimescale )
     if not res["OK"]:
       errStr = "setupStrategyHandler: Failed to get observed throughput from TransferDB."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    bandwidths = res["Value"] or False
+    bandwidths = res["Value"]
     res = self.transferDB().getCountFileToFTS(  self.__throughputTimescale, "Failed" )
     if not res["OK"]:
       errStr = "setupStrategyHandler: Failed to get Failed files counters from TransferDB."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    failedFiles = res["Value"] or False
+    failedFiles = res["Value"]
     ## neither channels nor bandwidths 
     if not ( channels and bandwidths ):
       return S_ERROR( "setupStrategyHandler: No active channels found for replication" )
