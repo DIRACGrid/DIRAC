@@ -1,8 +1,8 @@
 # $HeadURL $
 ''' CS
- 
+
   This module offers "helpers" to access the CS, and do some processing.
-  
+
 '''
 
 import itertools
@@ -12,11 +12,11 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities                                import List
 from DIRAC.ResourceStatusSystem.Utilities                import Utils
 
-__RCSID__  = '$Id: $'
+__RCSID__ = '$Id: $'
 
-g_BaseRegistrySection   = '/Registry'
-g_BaseResourcesSection  = '/Resources'
-g_BaseConfigSection     = 'RSSConfiguration'
+g_BaseRegistrySection = '/Registry'
+g_BaseResourcesSection = '/Resources'
+g_BaseConfigSection = 'RSSConfiguration'
 #g_BaseConfigSection     = '/Operations/RSSConfiguration'
 
 ### CS HELPER FUNCTIONS
@@ -29,7 +29,7 @@ def getValue( val, default ):
   '''Wrapper around gConfig.getValue. Returns typed values'''
   res = gConfig.getValue( val, default )
   if Utils.isiterable( res ):
-    return [ Utils.typedobj_of_string(e) for e in res ]
+    return [ Utils.typedobj_of_string( e ) for e in res ]
   else:
     return Utils.typedobj_of_string( res )
 
@@ -53,7 +53,7 @@ def getTypedDictRootedAtOperations( relpath = "", root = g_BaseConfigSection ):
 
     for k in opts:
       if opts[ k ].find( "," ) > -1:
-        retval[ k ] = [ Utils.typedobj_of_string(e) for e in List.fromChar(opts[k]) ]
+        retval[ k ] = [ Utils.typedobj_of_string( e ) for e in List.fromChar( opts[k] ) ]
       else:
         retval[ k ] = Utils.typedobj_of_string( opts[ k ] )
     for i in secs:
@@ -82,7 +82,7 @@ def getTypedDictRootedAt( relpath = "", root = g_BaseConfigSection ):
 
     for k in opts:
       if opts[ k ].find( "," ) > -1:
-        retval[ k ] = [ Utils.typedobj_of_string(e) for e in List.fromChar(opts[k]) ]
+        retval[ k ] = [ Utils.typedobj_of_string( e ) for e in List.fromChar( opts[k] ) ]
       else:
         retval[ k ] = Utils.typedobj_of_string( opts[ k ] )
     for i in secs:
@@ -97,7 +97,7 @@ def getTypedDictRootedAt( relpath = "", root = g_BaseConfigSection ):
 
 def getOperationMails( op ):
   ''' Get emails from Operations section'''
-  return Operations().getValue( "EMail/%s" % op ,"" )
+  return Operations().getValue( "EMail/%s" % op , "" )
 
 # Setup functions ####################
 
@@ -117,15 +117,15 @@ def getSites( grids = ( 'LCG', 'DIRAC' ) ):
   ''' Get sites from CS '''
   if isinstance( grids, basestring ):
     grids = ( grids, )
-  sites = [Utils.unpack(gConfig.getSections('%s/Sites/%s'
-                                      % ( g_BaseResourcesSection, grid ), True))
+  sites = [Utils.unpack( gConfig.getSections( '%s/Sites/%s'
+                                      % ( g_BaseResourcesSection, grid ), True ) )
            for grid in grids]
-  return Utils.list_flatten(sites)
+  return Utils.list_flatten( sites )
 
 def getSiteTiers( sites ):
   ''' Get tiers from CS '''
-  return [ getValue("%s/Sites/%s/%s/MoUTierLevel"
-                    % (g_BaseResourcesSection, site.split(".")[0], site), 2) for site in sites ]
+  return [ getValue( "%s/Sites/%s/%s/MoUTierLevel"
+                    % ( g_BaseResourcesSection, site.split( "." )[0], site ), 2 ) for site in sites ]
 
 def getSiteTier( site ):
   ''' Get tier from site '''
@@ -136,29 +136,29 @@ def getT1s( grids = 'LCG' ):
   sites = getSites( grids )
   tiers = getSiteTiers( sites )
   pairs = itertools.izip( sites, tiers )
-  return [ s for (s, t) in pairs if t == 1 ]
+  return [ s for ( s, t ) in pairs if t == 1 ]
 
 # LFC functions #####################
 
 def getLFCSites():
   ''' Get LFC sites '''
-  return Utils.unpack(gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined'
-                             % g_BaseResourcesSection, True))
+  return Utils.unpack( gConfig.getSections( '%s/FileCatalogs/LcgFileCatalogCombined'
+                             % g_BaseResourcesSection, True ) )
 
 def getLFCNode( sites = None, readable = ( 'ReadOnly', 'ReadWrite' ) ):
   ''' Get LFC node '''
-  
+
   if sites is None:
     sites = getLFCSites()
-  
-  def getLFCURL(site, mode):
-    return gConfig.getValue("%s/FileCatalogs/LcgFileCatalogCombined/%s/%s"
-                            % ((g_BaseResourcesSection, site, mode)), "")
 
-  if isinstance(sites, basestring)   : sites    = [sites]
-  if isinstance(readable, basestring): readable = [readable]
+  def getLFCURL( site, mode ):
+    return gConfig.getValue( "%s/FileCatalogs/LcgFileCatalogCombined/%s/%s"
+                            % ( ( g_BaseResourcesSection, site, mode ) ), "" )
 
-  node = [[getLFCURL(site, r) for r in readable] for site in sites]
+  if isinstance( sites, basestring )   : sites = [sites]
+  if isinstance( readable, basestring ): readable = [readable]
+
+  node = [[getLFCURL( site, r ) for r in readable] for site in sites]
   node = [url for urlgroup in node for url in urlgroup] # Flatten the list
   return [n for n in node if n != ""]                   # Filter empty string
 
@@ -166,57 +166,64 @@ def getLFCNode( sites = None, readable = ( 'ReadOnly', 'ReadWrite' ) ):
 
 def getSEs():
   ''' Get StorageElements '''
-  return Utils.unpack(gConfig.getSections("/Resources/StorageElements"))
+  return Utils.unpack( gConfig.getSections( "/Resources/StorageElements" ) )
 
 def getSEHost( SE ):
   ''' Get StorageElement host '''
-  return gConfig.getValue('%s/StorageElements/%s/AccessProtocol.1/Host'
-                          % (g_BaseResourcesSection, SE), "")
+  return gConfig.getValue( '%s/StorageElements/%s/AccessProtocol.1/Host'
+                          % ( g_BaseResourcesSection, SE ), "" )
 
 def getSENodes():
   ''' Get StorageElement nodes '''
-  nodes = [getSEHost(SE) for SE in getSEs()]
+  nodes = [getSEHost( SE ) for SE in getSEs()]
   return [n for n in nodes if n != ""]
 
 def getSEStatus( SE, accessType ):
   ''' Get StorageElement status '''
-  return gConfig.getValue("%s/StorageElements/%s/%s" %
-                           (g_BaseResourcesSection, SE, accessType), "")
+  return gConfig.getValue( "%s/StorageElements/%s/%s" %
+                           ( g_BaseResourcesSection, SE, accessType ), "" )
 
-def getSEToken(SE):
+def getSEToken( SE ):
   ''' Get StorageElement token '''
-  return gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken" % SE, "")
+  return gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken" % SE, "" )
 
 # Space Tokens functions ############
 
 def getSpaceTokens():
   ''' Get Space Tokens '''
-  
+
   spaceTokens = []
-  
+
   ses = getSEs()
   for se in ses:
     sToken = getSEToken( se )
-    spaceTokens.append( sToken ) 
+    spaceTokens.append( sToken )
   return list( set( spaceTokens ) )
 
 def getSpaceTokenEndpoints():
   ''' Get Space Token Endpoints '''
-  return getTypedDictRootedAt(root="", relpath="/Resources/Shares/Disk")
+  ses = Operations().getSections( 'Shares/Disk' )
+  if ses['OK']:
+    ses = ses['Value']
+    SEs = {}
+    for se in ses:
+      SEs[ se ] = Operations().getOptionsDict( 'Shares/Disk/%s' % se )[ 'Value' ]
+  else:
+    return getTypedDictRootedAt( root = "", relpath = "/Resources/Shares/Disk" )
 
 # CE functions ######################
 
 def getCEType( site, ce, grid = 'LCG' ):
   ''' Get CE types '''
-  res = gConfig.getValue('%s/Sites/%s/%s/CEs/%s/CEType'
-                          % (g_BaseResourcesSection, grid, site, ce), "CE")
+  res = gConfig.getValue( '%s/Sites/%s/%s/CEs/%s/CEType'
+                          % ( g_BaseResourcesSection, grid, site, ce ), "CE" )
   return "CREAMCE" if res == "CREAM" else "CE"
 
 # CondDB functions ##################
 
 def getCondDBs():
   ''' Get CondDB'''
-  return Utils.unpack(gConfig.getSections("%s/CondDB" % g_BaseResourcesSection))
+  return Utils.unpack( gConfig.getSections( "%s/CondDB" % g_BaseResourcesSection ) )
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
