@@ -144,18 +144,21 @@ class StrategyHandler( object ):
     self.log.info( "AcceptableFailureRate = %s" % self.acceptableFailureRate )
     self.acceptableFailedFiles = gConfig.getValue( self.configSection + "/AcceptableFailedFiles", 5 )
     self.log.info( "AcceptableFailedFiles = %s" % self.acceptableFailedFiles )
-
+    self.rwUpdatePeriod = gConfig.getValue( self.configSection + "/RssRWUpdatePeriod", 300 )
+    self.log.info( "RSSUpdatePeriod = %s s" % self.rwUpdatePeriod )
+    self.rwUpdatePeriod = datetime.timedelta( seconds=self.rwUpdatePeriod )
+    ## bandwithds
     self.bandwidths = bandwidths if bandwidths else {}
+    ## channels
     self.channels = channels if channels else {}
+    ## distinct failed files per channel 
     self.failedFiles = failedFiles if failedFiles else {}
+    ## chosen strategy
     self.chosenStrategy = 0
     ## fts graph
     self.ftsGraph = None
     ## timestamp for last update
-    self.lastRSS = None
-    ## trees processed
-    self.trees = 0
-    
+    self.lastRssUpdate = datetime.datetime.now()    
     # dispatcher
     self.strategyDispatcher = { "MinimiseTotalWait" : self.minimiseTotalWait, 
                                 "DynamicThroughput" : self.dynamicThroughput,
@@ -224,7 +227,7 @@ class StrategyHandler( object ):
         ftsChannel = FTSChannel( fromNode, toNode, rwAttrs, roAttrs )
         graph.addEdge( ftsChannel ) 
     self.ftsGraph = graph
-    self.lastRSS = datetime.datetime.now()
+    self.lastRssUpdate = datetime.datetime.now()
     return S_OK()
 
   def updateGraph( self, rwAccess=False, replicationTree=None, size=0.0 ):
@@ -341,15 +344,18 @@ class StrategyHandler( object ):
           ftsChannel = ftsChannel["Value"]
           channels.append( ( ftsChannel, sourceSE, targetSE ) )
       if not channels:
-        return S_ERROR("minimiseTotalWait: FTS channels between %s and %s not defined" % ( ",".join(sourceSEs),
-                                                                                           ",".join(targetSEs) ) )
+        msg = "minimiseTotalWait: FTS channels between %s and %s not defined" % ( ",".join(sourceSEs), 
+                                                                                  ",".join(targetSEs) )
+        self.log.error( msg )
+        return S_ERROR( msg )
       ## filter out already used channels 
-      channels = [ (channel, sourceSE, targetSE) for channel, sourseSE, targetSE in channels if channel.channelID not in tree ]
+      channels = [ (channel, sourceSE, targetSE) for channel, sourceSE, targetSE in channels 
+                   if channel.channelID not in tree ]
       if not channels:
-        self.log.error("minimiseTotalWait: all FTS channels between %s and %s are already used in tree" % ( ",".join(sourceSEs),
-                                                                                                            ",".join(targetSEs) ) )
-        return S_ERROR("minimiseTotalWait: all FTS channels between %s and %s are already used in tree" % ( ",".join(sourceSEs),
-                                                                                                            ",".join(targetSEs) ) )
+        msg = "minimiseTotalWait: all FTS channels between %s and %s are already used in tree" % ( ",".join(sourceSEs),
+                                                                                                   ",".join(targetSEs) )
+        self.log.error( msg )
+        return S_ERROR( msg )
 
       self.log.debug("minimiseTotalWait: found %s candiate channels, checking activity" % len( channels) )
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
@@ -421,13 +427,18 @@ class StrategyHandler( object ):
           channels.append( ( ftsChannel, sourceSE, targetSE ) )
       ## no candidate channels found
       if not channels:
-        return S_ERROR("dynamicThroughput: FTS channels between %s and %s are not defined" % ( ",".join(sourceSEs),
-                                                                                               ",".join(targetSEs) ) )
+        msg = "dynamicThroughput: FTS channels between %s and %s are not defined" % ( ",".join(sourceSEs), 
+                                                                                      ",".join(targetSEs) )
+        self.log.error( msg )
+        return S_ERROR( msg )
       ## filter out already used channels
-      channels = [ (channel, sourceSE, targetSE) for channel, sourceSE, targetSE in channels if channel.channelID not in tree ]
+      channels = [ (channel, sourceSE, targetSE) for channel, sourceSE, targetSE in channels 
+                   if channel.channelID not in tree ]
       if not channels:
-        return S_ERROR("dynamicThroughput: all FTS channels between %s and %s are already used in tree" % ( ",".join(sourceSEs),
-                                                                                                            ",".join(targetSEs) ) )
+        msg = "dynamicThroughput: all FTS channels between %s and %s are already used in tree" % ( ",".join(sourceSEs), 
+                                                                                                   ",".join(targetSEs) )
+        self.log.error( msg )
+        return S_ERROR( msg )
       ## filter out non-active channels
       self.log.debug("dynamicThroughput: found %s candidate channels, checking activity" % len(channels) )
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
@@ -501,9 +512,12 @@ class StrategyHandler( object ):
     """
     ## update SEs rwAccess every 5 minutes
     now = datetime.datetime.now()
-    if self.lastRSS - now > datetime.datetime.timedelta(minutes=5):
-      self.updateGraph( rwAccess=True )
-      self.lastRSS = now
+    if self.lastRssUpdate - now > self.rwUpdatePeriod:
+      update = self.updateGraph( rwAccess=True )
+      if not update["OK"]:
+        self.log.warn("replicationTree: unable to update FTS graph: %s" % update["Message"] )
+      else:
+        self.lastRssUpdate = now
     ## get strategy
     strategy = strategy if strategy else self.__selectStrategy()
     if strategy not in self.getSupportedStrategies():
@@ -517,7 +531,10 @@ class StrategyHandler( object ):
       self.log.error( "replicationTree: %s" % tree["Message"] )
       return tree
     ## update graph edges
-    self.updateGraph( replicationTree=tree["Value"], size=size )
+    update = self.updateGraph( replicationTree=tree["Value"], size=size )
+    if not update["OK"]:
+      self.log.error("replicationTree: unable to update FTS graph: %s" % update["Message"] )
+      return update
     return tree
     
   def __selectStrategy( self ):
