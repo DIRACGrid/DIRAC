@@ -8,7 +8,7 @@
     =======================
  
     .. module: GraphTests
-    :synopsis: tests for Graph classes
+    :synopsis: tests for Graph module classes
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 """
 __RCSID__ = "$Id$"
@@ -66,6 +66,13 @@ class NodeTests( unittest.TestCase ):
     self.rwAttrs = { "rw1" : 0, "rw2" : (1,2,3) }
     self.name = "BrightStart"    
     self.node = Node( self.name, self.rwAttrs, self.roAttrs )
+    
+  def tearDown(self):
+    """ clean up """
+    del self.roAttrs
+    del self.rwAttrs
+    del self.name
+    del self.node
 
   def testNode( self ):
     """ node rwAttrs roAttrs connect """
@@ -120,7 +127,13 @@ class EdgeTests( unittest.TestCase ):
     self.roAttrs = { "ro1" : True, "ro2" : "I'm read only" }
     self.rwAttrs = { "rw1" : 0, "rw2" : (1,2,3) }
     
-    
+  def tearDown(self):
+    """ clean up """
+    del self.fromNode
+    del self.toNode
+    del self.roAttrs
+    del self.rwAttrs
+
   def testEdge( self ):
     """ c'tor connect attrs """
     edge = Edge( self.fromNode, self.toNode, self.rwAttrs, self.roAttrs )
@@ -167,17 +180,26 @@ class EdgeTests( unittest.TestCase ):
 class GraphTests(unittest.TestCase):
   """
   .. class:: GraphTests
-  
   """
-
   def setUp( self ):
     """ setup test case """
     self.nodes = [ Node("1"), Node("2"), Node("3") ]
-    self.edges = [ self.nodes[0].connect( self.nodes[1] ) ]
+    self.edges = [ self.nodes[0].connect( self.nodes[1] ),
+                   self.nodes[0].connect( self.nodes[2] ) ]
+    self.aloneNode = Node("4")
+    
+  def tearDown( self ):
+    """ clean up """
+    del self.nodes
+    del self.edges
+    del self.aloneNode
 
   def testGraph(self):
     """ ctor nodes edges connect walk """
+
+    ## create graph
     gr = Graph( "testGraph", self.nodes, self.edges )
+  
     ## nodes and edges 
     for node in self.nodes:
       self.assertEqual( node in gr, True )
@@ -185,9 +207,39 @@ class GraphTests(unittest.TestCase):
       self.assertEqual( edge in gr, True )
     self.assertEqual( sorted(self.nodes), sorted( gr.nodes() ) )
     self.assertEqual( sorted(self.edges), sorted( gr.edges() ) )
-      
-      
 
+    ## getNode
+    for node in self.nodes:
+      self.assertEqual( gr.getNode(node.name), node )
+
+    ## connect
+    aloneEdge = gr.connect( self.nodes[0], self.aloneNode )
+    self.assertEqual( self.aloneNode in gr, True  )
+    self.assertEqual( aloneEdge in gr, True  )
+
+    ## addNode
+    anotherNode = Node("5")
+    anotherEdge = anotherNode.connect( self.aloneNode )
+    gr.addNode( anotherNode )
+    self.assertEqual( anotherNode in gr, True )
+    self.assertEqual( anotherEdge in gr, True )
+
+    ## walking
+
+    ## walk no nodeFcn
+    ret = gr.walkAll()
+    self.assertEqual( ret, {} )
+    for node in gr.nodes():
+      self.assertEqual( node.visited, True )
+    gr.reset()
+    for node in gr.nodes():
+      self.assertEqual( node.visited, False )
+    ## walk with nodeFcn
+    def nbEdges( node ):
+      """ dummy node fcn """
+      return len( node.edges() ) 
+    ret = gr.walkAll( nodeFcn=nbEdges )
+    self.assertEqual( ret, { '1': 3, '2' : 0, '3': 0, '4' : 0, '5': 1 } )
 
 ## test execution
 if __name__ == "__main__":

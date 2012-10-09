@@ -195,11 +195,7 @@ class Graph(object):
     self.addEdge( edge )
     self.addNode( fromNode )
     self.addNode( toNode )
-
-  def subNode( self, node ):
-    """ TODO: remove node and edges that points from (to) it """
-    if node in self:
-      pass
+    return edge
     
   def addNode( self, node ):
     """ add Node :node: to graph """
@@ -243,7 +239,7 @@ class Graph(object):
 
   def walkAll( self, nodeFcn=None, edgeFcn=None, res=None ):
     """ wall all nodes excuting :nodeFcn: on each node and :edgeFcn: on each edge
-    result is a dict { Node : result from :nodeFcn:, Edge : result from edgeFcn }
+    result is a dict { Node.name : result from :nodeFcn:, Edge.name : result from edgeFcn }
     """
     res = res if res else {}
     self.reset()
@@ -271,58 +267,3 @@ class Graph(object):
       edge.visited = True 
       res.update( self.walkNode( edge.toNode, nodeFcn, edgeFcn, res ) )  
     return res
-
-if __name__ == "__main__":
-  
-  class A( object ):
-    __metaclass__ = DynamicProps 
-    
-  a = A()  
-  a.makeProperty( "myname", "a" )
-  print a._myname
-
-  print a.myname
-  a.myname = 10
-  print a.myname
-  a.makeProperty( "ro", 10, True )
-  print a.ro
-  try:
-    a.ro = 14
-  except AttributeError, err:
-    print err
-    
-  b = Node( "node1", { "foo" :1, "bar": False } ) 
-  print b.foo
-  print b.bar
-  b.foo = 2
-  print b.foo
-  print b.bar
-  c = Node( "node2", { "foo" : -1 } )
-  d = Node( "node3" )
-
-  b.connect( c )
-  c.connect( d )
-  d.connect( b )
-  
-  g = Graph( "sample" )
-  g.addNode(b)
-
-  g.addNode( Node( "alone") )
-
-  print g.nodes()
-  print g.edges()
-
-  g.walkNode( b )
-
-  def getName( node ):
-    return node.name
-  g.reset()
-  ret = g.walkAll( getName, getName )
-  print ret 
-
-  g.reset()
-  def getFoo( node ):
-    return node.foo if hasattr( node, "foo" ) else None 
-  
-  ret = g.walkAll( getFoo, getFoo )
-  print ret 
