@@ -23,6 +23,7 @@ __RCSID__ = "$Id$"
 
 ## imports 
 import random
+import datetime
 ## from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
@@ -150,6 +151,8 @@ class StrategyHandler( object ):
     self.chosenStrategy = 0
     ## fts graph
     self.ftsGraph = None
+    ## timestamp for last update
+    self.lastRSS = None
     ## trees processed
     self.trees = 0
     
@@ -221,25 +224,26 @@ class StrategyHandler( object ):
         ftsChannel = FTSChannel( fromNode, toNode, rwAttrs, roAttrs )
         graph.addEdge( ftsChannel ) 
     self.ftsGraph = graph
+    self.lastRSS = datetime.datetime.now()
     return S_OK()
 
-  def updateGraph( self, replicationTree, size, rwAccess=False ):
+  def updateGraph( self, rwAccess=False, replicationTree=None, size=0.0 ):
     """ update rw access for nodes (sites) and size anf files for edges (channels) """
     replicationTree = replicationTree if replicationTree else {}
     size = size if size else 0.0
-
-    ## rw access for sites
+    ## update nodes rw access for SEs
     if rwAccess:
       for lcgSite in self.ftsGraph.nodes():
         rwDict = self.__getRWAccessForSE( lcgSite.SEs.keys() )
         if not rwDict["OK"]:
           return rwDict
         lcgSite.SEs = rwDict["Value"]
-
-    for channel in self.ftsGraph.edges():
-      if channel.channelID in replicationTree:
-        channel.size += size 
-        channel.files += 1
+    ## update channels size and files
+    if replicationTree:
+      for channel in self.ftsGraph.edges():
+        if channel.channelID in replicationTree:
+          channel.size += size 
+          channel.files += 1
     return S_OK()
           
   def simple( self, sourceSEs, targetSEs ):
@@ -495,22 +499,25 @@ class StrategyHandler( object ):
     :param long size: file size
     :param str strategy: strategy name
     """
-    self.trees += 1 
+    ## update SEs rwAccess every 5 minutes
+    now = datetime.datetime.now()
+    if self.lastRSS - now > datetime.datetime.timedelta(minutes=5):
+      self.updateGraph( rwAccess=True )
+      self.lastRSS = now
+    ## get strategy
     strategy = strategy if strategy else self.__selectStrategy()
     if strategy not in self.getSupportedStrategies():
       return S_ERROR("replicationTree: unsupported strategy '%s'" % strategy )
 
     self.log.info("replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" %\
                     ( strategy, sourceSEs, targetSEs, size ) )
+    ## fire action from dispatcher
     tree = self.strategyDispatcher[strategy]( sourceSEs, targetSEs )
     if not tree["OK"]:
       self.log.error( "replicationTree: %s" % tree["Message"] )
       return tree
-    ## update RW access every 100 scheduled files 
-    rwAccess = False
-    if self.trees % 100 == 0:
-      rwAccess = True 
-    self.updateGraph( tree["Value"], size, rwAccess )
+    ## update graph edges
+    self.updateGraph( replicationTree=tree["Value"], size=size )
     return tree
     
   def __selectStrategy( self ):
