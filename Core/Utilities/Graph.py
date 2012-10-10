@@ -4,7 +4,6 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/09/27 07:22:15
 ########################################################################
-
 """ :mod: Graph 
     =======================
  
@@ -14,19 +13,19 @@
 
     graph 
 """
-
-__RCSID__ = "$Id $"
-
+__RCSID__ = "$Id$"
 ##
 # @file Graph.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/09/27 07:22:23
 # @brief Definition of Graph class.
+# pylint: disable=E1101
 
 class DynamicProps( type ):
   """
   .. class:: DynamicProps
 
+  metaclass allowing to create properties on the fly 
   """
   def __new__( mcs, name, bases, classdict ):
     """ new operator """
@@ -39,7 +38,7 @@ class DynamicProps( type ):
       :warn: could raise AttributeError if :name: of :_name: is already defined as an attribute  
       """
       if hasattr( self, "_"+name) or hasattr( self, name ):
-       raise AttributeError( "_%s or %s is already defined as a member" % (name, name) )    
+        raise AttributeError( "_%s or %s is already defined as a member" % (name, name) )    
       fget = lambda self: self._getProperty( name )
       fset = None if readOnly else lambda self, value: self._setProperty( name, value )
       setattr( self, '_' + name, value )         
@@ -67,7 +66,12 @@ class Node( object ):
   __metaclass__ = DynamicProps
 
   def __init__( self, name, rwAttrs=None, roAttrs=None ):
-    """ c'tor """
+    """ c'tor 
+
+    :param str name: node name
+    :param dict rwAttrs: read/write properties dict 
+    :param dict roAttrs: read-only properties dict
+    """
     self.makeProperty( "name", name, True ) 
     self.makeProperty( "visited", False )
     self.__edges = list()
@@ -89,6 +93,7 @@ class Node( object ):
     return self.__edges.__iter__()
 
   def edges( self ):
+    """ get edges """
     return self.__edges
 
   def addEdge( self, edge ):
@@ -116,7 +121,13 @@ class Edge( object ):
   __metaclass__ = DynamicProps
 
   def __init__( self, fromNode, toNode, rwAttrs=None, roAttrs=None ):
-    """ c'tor """
+    """ c'tor 
+    
+    :param Node fromNode: edge start
+    :param Node toNode: edge end
+    :param dict rwAttrs: read/write properties dict
+    :param dict roAttrs: read only properties dict
+    """
     if not isinstance( fromNode, Node ):
       raise TypeError("supplied argument fromNode should be a Node instance" )
     if not isinstance( toNode, Node ):
@@ -131,7 +142,6 @@ class Edge( object ):
     roAttrs = roAttrs if type(roAttrs) == dict else {}
     for attr, value in roAttrs.items():
       self.makeProperty( attr, value, True )
-
     if self not in self.fromNode:
       self.fromNode.addEdge( self )
 
@@ -139,12 +149,16 @@ class Edge( object ):
     """ str representation of an object """
     return self.name 
 
+  def __repr__( self ):
+    """ repr operator for dot format """
+    return "'%s' -> '%s';" % ( self.fromNode.name, self.toNode.name )
+
 ########################################################################
 class Graph(object):
   """
   .. class:: Graph
   
-  a generic graph with attributes attached to its nodes and edges
+  a generic directed graph with attributes attached to its nodes and edges
   """
   __metaclass__ = DynamicProps 
 
@@ -152,6 +166,9 @@ class Graph(object):
     """c'tor
 
     :param self: self reference
+    :param str name: graph name
+    :param list nodes: initial node list
+    :param list edges: initial edge list
     """
     self.makeProperty( "name", name, True )
     nodes = nodes if nodes else list()
@@ -186,7 +203,7 @@ class Graph(object):
   def getEdge(self, edgeName):
     """ get edge :edgeName: """
     for edge in self.__edges:
-      if egde.name == edgeName:
+      if edge.name == edgeName:
         return edge
 
   def connect( self, fromNode, toNode, rwAttrs=None, roAttrs=None ):
@@ -207,7 +224,6 @@ class Graph(object):
         node.makeProperty( "graph", self )
       else:
         node.graph = self
-
     for edge in node:
       if edge not in self:
         self.addEdge( edge )
@@ -215,20 +231,19 @@ class Graph(object):
           self.addNode( edge.toNode )
         
   def addEdge( self, edge ):
-    """ add edge to the graph """
+    """ add edge :edge: to the graph """
     if not isinstance( edge, Edge ):
       raise TypeError( "supplied edge argument should be an Edge instance" )
     if edge.fromNode not in self: 
       self.addNode( edge.fromNode )
     if edge.toNode not in self:
       self.addNode( edge.toNode )
-    self.__edges.append( edge )
+    if edge not in self: 
+      self.__edges.append( edge )
     if not hasattr( edge, "graph" ): 
       edge.makeProperty( "graph", self )
     else:
       edge.graph = self
-    ## remove duplicates if any
-    self.__edges = list( set( self.__edges ) )
       
   def reset( self ):
     """ set visited for all nodes to False """
@@ -267,3 +282,13 @@ class Graph(object):
       edge.visited = True 
       res.update( self.walkNode( edge.toNode, nodeFcn, edgeFcn, res ) )  
     return res
+
+  def __repr__( self ):
+    """ repr operator creating dot string """
+    out = [ "digraph '%s' {" % self.name ]
+    for node in self.nodes():
+      out.append( "%s;" % node.name )
+    for edges in self.edges():
+      out.append( repr(edge) )
+    out.append( "}" )
+    return "\n".join( out )

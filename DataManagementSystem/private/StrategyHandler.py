@@ -510,9 +510,9 @@ class StrategyHandler( object ):
     :param long size: file size
     :param str strategy: strategy name
     """
-    ## update SEs rwAccess every 5 minutes
+    ## update SEs rwAccess every rwUpdatePertion timedelta (default 300 s)
     now = datetime.datetime.now()
-    if self.lastRssUpdate - now > self.rwUpdatePeriod:
+    if now - self.lastRssUpdate > self.rwUpdatePeriod:
       update = self.updateGraph( rwAccess=True )
       if not update["OK"]:
         self.log.warn("replicationTree: unable to update FTS graph: %s" % update["Message"] )
