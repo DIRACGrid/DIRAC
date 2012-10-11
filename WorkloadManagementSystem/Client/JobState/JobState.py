@@ -107,6 +107,8 @@ class JobState( object ):
       result = self._getStoreClient().getManifest( self.__jid )
     if not result[ 'OK' ] or rawData:
       return result
+    if not result[ 'Value' ]:
+      return S_ERROR( "No manifest for job %s" % self.__jid )
     manifest = JobManifest()
     result = manifest.loadJDL( result[ 'Value' ] )
     if not result[ 'OK' ]:
