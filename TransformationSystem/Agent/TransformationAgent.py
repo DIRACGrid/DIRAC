@@ -391,7 +391,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         self._logWarn( "%s not found in the catalog." % lfn, method = "__getDataReplicasRM", transID = transID )
         missingLfns.append( lfn )
     if missingLfns:
-      res = tsClient.setFileStatusForTransformation( transID, 'MissingLFC', missingLfns )
+      res = clients['TransformationClient'].setFileStatusForTransformation( transID, 'MissingLFC', missingLfns )
       if not res['OK']:
         self._logWarn( "Failed to update status of missing files: %s." % res['Message'],
                         method = "__getDataReplicasRM", transID = transID )
