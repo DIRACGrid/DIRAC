@@ -5,17 +5,18 @@
 # Author :  Matvey Sapunov
 ########################################################################
 """
-  Sort sites by their name in CS. Sort can be done alphabetically or by country.
-  By default it's alphabetical sort (i.e. LCG.IHEP.cn, LCG.IHEP.su, LCG.IN2P3.fr)
+  Sort site names at CS in "/Resources" section. Sort can be alphabetic or by country postfix in a site name.
+  Alphabetic sort is default (i.e. LCG.IHEP.cn, LCG.IHEP.su, LCG.IN2P3.fr)
   
   Options:
-    -C --Country              Sort sites alphabetically with respect to country (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)
+    -C --country              Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)
+    -R --reverse              Reverse the sort order
     
   Argument:
-    -S --Section              Name of the subsection in the CS '/Resources/Sites/' section to be sorted (ie: LCG, DIRAC)
+    Name of the subsection in the CS '/Resources/Sites/' section to be sorted (i.e. LCG, DIRAC)
     
-  Example: dirac-admin-sort-cs-sites -C --Section DIRAC
-  Sort sites in subsection /Resources/Sites/DIRAC with respect to countries
+  Example: dirac-admin-sort-cs-sites -C DIRAC
+  Sort sites in subsection /Resources/Sites/DIRAC by country postfix
 """
 __RCSID__ = "$Id$"
 
@@ -27,30 +28,36 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getPropertie
 from DIRAC.ConfigurationSystem.Client.CSAPI                  import CSAPI
 from DIRAC.Core.Utilities.Time                               import dateTime , toString
 
-global SORTBYNAME
+global SORTBYNAME, REVERSE
 SORTBYNAME = True
+REVERSE = False
 
 def sortBy( arg ):
   global SORTBYNAME
   SORTBYNAME = False
 
-def byCountry( arg ):
+def isReverse( arg ):
+  global REVERSE
+  REVERSE = True
+
+def country( arg ):
   cb = arg.split( "." )
   if not len( cb ) == 3:
     gLogger.error( "%s is not in GRID.NAME.COUNTRY format " )
     return False
   return cb[ 2 ]
 
-Script.registerSwitch( "C", "country", "Alphabetical sort by countries first (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)" , sortBy )
+Script.registerSwitch( "C", "country", "Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)" , sortBy )
+Script.registerSwitch( "R", "reverse", "Reverse the sort order" , isReverse )
 
 Script.setUsageMessage( "\n".join( [ __doc__.split( "\n" )[ 1 ]
                                       ,"Usage:"
                                       ,"  %s [option|cfgfile] <Section>" % Script.scriptName
                                       ,"Optional arguments:"
-                                      ,"  Section:       Name of the subsection in '/Resources/Sites/' CS section to be sorted (i.e. LCG DIRAC)"
+                                      ,"  Section:       Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)"
                                       ,"Example:"
                                       ,"  dirac-admin-sort-cs-sites -C CLOUDS DIRAC"
-                                      ,"  sort sites by country in '/Resources/Sites/CLOUDS' and '/Resources/Sites/DIRAC' subsection"
+                                      ,"  sort site names by country postfix in '/Resources/Sites/CLOUDS' and '/Resources/Sites/DIRAC' subsection"
                                       ,"" ] ) )
                                      
 Script.parseCommandLine( ignoreErrors = True )
@@ -99,25 +106,25 @@ for i in resultList:
     continue
   hasRun = True
   if SORTBYNAME:
-    dirty = cfg[ "Resources" ][ "Sites" ][ i ].sortAlphabetically()
+    dirty = cfg[ "Resources" ][ "Sites" ][ i ].sortAlphabetically( ascending = not REVERSE )
   else:
-    dirty = cfg[ "Resources" ][ "Sites" ][ i ].sortBy( key = byCountry )
+    dirty = cfg[ "Resources" ][ "Sites" ][ i ].sortByKey( key = country , reverse = REVERSE )
 
 if not hasRun:
-  gLogger.notice( "Failed to find suitable subsections with sitenames to sort" )
+  gLogger.notice( "Failed to find suitable subsections with site names to sort" )
   DIRAC.exit( 0 )
 
 if not dirty:
-  gLogger.notice( "Nothing to do, sitenames are already sorted" )
+  gLogger.notice( "Nothing to do, site names are already sorted" )
   DIRAC.exit( 0 )
 
 timestamp = toString( dateTime() )
-stamp = "Sitenames are sorted by %s script at %s" % ( Script.scriptName , timestamp )
+stamp = "Site names are sorted by %s script at %s" % ( Script.scriptName , timestamp )
 cs.setOptionComment( "/Resources/Sites" , stamp )
 
 result = cs.commit()
 if not result[ "OK" ]:
   gLogger.error( "Failed to commit changes to CS", result[ "Message" ] )
   DIRAC.exit( 2 )
-gLogger.notice( "Sitenames are sorted and commited to CS" )
+gLogger.notice( "Site names are sorted and committed to CS" )
 DIRAC.exit( 0 )
