@@ -99,7 +99,7 @@ else:
   resultList = cfg[ "Resources" ][ "Sites" ].listSections()
 
 hasRun = False
-dirty = False
+isDirty = False
 for i in resultList:
   if not cfg.isSection( "Resources/Sites/%s" % i ):
     gLogger.error( "Subsection /Resources/Sites/%s does not exists" % i )
@@ -109,12 +109,14 @@ for i in resultList:
     dirty = cfg[ "Resources" ][ "Sites" ][ i ].sortAlphabetically( ascending = not REVERSE )
   else:
     dirty = cfg[ "Resources" ][ "Sites" ][ i ].sortByKey( key = country , reverse = REVERSE )
+  if dirty:
+    isDirty = True
 
 if not hasRun:
   gLogger.notice( "Failed to find suitable subsections with site names to sort" )
   DIRAC.exit( 0 )
 
-if not dirty:
+if not isDirty:
   gLogger.notice( "Nothing to do, site names are already sorted" )
   DIRAC.exit( 0 )
 
