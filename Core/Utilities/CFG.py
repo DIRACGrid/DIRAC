@@ -188,6 +188,16 @@ class CFG( object ):
       self.__orderedList.reverse()
     return unordered != self.__orderedList
 
+  def sortBy( self, key = None ):
+    """
+    Order this cfg by function refered in key, default is None
+    corresponds to alphabetic sort
+    returns true if modified
+    """
+    unordered = list( self.__orderedList )
+    self.__orderedList.sort( key = key )
+    return unordered != self.__orderedList
+
   @gCFGSynchro
   def deleteKey( self, key ):
     """
