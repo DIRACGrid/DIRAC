@@ -540,7 +540,7 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     data = ''
     for i in range( len( self.__certList ) ):
-      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[1] )
+      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
     return S_OK( data )
 
   def dumpPKeyToString( self ):
