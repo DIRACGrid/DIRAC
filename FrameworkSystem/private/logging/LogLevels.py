@@ -5,7 +5,7 @@ class LogLevels:
 
   def __init__(self):
     self.always    = 'ALWAYS'
-    self.notice   = 'NOTICE'
+    self.notice    = 'NOTICE'
     self.info      = 'INFO'
     self.verbose   = 'VERB'
     self.debug     = 'DEBUG'
