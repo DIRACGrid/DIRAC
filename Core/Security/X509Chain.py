@@ -70,6 +70,8 @@ class X509Chain:
       self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, pemData )
     except Exception, e:
       return S_ERROR( "Can't load pem data: %s" % str( e ) )
+    if not self.__certList:
+      return S_ERROR( "No certificates in the contents" )
     self.__loadedChain = True
     #Update internals
     self.__checkProxyness()
