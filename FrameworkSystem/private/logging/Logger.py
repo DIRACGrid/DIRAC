@@ -107,6 +107,8 @@ class Logger:
 
     self.__backendOptions[ 'Site' ] = DIRAC.siteName()
 
+    self.__backendOptions[ 'Color' ] = gConfig.getValue( "%s/LogColor" % cfgPath, False )
+
     #Configure outputs
     desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath, 'stdout' )
     self.registerBackends( List.fromChar( desiredBackends ) )

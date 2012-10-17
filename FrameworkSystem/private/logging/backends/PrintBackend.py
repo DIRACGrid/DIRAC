@@ -20,10 +20,10 @@ class PrintBackend( BaseBackend ):
 
 
   LEVEL_MAP = {
-      'ALWAYS' : ( None, 'white', False ),
-      'NOTICE' : ( None, 'cyan', False ),
+      'ALWAYS' : ( 'black', 'white', False ),
+      'NOTICE' : ( None, 'magenta', False ),
       'INFO'   : ( None, 'green', False ),
-      'VERB'   : ( None, 'magenta', False),
+      'VERB'   : ( None, 'cyan', False),
       'DEBUG'  : ( None, 'blue', False ),
       'WARN'   : ( None, 'yellow', False ),
       'ERROR'  : ( None, 'red', False ),
@@ -33,7 +33,7 @@ class PrintBackend( BaseBackend ):
 
   def doMessage( self, messageObject ):
     msg = self.composeString( messageObject )
-    if not sys.stdout.isatty():
+    if not self._optionsDictionary[ 'Color' ] or not sys.stdout.isatty():
       print( msg )
       return
     params = []
