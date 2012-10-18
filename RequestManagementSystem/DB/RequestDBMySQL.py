@@ -27,8 +27,7 @@ class RequestDBMySQL( DB ):
     
     :param self: self reference
     :param str systemInstance: ??? 
-    :param int maxQueueSize: queue size
-    
+    :param int maxQueueSize: queue size    
     """
     DB.__init__( self, 'RequestDB', 'RequestManagement/RequestDB', maxQueueSize )
     self.getIdLock = threading.Lock()
@@ -849,7 +848,7 @@ class RequestDBMySQL( DB ):
     if not jobIDs:
       return S_ERROR( "RequestDB: unable to select requests, no jobIDs supplied" )
 
-    req = "SELECT JobID,RequestName from Requests where JobID IN (%s);" % intListToString( jobIDs )
+    req = "SELECT JobID,RequestName FROM Requests WHERE JobID IN (%s);" % intListToString( jobIDs )
     res = self._query( req )
     if not res:
       return res
@@ -866,7 +865,7 @@ class RequestDBMySQL( DB ):
     if type(jobIDs) != list:
       return S_ERROR("RequestDB: wrong format for jobIDs argument, got %s, expecting a list" )
     # make sure list is uniqe and has only longs
-    jobIDs = list( set( [ long(jobID) for jobID in jobIDs ] ) )
+    jobIDs = list( set( [ int(jobID) for jobID in jobIDs if int(jobID) != 0 ] ) )
 
     reqCols = [ "RequestID", "RequestName", "JobID", "Status", 
                 "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent", 
