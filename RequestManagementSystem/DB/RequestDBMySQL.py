@@ -648,7 +648,7 @@ class RequestDBMySQL( DB ):
       res = self._update( req )
       if not res['OK']:
         return S_ERROR( 'Failed to update file in db' )
-    return S_OK()
+      return S_OK()
 
   def __setSubRequestFiles( self, ind, requestType, subRequestID, request ):
     """ This is the new method for updating the File table
@@ -858,6 +858,88 @@ class RequestDBMySQL( DB ):
       jobIDs[jobID] = requestName
     return S_OK( jobIDs )
 
+  def readRequestsForJobs( self, jobIDs ):
+    """ read and return Requests for jobs 
+    :param mixed jobIDs: list with jobIDs or long JobIDs
+    """
+
+    if type(jobIDs) != list:
+      return S_ERROR("RequestDB: wrong format for jobIDs argument, got %s, expecting a list" )
+    # make sure list is uniqe and has only longs
+    jobIDs = list( set( [ long(jobID) for jobID in jobIDs ] ) )
+
+    reqCols = [ "RequestID", "RequestName", "JobID", "Status", 
+                "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent", 
+                "CreationTime", "SubmissionTime", "LastUpdate" ] 
+    subCols = [ "SubRequestID", "Operation", "Arguments", "RequestType", "ExecutionOrder", "Error"
+                "SourceSE", "TargetSE", "Catalogue", "CreationTime", "SubmissionTime", "LastUpdate" ]
+    fileCols = [ "FileID", "LFN", "Size", "PFN", "GUID", "Md5", "Addler", "Attempt", "Status" , "Error" ]
+
+    requestNames = self.getRequestForJobs( jobIDs )
+    if not requestNames["OK"]:
+      return requestNames
+    requestNames = requestNames["Value"]
+
+    ## this will be returned
+    retDict = { "Successful" : dict(), "Failed" : dict() }
+    for jobID in retDict:
+      ## missing requests
+      if jobID not in requestNames:
+        retDict["Failed"][jobID] = "Request not found"  
+        continue
+      requestName = requestNames[jobID]
+
+      ## get request
+      query = "SELECT %s FROM Requests WHERE RequestName = %s;" % ( ",".join( reqCols ), requestName ) 
+      query = self._query( query )
+      if not query["OK"]:
+        retDict["Failed"][jobID] = query["Message"] 
+        continue 
+      query = query["Value"] if query["Value"] else None
+      if not query:
+        retDict["Failed"][jobID] = "Unable to read request attributes."  
+        continue
+
+      requestObj = RequestContainer( init=False )
+      reqAttrs = dict( zip( reqCols, query ) )      
+      requestObj.setRequestAttributes( reqAttrs )
+
+      subCols = [ "SubRequestID", "Operation", "Arguments", "RequestType", "ExecutionOrder", "Error"
+                  "SourceSE", "TargetSE", "Catalogue", "CreationTime", "SubmissionTime", "LastUpdate" ]
+      query = "SELECT %s FROM SubRequests WHERE RequestID=%s;" % ( ",".join(subCols), reqAttrs["RequestID"] )
+      query = self._query(query)
+      if not query["OK"]:
+        retDict["Failed"][jobID] = query["Message"] 
+      
+      query = query["Value"] if query["Value"] else None
+      if not query:
+        retDict["Failed"][jobID] = "Unable to read subrequest attributes."  
+        continue
+      
+      ## get sub-requests
+      for recTuple in query:
+        subReqAttrs = dict( zip( subCols, recTuple ) )
+        subType = subReqAttrs["RequestType"]
+        subReqAttrs["ExecutionOrder"] = int( subReqAttrs["ExecutionOrder"] )
+        del subReqAttrs["RequestType"]
+        index = requestObj.initiateSubRequest( subType )
+        index = index["Value"]
+        requestObj.setSubRequestAttributes( index, subType, subReqAttrs )
+
+        ## get files
+        subFiles = []
+        fileQuery = "SELECT %s FROM Files WHERE SubRequestID = %s ORDER BY FileID;" % ( ",".join(fileCols), subReqAttrs["SubRequestID"] )
+        fileQuery = self._query( fileQuery )
+        if fileQuery["OK"] and fileQuery["Value"]:
+          for fileRec in fileQuery["Value"]:
+            subFiles.append( dict( zip(fileCols, fileRec) ) )
+        if subFiles:
+          requestObj.setSubRequestFiles( index, subType, subFiles )
+      
+      retDict["Successful"][jobID] = requestObj.toXML()
+      
+    return S_OK( retDict )
+    
   def getDigest( self, requestID ):
     """ Get digest of the given request specified by its requestID
     """
