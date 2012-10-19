@@ -413,7 +413,7 @@ class RequestClient( Client ):
     :return: S_OK( { "Successful" : { jobID1 : RequestContainer, ... },
                      "Failed" : { jobIDn : "Fail reason" } } ) 
     """
-    for requestRPCClient in self.requestRPCClients( url, ["central"] ):
+    for requestRPCClient in self.requestRPCClients( url, ["local", "central"] ):
       ret = requestRPCClient.readRequestsForJobs( jobIDs )
       if not ret["OK"]:
         return ret
@@ -422,8 +422,11 @@ class RequestClient( Client ):
         return S_ERROR("No values returned")
       ## create RequestContainers out of xml strings for successful reads
       if "Successful" in ret:
-        for jobID, xmlStr in ret["Successful"]:
-          ret["Successful"][jobID] = RequestContainer( xmlStr, True )
+        
+        for jobID, xmlStr in ret["Successful"].items():
+          req = RequestContainer( init = False )
+          req.parseRequest( request=xmlStr )
+          ret["Successful"][jobID] = req
       return S_OK( ret )
 
     return S_ERROR( "RequestClient.readRequestsForJobs: no RPC clients." )

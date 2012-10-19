@@ -870,7 +870,7 @@ class RequestDBMySQL( DB ):
     reqCols = [ "RequestID", "RequestName", "JobID", "Status", 
                 "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent", 
                 "CreationTime", "SubmissionTime", "LastUpdate" ] 
-    subCols = [ "SubRequestID", "Operation", "Arguments", "RequestType", "ExecutionOrder", "Error"
+    subCols = [ "SubRequestID", "Operation", "Arguments", "RequestType", "ExecutionOrder", "Error",
                 "SourceSE", "TargetSE", "Catalogue", "CreationTime", "SubmissionTime", "LastUpdate" ]
     fileCols = [ "FileID", "LFN", "Size", "PFN", "GUID", "Md5", "Addler", "Attempt", "Status" , "Error" ]
 
@@ -881,42 +881,43 @@ class RequestDBMySQL( DB ):
 
     ## this will be returned
     retDict = { "Successful" : dict(), "Failed" : dict() }
-    for jobID in retDict:
+    for jobID in jobIDs:
       ## missing requests
       if jobID not in requestNames:
         retDict["Failed"][jobID] = "Request not found"  
         continue
+      
       requestName = requestNames[jobID]
 
       ## get request
-      query = "SELECT %s FROM Requests WHERE RequestName = %s;" % ( ",".join( reqCols ), requestName ) 
-      query = self._query( query )
-      if not query["OK"]:
-        retDict["Failed"][jobID] = query["Message"] 
-        continue 
-      query = query["Value"] if query["Value"] else None
-      if not query:
+      queryStr = "SELECT %s FROM Requests WHERE RequestName = '%s';" % ( ",".join( reqCols ), requestName ) 
+      queryRes = self._query( queryStr )
+      if not queryRes["OK"]:
+        retDict["Failed"][jobID] = queryRes["Message"] 
+        continue
+      
+      queryRes = queryRes["Value"] if queryRes["Value"] else None
+      if not queryRes:
         retDict["Failed"][jobID] = "Unable to read request attributes."  
         continue
 
       requestObj = RequestContainer( init=False )
-      reqAttrs = dict( zip( reqCols, query ) )      
+      reqAttrs = dict( zip( reqCols, queryRes[0] ) )      
       requestObj.setRequestAttributes( reqAttrs )
 
-      subCols = [ "SubRequestID", "Operation", "Arguments", "RequestType", "ExecutionOrder", "Error"
-                  "SourceSE", "TargetSE", "Catalogue", "CreationTime", "SubmissionTime", "LastUpdate" ]
-      query = "SELECT %s FROM SubRequests WHERE RequestID=%s;" % ( ",".join(subCols), reqAttrs["RequestID"] )
-      query = self._query(query)
-      if not query["OK"]:
-        retDict["Failed"][jobID] = query["Message"] 
+      queryStr = "SELECT %s FROM SubRequests WHERE RequestID=%s;" % ( ",".join(subCols), reqAttrs["RequestID"] )
+      queryRes = self._query( queryStr )
+      if not queryRes["OK"]:
+        retDict["Failed"][jobID] = queryRes["Message"] 
+        continue
       
-      query = query["Value"] if query["Value"] else None
-      if not query:
+      queryRes = queryRes["Value"] if queryRes["Value"] else None
+      if not queryRes:
         retDict["Failed"][jobID] = "Unable to read subrequest attributes."  
         continue
       
       ## get sub-requests
-      for recTuple in query:
+      for recTuple in queryRes:
         subReqAttrs = dict( zip( subCols, recTuple ) )
         subType = subReqAttrs["RequestType"]
         subReqAttrs["ExecutionOrder"] = int( subReqAttrs["ExecutionOrder"] )
@@ -928,14 +929,14 @@ class RequestDBMySQL( DB ):
         ## get files
         subFiles = []
         fileQuery = "SELECT %s FROM Files WHERE SubRequestID = %s ORDER BY FileID;" % ( ",".join(fileCols), subReqAttrs["SubRequestID"] )
-        fileQuery = self._query( fileQuery )
-        if fileQuery["OK"] and fileQuery["Value"]:
-          for fileRec in fileQuery["Value"]:
+        fileQueryRes = self._query( fileQuery )
+        if fileQueryRes["OK"] and fileQueryRes["Value"]:
+          for fileRec in fileQueryRes["Value"]:
             subFiles.append( dict( zip(fileCols, fileRec) ) )
         if subFiles:
           requestObj.setSubRequestFiles( index, subType, subFiles )
       
-      retDict["Successful"][jobID] = requestObj.toXML()
+      retDict["Successful"][jobID] = requestObj.toXML()["Value"]
       
     return S_OK( retDict )
     

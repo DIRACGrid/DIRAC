@@ -253,6 +253,6 @@ class RequestManagerHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "RequestManagerHandler.readRequestsForJobs: Exception while selecting requests."
-      gLogger.exception( errStr, '', lException=x )
+      gLogger.exception( errStr )
       return S_ERROR( errStr )  
 
