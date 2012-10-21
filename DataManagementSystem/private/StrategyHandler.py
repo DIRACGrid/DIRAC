@@ -215,7 +215,7 @@ class StrategyHandler( object ):
           tree = self.__swarm( targetSEs[0], replicas.keys() )
    
     ## sanity check for tree, just checking if all targetSEs are in
-    missing = set( targetSEs ) - set( [ rep["DestSE"] for rep in tree ] )
+    missing = set( targetSEs ) - set( [ rep["DestSE"] for rep in tree.values() ] )
     if missing:
       msg = "wrong replication tree, missing %s targetSEs" % ",".join( [ tSE for tSE in missing ] )
       self.log.error( "determineReplicationTree: %s" % msg )
