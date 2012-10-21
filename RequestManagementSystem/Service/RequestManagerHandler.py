@@ -214,3 +214,16 @@ class RequestManagerHandler(RequestHandler):
       errStr = "RequestManagerHandler.selectRequests: Exception while selecting requests."
       gLogger.exception( errStr, '', lException=error)
       return S_ERROR(errStr)  
+
+  types_readRequestsForJobs = [ ListType ]
+  def export_readRequestsForJobs( self, jobIDs ):
+    """ read requests for jobs given list of jobIDs """
+    gLogger.verbose("RequestManagerHandler.readRequestsForJobs: Attepting to read requests associated to the jobs." )
+    try:
+      res = requestDB.readRequestsForJobs( jobIDs )
+      return res
+    except Exception, x:
+      errStr = "RequestManagerHandler.readRequestsForJobs: Exception while selecting requests."
+      gLogger.exception( errStr )
+      return S_ERROR( errStr )  
+
