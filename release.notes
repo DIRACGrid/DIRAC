@@ -1,3 +1,22 @@
+[v6r4p28]
+
+*Interfaces
+CHANGE: Dirac.py, DiracAdmin.py - remove explicit timeout on RPC client instantiation
+
+*RSS
+FIX: CS.py - fix for updated CS location (backward compatible)
+
+*DMS
+BUGFIX: StrategyHandler - bug fixed determineReplicationTree()
+FIX: FTSRequest - add checksum string to SURLs file before submitting an FTS job
+
+*WMS
+FIX: JobWrapper - protection for double quotes in JobName
+CHANGE: SiteDirector - switched some logging messages from verbose to info level
+
+*RMS
+NEW: Request(Client,DBMySQL,Manager) - added readRequestsForJobs() method
+
 [v6r4p27]
 
 *RSS
