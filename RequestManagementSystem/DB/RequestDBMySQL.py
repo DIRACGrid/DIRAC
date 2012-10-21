@@ -27,8 +27,7 @@ class RequestDBMySQL( DB ):
     
     :param self: self reference
     :param str systemInstance: ??? 
-    :param int maxQueueSize: queue size
-    
+    :param int maxQueueSize: queue size    
     """
     DB.__init__( self, 'RequestDB', 'RequestManagement/RequestDB', maxQueueSize )
     self.getIdLock = threading.Lock()
@@ -642,7 +641,7 @@ class RequestDBMySQL( DB ):
       res = self._update( req )
       if not res['OK']:
         return S_ERROR( 'Failed to update file in db' )
-    return S_OK()
+      return S_OK()
 
   def __setSubRequestFiles( self, ind, requestType, subRequestID, request ):
     """ This is the new method for updating the File table
@@ -843,7 +842,7 @@ class RequestDBMySQL( DB ):
     if not jobIDs:
       return S_ERROR( "RequestDB: unable to select requests, no jobIDs supplied" )
 
-    req = "SELECT JobID,RequestName from Requests where JobID IN (%s);" % intListToString( jobIDs )
+    req = "SELECT JobID,RequestName FROM Requests WHERE JobID IN (%s);" % intListToString( jobIDs )
     res = self._query( req )
     if not res:
       return res
@@ -852,6 +851,89 @@ class RequestDBMySQL( DB ):
       jobIDs[jobID] = requestName
     return S_OK( jobIDs )
 
+  def readRequestsForJobs( self, jobIDs ):
+    """ read and return Requests for jobs 
+    :param mixed jobIDs: list with jobIDs or long JobIDs
+    """
+
+    if type(jobIDs) != list:
+      return S_ERROR("RequestDB: wrong format for jobIDs argument, got %s, expecting a list" )
+    # make sure list is uniqe and has only longs
+    jobIDs = list( set( [ int(jobID) for jobID in jobIDs if int(jobID) != 0 ] ) )
+
+    reqCols = [ "RequestID", "RequestName", "JobID", "Status", 
+                "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent", 
+                "CreationTime", "SubmissionTime", "LastUpdate" ] 
+    subCols = [ "SubRequestID", "Operation", "Arguments", "RequestType", "ExecutionOrder", "Error",
+                "SourceSE", "TargetSE", "Catalogue", "CreationTime", "SubmissionTime", "LastUpdate" ]
+    fileCols = [ "FileID", "LFN", "Size", "PFN", "GUID", "Md5", "Addler", "Attempt", "Status" , "Error" ]
+
+    requestNames = self.getRequestForJobs( jobIDs )
+    if not requestNames["OK"]:
+      return requestNames
+    requestNames = requestNames["Value"]
+
+    ## this will be returned
+    retDict = { "Successful" : dict(), "Failed" : dict() }
+    for jobID in jobIDs:
+      ## missing requests
+      if jobID not in requestNames:
+        retDict["Failed"][jobID] = "Request not found"  
+        continue
+      
+      requestName = requestNames[jobID]
+
+      ## get request
+      queryStr = "SELECT %s FROM Requests WHERE RequestName = '%s';" % ( ",".join( reqCols ), requestName ) 
+      queryRes = self._query( queryStr )
+      if not queryRes["OK"]:
+        retDict["Failed"][jobID] = queryRes["Message"] 
+        continue
+      
+      queryRes = queryRes["Value"] if queryRes["Value"] else None
+      if not queryRes:
+        retDict["Failed"][jobID] = "Unable to read request attributes."  
+        continue
+
+      requestObj = RequestContainer( init=False )
+      reqAttrs = dict( zip( reqCols, queryRes[0] ) )      
+      requestObj.setRequestAttributes( reqAttrs )
+
+      queryStr = "SELECT %s FROM SubRequests WHERE RequestID=%s;" % ( ",".join(subCols), reqAttrs["RequestID"] )
+      queryRes = self._query( queryStr )
+      if not queryRes["OK"]:
+        retDict["Failed"][jobID] = queryRes["Message"] 
+        continue
+      
+      queryRes = queryRes["Value"] if queryRes["Value"] else None
+      if not queryRes:
+        retDict["Failed"][jobID] = "Unable to read subrequest attributes."  
+        continue
+      
+      ## get sub-requests
+      for recTuple in queryRes:
+        subReqAttrs = dict( zip( subCols, recTuple ) )
+        subType = subReqAttrs["RequestType"]
+        subReqAttrs["ExecutionOrder"] = int( subReqAttrs["ExecutionOrder"] )
+        del subReqAttrs["RequestType"]
+        index = requestObj.initiateSubRequest( subType )
+        index = index["Value"]
+        requestObj.setSubRequestAttributes( index, subType, subReqAttrs )
+
+        ## get files
+        subFiles = []
+        fileQuery = "SELECT %s FROM Files WHERE SubRequestID = %s ORDER BY FileID;" % ( ",".join(fileCols), subReqAttrs["SubRequestID"] )
+        fileQueryRes = self._query( fileQuery )
+        if fileQueryRes["OK"] and fileQueryRes["Value"]:
+          for fileRec in fileQueryRes["Value"]:
+            subFiles.append( dict( zip(fileCols, fileRec) ) )
+        if subFiles:
+          requestObj.setSubRequestFiles( index, subType, subFiles )
+      
+      retDict["Successful"][jobID] = requestObj.toXML()["Value"]
+      
+    return S_OK( retDict )
+    
   def getDigest( self, requestID ):
     """ Get digest of the given request specified by its requestID
     """
