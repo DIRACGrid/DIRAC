@@ -286,8 +286,9 @@ class SiteDirector( AgentModule ):
         self.log.warn( 'Failed to check the availability of queue %s: %s' % ( queue, result['Message'] ) )
         continue
       ceInfoDict = result['CEInfoDict']
-      self.log.verbose( "CE queue report: Waiting Jobs=%d, Running Jobs=%d, Submitted Jobs=%d, MaxTotalJobs=%d" % \
-                         ( ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'], ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
+      self.log.info( "CE queue report(%s_%s): Waiting Jobs=%d, Running Jobs=%d, Submitted Jobs=%d, MaxTotalJobs=%d" % \
+                     ( ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
+                       ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
 
       totalSlots = result['Value']
 
@@ -309,7 +310,7 @@ class SiteDirector( AgentModule ):
         return result
       taskQueueDict = result['Value']
       if not taskQueueDict:
-        self.log.verbose( 'No matching TQs found' )
+        self.log.info( 'No matching TQs found' )
         continue
 
       totalTQJobs = 0
@@ -341,7 +342,7 @@ class SiteDirector( AgentModule ):
             totalWaitingPilots += row[1]
 
       pilotsToSubmit = min( totalSlots, totalTQJobs - totalWaitingPilots )
-      self.log.verbose( 'Available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
+      self.log.info( 'Available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
                               ( totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
 
       if pilotsToSubmit > 0:
