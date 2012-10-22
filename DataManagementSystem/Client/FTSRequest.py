@@ -662,8 +662,8 @@ class FTSRequest(object):
 
     :param self: self reference
     """
-    toResolve = [ lfn for lfn in self.fileDict 
-                  if ( "Source" not in self.fileDict[lfn] ) and ( self.fileDict[lfn].get( "Status", "" ) != "Failed" ) ]
+    toResolve = [ lfn for lfn in self.fileDict ]
+    # if ( "Source" not in self.fileDict[lfn] ) and ( self.fileDict[lfn].get( "Status", "" ) != "Failed" ) ]
     if not toResolve:
       return S_OK()
     res = self.__updateMetadataCache( toResolve )
@@ -732,8 +732,8 @@ class FTSRequest(object):
 
     :param self: self reference
     """
-    toResolve = [ lfn for lfn in self.fileDict 
-                  if ( "Target" not in self.fileDict[lfn] ) and ( self.fileDict[lfn].get( "Status", "" ) != "Failed" ) ]
+    toResolve = [ lfn for lfn in self.fileDict ] 
+    #              if ( "Target" not in self.fileDict[lfn] ) and ( self.fileDict[lfn].get( "Status", "" ) != "Failed" ) ]
     if not toResolve:
       return S_OK()
     res = self.__updateReplicaCache( toResolve )
@@ -829,7 +829,7 @@ class FTSRequest(object):
         cksmStr = ""
         ## add chsmType:cksm only if cksmType is specified, else let FTS decide by itself
         if self.__cksmTest and self.__cksmType:
-          if lfn in self.catalogMetadata and "Checksum" in self.catalogMetadata:
+          if lfn in self.catalogMetadata and "Checksum" in self.catalogMetadata[lfn]:
             cksmStr = " %s:%s" % ( self.__cksmType, self.catalogMetadata[lfn]["Checksum"] )
         surlFile.write( "%s %s%s\n" % ( source, target, cksmStr ) )
     surlFile.close()

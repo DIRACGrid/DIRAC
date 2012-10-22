@@ -1148,10 +1148,12 @@ class JobWrapper:
       #To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
       if type( jobName ) == type( ' ' ) and jobName:
-        jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' )
+        jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' ).replace( '"', '' )
         jobName = jobName.replace( '.', '' ).replace( '{', '' ).replace( '}', '' ).replace( ':', '' )
         requestName = '%s_%s' % ( jobName, requestName )
 
+    if '"' in requestName: 
+      requestName = requestName.replace( '"', '' )
     request.setRequestName( requestName )
     request.setJobID( self.jobID )
     request.setSourceComponent( "Job_%s" % self.jobID )

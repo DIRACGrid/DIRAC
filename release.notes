@@ -75,12 +75,19 @@ CHANGE: Some general API polishing
 BUGFIX: TaskManager - bug fixed in treating tasks with input data
 FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
 
+[v6r5p7]
+
+FIX: merged in patch v6r4p28
+
 [v6r5p6]
 
 FIX: merged in patch v6r4p27
 
 *Transformation
 BUGFIX: TransformationDB - StringType must be imported before it can be used
+
+*RSS
+NEW: CS.py - Space Tokens were hardcoded, now are obtained after scanning the StorageElements.
 
 [v6r5p5]
 
@@ -236,10 +243,26 @@ CHANGE: request agents cleanup
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
 
-[v6r4p27]
+[v6r4p28]
+
+*Interfaces
+CHANGE: Dirac.py, DiracAdmin.py - remove explicit timeout on RPC client instantiation
 
 *RSS
-NEW: CS.py - Space Tokens were hardcoded, now are obtained after scanning the StorageElements.
+FIX: CS.py - fix for updated CS location (backward compatible)
+
+*DMS
+BUGFIX: StrategyHandler - bug fixed determineReplicationTree()
+FIX: FTSRequest - add checksum string to SURLs file before submitting an FTS job
+
+*WMS
+FIX: JobWrapper - protection for double quotes in JobName
+CHANGE: SiteDirector - switched some logging messages from verbose to info level
+
+*RMS
+NEW: Request(Client,DBMySQL,Manager) - added readRequestsForJobs() method
+
+[v6r4p27]
 
 *DMS
 FIX: SRM2Storage - removed hack for EOS (fixed server-side)
@@ -248,7 +271,7 @@ FIX: SRM2Storage - removed hack for EOS (fixed server-side)
 CHANGE: TransformationClient - limit to 100 the number of transformations in getTransformations()
 NEW: TransformationAgent - define the transformations type to use in the configuration
 
-*Interfacses
+*Interfaces
 FIX: Job.py -  fix for empty environmentDict (setExecutionEnv)
 
 [v6r4p26]

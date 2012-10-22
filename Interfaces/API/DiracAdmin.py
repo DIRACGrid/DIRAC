@@ -116,7 +116,7 @@ class DiracAdmin( API ):
        @return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getSiteMask()
     if result['OK']:
       sites = result['Value']
@@ -139,7 +139,7 @@ class DiracAdmin( API ):
        @return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     bannedSites = []
     totalList = []
 
@@ -227,7 +227,7 @@ class DiracAdmin( API ):
     if site in siteMask:
       return S_ERROR( 'Site %s already in mask of allowed sites' % site )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.allowSite( site, comment )
     if not result['OK']:
       return result
@@ -252,7 +252,7 @@ class DiracAdmin( API ):
     if not result['OK']:
       return result
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getSiteMaskLogging( site )
     if not result['OK']:
       return result
@@ -300,7 +300,7 @@ class DiracAdmin( API ):
     if not site in siteMask:
       return S_ERROR( 'Site %s is already banned' % site )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.banSite( site, comment )
     if not result['OK']:
       return result
@@ -336,7 +336,7 @@ class DiracAdmin( API ):
        @return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.clearMask()
     return result
 
@@ -472,7 +472,7 @@ class DiracAdmin( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or convertible integer for existing jobIDs' )
 
-    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = 120 )
+    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False )
     result = jobManager.resetJob( jobID )
     return result
 
@@ -495,7 +495,7 @@ class DiracAdmin( API ):
     if not os.path.exists( directory ):
       return self._errorReport( 'Directory %s does not exist' % directory )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getJobPilotOutput( jobID )
     if not result['OK']:
       return result
@@ -551,7 +551,7 @@ class DiracAdmin( API ):
     if not os.path.exists( directory ):
       return self._errorReport( 'Directory %s does not exist' % directory )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getPilotOutput( gridReference )
     if not result['OK']:
       return result
@@ -605,7 +605,7 @@ class DiracAdmin( API ):
     if not type( gridReference ) == type( " " ):
       return self._errorReport( 'Expected string for pilot reference' )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getPilotInfo( gridReference )
     return result
 
@@ -623,7 +623,7 @@ class DiracAdmin( API ):
     if type( gridReference ) not in types.StringTypes:
       return self._errorReport( 'Expected string for pilot reference' )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     return wmsAdmin.getPilotLoggingInfo( gridReference )
 
   #############################################################################
@@ -645,7 +645,7 @@ class DiracAdmin( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getPilots( jobID )
     if result['OK']:
       print self.pPrint.pformat( result['Value'] )
@@ -663,7 +663,7 @@ class DiracAdmin( API ):
        @type job: integer or string
        @return: S_OK,S_ERROR
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getPilotSummary( startDate, endDate )
     if not result['OK']:
       return result
@@ -727,7 +727,7 @@ class DiracAdmin( API ):
 
     self.log.verbose( 'Will select requests with the following conditions' )
     self.log.verbose( self.pPrint.pformat( conditions ) )
-    requestClient = RPCClient( "RequestManagement/centralURL", timeout = 120 )
+    requestClient = RPCClient( "RequestManagement/centralURL" )
     result = requestClient.getRequestSummaryWeb( conditions, [], requestStart, limit )
     if not result['OK']:
       self.log.warn( result['Message'] )
