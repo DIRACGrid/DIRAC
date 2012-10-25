@@ -61,7 +61,7 @@ DiracLibraryPath      = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'lib'), )
 baseLibPath = DiracLibraryPath
 for entry in os.listdir( baseLibPath ):
   if os.path.isdir( entry ):
-    DiracLibraryPath = '%s:%s' % ( DiracLibraryPath, os.path.join( baseLibPath, entry ) ) 
+    DiracLibraryPath = '%s:%s' % ( DiracLibraryPath, os.path.join( baseLibPath, entry ) )
 
 
 os.environ['PATH'] = '%s:%s' % ( DiracPath, os.environ['PATH'] )
@@ -83,7 +83,7 @@ certDir = os.path.join( "etc", "grid-security", "certificates" )
 if 'X509_CERT_DIR' not in os.environ and \
   not os.path.isdir( os.path.join( "/", certDir ) ) and \
   os.path.isdir( os.path.join( DiracRoot, certDir ) ):
-  os.environ[ 'X509_CERT_DIR' ] = os.path.join( DiracRoot, certDir ) 
+  os.environ[ 'X509_CERT_DIR' ] = os.path.join( DiracRoot, certDir )
 
 if sys.argv[1:]:
   args = ' "%s"' % '" "'.join( sys.argv[1:] )

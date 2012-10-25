@@ -70,6 +70,8 @@ class X509Chain:
       self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, pemData )
     except Exception, e:
       return S_ERROR( "Can't load pem data: %s" % str( e ) )
+    if not self.__certList:
+      return S_ERROR( "No certificates in the contents" )
     self.__loadedChain = True
     #Update internals
     self.__checkProxyness()
@@ -540,7 +542,7 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     data = ''
     for i in range( len( self.__certList ) ):
-      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[1] )
+      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
     return S_OK( data )
 
   def dumpPKeyToString( self ):

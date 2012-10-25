@@ -501,8 +501,10 @@ class UserProfileDB( DB ):
                 "`up_VOs`.Id = `up_ProfilesData`.VOId",
                 self.__webProfileReadAccessDataCond( userIds, userIds, sqlProfileName ) ]
     if filterDict:
+      fD = {}
       for k in filterDict:
-        filterDict[ k.lower() ] = filterDict[ k ]
+        fD[ k.lower() ] = filterDict[ k ]
+      filterDict = fD
       for k in ( 'user', 'group', 'vo' ):
         if k in filterDict:
           sqlCond.append( self.__profilesCondGenerator( filterDict[ k ], k ) )
