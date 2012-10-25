@@ -338,6 +338,7 @@ class JobWrapper:
       if not payloadPID:
         return S_ERROR( 'Payload process could not start after 10 seconds' )
     else:
+      self.__report( 'Failed', 'Application not found', sendFlag = True )
       return S_ERROR( 'Path to executable %s not found' % ( executable ) )
 
     self.__setJobParam( 'PayloadPID', payloadPID )
@@ -378,8 +379,14 @@ class JobWrapper:
       threadResult = EXECUTION_RESULT['Thread']
       if not threadResult['OK']:
         self.log.error( 'Failed to execute the payload', threadResult['Message'] )
+        
+        self.__report( 'Failed', 'Application failed, check job parameters', sendFlag = True )
         if 'Value' in threadResult:
           outputs = threadResult['Value']
+        if outputs:
+          self.__setJobParam( 'ApplicationError', outputs[-200:], sendFlag = True )
+        else:
+          self.__setJobParam( 'ApplicationError', 'None reported', sendFlag = True )
       else:
         outputs = threadResult['Value']
 
