@@ -179,13 +179,20 @@ class CFG( object ):
   def sortAlphabetically( self, ascending = True ):
     """
     Order this cfg alphabetically
-    returns true if modified
+    returns True if modified
+    """
+    if not ascending:
+      return self.sortByKey( reverse = True )
+    return self.sortByKey()
+
+  def sortByKey( self, key = None , reverse = False ):
+    """
+    Order this cfg by function refered in key, default is None
+    corresponds to alphabetic sort
+    returns True if modified
     """
     unordered = list( self.__orderedList )
-    if ascending:
-      self.__orderedList.sort()
-    else:
-      self.__orderedList.reverse()
+    self.__orderedList.sort( key = key , reverse = reverse )
     return unordered != self.__orderedList
 
   @gCFGSynchro
