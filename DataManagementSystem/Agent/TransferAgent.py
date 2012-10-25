@@ -33,7 +33,7 @@ from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 ## replica manager
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 ## startegy handler
-from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler, StrategyHandlerChannelNotDefined
+from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler, SHGraphCreationError 
 ## task to be executed
 from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 ## from RMS
@@ -259,7 +259,10 @@ class TransferAgent( RequestAgentBase ):
     :param self: self reference
     """
     if not self.__strategyHandler:
-      self.__strategyHandler = StrategyHandler( self.configPath() )
+      try:
+        self.__strategyHandler = StrategyHandler( self.configPath() )      
+      except SHGraphCreationError, error:
+        self.log.exception( "strategyHandler: %s" % str(error) )
     return self.__strategyHandler
 
   def setupStrategyHandler( self ):
@@ -273,31 +276,24 @@ class TransferAgent( RequestAgentBase ):
       errStr = "setupStrategyHandler: Failed to get channel queues from TransferDB."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    channels = res["Value"] or False
-
+    channels = res["Value"] or {}
     res = self.transferDB().getChannelObservedThroughput( self.__throughputTimescale )
     if not res["OK"]:
       errStr = "setupStrategyHandler: Failed to get observed throughput from TransferDB."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    bandwidths = res["Value"] or False
-
+    bandwidths = res["Value"] or {}
     res = self.transferDB().getCountFileToFTS(  self.__throughputTimescale, "Failed" )
     if not res["OK"]:
       errStr = "setupStrategyHandler: Failed to get Failed files counters from TransferDB."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    failedFiles = res["Value"] or False
-
+    failedFiles = res["Value"] or {}
     ## neither channels nor bandwidths 
     if not ( channels and bandwidths ):
       return S_ERROR( "setupStrategyHandler: No active channels found for replication" )
-    
-    self.strategyHandler().setBandwiths( bandwidths )
-    self.strategyHandler().setChannels( channels )
-    self.strategyHandler().setFailedFiles( failedFiles )
+    self.strategyHandler().setup( channels, bandwidths, failedFiles )
     self.strategyHandler().reset()
-
     return S_OK()
 
   @staticmethod
@@ -437,8 +433,8 @@ class TransferAgent( RequestAgentBase ):
     if not subRequestFiles["OK"]:
       return subRequestFiles
     subRequestFiles = subRequestFiles["Value"]
-    self.log.info( "collectFiles: subrequest %s found with %d files." % ( iSubRequest, 
-                                                                          len( subRequestFiles ) ) )
+    self.log.debug( "collectFiles: subrequest %s found with %d files." % ( iSubRequest, 
+                                                                           len( subRequestFiles ) ) )
     
     for subRequestFile in subRequestFiles:
       fileStatus = subRequestFile["Status"]
@@ -467,9 +463,9 @@ class TransferAgent( RequestAgentBase ):
           self.log.error( "collectFiles: failed to get file size %s: %s" % ( lfn, failure ) )
         metadata = metadata["Value"]["Successful"] 
    
-    self.log.info( "collectFiles: waitingFiles=%d replicas=%d metadata=%d" % ( len(waitingFiles), 
-                                                                               len(replicas), 
-                                                                               len(metadata) ) )
+    self.log.debug( "collectFiles: waitingFiles=%d replicas=%d metadata=%d" % ( len(waitingFiles), 
+                                                                                len(replicas), 
+                                                                                len(metadata) ) )
     
     if not ( len( waitingFiles ) == len( replicas ) == len( metadata ) ):
       self.log.warn( "collectFiles: Not all requested information available!" )
@@ -516,7 +512,7 @@ class TransferAgent( RequestAgentBase ):
 
       ## FTS scheduling
       if self.__executionMode["FTS"] and not failback:
-        self.log.info("execute: about to process request using FTS")
+        self.log.debug("execute: using FTS")
         executeFTS = self.executeFTS( requestDict )
         if not executeFTS["OK"]:
           self.log.error( executeFTS["Message"] )
@@ -547,7 +543,7 @@ class TransferAgent( RequestAgentBase ):
 
       ## Task execution
       if self.__executionMode["Tasks"]: 
-        self.log.info("execute: about to process request using TransferTask")
+        self.log.debug("execute: using TransferTask")
         res = self.executeTask( requestDict )
         if res["OK"]:
           requestCounter = requestCounter - 1
@@ -588,18 +584,14 @@ class TransferAgent( RequestAgentBase ):
         self.log.error("executeFTS: operation %s for subrequest %s is not supported in FTS mode" % ( operation, 
                                                                                                      iSubRequest ) )
         return S_OK( False )
-    
-    try:
-      schedule = self.schedule( requestDict )
-      if schedule["OK"]:
-        self.log.info("executeFTS: request %s has been processed" % requestDict["requestName"] )
-      else:
-        self.log.error( schedule["Message"] )
-        return schedule 
-    except StrategyHandlerChannelNotDefined, error:
-      self.log.info( str(error) )
-      return S_OK( False )
-    
+     
+    schedule = self.schedule( requestDict )
+    if schedule["OK"]:
+      self.log.info("executeFTS: request %s has been processed" % requestDict["requestName"] )
+    else:
+      self.log.error( schedule["Message"] )
+      return schedule 
+
     return S_OK( True )
           
   def executeTask( self, requestDict ):
@@ -664,11 +656,11 @@ class TransferAgent( RequestAgentBase ):
       self.log.error( "schedule: Failed to get number of 'transfer' subrequests", res["Message"] )
       return S_ERROR( "schedule: Failed to get number of 'transfer' subrequests" )
     numberRequests = res["Value"]
-    self.log.info( "schedule: request '%s'has got %s 'transfer' subrequest(s)" % ( requestName, 
-                                                                                   numberRequests ) )
+    self.log.debug( "schedule: request '%s' has got %s 'transfer' subrequest(s)" % ( requestName, 
+                                                                                     numberRequests ) )
     for iSubRequest in range( numberRequests ):
       self.log.info( "schedule: treating subrequest %s from '%s'" % ( iSubRequest, 
-                                                                       requestName ) )
+                                                                      requestName ) )
       subAttrs = requestObj.getSubRequestAttributes( iSubRequest, "transfer" )["Value"]
       
       subRequestStatus = subAttrs["Status"]
@@ -729,7 +721,7 @@ class TransferAgent( RequestAgentBase ):
       else:
         ## nope, all Done or no Waiting found
         self.log.info("schedule: subrequest %d is empty" % iSubRequest )
-        self.log.info("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
+        self.log.debug("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
 
       ## check if all files are in 'Done' status
@@ -738,7 +730,7 @@ class TransferAgent( RequestAgentBase ):
       ## all files Done, make this subrequest Done too 
       if subRequestDone:
         self.log.info("schedule: subrequest %s is done" % iSubRequest )
-        self.log.info("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
+        self.log.debug("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
 
     ## update Request in DB after operation 
@@ -843,16 +835,13 @@ class TransferAgent( RequestAgentBase ):
                                                                                    len(waitingFileReplicas), 
                                                                                    str(waitingFileTargets) ) ) 
       ## get the replication tree at least
-      tree = self.strategyHandler().determineReplicationTree( sourceSE, 
-                                                              waitingFileTargets, 
-                                                              waitingFileReplicas,  
-                                                              waitingFileSize, 
-                                                              strategy )
+      tree = self.strategyHandler().replicationTree( waitingFileReplicas.keys(),  
+                                                     waitingFileTargets, 
+                                                     waitingFileSize, 
+                                                     strategy )
+      if not tree["OK"]:
+        return tree
 
-      if not tree["OK"] or not tree["Value"]:
-        self.log.error( "scheduleFiles: failed to determine replication tree: ", 
-                        tree["Message"] if "Message" in tree else "tree is empty")
-        raise StrategyHandlerChannelNotDefined( "FTS" )
       tree = tree["Value"]
       self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
  
@@ -932,18 +921,15 @@ class TransferAgent( RequestAgentBase ):
     :param index: subrequest index
     :param dict subAttrs: subrequest attributes
     """
-    self.log.info( "checkReadyReplicas: *** check done replications ***" )
-    self.log.info( "checkReadyReplicas: obtaining all files in %d subrequest" % index )
-    
+    self.log.debug( "checkReadyReplicas: obtaining all files in %d subrequest" % index )
     ## get targetSEs
     targetSEs = [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") if targetSE.strip() ]
-
     ## get subrequest files
     subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
     if not subRequestFiles["OK"]:
       return subRequestFiles
     subRequestFiles = subRequestFiles["Value"]
-    self.log.info( "checkReadyReplicas: found %s files" % len( subRequestFiles ) ) 
+    self.log.debug( "checkReadyReplicas: found %s files" % len( subRequestFiles ) ) 
 
     fileLFNs = []
     for subRequestFile in subRequestFiles:
@@ -986,12 +972,12 @@ class TransferAgent( RequestAgentBase ):
     :param RequestContainer requestObj: request being processed
     :param dict subAttrs: subrequest's attributes
     """
-    self.log.info( "registerFiles: failover registration, processing %s subrequest" % index )
+    self.log.debug( "registerFiles: failover registration, processing %s subrequest" % index )
     subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
     if not subRequestFiles["OK"]:
       return subRequestFiles
     subRequestFiles = subRequestFiles["Value"]
-    self.log.info( "registerFiles: found %s files" % len( subRequestFiles ) ) 
+    self.log.debug( "registerFiles: found %s files" % len( subRequestFiles ) ) 
     for subRequestFile in subRequestFiles:
       status = subRequestFile["Status"]
       lfn = subRequestFile["LFN"]
