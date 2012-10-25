@@ -901,6 +901,14 @@ class Dirac( API ):
           if not getFile['OK']:
             self.log.warn( 'Failed to download %s with error:%s' % ( isFile, getFile['Message'] ) )
             return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
+        basefname = os.path.basename(isFile)
+        try:
+          if tarfile.is_tarfile(  basefname ):
+            tarFile = tarfile.open( basefname, 'r' )
+            for member in tarFile.getmembers():
+              tarFile.extract( member, os.getcwd() )
+        except Exception, x :
+          return S_ERROR( 'Could not untar %s with exception %s' % ( possibleTarFile, str( x ) ) )
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
