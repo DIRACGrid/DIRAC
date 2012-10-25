@@ -1,4 +1,4 @@
-[v6r6-pre5]
+[v6r6-pre6]
 
 *Core
 CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
@@ -10,6 +10,8 @@ FIX: Graphs.Utilities - allow two lines input in makeDataFromCVS()
 FIX: Graphs - allow Graphs package usage if even matplotlib is not installed
 NEW: dirac-compile-externals will retrieve the Externals compilation scripts from it's new location in github (DIRACGrid/Externals)
 NEW: Possibility to define a thread-global credentials for DISET connections (for web framework)
+NEW: Logger - color output ( configurable )
+NEW: dirac-admin-sort-cs-sites - to sort sites in the CS
 
 *Framework
 NEW: SystemAdministratorClientCLI - possibility to define roothPath and lcgVersion when updating software
@@ -29,8 +31,11 @@ FIX: Make several classes pylint compliant: DataIntegrityHandler, DataLoggingHan
      FileCatalogHandler, StorageElementHandler, StorageElementProxyHandler, TransferDBMonitoringHandler
 FIX: LogUploadAgent - remove the OSError exception in __replicate()
 FIX: FileCatalogClientCLI - multiple check of proper command inputs,
-     automatic completion of several commands with subcommands
+     automatic completion of several commands with subcommands,
+     automatic completion of file names
 FIX: dirac-admin-ban-se - allow to go over all options read/write/check for each SE      
+NEW: StrategyHandler - new implementation to speed up file scheduling + better error reporting
+NEW: LcgFileCatalogProxy - moved from from LHCbDirac to DIRAC
 
 *WMS
 CHANGE: RunNumber job parameter was removed from all the relevant places ( JDL, JobDB, etc )
@@ -48,6 +53,7 @@ CHANGE: Matcher, TaskQueueDB - switch to use Platform rather than LHCbPlatform r
 BUGFIX: Matcher - proper reporting pilot site and CE
 CHANGE: JobManager - improved job Killing/Deleting logic
 CHANGE: dirac-pilot - treat the OSG case when jobs on the same WN all run in the same directory
+NEW: JobWrapper - added more status reports on different failures
 
 *RMS
 FIX: RequestDBFile - better exception handling in case no JobID supplied
@@ -56,6 +62,7 @@ NEW: RequestProxyHandler - is forwarding requests from voboxes to central Reques
      If central RequestManager is down, requests are dumped into file cache and a separate thread 
      running in background is trying to push them into the central. 
 CHANGE: Major revision of the code      
+CHANGE: RequestDB - added index on SubRequestID in the Files table
 
 *RSS
 NEW: CS.py - Space Tokens were hardcoded, now are obtained after scanning the StorageElements.
@@ -70,10 +77,14 @@ NEW: enable definition of ChecksumType per SE
 *Interfaces
 CHANGE: Removed Script.initialize() from the API initialization
 CHANGE: Some general API polishing
+FIX: Dirac.py - when running in mode="local" any directory in the ISB would not get untarred, 
+     contrary to what is done in the JobWrapper
 
 *TS
 BUGFIX: TaskManager - bug fixed in treating tasks with input data
 FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
+NEW: TransformationAgent is multithreaded now ( implementation moved from LHCbDIRAC )
+NEW: added unit tests
 
 [v6r5p7]
 
