@@ -12,15 +12,19 @@ from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 class ObjectLoader( object ):
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
-  def __init__( self ):
+  def __init__( self, baseModules = False ):
     """ init
     """
+    if not baseModules:
+      baseModules = [ 'DIRAC' ]
+    self.__rootModules = baseModules
     self.__objs = {}
+    self.__generateRootModules( baseModules )
 
   def __rootImport( self, modName, hideExceptions = False ):
     """ Auto search which root module has to be used
     """
-    for rootModule in self.__rootModules():
+    for rootModule in self.__rootModules:
       impName = modName
       if rootModule:
         impName = "%s.%s" % ( rootModule, impName )
@@ -67,15 +71,14 @@ class ObjectLoader( object ):
     return self.__recurseImport( modName[1:], impModule,
                                  hideExceptions = hideExceptions, fullName = fullName )
 
-  def __rootModules( self ):
+  def __generateRootModules( self, baseModules ):
     """ Iterate over all the possible root modules
     """
-    yield 'DIRAC'
+    self.__rootModules = baseModules
     for rootModule in reversed( CSGlobals.getCSExtensions() ):
-      if rootModule[-5:] != "DIRAC":
-        rootModule = "%sDIRAC" % rootModule
-      yield rootModule
-    yield ''
+      if rootModule[-5:] != "DIRAC" and rootModule not in self.__rootModules:
+        self.__rootModules.append( "%sDIRAC" % rootModule )
+    self.__rootModules.append( "" )
 
 
   def loadModule( self, importString ):
@@ -125,7 +128,7 @@ class ObjectLoader( object ):
       reFilter = re.compile( reFilter )
 
 
-    for rootModule in self.__rootModules():
+    for rootModule in self.__rootModules:
       if rootModule:
         impPath = "%s.%s" % ( rootModule, modulePath )
       else:

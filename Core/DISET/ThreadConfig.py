@@ -12,8 +12,8 @@ class ThreadConfig( threading.local ):
   def reset( self ):
     self.__DN = False
     self.__group = False
-    self.__async = False
     self.__deco = False
+    self.__setup = False
 
   def setDecorator( self, deco ):
     self.__deco = deco
@@ -34,6 +34,22 @@ class ThreadConfig( threading.local ):
   def getID( self ):
     return ( self.__DN, self.__group )
 
+  def setSetup( self, setup ):
+    self.__setup = setup
+
+  def getSetup( self ):
+    return self.__setup
+
+  def dump( self ):
+    return ( self.__DN, self.__group, self.__setup )
+
+  def load( self, tp ):
+    if tp[0]:
+      self.__DN = tp[0]
+    if tp[1]:
+      self.__group = tp[1]
+    if tp[2]:
+      self.__setup = tp[2]
 
 
 def threadDeco( method ):

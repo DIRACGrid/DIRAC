@@ -58,6 +58,9 @@ class JobManifest( object ):
   def dumpAsCFG( self ):
     return str( self.__manifest )
 
+  def getAsCFG( self ):
+    return self.__manifest.copy()
+
   def dumpAsJDL( self ):
     return dumpCFGAsJDL( self.__manifest )
 

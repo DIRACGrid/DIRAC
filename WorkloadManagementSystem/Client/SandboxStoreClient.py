@@ -44,19 +44,35 @@ class SandboxStoreClient:
       except ( ImportError, RuntimeError, AttributeError ):
         SandboxStoreClient.__smdb = False
 
+  def __getFUCKEDkwargs( self ):
+    """
+     This is a nasty hack to fix for a really bad crap fix in the constructor.
+     TO BE REMOVED ASAP WITH THE CONSTRUCTOR ARGUMENTS
+    """
+    kwargs = {}
+    if self.__useCertificates:
+      kwargs[ 'useCertificates' ] = True
+    if self.__delegatedGroup:
+      kwargs[ 'delegatedGroup' ] = self.__delegatedGroup
+    if self.__delegatedDN:
+      kwargs[ 'delegatedDN' ] = self.__delegatedDN
+    if self.__setup:
+      kwargs[ 'setup' ] = self.__setup
+    return kwargs
+
   def __getRPCClient( self ):
     if self.__rpcClient:
       return self.__rpcClient
     else:
-      return RPCClient( self.__serviceName, useCertificates = self.__useCertificates,
-                        delegatedGroup = self.__delegatedGroup, delegatedDN = self.__delegatedDN, setup = self.__setup )
+      kwargs = self.__getFUCKEDkwargs()
+      return RPCClient( self.__serviceName, **kwargs )
 
   def __getTransferClient( self ):
     if self.__transferClient:
       return self.__transferClient
     else:
-      return TransferClient( self.__serviceName, useCertificates = self.__useCertificates,
-                             delegatedGroup = self.__delegatedGroup, delegatedDN = self.__delegatedDN, setup = self.__setup )
+      kwargs = self.__getFUCKEDkwargs()
+      return TransferClient( self.__serviceName, **kwargs )
 
   #Upload sandbox to jobs and pilots
 

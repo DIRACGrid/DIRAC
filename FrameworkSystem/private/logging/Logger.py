@@ -31,7 +31,7 @@ class Logger:
     self._outputList = []
     self._subLoggersDict = {}
     self._logLevels = LogLevels()
-    self.__backendOptions = { 'showHeaders' : True, 'showThreads' : False }
+    self.__backendOptions = { 'showHeaders' : True, 'showThreads' : False, 'Color' : False }
     self.__preinitialize()
     self.__initialized = False
 
@@ -106,6 +106,8 @@ class Logger:
     self.__backendOptions[ 'Interactive' ] = gConfig.getValue( "%s/BackendsOptions/Interactive" % cfgPath, True )
 
     self.__backendOptions[ 'Site' ] = DIRAC.siteName()
+
+    self.__backendOptions[ 'Color' ] = gConfig.getValue( "%s/LogColor" % cfgPath, False )
 
     #Configure outputs
     desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath, 'stdout' )

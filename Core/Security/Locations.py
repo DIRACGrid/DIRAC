@@ -31,34 +31,25 @@ def getCAsLocation():
   retVal = gConfig.getOption( '%s/Grid-Security' % g_SecurityConfPath )
   if retVal[ 'OK' ]:
     casPath = "%s/certificates" % retVal[ 'Value' ]
-    gLogger.debug( "Trying %s for CAs" % casPath )
     if os.path.isdir( casPath ):
-      gLogger.debug( "Using %s/Grid-Security + /certificates as location for CA's" % g_SecurityConfPath )
       return casPath
   #CAPath
   retVal = gConfig.getOption( '%s/CALocation' % g_SecurityConfPath )
   if retVal[ 'OK' ]:
     casPath = retVal[ 'Value' ]
-    gLogger.debug( "Trying %s for CAs" % casPath )
     if os.path.isdir( casPath ):
-      gLogger.debug( "Using %s/CALocation as location for CA's" % g_SecurityConfPath )
       return casPath
   # Look up the X509_CERT_DIR environment variable
   if os.environ.has_key( 'X509_CERT_DIR' ):
-    gLogger.debug( "Using X509_CERT_DIR env var as location for CA's" )
     casPath = os.environ[ 'X509_CERT_DIR' ]
     return casPath
   #rootPath./etc/grid-security/certificates
   casPath = "%s/etc/grid-security/certificates" % DIRAC.rootPath
-  gLogger.debug( "Trying %s for CAs" % casPath )
   if os.path.isdir( casPath ):
-    gLogger.debug( "Using <DIRACRoot>/etc/grid-security/certificates as location for CA's" )
     return casPath
   #/etc/grid-security/certificates
   casPath = "/etc/grid-security/certificates"
-  gLogger.debug( "Trying %s for CAs" % casPath )
   if os.path.isdir( casPath ):
-    gLogger.debug( "Using autodiscovered %s location for CA's" % casPath )
     return casPath
   #No CA's location found
   return False
@@ -69,7 +60,6 @@ def getCAsDefaultLocation():
   """
   #rootPath./etc/grid-security/certificates
   casPath = "%s/etc/grid-security/certificates" % DIRAC.rootPath
-  gLogger.debug( "Returning autodiscovered %s location for CA's" % casPath )
   return casPath
 
 #TODO: Static depending on files specified on CS
@@ -83,11 +73,8 @@ def getHostCertificateAndKeyLocation():
     #Direct file in config
     retVal = gConfig.getOption( '%s/%sFile' % ( g_SecurityConfPath, fileType.capitalize() ) )
     if retVal[ 'OK' ]:
-      gLogger.debug( 'Using %s/%sFile' % ( g_SecurityConfPath, fileType.capitalize() ) )
       fileDict[ fileType ] = retVal[ 'Value' ]
       continue
-    else:
-      gLogger.debug( '%s/%sFile is not defined' % ( g_SecurityConfPath, fileType.capitalize() ) )
     fileFound = False
     for filePrefix in ( "server", "host", "dirac", "service" ):
       #Possible grid-security's
@@ -99,9 +86,7 @@ def getHostCertificateAndKeyLocation():
       #paths.append( os.path.expanduser( "~/.globus" ) )
       for path in paths:
         filePath = os.path.realpath( "%s/%s%s.pem" % ( path, filePrefix, fileType ) )
-        gLogger.debug( "Trying %s for %s file" % ( filePath, fileType ) )
         if os.path.isfile( filePath ):
-          gLogger.debug( "Using %s for %s" % ( filePath, fileType ) )
           fileDict[ fileType ] = filePath
           fileFound = True
           break
