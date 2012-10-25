@@ -85,15 +85,16 @@ CREATE TABLE TransformationFiles(
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationTasks;
 CREATE TABLE TransformationTasks (
-  TaskID INTEGER NOT NULL AUTO_INCREMENT,
-  TransformationID INTEGER NOT NULL,
-  ExternalStatus char(16) DEFAULT 'Created',
-  ExternalID char(16) DEFAULT '',
-  TargetSE char(255) DEFAULT 'Unknown',
-  CreationTime DATETIME NOT NULL,
-  LastUpdateTime DATETIME NOT NULL,
-  PRIMARY KEY(TransformationID,TaskID),
-INDEX(ExternalStatus)
+    TaskID INTEGER NOT NULL AUTO_INCREMENT,
+    INDEX(TaskID),
+    TransformationID INTEGER NOT NULL,
+    ExternalStatus char(16) DEFAULT 'Created',
+    INDEX(ExternalStatus),
+    ExternalID char(16) DEFAULT '',
+    TargetSE char(255) DEFAULT 'Unknown',
+    CreationTime DATETIME NOT NULL,
+    LastUpdateTime DATETIME NOT NULL,
+    PRIMARY KEY(TransformationID,TaskID)
 );
 
 -- -------------------------------------------------------------------------------
