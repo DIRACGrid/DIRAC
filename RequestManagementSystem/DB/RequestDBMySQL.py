@@ -641,7 +641,8 @@ class RequestDBMySQL( DB ):
       res = self._update( req )
       if not res['OK']:
         return S_ERROR( 'Failed to update file in db' )
-      return S_OK()
+    
+    return S_OK()
 
   def __setSubRequestFiles( self, ind, requestType, subRequestID, request ):
     """ This is the new method for updating the File table

@@ -86,6 +86,10 @@ FIX: TransformationCleaningAgent - properly call superclass constructor with loa
 NEW: TransformationAgent is multithreaded now ( implementation moved from LHCbDIRAC )
 NEW: added unit tests
 
+[v6r5p8]
+
+FIX: merged in patch v6r4p29
+
 [v6r5p7]
 
 FIX: merged in patch v6r4p28
@@ -253,6 +257,11 @@ CHANGE: request agents cleanup
 
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
+
+[v6r4p29]
+
+*RMS
+BUGFIX: RequestDBMySQL - wrong indentation in __updateSubRequestFiles()
 
 [v6r4p28]
 
