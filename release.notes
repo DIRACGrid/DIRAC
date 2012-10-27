@@ -1,3 +1,8 @@
+[v6r4p29]
+
+*RMS
+BUGFIX: RequestDBMySQL - wrong indentation in __updateSubRequestFiles()
+
 [v6r4p28]
 
 *Interfaces
