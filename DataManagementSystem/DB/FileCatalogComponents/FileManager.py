@@ -148,6 +148,8 @@ class FileManager(FileManagerBase):
     statusID = 0
     if res['OK']:
       statusID = res['Value']
+      
+    directorySESizeDict = {}  
     for lfn in lfns.keys():
       dirID = lfns[lfn]['DirID']
       fileName = os.path.basename(lfn)
@@ -160,6 +162,11 @@ class FileManager(FileManagerBase):
         if result['OK']:
           s_uid, s_gid = result['Value']
       insertTuples.append("(%d,%d,%d,%d,%d,'%s')" % (dirID,size,s_uid,s_gid,statusID,fileName))
+      directorySESizeDict.setdefault( dirID, {} )
+      directorySESizeDict[dirID].setdefault( 0, {'Files':0,'Size':0} )
+      directorySESizeDict[dirID][0]['Size'] += lfns[lfn]['Size']
+      directorySESizeDict[dirID][0]['Files'] += 1
+      
     req = "INSERT INTO FC_Files (DirID,Size,UID,GID,Status,FileName) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
@@ -197,6 +204,12 @@ class FileManager(FileManagerBase):
         for lfn in lfns.keys():
           failed[lfn] = res['Message']
           lfns.pop(lfn)
+      else:
+        # Update the directory usage
+        result = self._updateDirectoryUsage(directorySESizeDict,'+',connection=connection)
+        if not result['OK']:
+          gLogger.warn( "Failed to insert FC_DirectoryUsage", result['Message'] )
+          
     return S_OK({'Successful':lfns,'Failed':failed})
 
   def _getFileIDFromGUID(self,guid,connection=False):
@@ -306,10 +319,10 @@ class FileManager(FileManagerBase):
     directorySESizeDict = {}
     for fileID,repDict in res['Value'].items():
       lfn = fileIDLFNs[fileID]
+      dirID = lfns[lfn]['DirID']
+      directorySESizeDict.setdefault( dirID, {} )
       for seID,repID in repDict.items():
         lfns[lfn]['RepID'] = repID
-        dirID = lfns[lfn]['DirID']
-        directorySESizeDict.setdefault( dirID, {} )
         directorySESizeDict[dirID].setdefault( seID, {'Files':0,'Size':0} )
         directorySESizeDict[dirID][seID]['Size'] += lfns[lfn]['Size']
         directorySESizeDict[dirID][seID]['Files'] += 1
@@ -379,10 +392,8 @@ class FileManager(FileManagerBase):
       toRemove.append((fileID,seID))
       # Now prepare the storage usage update
       dirID = fileDict['DirID']
-      if not directorySESizeDict.has_key(dirID):
-        directorySESizeDict[dirID] = {}
-      if not directorySESizeDict[dirID].has_key(seID):
-        directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
+      directorySESizeDict.setdefault( dirID, {} )
+      directorySESizeDict[dirID].setdefault( seID, {'Files':0,'Size':0} )
       directorySESizeDict[dirID][seID]['Size'] += fileDict['Size']
       directorySESizeDict[dirID][seID]['Files'] += 1
     res = self._getRepIDsForReplica(toRemove, connection)

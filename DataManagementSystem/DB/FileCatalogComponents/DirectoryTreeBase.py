@@ -592,7 +592,10 @@ class DirectoryTreeBase:
       return result
     connection = result['Value']
 
-    resultLogical = self._getDirectoryLogicalSize(lfns,connection)
+    if rawFileTables:
+      resultLogical = self._getDirectoryLogicalSize(lfns,connection)
+    else:
+      resultLogical = self._getDirectoryLogicalSizeFromUsage(lfns,connection)  
     if not resultLogical['OK']:
       connection.close()
       return resultLogical
@@ -619,6 +622,51 @@ class DirectoryTreeBase:
     connection.close()
     resultDict['QueryTime'] = time.time() - start
     return S_OK(resultDict)            
+  
+  def _getDirectoryLogicalSizeFromUsage(self,lfns,connection):
+    """ Get the total "logical" size of the requested directories
+    """
+    paths = lfns.keys()
+    successful = {}
+    failed = {}
+    for path in paths:
+      result = self.findDir(path)
+      if not result['OK']:
+        failed[path] = "Directory not found"
+        continue
+      if not result['Value']:
+        failed[path] = "Directory not found"
+        continue
+      dirID = result['Value']
+      result = self.getSubdirectoriesByID(dirID,requestString=True,includeParent=True)
+      if not result['OK']:
+        failed[path] = result['Message']
+        continue
+      else:
+        dirString = result['Value']
+        req = "SELECT SESize, SEFiles FROM FC_DirectoryUsage WHERE SEID=0 AND DirID=%d" % dirID
+        reqDir = dirString.replace('SELECT DirID FROM','SELECT count(*) FROM')
+      
+      result = self.db._query(req,connection)
+      if not result['OK']:
+        failed[path] = result['Message']
+      elif not result['Value']:
+        successful[path] = {"LogicalSize":0,"LogicalFiles":0,'LogicalDirectories':0}
+      elif result['Value'][0][0]:
+        successful[path] = {"LogicalSize":int(result['Value'][0][0]),
+                            "LogicalFiles":int(result['Value'][0][1])}
+        result = self.db._query(reqDir,connection)
+        if result['OK'] and result['Value']:
+          successful[path]['LogicalDirectories'] = result['Value'][0][0]
+        else:
+          successful[path]['LogicalDirectories'] = -1
+
+         
+      else:
+        successful[path] = {"LogicalSize":0,"LogicalFiles":0,'LogicalDirectories':0}
+          
+    return S_OK({'Successful':successful,'Failed':failed})       
+  
   
   def _getDirectoryLogicalSize(self,lfns,connection):
     """ Get the total "logical" size of the requested directories
@@ -816,7 +864,9 @@ class DirectoryTreeBase:
   def _rebuildDirectoryUsage( self ):
     """ Recreate and replenish the Storage Usage tables
     """
-    
+   
+    req = "DROP TABLE IF EXISTS FC_DirectoryUsage_backup"
+    result = self.db._update( req )
     req = "RENAME TABLE FC_DirectoryUsage TO FC_DirectoryUsage_backup"
     result = self.db._update( req )
     req = """CREATE TABLE `FC_DirectoryUsage` (
@@ -850,7 +900,7 @@ class DirectoryTreeBase:
   def __rebuildDirectoryUsageLeaves( self ):
     """ Rebuild DirectoryUsage entries for directories having files
     """  
-    req = 'SELECT DirID FROM FC_Files'
+    req = 'SELECT DISTINCT(DirID) FROM FC_Files'
     result = self.db._query(req)
     if not result['OK']:
       return result
@@ -860,15 +910,37 @@ class DirectoryTreeBase:
     insertCount = 0
     insertValues = []
     for dirID in dirIDs:
+      # Get the physical size
       req = "SELECT SUM(F.Size),COUNT(F.Size),R.SEID from FC_Files as F, FC_Replicas as R "
       req += "WHERE F.FileID=R.FileID AND F.DirID=%d GROUP BY R.SEID" % int(dirID)
       result = self.db._query( req )
       if not result['OK']:
         return result
       if not result['Value']:
+        continue
+
+      for seSize,seFiles,seID in result['Value']:       
+        insertValues = [dirID,seID,seSize,seFiles,'UTC_TIMESTAMP()'] 
+
+        print "AT >>> __rebuildDirectoryUsageLeaves 1", dirID,seID,seSize,seFiles
+
+        result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )  
+        if not result['OK']:
+          return result     
+ 
+      # Get the logical size
+      req = "SELECT SUM(Size),COUNT(Size) from FC_Files WHERE DirID=%d " % int(dirID)
+      result = self.db._query( req )
+      if not result['OK']:
+        return result
+      if not result['Value']:
         return S_ERROR('Empty directory')
-      seSize,seFiles,seID = result['Value'][0]       
-      insertValues = [dirID,seID,seSize,seFiles,'UTC_TIMESTAMP()']
+      seSize,seFiles = result['Value'][0]       
+      insertValues = [dirID,0,seSize,seFiles,'UTC_TIMESTAMP()'] 
+      
+
+      print "AT >>> __rebuildDirectoryUsageLeaves 2", dirID,0,seSize,seFiles
+
       result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )  
       if not result['OK']:
         return result
