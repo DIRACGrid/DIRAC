@@ -272,7 +272,7 @@ class FileManagerBase:
         seDict = dirDict[seID]
         files = seDict['Files']
         size = seDict['Size']
-        for dirID in [directoryID] + parentIDs:
+        for dirID in parentIDs:
           req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
                                                            % ( change, size, change, files )
           req += "WHERE DirID=%d AND SEID=%d;" % ( dirID, seID )

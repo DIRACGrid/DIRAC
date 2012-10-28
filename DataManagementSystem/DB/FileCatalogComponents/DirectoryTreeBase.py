@@ -657,7 +657,7 @@ class DirectoryTreeBase:
                             "LogicalFiles":int(result['Value'][0][1])}
         result = self.db._query(reqDir,connection)
         if result['OK'] and result['Value']:
-          successful[path]['LogicalDirectories'] = result['Value'][0][0]
+          successful[path]['LogicalDirectories'] = result['Value'][0][0] - 1
         else:
           successful[path]['LogicalDirectories'] = -1
 
@@ -707,7 +707,7 @@ class DirectoryTreeBase:
                             "LogicalFiles":int(result['Value'][0][1])}
         result = self.db._query(reqDir,connection)
         if result['OK'] and result['Value']:
-          successful[path]['LogicalDirectories'] = result['Value'][0][0]
+          successful[path]['LogicalDirectories'] = result['Value'][0][0] - 1
         else:
           successful[path]['LogicalDirectories'] = -1
 
@@ -732,10 +732,10 @@ class DirectoryTreeBase:
         failed[path] = "Directory not found"
         continue
       dirID = result['Value']
-      
-      req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
+
+      req = "SELECT S.SEID, S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
       req += "  WHERE S.SEID=D.SEID AND D.DirID=%d" % dirID
-      result = self.db._query(req,connection)       
+      result = self.db._query(req,connection)
       if not result['OK']:
         failed[path] = result['Message']
       elif not result['Value']:
@@ -744,17 +744,23 @@ class DirectoryTreeBase:
         seDict = {}
         totalSize = 0
         totalFiles = 0
-        for seName,seSize,seFiles in result['Value']:
-          seDict[seName] = {'Size':seSize,'Files':seFiles}
-          totalSize += seSize
-          totalFiles += seFiles
+        for seID, seName,seSize,seFiles in result['Value']:
+          if seSize or seFiles:
+            seDict[seName] = {'Size':seSize,'Files':seFiles}
+            totalSize += seSize
+            totalFiles += seFiles
+          else:
+            req = 'DELETE FROM FC_DirectoryUsage WHERE SEID=%d AND DirID=%d' % ( seID, dirID )
+            result = self.db._update( req )
+            if not result['OK']:
+              gLogger( 'Failed to delete entry from FC_DirectoryUsage', result['Message'] )
         seDict['TotalSize'] = int(totalSize)
-        seDict['TotalFiles'] = int(totalFiles)  
-        successful[path] = seDict  
+        seDict['TotalFiles'] = int(totalFiles)
+        successful[path] = seDict
       else:
-        successful[path] = {} 
-          
-    return S_OK({'Successful':successful,'Failed':failed})       
+        successful[path] = {}
+
+    return S_OK({'Successful':successful,'Failed':failed})
   
   
   def _getDirectoryPhysicalSizeFromUsage_old(self,lfns,connection):
@@ -975,10 +981,19 @@ class DirectoryTreeBase:
       if not result['OK']:
         return result
       if not result['Value']:
-        insertValues = [directoryID,seID,size,files] 
+        insertValues = [directoryID,seID,size,files,'UTC_TIMESTAMP()'] 
         result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )     
         if not result['OK']:
           return result
+        
+    req = "SELECT SEID,SESize,SEFiles from FC_DirectoryUsage WHERE DirID=%d" % directoryID
+    result = self.db._query( req )
+    if not result['OK']:
+      return result
+
+    resultDict = {}
+    for seid,size,files in result['Value']:
+      resultDict[seid] = {'Size':size,'Files':files}    
         
     return S_OK(resultDict)  
   
