@@ -30,7 +30,11 @@ class DirectoryLevelTree(DirectoryTreeBase):
     return 'Directory'
 
   def findDir(self,path):
-    req = "SELECT DirID,Level from FC_DirectoryLevelTree WHERE DirName='%s'" % path
+    """  Find directory ID for the given path
+    """
+    
+    dpath = os.path.normpath( path )    
+    req = "SELECT DirID,Level from FC_DirectoryLevelTree WHERE DirName='%s'" % dpath
     result = self.db._query(req)
     if not result['OK']:
       return result
@@ -326,6 +330,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     for el in elements[1:]:
       dPath += '/'+el
       pelements.append(dPath)
+    pelements.append( '/' )  
       
     pathString = [ "'"+p+"'" for p in pelements ]
     req = "SELECT DirID FROM FC_DirectoryLevelTree WHERE DirName in (%s) ORDER BY DirID" % ','.join(pathString)
