@@ -41,8 +41,17 @@ class DirectoryMetadata:
                         ( ptype, result['Value'][pname] ) )
 
     valueType = ptype
-    if ptype == "MetaSet":
+    if ptype.lower()[:3] == 'int':
+      valueType = 'INT'
+    elif ptype.lower() == 'string':
+      valueType = 'VARCHAR(128)'
+    elif ptype.lower() == 'float':
+      valueType = 'FLOAT'
+    elif ptype.lower() == 'date':
+      valueType = 'DATETIME'
+    elif ptype == "MetaSet":
       valueType = "VARCHAR(64)"
+      
     req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" \
                               % ( pname, valueType )
     result = self.db._query( req )
