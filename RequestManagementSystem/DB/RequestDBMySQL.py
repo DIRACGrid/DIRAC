@@ -17,18 +17,18 @@ import random, time
 
 class RequestDBMySQL( DB ):
   """
-  .. class:: RequestDBmySQL 
+  .. class:: RequestDBmySQL
 
-  An interface to mysql RequestDB database. 
+  An interface to mysql RequestDB database.
   """
 
-  def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
+  def __init__( self, systemInstance='Default', maxQueueSize=10 ):
     """ c'tor
-    
+
     :param self: self reference
-    :param str systemInstance: ??? 
+    :param str systemInstance: ???
     :param int maxQueueSize: queue size
-    
+
     """
     DB.__init__( self, 'RequestDB', 'RequestManagement/RequestDB', maxQueueSize )
     self.getIdLock = threading.Lock()
@@ -42,7 +42,7 @@ class RequestDBMySQL( DB ):
     :param str status: new status
     """
     attrName = 'RequestID'
-    res = self._getRequestAttribute( attrName, requestName = requestName )
+    res = self._getRequestAttribute( attrName, requestName=requestName )
     if not res['OK']:
       return res
     requestID = res['Value']
@@ -55,7 +55,7 @@ class RequestDBMySQL( DB ):
     """ Get subrequest IDs for the given request
 
     :param self: self reference
-    :param int requestID: Requests.RequestID 
+    :param int requestID: Requests.RequestID
     :return: list with SubRequestIDs
     """
     subRequestList = []
@@ -69,11 +69,11 @@ class RequestDBMySQL( DB ):
 
     return S_OK( subRequestList )
 
-  def setRequestStatus( self, requestName, requestStatus, subRequest_flag = True ):
+  def setRequestStatus( self, requestName, requestStatus, subRequest_flag=True ):
     """ Set request status and optionally subrequest status
     """
 
-    res = self._getRequestAttribute( 'RequestID', requestName = requestName )
+    res = self._getRequestAttribute( 'RequestID', requestName=requestName )
     if not res['OK']:
       return res
     requestID = res['Value']
@@ -91,7 +91,7 @@ class RequestDBMySQL( DB ):
 
     return S_OK()
 
-  def __buildCondition( self, condDict, older = None, newer = None ):
+  def __buildCondition( self, condDict, older=None, newer=None ):
     """ build SQL condition statement from provided condDict
         and other extra conditions
     """
@@ -125,7 +125,7 @@ class RequestDBMySQL( DB ):
 
     return condition
 
-  def selectRequests( self, selectDict, limit = 100 ):
+  def selectRequests( self, selectDict, limit=100 ):
     """ Select requests according to specified criteria
     """
 
@@ -141,7 +141,7 @@ class RequestDBMySQL( DB ):
       else:
         condDict[key] = value
 
-    condition = self.__buildCondition( condDict, older = older, newer = newer )
+    condition = self.__buildCondition( condDict, older=older, newer=newer )
     req += condition
     if limit:
       req += " LIMIT %d" % limit
@@ -219,23 +219,14 @@ class RequestDBMySQL( DB ):
     return S_OK( summaryDict )
 
   def getRequestFileStatus( self, requestID, files ):
-    req = "SELECT DISTINCT SubRequestID FROM SubRequests WHERE RequestID = %d;" % requestID
+    req = "SELECT Files.LFN, Files.Status from Files, SubRequests where Files.SubRequestID=SubRequests.SubRequestID " + \
+    "and SubRequests.RequestID=%d and Files.LFN in (%s);" % ( requestID, stringListToString( files ) )
     res = self._query( req )
     if not res['OK']:
       return res
-    subRequests = []
-    for subRequestID in res['Value'][0]:
-      subRequests.append( subRequestID )
-    req = "SELECT LFN,Status from Files WHERE SubRequestID IN (%s) AND LFN in (%s);" % ( intListToString( subRequests ), stringListToString( files ) )
-    res = self._query( req )
-    if not res['OK']:
-      return res
-    files = {}
-    for lfn, status in res['Value']:
-      files[lfn] = status
-    return S_OK( files )
+    return S_OK( dict( res['Value'] ) )
 
-  def yieldRequests( self, requestType = "", limit = 1 ):
+  def yieldRequests( self, requestType="", limit=1 ):
     """ quick and dirty request generator
 
     :param self: self reference
@@ -251,7 +242,7 @@ class RequestDBMySQL( DB ):
       if not requestDict["OK"] or not requestDict["Value"]:
         yield requestDict
         raise StopIteration()
-      ## not served yet?  
+      ## not served yet?
       if requestDict["Value"]["RequestName"] not in servedRequests:
         servedRequests.append( requestDict["Value"]["RequestName"] )
         yield requestDict
@@ -272,7 +263,7 @@ class RequestDBMySQL( DB ):
     # RG: What if requestType is not given?
     # the first query will return nothing.
     # KC: maybe returning S_ERROR would be enough?
-    # alternatively we should check if requestType is known (in 'transfer', 'removal', 'register' and 'diset') 
+    # alternatively we should check if requestType is known (in 'transfer', 'removal', 'register' and 'diset')
 
     if not requestType or type( requestType ) not in types.StringTypes:
       return S_ERROR( "Request type not given." )
@@ -284,7 +275,7 @@ class RequestDBMySQL( DB ):
     myRequestType = myRequestType['Value']
 
     start = time.time()
-    dmRequest = RequestContainer( init = False )
+    dmRequest = RequestContainer( init=False )
     requestID = 0
     subIDList = []
 
@@ -297,7 +288,7 @@ class RequestDBMySQL( DB ):
     req = "SELECT * from ( %s ) as T1 GROUP BY RequestID" % req
     # and get the 100 oldest ones of Type requestType
     req = "SELECT RequestID, ExecutionOrder FROM ( %s ) as T2 WHERE RequestType = %s ORDER BY LastUpdate limit 100" % ( req, myRequestType )
-    # and now get all waiting SubRequest for the selected RequestID and ExecutionOrder 
+    # and now get all waiting SubRequest for the selected RequestID and ExecutionOrder
     req = "SELECT A.%s FROM SubRequests AS A, ( %s ) AS B WHERE " % ( ', A.'.join( fields ), req )
     req = "%s A.RequestID = B.RequestID AND A.ExecutionOrder = B.ExecutionOrder AND A.Status = 'Waiting' AND A.RequestType = %s;" % ( req, myRequestType )
 
@@ -308,7 +299,7 @@ class RequestDBMySQL( DB ):
     if not result['Value']:
       return S_OK()
 
-    # We get up to 10 Request candidates, to add some randomness 
+    # We get up to 10 Request candidates, to add some randomness
     reqDict = {}
     for row in result['Value']:
       reqDict.setdefault( row[0], [] )
@@ -336,7 +327,7 @@ class RequestDBMySQL( DB ):
         requestID = reqID
 
         break
-    # Haven't succeeded to get any request        
+    # Haven't succeeded to get any request
     if not requestID:
       return S_OK()
 
@@ -434,7 +425,7 @@ class RequestDBMySQL( DB ):
       res = self._setSubRequestAttribute( requestID, subRequestID, 'Status', 'Waiting' )
 
   def setRequest( self, requestName, requestString ):
-    request = RequestContainer( init = True, request = requestString )
+    request = RequestContainer( init=True, request=requestString )
     requestTypes = request.getSubRequestTypes()['Value']
     failed = False
     res = self._getRequestID( requestName )
@@ -512,7 +503,7 @@ class RequestDBMySQL( DB ):
       return S_OK( requestID )
 
   def updateRequest( self, requestName, requestString ):
-    request = RequestContainer( request = requestString )
+    request = RequestContainer( request=requestString )
     requestTypes = ['transfer', 'register', 'removal', 'stage', 'diset', 'logupload']
     requestID = request.getRequestID()['Value']
     updateRequestFailed = False
@@ -717,7 +708,7 @@ class RequestDBMySQL( DB ):
     else:
       return S_ERROR( 'RequestDB.setRequestAttribute: failed to set attribute' )
 
-  def _getRequestAttribute( self, attrName, requestID = None, requestName = None ):
+  def _getRequestAttribute( self, attrName, requestID=None, requestName=None ):
     if requestID:
       req = "SELECT %s from Requests WHERE RequestID=%s;" % ( attrName, requestID )
     elif requestName:
@@ -989,7 +980,7 @@ class RequestDBMySQL( DB ):
 
     condition = ''
     if new_selectDict or older or newer:
-      condition = self.__buildCondition( new_selectDict, older = older, newer = newer )
+      condition = self.__buildCondition( new_selectDict, older=older, newer=newer )
       req += condition
 
     if condition:
