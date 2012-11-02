@@ -7,8 +7,8 @@ import re
 
 class TransformationPlugin( object ):
 
-  def __init__( self, plugin, transClient = None, replicaManager = None ):
-    self.params = False
+  def __init__( self, plugin, transClient=None, replicaManager=None ):
+    self.params = {}
     self.data = False
     self.plugin = plugin
     self.files = False
@@ -80,14 +80,14 @@ class TransformationPlugin( object ):
     sourceSEs = eval( self.params['SourceSE'] )
     if targetseParam.count( '[' ):
       targetSEs = eval( targetseParam )
-    elif type(targetseParam)==type([]):
+    elif type( targetseParam ) == type( [] ):
       targetSEs = targetseParam
     else:
       targetSEs = [targetseParam]
     #sourceSEs = eval(self.params['SourceSE'])
     #targetSEs = eval(self.params['TargetSE'])
     destinations = int( self.params.get( 'Destinations', 0 ) )
-    if destinations and ( destinations >= len(targetSEs) ):
+    if destinations and ( destinations >= len( targetSEs ) ):
       destinations = 0
 
     fileGroups = self._getFileGroups( self.data )
@@ -121,8 +121,8 @@ class TransformationPlugin( object ):
       tasks.append( ( ses, lfns ) )
     return S_OK( tasks )
 
-  def _ByShare( self, type = 'CPU' ):
-    res = self._getShares( type, normalise = True )
+  def _ByShare( self, type='CPU' ):
+    res = self._getShares( type, normalise=True )
     if not res['OK']:
       return res
     cpuShares = res['Value']
@@ -131,7 +131,7 @@ class TransformationPlugin( object ):
       gLogger.info( "%s: %.1f" % ( site.ljust( 15 ), cpuShares[site] ) )
 
     # Get the existing destinations from the transformationDB
-    res = self._getExistingCounters( requestedSites = cpuShares.keys() )
+    res = self._getExistingCounters( requestedSites=cpuShares.keys() )
     if not res['OK']:
       gLogger.error( "Failed to get existing file share", res['Message'] )
       return res
@@ -149,11 +149,11 @@ class TransformationPlugin( object ):
     replicaGroups = res['Value']
 
     tasks = []
-    # For the replica groups 
+    # For the replica groups
     for replicaSE, lfns in replicaGroups:
       possibleSEs = replicaSE.split( ',' )
       # Determine the next site based on requested shares, existing usage and candidate sites
-      res = self._getNextSite( existingCount, cpuShares, candidates = self._getSitesForSEs( possibleSEs ) )
+      res = self._getNextSite( existingCount, cpuShares, candidates=self._getSitesForSEs( possibleSEs ) )
       if not res['OK']:
         gLogger.error( "Failed to get next destination SE", res['Message'] )
         continue
@@ -163,7 +163,7 @@ class TransformationPlugin( object ):
       if not res['OK']:
         continue
       ses = res['Value']
-      # Determine the selected SE and create the task 
+      # Determine the selected SE and create the task
       for chosenSE in ses:
         if chosenSE in possibleSEs:
           tasks.append( ( chosenSE, lfns ) )
@@ -172,7 +172,7 @@ class TransformationPlugin( object ):
           existingCount[targetSite] += len( lfns )
     return S_OK( tasks )
 
-  def _getShares( self, type, normalise = False ):
+  def _getShares( self, type, normalise=False ):
     res = gConfig.getOptionsDict( '/Resources/Shares/%s' % type )
     if not res['OK']:
       return res
@@ -187,7 +187,7 @@ class TransformationPlugin( object ):
       return S_ERROR( "No non-zero shares defined" )
     return S_OK( shares )
 
-  def _getExistingCounters( self, normalise = False, requestedSites = [] ):
+  def _getExistingCounters( self, normalise=False, requestedSites=[] ):
     res = self.transClient.getCounters( 'TransformationFiles', ['UsedSE'], {'TransformationID':self.params['TransformationID']} )
     if not res['OK']:
       return res
@@ -199,7 +199,7 @@ class TransformationPlugin( object ):
     if requestedSites:
       siteDict = {}
       for se, count in usageDict.items():
-        res = getSitesForSE( se, gridName = 'LCG' )
+        res = getSitesForSE( se, gridName='LCG' )
         if not res['OK']:
           return res
         for site in res['Value']:
@@ -222,7 +222,7 @@ class TransformationPlugin( object ):
       shares[site] = share
     return shares
 
-  def _getNextSite( self, existingCount, cpuShares, candidates = [] ):
+  def _getNextSite( self, existingCount, cpuShares, candidates=[] ):
     # normalise the shares
     siteShare = self._normaliseShares( existingCount )
     # then fill the missing share values to 0
@@ -305,7 +305,7 @@ class TransformationPlugin( object ):
   def _getSiteForSE( self, se ):
     """ Get site name for the given SE
     """
-    result = getSitesForSE( se, gridName = 'LCG' )
+    result = getSitesForSE( se, gridName='LCG' )
     if not result['OK']:
       return result
     if result['Value']:
@@ -317,7 +317,7 @@ class TransformationPlugin( object ):
     """
     sites = []
     for se in seList:
-      result = getSitesForSE( se, gridName = 'LCG' )
+      result = getSitesForSE( se, gridName='LCG' )
       if result['OK']:
         sites += result['Value']
     return sites

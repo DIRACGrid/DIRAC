@@ -4,7 +4,7 @@
 """  The Request Task Agent takes workflow tasks created in the transformation database and submits to the workload management system. """
 __RCSID__ = "$Id$"
 
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
+from DIRAC                                                          import S_OK
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
 
@@ -18,14 +18,13 @@ class WorkflowTaskAgent( TaskManagerAgentBase ):
   #############################################################################
   def initialize( self ):
     """ Sets defaults """
-    
+
     taskManager = WorkflowTasks()
-    
-    TaskManagerAgentBase.initialize( self, taskManager = taskManager )
- #   WorkflowTasks.__init__( self )
+
+    TaskManagerAgentBase.initialize( self, taskManager=taskManager )
     self.transType = self.am_getOption( "TransType", ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'] )
 
-    # This sets the Default Proxy to used as that defined under 
+    # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/ProductionManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
