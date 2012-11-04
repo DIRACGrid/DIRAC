@@ -181,7 +181,7 @@ class SSHComputingElement( ComputingElement ):
   def reset( self ):
 
     self.queue = self.ceParameters['Queue']
-    self.sshScript = os.path.join( rootPath, "DIRAC", "Resources", "Computing", "scripts", "sshce" )
+    self.sshScript = os.path.join( rootPath, "DIRAC", "Resources", "Computing", "remote_scripts", "sshce" )
     if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
       self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
     self.execQueue = self.ceParameters['ExecQueue']

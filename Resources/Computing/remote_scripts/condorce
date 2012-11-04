@@ -1,0 +1,42 @@
+#!/bin/env python
+
+import re, sys, tempfile, commands, os
+
+executable,nJobs,jobDir = sys.argv[1:]
+
+jdlFile = tempfile.NamedTemporaryFile( dir=jobDir, suffix=".jdl" )
+jdlFile.write("""
+Executable = %s
+Universe = vanilla
+Requirements   = OpSys == "LINUX"
+Initialdir = %s
+Output = $(Cluster).$(Process).out
+Error = $(Cluster).$(Process).err
+Log = test.log
+Environment = CONDOR_JOBID=$(Cluster).$(Process)
+
+Queue %s
+
+""" % (executable,jobDir,nJobs)
+)
+
+jdlFile.flush()
+
+status,output = commands.getstatusoutput( 'condor_submit %s' % jdlFile.name )
+
+jdlFile.close()
+
+
+submittedJobs = 0
+if status == 0:
+  lines = output.split( '\n' )
+  for line in lines:
+    if 'cluster' in line:
+      result = re.match( '.*(\d+) job.*cluster (\d+)\.', line )
+      if result:
+        submittedJobs, cluster = result.groups()
+        print submittedJobs, cluster
+  if submittedJobs == 0 :
+    status = 1
+
+sys.exit(status)
