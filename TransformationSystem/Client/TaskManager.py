@@ -143,7 +143,7 @@ class RequestTasks( TaskBase ):
       res = self.requestClient.getRequestInfo( taskName, 'RequestManagement/centralURL' )
       if res['OK']:
         taskNameIDs[taskName] = res['Value'][0]
-      elif res['Message'].find( "Failed to retrieve RequestID for Request" ) >= 0:
+      elif "Failed to retrieve RequestID for Request" in res['Message']:
         noTasks.append( taskName )
       else:
         self.log.error( "Failed to get request info for request %s" % taskName, res['Message'] )
@@ -158,7 +158,7 @@ class RequestTasks( TaskBase ):
       newStatus = ''
       if res['OK']:
         newStatus = res['Value']['RequestStatus']
-      elif res['Message'].find( "Failed to retrieve RequestID for Request" ) >= 0 :
+      elif "Failed to retrieve RequestID for Request" in res['Message']:
         # Unimportant: just the request is created but not submitted
         self.log.verbose( "getSubmittedFileStatus: Failed to get task status for request %s" % taskName, res['Message'] )
         newStatus = 'Failed'
@@ -178,7 +178,7 @@ class RequestTasks( TaskBase ):
       lfnDict = taskFiles[taskName]
       res = self.requestClient.getRequestFileStatus( taskName, lfnDict.keys(), 'RequestManagement/centralURL' )
       if not res['OK']:
-        if res['Message'].find( "Failed to retrieve RequestID for Request" ) >= 0 :
+        if "Failed to retrieve RequestID for Request" in res['Message'] :
           # Unimportant: just the request is created but not submitted
           self.log.verbose( "getSubmittedFileStatus: Failed to get files status for request %s" % taskName, res['Message'] )
         else:
