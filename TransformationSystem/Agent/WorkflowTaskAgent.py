@@ -4,7 +4,7 @@
 """  The Request Task Agent takes workflow tasks created in the transformation database and submits to the workload management system. """
 __RCSID__ = "$Id$"
 
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
+from DIRAC                                                          import S_OK
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
 
@@ -22,7 +22,6 @@ class WorkflowTaskAgent( TaskManagerAgentBase ):
     taskManager = WorkflowTasks()
     
     TaskManagerAgentBase.initialize( self, taskManager = taskManager )
- #   WorkflowTasks.__init__( self )
     self.transType = self.am_getOption( "TransType", ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'] )
 
     # This sets the Default Proxy to used as that defined under 
