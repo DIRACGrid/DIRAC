@@ -35,7 +35,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient                import Notif
 
 import DIRAC
 
-import os, re, sys, time, shutil, threading, tarfile, glob, types
+import os, re, sys, time, shutil, threading, tarfile, glob, types, urllib
 
 EXECUTION_RESULT = {}
 
@@ -319,7 +319,7 @@ class JobWrapper:
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split( '=' )[0]
-        valEnv = var.split( '=' )[1]
+        valEnv = urllib.unquote( var.split( '=' )[1] )
         exeEnv[nameEnv] = valEnv
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
