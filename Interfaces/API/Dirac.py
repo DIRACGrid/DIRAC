@@ -16,7 +16,8 @@
 
 __RCSID__ = "$Id$"
 
-import re, os, sys, time, shutil, types, tempfile, glob, tarfile
+import re, os, sys, time, shutil, types, tempfile, glob, tarfile, urllib
+import pprint
 import DIRAC
 
 from DIRAC.Core.Base.API                                 import API
@@ -932,7 +933,7 @@ class Dirac( API ):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split( '=' )[0]
-        valEnv = var.split( '=' )[1]
+        valEnv = urllib.unquote( var.split( '=' )[1] ) #this is needed to make the value contain strange things
         executionEnv[nameEnv] = valEnv
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
