@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import systemCall, rootPath
-from DIRAC                                               import gConfig
+from DIRAC                                               import gConfig, gLogger
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
 import os, sys, time, re, socket, stat, shutil
@@ -35,7 +35,7 @@ class SSH:
       self.host = parameters.get( 'SSHHost', '' )
     self.password = password
     if not password:
-      self.host = parameters.get( 'SSHPassword', '' )
+      self.password = parameters.get( 'SSHPassword', '' )
     self.key = key
     if not key:
       self.key = parameters.get( 'SSHKey', '' )

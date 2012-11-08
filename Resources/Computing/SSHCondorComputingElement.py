@@ -4,10 +4,11 @@
 # Author : A.Tsaregorodtsev
 ########################################################################
 
-import os
+import os, stat, tempfile, shutil
 
 from DIRAC.Resources.Computing.ComputingElement     import ComputingElement
 from DIRAC.Resources.Computing.SSHComputingElement  import SSH 
+from DIRAC import rootPath, S_OK, S_ERROR
 
 CE_NAME = 'SSHCondor'
 MANDATORY_PARAMETERS = [ 'Queue' ]
@@ -57,7 +58,6 @@ class SSHCondorComputingElement(ComputingElement):
       self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
     self.execQueue = self.ceParameters['ExecQueue']
     self.log.info( "Using queue: ", self.queue )
-    self.hostname = socket.gethostname()
     self.sharedArea = self.ceParameters['SharedArea']
     self.batchOutput = self.ceParameters['BatchOutput']
     if not self.batchOutput.startswith( '/' ):
@@ -72,23 +72,17 @@ class SSHCondorComputingElement(ComputingElement):
     if not self.executableArea.startswith( '/' ):
       self.executableArea = os.path.join( self.sharedArea, self.executableArea )
       
-    self.sshHost = []
-    for h in self.ceParameters['SSHHost'].strip().split( ',' ):
-      host = h.strip().split('/')[0]
-      self.log.verbose( 'Registerng host:%s; uploading script' % host )
-      ssh = SSH( host = host, parameters = self.ceParameters )
-      result = ssh.scpCall( 10, self.sshScript, self.sharedArea )
-      if not result['OK']:
-        self.log.warn( 'Failed uploading script: %s' % result['Message'][1] )
-        continue
-      self.log.verbose( 'Creating working directories on %s' % host )
-      ssh.sshCall( 10, "chmod +x %s/sshce; mkdir -p %s; mkdir -p %s" % ( self.sharedArea, self.infoArea, self.executableArea ) )
-      if not result['OK']:
-        self.log.warn( 'Failed creating working directories: %s' % result['Message'][1] )
-        continue
-
-      self.log.info( 'Host %s registered for usage' % host )
-      self.sshHost.append( h.strip() )
+    self.sshHost = self.ceParameters['SSHHost']
+    self.log.verbose( 'Uploading condorce script to %s' % self.sshHost )
+    ssh = SSH( host = self.sshHost, parameters = self.ceParameters )
+    result = ssh.scpCall( 10, self.sshScript, self.sharedArea )
+    if not result['OK']:
+      self.log.warn( 'Failed uploading script: %s' % result['Message'][1] )
+      
+    self.log.verbose( 'Creating working directories on %s' % self.sshHost )
+    ssh.sshCall( 10, "chmod +x %s/condorce; mkdir -p %s" % ( self.sharedArea, self.executableArea ) )
+    if not result['OK']:
+      self.log.warn( 'Failed creating working directories: %s' % result['Message'][1] )
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -149,18 +143,18 @@ shutil.rmtree( workingDirectory )
     else: # no proxy
       submitFile = executableFile
 
-    ssh = SSH( host = host, parameters = self.ceParameters )
+    ssh = SSH( parameters = self.ceParameters )
     # Copy the executable
     os.chmod( submitFile, stat.S_IRUSR | stat.S_IXUSR )
     sFile = os.path.basename( submitFile )
     result = ssh.scpCall( 10, submitFile, '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) )
 
     # Submit jobs
-    cmd = "%s/condorce %s/%s %s %s" % ( self.sharedArea, self.executableArea, os.path.basename( submitFile ), numberOfJobs, self.infoArea )
+    cmd = "bash --login -c '%s/condorce %s/%s %s %s'" % ( self.sharedArea, self.executableArea, os.path.basename( submitFile ), numberOfJobs, self.batchOutput )
     self.log.verbose( 'CE submission command: %s\n' %  cmd )
-    result = ssh.sshCall( 10, cmd )
+    ret = ssh.sshCall( 10, cmd )
 
-    if not result['OK']:
+    if not ret['OK']:
       self.log.error( 'SSHCondor CE job submission failed', result['Message'] )
       return result
     else:
@@ -182,7 +176,7 @@ shutil.rmtree( workingDirectory )
     jobIDs = list ( jobIDList )
     resultDict = {}
     ssh = SSH( parameters = self.ceParameters )
-    cmd = ["condor_q -submitter %s" % self.ceParameters["SSHUser"] ]
+    cmd = ["bash --login -c 'condor_q -submitter %s'" % self.ceParameters["SSHUser"] ]
     ret = ssh.sshCall( 10, cmd )
 
     if not ret['OK']:
@@ -197,7 +191,7 @@ shutil.rmtree( workingDirectory )
       self.log.error( 'Failed condor_q execution:', stderr )
       return S_ERROR( stderr )
     
-    cmd = ["condor_history | grep %s" % self.ceParameters["SSHUser"] ]
+    cmd = ["bash --login -c 'condor_history | grep %s'" % self.ceParameters["SSHUser"] ]
     ret = ssh.sshCall( 10, cmd )
 
     if not ret['OK']:
@@ -210,7 +204,7 @@ shutil.rmtree( workingDirectory )
     
     stdout = stdout_q
     if status_history == 0:
-      stdout = '\n'.join( [stdout_r,stdout_history] )
+      stdout = '\n'.join( [stdout_q,stdout_history] )
 
     if len( stdout ):
       lines = stdout.split( '\n' )
@@ -240,7 +234,7 @@ shutil.rmtree( workingDirectory )
     """
     result = S_OK()
     ssh = SSH( parameters = self.ceParameters )
-    cmd = ["condor_q -submitter %s" % self.ceParameters["SSHUser"] ]
+    cmd = ["bash --login -c 'condor_q -submitter %s'" % self.ceParameters["SSHUser"] ]
     ret = ssh.sshCall( 10, cmd )
 
     if not ret['OK']:
@@ -270,6 +264,7 @@ shutil.rmtree( workingDirectory )
         elif " R " in line:
           runningJobs += 1  
 
+    result['SubmittedJobs'] = self.submittedJobs
     result['WaitingJobs'] = waitingJobs
     result['RunningJobs'] = runningJobs
 
@@ -283,26 +278,26 @@ shutil.rmtree( workingDirectory )
         the output is returned as file in this directory. Otherwise, the output is returned 
         as strings. 
     """
-    jobNumber = jobID.split( '.' )[0]
+    jobNumber = jobID
 
     if not localDir:
       tempDir = tempfile.mkdtemp()
     else:
       tempDir = localDir
     ssh = SSH( parameters = self.ceParameters )
-    result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchOutput, jobNumber ), upload = False )
+    result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobID ), '%s/%s.out' % ( self.batchOutput, jobNumber ), upload = False )
     if not result['OK']:
       return result
     if not os.path.exists( '%s/%s.out' % ( tempDir, jobID ) ):
       os.system( 'touch %s/%s.out' % ( tempDir, jobID ) )
-    result = ssh.scpCall( 20, '%s/%s.err' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchError, jobNumber ), upload = False )
+    result = ssh.scpCall( 20, '%s/%s.err' % ( tempDir, jobID ), '%s/%s.err' % ( self.batchOutput, jobNumber ), upload = False )
     if not result['OK']:
       return result
     if not os.path.exists( '%s/%s.err' % ( tempDir, jobID ) ):
       os.system( 'touch %s/%s.err' % ( tempDir, jobID ) )
     # The result is OK, we can remove the output
     if self.removeOutput:
-      result = ssh.sshCall( 10, 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobNumber, self.batchError, jobNumber ) )
+      result = ssh.sshCall( 10, 'rm -f %s/%s*' % ( self.batchOutput, jobNumber ) )
     if localDir:
       return S_OK( ( '%s/%s.out' % ( tempDir, jobID ), '%s/%s.err' % ( tempDir, jobID ) ) )
     else:
