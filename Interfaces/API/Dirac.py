@@ -17,7 +17,7 @@
     - Interaction with Grid storage and file catalogues
       via the DataManagement public interfaces (more to be added)
     - Local execution of workflows for testing purposes.
-
+    - This should be more detaild
 """
 
 from DIRAC.Core.Base import Script
