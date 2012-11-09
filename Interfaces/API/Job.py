@@ -34,7 +34,7 @@ Script.initialize()
 
 __RCSID__ = "$Id$"
 
-import re, os, types
+import re, os, types, urllib
 
 from DIRAC.Core.Workflow.Parameter                            import *
 from DIRAC.Core.Workflow.Module                               import *
@@ -821,7 +821,7 @@ class Job:
       environment = []
       for var, val in environmentDict.items():
         try:
-          environment.append( '='.join( [str( var ), str( val )] ) )
+          environment.append( '='.join( [str( var ), urllib.quote( str( val )] ) ) )
         except Exception:
           return self._reportError( 'Expected string for environment variable key value pairs', **kwargs )
 
