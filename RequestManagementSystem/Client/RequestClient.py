@@ -12,7 +12,6 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
 class RequestClient( Client ):
 
@@ -214,7 +213,7 @@ class RequestClient( Client ):
         thisURL = requestRPCClient.thisURL
         res = requestRPCClient.setRequest( requestName, requestString )
         if res['OK']:
-          self.log.info( "RequestClient.setRequest: request '%s' at %s set" % ( requestName, thisURL ) )
+          self.log.verbose( "RequestClient.setRequest: request '%s' at %s set" % ( requestName, thisURL ) )
           res["Server"] = thisURL
           return res
         errMsg = "RequestClient.setRequest: failed setting request '%s' at %s: %s " % ( requestName, thisURL, res["Message"] )

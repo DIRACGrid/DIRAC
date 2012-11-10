@@ -4,7 +4,7 @@
 """  The Request Task Agent takes request tasks created in the transformation database and submits to the request management system. """
 __RCSID__ = "$Id$"
 
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
+from DIRAC                                                          import S_OK
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Client.TaskManager                  import RequestTasks
 

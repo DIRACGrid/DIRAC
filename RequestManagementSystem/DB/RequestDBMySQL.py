@@ -218,21 +218,12 @@ class RequestDBMySQL( DB ):
     return S_OK( summaryDict )
 
   def getRequestFileStatus( self, requestID, files ):
-    req = "SELECT DISTINCT SubRequestID FROM SubRequests WHERE RequestID = %d;" % requestID
+    req = "SELECT Files.LFN, Files.Status from Files, SubRequests where Files.SubRequestID=SubRequests.SubRequestID " + \
+    "and SubRequests.RequestID=%d and Files.LFN in (%s);" % ( requestID, stringListToString( files ) )
     res = self._query( req )
     if not res['OK']:
       return res
-    subRequests = []
-    for subRequestID in res['Value'][0]:
-      subRequests.append( subRequestID )
-    req = "SELECT LFN,Status from Files WHERE SubRequestID IN (%s) AND LFN in (%s);" % ( intListToString( subRequests ), stringListToString( files ) )
-    res = self._query( req )
-    if not res['OK']:
-      return res
-    files = {}
-    for lfn, status in res['Value']:
-      files[lfn] = status
-    return S_OK( files )
+    return S_OK( dict( res['Value'] ) )
 
   def yieldRequests( self, requestType = "", limit = 1 ):
     """ quick and dirty request generator

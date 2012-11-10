@@ -8,7 +8,7 @@ import re
 class TransformationPlugin( object ):
 
   def __init__( self, plugin, transClient = None, replicaManager = None ):
-    self.params = False
+    self.params = {}
     self.data = False
     self.plugin = plugin
     self.files = False
