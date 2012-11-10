@@ -60,7 +60,7 @@ class TaskBase( object ):
   def getSubmittedFileStatus( self, fileDicts ):
     return S_ERROR( "Not implemented" )
 
-  def __taskName( self, transID, taskID ):
+  def _taskName( self, transID, taskID ):
     return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
 
 class RequestTasks( TaskBase ):
@@ -94,7 +94,7 @@ class RequestTasks( TaskBase ):
       oRequest.setSubRequestAttributes( subRequestIndex, requestType, attributeDict )
       files = [{'LFN':lfn} for lfn in paramDict['InputData'].split( ';' )]
       oRequest.setSubRequestFiles( subRequestIndex, requestType, files )
-      oRequest.setRequestAttributes( {'RequestName':self.__taskName( transID, taskID )} )
+      oRequest.setRequestAttributes( {'RequestName':self._taskName( transID, taskID )} )
       oRequest.setCreationtime()
       taskDict[taskID]['TaskObject'] = oRequest.toXML()['Value']
     return S_OK( taskDict )
@@ -139,7 +139,7 @@ class RequestTasks( TaskBase ):
     taskNameIDs = {}
     noTasks = []
     for taskDict in taskDicts:
-      taskName = self.__taskName( taskDict['TransformationID'], taskDict['TaskID'] )
+      taskName = self._taskName( taskDict['TransformationID'], taskDict['TaskID'] )
       res = self.requestClient.getRequestInfo( taskName, 'RequestManagement/centralURL' )
       if res['OK']:
         taskNameIDs[taskName] = res['Value'][0]
@@ -153,7 +153,7 @@ class RequestTasks( TaskBase ):
     updateDict = {}
     for taskDict in taskDicts:
       taskID = taskDict['TaskID']
-      taskName = self.__taskName( taskDict['TransformationID'], taskID )
+      taskName = self._taskName( taskDict['TransformationID'], taskID )
       res = self.requestClient.getRequestStatus( taskName, 'RequestManagement/centralURL' )
       newStatus = ''
       if res['OK']:
@@ -171,7 +171,7 @@ class RequestTasks( TaskBase ):
   def getSubmittedFileStatus( self, fileDicts ):
     taskFiles = {}
     for fileDict in fileDicts:
-      taskFiles.setdefault( self.__taskName( fileDict['TransformationID'], fileDict['TaskID'] ), {} )[fileDict['LFN']] = fileDict['Status']
+      taskFiles.setdefault( self._taskName( fileDict['TransformationID'], fileDict['TaskID'] ), {} )[fileDict['LFN']] = fileDict['Status']
 
     updateDict = {}
     for taskName in sorted( taskFiles ):
@@ -263,7 +263,7 @@ class WorkflowTasks( TaskBase ):
       transGroup = str( transID ).zfill( 8 )
       self.log.verbose( 'Adding default transformation group of %s' % ( transGroup ) )
       oJob.setJobGroup( transGroup )
-      constructedName = self.__taskName( transID, taskID )
+      constructedName = self._taskName( transID, taskID )
       self.log.verbose( 'Setting task name to %s' % constructedName )
       oJob.setName( constructedName )
       oJob._setParamValue( 'PRODUCTION_ID', transGroup )
@@ -420,7 +420,7 @@ class WorkflowTasks( TaskBase ):
     return res
 
   def updateTransformationReservedTasks( self, taskDicts ):
-    taskNames = [self.__taskName( taskDict['TransformationID'], taskDict['TaskID'] ) for taskDict in taskDicts]
+    taskNames = [self._taskName( taskDict['TransformationID'], taskDict['TaskID'] ) for taskDict in taskDicts]
     res = self.jobMonitoringClient.getJobs( {'JobName':taskNames} )
     if not ['OK']:
       self.log.info( "updateTransformationReservedTasks: Failed to get task from WMS", res['Message'] )
@@ -469,7 +469,7 @@ class WorkflowTasks( TaskBase ):
   def getSubmittedFileStatus( self, fileDicts ):
     taskFiles = {}
     for fileDict in fileDicts:
-      taskFiles.setdefault( self.__taskName( fileDict['TransformationID'], fileDict['TaskID'] ), {} )[fileDict['LFN']] = fileDict['Status']
+      taskFiles.setdefault( self._taskName( fileDict['TransformationID'], fileDict['TaskID'] ), {} )[fileDict['LFN']] = fileDict['Status']
     res = self.updateTransformationReservedTasks( fileDicts )
     if not res['OK']:
       self.log.error( "Failed to obtain taskIDs for %s files" % len( fileDicts ), res['Message'] )
