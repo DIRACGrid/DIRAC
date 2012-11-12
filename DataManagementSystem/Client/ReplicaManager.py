@@ -23,15 +23,15 @@ from types import StringTypes, ListType, DictType, StringType, TupleType
 ## from DIRAC
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.Core.Utilities.File import makeGuid, getSize
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
+from DIRAC.Core.Utilities.File import makeGuid, getSize
 from DIRAC.Core.Utilities.List import sortList, randomize
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getSEsForCountry
-from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 class CatalogBase( object ):
   """
@@ -1684,130 +1684,194 @@ class ReplicaManager( CatalogToStorage ):
     return S_ERROR( errStr )
 
   def __initializeReplication( self, lfn, sourceSE, destSE ):
+    
+    # Horrible, but kept to not break current log messages
+    logStr = "__initializeReplication:"
+    
     ###########################################################
     # Check that the destination storage element is sane and resolve its name
-    self.log.verbose( "__initializeReplication: Verifying dest StorageElement validity (%s)." % destSE )
+    self.log.verbose( "%s Verifying dest StorageElement validity (%s)." % ( logStr, destSE ) )
     destStorageElement = StorageElement( destSE )
     res = destStorageElement.isValid()
     if not res['OK']:
-      errStr = "__initializeReplication: The storage element is not currently valid."
+      errStr = "%s The storage element is not currently valid." % logStr
       self.log.error( errStr, "%s %s" % ( destSE, res['Message'] ) )
       return S_ERROR( errStr )
     destSE = destStorageElement.getStorageElementName()['Value']
-    self.log.info( "__initializeReplication: Destination Storage Element verified." )
+    self.log.info( "%s Destination Storage Element verified." % logStr )
+    
     ###########################################################
     # Get the LFN replicas from the file catalogue
-    self.log.verbose( "ReplicaManager.__initializeReplication: Attempting to obtain replicas for %s." % lfn )
+    self.log.verbose( "%s Attempting to obtain replicas for %s." % ( logStr, lfn ) )
     res = self.fileCatalogue.getReplicas( lfn )
-    if not res['OK']:
-      errStr = "__initializeReplication: Completely failed to get replicas for LFN."
+    if not res[ 'OK' ]:
+      errStr = "%s Completely failed to get replicas for LFN." % logStr
       self.log.error( errStr, "%s %s" % ( lfn, res['Message'] ) )
       return res
     if lfn not in res['Value']['Successful']:
-      errStr = "__initializeReplication: Failed to get replicas for LFN."
+      errStr = "%s Failed to get replicas for LFN." % logStr
       self.log.error( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
-    self.log.info( "__initializeReplication: Successfully obtained replicas for LFN." )
+    self.log.info( "%s Successfully obtained replicas for LFN." % logStr )
     lfnReplicas = res['Value']['Successful'][lfn]
+    
     ###########################################################
     # If the file catalogue size is zero fail the transfer
-    self.log.verbose( "__initializeReplication: Attempting to obtain size for %s." % lfn )
+    self.log.verbose( "%s Attempting to obtain size for %s." % ( logStr, lfn ) )
     res = self.fileCatalogue.getFileSize( lfn )
     if not res['OK']:
-      errStr = "__initializeReplication: Completely failed to get size for LFN."
+      errStr = "%s Completely failed to get size for LFN." % logStr
       self.log.error( errStr, "%s %s" % ( lfn, res['Message'] ) )
       return res
     if lfn not in res['Value']['Successful']:
-      errStr = "__initializeReplication: Failed to get size for LFN."
+      errStr = "%s Failed to get size for LFN." % logStr
       self.log.error( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
     catalogueSize = res['Value']['Successful'][lfn]
     if catalogueSize == 0:
-      errStr = "__initializeReplication: Registered file size is 0."
+      errStr = "%s Registered file size is 0." % logStr
       self.log.error( errStr, lfn )
       return S_ERROR( errStr )
-    self.log.info( "__initializeReplication: File size determined to be %s." % catalogueSize )
+    self.log.info( "%s File size determined to be %s." % ( logStr, catalogueSize ) )
+    
     ###########################################################
     # Check whether the destination storage element is banned
-    self.log.verbose( "__initializeReplication: Determining whether %s is banned." % destSE )
-    configStr = '/Resources/StorageElements/BannedTarget'
-    bannedTargets = gConfig.getValue( configStr, [] )
-    if destSE in bannedTargets:
-      infoStr = "__initializeReplication: Destination Storage Element is currently banned."
+    
+    self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
+    
+    destSEStatus = self.resourceStatus.getStorageElementStatus( destSE, 'Write' )
+    if not destSEStatus[ 'OK' ]:
+      self.log.error( destSEStatus[ 'Message' ] )
+      return destSEStatus
+    destSEStatus = destSEStatus[ 'Value' ][ destSE ][ 'Write' ] 
+ 
+    # For RSS, the Active and Bad statuses are OK. Probing and Banned are NOK statuses
+    if not destSEStatus in ( 'Active', 'Bad' ):
+      infoStr = "%s Destination Storage Element is currently '%s' for Write" % ( logStr, destSEStatus )
       self.log.info( infoStr, destSE )
       return S_ERROR( infoStr )
-    self.log.info( "__initializeReplication: Destination site not banned." )
+    
+    self.log.info( "%s Destination site not banned for Write." % logStr )     
+    
+#    configStr = '/Resources/StorageElements/BannedTarget'
+#    bannedTargets = gConfig.getValue( configStr, [] )
+#    if destSE in bannedTargets:
+#      infoStr = "__initializeReplication: Destination Storage Element is currently banned."
+#      self.log.info( infoStr, destSE )
+#      return S_ERROR( infoStr )
+#    
+#    self.log.info( "__initializeReplication: Destination site not banned." )
+
     ###########################################################
     # Check whether the supplied source SE is sane
-    self.log.verbose( "__initializeReplication: Determining whether source Storage Element is sane." )
-    configStr = '/Resources/StorageElements/BannedSource'
-    bannedSources = gConfig.getValue( configStr, [] )
+    
+    self.log.verbose( "%s: Determining whether source Storage Element is sane." % logStr )
+    
+#    configStr = '/Resources/StorageElements/BannedSource'
+#    bannedSources = gConfig.getValue( configStr, [] )
+    
     if sourceSE:
+      
+      sourceSEStatus = self.resourceStatus.getStorageElementStatus( sourceSE, 'Read' )
+      if not sourceSEStatus[ 'OK' ]:
+        self.log.error( sourceSEStatus[ 'Message' ] )
+        return sourceSEStatus
+      sourceSEStatus = sourceSEStatus[ 'Value' ][ sourceSE ][ 'Read' ] 
+      
       if sourceSE not in lfnReplicas:
-        errStr = "__initializeReplication: LFN does not exist at supplied source SE."
+        errStr = "%s LFN does not exist at supplied source SE." % logStr
         self.log.error( errStr, "%s %s" % ( lfn, sourceSE ) )
         return S_ERROR( errStr )
-      elif sourceSE in bannedSources:
-        infoStr = "__initializeReplication: Supplied source Storage Element is currently banned."
+      
+      elif not sourceSEStatus in ( 'Active', 'Bad' ):      
+#      elif sourceSE in bannedSources:
+        infoStr = "%s Supplied source Storage Element is currently '%s' for Read." % ( logStr, sourceSEStatus )
         self.log.info( infoStr, sourceSE )
         return S_ERROR( errStr )
-    self.log.info( "__initializeReplication: Replication initialization successful." )
-    resDict = {'DestStorage':destStorageElement, 'DestSE':destSE, 'Replicas':lfnReplicas, 'CatalogueSize':catalogueSize}
+    
+    self.log.info( "%s Replication initialization successful." % logStr )
+    
+    resDict = { 
+               'DestStorage'   : destStorageElement, 
+               'DestSE'        : destSE, 
+               'Replicas'      : lfnReplicas, 
+               'CatalogueSize' : catalogueSize
+               }
+    
     return S_OK( resDict )
 
   def __resolveBestReplicas( self, sourceSE, lfnReplicas, catalogueSize ):
+    
     ###########################################################
     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
-    configStr = '/Resources/StorageElements/BannedSource'
-    bannedSources = gConfig.getValue( configStr, [] )
-    self.log.info( "__resolveBestReplicas: Obtained current banned sources." )
+    
+    logStr = "__resolveBestReplicas:"
+    
+    #configStr = '/Resources/StorageElements/BannedSource'
+    #bannedSources = gConfig.getValue( configStr, [] )
+    self.log.info( "%s Obtained current banned sources." % logStr )
     replicaPreference = []
-    for diracSE, pfn in lfnReplicas.items():
+    
+    for diracSE, pfn in lfnReplicas.items():     
+      
       if sourceSE and diracSE != sourceSE:
-        self.log.info( "__resolveBestReplicas: %s replica not requested." % diracSE )
-      elif diracSE in bannedSources:
-        self.log.info( "__resolveBestReplicas: %s is currently banned as a source." % diracSE )
+        self.log.info( "%s %s replica not requested." % ( logStr, diracSE ) )
+        continue
+      
+      diracSEStatus = self.resourceStatus.getStorageElementStatus( diracSE, 'Read' )
+      if not diracSEStatus[ 'OK' ]:
+        self.log.error( diracSEStatus[ 'Message' ] )
+        continue
+      diracSEStatus = diracSEStatus[ 'Value' ][ sourceSE ][ 'Read' ]         
+      
+      if not diracSEStatus in ( 'Active', 'Bad' ):
+        self.log.info( "%s %s is currently '%s' as a source." % ( logStr, diracSE, diracSEStatus ) )
+      
+      #elif diracSE in bannedSources:  
+      #  self.log.info( "__resolveBestReplicas: %s is currently banned as a source." % diracSE )
       else:
-        self.log.info( "__resolveBestReplicas: %s is available for use." % diracSE )
+        self.log.info( "%s %s is available for use." % ( logStr, diracSE ) )
         storageElement = StorageElement( diracSE )
         res = storageElement.isValid()
         if not res['OK']:
-          errStr = "__resolveBestReplicas: The storage element is not currently valid."
+          errStr = "%s The storage element is not currently valid." % logStr
           self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
           if storageElement.getRemoteProtocols()['Value']:
-            self.log.verbose( "__resolveBestReplicas: Attempting to get source pfns for remote protocols." )
+            self.log.verbose( "%s Attempting to get source pfns for remote protocols." % logStr )
             res = storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols )
             if res['OK']:
               sourcePfn = res['Value']
-              self.log.verbose( "__resolveBestReplicas: Attempting to get source file size." )
+              self.log.verbose( "%s Attempting to get source file size." % logStr )
               res = storageElement.getFileSize( sourcePfn )
               if res['OK']:
                 if sourcePfn in res['Value']['Successful']:
                   sourceFileSize = res['Value']['Successful'][sourcePfn]
-                  self.log.info( "__resolveBestReplicas: Source file size determined to be %s." % sourceFileSize )
+                  self.log.info( "%s Source file size determined to be %s." % ( logStr, sourceFileSize ) )
                   if catalogueSize == sourceFileSize:
                     fileTuple = ( diracSE, sourcePfn )
                     replicaPreference.append( fileTuple )
                   else:
-                    errStr = "__resolveBestReplicas: Catalogue size and physical file size mismatch."
+                    errStr = "%s Catalogue size and physical file size mismatch." % logStr
                     self.log.error( errStr, "%s %s" % ( diracSE, sourcePfn ) )
                 else:
-                  errStr = "__resolveBestReplicas: Failed to get physical file size."
+                  errStr = "%s Failed to get physical file size." % logStr
                   self.log.error( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Value']['Failed'][sourcePfn] ) )
               else:
-                errStr = "__resolveBestReplicas: Completely failed to get physical file size."
+                errStr = "%s Completely failed to get physical file size." % logStr
                 self.log.error( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Message'] ) )
             else:
-              errStr = "__resolveBestReplicas: Failed to get PFN for replication for StorageElement."
+              errStr = "%s Failed to get PFN for replication for StorageElement." % logStr
               self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
           else:
-            errStr = "__resolveBestReplicas: Source Storage Element has no remote protocols."
+            errStr = "%s Source Storage Element has no remote protocols." % logStr
             self.log.info( errStr, diracSE )
+    
     if not replicaPreference:
-      errStr = "__resolveBestReplicas: Failed to find any valid source Storage Elements."
+      errStr = "%s Failed to find any valid source Storage Elements." % logStr
       self.log.error( errStr )
       return S_ERROR( errStr )
+    
     else:
       return S_OK( replicaPreference )
 
