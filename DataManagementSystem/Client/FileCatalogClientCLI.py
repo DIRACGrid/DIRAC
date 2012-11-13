@@ -185,7 +185,7 @@ class DirectoryListing:
       print str(e[5]).rjust(wList[3]),
       print str(e[6])
 
-  def addFile(self,name):
+  def addSimpleFile(self,name):
     """ Add single files to be sorted later"""
     self.entries.append(name)
 
@@ -934,7 +934,7 @@ File Catalog Client $Revision: 1.17 $Date:
               if fileDict:
                 dList.addFile(fname,fileDict,numericid)
             else:  
-              dList.addFile(fname)
+              dList.addSimpleFile(fname)
           for entry in result['Value']['Successful'][path]['SubDirs']:
             dname = entry.split('/')[-1]
             # print entry, dname
@@ -944,7 +944,7 @@ File Catalog Client $Revision: 1.17 $Date:
               if dirDict:
                 dList.addDirectory(dname,dirDict,numericid)
             else:    
-              dList.addFile(dname)
+              dList.addSimpleFile(dname)
           for entry in result['Value']['Successful'][path]['Links']:
             pass
               
