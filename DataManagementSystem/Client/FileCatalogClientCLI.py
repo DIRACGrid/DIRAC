@@ -184,7 +184,16 @@ class DirectoryListing:
       print str(e[4]).rjust(wList[2]),
       print str(e[5]).rjust(wList[3]),
       print str(e[6])
-      
+
+  def addFile(self,name):
+    """ Add single files to be sorted later"""
+    self.entries.append(name)
+
+def printOrdered(self):
+    """ print the ordered list"""
+    self.entries.sort()
+    for entry in self.entries:
+      print entry
 
 class FileCatalogClientCLI(cmd.Cmd):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
@@ -925,7 +934,7 @@ File Catalog Client $Revision: 1.17 $Date:
               if fileDict:
                 dList.addFile(fname,fileDict,numericid)
             else:  
-              print fname
+              dList.addFile(fname)
           for entry in result['Value']['Successful'][path]['SubDirs']:
             dname = entry.split('/')[-1]
             # print entry, dname
@@ -935,12 +944,14 @@ File Catalog Client $Revision: 1.17 $Date:
               if dirDict:
                 dList.addDirectory(dname,dirDict,numericid)
             else:    
-              print dname
+              dList.addFile(dname)
           for entry in result['Value']['Successful'][path]['Links']:
             pass
               
           if long:
             dList.printListing(reverse,timeorder)      
+          else:
+            dList.printOrdered()
       else:
         print "Error:",result['Message']
     except Exception, x:
