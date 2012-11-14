@@ -95,6 +95,10 @@ FIX: TransformationCleaningAgent - properly call superclass constructor with loa
 NEW: TransformationAgent is multithreaded now ( implementation moved from LHCbDIRAC )
 NEW: added unit tests
 
+[v6r5p9]
+
+FIX: merged in patch v6r4p30
+
 [v6r5p8]
 
 FIX: merged in patch v6r4p29
