@@ -6,6 +6,9 @@ BUGFIX: dirac-admin-bdii-ce-voview - proper check of the result structure
 *Interfaces
 FIX: Dirac.py, Job.py - allow to pass environment variables with special characters
 
+*DMS
+NEW: FileCatalogCLI - possibility to sort output in the ls command
+
 *WMS:
 FIX: JobWrapper - interpret environment variables with special characters 
 
