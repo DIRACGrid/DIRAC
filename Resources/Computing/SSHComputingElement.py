@@ -67,7 +67,7 @@ class SSH:
           if i == 0: # Timeout
             return S_OK( ( -1, str( child.before ) + str( child.after ), 'SSH login failed' ) )
           elif i == 1:
-            child.sendline( password )
+            child.sendline( self.password )
             child.expect( pexpect.EOF )
             return S_OK( ( 0, child.before, '' ) )
         elif i == 2:
