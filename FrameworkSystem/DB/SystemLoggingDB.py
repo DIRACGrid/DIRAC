@@ -390,7 +390,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
       self.log.error( '__DBCommit failed to query DB', result['Message'] )
       return S_ERROR()
     if len( result['Value'] ) == 0:
-      error = 'Could not retrieved inserted values'
+      error = 'Could not retrieve inserted values'
       if rowID:
         condDict = { outFields[0]: rowID  }
         self.deleteEntries( tableName, condDict )
