@@ -12,6 +12,7 @@ import cmd
 import commands
 import os.path
 import string
+import time
 from types  import *
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security import CS
@@ -29,6 +30,52 @@ def int_with_commas(i):
     news = s[-3:]+","+news
     s = s[:-3] 
   return news[:-1]
+
+def printTable(fields,records):
+    """ Utility to pretty print tabular data
+    """
+
+    if not records:
+      print "No output"
+      return
+
+    nFields = len(fields)
+    if nFields != len(records[0]):
+      print "Incorrect data structure to print"
+      return
+
+    lengths = []
+    for i in range(nFields):
+      lengths.append(len(fields[i]))
+      for r in records:
+        if len(r[i]) > lengths[i]:
+          lengths[i] = len(r[i])
+
+    totalLength = 0
+    for i in lengths:
+      totalLength += i
+      totalLength += 2
+    totalLength += 2  
+          
+    print ' '*3,      
+    for i in range(nFields):
+      print fields[i].ljust(lengths[i]+1),
+    print
+    print '='*totalLength
+    count = 1
+    for r in records:
+      if count == len(records) and records[-1][0] == "Total":
+        print " "*3,  
+      else:  
+        print str(count).rjust(3),
+      
+      for i in range(nFields):
+        print r[i].ljust(lengths[i]+1),
+      
+      print    
+      if count == len(records)-1 and records[-1][0] == "Total":
+        print '-'*totalLength
+      count += 1
 
 class DirectoryListing:
   
@@ -1255,20 +1302,17 @@ File Catalog Client $Revision: 1.17 $Date:
       path = path[:-1]
     
     # Check if the target path is a file
-    result =  self.fc.isFile(path)      
+    result =  self.fc.isFile(path)          
     if not result['OK']:
       print "Error: can not verify path"
       return
-    elif path in result['Value']['Successful']:
-      result = self.fc.getFileMetadata(path)
+    elif path in result['Value']['Successful'] and result['Value']['Successful'][path]:
+      result = self.fc.getFileMetadata(path)      
       dList = DirectoryListing()
       fileDict = result['Value']['Successful'][path]
       dList.addFile(os.path.basename(path),fileDict,numericid)
       dList.printListing(reverse,timeorder)
-      return   
-    else:
-      print "Error: path is not found"
-      return       
+      return         
     
     # Get directory contents now
     try:
@@ -1536,17 +1580,22 @@ File Catalog Client $Revision: 1.17 $Date:
                     "Files:",result['Value']['Successful'][path]['LogicalFiles'], \
                     "Directories:",result['Value']['Successful'][path]['LogicalDirectories']
               if long:
+                fields = ['StorageElement','Size','Replicas']
+                values = []
                 if "PhysicalSize" in result['Value']['Successful'][path]:
-                  print "Physical Size:"
+                  print 
                   totalSize = result['Value']['Successful'][path]['PhysicalSize']['TotalSize']
                   totalFiles = result['Value']['Successful'][path]['PhysicalSize']['TotalFiles'] 
                   for se,sdata in result['Value']['Successful'][path]['PhysicalSize'].items():
                     if not se.startswith("Total"):
                       size = sdata['Size']
                       nfiles = sdata['Files']
-                      print se.rjust(20),':',int_with_commas(size).ljust(25),"Files:",nfiles
-                  print '='*60
-                  print 'Total'.rjust(20),':',int_with_commas(totalSize).ljust(25),"Files:",totalFiles  
+                      #print se.rjust(20),':',int_with_commas(size).ljust(25),"Files:",nfiles
+                      values.append( (se, int_with_commas(size), str(nfiles)) )
+                  #print '='*60
+                  #print 'Total'.rjust(20),':',int_with_commas(totalSize).ljust(25),"Files:",totalFiles
+                  values.append( ('Total', int_with_commas(totalSize), str(totalFiles)) )
+                  printTable(fields,values)  
               if "QueryTime" in result['Value']:
                 print "Query time %.2f sec" % result['Value']['QueryTime']
             else:
@@ -2136,6 +2185,24 @@ File Catalog Client $Revision: 1.17 $Date:
       return 
     for key in result['Value']:
       print key.rjust(15),':',result['Value'][key]  
+      
+  def do_rebuild( self, args ):
+    """ Rebuild auxiliary tables
+    
+        Usage:
+           rebuild <option>
+    """
+    
+    argss = args.split()
+    option = argss[0]
+    start = time.time()
+    result = self.fc.rebuildDirectoryUsage()
+    if not result['OK']:
+      print "Error:", result['Message']
+      return 
+      
+    total = time.time() - start
+    print "Directory storage info rebuilt in %.2f sec", total    
       
   def do_exit(self, args):
     """ Exit the shell.

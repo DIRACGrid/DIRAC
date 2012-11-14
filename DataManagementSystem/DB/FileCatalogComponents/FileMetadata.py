@@ -31,6 +31,12 @@ class FileMetadata:
         pname - parameter name, ptype - parameter type in the MySQL notation
     """
 
+    result = self.db.dmeta.getMetadataFields( credDict )
+    if not result['OK']:
+      return result
+    if pname in result['Value'].keys():
+      return S_ERROR( 'The metadata %s is already defined for Directories' % pname )
+
     result = self.getFileMetadataFields( credDict )
     if not result['OK']:
       return result
