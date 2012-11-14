@@ -35,12 +35,13 @@ BASE_PATH = ""
 HTTP_FLAG = False
 HTTP_PORT = 9180
 HTTP_PATH = ""
-gRegister = DictCache(purgeCacheDirectory)
 
 def purgeCacheDirectory( path ):
   """ del recursively :path: """
   shutil.rmtree( path )
   
+gRegister = DictCache(purgeCacheDirectory)
+    
 def initializeStorageElementProxyHandler( serviceInfo ):
   """ handler initialisation """
 
