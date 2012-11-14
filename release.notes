@@ -1,3 +1,7 @@
+[v6r5p9]
+
+FIX: merged in patch v6r4p30
+
 [v6r5p8]
 
 FIX: merged in patch v6r4p29
@@ -161,6 +165,20 @@ CHANGE: request agents cleanup
 
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
+
+[v6r4p30]
+
+*Core
+BUGFIX: dirac-admin-bdii-ce-voview - proper check of the result structure
+
+*Interfaces
+FIX: Dirac.py, Job.py - allow to pass environment variables with special characters
+
+*DMS
+NEW: FileCatalogCLI - possibility to sort output in the ls command
+
+*WMS:
+FIX: JobWrapper - interpret environment variables with special characters 
 
 [v6r4p29]
 
