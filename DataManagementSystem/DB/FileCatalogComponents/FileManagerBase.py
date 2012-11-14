@@ -258,28 +258,12 @@ class FileManagerBase:
       if toPurge:
         self._deleteFiles( toPurge, connection = connection )
 
-    # Update storage usage
-    dirSEDict = {}
-    for lfn in newlyRegistered:
-      dirID = lfns[lfn]['DirID']
-      if not dirSEDict.has_key( dirID ):
-        dirSEDict[dirID] = {}
-      res = self.db.seManager.findSE( lfns[lfn]['SE'] )
-      if not res['OK']:
-        continue
-      seID = res['Value']
-      if not dirSEDict[dirID].has_key( seID ):
-        dirSEDict[dirID][seID] = {'Files':0, 'Size':0}
-      dirSEDict[dirID][seID]['Files'] += 1
-      dirSEDict[dirID][seID]['Size'] += lfns[lfn]['Size']
-    #if dirSEDict:
-    #  self._updateDirectoryUsage(dirSEDict,'+',connection=connection)
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def _updateDirectoryUsage( self, directorySEDict, change, connection = False ):
     connection = self._getConnection( connection )
     for directoryID in sortList( directorySEDict.keys() ):
-      result = self.db.tree.getPathIDsByID( directoryID )
+      result = self.db.dtree.getPathIDsByID( directoryID )
       if not result['OK']:
         return result
       parentIDs = result['Value']
@@ -288,7 +272,7 @@ class FileManagerBase:
         seDict = dirDict[seID]
         files = seDict['Files']
         size = seDict['Size']
-        for dirID in [directoryID] + parentIDs:
+        for dirID in parentIDs:
           req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
                                                            % ( change, size, change, files )
           req += "WHERE DirID=%d AND SEID=%d;" % ( dirID, seID )
@@ -555,17 +539,19 @@ class FileManagerBase:
       return res
     directorySESizeDict = {}
     for fileID, seDict in res['Value'].items():
+      dirID = lfns[fileIDLfns[fileID]]['DirID']
+      size = lfns[lfn]['Size']
+      directorySESizeDict.setdefault( dirID, {} )
+      directorySESizeDict[dirID].setdefault( 0, {'Files':0,'Size':0} )
+      directorySESizeDict[dirID][0]['Size'] += size
+      directorySESizeDict[dirID][0]['Files'] += 1
       for seName in seDict.keys():
         res = self.db.seManager.findSE( seName )
         if not res['OK']:
           return res
         seID = res['Value']
-        dirID = lfns[fileIDLfns[fileID]]['DirID']
         size = lfns[fileIDLfns[fileID]]['Size']
-        if not directorySESizeDict.has_key( dirID ):
-          directorySESizeDict[dirID] = {}
-        if not directorySESizeDict[dirID].has_key( seID ):
-          directorySESizeDict[dirID][seID] = {'Files':0, 'Size':0}
+        directorySESizeDict[dirID].setdefault( seID, {'Files':0,'Size':0} )
         directorySESizeDict[dirID][seID]['Size'] += size
         directorySESizeDict[dirID][seID]['Files'] += 1
 
