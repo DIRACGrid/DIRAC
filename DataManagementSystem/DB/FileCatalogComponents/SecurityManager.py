@@ -50,7 +50,7 @@ class SecurityManagerBase:
 
   def hasAdminAccess(self,credDict):
     group = credDict.get('group','')
-    if FC_MANAGEMENT in getPropertiesForGroup(group):
+    if 'FC_MANAGEMENT' in getPropertiesForGroup(group):
       return S_OK(True)
     return S_OK(False)
 
