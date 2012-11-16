@@ -329,7 +329,7 @@ class StalledJobAgent( AgentModule ):
                'FinalMajorStatus' : 'Failed',
                'FinalMinorStatus' : 'Stalled',
                'CPUTime' : lastCPUTime,
-               'NormCPUTime' : lastCPUTime * cpuNormalization,
+               'NormCPUTime' : lastCPUTime * float( cpuNormalization ),
                'ExecTime' : lastWallTime,
                'InputDataSize' : 0.0,
                'OutputDataSize' : 0.0,
