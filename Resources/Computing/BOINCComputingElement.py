@@ -160,7 +160,7 @@ EOF
     return resultRe
 
 #############################################################################
-  def getDynamicInfo( self ):
+  def getCEStatus( self ):
     """ Method to get the BONIC CE dynamic jobs information.
     """
     self.createClient( )
@@ -344,7 +344,7 @@ if __name__ == "__main__":
         print 'The status of the job %s is %s' % (id, jobStatus['Value'][id])
 
   if test_parameter & test_getDynamic:
-    serverState = test_boinc.getDynamicInfo()
+    serverState = test_boinc.getCEStatus()
 
     if not serverState['OK']:
       print serverState['Message']

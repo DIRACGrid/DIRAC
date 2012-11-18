@@ -115,39 +115,18 @@ class ComputingElement:
   def _addCEConfigDefaults( self ):
     """Method to make sure all necessary Configuration Parameters are defined
     """
-    try:
-      self.ceParameters['WaitingToRunningRatio'] = float( self.ceParameters['WaitingToRunningRatio'] )
-    except:
-      # if it does not exist or it can not be converted, take the default
-      self.ceParameters['WaitingToRunningRatio'] = WAITING_TO_RUNNING_RATIO
-
-    try:
-      self.ceParameters['MaxWaitingJobs'] = int( self.ceParameters['MaxWaitingJobs'] )
-    except:
-      # if it does not exist or it can not be converted, take the default
-      self.ceParameters['MaxWaitingJobs'] = MAX_WAITING_JOBS
-
-    try:
-      self.ceParameters['MaxTotalJobs'] = int( self.ceParameters['MaxTotalJobs'] )
-    except:
-      # if it does not exist or it can not be converted, take the default
-      self.ceParameters['MaxTotalJobs'] = MAX_TOTAL_JOBS
+    self.ceParameters['WaitingToRunningRatio'] = float( self.ceParameters.get( 'WaitingToRunningRatio', WAITING_TO_RUNNING_RATIO ) )
+    self.ceParameters['MaxWaitingJobs'] = int( self.ceParameters.get( 'MaxWaitingJobs', MAX_WAITING_JOBS ) )
+    self.ceParameters['MaxTotalJobs'] = int( self.ceParameters.get( 'MaxTotalJobs', MAX_TOTAL_JOBS ) )
 
   #############################################################################
   def __getInt( self, value ):
-    """To deal with JDL integer values.
+    """ To deal with JDL integer values.
     """
-    tmpValue = None
-
     try:
-     tmpValue = int( value.replace( '"', '' ) )
+      return int( value.replace( '"', '' ) )
     except Exception, x:
-      pass
-
-    if tmpValue:
-      value = tmpValue
-
-    return value
+      return None
 
   #############################################################################
   def __getSiteParameters( self ):
@@ -176,7 +155,7 @@ class ComputingElement:
 
     return S_OK()
 
-  def reset( self ):
+  def _reset( self ):
     """ Make specific CE parameter adjustments here
     """
     pass
@@ -192,7 +171,7 @@ class ComputingElement:
       if key in FLOAT_PARAMETERS:
         self.ceParameters[key] = float( self.ceParameters[key] )
         
-    self.reset()
+    self._reset()
     return S_OK()
 
   def getParameterDict( self ):
@@ -268,7 +247,7 @@ class ComputingElement:
     # FIXME: need to take into account the possible requirements from the pilots,
     #        so far the cputime
     ciInfoDict = {}
-    result = self.getDynamicInfo()
+    result = self.getCEStatus()
     if not result['OK']:
       self.log.warn( 'Could not obtain CE dynamic information' )
       self.log.warn( result['Message'] )
@@ -441,7 +420,7 @@ class ComputingElement:
         ceDict[option] = value
       elif type( value ) == type( ' ' ):
         tmpInt = self.__getInt( value )
-        if type( tmpInt ) == type( 1 ):
+        if tmpInt is not None:
           self.log.debug( 'Found CE integer attribute: %s = %s' % ( option, tmpInt ) )
           ceDict[option] = tmpInt
         else:
@@ -477,10 +456,10 @@ class ComputingElement:
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
 
   #############################################################################
-  def getDynamicInfo( self ):
+  def getCEStatus( self ):
     """ Method to get dynamic job information, can be overridden in sub-class.
     """
-    name = 'getDynamicInfo()'
+    name = 'getCEStatus()'
     self.log.error( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
 

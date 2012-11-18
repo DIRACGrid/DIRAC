@@ -6,93 +6,26 @@
 
 import os, stat, tempfile, shutil
 
-from DIRAC.Resources.Computing.ComputingElement     import ComputingElement
-from DIRAC.Resources.Computing.SSHComputingElement  import SSH 
+from DIRAC.Resources.Computing.SSHComputingElement  import SSH, SSHComputingElement 
+from DIRAC.Resources.Computing.PilotBundle          import bundleProxy 
 from DIRAC import rootPath, S_OK, S_ERROR
 
 CE_NAME = 'SSHCondor'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
-class SSHCondorComputingElement(ComputingElement):
+class SSHCondorComputingElement( SSHComputingElement ):
        
   #############################################################################
   def __init__( self, ceUniqueID ):
     """ Standard constructor.
     """
-    ComputingElement.__init__( self, ceUniqueID )
+    SSHComputingElement.__init__( self, ceUniqueID )
 
     self.ceType = CE_NAME
-    self.submittedJobs = 0
-    self.mandatoryParameters = MANDATORY_PARAMETERS     
+    self.controlScript = 'condorce'
+    self.mandatoryParameters = MANDATORY_PARAMETERS         
        
-  #############################################################################
-  def _addCEConfigDefaults( self ):
-    """Method to make sure all necessary Configuration Parameters are defined
-    """
-    # First assure that any global parameters are loaded
-    ComputingElement._addCEConfigDefaults( self )
-
-    if 'ExecQueue' not in self.ceParameters:
-      self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
-
-    if 'SharedArea' not in self.ceParameters:
-      self.ceParameters['SharedArea'] = ''
-
-    if 'BatchOutput' not in self.ceParameters:
-      self.ceParameters['BatchOutput'] = 'data' 
-
-    if 'BatchError' not in self.ceParameters:
-      self.ceParameters['BatchError'] = 'data' 
-
-    if 'ExecutableArea' not in self.ceParameters:
-      self.ceParameters['ExecutableArea'] = 'data' 
-
-    if 'InfoArea' not in self.ceParameters:
-      self.ceParameters['InfoArea'] = 'info'
-
-  def reset( self ):
-
-    self.queue = self.ceParameters['Queue']
-    self.sshScript = os.path.join( rootPath, "DIRAC", "Resources", "Computing", "remote_scripts", "condorce" )
-    if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
-      self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
-    self.execQueue = self.ceParameters['ExecQueue']
-    self.log.info( "Using queue: ", self.queue )
-    self.sharedArea = self.ceParameters['SharedArea']
-    self.batchOutput = self.ceParameters['BatchOutput']
-    if not self.batchOutput.startswith( '/' ):
-      self.batchOutput = os.path.join( self.sharedArea, self.batchOutput )
-    self.batchError = self.ceParameters['BatchError']
-    if not self.batchError.startswith( '/' ):
-      self.batchError = os.path.join( self.sharedArea, self.batchError )
-    self.infoArea = self.ceParameters['InfoArea']
-    if not self.infoArea.startswith( '/' ):
-      self.infoArea = os.path.join( self.sharedArea, self.infoArea )
-    self.executableArea = self.ceParameters['ExecutableArea']
-    if not self.executableArea.startswith( '/' ):
-      self.executableArea = os.path.join( self.sharedArea, self.executableArea )
-      
-    self.sshHost = self.ceParameters['SSHHost']
-    self.log.verbose( 'Uploading condorce script to %s' % self.sshHost )
-    ssh = SSH( host = self.sshHost, parameters = self.ceParameters )
-    result = ssh.scpCall( 10, self.sshScript, self.sharedArea )
-    if not result['OK']:
-      self.log.warn( 'Failed uploading script: %s' % result['Message'][1] )
-      
-    self.log.verbose( 'Creating working directories on %s' % self.sshHost )
-    ssh.sshCall( 10, "chmod +x %s/condorce; mkdir -p %s" % ( self.sharedArea, self.executableArea ) )
-    if not result['OK']:
-      self.log.warn( 'Failed creating working directories: %s' % result['Message'][1] )
-
-    self.submitOptions = ''
-    if 'SubmitOptions' in self.ceParameters:
-      self.submitOptions = self.ceParameters['SubmitOptions']
-    self.removeOutput = True
-    if 'RemoveOutput' in self.ceParameters:
-      if self.ceParameters['RemoveOutput'].lower()  in ['no', 'false', '0']:
-        self.removeOutput = False     
-       
-  def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
+  def submitJob_old( self, executableFile, proxy, numberOfJobs = 1 ):
 
 #    self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
@@ -104,42 +37,12 @@ class SSHCondorComputingElement(ComputingElement):
     # recommended to transfer a proxy inside the executable if possible.
     if proxy:
       self.log.verbose( 'Setting up proxy for payload' )
-
-      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
-      compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace( '\n', '' )
-
-      wrapperContent = """#!/usr/bin/env python
-# Wrapper script for executable and proxy
-import os, tempfile, sys, base64, bz2, shutil
-try:
-  workingDirectory = tempfile.mkdtemp( suffix = '_wrapper', prefix= 'TORQUE_' )
-  os.chdir( workingDirectory )
-  open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
-  open( '%(executable)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedExecutable)s" ) ) )
-  os.chmod('proxy',0600)
-  os.chmod('%(executable)s',0700)
-  os.environ["X509_USER_PROXY"]=os.path.join(workingDirectory, 'proxy')
-except Exception, x:
-  print >> sys.stderr, x
-  sys.exit(-1)
-cmd = "./%(executable)s"
-print 'Executing: ', cmd
-sys.stdout.flush()
-os.system( cmd )
-
-shutil.rmtree( workingDirectory )
-
-""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
-        'compressedAndEncodedExecutable': compressedAndEncodedExecutable, \
-        'executable': os.path.basename( executableFile ) }
-
-      fd, name = tempfile.mkstemp( suffix = '_wrapper.py', prefix = 'NOTORQUE_', dir = os.getcwd() )
+      wrapperContent = bundleProxy( executableFile, proxy )
+      fd, name = tempfile.mkstemp( suffix = '_wrapper.py', prefix = 'DIRAC_', dir = os.getcwd() )
       wrapper = os.fdopen( fd, 'w' )
       wrapper.write( wrapperContent )
       wrapper.close()
-
       submitFile = name
-
     else: # no proxy
       submitFile = executableFile
 
@@ -150,27 +53,45 @@ shutil.rmtree( workingDirectory )
     result = ssh.scpCall( 10, submitFile, '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) )
 
     # Submit jobs
-    cmd = "bash --login -c '%s/condorce %s/%s %s %s'" % ( self.sharedArea, self.executableArea, os.path.basename( submitFile ), numberOfJobs, self.batchOutput )
+    cmd = "bash --login -c '%s/%s %s/%s %s %s'" % ( self.sharedArea, 
+                                                    self.controlScript, 
+                                                    self.executableArea, 
+                                                    os.path.basename( submitFile ), 
+                                                    numberOfJobs, 
+                                                    self.batchOutput )
     self.log.verbose( 'CE submission command: %s\n' %  cmd )
-    ret = ssh.sshCall( 10, cmd )
+    result = ssh.sshCall( 10, cmd )
 
-    if not ret['OK']:
-      self.log.error( 'SSHCondor CE job submission failed', result['Message'] )
+    if not result['OK']:
+      self.log.error( '%s CE job submission failed' % self.ceType, result['Message'] )
       return result
     else:
-      self.log.debug( 'SSHCondor CE job submission OK' )
+      self.log.debug( '%s CE job submission OK' % self.ceType )
 
-    status = ret['Value'][0]
-    stdout = ret['Value'][1]
-    stderr = ret['Value'][2]
-    if status == 0:
-      nJobs,clusterID = stdout.strip().split()
-      jobIDs = [ clusterID + '.' + str(j) for j in range( int(nJobs) ) ]    
-      return S_OK( jobIDs )
+    sshStatus = result['Value'][0]
+    sshStdout = result['Value'][1]
+    sshStderr = result['Value'][2]
+    
+    # Examine results of the job submission
+    if sshStatus == 0:
+      outputLines = sshStdout.strip().replace('\r','').split('\n')
+      try:
+        status = int( outputLines[0] )
+      except:
+        return S_ERROR( "Failed local batch job submission:" % outputLines[0] )
+      if status != 0:
+        message = "Unknown reason"
+        if len( outputLines ) > 1:
+          message = outputLines[1]
+        return S_ERROR( 'Failed job submission, reason: %s' % message )   
+      else:
+        batchIDs = outputLines[1:]
+        jobIDs = [ self.ceType.lower()+'://'+self.ceParameters['SSHHost']+'/'+id for id in batchIDs ]    
+        return S_OK( jobIDs )
     else:
-      return S_ERROR( '\n'.join( [stdout,stderr] ) )
+      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
    
-  def getJobStatus( self, jobIDList ):
+  def getJobStatus_old( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
     jobIDs = list ( jobIDList )
@@ -229,7 +150,7 @@ shutil.rmtree( workingDirectory )
         resultDict[job] = 'Unknown'
     return S_OK( resultDict )    
                 
-  def getDynamicInfo( self ):  
+  def getCEStatus_old( self ):  
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()
@@ -273,7 +194,7 @@ shutil.rmtree( workingDirectory )
 
     return result
    
-  def getJobOutput( self, jobID, localDir = None ):   
+  def getJobOutput_old( self, jobID, localDir = None ):   
     """ Get the specified job standard output and error files. If the localDir is provided,
         the output is returned as file in this directory. Otherwise, the output is returned 
         as strings. 

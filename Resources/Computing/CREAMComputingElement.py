@@ -143,7 +143,7 @@ class CREAMComputingElement( ComputingElement ):
     return result
 
 #############################################################################
-  def getDynamicInfo( self ):
+  def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
     statusList = ['REGISTERED', 'PENDING', 'IDLE', 'RUNNING', 'REALLY-RUNNING']

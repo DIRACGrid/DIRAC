@@ -166,7 +166,7 @@ shutil.rmtree( workingDirectory )
     return S_OK( batchIDList )
 
   #############################################################################
-  def getDynamicInfo( self ):
+  def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
 
