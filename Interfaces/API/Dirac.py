@@ -153,7 +153,7 @@ class Dirac( API ):
       gLogger.warn( "No repository is initialised" )
       return S_OK()
     if requestedStates == None:
-      requestedStates = ['Done', 'Failed']
+      requestedStates = ['Done', 'Failed', 'Completed']#because users dont care about completed
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sortList( jobs.keys() ):
       jobDict = jobs[jobID]
