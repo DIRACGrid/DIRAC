@@ -103,15 +103,8 @@ class FTSMonitorAgent( AgentModule ):
           return fileIDs
         fileIDs = fileIDs["Value"]
       
-        ## update Channel table
-        resetChannels = self.transferDB.resetFileChannelStatus( channelID, fileIDs )
-        if not resetChannels["OK"]:
-          gLogger.error("Failed to reset Channel table for files to retry")
-          return resetChannels        
-
         ## update FileToFTS table, this is just a clean up, no worry if somethings goes wrong
         for fileID in fileIDs:
-
           fileStatus = self.transferDB.setFileToFTSFileAttribute( ftsReqID, fileID, 
                                                                   "Status", "Failed" )
           if not fileStatus["OK"]:
@@ -123,6 +116,12 @@ class FTSMonitorAgent( AgentModule ):
           if not failReason["OK"]:
             gLogger.error("Unable to set FileToFTS reason for FileID %s: %s" % ( fileID, 
                                                                                  failReason["Message"] ) )
+
+        ## update Channel table
+        resetChannels = self.transferDB.resetFileChannelStatus( channelID, fileIDs )
+        if not resetChannels["OK"]:
+          gLogger.error("Failed to reset Channel table for files to retry")
+          return resetChannels   
 
         ## update FTSReq table
         gLogger.info( 'Setting FTS request status to Finished' )
