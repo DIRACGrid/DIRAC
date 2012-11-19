@@ -1,7 +1,6 @@
 #############################################################################
 # $HeadURL$
 #############################################################################
-
 """ ..mod: FTSRequest
     =================
 
@@ -961,7 +960,6 @@ class FTSRequest(object):
     :param self: self reference
     :param bool printOutput: print summary to stdout
     """
-
     outStr = ''
     for status in sortList( self.statusSummary.keys() ):
       if self.statusSummary[status]:
