@@ -169,6 +169,16 @@ CHANGE: request agents cleanup
 
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
+[v6r4p31]
+
+*WMS
+FIX: StalledJobAgent - avoid exceptions in the stalled job accounting reporting
+
+*DMS
+NEW: FTSMonitorAgent - handling of expired FTS jobs 
+
+*Interfaces
+CHANGE: Dirac.py - attempt to retrieve output sandbox also for Completed jobs in retrieveRepositorySandboxes()
 
 [v6r4p30]
 
