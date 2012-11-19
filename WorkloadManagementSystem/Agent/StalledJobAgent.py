@@ -169,7 +169,7 @@ class StalledJobAgent( AgentModule ):
         for job in jobs:
           result = self.__sendAccounting( job )
           if not result['OK']:
-            break
+            continue
           recoverCounter += 1
       if not result['OK']:
         break
@@ -292,27 +292,31 @@ class StalledJobAgent( AgentModule ):
   def __sendAccounting( self, jobID ):
     """ Send WMS accounting data for the given job
     """
+    try:
+      accountingReport = Job()
+      endTime = 'Unknown'
+      lastHeartBeatTime = 'Unknown'
 
-    accountingReport = Job()
+      result = self.jobDB.getJobAttributes( jobID )
+      if not result['OK']:
+        return result
+      jobDict = result['Value']
 
-    result = self.jobDB.getJobAttributes( jobID )
-    if not result['OK']:
-      return result
-    jobDict = result['Value']
+      startTime, endTime = self.__checkLoggingInfo( jobID, jobDict )
 
-    startTime, endTime = self.__checkLoggingInfo( jobID, jobDict )
+      lastCPUTime, lastWallTime, lastHeartBeatTime = self.__checkHeartBeat( jobID, jobDict )
 
-    lastCPUTime, lastWallTime, lastHeartBeatTime = self.__checkHeartBeat( jobID, jobDict )
+      if fromString( lastHeartBeatTime ) > endTime:
+        endTime = fromString( lastHeartBeatTime )
 
-    if fromString( lastHeartBeatTime ) > endTime:
-      endTime = fromString( lastHeartBeatTime )
-
-    cpuNormalization = self.jobDB.getJobParameter( jobID, 'CPUNormalizationFactor' )
-    if not cpuNormalization['OK'] or not cpuNormalization['Value']:
-      cpuNormalization = 0.0
-    else:
-      cpuNormalization = cpuNormalization['Value']
-
+      cpuNormalization = self.jobDB.getJobParameter( jobID, 'CPUNormalizationFactor' )
+      if not cpuNormalization['OK'] or not cpuNormalization['Value']:
+        cpuNormalization = 0.0
+      else:
+        cpuNormalization = cpuNormalization['Value']
+    except Exception:
+      self.log.exception( "Exception in __sendAccounting for job %s: endTime=%s, lastHBTime %s" %(str(jobID), str(endTime),str(lastHeartBeatTime)), '' , False)
+      return S_ERROR("Exception")
     processingType = self.__getProcessingType( jobID )
 
     accountingReport.setStartTime( startTime )
@@ -329,7 +333,7 @@ class StalledJobAgent( AgentModule ):
                'FinalMajorStatus' : 'Failed',
                'FinalMinorStatus' : 'Stalled',
                'CPUTime' : lastCPUTime,
-               'NormCPUTime' : lastCPUTime * cpuNormalization,
+               'NormCPUTime' : lastCPUTime * float( cpuNormalization ),
                'ExecTime' : lastWallTime,
                'InputDataSize' : 0.0,
                'OutputDataSize' : 0.0,
