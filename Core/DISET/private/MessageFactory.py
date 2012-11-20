@@ -101,6 +101,7 @@ class Message( object ):
     self.__fDef = {}
     self.__order = []
     self.__values = {}
+    self.__msgClient = None
     self.__waitForAck = Message.DEFAULTWAITFORACK
     for fName in msgDefDict:
       fType = msgDefDict[ fName ]
@@ -113,6 +114,13 @@ class Message( object ):
     #"Enable" set attr
     self.__locked = True
     #self.__setattr__ = self.__objSetAttr
+
+  def setMsgClient( self, msgClient ):
+    self.__msgClient = msgClient
+
+  @property
+  def msgClient( self ):
+    return self.__msgClient
 
   def isOK( self ):
     for k in self.__order:

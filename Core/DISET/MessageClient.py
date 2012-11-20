@@ -86,6 +86,7 @@ class MessageClient( BaseClient ):
 
   def __cbRecvMsg( self, trid, msgObj ):
     msgName = msgObj.getName()
+    msgObj.setMsgClient( self )
     for cb in self.__specialCallbacks[ 'msg' ]:
       try:
         result = cb( self, msgObj )
