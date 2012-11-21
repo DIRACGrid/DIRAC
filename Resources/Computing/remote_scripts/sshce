@@ -14,8 +14,9 @@ return_running()
     let running=0;     
     infoarea=$1
     workarea=$2
-    user=$3                                 
-    for i in `ls -1 $infoarea/*.pid`; do                             
+    user=$3                               
+
+    ls $infoarea | grep ".pid" > /dev/null && for i in `ls -1 $infoarea/*.pid`; do
         test_pid=`cat $i`                        
         q=`ps -f -p $test_pid | grep $user | wc -l`                     
         if (( $q == 1 ))
@@ -79,6 +80,8 @@ test_pid_if_running()
         echo "$1:::Done";
     fi        
 }
+
+echo '============= Start output ==============='
 
 case "$1" in
     "status_info")

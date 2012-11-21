@@ -120,6 +120,8 @@ class SSHBatchComputingElement( SSHComputingElement ):
     restJobs = numberOfJobs
     submittedJobs = []
     for slots in range(maxSlots,0,-1):
+      if not slots in rankHosts:
+        continue
       for host in rankHosts[slots]:        
         result = self._submitJobToHost( submitFile, min( slots, restJobs ), host )
         if not result['OK']:

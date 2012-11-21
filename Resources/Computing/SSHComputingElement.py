@@ -18,8 +18,9 @@ from DIRAC                                               import systemCall, root
 from DIRAC                                               import gConfig, gLogger
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
-import os, sys, time, re, socket, stat, shutil
+import os, sys, time, re, socket, stat, shutil, urllib
 import string, shutil, bz2, base64, tempfile, random
+from types import StringTypes
 
 CE_NAME = 'SSH'
 MANDATORY_PARAMETERS = [ 'Queue' ]
@@ -40,6 +41,7 @@ class SSH:
     self.key = key
     if not key:
       self.key = parameters.get( 'SSHKey', '' )
+    self.log = gLogger.getSubLogger( 'SSH' )  
 
   def __ssh_call( self, command, timeout ):
 
@@ -107,9 +109,9 @@ class SSH:
 
     pattern = "'===><==='"
     command = 'ssh -q %s -l %s %s "echo %s;%s"' % ( key, self.user, self.host, pattern, command )    
-    gLogger.debug( "SSH command %s" % command )
+    self.log.debug( "SSH command %s" % command )
     result = self.__ssh_call( command, timeout )    
-    gLogger.debug( "SSH command result %s" % str( result ) )
+    self.log.debug( "SSH command result %s" % str( result ) )
     if not result['OK']:
       return result
     
@@ -139,7 +141,7 @@ class SSH:
       command = "scp %s %s %s@%s:%s" % ( key, localFile, self.user, self.host, destinationPath )
     else:
       command = "scp %s %s@%s:%s %s" % ( key, self.user, self.host, destinationPath, localFile )
-    gLogger.debug( "SCP command %s" % command )
+    self.log.debug( "SCP command %s" % command )
     return self.__ssh_call( command, timeout )
 
 class SSHComputingElement( ComputingElement ):
@@ -182,6 +184,9 @@ class SSHComputingElement( ComputingElement ):
       
     if 'WorkArea' not in self.ceParameters:
       self.ceParameters['WorkArea'] = 'work'  
+      
+    if 'SubmitOptions' not in self.ceParameters:
+      self.ceParameters['SubmitOptions'] = '-'    
 
   def _reset( self ):
     """ Process CE parameters and make necessary adjustments
@@ -207,7 +212,7 @@ class SSHComputingElement( ComputingElement ):
     if not self.executableArea.startswith( '/' ):
       self.executableArea = os.path.join( self.sharedArea, self.executableArea )
     self.workArea = self.ceParameters['WorkArea']  
-    if not workArea.startswith( '/' ):
+    if not self.workArea.startswith( '/' ):
       self.workArea = os.path.join( self.sharedArea, self.workArea )  
       
     result = self._prepareRemoteHost()
@@ -240,6 +245,9 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.warn( 'Failed creating working directories: %s' % result['Message'][1] )
       return result
+    status,output,error = result['Value']
+    if "cannot" in output:
+      return S_ERROR( 'Failed to create directories: %s' % output )
     
     # Upload the control script now
     sshScript = os.path.join( rootPath, "DIRAC", "Resources", "Computing", "remote_scripts", self.controlScript )
@@ -297,20 +305,24 @@ class SSHComputingElement( ComputingElement ):
       jobStamps.append( makeGuid()[:8] )
     jobStamp = '#'.join( jobStamps )
     
-    cmd = "bash --login -c '%s/%s submit_job %s/%s %s %s %s %d %s %s'" % ( self.sharedArea, 
-                                                                           self.controlScript, 
-                                                                           self.executableArea, 
-                                                                           os.path.basename( executableFile ),  
-                                                                           self.batchOutput, 
-                                                                           self.batchError,
-                                                                           self.workArea,
-                                                                           numberOfJobs,
-                                                                           self.infoArea,
-                                                                           jobStamp )
+    subOptions = urllib.quote( self.submitOptions )
+    
+    cmd = "bash --login -c '%s/%s submit_job %s/%s %s %s %s %d %s %s %s %s'" % ( self.sharedArea, 
+                                                                                 self.controlScript, 
+                                                                                 self.executableArea, 
+                                                                                 os.path.basename( executableFile ),  
+                                                                                 self.batchOutput, 
+                                                                                 self.batchError,
+                                                                                 self.workArea,
+                                                                                 numberOfJobs,
+                                                                                 self.infoArea,
+                                                                                 jobStamp,
+                                                                                 self.execQueue,
+                                                                                 subOptions )
 
     self.log.verbose( 'CE submission command: %s' %  cmd )
 
-    result = ssh.sshCall( 10, cmd )
+    result = ssh.sshCall( 120, cmd )
     if not result['OK']:
       self.log.error( '%s CE job submission failed' % self.ceType, result['Message'] )
       return result
@@ -325,9 +337,14 @@ class SSHComputingElement( ComputingElement ):
     submitHost = host
     if host is None:
       submitHost = self.ceParameters['SSHHost'].split('/')[0]
-    
+        
     if sshStatus == 0:
       outputLines = sshStdout.strip().replace('\r','').split('\n')
+      try:
+        index = outputLines.index('============= Start output ===============')
+        outputLines = outputLines[index+1:]
+      except:
+        return S_ERROR( "Invalid output from job submission: %s" % outputLines[0] )  
       try:
         status = int( outputLines[0] )
       except:
@@ -351,6 +368,8 @@ class SSHComputingElement( ComputingElement ):
   def killJob( self, jobIDList ):
     """ Kill a bunch of jobs
     """
+    if type( jobIDList ) in StringTypes:
+      jobIDList = [jobIDList]
     return self._killJobOnHost( jobIDList )
 
   def _killJobOnHost( self, jobIDList, host = None ):
@@ -359,7 +378,7 @@ class SSHComputingElement( ComputingElement ):
     resultDict = {}
     ssh = SSH( host = host, parameters = self.ceParameters )
     jobDict = {}
-    for job in jobIDList:
+    for job in jobIDList:      
       result = pfnparse( job )
       if result['OK']:
         stamp = result['Value']['FileName'] 
@@ -382,6 +401,11 @@ class SSHComputingElement( ComputingElement ):
     if sshStatus == 0:
       outputLines = sshStdout.strip().replace('\r','').split('\n')
       try:
+        index = outputLines.index('============= Start output ===============')
+        outputLines = outputLines[index+1:]
+      except:
+        return S_ERROR( "Invalid output from job kill: %s" % outputLines[0] )  
+      try:
         status = int( outputLines[0] )
       except:
         return S_ERROR( "Failed local batch job kill: %s" % outputLines[0] )
@@ -399,11 +423,12 @@ class SSHComputingElement( ComputingElement ):
     """ Get jobs running at a given host
     """
     ssh = SSH( host = host, parameters = self.ceParameters ) 
-    cmd = "bash --login -c '%s/%s status_info %s %s %s'" % ( self.sharedArea, 
+    cmd = "bash --login -c '%s/%s status_info %s %s %s %s'" % ( self.sharedArea, 
                                                              self.controlScript, 
                                                              self.infoArea,
                                                              self.workArea,
-                                                             self.ceParameters['SSHUser'] )
+                                                             self.ceParameters['SSHUser'],
+                                                             self.execQueue )
 
     result = ssh.sshCall( 10, cmd )
     if not result['OK']:
@@ -417,6 +442,11 @@ class SSHComputingElement( ComputingElement ):
     resultDict = {}
     if sshStatus == 0:
       outputLines = sshStdout.strip().replace('\r','').split('\n')
+      try:
+        index = outputLines.index('============= Start output ===============')
+        outputLines = outputLines[index+1:]
+      except:
+        return S_ERROR( "Invalid output from CE get status: %s" % outputLines[0] )  
       try:
         status = int( outputLines[0] )
       except:
@@ -486,13 +516,17 @@ class SSHComputingElement( ComputingElement ):
     result = ssh.sshCall( 10, cmd )
     if not result['OK']:
       return result
-
     sshStatus = result['Value'][0]
     sshStdout = result['Value'][1]
     sshStderr = result['Value'][2]
 
     if sshStatus == 0:
       outputLines = sshStdout.strip().replace('\r','').split('\n')
+      try:
+        index = outputLines.index('============= Start output ===============')
+        outputLines = outputLines[index+1:]
+      except:
+        return S_ERROR( "Invalid output from job get status: %s" % outputLines[0] )  
       try:
         status = int( outputLines[0] )
       except:
@@ -513,16 +547,31 @@ class SSHComputingElement( ComputingElement ):
 #    self.log.verbose( ' !!! getUnitJobStatus will return : %s\n' % resultDict )
     return S_OK( resultDict )
 
-  def getJobOutput( self, jobID, localDir = None ):
-    """ Get the specified job standard output and error files. If the localDir is provided,
-        the output is returned as file in this directory. Otherwise, the output is returned 
-        as strings. 
+  def _getJobOutputFiles( self, jobID ):
+    """ Get output file names for the specific CE 
     """
     result = pfnparse( jobID )
     if not result['OK']:
       return result
     jobStamp = result['Value']['FileName']
     host = result['Value']['Host']
+
+    output = '%s/%s.out' % ( self.batchOutput, jobStamp )
+    error = '%s/%s.out' % ( self.batchError, jobStamp )
+
+    return S_OK( (jobStamp,host,output,error) )
+
+  def getJobOutput( self, jobID, localDir = None ):
+    """ Get the specified job standard output and error files. If the localDir is provided,
+        the output is returned as file in this directory. Otherwise, the output is returned 
+        as strings. 
+    """
+    result = self._getJobOutputFiles(jobID)
+    if not result['OK']:
+      return result
+    
+    jobStamp,host,outputFile,errorFile = result['Value']
+    
     self.log.verbose( 'Getting output for jobID %s' % jobID )
 
     if not localDir:
@@ -531,12 +580,12 @@ class SSHComputingElement( ComputingElement ):
       tempDir = localDir
 
     ssh = SSH( host = host, parameters = self.ceParameters )
-    result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobStamp ), '%s/%s.out' % ( self.batchOutput, jobStamp ), upload = False )
+    result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobStamp ), '%s' % outputFile, upload = False )
     if not result['OK']:
       return result
     if not os.path.exists( '%s/%s.out' % ( tempDir, jobStamp ) ):
       os.system( 'touch %s/%s.out' % ( tempDir, jobStamp ) )
-    result = ssh.scpCall( 20, '%s/%s.err' % ( tempDir, jobStamp ), '%s/%s.err' % ( self.batchError, jobStamp ), upload = False )
+    result = ssh.scpCall( 20, '%s/%s.err' % ( tempDir, jobStamp ), '%s' % errorFile, upload = False )
     if not result['OK']:
       return result
     if not os.path.exists( '%s/%s.err' % ( tempDir, jobStamp ) ):
