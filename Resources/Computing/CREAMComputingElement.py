@@ -10,16 +10,11 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
-from DIRAC                                               import gConfig
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
-import os, sys, time, re, socket, stat, shutil
-import string, shutil, tempfile
+import os, re, tempfile
 from types import StringTypes
 
 CE_NAME = 'CREAM'
@@ -37,6 +32,9 @@ class CREAMComputingElement( ComputingElement ):
     self.submittedJobs = 0
     self.mandatoryParameters = MANDATORY_PARAMETERS
     self.pilotProxy = ''
+    self.queue = ''
+    self.outputURL = 'gsiftp://localhost'
+    self.gridEnv = ''
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -68,8 +66,6 @@ class CREAMComputingElement( ComputingElement ):
             'executableFile':executableFile,
             'executable':os.path.basename( executableFile ),
             'outputURL':self.outputURL,
-            'ceName':self.ceName,
-            'queueName':self.queue,
             'diracStamp':diracStamp
            }
 
@@ -77,7 +73,7 @@ class CREAMComputingElement( ComputingElement ):
     jdlFile.close()
     return name, diracStamp
 
-  def reset( self ):
+  def _reset( self ):
     self.queue = self.ceParameters['Queue']
     self.outputURL = self.ceParameters.get( 'OutputURL', 'gsiftp://localhost' )
     self.gridEnv = self.ceParameters['GridEnv']
@@ -201,11 +197,11 @@ class CREAMComputingElement( ComputingElement ):
     fd, idFileName = tempfile.mkstemp( suffix = '.ids', prefix = 'CREAM_', dir = workingDirectory )
     idFile = os.fdopen( fd, 'w' )
     idFile.write( '##CREAMJOBS##' )
-    for id in jobIDList:
-      if ":::" in id:
-        ref,stamp = id.split(':::')
+    for id_ in jobIDList:
+      if ":::" in id_:
+        ref,stamp = id_.split(':::')
       else:
-        ref = id  
+        ref = id_  
       idFile.write( '\n' + ref )
     idFile.close()
 
@@ -214,7 +210,7 @@ class CREAMComputingElement( ComputingElement ):
     os.unlink( idFileName )
     resultDict = {}
     if not result['OK']:
-      self.log.error('Failed to get job status',result['Message'])
+      self.log.error( 'Failed to get job status', result['Message'] )
       return result
     if result['Value'][0]:
       if result['Value'][2]:
@@ -240,33 +236,32 @@ class CREAMComputingElement( ComputingElement ):
     resultDict = {}
     ref = ''
     for line in output.split( '\n' ):
-      if not line: continue
+      if not line: 
+        continue
       match = re.search( 'JobID=\[(.*)\]', line )
       if match and len( match.groups() ) == 1:
         ref = match.group( 1 )
       match = re.search( 'Status.*\[(.*)\]', line )
       if match and len( match.groups() ) == 1:
-         creamStatus = match.group( 1 )
-         if creamStatus in ['DONE-OK']:
-           resultDict[ref] = 'Done'
-         elif creamStatus in ['DONE-FAILED']:
-           resultDict[ref] = 'Failed'
-         elif creamStatus in ['REGISTERED', 'PENDING', 'IDLE']:
-           resultDict[ref] = 'Scheduled'
-         elif creamStatus in ['ABORTED']:
-           resultDict[ref] = 'Aborted'
-         elif creamStatus in ['CANCELLED']:
-           resultDict[ref] = 'Killed'
-         elif creamStatus in ['RUNNING', 'REALLY-RUNNING']:
-           resultDict[ref] = 'Running'
-         elif creamStatus == 'N/A':
-           resultDict[ref] = 'Unknown'
-         else:
-           resultDict[ref] = creamStatus.capitalize()
-
+        creamStatus = match.group( 1 )
+        if creamStatus in ['DONE-OK']:
+          resultDict[ref] = 'Done'
+        elif creamStatus in ['DONE-FAILED']:
+          resultDict[ref] = 'Failed'
+        elif creamStatus in ['REGISTERED', 'PENDING', 'IDLE']:
+          resultDict[ref] = 'Scheduled'
+        elif creamStatus in ['ABORTED']:
+          resultDict[ref] = 'Aborted'
+        elif creamStatus in ['CANCELLED']:
+          resultDict[ref] = 'Killed'
+        elif creamStatus in ['RUNNING', 'REALLY-RUNNING']:
+          resultDict[ref] = 'Running'
+        elif creamStatus == 'N/A':
+          resultDict[ref] = 'Unknown'
+        else:
+          resultDict[ref] = creamStatus.capitalize()
 
     return resultDict
-
 
   def getJobOutput( self, jobID, localDir = None ):
     """ Get the specified job standard output and error files. If the localDir is provided,
