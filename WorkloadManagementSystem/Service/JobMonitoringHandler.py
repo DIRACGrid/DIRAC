@@ -76,11 +76,12 @@ class JobMonitoringHandler( RequestHandler ):
 
 ##############################################################################
   types_getJobGroups = []
-  def export_getJobGroups( self ):
+  def export_getJobGroups( self, condDict = None, cutDate = None ):
     """
     Return Distict Values of ProductionId job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'JobGroup' )
+    return jobDB.getDistinctJobAttributes( 'JobGroup', condDict, 
+                                           newer = cutDate )
 
 ##############################################################################
   types_getSites = []
