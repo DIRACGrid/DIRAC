@@ -10,7 +10,6 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight        import *
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
 from DIRAC.Core.Security                              import File
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfoAsString
@@ -22,8 +21,6 @@ from DIRAC.Core.Security                              import CS
 from DIRAC.Core.Security                              import Properties
 from DIRAC.Core.Utilities.Time                        import dateTime, second
 from DIRAC                                            import S_OK, S_ERROR, gLogger, version
-
-import os, re, string
 
 INTEGER_PARAMETERS = ['CPUTime']
 FLOAT_PARAMETERS = []
@@ -41,10 +38,10 @@ class ComputingElement:
     self.ceName = ceName
     self.ceType = ''
     #self.log.setLevel('debug') #temporary for debugging
-    self.classAd = ClassAd( '[]' )
     self.ceParameters = {}
     self.proxy = ''
     self.valid = None
+    self.mandatoryParameters = []
 
     self.minProxyTime = gConfig.getValue( '/Registry/MinProxyLifeTime', 10800 ) #secs
     self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 ) #secs
@@ -213,9 +210,9 @@ class ComputingElement:
     elif type( param ) == type( [] ):
       result = {}
       for p in param:
-        if param in self.ceParameters.keys():
-          result[param] = self.ceParameters[param]
-      if len( result.keys() ) == len( p ):
+        if p in self.ceParameters:
+          result[p] = self.ceParameters[p]
+      if len( result.keys() ) == len( param ):
         return S_OK( result )
       else:
         return S_ERROR( 'Not all specified parameters available' )
@@ -232,7 +229,6 @@ class ComputingElement:
     except:
       return S_ERROR( 'Wrong type for setCPUTimeLeft argument' )
 
-    self.classAd.insertAttributeInt( 'CPUTime', intCPUTimeLeft )
     self.ceParameters['CPUTime'] = intCPUTimeLeft
 
     return S_OK( intCPUTimeLeft )
