@@ -20,6 +20,7 @@ from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
 import os, sys, time, re, socket, stat, shutil
 import string, shutil, tempfile
+from types import StringTypes
 
 CE_NAME = 'CREAM'
 MANDATORY_PARAMETERS = [ 'Queue' ]
@@ -141,6 +142,22 @@ class CREAMComputingElement( ComputingElement ):
     else:
       result = S_ERROR('No pilot references obtained from the glite job submission')  
     return result
+
+  def killJob( self, jobIDList ):
+    """ Kill the specified jobs
+    """
+    jobList = list( jobIDList )
+    if type( jobIDList ) in StringTypes:
+      jobList = [ jobIDList ]
+      
+    cmd = ['glite-ce-job-cancel','-n','-N']+jobList
+    result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+    if not result['OK']:
+      return result
+    if result['Value'][0] != 0:
+      return S_ERROR( 'Failed kill job: %s' % result['Value'][0][1] )   
+      
+    return S_OK()
 
 #############################################################################
   def getCEStatus( self ):
