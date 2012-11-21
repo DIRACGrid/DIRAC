@@ -1,10 +1,8 @@
 #!/bin/env python
 
-import re, sys, tempfile, commands, os
+import re, sys, tempfile, commands, os, urllib
 
-executable,nJobs,jobDir = sys.argv[1:]
-
-def submitJob( executable,nJobs,jobDir ):
+def submitJob( executable, nJobs, jobDir, submitOptions ):
   """ Submit nJobs to the condor batch system
   """
 
@@ -27,7 +25,7 @@ def submitJob( executable,nJobs,jobDir ):
   
   jdlFile.flush()
   
-  status,output = commands.getstatusoutput( 'condor_submit %s' % jdlFile.name )
+  status,output = commands.getstatusoutput( 'condor_submit %s %s' % ( submitOptions, jdlFile.name ) )
   
   jdlFile.close()
   
@@ -86,7 +84,7 @@ def getJobStatus( jobIDList, user ):
   status,stdout_q = commands.getstatusoutput( 'condor_q -submitter %s' % user )
   if status != 0:
     print status
-    print output
+    print stdout_q
     return status
     
   status_history,stdout_history = commands.getstatusoutput( 'condor_history | grep %s' % user )  
@@ -126,15 +124,28 @@ def getJobStatus( jobIDList, user ):
 def getCEStatus( user ):
   """  Get the overall status of the CE 
   """ 
-  
+
   status,stdout = commands.getstatusoutput( 'condor_q -submitter %s' % user )
   if status != 0:
+    if "no record" in stdout:
+      status = 0
+      print status
+      print ":::".join( ["Waiting",str(waitingJobs)] )
+      print ":::".join( ["Running",str(runningJobs)] )  
+      return status
     print status
-    print output
+    print stdout
     return status
-
+  
   waitingJobs = 0
   runningJobs = 0
+  
+  if "no record" in stdout:
+    status = 0
+    print status
+    print ":::".join( ["Waiting",str(waitingJobs)] )
+    print ":::".join( ["Running",str(runningJobs)] )  
+    return status
 
   if len( stdout ):
     lines = stdout.split( '\n' )
@@ -155,21 +166,24 @@ def getCEStatus( user ):
 
 #####################################################################################
 
-command = sys.argv[0]
+# Get standard arguments and pass to the interface implementation functions
+
+command = sys.argv[1]
+print "============= Start output ==============="
 if command == "submit_job":
-  executable,outputDir,errorDir,nJobs = sys.argv[1:5]
-  status = submitJob( executable,nJobs,outputDir )
+  executable,outputDir,errorDir,workDir,nJobs,infoDir,jobStamps,queue,submitOptions = sys.argv[2:]
+  submitOptions = urllib.unquote(submitOptions)
+  if submitOptions == '-':
+    submitOptions = ''
+  status = submitJob( executable, nJobs, outputDir, submitOptions )
 elif command == "kill_job":
-  jobs = sys.argv[1]
-  jobList = jobs.split('#')
+  jobStamps,infoDir = sys.argv[2:]
+  jobList = jobStamps.split('#')
   status = killJob( jobList )
 elif command == "job_status":
-  jobs = sys.argv[1]
-  jobList = jobs.split('#')
-  user = sys.argv[3]
+  jobStamps,infoDir,user = sys.argv[2:]
+  jobList = jobStamps.split('#')
   status = getJobStatus( jobList, user )  
 elif command == "status_info":
-  user = sys.argv[2]
+  infoDir,workDir,user,queue = sys.argv[2:]
   status = getCEStatus( user )   
-
-sys.exit(status)
