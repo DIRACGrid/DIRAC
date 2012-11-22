@@ -345,9 +345,10 @@ class WMSAdministratorHandler(RequestHandler):
       stdout = result['StdOut']
       error = result['StdErr']
       fileList = result['FileList']
-      result = pilotDB.storePilotOutput(pilotReference,stdout,error)
-      if not result['OK']:
-        gLogger.error('Failed to store pilot output:',result['Message'])
+      if stdout:
+        result = pilotDB.storePilotOutput(pilotReference,stdout,error)
+        if not result['OK']:
+          gLogger.error('Failed to store pilot output:',result['Message'])
 
       resultDict = {}
       resultDict['StdOut'] = stdout
@@ -376,10 +377,10 @@ class WMSAdministratorHandler(RequestHandler):
       if not result['OK']:
         return result
       stdout,error = result['Value']
-
-      result = pilotDB.storePilotOutput(pilotReference,stdout,error)
-      if not result['OK']:
-        gLogger.error('Failed to store pilot output:',result['Message'])
+      if stdout:
+        result = pilotDB.storePilotOutput(pilotReference,stdout,error)
+        if not result['OK']:
+          gLogger.error('Failed to store pilot output:',result['Message'])
 
       resultDict = {}
       resultDict['StdOut'] = stdout
