@@ -12,6 +12,7 @@ NEW: dirac-compile-externals will retrieve the Externals compilation scripts fro
 NEW: Possibility to define a thread-global credentials for DISET connections (for web framework)
 NEW: Logger - color output ( configurable )
 NEW: dirac-admin-sort-cs-sites - to sort sites in the CS
+CHANGE: MessageClient(Factor) - added msgClient attribute to messages
 
 *Framework
 NEW: SystemAdministratorClientCLI - possibility to define roothPath and lcgVersion when updating software
@@ -63,6 +64,7 @@ CHANGE: JobManager - improved job Killing/Deleting logic
 CHANGE: dirac-pilot - treat the OSG case when jobs on the same WN all run in the same directory
 NEW: JobWrapper - added more status reports on different failures
 FIX: PilotStatusAgent - use getPilotProxyFromDIRACGroup() instead of getPilotProxyFromVOMSGroup()
+CHANGE: JobMonitoringHandler - add cutDate and condDict parameters to getJobGroup()
 
 *RMS
 FIX: RequestDBFile - better exception handling in case no JobID supplied
@@ -82,6 +84,10 @@ CHANGE: SSHXXX Computing Elements - define SSH class once in the SSHComputingEle
 NEW: SSHComputingElement - added option to define private key location
 CHANGE: Get rid of legacy methods in ComputingElement
 NEW: enable definition of ChecksumType per SE
+NEW: SSHBatch, SSHCondor Computing Elements
+NEW: SSHxxx Computing Elements - using remote control scripts to better capture remote command errors
+CHANGE: put common functionality into SSHComputingElement base class for all SSHxxx CEs
+NEW: added killJob() method tp all the CEs
 
 *Interfaces
 CHANGE: Removed Script.initialize() from the API initialization
