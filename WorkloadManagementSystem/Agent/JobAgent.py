@@ -148,7 +148,7 @@ class JobAgent( AgentModule ):
 
     if not jobRequest['OK']:
       if re.search( 'No match found', jobRequest['Message'] ):
-        self.log.info( 'Job request OK: %s' % ( jobRequest['Message'] ) )
+        self.log.notice( 'Job request OK: %s' % ( jobRequest['Message'] ) )
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
           return self.__finish( 'Nothing to do for more than %d cycles' %  self.stopAfterFailedMatches )
@@ -163,7 +163,7 @@ class JobAgent( AgentModule ):
         self.log.error( jobRequest['Message'] )
         return S_ERROR( jobRequest['Message'] )
       else:
-        self.log.info( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
+        self.log.notice( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
           return self.__finish( 'Nothing to do for more than %d cycles' %  self.stopAfterFailedMatches )
