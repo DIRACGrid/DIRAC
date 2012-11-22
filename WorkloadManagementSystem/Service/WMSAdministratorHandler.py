@@ -515,6 +515,69 @@ class WMSAdministratorHandler(RequestHandler):
       return S_ERROR( 'Failed to get pilot for Job %s' % jobID )
 
     return pilotDB.getPilotInfo(pilotID=pilots)
+  
+  ##############################################################################
+  types_killPilot = [ list(StringTypes)+[ListType] ]
+  def export_killPilot(self, pilotRefList ):
+    """ Kill the specified pilots
+    """
+    # Make a list if it is not yet
+    pilotRefs = list( pilotRefList )
+    if type( pilotRefList ) in StringTypes:
+      pilotRefs = [pilotRefList]
+    
+    # Regroup pilots per site and per owner
+    pilotRefDict = {}
+    for pilotReference in pilotRefs:
+      result = pilotDB.getPilotInfo(pilotReference)
+      if not result['OK'] or not result[ 'Value' ]:
+        return S_ERROR('Failed to get info for pilot ' + pilotReference)
+  
+      pilotDict = result['Value'][pilotReference]
+      owner = pilotDict['OwnerDN']
+      group = pilotDict['OwnerGroup']
+      queue = '@@@'.join( [owner, group, pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue']] )
+      gridType = pilotDict['GridType']
+      pilotRefDict.setdefault( queue, {} )
+      pilotRefDict[queue].setdefault( 'PilotList', [] )
+      pilotRefDict[queue]['PilotList'].append( pilotReference )
+      pilotRefDict[queue]['GridType'] = gridType
+      
+    # Do the work now queue by queue  
+    ceFactory = ComputingElementFactory()
+    failed = []
+    for key, pilotDict in pilotRefDict.items():
+      
+      owner,group,site,ce,queue = key.split( '@@@' )
+      result = getQueue( site, ce, queue )
+      if not result['OK']:
+        return result
+      queueDict = result['Value']
+      gridType = pilotDict['GridType']
+      result = ceFactory.getCE( gridType, ce, queueDict )
+      if not result['OK']:
+        return result
+      ce = result['Value']
+  
+      if gridType in ["LCG","gLite","CREAM"]:
+        group = getGroupOption(group,'VOMSRole',group)
+        ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
+        if not ret['OK']:
+          gLogger.error( ret['Message'] )
+          gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
+          return S_ERROR("Failed to get the pilot's owner proxy")
+        proxy = ret['Value']
+        ce.setProxy( proxy )
+
+      pilotList = pilotDict['PilotList']
+      result = ce.killJob( pilotList )
+      if not result['OK']:
+        failed.extend( pilotList )
+      
+    if failed:
+      return S_ERROR('Failed to kill at least some pilots')
+    
+    return S_OK()  
 
   ##############################################################################
   types_setJobForPilot = [ [IntType,LongType], StringTypes]
