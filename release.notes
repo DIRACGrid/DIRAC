@@ -1,3 +1,10 @@
+[v6r5p11]
+
+FIX: merged in patch v6r4p33
+
+*Core
+FIX: MySQL - added offset argument to buildConditions()
+
 [v6r5p10]
 
 FIX: merged in patch v6r4p31
@@ -169,7 +176,13 @@ CHANGE: request agents cleanup
 
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
-[v6r4p31]
+
+[v6r4p33]
+
+*DMS
+CHANGE: FTSRequest - be more verbose if something is wrong with file
+
+[v6r4p32]
 
 *WMS
 FIX: StalledJobAgent - avoid exceptions in the stalled job accounting reporting
