@@ -5,13 +5,14 @@
   :mod: FTSMonitorAgent
   =====================
 
-  The FTSMonitorAgent takes FTS Requests from the TransferDB and monitors their execution.
+  The FTSMonitorAgent takes FTS Requests from the TransferDB and monitors their execution
+  using FTSRequest helper class.
 
 """
 ## imports
 import re
 ## from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 #from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
@@ -43,16 +44,16 @@ class FTSMonitorAgent( AgentModule ):
 
     #########################################################################
     #  Get the details for all active FTS requests
-    gLogger.info( 'Obtaining requests to monitor' )
+    self.log.info( 'Obtaining requests to monitor' )
     res = self.transferDB.getFTSReq()
     if not res['OK']:
-      gLogger.error( "Failed to get FTS requests", res['Message'] )
+      self.log.error( "Failed to get FTS requests", res['Message'] )
       return res
     if not res['Value']:
-      gLogger.info( "FTSMonitorAgent. No FTS requests found to monitor." )
+      self.log.info( "FTSMonitorAgent. No FTS requests found to monitor." )
       return S_OK()
     ftsReqs = res['Value']
-    gLogger.info( 'Found %s FTS jobs' % len( ftsReqs ) )
+    self.log.info( 'Found %s FTS jobs' % len( ftsReqs ) )
 
     #######################################################################
     # Check them all....
@@ -60,7 +61,7 @@ class FTSMonitorAgent( AgentModule ):
     for ftsReqDict in ftsReqs:
       infoStr = "\n\n##################################################################################\n\n"
       infoStr = "%sStarting monitoring loop %s of %s\n\n" % ( infoStr, i, len( ftsReqs ) )
-      gLogger.info( infoStr )
+      self.log.info( infoStr )
       res = self.monitorTransfer( ftsReqDict )
       i += 1
     return S_OK()
@@ -83,23 +84,23 @@ class FTSMonitorAgent( AgentModule ):
 
     #########################################################################
     # Perform summary update of the FTS Request and update FTSReq entries.
-    gLogger.info( 'Perform summary update of the FTS Request' )
+    self.log.info( 'Perform summary update of the FTS Request' )
     infoStr = "Monitoring FTS Job:\n\n"
     infoStr = "%sglite-transfer-status -s %s -l %s\n" % ( infoStr, ftsServer, ftsGUID )
     infoStr = "%s%s%s\n" % ( infoStr, 'FTS GUID:'.ljust( 20 ), ftsGUID )
     infoStr = "%s%s%s\n\n" % ( infoStr, 'FTS Server:'.ljust( 20 ), ftsServer )
-    gLogger.info( infoStr )
+    self.log.info( infoStr )
     res = oFTSRequest.summary()
     self.transferDB.setFTSReqLastMonitor( ftsReqID )
     if not res['OK']:
-      gLogger.error( "Failed to update the FTS request summary", res['Message'] )
+      self.log.error( "Failed to update the FTS request summary", res['Message'] )
       if "getTransferJobSummary2: Not authorised to query request" in res["Message"]:
-        gLogger.error("FTS job is not existing at the FTS server anymore, will clean it up on TransferDB side")
+        self.log.error("FTS job is not existing at the FTS server anymore, will clean it up on TransferDB side")
 
         ## get fileIDs
         fileIDs = self.transferDB.getFTSReqFileIDs( ftsReqID )
         if not fileIDs["OK"]:
-          gLogger.error("Unable to retrieve FileIDs associated to %s request" % ftsReqID )
+          self.log.error("Unable to retrieve FileIDs associated to %s request" % ftsReqID )
           return fileIDs
         fileIDs = fileIDs["Value"]
       
@@ -108,26 +109,26 @@ class FTSMonitorAgent( AgentModule ):
           fileStatus = self.transferDB.setFileToFTSFileAttribute( ftsReqID, fileID, 
                                                                   "Status", "Failed" )
           if not fileStatus["OK"]:
-            gLogger.error("Unable to set FileToFTS status to Failed for FileID %s: %s" % ( fileID, 
+            self.log.error("Unable to set FileToFTS status to Failed for FileID %s: %s" % ( fileID, 
                                                                                            fileStatus["Message"] ) )
                           
           failReason = self.transferDB.setFileToFTSFileAttribute( ftsReqID, fileID, 
                                                                   "Reason", "FTS job expired on server" )
           if not failReason["OK"]:
-            gLogger.error("Unable to set FileToFTS reason for FileID %s: %s" % ( fileID, 
+            self.log.error("Unable to set FileToFTS reason for FileID %s: %s" % ( fileID, 
                                                                                  failReason["Message"] ) )
 
         ## update Channel table
         resetChannels = self.transferDB.resetFileChannelStatus( channelID, fileIDs )
         if not resetChannels["OK"]:
-          gLogger.error("Failed to reset Channel table for files to retry")
+          self.log.error("Failed to reset Channel table for files to retry")
           return resetChannels   
 
         ## update FTSReq table
-        gLogger.info( 'Setting FTS request status to Finished' )
+        self.log.info( 'Setting FTS request status to Finished' )
         ftsReqStatus = self.transferDB.setFTSReqStatus( ftsReqID, 'Finished' )
         if not ftsReqStatus['OK']:
-          gLogger.error( 'Failed update FTS Request status', ftsReqStatus['Message'] )
+          self.log.error( 'Failed update FTS Request status', ftsReqStatus['Message'] )
           return ftsReqStatus
         ## if we land here, everything should be OK
         return S_OK()
@@ -135,14 +136,14 @@ class FTSMonitorAgent( AgentModule ):
       return res
     res = oFTSRequest.dumpSummary()
     if not res['OK']:
-      gLogger.error( "Failed to get FTS request summary", res['Message'] )
+      self.log.error( "Failed to get FTS request summary", res['Message'] )
       return res
-    gLogger.info( res['Value'] )
+    self.log.info( res['Value'] )
     res = oFTSRequest.getPercentageComplete()
     if not res['OK']:
-      gLogger.error( "Failed to get FTS percentage complete", res['Message'] )
+      self.log.error( "Failed to get FTS percentage complete", res['Message'] )
       return res
-    gLogger.info( 'FTS Request found to be %.1f percent complete' % res['Value'] )
+    self.log.info( 'FTS Request found to be %.1f percent complete' % res['Value'] )
     self.transferDB.setFTSReqAttribute( ftsReqID, 'PercentageComplete', res['Value'] )
     self.transferDB.addLoggingEvent( ftsReqID, res['Value'] )
 
@@ -150,40 +151,40 @@ class FTSMonitorAgent( AgentModule ):
     # Update the information in the TransferDB if the transfer is terminal.
     res = oFTSRequest.isRequestTerminal()
     if not res['OK']:
-      gLogger.error( "Failed to determine whether FTS request terminal", res['Message'] )
+      self.log.error( "Failed to determine whether FTS request terminal", res['Message'] )
       return res
     if not res['Value']:
       return S_OK()
-    gLogger.info( 'FTS Request found to be terminal, updating file states' )
+    self.log.info( 'FTS Request found to be terminal, updating file states' )
 
     #########################################################################
     # Get the LFNS associated to the FTS request
-    gLogger.info( 'Obtaining the LFNs associated to this request' )
+    self.log.info( 'Obtaining the LFNs associated to this request' )
     res = self.transferDB.getFTSReqLFNs( ftsReqID, channelID, sourceSE )
     if not res['OK']:
-      gLogger.error( "Failed to obtain FTS request LFNs", res['Message'] )
+      self.log.error( "Failed to obtain FTS request LFNs", res['Message'] )
       return res
     files = res['Value']
     if not files:
-      gLogger.error( 'No files present for transfer' )
+      self.log.error( 'No files present for transfer' )
       return S_ERROR( 'No files were found in the DB' )
     lfns = files.keys()
-    gLogger.info( 'Obtained %s files' % len( lfns ) )
+    self.log.info( 'Obtained %s files' % len( lfns ) )
     for lfn in lfns:
       oFTSRequest.setLFN( lfn )
 
     res = oFTSRequest.monitor()
     if not res['OK']:
-      gLogger.error( "Failed to perform detailed monitoring of FTS request", res['Message'] )
+      self.log.error( "Failed to perform detailed monitoring of FTS request", res['Message'] )
       return res
     res = oFTSRequest.getFailed()
     if not res['OK']:
-      gLogger.error( "Failed to obtained failed files for FTS request", res['Message'] )
+      self.log.error( "Failed to obtained failed files for FTS request", res['Message'] )
       return res
     failedFiles = res['Value']
     res = oFTSRequest.getDone()
     if not res['OK']:
-      gLogger.error( "Failed to obtained successful files for FTS request", res['Message'] )
+      self.log.error( "Failed to obtained successful files for FTS request", res['Message'] )
       return res
     completedFiles = res['Value']
 
@@ -191,12 +192,12 @@ class FTSMonitorAgent( AgentModule ):
     # FTS will only do the transfer once. We need to identify all FileIDs
     res = self.transferDB.getFTSReqFileIDs( ftsReqID )
     if not res['OK']:
-      gLogger.error( 'Failed to get FileIDs associated to FTS Request', res['Message'] )
+      self.log.error( 'Failed to get FileIDs associated to FTS Request', res['Message'] )
       return res
     fileIDs = res['Value']
     res = self.transferDB.getAttributesForFilesList( fileIDs, ['LFN'] )
     if not res['OK']:
-      gLogger.error( 'Failed to get LFNs associated to FTS Request', res['Message'] )
+      self.log.error( 'Failed to get LFNs associated to FTS Request', res['Message'] )
       return res
     fileIDDict = res['Value']
 
@@ -222,57 +223,57 @@ class FTSMonitorAgent( AgentModule ):
         if res['OK']:
           failReason = res['Value']
         if self.missingSource( failReason ):
-          gLogger.error( 'The source SURL does not exist.', '%s %s' % ( lfn, oFTSRequest.getSourceSURL( lfn ) ) )
+          self.log.error( 'The source SURL does not exist.', '%s %s' % ( lfn, oFTSRequest.getSourceSURL( lfn ) ) )
           filesToFail.append( fileID )
         else:
           filesToRetry.append( fileID )
-        gLogger.error( 'Failed to replicate file on channel.', "%s %s" % ( channelID, failReason ) )
+        self.log.error( 'Failed to replicate file on channel.', "%s %s" % ( channelID, failReason ) )
         fileToFTSUpdates.append( ( fileID, 'Failed', failReason, 0, 0 ) )
 
     allUpdated = True
     if filesToRetry:
-      gLogger.info( 'Updating the Channel table for files to retry' )
+      self.log.info( 'Updating the Channel table for files to retry' )
       res = self.transferDB.resetFileChannelStatus( channelID, filesToRetry )
       if not res['OK']:
-        gLogger.error( 'Failed to update the Channel table for file to retry.', res['Message'] )
+        self.log.error( 'Failed to update the Channel table for file to retry.', res['Message'] )
         allUpdated = False
     for fileID in filesToFail:
-      gLogger.info( 'Updating the Channel table for files to reschedule' )
+      self.log.info( 'Updating the Channel table for files to reschedule' )
       res = self.transferDB.setFileChannelStatus( channelID, fileID, 'Failed' )
       if not res['OK']:
-        gLogger.error( 'Failed to update Channel table for failed files.', res['Message'] )
+        self.log.error( 'Failed to update Channel table for failed files.', res['Message'] )
         allUpdated = False
 
     if completedFileIDs:
-      gLogger.info( 'Updating the Channel table for successful files' )
+      self.log.info( 'Updating the Channel table for successful files' )
       res = self.transferDB.updateCompletedChannelStatus( channelID, completedFileIDs )
       if not res['OK']:
-        gLogger.error( 'Failed to update the Channel table for successful files.', res['Message'] )
+        self.log.error( 'Failed to update the Channel table for successful files.', res['Message'] )
         allUpdated = False
-      gLogger.info( 'Updating the Channel table for ancestors of successful files' )
+      self.log.info( 'Updating the Channel table for ancestors of successful files' )
       res = self.transferDB.updateAncestorChannelStatus( channelID, completedFileIDs )
       if not res['OK']:
-        gLogger.error( 'Failed to update the Channel table for ancestors of successful files.', res['Message'] )
+        self.log.error( 'Failed to update the Channel table for ancestors of successful files.', res['Message'] )
         allUpdated = False
 
     if fileToFTSUpdates:
-      gLogger.info( 'Updating the FileToFTS table for files' )
+      self.log.info( 'Updating the FileToFTS table for files' )
       res = self.transferDB.setFileToFTSFileAttributes( ftsReqID, channelID, fileToFTSUpdates )
       if not res['OK']:
-        gLogger.error( 'Failed to update the FileToFTS table for files.', res['Message'] )
+        self.log.error( 'Failed to update the FileToFTS table for files.', res['Message'] )
         allUpdated = False
 
     if allUpdated:
       res = oFTSRequest.finalize()
       if not res['OK']:
-        gLogger.error( "Failed to perform the finalization for the FTS request", res['Message'] )
+        self.log.error( "Failed to perform the finalization for the FTS request", res['Message'] )
         return res
 
-      gLogger.info( 'Adding logging event for FTS request' )
+      self.log.info( 'Adding logging event for FTS request' )
       # Now set the FTSReq status to terminal so that it is not monitored again
       res = self.transferDB.addLoggingEvent( ftsReqID, 'Finished' )
       if not res['OK']:
-        gLogger.error( 'Failed to add logging event for FTS Request', res['Message'] )
+        self.log.error( 'Failed to add logging event for FTS Request', res['Message'] )
 
       res = oFTSRequest.getFailedRegistrations()
       failedRegistrations = res['Value']
@@ -282,7 +283,7 @@ class FTSMonitorAgent( AgentModule ):
       for fileID, fileDict in fileIDDict.items():
         lfn = fileDict['LFN']
         if lfn in failedRegistrations:
-          gLogger.info( 'Setting failed registration in FileToCat back to Waiting', lfn )
+          self.log.info( 'Setting failed registration in FileToCat back to Waiting', lfn )
           regFailedFileIDs.append( fileID )
           # if the LFN appears more than once, FileToCat needs to be reset only once 
           del failedRegistrations[lfn]
@@ -295,26 +296,26 @@ class FTSMonitorAgent( AgentModule ):
       if regFailedFileIDs:
         res = self.transferDB.setRegistrationWaiting( channelID, regFailedFileIDs )
         if not res['OK']:
-          gLogger.error( 'Failed to reset entries in FileToCat', res['Message'] )
+          self.log.error( 'Failed to reset entries in FileToCat', res['Message'] )
           return res
 
       if regDoneFileIDs:
         res = self.transferDB.setRegistrationDone( channelID, regDoneFileIDs )
         if not res['OK']:
-          gLogger.error( 'Failed to set entries Done in FileToCat', res['Message'] )
+          self.log.error( 'Failed to set entries Done in FileToCat', res['Message'] )
           return res
 
       if regForgetFileIDs:
         # This entries could also be set to Failed, but currently there is no method to do so.
         res = self.transferDB.setRegistrationDone( channelID, regForgetFileIDs )
         if not res['OK']:
-          gLogger.error( 'Failed to set entries Done in FileToCat', res['Message'] )
+          self.log.error( 'Failed to set entries Done in FileToCat', res['Message'] )
           return res
 
-      gLogger.info( 'Updating FTS request status' )
+      self.log.info( 'Updating FTS request status' )
       res = self.transferDB.setFTSReqStatus( ftsReqID, 'Finished' )
       if not res['OK']:
-        gLogger.error( 'Failed update FTS Request status', res['Message'] )
+        self.log.error( 'Failed update FTS Request status', res['Message'] )
     return S_OK()
 
   def missingSource( self, failReason ):
@@ -323,12 +324,13 @@ class FTSMonitorAgent( AgentModule ):
     :param self: self reference
     :param str failReason: message sent by FTS server
     """
-    missingSourceErrors = [ 'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
-                            'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
-                            'SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed',
-                            'SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist',
-                            'TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory',
-                            'SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist' ]
+    missingSourceErrors = [ 
+      'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
+      'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
+      'SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed',
+      'SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist',
+      'TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory',
+      'SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist' ]
     for error in missingSourceErrors:
       if re.search( error, failReason ):
         return 1
