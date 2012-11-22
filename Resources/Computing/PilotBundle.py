@@ -1,6 +1,6 @@
 ########################################################################
 # $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py $
-# File :   ExecWrapper.py
+# File :   PilotBundle.py
 # Author : Ricardo Graciani
 ########################################################################
 """
@@ -11,11 +11,11 @@ __RCSID__ = "$Id: DIRACPilotDirector.py 28536 2010-09-23 06:08:40Z rgracian $"
 
 import os, base64, bz2, types, tempfile
 
-def wrapperScript( executable, arguments=[], proxy=None, sandboxDict = {}, environDict={}, execDir='' ):
+def getExecutableScript( executable, arguments=[], proxy=None, sandboxDict = {}, environDict={}, execDir='' ):
   """
    Prepare a wrapper script for executable including as required environment, proxy, sandbox,...
 
-   A temporary directory it is created and removed at the end where sandbox is unpacked and
+   A temporary directory is created and removed at the end where sandbox is unpacked and
    executable called
 
    In executable, arguments and execDir environmental variables can be used
@@ -45,10 +45,6 @@ def wrapperScript( executable, arguments=[], proxy=None, sandboxDict = {}, envir
     compressedAndEncodedFiles[fileName] = encodedFile
 
   script = """#!/usr/bin/env python
-########################################################################
-# File :   Pilot.py
-# Author : Ricardo Graciani
-########################################################################
 try:
   import os, tempfile, sys, shutil, base64, bz2, subprocess, datetime
 except:
@@ -139,6 +135,40 @@ exit( exitCode )
         'environDict': environDict, }
 
   return script
+
+def bundleProxy( executableFile, proxy ):
+  """ Create a self extracting archive bundling together an executable script and a proxy
+  """
+  
+  compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
+  compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace( '\n', '' )
+
+  bundle = """#!/usr/bin/env python
+# Wrapper script for executable and proxy
+import os, tempfile, sys, base64, bz2, shutil
+try:
+  workingDirectory = tempfile.mkdtemp( suffix = '_wrapper', prefix= 'TORQUE_' )
+  os.chdir( workingDirectory )
+  open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
+  open( '%(executable)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedExecutable)s" ) ) )
+  os.chmod('proxy',0600)
+  os.chmod('%(executable)s',0700)
+  os.environ["X509_USER_PROXY"]=os.path.join(workingDirectory, 'proxy')
+except Exception, x:
+  print >> sys.stderr, x
+  sys.exit(-1)
+cmd = "./%(executable)s"
+print 'Executing: ', cmd
+sys.stdout.flush()
+os.system( cmd )
+
+shutil.rmtree( workingDirectory )
+
+""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
+        'compressedAndEncodedExecutable': compressedAndEncodedExecutable, \
+        'executable': os.path.basename( executableFile ) }
+
+  return bundle
 
 def writeScript( script, writeDir=None ):
   """

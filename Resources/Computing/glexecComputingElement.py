@@ -304,7 +304,7 @@ class glexecComputingElement( ComputingElement ):
     return S_OK( glexecPath )
 
   #############################################################################
-  def getDynamicInfo( self ):
+  def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()
