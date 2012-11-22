@@ -134,23 +134,23 @@ class JobPolicy:
 
     return S_OK( permDict )
 
-def evaluateJobRights( jobPolicy, jobList, right ):
-  """ Get access rights to jobID for the user ownerDN/ownerGroup
-  """
-  validJobList = []
-  invalidJobList = []
-  nonauthJobList = []
-  ownerJobList = []
-  for jobID in jobList:
-    result = jobPolicy.getUserRightsForJob( jobID )
-    if result['OK']:
-      if result['Value'][right]:
-        validJobList.append( jobID )
+  def evaluateJobRights( self, jobList, right ):
+    """ Get access rights to jobID for the user ownerDN/ownerGroup
+    """
+    validJobList = []
+    invalidJobList = []
+    nonauthJobList = []
+    ownerJobList = []
+    for jobID in jobList:
+      result = self.getUserRightsForJob( jobID )
+      if result['OK']:
+        if result['Value'][right]:
+          validJobList.append( jobID )
+        else:
+          nonauthJobList.append( jobID )
+        if result[ 'UserIsOwner' ]:
+          ownerJobList.append( jobID )
       else:
-        nonauthJobList.append( jobID )
-      if result[ 'UserIsOwner' ]:
-        ownerJobList.append( jobID )
-    else:
-      invalidJobList.append( jobID )
-
-  return validJobList, invalidJobList, nonauthJobList, ownerJobList
+        invalidJobList.append( jobID )
+  
+    return validJobList, invalidJobList, nonauthJobList, ownerJobList

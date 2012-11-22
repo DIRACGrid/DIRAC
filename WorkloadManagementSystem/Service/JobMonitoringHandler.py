@@ -310,9 +310,8 @@ class JobMonitoringHandler( RequestHandler ):
 
       jobList = result['Value']
       
-      validJobList, invalidJobList, nonauthJobList, ownerJobList = evaluateJobRights( self.jobPolicy, 
-                                                                                      jobList,
-                                                                                      RIGHT_GET_INFO )
+      validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
+                                                                                                     RIGHT_GET_INFO )
       jobList = validJobList
       nJobs = len( jobList )
       resultDict['TotalRecords'] = nJobs
