@@ -1,4 +1,9 @@
-[v6r4p31]
+[v6r4p33]
+
+*DMS
+CHANGE: FTSRequest - be more verbose if something is wrong with file
+
+[v6r4p32]
 
 *WMS
 FIX: StalledJobAgent - avoid exceptions in the stalled job accounting reporting
