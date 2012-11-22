@@ -608,6 +608,23 @@ class DiracAdmin( API ):
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getPilotInfo( gridReference )
     return result
+  
+  #############################################################################
+  def killPilot( self, gridReference ):
+    """Kill the pilot specified
+
+       >>> print dirac.getPilotInfo(12345)
+       {'OK': True, 'Value': {}}
+
+       @param gridReference: Pilot Job Reference
+       @return: S_OK,S_ERROR
+    """
+    if not type( gridReference ) == type( " " ):
+      return self._errorReport( 'Expected string for pilot reference' )
+
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+    result = wmsAdmin.killPilot( gridReference )
+    return result
 
   #############################################################################
   def getPilotLoggingInfo( self, gridReference ):
