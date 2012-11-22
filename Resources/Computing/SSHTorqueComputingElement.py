@@ -10,9 +10,10 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
+from DIRAC.Resources.Computing.SSHComputingElement       import SSH, SSHComputingElement 
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
+from DIRAC.Core.Utilities.Pfn                            import pfnparse
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import systemCall, rootPath
 from DIRAC                                               import gConfig
@@ -25,20 +26,20 @@ import string, shutil, bz2, base64, tempfile
 CE_NAME = 'SSHTorque'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
-class SSHTorqueComputingElement( ComputingElement ):
+class SSHTorqueComputingElement( SSHComputingElement ):
 
   #############################################################################
   def __init__( self, ceUniqueID ):
     """ Standard constructor.
     """
-    ComputingElement.__init__( self, ceUniqueID )
+    SSHComputingElement.__init__( self, ceUniqueID )
 
     self.ceType = CE_NAME
-    self.submittedJobs = 0
+    self.controlScript = 'torquece'
     self.mandatoryParameters = MANDATORY_PARAMETERS
 
   #############################################################################
-  def _addCEConfigDefaults( self ):
+  def _addCEConfigDefaults_old( self ):
     """Method to make sure all necessary Configuration Parameters are defined
     """
     # First assure that any global parameters are loaded
@@ -60,7 +61,7 @@ class SSHTorqueComputingElement( ComputingElement ):
       self.ceParameters['ExecutableArea'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
 
 
-  def reset( self ):
+  def reset_old( self ):
 
     self.queue = self.ceParameters['Queue']
     if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
@@ -81,7 +82,7 @@ class SSHTorqueComputingElement( ComputingElement ):
         self.removeOutput = False
 
   #############################################################################
-  def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
+  def submitJob_old( self, executableFile, proxy, numberOfJobs = 1 ):
     """ Method to submit job
     """
 
@@ -166,7 +167,7 @@ shutil.rmtree( workingDirectory )
     return S_OK( batchIDList )
 
   #############################################################################
-  def getDynamicInfo( self ):
+  def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
 
@@ -180,7 +181,7 @@ shutil.rmtree( workingDirectory )
     if not ret['OK']:
       self.log.error( 'Timeout', ret['Message'] )
       return ret
-
+    
     status = ret['Value'][0]
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
@@ -220,17 +221,22 @@ shutil.rmtree( workingDirectory )
     ssh = SSH( parameters = self.ceParameters )
 
     for jobList in breakListIntoChunks( jobIDList, 100 ):
+      
       jobDict = {}
       for job in jobList:
-        jobNumber = job.split( '.' )[0]
-        if jobNumber:
-          jobDict[jobNumber] = job
+        result = pfnparse( job )
+        if result['OK']:
+          stamp = result['Value']['FileName'].split('.')[0] 
+        else:
+          self.log.error( 'Invalid job id', job )
+          continue  
+        jobDict[stamp] = job
+      stampList = jobDict.keys() 
 
-      cmd = [ 'qstat', ' '.join( jobList ) ]
+      cmd = [ 'qstat', ' '.join( stampList ) ]
       result = ssh.sshCall( 10, cmd )
       if not result['OK']:
         return result
-
       output = result['Value'][1].replace( '\r', '' )
       lines = output.split( '\n' )
       for job in jobDict:
@@ -250,45 +256,18 @@ shutil.rmtree( workingDirectory )
 
     return S_OK( resultDict )
 
-  def getJobOutput( self, jobID, localDir = None ):
-    """ Get the specified job standard output and error files. If the localDir is provided,
-        the output is returned as file in this directory. Otherwise, the output is returned 
-        as strings. 
+  def _getJobOutputFiles( self, jobID ):
+    """ Get output file names for the specific CE 
     """
-    jobNumber = jobID.split( '.' )[0]
-
-    if not localDir:
-      tempDir = tempfile.mkdtemp()
-    else:
-      tempDir = localDir
-
-    ssh = SSH( parameters = self.ceParameters )
-    result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchOutput, jobNumber ), upload = False )
+    result = pfnparse( jobID )
     if not result['OK']:
       return result
-    if not os.path.exists( '%s/%s.out' % ( tempDir, jobID ) ):
-      os.system( 'touch %s/%s.out' % ( tempDir, jobID ) )
-    result = ssh.scpCall( 20, '%s/%s.err' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchError, jobNumber ), upload = False )
-    if not result['OK']:
-      return result
-    if not os.path.exists( '%s/%s.err' % ( tempDir, jobID ) ):
-      os.system( 'touch %s/%s.err' % ( tempDir, jobID ) )
+    jobStamp = result['Value']['FileName']
+    host = result['Value']['Host']
 
-    # The result is OK, we can remove the output
-    if self.removeOutput:
-      result = ssh.sshCall( 10, 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobNumber, self.batchError, jobNumber ) )
+    output = '%s/DIRACPilot.o%s' % ( self.batchOutput, jobStamp )
+    error = '%s/DIRACPilot.e%s' % ( self.batchError, jobStamp )
 
-    if localDir:
-      return S_OK( ( '%s/%s.out' % ( tempDir, jobID ), '%s/%s.err' % ( tempDir, jobID ) ) )
-    else:
-      # Return the output as a string
-      outputFile = open( '%s/%s.out' % ( tempDir, jobID ), 'r' )
-      output = outputFile.read()
-      outputFile.close()
-      outputFile = open( '%s/%s.err' % ( tempDir, jobID ), 'r' )
-      error = outputFile.read()
-      outputFile.close()
-      shutil.rmtree( tempDir )
-      return S_OK( ( output, error ) )
+    return S_OK( (jobStamp,host,output,error) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
