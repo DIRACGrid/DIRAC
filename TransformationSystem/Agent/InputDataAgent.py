@@ -70,7 +70,10 @@ class InputDataAgent(AgentModule):
             # If it is more than a day since the last reduced query, make a full query just in case
             if (datetime.datetime.utcnow() - self.fullTimeLog[transID]) < datetime.timedelta(seconds=self.fullUpdatePeriod):
               timeStamp = self.timeLog[transID]
-              inputDataQuery['StartDate'] = (timeStamp - datetime.timedelta(seconds=10)).strftime('%Y-%m-%d %H:%M:%S')
+              if self.datekey:
+                inputDataQuery[self.datekey] = (timeStamp - datetime.timedelta(seconds=10)).strftime('%Y-%m-%d %H:%M:%S')
+              else:
+                gLogger.error( "DateKey was not set in the CS, cannot use the RefreshOnly" )
             else:
               self.fullTimeLog[transID] = datetime.datetime.utcnow()    
         self.timeLog[transID] = datetime.datetime.utcnow()
