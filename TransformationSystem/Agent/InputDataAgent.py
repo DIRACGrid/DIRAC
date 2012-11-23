@@ -2,6 +2,14 @@
 # $HeadURL$
 ########################################################################
 
+"""
+Update the transformation files of active transformations given an InputDataQuery fetched from the Transformation Service.
+
+Possibility to speedup the query time by only fetching files that were added since the last iteration. 
+Use the CS option RefreshOnly (False by default) and set the DateKey (empty by default) to the meta data
+key set in the DIRAC FileCatalog.
+"""
+
 __RCSID__ = "$Id$"
 
 from DIRAC                                                                import S_OK, S_ERROR, gConfig, gLogger, gMonitor
@@ -23,6 +31,8 @@ class InputDataAgent(AgentModule):
     self.fullTimeLog = {}
     self.pollingTime = self.am_getOption('PollingTime',120)
     self.fullUpdatePeriod = self.am_getOption('FullUpdatePeriod',86400)
+    self.refreshonly = self.am_getOption( 'RefreshOnly', False )
+    self.datekey = self.am_getOption( 'DateKey', None )
     gMonitor.registerActivity("Iteration","Agent Loops",AGENT_NAME,"Loops/min",gMonitor.OP_SUM)
     self.transClient = TransformationClient('TransformationDB')
     self.metadataClient = FileCatalogClient()
@@ -52,19 +62,20 @@ class InputDataAgent(AgentModule):
           gLogger.error("InputDataAgent.execute: Failed to get input data query for %d" % transID, res['Message'])
         continue
       inputDataQuery = res['Value']
-        
-      # Determine the correct time stamp to use for this transformation
-      if self.timeLog.has_key(transID):
-        if self.fullTimeLog.has_key(transID):
-          # If it is more than a day since the last reduced query, make a full query just in case
-          if (datetime.datetime.utcnow() - self.fullTimeLog[transID]) < datetime.timedelta(seconds=self.fullUpdatePeriod):
-            timeStamp = self.timeLog[transID]
-            inputDataQuery['StartDate'] = (timeStamp - datetime.timedelta(seconds=10)).strftime('%Y-%m-%d %H:%M:%S')
-          else:
-            self.fullTimeLog[transID] = datetime.datetime.utcnow()    
-      self.timeLog[transID] = datetime.datetime.utcnow()
-      if not self.fullTimeLog.has_key(transID):
-        self.fullTimeLog[transID] = datetime.datetime.utcnow()
+      
+      if self.refreshonly:
+        # Determine the correct time stamp to use for this transformation
+        if self.timeLog.has_key(transID):
+          if self.fullTimeLog.has_key(transID):
+            # If it is more than a day since the last reduced query, make a full query just in case
+            if (datetime.datetime.utcnow() - self.fullTimeLog[transID]) < datetime.timedelta(seconds=self.fullUpdatePeriod):
+              timeStamp = self.timeLog[transID]
+              inputDataQuery['StartDate'] = (timeStamp - datetime.timedelta(seconds=10)).strftime('%Y-%m-%d %H:%M:%S')
+            else:
+              self.fullTimeLog[transID] = datetime.datetime.utcnow()    
+        self.timeLog[transID] = datetime.datetime.utcnow()
+        if not self.fullTimeLog.has_key(transID):
+          self.fullTimeLog[transID] = datetime.datetime.utcnow()
 
       # Perform the query to the metadata catalog
       gLogger.verbose("Using input data query for transformation %d: %s" % (transID,str(inputDataQuery)))
