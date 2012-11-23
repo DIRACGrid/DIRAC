@@ -1346,6 +1346,9 @@ class ExecutionThread( threading.Thread ):
     return result
 
 def rescheduleFailedJob( jobID, message, jobReport = None ):
+  
+  rescheduleResult = 'Rescheduled' 
+  
   try:
 
     gLogger.warn( 'Failure during %s' % ( message ) )
@@ -1370,7 +1373,9 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
     jobManager = RPCClient( 'WorkloadManagement/JobManager' )
     result = jobManager.rescheduleJob( int( jobID ) )
     if not result['OK']:
-      gLogger.warn( result )
+      gLogger.warn( result['Message'] )
+      if 'Maximum number of reschedulings is reached' in result['Message']:
+        rescheduleResult = 'Failed'
 
     # Send mail to debug errors
     mailAddress = DIRAC.alarmMail
@@ -1383,10 +1388,10 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
 
     NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
 
-    return
+    return rescheduleResult
   except Exception:
     gLogger.exception( 'JobWrapperTemplate failed to reschedule Job' )
-    return
+    return 'Failed'
 
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

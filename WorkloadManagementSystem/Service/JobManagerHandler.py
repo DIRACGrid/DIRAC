@@ -24,8 +24,9 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
 from DIRAC.Core.DISET.MessageClient import MessageClient
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
-                                                                        RIGHT_DELETE, RIGHT_KILL, RIGHT_RESET
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
+                                                             RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
+                                                             RIGHT_DELETE, RIGHT_KILL, RIGHT_RESET
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
@@ -69,6 +70,7 @@ class JobManagerHandler( RequestHandler ):
     self.diracSetup = self.serviceInfoDict['clientSetup']
     self.maxParametricJobs = self.srv_getCSOption( 'MaxParametricJobs', MAX_PARAMETRIC_JOBS )
     self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
+    self.jobPolicy.setJobDB( gJobDB )
     return S_OK()
 
   def __sendNewJobsToMind( self, jids ):
@@ -245,29 +247,6 @@ class JobManagerHandler( RequestHandler ):
     return []
 
 ###########################################################################
-  def __evaluate_rights( self, jobList, right ):
-    """ Get access rights to jobID for the user ownerDN/ownerGroup
-    """
-    self.jobPolicy.setJobDB( gJobDB )
-    validJobList = []
-    invalidJobList = []
-    nonauthJobList = []
-    ownerJobList = []
-    for jobID in jobList:
-      result = self.jobPolicy.getUserRightsForJob( jobID )
-      if result['OK']:
-        if result['Value'][right]:
-          validJobList.append( jobID )
-        else:
-          nonauthJobList.append( jobID )
-        if result[ 'UserIsOwner' ]:
-          ownerJobList.append( jobID )
-      else:
-        invalidJobList.append( jobID )
-
-    return validJobList, invalidJobList, nonauthJobList, ownerJobList
-
-###########################################################################
   types_rescheduleJob = [ ]
   def export_rescheduleJob( self, jobIDs ):
     """  Reschedule a single job. If the optional proxy parameter is given
@@ -278,8 +257,8 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.__evaluate_rights( jobList,
-                                                                        RIGHT_RESCHEDULE )
+    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
+                                                                                                   RIGHT_RESCHEDULE )
     for jobID in validJobList:
       gtaskQueueDB.deleteJob( jobID )
       #gJobDB.deleteJobFromQueue(jobID)
@@ -341,7 +320,7 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.__evaluate_rights( jobList, right )
+    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList, right )
     
     # Get job status to see what is to be killed or deleted
     result = gJobDB.getAttributesForJobList( validJobList, ['Status'] )
@@ -409,8 +388,8 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.__evaluate_rights( jobList,
-                                                                        RIGHT_RESET )
+    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
+                                                                                                   RIGHT_RESET )
 
     bad_ids = []
     good_ids = []
