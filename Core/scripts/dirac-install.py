@@ -1195,16 +1195,17 @@ def installExternals( releaseConfig ):
     platFD.close()
     cliParams.platform = Platform.getPlatformString()
 
+  if cliParams.installSource:
+    tarsURL = cliParams.installSource
+  else:
+    tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
+
   if cliParams.buildExternals:
     compileExternals( externalsVersion )
   else:
     logDEBUG( "Using platform: %s" % cliParams.platform )
     extVer = "%s-%s-%s-python%s" % ( cliParams.externalsType, externalsVersion, cliParams.platform, cliParams.pythonVersion )
     logDEBUG( "Externals %s are to be installed" % extVer )
-    if cliParams.installSource:
-      tarsURL = cliParams.installSource
-    else:
-      tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
     if not downloadAndExtractTarball( tarsURL, "Externals", extVer, cache = True ):
       return ( not cliParams.noAutoBuild ) and compileExternals( externalsVersion )
     logNOTICE( "Fixing externals paths..." )
