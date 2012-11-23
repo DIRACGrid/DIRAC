@@ -47,7 +47,7 @@ def execute ( arguments ):
           os.chdir( wdir )
       except Exception:
         gLogger.exception( 'JobWrapperTemplate could not create working directory' )
-        rescheduleFailedJob( jobID, 'Could Not Create Working Directory' )
+        rescheduleResult = rescheduleFailedJob( jobID, 'Could Not Create Working Directory' )
         return 1
 
   #root = arguments['CE']['Root']
@@ -58,8 +58,8 @@ def execute ( arguments ):
     job.initialize( arguments )
   except Exception:
     gLogger.exception( 'JobWrapper failed the initialization phase' )
-    rescheduleFailedJob( jobID, 'Job Wrapper Initialization', gJobReport )
-    job.sendWMSAccounting( 'Failed', 'Job Wrapper Initialization' )
+    rescheduleResult = rescheduleFailedJob( jobID, 'Job Wrapper Initialization', gJobReport )
+    job.sendWMSAccounting( rescheduleResult, 'Job Wrapper Initialization' )
     return 1
 
   if arguments['Job'].has_key( 'InputSandbox' ):
@@ -71,8 +71,8 @@ def execute ( arguments ):
         raise JobWrapperError( result['Message'] )
     except Exception:
       gLogger.exception( 'JobWrapper failed to download input sandbox' )
-      rescheduleFailedJob( jobID, 'Input Sandbox Download', gJobReport )
-      job.sendWMSAccounting( 'Failed', 'Input Sandbox Download' )
+      rescheduleResult = rescheduleFailedJob( jobID, 'Input Sandbox Download', gJobReport )
+      job.sendWMSAccounting( rescheduleResult, 'Input Sandbox Download' )
       return 1
   else:
     gLogger.verbose( 'Job has no InputSandbox requirement' )
@@ -88,8 +88,8 @@ def execute ( arguments ):
           raise JobWrapperError( result['Message'] )
       except Exception, x:
         gLogger.exception( 'JobWrapper failed to resolve input data' )
-        rescheduleFailedJob( jobID, 'Input Data Resolution', gJobReport )
-        job.sendWMSAccounting( 'Failed', 'Input Data Resolution' )
+        rescheduleResult = rescheduleFailedJob( jobID, 'Input Data Resolution', gJobReport )
+        job.sendWMSAccounting( rescheduleResult, 'Input Data Resolution' )
         return 1
     else:
       gLogger.verbose( 'Job has a null InputData requirement:' )
