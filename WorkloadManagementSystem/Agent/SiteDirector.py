@@ -722,9 +722,12 @@ EOF
               self.log.error( 'Failed to get pilot output: %s' % result['Message'] )
             else:
               output, error = result['Value']
-              result = pilotAgentsDB.storePilotOutput( pRef, output, error )
-              if not result['OK']:
-                self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
+              if output:
+                result = pilotAgentsDB.storePilotOutput( pRef, output, error )
+                if not result['OK']:
+                  self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
+              else:
+                self.log.warn( 'Empty pilot output not stored to PilotDB' )    
 
     # The pilot can be in Done state set by the job agent check if the output is retrieved
     for queue in self.queueDict:
