@@ -1,4 +1,4 @@
-[v6r6-pre7]
+[v6r6-pre8]
 
 *Core
 CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
@@ -65,6 +65,10 @@ CHANGE: dirac-pilot - treat the OSG case when jobs on the same WN all run in the
 NEW: JobWrapper - added more status reports on different failures
 FIX: PilotStatusAgent - use getPilotProxyFromDIRACGroup() instead of getPilotProxyFromVOMSGroup()
 CHANGE: JobMonitoringHandler - add cutDate and condDict parameters to getJobGroup()
+NEW: JobMonitoringHandler - check access rights with JobPolicy when accessing job info from the web
+NEW: JobManager,JobWrapper - report to accounting jobs in Rescheduled final state if rescheduling is successful
+FIX: WMSAdministrator, SiteDirector - store only non-empty pilot output to the PilotDB
+NEW: added killPilot() to the WMSAdministrator interface, DiracAdmin and dirac-admin-kill-pilot command
 
 *RMS
 FIX: RequestDBFile - better exception handling in case no JobID supplied
