@@ -162,7 +162,7 @@ class FileMetadata:
           failedMeta[meta] = result['Value']
       else:
         # Meta parameter case
-        req = "DELETE FROM FC_FileMeta WHERE MetaKey='%s' AND FileID=%d" % (meta,FileID)
+        req = "DELETE FROM FC_FileMeta WHERE MetaKey='%s' AND FileID=%d" % (meta,fileID)
         result = self.db._update(req)
         if not result['OK']:
           failedMeta[meta] = result['Value']    
