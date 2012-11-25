@@ -239,7 +239,7 @@ class DirectoryListing:
     """ Add single files to be sorted later"""
     self.entries.append(name)
 
-def printOrdered(self):
+  def printOrdered(self):
     """ print the ordered list"""
     self.entries.sort()
     for entry in self.entries:
