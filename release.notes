@@ -92,6 +92,8 @@ NEW: SSHBatch, SSHCondor Computing Elements
 NEW: SSHxxx Computing Elements - using remote control scripts to better capture remote command errors
 CHANGE: put common functionality into SSHComputingElement base class for all SSHxxx CEs
 NEW: added killJob() method tp all the CEs
+NEW: FileCatalog - take the catalog information info from /Operations CS section, if defined there, 
+     to allow specifications per VO 
 
 *Interfaces
 CHANGE: Removed Script.initialize() from the API initialization
@@ -104,6 +106,7 @@ BUGFIX: TaskManager - bug fixed in treating tasks with input data
 FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
 NEW: TransformationAgent is multithreaded now ( implementation moved from LHCbDIRAC )
 NEW: added unit tests
+NEW: InputDataAgent - possibility to refresh only data registered in the last predefined period of time 
 
 [v6r5p10]
 
