@@ -1,3 +1,9 @@
+[v6r4p34]
+
+*DMS
+BUGFIX: FileCatalogCLI - fixed wrong indentation
+CHANGE: RegistrationTask - removed some LHCb specific defaults
+
 [v6r4p33]
 
 *DMS
