@@ -1,3 +1,7 @@
+[v6r5p12]
+
+FIX: merged in patch v6r4p34
+
 [v6r5p11]
 
 FIX: merged in patch v6r4p33
@@ -176,6 +180,12 @@ CHANGE: request agents cleanup
 
 *RMS
 CHANGE: Stop using RequestAgentMixIn in the request agents
+
+[v6r4p34]
+
+*DMS
+BUGFIX: FileCatalogCLI - fixed wrong indentation
+CHANGE: RegistrationTask - removed some LHCb specific defaults
 
 [v6r4p33]
 

@@ -61,17 +61,15 @@ class RegistrationTask( RequestTask ):
     targetSEs = list( set( [ targetSE.strip() for targetSE in  subRequestAttrs["TargetSE"].split(",") 
                              if targetSE.strip() ] ) )
     if not targetSEs:
-      self.warn( "registerFile: no TargetSE specified! will use default 'CERN-FAILOVER'")
-      targetSEs = [ "CERN-FAILOVER" ]
+      self.error( "registerFile: no TargetSE specified!")
+      return S_ERROR( "registerFile: no TargetSE specified!" )
 
     ## dict for failed LFNs
     failed = {}
     failedFiles = 0
 
+    ## get catalogue
     catalogue = subRequestAttrs["Catalogue"] if subRequestAttrs["Catalogue"] else ""
-    if catalogue == "BookkeepingDB":
-      self.warn( "registerFile: catalogue set to 'BookkeepingDB', set it to 'CERN-HIST'")
-      catalogue = "CERN-HIST"
 
     for subRequestFile in subRequestFiles:
       lfn = subRequestFile.get( "LFN", "" ) 
