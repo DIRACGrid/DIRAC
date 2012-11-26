@@ -73,7 +73,7 @@ class NotificationHandler( RequestHandler ):
     """ Send an SMS with supplied body to the specified DIRAC user using the Mail utility via an SMS switch.
     """
     gLogger.verbose( 'Received signal to send the following SMS to %s:\n%s' % ( userName, body ) )
-    mobile = gConfig.getValue( '/Registry/Users/%s/mobile' % userName, '' )
+    mobile = gConfig.getValue( '/Registry/Users/%s/Mobile' % userName, '' )
     if not mobile:
       return S_ERROR( 'No registered mobile number for %s' % userName )
 
