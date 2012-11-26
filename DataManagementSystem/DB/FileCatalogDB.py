@@ -474,11 +474,17 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.removeDirectory(res['Value']['Successful'],credDict)
-    if not res['OK']:
-      return res
-    failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
+    if successful:
+      res = self.dtree.removeDirectory(res['Value']['Successful'],credDict)
+      if not res['OK']:
+        return res
+      failed.update(res['Value']['Failed'])
+      successful = res['Value']['Successful']
+      if not successful:
+        return S_OK( {'Successful':successful,'Failed':failed} )
+    else:
+      return S_OK( {'Successful':successful,'Failed':failed} )
     
     # Remove the directory metadata now
     dirIdList = [ successful[p]['DirID'] for p in successful ]
