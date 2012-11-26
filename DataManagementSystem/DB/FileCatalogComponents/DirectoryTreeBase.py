@@ -206,12 +206,40 @@ class DirectoryTreeBase:
           
     return S_OK({'Successful':successful,'Failed':failed}) 
 
+  #####################################################################
+  def isEmpty( self, path ):
+    """ Find out if the given directory is empty
+    """ 
+    # Check if there are subdirectories
+    result = self.getChildren( path )
+    if not result['OK']:
+      return result
+    childIDs = result['Value']
+    if childIDs:
+      return S_OK( False )
+    
+    #Check if there are files
+    result = self.db.fileManager.getFilesInDirectory(directoryID,path,verbose=details)
+    if not result['OK']:
+      return result
+    files = result['Value']
+    if files:
+      return S_OK( False )
+    
+    return S_OK( True )
+
 #####################################################################
   def removeDirectory(self,dirs,force=False):
     """Remove an empty directory from the catalog """
     successful = {}
     failed = {}
     for dir in dirs:
+      result = self.isEmpty( path )
+      if not result['OK']:
+        return result
+      if not result['Value']:
+        failed[dir] = 'Failed to remove non-empty directory'
+        continue
       result = self.removeDir(dir)
       if not result['OK']:
         failed[dir] = result['Message']
