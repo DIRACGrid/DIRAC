@@ -7,17 +7,17 @@ from DIRAC.Core.Base.Client                         import Client
 from DIRAC.Core.Utilities.List                      import breakListIntoChunks
 from DIRAC.Resources.Catalog.FileCatalogueBase      import FileCatalogueBase
 import types
-    
+
 rpc = None
-url = None    
-    
-class TransformationClient(Client,FileCatalogueBase):
-  
+url = None
+
+class TransformationClient( Client, FileCatalogueBase ):
+
   """ Exposes the functionality available in the DIRAC/TransformationHandler
 
       This inherits the DIRAC base Client for direct execution of server functionality.
       The following methods are available (although not visible here).
-      
+
       Transformation (table) manipulation
 
           deleteTransformation(transName)
@@ -28,41 +28,41 @@ class TransformationClient(Client,FileCatalogueBase):
           deleteTransformationParameter(transName,paramName)
 
       TransformationFiles table manipulation
-      
+
           addFilesToTransformation(transName,lfns)
           addTaskForTransformation(transName,lfns=[],se='Unknown')
           setFileStatusForTransformation(transName,status,lfns)
-          setFileUsedSEForTransformation(transName,usedSE,lfns)  
+          setFileUsedSEForTransformation(transName,usedSE,lfns)
           getTransformationStats(transName)
-          
-      TransformationTasks table manipulation 
-          
-          setTaskStatus(transName, taskID, status) 
-          setTaskStatusAndWmsID(transName, taskID, status, taskWmsID) 
-          getTransformationTaskStats(transName) 
-          deleteTasks(transName, taskMin, taskMax) 
-          extendTransformation( transName, nTasks) 
-          getTasksToSubmit(transName,numTasks,site='') 
-          
+
+      TransformationTasks table manipulation
+
+          setTaskStatus(transName, taskID, status)
+          setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
+          getTransformationTaskStats(transName)
+          deleteTasks(transName, taskMin, taskMax)
+          extendTransformation( transName, nTasks)
+          getTasksToSubmit(transName,numTasks,site='')
+
       TransformationLogging table manipulation
-          
-          getTransformationLogging(transName) 
-      
+
+          getTransformationLogging(transName)
+
       File/directory manipulation methods (the remainder of the interface can be found below)
-      
+
           getFileSummary(lfns,transName)
-          exists(lfns) 
-          
-      Web monitoring tools    
-          
-          getDistinctAttributeValues(attribute, selectDict) 
-          getTransformationStatusCounters() 
-          getTransformationSummary() 
-          getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems) 
+          exists(lfns)
+
+      Web monitoring tools
+
+          getDistinctAttributeValues(attribute, selectDict)
+          getTransformationStatusCounters()
+          getTransformationSummary()
+          getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems)
   """
 
   def __init__( self, name = 'TransformationClient' ):
-    self.setServer('Transformation/TransformationManager')
+    self.setServer( 'Transformation/TransformationManager' )
 
   def setServer( self, url ):
     self.serverURL = url
@@ -162,6 +162,67 @@ class TransformationClient(Client,FileCatalogueBase):
           break
     return S_OK( transformationTasks )
 
+  def moveFilesToDerivedTransformation( self, transDict, resetUnused = True ):
+    prod = transDict['TransformationID']
+    parentProd = int( transDict.get( 'InheritedFrom', 0 ) )
+    movedFiles = {}
+    if not parentProd:
+      gLogger.warn( "Transformation %d was not derived..." % prod )
+      return S_OK( ( parentProd, movedFiles ) )
+    statusToMove = [ 'Unused', 'MaxReset' ]
+    selectDict = {'TransformationID': parentProd, 'Status': statusToMove}
+    res = self.getTransformationFiles( selectDict )
+    if not res['OK']:
+      gLogger.error( "Error getting Unused files from transformation %s:" % parentProd, res['Message'] )
+      return res
+    parentFiles = res['Value']
+    lfns = [lfnDict['LFN'] for lfnDict in parentFiles]
+    if not lfns:
+      gLogger.info( "No files found to be moved from transformation %d to %d" % ( parentProd, prod ) )
+      return res
+    selectDict = { 'TransformationID': prod, 'LFN': lfns}
+    res = self.getTransformationFiles( selectDict )
+    if not res['OK']:
+      gLogger.error( "Error getting files from derived transformation %s" % prod, res['Message'] )
+      return res
+    derivedFiles = res['Value']
+    suffix = '-%d' % parentProd
+    errorFiles = {}
+    for parentDict in parentFiles:
+      lfn = parentDict['LFN']
+      status = parentDict['Status']
+      force = False
+      if resetUnused and status == 'MaxReset':
+        status = 'Unused'
+        force = True
+      derivedStatus = None
+      for derivedDict in derivedFiles:
+        if derivedDict['LFN'] == lfn:
+          derivedStatus = derivedDict['Status']
+          break
+      if derivedStatus:
+        if derivedStatus.endswith( suffix ):
+          res = self.setFileStatusForTransformation( parentProd, 'MovedTo-%d' % prod, [lfn] )
+          if not res['OK']:
+            gLogger.error( "Error setting status for %s in transformation %d to %s" % ( lfn, parentProd, 'MovedTo-%d' % prod ), res['Message'] )
+            continue
+          res = self.setFileStatusForTransformation( prod, status, [lfn], force = force )
+          if not res['OK']:
+            gLogger.error( "Error setting status for %s in transformation %d to %s" % ( lfn, prod, status ), res['Message'] )
+            self.setFileStatusForTransformation( parentProd, status , [lfn] )
+            continue
+          if force:
+            status = 'Unused from MaxReset'
+          movedFiles[status] = movedFiles.setdefault( status, 0 ) + 1
+        else:
+          errorFiles[derivedStatus] = errorFiles.setdefault( derivedStatus, 0 ) + 1
+    if errorFiles:
+      gLogger.error( "Some files didn't have the expected status in derived transformation %d" % prod )
+      for err, val in errorFiles.items():
+        gLogger.error( "\t%d files were in status %s" % ( val, err ) )
+
+    return S_OK( ( parentProd, movedFiles ) )
+
   def setFileStatusForTransformation( self, transName, status, lfns, force = False, timeout = 120 ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.setFileStatusForTransformation( transName, status, lfns, force )
@@ -171,10 +232,10 @@ class TransformationClient(Client,FileCatalogueBase):
   # These are the file catalog interface methods
   #
 
-  def isOK(self):
+  def isOK( self ):
     return self.valid
 
-  def getName(self,DN=''):
+  def getName( self, DN = '' ):
     """ Get the file catalog type name
     """
     return self.name
@@ -196,7 +257,7 @@ class TransformationClient(Client,FileCatalogueBase):
     if not res['OK']:
       return res
     tuples = []
-    for lfn,info in res['Value'].items():
+    for lfn, info in res['Value'].items():
       tuples.append( ( lfn, info['PFN'], info['Size'], info['SE'], info['GUID'], info['Checksum'] ) )
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addFile( tuples, force )
@@ -206,7 +267,7 @@ class TransformationClient(Client,FileCatalogueBase):
     if not res['OK']:
       return res
     tuples = []
-    for lfn,info in res['Value'].items():
+    for lfn, info in res['Value'].items():
       tuples.append( ( lfn, info['PFN'], info['SE'], False ) )
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addReplica( tuples, force )
@@ -227,14 +288,14 @@ class TransformationClient(Client,FileCatalogueBase):
       successful.update( res['Value']['Successful'] )
       failed.update( res['Value']['Failed'] )
     resDict = {'Successful': successful, 'Failed':failed}
-    return S_OK(resDict) 
+    return S_OK( resDict )
 
   def removeReplica( self, lfn, rpc = '', url = '', timeout = 120 ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     tuples = []
-    for lfn,info in res['Value'].items():
+    for lfn, info in res['Value'].items():
       tuples.append( ( lfn, info['PFN'], info['SE'] ) )
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     successful = {}
@@ -247,14 +308,14 @@ class TransformationClient(Client,FileCatalogueBase):
       successful.update( res['Value']['Successful'] )
       failed.update( res['Value']['Failed'] )
     resDict = {'Successful': successful, 'Failed':failed}
-    return S_OK(resDict)
+    return S_OK( resDict )
 
   def getReplicaStatus( self, lfn, rpc = '', url = '', timeout = 120 ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     tuples = []
-    for lfn,info in res['Value'].items():
+    for lfn, info in res['Value'].items():
       tuples.append( ( lfn, info['SE'] ) )
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.getReplicaStatus( tuples )
@@ -264,7 +325,7 @@ class TransformationClient(Client,FileCatalogueBase):
     if not res['OK']:
       return res
     tuples = []
-    for lfn,info in res['Value'].items():
+    for lfn, info in res['Value'].items():
       tuples.append( ( lfn, info['PFN'], info['SE'], info['Status'] ) )
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.setReplicaStatus( tuples )
@@ -274,7 +335,7 @@ class TransformationClient(Client,FileCatalogueBase):
     if not res['OK']:
       return res
     tuples = []
-    for lfn,info in res['Value'].items():
+    for lfn, info in res['Value'].items():
       tuples.append( ( lfn, info['PFN'], info['SE'], info['NewSE'] ) )
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.setReplicaHost( tuples )
@@ -297,19 +358,19 @@ class TransformationClient(Client,FileCatalogueBase):
       return res
     successful = {}
     for lfn in res['Value'].keys():
-      successful[lfn] = True     
-    resDict = {'Successful':successful,'Failed':{}}
-    return S_OK(resDict)
+      successful[lfn] = True
+    resDict = {'Successful':successful, 'Failed':{}}
+    return S_OK( resDict )
 
   def __checkArgumentFormat( self, path ):
-    if type(path) in types.StringTypes:
+    if type( path ) in types.StringTypes:
       urls = {path:False}
     elif type( path ) == types.ListType:
       urls = {}
       for url in path:
         urls[url] = False
-    elif type(path) == types.DictType:
+    elif type( path ) == types.DictType:
       urls = path
     else:
       return S_ERROR( "TransformationClient.__checkArgumentFormat: Supplied path is not of the correct format." )
-    return S_OK(urls)
+    return S_OK( urls )
