@@ -7,7 +7,7 @@
 """
 
 import re, time, threading, copy
-from types import IntType, LongType, StringTypes, ListType, TupleType, DictType, StringType
+from types import IntType, LongType, StringTypes, ListType, TupleType, DictType
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
@@ -967,8 +967,8 @@ class TransformationDB( DB ):
     return S_OK( statusDict )
 
   def __setTaskParameterValue( self, transID, taskID, paramName, paramValue, connection = False ):
-    req = "UPDATE TransformationTasks SET %s='%s', LastUpdateTime=UTC_TIMESTAMP()"
-    req = req + " WHERE TransformationID=%d AND TaskID=%d;" % ( paramName, paramValue, transID, taskID )
+    req = "UPDATE TransformationTasks SET %s='%s', LastUpdateTime=UTC_TIMESTAMP()" % ( paramName, paramValue )
+    req = req + " WHERE TransformationID=%d AND TaskID=%d;" % ( transID, taskID )
     return self._update( req, connection )
 
   def __deleteTransformationTasks( self, transID, connection = False ):
