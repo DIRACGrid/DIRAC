@@ -633,7 +633,10 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result =  self.fc.removeDirectory(lfn)
       if result['OK']:
-        print "Directory",lfn,"removed from the catalog"
+        if result['Value']['Successful']:
+          print "Directory",lfn,"removed from the catalog"
+        elif result['Value']['Failed']:
+          print "ERROR:", result['Value']['Failed'][lfn]  
       else:
         print "Failed to remove directory from the catalog"  
         print result['Message']

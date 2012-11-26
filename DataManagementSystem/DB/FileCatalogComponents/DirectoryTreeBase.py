@@ -234,7 +234,7 @@ class DirectoryTreeBase:
     successful = {}
     failed = {}
     for dir in dirs:
-      result = self.isEmpty( path )
+      result = self.isEmpty( dir )
       if not result['OK']:
         return result
       if not result['Value']:
