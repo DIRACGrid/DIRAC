@@ -29,6 +29,7 @@ FIX: FileCatalog - path argument is normalized before usage in multiple methods
 FIX: FileCatalog - new metadata for files(directories) should not be there before for directories(files)
 NEW: FileCatalog - added method for rebuilding DirectoryUsage data from scratch 
 NEW: FileCatalog - Use DirectoryUsage mechanism for both logical and physical storage
+CHANGE: FileCatalog - forbid removing non-empty directories
 BUGFIX: FileCatalogClientCLI - in do_ls() check properly the path existence
 FIX: FileCatalogClientCLI - protection against non-existing getCatalogCounters method in the LFC client
 FIX: DMS Agents - properly call superclass constructor with loadName argument
