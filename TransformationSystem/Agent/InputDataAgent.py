@@ -32,7 +32,7 @@ class InputDataAgent(AgentModule):
     self.pollingTime = self.am_getOption('PollingTime',120)
     self.fullUpdatePeriod = self.am_getOption('FullUpdatePeriod',86400)
     self.refreshonly = self.am_getOption( 'RefreshOnly', False )
-    self.datekey = self.am_getOption( 'DateKey', None )
+    self.dateKey = self.am_getOption( 'DateKey', None )
     gMonitor.registerActivity("Iteration","Agent Loops",AGENT_NAME,"Loops/min",gMonitor.OP_SUM)
     self.transClient = TransformationClient('TransformationDB')
     self.metadataClient = FileCatalogClient()
@@ -70,8 +70,8 @@ class InputDataAgent(AgentModule):
             # If it is more than a day since the last reduced query, make a full query just in case
             if (datetime.datetime.utcnow() - self.fullTimeLog[transID]) < datetime.timedelta(seconds=self.fullUpdatePeriod):
               timeStamp = self.timeLog[transID]
-              if self.datekey:
-                inputDataQuery[self.datekey] = (timeStamp - datetime.timedelta(seconds=10)).strftime('%Y-%m-%d %H:%M:%S')
+              if self.dateKey:
+                inputDataQuery[self.dateKey] = (timeStamp - datetime.timedelta(seconds=10)).strftime('%Y-%m-%d %H:%M:%S')
               else:
                 gLogger.error( "DateKey was not set in the CS, cannot use the RefreshOnly" )
             else:
