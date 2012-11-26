@@ -7,7 +7,7 @@ def submitJob( executable,outputDir,errorDir,nJobs,jobDir,queue,submitOptions ):
   """
   outputs = []
   for i in range( int(nJobs) ):
-    cmd = "bsub -o %s -e %s -q %s -N DIRACPilot %s %s" % ( outputDir,
+    cmd = "bsub -o %s -e %s -q %s -J DIRACPilot %s %s" % ( outputDir,
                                                            errorDir,
                                                            queue,
                                                            submitOptions,

@@ -83,7 +83,7 @@ class SSH:
           child.expect( pexpect.EOF )
           return S_OK( ( 0, child.before, '' ) )
         else:
-          return S_ERROR( ( -1, child.before, '' ) )
+          return S_ERROR( ( -2, child.before, '' ) )
       except Exception, x:
         res = ( -1 , 'Encountered exception %s: %s' % ( Exception, str( x ) ) )
         return S_ERROR( res )  
@@ -241,21 +241,33 @@ class SSHComputingElement( ComputingElement ):
     nDirs = len( dirTuple )
     cmd = 'mkdir -p %s; '*nDirs % dirTuple
     self.log.verbose( 'Creating working directories on %s' % self.ceParameters['SSHHost'] )
-    result = ssh.sshCall( 10, cmd )
+    result = ssh.sshCall( 30, cmd )
     if not result['OK']:
       self.log.warn( 'Failed creating working directories: %s' % result['Message'][1] )
       return result
     status,output,error = result['Value']
+    if status == -1:
+      self.log.warn( 'TImeout while creating directories' )
+      return S_ERROR( 'TImeout while creating directories' )
     if "cannot" in output:
+      self.log.warn( 'Failed to create directories: %s' % output )
       return S_ERROR( 'Failed to create directories: %s' % output )
     
     # Upload the control script now
     sshScript = os.path.join( rootPath, "DIRAC", "Resources", "Computing", "remote_scripts", self.controlScript )
     self.log.verbose( 'Uploading %s script to %s' % ( self.controlScript, self.ceParameters['SSHHost'] ) )
-    result = ssh.scpCall( 10, sshScript, self.sharedArea )
+    result = ssh.scpCall( 30, sshScript, self.sharedArea )
     if not result['OK']:
       self.log.warn( 'Failed uploading control script: %s' % result['Message'][1] )
       return result
+    status,output,error = result['Value']
+    if status != 0:
+      if status == -1:
+        self.log.warn( 'Timeout while uploading control script' )
+        return S_ERROR( 'Timeout while uploading control script' )
+      else:  
+        self.log.warn( 'Failed uploading control script: %s' % output )
+        return S_ERROR( 'Failed uploading control script' )
       
     # Chmod the control scripts
     self.log.verbose( 'Chmod +x control script' )
@@ -263,6 +275,14 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.warn( 'Failed chmod control script: %s' % result['Message'][1] )
       return result
+    status,output,error = result['Value']
+    if status != 0:
+      if status == -1:
+        self.log.warn( 'Timeout while chmod control script' )
+        return S_ERROR( 'Timeout while chmod control script' )
+      else:  
+        self.log.warn( 'Failed uploading chmod script: %s' % output )
+        return S_ERROR( 'Failed uploading chmod script' )
     
     return S_OK()
 
@@ -326,8 +346,6 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.error( '%s CE job submission failed' % self.ceType, result['Message'] )
       return result
-    else:
-      self.log.debug( '%s CE job submission OK' % self.ceType )
 
     sshStatus = result['Value'][0]
     sshStdout = result['Value'][1]

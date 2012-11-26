@@ -228,6 +228,8 @@ class SiteDirector( AgentModule ):
             return result
           if 'BundleProxy' in self.queueDict[queueName]['ParametersDict']:
             self.queueDict[queueName]['BundleProxy'] = True
+          elif 'BundleProxy' in ceDict:
+            self.queueDict[queueName]['BundleProxy'] = True  
 
           if site not in self.sites:
             self.sites.append( site )
