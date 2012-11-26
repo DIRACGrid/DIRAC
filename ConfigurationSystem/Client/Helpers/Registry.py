@@ -94,6 +94,12 @@ def getAllUsers():
     return []
   return retVal[ 'Value' ]
 
+def getAllGroups():
+  retVal = gConfig.getSections( "%s/Groups" % gBaseSecuritySection )
+  if not retVal[ 'OK' ]:
+    return []
+  return retVal[ 'Value' ]
+
 def getUsersInGroup( groupName, defaultValue = None ):
   if defaultValue == None:
     defaultValue = []
