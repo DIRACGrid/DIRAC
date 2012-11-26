@@ -1,4 +1,17 @@
 #!/bin/env python
+############################################################################
+#
+#  Remote control script for submitting jobs to the Grid Engine batch
+#  25.11.2012
+#  Author: A.T.
+#
+############################################################################
+
+""" The script relies on the SubmitOptions parameter to choose the right queue.
+    This should be specified in the Queue description in the CS. e.g.
+    
+    SubmitOption = -l ct=6000
+"""
 
 import re, sys, tempfile, commands, os, urllib
 
@@ -7,11 +20,10 @@ def submitJob( executable,outputDir,errorDir,nJobs,jobDir,queue,submitOptions ):
   """
   outputs = []
   for i in range( int(nJobs) ):
-    cmd = "qsub -o %s -e %s -q %s -N DIRACPilot %s %s" % ( outputDir,
-                                                           errorDir,
-                                                           queue,
-                                                           submitOptions,
-                                                           executable )
+    cmd = "qsub -o %s -e %s -N DIRACPilot %s %s" % ( outputDir,
+                                                     errorDir,
+                                                     submitOptions,
+                                                     executable )
     status,output = commands.getstatusoutput(cmd)
     if status == 0:
       outputs.append(output)
