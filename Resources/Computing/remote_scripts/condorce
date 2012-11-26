@@ -28,14 +28,14 @@ def submitJob( executable, nJobs, jobDir, submitOptions ):
   status,output = commands.getstatusoutput( 'condor_submit %s %s' % ( submitOptions, jdlFile.name ) )
   
   jdlFile.close()
-  
+   
   submittedJobs = 0
   cluster = ''
   if status == 0:
     lines = output.split( '\n' )
     for line in lines:
       if 'cluster' in line:
-        result = re.match( '.*(\d+) job.*cluster (\d+)\.', line )
+        result = re.match( '(\d+) job.*cluster (\d+)\.', line )
         if result:
           submittedJobs, cluster = result.groups()
           try:
@@ -125,6 +125,9 @@ def getCEStatus( user ):
   """  Get the overall status of the CE 
   """ 
 
+  waitingJobs = 0
+  runningJobs = 0
+
   status,stdout = commands.getstatusoutput( 'condor_q -submitter %s' % user )
   if status != 0:
     if "no record" in stdout:
@@ -136,9 +139,6 @@ def getCEStatus( user ):
     print status
     print stdout
     return status
-  
-  waitingJobs = 0
-  runningJobs = 0
   
   if "no record" in stdout:
     status = 0

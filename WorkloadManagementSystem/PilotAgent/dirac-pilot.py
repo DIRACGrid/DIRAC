@@ -318,14 +318,24 @@ if cliParams.pilotReference:
 
 # Take the reference from the Torque batch system  
 if os.environ.has_key( 'PBS_JOBID' ):
-  cliParams.flavour = 'DIRAC'
-  pilotRef = os.environ['PBS_JOBID']
+  cliParams.flavour = 'SSHTorque'
+  pilotRef = 'sshtorque://'+cliParams.ceName+'/'+os.environ['PBS_JOBID']
   cliParams.queueName = os.environ['PBS_QUEUE']
 
 # Grid Engine
 if os.environ.has_key( 'JOB_ID' ):
     cliParams.flavour = 'SSHGE'
-    pilotRef = os.environ['JOB_ID']
+    pilotRef = 'sshge://'+cliParams.ceName+'/'+os.environ['JOB_ID']
+    
+# Condor
+if os.environ.has_key( 'CONDOR_JOBID' ):
+  cliParams.flavour = 'SSHCondor'
+  pilotRef = 'sshcondor://'+cliParams.ceName+'/'+os.environ['CONDOR_JOBID']    
+  
+# LSF
+if os.environ.has_key( 'LSB_BATCH_JID' ):
+  cliParams.flavour = 'SSHLSF'
+  pilotRef = 'sshlsf://'+cliParams.ceName+'/'+os.environ['LSB_BATCH_JID']     
 
 # This is the CREAM direct submission case  
 if os.environ.has_key( 'CREAM_JOBID' ):
@@ -349,7 +359,7 @@ if os.environ.has_key( 'OSG_WN_TMP' ):
 # Direct SSH tunnel submission    
 if os.environ.has_key( 'SSHCE_JOBID' ):
   cliParams.flavour = 'SSH'
-  pilotRef = os.environ['SSHCE_JOBID']    
+  pilotRef = 'ssh://'+cliParams.ceName+'/'+os.environ['SSHCE_JOBID']    
 
 # This is for BOINC case
 if os.environ.has_key( 'BOINC_JOB_ID' ):
