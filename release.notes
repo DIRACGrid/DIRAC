@@ -1,4 +1,4 @@
-[v6r6-pre8]
+[v6r6-pre9]
 
 *Core
 CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
@@ -108,9 +108,17 @@ NEW: TransformationAgent is multithreaded now ( implementation moved from LHCbDI
 NEW: added unit tests
 NEW: InputDataAgent - possibility to refresh only data registered in the last predefined period of time 
 
+[v6r5p12]
+
+FIX: merged in patch v6r4p34
+
+[v6r5p11]
+
+FIX: merged in patch v6r4p33
+
 [v6r5p10]
 
-FIX: merged in patch v6r4p31
+FIX: merged in patch v6r4p32
 
 [v6r5p9]
 
