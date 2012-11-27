@@ -165,12 +165,6 @@ class WMSAdministratorHandler(RequestHandler):
 
     return S_OK(siteDict)
 
-
-##########################################################################################
-  types_countPilots = [ DictType ]
-  def export_countPilots( self, condDict, older=None, newer=None, timeStamp='SubmissionTime' ):
-    return pilotDB.countPilots( condDict, older, newer, timeStamp )
-
 ##############################################################################
   types_getCurrentPilotCounters = [ ]
   def export_getCurrentPilotCounters( self, attrDict={}):
@@ -368,7 +362,6 @@ class WMSAdministratorHandler(RequestHandler):
       if not result['OK']:
         return result
       ce = result['Value']
-      ce.reset()
       pilotStamp = pilotDict['PilotStamp']
       pRef = pilotReference
       if pilotStamp:

@@ -288,7 +288,7 @@ class Graph(object):
     out = [ "digraph '%s' {" % self.name ]
     for node in self.nodes():
       out.append( "%s;" % node.name )
-    for edges in self.edges():
+    for edge in self.edges():
       out.append( repr(edge) )
     out.append( "}" )
     return "\n".join( out )
