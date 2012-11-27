@@ -345,9 +345,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
           install mysql
           install db <database>
-          install service <system> <service>
-          install agent <system> <agent>
-          install executor <system> <executor>
+          install service <system> <service> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
+          install agent <system> <agent> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
+          install executor <system> <executor> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
     """
     argss = args.split()
     if not argss:
