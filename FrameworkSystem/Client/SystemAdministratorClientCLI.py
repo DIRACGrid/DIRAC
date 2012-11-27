@@ -347,6 +347,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           install db <database>
           install service <system> <service>
           install agent <system> <agent>
+          install executor <system> <executor>
     """
     argss = args.split()
     if not argss:
