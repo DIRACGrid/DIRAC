@@ -41,10 +41,9 @@ class ErrorMessageMonitor( AgentModule ):
       mailList = Operations().getValue( 'EMail/Logging', [] )
 
     if not len( mailList ):
-      errString = "There are no valid users in the list"
+      errString = "There are no valid users in the mailing list"
       varString = "[" + ','.join( userList ) + "]"
-      self.log.error( errString, varString )
-      return S_ERROR( errString + varString )
+      self.log.warn( errString, varString )
 
     self.log.info( "List of mails to be notified", ','.join( mailList ) )
 
@@ -83,10 +82,11 @@ class ErrorMessageMonitor( AgentModule ):
       mailBody = mailBody + "String: '" + message[1] + "'\tSystem: '" \
                  + message[2] + "'\tSubsystem: '" + message[3] + "'\n"
 
-    result = self.notification.sendMail( self._mailAddress, self._subject, mailBody )
-    if not result[ 'OK' ]:
-      self.log.warn( "The mail could not be sent" )
-      return S_OK()
+    if self._mailAddress:
+      result = self.notification.sendMail( self._mailAddress, self._subject, mailBody )
+      if not result[ 'OK' ]:
+        self.log.warn( "The mail could not be sent" )
+        return S_OK()
 
     messageIDs = [ message[0] for message in messageList ]
     condDict = {'FixedTextID': messageIDs}
