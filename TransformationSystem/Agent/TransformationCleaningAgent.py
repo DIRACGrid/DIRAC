@@ -20,7 +20,6 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.DataManagementSystem.Client.StorageUsageClient import StorageUsageClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
@@ -40,7 +39,7 @@ class TransformationCleaningAgent( AgentModule ):
 
   """
 
-  def __init__( self, agentName, loadName, baseAgentName = False,	properties = dict() ):
+  def __init__( self, agentName, loadName, baseAgentName = False, properties = dict() ):
     """ c'tor
 
     :param self: self reference
@@ -60,8 +59,6 @@ class TransformationCleaningAgent( AgentModule ):
     self.requestClient = RequestClient()
     ## file catalog clinet
     self.metadataClient = FileCatalogClient()
-    ## storage usage agent
-    self.storageUsageClient = StorageUsageClient()
 
     ## placeholders for CS options
 
@@ -99,7 +96,6 @@ class TransformationCleaningAgent( AgentModule ):
     self.log.info( "Will consider the following transformation types: %s" % str( self.transformationTypes ) )
     ## directory locations
     self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', [ 'TransformationDB', 
-                                                                                   'StorageUsage', 
                                                                                    'MetadataCatalog' ] ) )
     self.log.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
     ## transformation metadata
@@ -181,7 +177,9 @@ class TransformationCleaningAgent( AgentModule ):
       directories = self.__addDirs( transID, transDirectories, directories )
 
     if 'StorageUsage' in self.directoryLocations:
-      res = self.storageUsageClient.getStorageDirectories( '', '', transID, [] )
+      from DIRAC.DataManagementSystem.Client.StorageUsageClient import StorageUsageClient
+      storageUsageClient = StorageUsageClient()
+      res = storageUsageClient.getStorageDirectories( '', '', transID, [] )
       if not res['OK']:
         self.log.error( "Failed to obtain storage usage directories", res['Message'] )
         return res
@@ -195,10 +193,20 @@ class TransformationCleaningAgent( AgentModule ):
         return res
       transDirectories = res['Value']
       directories = self.__addDirs( transID, transDirectories, directories )
+      
+    result = self._addExtraDirectories()
+    if result['OK'] and result['Value']:
+      directories.extend( result['Value'] )  
+      
     if not directories:
       self.log.info( "No output directories found" )
     directories = sortList( directories )
     return S_OK( directories )
+  
+  def _addExtraDirectories( self ):
+    """ get more directories that can be provided by a subclass
+    """
+    return S_OK( [] )
 
   def __addDirs( self, transID, newDirs, existingDirs ):
     """ append uniqe :newDirs: list to :existingDirs: list
