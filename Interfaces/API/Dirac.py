@@ -909,7 +909,7 @@ class Dirac( API ):
             for member in tarFile.getmembers():
               tarFile.extract( member, os.getcwd() )
         except Exception, x :
-          return S_ERROR( 'Could not untar %s with exception %s' % ( possibleTarFile, str( x ) ) )
+          return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
