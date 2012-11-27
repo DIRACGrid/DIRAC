@@ -368,7 +368,6 @@ class WMSAdministratorHandler(RequestHandler):
       if not result['OK']:
         return result
       ce = result['Value']
-      ce.reset()
       pilotStamp = pilotDict['PilotStamp']
       pRef = pilotReference
       if pilotStamp:
