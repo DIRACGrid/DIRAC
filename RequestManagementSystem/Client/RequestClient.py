@@ -1,15 +1,17 @@
 ########################################################################################
 # $HeadURL$
 ########################################################################################
-
-""" This is the client implementation for the RequestDB using the DISET framework. """
-
+""" 
+    :mod:  RequestClient
+    ====================
+ 
+    .. module:  RequestClient
+    :synopsis: implementation of client for RequestDB using DISET framework
+"""
+## RCSID
 __RCSID__ = "$Id$"
-
-## imports
-import random
 ## from DIRAC
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -17,8 +19,10 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
 class RequestClient( Client ):
+  """ 
+  .. class:: RequestClient
 
-  """ RequestClient is a class manipulating and operation on Requests. 
+  RequestClient is a class manipulating and operation on Requests. 
   
   :param RPCClient requestManager: RPC client to RequestManager
   :param dict requestProxiesDict: RPC client to ReqestProxy
@@ -33,9 +37,7 @@ class RequestClient( Client ):
     :param bool useCertificates: flag to enable/disable certificates
     """
     Client.__init__( self )
-    ## setup logger
     self.log = gLogger.getSubLogger( "RequestManagement/RequestClient" )
-    ## TODO: do we need that???
     self.setServer( "RequestManagement/RequestManager" )
 
   def requestManager( self, timeout = 120 ):
@@ -301,7 +303,7 @@ class RequestClient( Client ):
 
     return S_OK()
   
-  def readRequestsForJobs( self, jobIDs, url="" ):
+  def readRequestsForJobs( self, jobIDs ):
     """ read requests for jobs 
     
     :param list jobIDs: list with jobIDs
@@ -309,20 +311,16 @@ class RequestClient( Client ):
     :return: S_OK( { "Successful" : { jobID1 : RequestContainer, ... },
                      "Failed" : { jobIDn : "Fail reason" } } ) 
     """
-    for requestRPCClient in self.requestRPCClients( url, ["local", "central"] ):
-      ret = requestRPCClient.readRequestsForJobs( jobIDs )
-      if not ret["OK"]:
-        return ret
-      ret = ret["Value"] if ret["Value"] else None
-      if not ret:
-        return S_ERROR("No values returned")
-      ## create RequestContainers out of xml strings for successful reads
-      if "Successful" in ret:
-        
-        for jobID, xmlStr in ret["Successful"].items():
-          req = RequestContainer( init = False )
-          req.parseRequest( request=xmlStr )
-          ret["Successful"][jobID] = req
-      return S_OK( ret )
-
-    return S_ERROR( "RequestClient.readRequestsForJobs: no RPC clients." )
+    readReqsForJobs = self.requestManager().readRequestsForJobs( jobIDs )
+    if not readReqsForJobs["OK"]:
+      return readReqsForJobs
+    ret = readReqsForJobs["Value"] if readReqsForJobs["Value"] else None
+    if not ret:
+      return S_ERROR("No values returned")
+    ## create RequestContainers out of xml strings for successful reads
+    if "Successful" in ret:    
+      for jobID, xmlStr in ret["Successful"].items():
+        req = RequestContainer( init = False )
+        req.parseRequest( request=xmlStr )
+        ret["Successful"][jobID] = req
+    return S_OK( ret )
