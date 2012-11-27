@@ -94,7 +94,6 @@ class Service:
           gLogger.verbose( "Executing initialization function" )
           try:
             result = initFunc( dict( self._serviceInfoDict ) )
-            print result
           except Exception, excp:
             gLogger.exception( "Exception while calling initialization function" )
             return S_ERROR( "Exception while calling initialization function: %s" % str( excp ) )
