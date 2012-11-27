@@ -19,7 +19,7 @@ import stat
 import imp
 import shutil
 
-gitRepo = "git@github.com:DIRACGrid/Externals.git"
+gitRepo = "https://github.com/DIRACGrid/Externals.git"
 
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
