@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "7bf9a4d (2012-11-22 21:33:40 +0100) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
+__RCSID__ = "$Id$"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -54,7 +54,7 @@ class JobManagerHandler( RequestHandler ):
     cls.__connectToOptMind()
     gThreadScheduler.addPeriodicTask( 60, cls.__connectToOptMind )
     return S_OK()
-    
+
 
   @classmethod
   def __connectToOptMind( cls ):
@@ -313,19 +313,19 @@ class JobManagerHandler( RequestHandler ):
       result = gtaskQueueDB.deleteJob( jobID )
       if not result['OK']:
         gLogger.warn( 'Failed to delete job from the TaskQueue' )
-    
+
     return S_OK()
-  
+
   def __kill_delete_jobs( self, jobIDList, right ):
     """  Kill or delete jobs as necessary
-    """ 
-    
+    """
+
     jobList = self.__get_job_list( jobIDList )
     if not jobList:
       return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
 
     validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList, right )
-    
+
     # Get job status to see what is to be killed or deleted
     result = gJobDB.getAttributesForJobList( validJobList, ['Status'] )
     if not result['OK']:
@@ -337,21 +337,21 @@ class JobManagerHandler( RequestHandler ):
         killJobList.append( jobID )
       elif sDict['Status'] in ['Done','Failed']:
         if not right == RIGHT_KILL:
-          deleteJobList.append( jobID )  
+          deleteJobList.append( jobID )
       else:
-        deleteJobList.append( jobID )      
+        deleteJobList.append( jobID )
 
     bad_ids = []
     for jobID in killJobList:
       result = self.__killJob( jobID )
       if not result['OK']:
         bad_ids.append( jobID )
-        
+
     for jobID in deleteJobList:
       result = self.__deleteJob( jobID )
       if not result['OK']:
-        bad_ids.append( jobID ) 
-        
+        bad_ids.append( jobID )
+
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR( 'Some jobs failed deletion' )
       if invalidJobList:
