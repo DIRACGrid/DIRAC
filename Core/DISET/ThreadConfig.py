@@ -24,8 +24,14 @@ class ThreadConfig( threading.local ):
   def setDN( self, DN ):
     self.__DN = DN
 
+  def getDN( self ):
+    return self.__DN
+
   def setGroup( self, group ):
     self.__group = group
+
+  def getGroup( self ):
+    return self.__group
 
   def setID( self, DN, group ):
     self.__DN = DN

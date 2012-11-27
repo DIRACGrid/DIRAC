@@ -70,16 +70,6 @@ class ServiceInterface:
                                                      'label': '$SITE'} ),
                                    ['sources.componentName'] )
 
-  def __checkActivityDict( self, acDict ):
-    """
-    Check that the dictionary is a valid activity one
-    """
-    validKeys = ( "name", "category", "unit", "type", "description", "bucketLength" )
-    for key in acDict:
-      if key not in validKeys:
-        return False
-    return True
-
   def __checkSourceDict( self, sourceDict ):
     """
     Check that the dictionary is a valid source one

@@ -5,6 +5,7 @@ import imp
 from DIRAC.Core.Utilities import List
 from DIRAC import gConfig, S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class ModuleLoader( object ):
 

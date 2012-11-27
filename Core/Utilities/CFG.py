@@ -472,7 +472,7 @@ class CFG( object ):
     """
     result = self.getRecursive( optionName, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[:-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( optionName, "/" )[:-1] ) )
     cfg = result[ 'value' ]
     end = result[ 'levelsBelow' ]
     if end not in cfg.__dataDict:

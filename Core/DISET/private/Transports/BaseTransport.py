@@ -91,9 +91,6 @@ class BaseTransport:
   def getSocket( self ):
     return self.oSocket
 
-  def _write( self, sBuffer ):
-    self.oSocket.send( sBuffer )
-
   def _readReady( self ):
     if not self.iReadTimeout:
       return True

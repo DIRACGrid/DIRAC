@@ -94,7 +94,6 @@ class Service:
           gLogger.verbose( "Executing initialization function" )
           try:
             result = initFunc( dict( self._serviceInfoDict ) )
-            print result
           except Exception, excp:
             gLogger.exception( "Exception while calling initialization function" )
             return S_ERROR( "Exception while calling initialization function: %s" % str( excp ) )
@@ -258,7 +257,7 @@ class Service:
       self._monitor.setComponentExtraParam( prop[1], value )
     for secondaryName in self._cfg.registerAlsoAs():
       if secondaryName not in self.servicesDict:
-        gLogger.info( "Registering %s also as %s" % ( serviceName, secondaryName ) )
+        gLogger.info( "Registering %s also as %s" % ( self._name, secondaryName ) )
         self._validNames.append( secondaryName )
     return S_OK()
 
