@@ -219,7 +219,11 @@ class DirectoryTreeBase:
       return S_OK( False )
     
     #Check if there are files
-    result = self.db.fileManager.getFilesInDirectory(directoryID,path,verbose=details)
+    result = self.__getDirID( path )
+    if not result['OK']:
+      return result
+    dirID = result['Value']
+    result = self.db.fileManager.getFilesInDirectory( dirID, path )
     if not result['OK']:
       return result
     files = result['Value']

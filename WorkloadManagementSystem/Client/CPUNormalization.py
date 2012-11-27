@@ -56,6 +56,7 @@ def getQueueNormalization( ceUniqueID ):
   ceInfoDict = result['Value']
   siteCSSEction = ceInfoDict['SiteCSSEction']
   queueCSSection = ceInfoDict['QueueCSSection']
+  subClusterUniqueID = ceInfoDict['SubClusterUniqueID']
 
   benchmarkSI00 = __getQueueNormalization( queueCSSection, siteCSSEction )
 
@@ -63,10 +64,8 @@ def getQueueNormalization( ceUniqueID ):
     return S_OK( benchmarkSI00 )
   else:
     return S_ERROR( 'benchmarkSI00 info not available for %s' % subClusterUniqueID )
-    errorList.append( ( subClusterUniqueID , 'benchmarkSI00 info not available' ) )
-    exitCode = 3
-
-  pass
+    #errorList.append( ( subClusterUniqueID , 'benchmarkSI00 info not available' ) )
+    #exitCode = 3
 
 def __getQueueNormalization( queueCSSection, siteCSSEction ):
   """

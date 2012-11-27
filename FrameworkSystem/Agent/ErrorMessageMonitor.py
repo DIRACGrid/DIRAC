@@ -56,7 +56,7 @@ class ErrorMessageMonitor( AgentModule ):
     """ The main agent execution method
     """
     condDict = {'ReviewedMessage':0}
-    result = self.systemLoggingDB.getCounters( 'FixedTextMessages', 'ReviewedMessage', condDict )
+    result = self.systemLoggingDB.getCounters( 'FixedTextMessages', ['ReviewedMessage'], condDict )
     if not result['OK']:
       return result
 
@@ -67,7 +67,7 @@ class ErrorMessageMonitor( AgentModule ):
                      'SubSystemName' ]
     result = self.systemLoggingDB._queryDB( showFieldList = returnFields,
                                             groupColumn = 'FixedTextString',
-                                            condDict = conds )
+                                            condDict = condDict )
     if not result['OK']:
       self.log.error( 'Failed to obtain the non reviewed Strings',
                      result['Message'] )
