@@ -581,9 +581,10 @@ class X509Chain:
     if self.__isProxy:
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
       retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )
-      if retVal[ 'OK' ]:
-        credDict[ 'username' ] = retVal[ 'Value' ]
-        credDict[ 'validDN' ] = True
+      if not retVal[ 'OK' ]:
+        return credDict
+      credDict[ 'username' ] = retVal[ 'Value' ]
+      credDict[ 'validDN' ] = True
       retVal = self.getDIRACGroup( ignoreDefault = ignoreDefault )
       if retVal[ 'OK' ]:
         diracGroup = retVal[ 'Value' ]

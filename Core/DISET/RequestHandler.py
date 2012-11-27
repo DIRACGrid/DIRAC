@@ -64,13 +64,6 @@ class RequestHandler( object ):
     cls.__monitor = monitor
     cls.log = gLogger
 
-  def initialize( self ):
-    """
-    Dummy function to be inherited by real handlers. This function will be called when initializing
-    the server.
-    """
-    pass
-
   def getRemoteAddress( self ):
     """
     Get the address of the remote peer.

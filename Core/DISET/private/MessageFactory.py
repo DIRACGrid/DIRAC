@@ -143,11 +143,11 @@ class Message( object ):
     return self.__order
 
   def loadAttrsFromDict( self, dataDict ):
-    if type( data ) != types.DictType:
+    if type( dataDict ) != types.DictType:
       return S_ERROR( "Params have to be a dict" )
     for k in dataDict:
       try:
-        setattr( self, k , v )
+        setattr( self, k , dataDict[ k ] )
       except AttributeError, e:
         return S_ERROR( str( e ) )
     return S_OK()

@@ -46,6 +46,10 @@ class MessageClient( BaseClient ):
   def createMessage( self, msgName ):
     return self.__msgBroker.getMsgFactory().createMessage( self.getServiceName(), msgName )
 
+  @property
+  def connected( self ):
+    return self.__trid
+
   def connect( self, **extraParams ):
     if extraParams:
       self.__connectExtraParams = extraParams
