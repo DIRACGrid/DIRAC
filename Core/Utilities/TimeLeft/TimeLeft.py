@@ -115,7 +115,7 @@ class TimeLeft:
       if cpu and cpuConsumed > 3600. and self.normFactor:
         # If there has been more than 1 hour of consumed CPU and 
         # there is a Normalization set for the current CPU
-        #Êuse that value to renormalize the values returned by the batch system
+        # use that value to renormalize the values returned by the batch system
         cpuWork = cpuConsumed * self.normFactor
         timeLeft = ( cpuLimit - cpu ) * cpuWork / cpu
       else:
