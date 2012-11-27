@@ -62,18 +62,19 @@ class SiteDirector( AgentModule ):
 
     self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
     self.vo = self.am_getOption( "Community", '' )
+    self.group = self.am_getOption( "Group", '' )
 
     # Choose the group for which pilots will be submitted. This is a hack until
     # we will be able to match pilots to VOs.
-    self.group = ''
-    if self.vo:
-      result = Registry.getGroupsForVO( self.vo )
-      if not result['OK']:
-        return result
-      for group in result['Value']:
-        if 'NormalUser' in Registry.getPropertiesForGroup( group ):
-          self.group = group
-          break
+    if not self.group:
+      if self.vo:
+        result = Registry.getGroupsForVO( self.vo )
+        if not result['OK']:
+          return result
+        for group in result['Value']:
+          if 'NormalUser' in Registry.getPropertiesForGroup( group ):
+            self.group = group
+            break
 
     result = findGenericPilotCredentials( vo = self.vo )
     if not result[ 'OK' ]:
