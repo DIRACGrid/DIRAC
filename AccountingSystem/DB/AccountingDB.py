@@ -916,7 +916,7 @@ class AccountingDB( DB ):
         #If failed because of dead lock try restarting
         if result[ 'Message' ].find( "try restarting transaction" ):
           continue
-        return retVal
+        return result
       #If OK, break loopo
       if result[ 'OK' ]:
         return result

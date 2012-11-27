@@ -231,7 +231,7 @@ class MessageBroker:
     if 'attrs' in msg:
       attrs = msg[ 'attrs' ]
       if type( attrs ) not in( types.TupleType, types.ListType ):
-        return S_ERROR( "Message args has to be a tuple or a list, not %s" % type( args ) )
+        return S_ERROR( "Message args has to be a tuple or a list, not %s" % type( attrs ) )
     else:
       attrs = None
     #Do we "unpack" or do we send the raw data to the callback?

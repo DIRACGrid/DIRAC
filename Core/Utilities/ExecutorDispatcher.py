@@ -133,13 +133,6 @@ class ExecutorState:
     finally:
       self.__lock.release()
 
-  def getTasksForExecutor( self, eId ):
-    try:
-      return list( self.__execTasks[ eId ] )
-    except KeyError:
-      return []
-
-
 class ExecutorQueues:
 
   def __init__( self, log = False ):

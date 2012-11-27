@@ -77,7 +77,7 @@ class JobPath( OptimizerExecutor ):
     jobManifest = result[ 'Value' ]
     opChain = jobManifest.getOption( "JobPath", [] )
     if opChain:
-      self.jobLog.info( 'Job defines its own optimizer chain %s' % jobPath )
+      self.jobLog.info( 'Job defines its own optimizer chain %s' % opChain )
       return self.__setOptimizerChain( jobState, opChain )
     #Construct path
     opPath = self.ex_getOption( 'BasePath', ['JobPath', 'JobSanity'] )
