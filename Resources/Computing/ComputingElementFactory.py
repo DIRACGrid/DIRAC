@@ -64,6 +64,7 @@ class ComputingElementFactory:
       self.log.warn( msg )
       return S_ERROR( msg )
 
+    computingElement._reset()
     return S_OK( computingElement )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
