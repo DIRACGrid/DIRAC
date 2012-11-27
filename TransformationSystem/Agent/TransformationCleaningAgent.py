@@ -193,10 +193,20 @@ class TransformationCleaningAgent( AgentModule ):
         return res
       transDirectories = res['Value']
       directories = self.__addDirs( transID, transDirectories, directories )
+      
+    result = self._addExtraDirectories()
+    if result['OK'] and result['Value']:
+      directories.extend( result['Value'] )  
+      
     if not directories:
       self.log.info( "No output directories found" )
     directories = sortList( directories )
     return S_OK( directories )
+  
+  def _addExtraDirectories( self ):
+    """ get more directories that can be provided by a subclass
+    """
+    return S_OK( [] )
 
   def __addDirs( self, transID, newDirs, existingDirs ):
     """ append uniqe :newDirs: list to :existingDirs: list
