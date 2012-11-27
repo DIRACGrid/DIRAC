@@ -1,4 +1,4 @@
-[v6r6-pre10]
+[v6r6-pre11]
 
 *Core
 CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
@@ -73,6 +73,8 @@ NEW: JobMonitoringHandler - check access rights with JobPolicy when accessing jo
 NEW: JobManager,JobWrapper - report to accounting jobs in Rescheduled final state if rescheduling is successful
 FIX: WMSAdministrator, SiteDirector - store only non-empty pilot output to the PilotDB
 NEW: added killPilot() to the WMSAdministrator interface, DiracAdmin and dirac-admin-kill-pilot command
+NEW: TimeLeft - renormalize time left using DIRAC Normalization if available
+FIX: JobManager - reconnect to the OptimizationMind in background if not yet connected
 
 *RMS
 FIX: RequestDBFile - better exception handling in case no JobID supplied
@@ -82,6 +84,7 @@ NEW: RequestProxyHandler - is forwarding requests from voboxes to central Reques
      running in background is trying to push them into the central. 
 CHANGE: Major revision of the code      
 CHANGE: RequestDB - added index on SubRequestID in the Files table
+CHANGE: RequestClient - readRequestForJobs updated to the new RequetsClient structure
 
 *RSS
 NEW: CS.py - Space Tokens were hardcoded, now are obtained after scanning the StorageElements.
