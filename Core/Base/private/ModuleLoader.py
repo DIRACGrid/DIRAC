@@ -141,7 +141,7 @@ class ModuleLoader( object ):
         className = List.fromChar( handlerPath, "." )[-1]
         result = self.__recurseImport( handlerPath )
         if not result[ 'OK' ]:
-          return S_ERROR( "Cannot load user defined handler %s: %s" % ( handlerPath, result[ 'Value' ] ) )
+          return S_ERROR( "Cannot load user defined handler %s: %s" % ( handlerPath, result[ 'Message' ] ) )
         gLogger.verbose( "Loaded %s" % handlerPath )
       elif parentModule:
         #If we've got a parent module, load from there.
