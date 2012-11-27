@@ -1559,7 +1559,10 @@ class TransferDB( DB ):
   def __selectFromTable( self, table, tableID, condDict, older, newer, orderAttribute, limit ):
     """ select something from table something
     """
-    res = self.getFields( tableName, [tableID], condDict, limit, older = older, newer = newer, timeStamp = 'LastUpdateTime', orderAttribute = orderAttribute )
+    res = self.getFields( table, [tableID], condDict, limit, 
+                          older = older, newer = newer, 
+                          timeStamp = 'LastUpdateTime', 
+                          orderAttribute = orderAttribute )
     if not res['OK']:
       return res
     if not len( res['Value'] ):
@@ -1577,12 +1580,17 @@ class TransferDB( DB ):
     """
     return self.getDistinctAttributeValues( 'SubRequests', attribute, condDict, older, newer, timeStamp = 'LastUpdateTime' )
 
-  def getDistinctFilesAttributes( self, attribute, condDict = None, older = None, newer = None ):
+  def getDistinctFilesAttributes( self, attribute, condDict = None, older = None, newer = None, timeStamp=None ):
     """ Get distinct values of the Files  table attribute under specified conditions
     """
-    return self.getDistinctAttributeValues( 'Files', attribute, condDict, older, newer, timeStamp = 'LastUpdateTime' )
+    return self.getDistinctAttributeValues( 'Files', attribute, condDict=None, older=None, newer=None, timeStamp=None )
 
-  def getDistinctChannelsAttributes( self, attribute, condDict = None ):
+  def getDistinctChannelAttributes( self, attribute, condDict = None, older=None, newer=None, timeStamp='LastUpdateTime' ):
+    """ Get distinct values of the Channel table attribute under specified conditions
+    """
+    return self.getDistinctAttributeValues( 'Channel', attribute, condDict=None , older=None, newer=None, timeStamp = 'LastUpdate' )
+
+  def getDistinctChannelsAttributes( self, attribute, condDict = None, older=None, newer=None, timeStamp=None ):
     """ Get distinct values of the Channels table attribute under specified conditions
     """
-    return self.getDistinctAttributeValues( 'Channels', attribute, condDict, older, newer, timeStamp = 'LastUpdateTime' )
+    return self.getDistinctAttributeValues( 'Channels', attribute, condDict, older, newer, timeStamp )
