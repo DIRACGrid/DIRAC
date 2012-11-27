@@ -111,6 +111,8 @@ FIX: Dirac.py - when running in mode="local" any directory in the ISB would not 
 *TS
 BUGFIX: TaskManager - bug fixed in treating tasks with input data
 FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
+NEW: TransformationCleaningAgent - added _addExtraDirectories() method to extend the list of
+     directories to clean in a subclass if needed
 NEW: TransformationAgent is multithreaded now ( implementation moved from LHCbDIRAC )
 NEW: added unit tests
 NEW: InputDataAgent - possibility to refresh only data registered in the last predefined period of time 
