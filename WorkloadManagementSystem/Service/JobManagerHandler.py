@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id$"
+__RCSID__ = "7bf9a4d (2012-11-22 21:33:40 +0100) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -29,6 +29,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
                                                              RIGHT_DELETE, RIGHT_KILL, RIGHT_RESET
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 # This is a global instance of the JobDB class
 gJobDB = False
@@ -47,18 +48,20 @@ def initializeJobManagerHandler( serviceInfo ):
 
 class JobManagerHandler( RequestHandler ):
 
-  __sendJobsToOptimizationMind = True
-
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     cls.msgClient = MessageClient( "WorkloadManagement/OptimizationMind" )
-    result = cls.msgClient.connect( JobManager = True )
-    if not result[ 'OK' ]:
-      # if we can not connect to the Mind do not attempt to send messages
-      cls.__sendJobsToOptimizationMind = False
-      cls.log.error( "Cannot connect to OptimizationMind!", result[ 'Message' ] )
-
+    cls.__connectToOptMind()
+    gThreadScheduler.addPeriodicTask( 60, cls.__connectToOptMind )
     return S_OK()
+    
+
+  @classmethod
+  def __connectToOptMind( cls ):
+    if not cls.msgClient.connected:
+      result = cls.msgClient.connect( JobManager = True )
+      if not result[ 'OK' ]:
+        cls.log.warn( "Cannot connect to OptimizationMind!", result[ 'Message' ] )
 
   def initialize( self ):
     credDict = self.getRemoteCredentials()
@@ -74,7 +77,7 @@ class JobManagerHandler( RequestHandler ):
     return S_OK()
 
   def __sendNewJobsToMind( self, jids ):
-    if not self.__sendJobsToOptimizationMind:
+    if not self.msgClient.connected:
       return
     result = self.msgClient.createMessage( "OptimizeJobs" )
     if not result[ 'OK' ]:
@@ -86,6 +89,7 @@ class JobManagerHandler( RequestHandler ):
     if not result[ 'OK' ]:
       self.log.error( "Cannot send Optimize message: %s" % result[ 'Message' ] )
       return
+    self.log.info( "Optimize msg sent for %s jobs" % len( jids ) )
 
   ###########################################################################
   types_submitJob = [ StringType ]
