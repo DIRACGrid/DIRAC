@@ -1,10 +1,6 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
-""" :mod: TransformationCleaningAgent 
+""" :mod: TransformationCleaningAgent
     =================================
- 
+
     .. module: TransformationCleaningAgent
     :synopsis: clean up of finalised transformations
 """
@@ -45,7 +41,7 @@ class TransformationCleaningAgent( AgentModule ):
     :param self: self reference
     :param str agentName: name of agent
     :param str loadName: name of module
-    :param bool baseAgentName: whatever  
+    :param bool baseAgentName: whatever
     :param dict properties: whatever else
     """
     AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
@@ -63,23 +59,23 @@ class TransformationCleaningAgent( AgentModule ):
     ## placeholders for CS options
 
     ## transformations types
-    self.transformationTypes = None 
+    self.transformationTypes = None
     ## directory locations
-    self.directoryLocations = None 
+    self.directoryLocations = None
     ## transformation metadata
-    self.transfidmeta = None 
+    self.transfidmeta = None
     ## archive periof in days
-    self.archiveAfter = None 
+    self.archiveAfter = None
     ## active SEs
-    self.activeStorages = None 
+    self.activeStorages = None
     ## transformation log SEs
-    self.logSE = None 
+    self.logSE = None
     ## enable/disable execution
-    self.enableFlag = None 
+    self.enableFlag = None
 
   def initialize( self ):
-    """ agent initialisation 
-    
+    """ agent initialisation
+
     reading and setting confing opts
 
     :param self: self reference
@@ -87,15 +83,15 @@ class TransformationCleaningAgent( AgentModule ):
     ## shifter proxy
     self.am_setOption( 'shifterProxy', 'DataManager' )
     ## transformations types
-    self.transformationTypes = sortList( self.am_getOption( 'TransformationTypes', [ 'MCSimulation', 
-                                                                                     'DataReconstruction', 
-                                                                                     'DataStripping', 
-                                                                                     'MCStripping', 
-                                                                                     'Merge', 
+    self.transformationTypes = sortList( self.am_getOption( 'TransformationTypes', [ 'MCSimulation',
+                                                                                     'DataReconstruction',
+                                                                                     'DataStripping',
+                                                                                     'MCStripping',
+                                                                                     'Merge',
                                                                                      'Replication' ] ) )
     self.log.info( "Will consider the following transformation types: %s" % str( self.transformationTypes ) )
     ## directory locations
-    self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', [ 'TransformationDB', 
+    self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', [ 'TransformationDB',
                                                                                    'MetadataCatalog' ] ) )
     self.log.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
     ## transformation metadata
@@ -113,7 +109,7 @@ class TransformationCleaningAgent( AgentModule ):
     ## enable/disable execution, should be using CS option Status?? with default value as 'Active'?? 
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
     return S_OK()
-    
+
   #############################################################################
   def execute( self ):
     """ execution in one agent's cycle
@@ -127,7 +123,7 @@ class TransformationCleaningAgent( AgentModule ):
       return S_OK( 'Disabled via CS flag' )
 
     ## Obtain the transformations in Cleaning status and remove any mention of the jobs/files
-    res = self.transClient.getTransformations( { 'Status' : 'Cleaning', 
+    res = self.transClient.getTransformations( { 'Status' : 'Cleaning',
                                                  'Type' : self.transformationTypes } )
     if res['OK']:
       for transDict in res['Value']:
@@ -135,11 +131,11 @@ class TransformationCleaningAgent( AgentModule ):
         ## We just archive
         if transDict[ 'Type' ] in [ 'Replication', 'Removal' ]:
           self.archiveTransformation( transDict['TransformationID'] )
-        else:      
+        else:
           self.cleanTransformation( transDict['TransformationID'] )
 
     ## Obtain the transformations in RemovingFiles status and (wait for it) removes the output files
-    res = self.transClient.getTransformations( { 'Status' : 'RemovingFiles', 
+    res = self.transClient.getTransformations( { 'Status' : 'RemovingFiles',
                                                  'Type' : self.transformationTypes} )
     if res['OK']:
       for transDict in res['Value']:
@@ -147,7 +143,7 @@ class TransformationCleaningAgent( AgentModule ):
 
     ## Obtain the transformations in Completed status and archive if inactive for X days
     olderThanTime = datetime.utcnow() - timedelta( days = self.archiveAfter )
-    res = self.transClient.getTransformations( { 'Status' : 'Completed', 
+    res = self.transClient.getTransformations( { 'Status' : 'Completed',
                                                  'Type' : self.transformationTypes },
                                                older = olderThanTime )
     if res['OK']:
@@ -162,7 +158,7 @@ class TransformationCleaningAgent( AgentModule ):
   #
 
   def getTransformationDirectories( self, transID ):
-    """ get the directories for the supplied transformation from the transformation system 
+    """ get the directories for the supplied transformation from the transformation system
 
     :param self: self reference
     :param int transID: transformation ID
@@ -174,17 +170,7 @@ class TransformationCleaningAgent( AgentModule ):
         self.log.error( "Failed to obtain transformation directories", res['Message'] )
         return res
       transDirectories = res['Value'].splitlines()
-      directories = self.__addDirs( transID, transDirectories, directories )
-
-    if 'StorageUsage' in self.directoryLocations:
-      from DIRAC.DataManagementSystem.Client.StorageUsageClient import StorageUsageClient
-      storageUsageClient = StorageUsageClient()
-      res = storageUsageClient.getStorageDirectories( '', '', transID, [] )
-      if not res['OK']:
-        self.log.error( "Failed to obtain storage usage directories", res['Message'] )
-        return res
-      transDirectories = res['Value']
-      directories = self.__addDirs( transID, transDirectories, directories )
+      directories = self._addDirs( transID, transDirectories, directories )
 
     if 'MetadataCatalog' in self.directoryLocations:
       res = self.metadataClient.findDirectoriesByMetadata( {self.transfidmeta:transID} )
@@ -192,33 +178,24 @@ class TransformationCleaningAgent( AgentModule ):
         self.log.error( "Failed to obtain metadata catalog directories", res['Message'] )
         return res
       transDirectories = res['Value']
-      directories = self.__addDirs( transID, transDirectories, directories )
-      
-    result = self._addExtraDirectories()
-    if result['OK'] and result['Value']:
-      directories.extend( result['Value'] )  
-      
+      directories = self._addDirs( transID, transDirectories, directories )
+
     if not directories:
       self.log.info( "No output directories found" )
     directories = sortList( directories )
     return S_OK( directories )
-  
-  def _addExtraDirectories( self ):
-    """ get more directories that can be provided by a subclass
-    """
-    return S_OK( [] )
 
-  def __addDirs( self, transID, newDirs, existingDirs ):
+  def _addDirs( self, transID, newDirs, existingDirs ):
     """ append uniqe :newDirs: list to :existingDirs: list
 
-    :param self: self reference 
+    :param self: self reference
     :param int transID: transformationID
     :param list newDirs: src list of paths
     :param list existingDirs: dest list of paths
     """
     for folder in newDirs:
       transStr = str( transID ).zfill( 8 )
-      if re.search( transStr, str(folder) ):
+      if re.search( transStr, str( folder ) ):
         if not folder in existingDirs:
           existingDirs.append( folder )
     return existingDirs
@@ -265,15 +242,15 @@ class TransformationCleaningAgent( AgentModule ):
     if not exists:
       self.log.info( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
-    res = self.replicaManager.removeStorageDirectory( storageDirectory, 
-                                                      storageElement, 
-                                                      recursive = True, 
+    res = self.replicaManager.removeStorageDirectory( storageDirectory,
+                                                      storageElement,
+                                                      recursive = True,
                                                       singleDirectory = True )
     if not res['OK']:
       self.log.error( "Failed to remove storage directory", res['Message'] )
       return res
-    self.log.info( "Successfully removed %d files from %s at %s" % ( res['Value']['FilesRemoved'], 
-                                                                     directory, 
+    self.log.info( "Successfully removed %d files from %s at %s" % ( res['Value']['FilesRemoved'],
+                                                                     directory,
                                                                      storageElement ) )
     return S_OK()
 
@@ -300,9 +277,9 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK()
 
   def __getCatalogDirectoryContents( self, directories ):
-    """ get catalog contents under paths :directories: 
+    """ get catalog contents under paths :directories:
 
-    :param self: self reference 
+    :param self: self reference
     :param list directories: list of paths in catalog
     """
     self.log.info( 'Obtaining the catalog contents for %d directories:' % len( directories ) )
@@ -328,7 +305,7 @@ class TransformationCleaningAgent( AgentModule ):
   def cleanTransformationLogFiles( self, directory ):
     """ clean up transformation logs from directory :directory:
 
-    :param self: self reference 
+    :param self: self reference
     :param str directory: folder name
     """
     self.log.info( "Removing log files found in the directory %s" % directory )
@@ -375,7 +352,7 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK()
 
   def archiveTransformation( self, transID ):
-    """ This just removes job from the jobDB and the transformation DB 
+    """ This just removes job from the jobDB and the transformation DB
 
     :param self: self reference
     :param int transID: transformation ID
@@ -399,7 +376,7 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK()
 
   def cleanTransformation( self, transID ):
-    """ This removes any mention of the supplied transformation 
+    """ This removes any mention of the supplied transformation
     """
     self.log.info( "Cleaning transformation %s" % transID )
     res = self.getTransformationDirectories( transID )
@@ -440,7 +417,7 @@ class TransformationCleaningAgent( AgentModule ):
     self.log.info( "Updated status of transformation %s to Deleted" % ( transID ) )
     return S_OK()
 
-  def cleanMetadataCatalogFiles( self, transID, directories=None ):
+  def cleanMetadataCatalogFiles( self, transID, directories = None ):
     """ wipe out files from catalog """
     res = self.metadataClient.findFilesByMetadata( { self.transfidmeta : transID } )
     if not res['OK']:
@@ -484,8 +461,8 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK()
 
   def __getTransformationExternalIDs( self, transID ):
-    """ collect all ExternalIDs for transformation :transID: 
-    
+    """ collect all ExternalIDs for transformation :transID:
+
     :param self: self reference
     :param int transID: transforamtion ID
     """
@@ -503,15 +480,15 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK()
 
   def __removeWMSTasks( self, transJobIDs ):
-    """ wipe out jobs and their requests from the system 
-    
+    """ wipe out jobs and their requests from the system
+
     TODO: should check request status, maybe FTS files as well ???
 
     :param self: self reference
     :param list trasnJobIDs: job IDs
     """
     # Prevent 0 job IDs
-    jobIDs = [ int(j) for j in transJobIDs if int(j) ]
+    jobIDs = [ int( j ) for j in transJobIDs if int( j ) ]
     allRemove = True
     for jobList in breakListIntoChunks( jobIDs, 500 ):
 
@@ -544,7 +521,7 @@ class TransformationCleaningAgent( AgentModule ):
     self.log.info( "Successfully removed all tasks from the WMS" )
 
     if not jobIDs:
-      self.log.info("JobIDs not present, unable to remove asociated requests.")
+      self.log.info( "JobIDs not present, unable to remove asociated requests." )
       return S_OK()
 
     res = self.requestClient.getRequestForJobs( jobIDs )
