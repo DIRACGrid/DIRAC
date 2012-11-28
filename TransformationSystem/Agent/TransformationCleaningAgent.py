@@ -31,7 +31,6 @@ class TransformationCleaningAgent( AgentModule ):
   :param TransfromationClient transClient: TransfromationClient instance
   :param RequestClient requestClient: RequestClient instance
   :param FileCatalogClient metadataClient: FileCatalogClient instance
-  :param StorageUsageClient storageUsageClient: StorageUsageClient instance
 
   """
 
