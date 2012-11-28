@@ -297,7 +297,7 @@ class JobAgent( AgentModule ):
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception', self.stopOnApplicationFailure )
 
     currentTimes = os.times()
-    for i in len( currentTimes ):
+    for i in range( len( currentTimes ) ):
       currentTimes[i] -= self.initTimes[i]
 
     utime, stime, cutime, cstime, elapsed = currentTimes
