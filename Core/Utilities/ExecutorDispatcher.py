@@ -284,7 +284,7 @@ class ExecutorDispatcher:
       return rS
 
 
-  def __init__( self, monitor = False ):
+  def __init__( self, monitor = None ):
     self.__idMap = {}
     self.__execTypes = {}
     self.__executorsLock = threading.Lock()
@@ -470,7 +470,7 @@ class ExecutorDispatcher:
           eTask = self.__tasks[ taskId ]
         except KeyError:
           self.__log.notice( "Removing task %s from the freezer. Somebody has removed the task" % taskId )
-          self.self.__taskFreezer.pop( iP )
+          self.__taskFreezer.pop( iP )
           continue
         #Current taskId/eTask is the one to defrost
         if eType and eType != eTask.eType:
