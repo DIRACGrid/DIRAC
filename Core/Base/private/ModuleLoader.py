@@ -177,7 +177,7 @@ class ModuleLoader( object ):
         if '__file__' in dir( modObj ):
           location = modObj.__file__
         else:
-          locateion = modObj.__path__
+          location = modObj.__path__
         gLogger.exception( "%s module does not have a %s class!" % ( location, module ) )
         return S_ERROR( "Cannot load %s" % module )
       #Check if it's subclass
