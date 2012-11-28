@@ -155,7 +155,7 @@ class DirectoryMetadata:
         return S_ERROR( 'Unknown key %s' % key )
       if expandFlag:
         if metaTypeDict[key] == "MetaSet":
-          result = self.getMetadataSet( value, credDict )
+          result = self.getMetadataSet( value, expandFlag, credDict )
           if not result['OK']:
             return result
           resultDict.update( result['Value'] )
