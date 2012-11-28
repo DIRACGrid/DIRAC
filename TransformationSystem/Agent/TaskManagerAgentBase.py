@@ -1,47 +1,60 @@
-########################################################################
-# $HeadURL$
-########################################################################
-"""  The TaskManagerAgentBase is the base class to submit tasks to external systems, monitor and update the tasks and file status in the transformation DB. """
+''' The TaskManagerAgentBase is the base class to submit tasks to external systems,
+    monitor and update the tasks and file status in the transformation DB.
+'''
 
-__RCSID__ = "$Id$"
-
-from DIRAC                                                          import S_OK, S_ERROR, gMonitor, gLogger
-from DIRAC.Core.Base.AgentModule                                    import AgentModule
-from DIRAC.TransformationSystem.Client.FileReport                   import FileReport
-from DIRAC.Core.Security.ProxyInfo                                  import getProxyInfo
-from DIRAC.Core.Utilities.List                                      import sortList
 import datetime
+from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.TransformationSystem.Client.FileReport import FileReport
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.List import sortList
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 
 class TaskManagerAgentBase( AgentModule ):
+  ''' To be extended. The extension needs to:
+      - provide a taskManager object as data member
+      - provide a shifterProxy (string) as data member
+      - provide a transType (list of strings) as data member
+  '''
+
+  def __init__( self, agentName, loadName, baseAgentName, properties ):
+    ''' c'tor
+    '''
+    AgentModule.__init__( agentName, loadName, baseAgentName, properties )
+
+    self.taskManager = None
+    self.shifterProxy = ''
+    self.transClient = TransformationClient()
+    self.transType = []
 
   #############################################################################
 
-  def initialize( self, tsClient = None, taskManager = None ):
+  def initialize( self ):
+    ''' agent initialization
+    '''
+    if not self.taskManager:
+      return S_ERROR( 'No task manager provided!' )
 
-    self.section = self.am_getOption( "section" )
-    gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks", gMonitor.OP_ACUM )
+    if not self.shifterProxy:
+      return S_ERROR( 'No shifter proxy provided!' )
+    self.am_setOption( 'shifterProxy', self.shifterProxy )
 
-    if not tsClient:
-      from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-      self.transClient = TransformationClient()
-    else:
-      self.transClient = tsClient
-
-    self.taskManager = taskManager
-    if not taskManager:
-      return S_ERROR('No task manager provided !')        
-
-    self.transType = self.am_getOption( "TransType", ['MCSimulation'] )
+    if not self.transType:
+      return S_ERROR( 'No transformation types to look for!' )
     gLogger.info( "Looking for %s" % self.transType )
+
+    gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks",
+                               gMonitor.OP_ACUM )
 
     return S_OK()
 
   #############################################################################
 
   def execute( self ):
-    """ The TaskManagerBase execution method. """
+    ''' The TaskManagerBase execution method.
+    '''
 
     # Determine whether the task status is to be monitored and updated
     enableTaskMonitor = self.am_getOption( 'MonitorTasks', '' )
@@ -86,6 +99,8 @@ class TaskManagerAgentBase( AgentModule ):
     return S_OK()
 
   def _selectTransformations( self, transType = [], status = ['Active', 'Completing'], agentType = ['Automatic'] ):
+    ''' get the transformations
+    '''
     selectCond = {}
     if status:
       selectCond['Status'] = status
@@ -103,6 +118,8 @@ class TaskManagerAgentBase( AgentModule ):
     return res
 
   def updateTaskStatus( self ):
+    ''' Updates the task status
+    '''
     gLogger.info( "updateTaskStatus: Updating the Status of tasks" )
     # Get the transformations to be updated
     status = self.am_getOption( 'UpdateTasksStatus', ['Active', 'Completing', 'Stopped'] )
@@ -112,32 +129,42 @@ class TaskManagerAgentBase( AgentModule ):
     for transformation in res['Value']:
       transID = transformation['TransformationID']
       # Get the tasks which are in a UPDATE state
-      updateStatus = self.am_getOption( 'TaskUpdateStatus', ['Checking', 'Deleted', 'Killed', 'Staging', 'Stalled', 'Matched', 'Rescheduled', 'Completed', 'Submitted', 'Received', 'Waiting', 'Running'] )
+      updateStatus = self.am_getOption( 'TaskUpdateStatus', ['Checking', 'Deleted', 'Killed', 'Staging', 'Stalled',
+                                                             'Matched', 'Rescheduled', 'Completed', 'Submitted',
+                                                             'Received', 'Waiting', 'Running'] )
       condDict = {"TransformationID":transID, "ExternalStatus":updateStatus}
       timeStamp = str( datetime.datetime.utcnow() - datetime.timedelta( minutes = 10 ) )
-      res = self.transClient.getTransformationTasks( condDict = condDict, older = timeStamp, timeStamp = 'LastUpdateTime' )
+      res = self.transClient.getTransformationTasks( condDict = condDict,
+                                                     older = timeStamp,
+                                                     timeStamp = 'LastUpdateTime' )
       if not res['OK']:
-        gLogger.error( "updateTaskStatus: Failed to get tasks to update for transformation", "%s %s" % ( transID, res['Message'] ) )
+        gLogger.error( "updateTaskStatus: Failed to get tasks to update for transformation", "%s %s" % ( transID,
+                                                                                                     res['Message'] ) )
         continue
       if not res['Value']:
         gLogger.verbose( "updateTaskStatus: No tasks found to update for transformation %s" % transID )
         continue
       res = self.taskManager.getSubmittedTaskStatus( res['Value'] )
       if not res['OK']:
-        gLogger.error( "updateTaskStatus: Failed to get updated task statuses for transformation", "%s %s" % ( transID, res['Message'] ) )
+        gLogger.error( "updateTaskStatus: Failed to get updated task statuses for transformation", "%s %s" % ( transID,
+                                                                                                     res['Message'] ) )
         continue
       statusDict = res['Value']
       for status in sortList( statusDict.keys() ):
         taskIDs = statusDict[status]
-        gLogger.info( "updateTaskStatus: Updating %d task(s) from transformation %d to %s" % ( len( taskIDs ), transID, status ) )
+        gLogger.info( "updateTaskStatus: Updating %d task(s) from transformation %d to %s" % ( len( taskIDs ),
+                                                                                               transID, status ) )
         res = self.transClient.setTaskStatus( transID, taskIDs, status )
         if not res['OK']:
-          gLogger.error( "updateTaskStatus: Failed to update task status for transformation", "%s %s" % ( transID, res['Message'] ) )
+          gLogger.error( "updateTaskStatus: Failed to update task status for transformation", "%s %s" % ( transID,
+                                                                                                     res['Message'] ) )
 
     gLogger.info( "updateTaskStatus: Transformation task status update complete" )
     return S_OK()
 
   def updateFileStatus( self ):
+    ''' Update the files status
+    '''
     gLogger.info( "updateFileStatus: Updating Status of task files" )
     #Get the transformations to be updated
     status = self.am_getOption( 'UpdateFilesStatus', ['Active', 'Completing', 'Stopped'] )
@@ -146,8 +173,6 @@ class TaskManagerAgentBase( AgentModule ):
       return res
     for transformation in res['Value']:
       transID = transformation['TransformationID']
-      # Get the files which are in a UPDATE state
-      updateStatus = self.am_getOption( 'FileUpdateStatus', ['Submitted', 'Received', 'Waiting', 'Running'] )
       timeStamp = str( datetime.datetime.utcnow() - datetime.timedelta( minutes = 10 ) )
       condDict = {'TransformationID' : transID, 'Status' : ['Assigned']}
       res = self.transClient.getTransformationFiles( condDict = condDict, older = timeStamp, timeStamp = 'LastUpdate' )
@@ -159,7 +184,8 @@ class TaskManagerAgentBase( AgentModule ):
         continue
       res = self.taskManager.getSubmittedFileStatus( res['Value'] )
       if not res['OK']:
-        gLogger.error( "updateFileStatus: Failed to get updated file statuses for transformation", "%s %s" % ( transID, res['Message'] ) )
+        gLogger.error( "updateFileStatus: Failed to get updated file statuses for transformation", "%s %s" % ( transID,
+                                                                                                     res['Message'] ) )
         continue
       statusDict = res['Value']
       if not statusDict:
@@ -170,7 +196,8 @@ class TaskManagerAgentBase( AgentModule ):
         fileReport.setFileStatus( int( transID ), lfn, status )
       res = fileReport.commit()
       if not res['OK']:
-        gLogger.error( "updateFileStatus: Failed to update file status for transformation", "%s %s" % ( transID, res['Message'] ) )
+        gLogger.error( "updateFileStatus: Failed to update file status for transformation", "%s %s" % ( transID,
+                                                                                                      res['Message'] ) )
       else:
         for status, update in res['Value'].items():
           gLogger.info( "updateFileStatus: Updated %s files for %s to %s." % ( update, transID, status ) )
@@ -190,9 +217,11 @@ class TaskManagerAgentBase( AgentModule ):
       condDict = {"TransformationID":transID, "ExternalStatus":'Reserved'}
       time_stamp_older = str( datetime.datetime.utcnow() - datetime.timedelta( hours = 1 ) )
       time_stamp_newer = str( datetime.datetime.utcnow() - datetime.timedelta( days = 7 ) )
-      res = self.transClient.getTransformationTasks( condDict = condDict, older = time_stamp_older, newer = time_stamp_newer, timeStamp = 'LastUpdateTime' )
+      res = self.transClient.getTransformationTasks( condDict = condDict, older = time_stamp_older,
+                                                     newer = time_stamp_newer, timeStamp = 'LastUpdateTime' )
       if not res['OK']:
-        gLogger.error( "checkReservedTasks: Failed to get Reserved tasks for transformation", "%s %s" % ( transID, res['Message'] ) )
+        gLogger.error( "checkReservedTasks: Failed to get Reserved tasks for transformation", "%s %s" % ( transID,
+                                                                                                     res['Message'] ) )
         continue
       if not res['Value']:
         gLogger.verbose( "checkReservedTasks: No Reserved tasks found for transformation %s" % transID )
@@ -209,14 +238,16 @@ class TaskManagerAgentBase( AgentModule ):
         gLogger.info( "checkReservedTasks: Resetting status of %s to Created as no associated task found" % ( taskName ) )
         res = self.transClient.setTaskStatus( int( transID ), int( taskID ), 'Created' )
         if not res['OK']:
-          gLogger.warn( "checkReservedTasks: Failed to update task status and ID after recovery", "%s %s" % ( taskName, res['Message'] ) )
+          gLogger.warn( "checkReservedTasks: Failed to update task status and ID after recovery", "%s %s" % ( taskName,
+                                                                                                      res['Message'] ) )
       # For the tasks for which an associated request was found update the task details in the transformationDB
       for taskName, extTaskID in taskNameIDs.items():
         transID, taskID = taskName.split( '_' )
         gLogger.info( "checkReservedTasks: Resetting status of %s to Created with ID %s" % ( taskName, extTaskID ) )
         res = self.transClient.setTaskStatusAndWmsID( int( transID ), int( taskID ), 'Submitted', str( extTaskID ) )
         if not res['OK']:
-          gLogger.warn( "checkReservedTasks: Failed to update task status and ID after recovery", "%s %s" % ( taskName, res['Message'] ) )
+          gLogger.warn( "checkReservedTasks: Failed to update task status and ID after recovery", "%s %s" % ( taskName,
+                                                                                                      res['Message'] ) )
     gLogger.info( "checkReservedTasks: Updating of reserved tasks complete" )
     return S_OK()
 
@@ -254,11 +285,13 @@ class TaskManagerAgentBase( AgentModule ):
         continue
       res = self.taskManager.submitTransformationTasks( res['Value'] )
       if not res['OK']:
-        gLogger.error( "submitTasks: Failed to submit prepared tasks for transformation", "%s %s" % ( transID, res['Message'] ) )
+        gLogger.error( "submitTasks: Failed to submit prepared tasks for transformation", "%s %s" % ( transID,
+                                                                                                      res['Message'] ) )
         continue
       res = self.taskManager.updateDBAfterTaskSubmission( res['Value'] )
       if not res['OK']:
-        gLogger.error( "submitTasks: Failed to update DB after task submission for transformation", "%s %s" % ( transID, res['Message'] ) )
+        gLogger.error( "submitTasks: Failed to update DB after task submission for transformation", "%s %s" % ( transID,
+                                                                                                     res['Message'] ) )
         continue
     gLogger.info( "submitTasks: Submission of transformation tasks complete" )
     return S_OK()
