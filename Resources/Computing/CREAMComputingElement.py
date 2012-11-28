@@ -102,7 +102,7 @@ class CREAMComputingElement( ComputingElement ):
       if result['OK']:
         if result['Value'][0]:
           # We have got a non-zero status code
-          return S_ERROR('Pilot submission failed with error: %s ' % result['Value'][2].strip())
+          return S_ERROR('Pilot submission failed with error: %s ' % result['Value'][1].strip())
         pilotJobReference = result['Value'][1].strip()
         if not pilotJobReference:
           return S_ERROR('No pilot reference returned from the glite job submission command')
