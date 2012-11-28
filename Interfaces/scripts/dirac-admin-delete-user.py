@@ -48,4 +48,3 @@ for error in errorList:
   print "ERROR %s: %s" % error
 
 DIRAC.exit( exitCode )
-x
