@@ -308,7 +308,7 @@ class JobScheduling( OptimizerExecutor ):
       se = StorageElement( seName )
       result = se.getStatus()
       if not result[ 'OK' ]:
-        self.jobLog.error( "Cannot retrieve SE %s status: %s" ( seName, result[ 'Message' ] ) )
+        self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
         return S_ERROR( "Cannot retrieve SE status" )
       seStatus = result[ 'Value' ]
       if seStatus[ 'Read' ] and seStatus[ 'TapeSE' ]:
@@ -410,7 +410,7 @@ class JobScheduling( OptimizerExecutor ):
           seObj = StorageElement( seName )
           result = seObj.getStatus()
           if not result['OK' ]:
-            self.jobLog.error( "Cannot retrieve SE %s status: %s" ( seName, result[ 'Message' ] ) )
+            self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
             continue
           seStatus[ seName ] = result[ 'Value' ]
         #get the SE status from mem and add it if its disk
