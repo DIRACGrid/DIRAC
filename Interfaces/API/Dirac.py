@@ -342,7 +342,7 @@ class Dirac( API ):
         os.chdir( curDir )
       if mode.lower() == 'agent':
         self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
-        result = self.runLocalAgent( jdl, jobDescription )
+        result = self.runLocalAgent( jdl )
       if mode.lower() == 'wms':
         self.log.verbose( 'Will submit job to WMS' ) #this will happen by default anyway
         result = self._sendJob( jdl )
