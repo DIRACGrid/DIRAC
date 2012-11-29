@@ -431,7 +431,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   def __cleanCache( self ):
     """ Cleans the cache
     """
-    method = '__cleanCache'
     try:
       timeLimit = datetime.datetime.utcnow() - datetime.timedelta( days = self.replicaCacheValidity )
       for transID in self.replicaCache.keys():
@@ -445,8 +444,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
           self.replicaCache.pop( transID )
     except Exception:
       self._logException( "Exception when cleaning replica cache:" )
-    finally:
-      self.__releaseLock( method = method )
 
     # Write the cache file
     try:
@@ -469,6 +466,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   def __writeCache( self, force = False ):
     """ Writes the cache
     """
+    method = '__writeCache'
     now = datetime.datetime.now()
     if ( now - self.dateWriteCache ) < datetime.timedelta( minutes = 60 ) and not force:
       return
@@ -479,7 +477,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       startTime = time.time()
       self.dateWriteCache = now
       # Protect the copy of the cache
-      method = '__writeCache'
       tmpCache = self.replicaCache.copy()
       # write to a temporary file in order to avoid corrupted files
       tmpFile = self.cacheFile + '.tmp'
