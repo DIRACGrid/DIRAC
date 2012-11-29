@@ -189,7 +189,7 @@ class InputData( OptimizerExecutor ):
     if not result['OK']:
       # due to banned SE's input data might no be available
       self.jobLog.warn( result['Message'] )
-      return S_ERROR( msg )
+      return S_ERROR( result['Message'] )
 
     activeReplicaDict = result['Value']
 
