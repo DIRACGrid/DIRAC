@@ -2,7 +2,7 @@
 """
 
 import time, re, random, Queue, os, datetime, pickle
-from DIRAC                                                          import  S_OK, S_ERROR
+from DIRAC                                                          import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
 from DIRAC.Core.Utilities.ThreadSafe                                import Synchronizer
@@ -58,7 +58,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.transInThread = {}
 
   def initialize( self ):
-    """ standard init
+    """ standard initialize
     """
 
     self.__readCache()
@@ -89,7 +89,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     return S_OK()
 
   def execute( self ):
-    """ Just puts threads in the queue
+    """ Just puts transformations in the queue
     """
     # Get the transformations to process
     res = self.getTransformations()
@@ -216,7 +216,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     # Get the plug-in type and create the plug-in object
     plugin = 'Standard'
-    if transDict.has_key( 'Plugin' ) and transDict['Plugin']:
+    if transDict.get( 'Plugin' ):
       plugin = transDict['Plugin']
     self._logInfo( "Processing transformation with '%s' plug-in." % plugin,
                     method = "processTransformation", transID = transID )
