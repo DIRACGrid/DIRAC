@@ -435,7 +435,7 @@ class WorkflowTasks( TaskBase ):
       except Exception, x:
         self.log.exception( "Failed to create job object", '', x )
         return S_ERROR( "Failed to create job object" )
-    elif type( job ) == types.InstanceType:
+    elif isinstance( job, self.jobClass ):
       oJob = job
     else:
       self.log.error( "No valid job description found" )
