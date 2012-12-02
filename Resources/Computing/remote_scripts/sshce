@@ -55,6 +55,7 @@ submit_job()
       export SSHCE_JOBID=$stamp
       mkdir -p $4/$stamp
       cd $4/$stamp
+      chmod +x $1
       $1 1>$2/$stamp.out 2>$3/$stamp.err &
       echo $! > $5/$stamp.pid
       echo $stamp
