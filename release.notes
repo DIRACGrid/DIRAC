@@ -1,4 +1,4 @@
-[v6r6-pre12]
+[v6r6-pre13]
 
 *Core
 CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
@@ -49,6 +49,7 @@ NEW: StrategyHandler - new implementation to speed up file scheduling + better e
 NEW: LcgFileCatalogProxy - moved from from LHCbDirac to DIRAC
 FIX: ReplicaManager - removed usage of obsolete "/Resources/StorageElements/BannedTarget" 
 CHANGE: removed StorageUsageClient.py
+CHANGE: removed obsoleted ProcessingDBAgent.py
 
 *WMS
 CHANGE: RunNumber job parameter was removed from all the relevant places ( JDL, JobDB, etc )
@@ -113,10 +114,12 @@ BUGFIX: TaskManager - bug fixed in treating tasks with input data
 FIX: TransformationCleaningAgent - properly call superclass constructor with loadName argument
 NEW: TransformationCleaningAgent - added _addExtraDirectories() method to extend the list of
      directories to clean in a subclass if needed
+CHANGE: TransformationCleaningAgent - removed usage of StorageUsageClient     
 NEW: TransformationAgent is multithreaded now ( implementation moved from LHCbDIRAC )
 NEW: added unit tests
 NEW: InputDataAgent - possibility to refresh only data registered in the last predefined period of time 
-NEW: TransformationAgent(Client) - management of derived transformations ported from LHCbDIRAC
+NEW: TransformationAgent(Client) - management of derived transformations and more ported from LHCbDIRAC
+BUGFIX: TransformationDB - wrong SQL statement generation in setFileStatusForTransformation()
 
 [v6r5p12]
 
