@@ -284,9 +284,9 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods for file manipulation
   #
 
-  types_getFileSummary = [ListType, transTypes]
-  def export_getFileSummary( self, lfns, transName ):
-    res = database.getFileSummary( lfns, transName )
+  types_getFileSummary = [ListType]
+  def export_getFileSummary( self, lfns ):
+    res = database.getFileSummary( lfns )
     return self._parseRes( res )
 
   types_addDirectory = [StringType]
