@@ -188,6 +188,7 @@ class InputData( OptimizerExecutor ):
     self.jobLog.info( "Active replica check took %.2f secs" % ( time.time() - startTime ) )
     if not result['OK']:
       # due to banned SE's input data might no be available
+      msg = "On Hold: Input data not Available for SE"
       self.jobLog.warn( result['Message'] )
       return S_ERROR( msg )
 
