@@ -105,7 +105,7 @@ class DataLoggingDBTestCase(unittest.TestCase):
     self.assertEqual( result["OK"], True )
     self.assertEqual( result["Value"], [ "TestStatus" ] )
 
-    result = self.__db._update( 'DROP TABLE `%s`' % db.tableName )
+    result = self.__db._update( 'DROP TABLE `%s`' % self.__db.tableName )
     self.assertEqual( result["OK"], True )
 
 
