@@ -7,7 +7,7 @@
 """
 
 import re, time, threading, copy
-from types import IntType, LongType, StringTypes, ListType, TupleType, DictType
+from types import IntType, LongType, StringType, StringTypes, ListType, TupleType, DictType
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
@@ -431,7 +431,7 @@ class TransformationDB( DB ):
     if not res['OK']:
       return res
     paramDict = {}
-    for parameterName, parameterValue, parameterType in res['Value']:
+    for transID, parameterName, parameterValue, parameterType in res['Value']:
       parameterType = eval( parameterType )
       if parameterType in [IntType, LongType]:
         parameterValue = int( parameterValue )
