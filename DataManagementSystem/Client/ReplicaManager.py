@@ -1822,7 +1822,7 @@ class ReplicaManager( CatalogToStorage ):
       if not diracSEStatus[ 'OK' ]:
         self.log.error( diracSEStatus[ 'Message' ] )
         continue
-      diracSEStatus = diracSEStatus[ 'Value' ][ sourceSE ][ 'Read' ]         
+      diracSEStatus = diracSEStatus[ 'Value' ][ diracSE ][ 'Read' ]         
       
       if not diracSEStatus in ( 'Active', 'Bad' ):
         self.log.info( "%s %s is currently '%s' as a source." % ( logStr, diracSE, diracSEStatus ) )
