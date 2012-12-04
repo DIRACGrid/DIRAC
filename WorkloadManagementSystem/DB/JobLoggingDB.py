@@ -118,6 +118,14 @@ class JobLoggingDB(DB):
     return S_OK(return_value)    
     
 #############################################################################
+  def deleteJob(self, jobID ):
+    """ Delete logging records for the given job
+    """    
+    req = "DELETE FROM LoggingInfo WHERE JobID=%d" % int(jobID)
+    result = self._update( req )
+    return result
+    
+#############################################################################
   def getWMSTimeStamps(self, jobID ):
     """ Get TimeStamps for job MajorState transitions
         return a {State:timestamp} dictionary
