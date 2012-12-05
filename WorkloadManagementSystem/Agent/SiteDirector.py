@@ -571,14 +571,14 @@ class SiteDirector( AgentModule ):
     return [ pilotOptions, pilotsToSubmit ]
 
 #####################################################################################
-  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = '', httpProxy = '', pilotExecDir = '' ):
+  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = None, httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admixt the proxy if given
     """
 
     try:
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
-      if proxy:
+      if proxy is not None:
         compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) )
         proxyFlag = 'True'
       compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) )
