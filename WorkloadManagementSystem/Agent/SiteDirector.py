@@ -414,6 +414,7 @@ class SiteDirector( AgentModule ):
         # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
         # task queue priorities
         pilotList = result['Value']
+        self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList), queueName, ceName ) )
         stampDict = {}
         if result.has_key( 'PilotStampDict' ):
           stampDict = result['PilotStampDict']
