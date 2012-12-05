@@ -13,7 +13,7 @@ __RCSID__ = "$Id$"
 
 import re, os, sys
 import time
-from types import *
+from types import StringTypes, IntType, LongType 
 
 from DIRAC              import gLogger,S_OK, S_ERROR, Time
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
@@ -119,9 +119,19 @@ class JobLoggingDB(DB):
     
 #############################################################################
   def deleteJob(self, jobID ):
-    """ Delete logging records for the given job
-    """    
-    req = "DELETE FROM LoggingInfo WHERE JobID=%d" % int(jobID)
+    """ Delete logging records for given jobs
+    """
+    
+    # Make sure that we have a list of jobs    
+    if type( jobID ) in [ IntType, LongType ]:
+      jobList = [ str( jobID ) ]
+    elif type( jobID ) in StringTypes:
+      jobList = [ jobID ]
+    else:
+      jobList = list( jobID )
+      
+    jobString = ','.join( jobList )
+    req = "DELETE FROM LoggingInfo WHERE JobID IN (%s)" % jobString
     result = self._update( req )
     return result
     
@@ -154,5 +164,4 @@ class JobLoggingDB(DB):
       result['LastTime'] = "Unknown"  
           
     return S_OK(result)
-    
     

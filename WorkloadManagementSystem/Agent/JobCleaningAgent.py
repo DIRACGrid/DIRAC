@@ -149,6 +149,12 @@ class JobCleaningAgent( AgentModule ):
         else:
           count += 1    
 
+      result = self.jobLoggingDB.deleteJob( jobList )
+      if not result['OK']:
+        gLogger.error('Failed to delete %d jobs from JobLoggingDB' % len(jobList) )
+      else:
+        gLogger.info('Deleted %d jobs from JobLoggingDB' % len(jobList) )
+
     if count > 0 or error_count > 0 :
       gLogger.info( 'Deleted %d jobs from JobDB, %d errors' % ( count, error_count ) )
     return S_OK()
