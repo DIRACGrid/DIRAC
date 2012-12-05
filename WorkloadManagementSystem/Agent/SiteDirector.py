@@ -61,8 +61,12 @@ class SiteDirector( AgentModule ):
   def beginExecution( self ):
 
     self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
+    # The SiteDirector is for a particular user community
     self.vo = self.am_getOption( "Community", '' )
+    # The SiteDirector is for a particular user group
     self.group = self.am_getOption( "Group", '' )
+    # self.voGroups contain all the eligible user groups for pilots submutted by this SiteDirector
+    self.voGroups = []
 
     # Choose the group for which pilots will be submitted. This is a hack until
     # we will be able to match pilots to VOs.
@@ -73,8 +77,9 @@ class SiteDirector( AgentModule ):
           return result
         for group in result['Value']:
           if 'NormalUser' in Registry.getPropertiesForGroup( group ):
-            self.group = group
-            break
+            self.voGroups.append( group )
+    else:
+      self.voGroups = [ self.group ]      
 
     result = findGenericPilotCredentials( vo = self.vo )
     if not result[ 'OK' ]:
@@ -268,8 +273,8 @@ class SiteDirector( AgentModule ):
                'SubmitPool' : self.defaultSubmitPools }
     if self.vo:
       tqDict['Community'] = self.vo
-    if self.group:
-      tqDict['OwnerGroup'] = self.group
+    if self.voGroups:
+      tqDict['OwnerGroup'] = self.voGroups  
     
     result = Resources.getCompatiblePlatforms( self.platforms )
     if not result['OK']:
@@ -342,8 +347,8 @@ class SiteDirector( AgentModule ):
         del ceDict[ 'Site' ]
       if self.vo:
         ceDict['Community'] = self.vo
-      if self.group:
-        ceDict['OwnerGroup'] = self.group
+      if self.voGroups:
+        ceDict['OwnerGroup'] = self.voGroups
       
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools  
