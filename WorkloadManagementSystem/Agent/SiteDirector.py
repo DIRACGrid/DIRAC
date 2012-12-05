@@ -31,7 +31,6 @@ DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac
 TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready']
 WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
-ERROR_TOKEN = 'Invalid proxy token request'
 MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
@@ -250,13 +249,13 @@ class SiteDirector( AgentModule ):
 
     result = self.submitJobs()
     if not result['OK']:
-      self.log.error( 'Errors in the job submission: %s' % result['Message'] )
+      self.log.error( 'Errors in the job submission: ', result['Message'] )
 
 
     if self.updateStatus:
       result = self.updatePilotStatus()
       if not result['OK']:
-        self.log.error( 'Errors in updating pilot status: %s' % result['Message'] )
+        self.log.error( 'Errors in updating pilot status: ', result['Message'] )
 
     return S_OK()
 
@@ -445,14 +444,14 @@ class SiteDirector( AgentModule ):
                                                      '',
                                                      stampDict )
           if not result['OK']:
-            self.log.error( 'Failed add pilots to the PilotAgentsDB: %s' % result['Message'] )
+            self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
             continue
           for pilot in pilotList:
             result = pilotAgentsDB.setPilotStatus( pilot, 'Submitted', ceName,
                                                   'Successfully submitted by the SiteDirector',
                                                   siteName, queueName )
             if not result['OK']:
-              self.log.error( 'Failed to set pilot status: %s' % result['Message'] )
+              self.log.error( 'Failed to set pilot status: ', result['Message'] )
               continue
 
     return S_OK()
@@ -511,7 +510,7 @@ class SiteDirector( AgentModule ):
     # Request token for maximum pilot efficiency
     result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit * self.maxJobsInFillMode )
     if not result[ 'OK' ]:
-      self.log.error( ERROR_TOKEN, result['Message'] )
+      self.log.error( 'Invalid proxy token request', result['Message'] )
       return [ None, None ]
     ( token, numberOfUses ) = result[ 'Value' ]
     pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
@@ -669,7 +668,7 @@ EOF
 
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
-        self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
+        self.log.error( 'Failed to get pilots info from DB', result['Message'] )
         continue
       pilotDict = result['Value']
 
@@ -693,7 +692,7 @@ EOF
 
       result = ce.getJobStatus( stampedPilotRefs )
       if not result['OK']:
-        self.log.error( 'Failed to get pilots status from CE: %s' % result['Message'] )
+        self.log.error( 'Failed to get pilots status from CE', '%s: %s' % ( ceName, result['Message'] ) )
         continue
       pilotCEDict = result['Value']
 
@@ -726,13 +725,13 @@ EOF
               pRefStamp = pRef + ':::' + pilotStamp
             result = ce.getJobOutput( pRefStamp )
             if not result['OK']:
-              self.log.error( 'Failed to get pilot output: %s' % result['Message'] )
+              self.log.error( 'Failed to get pilot output', '%s: %s' % ( ceName, result['Message'] ) )
             else:
               output, error = result['Value']
               if output:
                 result = pilotAgentsDB.storePilotOutput( pRef, output, error )
                 if not result['OK']:
-                  self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
+                  self.log.error( 'Failed to store pilot output', result['Message'] )
               else:
                 self.log.warn( 'Empty pilot output not stored to PilotDB' )    
 
@@ -758,14 +757,14 @@ EOF
                                            'Status':FINAL_PILOT_STATUS} )
 
       if not result['OK']:
-        self.log.error( 'Failed to select pilots: %s' % result['Message'] )
+        self.log.error( 'Failed to select pilots', result['Message'] )
         continue
       pilotRefs = result['Value']
       if not pilotRefs:
         continue
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
-        self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
+        self.log.error( 'Failed to get pilots info from DB', result['Message'] )
         continue
       pilotDict = result['Value']
       if self.getOutput:
@@ -777,12 +776,12 @@ EOF
             pRefStamp = pRef + ':::' + pilotStamp
           result = ce.getJobOutput( pRefStamp )
           if not result['OK']:
-            self.log.error( 'Failed to get pilot output: %s' % result['Message'] )
+            self.log.error( 'Failed to get pilot output', '%s: %s' % ( ceName, result['Message'] ) )
           else:
             output, error = result['Value']
             result = pilotAgentsDB.storePilotOutput( pRef, output, error )
             if not result['OK']:
-              self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
+              self.log.error( 'Failed to store pilot output', result['Message'] )
 
       # Check if the accounting is to be sent
       if self.sendAccounting:
@@ -794,14 +793,14 @@ EOF
                                              'Status':FINAL_PILOT_STATUS} )
 
         if not result['OK']:
-          self.log.error( 'Failed to select pilots: %s' % result['Message'] )
+          self.log.error( 'Failed to select pilots', result['Message'] )
           continue
         pilotRefs = result['Value']
         if not pilotRefs:
           continue
         result = pilotAgentsDB.getPilotInfo( pilotRefs )
         if not result['OK']:
-          self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
+          self.log.error( 'Failed to get pilots info from DB', result['Message'] )
           continue
         pilotDict = result['Value']
         result = self.sendPilotAccounting( pilotDict )
@@ -842,12 +841,12 @@ EOF
       self.log.info( "Adding accounting record for pilot %s" % pilotDict[pRef][ 'PilotID' ] )
       retVal = gDataStoreClient.addRegister( pA )
       if not retVal[ 'OK' ]:
-        self.log.error( 'Failed to send accounting info for pilot %s' % pRef )
+        self.log.error( 'Failed to send accounting info for pilot ', pRef )
       else:
         # Set up AccountingSent flag
         result = pilotAgentsDB.setAccountingFlag( pRef )
         if not result['OK']:
-          self.log.error( 'Failed to set accounting flag for pilot %s' % pRef )
+          self.log.error( 'Failed to set accounting flag for pilot ', pRef )
 
     self.log.info( 'Committing accounting records for %d pilots' % len( pilotDict ) )
     result = gDataStoreClient.commit()
@@ -856,7 +855,7 @@ EOF
         self.log.verbose( 'Setting AccountingSent flag for pilot %s' % pRef )
         result = pilotAgentsDB.setAccountingFlag( pRef )
         if not result['OK']:
-          self.log.error( 'Failed to set accounting flag for pilot %s' % pRef )
+          self.log.error( 'Failed to set accounting flag for pilot ', pRef )
     else:
       return result
 
