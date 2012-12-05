@@ -3,6 +3,7 @@ from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
 
 class JobManifest( object ):
@@ -169,15 +170,9 @@ class JobManifest( object ):
     result = self.__checkMaxInputData( 500 )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMultiChoice( "JobType",
-                                      gConfig.getValue( "/Operations/JobManifest/AllowedJobTypes", [] ) )
+    result = self.__checkMultiChoice( "JobType", Operations().getValue( "JobDescription/AllowedJobTypes", [] ) )
     if not result[ 'OK' ]:
-      #HACK to maintain backwards compatibility
-      #If invalid set to "User"
-      #HACKEXPIRATION 05/2009
-      self.setOption( "JobType", "User" )
-      #Uncomment after deletion of hack
-      #return result
+      return result
     return S_OK()
 
   def createSection( self, secName, contents = False ):
@@ -204,7 +199,7 @@ class JobManifest( object ):
       self.__manifest[ secName ].reset()
       self.__manifest[ secName ].mergeWith( contents )
     else:
-      self.__manifest.createNewSection( sectionName, contents = contents )
+      self.__manifest.createNewSection( secName, contents = contents )
 
   def setOption( self, varName, varValue ):
     """

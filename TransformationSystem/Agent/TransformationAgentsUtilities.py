@@ -9,7 +9,10 @@ AGENT_NAME = ''
 class TransformationAgentsUtilities( object ):
 
   def __threadForTrans( self, transID ):
-    return self.transInThread.get( transID, ' [None] [None] ' ) + AGENT_NAME + '.'
+    try:
+      return self.transInThread.get( transID, ' [None] [None] ' ) + AGENT_NAME + '.'
+    except NameError:
+      return ''
 
   def _logVerbose( self, message, param = '', method = "execute", transID = 'None' ):
     """ verbose """
