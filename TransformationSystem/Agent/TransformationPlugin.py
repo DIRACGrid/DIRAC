@@ -315,17 +315,21 @@ class TransformationPlugin( object ):
     return S_OK( tasks )
 
   @classmethod
-  def _getFileGroups( self, fileReplicas ):
+  def _getFileGroups( cls, fileReplicas ):
+    """ get file groups dictionary { "SE1,SE2,SE3" : [ lfn1, lfn2 ], ... }
+    
+    :param dict fileReplicas: { lfn : [SE1, SE2, SE3], ... }
+    """
     fileGroups = {}
     for lfn, replicas in fileReplicas.items():
-      replicaSEs = str.join( ',', sortList( uniqueElements( replicas.keys() ) ) )
-      if not fileGroups.has_key( replicaSEs ):
+      replicaSEs = ",".join( sortList( uniqueElements( replicas ) ) )
+      if replicaSEs not in fileGroups:
         fileGroups[replicaSEs] = []
       fileGroups[replicaSEs].append( lfn )
     return fileGroups
 
   @classmethod
-  def _getSiteForSE( self, se ):
+  def _getSiteForSE( cls, se ):
     """ Get site name for the given SE
     """
     result = getSitesForSE( se, gridName = 'LCG' )
@@ -336,7 +340,7 @@ class TransformationPlugin( object ):
     return S_OK( '' )
 
   @classmethod
-  def _getSitesForSEs( self, seList ):
+  def _getSitesForSEs( cls, seList ):
     """ Get all the sites for the given SE list
     """
     sites = []

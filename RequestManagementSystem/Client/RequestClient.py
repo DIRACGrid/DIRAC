@@ -115,7 +115,7 @@ class RequestClient( Client ):
     :param list jobID: list of job IDs (integers)
     """
     self.log.info( "getRequestForJobs: attempt to get request(s) for job %s" % jobID )
-    requests = self.requestManager().getRequestForJob( jobID )
+    requests = self.requestManager().getRequestForJobs( jobID )
     if not requests["OK"]:
       self.log.error( "getRequestForJobs: unable to get request(s) for jobs %s: %s" % ( jobID, 
                                                                                         requests["Message"] ) )
