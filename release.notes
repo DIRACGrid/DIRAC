@@ -1,4 +1,4 @@
-[v6r6-pre13]
+[v6r6-pre14]
 
 *Core
 CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
@@ -13,6 +13,7 @@ NEW: Possibility to define a thread-global credentials for DISET connections (fo
 NEW: Logger - color output ( configurable )
 NEW: dirac-admin-sort-cs-sites - to sort sites in the CS
 CHANGE: MessageClient(Factor) - added msgClient attribute to messages
+NEW: Core.Security.Properties - added JOB_MONITOR and USER_MANAGER properties
 
 *Configuration
 NEW: Registry - added getAllGroups() method
@@ -58,6 +59,7 @@ NEW: WMSAdministrator - get output for non-grid CEs if not yet in the DB
 NEW: JobAgent - job publishes BOINC parameters if any
 CHANGE: Get rid of LHCbPlatform everywhere except TaskQueueDB
 FIX: SiteDirector - provide list of sites to the Matcher in the initial query
+FIX: SiteDirector - present a list of all groups of a community to match TQs
 CHANGE: dirac-boinc-pilot dropped
 CHANGE: TaskQueueDirector does not depend on /LocalSite section any more
 CHANGE: reduced default delays for JobCleaningAgent
@@ -76,6 +78,8 @@ FIX: WMSAdministrator, SiteDirector - store only non-empty pilot output to the P
 NEW: added killPilot() to the WMSAdministrator interface, DiracAdmin and dirac-admin-kill-pilot command
 NEW: TimeLeft - renormalize time left using DIRAC Normalization if available
 FIX: JobManager - reconnect to the OptimizationMind in background if not yet connected
+CHANGE: JobManifest - use Operations helper
+NEW: JobCleaningAgent - delete logging records from JobLoggingDB when deleting jobs
 
 *RMS
 FIX: RequestDBFile - better exception handling in case no JobID supplied
