@@ -320,9 +320,9 @@ class StalledJobAgent( AgentModule ):
 
       startTime, endTime = self.__checkLoggingInfo( jobID, jobDict )
       lastCPUTime, lastWallTime, lastHeartBeatTime = self.__checkHeartBeat( jobID, jobDict )
-
-      if fromString( lastHeartBeatTime ) > endTime:
-        endTime = fromString( lastHeartBeatTime )
+      lastHeartBeatTime = fromString( lastHeartBeatTime )
+      if lastHeartBeatTime is not None and lastHeartBeatTime > endTime:
+        endTime = lastHeartBeatTime 
 
       cpuNormalization = self.jobDB.getJobParameter( jobID, 'CPUNormalizationFactor' )
       if not cpuNormalization['OK'] or not cpuNormalization['Value']:
@@ -374,7 +374,6 @@ class StalledJobAgent( AgentModule ):
     """ Get info from HeartBeat 
     """
     result = self.jobDB.getHeartBeatData( jobID )
-
     lastCPUTime = 0
     lastWallTime = 0
     lastHeartBeatTime = jobDict['StartExecTime']
