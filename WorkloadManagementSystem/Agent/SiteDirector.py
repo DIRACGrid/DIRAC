@@ -8,8 +8,7 @@
 """
 
 from DIRAC.Core.Base.AgentModule                           import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, getVO, Registry, Operations, Resources
-from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
+from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
@@ -20,7 +19,6 @@ from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as Pilot
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Security                                   import CS
-from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 import os, base64, bz2, tempfile, random, socket
@@ -61,8 +59,12 @@ class SiteDirector( AgentModule ):
   def beginExecution( self ):
 
     self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
+    # The SiteDirector is for a particular user community
     self.vo = self.am_getOption( "Community", '' )
+    # The SiteDirector is for a particular user group
     self.group = self.am_getOption( "Group", '' )
+    # self.voGroups contain all the eligible user groups for pilots submutted by this SiteDirector
+    self.voGroups = []
 
     # Choose the group for which pilots will be submitted. This is a hack until
     # we will be able to match pilots to VOs.
@@ -73,8 +75,9 @@ class SiteDirector( AgentModule ):
           return result
         for group in result['Value']:
           if 'NormalUser' in Registry.getPropertiesForGroup( group ):
-            self.group = group
-            break
+            self.voGroups.append( group )
+    else:
+      self.voGroups = [ self.group ]      
 
     result = findGenericPilotCredentials( vo = self.vo )
     if not result[ 'OK' ]:
@@ -268,8 +271,8 @@ class SiteDirector( AgentModule ):
                'SubmitPool' : self.defaultSubmitPools }
     if self.vo:
       tqDict['Community'] = self.vo
-    if self.group:
-      tqDict['OwnerGroup'] = self.group
+    if self.voGroups:
+      tqDict['OwnerGroup'] = self.voGroups  
     
     result = Resources.getCompatiblePlatforms( self.platforms )
     if not result['OK']:
@@ -342,8 +345,8 @@ class SiteDirector( AgentModule ):
         del ceDict[ 'Site' ]
       if self.vo:
         ceDict['Community'] = self.vo
-      if self.group:
-        ceDict['OwnerGroup'] = self.group
+      if self.voGroups:
+        ceDict['OwnerGroup'] = self.voGroups
       
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools  
@@ -411,6 +414,7 @@ class SiteDirector( AgentModule ):
         # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
         # task queue priorities
         pilotList = result['Value']
+        self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList), queueName, ceName ) )
         stampDict = {}
         if result.has_key( 'PilotStampDict' ):
           stampDict = result['PilotStampDict']
@@ -566,14 +570,14 @@ class SiteDirector( AgentModule ):
     return [ pilotOptions, pilotsToSubmit ]
 
 #####################################################################################
-  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = '', httpProxy = '', pilotExecDir = '' ):
+  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = None, httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admixt the proxy if given
     """
 
     try:
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
-      if proxy:
+      if proxy is not None:
         compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) )
         proxyFlag = 'True'
       compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) )
