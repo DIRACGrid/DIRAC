@@ -461,7 +461,7 @@ class SiteDirector( AgentModule ):
     """ Prepare the full executable for queue
     """
 
-    proxy = ''
+    proxy = None
     if bundleProxy:
       proxy = self.proxy
     pilotOptions, pilotsToSubmit = self.__getPilotOptions( queue, pilotsToSubmit )
