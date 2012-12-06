@@ -330,7 +330,7 @@ class SiteDirector( AgentModule ):
         self.log.warn( 'Failed to check the availability of queue %s: %s' % ( queue, result['Message'] ) )
         continue
       ceInfoDict = result['CEInfoDict']
-      self.log.info( "CE queue report(%s_%s): Waiting Jobs=%d, Running Jobs=%d, Submitted Jobs=%d, MaxTotalJobs=%d" % \
+      self.log.info( "CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" % \
                      ( ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
                        ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
 
