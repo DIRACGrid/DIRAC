@@ -1,4 +1,4 @@
-[v6r6-pre14]
+[v6r6]
 
 *Core
 CHANGE: getDNForUsername helper migrated from Core.Security.CS to Registry helper
