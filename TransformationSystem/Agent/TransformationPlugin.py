@@ -21,12 +21,12 @@ class TransformationPlugin( object ):
     self.data = False
     self.plugin = plugin
     self.files = False
-    if transClient == None:
+    if transClient is None:
       self.transClient = TransformationClient()
     else:
       self.transClient = transClient
 
-    if replicaManager == None:
+    if replicaManager is None:
       self.rm = ReplicaManager()
     else:
       self.rm = replicaManager
