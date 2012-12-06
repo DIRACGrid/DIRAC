@@ -8,7 +8,8 @@ CHANGE: The DIRAC.Core.Security.CS is replaced by the Registry helper
 BUGFIX: dirac-install - properly parse += in .cfg files
 FIX: Graphs.Utilities - allow two lines input in makeDataFromCVS()
 FIX: Graphs - allow Graphs package usage if even matplotlib is not installed
-NEW: dirac-compile-externals will retrieve the Externals compilation scripts from it's new location in github (DIRACGrid/Externals)
+NEW: dirac-compile-externals will retrieve the Externals compilation scripts from it's new location 
+     in github (DIRACGrid/Externals)
 NEW: Possibility to define a thread-global credentials for DISET connections (for web framework)
 NEW: Logger - color output ( configurable )
 NEW: dirac-admin-sort-cs-sites - to sort sites in the CS
@@ -26,7 +27,7 @@ NEW: JobPlotter - added Normalized CPU plots to Job accounting
 FIX: DBUtils - plots going to greater granularity
 
 *DMS
-NEW: FileCatalog - torage usage info stored in all the directories, not only those with files
+NEW: FileCatalog - storage usage info stored in all the directories, not only those with files
 NEW: FileCatalog - added utility to rebuild storage usage info from scratch
 FIX: FileCatalog - addMetadataField() allow generic types, e.g. string
 FIX: FileCatalog - path argument is normalized before usage in multiple methods
@@ -1015,7 +1016,7 @@ BUGFIX: Minor bugfixes spotted on the Web development
 FIX: Removed useless decorator from RSS handlers
 CHANGE: ResourceStatus helper tool moved to RSS/Client directory, no RSS objects created if the system is InActive
 CHANGE: Removed ClientFastDec decorator, using a more verbose alternative.
-CHANGE: Removed useless usage of **kwargs on helper functions.  
+CHANGE: Removed useless usage of "**kwargs" on helper functions.  
 NEW: added getSESitesList method to RSSClient      
 FIX: _checkFloat() checks INTEGERS, not datetimes
 
