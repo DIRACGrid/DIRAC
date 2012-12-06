@@ -327,7 +327,7 @@ class SiteDirector( AgentModule ):
       # Get the number of available slots on the target site/queue
       result = ce.available()
       if not result['OK']:
-        self.log.warn( 'Failed to check the availability of queue %s: %s' % ( queue, result['Message'] ) )
+        self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
         continue
       ceInfoDict = result['CEInfoDict']
       self.log.info( "CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" % \
@@ -405,7 +405,7 @@ class SiteDirector( AgentModule ):
         executable, pilotSubmissionChunk = result['Value']
         result = ce.submitJob( executable, '', pilotSubmissionChunk )
         if not result['OK']:
-          self.log.error( 'Failed submission to queue %s:' % queue, result['Message'] )
+          self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
           pilotsToSubmit = 0
           continue
         
