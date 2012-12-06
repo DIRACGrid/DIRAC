@@ -11,6 +11,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient         import Trans
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/TransformationAgent'
 gSynchro = Synchronizer()
