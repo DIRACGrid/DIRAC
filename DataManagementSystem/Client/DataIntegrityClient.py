@@ -1,4 +1,7 @@
-""" This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
+""" This is the Data Integrity Client which allows the simple reporting of problematic file 
+    and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.
+""" 
+
 __RCSID__ = "$Id$"
 
 from DIRAC                                                import S_OK, S_ERROR,gLogger,gConfig
@@ -42,7 +45,9 @@ class DataIntegrityClient(Client):
             Inserts file with supplied metadata into the integrity DB
   """
   
-  def __init__(self):
+  def __init__( self, **kwargs ):
+    
+    Client.__init__( self, **kwargs )
     self.setServer('DataManagement/DataIntegrity')
     self.rm = ReplicaManager()
 
