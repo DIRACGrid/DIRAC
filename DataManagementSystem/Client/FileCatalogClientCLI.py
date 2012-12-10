@@ -1552,7 +1552,11 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Get file or directory size. If -l switch is specified, get also the total
         size per Storage Element 
 
-        usage: size [-l] <lfn>|<dir_path> 
+        usage: size [-l] [-f] <lfn>|<dir_path>
+        
+        Switches:
+           -l  long output including per SE report
+           -f  use raw file information and not the storage tables  
     """      
     
     argss = args.split()
