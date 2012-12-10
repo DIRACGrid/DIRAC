@@ -959,9 +959,6 @@ class DirectoryTreeBase:
 
       for seSize,seFiles,seID in result['Value']:       
         insertValues = [dirID,seID,seSize,seFiles,'UTC_TIMESTAMP()'] 
-
-        print "AT >>> __rebuildDirectoryUsageLeaves 1", dirID,seID,seSize,seFiles
-
         result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )  
         if not result['OK']:
           return result     
@@ -975,10 +972,6 @@ class DirectoryTreeBase:
         return S_ERROR('Empty directory')
       seSize,seFiles = result['Value'][0]       
       insertValues = [dirID,0,seSize,seFiles,'UTC_TIMESTAMP()'] 
-      
-
-      print "AT >>> __rebuildDirectoryUsageLeaves 2", dirID,0,seSize,seFiles
-
       result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )  
       if not result['OK']:
         return result
