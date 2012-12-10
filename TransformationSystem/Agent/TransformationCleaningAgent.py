@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from DIRAC import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
@@ -82,12 +83,12 @@ class TransformationCleaningAgent( AgentModule ):
     ## shifter proxy
     self.am_setOption( 'shifterProxy', 'DataManager' )
     ## transformations types
-    self.transformationTypes = sortList( self.am_getOption( 'TransformationTypes', [ 'MCSimulation',
-                                                                                     'DataReconstruction',
-                                                                                     'DataStripping',
-                                                                                     'MCStripping',
-                                                                                     'Merge',
-                                                                                     'Replication' ] ) )
+    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
+    if agentTSTypes:
+      self.transformationTypes = sortList(agentTSTypes)
+    else:
+      self.transformationTypes = sortList( Operations().getValue( 'Transformations/DataProcessing', 
+                                                                  ['MCSimulation', 'Merge'] ) )
     self.log.info( "Will consider the following transformation types: %s" % str( self.transformationTypes ) )
     ## directory locations
     self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', [ 'TransformationDB',

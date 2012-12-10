@@ -2,8 +2,9 @@
     transformation database and submits to the workload management system.
 '''
 
-from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
-from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
+from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAgentBase
+from DIRAC.TransformationSystem.Client.TaskManager          import WorkflowTasks
 
 AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 
@@ -17,4 +18,8 @@ class WorkflowTaskAgent( TaskManagerAgentBase ):
 
     self.taskManager = WorkflowTasks( transClient = self.transClient )
     self.shifterProxy = 'ProductionManager'
-    self.transType = self.am_getOption( "TransType", ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'] )
+    agentTSTypes = self.am_getOption( 'TransType', [] )
+    if agentTSTypes:
+      self.transType = agentTSTypes
+    else:
+      self.transType = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )

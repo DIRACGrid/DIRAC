@@ -8,11 +8,12 @@ The Job Cleaning Agent controls removing jobs from the WMS in the end of their l
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.AgentModule                      import AgentModule
-from DIRAC.WorkloadManagementSystem.DB.JobDB          import JobDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB    import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB   import JobLoggingDB
-from DIRAC                                            import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Base.AgentModule                          import AgentModule
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
+from DIRAC.WorkloadManagementSystem.DB.JobDB              import JobDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB        import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB       import JobLoggingDB
+from DIRAC                                                import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 import DIRAC.Core.Utilities.Time as Time
 import string
@@ -43,7 +44,11 @@ class JobCleaningAgent( AgentModule ):
     self.taskQueueDB = TaskQueueDB()
     self.jobLoggingDB = JobLoggingDB()
     # self.sandboxDB = SandboxDB( 'SandboxDB' )
-    self.prod_types = self.am_getOption('ProductionTypes',['DataReconstruction', 'DataStripping', 'MCSimulation', 'Merge', 'production'])
+    agentTSTypes = self.am_getOption('ProductionTypes', [])
+    if agentTSTypes:
+      self.prod_types = agentTSTypes
+    else:
+      self.prod_types = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
     gLogger.info('Will exclude the following Production types from cleaning %s'%(string.join(self.prod_types,', ')))
     self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce',200)
     self.jobByJob = self.am_getOption('JobByJob',True)

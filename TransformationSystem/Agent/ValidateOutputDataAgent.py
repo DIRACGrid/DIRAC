@@ -4,6 +4,7 @@
 from DIRAC                                                     import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                               import AgentModule
 from DIRAC.Core.Utilities.List                                 import sortList
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
 from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient
@@ -28,7 +29,11 @@ class ValidateOutputDataAgent( AgentModule ):
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
 
-    self.transformationTypes = sortList( self.am_getOption( 'TransformationTypes', ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'] ) )
+    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
+    if agentTSTypes:
+      self.transformationTypes = agentTSTypes
+    else:
+      self.transformationTypes = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
     gLogger.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
     self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', ['TransformationDB', 'MetadataCatalog'] ) )
     gLogger.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )

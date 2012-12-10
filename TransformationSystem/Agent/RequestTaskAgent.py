@@ -2,8 +2,9 @@
     and submits to the request management system
 '''
 
-from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
-from DIRAC.TransformationSystem.Client.TaskManager                  import RequestTasks
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
+from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAgentBase
+from DIRAC.TransformationSystem.Client.TaskManager          import RequestTasks
 
 AGENT_NAME = 'Transformation/RequestTaskAgent'
 
@@ -17,4 +18,9 @@ class RequestTaskAgent( TaskManagerAgentBase ):
 
     self.taskManager = RequestTasks( transClient = self.transClient )
     self.shifterProxy = 'ProductionManager'
-    self.transType = ['Replication', 'Removal']
+    agentTSTypes = self.am_getOption( 'TransType', [] )
+    if agentTSTypes:
+      self.transType = agentTSTypes
+    else:
+      self.transType = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
+    
