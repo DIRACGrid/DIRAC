@@ -24,11 +24,11 @@ def promptUser( message, choices = [], default = 'n', logger = None ):
 
   while True:
     if choiceString:
-      logger.info( '%s %s :' % ( message, choiceString ) )
+      logger.notice( '%s %s :' % ( message, choiceString ) )
     elif default:
-      logger.info( '%s %s :' % ( message, default ) )
+      logger.notice( '%s %s :' % ( message, default ) )
     else:
-      logger.info( '%s :' % message )
+      logger.notice( '%s :' % message )
     response = raw_input( '%s' % message )
     if ( not response ) and ( default ):
       return S_OK( default )
@@ -36,7 +36,7 @@ def promptUser( message, choices = [], default = 'n', logger = None ):
       logger.error( "Failed to determine user selection" )
       return S_ERROR( "Failed to determine user selection" )
     elif ( response ) and ( choices ) and ( not response in choices ):
-      logger.info( 'your answer is not valid' )
+      logger.notice( 'your answer is not valid' )
       continue
     else:
       return S_OK( response )
