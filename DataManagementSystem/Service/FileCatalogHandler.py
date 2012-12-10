@@ -284,10 +284,10 @@ class FileCatalogHandler(RequestHandler):
     """ Determine whether supplied path is a directory """
     return gFileCatalogDB.isDirectory( lfns, self.getRemoteCredentials() )
   
-  types_getDirectorySize = [ [ ListType, DictType ] + list(StringTypes), BooleanType ]
-  def export_getDirectorySize( self, lfns, longOut=False ):
+  types_getDirectorySize = [ [ ListType, DictType ] + list(StringTypes), BooleanType, BooleanType ]
+  def export_getDirectorySize( self, lfns, longOut=False, fromFiles=False ):
     """ Get the size of the supplied directory """
-    return gFileCatalogDB.getDirectorySize( lfns, longOut, self.getRemoteCredentials() )
+    return gFileCatalogDB.getDirectorySize( lfns, longOut, fromFiles, self.getRemoteCredentials() )
 
   types_getDirectoryReplicas = [ [ ListType, DictType ] + list(StringTypes), BooleanType ]
   def export_getDirectoryReplicas( self, lfns, allStatus=False ):

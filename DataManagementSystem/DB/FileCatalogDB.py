@@ -536,12 +536,12 @@ class FileCatalogDB(DB):
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
 
-  def getDirectorySize(self,lfns,longOutput,credDict):
+  def getDirectorySize( self, lfns, longOutput, rawFileTables, credDict ):
     res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectorySize(res['Value']['Successful'],longOutput)
+    res = self.dtree.getDirectorySize( res['Value']['Successful'], longOutput, rawFileTables )
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
