@@ -1,6 +1,7 @@
 from DIRAC                                                          import S_OK, gLogger
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.List                                      import sortList
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 
 AGENT_NAME = 'Transformation/MCExtensionAgent'
@@ -13,7 +14,12 @@ class MCExtensionAgent( AgentModule ):
     AgentModule.__init__( agentName, loadName, baseAgentName, properties )
 
     self.transClient = TransformationClient()
-    self.transformationTypes = sortList( self.am_getOption( 'TransformationTypes', ['MCSimulation', 'Simulation'] ) )
+    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
+    if agentTSTypes:
+      self.transformationTypes = sortList( agentTSTypes )
+    else:
+      self.transformationTypes = sortList( Operations().getValue( 'Transformations/ExtendableTransfTypes',
+                                                                  ['MCSimulation', 'Simulation'] ) )
     self.maxIterationTasks = self.am_getOption( 'TasksPerIteration', 50 )
     self.maxFailRate = self.am_getOption( 'MaxFailureRate', 30 )
     self.maxWaitingJobs = self.am_getOption( 'MaxWaitingJobs', 1000 )
