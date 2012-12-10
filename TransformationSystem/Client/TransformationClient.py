@@ -61,7 +61,9 @@ class TransformationClient( Client, FileCatalogueBase ):
           getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems)
   """
 
-  def __init__( self, name = 'TransformationClient' ):
+  def __init__( self, **kwargs ):
+    
+    Client.__init__( self, **kwargs )
     self.setServer( 'Transformation/TransformationManager' )
 
   def setServer( self, url ):

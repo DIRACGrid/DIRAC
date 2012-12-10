@@ -53,7 +53,7 @@ class SystemLoggingHandler( RequestHandler ):
       userGroup = 'unknown'
 
     remoteAddress = self.getRemoteAddress()[0]
-    return gLogDB._insertMessage( messageObject, site, nodeFQDN, userDN, userGroup, remoteAddress )
+    return gLogDB.insertMessage( messageObject, site, nodeFQDN, userDN, userGroup, remoteAddress )
 
 
   types_addMessages = [ ListType, StringTypes, StringTypes ]

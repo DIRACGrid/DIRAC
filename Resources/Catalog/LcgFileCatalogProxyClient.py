@@ -11,10 +11,10 @@ class LcgFileCatalogProxyClient( Client ):
   """ File catalog client for LCG File Catalog proxy service
   """
 
-  def __init__( self, url = False ):
+  def __init__( self, url = False, **kwargs ):
     """ Constructor of the LCGFileCatalogProxy client class
     """
-    Client.__init__( self )
+    Client.__init__( self, **kwargs )
     self.method = None
     self.name = 'LFCProxy'
     self.valid = False

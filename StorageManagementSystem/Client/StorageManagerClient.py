@@ -5,13 +5,10 @@
 ########################################################################
 __RCSID__ = "$Id$"
 
-from DIRAC                                          import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.Client                         import Client
-from DIRAC.Core.DISET.RPCClient                     import RPCClient
-from DIRAC.Core.Utilities.List                      import breakListIntoChunks
-import types
+from DIRAC.Core.Base.Client import Client
 
-class StorageManagerClient(Client):
+class StorageManagerClient( Client ):
 
-  def __init__(self):
-    self.setServer('StorageManagement/StorageManager')
+  def __init__( self, **kwargs ):
+    Client.__init__( self, **kwargs )
+    self.setServer( 'StorageManagement/StorageManager' )

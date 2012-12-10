@@ -3,7 +3,7 @@
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
-    insertMessageIntoSystemLoggingDB()
+    insertMessage()
     getMessagesByDate()
     getMessagesByFixedText()
     getMessages()
@@ -415,7 +415,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     return S_OK( int( outValues[0] ) )
 
 
-  def _insertMessage( self, message, site, nodeFQDN, userDN, userGroup, remoteAddress ):
+  def insertMessage( self, message, site, nodeFQDN, userDN, userGroup, remoteAddress ):
     """ This function inserts the Log message into the DB
     """
     messageDate = Time.toString( message.getTime() )
@@ -582,13 +582,13 @@ def testSystemLoggingDB():
 
     gLogger.info( '\n Inserting some records\n' )
     for k in range( records ):
-      result = db._insertMessage( message, site, nodeFQDN,
+      result = db.insertMessage( message, site, nodeFQDN,
                                   userDN, userGroup, remoteAddress )
       assert result['OK']
       assert result['lastRowId'] == k + 1
       assert result['Value'] == 1
 
-    result = db._insertMessage( message, longSite, nodeFQDN,
+    result = db.insertMessage( message, longSite, nodeFQDN,
                                   userDN, userGroup, remoteAddress )
     assert not result['OK']
 
