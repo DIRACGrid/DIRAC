@@ -1552,15 +1552,24 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Get file or directory size. If -l switch is specified, get also the total
         size per Storage Element 
 
-        usage: size [-l] <lfn>|<dir_path> 
+        usage: size [-l] [-f] <lfn>|<dir_path>
+        
+        Switches:
+           -l  long output including per SE report
+           -f  use raw file information and not the storage tables  
     """      
     
     argss = args.split()
     long = False
+    fromFiles = False
     if len(argss) > 0:
       if argss[0] == '-l':
         long = True
         del argss[0]
+    if len(argss) > 0:
+      if argss[0] == '-f':
+        fromFiles = True
+        del argss[0]    
         
     if len(argss) == 1:
       path = argss[0]
@@ -1587,7 +1596,7 @@ File Catalog Client $Revision: 1.17 $Date:
             print "File size failed:",result['Message']
         else:
           print "directory:",path
-          result =  self.fc.getDirectorySize(path,long)          
+          result =  self.fc.getDirectorySize( path, long, fromFiles )          
           if result['OK']:
             if result['Value']['Successful']:
               print "Logical Size:",int_with_commas(result['Value']['Successful'][path]['LogicalSize']), \
