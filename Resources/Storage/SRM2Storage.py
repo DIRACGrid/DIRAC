@@ -384,7 +384,7 @@ class SRM2Storage( StorageBase ):
           successful[pathSURL] = True
         elif urlDict['status'] == 2:
           # This is the case where the file doesn't exist.
-          self.log.debug( "removeFile: File did not exist, sucessfully removed: %s" % pathSURL )
+          self.log.debug( "removeFile: File did not exist, successfully removed: %s" % pathSURL )
           successful[pathSURL] = True
         else:
           errStr = "removeFile: Failed to remove file."

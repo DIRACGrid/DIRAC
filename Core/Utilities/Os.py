@@ -80,7 +80,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
       back the environment
   """
 
-  # add appropiated extension to first element of the tuple (the command)
+  # add appropriate extension to first element of the tuple (the command)
   envAsDict = '&& python -c "import os,sys ; print >> sys.stderr, os.environ"'
 
   # 1.- Choose the right version of the configuration file

@@ -12,13 +12,13 @@ from DIRAC.Core.Base.Client             import Client
 
 class FileCatalogClient(Client):
 
-  def __init__(self,url=None,timeout=0):
+  def __init__( self, url=None, **kwargs ):
     """ Constructor function.
     """
+    Client.__init__( self, **kwargs )
     self.setServer('DataManagement/FileCatalog')
     if url:
       self.setServer(url)
-    self.setTimeout(timeout)
     self.available = False
 #    res = self.isOK()
 #    if res['OK']:
