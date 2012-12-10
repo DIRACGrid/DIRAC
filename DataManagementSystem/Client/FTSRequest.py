@@ -22,7 +22,7 @@ from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface
+from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface, ReplicaManager
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 #from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
@@ -125,7 +125,9 @@ class FTSRequest(object):
     ## disable checksum test by default
     self.__cksmTest = False 
  
-  
+    ## replica manager handler
+    self.replicaManager = ReplicaManager()
+
   ####################################################################
   #
   #  Methods for setting/getting/checking the SEs
@@ -720,9 +722,12 @@ class FTSRequest(object):
         self.__setFileParameter( lfn, 'Reason', "Source file Lost" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
       elif not metadata['Cached']:
-        gLogger.warn("resolveSource: skipping %s - source file not cached" % lfn )
-        self.__setFileParameter( lfn, 'Reason', "Source file not Cached" )
-        self.__setFileParameter( lfn, 'Status', 'Failed' )
+        gLogger.warn("resolveSource: source file %s not cached, prestaging..." % lfn )
+        stage = self.replicaManager.prestageStorageFile( pfn, self.sourceSE, singleFile = True )
+        if not stage["OK"]:
+          gLogger.warn("resolveSource: skipping %s - %s" % ( lfn, stage["Message"] ) )
+          self.__setFileParameter( lfn, 'Reason', stage["Message"] )
+          self.__setFileParameter( lfn, 'Status', 'Failed' )
       elif metadata['Size'] != self.catalogMetadata[lfn]['Size']:
         gLogger.warn("resolveSource: skipping %s - source file size mismatch" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source size mismatch" )
@@ -810,9 +815,9 @@ class FTSRequest(object):
 
   def __filesToSubmit( self ):
     """
-    
-    TODO: exit after first eligible file? that wrong!
+    check if there is at least one file to submit 
 
+    :return: S_OK if at least one file is present, S_ERROR otherwise
     """
     for lfn in self.fileDict:
       lfnStatus = self.fileDict[lfn].get( 'Status' )
@@ -881,8 +886,6 @@ class FTSRequest(object):
   def __resolveFTSServer( self ):
     """
     resolve FTS server to use, it should be the closest one from target SE
-
-    TODO: exception? here? really?
 
     :param self: self reference
     """
