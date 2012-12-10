@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__ = "$Id$"
 
 import sys
 if len( sys.argv ) < 2:
