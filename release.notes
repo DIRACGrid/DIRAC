@@ -1,3 +1,18 @@
+[v6r6p1]
+
+*Core:
+CHANGE: PromptUser - changed log level of the printout to NOTICE
+NEW: Base Client constructor arguments are passed to the RPCClient constructor
+
+*DMS:
+NEW: FTSRequest - added a prestage mechanism for source files
+NEW: FileCatalogClientCLI - added -f swicth to the size command to use raw faile tables 
+     instead of storage usage tables
+
+*WMS:
+FIX: SandboxStoreClient - no more kwargs tricks
+FIX: SandboxStoreClient returns sandbox file name in case of upload failure to allow failover
+
 [v6r6]
 
 *Core
