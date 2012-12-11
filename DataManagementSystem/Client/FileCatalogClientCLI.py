@@ -2235,7 +2235,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Repair catalog inconsistencies
     
         Usage:
-           rebuild directories
+           repair catalog
     """
     
     argss = args.split()
