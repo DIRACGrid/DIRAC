@@ -27,6 +27,15 @@
 """
 __RCSID__ = "$Id$"
 
+from multiprocessing import Process, Pipe
+import threading
+import time
+import select
+import os
+import sys
+import types
+import subprocess
+import signal
 # Very Important:
 #  Here we can not import directly from DIRAC, since this file it is imported
 #  at initialization time therefore the full path is necessary
@@ -36,17 +45,87 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import DEncode
 
-import time
-import select
-import os
-import sys
-import types
-import subprocess
-import signal
+
+class Watchdog( object ):
+  """
+  .. class Watchdog
+
+  timeout watchdog
+  """
+  def __init__( self, func, args=None, kwargs=None ):
+    """ c'tor """
+    self.func = func if callable(func) else None
+    print func, args, kwargs
+    self.args = args if args else tuple()
+    self.kwargs = kwargs if kwargs else {}
+    self.start = self.end = self.pid = None
+    self.__watchdogThread = None
+    self.parentPipe, self.childPipe = Pipe()
+    self.__executor = Process( target = self.run_func, args = (self.childPipe, ) )
+
+  def run_func( self, pipe ):
+    """ Process target """
+    try:
+      print "in run_func"
+      ret = self.func( *self.args, **self.kwargs )
+      print ret
+      pipe.send( ret )
+    except Exception, error:
+      pipe.send( { "OK" : False, "Message" : str(error) } )
+    
+  def watchdog( self ):
+    """ watchdog thread target """
+    print "watchdog start..."
+    while True:
+      if time.time() < self.end:
+        print "watchdog is sleeping for 5 s"
+        time.sleep(5)
+      else:
+        print "exiting while loop"
+        break
+    if not self.__executor.is_alive():
+      print "executor is dead, exiting"
+      return
+    else:
+      print "about to send SIGTERM to", self.pid
+      os.kill( self.pid, signal.SIGTERM )
+      time.sleep(5)
+      if self.__executor.is_alive():
+        print "about to send SIGKILL to", self.pid
+        os.kill( self.pid, signal.SIGKILL )
+      
+  def __call__( self, timeout = 0 ):
+    """ decorator execution """
+    if timeout:
+      self.start = int( time.time() )
+      self.end = self.start + timeout
+      self.__watchdogThread = threading.Thread( target = self.watchdog )
+      self.__watchdogThread.daemon = True
+      self.__watchdogThread.start()
+    ret = { "OK" : False, "Message" : "Timed out" }
+    try:
+      self.__executor.start()
+      time.sleep(0.5)
+      self.pid = self.__executor.pid
+      self.__executor.join( timeout )      
+      if not self.__executor.is_alive():
+        ret = self.parentPipe.recv()
+        print "in __call__, ret = ", ret
+    except Exception, error:
+      return { "OK" : False, "Message" : str(error) }
+    return ret
 
 class Subprocess:
+  """
+  .. class:: Subprocess
 
+  """
   def __init__( self, timeout = False, bufferLimit = 52428800 ):
+    """ c'tor
+
+    :param int timeout: timeout in seconds
+    :param int bufferLimit: buffer size, default 5MB
+    """
     self.log = gLogger.getSubLogger( 'Subprocess' )
     self.timeout = False
     try:
@@ -63,15 +142,23 @@ class Subprocess:
     self.cmdSeq = []
 
   def changeTimeout( self, timeout ):
+    """ set the tim out limit to :timeout: seconds 
+
+    :param int timeout: time out in seconds
+    """
     self.timeout = int( timeout )
     if self.timeout == 0:
       self.timeout = False
     self.log.debug( 'Timeout set to', timeout )
 
   def __readFromFD( self, fd, baseLength = 0 ):
+    """ read from file descriptior :fd:
+
+    :param fd: file descriptior
+    :param int baseLength: ???
+    """
     dataString = ''
     redBuf = " "
-
     while len( redBuf ) > 0:
       redBuf = os.read( fd, 8192 )
       dataString += redBuf
@@ -119,6 +206,11 @@ class Subprocess:
       return select.select( validList , [], [], timeout )[0]
 
   def __killPid( self, pid, sig = 9 ):
+    """ send signal :sig: to process :pid:
+
+    :param int pid: process id
+    :param int sig: signal to send, default 9 (SIGKILL)
+    """
     try:
       os.kill( pid, sig )
     except Exception, x:
@@ -229,7 +321,7 @@ class Subprocess:
           break
         dataString += nB
     except Exception, x:
-      self.log.exception( "SUPROCESS: readFromFile exception" )
+      self.log.exception( "SUBPROCESS: readFromFile exception" )
       try:
         self.log.error( 'Error reading', 'type(nB) =%s' % type( nB ) )
         self.log.error( 'Error reading', 'nB =%s' % str( nB ) )
@@ -374,11 +466,11 @@ def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimi
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, it is executed directly without calling a shell
   """
-  spObject = Subprocess( timeout, bufferLimit = bufferLimit )
-  return spObject.systemCall( cmdSeq,
-                              callbackFunction = callbackFunction,
-                              env = env,
-                              shell = False )
+  spObject = Subprocess( timeout=False, bufferLimit = bufferLimit )
+  sysCall =  Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
+                                                                         "env" : env,
+                                                                         "shell" : False } )
+  return sysCall(timeout)
 
 def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit = 52428800 ):
   """
