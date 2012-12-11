@@ -2206,8 +2206,12 @@ File Catalog Client $Revision: 1.17 $Date:
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return 
-    for key in result['Value']:
-      print key.rjust(15),':',result['Value'][key]  
+    fields = ['Counter','Number']
+    records = []
+    for key,value in result['Value'].items():
+      records.append( ( key, str(value) ) )
+      #print key.rjust(15),':',result['Value'][key]
+    printTable( fields, records )    
       
   def do_rebuild( self, args ):
     """ Rebuild auxiliary tables
@@ -2226,6 +2230,24 @@ File Catalog Client $Revision: 1.17 $Date:
       
     total = time.time() - start
     print "Directory storage info rebuilt in %.2f sec", total    
+    
+  def do_repair( self, args ):
+    """ Repair catalog inconsistencies
+    
+        Usage:
+           rebuild directories
+    """
+    
+    argss = args.split()
+    option = argss[0]
+    start = time.time()
+    result = self.fc.repairCatalog()
+    if not result['OK']:
+      print "Error:", result['Message']
+      return 
+      
+    total = time.time() - start
+    print "Catalog repaired in %.2f sec", total      
       
   def do_exit(self, args):
     """ Exit the shell.
