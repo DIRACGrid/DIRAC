@@ -20,7 +20,16 @@ class DirectoryTreeBase:
     self.db = database
     self.lock = threading.Lock()
     self.treeTable = ''
-    
+   
+  def _getConnection( self, connection ):
+    if connection:
+      return connection
+    res = self.db._getConnection()
+    if res['OK']:
+      return res['Value']
+    gLogger.warn( "Failed to get MySQL connection", res['Message'] )
+    return connection  
+ 
   def getTreeTable(self):
     """ Get the string of the Directory Tree type
     """  
@@ -322,13 +331,13 @@ class DirectoryTreeBase:
     return result
 
 #####################################################################
-  def __setDirectoryUid(self,path,uid):
+  def _setDirectoryUid(self,path,uid):
     """ Set the directory owner
     """
     return self.__setDirectoryParameter(path,'UID',uid)
 
 #####################################################################
-  def __setDirectoryGid(self,path,gid):
+  def _setDirectoryGid(self,path,gid):
     """ Set the directory group
     """
     return self.__setDirectoryParameter(path,'GID',gid)
@@ -344,7 +353,7 @@ class DirectoryTreeBase:
     dirID = result['Value']
     result = self.db.ugManager.findUser(owner)
     uid = result['Value']
-    result = self.__setDirectoryUid(dirID,uid)
+    result = self._setDirectoryUid(dirID,uid)
     return result
   
 #####################################################################
@@ -387,7 +396,7 @@ class DirectoryTreeBase:
     dirID = result['Value']
     result = self.db.ugManager.findGroup(gname)
     gid = result['Value']
-    result = self.__setDirectoryGid(dirID,gid)
+    result = self._setDirectoryGid(dirID,gid)
     return result
   
 #####################################################################
@@ -706,11 +715,12 @@ class DirectoryTreeBase:
     paths = lfns.keys()
     successful = {}
     failed = {}
+    treeTable = self.getTreeTable()
     for path in paths:
 
       if path == "/":
-        req = "SELECT SUM(Size),COUNT(*) FROM FC_Files" 
-        reqDir = "SELECT count(*) FROM FC_DirectoryInfo"
+        req = "SELECT SUM(Size),COUNT(*) FROM FC_Files"
+        reqDir = "SELECT count(*) FROM %s" % treeTable
       else:
         result = self.findDir(path)
         if not result['OK']:
@@ -726,7 +736,7 @@ class DirectoryTreeBase:
           continue
         else:
           dirString = result['Value']
-          req = "SELECT SUM(F.Size),COUNT(*) FROM FC_Files as F JOIN (%s) as T WHERE F.DirID=T.DirID" % dirString 
+          req = "SELECT SUM(F.Size),COUNT(*) FROM FC_Files as F JOIN (%s) as T WHERE F.DirID=T.DirID" % dirString
           reqDir = dirString.replace('SELECT DirID FROM','SELECT count(*) FROM')
 
       result = self.db._query(req,connection)
@@ -933,6 +943,7 @@ class DirectoryTreeBase:
       return S_ERROR('Directory / not found')
     dirID = result['Value']
     result = self.__rebuildDirectoryUsage(dirID)
+    gLogger.verbose( 'Finished rebuilding Directory Usage' )
     return result
     
   def __rebuildDirectoryUsageLeaves( self ):
@@ -944,10 +955,19 @@ class DirectoryTreeBase:
       return result
     
     dirIDs = [ x[0] for x in result['Value'] ]
+    gLogger.verbose( 'Starting rebuilding Directory Usage, number of visible directories %d' % len(dirIDs) )
+    
     insertFields = ['DirID','SEID','SESize','SEFiles','LastUpdate']
     insertCount = 0
     insertValues = []
+
+    count = 0
+    empty = 0
+
     for dirID in dirIDs:
+
+      count += 1
+
       # Get the physical size
       req = "SELECT SUM(F.Size),COUNT(F.Size),R.SEID from FC_Files as F, FC_Replicas as R "
       req += "WHERE F.FileID=R.FileID AND F.DirID=%d GROUP BY R.SEID" % int(dirID)
@@ -955,12 +975,18 @@ class DirectoryTreeBase:
       if not result['OK']:
         return result
       if not result['Value']:
-        continue
+        empty += 1
 
       for seSize,seFiles,seID in result['Value']:       
         insertValues = [dirID,seID,seSize,seFiles,'UTC_TIMESTAMP()'] 
         result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )  
         if not result['OK']:
+          if "Duplicate" in result['Message']:
+            req = "UPDATE FC_DirectoryUsage SET SESize=%d, SEFiles=%d, LastUpdate=UTC_TIMESTAMP()" % ( seSize,seFiles )
+            req += " WHERE DirID=%s AND SEID=%s" % ( dirID, seID )
+            result = self.db._update( req )
+            if not result['OK']:
+              return result
           return result     
  
       # Get the logical size
@@ -974,7 +1000,17 @@ class DirectoryTreeBase:
       insertValues = [dirID,0,seSize,seFiles,'UTC_TIMESTAMP()'] 
       result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )  
       if not result['OK']:
-        return result
+        if "Duplicate" in result['Message']:
+          req = "UPDATE FC_DirectoryUsage SET SESize=%d, SEFiles=%d, LastUpdate=UTC_TIMESTAMP()" % ( seSize,seFiles )
+          req += " WHERE DirID=%s AND SEID=0" % dirID
+          result = self.db._update( req )
+          if not result['OK']:
+            return result
+        else:  
+          return result
+
+    gLogger.verbose( "Processed %d directories, %d empty " % ( count, empty ) )
+
     return S_OK()      
     
   def __rebuildDirectoryUsage( self, directoryID ):
@@ -1025,13 +1061,40 @@ class DirectoryTreeBase:
   def getDirectoryCounters( self, connection = False ):
     """ Get the total number of directories
     """
-    result = self.db._getConnection(connection)
-    if not result['OK']:
-      return result
-    
-    conn = result['Value']
+    conn = self._getConnection(connection)
+    resultDict = {}
     req = "SELECT COUNT(*) from FC_DirectoryInfo"
     res = self.db._query( req, connection )
     if not res['OK']:
       return res
-    return S_OK( {'Directories':res['Value'][0][0]} )
+    resultDict['Directories'] = res['Value'][0][0]
+
+    treeTable = self.getTreeTable()
+
+    req = "SELECT COUNT(DirID) FROM %s WHERE Parent NOT IN ( SELECT DirID from %s )" % (treeTable,treeTable)
+    req += " AND DirID <> 1"
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['Orphan Directories'] = res['Value'][0][0]
+    
+    req = "SELECT COUNT(DirID) FROM %s WHERE DirID NOT IN ( SELECT Parent from %s )" % (treeTable,treeTable)
+    req += " AND DirID NOT IN ( SELECT DirID from FC_Files ) "
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['Empty Directories'] = res['Value'][0][0]
+
+    req = "SELECT COUNT(DirID) FROM %s WHERE DirID NOT IN ( SELECT DirID FROM FC_DirectoryInfo )" % treeTable
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['DirTree w/o DirInfo'] = res['Value'][0][0]
+
+    req = "SELECT COUNT(DirID) FROM FC_DirectoryInfo WHERE DirID NOT IN ( SELECT DirID FROM %s )" % treeTable
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['DirInfo w/o DirTree'] = res['Value'][0][0]
+
+    return S_OK( resultDict )
