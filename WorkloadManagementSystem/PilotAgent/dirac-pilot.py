@@ -478,7 +478,7 @@ if cliParams.flavour == "OSG":
 
 if os.environ.has_key( 'OSG_APP' ):
   # Try to define it here although this will be only in the local shell environment
-  os.environ['VO_%s_SW_DIR' % vo] = os.path.join( 'OSG_APP', vo )
+  os.environ['VO_%s_SW_DIR' % vo] = os.path.join( os.environ('OSG_APP'), vo )
 
 if rootPath == originalRootPath:
   # No special root path was requested
