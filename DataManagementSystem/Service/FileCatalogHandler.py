@@ -309,6 +309,11 @@ class FileCatalogHandler(RequestHandler):
   def export_rebuildDirectoryUsage():
     """ Rebuild DirectoryUsage table from scratch """
     return gFileCatalogDB.rebuildDirectoryUsage()
+  
+  types_repairCatalog = []
+  def export_repairCatalog( self ):
+    """ Repair the catalog inconsistencies """
+    return gFileCatalogDB.repairCatalog( self.getRemoteCredentials() )
 
   ########################################################################
   # Metadata Catalog Operations
