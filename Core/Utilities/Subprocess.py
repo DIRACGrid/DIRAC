@@ -50,12 +50,11 @@ class Watchdog( object ):
   """
   .. class Watchdog
 
-  timeout watchdog
+  timeout watchdog decorator
   """
   def __init__( self, func, args=None, kwargs=None ):
     """ c'tor """
     self.func = func if callable(func) else None
-    print func, args, kwargs
     self.args = args if args else tuple()
     self.kwargs = kwargs if kwargs else {}
     self.start = self.end = self.pid = None
@@ -64,53 +63,53 @@ class Watchdog( object ):
     self.__executor = Process( target = self.run_func, args = (self.childPipe, ) )
 
   def run_func( self, pipe ):
-    """ Process target """
+    """ subprocess target 
+
+    :param Pipe pipe: pipe used for communication
+    """
     try:
-      print "in run_func"
       ret = self.func( *self.args, **self.kwargs )
-      print ret
       pipe.send( ret )
     except Exception, error:
       pipe.send( { "OK" : False, "Message" : str(error) } )
     
   def watchdog( self ):
     """ watchdog thread target """
-    print "watchdog start..."
     while True:
       if time.time() < self.end:
-        print "watchdog is sleeping for 5 s"
         time.sleep(5)
       else:
-        print "exiting while loop"
         break
     if not self.__executor.is_alive():
-      print "executor is dead, exiting"
       return
     else:
-      print "about to send SIGTERM to", self.pid
       os.kill( self.pid, signal.SIGTERM )
       time.sleep(5)
       if self.__executor.is_alive():
-        print "about to send SIGKILL to", self.pid
         os.kill( self.pid, signal.SIGKILL )
       
   def __call__( self, timeout = 0 ):
     """ decorator execution """
+    timeout = int(timeout)
+    ret = { "OK" : True, "Value" : "" }
     if timeout:
       self.start = int( time.time() )
       self.end = self.start + timeout
       self.__watchdogThread = threading.Thread( target = self.watchdog )
       self.__watchdogThread.daemon = True
       self.__watchdogThread.start()
-    ret = { "OK" : False, "Message" : "Timed out" }
+      ret = { "OK" : False, "Message" : "Timed out after %s seconds" % timeout  }
     try:
       self.__executor.start()
       time.sleep(0.5)
       self.pid = self.__executor.pid
-      self.__executor.join( timeout )      
+      if timeout:
+        self.__executor.join( timeout )
+      else:
+        self.__executor.join()
+      ## get results if any
       if not self.__executor.is_alive():
         ret = self.parentPipe.recv()
-        print "in __call__, ret = ", ret
     except Exception, error:
       return { "OK" : False, "Message" : str(error) }
     return ret
@@ -172,6 +171,10 @@ class Subprocess:
     return S_OK( dataString )
 
   def __executePythonFunction( self, function, writePipe, *stArgs, **stKeyArgs ):
+    """
+    execute function :funtion: using :stArgs: and :stKeyArgs:
+
+    """
     try:
       os.write( writePipe, DEncode.encode( S_OK( function( *stArgs, **stKeyArgs ) ) ) )
     except OSError, x:
@@ -258,6 +261,7 @@ class Subprocess:
     return exitStatus[1]
 
   def pythonCall( self, function, *stArgs, **stKeyArgs ):
+    """ call python function :function: with :stArgs: and :stKeyArgs: """
     readFD, writeFD = os.pipe()
     pid = os.fork()
     self.childPID = pid
@@ -477,19 +481,20 @@ def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, cmdSeq it is invoque by /bin/sh
   """
-  spObject = Subprocess( timeout, bufferLimit = bufferLimit )
-  return spObject.systemCall( cmdSeq,
-                              callbackFunction = callbackFunction,
-                              env = env,
-                              shell = True )
+  spObject = Subprocess( timeout=False, bufferLimit = bufferLimit )
+  shellCall = Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
+                                                                          "env" : env,
+                                                                          "shell" : True } )
+  return shellCall(timeout)
 
 def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
   """
      Use SubprocessExecutor class to execute function with provided arguments,
      with a timeout wrapper.
   """
-  spObject = Subprocess( timeout )
-  return spObject.pythonCall( function, *stArgs, **stKeyArgs )
+  spObject = Subprocess( timeout=False )
+  pythonCall = Watchdog( spObject.pythonCall, args=( function, ) + stArgs, kwargs=stKeyArgs )
+  return pythonCall( timeout )
 
 def __getChildrenForPID( ppid ):
   """
