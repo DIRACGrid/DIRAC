@@ -6,12 +6,19 @@ NEW: Base Client constructor arguments are passed to the RPCClient constructor
 
 *DMS:
 NEW: FTSRequest - added a prestage mechanism for source files
-NEW: FileCatalogClientCLI - added -f swicth to the size command to use raw faile tables 
+NEW: FileCatalogClientCLI - added -f switch to the size command to use raw faile tables 
      instead of storage usage tables
+NEW: FileCatalog - added orphan directory repair tool
+NEW: FIleCatalog - more counters to control the catalog sanity     
 
 *WMS:
 FIX: SandboxStoreClient - no more kwargs tricks
 FIX: SandboxStoreClient returns sandbox file name in case of upload failure to allow failover
+FIX: dirac-pilot - fixed VO_%s_SW_DIR env variable in case of OSG
+
+*TS:
+FIX: TransformationManagerHandler - avoid multiple Operations() instantiation in 
+     getTransformationSummaryWeb()
 
 [v6r6]
 

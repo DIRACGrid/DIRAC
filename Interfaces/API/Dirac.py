@@ -66,7 +66,9 @@ class Dirac( API ):
         self.jobRepo = False
 
     self.scratchDir = gConfig.getValue( self.section + '/LocalSite/ScratchDir', '/tmp' )
-    self.sandboxClient = SandboxStoreClient( useCertificates, sbRPCClient, sbTransferClient )
+    self.sandboxClient = SandboxStoreClient( rpcClient=sbRPCClient, 
+                                             transferClient=sbTransferClient, 
+                                             useCertificates=useCertificates  )
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
     # Determine the default file catalog
     self.defaultFileCatalog = ''

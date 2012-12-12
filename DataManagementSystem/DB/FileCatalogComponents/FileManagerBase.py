@@ -31,11 +31,46 @@ class FileManagerBase:
 
   def getFileCounters( self, connection = False ):
     connection = self._getConnection( connection )
+  
+    resultDict = {}
     req = "SELECT COUNT(*) FROM FC_Files;"
     res = self.db._query( req, connection )
     if not res['OK']:
       return res
-    return S_OK( {'Files':res['Value'][0][0]} )
+    resultDict['Files'] = res['Value'][0][0]
+
+    req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN ( SELECT FileID FROM FC_Replicas )"
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['Files w/o Replicas'] = res['Value'][0][0]
+    
+    req = "SELECT COUNT(RepID) FROM FC_Replicas WHERE FileID NOT IN ( SELECT FileID FROM FC_Files )"
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['Replicas w/o Files'] = res['Value'][0][0]
+
+    treeTable = self.db.dtree.getTreeTable()
+    req = "SELECT COUNT(FileID) FROM FC_Files WHERE DirID NOT IN ( SELECT DirID FROM %s)" % treeTable
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['Orphan Files'] = res['Value'][0][0]
+
+    req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN ( SELECT FileID FROM FC_FileInfo)"
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['Files w/o FileInfo'] = res['Value'][0][0]
+
+    req = "SELECT COUNT(FileID) FROM FC_FileInfo WHERE FileID NOT IN ( SELECT FileID FROM FC_Files)"
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['FileInfo w/o Files'] = res['Value'][0][0]
+
+    return S_OK( resultDict )
 
   def getReplicaCounters( self, connection = False ):
     connection = self._getConnection( connection )
