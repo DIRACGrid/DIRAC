@@ -1,46 +1,44 @@
-# $HeadURL $
-''' Configurations
+# $HeadURL:  $
+''' Configurations module
 
-  Collects everything needed to configure policies.
+  Configuration to use policies.
+  
+  Follows the schema:
+  
+  <PolicyNameInCS> : {
+             'description' : <some human readable description>,
+             'module'      : <policy module name>,
+             'command'     : ( <command module name >, < command class name > ),
+             'args'        : { arguments for the command } or None 
+                     }
   
 '''
 
-from DIRAC.ResourceStatusSystem.Utilities import CS
+__RCSID__ = '$Id:  $'
 
-__RCSID__ = '$Id: $'
-
-#pp = CS.getTypedDictRootedAt( 'PolicyParameters' )
-
-def getPolicyParameters():
-  return CS.getTypedDictRootedAtOperations( 'PolicyParameters' )
-
-Policies = {
+POLICIESMETA = {
             
-  'DT_OnGoing_Only' :
+#  'DTOnGoingOnly' :
+#    {
+#      'description' : "Ongoing down-times",
+#      'module'      : 'DTPolicy',
+#      'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
+#      'args'        : None
+#    },
+
+  'DTScheduled' :
     {
-      'Description' : "Ongoing down-times",
-      'module'      : 'DT_Policy',
-      'commandIn'   : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
-      'args'        : None
+      'description' : "Ongoing and scheduled down-times",
+      'module'      : 'DowntimePolicy',
+      'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
+      'args'        : { 'hours' : 12, 'onlyCache' : True },
     },
 
-  'DT_Scheduled' :
+  'AlwaysActive' :
     {
-      'Description'     : "Ongoing and scheduled down-times",
-      'module'          : 'DT_Policy',
-      'commandInNewRes' : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
-      'commandIn'       : ( 'GOCDBStatus_Command', 'DTCached_Command' ),
-      'args'            : ( 12, ),#Hacked to avoid executing code( pp["DTinHours"], ),
-      'Site_Panel'      : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
-                                         'args': None}},],
-      'Resource_Panel'  : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
-                                         'args': None}}]
-    },
-
-  'AlwaysFalse' :
-    {
-      'Description' : "A Policy that always returns false",
-      'commandIn'   : None,
+      'description' : "A Policy that always returns Active",
+      'module'      : 'AlwaysActivePolicy',
+      'command'     : None,
       'args'        : None
     }
             
