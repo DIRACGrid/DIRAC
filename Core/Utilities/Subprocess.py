@@ -192,6 +192,7 @@ class Subprocess:
       os._exit( 0 )
 
   def __selectFD( self, readSeq, timeout = False ):
+    """ select file descriptor from :readSeq: list """
     validList = []
     for fd in readSeq:
       try:
@@ -222,6 +223,7 @@ class Subprocess:
         raise x
 
   def __poll( self, pid ):
+    """ wait for :pid: """
     try:
       return os.waitpid( pid, os.WNOHANG )
     except os.error:
@@ -230,6 +232,10 @@ class Subprocess:
       return None
 
   def killChild( self, recursive = True ):
+    """ kill child process 
+
+    :param boolean recursive: flag to kill all descendants
+    """
     if self.childPID < 1:
       self.log.error( "Could not kill child. Child PID is %s" % self.childPID )
       return - 1
@@ -305,6 +311,12 @@ class Subprocess:
         os.close( readFD )
 
   def __generateSystemCommandError( self, exitStatus, message ):
+    """ create system command error 
+
+    :param int exitStatus: exist status
+    :param str message: error message
+    :return: S_ERROR with additional 'Value' tuple ( existStatus, stdoutBuf, stderrBuf ) 
+    """
     retDict = S_ERROR( message )
     retDict[ 'Value' ] = ( exitStatus,
                            self.bufferList[0][0],
@@ -312,6 +324,9 @@ class Subprocess:
     return retDict
 
   def __readFromFile( self, fd, baseLength, doAll = True ):
+    """ read from file descriptor :fd: and save it to the dedicated buffer
+
+    """
     try:
       dataString = ""
       fn = fd.fileno()
@@ -342,6 +357,7 @@ class Subprocess:
     return S_OK( dataString )
 
   def __readFromSystemCommandOutput( self, fd, bufferIndex ):
+    """ read stdout from file descriptor :fd: """
     retDict = self.__readFromFile( fd,
                                    len( self.bufferList[ bufferIndex ][0] ) )
     if retDict[ 'OK' ]:
@@ -358,6 +374,7 @@ class Subprocess:
                   "%s for '%s' call" % ( retDict['Message'], self.cmdSeq ) )
 
   def systemCall( self, cmdSeq, callbackFunction = None, shell = False, env = None ):
+    """ system call (no shell) - execute :cmdSeq: """
     self.cmdSeq = cmdSeq
     self.callback = callbackFunction
     if sys.platform.find( "win" ) == 0:
@@ -366,11 +383,11 @@ class Subprocess:
       closefd = True
     try:
       self.child = subprocess.Popen( self.cmdSeq,
-                                      shell = shell,
-                                      stdout = subprocess.PIPE,
-                                      stderr = subprocess.PIPE,
-                                      close_fds = closefd,
-                                      env = env )
+                                     shell = shell,
+                                     stdout = subprocess.PIPE,
+                                     stderr = subprocess.PIPE,
+                                     close_fds = closefd,
+                                     env = env )
       self.childPID = self.child.pid
     except OSError, v:
       retDict = S_ERROR( v )
@@ -423,9 +440,11 @@ class Subprocess:
         pass
 
   def getChildPID( self ):
+    """ child pid getter """
     return self.childPID
 
   def __readFromCommand( self, isLast = False ):
+    """ read child stdout and stderr """
     fdList = []
     for i in ( self.child.stdout, self.child.stderr ):
       try:
@@ -447,6 +466,7 @@ class Subprocess:
     return S_OK()
 
   def __callLineCallback( self, bufferIndex ):
+    """ line callback execution """
     nextLineIndex = self.bufferList[ bufferIndex ][0][ self.bufferList[ bufferIndex ][1]: ].find( "\n" )
     if nextLineIndex > -1:
       try:
@@ -482,10 +502,10 @@ def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit
      with a timeout wrapper, cmdSeq it is invoque by /bin/sh
   """
   spObject = Subprocess( timeout=False, bufferLimit = bufferLimit )
-  shellCall = Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
+  shCall = Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
                                                                           "env" : env,
                                                                           "shell" : True } )
-  return shellCall(timeout)
+  return shCall(timeout)
 
 def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
   """
@@ -493,8 +513,8 @@ def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
      with a timeout wrapper.
   """
   spObject = Subprocess( timeout=False )
-  pythonCall = Watchdog( spObject.pythonCall, args=( function, ) + stArgs, kwargs=stKeyArgs )
-  return pythonCall( timeout )
+  pyCall = Watchdog( spObject.pythonCall, args=( function, ) + stArgs, kwargs=stKeyArgs )
+  return pyCall( timeout )
 
 def __getChildrenForPID( ppid ):
   """
