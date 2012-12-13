@@ -54,7 +54,7 @@ class JobPath( OptimizerExecutor ):
 
     argsDict = { 'JobID': jobState.jid,
                  'JobState' : jobState,
-                 'ConfigPath':self.ex_getModuleParam( "section" ) }
+                 'ConfigPath':self.ex_getProperty( "section" ) }
     try:
       modInstance = self.__voPlugins[ voPlugin ]( argsDict )
       result = modInstance.execute()
