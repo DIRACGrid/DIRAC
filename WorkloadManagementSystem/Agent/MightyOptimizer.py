@@ -70,7 +70,7 @@ class MightyOptimizer( AgentModule ):
       while not jobOptimized:
         result = self.optimizeJob( jobId, jobAttrs, jobDef )
         if not result[ 'OK' ]:
-          self.log.error( "Optimizer %s Job %s: %s" % ( jobId, jobAttrs[ 'MinorStatus' ], result[ 'Message' ] ) )
+          self.log.error( "Optimizer %s error" % jobAttrs[ 'MinorStatus' ], "Job %s: %s" % ( str(jobID), result[ 'Message' ] ) )
           jobOK = False
           break
         optResult = result[ 'Value' ]
