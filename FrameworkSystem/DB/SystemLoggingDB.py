@@ -354,7 +354,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
 
     return self._query( cmd )
 
-  def __DBCommit( self, tableName, outFields, inFields, inValues ):
+  def __insertIntoAuxiliaryTable( self, tableName, outFields, inFields, inValues ):
     """  This is an auxiliary function to insert values on a
          satellite Table if they do not exist and returns
          the unique KEY associated to the given set of values
@@ -373,24 +373,34 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     #              'ClientIPs':'ClientFQDN', 
     #              'Sites':'SiteName'}
 
+    # Check if the record is already there and get the rowID
+    condDict = {}
+    condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
+    result = self.getFields( tableName, outFields, condDict = condDict )
+    if not result['OK']:
+      self.log.error( '__insertIntoAuxiliaryTable failed to query DB', result['Message'] )
+      return S_ERROR()
+    if len( result['Value'] ) > 0:
+      return S_OK( int( result['Value'][0][0] ) )
+
     result = self.insertFields( tableName, inFields, inValues )
     rowID = 0
     if not result['OK'] and 'Duplicate entry' not in result['Message']:
-      self.log.error( '__DBCommit failed to insert data into DB', result['Message'] )
+      self.log.error( '__insertIntoAuxiliaryTable failed to insert data into DB', result['Message'] )
       return S_ERROR( 'Could not insert the data into %s table' % tableName )
     elif not result['OK']:
-      self.log.verbose( '__DBCommit duplicated record' )
+      self.log.verbose( '__insertIntoAuxiliaryTable duplicated record' )
     elif result['Value'] == 0:
-      self.log.error( '__DBCommit failed to insert data into DB' )
+      self.log.error( '__insertIntoAuxiliaryTable failed to insert data into DB' )
     else:
       rowID = result['lastRowId']
-      self.log.verbose( '__DBCommit new entry added', rowID )
+      self.log.verbose( '__insertIntoAuxiliaryTable new entry added', rowID )
     # check the inserted values
     condDict = {}
     condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
     result = self.getFields( tableName, outFields + inFields, condDict = condDict )
     if not result['OK']:
-      self.log.error( '__DBCommit failed to query DB', result['Message'] )
+      self.log.error( '__insertIntoAuxiliaryTable failed to query DB', result['Message'] )
       return S_ERROR()
     if len( result['Value'] ) == 0:
       error = 'Could not retrieve inserted values'
@@ -429,7 +439,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inValues = [ userDN, userGroup ]
     inFields = [ 'OwnerDN', 'OwnerGroup' ]
     outFields = [ 'UserDNID' ]
-    result = self.__DBCommit( 'UserDNs', outFields, inFields, inValues )
+    result = self.__insertIntoAuxiliaryTable( 'UserDNs', outFields, inFields, inValues )
     if not result['OK']:
       return result
     messageList.append( result['Value'] )
@@ -440,7 +450,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inFields = [ 'SiteName']
     inValues = [ site ]
     outFields = [ 'SiteID' ]
-    result = self.__DBCommit( 'Sites', outFields, inFields, inValues )
+    result = self.__insertIntoAuxiliaryTable( 'Sites', outFields, inFields, inValues )
     if not result['OK']:
       return result
     siteIDKey = result['Value']
@@ -448,7 +458,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inFields = [ 'ClientIPNumberString' , 'ClientFQDN', 'SiteID' ]
     inValues = [ remoteAddress, nodeFQDN, siteIDKey ]
     outFields = [ 'ClientIPNumberID' ]
-    result = self.__DBCommit( 'ClientIPs', outFields, inFields, inValues )
+    result = self.__insertIntoAuxiliaryTable( 'ClientIPs', outFields, inFields, inValues )
     if not result['OK']:
       return result
     messageList.append( result['Value'] )
@@ -464,7 +474,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inFields = [ 'SystemName' ]
     inValues = [ messageName ]
     outFields = [ 'SystemID'  ]
-    result = self.__DBCommit( 'Systems', outFields, inFields, inValues )
+    result = self.__insertIntoAuxiliaryTable( 'Systems', outFields, inFields, inValues )
     if not result['OK']:
       return result
     systemIDKey = result['Value']
@@ -474,14 +484,14 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inFields = [ 'SubSystemName', 'SystemID' ]
     inValues = [ messageSubSystemName, systemIDKey  ]
     outFields = [ 'SubSystemID' ]
-    result = self.__DBCommit( 'SubSystems', outFields, inFields, inValues )
+    result = self.__insertIntoAuxiliaryTable( 'SubSystems', outFields, inFields, inValues )
     if not result['OK']:
       return result
 
     inFields = [ 'FixedTextString' , 'SubSystemID' ]
     inValues = [ message.getFixedMessage(), systemIDKey ]
     outFields = [ 'FixedTextID' ]
-    result = self.__DBCommit( 'FixedTextMessages', outFields, inFields,
+    result = self.__insertIntoAuxiliaryTable( 'FixedTextMessages', outFields, inFields,
                               inValues )
     if not result['OK']:
       return result
