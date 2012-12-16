@@ -151,7 +151,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                                    'VariableText': 'VARCHAR(255) NOT NULL',
                                                    'UserDNID': 'INT NOT NULL',
                                                    'ClientIPNumberID': 'INT NOT NULL',
-                                                   'LogLevel': 'INT NOT NULL',
+                                                   'LogLevel': 'VARCHAR(15) NOT NULL',
                                                    'FixedTextID': 'INT NOT NULL', },
                                        'PrimaryKey': 'MessageID',
                                        'Indexes': { 'TimeStampsIDX': ['MessageTime'],
