@@ -479,7 +479,7 @@ class MatcherHandler( RequestHandler ):
     if not resAtt['Value']:
       return S_ERROR( 'No attributes returned for job' )
     if not resAtt['Value']['Status'] == 'Waiting':
-      gLogger.error( 'Job %s matched by the TQ is not in Waiting state' % str( jobID ) )
+      gLogger.error( 'Job matched by the TQ is not in Waiting state', str( jobID ) )
       result = gTaskQueueDB.deleteJob( jobID )
       if not result[ 'OK' ]:
         return result
