@@ -487,9 +487,10 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     result = self.__insertIntoAuxiliaryTable( 'SubSystems', outFields, inFields, inValues )
     if not result['OK']:
       return result
+    subSystemIDKey = result['Value']
 
     inFields = [ 'FixedTextString' , 'SubSystemID' ]
-    inValues = [ message.getFixedMessage(), systemIDKey ]
+    inValues = [ message.getFixedMessage(), subSystemIDKey ]
     outFields = [ 'FixedTextID' ]
     result = self.__insertIntoAuxiliaryTable( 'FixedTextMessages', outFields, inFields,
                               inValues )
@@ -498,7 +499,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     messageList.append( result['Value'] )
     fieldsList.extend( outFields )
 
-    return self._insert( 'MessageRepository', fieldsList, messageList )
+    return self.insertFields( 'MessageRepository', fieldsList, messageList )
 
   def _insertDataIntoAgentTable( self, agentName, data ):
     """Insert the persistent data needed by the agents running on top of
@@ -519,7 +520,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     elif result['Value'] == ():
       inFields = [ 'AgentName', 'AgentData' ]
       inValues = [ agentName, escapedData]
-      result = self._insert( 'AgentPersistentData', inFields, inValues )
+      result = self.insertFields( 'AgentPersistentData', inFields, inValues )
       if not result['OK']:
         return result
     cmd = "UPDATE LOW_PRIORITY AgentPersistentData SET AgentData='%s' WHERE AgentID='%s'" % \
