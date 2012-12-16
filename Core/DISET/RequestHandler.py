@@ -112,7 +112,7 @@ class RequestHandler( object ):
       else:
         return S_ERROR( "Unknown action %s" % actionType )
     except RequestHandler.ConnectionError, excp:
-      gLogger.error( str( excp ) )
+      gLogger.error( "ConnectionError", str( excp ) )
       return S_ERROR( excp )
     if  not isReturnStructure( retVal ):
       message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
