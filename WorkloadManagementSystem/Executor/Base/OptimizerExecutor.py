@@ -142,7 +142,6 @@ class OptimizerExecutor( ExecutorModule ):
       if encLength == len( valenc ):
         return S_OK( value )
     except Exception:
-      raise
       self.jobLog.warn( "Opt param %s doesn't seem to be dencoded %s" % ( name, valenc ) )
     return S_OK( eval( valenc ) )
 
