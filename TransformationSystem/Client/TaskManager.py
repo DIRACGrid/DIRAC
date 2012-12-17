@@ -9,14 +9,18 @@ import re, time, types, os, copy
 from DIRAC                                                      import gConfig, S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List                                  import sortList, fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
+from DIRAC.Interfaces.API.Job                                   import Job
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
+from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
+from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 
 class TaskBase( object ):
 
   def __init__( self, transClient = None, logger = None ):
 
     if not transClient:
-      from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
       self.transClient = TransformationClient()
     else:
       self.transClient = transClient
@@ -213,13 +217,11 @@ class WorkflowTasks( TaskBase ):
     super( WorkflowTasks, self ).__init__( transClient, logger )
 
     if not submissionClient:
-      from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
       self.submissionClient = WMSClient()
     else:
       self.submissionClient = submissionClient
 
     if not jobMonitoringClient:
-      from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
       self.jobMonitoringClient = JobMonitoringClient()
     else:
       self.jobMonitoringClient = jobMonitoringClient
@@ -230,13 +232,11 @@ class WorkflowTasks( TaskBase ):
       self.outputDataModule = outputDataModule
 
     if not jobClass:
-      from DIRAC.Interfaces.API.Job import Job
       self.jobClass = Job
     else:
       self.jobClass = jobClass
 
     if not opsH:
-      from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
       self.opsH = Operations()
     else:
       self.opsH = opsH
@@ -372,7 +372,7 @@ class WorkflowTasks( TaskBase ):
         oJob.setInputData( paramsDict['InputData'] )
 
   def _handleRest( self, oJob, paramsDict ):
-    """ add as JDL parameters all the other parameters that are not for inputs or destination 
+    """ add as JDL parameters all the other parameters that are not for inputs or destination
     """
     for paramName, paramValue in paramsDict.items():
       if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
