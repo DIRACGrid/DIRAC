@@ -165,6 +165,13 @@ NEW: InputDataAgent - possibility to refresh only data registered in the last pr
 NEW: TransformationAgent(Client) - management of derived transformations and more ported from LHCbDIRAC
 BUGFIX: TransformationDB - wrong SQL statement generation in setFileStatusForTransformation()
 
+[v6r5p13]
+
+*WMS
+FIX: Executors - VOPlugin will properly send and receive the params
+NEW: Correctors can be defined in an extension
+FIX: Correctors - Properly retrieve info from the CS using the ops helper
+
 [v6r5p12]
 
 FIX: merged in patch v6r4p34
