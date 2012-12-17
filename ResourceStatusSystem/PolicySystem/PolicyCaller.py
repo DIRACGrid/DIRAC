@@ -6,9 +6,9 @@
   
 '''
 
-from DIRAC                                            import gLogger
-from DIRAC.ResourceStatusSystem.Utilities             import Utils
-from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
+from DIRAC                                import S_ERROR
+from DIRAC.ResourceStatusSystem.Utilities import Utils
+from DIRAC.ResourceStatusSystem.Command   import CommandCaller
 
 __RCSID__  = '$Id: $'
 
@@ -17,22 +17,18 @@ class PolicyCaller:
     PolicyCaller loads policies, sets commands and runs them.
   '''
   
-  def __init__( self, commandCallerIn = None, **clients ):
+  def __init__( self, clients = None ):
     '''
       Constructor
     '''
- 
-    if commandCallerIn is None:
-      commandCallerIn = CommandCaller()  
+
+    self.cCaller = CommandCaller  
     
-    self.cCaller = commandCallerIn 
-    self.clients = clients
+    self.clients = {}
+    if clients is not None: 
+      self.clients = clients       
 
-################################################################################
-
-  def policyInvocation( self, granularity = None, name = None,
-                        status = None, policy = None, args = None, pName = None,
-                        pModule = None, extraArgs = None, commandIn = None ):
+  def policyInvocation( self, decissionParams, policyDict ):  
     '''
     Invokes a policy:
 
@@ -49,52 +45,51 @@ class PolicyCaller:
     to get a command object
     '''
 
-    if not policy:
+    if not 'module' in policyDict:
+      return S_ERROR( 'Malformed policyDict %s' % policyDict )
+    pModuleName = policyDict[ 'module' ]
 
-      try:
-      
-        policyModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.%s' % pModule )
-        
-      except ImportError:
-        _msg = 'Unable to import a policy module named %s, falling back on AlwaysFalse_Policy.' % pModule
-        gLogger.warn( _msg )
-        policyModule = __import__( 'DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy',
-                                   globals(), locals(), ['*'] )
-        pModule = 'AlwaysFalse_Policy'
-        
-      try:
-        
-        policy = getattr( policyModule, pModule )()
-        
-      except AttributeError as exc:
-        print policyModule, pModule
-        raise exc
-
-    if not args:
-      args = ( granularity, name )
-
-    if extraArgs:
-      args = args + tuple( extraArgs )
-
-    if commandIn:
-      commandIn = self.cCaller.setCommandObject( commandIn )
-      for clientName, clientInstance in self.clients.items():
-        
-        self.cCaller.setAPI( commandIn, clientName, clientInstance )
-
-    res = self._innerEval( policy, args, commandIn = commandIn )
-    # Just adding the PolicyName to the result of the evaluation of the policy
-    res[ 'PolicyName' ] = pName
-    return res
-
-  def _innerEval( self, policy, arguments, commandIn = None ):
-    '''
-      Policy evaluation
-    '''
+    if not 'command' in policyDict:
+      return S_ERROR( 'Malformed policyDict %s' % policyDict )
+    pCommand = policyDict[ 'command' ]
     
-    policy.setArgs( arguments )
-    policy.setCommand( commandIn )
-    return policy.evaluate()
+    if not 'args' in policyDict:
+      return S_ERROR( 'Malformed policyDict %s' % policyDict )
+    pArgs = policyDict[ 'args' ]
+
+    try:     
+      policyModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.%s' % pModuleName )
+    except ImportError:
+      return S_ERROR( 'Unable to import DIRAC.ResourceStatusSystem.Policy.%s' % pModuleName )
+    
+    if not hasattr( policyModule, pModuleName ):
+      return S_ERROR( '%s has no attibute %s' % ( policyModule, pModuleName ) ) 
+    
+    policy  = getattr( policyModule, pModuleName )() 
+    
+    command = self.cCaller.commandInvocation( pCommand, pArgs, decissionParams, self.clients )
+    if not command[ 'OK' ]:
+      return command
+    command = command[ 'Value' ]
+    
+    evaluationResult = self.policyEvaluation( policy, command )
+    
+    if evaluationResult[ 'OK' ]:
+      evaluationResult[ 'Value' ][ 'Policy' ] = policyDict
+    
+    return evaluationResult
+
+  @staticmethod
+  def policyEvaluation( policy, command ):
+    '''
+    Method that given a policy and a command objects, assigns the second one as 
+    a member of the first and evaluates the policy.
+    '''
+       
+    policy.setCommand( command )
+    evaluationResult = policy.evaluate()
+    
+    return evaluationResult    
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
