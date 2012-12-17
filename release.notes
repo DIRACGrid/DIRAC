@@ -1,5 +1,8 @@
 [v6r7-pre1]
 
+*Core
+NEW: Subprocess - timeout wrapper for subprocess calls
+
 *RSS
 NEW:  general reimplementation: 
       New DB schema using python definition of tables, having three big blocks: Site, Resource and Node.
