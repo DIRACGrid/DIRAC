@@ -1383,8 +1383,7 @@ class TransformationDB( DB ):
       return res
     transType = res['Value']['Type']
     transID = res['Value']['TransformationID']
-    extendableProds = Operations().getValue( 'Production/%s/ExtendableTransfTypes' % self.__class__.__name__,
-                                             ['simulation', 'mcsimulation'] )
+    extendableProds = Operations().getValue( 'Transformations/ExtendableTransfTypes', ['Simulation', 'MCSimulation'] )
     if transType.lower() not in extendableProds:
       return S_ERROR( 'Can not extend non-SIMULATION type production' )
     taskIDs = []

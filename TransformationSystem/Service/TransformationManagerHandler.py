@@ -613,7 +613,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
       # Get the statistics for the number of files for the transformation
       fileDict = {}
       transType = transDict['Type']
-      
+      extendableTranfs = Operations().getValue( 'Transformations/ExtendableTransfTypes',
+                                                ['Simulation', 'MCsimulation'] )
       if transType.lower() in extendableTranfs:
         fileDict['PercentProcessed'] = '-'
       else:
