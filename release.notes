@@ -1,3 +1,10 @@
+[v6r5p13]
+
+*WMS
+FIX: Executors - VOPlugin will properly send and receive the params
+NEW: Correctors can be defined in an extension
+FIX: Correctors - Properly retrieve info from the CS using the ops helper
+
 [v6r5p12]
 
 FIX: merged in patch v6r4p34
