@@ -105,6 +105,11 @@ class JobPath( OptimizerExecutor ):
         self.jobLog.info( 'No input data requirement' )
     #End of path
     opPath.extend( self.ex_getOption( 'EndPath', ['JobScheduling'] ) )
+    uPath = []
+    for opN in opPath:
+      if opN not in uPath:
+        uPath.append( opN )
+    opPath = uPath
     self.jobLog.info( 'Constructed path is: %s' % "->".join( opPath ) )
     result = self.__setOptimizerChain( jobState, opPath )
     if not result['OK']:

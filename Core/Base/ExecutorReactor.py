@@ -173,9 +173,13 @@ class ExecutorReactor( object ):
       taskStub, freezeTime, fastTrackType = result[ 'Value' ]
       if freezeTime:
         return S_OK( ( "TaskFreeze", taskStub, freezeTime ) )
-      if fastTrackLevel < 10 and fastTrackType and fastTrackType in self.__modules:
-        gLogger.notice( "Fast tracking task %s to %s" % ( taskId, fastTrackType ) )
-        return self.__moduleProcess( fastTrackType, taskId, taskStub, fastTrackLevel + 1 )
+      if fastTrackType:
+        if fastTrackLevel < 10 and fastTrackType in self.__modules:
+          gLogger.notice( "Fast tracking task %s to %s" % ( taskId, fastTrackType ) )
+          return self.__moduleProcess( fastTrackType, taskId, taskStub, fastTrackLevel + 1 )
+        else:
+          gLogger.notice( "Stopping %s fast track. Sending back to the mind" % ( taskId ) )
+      
       return S_OK( ( "TaskDone", taskStub, True ) )
 
 
