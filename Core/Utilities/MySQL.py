@@ -523,7 +523,7 @@ class MySQL:
       if cursor.lastrowid:
         retDict[ 'lastRowId' ] = cursor.lastrowid
     except Exception, x:
-      self.log.warn( '_update:', cmd )
+      self.log.warn( '_update: %s: %s' % ( cmd, str(x) ) )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
     try:

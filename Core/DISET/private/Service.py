@@ -318,7 +318,7 @@ class Service:
       #Close the connection if required
       if result[ 'closeTransport' ] or not result[ 'OK' ]:
         if not result[ 'OK' ]:
-          gLogger.error( "Error processing proposal: %s" % result[ 'Message' ] )
+          gLogger.error( "Error processing proposal", result[ 'Message' ] )
         self._transportPool.close( trid )
       return result
     finally:
