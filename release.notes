@@ -19,7 +19,14 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 
 FIX: merged in patch v6r5p13
 
+*WMS
 FIX: SiteDirector - if no community set, look for DIRAC/VirtualOrganization setting
+
+*Framework
+FIX: SystemLoggingDB - LogLevel made VARCHAR in the MessageRepository table
+FIX: Logging - several log messages are split in fixed and variable parts
+FIX: SystemLoggingDB - in insertMessage() do not insert new records in auxiliary tables if they 
+     are already there
 
 [v6r6p1]
 
