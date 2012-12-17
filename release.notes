@@ -15,6 +15,12 @@ NEW:  general reimplementation:
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p2]
+
+FIX: merged in patch v6r5p13
+
+FIX: SiteDirector - if no community set, look for DIRAC/VirtualOrganization setting
+
 [v6r6p1]
 
 *Core:
