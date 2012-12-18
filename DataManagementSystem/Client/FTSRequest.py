@@ -564,7 +564,7 @@ class FTSRequest(object):
     res = self.__submitFTSTransfer()
     if not res['OK']:
       return res
-    resDict = {'ftsGUID':self.ftsGUID, 'ftsServer':self.ftsServer}
+    resDict = { 'ftsGUID' : self.ftsGUID, 'ftsServer' : self.ftsServer }
     print "Submitted %s @ %s" % ( self.ftsGUID, self.ftsServer )
     if monitor:
       self.monitor( untilTerminal = True, printOutput = printOutput )
@@ -837,7 +837,8 @@ class FTSRequest(object):
       lfnStatus = self.fileDict[lfn].get( 'Status' )
       source = self.fileDict[lfn].get( 'Source' )
       target = self.fileDict[lfn].get( 'Target' )
-      if ( lfnStatus != 'Failed' ) and ( lfnStatus != 'Done' ) and source and target:
+      if ( lfnStatus not in ( 'Failed', 'Done' ) ) and source and target:
+        submitted[lfn] = self.fileDict[lfn]
         cksmStr = ""
         ## add chsmType:cksm only if cksmType is specified, else let FTS decide by itself
         if self.__cksmTest and self.__cksmType:
@@ -973,7 +974,6 @@ class FTSRequest(object):
     :param self: self reference
     :param bool printOutput: print summary to stdout
     """
-
     outStr = ''
     for status in sortList( self.statusSummary.keys() ):
       if self.statusSummary[status]:
