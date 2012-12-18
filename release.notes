@@ -1078,7 +1078,7 @@ BUGFIX: Minor bugfixes spotted on the Web development
 FIX: Removed useless decorator from RSS handlers
 CHANGE: ResourceStatus helper tool moved to RSS/Client directory, no RSS objects created if the system is InActive
 CHANGE: Removed ClientFastDec decorator, using a more verbose alternative.
-CHANGE: Removed useless usage of "**kwargs" on helper functions.  
+CHANGE: Removed useless usage of kwargs on helper functions.  
 NEW: added getSESitesList method to RSSClient      
 FIX: _checkFloat() checks INTEGERS, not datetimes
 
