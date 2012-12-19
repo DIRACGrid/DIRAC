@@ -201,33 +201,26 @@ class PDP:
         
     # Get according to the RssMachine the next state, given a candidate    
     candidateState = singlePolicyRes[ 0 ][ 'Status' ]
-    nextStates     = self.rssMachine.getNextStates( candidateState )
+    nextState      = self.rssMachine.getNextState( candidateState )
     
-    if not nextStates[ 'OK' ]:
-      return nextStates
-    nextStates = nextStates[ 'Value' ]
+    if not nextState[ 'OK' ]:
+      return nextState
+    nextState = nextState[ 'Value' ]
     
     # If the RssMachine does not accept the candidate, return forcing message
-    #if nextStates != candidateState:
-    if candidateState not in nextStates:
-      
-      # Assumption: RssMachine, when forcing a State returns a one element list !
-      # Enforced giving as defState for Status object ONE state as string
-      forcedState = nextStates[ 0 ]
-      
-      policyCombined[ 'Status' ] = forcedState
-      policyCombined[ 'Reason' ] = 'RssMachine forced status %s to %s' % ( candidateState, forcedState )
+    if candidateState != nextState:
+                
+      policyCombined[ 'Status' ] = nextState
+      policyCombined[ 'Reason' ] = 'RssMachine forced status %s to %s' % ( candidateState, nextState )
       return S_OK( policyCombined )
     
     # If the RssMachine accepts the candidate, just concatenate the reasons
     for policyRes in singlePolicyRes:
       
-      #if policyRes[ 'Status' ] == nextStates:
-      if policyRes[ 'Status' ] == candidateState:
+      if policyRes[ 'Status' ] == nextState:
         policyCombined[ 'Reason' ] += '%s ###' % policyRes[ 'Reason' ]  
         
-    #policyCombined[ 'Status' ] = nextStates
-    policyCombined[ 'Status' ] = candidateState
+    policyCombined[ 'Status' ] = nextState
     
     return S_OK( policyCombined )                             
 
