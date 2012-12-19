@@ -104,7 +104,7 @@ class RSSMachine( StateMachine ):
                    'Active'   : State( 4 ),
                    'Degraded' : State( 3 ),
                    'Probing'  : State( 2 ),
-                   'Banned'   : State( 1, [ 'Banned', 'Probing' ], defState = 'Probing' ),
+                   'Banned'   : State( 1, [ 'Error', 'Banned', 'Probing' ], defState = 'Probing' ),
                    'Error'    : State( 0 )
                   }
 
