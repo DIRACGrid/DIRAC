@@ -190,33 +190,44 @@ class PDP:
       
       return S_OK( policyCombined )
 
+    # We set the rssMachine on the current state
+    machineStatus = self.rssMachine.setState( self.decissionParams[ 'status' ] )
+    if not machineStatus[ 'OK' ]:
+      return machineStatus
     
-    self.rssMachine.status = self.decissionParams[ 'status' ]
-    # Order statuses by most restrictive
-    policyResults = self.rssMachine.orderPolicyResults( singlePolicyRes )
+    # Order statuses by most restrictive ( lower level first )
+    self.rssMachine.orderPolicyResults( singlePolicyRes )
+    #policyResults = self.rssMachine.orderPolicyResults( singlePolicyRes )
         
     # Get according to the RssMachine the next state, given a candidate    
-    candidateState = policyResults[ 0 ][ 'Status' ]
-    nextState      = self.rssMachine.getNextState( candidateState )
+    candidateState = singlePolicyRes[ 0 ][ 'Status' ]
+    nextStates     = self.rssMachine.getNextStates( candidateState )
     
-    if not nextState[ 'OK' ]:
-      return nextState
-    nextState = nextState[ 'Value' ]
+    if not nextStates[ 'OK' ]:
+      return nextStates
+    nextStates = nextStates[ 'Value' ]
     
     # If the RssMachine does not accept the candidate, return forcing message
-    if nextState != candidateState:
+    #if nextStates != candidateState:
+    if candidateState not in nextStates:
       
-      policyCombined[ 'Status' ] = nextState
-      policyCombined[ 'Reason' ] = 'RssMachine forced status %s to %s' % ( candidateState, nextState )
+      # Assumption: RssMachine, when forcing a State returns a one element list !
+      # Enforced giving as defState for Status object ONE state as string
+      forcedState = nextStates[ 0 ]
+      
+      policyCombined[ 'Status' ] = forcedState
+      policyCombined[ 'Reason' ] = 'RssMachine forced status %s to %s' % ( candidateState, forcedState )
       return S_OK( policyCombined )
     
     # If the RssMachine accepts the candidate, just concatenate the reasons
-    for policyRes in policyResults:
+    for policyRes in singlePolicyRes:
       
-      if policyRes[ 'Status' ] == nextState:
+      #if policyRes[ 'Status' ] == nextStates:
+      if policyRes[ 'Status' ] == candidateState:
         policyCombined[ 'Reason' ] += '%s ###' % policyRes[ 'Reason' ]  
         
-    policyCombined[ 'Status' ] = nextState
+    #policyCombined[ 'Status' ] = nextStates
+    policyCombined[ 'Status' ] = candidateState
     
     return S_OK( policyCombined )                             
 
