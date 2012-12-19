@@ -73,6 +73,21 @@ class StateMachine( object ):
     '''
     return self.states.keys()    
 
+  def getNextState( self, candidateState ):
+    '''
+      - If the candidateState makes no sense, returns error
+      - If the state machine has no status, it returns whatever the candidateState is.
+      - Otherwise, returns whatever transition makes sense according to the rules      
+    '''
+
+    if not candidateState in self.states:
+      return S_ERROR( '%s is not a valid state' % candidateState )
+
+    if self.state is None:
+      return S_OK( candidateState )
+    
+    return S_OK( self.states[ self.state ].transitionRule( candidateState ) )
+
 ################################################################################
    
 class RSSMachine( StateMachine ):
@@ -111,22 +126,7 @@ class RSSMachine( StateMachine ):
       goes wrong. 
     '''
     
-    return self.levelOfState( policyResult[ 'Status' ] ) 
-  
-  def getNextState( self, candidateState ):
-    '''
-      - If the candidateState makes no sense, returns error
-      - If the state machine has no status, it returns whatever the candidateState is.
-      - Otherwise, returns whatever transition makes sense according to the rules      
-    '''
-
-    if not candidateState in self.states:
-      return S_ERROR( '%s is not a valid state' % candidateState )
-
-    if self.state is None:
-      return S_OK( candidateState )
-    
-    return S_OK( self.states[ self.state ].transitionRule( candidateState ) )
+    return self.levelOfState( policyResult[ 'Status' ] )
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
