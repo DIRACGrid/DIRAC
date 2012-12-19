@@ -57,7 +57,8 @@ class EmailAction( BaseAction ):
       # If reason has not changed, we skip
       return S_OK()
 
-    if not 'Banned' in ( status, self.decissionParams[ 'status' ] ):
+    if not set( ( 'Banned', 'Error', 'Unknown' ) ) & set( ( status, self.decissionParams[ 'status' ] ) ):
+      # if not 'Banned', 'Error', 'Unknown' in ( status, self.decissionParams[ 'status' ] ):
       # not really interesting to send an email
       return S_OK()
       
