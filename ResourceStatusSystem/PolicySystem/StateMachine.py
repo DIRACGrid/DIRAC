@@ -26,7 +26,9 @@ class State( object ):
       map, and the proposed next state.
     '''
     defaultNext = ( 1 and self.default ) or nextState
-    return self.map.get( nextState, defaultNext )
+    nextStates  = self.map.get( nextState, defaultNext )
+    # make sure we always return a list of state(s)
+    return list( nextStates ) 
 
 class StateMachine( object ):
   '''
@@ -45,6 +47,20 @@ class StateMachine( object ):
     if not state in self.states:
       return -1
     return self.states[ state ].level
+
+  def setState( self, state ):
+    '''
+      Makes sure the state is either None or known to the machine
+    '''
+    
+    if state is None:
+      self.state = state
+    elif state in self.states.keys():
+      self.state = state
+    else:
+      return S_ERROR( '%s is not a valid state' % state )  
+    
+    return S_OK()
 
   def getStates( self ):
     '''
@@ -81,8 +97,8 @@ class RSSMachine( StateMachine ):
     '''
     
     policyResults.sort( key = self.levelOfPolicyState )
-    
-    return policyResults
+    #We really do not need to return, as the list is mutable
+    #return policyResults
     
   def levelOfPolicyState( self, policyResult ): 
     '''
@@ -92,7 +108,7 @@ class RSSMachine( StateMachine ):
     
     return self.levelOfState( policyResult[ 'Status' ] ) 
   
-  def getNextState( self, candidateState ):
+  def getNextStates( self, candidateState ):
     '''
       - If the candidateState makes no sense, returns error
       - If the state machine has no status, it returns whatever the candidateState is.
