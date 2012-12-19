@@ -28,8 +28,10 @@ class State( object ):
     defaultNext = ( 1 and self.default ) or nextState
     nextStates  = self.map.get( nextState, defaultNext )
     # make sure we always return a list of state(s)
-    return list( nextStates ) 
-
+    if not isinstance( nextStates, list ):
+      nextStates = [ nextStates ]
+    return nextStates  
+    
 class StateMachine( object ):
   '''
     StateMachine class that represents the whole state machine with all transitions.
