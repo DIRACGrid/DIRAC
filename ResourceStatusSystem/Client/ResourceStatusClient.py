@@ -6,8 +6,8 @@
 '''
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-#from DIRAC.Core.DISET.RPCClient                      import RPCClient                   
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
+from DIRAC.Core.DISET.RPCClient                      import RPCClient                   
+#from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
 from DIRAC.ResourceStatusSystem.Utilities            import RssConfiguration  
 
 __RCSID__ = '$Id:  $'
@@ -48,9 +48,8 @@ class ResourceStatusClient( object ):
     '''
     
     if not serviceIn:
-      self.gate = ResourceStatusDB()
-      # FIXME: commented out duriing development           
-      # self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
+      #self.gate = ResourceStatusDB()           
+      self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
     else:
       self.gate = serviceIn 
 
