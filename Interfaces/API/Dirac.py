@@ -1358,9 +1358,9 @@ class Dirac( API ):
        @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
+    if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    else:
+    elif type( lfn ) != types.ListType:   
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     if not sourceSE:
