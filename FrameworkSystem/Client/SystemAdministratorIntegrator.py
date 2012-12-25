@@ -17,11 +17,12 @@ SYSADMIN_PORT = 9162
 
 class SystemAdministratorIntegrator:
 
-  def __init__( self, hosts = None ):
-    """ Constructor function 
+  def __init__( self, **kwargs ):
+    """ Constructor  
     """
-    if hosts is not None:
-      self.__hosts = hosts
+    if 'hosts' in kwargs:
+      self.__hosts = kwargs['hosts']
+      del kwargs['hosts']
     else:  
       result = Registry.getHosts()
       if result['OK']:
@@ -29,6 +30,7 @@ class SystemAdministratorIntegrator:
       else:
         self.__hosts = []
       
+    self.__kwargs = dict( kwargs )  
     self.__pool = ThreadPool( len( self.__hosts ) )  
     self.__resultDict = {}
       
@@ -38,8 +40,8 @@ class SystemAdministratorIntegrator:
 
   def __executeClient( self, host, method, *parms, **kwargs ):
     """ Execute RPC method on a given host 
-    """    
-    client = SystemAdministratorClient( host )
+    """        
+    client = SystemAdministratorClient( host, **self.__kwargs )
     result = getattr( client, method )( *parms, **kwargs )
     result['Host'] = host   
     return result
