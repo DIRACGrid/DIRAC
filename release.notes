@@ -181,6 +181,11 @@ NEW: InputDataAgent - possibility to refresh only data registered in the last pr
 NEW: TransformationAgent(Client) - management of derived transformations and more ported from LHCbDIRAC
 BUGFIX: TransformationDB - wrong SQL statement generation in setFileStatusForTransformation()
 
+[v6r5p14]
+
+*Core
+NEW: Utilities - added Backports utility
+
 [v6r5p13]
 
 *WMS
