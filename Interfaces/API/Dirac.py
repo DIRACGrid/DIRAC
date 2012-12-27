@@ -1358,16 +1358,16 @@ class Dirac( API ):
        @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
+    if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    else:
+    elif type( lfn ) != types.ListType:   
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     if not sourceSE:
       sourceSE = ''
     if not localCache:
       localCache = ''
-    if not type( sourceSE ) == type( " " ):
+    if not type( sourceSE ) in types.StringTypes:
       return self._errorReport( 'Expected string for source SE name' )
     if not type( localCache ) == type( " " ):
       return self._errorReport( 'Expected string for path to local cache' )
