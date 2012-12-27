@@ -31,6 +31,9 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 
 FIX: merged in patch v6r5p14
 
+*Core
+BUGFIX: X509Chain - return the right structure in getCredentials() in case of failure
+
 *Interfaces
 BUGFIX: Dirac.py - allow to pass LFN list to replicateFile()
 
