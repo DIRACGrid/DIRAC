@@ -6,7 +6,7 @@
 __RCSID__ = "$Id$"
 
 from types import *
-import os
+import os, re, commands
 from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
@@ -393,3 +393,52 @@ class SystemAdministratorHandler( RequestHandler ):
       resultDict[c] = {'ErrorsHour':errors_1, 'ErrorsDay':errors_24, 'LastError':lastError}
 
     return S_OK( resultDict )
+
+  types_getHostInfo = []
+  def export_getHostInfo(self):
+    """ Get host current loads, memory, etc
+    """
+
+    result = dict()
+    # Memory info
+    re_parser = re.compile(r'^(?P<key>\S*):\s*(?P<value>\d*)\s*kB' )
+    for line in open('/proc/meminfo'):
+      match = re_parser.match(line)
+      if not match:
+        continue
+      key, value = match.groups(['key', 'value'])
+      result[key] = int(value)
+    
+    for mtype in ['Mem','Swap']:
+      memory = int(result.get(mtype+'Total'))
+      mfree = int(result.get(mtype+'Free'))
+      if memory > 0:
+        percentage = float(memory-mfree)/float(memory)*100.
+      else:
+        percentage = 0
+      name = 'Memory'
+      if mtype == "Swap":
+        name = 'Swap'
+      result[name] = '%.1f%%/%.1fMB' % (percentage,memory/1024.)
+
+    # Loads
+    line = open('/proc/loadavg').read()
+    l1,l5,l15,d1,d2 = line.split()
+    result['Load1'] = l1
+    result['Load5'] = l5
+    result['Load15'] = l15
+    result['Load'] = '/'.join([l1,l5,l15])
+
+    # Disk occupancy
+    summary = ''
+    status,output = commands.getstatusoutput('df')
+    for line in output.split('\n'):
+      if line.startswith('/dev'):
+        fields = line.split()
+        disk = fields[0].replace('/dev/sd','')
+        partition = fields[5]
+        occupancy = fields[4]
+        summary += ",%s:%s" % (partition,occupancy)
+    result['DiskOccupancy'] = summary[1:]
+
+    return S_OK(result)
