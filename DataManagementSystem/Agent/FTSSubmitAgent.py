@@ -184,6 +184,17 @@ class FTSSubmitAgent( AgentModule ):
 """ % ( ftsGUID, ftsServer, str( channelID ), sourceSE, targetSE, str( len( files ) ) )
     self.log.info( infoStr )
 
+    ## filter out skipped files
+    failedFiles = oFTSRequest.getFailed()
+    if not failedFiles["OK"]:
+      self.log.warn("Unable to read skipped LFNs.")
+    failedFiles = failedFiles["Value"] if "Value" in failedFiles else []
+    failedIDs = [ meta["FileID"] for meta in files if meta["LFN"] in failedFiles ]
+    ## only submitted
+    fileIDs = [ fileID for fileID in fileIDs if fileID not in failedIDs ]
+    ## sub failed from total size
+    totalSize -= sum( [ meta["Size"] for meta in files if meta["LFN"] in failedFiles ] )
+
     #########################################################################
     #  Insert the FTS Req details and add the number of files and size
     res = self.transferDB.insertFTSReq( ftsGUID, ftsServer, channelID )
