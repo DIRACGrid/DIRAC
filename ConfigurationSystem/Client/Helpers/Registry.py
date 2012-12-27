@@ -165,6 +165,9 @@ def getGroupOption( groupName, optName, defaultValue = "" ):
 def getHostOption( hostName, optName, defaultValue = "" ):
   return gConfig.getValue( "%s/Hosts/%s/%s" % ( gBaseSecuritySection, hostName, optName ), defaultValue )
 
+def getHosts():
+  return gConfig.getSections( '%s/Hosts' % gBaseSecuritySection )
+
 def getVOOption( voName, optName, defaultValue = "" ):
   return gConfig.getValue( "%s/VO/%s/%s" % ( gBaseSecuritySection, voName, optName ), defaultValue )
 
