@@ -18,6 +18,13 @@ NEW:  general reimplementation:
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p3]
+
+FIX: merged in patch v6r5p14
+
+*Interfaces
+BUGFIX: Dirac.py - allow to pass LFN list to replicateFile()
+
 [v6r6p2]
 
 FIX: merged in patch v6r5p13
@@ -186,6 +193,11 @@ BUGFIX: TransformationDB - wrong SQL statement generation in setFileStatusForTra
 *Core
 NEW: Utilities - added Backports utility
 
+*WMS
+FIX: Use /Operations/JobScheduling section consistently, drop /Operations/Matching section
+NEW: Allow VO specific share correction plugins from extensions
+FIX: Executors - several fixes
+
 [v6r5p13]
 
 *WMS
@@ -200,6 +212,9 @@ FIX: merged in patch v6r4p34
 [v6r5p11]
 
 FIX: merged in patch v6r4p33
+
+*Core
+FIX: MySQL - added offset argument to buildConditions()
 
 [v6r5p10]
 
