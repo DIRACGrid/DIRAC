@@ -1,7 +1,15 @@
-[v6r7-pre1]
+[v6r7-pre2]
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
+
+*Framework
+NEW: SystemAdministratorIntegrator client for collecting info from several hosts
+NEW: SystemAdministrator - added getHostInfo()
+
+*DMS
+FIX: FTSSubmitAgent - file for some reason rejected from submission should stay in 'Waiting' in 
+     TransferDB.Channel table
 
 *RSS
 NEW:  general reimplementation: 
@@ -14,6 +22,7 @@ NEW:  general reimplementation:
       New Generic StateMachine using OOP.
       Commands and Policies simplified.
       ResourceStatus using internal cache, needs to be tested with real load.
+      Fixes for the state machine
       
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
