@@ -190,13 +190,17 @@ class PDP:
       
       return S_OK( policyCombined )
 
+    # We set the rssMachine on the current state
+    machineStatus = self.rssMachine.setState( self.decissionParams[ 'status' ] )
+    if not machineStatus[ 'OK' ]:
+      return machineStatus
     
-    self.rssMachine.status = self.decissionParams[ 'status' ]
-    # Order statuses by most restrictive
-    policyResults = self.rssMachine.orderPolicyResults( singlePolicyRes )
+    # Order statuses by most restrictive ( lower level first )
+    self.rssMachine.orderPolicyResults( singlePolicyRes )
+    #policyResults = self.rssMachine.orderPolicyResults( singlePolicyRes )
         
     # Get according to the RssMachine the next state, given a candidate    
-    candidateState = policyResults[ 0 ][ 'Status' ]
+    candidateState = singlePolicyRes[ 0 ][ 'Status' ]
     nextState      = self.rssMachine.getNextState( candidateState )
     
     if not nextState[ 'OK' ]:
@@ -204,14 +208,14 @@ class PDP:
     nextState = nextState[ 'Value' ]
     
     # If the RssMachine does not accept the candidate, return forcing message
-    if nextState != candidateState:
-      
+    if candidateState != nextState:
+                
       policyCombined[ 'Status' ] = nextState
       policyCombined[ 'Reason' ] = 'RssMachine forced status %s to %s' % ( candidateState, nextState )
       return S_OK( policyCombined )
     
     # If the RssMachine accepts the candidate, just concatenate the reasons
-    for policyRes in policyResults:
+    for policyRes in singlePolicyRes:
       
       if policyRes[ 'Status' ] == nextState:
         policyCombined[ 'Reason' ] += '%s ###' % policyRes[ 'Reason' ]  

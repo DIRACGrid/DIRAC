@@ -15,19 +15,26 @@ class State( object ):
     possible transitions, the default transition and an ordering level.
   '''
   
-  def __init__( self, level, mapState = dict(), defState = None ):
-    self.map     = mapState
-    self.level   = level
-    self.default = defState
-      
+  def __init__( self, level, stateMap = list(), defState = None ):
+    self.stateMap = stateMap
+    self.level    = level
+    self.default  = defState
+
   def transitionRule( self, nextState ):
     '''
       Method that selects next state, knowing the default and the transitions
       map, and the proposed next state.
     '''
+    #If next state is on the list of next states, go ahead.
+    if nextState in self.stateMap:
+      return nextState
+    
+    #If not, calculate defaultState:
+    # if there is a default, that one
+    # otherwise is nextState ( states with empty list have no movement restrictions )
     defaultNext = ( 1 and self.default ) or nextState
-    return self.map.get( nextState, defaultNext )
-
+    return defaultNext
+              
 class StateMachine( object ):
   '''
     StateMachine class that represents the whole state machine with all transitions.
@@ -46,11 +53,40 @@ class StateMachine( object ):
       return -1
     return self.states[ state ].level
 
+  def setState( self, state ):
+    '''
+      Makes sure the state is either None or known to the machine
+    '''
+    
+    if state is None:
+      self.state = state
+    elif state in self.states.keys():
+      self.state = state
+    else:
+      return S_ERROR( '%s is not a valid state' % state )  
+    
+    return S_OK()
+
   def getStates( self ):
     '''
       Returns all possible states
     '''
     return self.states.keys()    
+
+  def getNextState( self, candidateState ):
+    '''
+      - If the candidateState makes no sense, returns error
+      - If the state machine has no status, it returns whatever the candidateState is.
+      - Otherwise, returns whatever transition makes sense according to the rules      
+    '''
+
+    if not candidateState in self.states:
+      return S_ERROR( '%s is not a valid state' % candidateState )
+
+    if self.state is None:
+      return S_OK( candidateState )
+    
+    return S_OK( self.states[ self.state ].transitionRule( candidateState ) )
 
 ################################################################################
    
@@ -68,7 +104,7 @@ class RSSMachine( StateMachine ):
                    'Active'   : State( 4 ),
                    'Degraded' : State( 3 ),
                    'Probing'  : State( 2 ),
-                   'Banned'   : State( 1, { 'Banned' : [ 'Banned', 'Probing' ] }, defState = 'Probing' ),
+                   'Banned'   : State( 1, [ 'Error', 'Banned', 'Probing' ], defState = 'Probing' ),
                    'Error'    : State( 0 )
                   }
 
@@ -81,8 +117,8 @@ class RSSMachine( StateMachine ):
     '''
     
     policyResults.sort( key = self.levelOfPolicyState )
-    
-    return policyResults
+    #We really do not need to return, as the list is mutable
+    #return policyResults
     
   def levelOfPolicyState( self, policyResult ): 
     '''
@@ -90,22 +126,7 @@ class RSSMachine( StateMachine ):
       goes wrong. 
     '''
     
-    return self.levelOfState( policyResult[ 'Status' ] ) 
-  
-  def getNextState( self, candidateState ):
-    '''
-      - If the candidateState makes no sense, returns error
-      - If the state machine has no status, it returns whatever the candidateState is.
-      - Otherwise, returns whatever transition makes sense according to the rules      
-    '''
-
-    if not candidateState in self.states:
-      return S_ERROR( '%s is not a valid state' % candidateState )
-
-    if self.state is None:
-      return S_OK( candidateState )
-    
-    return S_OK( self.states[ self.state ].transitionRule( candidateState ) )
+    return self.levelOfState( policyResult[ 'Status' ] )
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
