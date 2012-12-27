@@ -1367,7 +1367,7 @@ class Dirac( API ):
       sourceSE = ''
     if not localCache:
       localCache = ''
-    if not type( sourceSE ) == type( " " ):
+    if not type( sourceSE ) in types.StringTypes:
       return self._errorReport( 'Expected string for source SE name' )
     if not type( localCache ) == type( " " ):
       return self._errorReport( 'Expected string for path to local cache' )
