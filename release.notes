@@ -33,24 +33,17 @@ FIX: merged in patch v6r5p14
 
 *Core
 BUGFIX: X509Chain - return the right structure in getCredentials() in case of failure
-<<<<<<< HEAD
-=======
 FIX: dirac-deploy-scripts.py - allow short scripts starting from "d"
 FIX: dirac-deploy-scripts.py - added DCOMMANDS_PPID env variable in the script wrapper
 FIX: ExecutorReactor - reduced error message dropping redundant Task ID 
->>>>>>> rel-v6r6
 
 *Interfaces
 BUGFIX: Dirac.py - allow to pass LFN list to replicateFile()
 
-<<<<<<< HEAD
-=======
 *DMS
 FIX: FileManager - extra check if all files are available in _findFiles()
 BUGFIX: FileCatalogClientCLI - bug in DirectoryListing
 
-
->>>>>>> rel-v6r6
 [v6r6p2]
 
 FIX: merged in patch v6r5p13
