@@ -85,6 +85,9 @@ if 'X509_CERT_DIR' not in os.environ and \
   os.path.isdir( os.path.join( DiracRoot, certDir ) ):
   os.environ[ 'X509_CERT_DIR' ] = os.path.join( DiracRoot, certDir )
 
+# DCommands special
+os.environ['DCOMMANDS_PPID'] = str( os.getppid( ) )
+
 if sys.argv[1:]:
   args = ' "%s"' % '" "'.join( sys.argv[1:] )
 else:
