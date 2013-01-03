@@ -85,6 +85,9 @@ if 'X509_CERT_DIR' not in os.environ and \
   os.path.isdir( os.path.join( DiracRoot, certDir ) ):
   os.environ[ 'X509_CERT_DIR' ] = os.path.join( DiracRoot, certDir )
 
+# DCommands special
+os.environ['DCOMMANDS_PPID'] = str( os.getppid( ) )
+
 if sys.argv[1:]:
   args = ' "%s"' % '" "'.join( sys.argv[1:] )
 else:
@@ -120,7 +123,7 @@ if not rootPath:
   sys.exit( 1 )
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
-pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+).py" )
+pythonScriptRE = re.compile( "(.*/)*([a-z]+-|d[a-zA-Z0-9-]+).py" )
 logNOTICE( "Scripts will be deployed at %s" % targetScriptsPath )
 
 if not os.path.isdir( targetScriptsPath ):
