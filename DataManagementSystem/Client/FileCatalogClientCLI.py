@@ -231,8 +231,8 @@ class DirectoryListing:
       print str(e[1]).rjust(wList[1]),
       print str(e[2]).ljust(wList[2]),
       print str(e[3]).ljust(wList[3]),
-      print str(e[4]).rjust(wList[2]),
-      print str(e[5]).rjust(wList[3]),
+      print str(e[4]).rjust(wList[4]),
+      print str(e[5]).rjust(wList[5]),
       print str(e[6])
 
   def addSimpleFile(self,name):
