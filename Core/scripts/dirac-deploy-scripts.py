@@ -120,7 +120,7 @@ if not rootPath:
   sys.exit( 1 )
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
-pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+).py" )
+pythonScriptRE = re.compile( "(.*/)*([a-z]+-|d[a-zA-Z0-9-]+).py" )
 logNOTICE( "Scripts will be deployed at %s" % targetScriptsPath )
 
 if not os.path.isdir( targetScriptsPath ):
