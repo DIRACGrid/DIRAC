@@ -169,7 +169,7 @@ class ExecutorReactor( object ):
       self.__storeInstance( eType, modInstance )
 
       if not result[ 'OK' ]:
-        return S_OK( ( 'TaskError', taskStub, "Task %d has had an error: %s" % ( taskId, result[ 'Message' ] ) ))
+        return S_OK( ( 'TaskError', taskStub, "Error: %s" % result[ 'Message' ] ) )
       taskStub, freezeTime, fastTrackType = result[ 'Value' ]
       if freezeTime:
         return S_OK( ( "TaskFreeze", taskStub, freezeTime ) )
