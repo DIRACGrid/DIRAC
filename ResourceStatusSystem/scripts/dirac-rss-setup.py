@@ -16,6 +16,8 @@ from DIRAC                                          import gLogger, exit as DIRA
 from DIRAC.Core.Base                                import Script
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
 
+__RCSID__  = '$Id:$'
+
 subLogger = None
 
 def registerSwitches():

@@ -13,6 +13,7 @@
         --init                Initialize the element to the status in the CS ( applicable for StorageElements )
         --element=            Element family to be Synchronized ( Site, Resource or Node ) or `all`
     
+    
     Verbosity:
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..        
 """
@@ -22,6 +23,8 @@ from DIRAC.Core.Base                           import Script
 from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem   import StateMachine
 from DIRAC.ResourceStatusSystem.Utilities      import CSHelpers, RssConfiguration, Synchronizer
+
+__RCSID__  = '$Id:$'
 
 subLogger  = None
 switchDict = {}

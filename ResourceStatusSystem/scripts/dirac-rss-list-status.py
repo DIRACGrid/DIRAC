@@ -14,7 +14,7 @@
         --statusType=         StatusType; None if default
         --status=             Status; None if default  
         
-    
+        
     Verbosity:
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..        
 """
@@ -22,6 +22,8 @@
 from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
 from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
+
+__RCSID__  = '$Id:$'
 
 subLogger  = None
 switchDict = {}
