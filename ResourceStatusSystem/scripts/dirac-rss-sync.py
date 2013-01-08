@@ -11,7 +11,7 @@
     Usage:
       dirac-rss-sync
         --init                Initialize the element to the status in the CS ( applicable for StorageElements )
-        --element             Element family to be Synchronized ( Site, Resource or Node ) or `all`
+        --element=            Element family to be Synchronized ( Site, Resource or Node ) or `all`
     
     Verbosity:
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..        
