@@ -205,7 +205,7 @@
 #      **statusType** - `[, string, list]`
 #        it has to be a valid status type for the `Site` granularity
 #      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
 #        `Probing` | `Banned`  
 #      **dateEffective** - `[, datetime, list]`
 #        time-stamp from which the status & status type are effective
@@ -342,7 +342,7 @@
 #      **statusType** - `[, string, list]`
 #        it has to be a valid status type for the `Service` granularity
 #      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
 #        `Probing` | `Banned`  
 #      **dateEffective** - `[, datetime, list]`
 #        time-stamp from which the status & status type are effective
@@ -506,7 +506,7 @@
 #      **statusType** - `[, string, list]`
 #        it has to be a valid status type for the `Resource` granularity
 #      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
 #        `Probing` | `Banned`  
 #      **dateEffective** - `[, datetime, list]`
 #        time-stamp from which the status & status type are effective
@@ -643,7 +643,7 @@
 #      **statusType** - `[, string, list]`
 #        it has to be a valid status type for the `StorageElement` granularity
 #      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
 #        `Probing` | `Banned`  
 #      **dateEffective** - `[, datetime, list]`
 #        time-stamp from which the status & status type are effective
@@ -892,7 +892,7 @@
 #
 #  def getServiceStats( self, siteName, statusType = None ):
 #    '''
-#    Computes simple statistics of `Active`, `Bad`, `Probing` and `Banned` 
+#    Computes simple statistics of `Active`, `Degraded`, `Probing` and `Banned` 
 #    Services of a Site;
 #    
 #    :Parameters:
@@ -917,7 +917,7 @@
 #
 #  def getResourceStats( self, element, name, statusType = None ):
 #    '''
-#    Computes simple statistics of `Active`, `Bad`, `Probing` and `Banned` 
+#    Computes simple statistics of `Active`, `Degraded`, `Probing` and `Banned` 
 #    Resources of a Site or a Service;
 #    
 #    :Parameters:
@@ -976,7 +976,7 @@
 # 
 #  def getStorageElementStats( self, element, name, statusType = None ):
 #    '''
-#    Computes simple statistics of `Active`, `Bad`, `Probing` and `Banned` 
+#    Computes simple statistics of `Active`, `Degraded`, `Probing` and `Banned` 
 #    StorageElements of a Site or a Resource;
 #    
 #    :Parameters:

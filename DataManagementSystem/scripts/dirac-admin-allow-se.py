@@ -101,19 +101,19 @@ for se, seOptions in res[ 'Value' ].items():
   resW = resC = resR = { 'OK' : False }
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if read and seOptions.has_key( 'Read' ):
+  if read and seOptions.has_key( 'ReadAccess' ):
 
-    if not seOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:
+    if not seOptions[ 'ReadAccess' ] in [ "InActive", "Banned", "Probing" ]:
       gLogger.notice( 'Read option for %s is %s, instead of %s' %
-                      ( se, seOptions[ 'Read' ], [ "InActive", "Banned", "Probing" ] ) )
-      gLogger.notice( 'Try specifying the command switchs' )
+                      ( se, seOptions[ 'ReadAccess' ], [ "InActive", "Banned", "Probing" ] ) )
+      gLogger.notice( 'Try specifying the command switches' )
       continue
 
     if 'ARCHIVE' in se:
       gLogger.notice( '%s is not supposed to change Read status to Active' % se )
       continue
 
-    resR = resourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
+    resR = resourceStatus.setStorageElementStatus( se, 'ReadAccess', 'Active', reason, userName )
     if not resR['OK']:
       gLogger.error( "Failed to update %s read access to Active" % se )
     else:
@@ -121,15 +121,15 @@ for se, seOptions in res[ 'Value' ].items():
       readAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if write and seOptions.has_key( 'Write' ):
+  if write and seOptions.has_key( 'WriteAccess' ):
 
-    if not seOptions[ 'Write' ] in [ "InActive", "Banned", "Probing" ]:
+    if not seOptions[ 'WriteAccess' ] in [ "InActive", "Banned", "Probing" ]:
       gLogger.notice( 'Write option for %s is %s, instead of %s' %
-                      ( se, seOptions[ 'Write' ], [ "InActive", "Banned", "Probing" ] ) )
-      gLogger.notice( 'Try specifying the command switchs' )
+                      ( se, seOptions[ 'WriteAccess' ], [ "InActive", "Banned", "Probing" ] ) )
+      gLogger.notice( 'Try specifying the command switches' )
       continue
 
-    resW = resourceStatus.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
+    resW = resourceStatus.setStorageElementStatus( se, 'WriteAccess', 'Active', reason, userName )
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Active" % se )
     else:
@@ -137,15 +137,15 @@ for se, seOptions in res[ 'Value' ].items():
       writeAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if check and seOptions.has_key( 'Check' ):
+  if check and seOptions.has_key( 'CheckAccess' ):
 
-    if not seOptions[ 'Check' ] in [ "InActive", "Banned", "Probing" ]:
+    if not seOptions[ 'CheckAccess' ] in [ "InActive", "Banned", "Probing" ]:
       gLogger.notice( 'Check option for %s is %s, instead of %s' %
-                      ( se, seOptions[ 'Check' ], [ "InActive", "Banned", "Probing" ] ) )
-      gLogger.notice( 'Try specifying the command switchs' )
+                      ( se, seOptions[ 'CheckAccess' ], [ "InActive", "Banned", "Probing" ] ) )
+      gLogger.notice( 'Try specifying the command switches' )
       continue
 
-    resC = resourceStatus.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
+    resC = resourceStatus.setStorageElementStatus( se, 'CheckAccess', 'Active', reason, userName )
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Active" % se )
     else:

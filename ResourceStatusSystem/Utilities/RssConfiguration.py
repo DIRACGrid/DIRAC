@@ -87,7 +87,7 @@ class RssConfiguration:
 #  #  return True
 #  
 #  #XME: Return S_OK
-#  return { 'Site' : { '' : { 'Active' : 2, 'Bad' : 2, 'Probing' : 2, 'Banned' : 2 } } }
+#  return { 'Site' : { '' : { 'Active' : 2, 'Degraded' : 2, 'Probing' : 2, 'Banned' : 2 } } }
 
 ## RssConfiguration/Policies ###################################################
 
@@ -180,7 +180,7 @@ def getValidStatus():
 #  Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/PolicyResult
 #  '''
 #  
-#  DEFAULTS = [ 'Error', 'Unknown', 'Banned', 'Probing', 'Bad', 'Active' ]
+#  DEFAULTS = [ 'Error', 'Unknown', 'Banned', 'Probing', 'Degraded', 'Active' ]
 #  
 #  result = Operations().getValue( 'RSSConfiguration/GeneralConfig/PolicyResult' )
 #  if result is not None:

@@ -1739,14 +1739,14 @@ class ReplicaManager( CatalogToStorage ):
     
     self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
     
-    destSEStatus = self.resourceStatus.getStorageElementStatus( destSE, 'Write' )
+    destSEStatus = self.resourceStatus.getStorageElementStatus( destSE, 'WriteAccess' )
     if not destSEStatus[ 'OK' ]:
       self.log.error( destSEStatus[ 'Message' ] )
       return destSEStatus
-    destSEStatus = destSEStatus[ 'Value' ][ destSE ][ 'Write' ] 
+    destSEStatus = destSEStatus[ 'Value' ][ destSE ][ 'WriteAccess' ] 
  
-    # For RSS, the Active and Bad statuses are OK. Probing and Banned are NOK statuses
-    if not destSEStatus in ( 'Active', 'Bad' ):
+    # For RSS, the Active and Degraded statuses are OK. Probing and Banned are NOK statuses
+    if not destSEStatus in ( 'Active', 'Degraded' ):
       infoStr = "%s Destination Storage Element is currently '%s' for Write" % ( logStr, destSEStatus )
       self.log.info( infoStr, destSE )
       return S_ERROR( infoStr )
@@ -1772,18 +1772,18 @@ class ReplicaManager( CatalogToStorage ):
     
     if sourceSE:
       
-      sourceSEStatus = self.resourceStatus.getStorageElementStatus( sourceSE, 'Read' )
+      sourceSEStatus = self.resourceStatus.getStorageElementStatus( sourceSE, 'ReadAccess' )
       if not sourceSEStatus[ 'OK' ]:
         self.log.error( sourceSEStatus[ 'Message' ] )
         return sourceSEStatus
-      sourceSEStatus = sourceSEStatus[ 'Value' ][ sourceSE ][ 'Read' ] 
+      sourceSEStatus = sourceSEStatus[ 'Value' ][ sourceSE ][ 'ReadAccess' ] 
       
       if sourceSE not in lfnReplicas:
         errStr = "%s LFN does not exist at supplied source SE." % logStr
         self.log.error( errStr, "%s %s" % ( lfn, sourceSE ) )
         return S_ERROR( errStr )
       
-      elif not sourceSEStatus in ( 'Active', 'Bad' ):      
+      elif not sourceSEStatus in ( 'Active', 'Degraded' ):      
 #      elif sourceSE in bannedSources:
         infoStr = "%s Supplied source Storage Element is currently '%s' for Read." % ( logStr, sourceSEStatus )
         self.log.info( infoStr, sourceSE )
@@ -1818,13 +1818,13 @@ class ReplicaManager( CatalogToStorage ):
         self.log.info( "%s %s replica not requested." % ( logStr, diracSE ) )
         continue
       
-      diracSEStatus = self.resourceStatus.getStorageElementStatus( diracSE, 'Read' )
+      diracSEStatus = self.resourceStatus.getStorageElementStatus( diracSE, 'ReadAccess' )
       if not diracSEStatus[ 'OK' ]:
         self.log.error( diracSEStatus[ 'Message' ] )
         continue
-      diracSEStatus = diracSEStatus[ 'Value' ][ diracSE ][ 'Read' ]         
+      diracSEStatus = diracSEStatus[ 'Value' ][ diracSE ][ 'ReadAccess' ]         
       
-      if not diracSEStatus in ( 'Active', 'Bad' ):
+      if not diracSEStatus in ( 'Active', 'Degraded' ):
         self.log.info( "%s %s is currently '%s' as a source." % ( logStr, diracSE, diracSEStatus ) )
       
       #elif diracSE in bannedSources:  
@@ -2500,9 +2500,9 @@ class ReplicaManager( CatalogToStorage ):
       return S_ERROR( 'SE not known' )
 
     seStatus = { 'Read' : True, 'Write' : True }
-    if ( "Read" in res['Value'][se] ) and ( res['Value'][se]['Read'] not in ( 'Active', 'Bad' ) ):
+    if ( "Read" in res['Value'][se] ) and ( res['Value'][se]['Read'] not in ( 'Active', 'Degraded' ) ):
       seStatus[ 'Read' ] = False
-    if ( "Write" in res['Value'][se] ) and ( res['Value'][se]['Write'] not in ( 'Active', 'Bad' ) ):
+    if ( "Write" in res['Value'][se] ) and ( res['Value'][se]['Write'] not in ( 'Active', 'Degraded' ) ):
       seStatus[ 'Write' ] = False
 
     return S_OK( seStatus )
