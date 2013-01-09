@@ -18,7 +18,7 @@ class DowntimePolicy( PolicyBase ):
     '''
       It returns Active status if there is no downtime announced. 
       Banned if the element is in OUTAGE.
-      Bad if it is on WARNING status.
+      Degraded if it is on WARNING status.
       
       Otherwise, it returns error.
     '''

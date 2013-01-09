@@ -995,7 +995,7 @@ class ResourceManagementClient( object ):
 #      **statusType** - `string`
 #        it has to be a valid status type for the given granularity
 #      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
 #        `Probing` | `Banned`    
 #      **reason** - `string`
 #        decision that triggered the assigned status
@@ -1027,7 +1027,7 @@ class ResourceManagementClient( object ):
 #      **statusType** - `string`
 #        it has to be a valid status type for the given granularity
 #      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
 #        `Probing` | `Banned`    
 #      **reason** - `string`
 #        decision that triggered the assigned status
@@ -1059,7 +1059,7 @@ class ResourceManagementClient( object ):
       **statusType** - `[, string, list]`
         it has to be a valid status type for the given granularity
       **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`    
       **reason** - `[, string, list]`
         decision that triggered the assigned status
@@ -1091,7 +1091,7 @@ class ResourceManagementClient( object ):
       **statusType** - `[, string, list]`
         it has to be a valid status type for the given granularity
       **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`    
       **reason** - `[, string, list]`
         decision that triggered the assigned status
@@ -1125,7 +1125,7 @@ class ResourceManagementClient( object ):
       **statusType** - `string`
         it has to be a valid status type for the given element
       **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`    
       **reason** - `string`
         decision that triggered the assigned status
@@ -1162,7 +1162,7 @@ class ResourceManagementClient( object ):
 #      **statusType** - `string`
 #        it has to be a valid status type for the given element
 #      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
 #        `Probing` | `Banned`    
 #      **reason** - `string`
 #        decision that triggered the assigned status
@@ -1200,7 +1200,7 @@ class ResourceManagementClient( object ):
 #      **statusType** - `string`
 #        it has to be a valid status type for the given element
 #      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
 #        `Probing` | `Banned`    
 #      **reason** - `string`
 #        decision that triggered the assigned status
@@ -1233,7 +1233,7 @@ class ResourceManagementClient( object ):
 #      **statusType** - `string`
 #        it has to be a valid status type for the given element
 #      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
 #        `Probing` | `Banned`    
 #      **reason** - `string`
 #        decision that triggered the assigned status
@@ -1265,7 +1265,7 @@ class ResourceManagementClient( object ):
       **statusType** - `[, string, list]`
         it has to be a valid status type for the given element
       **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`    
       **reason** - `[, string, list]`
         decision that triggered the assigned status
@@ -1297,7 +1297,7 @@ class ResourceManagementClient( object ):
       **statusType** - `[, string, list]`
         it has to be a valid status type for the given element
       **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`    
       **reason** - `[, string, list]`
         decision that triggered the assigned status
@@ -1331,7 +1331,7 @@ class ResourceManagementClient( object ):
       **statusType** - `string`
         it has to be a valid status type for the given element
       **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`    
       **reason** - `string`
         decision that triggered the assigned status
@@ -1366,7 +1366,7 @@ class ResourceManagementClient( object ):
 #      **statusType** - `string`
 #        it has to be a valid status type for the given element
 #      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
 #        `Probing` | `Banned`    
 #      **reason** - `string`
 #        decision that triggered the assigned status

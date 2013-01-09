@@ -256,8 +256,9 @@ class ResourceStatus( object ):
     for element in elementName:
     
       if statusType is not None:
-        # Added Allowed by default
-        res = gConfig.getOption( "%s/%s/%s" % ( cs_path, element, statusType ), 'Allowed' )
+        # Added Active by default
+        #res = gConfig.getOption( "%s/%s/%s" % ( cs_path, element, statusType ), 'Allowed' )
+        res = gConfig.getOption( "%s/%s/%s" % ( cs_path, element, statusType ), 'Active' )
         if res[ 'OK' ] and res[ 'Value' ]:
           result[ element ] = { statusType : res[ 'Value' ] }
         
@@ -271,9 +272,10 @@ class ResourceStatus( object ):
               elementStatuses[ elementStatusType ] = value
           
           # If there is no status defined in the CS, we add by default Read and 
-          # Write as Allowed.
+          # Write as Active.
           if elementStatuses == {}:
-            elementStatuses = { 'ReadAccess' : 'Allowed', 'WriteAccess' : 'Allowed' }
+            #elementStatuses = { 'ReadAccess' : 'Allowed', 'WriteAccess' : 'Allowed' }
+            elementStatuses = { 'ReadAccess' : 'Active', 'WriteAccess' : 'Active' }
                 
           result[ element ] = elementStatuses             
     
@@ -327,7 +329,7 @@ class ResourceStatus( object ):
   
     cs_path     = "/Resources/StorageElements"
     
-    csAPI.setOption( "%s/%s/%sAccess" % ( cs_path, elementName, statusType ), status )  
+    csAPI.setOption( "%s/%s/%s" % ( cs_path, elementName, statusType ), status )  
   
     res = csAPI.commitChanges()
     if not res[ 'OK' ]:
