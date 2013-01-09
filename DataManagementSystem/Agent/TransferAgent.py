@@ -840,7 +840,8 @@ class TransferAgent( RequestAgentBase ):
                                                      waitingFileSize, 
                                                      strategy )
       if not tree["OK"]:
-        return tree
+        self.log.warn("scheduleFiles: file %s cannot be scheduled: %s" % ( waitingFileLFN, tree["Message"] ) )
+        continue
 
       tree = tree["Value"]
       self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
