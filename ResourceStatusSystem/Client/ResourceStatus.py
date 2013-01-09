@@ -246,12 +246,7 @@ class ResourceStatus( object ):
     statuses = self.rssConfig.getConfigStatusType( 'StorageElement' )
     #statuses = self.__opHelper.getOptionsDict( 'RSSConfiguration/GeneralConfig/Resources/StorageElement' )
     #statuses = gConfig.getOptionsDict( '/Operations/RSSConfiguration/GeneralConfig/Resources/StorageElement' )
-    
-    if statuses[ 'OK' ]:
-      statuses = statuses[ 'Value' ][ 'StatusType' ]
-    else:
-      statuses = [ 'ReadAccess', 'WriteAccess' ]  
-    
+       
     result = {}
     for element in elementName:
     
@@ -319,11 +314,15 @@ class ResourceStatus( object ):
     
     return res
 
-  @staticmethod
-  def __setCSStorageElementStatus( elementName, statusType, status ):
+  def __setCSStorageElementStatus( self, elementName, statusType, status ):
     '''
     Sets on the CS the StorageElements status
     '''
+
+    statuses = self.rssConfig.getConfigStatusType( 'StorageElement' )
+    if not statusType in statuses:
+      gLogger.error( "%s is not a valid statusType" % statusType )
+      return S_ERROR( "%s is not a valid statusType: %s" % ( statusType, statuses ) )    
 
     csAPI = CSAPI()
   
