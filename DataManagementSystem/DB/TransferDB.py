@@ -1536,7 +1536,7 @@ class TransferDB( DB ):
     :param list idList: list of :table:.:tableID:
     :param list attrList: list of column names from :table:
     """
-    res = self.getFields( table, outFields = [tableID] + attrList, condDict = {tableID:instIDList} )
+    res = self.getFields( table, outFields = [tableID] + attrList, condDict = { tableID : idList } )
     if not res['OK']:
       return res
     try:
