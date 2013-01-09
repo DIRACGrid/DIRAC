@@ -35,7 +35,7 @@ class BaseClient:
   __threadConfig = ThreadConfig()
 
   def __init__( self, serviceName, **kwargs ):
-    if type( serviceName ) != types.StringType:
+    if type( serviceName ) not in types.StringTypes:
       raise TypeError( "Service name expected to be a string. Received %s type %s" %
                        ( str( serviceName ), type( serviceName ) ) )
     self._destinationSrv = serviceName
