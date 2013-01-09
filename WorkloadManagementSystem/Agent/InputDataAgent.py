@@ -11,7 +11,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
-from DIRAC.Resources.Storage.StorageElement                import StorageElement
 
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.List                             import uniqueElements
@@ -285,7 +284,7 @@ class InputDataAgent( OptimizerModule ):
             continue
           try:
             #storageElement = StorageElement( se )
-            result = self.resourceStatus.getStorageElementStatus( se, statusType = 'Read' )
+            result = self.resourceStatus.getStorageElementStatus( se, statusType = 'ReadAccess' )
             if not result['OK']:
               continue
             seDict[se] = { 'Sites': sites['Value'], 'SEParams': result['Value'][se] }
@@ -298,12 +297,12 @@ class InputDataAgent( OptimizerModule ):
             continue
         for site in seDict[se]['Sites']:
           if site in siteCandidates:
-            if seDict[se]['SEParams']['Read'] and seDict[se]['SEParams']['DiskSE']:
+            if seDict[se]['SEParams']['ReadAccess'] and seDict[se]['SEParams']['DiskSE']:
               if lfn not in siteResult[site]['disk']:
                 siteResult[site]['disk'].append( lfn )
                 if lfn in siteResult[site]['tape']:
                   siteResult[site]['tape'].remove( lfn )
-            if seDict[se]['SEParams']['Read'] and seDict[se]['SEParams']['TapeSE']:
+            if seDict[se]['SEParams']['ReadAccess'] and seDict[se]['SEParams']['TapeSE']:
               if lfn not in siteResult[site]['tape'] and lfn not in siteResult[site]['disk']:
                 siteResult[site]['tape'].append( lfn )
 
