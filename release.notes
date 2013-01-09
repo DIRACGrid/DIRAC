@@ -30,6 +30,15 @@ NEW:  general reimplementation:
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p4]
+
+*DMS
+FIX: TransferAgent - protection for files that can not be scheduled
+BUGFIX: TransferDB - typo (instIDList - > idList ) fixed
+
+*Transformation
+BUGFIX: TransformationAgent - typo ( loginfo -> logInfo )
+
 [v6r6p3]
 
 FIX: merged in patch v6r5p14
