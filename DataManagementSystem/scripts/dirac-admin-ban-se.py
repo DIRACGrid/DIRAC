@@ -102,8 +102,8 @@ for se, seOptions in res[ 'Value' ].items():
   # Eventually, we will get rid of the notion of InActive, as we always write Banned.
   if read and seOptions.has_key( 'Read' ):
 
-    if not seOptions[ 'Read' ] in [ 'Active', 'Bad' ]:
-      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'Read' ], [ 'Active', 'Bad' ] ) )
+    if not seOptions[ 'Read' ] in [ 'Active', 'Degraded' ]:
+      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'Read' ], [ 'Active', 'Degraded' ] ) )
       gLogger.notice( 'Try specifying the command switchs' )
     else:
 
@@ -118,8 +118,8 @@ for se, seOptions in res[ 'Value' ].items():
   # Eventually, we will get rid of the notion of InActive, as we always write Banned.
   if write and seOptions.has_key( 'Write' ):
 
-    if not seOptions[ 'Write' ] in [ 'Active', 'Bad' ]:
-      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'Write' ], [ 'Active', 'Bad' ] ) )
+    if not seOptions[ 'Write' ] in [ 'Active', 'Degraded' ]:
+      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'Write' ], [ 'Active', 'Degraded' ] ) )
       gLogger.notice( 'Try specifying the command switchs' )
     else:
 
@@ -134,8 +134,8 @@ for se, seOptions in res[ 'Value' ].items():
   # Eventually, we will get rid of the notion of InActive, as we always write Banned.
   if check and seOptions.has_key( 'Check' ):
 
-    if not seOptions[ 'Check' ] in [ 'Active', 'Bad' ]:
-      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'Check' ], [ 'Active', 'Bad' ] ) )
+    if not seOptions[ 'Check' ] in [ 'Active', 'Degraded' ]:
+      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'Check' ], [ 'Active', 'Degraded' ] ) )
       gLogger.notice( 'Try specifying the command switchs' )
     else:
 
