@@ -1,4 +1,4 @@
-[v6r7-pre3]
+[v6r7-pre4]
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
@@ -23,6 +23,9 @@ NEW:  general reimplementation:
       Commands and Policies simplified.
       ResourceStatus using internal cache, needs to be tested with real load.
       Fixes for the state machine
+      Replaced Bad with Degraded status ( outside RSS ).
+      Added "Access" to Read|Write|Check|Remove SE statuses wherever it applies.
+      ResourceStatus returns by default "Active" instead of "Allowed" for CS calls.
       
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
