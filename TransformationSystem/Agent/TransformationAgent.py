@@ -81,7 +81,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ graceful finalization
     """
     if self.transInQueue:
-      self._loginfo( "Wait for threads to get empty before terminating the agent (%d tasks)" % len( self.transInThread ) )
+      self._logInfo( "Wait for threads to get empty before terminating the agent (%d tasks)" % len( self.transInThread ) )
       self.transInQueue = []
       while self.transInThread:
         time.sleep( 2 )
