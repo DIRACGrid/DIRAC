@@ -15,6 +15,15 @@ NEW:  general reimplementation:
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p5]
+
+*Transformation
+FIX: TransformationAgent - type( transClient -> transfClient )
+FIX: TransformationAgent - self._logInfo -> self.log.info
+FIX: TransformationAgent - skip if no Unused files
+FIX: TransformationAgent - Use CS option for replica cache lifetime
+CHANGE: TransformationAgent - accept No new Unused files every [6] hours
+
 [v6r6p4]
 
 *DMS
