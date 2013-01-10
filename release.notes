@@ -6,6 +6,7 @@ NEW: Subprocess - timeout wrapper for subprocess calls
 *Framework
 NEW: SystemAdministratorIntegrator client for collecting info from several hosts
 NEW: SystemAdministrator - added getHostInfo()
+FIX: dirac-proxy-init - always check for errors in S_OK/ERROR returned structures
 
 *DMS
 FIX: FTSSubmitAgent - file for some reason rejected from submission should stay in 'Waiting' in 
