@@ -256,9 +256,8 @@ class Service:
         value = 'unset'
       self._monitor.setComponentExtraParam( prop[1], value )
     for secondaryName in self._cfg.registerAlsoAs():
-      if secondaryName not in self.servicesDict:
-        gLogger.info( "Registering %s also as %s" % ( self._name, secondaryName ) )
-        self._validNames.append( secondaryName )
+      gLogger.info( "Registering %s also as %s" % ( self._name, secondaryName ) )
+      self._validNames.append( secondaryName )
     return S_OK()
 
   def __reportThreadPoolContents( self ):

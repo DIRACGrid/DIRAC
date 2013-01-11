@@ -112,7 +112,7 @@ class AgentReactor:
       Run all defined agents a given number of cycles
     """
     if agentName:
-      self.loadAgentModule( agentName )
+      self.loadAgentModules( [ agentName ] )
     error = ''
     for aName in self.__agentModules:
       result = self.setAgentModuleCyclesToExecute( aName, numCycles )
