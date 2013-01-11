@@ -80,14 +80,14 @@ from types import ListType, StringTypes
 #
 #  Global constants
 
-gBaseResourcesSection = "/ResourcesNew"
+gBaseResourcesSection = "/Resources"
 RESOURCE_ACCESS_MAPPING = {
   'Computing':'Queue',
   'Storage':'AccessProtocol',
   'Catalog':'',
-  'FileTransfer':'Channel',
+  'Transfer':'Channel',
   'CommunityManagement':'',
-  'Database':''
+  'DBServer':'Database'
 }
 
 ############################################################################
