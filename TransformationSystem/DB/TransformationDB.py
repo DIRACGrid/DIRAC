@@ -7,7 +7,7 @@
 """
 
 import re, time, threading, copy
-from types import IntType, LongType, StringTypes, ListType, TupleType, DictType
+from types import IntType, LongType, StringType, StringTypes, ListType, TupleType, DictType
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
@@ -431,7 +431,7 @@ class TransformationDB( DB ):
     if not res['OK']:
       return res
     paramDict = {}
-    for parameterName, parameterValue, parameterType in res['Value']:
+    for transID, parameterName, parameterValue, parameterType in res['Value']:
       parameterType = eval( parameterType )
       if parameterType in [IntType, LongType]:
         parameterValue = int( parameterValue )
@@ -622,17 +622,17 @@ class TransformationDB( DB ):
         if errorCount >= MAX_ERROR_COUNT:
           if force:
             req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=0"
-            req = req + " WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
+            req = ( req + " WHERE TransformationID=%d AND FileID=%d;") % ( status, transID, fileID )
           else:
             failed[lfn] = 'Max number of resets reached'
             req = "UPDATE TransformationFiles SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP()"
-            req = req + " WHERE TransformationID=%d AND FileID=%d;" % ( transID, fileID )
+            req = ( req + " WHERE TransformationID=%d AND FileID=%d;") % ( transID, fileID )
         else:
           req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=ErrorCount+1"
-          req = req + " WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
+          req = ( req + " WHERE TransformationID=%d AND FileID=%d;" ) % ( status, transID, fileID )
       else:
         req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP()"
-        req = req + " WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
+        req = ( req + " WHERE TransformationID=%d AND FileID=%d;" ) % ( status, transID, fileID )
       if not req:
         continue
       res = self._update( req, connection )
@@ -748,7 +748,7 @@ class TransformationDB( DB ):
     """ Make necessary updates to the TransformationFiles table for the newly created task
     """
     req = "UPDATE TransformationFiles SET TaskID='%d',UsedSE='%s',Status='Assigned',LastUpdate=UTC_TIMESTAMP()"
-    req = req + " WHERE TransformationID = %d AND FileID IN (%s);" % ( taskID, se, transID, intListToString( fileIDs ) )
+    req = ( req + " WHERE TransformationID = %d AND FileID IN (%s);" ) % ( taskID, se, transID, intListToString( fileIDs ) )
     res = self._update( req, connection )
     if not res['OK']:
       gLogger.error( "Failed to assign file to task", res['Message'] )
@@ -1383,8 +1383,7 @@ class TransformationDB( DB ):
       return res
     transType = res['Value']['Type']
     transID = res['Value']['TransformationID']
-    extendableProds = Operations().getValue( 'Production/%s/ExtendableTransfTypes' % self.__class__.__name__,
-                                             ['simulation', 'mcsimulation'] )
+    extendableProds = Operations().getValue( 'Transformations/ExtendableTransfTypes', ['Simulation', 'MCSimulation'] )
     if transType.lower() not in extendableProds:
       return S_ERROR( 'Can not extend non-SIMULATION type production' )
     taskIDs = []

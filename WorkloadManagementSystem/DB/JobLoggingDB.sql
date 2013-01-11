@@ -40,5 +40,5 @@ CREATE TABLE LoggingInfo (
     StatusTimeOrder DOUBLE(11,3) NOT NULL,  
     StatusSource VARCHAR(32) NOT NULL DEFAULT 'Unknown',
     INDEX (JobID)
-);
+) ENGINE = InnoDB;
 

@@ -141,7 +141,7 @@ class ModuleLoader( object ):
         className = List.fromChar( handlerPath, "." )[-1]
         result = self.__recurseImport( handlerPath )
         if not result[ 'OK' ]:
-          return S_ERROR( "Cannot load user defined handler %s: %s" % ( handlerPath, result[ 'Value' ] ) )
+          return S_ERROR( "Cannot load user defined handler %s: %s" % ( handlerPath, result[ 'Message' ] ) )
         gLogger.verbose( "Loaded %s" % handlerPath )
       elif parentModule:
         #If we've got a parent module, load from there.
@@ -177,7 +177,7 @@ class ModuleLoader( object ):
         if '__file__' in dir( modObj ):
           location = modObj.__file__
         else:
-          locateion = modObj.__path__
+          location = modObj.__path__
         gLogger.exception( "%s module does not have a %s class!" % ( location, module ) )
         return S_ERROR( "Cannot load %s" % module )
       #Check if it's subclass

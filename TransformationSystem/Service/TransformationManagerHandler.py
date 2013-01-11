@@ -284,9 +284,9 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods for file manipulation
   #
 
-  types_getFileSummary = [ListType, transTypes]
-  def export_getFileSummary( self, lfns, transName ):
-    res = database.getFileSummary( lfns, transName )
+  types_getFileSummary = [ListType]
+  def export_getFileSummary( self, lfns ):
+    res = database.getFileSummary( lfns )
     return self._parseRes( res )
 
   types_addDirectory = [StringType]
@@ -591,6 +591,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
     transList = trList[ini:last]
 
     statusDict = {}
+    extendableTranfs = Operations().getValue( "Production/%s/ExtendableTransfTypes" % database.__class__.__name__,
+                                              'mcsimulation' )
     # Add specific information for each selected transformation
     for trans in transList:
       transDict = dict( zip( paramNames, trans ) )
@@ -611,8 +613,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
       # Get the statistics for the number of files for the transformation
       fileDict = {}
       transType = transDict['Type']
-      extendableTranfs = Operations().getValue( "Production/%s/ExtendableTransfTypes" % database.__class__.__name__,
-                                                'mcsimulation' )
+      extendableTranfs = Operations().getValue( 'Transformations/ExtendableTransfTypes',
+                                                ['Simulation', 'MCsimulation'] )
       if transType.lower() in extendableTranfs:
         fileDict['PercentProcessed'] = '-'
       else:

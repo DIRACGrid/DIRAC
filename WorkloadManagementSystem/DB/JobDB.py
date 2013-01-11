@@ -1526,6 +1526,11 @@ class JobDB( DB ):
     if not res['OK']:
       return res
 
+    # Delete optimizer parameters
+    cmd = 'DELETE FROM OptimizerParameters WHERE JobID=%s' % ( e_jobID )
+    if not self._update( cmd )['OK']:
+      return S_ERROR( 'JobDB.removeJobOptParameter: operation failed.' )
+
     # the Jobreceiver needs to know if there is InputData ??? to decide which optimizer to call
     # proposal: - use the getInputData method
     res = self.getJobJDL( jobID, original = True )

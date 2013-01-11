@@ -231,8 +231,8 @@ class DirectoryListing:
       print str(e[1]).rjust(wList[1]),
       print str(e[2]).ljust(wList[2]),
       print str(e[3]).ljust(wList[3]),
-      print str(e[4]).rjust(wList[2]),
-      print str(e[5]).rjust(wList[3]),
+      print str(e[4]).rjust(wList[4]),
+      print str(e[5]).rjust(wList[5]),
       print str(e[6])
 
   def addSimpleFile(self,name):
@@ -1552,15 +1552,24 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Get file or directory size. If -l switch is specified, get also the total
         size per Storage Element 
 
-        usage: size [-l] <lfn>|<dir_path> 
+        usage: size [-l] [-f] <lfn>|<dir_path>
+        
+        Switches:
+           -l  long output including per SE report
+           -f  use raw file information and not the storage tables  
     """      
     
     argss = args.split()
     long = False
+    fromFiles = False
     if len(argss) > 0:
       if argss[0] == '-l':
         long = True
         del argss[0]
+    if len(argss) > 0:
+      if argss[0] == '-f':
+        fromFiles = True
+        del argss[0]    
         
     if len(argss) == 1:
       path = argss[0]
@@ -1587,7 +1596,7 @@ File Catalog Client $Revision: 1.17 $Date:
             print "File size failed:",result['Message']
         else:
           print "directory:",path
-          result =  self.fc.getDirectorySize(path,long)          
+          result =  self.fc.getDirectorySize( path, long, fromFiles )          
           if result['OK']:
             if result['Value']['Successful']:
               print "Logical Size:",int_with_commas(result['Value']['Successful'][path]['LogicalSize']), \
@@ -2197,8 +2206,12 @@ File Catalog Client $Revision: 1.17 $Date:
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return 
-    for key in result['Value']:
-      print key.rjust(15),':',result['Value'][key]  
+    fields = ['Counter','Number']
+    records = []
+    for key,value in result['Value'].items():
+      records.append( ( key, str(value) ) )
+      #print key.rjust(15),':',result['Value'][key]
+    printTable( fields, records )    
       
   def do_rebuild( self, args ):
     """ Rebuild auxiliary tables
@@ -2217,6 +2230,24 @@ File Catalog Client $Revision: 1.17 $Date:
       
     total = time.time() - start
     print "Directory storage info rebuilt in %.2f sec", total    
+    
+  def do_repair( self, args ):
+    """ Repair catalog inconsistencies
+    
+        Usage:
+           repair catalog
+    """
+    
+    argss = args.split()
+    option = argss[0]
+    start = time.time()
+    result = self.fc.repairCatalog()
+    if not result['OK']:
+      print "Error:", result['Message']
+      return 
+      
+    total = time.time() - start
+    print "Catalog repaired in %.2f sec", total      
       
   def do_exit(self, args):
     """ Exit the shell.

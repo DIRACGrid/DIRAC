@@ -69,7 +69,7 @@ class TaskQueueDB( DB ):
     return self.__multiValueMatchFields
 
   def __getCSOption( self, optionName, defValue ):
-    return self.__opsHelper.getValue( "Matching/%s" % optionName, defValue )
+    return self.__opsHelper.getValue( "JobScheduling/%s" % optionName, defValue )
 
   def getPrivatePilots( self ):
     return self.__getCSOption( "PrivatePilotTypes", [ 'private' ] )
@@ -805,15 +805,12 @@ class TaskQueueDB( DB ):
     return S_OK( retVal[ 'Value' ][0] )
 
   def __deleteTQIfEmpty( self, args ):
-    print "[ADRILETE] PRE"
     ( tqId, tqOwnerDN, tqOwnerGroup ) = args
-    print "[ADRILETE] POST"
     retries = 3
     while retries:
       retries -= 1
       result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup )
       if result[ 'OK' ]:
-        print "[ADRILETE] OK"
         return
     gLogger.error( "Could not delete TQ %s: %s" % ( tqId, result[ 'Message' ] ) )
 

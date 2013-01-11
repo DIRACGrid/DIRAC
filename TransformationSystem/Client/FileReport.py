@@ -1,4 +1,4 @@
-""" FileReport class encapsulates methods to report file status to the transformation DB """
+''' FileReport class encapsulates methods to report file status to the transformation DB '''
 
 __RCSID__ = "$Id: FileReport.py 18161 2009-11-11 12:07:09Z acasajus $"
 
@@ -9,6 +9,8 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestCo
 import copy
 
 class FileReport:
+  ''' A stateful object for reporting to TransformationDB
+  '''
 
   def __init__( self, server = 'Transformation/TransformationManager' ):
     self.client = TransformationClient()
@@ -17,7 +19,7 @@ class FileReport:
     self.transformation = None
 
   def setFileStatus( self, transformation, lfn, status, sendFlag = False ):
-    """ Set file status in the context of the given transformation """
+    ''' Set file status in the context of the given transformation '''
     if not self.transformation:
       self.transformation = transformation
     self.statusDict[lfn] = status
@@ -26,17 +28,17 @@ class FileReport:
     return S_OK()
 
   def setCommonStatus( self, status ):
-    """ Set common status for all files in the internal cache """
+    ''' Set common status for all files in the internal cache '''
     for lfn in self.statusDict.keys():
       self.statusDict[lfn] = status
     return S_OK()
 
   def getFiles( self ):
-    """ Get the statuses of the files already accumulated in the FileReport object """
+    ''' Get the statuses of the files already accumulated in the FileReport object '''
     return copy.deepcopy( self.statusDict )
 
   def commit( self ):
-    """ Commit pending file status update records """
+    ''' Commit pending file status update records '''
     if not self.statusDict:
       return S_OK()
 
@@ -68,7 +70,7 @@ class FileReport:
     return result
 
   def generateRequest( self ):
-    """ Commit the accumulated records and generate request eventually """
+    ''' Commit the accumulated records and generate request eventually '''
     result = self.commit()
     request = None
     if not result['OK']:

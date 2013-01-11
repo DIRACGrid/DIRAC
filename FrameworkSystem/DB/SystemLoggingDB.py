@@ -3,7 +3,7 @@
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
-    insertMessageIntoSystemLoggingDB()
+    insertMessage()
     getMessagesByDate()
     getMessagesByFixedText()
     getMessages()
@@ -151,7 +151,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                                    'VariableText': 'VARCHAR(255) NOT NULL',
                                                    'UserDNID': 'INT NOT NULL',
                                                    'ClientIPNumberID': 'INT NOT NULL',
-                                                   'LogLevel': 'INT NOT NULL',
+                                                   'LogLevel': 'VARCHAR(15) NOT NULL',
                                                    'FixedTextID': 'INT NOT NULL', },
                                        'PrimaryKey': 'MessageID',
                                        'Indexes': { 'TimeStampsIDX': ['MessageTime'],
@@ -178,6 +178,9 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     """
     DB.__init__( self, 'SystemLoggingDB', 'Framework/SystemLoggingDB',
                  maxQueueSize, debug = DEBUG )
+    result = self._checkTable()
+    if not result['OK']:
+      gLogger.error( 'Failed to check/create the database tables', result['Message'] )
 
   def _checkTable( self ):
     """ Make sure the tables are created
@@ -351,7 +354,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
 
     return self._query( cmd )
 
-  def __DBCommit( self, tableName, outFields, inFields, inValues ):
+  def __insertIntoAuxiliaryTable( self, tableName, outFields, inFields, inValues ):
     """  This is an auxiliary function to insert values on a
          satellite Table if they do not exist and returns
          the unique KEY associated to the given set of values
@@ -370,24 +373,34 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     #              'ClientIPs':'ClientFQDN', 
     #              'Sites':'SiteName'}
 
+    # Check if the record is already there and get the rowID
+    condDict = {}
+    condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
+    result = self.getFields( tableName, outFields, condDict = condDict )
+    if not result['OK']:
+      self.log.error( '__insertIntoAuxiliaryTable failed to query DB', result['Message'] )
+      return S_ERROR()
+    if len( result['Value'] ) > 0:
+      return S_OK( int( result['Value'][0][0] ) )
+
     result = self.insertFields( tableName, inFields, inValues )
     rowID = 0
     if not result['OK'] and 'Duplicate entry' not in result['Message']:
-      self.log.error( '__DBCommit failed to insert data into DB', result['Message'] )
+      self.log.error( '__insertIntoAuxiliaryTable failed to insert data into DB', result['Message'] )
       return S_ERROR( 'Could not insert the data into %s table' % tableName )
     elif not result['OK']:
-      self.log.verbose( '__DBCommit duplicated record' )
+      self.log.verbose( '__insertIntoAuxiliaryTable duplicated record' )
     elif result['Value'] == 0:
-      self.log.error( '__DBCommit failed to insert data into DB' )
+      self.log.error( '__insertIntoAuxiliaryTable failed to insert data into DB' )
     else:
       rowID = result['lastRowId']
-      self.log.verbose( '__DBCommit new entry added', rowID )
+      self.log.verbose( '__insertIntoAuxiliaryTable new entry added', rowID )
     # check the inserted values
     condDict = {}
     condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
     result = self.getFields( tableName, outFields + inFields, condDict = condDict )
     if not result['OK']:
-      self.log.error( '__DBCommit failed to query DB', result['Message'] )
+      self.log.error( '__insertIntoAuxiliaryTable failed to query DB', result['Message'] )
       return S_ERROR()
     if len( result['Value'] ) == 0:
       error = 'Could not retrieve inserted values'
@@ -412,7 +425,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     return S_OK( int( outValues[0] ) )
 
 
-  def _insertMessage( self, message, site, nodeFQDN, userDN, userGroup, remoteAddress ):
+  def insertMessage( self, message, site, nodeFQDN, userDN, userGroup, remoteAddress ):
     """ This function inserts the Log message into the DB
     """
     messageDate = Time.toString( message.getTime() )
@@ -426,7 +439,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inValues = [ userDN, userGroup ]
     inFields = [ 'OwnerDN', 'OwnerGroup' ]
     outFields = [ 'UserDNID' ]
-    result = self.__DBCommit( 'UserDNs', outFields, inFields, inValues )
+    result = self.__insertIntoAuxiliaryTable( 'UserDNs', outFields, inFields, inValues )
     if not result['OK']:
       return result
     messageList.append( result['Value'] )
@@ -437,7 +450,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inFields = [ 'SiteName']
     inValues = [ site ]
     outFields = [ 'SiteID' ]
-    result = self.__DBCommit( 'Sites', outFields, inFields, inValues )
+    result = self.__insertIntoAuxiliaryTable( 'Sites', outFields, inFields, inValues )
     if not result['OK']:
       return result
     siteIDKey = result['Value']
@@ -445,7 +458,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inFields = [ 'ClientIPNumberString' , 'ClientFQDN', 'SiteID' ]
     inValues = [ remoteAddress, nodeFQDN, siteIDKey ]
     outFields = [ 'ClientIPNumberID' ]
-    result = self.__DBCommit( 'ClientIPs', outFields, inFields, inValues )
+    result = self.__insertIntoAuxiliaryTable( 'ClientIPs', outFields, inFields, inValues )
     if not result['OK']:
       return result
     messageList.append( result['Value'] )
@@ -461,7 +474,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inFields = [ 'SystemName' ]
     inValues = [ messageName ]
     outFields = [ 'SystemID'  ]
-    result = self.__DBCommit( 'Systems', outFields, inFields, inValues )
+    result = self.__insertIntoAuxiliaryTable( 'Systems', outFields, inFields, inValues )
     if not result['OK']:
       return result
     systemIDKey = result['Value']
@@ -471,21 +484,22 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inFields = [ 'SubSystemName', 'SystemID' ]
     inValues = [ messageSubSystemName, systemIDKey  ]
     outFields = [ 'SubSystemID' ]
-    result = self.__DBCommit( 'SubSystems', outFields, inFields, inValues )
+    result = self.__insertIntoAuxiliaryTable( 'SubSystems', outFields, inFields, inValues )
     if not result['OK']:
       return result
+    subSystemIDKey = result['Value']
 
     inFields = [ 'FixedTextString' , 'SubSystemID' ]
-    inValues = [ message.getFixedMessage(), systemIDKey ]
+    inValues = [ message.getFixedMessage(), subSystemIDKey ]
     outFields = [ 'FixedTextID' ]
-    result = self.__DBCommit( 'FixedTextMessages', outFields, inFields,
+    result = self.__insertIntoAuxiliaryTable( 'FixedTextMessages', outFields, inFields,
                               inValues )
     if not result['OK']:
       return result
     messageList.append( result['Value'] )
     fieldsList.extend( outFields )
 
-    return self._insert( 'MessageRepository', fieldsList, messageList )
+    return self.insertFields( 'MessageRepository', fieldsList, messageList )
 
   def _insertDataIntoAgentTable( self, agentName, data ):
     """Insert the persistent data needed by the agents running on top of
@@ -506,7 +520,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     elif result['Value'] == ():
       inFields = [ 'AgentName', 'AgentData' ]
       inValues = [ agentName, escapedData]
-      result = self._insert( 'AgentPersistentData', inFields, inValues )
+      result = self.insertFields( 'AgentPersistentData', inFields, inValues )
       if not result['OK']:
         return result
     cmd = "UPDATE LOW_PRIORITY AgentPersistentData SET AgentData='%s' WHERE AgentID='%s'" % \
@@ -579,13 +593,13 @@ def testSystemLoggingDB():
 
     gLogger.info( '\n Inserting some records\n' )
     for k in range( records ):
-      result = db._insertMessage( message, site, nodeFQDN,
+      result = db.insertMessage( message, site, nodeFQDN,
                                   userDN, userGroup, remoteAddress )
       assert result['OK']
       assert result['lastRowId'] == k + 1
       assert result['Value'] == 1
 
-    result = db._insertMessage( message, longSite, nodeFQDN,
+    result = db.insertMessage( message, longSite, nodeFQDN,
                                   userDN, userGroup, remoteAddress )
     assert not result['OK']
 

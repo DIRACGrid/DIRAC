@@ -8,8 +8,7 @@
 """
 
 from DIRAC.Core.Base.AgentModule                           import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, getVO, Registry, Operations, Resources
-from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
+from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
@@ -20,7 +19,6 @@ from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as Pilot
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Security                                   import CS
-from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 import os, base64, bz2, tempfile, random, socket
@@ -33,7 +31,6 @@ DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac
 TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready']
 WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
-ERROR_TOKEN = 'Invalid proxy token request'
 MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
@@ -61,19 +58,27 @@ class SiteDirector( AgentModule ):
   def beginExecution( self ):
 
     self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
+    # The SiteDirector is for a particular user community
     self.vo = self.am_getOption( "Community", '' )
+    if not self.vo:
+      self.vo = gConfig.getValue( "DIRAC/VirtualOrganization" )
+    # The SiteDirector is for a particular user group
+    self.group = self.am_getOption( "Group", '' )
+    # self.voGroups contain all the eligible user groups for pilots submutted by this SiteDirector
+    self.voGroups = []
 
     # Choose the group for which pilots will be submitted. This is a hack until
     # we will be able to match pilots to VOs.
-    self.group = ''
-    if self.vo:
-      result = Registry.getGroupsForVO( self.vo )
-      if not result['OK']:
-        return result
-      for group in result['Value']:
-        if 'NormalUser' in Registry.getPropertiesForGroup( group ):
-          self.group = group
-          break
+    if not self.group:
+      if self.vo:
+        result = Registry.getGroupsForVO( self.vo )
+        if not result['OK']:
+          return result
+        for group in result['Value']:
+          if 'NormalUser' in Registry.getPropertiesForGroup( group ):
+            self.voGroups.append( group )
+    else:
+      self.voGroups = [ self.group ]      
 
     result = findGenericPilotCredentials( vo = self.vo )
     if not result[ 'OK' ]:
@@ -246,13 +251,13 @@ class SiteDirector( AgentModule ):
 
     result = self.submitJobs()
     if not result['OK']:
-      self.log.error( 'Errors in the job submission: %s' % result['Message'] )
+      self.log.error( 'Errors in the job submission: ', result['Message'] )
 
 
     if self.updateStatus:
       result = self.updatePilotStatus()
       if not result['OK']:
-        self.log.error( 'Errors in updating pilot status: %s' % result['Message'] )
+        self.log.error( 'Errors in updating pilot status: ', result['Message'] )
 
     return S_OK()
 
@@ -267,8 +272,8 @@ class SiteDirector( AgentModule ):
                'SubmitPool' : self.defaultSubmitPools }
     if self.vo:
       tqDict['Community'] = self.vo
-    if self.group:
-      tqDict['OwnerGroup'] = self.group
+    if self.voGroups:
+      tqDict['OwnerGroup'] = self.voGroups  
     
     result = Resources.getCompatiblePlatforms( self.platforms )
     if not result['OK']:
@@ -324,10 +329,10 @@ class SiteDirector( AgentModule ):
       # Get the number of available slots on the target site/queue
       result = ce.available()
       if not result['OK']:
-        self.log.warn( 'Failed to check the availability of queue %s: %s' % ( queue, result['Message'] ) )
+        self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
         continue
       ceInfoDict = result['CEInfoDict']
-      self.log.info( "CE queue report(%s_%s): Waiting Jobs=%d, Running Jobs=%d, Submitted Jobs=%d, MaxTotalJobs=%d" % \
+      self.log.info( "CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" % \
                      ( ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
                        ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
 
@@ -341,8 +346,8 @@ class SiteDirector( AgentModule ):
         del ceDict[ 'Site' ]
       if self.vo:
         ceDict['Community'] = self.vo
-      if self.group:
-        ceDict['OwnerGroup'] = self.group
+      if self.voGroups:
+        ceDict['OwnerGroup'] = self.voGroups
       
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools  
@@ -402,7 +407,7 @@ class SiteDirector( AgentModule ):
         executable, pilotSubmissionChunk = result['Value']
         result = ce.submitJob( executable, '', pilotSubmissionChunk )
         if not result['OK']:
-          self.log.error( 'Failed submission to queue %s:' % queue, result['Message'] )
+          self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
           pilotsToSubmit = 0
           continue
         
@@ -410,6 +415,7 @@ class SiteDirector( AgentModule ):
         # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
         # task queue priorities
         pilotList = result['Value']
+        self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList), queueName, ceName ) )
         stampDict = {}
         if result.has_key( 'PilotStampDict' ):
           stampDict = result['PilotStampDict']
@@ -440,14 +446,14 @@ class SiteDirector( AgentModule ):
                                                      '',
                                                      stampDict )
           if not result['OK']:
-            self.log.error( 'Failed add pilots to the PilotAgentsDB: %s' % result['Message'] )
+            self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
             continue
           for pilot in pilotList:
             result = pilotAgentsDB.setPilotStatus( pilot, 'Submitted', ceName,
                                                   'Successfully submitted by the SiteDirector',
                                                   siteName, queueName )
             if not result['OK']:
-              self.log.error( 'Failed to set pilot status: %s' % result['Message'] )
+              self.log.error( 'Failed to set pilot status: ', result['Message'] )
               continue
 
     return S_OK()
@@ -457,7 +463,7 @@ class SiteDirector( AgentModule ):
     """ Prepare the full executable for queue
     """
 
-    proxy = ''
+    proxy = None
     if bundleProxy:
       proxy = self.proxy
     pilotOptions, pilotsToSubmit = self.__getPilotOptions( queue, pilotsToSubmit )
@@ -506,7 +512,7 @@ class SiteDirector( AgentModule ):
     # Request token for maximum pilot efficiency
     result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit * self.maxJobsInFillMode )
     if not result[ 'OK' ]:
-      self.log.error( ERROR_TOKEN, result['Message'] )
+      self.log.error( 'Invalid proxy token request', result['Message'] )
       return [ None, None ]
     ( token, numberOfUses ) = result[ 'Value' ]
     pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
@@ -565,14 +571,14 @@ class SiteDirector( AgentModule ):
     return [ pilotOptions, pilotsToSubmit ]
 
 #####################################################################################
-  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = '', httpProxy = '', pilotExecDir = '' ):
+  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = None, httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admixt the proxy if given
     """
 
     try:
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
-      if proxy:
+      if proxy is not None:
         compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) )
         proxyFlag = 'True'
       compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) )
@@ -664,7 +670,7 @@ EOF
 
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
-        self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
+        self.log.error( 'Failed to get pilots info from DB', result['Message'] )
         continue
       pilotDict = result['Value']
 
@@ -688,7 +694,7 @@ EOF
 
       result = ce.getJobStatus( stampedPilotRefs )
       if not result['OK']:
-        self.log.error( 'Failed to get pilots status from CE: %s' % result['Message'] )
+        self.log.error( 'Failed to get pilots status from CE', '%s: %s' % ( ceName, result['Message'] ) )
         continue
       pilotCEDict = result['Value']
 
@@ -721,13 +727,13 @@ EOF
               pRefStamp = pRef + ':::' + pilotStamp
             result = ce.getJobOutput( pRefStamp )
             if not result['OK']:
-              self.log.error( 'Failed to get pilot output: %s' % result['Message'] )
+              self.log.error( 'Failed to get pilot output', '%s: %s' % ( ceName, result['Message'] ) )
             else:
               output, error = result['Value']
               if output:
                 result = pilotAgentsDB.storePilotOutput( pRef, output, error )
                 if not result['OK']:
-                  self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
+                  self.log.error( 'Failed to store pilot output', result['Message'] )
               else:
                 self.log.warn( 'Empty pilot output not stored to PilotDB' )    
 
@@ -753,14 +759,14 @@ EOF
                                            'Status':FINAL_PILOT_STATUS} )
 
       if not result['OK']:
-        self.log.error( 'Failed to select pilots: %s' % result['Message'] )
+        self.log.error( 'Failed to select pilots', result['Message'] )
         continue
       pilotRefs = result['Value']
       if not pilotRefs:
         continue
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
-        self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
+        self.log.error( 'Failed to get pilots info from DB', result['Message'] )
         continue
       pilotDict = result['Value']
       if self.getOutput:
@@ -772,12 +778,12 @@ EOF
             pRefStamp = pRef + ':::' + pilotStamp
           result = ce.getJobOutput( pRefStamp )
           if not result['OK']:
-            self.log.error( 'Failed to get pilot output: %s' % result['Message'] )
+            self.log.error( 'Failed to get pilot output', '%s: %s' % ( ceName, result['Message'] ) )
           else:
             output, error = result['Value']
             result = pilotAgentsDB.storePilotOutput( pRef, output, error )
             if not result['OK']:
-              self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
+              self.log.error( 'Failed to store pilot output', result['Message'] )
 
       # Check if the accounting is to be sent
       if self.sendAccounting:
@@ -789,14 +795,14 @@ EOF
                                              'Status':FINAL_PILOT_STATUS} )
 
         if not result['OK']:
-          self.log.error( 'Failed to select pilots: %s' % result['Message'] )
+          self.log.error( 'Failed to select pilots', result['Message'] )
           continue
         pilotRefs = result['Value']
         if not pilotRefs:
           continue
         result = pilotAgentsDB.getPilotInfo( pilotRefs )
         if not result['OK']:
-          self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
+          self.log.error( 'Failed to get pilots info from DB', result['Message'] )
           continue
         pilotDict = result['Value']
         result = self.sendPilotAccounting( pilotDict )
@@ -837,12 +843,12 @@ EOF
       self.log.info( "Adding accounting record for pilot %s" % pilotDict[pRef][ 'PilotID' ] )
       retVal = gDataStoreClient.addRegister( pA )
       if not retVal[ 'OK' ]:
-        self.log.error( 'Failed to send accounting info for pilot %s' % pRef )
+        self.log.error( 'Failed to send accounting info for pilot ', pRef )
       else:
         # Set up AccountingSent flag
         result = pilotAgentsDB.setAccountingFlag( pRef )
         if not result['OK']:
-          self.log.error( 'Failed to set accounting flag for pilot %s' % pRef )
+          self.log.error( 'Failed to set accounting flag for pilot ', pRef )
 
     self.log.info( 'Committing accounting records for %d pilots' % len( pilotDict ) )
     result = gDataStoreClient.commit()
@@ -851,7 +857,7 @@ EOF
         self.log.verbose( 'Setting AccountingSent flag for pilot %s' % pRef )
         result = pilotAgentsDB.setAccountingFlag( pRef )
         if not result['OK']:
-          self.log.error( 'Failed to set accounting flag for pilot %s' % pRef )
+          self.log.error( 'Failed to set accounting flag for pilot ', pRef )
     else:
       return result
 

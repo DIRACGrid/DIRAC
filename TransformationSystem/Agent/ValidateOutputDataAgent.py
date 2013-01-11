@@ -1,14 +1,12 @@
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__ = "$Id$"
+''' Runs few integrity checks
+'''
 
 from DIRAC                                                     import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                               import AgentModule
 from DIRAC.Core.Utilities.List                                 import sortList
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
-from DIRAC.DataManagementSystem.Client.StorageUsageClient      import StorageUsageClient
 from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient    import TransformationClient
 import re, os
@@ -24,7 +22,6 @@ class ValidateOutputDataAgent( AgentModule ):
     self.integrityClient = DataIntegrityClient()
     self.replicaManager = ReplicaManager()
     self.transClient = TransformationClient()
-    self.storageUsageClient = StorageUsageClient()
     self.fileCatalogClient = FileCatalogClient()
 
     # This sets the Default Proxy to used as that defined under 
@@ -32,9 +29,13 @@ class ValidateOutputDataAgent( AgentModule ):
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
 
-    self.transformationTypes = sortList( self.am_getOption( 'TransformationTypes', ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'] ) )
+    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
+    if agentTSTypes:
+      self.transformationTypes = agentTSTypes
+    else:
+      self.transformationTypes = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
     gLogger.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
-    self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', ['TransformationDB', 'StorageUsage', 'MetadataCatalog'] ) )
+    self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', ['TransformationDB', 'MetadataCatalog'] ) )
     gLogger.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
     self.activeStorages = sortList( self.am_getOption( 'ActiveSEs', [] ) )
     gLogger.info( "Will check the following storage elements: %s" % str( self.activeStorages ) )
@@ -114,15 +115,7 @@ class ValidateOutputDataAgent( AgentModule ):
         gLogger.error( "Failed to obtain transformation directories", res['Message'] )
         return res
       transDirectories = res['Value'].splitlines()
-      directories = self.__addDirs( transID, transDirectories, directories )
-
-    if 'StorageUsage' in self.directoryLocations:
-      res = self.storageUsageClient.getStorageDirectories( '', '', transID, [] )
-      if not res['OK']:
-        gLogger.error( "Failed to obtain storage usage directories", res['Message'] )
-        return res
-      transDirectories = res['Value']
-      directories = self.__addDirs( transID, transDirectories, directories )
+      directories = self._addDirs( transID, transDirectories, directories )
 
     if 'MetadataCatalog' in self.directoryLocations:
       res = self.fileCatalogClient.findDirectoriesByMetadata( {self.transfidmeta:transID} )
@@ -130,13 +123,13 @@ class ValidateOutputDataAgent( AgentModule ):
         gLogger.error( "Failed to obtain metadata catalog directories", res['Message'] )
         return res
       transDirectories = res['Value']
-      directories = self.__addDirs( transID, transDirectories, directories )
+      directories = self._addDirs( transID, transDirectories, directories )
     if not directories:
       gLogger.info( "No output directories found" )
     directories = sortList( directories )
     return S_OK( directories )
 
-  def __addDirs( self, transID, newDirs, existingDirs ):
+  def _addDirs( self, transID, newDirs, existingDirs ):
     for dir in newDirs:
       transStr = str( transID ).zfill( 8 )
       if re.search( transStr, dir ):

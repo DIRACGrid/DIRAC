@@ -103,6 +103,9 @@ class SSHBatchComputingElement( SSHComputingElement ):
 
     if maxSlots == 0:
       return S_ERROR( "No online node found on queue" )
+    ##make it executable
+    if not os.access( executableFile, 5 ):
+      os.chmod( executableFile, 0755 )
     
     # if no proxy is supplied, the executable can be submitted directly
     # otherwise a wrapper script is needed to get the proxy to the execution node

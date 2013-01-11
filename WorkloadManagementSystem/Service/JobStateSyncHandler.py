@@ -6,6 +6,8 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 
+__RCSID__ = "$Id$"
+
 class JobStateSyncHandler( RequestHandler ):
 
   __jobStateMethods = []

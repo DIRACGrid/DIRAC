@@ -536,12 +536,12 @@ class FileCatalogDB(DB):
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
 
-  def getDirectorySize(self,lfns,longOutput,credDict):
+  def getDirectorySize(self,lfns,longOutput,fromFiles,credDict):
     res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectorySize(res['Value']['Successful'],longOutput)
+    res = self.dtree.getDirectorySize(res['Value']['Successful'],longOutput,fromFiles)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
@@ -555,6 +555,15 @@ class FileCatalogDB(DB):
     
     result = self.dtree._rebuildDirectoryUsage()
     return result
+
+  def repairCatalog( self, directoryFlag=True, credDict={} ):
+    """ Repair catalog inconsistencies
+    """
+    result = S_OK()
+    if directoryFlag:
+      result = self.dtree.recoverOrphanDirectories( credDict )
+      
+    return result 
     
   #######################################################################
   #

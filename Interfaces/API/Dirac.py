@@ -66,7 +66,9 @@ class Dirac( API ):
         self.jobRepo = False
 
     self.scratchDir = gConfig.getValue( self.section + '/LocalSite/ScratchDir', '/tmp' )
-    self.sandboxClient = SandboxStoreClient( useCertificates, sbRPCClient, sbTransferClient )
+    self.sandboxClient = SandboxStoreClient( rpcClient=sbRPCClient, 
+                                             transferClient=sbTransferClient, 
+                                             useCertificates=useCertificates  )
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
     # Determine the default file catalog
     self.defaultFileCatalog = ''
@@ -342,7 +344,7 @@ class Dirac( API ):
         os.chdir( curDir )
       if mode.lower() == 'agent':
         self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
-        result = self.runLocalAgent( jdl, jobDescription )
+        result = self.runLocalAgent( jdl )
       if mode.lower() == 'wms':
         self.log.verbose( 'Will submit job to WMS' ) #this will happen by default anyway
         result = self._sendJob( jdl )
@@ -909,7 +911,7 @@ class Dirac( API ):
             for member in tarFile.getmembers():
               tarFile.extract( member, os.getcwd() )
         except Exception, x :
-          return S_ERROR( 'Could not untar %s with exception %s' % ( possibleTarFile, str( x ) ) )
+          return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
@@ -1356,16 +1358,16 @@ class Dirac( API ):
        @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
+    if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    else:
+    elif type( lfn ) != types.ListType:   
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     if not sourceSE:
       sourceSE = ''
     if not localCache:
       localCache = ''
-    if not type( sourceSE ) == type( " " ):
+    if not type( sourceSE ) in types.StringTypes:
       return self._errorReport( 'Expected string for source SE name' )
     if not type( localCache ) == type( " " ):
       return self._errorReport( 'Expected string for path to local cache' )

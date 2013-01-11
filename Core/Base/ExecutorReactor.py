@@ -169,13 +169,17 @@ class ExecutorReactor( object ):
       self.__storeInstance( eType, modInstance )
 
       if not result[ 'OK' ]:
-        return S_OK( ( 'TaskError', taskStub, "Task %d has had an error: %s" % ( taskId, result[ 'Message' ] ) ))
+        return S_OK( ( 'TaskError', taskStub, "Error: %s" % result[ 'Message' ] ) )
       taskStub, freezeTime, fastTrackType = result[ 'Value' ]
       if freezeTime:
         return S_OK( ( "TaskFreeze", taskStub, freezeTime ) )
-      if fastTrackLevel < 10 and fastTrackType and fastTrackType in self.__modules:
-        gLogger.notice( "Fast tracking task %s to %s" % ( taskId, fastTrackType ) )
-        return self.__moduleProcess( fastTrackType, taskId, taskStub, fastTrackLevel + 1 )
+      if fastTrackType:
+        if fastTrackLevel < 10 and fastTrackType in self.__modules:
+          gLogger.notice( "Fast tracking task %s to %s" % ( taskId, fastTrackType ) )
+          return self.__moduleProcess( fastTrackType, taskId, taskStub, fastTrackLevel + 1 )
+        else:
+          gLogger.notice( "Stopping %s fast track. Sending back to the mind" % ( taskId ) )
+      
       return S_OK( ( "TaskDone", taskStub, True ) )
 
 

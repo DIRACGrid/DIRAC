@@ -1009,7 +1009,7 @@ class TransferAgent( RequestAgentBase ):
                 error = registerReplica["Value"]["Failed"][lfn]
             self.log.error( "registerFiles: unable to register %s at %s: %s" %  ( lfn, se, error ) )
             return S_ERROR( error )
-          elif lfn in registerReplica["Value"]["Successfull"]:
+          elif lfn in registerReplica["Value"]["Successful"]:
             ## no other option, it must be in successfull
             register = self.transferDB().setRegistrationDone( channelID, fileID )
             if not register["OK"]:

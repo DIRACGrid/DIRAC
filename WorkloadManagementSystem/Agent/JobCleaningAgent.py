@@ -8,10 +8,12 @@ The Job Cleaning Agent controls removing jobs from the WMS in the end of their l
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.AgentModule                      import AgentModule
-from DIRAC.WorkloadManagementSystem.DB.JobDB          import JobDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB    import TaskQueueDB
-from DIRAC                                            import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Base.AgentModule                          import AgentModule
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
+from DIRAC.WorkloadManagementSystem.DB.JobDB              import JobDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB        import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB       import JobLoggingDB
+from DIRAC                                                import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 import DIRAC.Core.Utilities.Time as Time
 import string
@@ -40,8 +42,13 @@ class JobCleaningAgent( AgentModule ):
     self.am_setOption( "PollingTime", 60 )
     self.jobDB = JobDB()
     self.taskQueueDB = TaskQueueDB()
+    self.jobLoggingDB = JobLoggingDB()
     # self.sandboxDB = SandboxDB( 'SandboxDB' )
-    self.prod_types = self.am_getOption('ProductionTypes',['DataReconstruction', 'DataStripping', 'MCSimulation', 'Merge', 'production'])
+    agentTSTypes = self.am_getOption('ProductionTypes', [])
+    if agentTSTypes:
+      self.prod_types = agentTSTypes
+    else:
+      self.prod_types = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
     gLogger.info('Will exclude the following Production types from cleaning %s'%(string.join(self.prod_types,', ')))
     self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce',200)
     self.jobByJob = self.am_getOption('JobByJob',True)
@@ -115,12 +122,19 @@ class JobCleaningAgent( AgentModule ):
       for jobID in jobList:
         resultJobDB = self.jobDB.removeJobFromDB( jobID )
         resultTQ = self.taskQueueDB.deleteJob( jobID )
+        resultLogDB = self.jobLoggingDB.deleteJob( jobID )
+        errorFlag = False
         if not resultJobDB['OK']:
           gLogger.warn( 'Failed to remove job %d from JobDB' % jobID, result['Message'] )
-          error_count += 1
-        elif not resultTQ['OK']:
+          errorFlag = True
+        if not resultTQ['OK']:
           gLogger.warn( 'Failed to remove job %d from TaskQueueDB' % jobID, result['Message'] )
-          error_count += 1
+          errorFlag = True
+        if not resultLogDB['OK']:
+          gLogger.warn( 'Failed to remove job %d from JobLoggingDB' % jobID, result['Message'] )
+          errorFlag = True
+        if errorFlag:  
+          error_count += 1  
         else:
           count += 1
         if self.throttlingPeriod:
@@ -139,6 +153,12 @@ class JobCleaningAgent( AgentModule ):
           error_count += 1
         else:
           count += 1    
+
+      result = self.jobLoggingDB.deleteJob( jobList )
+      if not result['OK']:
+        gLogger.error('Failed to delete %d jobs from JobLoggingDB' % len(jobList) )
+      else:
+        gLogger.info('Deleted %d jobs from JobLoggingDB' % len(jobList) )
 
     if count > 0 or error_count > 0 :
       gLogger.info( 'Deleted %d jobs from JobDB, %d errors' % ( count, error_count ) )

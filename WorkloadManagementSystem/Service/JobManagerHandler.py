@@ -322,7 +322,7 @@ class JobManagerHandler( RequestHandler ):
 
     jobList = self.__get_job_list( jobIDList )
     if not jobList:
-      return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
+      return S_ERROR( 'Invalid job specification: ' + str( jobIDList ) )
 
     validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList, right )
 

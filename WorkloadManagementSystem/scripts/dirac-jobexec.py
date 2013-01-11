@@ -84,7 +84,7 @@ for switch, parameter in parList:
 
     parDict[name] = value 
     
-gLogger.verbose( 'PYTHONPATH:\n%s' % ( string.join( sys.path, '\n' ) ) )
+gLogger.debug( 'PYTHONPATH:\n%s' % ( string.join( sys.path, '\n' ) ) )
 result = jobexec( jobXMLfile, parDict )
 if not result['OK']:
   gLogger.debug( 'Workflow execution finished with errors, exiting' )

@@ -60,6 +60,8 @@ class JobAgent( AgentModule ):
       self.log.warn( ceInstance['Message'] )
       return ceInstance
 
+    self.initTimes = os.times()
+
     self.computingElement = ceInstance['Value']
     self.diracRoot = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( __file__ ) ) ) )
     #Localsite options
@@ -122,22 +124,22 @@ class JobAgent( AgentModule ):
     if not result['OK']:
       return result
     ceDict = result['Value']
-    
+
     # Add pilot information
     gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
     if gridCE != 'Unknown':
       ceDict['GridCE'] = gridCE
-    if not 'PilotReference' in ceDict:  
-      ceDict['PilotReference'] = str( self.pilotReference ) 
-    ceDict['PilotBenchmark'] = self.cpuFactor 
+    if not 'PilotReference' in ceDict:
+      ceDict['PilotReference'] = str( self.pilotReference )
+    ceDict['PilotBenchmark'] = self.cpuFactor
     ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
-    
+
     # Add possible job requirements
     result = gConfig.getOptionsDict( '/AgentJobRequirements' )
     if result['OK']:
       requirementsDict = result['Value']
       ceDict.update( requirementsDict )
-    
+
     self.log.verbose( ceDict )
     start = time.time()
     jobRequest = self.__requestJob( ceDict )
@@ -151,13 +153,13 @@ class JobAgent( AgentModule ):
         self.log.notice( 'Job request OK: %s' % ( jobRequest['Message'] ) )
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
-          return self.__finish( 'Nothing to do for more than %d cycles' %  self.stopAfterFailedMatches )
+          return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "seconds timeout" ) != -1:
         self.log.error( jobRequest['Message'] )
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
-          return self.__finish( 'Nothing to do for more than %d cycles' %  self.stopAfterFailedMatches )
+          return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "Pilot version does not match" ) != -1 :
         self.log.error( jobRequest['Message'] )
@@ -166,7 +168,7 @@ class JobAgent( AgentModule ):
         self.log.notice( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
-          return self.__finish( 'Nothing to do for more than %d cycles' %  self.stopAfterFailedMatches )
+          return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
 
     # Reset the Counter
@@ -246,12 +248,12 @@ class JobAgent( AgentModule ):
       jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
       if self.gridCEQueue:
         jobReport.setJobParameter( 'GridCEQueue', self.gridCEQueue, sendFlag = False )
-        
+
       if os.environ.has_key( 'BOINC_JOB_ID' ):
         # Report BOINC environment 
-        for p in ['BoincUserID','BoincHostID','BoincHostPlatform','BoincHostName']:
-          jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )  
-        
+        for p in ['BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName']:
+          jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )
+
       jobReport.setJobStatus( 'Matched', 'Job Received by Agent' )
       # self.__setJobSite( jobID, self.siteName )
       if not self.pilotInfoReportedFlag:
@@ -294,7 +296,14 @@ class JobAgent( AgentModule ):
       self.log.exception()
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception', self.stopOnApplicationFailure )
 
-    result = self.timeLeftUtil.getTimeLeft( 0.0 )
+    currentTimes = list( os.times() )
+    for i in range( len( currentTimes ) ):
+      currentTimes[i] -= self.initTimes[i]
+
+    utime, stime, cutime, cstime, elapsed = currentTimes
+    cpuTime = utime + stime + cutime + cstime
+
+    result = self.timeLeftUtil.getTimeLeft( cpuTime )
     if result['OK']:
       self.timeLeft = result['Value']
     else:

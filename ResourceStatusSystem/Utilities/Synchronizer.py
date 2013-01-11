@@ -1,458 +1,546 @@
-# $HeadURL $
+# $HeadURL:  $
 ''' Synchronizer
 
-  Module that keeps in sync the CS and the RSS database.
+  Module that keeps the database 
 
 '''
 
-from DIRAC                                                      import gLogger, S_OK
-from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
-from DIRAC.Core.Utilities.SiteCEMapping                         import getSiteCEMapping
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName, getDIRACSiteName
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Utilities                       import CS, Utils
+__RCSID__ = '$Id:  $'
 
-__RCSID__ = '$Id: $'
+from DIRAC                                                 import gLogger, S_OK
+from DIRAC.ResourceStatusSystem.Client                     import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client                     import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Utilities                  import CSHelpers
+from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 class Synchronizer( object ):
+  '''
+  Every time there is a successful write on the CS, Synchronizer().sync() is 
+  executed. It updates the database with the values on the CS.
+  
+  '''
+  
+  def __init__( self, rStatus = None, rManagement = None ):
+    
+    # Warm up local CS
+    CSHelpers.warmUp()
+    
+    if rStatus is None:
+      self.rStatus     = ResourceStatusClient.ResourceStatusClient()
+    if rManagement is None:   
+      self.rManagement = ResourceManagementClient.ResourceManagementClient()
+      
+    self.rssConfig = RssConfiguration()  
+  
+  def sync( self ):
+    '''
+      Main synchronizer method. It syncs the three types of elements: Sites,
+      Resources and Nodes.
+    '''
+    
+    syncSites = self._syncSites()
+    if not syncSites[ 'OK' ]:
+      gLogger.error( syncSites[ 'Message' ] )
+      
+    syncResources = self._syncResources()
+    if not syncResources[ 'OK' ]:
+      gLogger.error( syncResources[ 'Message' ] )  
+  
+    syncNodes = self._syncNodes()
+    if not syncNodes[ 'OK' ]:
+      gLogger.error( syncNodes[ 'Message' ] )  
+  
+    #FIXME: also sync users
+    
+    return S_OK()
+  
+  ## Protected methods #########################################################
+  
+  def _syncSites( self ):
+    '''
+      Sync sites: compares CS with DB and does the necessary modifications.
+    '''
+    
+    gLogger.verbose( '-- Synchronizing sites --')
+    
+    domainSitesCS = CSHelpers.getDomainSites()
+    if not domainSitesCS[ 'OK' ]:
+      return domainSitesCS
+    domainSitesCS = domainSitesCS[ 'Value' ]
+    
+    for domainName, sitesCS in domainSitesCS.items():
+    
+      gLogger.verbose( '%s sites found in CS for %s domain' % ( len( sitesCS ), domainName ) )
+    
+      sitesDB = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName,
+                                                  meta = { 'columns' : [ 'name' ] } ) 
+      if not sitesDB[ 'OK' ]:
+        return sitesDB    
+      sitesDB = [ siteDB[0] for siteDB in sitesDB[ 'Value' ] ]
+       
+      # Sites that are in DB but not in CS
+      toBeDeleted = list( set( sitesDB ).difference( set( sitesCS ) ) )
+      gLogger.verbose( '%s sites to be deleted' % len( toBeDeleted ) )
+    
+      # Delete sites
+      for siteName in toBeDeleted:
+      
+        deleteQuery = self.rStatus._extermineStatusElement( 'Site', siteName )
+      
+        gLogger.verbose( '... %s' % siteName )
+        if not deleteQuery[ 'OK' ]:
+          return deleteQuery         
 
-  def __init__( self, rsClient = None, rmClient = None ):
+      sitesTuple  = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName, 
+                                                      meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+      if not sitesTuple[ 'OK' ]:
+        return sitesTuple   
+      sitesTuple = sitesTuple[ 'Value' ]
 
-    self.GOCDBClient = GOCDBClient()
-    self.rsClient = ResourceStatusClient()     if rsClient == None else rsClient
-    self.rmClient = ResourceManagementClient() if rmClient == None else rmClient
+      statusTypes = self.rssConfig.getConfigStatusType( domainName )
+    
+      # For each ( site, statusType ) tuple not present in the DB, add it.
+      siteStatusTuples = [ ( site, statusType ) for site in sitesCS for statusType in statusTypes ]     
+      toBeAdded = list( set( siteStatusTuples ).difference( set( sitesTuple ) ) )
+    
+      gLogger.verbose( '%s site entries to be added' % len( toBeAdded ) )
+  
+      for siteTuple in toBeAdded:
+      
+        query = self.rStatus.addIfNotThereStatusElement( 'Site', 'Status', 
+                                                         name = siteTuple[ 0 ], 
+                                                         statusType = siteTuple[ 1 ], 
+                                                         status = 'Unknown', 
+                                                         elementType = domainName, 
+                                                         reason = 'Synchronized' )
+        if not query[ 'OK' ]:
+          return query
+      
+    return S_OK()  
+  
+  def _syncResources( self ):
+    '''
+      Sync resources: compares CS with DB and does the necessary modifications.
+      ( StorageElements, FTS, FileCatalogs and ComputingElements )
+    '''
+    
+    gLogger.verbose( '-- Synchronizing Resources --' )
+    
+    gLogger.verbose( '-> StorageElements' )
+    ses = self.__syncStorageElements()
+    if not ses[ 'OK' ]:
+      gLogger.error( ses[ 'Message' ] )
+    
+    gLogger.verbose( '-> FTS' )
+    fts = self.__syncFTS()
+    if not fts[ 'OK' ]:
+      gLogger.error( fts[ 'Message' ] )
+    
+    gLogger.verbose( '-> FileCatalogs' )
+    fileCatalogs = self.__syncFileCatalogs()
+    if not fileCatalogs[ 'OK' ]:
+      gLogger.error( fileCatalogs[ 'Message' ] ) 
 
-    self.synclist = [ 'Sites', 'Resources', 'StorageElements', 'Services', 'RegistryUsers' ]
+    gLogger.verbose( '-> ComputingElements' )
+    computingElements = self.__syncComputingElements()
+    if not computingElements[ 'OK' ]:
+      gLogger.error( computingElements[ 'Message' ] )
 
-################################################################################
-
-  def sync( self, _a, _b ):
-    """
-    :params:
-      :attr:`thingsToSync`: list of things to sync
-    """
-    gLogger.info( "!!! Sync DB content with CS content for %s !!!" % ( ", ".join(self.synclist) ) )
-
-    for thing in self.synclist:
-      getattr( self, '_sync' + thing )()
+    #FIXME: VOMS
 
     return S_OK()
 
-################################################################################
-  def __purge_resource( self, resourceName ):
-    # Maybe remove attached SEs
+  def _syncNodes( self ):
+    '''
+      Sync resources: compares CS with DB and does the necessary modifications.
+      ( Queues )
+    '''
+    gLogger.verbose( '-- Synchronizing Nodes --' )
+  
+    gLogger.verbose( '-> Queues' )
+    queues = self.__syncQueues()
+    if not queues[ 'OK' ]:
+      gLogger.error( queues[ 'Message' ] )
     
-    #SEs = Utils.unpack(self.rsClient.getStorageElement(resourceName=resourceName))
-    SEs = self.rsClient.getStorageElement( resourceName = resourceName )
-    if not SEs[ 'OK' ]:
-      gLogger.error( SEs[ 'Message' ] )
-      return SEs
+    return S_OK()  
+
+  ## Private methods ###########################################################
+
+  def __syncComputingElements( self ): 
+    '''
+      Sync CEs: compares CS with DB and does the necessary modifications.
+    '''
     
-    #Utils.unpack(self.rsClient.removeElement("StorageElement", [s[0] for s in SEs]))   
-    SEs = [ se[0] for se in SEs ]  
-    res = self.rsClient.removeElement( 'StorageElement', SEs )
-    if not res[ 'OK' ]:
-      gLogger.error( res[ 'Message' ] )
-      return res
+    cesCS = CSHelpers.getComputingElements()
+    if not cesCS[ 'OK' ]:
+      return cesCS
+    cesCS = cesCS[ 'Value' ]        
     
-    # Remove resource itself.
-    #Utils.unpack(self.rsClient.removeElement("Resource", resourceName))
-    res = self.rsClient.removeElement( 'Resource', resourceName )
-    if not res[ 'OK' ]:
-      gLogger.error( res[ 'Message' ] ) 
+    gLogger.verbose( '%s Computing elements found in CS' % len( cesCS ) )
     
-    return res
-    
-  def __purge_site( self, siteName ):
-    # Remove associated resources and services
-    
-    #resources = Utils.unpack(self.rsClient.getResource(siteName=siteName))
-    resources = self.rsClient.getResource( siteName = siteName )
-    if not resources[ 'OK' ]:
-      gLogger.error( resources[ 'Message' ] )
-      return resources
-    
-    #services  = Utils.unpack(self.rsClient.getService(siteName=siteName))
-    services = self.rsClient.getService( siteName = siteName )
-    if not services[ 'OK' ]:
-      gLogger.error( services[ 'Message' ] )
-      return services
-    
-    #_ = [self.__purge_resource(r[0]) for r in resources]
-    for resource in resources:
-      res = self.__purge_resource( resource[ 0 ] )
-      if not res[ 'OK' ]:
-        gLogger.error( res[ 'Message' ] )
-        return res
+    cesDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                   elementType = 'CE',
+                                                   meta = { 'columns' : [ 'name' ] } ) 
+    if not cesDB[ 'OK' ]:
+      return cesDB    
+    cesDB = [ ceDB[0] for ceDB in cesDB[ 'Value' ] ]
        
-    #Utils.unpack(self.rsClient.removeElement("Service", [s[0] for s in services]))
-    services = [ service[ 0 ] for service in services[ 'Value' ] ]
-    res      = self.rsClient.removeElement( 'Service', services )
-    if not res[ 'OK' ]:
-      gLogger.error( res[ 'Message' ] )
-      return res  
-    
-    # Remove site itself
-    #Utils.unpack(self.rsClient.removeElement("Site", siteName))
-    res = self.rsClient.removeElement( 'Site', siteName )
-    if not res[ 'OK' ]:
-      gLogger.info( res[ 'Message' ] )
-    
-    return res
-    
-  def _syncSites( self ):
-    """
-    Sync DB content with sites that are in the CS
-    """
-    def getGOCTier(sitesList):
-      return "T" + str(min([int(v) for v in CS.getSiteTiers(sitesList)]))
-
-    # sites in the DB now
-    #sitesDB = set((s[0] for s in Utils.unpack(self.rsClient.getSite())))
-    
-    sites = self.rsClient.getSite()
-    if not sites[ 'OK' ]:
-      gLogger.error( sites[ 'Message' ] )
-      return sites
-    sitesDB = set( [ site[0] for site in sites[ 'Value' ] ] )
-
-    # sites in CS now
-    sitesCS = set( CS.getSites() )
-
-    gLogger.info("Syncing Sites from CS: %d sites in CS, %d sites in DB" % (len(sitesCS), len(sitesDB)))
-
-    # remove sites and associated resources, services, and storage
-    # elements from the DB that are not in the CS:
-    for s in sitesDB - sitesCS:
-      gLogger.info("Purging Site %s (not in CS anymore)" % s)
-      self.__purge_site(s)
-
-    # add to DB what is missing
-    gLogger.info("Updating %d Sites in DB" % len(sitesCS - sitesDB))
-    for site in sitesCS - sitesDB:
-      siteType = site.split(".")[0]
-      # DIRAC Tier
-      tier = "T" + str(CS.getSiteTier( site ))
-      if siteType == "LCG":
-        # Grid Name of the site
-        #gridSiteName = Utils.unpack(getGOCSiteName(site))
-        gridSiteName = getGOCSiteName( site )
-        if not gridSiteName[ 'OK' ]:
-          gLogger.error( gridSiteName[ 'Message' ] )
-          return gridSiteName
-        gridSiteName = gridSiteName[ 'Value' ]
-
-        # Grid Tier (with a workaround!)
-        #DIRACSitesOfGridSites = Utils.unpack(getDIRACSiteName(gridSiteName))
-        DIRACSitesOfGridSites = getDIRACSiteName( gridSiteName )
-        if not DIRACSitesOfGridSites[ 'OK' ]:
-          gLogger.error( DIRACSitesOfGridSites[ 'Message' ] )
-          return DIRACSitesOfGridSites
-        DIRACSitesOfGridSites = DIRACSitesOfGridSites[ 'Value' ]
-        
-        if len( DIRACSitesOfGridSites ) == 1:
-          gt = tier
-        else:
-          gt = getGOCTier( DIRACSitesOfGridSites )
-
-        #Utils.protect2(self.rsClient.addOrModifyGridSite, gridSiteName, gt)
-        res = self.rsClient.addOrModifyGridSite( gridSiteName, gt )
-        if not res[ 'OK' ]:
-          gLogger.error( res[ 'Message' ] )
-          return res
-        
-        #Utils.protect2(self.rsClient.addOrModifySite, site, tier, gridSiteName )
-        res = self.rsClient.addOrModifySite( site, tier, gridSiteName )
-        if not res[ 'OK' ]:
-          gLogger.error( res[ 'Message' ] )
-          return res
-
-      elif siteType == "DIRAC":
-        #Utils.protect2(self.rsClient.addOrModifySite, site, tier, "NULL" )
-        res = self.rsClient.addOrModifySite( site, tier, "NULL" )
-        if not res[ 'OK' ]:
-          gLogger.error( res[ 'Message' ] )
-          return res
-
-################################################################################
-# _syncResources HELPER functions
-
-  def __updateService(self, site, type_):
-    service = type_ + '@' + site
-    #Utils.protect2(self.rsClient.addOrModifyService, service, type_, site )
-    res = self.rsClient.addOrModifyService( service, type_, site )
-    if not res[ 'OK' ]:
-      gLogger.error( res[ 'Message' ] )
-      return res
-
-  def __getServiceEndpointInfo(self, node):
-    #res = Utils.unpack( self.GOCDBClient.getServiceEndpointInfo( 'hostname', node ) )
-    res = self.GOCDBClient.getServiceEndpointInfo( 'hostname', node )
-    if res['OK']:
-      res = res[ 'Value' ]
-    else:
-      gLogger.warn( 'Error getting hostname info for %s' % node )
-      return []
-        
-    if res == []:
-      #res = Utils.unpack( self.GOCDBClient.getServiceEndpointInfo('hostname', Utils.canonicalURL(node)) )
-      url = Utils.canonicalURL(node)
-      res = self.GOCDBClient.getServiceEndpointInfo('hostname', url )
-      if res['OK']:
-        res = res[ 'Value' ]
-      else:
-        gLogger.warn( 'Error getting canonical hostname info for %s' % node )
-        res = []
+    # ComputingElements that are in DB but not in CS
+    toBeDeleted = list( set( cesDB ).difference( set( cesDB ) ) )
+    gLogger.verbose( '%s Computing elements to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for ceName in toBeDeleted:
       
-    return res
-
-  def __syncNode(self, NodeInCS, resourcesInDB, resourceType, serviceType, site = "NULL"):
-
-    nodesToUpdate = NodeInCS - resourcesInDB
-    if len(nodesToUpdate) > 0:
-      gLogger.debug(str(NodeInCS))
-      gLogger.debug(str(nodesToUpdate))
-
-    # Update Service table
-    siteInGOCDB = [self.__getServiceEndpointInfo(node) for node in nodesToUpdate]
-    siteInGOCDB = Utils.list_sanitize(siteInGOCDB)
-    #sites = [Utils.unpack(getDIRACSiteName(s[0]['SITENAME'])) for s in siteInGOCDB]
-    
-    sites = []
-    for sInGOCDB in siteInGOCDB:
-      siteName = getDIRACSiteName( sInGOCDB[ 0 ][ 'SITENAME' ] )
-      if not siteName[ 'OK' ]:
-        gLogger.error( siteName[ 'Message' ] )
-        return siteName
-      sites.append( siteName[ 'Value' ] )
-    
-    sites = Utils.list_sanitize( Utils.list_flatten( sites ) )
-    _     = [ self.__updateService(s, serviceType) for s in sites ]
-
-    # Update Resource table
-    for node in NodeInCS:
-      if serviceType == "Computing":
-        resourceType = CS.getCEType(site, node)
-      if node not in resourcesInDB and node is not None:
-        try:
-          siteInGOCDB = self.__getServiceEndpointInfo(node)[0]['SITENAME']
-        except IndexError: # No INFO in GOCDB: Node does not exist
-          gLogger.warn("Node %s is not in GOCDB!! Considering that it does not exists!" % node)
-          continue
-
-        assert(type(siteInGOCDB) == str)
-        #Utils.protect2(self.rsClient.addOrModifyResource, node, resourceType, serviceType, site, siteInGOCDB )
-        res = self.rsClient.addOrModifyResource( node, resourceType, serviceType, site, siteInGOCDB )
-        if not res[ 'OK' ]:
-          gLogger.error( res[ 'Message' ] )
-          return res
-        resourcesInDB.add( node )
-
-################################################################################
-
-  def _syncResources( self ):
-    gLogger.info("Starting sync of Resources")
-
-    # resources in the DB now
-    #resourcesInDB = set((r[0] for r in Utils.unpack(self.rsClient.getResource())))
-    
-    resources = self.rsClient.getResource()
-    if not resources[ 'OK' ]:
-      gLogger.error( resources[ 'Message' ] )
-      return resources
-    
-    resourcesInDB = set( [ resource[ 0 ] for resource in resources[ 'Value' ] ] )
+      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', ceName )
       
-    # Site-CE / Site-SE mapping in CS now
-    #CEinCS = Utils.unpack(getSiteCEMapping( 'LCG' ))
-    CEinCS = getSiteCEMapping( 'LCG' )
-    if not CEinCS[ 'OK' ]:
-      gLogger.error( CEinCS[ 'Message' ] )
-      return CEinCS
-    CEinCS = CEinCS[ 'Value' ]
-
-    # All CEs in CS now
-    CEInCS = Utils.set_sanitize([CE for celist in CEinCS.values() for CE in celist])
-
-    # All SE Nodes in CS now
-    SENodeInCS = set(CS.getSENodes())
-
-    # LFC Nodes in CS now
-    LFCNodeInCS_L = set(CS.getLFCNode(readable = "ReadOnly"))
-    LFCNodeInCS_C = set(CS.getLFCNode(readable = "ReadWrite"))
-
-    # FTS Nodes in CS now
-    FTSNodeInCS = set([v.split("/")[2][0:-5] for v
-                       in CS.getTypedDictRootedAt(root="/Resources/FTSEndpoints").values()])
-
-    # VOMS Nodes in CS now
-    VOMSNodeInCS = set(CS.getVOMSEndpoints())
-
-    # complete list of resources in CS now
-    resourcesInCS = CEInCS | SENodeInCS | LFCNodeInCS_L | LFCNodeInCS_C | FTSNodeInCS | VOMSNodeInCS
-
-    gLogger.info("  %d resources in CS, %s resources in DB, updating %d resources" %
-                 (len(resourcesInCS), len(resourcesInDB), len(resourcesInCS)-len(resourcesInDB)))
-
-    # Remove resources that are not in the CS anymore
-    for res in resourcesInDB - resourcesInCS:
-      gLogger.info("Purging resource %s. Reason: not in CS anywore." % res)
-      self.__purge_resource(res)
-
-    # Add to DB what is in CS now and wasn't before
-
-    # CEs
-    for site in CEinCS:
-      self.__syncNode(set(CEinCS[site]), resourcesInDB, "", "Computing", site)
-
-    # SRMs
-    self.__syncNode(SENodeInCS, resourcesInDB, "SE", "Storage")
-
-    # LFC_C
-    self.__syncNode(LFCNodeInCS_C, resourcesInDB, "LFC_C", "Storage")
-
-    # LFC_L
-    self.__syncNode(LFCNodeInCS_L, resourcesInDB, "LFC_L", "Storage")
-
-    # FTSs
-    self.__syncNode(FTSNodeInCS, resourcesInDB, "FTS", "Storage")
-
-    # VOMSs
-    self.__syncNode(VOMSNodeInCS, resourcesInDB, "VOMS", "VOMS")
-
-################################################################################
-
-  def _syncStorageElements( self ):
-
-    # Get StorageElements from the CS and the DB
-    CSSEs = set(CS.getSEs())
-    #DBSEs = set((s[0] for s in Utils.unpack(self.rsClient.getStorageElement())))
-    ses = self.rsClient.getStorageElement()
-    if not ses[ 'OK' ]:
-      gLogger.error( ses[ 'Message' ] )
-      return ses
+      gLogger.verbose( '... %s' % ceName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
     
-    DBSEs = set( [ se[0] for se in ses[ 'Value' ] ] )  
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    statusTypes = self.rssConfig.getConfigStatusType( 'CE' )
 
-    # Remove storageElements that are in DB but not in CS
-    for se in DBSEs - CSSEs:
-      #Utils.protect2(self.rsClient.removeElement, 'StorageElement', se )
-      res = self.rsClient.removeElement( 'StorageElement', se )
-      if not res[ 'OK' ]:
-        gLogger.error( res[ 'Message' ] )
-        return res
-
-    # Add new storage elements
-    gLogger.info("Updating %d StorageElements in DB (%d on CS vs %d on DB)" % (len(CSSEs - DBSEs), len(CSSEs), len(DBSEs)))
-    for SE in CSSEs - DBSEs:
-      srm = CS.getSEHost( SE )
-      if not srm:
-        gLogger.warn("%s has no srm URL in CS!!!" % SE)
-        continue
-      #siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
-      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm )
-      if siteInGOCDB[ 'OK' ]:
-        siteInGOCDB = siteInGOCDB[ 'Value' ]
-      else:
-        gLogger.error("Error getting hostname for %s from GOCDB!!!" % srm)
-        continue
-      if siteInGOCDB == []:
-        gLogger.warn("%s is not in GOCDB!!!" % srm)
-        continue
-      siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
-      #Utils.protect2(self.rsClient.addOrModifyStorageElement, SE, srm, siteInGOCDB )
-      res = self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
-      if not res[ 'OK' ]:
-        gLogger.error( res[ 'Message' ] )
-        return res
-
-################################################################################
-
-  def _syncServices(self):
-    """This function is in charge of cleaning the Service table in DB
-    in case of obsolescence."""
-    # services in the DB now
-    #servicesInDB = Utils.unpack(self.rsClient.getService())
-    servicesInDB = self.rsClient.getService()
-    if not servicesInDB[ 'OK' ]:
-      gLogger.error( servicesInDB[ 'Message' ] )
-      return servicesInDB
-    servicesInDB = servicesInDB[ 'Value' ]
+    cesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                 elementType = 'CE', 
+                                                 meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    if not cesTuple[ 'OK' ]:
+      return cesTuple   
+    cesTuple = cesTuple[ 'Value' ]        
+  
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    cesStatusTuples = [ ( se, statusType ) for se in cesCS for statusType in statusTypes ]     
+    toBeAdded = list( set( cesStatusTuples ).difference( set( cesTuple ) ) )
     
-    for service_name, service_type, site_name in servicesInDB:
-      if not service_type in ["VO-BOX", "CondDB", "VOMS", "Storage"]:
+    gLogger.debug( '%s Computing elements entries to be added' % len( toBeAdded ) )
+  
+    for ceTuple in toBeAdded:
+      
+      _name            = ceTuple[ 0 ]
+      _statusType      = ceTuple[ 1 ]
+      _status          = 'Unknown'
+      _reason          = 'Synchronized'
+      _elementType     = 'CE'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       status = _status,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()    
+  
+  def __syncFileCatalogs( self ): 
+    '''
+      Sync FileCatalogs: compares CS with DB and does the necessary modifications.
+    '''
         
-        #if Utils.unpack(self.rsClient.getResource(siteName=site_name, serviceType=service_type)) == []:
-        resource = self.rsClient.getResource( siteName = site_name, serviceType = service_type )
-        if not resource[ 'OK' ]:
-          gLogger.error( resource[ 'Message' ] )
-          return resource
-        if resource[ 'Value' ] == []:
-          
-          gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
-          #Utils.protect2(self.rsClient.removeElement, "Service", service_name)
-          res = self.rsClient.removeElement( "Service", service_name )
-          if not res[ 'OK' ]:
-            gLogger.error( res[ 'Message' ] )
-            return res
-      elif service_type == "Storage":
-        res = self.rsClient.getSite( siteName = site_name, meta = { 'columns' : 'GridSiteName'} )
-        if res[ 'OK' ]:
-          res = res[ 'Value' ]
-        else:
-          res = []
+    catalogsCS = CSHelpers.getFileCatalogs()
+    if not catalogsCS[ 'OK' ]:
+      return catalogsCS
+    catalogsCS = catalogsCS[ 'Value' ]        
+    
+    gLogger.verbose( '%s File catalogs found in CS' % len( catalogsCS ) )
+    
+    catalogsDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                   elementType = 'Catalog',
+                                                   meta = { 'columns' : [ 'name' ] } ) 
+    if not catalogsDB[ 'OK' ]:
+      return catalogsDB    
+    catalogsDB = [ catalogDB[0] for catalogDB in catalogsDB[ 'Value' ] ]
+       
+    # StorageElements that are in DB but not in CS
+    toBeDeleted = list( set( catalogsDB ).difference( set( catalogsCS ) ) )
+    gLogger.verbose( '%s File catalogs to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for catalogName in toBeDeleted:
+      
+      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', catalogName )
+      
+      gLogger.verbose( '... %s' % catalogName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
+    
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    statusTypes = self.rssConfig.getConfigStatusType( 'Catalog' )
+
+    sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                 elementType = 'Catalog', 
+                                                 meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    if not sesTuple[ 'OK' ]:
+      return sesTuple   
+    sesTuple = sesTuple[ 'Value' ]        
+  
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    catalogsStatusTuples = [ ( se, statusType ) for se in catalogsCS for statusType in statusTypes ]     
+    toBeAdded = list( set( catalogsStatusTuples ).difference( set( sesTuple ) ) )
+    
+    gLogger.verbose( '%s File catalogs entries to be added' % len( toBeAdded ) )
+  
+    for catalogTuple in toBeAdded:
+      
+      _name            = catalogTuple[ 0 ]
+      _statusType      = catalogTuple[ 1 ]
+      _status          = 'Unknown'
+      _reason          = 'Synchronized'
+      _elementType     = 'Catalog'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       status = _status,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()      
+
+  def __syncFTS( self ): 
+    '''
+      Sync FTS: compares CS with DB and does the necessary modifications.
+    '''
         
-        if res:
-          if self.rsClient.getResource( gridSiteName = res[0], serviceType = service_type ) == []:
-            gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
-            #Utils.protect2(self.rsClient.removeElement, "Service", service_name)
-            res = self.rsClient.removeElement( "Service", service_name )
-            if not res[ 'OK' ]:
-              gLogger.error( res[ 'Message' ] )
-              return res
-
-  def _syncRegistryUsers(self):
-    users = CS.getTypedDictRootedAt("Users", root= "/Registry")
-    usersInCS = set(users.keys())
-    #usersInDB = set((u[0] for u in Utils.unpack(self.rmClient.getUserRegistryCache())))
+    ftsCS = CSHelpers.getFTS()
+    if not ftsCS[ 'OK' ]:
+      return ftsCS
+    ftsCS = ftsCS[ 'Value' ]        
     
-    usersInCache = self.rmClient.getUserRegistryCache()
-    if not usersInCache[ 'OK' ]:
-      gLogger.error( usersInCache[ 'Message' ] )
-      return usersInCache
+    gLogger.verbose( '%s FTS endpoints found in CS' % len( ftsCS ) )
     
-    usersInDB = set( [ userInCache[ 0 ] for userInCache in usersInCache[ 'Value' ] ] )
-    
-    usersToAdd = usersInCS - usersInDB
-    usersToDel = usersInDB - usersInCS
-
-    gLogger.info("Updating Registry Users: + %d, - %d" % (len(usersToAdd), len(usersToDel)))
-    if len(usersToAdd) > 0:
-      gLogger.debug(str(usersToAdd))
-    if len(usersToDel) > 0:
-      gLogger.debug(str(usersToDel))
-
-    for u in usersToAdd:
-      if type(users[u]['DN']) == list:
-        users[u]['DN'] = users[u]['DN'][0]
-      if type(users[u]['Email']) == list:
-        users[u]['Email'] = users[u]['Email'][0]
-      users[u]['DN'] = users[u]['DN'].split('=')[-1]
+    ftsDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                              elementType = 'FTS',
+                                              meta = { 'columns' : [ 'name' ] } ) 
+    if not ftsDB[ 'OK' ]:
+      return ftsDB    
+    ftsDB = [ fts[0] for fts in ftsDB[ 'Value' ] ]
+       
+    # StorageElements that are in DB but not in CS
+    toBeDeleted = list( set( ftsDB ).difference( set( ftsCS ) ) )
+    gLogger.verbose( '%s FTS endpoints to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for ftsName in toBeDeleted:
       
-      #Utils.unpack(self.rmClient.addOrModifyUserRegistryCache( u, users[u]['DN'], users[u]['Email'].lower()))
+      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', ftsName )
       
-      res = self.rmClient.addOrModifyUserRegistryCache( u, users[u]['DN'], users[u]['Email'].lower() )
-      if not res[ 'OK' ]:
-        gLogger.error( res[ 'Message' ] )
-        return res
+      gLogger.verbose( '... %s' % ftsName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
+    
+    statusTypes = self.rssConfig.getConfigStatusType( 'FTS' )
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
-    for u in usersToDel:
-      #Utils.protect2(self.rmClient.deleteUserRegistryCache, u)
-      res = self.rmClient.deleteUserRegistryCache( u )
-      if not res[ 'OK' ]:
-        gLogger.error( res[ 'Message' ] )
-        return res
+    sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                 elementType = 'FTS', 
+                                                 meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    if not sesTuple[ 'OK' ]:
+      return sesTuple   
+    sesTuple = sesTuple[ 'Value' ]        
+  
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    ftsStatusTuples = [ ( se, statusType ) for se in ftsCS for statusType in statusTypes ]     
+    toBeAdded = list( set( ftsStatusTuples ).difference( set( sesTuple ) ) )
+    
+    gLogger.verbose( '%s FTS endpoints entries to be added' % len( toBeAdded ) )
+  
+    for ftsTuple in toBeAdded:
+      
+      _name            = ftsTuple[ 0 ]
+      _statusType      = ftsTuple[ 1 ]
+      _status          = 'Unknown'
+      _reason          = 'Synchronized'
+      _elementType     = 'FTS'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       status = _status,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()      
+ 
+  def __syncStorageElements( self ): 
+    '''
+      Sync StorageElements: compares CS with DB and does the necessary modifications.
+    '''
+        
+    sesCS = CSHelpers.getStorageElements()
+    if not sesCS[ 'OK' ]:
+      return sesCS
+    sesCS = sesCS[ 'Value' ]        
+    
+    gLogger.verbose( '%s storage elements found in CS' % len( sesCS ) )
+    
+    sesDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                              elementType = 'StorageElement',
+                                              meta = { 'columns' : [ 'name' ] } ) 
+    if not sesDB[ 'OK' ]:
+      return sesDB    
+    sesDB = [ seDB[0] for seDB in sesDB[ 'Value' ] ]
+       
+    # StorageElements that are in DB but not in CS
+    toBeDeleted = list( set( sesDB ).difference( set( sesCS ) ) )
+    gLogger.verbose( '%s storage elements to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for sesName in toBeDeleted:
+      
+      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', sesName )
+      
+      gLogger.verbose( '... %s' % sesName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
+    
+    statusTypes = self.rssConfig.getConfigStatusType( 'StorageElement' )
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
+    sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                 elementType = 'StorageElement', 
+                                                 meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    if not sesTuple[ 'OK' ]:
+      return sesTuple   
+    sesTuple = sesTuple[ 'Value' ]        
+  
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    sesStatusTuples = [ ( se, statusType ) for se in sesCS for statusType in statusTypes ]     
+    toBeAdded = list( set( sesStatusTuples ).difference( set( sesTuple ) ) )
+    
+    gLogger.verbose( '%s storage element entries to be added' % len( toBeAdded ) )
+  
+    for seTuple in toBeAdded:
+      
+      _name            = seTuple[ 0 ]
+      _statusType      = seTuple[ 1 ]
+      _status          = 'Unknown'
+      _reason          = 'Synchronized'
+      _elementType     = 'StorageElement'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       status = _status,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()  
+
+  def __syncQueues( self ):
+    '''
+      Sync Queues: compares CS with DB and does the necessary modifications.
+    '''
+
+    queuesCS = CSHelpers.getQueues()
+    if not queuesCS[ 'OK' ]:
+      return queuesCS
+    queuesCS = queuesCS[ 'Value' ]        
+    
+    gLogger.verbose( '%s Queues found in CS' % len( queuesCS ) )
+    
+    queuesDB = self.rStatus.selectStatusElement( 'Node', 'Status', 
+                                                 elementType = 'Queue',
+                                                 meta = { 'columns' : [ 'name' ] } ) 
+    if not queuesDB[ 'OK' ]:
+      return queuesDB    
+    queuesDB = [ queueDB[0] for queueDB in queuesDB[ 'Value' ] ]
+       
+    # ComputingElements that are in DB but not in CS
+    toBeDeleted = list( set( queuesDB ).difference( set( queuesDB ) ) )
+    gLogger.verbose( '%s Queues to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for queueName in toBeDeleted:
+      
+      deleteQuery = self.rStatus._extermineStatusElement( 'Node', queueName )
+      
+      gLogger.verbose( '... %s' % queueName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
+    
+    statusTypes = self.rssConfig.getConfigStatusType( 'Queue' )
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
+
+    queueTuple = self.rStatus.selectStatusElement( 'Node', 'Status', 
+                                                   elementType = 'Queue', 
+                                                   meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    if not queueTuple[ 'OK' ]:
+      return queueTuple   
+    queueTuple = queueTuple[ 'Value' ]        
+  
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    queueStatusTuples = [ ( se, statusType ) for se in queuesCS for statusType in statusTypes ]     
+    toBeAdded = list( set( queueStatusTuples ).difference( set( queueTuple ) ) )
+    
+    gLogger.verbose( '%s Queue entries to be added' % len( toBeAdded ) )
+  
+    for queueTuple in toBeAdded:
+      
+      _name            = queueTuple[ 0 ]
+      _statusType      = queueTuple[ 1 ]
+      _status          = 'Unknown'
+      _reason          = 'Synchronized'
+      _elementType     = 'Queue'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Node', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       status = _status,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()      
+  
+  def _syncUsers( self ):
+    '''
+      Sync Users: compares CS with DB and does the necessary modifications.
+    '''    
+    
+    gLogger.verbose( '-- Synchronizing users --')
+    
+    usersCS = CSHelpers.getRegistryUsers()
+    if not usersCS[ 'OK' ]:
+      return usersCS
+    usersCS = usersCS[ 'Value' ]
+    
+    gLogger.verbose( '%s users found in CS' % len( usersCS ) )
+    
+    usersDB = self.rManagement.selectUserRegistryCache( meta = { 'columns' : [ 'login' ] } ) 
+    if not usersDB[ 'OK' ]:
+      return usersDB    
+    usersDB = [ userDB[0] for userDB in usersDB[ 'Value' ] ]
+    
+    # Users that are in DB but not in CS
+    toBeDeleted = list( set( usersDB ).difference( set( usersCS.keys() ) ) )
+    gLogger.verbose( '%s users to be deleted' % len( toBeDeleted ) )
+    
+    # Delete users
+    # FIXME: probably it is not needed since there is a DatabaseCleanerAgent
+    for userLogin in toBeDeleted:
+      
+      deleteQuery = self.rManagement.deleteUserRegistryCache( login = userLogin )
+      
+      gLogger.verbose( '... %s' % userLogin )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery      
+     
+    # AddOrModify Users 
+    for userLogin, userDict in usersCS.items():
+      
+      _name  = userDict[ 'DN' ].split( '=' )[ -1 ]
+      _email = userDict[ 'Email' ]
+      
+      query = self.rManagement.addOrModifyUserRegistryCache( userLogin, _name, _email )
+      gLogger.verbose( '-> %s' % userLogin )
+      if not query[ 'OK' ]:
+        return query     
+  
+    return S_OK()
+    
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

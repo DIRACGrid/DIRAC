@@ -43,11 +43,11 @@ class ProxyManagerHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     result = Registry.getDNForUsername( credDict[ 'username' ] )
     if not result[ 'OK' ]:
-      return retDict
+      return result
     selDict = { 'UserDN' : result[ 'Value' ] }
     result = self.__proxyDB.getProxiesContent( selDict, {}, 0, 0 )
     if not result[ 'OK']:
-      return retDict
+      return result
     contents = result[ 'Value' ]
     userDNIndex = contents[ 'ParameterNames' ].index( "UserDN" )
     userGroupIndex = contents[ 'ParameterNames' ].index( "UserGroup" )

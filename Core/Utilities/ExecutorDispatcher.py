@@ -182,7 +182,7 @@ class ExecutorQueues:
     if type( eTypes ) not in ( types.ListType, types.TupleType ):
       eTypes = [ eTypes ]
     self.__lock.acquire()
-    for eType in reversed( eTypes ):
+    for eType in eTypes:
       try:
         taskId = self.__queues[ eType ].pop( 0 )
         del( self.__taskInQueue[ taskId ] )
@@ -284,7 +284,7 @@ class ExecutorDispatcher:
       return rS
 
 
-  def __init__( self, monitor = False ):
+  def __init__( self, monitor = None ):
     self.__idMap = {}
     self.__execTypes = {}
     self.__executorsLock = threading.Lock()
@@ -470,7 +470,7 @@ class ExecutorDispatcher:
           eTask = self.__tasks[ taskId ]
         except KeyError:
           self.__log.notice( "Removing task %s from the freezer. Somebody has removed the task" % taskId )
-          self.self.__taskFreezer.pop( iP )
+          self.__taskFreezer.pop( iP )
           continue
         #Current taskId/eTask is the one to defrost
         if eType and eType != eTask.eType:
@@ -757,14 +757,21 @@ class ExecutorDispatcher:
   def __sendTaskToExecutor( self, eId, eTypes = False, checkIdle = False ):
     if checkIdle and self.__states.freeSlots( eId ) == 0:
       return S_OK()
-    if not eTypes:
-      #Any eType valid for executor
-      try:
-        eTypes = self.__idMap[ eId ]
-      except KeyError:
-        self.__log.verbose( "Executor %s invalid/disconnected" % eId )
-        return S_ERROR( "Invalid executor" )
-    pData = self.__queues.popTask( eTypes )
+    try:
+      searchTypes = list( reversed( self.__idMap[ eId ] ) )
+    except KeyError:
+      self.__log.verbose( "Executor %s invalid/disconnected" % eId )
+      return S_ERROR( "Invalid executor" )
+    if eTypes:
+      if type( eTypes ) not in ( types.ListType, types.TupleType ):
+        eTypes = [ eTypes ]
+      for eType in reversed( eTypes ):
+        try:
+          searchTypes.remove( eType )
+        except ValueError:
+          pass
+        searchTypes.append( eType )
+    pData = self.__queues.popTask( searchTypes ) 
     if pData == None:
       self.__log.verbose( "No more tasks for %s" % eTypes )
       return S_OK()

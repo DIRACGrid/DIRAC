@@ -1,5 +1,5 @@
 
-import inspect
+import inspect, sys
 
 try:
   raise AttributeError()

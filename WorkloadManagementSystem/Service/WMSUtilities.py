@@ -56,7 +56,6 @@ def getCREAMPilotOutput(proxy,pilotRef,pilotStamp):
     shutil.rmtree(tmpdir)  
     return result
   ce = result['Value']
-  ce.reset()
   ce.setProxy(proxy)
   fullPilotRef = ":::".join([pilotRef,pilotStamp])
   result = ce.getJobOutput( fullPilotRef )
