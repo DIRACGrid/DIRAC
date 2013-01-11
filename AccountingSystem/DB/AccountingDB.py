@@ -120,7 +120,7 @@ class AccountingDB( DB ):
           bucketsLength.sort()
           if bucketsLength != self.dbBucketsLength[ typeName ]:
             bucketsLength = self.dbBucketsLength[ typeName ]
-            self.log.error( "Bucket length has changed for type %s" % typeName )
+            self.log.warn( "Bucket length has changed for type %s" % typeName )
           keyFields = [ f[0] for f in definitionKeyFields ]
           if keyFields != self.dbCatalog[ typeName ][ 'keys' ]:
             keyFields = self.dbCatalog[ typeName ][ 'keys' ]
