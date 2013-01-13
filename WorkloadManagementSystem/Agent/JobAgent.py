@@ -464,7 +464,7 @@ class JobAgent( AgentModule ):
         rescheduleFailedJob( jobID, submission['Message'], self.__report )
       else:
         if 'Value' in submission:
-          self.log.error( 'Error in DIRAC JobWrapper:', 'exit code = %s' % submission['Value'] )
+          self.log.error( 'Error in DIRAC JobWrapper:', 'exit code = %s' % ( str( submission['Value'] ) ) )
         # make sure the Job is declared Failed
         self.__report( jobID, 'Failed', submission['Message'] )
       return S_ERROR( '%s CE Submission Error: %s' % ( self.ceName, submission['Message'] ) )
