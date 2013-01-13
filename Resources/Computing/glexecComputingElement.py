@@ -13,6 +13,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                        import shellCall
+from DIRAC.Core.Utilities.Os                                import which
 from DIRAC                                                  import S_OK, S_ERROR
 
 import DIRAC
@@ -297,6 +298,8 @@ class glexecComputingElement( ComputingElement ):
       glexecPath = '%s' % ( os.environ['OSG_GLEXEC_LOCATION'] )
     elif os.environ.has_key( 'GLITE_LOCATION' ):
       glexecPath = '%s/sbin/glexec' % ( os.environ['GLITE_LOCATION'] )
+    else: #try to locate the excutable in the PATH
+      glexecPath = which( "glexec" )    
     if not glexecPath:
       self.log.info( 'Unable to locate glexec, site does not have GLITE_LOCATION nor OSG_GLEXEC_LOCATION defined' )
       return S_ERROR( 'glexec not found' )
