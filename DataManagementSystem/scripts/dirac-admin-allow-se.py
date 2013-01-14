@@ -103,9 +103,9 @@ for se, seOptions in res[ 'Value' ].items():
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if read and seOptions.has_key( 'ReadAccess' ):
 
-    if not seOptions[ 'ReadAccess' ] in [ "InActive", "Banned", "Probing" ]:
+    if not seOptions[ 'ReadAccess' ] in [ "InActive", "Banned", "Probing", "Degraded" ]:
       gLogger.notice( 'Read option for %s is %s, instead of %s' %
-                      ( se, seOptions[ 'ReadAccess' ], [ "InActive", "Banned", "Probing" ] ) )
+                      ( se, seOptions[ 'ReadAccess' ], [ "InActive", "Banned", "Probing", "Degraded" ] ) )
       gLogger.notice( 'Try specifying the command switches' )
       continue
 
@@ -123,9 +123,9 @@ for se, seOptions in res[ 'Value' ].items():
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if write and seOptions.has_key( 'WriteAccess' ):
 
-    if not seOptions[ 'WriteAccess' ] in [ "InActive", "Banned", "Probing" ]:
+    if not seOptions[ 'WriteAccess' ] in [ "InActive", "Banned", "Probing", "Degraded" ]:
       gLogger.notice( 'Write option for %s is %s, instead of %s' %
-                      ( se, seOptions[ 'WriteAccess' ], [ "InActive", "Banned", "Probing" ] ) )
+                      ( se, seOptions[ 'WriteAccess' ], [ "InActive", "Banned", "Probing", "Degraded" ] ) )
       gLogger.notice( 'Try specifying the command switches' )
       continue
 
@@ -139,9 +139,9 @@ for se, seOptions in res[ 'Value' ].items():
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if check and seOptions.has_key( 'CheckAccess' ):
 
-    if not seOptions[ 'CheckAccess' ] in [ "InActive", "Banned", "Probing" ]:
+    if not seOptions[ 'CheckAccess' ] in [ "InActive", "Banned", "Probing", "Degraded" ]:
       gLogger.notice( 'Check option for %s is %s, instead of %s' %
-                      ( se, seOptions[ 'CheckAccess' ], [ "InActive", "Banned", "Probing" ] ) )
+                      ( se, seOptions[ 'CheckAccess' ], [ "InActive", "Banned", "Probing", "Degraded" ] ) )
       gLogger.notice( 'Try specifying the command switches' )
       continue
 
