@@ -52,6 +52,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # Validity of the cache
     self.replicaCache = None
     self.replicaCacheValidity = self.am_getOption( 'ReplicaCacheValidity', 2 )
+    self.writingCache = False
 
     self.noUnusedDelay = self.am_getOption( 'NoUnusedDelay', 6 )
     self.unusedFiles = {}
@@ -479,12 +480,15 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     now = datetime.datetime.utcnow()
     if ( now - self.dateWriteCache ) < datetime.timedelta( minutes = 60 ) and not force:
       return
-    while force:
+    while force and self.writingCache:
       #If writing is forced, wait until the previous write is over
       time.sleep( 10 )
     try:
       startTime = time.time()
       self.dateWriteCache = now
+      if self.writingCache:
+        return
+      self.writingCache = True
       # Protect the copy of the cache
       tmpCache = self.replicaCache.copy()
       # write to a temporary file in order to avoid corrupted files
@@ -498,6 +502,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                         % ( self.cacheFile, time.time() - startTime ), method = method )
     except Exception:
       self._logException( "Could not write replica cache file %s" % self.cacheFile, method = method )
+    finally:
+      self.writingCache = False
 
   def __generatePluginObject( self, plugin, clients ):
     """ This simply instantiates the TransformationPlugin class with the relevant plugin name
