@@ -9,7 +9,7 @@
 import re, time, threading, copy
 from types import IntType, LongType, StringType, StringTypes, ListType, TupleType, DictType
 
-from DIRAC                                                import gLogger, S_OK, S_ERROR
+from DIRAC                                                import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.DB                                   import DB
 from DIRAC.DataManagementSystem.Client.ReplicaManager     import CatalogDirectory
 from DIRAC.Core.Security.ProxyInfo                        import getProxyInfo
@@ -100,6 +100,147 @@ class TransformationDB( DB ):
                                  'ParameterType'
                                  ]
 
+    ##Get from the CS the list of columns names
+    self.JobsStatuses = []
+    res = self.getCSOption( 'TSCountersColumnsJobs', [] )
+    if res['OK']:
+      self.JobsStatuses = res['Value']
+    res = self.getCSOption( 'TSCountersColumnsFiles', [] )
+    self.FileStatuses = []
+    if res['OK']:
+      self.FileStatuses = res['Value']    
+    
+    ##Create the tables. Does not require the use of the sql file
+    result = self.__initializeDB()
+    if not result[ 'OK' ]:
+      self.log.fatal( "Cannot initialize DB!", result[ 'Message' ] )
+
+  def __initializeDB(self):
+    """ Initialize: create tables if needed
+    """
+    
+    tablesToCreate = {'AdditionalParameters': {'Fields': {'ParameterName': 'VARCHAR(32) NOT NULL',
+                                                          'ParameterType': "VARCHAR(32) DEFAULT 'StringType'",
+                                                          'ParameterValue': 'LONGBLOB NOT NULL',
+                                                          'TransformationID': 'INTEGER NOT NULL'},
+                                               'PrimaryKey': ['TransformationID', 'ParameterName']},
+                      'DataFiles': {'Fields': {'FileID': 'INTEGER NOT NULL AUTO_INCREMENT',
+                                               'LFN': 'VARCHAR(255) UNIQUE',
+                                               'Status': "varchar(32) DEFAULT 'AprioriGood'"},
+                                    'Indexes': {'Status': ['Status']},
+                                    'PrimaryKey': ['FileID', 'LFN']},
+                      'Replicas': {'Fields': {'FileID': 'INTEGER NOT NULL',
+                                              'PFN': 'VARCHAR(255)',
+                                              'SE': 'VARCHAR(32)',
+                                              'Status': "VARCHAR(32) DEFAULT 'AprioriGood'"},
+                                   'Indexes': {'Status': ['Status']},
+                                   'PrimaryKey': ['FileID', 'SE']},
+                      'TaskInputs': {'Fields': {'InputVector': 'BLOB',
+                                                'TaskID': 'INTEGER NOT NULL',
+                                                'TransformationID': 'INTEGER NOT NULL'},
+                                     'PrimaryKey': ['TransformationID', 'TaskID']},
+                      'TransformationFileTasks': {'Fields': {'FileID': 'INTEGER NOT NULL',
+                                                             'TaskID': 'INTEGER NOT NULL',
+                                                             'TransformationID': 'INTEGER NOT NULL'},
+                                                  'PrimaryKey': ['TransformationID',
+                                                                 'FileID',
+                                                                 'TaskID']},
+                      'TransformationFiles': {'Fields': {'ErrorCount': 'INT(4) NOT NULL DEFAULT 0',
+                                                         'FileID': 'INTEGER NOT NULL',
+                                                         'InsertedTime': 'DATETIME',
+                                                         'LastUpdate': 'DATETIME',
+                                                         'Status': 'VARCHAR(32) DEFAULT "Unused"',
+                                                         'TargetSE': 'VARCHAR(255) DEFAULT "Unknown"',
+                                                         'TaskID': 'VARCHAR(32)',
+                                                         'TransformationID': 'INTEGER NOT NULL',
+                                                         'UsedSE': 'VARCHAR(255) DEFAULT "Unknown"'},
+                                              'Indexes': {'Status': ['Status'],
+                                                          'TransformationID': ['TransformationID']},
+                                              'PrimaryKey': ['TransformationID', 'FileID']},
+                      'TransformationInputDataQuery': {'Fields': {'ParameterName': 'VARCHAR(512) NOT NULL',
+                                                                  'ParameterType': 'VARCHAR(8) NOT NULL',
+                                                                  'ParameterValue': 'BLOB NOT NULL',
+                                                                  'TransformationID': 'INTEGER NOT NULL'},
+                                                       'PrimaryKey': ['TransformationID',
+                                                                      'ParameterName']},
+                      'TransformationLog': {'Fields': {'Author': 'VARCHAR(255) NOT NULL DEFAULT "Unknown"',
+                                                       'Message': 'VARCHAR(255) NOT NULL',
+                                                       'MessageDate': 'DATETIME NOT NULL',
+                                                       'TransformationID': 'INTEGER NOT NULL'},
+                                            'Indexes': {'MessageDate': ['MessageDate'],
+                                                        'TransformationID': ['TransformationID']}},
+                      'TransformationTasks': {'Fields': {'CreationTime': 'DATETIME NOT NULL',
+                                                         'ExternalID': "char(16) DEFAULT ''",
+                                                         'ExternalStatus': "char(16) DEFAULT 'Created'",
+                                                         'LastUpdateTime': 'DATETIME NOT NULL',
+                                                         'TargetSE': "char(255) DEFAULT 'Unknown'",
+                                                         'TaskID': 'INTEGER NOT NULL AUTO_INCREMENT',
+                                                         'TransformationID': 'INTEGER NOT NULL'},
+                                              'Indexes': {'ExternalStatus': ['ExternalStatus'],
+                                                          'TaskID': ['TaskID']},
+                                              'PrimaryKey': ['TransformationID', 'TaskID']},
+                      'Transformations': {'Fields': {'AgentType': "CHAR(32) DEFAULT 'Manual'",
+                                                     'AuthorDN': 'VARCHAR(255) NOT NULL',
+                                                     'AuthorGroup': 'VARCHAR(255) NOT NULL',
+                                                     'Body': 'LONGBLOB',
+                                                     'CreationDate': 'DATETIME',
+                                                     'Description': 'VARCHAR(255)',
+                                                     'EventsPerTask': 'INT NOT NULL DEFAULT 0',
+                                                     'FileMask': 'VARCHAR(255)',
+                                                     'GroupSize': 'INT NOT NULL DEFAULT 1',
+                                                     'InheritedFrom': 'INTEGER DEFAULT 0',
+                                                     'LastUpdate': 'DATETIME',
+                                                     'LongDescription': 'BLOB',
+                                                     'MaxNumberOfTasks': 'INT NOT NULL DEFAULT 0',
+                                                     'Plugin': "CHAR(32) DEFAULT 'None'",
+                                                     'Status': "CHAR(32) DEFAULT 'New'",
+                                                     'TransformationFamily': "varchar(64) default '0'",
+                                                     'TransformationGroup': "varchar(64) NOT NULL default 'General'",
+                                                     'TransformationID': 'INTEGER NOT NULL AUTO_INCREMENT',
+                                                     'TransformationName': 'VARCHAR(255) NOT NULL',
+                                                     'Type': "CHAR(32) DEFAULT 'Simulation'"},
+                                          'Indexes': {'TransformationName': ['TransformationName']},
+                                          'PrimaryKey': ['TransformationID']}
+                      }
+      
+
+    needupdate = False
+    # make sure the TransformationCounters table is in, otherwise, we need to use the alter table
+    retVal = self._query( "show tables" )
+    if not retVal[ 'OK' ]:
+      return retVal
+    
+    tablesInDB = [ t[0] for t in retVal[ 'Value' ] ]  
+    if not "TransformationCounters" in tablesInDB:
+      tablesToCreate['TransformationCounters']= {'Fields': {'TransformationID' : "INTEGER NOT NULL"},
+                                                 'PrimaryKey': ['TransformationID']}
+      for status in self.JobsStatuses+self.FileStatuses:
+        tablesToCreate['TransformationCounters']['Fields'][status] = 'INTEGER DEFAULT 0' 
+    else:
+      needupdate = True
+      
+    
+    res =  self._createTables( tablesToCreate ) 
+    if not res['OK']:
+      return res
+    
+    if not needupdate:
+      return res
+    
+    retVal =  self._query( "explain TransformationCounters" )
+    if not retVal[ 'OK' ]:
+      return retVal
+    fields = [ t[0] for t in retVal[ 'Value' ] ]
+    for status in self.JobsStatuses+self.FileStatuses:
+      if not status in fields:
+        altertable = "ALTER TABLE TransformationCounters ADD COLUMN `%s` INTEGER DEFAULT 0" % status
+        retVal = self._query( altertable )
+        if not retVal['OK']:
+          return retVal
+    
+    return S_OK()
+    
+    
   def getName( self ):
     """  Get the database name
     """
@@ -1314,6 +1455,50 @@ class TransformationDB( DB ):
     req = "UPDATE Replicas SET SE='%s' WHERE FileID IN (%s) AND SE = '%s';" % ( newSE,
                                                                                 intListToString( fileIDs ), oldSE )
     return self._update( req, connection )
+
+  ###########################################################################
+  #
+  # Fill in / get the counters
+  #
+  def updateTransformationCounters(self, counterDict, connection = False ):
+    """ Insert in the table or update the transformation counters given a dict
+    """
+    ##first, check that all the keys in this dict are among those expected
+    for key in counterDict.keys():
+      if key not in self.JobsStatuses+self.FileStatuses+['TransformationID']:
+        return S_ERROR("Key %s not in the table" % key)
+    if not 'TransformationID' in counterDict.keys():
+      return S_ERROR("TransformationID is mandatory")
+    
+    res = self.getFields("TransformationCounters", ['TransformationID'], 
+                         condDict = {'TransformationID' : counterDict['TransformationID']}, conn = connection)
+    if not res['Value']:
+      return res
+    
+    if len(res['Value']): #if the Transformation is already in:
+      res = self.updateFields("TransformationCounters", condDict = {'TransformationID' : counterDict['TransformationID']},
+                              updateDict = counterDict, conn = connection)
+      if not res['OK']:
+        return res
+    else:
+      res = self.insertFields("TransformationCounters", inDict = counterDict, conn = connection)
+      if not res['OK']:
+        return res
+      
+    return S_OK()
+
+  def getTransformationCounters(self, TransIDs, connection = False):
+    """ Get all the counters for the given transformationIDs 
+    """
+    res = self.getFields("TransformationCounters", condDict = {'TransformationID' : TransIDs}, conn = connection)
+    if not res['OK']:
+      return res
+    fields = ['TransformationID']+self.JobsStatuses+self.FileStatuses
+    resList = []
+    for row in res['Value']:
+      resList.append( dict( zip( fields, row ) ) )
+      
+    return S_OK(resList)
 
   ###########################################################################
   #
