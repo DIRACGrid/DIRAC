@@ -80,7 +80,7 @@ class JobPath( OptimizerExecutor ):
       self.jobLog.info( 'Job defines its own optimizer chain %s' % opChain )
       return self.__setOptimizerChain( jobState, opChain )
     #Construct path
-    opPath = self.ex_getOption( 'BasePath', ['JobPath', 'JobSanity'] )
+    opPath = self.ex_getOption( 'BasePath', ['JobPath', 'JobSanity', 'Parametric'] )
     voPlugin = self.ex_getOption( 'VOPlugin', '' )
     #Specific VO path
     if voPlugin:
