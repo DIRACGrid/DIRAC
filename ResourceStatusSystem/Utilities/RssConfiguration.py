@@ -26,9 +26,11 @@ class RssConfiguration:
   { 
     Config:
     { 
-      State      : Active | InActive,
-      RecordLogs : Active | InActive, 
-      StatusType :
+      State        : Active | InActive,
+      RecordLogs   : Active | InActive,
+      Cache        : 300,
+      CacheHistory : 24,
+      StatusType   :
       { 
         default       : all,
         StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
@@ -53,6 +55,20 @@ class RssConfiguration:
     '''
     
     return self.opsHelper.getValue( '%s/Config/State' % _rssConfigPath, default )
+
+  def getConfigCache( self, default = 300 ):
+    '''
+      Gets from <pathToRSSConfiguration>/Config the value of Cache
+    '''
+    
+    return self.opsHelper.getValue( '%s/Config/Cache' % _rssConfigPath, default )
+
+  def getConfigCacheHistory( self, default = 24 ):
+    '''
+      Gets from <pathToRSSConfiguration>/Config the value of CacheHistory
+    '''
+    
+    return self.opsHelper.getValue( '%s/Config/CacheHistory' % _rssConfigPath, default )
   
   def getConfigStatusType( self, elementType = None ):
     '''
