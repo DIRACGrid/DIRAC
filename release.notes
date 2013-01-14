@@ -1,4 +1,4 @@
-[v6r7-pre5]
+[v6r7-pre6]
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
@@ -11,6 +11,7 @@ FIX: dirac-proxy-init - always check for errors in S_OK/ERROR returned structure
 *DMS
 FIX: FTSSubmitAgent - file for some reason rejected from submission should stay in 'Waiting' in 
      TransferDB.Channel table
+FIX: FTSRequest - fix in the log printout     
 
 *RSS
 NEW:  general reimplementation: 
@@ -27,6 +28,13 @@ NEW:  general reimplementation:
       Replaced Bad with Degraded status ( outside RSS ).
       Added "Access" to Read|Write|Check|Remove SE statuses wherever it applies.
       ResourceStatus returns by default "Active" instead of "Allowed" for CS calls.
+      Caching parameters are defined in the CS
+FIX: dirac-admin-allow/ban-se - allow a SE on Degraded ( Degraded->Active ) and ban a SE on Probing 
+     ( Probing -> Banned ). In practice, Active and Degraded are "usable" states anyway.            
+      
+*Resources    
+NEW: glexecCE - add new possible locations of the glexec binary: OSG specific stuff and in last resort 
+     looking in the PATH    
       
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
