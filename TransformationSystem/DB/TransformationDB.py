@@ -1487,7 +1487,7 @@ class TransformationDB( DB ):
       
     return S_OK()
 
-  def getTransformationCounters(self, TransIDs, connection = False):
+  def getTransformationsCounters(self, TransIDs, connection = False):
     """ Get all the counters for the given transformationIDs 
     """
     res = self.getFields("TransformationCounters", condDict = {'TransformationID' : TransIDs}, conn = connection)
