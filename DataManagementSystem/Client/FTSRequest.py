@@ -702,7 +702,7 @@ class FTSRequest(object):
     for pfn, error in res['Value']['Failed'].items():
       lfn = toResolve[pfn]
       if re.search( 'File does not exist', error ):
-        gLogger.warn("resolveSource: skipping %s - source file does not exists: %s" % ( lfn, res["Message"] ) )
+        gLogger.warn("resolveSource: skipping %s - source file does not exists" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source file does not exist" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
       else:
