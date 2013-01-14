@@ -102,8 +102,8 @@ for se, seOptions in res[ 'Value' ].items():
   # Eventually, we will get rid of the notion of InActive, as we always write Banned.
   if read and seOptions.has_key( 'ReadAccess' ):
 
-    if not seOptions[ 'ReadAccess' ] in [ 'Active', 'Degraded' ]:
-      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'ReadAccess' ], [ 'Active', 'Degraded' ] ) )
+    if not seOptions[ 'ReadAccess' ] in [ 'Active', 'Degraded', 'Probing' ]:
+      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'ReadAccess' ], [ 'Active', 'Degraded', 'Probing' ] ) )
       gLogger.notice( 'Try specifying the command switches' )
     else:
 
@@ -118,8 +118,8 @@ for se, seOptions in res[ 'Value' ].items():
   # Eventually, we will get rid of the notion of InActive, as we always write Banned.
   if write and seOptions.has_key( 'WriteAccess' ):
 
-    if not seOptions[ 'WriteAccess' ] in [ 'Active', 'Degraded' ]:
-      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'WriteAccess' ], [ 'Active', 'Degraded' ] ) )
+    if not seOptions[ 'WriteAccess' ] in [ 'Active', 'Degraded', 'Probing' ]:
+      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'WriteAccess' ], [ 'Active', 'Degraded', 'Probing' ] ) )
       gLogger.notice( 'Try specifying the command switches' )
     else:
 
@@ -134,8 +134,8 @@ for se, seOptions in res[ 'Value' ].items():
   # Eventually, we will get rid of the notion of InActive, as we always write Banned.
   if check and seOptions.has_key( 'CheckAccess' ):
 
-    if not seOptions[ 'CheckAccess' ] in [ 'Active', 'Degraded' ]:
-      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'CheckAccess' ], [ 'Active', 'Degraded' ] ) )
+    if not seOptions[ 'CheckAccess' ] in [ 'Active', 'Degraded', 'Probing' ]:
+      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'CheckAccess' ], [ 'Active', 'Degraded', 'Probing' ] ) )
       gLogger.notice( 'Try specifying the command switches' )
     else:
 
