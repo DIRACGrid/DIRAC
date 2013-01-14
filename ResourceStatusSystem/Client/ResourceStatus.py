@@ -33,10 +33,15 @@ class ResourceStatus( object ):
     self.rssConfig  = RssConfiguration()
     self.__opHelper = Operations()    
     self.rssClient  = None 
+    
+    # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
+    cacheLifeTime   = int( self.rssConfig.getConfigCache() )
+    cacheHistory    = int( self.rssConfig.getConfigCacheHistory() )
 
     # RSSCache only affects the calls directed to RSS, if using the CS it is not
     # used.  
-    self.seCache   = RSSCache( 300, updateFunc = self.__updateSECache, cacheHistoryLifeTime = 24 ) 
+    self.seCache   = RSSCache( cacheLifeTime, updateFunc = self.__updateSECache, 
+                               cacheHistoryLifeTime = cacheHistory ) 
     self.seCache.startRefreshThread()           
             
   def getStorageElementStatus( self, elementName, statusType = None, default = None ):
