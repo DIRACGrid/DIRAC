@@ -13,6 +13,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                        import shellCall
+from DIRAC.Core.Utilities.Os                                import which
 from DIRAC                                                  import S_OK, S_ERROR
 
 import DIRAC
@@ -292,13 +293,19 @@ class glexecComputingElement( ComputingElement ):
   def glexecLocate( self ):
     """Try to find glexec on the local system, if not found default to InProcess.
     """
-    if not os.environ.has_key( 'GLITE_LOCATION' ):
-      self.log.info( 'Unable to locate glexec, site does not have GLITE_LOCATION defined' )
+    glexecPath = ""
+    if os.environ.has_key( 'OSG_GLEXEC_LOCATION' ):
+      glexecPath = '%s' % ( os.environ['OSG_GLEXEC_LOCATION'] )
+    elif os.environ.has_key( 'GLITE_LOCATION' ):
+      glexecPath = '%s/sbin/glexec' % ( os.environ['GLITE_LOCATION'] )
+    else: #try to locate the excutable in the PATH
+      glexecPath = which( "glexec" )    
+    if not glexecPath:
+      self.log.info( 'Unable to locate glexec, site does not have GLITE_LOCATION nor OSG_GLEXEC_LOCATION defined' )
       return S_ERROR( 'glexec not found' )
 
-    glexecPath = '%s/sbin/glexec' % ( os.environ['GLITE_LOCATION'] )
     if not os.path.exists( glexecPath ):
-      self.log.info( '$GLITE_LOCATION/sbin/glexec not found at path %s' % ( glexecPath ) )
+      self.log.info( 'glexec not found at path %s' % ( glexecPath ) )
       return S_ERROR( 'glexec not found' )
 
     return S_OK( glexecPath )

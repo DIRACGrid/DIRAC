@@ -182,3 +182,14 @@ def unifyLdLibraryPath( path, newpath ):
   else:
     # Windows does nothing for the moment
     return path
+
+def which( filetofind ):
+  """ Utility that mimics the 'which' command from the shell
+  """
+  if not "PATH" in os.environ:
+     return None
+  for path in os.environ["PATH"].split(":"):
+    if os.path.exists(path + "/" + filetofind):
+      return path + "/" + filetofind
+
+  return None
