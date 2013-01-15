@@ -612,7 +612,7 @@ class TransformationDB( DB ):
       errorCount = fileDict['ErrorCount']
       lfn = fileDict['LFN']
       fileID = fileDict['FileID']
-      if ( currentStatus.lower() == "processed" ) and ( status.lower() != "processed" ):
+      if ( not force ) and ( currentStatus.lower() == "processed" ) and ( status.lower() != "processed" ):
         failed[lfn] = 'Can not change Processed status'
         req = ''
       elif ( currentStatus == status ):
