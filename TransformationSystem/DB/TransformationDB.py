@@ -505,6 +505,11 @@ class TransformationDB( DB ):
           return res
         originalFileIDs, _ignore = res['Value']
         condDict['FileID'] = originalFileIDs.keys()
+
+      for val in condDict.iterValues():
+        if not val:
+          return S_OK( [] )
+
       req = "%s %s" % ( req, self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit,
                                                   offset = offset ) )
     res = self._query( req, connection )
