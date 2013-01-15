@@ -144,7 +144,8 @@ class TransformationCleaningAgent( AgentModule ):
     olderThanTime = datetime.utcnow() - timedelta( days = self.archiveAfter )
     res = self.transClient.getTransformations( { 'Status' : 'Completed',
                                                  'Type' : self.transformationTypes },
-                                               older = olderThanTime )
+                                                 older = olderThanTime,
+                                                 timeStamp = 'LastUpdate' )
     if res['OK']:
       for transDict in res['Value']:
         self.archiveTransformation( transDict['TransformationID'] )
