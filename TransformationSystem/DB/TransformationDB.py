@@ -101,14 +101,17 @@ class TransformationDB( DB ):
                                  ]
 
     ##Get from the CS the list of columns names
+    default_task_statuses = ['Checking','Staging','Waiting','Running','Done','Completed','Killed','Stalled',
+                             'Failed','Rescheduled']
+    default_file_statuses = ['Unused','Assigned','Processed','Problematic']
     self.JobsStatuses = []
-    res = self.getCSOption( 'TSCountersColumnsJobs', [] )
+    res = Operations().getValue( 'Transformations/TasksStates', default_task_statuses )
     if res['OK']:
       self.JobsStatuses = res['Value']
-    res = self.getCSOption( 'TSCountersColumnsFiles', [] )
+    res = Operations().getValue( 'Transformations/FilesStates', default_file_statuses )
     self.FileStatuses = []
     if res['OK']:
-      self.FileStatuses = res['Value']    
+      self.FileStatuses = res['Value']
     
     ##Create the tables. Does not require the use of the sql file
     result = self.__initializeDB()
@@ -209,13 +212,15 @@ class TransformationDB( DB ):
     retVal = self._query( "show tables" )
     if not retVal[ 'OK' ]:
       return retVal
-    
+    self.TSCounterFields = []
     tablesInDB = [ t[0] for t in retVal[ 'Value' ] ]  
     if not "TransformationCounters" in tablesInDB:
       tablesToCreate['TransformationCounters']= {'Fields': {'TransformationID' : "INTEGER NOT NULL"},
                                                  'PrimaryKey': ['TransformationID']}
+      self.TSCounterFields.append('TransformationID')
       for status in self.JobsStatuses+self.FileStatuses:
-        tablesToCreate['TransformationCounters']['Fields'][status] = 'INTEGER DEFAULT 0' 
+        tablesToCreate['TransformationCounters']['Fields'][status] = 'INTEGER DEFAULT 0'
+        self.TSCounterFields.append(status)
     else:
       needupdate = True
       
@@ -230,14 +235,15 @@ class TransformationDB( DB ):
     retVal =  self._query( "explain TransformationCounters" )
     if not retVal[ 'OK' ]:
       return retVal
-    fields = [ t[0] for t in retVal[ 'Value' ] ]
+    #Get the available counters
+    self.TSCounterFields = [ t[0] for t in retVal[ 'Value' ] ]
     for status in self.JobsStatuses+self.FileStatuses:
-      if not status in fields:
+      if not status in self.TSCounterFields:
         altertable = "ALTER TABLE TransformationCounters ADD COLUMN `%s` INTEGER DEFAULT 0" % status
         retVal = self._query( altertable )
         if not retVal['OK']:
           return retVal
-    
+        self.TSCounterFields.append(status)
     return S_OK()
     
     
@@ -1465,10 +1471,10 @@ class TransformationDB( DB ):
     """
     ##first, check that all the keys in this dict are among those expected
     for key in counterDict.keys():
-      if key not in self.JobsStatuses+self.FileStatuses+['TransformationID']:
+      if key not in self.TSCounterFields:
         return S_ERROR("Key %s not in the table" % key)
     if not 'TransformationID' in counterDict.keys():
-      return S_ERROR("TransformationID is mandatory")
+      return S_ERROR("TransformationID key is mandatory")
     
     res = self.getFields("TransformationCounters", ['TransformationID'], 
                          condDict = {'TransformationID' : counterDict['TransformationID']}, conn = connection)
@@ -1493,7 +1499,7 @@ class TransformationDB( DB ):
     res = self.getFields("TransformationCounters", condDict = {'TransformationID' : TransIDs}, conn = connection)
     if not res['OK']:
       return res
-    fields = ['TransformationID']+self.JobsStatuses+self.FileStatuses
+    fields = self.TSCounterFields
     resList = []
     for row in res['Value']:
       resList.append( dict( zip( fields, row ) ) )
