@@ -533,10 +533,115 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
     return S_OK( resultDict )
 
+  types_updateTransformationCounters = [DictType]
+  def export_updateTransformationCounters( self, counterDict ):
+    """ Update or insert transformation counters
+    """
+    if 'TransformationID' not in counterDict:
+      return S_ERROR( "Missing mandatory key TransformationID" )
+    return database.updateTransformationCounters( counterDict )
+
   types_getTransformationSummaryWeb = [DictType, ListType, IntType, IntType]
   def export_getTransformationSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the transformation information for a given page in the generic format """
+    # Obtain the timing information from the selectDict
+    last_update = selectDict.get( 'CreationDate', None )
+    if last_update:
+      del selectDict['CreationDate']
+    fromDate = selectDict.get( 'FromDate', None )
+    if fromDate:
+      del selectDict['FromDate']
+    if not fromDate:
+      fromDate = last_update
+    toDate = selectDict.get( 'ToDate', None )
+    if toDate:
+      del selectDict['ToDate']
+    # Sorting instructions. Only one for the moment.
+    if sortList:
+      orderAttribute = sortList[0][0] + ":" + sortList[0][1]
+    else:
+      orderAttribute = None
 
+    # Get the transformations that match the selection
+    res = database.getTransformations( condDict = selectDict, older = toDate, newer = fromDate,
+                                       orderAttribute = orderAttribute )
+    if not res['OK']:
+      return self._parseRes( res )
+    # Prepare the standard structure now within the resultDict dictionary
+    resultDict = {}
+    trList = res['Records']
+    # Create the total records entry
+    nTrans = len( trList )
+    resultDict['TotalRecords'] = nTrans
+    # Create the ParameterNames entry
+    paramNames = res['ParameterNames']
+    resultDict['ParameterNames'] = paramNames
+
+    # Add the job states to the ParameterNames entry: the order here matters
+    taskStateNames = Operations().getValue( "Transformations/TasksStates", [] )
+    resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
+    resultDict['ParameterNames'] += ['Created']
+    fileStateNames = Operations().getValue( 'Transformations/FilesStates', [] )
+    resultDict['ParameterNames'] += ['Files_' + x for x in fileStateNames]
+    resultDict['ParameterNames'] += ['PercentProcessed', 'Total']
+    # Get the transformations which are within the selected window
+    if nTrans == 0:
+      return S_OK( resultDict )
+    ini = startItem
+    last = ini + maxItems
+    if ini >= nTrans:
+      return S_ERROR( 'Item number out of range' )
+    if last > nTrans:
+      last = nTrans
+    transList = trList[ini:last]
+
+    statusDict = {}
+    extendableTranfs = Operations().getValue( "Transformations/%s/ExtendableTransfTypes" % database.__class__.__name__,
+                                              ['Simulation', 'MCsimulation'] )
+    # Add specific information for each selected transformation
+    for trans in transList:
+      transDict = dict( zip( paramNames, trans ) )
+      # Update the status counters
+      status = transDict['Status']
+      statusDict[status] = statusDict.setdefault( status, 0 ) + 1
+      # Get the statistics on the number of jobs for the transformation
+      transID = transDict['TransformationID']
+      res = database.getTransformationsCounters( transID )
+      if not res['OK']:
+        return S_ERROR( "Failed getting the Counters" )
+      counters = res['Value']
+      created = 0
+      taskscounter = []
+      for state in taskStateNames:
+        taskscounter.append( counters.get( state, 0 ) )
+        created += counters.get( state, 0 )
+      taskscounter.append( created ) #the list is ordered, the created must be last
+      trans.extend( taskscounter )
+      transType = transDict['Type']
+
+      filestats = []
+      total = 0
+      for state in fileStateNames:
+        filestats.append( counters.get( state, 0 ) )
+        total += counters.get( state, 0 )
+        PercentProcessed = 0
+      if transType.lower() in extendableTranfs:
+        PercentProcessed = '-'
+      elif total != 0:
+        PercentProcessed = "%.1f" % ( int( counters.get( "Processed", 0 ) * 1000. / total ) / 10. )
+      else:
+        PercentProcessed = '0.0'
+      filestats.append( PercentProcessed )
+      filestats.append( total )
+      trans.extend( filestats )
+
+    resultDict['Records'] = transList
+    resultDict['Extras'] = statusDict
+    return S_OK( resultDict )
+
+  types_getTransformationSummaryWebOld = [DictType, ListType, IntType, IntType]
+  def export_getTransformationSummaryWebOld( self, selectDict, sortList, startItem, maxItems ):
+    """ Get the summary of the transformation information for a given page in the generic format """
     # Obtain the timing information from the selectDict
     last_update = selectDict.get( 'CreationDate', None )
     if last_update:
