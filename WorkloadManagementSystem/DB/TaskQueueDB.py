@@ -53,7 +53,10 @@ class TaskQueueDB( DB ):
   def findOrphanJobs( self ):
     """ Find jobs that are not in any task queue
     """
-    return self._query( "select JobID from tq_Jobs WHERE TQId not in (SELECT TQId from tq_TaskQueues)" )
+    result = self._query( "select JobID from tq_Jobs WHERE TQId not in (SELECT TQId from tq_TaskQueues)" )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( [ row[0] for row in result[ 'Value' ] ] )
 
   def isSharesCorrectionEnabled( self ):
     return self.__getCSOption( "EnableSharesCorrection", False )
