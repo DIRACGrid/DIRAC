@@ -1,4 +1,6 @@
 import threading
+#Because eval(valenc) might require it
+import datetime
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DEncode, List
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
