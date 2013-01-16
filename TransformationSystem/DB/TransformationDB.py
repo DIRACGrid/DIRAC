@@ -101,18 +101,18 @@ class TransformationDB( DB ):
                                  ]
 
     ##Get from the CS the list of columns names
-    default_task_statuses = ['Checking','Staging','Waiting','Running','Done','Completed','Killed','Stalled',
+    default_task_statuses = ['Created','Submitted','Checking','Staging','Waiting','Running','Done','Completed','Killed','Stalled',
                              'Failed','Rescheduled']
     default_file_statuses = ['Unused','Assigned','Processed','Problematic']
-    self.JobsStatuses = []
-    res = Operations().getValue( 'Transformations/TasksStates', default_task_statuses )
+    self.TasksStatuses = default_task_statuses
+    res = Operations().getValue( 'Transformations/TasksStates', [] )
     if res['OK']:
-      self.JobsStatuses = res['Value']
-    res = Operations().getValue( 'Transformations/FilesStates', default_file_statuses )
-    self.FileStatuses = []
+      self.TasksStatuses += res['Value']
+    res = Operations().getValue( 'Transformations/FilesStates', [] )
+    self.FileStatuses = default_file_statuses
     if res['OK']:
-      self.FileStatuses = res['Value']
-    
+      self.FileStatuses += res['Value']
+  
     ##Create the tables. Does not require the use of the sql file
     result = self.__initializeDB()
     if not result[ 'OK' ]:
@@ -218,7 +218,7 @@ class TransformationDB( DB ):
       tablesToCreate['TransformationCounters']= {'Fields': {'TransformationID' : "INTEGER NOT NULL"},
                                                  'PrimaryKey': ['TransformationID']}
       self.TSCounterFields.append('TransformationID')
-      for status in self.JobsStatuses+self.FileStatuses:
+      for status in self.TasksStatuses+self.FileStatuses:
         tablesToCreate['TransformationCounters']['Fields'][status] = 'INTEGER DEFAULT 0'
         self.TSCounterFields.append(status)
     else:
@@ -237,7 +237,7 @@ class TransformationDB( DB ):
       return retVal
     #Get the available counters
     self.TSCounterFields = [ t[0] for t in retVal[ 'Value' ] ]
-    for status in self.JobsStatuses+self.FileStatuses:
+    for status in self.TasksStatuses+self.FileStatuses:
       if not status in self.TSCounterFields:
         altertable = "ALTER TABLE TransformationCounters ADD COLUMN `%s` INTEGER DEFAULT 0" % status
         retVal = self._query( altertable )
@@ -1466,6 +1466,15 @@ class TransformationDB( DB ):
   #
   # Fill in / get the counters
   #
+  def getTasksTransformationCountersStatuses(self, connection = False):
+    """ Need to get all the statuses to update
+    """
+    return self.TasksStatuses
+  def getFilesTransformationCountersStatuses(self, connection = False):
+    """ Need to get all the statuses to update
+    """
+    return self.FileStatuses
+   
   def updateTransformationCounters(self, counterDict, connection = False ):
     """ Insert in the table or update the transformation counters given a dict
     """
