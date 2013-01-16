@@ -15,6 +15,12 @@ NEW:  general reimplementation:
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p7]
+
+*Resources
+FIX: StorageFactory - uncommented line that was preventing the status to be returned 
+BUGFIX: CE remote scripts - should return status and not call exit()
+
 [v6r6p6]
 
 *WMS
