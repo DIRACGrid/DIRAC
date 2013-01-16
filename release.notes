@@ -44,6 +44,7 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 *Resources
 FIX: StorageFactory - uncommented line that was preventing the status to be returned 
 BUGFIX: CE remote scripts - should return status and not call exit()
+BUGFIX: SSHComputingElement - wrong pilot ID reference
 
 [v6r6p6]
 
