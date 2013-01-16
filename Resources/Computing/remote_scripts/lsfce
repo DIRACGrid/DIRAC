@@ -53,12 +53,12 @@ def killJob( jobList ):
 def getJobStatus( jobList, user ):
 
   print -1
-  exit(-1)
+  return -1
   
 def getCEStatus( user ):
 
   print -1
-  exit(-1)        
+  return -1
 
 #####################################################################################
 

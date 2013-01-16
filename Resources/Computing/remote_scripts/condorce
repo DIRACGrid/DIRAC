@@ -51,9 +51,11 @@ def submitJob( executable, nJobs, jobDir, submitOptions ):
     print status
     for i in range( submittedJobs ):
       print '.'.join( [cluster,str(i)] )
+    return status  
   else:
     print 1
-    print "No jobs were submitted to the local batch system"        
+    print "No jobs were submitted to the local batch system"     
+    return 1   
 
 def killJob( jobList ):
   """ Kill jobs in the given list

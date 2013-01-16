@@ -26,7 +26,7 @@ def submitJob( executable,outputDir,errorDir,nJobs,jobDir,queue,submitOptions ):
     print status
     print output
     
-  exit(status)      
+  return status
 
 def killJob( jobList ):
   """ Kill jobs in the given list
@@ -51,12 +51,12 @@ def killJob( jobList ):
 def getJobStatus( jobList, user ):
 
   print -1
-  exit(-1)
+  return -1
   
 def getCEStatus( user ):
 
   print -1
-  exit(-1)        
+  return -1       
 
 #####################################################################################
 
