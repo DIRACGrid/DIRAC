@@ -720,6 +720,7 @@ class AccountingDB( DB ):
                           conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
+    print "FOUND %s" % retVal
     #Record is not in the db
     if len( retVal[ 'Value' ] ) == 0:
       return S_OK( 0 )
@@ -873,11 +874,11 @@ class AccountingDB( DB ):
       valueField = self.dbCatalog[ typeName ][ 'values' ][ pos ]
       value = bucketValues[ pos ]
       fullFieldName = "`%s`.`%s`" % ( tableName, valueField )
-      sqlValList.append( "%s=%s-(%s*%s)" % ( fullFieldName, fullFieldName, value, proportion ) )
-    sqlValList.append( "`%s`.`entriesInBucket`=`%s`.`entriesInBucket`-(%s*%s)" % ( tableName,
-                                                                                    tableName,
-                                                                                    bucketValues[-1],
-                                                                                    proportion ) )
+      sqlValList.append( "%s=GREATEST(0,%s-(%s*%s))" % ( fullFieldName, fullFieldName, value, proportion ) )
+    sqlValList.append( "`%s`.`entriesInBucket`=GREATEST(0,`%s`.`entriesInBucket`-(%s*%s))" % ( tableName,
+                                                                                               tableName,
+                                                                                               bucketValues[-1],
+                                                                                               proportion ) )
     cmd += ", ".join( sqlValList )
     cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                             tableName,
