@@ -595,11 +595,20 @@ File Catalog Client $Revision: 1.17 $Date:
     lfn = self.getPath(path)
     print "lfn:",lfn
     rmse = args[1]
+    pfn = args[2]
     try:
-      result =  self.fc.removeReplica( {lfn:{'SE':rmse}} )
+      result =  self.fc.removeReplica( {lfn:{'SE':rmse,'PFN':pfn}} )
       done = 1
       if result['OK']:
-        print "Replica at",rmse,"removed from the catalog"
+        if 'Failed' in result['Value']:
+          if lfn in result['Value']['Failed']:
+            print "ERROR: %s" % ( result['Value']['Failed'][lfn])
+          elif  lfn in result['Value']['Successful']:
+            print "File %s at %s removed from the catalog" %( lfn, rmse )
+          else:
+            "ERROR: Unexpected returned value %s" % result['Value']
+        else:
+          print "File %s at %s removed from the catalog" %( lfn, rmse )
       else:
         print "Failed to remove replica at",rmse
         print result['Message']
@@ -622,7 +631,7 @@ File Catalog Client $Revision: 1.17 $Date:
           elif lfn in result['Value']['Successful']:
             print "File",lfn,"removed from the catalog"
           else:
-            print "Unexpected result %s" % result['Value']
+            print "ERROR: Unexpected result %s" % result['Value']
         else:
           print "File",lfn,"removed from the catalog"
       else:
