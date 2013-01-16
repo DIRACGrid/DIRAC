@@ -21,12 +21,7 @@ class UpdateTransformationCounters(AgentModule):
     self.fileLog = {}
     self.timeLog = {}
     self.fullTimeLog = {}
-    default_task_statuses = ['Checking','Staging','Waiting','Running','Done','Completed','Killed','Stalled',
-                             'Failed','Rescheduled']
-    default_file_statuses = ['Unused','Assigned','Processed','Problematic']
     self.pollingTime = self.am_getOption( 'PollingTime', 800 )
-    self.JobsStates = Operations().getValue( 'Transformations/TasksStates', default_task_statuses )
-    self.FilesStates = Operations().getValue( 'Transformations/FilesStates', default_file_statuses )
     self.TransfStatuses = Operations().getValue( 'Transformations/TransformationStatuses', ['Active',"Stopped"] )
     self.transClient = TransformationClient()
 
@@ -47,6 +42,8 @@ class UpdateTransformationCounters(AgentModule):
       gLogger.error( "UpdateTransformationCounters.execute: Failed to get transformations.", result['Message'] )
       return S_OK()
     # Process each transformation
+    self.JobsStates = self.transClient.getTransformationCountersStatuses('Tasks')
+    self.FilesStates= self.transClient.getTransformationCountersStatuses('Files')
     for transDict in result['Value']:
       transID = long( transDict['TransformationID'] )
       counterDict = {}

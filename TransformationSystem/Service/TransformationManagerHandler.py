@@ -533,6 +533,17 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
     return S_OK( resultDict )
 
+  types_getTransformationCountersStatuses = [StringTypes]
+  def export_getTransformationCountersStatuses( self, type_counter ):
+    """ Return all statuses that are considered
+    """
+    if type_counter == 'Tasks':
+      return database.getTasksTransformationCountersStatuses()
+    elif type_counter == 'Files':
+      return database.getFilesTransformationCountersStatuses()
+    else:
+      return S_ERROR( "Only 'Tasks' and 'Files' allowed" )
+
   types_updateTransformationCounters = [DictType]
   def export_updateTransformationCounters( self, counterDict ):
     """ Update or insert transformation counters
@@ -578,12 +589,11 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resultDict['ParameterNames'] = paramNames
 
     # Add the job states to the ParameterNames entry: the order here matters
-    taskStateNames = Operations().getValue( "Transformations/TasksStates", [] )
+    taskStateNames = database.getTasksTransformationCountersStatuses()
     resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
-    resultDict['ParameterNames'] += ['Created']
-    fileStateNames = Operations().getValue( 'Transformations/FilesStates', [] )
+    fileStateNames = database.getFilesTransformationCountersStatuses()
+    fileStateNames += ['PercentProcessed', 'Total']
     resultDict['ParameterNames'] += ['Files_' + x for x in fileStateNames]
-    resultDict['ParameterNames'] += ['PercentProcessed', 'Total']
     # Get the transformations which are within the selected window
     if nTrans == 0:
       return S_OK( resultDict )
@@ -597,28 +607,28 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
     statusDict = {}
     extendableTranfs = Operations().getValue( "Transformations/%s/ExtendableTransfTypes" % database.__class__.__name__,
-                                              ['Simulation', 'MCsimulation'] )
+                                              ['simulation', 'mcsimulation'] )
     # Add specific information for each selected transformation
     for trans in transList:
       transDict = dict( zip( paramNames, trans ) )
       # Update the status counters
       status = transDict['Status']
       statusDict[status] = statusDict.setdefault( status, 0 ) + 1
-      # Get the statistics on the number of jobs for the transformation
+      # Get the statistics on the number of Tasks for the transformation
       transID = transDict['TransformationID']
       res = database.getTransformationsCounters( transID )
       if not res['OK']:
         return S_ERROR( "Failed getting the Counters" )
-      counters = res['Value']
-      created = 0
+      counters = res['Value'] #We now have the full table
+
+      #Get busy with the tasks statuses
       taskscounter = []
       for state in taskStateNames:
         taskscounter.append( counters.get( state, 0 ) )
-        created += counters.get( state, 0 )
-      taskscounter.append( created ) #the list is ordered, the created must be last
-      trans.extend( taskscounter )
-      transType = transDict['Type']
+      trans.extend( taskscounter ) ##add at the bottom of the list
 
+      ##Now take a look at the Files
+      transType = transDict['Type']
       filestats = []
       total = 0
       for state in fileStateNames:
@@ -633,7 +643,9 @@ class TransformationManagerHandlerBase( RequestHandler ):
         PercentProcessed = '0.0'
       filestats.append( PercentProcessed )
       filestats.append( total )
-      trans.extend( filestats )
+      trans.extend( filestats ) #add at the bottom if the list
+      #Now the trans list contains all the values, and resultDict contains all the ParameterNames and the 
+      #updated transList
 
     resultDict['Records'] = transList
     resultDict['Extras'] = statusDict
