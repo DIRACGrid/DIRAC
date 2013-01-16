@@ -616,7 +616,15 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result =  self.fc.removeFile(lfn)
       if result['OK']:
-        print "File",lfn,"removed from the catalog"
+        if 'Failed' in result['Value']:
+          if lfn in result['Value']['Failed']:
+            print result['Value']['Failed'][lfn]
+          elif lfn in result['Value']['Successful']:
+            print "File",lfn,"removed from the catalog"
+          else:
+            print "Unexpected result %s" % result['Value']
+        else:
+          print "File",lfn,"removed from the catalog"
       else:
         print "Failed to remove file from the catalog"  
         print result['Message']
