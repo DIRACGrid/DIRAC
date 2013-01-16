@@ -618,7 +618,7 @@ File Catalog Client $Revision: 1.17 $Date:
       if result['OK']:
         if 'Failed' in result['Value']:
           if lfn in result['Value']['Failed']:
-            print result['Value']['Failed'][lfn]
+            print "ERROR: %s" % ( result['Value']['Failed'][lfn] )
           elif lfn in result['Value']['Successful']:
             print "File",lfn,"removed from the catalog"
           else:
