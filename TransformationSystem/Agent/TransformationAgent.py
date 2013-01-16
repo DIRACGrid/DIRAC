@@ -47,13 +47,15 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     #for caching using a pickle file
     self.workDirectory = self.am_getWorkDirectory()
     self.cacheFile = os.path.join( self.workDirectory, 'ReplicaCache.pkl' )
-    self.dateWriteCache = datetime.datetime.now()
+    self.dateWriteCache = datetime.datetime.utcnow()
 
     # Validity of the cache
     self.replicaCache = None
-    self.replicaCacheValidity = 2
+    self.replicaCacheValidity = self.am_getOption( 'ReplicaCacheValidity', 2 )
 
+    self.noUnusedDelay = self.am_getOption( 'NoUnusedDelay', 6 )
     self.unusedFiles = {}
+    self.unusedTimeStamp = {}
 
     self.debug = False
     self.transInThread = {}
@@ -63,7 +65,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """
 
     self.__readCache()
-    self.dateWriteCache = datetime.datetime.now()
+    self.dateWriteCache = datetime.datetime.utcnow()
 
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
@@ -81,7 +83,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ graceful finalization
     """
     if self.transInQueue:
-      self._loginfo( "Wait for threads to get empty before terminating the agent (%d tasks)" % len( self.transInThread ) )
+      self._logInfo( "Wait for threads to get empty before terminating the agent (%d tasks)" % len( self.transInThread ) )
       self.transInQueue = []
       while self.transInThread:
         time.sleep( 2 )
@@ -103,7 +105,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       transID = long( transDict['TransformationID'] )
       if transDict.get( 'InheritedFrom' ):
         # Try and move datasets from the ancestor production
-        res = self.transClient.moveFilesToDerivedTransformation( transDict )
+        res = self.transfClient.moveFilesToDerivedTransformation( transDict )
         if not res['OK']:
           self._logError( "Error moving files from an inherited transformation", res['Message'], transID = transID )
         else:
@@ -197,6 +199,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     transFiles = self._getTransformationFiles( transDict, clients )
     if not transFiles['OK']:
       return transFiles
+    if not transFiles['Value']:
+      return S_OK()
 
     transFiles = transFiles['Value']
     lfns = [ f['LFN'] for f in transFiles ]
@@ -296,11 +300,15 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                           method = "_getTransformationFiles", transID = transID )
       return S_OK()
     #Check if something new happened
-    if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush':
+    now = datetime.datetime.utcnow()
+    nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = self.noUnusedDelay )
+    skip = now < nextStamp
+    if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
       self._logInfo( "No new 'Unused' files found for transformation.",
                       method = "_getTransformationFiles", transID = transID )
       return S_OK()
 
+    self.unusedTimeStamp[transID] = now
     return S_OK( transFiles )
 
   def __applyReduction( self, lfns ):
@@ -468,7 +476,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ Writes the cache
     """
     method = '__writeCache'
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
     if ( now - self.dateWriteCache ) < datetime.timedelta( minutes = 60 ) and not force:
       return
     while force:

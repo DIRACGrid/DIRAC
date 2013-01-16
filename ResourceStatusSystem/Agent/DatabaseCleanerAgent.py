@@ -56,7 +56,8 @@ class DatabaseCleanerAgent( AgentModule ):
   
   def execute( self ):
 
-    self._cleanCaches()
+#    TODO: uncomment when ResourceMonitoring is ready 
+#    self._cleanCaches()
     self._cleanStatusTable( 'History', self.maxHistoryLifetime )
     self._cleanStatusTable( 'Log',     self.maxLogLifetime )
     

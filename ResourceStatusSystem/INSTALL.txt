@@ -16,8 +16,10 @@ WARNING: REPORT FIRST to the DIRAC FORUM !
   Please, make sure you have the following schema:
     /Operations/Defaults/RSSConfiguration2
         /Config
-          State      = InActive
-          RecordLogs = Active
+          State        = InActive
+          Cache        = 300
+          CacheHistory = 24
+          RecordLogs   = Active
           /StatusTypes
               default = all
               StorageElement = ReadAccess,WriteAccess,CheckAccess,RemoveAccess
@@ -33,15 +35,19 @@ WARNING: REPORT FIRST to the DIRAC FORUM !
   there is no old database, just install a new one as follows:
     $ dirac-install-db ResourceStatusDB
 
-
 2.- Generate DB tables
 
   Issue the command to populate the DB with the tables that are actually going to
   be used.
     $ dirac-rss-setup -o LogLevel=INFO
 
+3.- Run service(s)
 
-3.- Populate tables
+  RSS - basic - needs the following service to be up and running:
+  ResourceStatusSystem/ResourceStatus, please install it and make sure it is 
+  running.  
+
+4.- Populate tables
   
   Let's do it one by one to make it easier:
     $ dirac-rss-sync --element Site -o LogLevel=VERBOSE
@@ -53,7 +59,7 @@ WARNING: REPORT FIRST to the DIRAC FORUM !
   please report and DO NOT ACTIVATE RSS.
 
 
-4.- Initialize Statuses for StorageElements 
+5.- Initialize Statuses for StorageElements 
 
   Copy over the values that we had on the CS for the StorageElements 
     $ dirac-rss-sync --init -o LogLevel=VERBOSE
@@ -64,7 +70,7 @@ WARNING: REPORT FIRST to the DIRAC FORUM !
   WARNING !: to be fixed.
 
 
-5.- Set statuses by HAND
+6.- Set statuses by HAND
 
   In case you entered the WARNING ! on point 4, you may need to identify the status
   of your StorageElements. Try to detect the Banned SEs using the following:
@@ -75,11 +81,18 @@ WARNING: REPORT FIRST to the DIRAC FORUM !
     # This matches all StatusTypes
     $ dirac-rss-set-status --element Resource --name CERN-USER --status Active --reason "Why not?"
        
-6.- Activate RSS
+7.- Activate RSS
 
   If you did not see any problem, activate RSS.
     /Operations/Defaults/RSSConfiguration2/Config
         State = Active 
 
+8.- Agents
+
+  There are few agents that are required:
+    - SummarizeLogsAgent
+    - DatabaseCleanerAgent   
+  Please, install them and make sure they are up and running.
+  
 -------------------------------------------------------------------------------- 
 INSTALL.txt

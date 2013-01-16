@@ -33,10 +33,15 @@ class ResourceStatus( object ):
     self.rssConfig  = RssConfiguration()
     self.__opHelper = Operations()    
     self.rssClient  = None 
+    
+    # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
+    cacheLifeTime   = int( self.rssConfig.getConfigCache() )
+    cacheHistory    = int( self.rssConfig.getConfigCacheHistory() )
 
     # RSSCache only affects the calls directed to RSS, if using the CS it is not
     # used.  
-    self.seCache   = RSSCache( 300, updateFunc = self.__updateSECache, cacheHistoryLifeTime = 24 ) 
+    self.seCache   = RSSCache( cacheLifeTime, updateFunc = self.__updateSECache, 
+                               cacheHistoryLifeTime = cacheHistory ) 
     self.seCache.startRefreshThread()           
             
   def getStorageElementStatus( self, elementName, statusType = None, default = None ):
@@ -246,12 +251,7 @@ class ResourceStatus( object ):
     statuses = self.rssConfig.getConfigStatusType( 'StorageElement' )
     #statuses = self.__opHelper.getOptionsDict( 'RSSConfiguration/GeneralConfig/Resources/StorageElement' )
     #statuses = gConfig.getOptionsDict( '/Operations/RSSConfiguration/GeneralConfig/Resources/StorageElement' )
-    
-    if statuses[ 'OK' ]:
-      statuses = statuses[ 'Value' ][ 'StatusType' ]
-    else:
-      statuses = [ 'ReadAccess', 'WriteAccess' ]  
-    
+       
     result = {}
     for element in elementName:
     
@@ -319,11 +319,15 @@ class ResourceStatus( object ):
     
     return res
 
-  @staticmethod
-  def __setCSStorageElementStatus( elementName, statusType, status ):
+  def __setCSStorageElementStatus( self, elementName, statusType, status ):
     '''
     Sets on the CS the StorageElements status
     '''
+
+    statuses = self.rssConfig.getConfigStatusType( 'StorageElement' )
+    if not statusType in statuses:
+      gLogger.error( "%s is not a valid statusType" % statusType )
+      return S_ERROR( "%s is not a valid statusType: %s" % ( statusType, statuses ) )    
 
     csAPI = CSAPI()
   
