@@ -438,7 +438,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Unregister records in the File Catalog
     
         usage:
-          unregister replica  <lfn> <se>
+          unregister replica  <lfn> <se> <pfn>
           unregister file <lfn>
           unregister dir <path>
     """        
@@ -449,7 +449,7 @@ File Catalog Client $Revision: 1.17 $Date:
     option = argss[0]
     del argss[0]
     if option == 'replica':
-      if (len(argss) != 2):
+      if (len(argss) != 3):
         print self.do_unregister.__doc__
         return
       return self.removeReplica(argss)
