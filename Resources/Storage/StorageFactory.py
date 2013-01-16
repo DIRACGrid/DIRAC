@@ -234,7 +234,7 @@ class StorageFactory:
 
     # We add the dictionary with the statusTypes and values
     # { 'statusType1' : 'status1', 'statusType2' : 'status2' ... }
-    #optionsDict.update( res[ 'Value' ][ storageName ] )
+    optionsDict.update( res[ 'Value' ][ storageName ] )
 
     return S_OK( optionsDict )
 
