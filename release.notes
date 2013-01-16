@@ -39,6 +39,18 @@ NEW: glexecCE - add new possible locations of the glexec binary: OSG specific st
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p6]
+
+*WMS
+FIX: TaskQueueDB - in findOrphanJobs() retrieve orphaned jobs as list of ints instead of list of tuples
+FIX: OptimizerExecutor - added import of datetime to cope with the old style optimizer parameters
+
+*Transformation
+FIX: TransformationAgent - fix finalization entering in an infinite loop
+NEW: TransformationCLI - added resetProcessedFile command
+FIX: TransformationCleaningAgent - treating the archiving delay 
+FIX: TransformationDB - fix in getTransformationFiles() in case of empty file list
+
 [v6r6p5]
 
 *Transformation
