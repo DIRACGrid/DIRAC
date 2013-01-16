@@ -40,7 +40,7 @@ def submitJob( executable,outputDir,errorDir,nJobs,jobDir,queue,submitOptions ):
     print status
     print output
     
-  exit(status)      
+  return status
 
 def killJob( jobList ):
   """ Kill jobs in the given list
