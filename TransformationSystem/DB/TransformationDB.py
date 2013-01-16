@@ -505,6 +505,11 @@ class TransformationDB( DB ):
           return res
         originalFileIDs, _ignore = res['Value']
         condDict['FileID'] = originalFileIDs.keys()
+
+      for val in condDict.iterValues():
+        if not val:
+          return S_OK( [] )
+
       req = "%s %s" % ( req, self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit,
                                                   offset = offset ) )
     res = self._query( req, connection )
@@ -612,7 +617,7 @@ class TransformationDB( DB ):
       errorCount = fileDict['ErrorCount']
       lfn = fileDict['LFN']
       fileID = fileDict['FileID']
-      if ( currentStatus.lower() == "processed" ) and ( status.lower() != "processed" ):
+      if ( not force ) and ( currentStatus.lower() == "processed" ) and ( status.lower() != "processed" ):
         failed[lfn] = 'Can not change Processed status'
         req = ''
       elif ( currentStatus == status ):
