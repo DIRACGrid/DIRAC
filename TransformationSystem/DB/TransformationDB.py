@@ -212,7 +212,6 @@ class TransformationDB( DB ):
     retVal = self._query( "show tables" )
     if not retVal[ 'OK' ]:
       return retVal
-    self.TSCounterFields = []
     tablesInDB = [ t[0] for t in retVal[ 'Value' ] ]  
     if not "TransformationCounters" in tablesInDB:
       tablesToCreate['TransformationCounters']= {'Fields': {'TransformationID' : "INTEGER NOT NULL"},
@@ -220,7 +219,6 @@ class TransformationDB( DB ):
       self.TSCounterFields.append('TransformationID')
       for status in self.TasksStatuses+self.FileStatuses:
         tablesToCreate['TransformationCounters']['Fields'][status] = 'INTEGER DEFAULT 0'
-        self.TSCounterFields.append(status)
     else:
       needupdate = True
       
@@ -232,10 +230,10 @@ class TransformationDB( DB ):
     if not needupdate:
       return res
     
+    #Get the available counters
     retVal =  self._query( "explain TransformationCounters" )
     if not retVal[ 'OK' ]:
       return retVal
-    #Get the available counters
     self.TSCounterFields = [ t[0] for t in retVal[ 'Value' ] ]
     for status in self.TasksStatuses+self.FileStatuses:
       if not status in self.TSCounterFields:
@@ -243,7 +241,6 @@ class TransformationDB( DB ):
         retVal = self._query( altertable )
         if not retVal['OK']:
           return retVal
-        self.TSCounterFields.append(status)
     return S_OK()
     
     
@@ -1480,7 +1477,7 @@ class TransformationDB( DB ):
     """
     ##first, check that all the keys in this dict are among those expected
     for key in counterDict.keys():
-      if key not in self.TSCounterFields:
+      if key not in self.TasksStatuses+self.FileStatuses:
         return S_ERROR("Key %s not in the table" % key)
     if not 'TransformationID' in counterDict.keys():
       return S_ERROR("TransformationID key is mandatory")
@@ -1505,10 +1502,10 @@ class TransformationDB( DB ):
   def getTransformationsCounters(self, TransIDs, connection = False):
     """ Get all the counters for the given transformationIDs 
     """
-    res = self.getFields("TransformationCounters", condDict = {'TransformationID' : TransIDs}, conn = connection)
+    fields = ['TransformationID']+self.TasksStatuses+self.FileStatuses
+    res = self.getFields("TransformationCounters", outFields = fields, condDict = {'TransformationID' : TransIDs}, conn = connection)
     if not res['OK']:
       return res
-    fields = self.TSCounterFields
     resList = []
     for row in res['Value']:
       resList.append( dict( zip( fields, row ) ) )
