@@ -831,7 +831,17 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( lfns ) > 2:
       created = self.__openSession()
+    res = self.getReplicas(lfn) #We need the PFNs of the input lfn (list)
+    if not res['OK']:
+      return res
+    for lfn, lfnrep in res['Value']['Successful'].items():
+      if not "PFN" in lfns[lfn]:#Update only if the PFN was not supplied
+        lfns[lfn]["PFN"] = lfnrep[ lfns[lfn]['SE'] ]
     failed = {}
+    for lfn, message in res['Value']['Failed'].items():
+      if not "PFN" in lfns[lfn]:#Change only if PFN is not there
+        failed[lfn] = message #The replicas are not available, mark the lfn as failed
+        lfns.pop(lfn) #and remove them
     successful = {}
     for lfn, info in lfns.items():
       if ( not info.has_key( 'PFN' ) ) or ( not info.has_key( 'SE' ) ):
