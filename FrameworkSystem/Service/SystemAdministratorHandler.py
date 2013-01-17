@@ -408,7 +408,7 @@ class SystemAdministratorHandler( RequestHandler ):
         continue
       key, value = match.groups(['key', 'value'])
       result[key] = int(value)
-    
+
     for mtype in ['Mem','Swap']:
       memory = int(result.get(mtype+'Total'))
       mfree = int(result.get(mtype+'Free'))
@@ -432,9 +432,12 @@ class SystemAdministratorHandler( RequestHandler ):
     # Disk occupancy
     summary = ''
     status,output = commands.getstatusoutput('df')
-    for line in output.split('\n'):
-      if line.startswith('/dev'):
-        fields = line.split()
+    lines = output.split('\n')
+    for i in range( len( lines ) ):
+      if lines[i].startswith('/dev'):
+        fields = lines[i].split()
+        if len( fields ) == 1:
+          fields += lines[i+1].split()
         disk = fields[0].replace('/dev/sd','')
         partition = fields[5]
         occupancy = fields[4]
