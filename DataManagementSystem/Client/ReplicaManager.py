@@ -1684,10 +1684,10 @@ class ReplicaManager( CatalogToStorage ):
     return S_ERROR( errStr )
 
   def __initializeReplication( self, lfn, sourceSE, destSE ):
-    
+
     # Horrible, but kept to not break current log messages
     logStr = "__initializeReplication:"
-    
+
     ###########################################################
     # Check that the destination storage element is sane and resolve its name
     self.log.verbose( "%s Verifying dest StorageElement validity (%s)." % ( logStr, destSE ) )
@@ -1699,7 +1699,7 @@ class ReplicaManager( CatalogToStorage ):
       return S_ERROR( errStr )
     destSE = destStorageElement.getStorageElementName()['Value']
     self.log.info( "%s Destination Storage Element verified." % logStr )
-    
+
     ###########################################################
     # Get the LFN replicas from the file catalogue
     self.log.verbose( "%s Attempting to obtain replicas for %s." % ( logStr, lfn ) )
@@ -1714,7 +1714,7 @@ class ReplicaManager( CatalogToStorage ):
       return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
     self.log.info( "%s Successfully obtained replicas for LFN." % logStr )
     lfnReplicas = res['Value']['Successful'][lfn]
-    
+
     ###########################################################
     # If the file catalogue size is zero fail the transfer
     self.log.verbose( "%s Attempting to obtain size for %s." % ( logStr, lfn ) )
@@ -1733,10 +1733,10 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, lfn )
       return S_ERROR( errStr )
     self.log.info( "%s File size determined to be %s." % ( logStr, catalogueSize ) )
-    
+
     ###########################################################
     # Check whether the destination storage element is banned
-    
+
     self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
     
     destSEStatus = self.resourceStatus.getStorageElementStatus( destSE, 'WriteAccess' )
@@ -1750,26 +1750,26 @@ class ReplicaManager( CatalogToStorage ):
       infoStr = "%s Destination Storage Element is currently '%s' for Write" % ( logStr, destSEStatus )
       self.log.info( infoStr, destSE )
       return S_ERROR( infoStr )
-    
-    self.log.info( "%s Destination site not banned for Write." % logStr )     
-    
+
+    self.log.info( "%s Destination site not banned for Write." % logStr )
+
 #    configStr = '/Resources/StorageElements/BannedTarget'
 #    bannedTargets = gConfig.getValue( configStr, [] )
 #    if destSE in bannedTargets:
 #      infoStr = "__initializeReplication: Destination Storage Element is currently banned."
 #      self.log.info( infoStr, destSE )
 #      return S_ERROR( infoStr )
-#    
+#
 #    self.log.info( "__initializeReplication: Destination site not banned." )
 
     ###########################################################
     # Check whether the supplied source SE is sane
-    
+
     self.log.verbose( "%s: Determining whether source Storage Element is sane." % logStr )
-    
+
 #    configStr = '/Resources/StorageElements/BannedSource'
 #    bannedSources = gConfig.getValue( configStr, [] )
-    
+
     if sourceSE:
       
       sourceSEStatus = self.resourceStatus.getStorageElementStatus( sourceSE, 'ReadAccess' )
@@ -1781,39 +1781,38 @@ class ReplicaManager( CatalogToStorage ):
       if sourceSE not in lfnReplicas:
         errStr = "%s LFN does not exist at supplied source SE." % logStr
         self.log.error( errStr, "%s %s" % ( lfn, sourceSE ) )
-        return S_ERROR( errStr )
-      
+        return S_ERROR( errStr )      
       elif not sourceSEStatus in ( 'Active', 'Degraded' ):      
 #      elif sourceSE in bannedSources:
         infoStr = "%s Supplied source Storage Element is currently '%s' for Read." % ( logStr, sourceSEStatus )
         self.log.info( infoStr, sourceSE )
-        return S_ERROR( errStr )
-    
+        return S_ERROR( infoStr )
+
     self.log.info( "%s Replication initialization successful." % logStr )
-    
-    resDict = { 
-               'DestStorage'   : destStorageElement, 
-               'DestSE'        : destSE, 
-               'Replicas'      : lfnReplicas, 
+
+    resDict = {
+               'DestStorage'   : destStorageElement,
+               'DestSE'        : destSE,
+               'Replicas'      : lfnReplicas,
                'CatalogueSize' : catalogueSize
                }
-    
+
     return S_OK( resDict )
 
   def __resolveBestReplicas( self, sourceSE, lfnReplicas, catalogueSize ):
-    
+
     ###########################################################
     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
-    
+
     logStr = "__resolveBestReplicas:"
-    
+
     #configStr = '/Resources/StorageElements/BannedSource'
     #bannedSources = gConfig.getValue( configStr, [] )
     self.log.info( "%s Obtained current banned sources." % logStr )
     replicaPreference = []
-    
-    for diracSE, pfn in lfnReplicas.items():     
-      
+
+    for diracSE, pfn in lfnReplicas.items():
+
       if sourceSE and diracSE != sourceSE:
         self.log.info( "%s %s replica not requested." % ( logStr, diracSE ) )
         continue
@@ -1826,8 +1825,8 @@ class ReplicaManager( CatalogToStorage ):
       
       if not diracSEStatus in ( 'Active', 'Degraded' ):
         self.log.info( "%s %s is currently '%s' as a source." % ( logStr, diracSE, diracSEStatus ) )
-      
-      #elif diracSE in bannedSources:  
+
+      #elif diracSE in bannedSources:
       #  self.log.info( "__resolveBestReplicas: %s is currently banned as a source." % diracSE )
       else:
         self.log.info( "%s %s is available for use." % ( logStr, diracSE ) )
@@ -1866,12 +1865,12 @@ class ReplicaManager( CatalogToStorage ):
           else:
             errStr = "%s Source Storage Element has no remote protocols." % logStr
             self.log.info( errStr, diracSE )
-    
+
     if not replicaPreference:
       errStr = "%s Failed to find any valid source Storage Elements." % logStr
       self.log.error( errStr )
       return S_ERROR( errStr )
-    
+
     else:
       return S_OK( replicaPreference )
 
