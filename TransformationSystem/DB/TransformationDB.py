@@ -506,7 +506,7 @@ class TransformationDB( DB ):
         originalFileIDs, _ignore = res['Value']
         condDict['FileID'] = originalFileIDs.keys()
 
-      for val in condDict.iterValues():
+      for val in condDict.itervalues():
         if not val:
           return S_OK( [] )
 

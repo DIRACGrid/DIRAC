@@ -39,6 +39,11 @@ NEW: glexecCE - add new possible locations of the glexec binary: OSG specific st
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p8]
+
+*Transformation
+BUGFIX: TransformationDB - typo in getTransformationFiles(): iterValues -> itervalues
+
 [v6r6p7]
 
 *Resources
