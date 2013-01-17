@@ -15,6 +15,11 @@ NEW:  general reimplementation:
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p8]
+
+*Transformation
+BUGFIX: TransformationDB - typo in getTransformationFiles(): iterValues -> itervalues
+
 [v6r6p7]
 
 *Resources
