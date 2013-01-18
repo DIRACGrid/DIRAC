@@ -21,6 +21,7 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import Watch
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry              import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
@@ -966,7 +967,10 @@ class JobWrapper:
       vo = getVOForGroup( self.userGroup )
       if not vo:
         vo = 'dirac'
-      basePath = '/' + vo + '/user/' + initial + '/' + self.owner
+        
+      ops = Operations( vo = vo)
+      user_prefix = ops.getValue("LFNUserPrefix",'user')  
+      basePath = '/' + vo + '/' + user_prefix + '/' + initial + '/' + self.owner
       if outputPath:
         # If output path is given, append it to the user path and put output files in this directory
         if outputPath.startswith( '/' ):
