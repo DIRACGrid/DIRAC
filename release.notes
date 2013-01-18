@@ -47,6 +47,18 @@ NEW: glexecCE - add new possible locations of the glexec binary: OSG specific st
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p9]
+
+*Accounting
+NEW: Add some validation to the job records because of weird data coming from YANDEX.ru
+
+*DMS
+BUGFIX: ReplicaManager - typo errStr -> infoStr in __replicate()
+FIX: FTSRequest - fixed log message
+
+*WMS
+FIX: SiteDirector - use CSGlobals.getVO() call instead of explicit CS option
+
 [v6r6p8]
 
 *Transformation
