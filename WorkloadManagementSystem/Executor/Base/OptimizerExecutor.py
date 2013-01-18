@@ -71,9 +71,7 @@ class OptimizerExecutor( ExecutorModule ):
     self.__jobData.jobLog = self.JobLog( self.log, jid )
     try:
       self.jobLog.info( "Processing" )
-      result = self.optimizeJob( jid, jobState )
-      if not result[ 'OK' ]:
-        return result
+      optResult = self.optimizeJob( jid, jobState )
       #If the manifest is dirty, update it!
       result = jobState.getManifest()
       if not result[ 'OK' ]:
@@ -82,9 +80,9 @@ class OptimizerExecutor( ExecutorModule ):
       if manifest.isDirty():
         jobState.setManifest( manifest )
       #Did it go as expected? If not Failed!
-      if not result[ 'OK' ]:
-        self.jobLog.info( "Set to Failed/%s" % result[ 'Message' ] )
-        return jobState.setStatus( "Failed", result[ 'Message' ] )
+      if not optResult[ 'OK' ]:
+        self.jobLog.info( "Set to Failed/%s" % optResult[ 'Message' ] )
+        return jobState.setStatus( "Failed", optResult[ 'Message' ] )
 
       return S_OK()
     finally:
@@ -161,20 +159,19 @@ class OptimizerExecutor( ExecutorModule ):
     return S_OK( cjs.serialize() )
 
   def fastTrackDispatch( self, jid, jobState ):
-    self.log.verbose( "Trying to fastTrack job %s" % jid )
     result = jobState.getStatus()
     if not result[ 'OK' ]:
       return S_ERROR( "Could not retrieve job status for %s: %s" % ( jid, result[ 'Message' ] ) )
     status, minorStatus = result[ 'Value' ]
     if status != "Checking":
-      self.log.info( "Job %s is not in checking state. Avoid fast track" % jid )
+      self.log.info( "[JID %s] Not in checking state. Avoid fast track" % jid )
       return S_OK()
     result = jobState.getOptParameter( "OptimizerChain" )
     if not result[ 'OK' ]:
       return S_ERROR( "Could not retrieve OptimizerChain for job %s: %s" % ( jid, result[ 'Message' ] ) )
     optChain = result[ 'Value' ]
     if minorStatus not in optChain:
-      self.log.info( "End of chain for job %s" % jid )
+      self.log.info( "[JID %s] End of chain for job" % jid )
       return S_OK()
-    self.log.info( "Fast track possible for %s to %s" % ( jid, minorStatus ) )
+    self.log.info( "[JID %s] Fast track possible to %s" % ( jid, minorStatus ) )
     return S_OK( "WorkloadManagement/%s" % minorStatus )
