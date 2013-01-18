@@ -273,8 +273,8 @@ class JobWrapper:
     if self.jobArgs.has_key( 'StdOutput' ):
       outputFile = self.jobArgs['StdOutput']
 
-    if self.jobArgs.has_key( 'MaxCPUTime' ):
-      jobCPUTime = int( self.jobArgs['MaxCPUTime'] )
+    if self.jobArgs.has_key( 'CPUTime' ):
+      jobCPUTime = int( self.jobArgs['CPUTime'] )
     else:
       self.log.info( 'Job %s has no CPU time limit specified, '
                      'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
