@@ -1330,11 +1330,11 @@ class JobDB( DB ):
     if cpuTime == 0:
       # Just in case check for MaxCPUTime for backward compatibility
       cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
-      classAdJob.insertAttributeInt( 'CPUtime', cpuTime )
+      if cpuTime > 0:
+        classAdJob.insertAttributeInt( 'CPUtime', cpuTime )
 
     classAdReq.insertAttributeInt( 'UserPriority', priority )
     classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
-    
 
     if systemConfig and systemConfig.lower() != 'any':
       # FIXME: need to reformulate in a VO independent mode
