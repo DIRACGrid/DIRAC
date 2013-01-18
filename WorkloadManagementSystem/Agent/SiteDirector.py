@@ -61,7 +61,7 @@ class SiteDirector( AgentModule ):
     # The SiteDirector is for a particular user community
     self.vo = self.am_getOption( "Community", '' )
     if not self.vo:
-      self.vo = gConfig.getValue( "DIRAC/VirtualOrganization" )
+      self.vo = CSGlobals.getVO()
     # The SiteDirector is for a particular user group
     self.group = self.am_getOption( "Group", '' )
     # self.voGroups contain all the eligible user groups for pilots submutted by this SiteDirector
