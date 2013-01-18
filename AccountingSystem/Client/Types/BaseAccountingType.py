@@ -101,6 +101,14 @@ class BaseAccountingType:
       self.setValueByKey( key, dataDict[ key ] )
     return S_OK()
 
+  def getValue( self, key ):
+    try:
+      return S_OK( self.valuesList[ self.fieldsList.index( key ) ] )
+    except IndexError:
+      return S_ERROR( "%s does not have a value" % key )
+    except ValueError:
+      return S_ERROR( "%s is not a valid key" % key )
+
   def checkValues( self ):
     """
     Check that all values are defined and valid
@@ -122,6 +130,11 @@ class BaseAccountingType:
       return S_ERROR( "End time has not been defined" )
     if type( self.endTime ) != Time._dateTimeType:
       return S_ERROR( "End time is not a datetime object" )
+    return self.checkRecord()
+
+  def checkRecord( self ):
+    """ To be overwritten by child class
+    """
     return S_OK()
 
   def getDefinition( self ):
