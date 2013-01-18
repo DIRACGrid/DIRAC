@@ -41,7 +41,8 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
   if not res['OK']:
     gLogger.error( "Failed to remove data", res['Message'] )
     DIRAC.exit( -2 )
-  for lfn, reason in res['Value']['Failed'].items():
+  for lfn, r in res['Value']['Failed'].items():
+    reason = str(r)
     if not reason in errorReasons.keys():
       errorReasons[reason] = []
     errorReasons[reason].append( lfn )

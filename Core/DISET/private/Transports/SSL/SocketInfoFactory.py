@@ -34,7 +34,7 @@ class SocketInfoFactory:
       return S_ERROR( "Error while creating SSL context: %s" % str( e ) )
 
   def generateServerInfo( self, kwargs ):
-    infoDict = { 'clientMode' : False, 'timeout' : 60 }
+    infoDict = { 'clientMode' : False, 'timeout' : 30 }
     for key in kwargs.keys():
       infoDict[ key ] = kwargs[ key ]
     try:

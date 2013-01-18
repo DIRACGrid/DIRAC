@@ -1,162 +1,149 @@
-####################################################################
-# $HeadURL$
-################################################################### 
+########################################################################
+# $HeadURL $
+# File: TransferDBMonitoringHandler.py
+########################################################################
 
-"""  TransferDBMonitoringHandler is the implementation of the TransferDB 
-     monitoring service in the DISET framework.
+""" :mod: TransferDBMonitoringHandler
+    =================================
+ 
+    .. module: TransferDBMonitoringHandler
+    :synopsis: Implementation of the TransferDB monitoring service in the DISET framework.
 """
 
 __RCSID__ = "$Id"
 
+## imports
 from types import IntType, StringType, DictType, ListType
+## fro DIARC
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-from DIRAC.ConfigurationSystem.Client import PathFinder
-import DIRAC
-import os
 
 # These are global instances of the DB classes
-transferDB = False
+gTransferDB = False
 
 # this should also select the SourceSite,DestinationSite
-SUMMARY = [ 'Status', 
-            'NumberOfFiles', 
-            'PercentageComplete', 
-            'TotalSize', 
-            'SubmitTime', 
+SUMMARY = [ 'Status',
+            'NumberOfFiles',
+            'PercentageComplete',
+            'TotalSize',
+            'SubmitTime',
             'LastMonitor' ]
 
-RequestsColumns = [ 'RequestID', 
-                    'RequestName', 
-                    'JobID', 
-                    'OwnerDN', 
-                    'DIRACInstance', 
-                    'Status', 
-                    'CreationTime', 
-                    'SubmissionTime' ]
+REQUEST_COLS = [ 'RequestID',
+                 'RequestName',
+                 'JobID',
+                 'OwnerDN',
+                 'DIRACInstance',
+                 'Status',
+                 'CreationTime',
+                 'SubmissionTime' ]
 
-SubRequestsColumns = [ 'RequestID', 
-                       'SubRequestID', 
-                       'RequestType', 
-                       'Status', 
-                       'Operation', 
-                       'SourceSE', 
-                       'TargetSE', 
-                       'Catalogue', 
-                       'SubmissionTime', 
-                       'LastUpdate' ]
+SUBREQUEST_COLS = [ 'RequestID',
+                    'SubRequestID',
+                    'RequestType',
+                    'Status',
+                    'Operation',
+                    'SourceSE',
+                    'TargetSE',
+                    'Catalogue',
+                    'SubmissionTime',
+                    'LastUpdate' ]
 
-FilesColumns = [ 'SubRequestID', 
-                 'FileID', 
-                 'LFN', 
-                 'Size', 
-                 'PFN', 
-                 'GUID', 
-                 'Md5', 
-                 'Addler', 
-                 'Attempt', 
+FILES_COLS = [ 'SubRequestID',
+               'FileID',
+               'LFN',
+               'Size',
+               'PFN',
+               'GUID',
+               'Md5',
+               'Addler',
+               'Attempt',
+               'Status' ]
+
+DATASET_COLS = [ 'SubRequestID',
+                 'Dataset',
                  'Status' ]
-
-DatasetColumns = [ 'SubRequestID', 
-                   'Dataset', 
-                   'Status' ]
 
 def initializeTransferDBMonitoringHandler( serviceInfo ):
   """ handler initialization
 
   :param tuple serviceInfo: service info
   """
-
-  global transferDB
-  transferDB = TransferDB()
-
-  monitoringSection = PathFinder.getServiceSection( "DataManagement/TransferDBMonitoring" )
-  #Get data location
-  retDict = gConfig.getOption( "%s/DataLocation" % monitoringSection )
-  if not retDict["OK"]:
-    return retDict
-  dataPath = retDict["Value"].strip()
-  if "/" != dataPath[0]:
-    dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
-  gLogger.info( "Data will be written into %s path" % dataPath )
-
-  ## check data path 
-  try:
-    ## exists??   
-    if os.path.exists( dataPath ):
-      ## and it's a dir??
-      if os.path.isdir( dataPath):
-        ## and writable??
-        if os.access( dataPath, os.W_OK ):
-          return S_OK()
-        else:
-          return S_ERROR( "Data path %s exists, but it is not writable!" % dataPath )
-      else:
-        return S_ERROR( "Data path %s exists, but points to a file!" % dataPath  )
-    else:
-      ## create 
-      os.makedirs( dataPath )
-
-  except ( OSError, IOError ) , anError:
-    return S_ERROR( str(anError) )
-    
+  global gTransferDB
+  gTransferDB = TransferDB()
   return S_OK()
 
 class TransferDBMonitoringHandler( RequestHandler ):
+  """ 
+  .. class:: TransferDBMonitoringHandler
+  """
 
   types_getChannels = []
-  def export_getChannels( self ):
-    """ Get the details of the channels
-    """
-    return transferDB.getChannels()
+  @staticmethod
+  def export_getChannels():
+    """ Get the details of the channels """
+    return gTransferDB.getChannels()
 
   types_increaseChannelFiles = [ IntType ]
-  def export_increaseChannelFiles( self, channelID ):
-    """ Increase the number of files on a channel
-    """
-    return transferDB.increaseChannelFiles( channelID )
+  @staticmethod
+  def export_increaseChannelFiles( channelID ):
+    """ Increase the number of files on a channel """
+    return gTransferDB.increaseChannelFiles( channelID )
 
   types_decreaseChannelFiles = [ IntType ]
-  def export_decreaseChannelFiles( self, channelID ):
-    """ Decrease the numner of files on a channel
-    """
-    return transferDB.decreaseChannelFiles( channelID )
+  @staticmethod
+  def export_decreaseChannelFiles( channelID ):
+    """ Decrease the numner of files on a channel """
+    return gTransferDB.decreaseChannelFiles( channelID )
 
   types_getSites = []
-  def export_getSites( self ):
-    """ Get the details of the sites
-    """
-    return transferDB.getSites()
+  @staticmethod
+  def export_getSites():
+    """ Get the details of the sites """
+    return gTransferDB.getSites()
 
   types_getFTSInfo = [ IntType ]
-  def export_getFTSInfo( self, ftsReqID ):
-    """ Get the details of a particular FTS job
-    """
-    return transferDB.getFTSJobDetail( ftsReqID )
+  @staticmethod
+  def export_getFTSInfo( ftsReqID ):
+    """ Get the details of a particular FTS job """
+    return gTransferDB.getFTSJobDetail( ftsReqID )
 
   types_getFTSJobs = []
-  def export_getFTSJobs( self ):
-    """ Get all the FTS jobs from the DB
-    """
-    return transferDB.getFTSJobs()
+  @staticmethod
+  def export_getFTSJobs():
+    """ Get all the FTS jobs from the DB """
+    return gTransferDB.getFTSJobs()
 
   types_getChannelObservedThroughput = [ IntType ]
-  def export_getChannelObservedThroughput( self, interval ):
-    """ Get the observed throughput on the channels defined
-    """
-    return transferDB.getChannelObservedThroughput( interval )
+  @staticmethod
+  def export_getChannelObservedThroughput( interval ):
+    """ Get the observed throughput on the channels defined """
+    return gTransferDB.getChannelObservedThroughput( interval )
 
-##############################################################################
+  types_getChannelQueues = []
+  @staticmethod
+  def export_getChannelQueues():
+    """ Get the channel queues """
+    return gTransferDB.getChannelQueues() 
+
+  types_getCountFileToFTS = [ IntType, StringType ]
+  @staticmethod
+  def export_getCountFileToFTS( interval, status ):
+    """ Get the count of distinct failed files in FileToFTS per channel """
+    return gTransferDB.getCountFileToFTS( interval, status ) 
+
+  ##############################################################################
   types_getReqPageSummary = [ DictType, StringType, IntType, IntType ]
-  def export_getReqPageSummary( self, attrDict, orderAttribute, pageNumber, numberPerPage ):
+  @staticmethod
+  def export_getReqPageSummary( attrDict, orderAttribute, pageNumber, numberPerPage ):
     """ Get the summary of the fts req information for a given page in the fts monitor
     """
     last_update = None
     if attrDict.has_key( 'LastUpdate' ):
       last_update = attrDict['LastUpdate']
       del attrDict['LastUpdate']
-    res = transferDB.selectFTSReqs( attrDict, orderAttribute = orderAttribute, newer = last_update )
+    res = gTransferDB.selectFTSReqs( attrDict, orderAttribute = orderAttribute, newer = last_update )
     if not res['OK']:
       return S_ERROR( 'Failed to select FTS requests: ' + res['Message'] )
 
@@ -173,7 +160,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
       lastReq = nFTSReqs
 
     summaryReqList = ftsReqList[iniReq:lastReq]
-    res = transferDB.getAttributesForReqList( summaryReqList, SUMMARY )
+    res = gTransferDB.getAttributesForReqList( summaryReqList, SUMMARY )
     if not res['OK']:
       return S_ERROR( 'Failed to get request summary: ' + res['Message'] )
     summaryDict = res['Value']
@@ -190,7 +177,8 @@ class TransferDBMonitoringHandler( RequestHandler ):
 
 
   types_getRequestPageSummaryWeb = [DictType, ListType, IntType, IntType]
-  def export_getRequestPageSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
+  @staticmethod
+  def export_getRequestPageSummaryWeb( selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the request information for a given page in the
         request monitor in a generic format
     """
@@ -205,7 +193,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
     else:
       orderAttribute = None
 
-    result = transferDB.selectRequests( selectDict, orderAttribute = orderAttribute, newer = last_update )
+    result = gTransferDB.selectRequests( selectDict, orderAttribute = orderAttribute, newer = last_update )
     if not result['OK']:
       return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
@@ -224,7 +212,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
       lastRequest = nRequests
 
     summaryRequestList = requestList[iniRequest:lastRequest]
-    result = transferDB.getAttributesForRequestList( summaryRequestList, RequestsColumns )
+    result = gTransferDB.getAttributesForRequestList( summaryRequestList, REQUEST_COLS )
     if not result['OK']:
       return S_ERROR( 'Failed to get request summary: ' + result['Message'] )
 
@@ -235,7 +223,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
     paramNames = summaryDict[key].keys()
 
     records = []
-    for requestID, requestDict in summaryDict.items():
+    for requestDict in summaryDict.values():
       rParList = []
       for pname in paramNames:
         rParList.append( requestDict[pname] )
@@ -248,7 +236,8 @@ class TransferDBMonitoringHandler( RequestHandler ):
 
 
   types_getSubRequestPageSummaryWeb = [DictType, ListType, IntType, IntType]
-  def export_getSubRequestPageSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
+  @staticmethod
+  def export_getSubRequestPageSummaryWeb( selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the request information for a given page in the
         request monitor in a generic format
     """
@@ -263,7 +252,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
     else:
       orderAttribute = None
 
-    result = transferDB.selectSubRequests( selectDict, orderAttribute = orderAttribute, newer = last_update )
+    result = gTransferDB.selectSubRequests( selectDict, orderAttribute = orderAttribute, newer = last_update )
     if not result['OK']:
       return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
@@ -282,7 +271,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
       lastRequest = nRequests
 
     summaryRequestList = requestList[iniRequest:lastRequest]
-    result = transferDB.getAttributesForSubRequestList( summaryRequestList, SubRequestsColumns )
+    result = gTransferDB.getAttributesForSubRequestList( summaryRequestList, SUBREQUEST_COLS )
     if not result['OK']:
       return S_ERROR( 'Failed to get request summary: ' + result['Message'] )
 
@@ -293,7 +282,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
     paramNames = summaryDict[key].keys()
 
     records = []
-    for requestID, requestDict in summaryDict.items():
+    for requestDict in summaryDict.values():
       rParList = []
       for pname in paramNames:
         rParList.append( requestDict[pname] )
@@ -305,7 +294,8 @@ class TransferDBMonitoringHandler( RequestHandler ):
 
 
   types_getFilesPageSummaryWeb = [DictType, ListType, IntType, IntType]
-  def export_getFilesPageSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
+  @staticmethod
+  def export_getFilesPageSummaryWeb( selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the request information for a given page in the
         request monitor in a generic format
     """
@@ -320,7 +310,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
     else:
       orderAttribute = None
 
-    result = transferDB.selectFiles( selectDict, orderAttribute = orderAttribute, newer = last_update )
+    result = gTransferDB.selectFiles( selectDict, orderAttribute = orderAttribute, newer = last_update )
     if not result['OK']:
       return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
@@ -338,7 +328,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
     if lastRequest > nRequests:
       lastRequest = nRequests
     summaryRequestList = requestList[iniRequest:lastRequest]
-    result = transferDB.getAttributesForFilesList( summaryRequestList, FilesColumns )
+    result = gTransferDB.getAttributesForFilesList( summaryRequestList, FILES_COLS )
     if not result['OK']:
       return S_ERROR( 'Failed to get request summary: ' + result['Message'] )
 
@@ -349,7 +339,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
     paramNames = summaryDict[key].keys()
 
     records = []
-    for requestID, requestDict in summaryDict.items():
+    for requestDict in summaryDict.values():
       rParList = []
       for pname in paramNames:
         rParList.append( requestDict[pname] )
@@ -364,53 +354,73 @@ class TransferDBMonitoringHandler( RequestHandler ):
   # Sub Request monitor methods
   #
   types_getSubRequestStatuses = []
-  def export_getSubRequestStatuses( self ):
-    return transferDB.getDistinctSubRequestAttributes( 'Status' )
+  @staticmethod
+  def export_getSubRequestStatuses():
+    """ get distict sub-request's statuses """
+    return gTransferDB.getDistinctSubRequestAttributes( 'Status' )
 
   types_getSubRequestTypes = []
-  def export_getSubRequestTypes( self ):
-    return transferDB.getDistinctSubRequestAttributes( 'RequestType' )
+  @staticmethod
+  def export_getSubRequestTypes():
+    """ get distinct sub-request's types"""
+    return gTransferDB.getDistinctSubRequestAttributes( 'RequestType' )
 
   types_getSubRequestOperations = []
-  def export_getSubRequestOperations( self ):
-    return transferDB.getDistinctSubRequestAttributes( 'Operation' )
+  @staticmethod
+  def export_getSubRequestOperations():
+    """ get distinct sub-request's operations """
+    return gTransferDB.getDistinctSubRequestAttributes( 'Operation' )
 
   types_getSubRequestSourceSEs = []
-  def export_getSubRequestSourceSEs( self ):
-    return transferDB.getDistinctSubRequestAttributes( 'SourceSE' )
+  @staticmethod
+  def export_getSubRequestSourceSEs():
+    """ get distinct sub-request's source SE """
+    return gTransferDB.getDistinctSubRequestAttributes( 'SourceSE' )
 
   types_getSubRequestTargetSEs = []
-  def export_getSubRequestTargetSEs( self ):
-    return transferDB.getDistinctSubRequestAttributes( 'TargetSE' )
+  @staticmethod
+  def export_getSubRequestTargetSEs():
+    """ get distinct sub-request's target SE """
+    return gTransferDB.getDistinctSubRequestAttributes( 'TargetSE' )
 
   ########################################################################
   #
   # Request monitor methods
   #
   types_getRequestStatuses = []
-  def export_getRequestStatuses( self ):
-    return transferDB.getDistinctRequestAttributes( 'Status' )
+  @staticmethod
+  def export_getRequestStatuses():
+    """ get disticnt request's statuses """
+    return gTransferDB.getDistinctRequestAttributes( 'Status' )
 
   ########################################################################
   #
   # File monitor methods
   #
   types_getFilesStatuses = []
-  def export_getFilesStatuses( self ):
-    return transferDB.getDistinctFilesAttributes( 'Status' )
+  @staticmethod
+  def export_getFilesStatuses():
+    """ get distinct file's statuses """
+    return gTransferDB.getDistinctFilesAttributes( 'Status' )
 
   ########################################################################
   #
   # Channels monitor methods
   #
   types_getChannelSources = []
-  def export_getChanelSources( self ):
-    return transferDB.getDistinctChannelsAttributes( 'SourceSite' )
+  @staticmethod
+  def export_getChannelSources():
+    """ get distinct channel's sources"""
+    return gTransferDB.getDistinctChannelsAttributes( 'SourceSite' )
 
   types_getChannelDestinations = []
-  def export_getChanelDestinations( self ):
-    return transferDB.getDistinctChannelsAttributes( 'DestinationSite' )
+  @staticmethod
+  def export_getChannelDestinations():
+    """ get distinct channel's destinations """
+    return gTransferDB.getDistinctChannelsAttributes( 'DestinationSite' )
 
   types_getChannelStatus = []
-  def export_getChanelStatus( self ):
-    return transferDB.getDistinctChannelsAttributes( 'Status' )
+  @staticmethod
+  def export_getChannelStatus():
+    """ get distinct channel's statuses """
+    return gTransferDB.getDistinctChannelsAttributes( 'Status' )

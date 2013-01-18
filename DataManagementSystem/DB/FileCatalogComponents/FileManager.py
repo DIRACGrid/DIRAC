@@ -1,14 +1,12 @@
 ########################################################################
-# $Id: FileManager.py 22623 2010-03-09 19:54:25Z acsmith $
+# $Id$
 ########################################################################
 
-__RCSID__ = "$Id: FileManager.py 22623 2010-03-09 19:54:25Z acsmith $"
+__RCSID__ = "$Id$"
 
-from DIRAC                                                                import S_OK,S_ERROR,gLogger
+from DIRAC                                                                import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase  import FileManagerBase
-from DIRAC.Core.Utilities.List                                            import stringListToString,intListToString
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities        import * 
-from DIRAC.Core.Utilities.Pfn                                             import pfnparse, pfnunparse
+from DIRAC.Core.Utilities.List                                            import stringListToString, intListToString
 
 DEBUG = 0
 
@@ -23,12 +21,12 @@ class FileManager(FileManagerBase):
   #
 
   def _findFiles(self,lfns,metadata=['FileID'],connection=False):
-    connection = self._getConnection(connection)
     """ Find file ID if it exists for the given list of LFNs """
+    connection = self._getConnection(connection)
     dirDict = self._getFileDirectories(lfns)
     failed = {}
     directoryIDs = {}
-    for dirPath in dirDict.keys():
+    for dirPath in dirDict:
       res = self.db.dtree.findDir(dirPath)
       if (not res['OK']) or (not res['Value']):
         error = res.get('Message','No such file or directory')
@@ -39,7 +37,7 @@ class FileManager(FileManagerBase):
       else:
         directoryIDs[dirPath] = res['Value']
     successful = {}
-    for dirPath in directoryIDs.keys():
+    for dirPath in directoryIDs:
       fileNames = dirDict[dirPath]
       res = self._getDirectoryFiles(directoryIDs[dirPath],fileNames,metadata,connection=connection)
       if (not res['OK']) or (not res['Value']):
@@ -53,6 +51,11 @@ class FileManager(FileManagerBase):
           fname = '%s/%s' % (dirPath,fileName)
           fname = fname.replace('//','/')
           successful[fname] = fileDict
+      for fileName in fileNames:
+        if not fileName in res['Value']:
+          fname = '%s/%s' % (dirPath,fileName)
+          fname = fname.replace('//','/')
+          failed[fname] = 'No such file or directory'    
     return S_OK({"Successful":successful,"Failed":failed})
 
   def _getDirectoryFiles(self,dirID,fileNames,metadata_input,allStatus=False,connection=False):
@@ -148,11 +151,25 @@ class FileManager(FileManagerBase):
     statusID = 0
     if res['OK']:
       statusID = res['Value']
+      
+    directorySESizeDict = {}  
     for lfn in lfns.keys():
       dirID = lfns[lfn]['DirID']
       fileName = os.path.basename(lfn)
       size = lfns[lfn]['Size']
-      insertTuples.append("(%d,%d,%d,%d,%d,'%s')" % (dirID,size,uid,gid,statusID,fileName))
+      ownerDict = lfns[lfn].get('Owner',None)
+      s_uid = uid
+      s_gid = gid
+      if ownerDict:
+        result = self.db.ugManager.getUserAndGroupID( ownerDict )
+        if result['OK']:
+          s_uid, s_gid = result['Value']
+      insertTuples.append("(%d,%d,%d,%d,%d,'%s')" % (dirID,size,s_uid,s_gid,statusID,fileName))
+      directorySESizeDict.setdefault( dirID, {} )
+      directorySESizeDict[dirID].setdefault( 0, {'Files':0,'Size':0} )
+      directorySESizeDict[dirID][0]['Size'] += lfns[lfn]['Size']
+      directorySESizeDict[dirID][0]['Files'] += 1
+      
     req = "INSERT INTO FC_Files (DirID,Size,UID,GID,Status,FileName) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
@@ -179,8 +196,9 @@ class FileManager(FileManagerBase):
       checksumtype = fileInfo.get('ChecksumType','Adler32')
       guid = fileInfo.get('GUID','')
       dirName = os.path.dirname(lfn)
+      mode = fileInfo.get('Mode',self.db.umask)
       toDelete.append(fileID)
-      insertTuples.append("(%d,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" % (fileID,guid,checksum,checksumtype,self.db.umask))
+      insertTuples.append("(%d,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" % (fileID,guid,checksum,checksumtype,mode))
     if insertTuples:
       req = "INSERT INTO FC_FileInfo (FileID,GUID,Checksum,CheckSumType,CreationDate,ModificationDate,Mode) VALUES %s" % ','.join(insertTuples)
       res = self.db._update(req)
@@ -189,6 +207,12 @@ class FileManager(FileManagerBase):
         for lfn in lfns.keys():
           failed[lfn] = res['Message']
           lfns.pop(lfn)
+      else:
+        # Update the directory usage
+        result = self._updateDirectoryUsage(directorySESizeDict,'+',connection=connection)
+        if not result['OK']:
+          gLogger.warn( "Failed to insert FC_DirectoryUsage", result['Message'] )
+          
     return S_OK({'Successful':lfns,'Failed':failed})
 
   def _getFileIDFromGUID(self,guid,connection=False):
@@ -267,12 +291,19 @@ class FileManager(FileManagerBase):
       fileID = lfns[lfn]['FileID']
       fileIDLFNs[fileID] = lfn
       seName = lfns[lfn]['SE']
-      res = self.db.seManager.findSE(seName)
-      if not res['OK']:
-        failed[lfn] = res['Message']
-        continue
-      seID = res['Value']
-      insertTuples.append((fileID,seID))
+      if type(seName) in StringTypes:
+        seList = [seName]
+      elif type(seName) == ListType:
+        seList = seName
+      else:
+        return S_ERROR('Illegal type of SE list: %s' % str( type( seName ) ) )
+      for seName in seList:    
+        res = self.db.seManager.findSE(seName)
+        if not res['OK']:
+          failed[lfn] = res['Message']
+          continue
+        seID = res['Value']
+        insertTuples.append((fileID,seID))
     if not master:
       res = self._getRepIDsForReplica(insertTuples, connection=connection)
       if not res['OK']:
@@ -291,35 +322,27 @@ class FileManager(FileManagerBase):
     directorySESizeDict = {}
     for fileID,repDict in res['Value'].items():
       lfn = fileIDLFNs[fileID]
+      dirID = lfns[lfn]['DirID']
+      directorySESizeDict.setdefault( dirID, {} )
       for seID,repID in repDict.items():
         lfns[lfn]['RepID'] = repID
-        dirID = lfns[lfn]['DirID']
-        if not directorySESizeDict.has_key(dirID):
-          directorySESizeDict[dirID] = {}
-        if not directorySESizeDict[dirID].has_key(seID):
-          directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
+        directorySESizeDict[dirID].setdefault( seID, {'Files':0,'Size':0} )
         directorySESizeDict[dirID][seID]['Size'] += lfns[lfn]['Size']
         directorySESizeDict[dirID][seID]['Files'] += 1
 
     replicaType = 'Replica'
     if master:
       replicaType = 'Master'
-    insertTuples = []
+    insertReplicas = []
     toDelete = []
     for lfn in lfns.keys():
       fileDict = lfns[lfn]
-      fileID = fileDict['FileID']
       repID = fileDict['RepID']
       pfn = fileDict['PFN']
-      seName = fileDict['SE']
-      res = self.db.seManager.findSE(seName)
-      if not res['OK']:
-        return res
-      seID = res['Value']
       toDelete.append(repID)
-      insertTuples.append("(%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (repID,replicaType,pfn))    
-    if insertTuples:
-      req = "INSERT INTO FC_ReplicaInfo (RepID,RepType,CreationDate,ModificationDate,PFN) VALUES %s" % (','.join(insertTuples))
+      insertReplicas.append("(%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (repID,replicaType,pfn))    
+    if insertReplicas:
+      req = "INSERT INTO FC_ReplicaInfo (RepID,RepType,CreationDate,ModificationDate,PFN) VALUES %s" % (','.join(insertReplicas))
       res = self.db._update(req,connection)    
       if not res['OK']:
         for lfn in lfns.keys():
@@ -372,10 +395,8 @@ class FileManager(FileManagerBase):
       toRemove.append((fileID,seID))
       # Now prepare the storage usage update
       dirID = fileDict['DirID']
-      if not directorySESizeDict.has_key(dirID):
-        directorySESizeDict[dirID] = {}
-      if not directorySESizeDict[dirID].has_key(seID):
-        directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
+      directorySESizeDict.setdefault( dirID, {} )
+      directorySESizeDict[dirID].setdefault( seID, {'Files':0,'Size':0} )
       directorySESizeDict[dirID][seID]['Size'] += fileDict['Size']
       directorySESizeDict[dirID][seID]['Files'] += 1
     res = self._getRepIDsForReplica(toRemove, connection)

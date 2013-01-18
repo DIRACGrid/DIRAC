@@ -17,7 +17,7 @@ class PlainTransport( BaseTransport ):
       self.oSocket.settimeout( self.extraArgsDict[ 'timeout' ] )
     try:
       self.oSocket.connect( self.stServerAddress )
-    except socket.error ,e:
+    except socket.error , e:
       if e.args[0] != 115:
         return S_ERROR( "Can't connect: %s" % str( e ) )
       #Connect in progress
@@ -78,7 +78,7 @@ class PlainTransport( BaseTransport ):
         return S_OK( data )
       except socket.error, e:
         if e[0] == 11:
-          time.sleep(0.1)
+          time.sleep( 0.001 )
         else:
           return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
       except Exception, e:
@@ -103,7 +103,7 @@ class PlainTransport( BaseTransport ):
           sentBytes += sent
       except socket.error, e:
         if e[0] == 11:
-          time.sleep(0.1)
+          time.sleep( 0.001 )
         else:
           return S_ERROR( "Exception while sending to peer: %s" % str( e ) )
       except Exception, e:

@@ -33,6 +33,11 @@ class TimeLeft:
     self.scaleFactor = gConfig.getValue( '/LocalSite/CPUScalingFactor', 0.0 )
     if not self.scaleFactor:
       self.log.warn( '/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName() )
+
+    self.normFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
+    if not self.normFactor:
+      self.log.warn( '/LocalSite/CPUNormalizationFactor not defined for site %s' % DIRAC.siteName() )
+
     self.cpuMargin = gConfig.getValue( '/LocalSite/CPUMargin', 10 ) #percent
     result = self.__getBatchSystemPlugin()
     if result['OK']:
@@ -61,7 +66,7 @@ class TimeLeft:
     return S_OK( 0.0 )
 
   #############################################################################
-  def getTimeLeft( self, cpuConsumed ):
+  def getTimeLeft( self, cpuConsumed = 0.0 ):
     """Returns the CPU Time Left for supported batch systems.  The CPUConsumed
        is the current raw total CPU.
     """
@@ -82,6 +87,7 @@ class TimeLeft:
     if not resources['CPULimit'] or not resources['WallClockLimit']:
       return S_ERROR( 'No CPU / WallClock limits obtained' )
 
+    cpu = float( resources['CPU'] )
     cpuFactor = 100 * float( resources['CPU'] ) / float( resources['CPULimit'] )
     cpuRemaining = 100 - cpuFactor
     cpuLimit = float( resources['CPULimit'] )
@@ -94,24 +100,30 @@ class TimeLeft:
 
     timeLeft = None
     if wcRemaining > cpuRemaining and ( wcRemaining - cpuRemaining ) > self.cpuMargin:
-      # In some cases cpuFactor might be 0
-      # timeLeft = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
-      # We need time left in the same units used by the Matching
-      timeLeft = float( cpuRemaining * cpuLimit / 100 * self.scaleFactor )
       self.log.verbose( 'Remaining WallClock %.02f > Remaining CPU %.02f and difference > margin %s' %
                         ( wcRemaining, cpuRemaining, self.cpuMargin ) )
+      timeLeft = True
     else:
       if cpuRemaining > self.cpuMargin and wcRemaining > self.cpuMargin:
         self.log.verbose( 'Remaining WallClock %.02f and Remaining CPU %.02f both > margin %s' %
                           ( wcRemaining, cpuRemaining, self.cpuMargin ) )
-        # In some cases cpuFactor might be 0
-        # timeLeft = float(cpuConsumed*self.scaleFactor*(wcRemaining-self.cpuMargin)/cpuFactor)
-        timeLeft = float( cpuRemaining * cpuLimit / 100 * self.scaleFactor )
+        timeLeft = True
       else:
         self.log.verbose( 'Remaining CPU %.02f < margin %s and WallClock %.02f < margin %s so no time left' %
                           ( cpuRemaining, self.cpuMargin, wcRemaining, self.cpuMargin ) )
-
     if timeLeft:
+      if cpu and cpuConsumed > 3600. and self.normFactor:
+        # If there has been more than 1 hour of consumed CPU and 
+        # there is a Normalization set for the current CPU
+        # use that value to renormalize the values returned by the batch system
+        cpuWork = cpuConsumed * self.normFactor
+        timeLeft = ( cpuLimit - cpu ) * cpuWork / cpu
+      else:
+        # In some cases cpuFactor might be 0
+        # timeLeft = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
+        # We need time left in the same units used by the Matching
+        timeLeft = float( cpuRemaining * cpuLimit / 100 * self.scaleFactor )
+
       self.log.verbose( 'Remaining CPU in normalized units is: %.02f' % timeLeft )
       return S_OK( timeLeft )
     else:
@@ -122,7 +134,7 @@ class TimeLeft:
     """Using the name of the batch system plugin, will return an instance
        of the plugin class.
     """
-    batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME'} #more to be added later
+    batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME', 'SGE':'SGE_TASK_ID'} #more to be added later
     name = None
     for batchSystem, envVar in batchSystems.items():
       if os.environ.has_key( envVar ):

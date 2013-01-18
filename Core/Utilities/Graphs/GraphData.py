@@ -259,7 +259,7 @@ class GraphData:
         return zip( self.plotdata.getNumKeys(), self.plotdata.getValues() )
       else:
         return self.plotdata.getValues()
-    elif label:
+    elif label is not None:
       if label == "Others":
         return self.otherPlot.getPlotDataForNumKeys( self.all_num_keys )
       else:

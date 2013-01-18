@@ -13,14 +13,13 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RPCClient import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
-from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
 
 import time, os, re
 from types import *
 
 AGENT_NAME = 'RequestManagement/DISETForwardingAgent'
 
-class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
+class DISETForwardingAgent( AgentModule ):
 
   def initialize( self ):
 
@@ -33,20 +32,18 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
       if requestDB._connected:
         self.RequestDB = requestDB
 
-
-
     gMonitor.registerActivity( "Iteration", "Agent Loops", "DISETForwardingAgent", "Loops/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Attempted", "Request Processed", "DISETForwardingAgent", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Successful", "Request Forward Successful", "DISETForwardingAgent", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Failed", "Request Forward Failed", "DISETForwardingAgent", "Requests/min", gMonitor.OP_SUM )
 
-    self.local = PathFinder.getServiceURL( "RequestManagement/localURL" )
-    if not self.local:
-      self.local = AgentModule.am_getOption( self, 'localURL', '' )
-    if not self.local:
-      errStr = 'The RequestManagement/localURL option must be defined.'
-      gLogger.fatal( errStr )
-      return S_ERROR( errStr )
+    #self.local = PathFinder.getServiceURL( "RequestManagement/localURL" )
+    #if not self.local:
+    #  self.local = AgentModule.am_getOption( self, 'localURL', '' )
+    #if not self.local:
+    #  errStr = 'The RequestManagement/localURL option must be defined.'
+    #  gLogger.fatal( errStr )
+    #  return S_ERROR( errStr )
     return S_OK()
 
   def execute( self ):
@@ -70,9 +67,9 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
     if self.RequestDB:
       res = self.RequestDB.getRequest( 'diset' )
     else:
-      res = self.RequestDBClient.getRequest( 'diset', url = self.local )
+      res = self.RequestDBClient.getRequest( 'diset' )
     if not res['OK']:
-      gLogger.error( "DISETForwardingAgent.execute: Failed to get request from database.", self.local )
+      gLogger.error( "DISETForwardingAgent.execute: Failed to get request from database." )
       return S_OK()
     elif not res['Value']:
       gLogger.info( "DISETForwardingAgent.execute: No requests to be executed found." )
@@ -94,7 +91,7 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
       requestID = result['Value']
       result = self.RequestDB.getCurrentExecutionOrder( requestID )
     else:
-      result = self.RequestDBClient.getCurrentExecutionOrder( requestName, self.local )
+      result = self.RequestDBClient.getCurrentExecutionOrder( requestName )
     if result['OK']:
       currentOrder = result['Value']
     else:
@@ -145,13 +142,13 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
     if self.RequestDB:
       res = self.RequestDB.updateRequest( requestName, requestString )
     else:
-      res = self.RequestDBClient.updateRequest( requestName, requestString, self.local )
+      res = self.RequestDBClient.updateRequest( requestName, requestString )
     if res['OK']:
       gLogger.info( "DISETForwardingAgent.execute: Successfully updated request." )
     else:
-      gLogger.error( "DISETForwardingAgent.execute: Failed to update request to", self.local )
+      gLogger.error( "DISETForwardingAgent.execute: Failed to update request" )
 
     if modified and jobID:
-      result = self.finalizeRequest( requestName, jobID, self.local )
+      result = self.RequestDBClient.finalizeRequest( requestName, jobID )
 
     return S_OK()

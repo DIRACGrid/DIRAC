@@ -5,7 +5,7 @@ Compile the externals
 """
 __RCSID__ = "$Id$"
 
-import sys, os, getopt, tarfile, urllib2, imp, signal, re, time, stat, types, copy
+import sys, os, getopt, tarfile, urllib2, imp, signal, re, time, stat, types, shutil
 
 try:
   import zipfile
@@ -26,9 +26,6 @@ def S_OK( value = "" ):
 def S_ERROR( msg = "" ):
   return { 'OK' : False, 'Message' : msg }
 
-g_GlobalDefaultsLoc = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
-#g_GlobalDefaultsLoc = "file:///home/adria/tmp/insttest/globalDefaults.cfg"
-
 ############
 # Start of CFG
 ############
@@ -44,6 +41,7 @@ class Params:
     self.externalsType = 'client'
     self.pythonVersion = '26'
     self.platform = ""
+    self.basePath = os.getcwd()
     self.targetPath = os.getcwd()
     self.buildExternals = False
     self.noAutoBuild = False
@@ -52,6 +50,8 @@ class Params:
     self.lcgVer = ''
     self.useVersionsDir = False
     self.installSource = ""
+    self.globalDefaults = False
+    self.timeout = 300
 
 cliParams = Params()
 
@@ -111,9 +111,9 @@ class ReleaseConfig:
           fields = line.split( "+=" )
           opName = fields[0].strip()
           if opName in self.__data:
-            self.__data[ opName ] = "+=".join( fields[1:] ).strip()
+            self.__data[ opName ] += ', %s' % '+='.join( fields[1:] ).strip()
           else:
-            self.__data[ opName ].append( "+=".join( fields[1:] ).strip() )
+            self.__data[ opName ] = '+='.join( fields[1:] ).strip()
           continue
 
         if line.find( "=" ) > -1:
@@ -257,7 +257,12 @@ class ReleaseConfig:
 
     #END OF CFG CLASS
 
-  def __init__( self, instName = 'DIRAC', projectName = 'DIRAC' ):
+  def __init__( self, instName = 'DIRAC', projectName = 'DIRAC', globalDefaultsURL = False ):
+
+    if globalDefaultsURL:
+      self.__globalDefaultsURL = globalDefaultsURL
+    else:
+      self.__globalDefaultsURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
     self.__globalDefaults = ReleaseConfig.CFG()
     self.__loadedCfgs = []
     self.__prjDepends = {}
@@ -301,22 +306,24 @@ class ReleaseConfig:
     if urlcfg in self.__cfgCache:
       return S_OK( self.__cfgCache[ urlcfg ] )
     try:
-      cfgFile = urllib2.urlopen( urlcfg )
+      cfgData = urlretrieveTimeout( urlcfg, timeout = cliParams.timeout )
+      if not cfgData:
+        return S_ERROR( "Could not get data from %s" % urlcfg )
     except:
       return S_ERROR( "Could not open %s" % urlcfg )
     try:
-      cfgData = cfgFile.read()
+      #cfgData = cfgFile.read()
       cfg = ReleaseConfig.CFG( cfgData )
     except Exception, excp:
       return S_ERROR( "Could not parse %s: %s" % ( urlcfg, excp ) )
-    cfgFile.close()
+    #cfgFile.close()
     if not checkHash:
       self.__cfgCache[ urlcfg ] = cfg
       return S_OK( cfg )
     try:
-      md5File = urllib2.urlopen( urlcfg[:-4] + ".md5" )
-      md5Hex = md5File.read().strip()
-      md5File.close()
+      md5Data = urlretrieveTimeout( urlcfg[:-4] + ".md5", timeout = 60 )
+      md5Hex = md5Data.strip()
+      #md5File.close()
       if md5Hex != md5.md5( cfgData ).hexdigest():
         return S_ERROR( "Hash check failed on %s" % urlcfg )
     except Exception, excp:
@@ -337,8 +344,8 @@ class ReleaseConfig:
     return self.__loadObjectDefaults( "Projects", self.__projectName )
 
   def __loadGlobalDefaults( self ):
-    self.__dbgMsg( "Loading global defaults from: %s" % g_GlobalDefaultsLoc )
-    result = self.__loadCFGFromURL( g_GlobalDefaultsLoc )
+    self.__dbgMsg( "Loading global defaults from: %s" % self.__globalDefaultsURL )
+    result = self.__loadCFGFromURL( self.__globalDefaultsURL )
     if not result[ 'OK' ]:
       return result
     self.__globalDefaults = result[ 'Value' ]
@@ -758,7 +765,7 @@ def logNOTICE( msg ):
 def alarmTimeoutHandler( *args ):
   raise Exception( 'Timeout' )
 
-def urlretrieveTimeout( url, fileName, timeout = 0 ):
+def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
   """
    Retrieve remote url to local file, with timeout wrapper
   """
@@ -766,21 +773,44 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
   #       This is OK for dirac-install, since there are no threads.
   logDEBUG( 'Retrieving remote file "%s"' % url )
 
+  urlData = ''
   if timeout:
     signal.signal( signal.SIGALRM, alarmTimeoutHandler )
     # set timeout alarm
-    signal.alarm( timeout )
+    signal.alarm( timeout + 5 )
   try:
+    # if "http_proxy" in os.environ and os.environ['http_proxy']:
+    #   proxyIP = os.environ['http_proxy']
+    #   proxy = urllib2.ProxyHandler( {'http': proxyIP} )
+    #   opener = urllib2.build_opener( proxy )
+    #   #opener = urllib2.build_opener()
+    #  urllib2.install_opener( opener )
     remoteFD = urllib2.urlopen( url )
     expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    localFD = open( fileName, "wb" )
+    if fileName:
+      localFD = open( fileName, "wb" )
     receivedBytes = 0L
     data = remoteFD.read( 16384 )
+    count = 1
+    progressBar = False
     while data:
       receivedBytes += len( data )
-      localFD.write( data )
+      if fileName:
+        localFD.write( data )
+      else:
+        urlData += data
       data = remoteFD.read( 16384 )
-    localFD.close()
+      if count % 20 == 0:
+        print '\033[1D' + ".",
+        sys.stdout.flush()
+        progressBar = True
+      count += 1
+    if progressBar:
+      # return cursor to the beginning of the line
+      print '\033[1K',
+      print '\033[1A'
+    if fileName:
+      localFD.close()
     remoteFD.close()
     if receivedBytes != expectedBytes:
       logERROR( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
@@ -789,6 +819,8 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
     if x.code == 404:
       logERROR( "%s does not exist" % url )
       return False
+  except urllib2.URLError:
+    logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
   except Exception, x:
     if x == 'Timeout':
       logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
@@ -798,33 +830,48 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
 
   if timeout:
     signal.alarm( 0 )
-  return True
 
-def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True ):
+  if fileName:
+    return True
+  else:
+    return urlData
+
+def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache = False ):
   tarName = "%s-%s.tar.gz" % ( pkgName, pkgVer )
   tarPath = os.path.join( cliParams.targetPath, tarName )
   tarFileURL = "%s/%s" % ( tarsURL, tarName )
-  logNOTICE( "Retrieving %s" % tarFileURL )
-  try:
-    if not urlretrieveTimeout( tarFileURL, tarPath, 300 ):
-      logERROR( "Cannot download %s" % tarName )
-      return False
-  except Exception, e:
-    logERROR( "Cannot download %s: %s" % ( tarName, str( e ) ) )
-    sys.exit( 1 )
+  cacheDir = os.path.join( cliParams.basePath, ".installCache" )
+  tarCachePath = os.path.join( cacheDir, tarName )
+  if cache and os.path.isfile( tarCachePath ):
+    logNOTICE( "Using cached copy of %s" % tarName )
+    shutil.copy( tarCachePath, tarPath )
+  else:
+    logNOTICE( "Retrieving %s" % tarFileURL )
+    try:
+      if not urlretrieveTimeout( tarFileURL, tarPath, cliParams.timeout ):
+        logERROR( "Cannot download %s" % tarName )
+        return False
+    except Exception, e:
+      logERROR( "Cannot download %s: %s" % ( tarName, str( e ) ) )
+      sys.exit( 1 )
   if checkHash:
     md5Name = "%s-%s.md5" % ( pkgName, pkgVer )
     md5Path = os.path.join( cliParams.targetPath, md5Name )
     md5FileURL = "%s/%s" % ( tarsURL, md5Name )
-    logNOTICE( "Retrieving %s" % md5FileURL )
-    try:
-      if not urlretrieveTimeout( md5FileURL, md5Path, 300 ):
-        logERROR( "Cannot download %s" % tarName )
+    md5CachePath = os.path.join( cacheDir, md5Name )
+    if cache and os.path.isfile( md5CachePath ):
+      logNOTICE( "Using cached copy of %s" % md5Name )
+      shutil.copy( md5CachePath, md5Path )
+    else:
+      logNOTICE( "Retrieving %s" % md5FileURL )
+      try:
+        if not urlretrieveTimeout( md5FileURL, md5Path, 60 ):
+          logERROR( "Cannot download %s" % tarName )
+          return False
+      except Exception, e:
+        logERROR( "Cannot download %s: %s" % ( md5Name, str( e ) ) )
         return False
-    except Exception, e:
-      logERROR( "Cannot download %s: %s" % ( md5Name, str( e ) ) )
-      return False
-    #Read md5  
+    #Read md5
     fd = open( os.path.join( cliParams.targetPath, md5Name ), "r" )
     md5Expected = fd.read().strip()
     fd.close()
@@ -841,7 +888,12 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True ):
       logERROR( "Oops... md5 for package %s failed!" % pkgVer )
       sys.exit( 1 )
     #Delete md5 file
-    os.unlink( md5Path )
+    if cache:
+      if not os.path.isdir( cacheDir ):
+        os.makedirs( cacheDir )
+      os.rename( md5Path, md5CachePath )
+    else:
+      os.unlink( md5Path )
   #Extract
   #cwd = os.getcwd()
   #os.chdir(cliParams.targetPath)
@@ -852,7 +904,12 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True ):
   tarCmd = "tar xzf '%s' -C '%s'" % ( tarPath, cliParams.targetPath )
   os.system( tarCmd )
   #Delete tar
-  os.unlink( tarPath )
+  if cache:
+    if not os.path.isdir( cacheDir ):
+      os.makedirs( cacheDir )
+    os.rename( tarPath, tarCachePath )
+  else:
+    os.unlink( tarPath )
 
   postInstallScript = os.path.join( cliParams.targetPath, pkgName, 'dirac-postInstall.py' )
   if os.path.isfile( postInstallScript ):
@@ -867,8 +924,8 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True ):
 
 def fixBuildPaths():
   """
-  At compilation time many scripts get the building directory inserted, 
-  this needs to be changed to point to the current installation path: 
+  At compilation time many scripts get the building directory inserted,
+  this needs to be changed to point to the current installation path:
   cliParams.targetPath
 """
 
@@ -906,6 +963,16 @@ def runExternalsPostInstall():
     if os.system( "'%s' > '%s.out' 2> '%s.err'" % ( scriptPath, scriptPath, scriptPath ) ):
       logERROR( "Post installation script %s failed. Check %s.err" % ( scriptPath, scriptPath ) )
       sys.exit( 1 )
+
+def fixMySQLScript():
+  """
+   Update the mysql.server script (if installed) to point to the proper datadir
+  """
+  scriptPath = os.path.join( cliParams.targetPath, 'scripts', 'dirac-fix-mysql-script' )
+  if os.path.exists( scriptPath ):
+    logNOTICE( "Executing %s..." % scriptPath )
+    os.system( "%s > /dev/null " % scriptPath )
+
 
 def checkPlatformAliasLink():
   """
@@ -947,7 +1014,9 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'V:', 'installation=', 'Installation from which to extract parameter values' ),
             ( 'X', 'externalsOnly', 'Only install external binaries' ),
+            ( 'M:', 'defaultsURL=', 'Where to retrieve the global defaults from' ),
             ( 'h', 'help', 'Show this help' ),
+            ( 'T:', 'Timeout=', 'Timeout for downloads (default = %s)' )
           )
 
 def usage():
@@ -965,7 +1034,8 @@ def usage():
                    ( 'UseVersionsDir', cliParams.useVersionsDir ),
                    ( 'BuildExternals', cliParams.buildExternals ),
                    ( 'NoAutoBuild', cliParams.noAutoBuild ),
-                   ( 'Debug', cliParams.debug ) ]:
+                   ( 'Debug', cliParams.debug ),
+                   ( 'Timeout', cliParams.timeout ) ]:
     print " %s = %s" % options
 
   sys.exit( 1 )
@@ -985,8 +1055,10 @@ def loadConfiguration():
       cliParams.installation = v
     elif o in ( "-d", "--debug" ):
       cliParams.debug = True
+    elif o in ( "-M", "--defaultsURL" ):
+      cliParams.globalDefaults = v
 
-  releaseConfig = ReleaseConfig( instName = cliParams.installation )
+  releaseConfig = ReleaseConfig( instName = cliParams.installation, globalDefaultsURL = cliParams.globalDefaults )
   if cliParams.debug:
     releaseConfig.setDebugCB( logDEBUG )
 
@@ -1003,9 +1075,9 @@ def loadConfiguration():
         logNOTICE( "Loaded %s" % arg )
 
   for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
-                  'buildExternals', 'noAutoBuild', 'debug' ,
+                  'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraModules', 'extensions' ):
+                  'project', 'release', 'extraModules', 'extensions', 'timeout' ):
     try:
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
@@ -1058,14 +1130,21 @@ def loadConfiguration():
       cliParams.noAutoBuild = True
     elif o in ( '-X', '--externalsOnly' ):
       cliParams.externalsOnly = True
+    elif o in ( '-T', '--Timeout' ):
+      try:
+        cliParams.timeout = max( cliParams.timeout, int( v ) )
+        cliParams.timeout = min( cliParams.timeout, 3600 )
+      except ValueError:
+        pass
+
 
   if not cliParams.release:
     logERROR( "Missing release to install" )
     usage()
 
+  cliParams.basePath = cliParams.targetPath
   if cliParams.useVersionsDir:
     # install under <installPath>/versions/<version>_<timestamp>
-    cliParams.basePath = cliParams.targetPath
     cliParams.targetPath = os.path.join( cliParams.targetPath, 'versions', '%s_%s' % ( cliParams.release, int( time.time() ) ) )
     try:
       os.makedirs( cliParams.targetPath )
@@ -1116,22 +1195,22 @@ def installExternals( releaseConfig ):
     platFD.close()
     cliParams.platform = Platform.getPlatformString()
 
-  if cliParams.buildExternals:
-    return compileExternals( externalsVersion )
-
-  logDEBUG( "Using platform: %s" % cliParams.platform )
-  extVer = "%s-%s-%s-python%s" % ( cliParams.externalsType, externalsVersion, cliParams.platform, cliParams.pythonVersion )
-  logDEBUG( "Externals %s are to be installed" % extVer )
   if cliParams.installSource:
     tarsURL = cliParams.installSource
   else:
     tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
-  if not downloadAndExtractTarball( tarsURL, "Externals", extVer ):
-    return ( not cliParams.noAutoBuild ) and compileExternals( externalsVersion )
-  logNOTICE( "Fixing externals paths..." )
-  fixBuildPaths()
-  logNOTICE( "Runnning externals post install..." )
-  runExternalsPostInstall()
+
+  if cliParams.buildExternals:
+    compileExternals( externalsVersion )
+  else:
+    logDEBUG( "Using platform: %s" % cliParams.platform )
+    extVer = "%s-%s-%s-python%s" % ( cliParams.externalsType, externalsVersion, cliParams.platform, cliParams.pythonVersion )
+    logDEBUG( "Externals %s are to be installed" % extVer )
+    if not downloadAndExtractTarball( tarsURL, "Externals", extVer, cache = True ):
+      return ( not cliParams.noAutoBuild ) and compileExternals( externalsVersion )
+    logNOTICE( "Fixing externals paths..." )
+    fixBuildPaths()
+  logNOTICE( "Running externals post install..." )
   checkPlatformAliasLink()
   #lcg utils?
   #LCG utils if required
@@ -1139,37 +1218,54 @@ def installExternals( releaseConfig ):
   if lcgVer:
     verString = "%s-%s-python%s" % ( lcgVer, cliParams.platform, cliParams.pythonVersion )
     #HACK: try to find a more elegant solution for the lcg bundles location
-    if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False ):
+    if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False, cache = True ):
       logERROR( "Check that there is a release for your platform: DIRAC-lcg-%s" % verString )
   return True
 
-def createBashrc():
-
+def createPermanentDirLinks():
+  """ Create links to permanent directories from within the version directory
+  """
   proPath = cliParams.targetPath
   if cliParams.useVersionsDir:
     oldPath = os.path.join( cliParams.basePath, 'old' )
     proPath = os.path.join( cliParams.basePath, 'pro' )
     try:
-      if os.path.exists( proPath ):
-        if os.path.exists( oldPath ):
+      if os.path.exists( proPath ) or os.path.islink( proPath ):
+        if os.path.exists( oldPath ) or os.path.islink( oldPath ):
           os.unlink( oldPath )
         os.rename( proPath, oldPath )
       os.symlink( cliParams.targetPath, proPath )
-      for dir in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc']:
+      for dir in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc', 'webRoot']:
         fake = os.path.join( cliParams.targetPath, dir )
         real = os.path.join( cliParams.basePath, dir )
         if not os.path.exists( real ):
           os.makedirs( real )
+        if os.path.exists( fake ):
+          # Try to reproduce the directory structure to avoid lacking directories
+          fakeDirs = os.listdir( fake )
+          for fd in fakeDirs:
+            if os.path.isdir( os.path.join( fake, fd ) ):
+              if not os.path.exists( os.path.join( real, fd ) ):
+                os.makedirs( os.path.join( real, fd ) )
+          os.rename( fake, fake + '.bak' )
         os.symlink( real, fake )
     except Exception, x:
       logERROR( str( x ) )
       return False
 
+  return True
+
+def createBashrc():
+  """ Create DIRAC environment setting script for the bash shell
+  """
+
+  proPath = cliParams.targetPath
   # Now create bashrc at basePath
   try:
     bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
     if cliParams.useVersionsDir:
       bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
+      proPath = os.path.join( cliParams.basePath, 'pro' )
     logNOTICE( 'Creating %s' % bashrcFile )
     if not os.path.exists( bashrcFile ):
       lines = [ '# DIRAC bashrc file, used by service and agent run scripts to set environment',
@@ -1206,8 +1302,55 @@ def createBashrc():
       f.write( '\n'.join( lines ) )
       f.close()
   except Exception, x:
-   logERROR( str( x ) )
-   return False
+    logERROR( str( x ) )
+    return False
+
+  return True
+
+def createCshrc():
+  """ Create DIRAC environment setting script for the (t)csh shell
+  """
+
+  proPath = cliParams.targetPath
+  # Now create cshrc at basePath
+  try:
+    cshrcFile = os.path.join( cliParams.targetPath, 'cshrc' )
+    if cliParams.useVersionsDir:
+      cshrcFile = os.path.join( cliParams.basePath, 'cshrc' )
+      proPath = os.path.join( cliParams.basePath, 'pro' )
+    logNOTICE( 'Creating %s' % cshrcFile )
+    if not os.path.exists( cshrcFile ):
+      lines = [ '# DIRAC cshrc file, used by clients to set up the environment',
+                'setenv PYTHONUNBUFFERED yes',
+                'setenv PYTHONOPTIMIZE x' ]
+      if not 'X509_CERT_DIR' in os.environ and not os.path.isdir( "/etc/grid-security/certificates" ):
+        lines.append( "[ -d '%s/etc/grid-security/certificates' ] && setenv X509_CERT_DIR %s/etc/grid-security/certificates" % ( proPath, proPath ) )
+      lines.append( 'setenv X509_VOMS_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
+      lines.extend( ['# Some DIRAC locations',
+                     'setenv DIRAC %s' % proPath,
+                     'setenv DIRACBIN %s' % os.path.join( proPath, cliParams.platform, 'bin' ),
+                     'setenv DIRACSCRIPTS %s' % os.path.join( proPath, 'scripts' ),
+                     'setenv DIRACLIB %s' % os.path.join( proPath, cliParams.platform, 'lib' ),
+                     'setenv TERMINFO %s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ) ] )
+
+      lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
+                    'setenv PYTHONPATH',
+                    'setenv LD_LIBRARY_PATH'] )
+
+      lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || setenv PATH ${DIRACBIN}:$PATH',
+                     '( echo $PATH | grep -q $DIRACSCRIPTS ) || setenv PATH ${DIRACSCRIPTS}:$PATH',
+                     'setenv LD_LIBRARY_PATH $DIRACLIB',
+                     'setenv DYLD_LIBRARY_PATH $DIRACLIB',
+                     'setenv PYTHONPATH $DIRAC'] )
+      lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
+                     'setenv OPENSSL_CONF /tmp'] )
+      lines.append( '' )
+      f = open( cshrcFile, 'w' )
+      f.write( '\n'.join( lines ) )
+      f.close()
+  except Exception, x:
+    logERROR( str( x ) )
+    return False
 
   return True
 
@@ -1254,7 +1397,7 @@ if __name__ == "__main__":
       logNOTICE( "Installing %s:%s" % ( modName, modVersion ) )
       if not downloadAndExtractTarball( tarsURL, modName, modVersion ):
         sys.exit( 1 )
-    logNOTICE( "Deloying scripts..." )
+    logNOTICE( "Deploying scripts..." )
     ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" )
     if os.path.isfile( ddeLocation ):
       os.system( ddeLocation )
@@ -1265,9 +1408,16 @@ if __name__ == "__main__":
   logNOTICE( "Installing %s externals..." % cliParams.externalsType )
   if not installExternals( releaseConfig ):
     sys.exit( 1 )
+  fixMySQLScript()
+  if not createPermanentDirLinks():
+    sys.exit( 1 )
   if not createBashrc():
     sys.exit( 1 )
+  if not createCshrc():
+    sys.exit( 1 )
+  runExternalsPostInstall()
   writeDefaultConfiguration()
   installExternalRequirements( cliParams.externalsType )
   logNOTICE( "%s properly installed" % cliParams.installation )
   sys.exit( 0 )
+

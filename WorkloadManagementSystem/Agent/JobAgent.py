@@ -60,6 +60,8 @@ class JobAgent( AgentModule ):
       self.log.warn( ceInstance['Message'] )
       return ceInstance
 
+    self.initTimes = os.times()
+
     self.computingElement = ceInstance['Value']
     self.diracRoot = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( __file__ ) ) ) )
     #Localsite options
@@ -78,13 +80,16 @@ class JobAgent( AgentModule ):
     self.defaultLogLevel = self.am_getOption( 'DefaultLogLevel', 'info' )
     self.fillingMode = self.am_getOption( 'FillingModeFlag', False )
     self.stopOnApplicationFailure = self.am_getOption( 'StopOnApplicationFailure', True )
+    self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', 10 )
     self.jobCount = 0
+    self.matchFailedCount = 0
     #Timeleft
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
     self.gridCEQueue = gConfig.getValue( '/Resources/Computing/CEDefaults/GridCEQueue', '' )
     self.timeLeftError = ''
     self.scaledCPUTime = 0.0
+    self.pilotInfoReportedFlag = False
     return S_OK()
 
   #############################################################################
@@ -103,8 +108,6 @@ class JobAgent( AgentModule ):
         result = self.computingElement.setCPUTimeLeft( cpuTimeLeft = self.timeLeft )
         if not result['OK']:
           return self.__finish( result['Message'] )
-        ceJDL = self.computingElement.getJDL()
-        resourceJDL = ceJDL['Value']
       else:
         return self.__finish( 'Filling Mode is Disabled' )
 
@@ -117,30 +120,63 @@ class JobAgent( AgentModule ):
 
     self.log.info( available['Message'] )
 
-    ceJDL = self.computingElement.getJDL()
-    resourceJDL = ceJDL['Value']
-    self.log.verbose( resourceJDL )
+    result = self.computingElement.getDescription()
+    if not result['OK']:
+      return result
+    ceDict = result['Value']
+
+    # Add pilot information
+    gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
+    if gridCE != 'Unknown':
+      ceDict['GridCE'] = gridCE
+    if not 'PilotReference' in ceDict:
+      ceDict['PilotReference'] = str( self.pilotReference )
+    ceDict['PilotBenchmark'] = self.cpuFactor
+    ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
+
+    # Add possible job requirements
+    result = gConfig.getOptionsDict( '/AgentJobRequirements' )
+    if result['OK']:
+      requirementsDict = result['Value']
+      ceDict.update( requirementsDict )
+
+    self.log.verbose( ceDict )
     start = time.time()
-    jobRequest = self.__requestJob( resourceJDL )
+    jobRequest = self.__requestJob( ceDict )
     matchTime = time.time() - start
     self.log.info( 'MatcherTime = %.2f (s)' % ( matchTime ) )
 
+    self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', self.stopAfterFailedMatches )
+
     if not jobRequest['OK']:
-      if re.search( 'No work available', jobRequest['Message'] ):
-        self.log.info( 'Job request OK: %s' % ( jobRequest['Message'] ) )
+      if re.search( 'No match found', jobRequest['Message'] ):
+        self.log.notice( 'Job request OK: %s' % ( jobRequest['Message'] ) )
+        self.matchFailedCount += 1
+        if self.matchFailedCount > self.stopAfterFailedMatches:
+          return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "seconds timeout" ) != -1:
         self.log.error( jobRequest['Message'] )
+        self.matchFailedCount += 1
+        if self.matchFailedCount > self.stopAfterFailedMatches:
+          return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "Pilot version does not match" ) != -1 :
         self.log.error( jobRequest['Message'] )
         return S_ERROR( jobRequest['Message'] )
       else:
-        self.log.info( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
+        self.log.notice( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
+        self.matchFailedCount += 1
+        if self.matchFailedCount > self.stopAfterFailedMatches:
+          return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
+
+    # Reset the Counter
+    self.matchFailedCount = 0
 
     matcherInfo = jobRequest['Value']
     jobID = matcherInfo['JobID']
+    self.pilotInfoReportedFlag = matcherInfo.get( 'PilotInfoReportedFlag', False )
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
       if not matcherInfo.has_key( param ):
@@ -208,12 +244,20 @@ class JobAgent( AgentModule ):
     self.log.info( 'OwnerDN: %s JobGroup: %s' % ( ownerDN, jobGroup ) )
     self.jobCount += 1
     try:
-      self.__setJobParam( jobID, 'MatcherServiceTime', str( matchTime ) )
+      jobReport = JobReport( jobID, 'JobAgent@%s' % self.siteName )
+      jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
       if self.gridCEQueue:
-        self.__setJobParam( jobID, 'GridCEQueue', self.gridCEQueue )
-      self.__report( jobID, 'Matched', 'Job Received by Agent' )
-      self.__setJobSite( jobID, self.siteName )
-      self.__reportPilotInfo( jobID )
+        jobReport.setJobParameter( 'GridCEQueue', self.gridCEQueue, sendFlag = False )
+
+      if os.environ.has_key( 'BOINC_JOB_ID' ):
+        # Report BOINC environment 
+        for p in ['BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName']:
+          jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )
+
+      jobReport.setJobStatus( 'Matched', 'Job Received by Agent' )
+      # self.__setJobSite( jobID, self.siteName )
+      if not self.pilotInfoReportedFlag:
+        self.__reportPilotInfo( jobID )
       result = self.__setupProxy( ownerDN, jobGroup )
       if not result[ 'OK' ]:
         return self.__rescheduleFailedJob( jobID, result[ 'Message' ], self.stopOnApplicationFailure )
@@ -224,12 +268,12 @@ class JobAgent( AgentModule ):
       saveJDL = self.__saveJobJDLRequest( jobID, jobJDL )
       #self.__report(jobID,'Matched','Job Prepared to Submit')
 
-      resourceParameters = self.__getJDLParameters( resourceJDL )
-      if not resourceParameters['OK']:
-        return resourceParameters
-      resourceParams = resourceParameters['Value']
+      #resourceParameters = self.__getJDLParameters( resourceJDL )
+      #if not resourceParameters['OK']:
+      #  return resourceParameters
+      #resourceParams = resourceParameters['Value']
 
-      software = self.__checkInstallSoftware( jobID, params, resourceParams )
+      software = self.__checkInstallSoftware( jobID, params, ceDict )
       if not software['OK']:
         self.log.error( 'Failed to install software for job %s' % ( jobID ) )
         errorMsg = software['Message']
@@ -238,7 +282,7 @@ class JobAgent( AgentModule ):
         return self.__rescheduleFailedJob( jobID, errorMsg, self.stopOnApplicationFailure )
 
       self.log.verbose( 'Before %sCE submitJob()' % ( self.ceName ) )
-      submission = self.__submitJob( jobID, params, resourceParams, optimizerParams, jobJDL, proxyChain )
+      submission = self.__submitJob( jobID, params, ceDict, optimizerParams, jobJDL, proxyChain )
       if not submission['OK']:
         self.__report( jobID, 'Failed', submission['Message'] )
         return self.__finish( submission['Message'] )
@@ -252,7 +296,14 @@ class JobAgent( AgentModule ):
       self.log.exception()
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception', self.stopOnApplicationFailure )
 
-    result = self.timeLeftUtil.getTimeLeft( 0.0 )
+    currentTimes = list( os.times() )
+    for i in range( len( currentTimes ) ):
+      currentTimes[i] -= self.initTimes[i]
+
+    utime, stime, cutime, cstime, elapsed = currentTimes
+    cpuTime = utime + stime + cutime + cstime
+
+    result = self.timeLeftUtil.getTimeLeft( cpuTime )
     if result['OK']:
       self.timeLeft = result['Value']
     else:
@@ -357,9 +408,6 @@ class JobAgent( AgentModule ):
 
     self.__report( jobID, 'Matched', 'Installing Software' )
     softwareDist = jobParams['SoftwareDistModule']
-    #HACK: Delete when svn repo is in production!
-    softwareDist = softwareDist.replace( "DIRAC.LHCbSystem.", "LHCbDIRAC.Core." )
-    #END OF HACK
     self.log.verbose( 'Found VO Software Distribution module: %s' % ( softwareDist ) )
     argumentsDict = {'Job':jobParams, 'CE':resourceParams}
     moduleFactory = ModuleFactory()
@@ -414,6 +462,11 @@ class JobAgent( AgentModule ):
       self.__setJobParam( jobID, 'ErrorMessage', '%s CE Submission Error' % ( self.ceName ) )
       if 'ReschedulePayload' in submission:
         rescheduleFailedJob( jobID, submission['Message'], self.__report )
+      else:
+        if 'Value' in submission:
+          self.log.error( 'Error in DIRAC JobWrapper:', 'exit code = %s' % ( str( submission['Value'] ) ) )
+        # make sure the Job is declared Failed
+        self.__report( jobID, 'Failed', submission['Message'] )
       return S_ERROR( '%s CE Submission Error: %s' % ( self.ceName, submission['Message'] ) )
 
     return ret
@@ -500,7 +553,7 @@ class JobAgent( AgentModule ):
     jobExeFile = '%s/job/Wrapper/Job%s' % ( workingDir, jobID )
     jobFileContents = \
 """#!/bin/sh
-%s %s -o LogLevel=%s
+%s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
 """ % ( dPython, jobWrapperFile, logLevel )
     jobFile = open( jobExeFile, 'w' )
     jobFile.write( jobFileContents )
@@ -521,12 +574,12 @@ class JobAgent( AgentModule ):
     return S_OK( jdlFileName )
 
   #############################################################################
-  def __requestJob( self, resourceJDL ):
+  def __requestJob( self, ceDict ):
     """Request a single job from the matcher service.
     """
     try:
       matcher = RPCClient( 'WorkloadManagement/Matcher', timeout = 600 )
-      result = matcher.requestJob( resourceJDL )
+      result = matcher.requestJob( ceDict )
       return result
     except Exception, x:
       self.log.exception( lException = x )
@@ -544,7 +597,7 @@ class JobAgent( AgentModule ):
       classAdJob = ClassAd( jdl )
       paramsDict = classAdJob.contents
       for param, value in paramsDict.items():
-        if re.search( '{', value ):
+        if value.strip().startswith( '{' ):
           self.log.debug( 'Found list type parameter %s' % ( param ) )
           rawValues = value.replace( '{', '' ).replace( '}', '' ).replace( '"', '' ).split()
           valueList = []
@@ -555,8 +608,8 @@ class JobAgent( AgentModule ):
               valueList.append( val )
           parameters[param] = valueList
         else:
-          self.log.debug( 'Found standard parameter %s' % ( param ) )
-          parameters[param] = value.replace( '"', '' )
+          parameters[param] = value.replace( '"', '' ).replace( '{', '"{' ).replace( '}', '}"' )
+          self.log.debug( 'Found standard parameter %s: %s' % ( param, parameters[param] ) )
       return S_OK( parameters )
     except Exception, x:
       self.log.exception( lException = x )

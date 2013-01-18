@@ -1,11 +1,9 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' DIRAC.ResourceStatusSystem.PolicySystem.Actions package
 
-"""
-  Actions for PEP
-"""
+'''
+
+__RCSID__  = '$Id: $'
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF 

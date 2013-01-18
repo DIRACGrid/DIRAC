@@ -11,12 +11,14 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
-from DIRAC.Resources.Storage.StorageElement                import StorageElement
 
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.List                             import uniqueElements
 from DIRAC                                                 import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import getStorageElementOptions
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus      import ResourceStatus
+
 import time
 
 class InputDataAgent( OptimizerModule ):
@@ -46,6 +48,8 @@ class InputDataAgent( OptimizerModule ):
       msg = 'Failed to create ReplicaManager'
       self.log.exception( msg )
       return S_ERROR( msg + str( e ) )
+    
+    self.resourceStatus = ResourceStatus()
 
     self.seToSiteMapping = {}
     self.lastCScheck = 0
@@ -279,19 +283,26 @@ class InputDataAgent( OptimizerModule ):
           if not sites['OK']:
             continue
           try:
-            storageElement = StorageElement( se )
-            seDict[se] = { 'Sites': sites['Value'], 'Status': storageElement.getStatus()['Value'] }
+            #storageElement = StorageElement( se )
+            result = self.resourceStatus.getStorageElementStatus( se, statusType = 'ReadAccess' )
+            if not result['OK']:
+              continue
+            seDict[se] = { 'Sites': sites['Value'], 'SEParams': result['Value'][se] }
+            result = getStorageElementOptions( se )
+            if not result['OK']:
+              continue
+            seDict[se]['SEParams'].update(result['Value'])
           except Exception:
             self.log.exception( 'Failed to instantiate StorageElement( %s )' % se )
             continue
         for site in seDict[se]['Sites']:
           if site in siteCandidates:
-            if seDict[se]['Status']['Read'] and seDict[se]['Status']['DiskSE']:
+            if seDict[se]['SEParams']['ReadAccess'] and seDict[se]['SEParams']['DiskSE']:
               if lfn not in siteResult[site]['disk']:
                 siteResult[site]['disk'].append( lfn )
                 if lfn in siteResult[site]['tape']:
                   siteResult[site]['tape'].remove( lfn )
-            if seDict[se]['Status']['Read'] and seDict[se]['Status']['TapeSE']:
+            if seDict[se]['SEParams']['ReadAccess'] and seDict[se]['SEParams']['TapeSE']:
               if lfn not in siteResult[site]['tape'] and lfn not in siteResult[site]['disk']:
                 siteResult[site]['tape'].append( lfn )
 

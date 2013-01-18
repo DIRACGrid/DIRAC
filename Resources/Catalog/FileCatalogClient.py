@@ -12,15 +12,17 @@ from DIRAC.Core.Base.Client             import Client
 
 class FileCatalogClient(Client):
 
-  def __init__(self,timeout=0):
+  def __init__( self, url=None, **kwargs ):
     """ Constructor function.
     """
+    Client.__init__( self, **kwargs )
     self.setServer('DataManagement/FileCatalog')
-    self.setTimeout(timeout)
+    if url:
+      self.setServer(url)
     self.available = False
-    res = self.isOK()
-    if res['OK']:
-      self.available = res['Value']
+#    res = self.isOK()
+#    if res['OK']:
+#      self.available = res['Value']
 
   def isOK(self,rpc='',url='',timeout=120):
     if not self.available:
@@ -47,3 +49,27 @@ class FileCatalogClient(Client):
   def getDirectoryReplicas(self,lfns,allStatus=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     return rpcClient.getDirectoryReplicas(lfns,allStatus)
+
+  def findFilesByMetadata(self,metaDict,path='/',rpc='',url='',timeout=120):
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    result = rpcClient.findFilesByMetadata(metaDict,path)
+    if not result['OK']:
+      return result
+    if type(result['Value']) == types.ListType:
+      return result
+    elif type(result['Value']) == types.DictType:
+      # Process into the lfn list
+      fileList = []
+      for dir,fList in result['Value'].items():
+        for f in fList:
+          fileList.append(dir+'/'+f)
+      result['Value'] = fileList    
+      return result
+    else:
+      return S_ERROR( 'Illegal return value type %s' % type( result['Value'] ) )    
+     
+    
+    
+  
+  
+  

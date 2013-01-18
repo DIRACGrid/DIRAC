@@ -14,6 +14,8 @@ from DIRAC.Core.Utilities.Grid import executeGridCommand
 
 import os, time, re
 
+from hashlib import md5
+
 # Some default values
 
 BROKERS = ['wms206.cern.ch']
@@ -65,7 +67,7 @@ class gLitePilotDirector( GridPilotDirector ):
     # This allows to set it to '' for LHCB and prevent CREAM CEs to reuse old proxies
     # For this to work with parametric jobs it requires the UI default configuration files to properly defined a
     #  consistent default.
-    # For other VOs it allows to set a proper MyProxyServer for automatic renewal 
+    # For other VOs it allows to set a proper MyProxyServer for automatic renewal
     #  of pilot credentials for private pilots
     self.myProxyServer = gConfig.getValue( mySection + '/MyProxyServer'         , self.myProxyServer )
 
@@ -95,36 +97,39 @@ class gLitePilotDirector( GridPilotDirector ):
       else:
         extraReq = "AllowsGenericPilot"
 
-    wmsClientJDL = """
+    myProxyServer = self.myProxyServer.strip()
+    if not myProxyServer:
+      #Random string to avoid caching
+      myProxyServer = "%s.cern.ch" % md5( str( time.time() ) ).hexdigest()[:10]
 
+    wmsClientJDL = """
 RetryCount = 0;
 ShallowRetryCount = 0;
-MyProxyServer = "%s";
-
 AllowsGenericPilot = Member( "VO-lhcb-pilot" , other.GlueHostApplicationSoftwareRunTimeEnvironment );
 Requirements = pilotRequirements && %s;
-WmsClient = [
-ErrorStorage = "%s/pilotError";
-OutputStorage = "%s/pilotOutput";
-# ListenerPort = 44000;
-ListenerStorage = "%s/Storage";
-RetryCount = 0;
-ShallowRetryCount = 0;
-WMProxyEndPoints = { %s };
-LBEndPoints = { %s };
 MyProxyServer = "%s";
-EnableServiceDiscovery = false;
-JdlDefaultAttributes =  [
+WmsClient = [
+  ErrorStorage = "%s/pilotError";
+  OutputStorage = "%s/pilotOutput";
+# ListenerPort = 44000;
+  ListenerStorage = "%s/Storage";
+  RetryCount = 0;
+  ShallowRetryCount = 0;
+  WMProxyEndPoints = { %s };
+  LBEndPoints = { %s };
+  EnableServiceDiscovery = false;
+  MyProxyServer = "%s";
+  JdlDefaultAttributes =  [
     requirements  =  ( other.GlueCEStateStatus == "Production" || other.GlueCEStateStatus == "Special" );
     AllowZippedISB  =  true;
     SignificantAttributes  =  {"Requirements", "Rank", "FuzzyRank"};
     PerusalFileEnable  =  false;
-    ];
+  ];
 ];
-""" % ( self.myProxyServer, extraReq,
+""" % ( extraReq, myProxyServer,
         workingDirectory, workingDirectory,
         workingDirectory, ', '.join( rbList ),
-        ', '.join( lbList ), self.myProxyServer )
+        ', '.join( lbList ), myProxyServer )
 
     if pilotsToSubmit > 1:
       wmsClientJDL += """
@@ -176,10 +181,10 @@ ParameterStart = 0;
 
     if not ret['OK']:
       self.log.error( 'Failed to execute Job Status', ret['Message'] )
-      return False
+      return []
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing Job Status:', str( ret['Value'][0] ) + '\n'.join( ret['Value'][1:3] ) )
-      return False
+      return []
     self.log.info( 'Job Status Execution Time: %.2f' % ( time.time() - start ) )
 
     stdout = ret['Value'][1]

@@ -9,21 +9,13 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 class InnerRPCClient( BaseClient ):
 
   def executeRPC( self, functionName, args ):
-    try:
-      return self.__serverRPC( functionName, args )
-    except:
-      raise
-    finally:
-      self._disconnect()
-
-  def __serverRPC( self, functionName, args ):
     stub = ( self._getBaseStub(), functionName, args )
     retVal = self._connect()
+    if not retVal[ 'OK' ]:
+      retVal[ 'rpcStub' ] = stub
+      return retVal
+    trid, transport = retVal[ 'Value' ]
     try:
-      if not retVal[ 'OK' ]:
-        retVal[ 'rpcStub' ] = stub
-        return retVal
-      transport = retVal[ 'Value' ]
       retVal = self._proposeAction( transport, ( "RPC", functionName ) )
       if not retVal[ 'OK' ]:
         retVal[ 'rpcStub' ] = stub
@@ -36,5 +28,5 @@ class InnerRPCClient( BaseClient ):
         receivedData[ 'rpcStub' ] = stub
       return receivedData
     finally:
-      self._disconnect()
+      self._disconnect( trid )
 

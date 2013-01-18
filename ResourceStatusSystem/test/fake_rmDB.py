@@ -9,12 +9,6 @@ __RCSID__  = "$Id$"
 """
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-
-class RSSManagementDBException(RSSException):
-  pass
-
-################################################################################
 
 class ResourceManagementDB:
   

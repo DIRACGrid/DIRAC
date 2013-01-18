@@ -7,12 +7,18 @@ import os, types
 from DIRAC.Core.Utilities.Os import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers         import Local
 from DIRAC import systemCall, shellCall, S_OK, S_ERROR
 
 def executeGridCommand( proxy, cmd, gridEnvScript = None ):
   """ Execute cmd tuple after sourcing GridEnv
   """
   currentEnv = dict( os.environ )
+
+  if not gridEnvScript:
+    # if not passed as argument, use default from CS Helpers
+    gridEnvScript = Local.gridEnv()
+
   if gridEnvScript:
     ret = sourceEnv( 10, [gridEnvScript] )
     if not ret['OK']:

@@ -19,11 +19,8 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
-from DIRAC.Core.Utilities.Time import *
-
 
 import re, time
-from types import *
 
 MAX_JOBS_QUERY = 10
 MAX_WAITING_STATE_LENGTH = 3
@@ -118,7 +115,7 @@ class PilotStatusAgent( AgentModule ):
           continue
         refList = result['Value']
 
-        ret = gProxyManager.getPilotProxyFromVOMSGroup( ownerDN, ownerGroup )
+        ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup )
         if not ret['OK']:
           self.log.error( ret['Message'] )
           self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
@@ -151,7 +148,7 @@ class PilotStatusAgent( AgentModule ):
                 if not result['OK']:
                   self.log.warn( result['Message'] )
                 else:
-                  self.log.info( 'Parameteric parent removed: %s' % pRef )
+                  self.log.info( 'Parametric parent removed: %s' % pRef )
               if pDict[ 'FinalStatus' ]:
                 self.log.verbose( 'Marking Status for %s to %s' % ( pRef, pDict['Status'] ) )
                 pilotsToAccount[ pRef ] = pDict
@@ -270,10 +267,9 @@ class PilotStatusAgent( AgentModule ):
     pilotsDict = result['Value']
 
     for pRef in pilotsDict:
-      statusDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() )
       deletedJobDict = pilotsDict[pRef]
       deletedJobDict['Status'] = 'Deleted'
-      deletedJobDict['StatusDate'] = statusDate
+      deletedJobDict['StatusDate'] = Time.dateTime()
       pilotsToAccount[ pRef ] = deletedJobDict
       if len( pilotsToAccount ) > 100:
         self.accountPilots( pilotsToAccount, connection )
@@ -307,7 +303,7 @@ class PilotStatusAgent( AgentModule ):
           if dbData[pref][ 'Status' ] not in self.finalStateList:
             dbData[pref][ 'Status' ] = pilotsToAccount[pref][ 'Status' ]
             dbData[pref][ 'DestinationSite' ] = pilotsToAccount[pref][ 'DestinationSite' ]
-            dbData[pref][ 'LastUpdateTime' ] = Time.fromString( pilotsToAccount[pref][ 'StatusDate' ] )
+            dbData[pref][ 'LastUpdateTime' ] = pilotsToAccount[pref][ 'StatusDate' ]
 
       retVal = self.__addPilotsAccountingReport( dbData )
       if not retVal['OK']:
@@ -317,7 +313,7 @@ class PilotStatusAgent( AgentModule ):
       self.log.info( "Sending accounting records..." )
       retVal = gDataStoreClient.commit()
       if not retVal[ 'OK' ]:
-        self.log.error( "Can't send accounting repots", retVal[ 'Message' ] )
+        self.log.error( "Can't send accounting reports", retVal[ 'Message' ] )
       else:
         self.log.info( "Accounting sent for %s pilots" % len( pilotsToAccount ) )
         accountingSent = True
@@ -364,10 +360,9 @@ class PilotStatusAgent( AgentModule ):
       resultDict = {}
       status = 'Deleted'
       destination = 'Unknown'
-      statusDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() )
       deletedJobDict = { 'Status': status,
              'DestinationSite': destination,
-             'StatusDate': statusDate,
+             'StatusDate': Time.dateTime(),
              'isChild': False,
              'isParent': False,
              'ParentRef': False,
@@ -444,19 +439,19 @@ class PilotStatusAgent( AgentModule ):
     if status == "Running":
       # Pilots can be in Running state for too long, due to bugs in the WMS
       if statusDate:
-        statusTime = fromString( statusDate )
-        delta = dateTime() - statusTime
-        if delta > 4 * day:
+        statusTime = Time.fromString( statusDate )
+        delta = Time.dateTime() - statusTime
+        if delta > 4 * Time.day:
           self.log.info( 'Setting pilot status to Deleted after 4 days in Running' )
           status = "Deleted"
-          statusDate = toString( statusTime + 4 * day )
+          statusDate = statusTime + 4 * Time.day
       elif submittedDate:
-        statusTime = fromString( submittedDate )
-        delta = dateTime() - statusTime
-        if delta > 7 * day:
+        statusTime = Time.fromString( submittedDate )
+        delta = Time.dateTime() - statusTime
+        if delta > 7 * Time.day:
           self.log.info( 'Setting pilot status to Deleted more than 7 days after submission still in Running' )
           status = "Deleted"
-          statusDate = toString( statusTime + 7 * day )
+          statusDate = statusTime + 7 * Time.day
 
     childRefs = []
     childDicts = {}

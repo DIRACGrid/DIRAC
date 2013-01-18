@@ -1,40 +1,48 @@
-""" DIRAC.ResourceStatusSystem.Policy.Configurations Module
+# $HeadURL:  $
+''' Configurations module
 
-    collects everything needed to configure policies
-"""
+  Configuration to use policies.
+  
+  Follows the schema:
+  
+  <PolicyNameInCS> : {
+             'description' : <some human readable description>,
+             'module'      : <policy module name>,
+             'command'     : ( <command module name >, < command class name > ),
+             'args'        : { arguments for the command } or None 
+                     }
+  
+'''
 
-__RCSID__ = "$Id: "
+__RCSID__ = '$Id:  $'
 
-from DIRAC.ResourceStatusSystem.Utilities import CS
+POLICIESMETA = {
+            
+#  'DTOnGoingOnly' :
+#    {
+#      'description' : "Ongoing down-times",
+#      'module'      : 'DTPolicy',
+#      'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
+#      'args'        : None
+#    },
 
-pp = CS.getTypedDictRootedAt("PolicyParameters")
-
-Policies = {
-  'DT_OnGoing_Only' :
+  'DTScheduled' :
     {
-      'Description' : "Ongoing down-times",
-      'module'      : 'DT_Policy',
-      'commandIn'   : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
-      'args'        : None
+      'description' : "Ongoing and scheduled down-times",
+      'module'      : 'DowntimePolicy',
+      'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
+      'args'        : { 'hours' : 12, 'onlyCache' : True },
     },
 
-  'DT_Scheduled' :
+  'AlwaysActive' :
     {
-      'Description'     : "Ongoing and scheduled down-times",
-      'module'          : 'DT_Policy',
-      'commandInNewRes' : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
-      'commandIn'       : ( 'GOCDBStatus_Command', 'DTCached_Command' ),
-      'args'            : ( pp["DTinHours"], ),
-      'Site_Panel'      : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
-                                         'args': None}},],
-      'Resource_Panel'  : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
-                                         'args': None}}]
-    },
-
-  'AlwaysFalse' :
-    {
-      'Description' : "A Policy that always returns false",
-      'commandIn'   : None,
+      'description' : "A Policy that always returns Active",
+      'module'      : 'AlwaysActivePolicy',
+      'command'     : None,
       'args'        : None
     }
+            
   }
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

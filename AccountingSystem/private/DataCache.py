@@ -17,9 +17,10 @@ class DataCache:
     self.cachedGraphs = {}
     self.alive = True
     self.purgeThread = threading.Thread( target = self.purgeExpired )
+    self.purgeThread.setDaemon( 1 )
     self.purgeThread.start()
     self.__dataCache = DictCache()
-    self.__graphCache = DictCache( deleteFunction = _deleteGraph )
+    self.__graphCache = DictCache( deleteFunction = self._deleteGraph )
     self.__dataLifeTime = 600
     self.__graphLifeTime = 3600
 
@@ -78,17 +79,19 @@ class DataCache:
       return S_ERROR( "Can't open file %s: %s" % ( plotFileName, str( e ) ) )
     return S_OK( data )
 
-def _deleteGraph( plotDict ):
-  try:
-    for key in plotDict:
-      value = plotDict[ key ]
-      if value and os.path.isfile( value ):
-        gLogger.info( "Deleting plot from cache", value )
-        os.unlink( value )
-      else:
-        gLogger.info( "Plot has already been deleted", value )
-  except:
-    pass
+  def _deleteGraph( self, plotDict ):
+    try:
+      for key in plotDict:
+        value = plotDict[ key ]
+        if value:
+          fPath = os.path.join( self.graphsLocation, str( value ) )
+          if os.path.isfile( fPath ):
+            gLogger.info( "Deleting plot from cache", value )
+            os.unlink( fPath )
+          else:
+            gLogger.info( "Plot has already been deleted", value )
+    except:
+      pass
 
 
 

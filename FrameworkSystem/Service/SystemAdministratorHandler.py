@@ -6,27 +6,15 @@
 __RCSID__ = "$Id$"
 
 from types import *
-import os
+import os, re, commands
 from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.Core.Utilities import InstallTools, CFG
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 
-cmDB = None
-
-def initializeSystemAdministratorHandler( serviceInfo ):
-
-  global cmDB
-  #try:
-  #  cmDB = ComponentMonitoringDB()
-  #except Exception,x:
-  #  gLogger.warn('Failed to create an instance of ComponentMonitoringDB ')
-  return S_OK()
-
 
 class SystemAdministratorHandler( RequestHandler ):
-
 
   types_getInfo = [ ]
   def export_getInfo( self ):
@@ -61,7 +49,19 @@ class SystemAdministratorHandler( RequestHandler ):
     """  Get the complete status information for the components in the
          given list
     """
-    return InstallTools.getOverallStatus( getCSExtensions() )
+    result = InstallTools.getOverallStatus( getCSExtensions() )
+    if not result['OK']:
+      return result
+    statusDict = result['Value']
+    for compType in statusDict:
+      for system in statusDict[compType]:
+        for component in statusDict[compType][system]:
+          result = InstallTools.getComponentModule( gConfig,system,component,compType )
+          if not result['OK']:
+            statusDict[compType][system][component]['Module'] = "Unknown"
+          else:
+            statusDict[compType][system][component]['Module'] = result['Value']
+    return S_OK(statusDict)   
 
   types_getStartupComponentStatus = [ ListType ]
   def export_getStartupComponentStatus( self, componentTupleList ):
@@ -71,17 +71,19 @@ class SystemAdministratorHandler( RequestHandler ):
     return InstallTools.getStartupComponentStatus( componentTupleList )
 
   types_installComponent = [ StringTypes, StringTypes, StringTypes ]
-  def export_installComponent( self, componentType, system, component ):
+  def export_installComponent( self, componentType, system, component, componentModule='' ):
     """ Install runit directory for the specified component
     """
-    return InstallTools.installComponent( componentType, system, component, getCSExtensions() )
+    return InstallTools.installComponent( componentType, system, component, getCSExtensions(), componentModule )
 
   types_setupComponent = [ StringTypes, StringTypes, StringTypes ]
-  def export_setupComponent( self, componentType, system, component ):
+  def export_setupComponent( self, componentType, system, component, componentModule='' ):
     """ Setup the specified component for running with the runsvdir daemon
         It implies installComponent
     """
-    return InstallTools.setupComponent( componentType, system, component, getCSExtensions() )
+    result = InstallTools.setupComponent( componentType, system, component, getCSExtensions(), componentModule )
+    gConfig.forceRefresh()
+    return result
 
   types_addDefaultOptionsToComponentCfg = [ StringTypes, StringTypes ]
   def export_addDefaultOptionsToComponentCfg( self, componentType, system, component ):
@@ -391,3 +393,55 @@ class SystemAdministratorHandler( RequestHandler ):
       resultDict[c] = {'ErrorsHour':errors_1, 'ErrorsDay':errors_24, 'LastError':lastError}
 
     return S_OK( resultDict )
+
+  types_getHostInfo = []
+  def export_getHostInfo(self):
+    """ Get host current loads, memory, etc
+    """
+
+    result = dict()
+    # Memory info
+    re_parser = re.compile(r'^(?P<key>\S*):\s*(?P<value>\d*)\s*kB' )
+    for line in open('/proc/meminfo'):
+      match = re_parser.match(line)
+      if not match:
+        continue
+      key, value = match.groups(['key', 'value'])
+      result[key] = int(value)
+
+    for mtype in ['Mem','Swap']:
+      memory = int(result.get(mtype+'Total'))
+      mfree = int(result.get(mtype+'Free'))
+      if memory > 0:
+        percentage = float(memory-mfree)/float(memory)*100.
+      else:
+        percentage = 0
+      name = 'Memory'
+      if mtype == "Swap":
+        name = 'Swap'
+      result[name] = '%.1f%%/%.1fMB' % (percentage,memory/1024.)
+
+    # Loads
+    line = open('/proc/loadavg').read()
+    l1,l5,l15,d1,d2 = line.split()
+    result['Load1'] = l1
+    result['Load5'] = l5
+    result['Load15'] = l15
+    result['Load'] = '/'.join([l1,l5,l15])
+
+    # Disk occupancy
+    summary = ''
+    status,output = commands.getstatusoutput('df')
+    lines = output.split('\n')
+    for i in range( len( lines ) ):
+      if lines[i].startswith('/dev'):
+        fields = lines[i].split()
+        if len( fields ) == 1:
+          fields += lines[i+1].split()
+        disk = fields[0].replace('/dev/sd','')
+        partition = fields[5]
+        occupancy = fields[4]
+        summary += ",%s:%s" % (partition,occupancy)
+    result['DiskOccupancy'] = summary[1:]
+
+    return S_OK(result)

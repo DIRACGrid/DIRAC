@@ -10,8 +10,6 @@ from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-
-
 class ConfigurationClient:
 
   def __init__( self, fileToLoadList = None ):
@@ -25,6 +23,9 @@ class ConfigurationClient:
 
   def loadCFG( self, cfg ):
     return gConfigurationData.mergeWithLocal( cfg )
+
+  def forceRefresh( self ):
+    return gRefresher.forceRefresh()
 
   def dumpLocalCFGToFile( self, fileName ):
     return gConfigurationData.dumpLocalCFGToFile( fileName )
@@ -69,7 +70,6 @@ class ConfigurationClient:
     if retVal[ 'OK' ]:
       return retVal[ 'Value' ]
     else:
-      gLogger.debug( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
       return defaultValue
 
 #  def getSpecialValue( self, optionPath, defaultValue = None, vo = None, setup = None ):
@@ -96,45 +96,40 @@ class ConfigurationClient:
 #    value = self.getValue( optionPath, defaultValue )
 #    return value
 
-  def getOption( self, optionPath, defaultValue = None ):
+  def getOption( self, optionPath, typeValue = None ):
     gRefresher.refreshConfigurationIfNeeded()
     optionValue = gConfigurationData.extractOptionFromCFG( optionPath )
-    if not optionValue:
-      optionValue = defaultValue
 
-    #Return value if existing, defaultValue if not
-    if optionValue == defaultValue:
-      if defaultValue == None or type( defaultValue ) == types.TypeType:
-        return S_ERROR( "Path %s does not exist or it's not an option" % optionPath )
-      return S_OK( optionValue )
+    if optionValue == None:
+      return S_ERROR( "Path %s does not exist or it's not an option" % optionPath )
 
     #Value has been returned from the configuration
-    if defaultValue == None:
+    if typeValue == None:
       return S_OK( optionValue )
 
-    #Casting to defaultValue's type
-    defaultType = defaultValue
-    if not type( defaultValue ) == types.TypeType:
-      defaultType = type( defaultValue )
+    #Casting to typeValue's type
+    requestedType = typeValue
+    if not type( typeValue ) == types.TypeType:
+      requestedType = type( typeValue )
 
-    if defaultType == types.ListType:
+    if requestedType == types.ListType:
       try:
         return S_OK( List.fromChar( optionValue, ',' ) )
       except Exception:
         return S_ERROR( "Can't convert value (%s) to comma separated list" % str( optionValue ) )
-    elif defaultType == types.BooleanType:
+    elif requestedType == types.BooleanType:
       try:
         return S_OK( optionValue.lower() in ( "y", "yes", "true", "1" ) )
       except Exception:
         return S_ERROR( "Can't convert value (%s) to Boolean" % str( optionValue ) )
     else:
       try:
-        return S_OK( defaultType( optionValue ) )
+        return S_OK( requestedType( optionValue ) )
       except:
-        return S_ERROR( "Type mismatch between default (%s) and configured value (%s) " % ( str( defaultValue ), optionValue ) )
+        return S_ERROR( "Type mismatch between default (%s) and configured value (%s) " % ( str( typeValue ), optionValue ) )
 
 
-  def getSections( self, sectionPath, listOrdered = False ):
+  def getSections( self, sectionPath, listOrdered = True ):
     gRefresher.refreshConfigurationIfNeeded()
     sectionList = gConfigurationData.getSectionsFromCFG( sectionPath, ordered = listOrdered )
     if type( sectionList ) == types.ListType:
@@ -142,7 +137,7 @@ class ConfigurationClient:
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
 
-  def getOptions( self, sectionPath, listOrdered = False ):
+  def getOptions( self, sectionPath, listOrdered = True ):
     gRefresher.refreshConfigurationIfNeeded()
     optionList = gConfigurationData.getOptionsFromCFG( sectionPath, ordered = listOrdered )
     if type( optionList ) == types.ListType:

@@ -1,26 +1,32 @@
-################################################################################
-# $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+# $HeadURL:  $
+''' MacroCommand 
+  
   The MacroCommand class is a macro class for all the macro commands
   for interacting with multiple commands
-"""
-
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-
-class MacroCommand(Command):
   
-  def __init__(self):
+'''
+
+from DIRAC                                      import gLogger
+from DIRAC.ResourceStatusSystem.Command.Command import Command
+
+__RCSID__ = '$Id:  $'
+
+class MacroCommand( Command ):
+  '''
+  As of today, it is not used.
+  '''
+  
+  def __init__( self ):
+    
+    super( MacroCommand, self ).__init__()
+    
     self.commands = None
     self.args     = None
     self.clients  = None
 
 ################################################################################
     
-  def setCommands(self, commandsListIn = None):
+  def setCommands( self, commandsListIn = None ):
     """
     Method to be called as first at every MacroCommand instantiation.
     
@@ -35,7 +41,7 @@ class MacroCommand(Command):
   
 ################################################################################
     
-  def setArgs(self, argsListIn = None):
+  def setArgs( self, argsListIn = None ):
     """
     Set the arguments of the commands.
     
@@ -54,14 +60,14 @@ class MacroCommand(Command):
     elif len(self.args) == 1:
       commArgs = [(self.commands[x], self.args[0]) for x in range(len(self.commands))]
     else:
-      raise RSSException, "Tuples or `args` provided are nor 1 nor the same number of the commands"
+      gLogger.error( "Tuples or `args` provided are nor 1 nor the same number of the commands" )
     
     for command, arg in commArgs:
       command.setArgs(arg)
   
 ################################################################################
   
-  def setClient(self, clientListIn = None):
+  def setClient( self, clientListIn = None ):
     """
     Set `self.clients`. If not set, a standard client will be instantiated. 
     Then, set the clients used by the commands. 
@@ -80,14 +86,14 @@ class MacroCommand(Command):
     elif len(self.args) == 1:
       commArgs = [(self.commands[x], self.clients[0]) for x in range(len(self.commands))]
     else:
-      raise RSSException, "`clients` provided are nor 1 nor the same number of the commands"
-    
+      gLogger.error( "`clients` provided are nor 1 nor the same number of the commands" )
+          
     for command, client in commArgs:
       command.setClient(client)
 
 ################################################################################
   
-  def doCommand(self):
+  def doCommand( self ):
     """ 
     Calls command.doCommand for every command in the list of self.commands
     """
@@ -98,15 +104,5 @@ class MacroCommand(Command):
       res.append(command.doCommand())
     return res
   
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
-
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

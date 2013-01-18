@@ -1,115 +1,90 @@
 ########################################################################
-# $Id$
+# $HeadURL$
 ########################################################################
+""" 
+    :mod: DataLoggingHandler
+    ========================
 
-""" DataLoggingHandler is the implementation of the Data Logging
-    service in the DISET framework
+     .. module: DataLoggingHandler
+     :synopsis: DataLoggingHandler is the implementation of the Data Logging
+    service in the DISET framework.
 
-    The following methods are available in the Service interface
+    The following methods are available in the Service interface::
 
-    addFileRecord()
-    addFileRecords()
-    getFileLoggingInfo()
+    * addFileRecord()
+    * addFileRecords()
+    * getFileLoggingInfo()
 
 """
 
 __RCSID__ = "$Id$"
-from DIRAC                                          import gLogger, gConfig, rootPath, S_OK, S_ERROR
-from DIRAC.Core.DISET.RequestHandler                import RequestHandler
-from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB
-from types import *
-import time, os
 
-from DIRAC.ConfigurationSystem.Client               import PathFinder
+## imports
+from types import StringType, ListType, TupleType
+## from DIRAC
+from DIRAC import S_OK
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.DataManagementSystem.DB.DataLoggingDB import DataLoggingDB
 
-# This is a global instance of the DataLoggingDB class
-logDB = False
-dataPath = False
+## global instance of the DataLoggingDB
+gDataLoggingDB = False
 
 def initializeDataLoggingHandler( serviceInfo ):
+  """ handler initialisation """
+  global gDataLoggingDB
+  gDataLoggingDB = DataLoggingDB()
 
-  global dataPath
-  global logDB
-  logDB = DataLoggingDB()
-
-  monitoringSection = PathFinder.getServiceSection( "DataManagement/DataLogging" )
-  #Get data location
-  retDict = gConfig.getOption( "%s/DataLocation" % monitoringSection, "dataLoggingPlots" )
-  if not retDict[ 'OK' ]:
-    return retDict
-  dataPath = retDict[ 'Value' ].strip()
-  if "/" != dataPath[0]:
-    dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
-  gLogger.info( "Data will be written into %s" % dataPath )
-  try:
-    os.makedirs( dataPath )
-  except:
-    pass
-  try:
-    testFile = "%s/mon.jarl.test" % dataPath
-    fd = file( testFile, "w" )
-    fd.close()
-    os.unlink( testFile )
-  except IOError:
-    gLogger.fatal( "Can't write to %s" % dataPath )
-    return S_ERROR( "Data location is not writable" )
+  res = gDataLoggingDB._connect()
+  if not res['OK']:
+    return res
+  res = gDataLoggingDB._checkTable()
+  if not res['OK'] and not res['Message'] == 'The requested table already exist':
+    return res
   return S_OK()
 
 class DataLoggingHandler( RequestHandler ):
+  """ 
+  .. class:: DataLoggingClient
+  
+  Request handler for DataLogging service.
+  """
 
-  ###########################################################################
-  types_addFileRecord = [[StringType, ListType], StringType, StringType, StringType, StringType]
-  def export_addFileRecord( self, lfn, status, minor, date, source ):
+  types_addFileRecord = [ [StringType, ListType], StringType, StringType, StringType, StringType ]
+  @staticmethod
+  def export_addFileRecord( lfn, status, minor, date, source ):
     """ Add a logging record for the given file
+    
+    :param self: self reference
+    :param mixed lfn: list of strings or a string with LFN
+    :param str status: file status
+    :param str minor: minor status (additional information)
+    :param mixed date: datetime.datetime or str(datetime.datetime) or ""
+    :param str source: source setting a new status 
     """
     if type( lfn ) == StringType:
-      lfns = [lfn]
+      lfns = [ lfn ]
     else:
       lfns = lfn
-    result = logDB.addFileRecord( lfns, status, minor, date, source )
-    return result
+    return gDataLoggingDB.addFileRecord( lfns, status, minor, date, source )
 
-  types_addFileRecords = [[ListType, TupleType]]
-  def export_addFileRecords( self, fileTuples ):
+  types_addFileRecords = [ [ ListType, TupleType ] ]
+  @staticmethod
+  def export_addFileRecords( fileTuples ):
     """ Add a group of logging records
     """
-    result = logDB.addFileRecords( fileTuples )
-    return result
+    return gDataLoggingDB.addFileRecords( fileTuples )
 
-  ###########################################################################
-  types_getFileLoggingInfo = [StringType]
-  def export_getFileLoggingInfo( self, lfn ):
+  types_getFileLoggingInfo = [ StringType ]
+  @staticmethod
+  def export_getFileLoggingInfo( lfn ):
     """ Get the file logging information
     """
-    result = logDB.getFileLoggingInfo( lfn )
-    return result
-
+    return gDataLoggingDB.getFileLoggingInfo( lfn )
+  
   types_getUniqueStates = []
-  def export_getUniqueStates( self ):
+  @staticmethod
+  def export_getUniqueStates():
     """ Get all the unique states
     """
-    result = logDB.getUniqueStates()
-    return result
-
-  types_plotView = [DictType]
-  def export_plotView( self, paramsDict ):
-    """  Plot the view for the supplied parameters
-    """
-
-    startState = paramsDict['StartState']
-    endState = paramsDict['EndState']
-    startTime = ''
-    endTime = ''
-    title = '%s till %s' % ( startState, endState )
-    if paramsDict.has_key( 'StartTime' ):
-      startTime = paramsDict['StartTime']
-    if paramsDict.has_key( 'EndTime' ):
-      endTime = paramsDict['EndTime']
-    xlabel = 'Time (seconds)'
-    ylabel = ''
-    outputFile = '%s/%s-%s' % ( dataPath, startState, endState )
-    res = logDB.getStateDiff( startState, endState, startTime, endTime )
-    if not res['OK']:
-      return S_ERROR( 'Failed to get DB info: %s' % res['Message'] )
-    dataPoints = res['Value']
-    return S_ERROR( "To be migrated to new plotting package" )
+    return gDataLoggingDB.getUniqueStates()
+  

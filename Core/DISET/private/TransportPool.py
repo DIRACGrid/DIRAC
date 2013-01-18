@@ -24,10 +24,19 @@ class TransportPool:
   # Send keep alives
   #
 
-  def __sendKeepAlives( self ):
+  def __sendKeepAlives( self, retries = 5 ):
+    if retries == 0:
+      return
     now = time.time()
-    for trid in self.__transports:
-      tr = self.__transports[ trid ][0]
+    try:
+      tridList = [ trid for trid in self.__transports ]
+    except RuntimeError:
+      self.__sendKeepAlives( retries - 1 )
+    for trid in tridList:
+      try:
+        tr = self.__transports[ trid ][0]
+      except KeyError:
+        continue
       if not tr.getKeepAliveLapse():
         continue
       try:
@@ -111,7 +120,7 @@ class TransportPool:
     except KeyError:
       return S_ERROR( "No transport with id %s defined" % trid )
     else:
-      self.__close( trid )
+      self.close( trid )
 
   def sendAndClose( self, trid, msg ):
     try:

@@ -12,8 +12,8 @@ try:
 except:
   import md5
 
-import random, os
-from types import *
+import random, os, time
+from types import StringTypes, ListType, DictType
 from DIRAC import S_OK, S_ERROR
 
 def checkArgumentFormat( path ):
@@ -88,3 +88,13 @@ def generateGuid( checksum, checksumtype ):
                               md5HexString[20:32] )
   guid = guid.upper()
   return guid
+
+def queryTime(f):
+  """ Decorator to measure the function call time
+  """
+  def measureQueryTime(*args, **kwargs):
+    start = time.time()
+    result = f(*args, **kwargs)
+    result['QueryTime'] = time.time() - start
+    return result
+  return measureQueryTime

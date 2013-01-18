@@ -7,7 +7,6 @@ __RCSID__ = "$Id$"
 import platform
 import sys
 import os
-import subprocess
 import re
 
 # We need to patch python platform module. It does a string comparison for the libc versions.
@@ -84,13 +83,24 @@ def getPlatformString():
   # Modified to return our desired platform string, R. Graciani
   platformTuple = ( platform.system(), platform.machine() )
   if platformTuple[0] == 'Linux':
-    sp = subprocess.Popen( [ '/sbin/ldconfig', '--print-cache' ], stdout=subprocess.PIPE )
+    try:
+      import subprocess
+      sp = subprocess.Popen( [ '/sbin/ldconfig', '--print-cache' ], stdout = subprocess.PIPE )
+      spStdout = sp.stdout
+    except:
+      sp = None
+      spStdout = os.popen( '/sbin/ldconfig --print-cache', 'r' )
     ldre = re.compile( ".*=> (.*/libc\.so\..*$)" )
     libs = []
-    for line in sp.stdout.readlines():
+    for line in spStdout.readlines():
       reM = ldre.match( line )
       if reM:
         libs.append( reM.groups()[0] )
+    if sp:
+      if 'terminate' in dir( sp ):
+        sp.terminate()
+        sp.wait()
+
     if not libs:
       # get version of higher libc installed
       if platform.machine().find( '64' ) != -1:

@@ -21,7 +21,7 @@ gAccountingDB = False
 
 def initializeReportGeneratorHandler( serviceInfo ):
   global gAccountingDB
-  gAccountingDB = AccountingDB()
+  gAccountingDB = AccountingDB( readOnly = True )
   #Get data location
   reportSection = PathFinder.getServiceSection( "Accounting/ReportGenerator" )
   dataPath = gConfig.getValue( "%s/DataLocation" % reportSection, "data/accountingGraphs" )
@@ -215,7 +215,7 @@ class ReportGeneratorHandler( RequestHandler ):
       fileId = result[ 'Value' ]
     retVal = gDataCache.getPlotData( fileId )
     if not retVal[ 'OK' ]:
-      self.__sendErrorAsImg( result[ 'Message' ], fileHelper )
+      self.__sendErrorAsImg( retVal[ 'Message' ], fileHelper )
       return retVal
     retVal = fileHelper.sendData( retVal[ 'Value' ] )
     if not retVal[ 'OK' ]:

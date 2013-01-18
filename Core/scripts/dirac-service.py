@@ -16,7 +16,6 @@ localCfg = LocalConfiguration()
 
 positionalArgs = localCfg.getPositionalArguments()
 if len( positionalArgs ) == 0:
-  gLogger.initialize( "NOT SPECIFIED", "/" )
   gLogger.fatal( "You must specify which server to run!" )
   sys.exit( 1 )
 
@@ -27,6 +26,7 @@ localCfg.addMandatoryEntry( "Port" )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
 localCfg.addDefaultEntry( "LogLevel", "INFO" )
+localCfg.addDefaultEntry( "LogColor", True )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
   gLogger.initialize( serverName, "/" )
@@ -35,8 +35,8 @@ if not resultDict[ 'OK' ]:
 
 
 
-serverToLaunch = ServiceReactor( positionalArgs )
-result = serverToLaunch.initialize()
+serverToLaunch = ServiceReactor()
+result = serverToLaunch.initialize( positionalArgs )
 if not result[ 'OK' ]:
   gLogger.error( result[ 'Message' ] )
   sys.exit( 1 )

@@ -28,6 +28,7 @@ class ComputingElementFactory:
     """This method returns the CE instance corresponding to the supplied
        CEUniqueID.  If no corresponding CE is available, this is indicated.
     """
+    self.log.verbose('Creating CE of %s type with the name %s' % (ceType,ceName) )
     ceTypeLocal = ceType
     if not ceTypeLocal:
       ceTypeLocal = self.ceType
@@ -35,7 +36,7 @@ class ComputingElementFactory:
     if not ceNameLocal:
       ceNameLocal = self.ceType 
     ceConfigDict = getCEConfigDict( ceNameLocal )
-    self.log.info('CEConfigDict',ceConfigDict)
+    self.log.verbose('CEConfigDict',ceConfigDict)
     if 'CEType' in ceConfigDict:
       ceTypeLocal = ceConfigDict['CEType']
     if not ceTypeLocal:
@@ -63,6 +64,7 @@ class ComputingElementFactory:
       self.log.warn( msg )
       return S_ERROR( msg )
 
+    computingElement._reset()
     return S_OK( computingElement )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

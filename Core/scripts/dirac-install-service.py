@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Utilities import InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 #
-from DIRAC import gConfig
+from DIRAC import gConfig, S_OK, S_ERROR
 InstallTools.exitOnError = True
 #
 from DIRAC.Core.Base import Script
@@ -23,7 +23,23 @@ def setOverwrite( opVal ):
   overwrite = True
   return S_OK()
 
+module = ''
+specialOptions = {}
+def setModule( optVal ):
+  global specialOptions,module
+  specialOptions['Module'] = optVal
+  module = optVal
+  return S_OK()
+
+def setSpecialOption( optVal ):
+  global specialOptions
+  option,value = optVal.split('=')
+  specialOptions[option] = value
+  return S_OK()
+
 Script.registerSwitch( "w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite )
+Script.registerSwitch( "m:", "module=", "Python module name for the service code", setModule )
+Script.registerSwitch( "p:", "parameter=", "Special service option ", setSpecialOption )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ... System Service|System/Service' % Script.scriptName,
@@ -44,12 +60,24 @@ if len( args ) != 2:
 system = args[0]
 service = args[1]
 
-result = InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, service,
-                                             getCSExtensions(), overwrite = overwrite )
+if module:
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, module,
+                                               getCSExtensions(),
+                                               overwrite = overwrite )
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, service,
+                                               getCSExtensions(),
+                                               specialOptions=specialOptions,
+                                               overwrite = overwrite,
+                                               addDefaultOptions = False )
+else:
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, service,
+                                               getCSExtensions(),
+                                               specialOptions=specialOptions,
+                                               overwrite = overwrite )
 if not result['OK']:
   print "ERROR:", result['Message']
 else:
-  result = InstallTools.installComponent( 'service', system, service, getCSExtensions() )
+  result = InstallTools.installComponent( 'service', system, service, getCSExtensions(), module )
   if not result['OK']:
     print "ERROR:", result['Message']
   else:

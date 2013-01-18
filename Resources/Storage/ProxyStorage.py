@@ -1,5 +1,8 @@
-""" This is the Proxy storage element client """
+#################################################################################
+# $HeadURL $
+#################################################################################
 
+""" This is the Proxy storage element client """
 
 __RCSID__ = "$Id$"
 
@@ -227,16 +230,15 @@ class ProxyStorage( StorageBase ):
   def __executeOperation( self, url, method ):
     """ Executes the requested functionality with the supplied url
     """
-    execString = "res = self.%s(url)" % method
-    try:
-      exec( execString )
-      if not res['OK']:
-        return S_ERROR( res['Message'] )
-      elif not res['Value']['Successful'].has_key( url ):
-        return S_ERROR( res['Value']['Failed'][url] )
-      else:
-        return S_OK( res['Value']['Successful'][url] )
-    except AttributeError, errMessage:
-      exceptStr = "ProxyStorage.__executeOperation: Exception while perfoming %s." % method
-      gLogger.exception( exceptStr, '', errMessage )
-      return S_ERROR( "%s%s" % ( exceptStr, errMessage ) )
+    fcn = None
+    if hasattr( self, method ) and callable( getattr( self, method ) ):
+      fcn = getattr( self, method )
+    if not fcn:
+      return S_ERROR("Unable to invoke %s, it isn't a member function of ProxyStorage" % method )
+    res = fcn( url )
+    if not res['OK']:
+      return res
+    elif url not in res['Value']['Successful']:
+      return S_ERROR( res['Value']['Failed'][url] )
+    return S_OK( res['Value']['Successful'][url] )
+    

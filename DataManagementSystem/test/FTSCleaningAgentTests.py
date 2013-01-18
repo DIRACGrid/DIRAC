@@ -13,6 +13,8 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     unit tests for FTSCleaningAgent
+
+    TODO: needs some smart content
 """
 
 __RCSID__ = "$Id $"
@@ -25,9 +27,9 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import mock
-
+import unitest
 ## from DIRAC
-
+from DIRAC.DataManagementSystem.Agent.FTSCleaningAgent import FTSCleaningAgent
 
 ########################################################################
 class FTSCleaningAgentTests(unittest.TestCase):

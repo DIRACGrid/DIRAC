@@ -56,7 +56,6 @@ def getCREAMPilotOutput(proxy,pilotRef,pilotStamp):
     shutil.rmtree(tmpdir)  
     return result
   ce = result['Value']
-  ce.reset()
   ce.setProxy(proxy)
   fullPilotRef = ":::".join([pilotRef,pilotStamp])
   result = ce.getJobOutput( fullPilotRef )
@@ -97,10 +96,14 @@ def getWMSPilotOutput( proxy, grid, pilotRef ):
   for errorString in [ 'already retrieved',
                        'Output not yet Ready',
                        'not yet ready',
-                       'the status is ABORTED' ]:
-    if error.find( errorString ) != -1:
+                       'the status is ABORTED',
+                       'No output files' ]:
+    if errorString in error:
       shutil.rmtree( tmp_dir )
       return S_ERROR( error )
+    if errorString in output:
+      shutil.rmtree( tmp_dir )
+      return S_ERROR( output )
 
   if status:
     shutil.rmtree( tmp_dir )

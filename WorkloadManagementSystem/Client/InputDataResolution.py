@@ -1,9 +1,3 @@
-########################################################################
-# $HeadURL$
-# File :   InputDataResolution.py
-# Author : Stuart Paterson
-########################################################################
-
 """ The input data resolution module is a plugin that
     allows to define VO input data policy in a simple way using existing
     utilities in DIRAC or extension code supplied by the VO.
@@ -11,41 +5,44 @@
     The arguments dictionary from the Job Wrapper includes the file catalogue
     result and in principle has all the necessary information to resolve input data
     for applications.
-
 """
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
-from DIRAC.WorkloadManagementSystem.Client.PoolXMLSlice             import PoolXMLSlice
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
-import DIRAC
-
 import types
+import DIRAC
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
+from DIRAC.WorkloadManagementSystem.Client.PoolXMLSlice import PoolXMLSlice
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 COMPONENT_NAME = 'InputDataResolution'
+CREATE_CATALOG = False
 
-class InputDataResolution:
+class InputDataResolution( object ):
+  """ Defines the Input Data Policy
+  """
 
   #############################################################################
   def __init__( self, argumentsDict ):
     """ Standard constructor
     """
     self.arguments = argumentsDict
+    self.name = COMPONENT_NAME
+    self.log = gLogger.getSubLogger( self.name )
+
     # By default put input data into the current directory
     if not self.arguments.has_key( 'InputDataDirectory' ):
       self.arguments['InputDataDirectory'] = 'CWD'
-    self.name = COMPONENT_NAME
-    self.log = gLogger.getSubLogger( self.name )
 
   #############################################################################
   def execute( self ):
     """Given the arguments from the Job Wrapper, this function calls existing
-       utilities in DIRAC to resolve input data according to LHCb VO policy.
+       utilities in DIRAC to resolve input data.
     """
-    result = self.__resolveInputData()
-    if not result['OK']:
-      self.log.error( 'InputData resolution failed with result:\n%s' % ( result ) )
+    resolvedInputData = self.__resolveInputData()
+    if not resolvedInputData['OK']:
+      self.log.error( 'InputData resolution failed with result:\n%s' % ( resolvedInputData ) )
 
     #For local running of this module we can expose an option to ignore missing files
     ignoreMissing = False
@@ -53,43 +50,49 @@ class InputDataResolution:
       ignoreMissing = self.arguments['IgnoreMissing']
 
     # Missing some of the input files is a fatal error unless ignoreMissing option is defined
-    if result.has_key( 'Failed' ):
-      failedReplicas = result['Failed']
+    if resolvedInputData.has_key( 'Failed' ):
+      failedReplicas = resolvedInputData['Failed']
       if failedReplicas and not ignoreMissing:
         self.log.error( 'Failed to obtain access to the following files:\n%s'
                         % ( '\n'.join( failedReplicas ) ) )
         return S_ERROR( 'Failed to access all of requested input data' )
 
-    if not result.has_key( 'Successful' ):
-      return result
+    if not resolvedInputData.has_key( 'Successful' ):
+      return resolvedInputData
 
-    if not result['Successful']:
+    if not resolvedInputData['Successful']:
       return S_ERROR( 'Could not access any requested input data' )
 
-    #TODO: Must define file types in order to pass to POOL XML catalogue.  In the longer
-    #term this will be derived from file catalog metadata information but for now is based
-    #on the file extension types.
-    resolvedData = result['Successful']
+    if CREATE_CATALOG:
+      res = self._createCatalog( resolvedInputData )
+      if not res['OK']:
+        return res
+
+    return resolvedInputData
+
+  #############################################################################
+
+  def _createCatalog( self, resolvedInputData, catalogName = 'pool_xml_catalog.xml', pfnType = 'ROOT_All' ):
+    """ By default uses PoolXMLSlice, VO extensions can modify at will
+    """
+
+    resolvedData = resolvedInputData['Successful']
     tmpDict = {}
     for lfn, mdata in resolvedData.items():
       tmpDict[lfn] = mdata
-      tmpDict[lfn]['pfntype'] = 'ROOT_All'
-      self.log.verbose( 'Adding PFN file type %s for LFN:%s' % ( 'ROOT_All', lfn ) )
+      tmpDict[lfn]['pfntype'] = pfnType
+      self.log.verbose( 'Adding PFN file type %s for LFN:%s' % ( pfnType, lfn ) )
 
-    resolvedData = tmpDict
-    catalogName = 'pool_xml_catalog.xml'
     if self.arguments['Configuration'].has_key( 'CatalogName' ):
       catalogName = self.arguments['Configuration']['CatalogName']
-
     self.log.verbose( 'Catalog name will be: %s' % catalogName )
+
     resolvedData = tmpDict
     appCatalog = PoolXMLSlice( catalogName )
-    check = appCatalog.execute( resolvedData )
-    if not check['OK']:
-      return check
-    return result
+    return appCatalog.execute( resolvedData )
 
   #############################################################################
+
   def __resolveInputData( self ):
     """This method controls the execution of the DIRAC input data modules according
        to the VO policy defined in the configuration service.
@@ -111,9 +114,9 @@ class InputDataResolution:
       self.log.info( 'Job has a specific policy setting: %s' % ( ', '.join( policy ) ) )
     else:
       self.log.verbose( 'Attempting to resolve input data policy for site %s' % site )
-      inputDataPolicy = gConfig.getOptionsDict( '/Operations/InputDataPolicy' )
+      inputDataPolicy = Operations().getOptionsDict( 'InputDataPolicy' )
       if not inputDataPolicy['OK']:
-        return S_ERROR( 'Could not resolve InputDataPolicy from /Operations/InputDataPolicy' )
+        return S_ERROR( 'Could not resolve InputDataPolicy from Operations InputDataPolicy' )
 
       options = inputDataPolicy['Value']
       if options.has_key( site ):
@@ -159,7 +162,7 @@ class InputDataResolution:
   def __runModule( self, modulePath, remainingReplicas ):
     """This method provides a way to run the modules specified by the VO that
        govern the input data access policy for the current site. Using the 
-       section /Operations/InputDataPolicy different modules can be defined for 
+       InputDataPolicy section from Operations different modules can be defined for 
        particular sites or for InputDataPolicy defined in the JDL of the jobs.
     """
     self.log.info( 'Attempting to run %s' % ( modulePath ) )

@@ -12,32 +12,49 @@ except:
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.private.GatewayService import GatewayService
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Network, Time
+from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class ServiceReactor:
 
-  __transportExtraKeywords = [ "SSLSessionTimeout", 'IgnoreCRLs' ]
+  __transportExtraKeywords = { 'SSLSessionTimeout' : False, 
+                               'IgnoreCRLs': False, 
+                               'PacketTimeout': 'timeout' }
 
-  def __init__( self, services ):
-    if type( services ) in ( types.StringType, types.UnicodeType ):
-      services = [ services ]
+  def __init__( self ):
     self.__services = {}
     self.__alive = True
+    self.__loader = ModuleLoader( "Service",
+                                  PathFinder.getServiceSection,
+                                  RequestHandler,
+                                  moduleSuffix = "Handler" )
+    self.__maxFD = 0
     self.__listeningConnections = {}
     self.__stats = ReactorStats()
-    for serviceName in services:
-      while serviceName[0] == "/":
-        serviceName = serviceName[1:]
-      if serviceName == GatewayService.GATEWAY_NAME:
-        self.__services[ serviceName ] = GatewayService()
-      else:
-        self.__services[ serviceName ] = Service( serviceName )
 
-  def initialize( self ):
+  def initialize( self, servicesList ):
+    try:
+      servicesList.remove( GatewayService.GATEWAY_NAME )
+      self.__services[ GatewayService.GATEWAY_NAME ] = GatewayService()
+    except ValueError:
+      #No GW in the service list
+      pass
+
+    result = self.__loader.loadModules( servicesList )
+    if not result[ 'OK' ]:
+      return result
+    self.__serviceModules = self.__loader.getModules()
+
+    for serviceName in self.__serviceModules:
+      self.__services[ serviceName ] = Service( self.__serviceModules[ serviceName ] )
+
+    #Loop again to include the GW in case there is one (included in the __init__)
     for serviceName in self.__services:
-      gLogger.verbose( "Initializing %s" % serviceName )
+      gLogger.info( "Initializing %s" % serviceName )
       result = self.__services[ serviceName ].initialize()
       if not result[ 'OK' ]:
         return result
@@ -68,6 +85,11 @@ class ServiceReactor:
       for kw in ServiceReactor.__transportExtraKeywords:
         value = svcCfg.getOption( kw )
         if value:
+          ikw = ServiceReactor.__transportExtraKeywords[ kw ]
+          if ikw:
+            kw = ikw
+          if kw == 'timeout':
+            value = int( value )
           transportArgs[ kw ] = value
       gLogger.verbose( "Initializing %s transport" % protocol, svcCfg.getURL() )
       transport = gProtocolDict[ protocol ][ 'transport' ]( ( "", port ),
@@ -130,6 +152,7 @@ class ServiceReactor:
               clientTransport = retVal[ 'Value' ]
       except socket.error:
         return
+      self.__maxFD = max( self.__maxFD, clientTransport.oSocket.fileno() )
       #Is it banned?
       clientIP = clientTransport.getRemoteAddress()[0]
       if clientIP in Registry.getBannedIPs():

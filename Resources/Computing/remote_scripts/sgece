@@ -1,0 +1,175 @@
+#!/bin/env python
+############################################################################
+#
+#  Remote control script for submitting jobs to the Grid Engine batch
+#  25.11.2012
+#  Author: A.T.
+#
+############################################################################
+
+""" The script relies on the SubmitOptions parameter to choose the right queue.
+    This should be specified in the Queue description in the CS. e.g.
+    
+    SubmitOption = -l ct=6000
+"""
+
+import re, sys, tempfile, commands, os, urllib
+
+def submitJob( executable,outputDir,errorDir,nJobs,jobDir,queue,submitOptions ):
+  """ Submit nJobs to the condor batch system
+  """
+  outputs = []
+  for i in range( int(nJobs) ):
+    cmd = "qsub -o %s -e %s -N DIRACPilot %s %s" % ( outputDir,
+                                                     errorDir,
+                                                     submitOptions,
+                                                     executable )
+    status,output = commands.getstatusoutput(cmd)
+    if status == 0:
+      outputs.append(output)
+    else:
+      break                                                         
+
+  if outputs:
+    print 0
+    for output in outputs:
+      match = re.match('Your job (\d*) ',output)
+      if match:
+        print match.groups()[0]
+  else:
+    print status
+    print output
+    
+  return status
+
+def killJob( jobList ):
+  """ Kill jobs in the given list
+  """
+  
+  result = 0
+  successful = []
+  failed = []
+  for job in jobList:
+    status,output = commands.getstatusoutput( 'qdel %s' % job )
+    if status != 0:
+      result += 1
+      failed.append( job )
+    else:
+      successful.append( job )  
+  
+  print result
+  for job in successful:
+    print job
+  return result
+  
+def getJobStatus( jobIDList, user ):
+  """ Get status of the jobs in the given list
+  """
+  resultDict = {}
+  
+  status,output = commands.getstatusoutput( 'qstat -u %s' % user )
+  
+  if status != 0:
+    print status
+    print output
+    return status
+    
+  if len( output ):
+    lines = output.split( '\n' )
+    for line in lines:
+      l = line.strip()
+      for job in jobIDList:
+        if l.startswith( job ):
+          jobStatus = l.split()[4]
+          if jobStatus in ['Tt', 'Tr']:
+            resultDict[job] = 'Done'
+          elif jobStatus in ['Rr', 'r']:
+            resultDict[job] = 'Running'
+          elif jobStatus in ['qw', 'h']:
+            resultDict[job] = 'Waiting'
+
+  status,output = commands.getstatusoutput( 'qstat -u %s -s z' % user )
+  
+  if status == 0:    
+    if len( output ):
+      lines = output.split( '\n' )
+      for line in lines:
+        l = line.strip()
+        for job in jobIDList:
+          if l.startswith( job ):
+            resultDict[job] = 'Done'
+
+  if len( resultDict ) != len( jobIDList ):
+    for job in jobIDList:
+      if not job in resultDict:
+        resultDict[job] = 'Unknown'
+        
+  # Final output
+  status = 0
+  print status
+  for job,status in resultDict.items():
+    print ':::'.join( [job,status] )  
+        
+  return status    
+  
+def getCEStatus( user ):
+  """ Get the overall CE status
+  """
+
+  cmd = 'qstat -u %s' % user
+  status,output = commands.getstatusoutput( cmd ) 
+
+  if status != 0:
+    print status
+    print output
+    return status
+
+  waitingJobs = 0
+  runningJobs = 0
+
+  if len( output ):
+    lines = output.split( '\n' )
+    for line in lines:      
+      if not line.strip():
+        continue
+      if 'DIRACPilot %s' % user in line:
+        jobStatus = line.split()[4]
+        if jobStatus in ['Tt', 'Tr']:
+          doneJobs = 'Done'
+        elif jobStatus in ['Rr', 'r']:
+          runningJobs = runningJobs + 1
+        elif jobStatus in ['qw', 'h']:
+          waitingJobs = waitingJobs + 1
+
+  # Final output
+  status = 0
+  print status
+  print ":::".join( ["Waiting",str(waitingJobs)] )
+  print ":::".join( ["Running",str(runningJobs)] )  
+  return status
+
+#####################################################################################
+
+# Get standard arguments and pass to the interface implementation functions
+
+command = sys.argv[1]
+print "============= Start output ==============="
+if command == "submit_job":
+  executable,outputDir,errorDir,workDir,nJobs,infoDir,jobStamps,queue,submitOptions = sys.argv[2:]
+  submitOptions = urllib.unquote(submitOptions)
+  if submitOptions == '-':
+    submitOptions = ''
+  status = submitJob( executable, outputDir, errorDir, nJobs, outputDir, queue, submitOptions )
+elif command == "kill_job":
+  jobStamps,infoDir = sys.argv[2:]
+  jobList = jobStamps.split('#')
+  status = killJob( jobList )
+elif command == "job_status":
+  jobStamps,infoDir,user = sys.argv[2:]
+  jobList = jobStamps.split('#')
+  status = getJobStatus( jobList, user )  
+elif command == "status_info":
+  infoDir,workDir,user,queue = sys.argv[2:]
+  status = getCEStatus( user )   
+
+sys.exit(status)

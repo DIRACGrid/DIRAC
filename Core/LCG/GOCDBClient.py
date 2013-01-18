@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from xml.dom import minidom
 import socket
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR, gLogger
 
 def _parseSingleElement( element, attributes = None ):
   """
@@ -159,9 +159,14 @@ class GOCDBClient(object):
       :attr:`entity` : a string. Actual name of the entity.
     """
     assert(type(granularity) == str and type(entity) == str)
-    serviceXML = self._getServiceEndpointCurlDownload( granularity, entity )
-    return S_OK( self._serviceEndpointXMLParsing( serviceXML ) )
-
+    try:
+      serviceXML = self._getServiceEndpointCurlDownload( granularity, entity )
+      return S_OK( self._serviceEndpointXMLParsing( serviceXML ) )
+    except Exception, e:
+      _msg = 'Exception getting information for %s %s' % ( granularity, entity )
+      gLogger.exception( _msg )
+      return S_ERROR( _msg )
+      
 #############################################################################
 
 #  def getSiteInfo(self, site):

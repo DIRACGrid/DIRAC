@@ -137,7 +137,8 @@ def dumpCFGAsJDL( cfg, level = 1, tab = "  " ):
       contents.append( "%s;" % dumpCFGAsJDL( cfg[ key ], level + 1, tab ) )
     else:
       val = List.fromChar( cfg[ key ] )
-      if len( val ) < 2:
+      # Some attributes are never lists
+      if len( val ) < 2 or key in ['Arguments','Executable','StdOutput','StdError']:
         value = cfg[ key ]
         try:
           try_value = float( value )

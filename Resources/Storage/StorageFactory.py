@@ -14,9 +14,10 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                    import gLogger, gConfig, S_OK, S_ERROR, rootPath
-from DIRAC.Core.Utilities.List                import sortList
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
+from DIRAC                                            import gLogger, gConfig, S_OK, S_ERROR, rootPath
+from DIRAC.Core.Utilities.List                        import sortList
+from DIRAC.ConfigurationSystem.Client.Helpers         import getInstalledExtensions
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 import os
 
 class StorageFactory:
@@ -29,6 +30,8 @@ class StorageFactory:
     res = gConfig.getOption( "%s/UseProxy" % self.rootConfigPath )
     if res['OK'] and ( res['Value'] == 'True' ):
       self.proxy = True
+    self.resourceStatus = ResourceStatus()
+
 
   ###########################################################################################
   #
@@ -39,7 +42,7 @@ class StorageFactory:
     return self._getConfigStorageName( initialName )
 
   def getStorage( self, parameterDict ):
-    """ This instanciates a single storage for the details provided and doesn't check the CS.
+    """ This instantiates a single storage for the details provided and doesn't check the CS.
     """
     # The storage name must be supplied.
     if parameterDict.has_key( 'StorageName' ):
@@ -214,8 +217,25 @@ class StorageFactory:
     options = res['Value']
     optionsDict = {}
     for option in options:
+
+      if option in [ 'ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess']:
+        continue
       optionConfigPath = '%s/%s' % ( storageConfigPath, option )
       optionsDict[option] = gConfig.getValue( optionConfigPath, '' )
+
+    res = self.resourceStatus.getStorageElementStatus( storageName )
+    if not res[ 'OK' ]:
+      errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
+      gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
+      return S_ERROR( errStr )
+
+    # For safety, we did not add the ${statusType}Access keys
+    # this requires modifications in the StorageElement class
+
+    # We add the dictionary with the statusTypes and values
+    # { 'statusType1' : 'status1', 'statusType2' : 'status2' ... }
+    optionsDict.update( res[ 'Value' ][ storageName ] )
+
     return S_OK( optionsDict )
 
   def _getConfigStorageProtocols( self, storageName ):
@@ -314,11 +334,11 @@ class StorageFactory:
         evalString = "storageModule.%s(storageName,protocol,path,host,port,spaceToken,wsUrl)" % moduleName
         storage = eval( evalString )
         if not storage.isOK():
-          errStr = "StorageFactory._generateStorageObject: Failed to instatiate storage plug in."
+          errStr = "StorageFactory._generateStorageObject: Failed to instantiate storage plug in."
           gLogger.error( errStr, "%s" % ( moduleName ) )
           return S_ERROR( errStr )
       except Exception, x:
-        errStr = "StorageFactory._generateStorageObject: Failed to instatiate %s(): %s" % ( moduleName, x )
+        errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s(): %s" % ( moduleName, x )
         gLogger.exception( errStr )
         return S_ERROR( errStr )
       return S_OK( storage )

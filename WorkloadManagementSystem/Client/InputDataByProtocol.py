@@ -30,7 +30,7 @@ class InputDataByProtocol:
     self.configuration = argumentsDict['Configuration']
     self.fileCatalogResult = argumentsDict['FileCatalog']
     self.jobID = None
-    self.rm = ReplicaManager()
+    self.replicaManager = ReplicaManager()
 
   #############################################################################
   def execute( self, dataToResolve = None ):
@@ -76,8 +76,8 @@ class InputDataByProtocol:
     # Check that all replicas are on a valid local SE
     for lfn, reps in replicas.items():
       localReplica = False
-      for se in reps:
-        if se in diskSEs or se in tapeSEs:
+      for seName in reps:
+        if seName in diskSEs or seName in tapeSEs:
           localReplica = True
       if not localReplica:
         failedReplicas.append( lfn )
@@ -94,13 +94,13 @@ class InputDataByProtocol:
     newReplicasDict = {}
     for lfn, reps in replicas.items():
       newReplicasDict[lfn] = []
-      for se in diskSEs:
-        if se in reps:
-          newReplicasDict[lfn].append( ( se, reps[se] ) )
+      for seName in diskSEs:
+        if seName in reps:
+          newReplicasDict[lfn].append( ( seName, reps[seName] ) )
       if not newReplicasDict[lfn]:
-        for se in tapeSEs:
-          if se in reps:
-            newReplicasDict[lfn].append( ( se, reps[se] ) )
+        for seName in tapeSEs:
+          if seName in reps:
+            newReplicasDict[lfn].append( ( seName, reps[seName] ) )
 
     #Need to group files by SE in order to stage optimally
     #we know from above that all remaining files have a replica
@@ -111,37 +111,87 @@ class InputDataByProtocol:
     for lfn, seList in newReplicasDict.items():
       if lfn not in self.inputData:
         continue
-      for se, pfn in seList:
-        if se not in seFilesDict:
-          seFilesDict[se] = {}
-        seFilesDict[se][lfn] = pfn
+      for seName, pfn in seList:
+        if seName not in seFilesDict:
+          seFilesDict[seName] = {}
+        seFilesDict[seName][lfn] = pfn
 
-    sortedSEs = sorted( [ ( len( lfns ), se ) for se, lfns in seFilesDict.items() ] )
+    sortedSEs = sorted( [ ( len( lfns ), seName ) for seName, lfns in seFilesDict.items() ] )
 
     trackLFNs = {}
-    for lfns, se in reversed( sortedSEs ):
-      for lfn, pfn in seFilesDict[se].items():
+    for lfns, seName in reversed( sortedSEs ):
+      for lfn, pfn in seFilesDict[seName].items():
         if lfn not in trackLFNs:
           if 'Size' in replicas[lfn] and 'GUID' in replicas[lfn]:
-            trackLFNs[lfn] = { 'pfn': pfn, 'se': se, 'size': replicas[lfn]['Size'], 'guid': replicas[lfn]['GUID'] }
+            trackLFNs[lfn] = { 'pfn': pfn, 'se': seName, 'size': replicas[lfn]['Size'], 'guid': replicas[lfn]['GUID'] }
         else:
           # Remove the lfn from those SEs with less lfns
-          del seFilesDict[se][lfn]
+          del seFilesDict[seName][lfn]
 
     self.log.verbose( 'Files grouped by LocalSE are:' )
     self.log.verbose( seFilesDict )
-    for se, pfnList in seFilesDict.items():
+    for seName, pfnList in seFilesDict.items():
       seTotal = len( pfnList )
-      self.log.info( ' %s SURLs found from catalog for LocalSE %s' % ( seTotal, se ) )
+      self.log.info( ' %s SURLs found from catalog for LocalSE %s' % ( seTotal, seName ) )
       for pfn in pfnList:
-        self.log.info( '%s %s' % ( se, pfn ) )
+        self.log.info( '%s %s' % ( seName, pfn ) )
 
     #Can now start to obtain TURLs for files grouped by localSE
     #for requested input data
     requestedProtocol = self.configuration.get( 'Protocol', '' )
-    for se, lfnDict in seFilesDict.items():
+    for seName, lfnDict in seFilesDict.items():
       pfnList = lfnDict.values()
-      result = self.rm.getStorageFileAccessUrl( pfnList, se, protocol = requestedProtocol )
+      if not pfnList:
+        continue
+      result = self.replicaManager.getStorageFileMetadata( pfnList, seName )
+      if not result['OK']:
+        self.log.warn( result['Message'] )
+        # If we can not get MetaData, most likely there is a problem with the SE
+        # declare the replicas failed and continue
+        failedReplicas.extend( lfnDict.keys() )
+        continue
+      if result['Value']['Failed']:
+        error = 'Could not get Storage Metadata from %s' % seName
+        self.log.error( error )
+        # If MetaData can not be retrieved for some PFNs 
+        # declared them failed and go on
+        for lfn in lfnDict:
+          pfn = lfnDict[lfn]
+          if pfn in result['Value']['Failed']:
+            failedReplicas.append( lfn )
+            pfnList.remove( pfn )
+      for pfn, metadata in result['Value']['Successful'].items():
+        if metadata['Lost']:
+          error = "PFN has been Lost by the StorageElement"
+          self.log.error( error , pfn )
+          # If PFN has been lost 
+          # declared it failed and go on
+          for lfn in lfnDict:
+            if pfn == lfnDict[lfn]:
+              failedReplicas.append( lfn )
+              pfnList.remove( pfn )
+        elif metadata['Unavailable']:
+          error = "PFN is declared Unavailable by the StorageElement"
+          self.log.error( error, pfn )
+          # If PFN is not available
+          # declared it failed and go on
+          for lfn in lfnDict:
+            if pfn == lfnDict[lfn]:
+              failedReplicas.append( lfn )
+              pfnList.remove( pfn )
+        elif seName in tapeSEs and not metadata['Cached']:
+          error = "PFN is no longer in StorageElement Cache"
+          self.log.error( error, pfn )
+          # If PFN is not in the disk Cache
+          # declared it failed and go on
+          for lfn in lfnDict:
+            if pfn == lfnDict[lfn]:
+              failedReplicas.append( lfn )
+              pfnList.remove( pfn )
+
+      self.log.info( 'Preliminary checks OK, getting TURLS:\n', '\n'.join( pfnList ) )
+
+      result = self.replicaManager.getStorageFileAccessUrl( pfnList, seName, protocol = requestedProtocol )
       self.log.debug( result )
       if not result['OK']:
         self.log.warn( result['Message'] )
@@ -175,9 +225,9 @@ class InputDataByProtocol:
           if lfnDict[lfn] == pfn:
             break
         trackLFNs[lfn]['turl'] = turl
-        se = trackLFNs[lfn]['se']
+        seName = trackLFNs[lfn]['se']
         self.log.info( 'Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>PFN: %s\n>>>>TURL: %s' %
-                       ( se, lfn, pfn, turl ) )
+                       ( seName, lfn, pfn, turl ) )
 
 
     self.log.verbose( trackLFNs )

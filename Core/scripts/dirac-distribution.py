@@ -62,6 +62,7 @@ class Params:
     self.destination = ""
     self.externalsLocation = ""
     self.makeJobs = 1
+    self.globalDefaults = ""
 
   def setReleases( self, optionValue ):
     self.releasesToBuild = List.fromChar( optionValue )
@@ -110,6 +111,10 @@ class Params:
   def setReleasesCFG( self, optionValue ):
     self.relcfg = optionValue
     return S_OK()
+  
+  def setGlobalDefaults( self, value ):
+    self.globalDefaults = value
+    return S_OK()
 
   def registerSwitches( self ):
     Script.registerSwitch( "r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
@@ -123,6 +128,7 @@ class Params:
     Script.registerSwitch( "t:", "buildType=", "External type to build (client/server)", cliParams.setExternalsBuildType )
     Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them", cliParams.setExternalsLocation )
     Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
+    Script.registerSwitch( 'M:', 'defaultsURL=', 'Where to retrieve the global defaults from', cliParams.setGlobalDefaults )
 
     Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                         '\nUsage:',
@@ -133,7 +139,8 @@ class DistributionMaker:
 
   def __init__( self, cliParams ):
     self.cliParams = cliParams
-    self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName )
+    self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName, 
+                                               globalDefaultsURL = cliParams.globalDefaults )
     self.relConf.setDebugCB( gLogger.info )
     self.relConf.loadProjectDefaults()
 
@@ -205,7 +212,7 @@ class DistributionMaker:
 
 
   def getAvailableExternals( self ):
-    packagesURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/tars/tars.list"
+    packagesURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/installSource/tars.list"
     try:
       remoteFile = urllib2.urlopen( packagesURL )
     except urllib2.URLError:

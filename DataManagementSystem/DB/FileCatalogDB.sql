@@ -9,7 +9,7 @@ delete from user where user='Dirac';
 --
 -- Must set passwords for database user by replacing "must_be_set".
 --
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
+GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
 
 FLUSH PRIVILEGES;
 
@@ -240,6 +240,14 @@ CREATE TABLE FC_DirectoryUsage(
 -- ------------------------------------------------------------------------------
 drop table if exists FC_MetaFields;
 CREATE TABLE FC_MetaFields (
+  MetaID INT AUTO_INCREMENT PRIMARY KEY,
+  MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  MetaType VARCHAR(128) NOT NULL
+);
+
+-- ------------------------------------------------------------------------------
+drop table if exists FC_FileMetaFields;
+CREATE TABLE FC_FileMetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
   MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   MetaType VARCHAR(128) NOT NULL

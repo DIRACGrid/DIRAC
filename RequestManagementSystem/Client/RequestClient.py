@@ -1,303 +1,326 @@
+########################################################################################
 # $HeadURL$
-
+########################################################################################
+""" 
+    :mod:  RequestClient
+    ====================
+ 
+    .. module:  RequestClient
+    :synopsis: implementation of client for RequestDB using DISET framework
 """
-  This is the client implementation for the RequestDB using the DISET framework.
-"""
-
+## RCSID
 __RCSID__ = "$Id$"
-
-from types import *
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+## from DIRAC
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
 class RequestClient( Client ):
+  """ 
+  .. class:: RequestClient
 
-  def __init__( self, useCertificates = False ):
-    """ Constructor of the RequestClient class
+  RequestClient is a class manipulating and operation on Requests. 
+  
+  :param RPCClient requestManager: RPC client to RequestManager
+  :param dict requestProxiesDict: RPC client to ReqestProxy
+  """
+  __requestManager = None
+  __requestProxiesDict = {}
+
+  def __init__( self, **kwargs ):
+    """c'tor
+
+    :param self: self reference
+    :param bool useCertificates: flag to enable/disable certificates
     """
-    voBoxUrls = fromChar( PathFinder.getServiceURL( "RequestManagement/voBoxURLs" ) )
-    self.voBoxUrls = []
-    if voBoxUrls:
-      self.voBoxUrls = randomize( voBoxUrls )
+    Client.__init__( self, **kwargs )
+    self.log = gLogger.getSubLogger( "RequestManagement/RequestClient" )
+    self.setServer( "RequestManagement/RequestManager" )
 
-    local = PathFinder.getServiceURL( "RequestManagement/localURL" )
-    self.local = False
-    if local:
-      self.local = local
+  def requestManager( self, timeout = 120 ):
+    """ facade for RequestManager RPC client """
+    if not self.__requestManager:
+      url = PathFinder.getServiceURL( "RequestManagement/RequestManager" )
+      if not url:
+        raise RuntimeError("CS option RequestManagement/RequestManager URL is not set!")
+      self.__requestManager = RPCClient( url, timeout=timeout )
+    return self.__requestManager
 
-    central = PathFinder.getServiceURL( "RequestManagement/centralURL" )
-    self.central = False
-    if central:
-      self.central = central
-
-    self.setServer( 'RequestManagement/centralURL' )
+  def requestProxies( self, timeout = 120 ):
+    """ get request proxies dict """
+    if not self.__requestProxiesDict:
+      self.__requestProxiesDict = {}
+      proxiesURLs = fromChar( PathFinder.getServiceURL( "RequestManagement/RequestProxyURLs" ) )
+      if not proxiesURLs:
+        self.log.warn( "CS option RequestManagement/RequestProxyURLs is not set!")
+      for proxyURL in randomize( proxiesURLs ):
+        self.log.debug( "creating RequestProxy for url = %s" % proxyURL )
+        self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout=timeout )
+    return self.__requestProxiesDict 
 
   ########################################################################
   #
   # These are the methods operating on existing requests and have fixed URLs
   #
 
-  def updateRequest( self, requestName, requestString, url = '' ):
-    """ Update the request at the supplied url
-    """
-    try:
-      if not url:
-        url = self.central
-      gLogger.verbose( "RequestDBClient.updateRequest: Attempting to update %s at %s." % ( requestName, url ) )
-      requestRPCClient = RPCClient( url, timeout = 120 )
-      return requestRPCClient.updateRequest( requestName, requestString )
-    except Exception, x:
-      errStr = "Request.updateRequest: Exception while updating request."
-      gLogger.exception( errStr, requestName, lException = x )
-      return S_ERROR( errStr )
+  def updateRequest( self, requestName, requestString ):
+    """ update the request
 
-  def deleteRequest( self, requestName, url = '' ):
-    """ Delete the request at the supplied url
+    :param self: self reference
+    :param str requestName: request name
+    :param str requestString: xml string 
     """
-    try:
-      if not url:
-        url = self.central
-      gLogger.verbose( "RequestDBClient.deleteRequest: Attempting to delete %s at %s." % ( requestName, url ) )
-      requestRPCClient = RPCClient( url, timeout = 120 )
-      return requestRPCClient.deleteRequest( requestName )
-    except Exception, x:
-      errStr = "Request.deleteRequest: Exception while deleting request."
-      gLogger.exception( errStr, requestName, lException = x )
-      return S_ERROR( errStr )
+    self.log.info("updateRequest: attempt to update '%s' request" % requestName )
+    updateRequest = self.requestManager().updateRequest( requestName, requestString )
+    if not updateRequest["OK"]:
+      self.log.error( "updateRequest: unable to update '%s' request: %s" % ( requestName, 
+                                                                             updateRequest["Message"] ) )
+    return updateRequest
 
-  def setRequestStatus( self, requestName, requestStatus, url = '' ):
-    """ Set the status of a request
+  def deleteRequest( self, requestName ):
+    """ delete the request 
+
+    :param self: self reference
+    :param str requestName: request name
     """
-    try:
-      if not url:
-        url = self.central
-      gLogger.verbose( "RequestDBClient.setRequestStatus: Attempting to set %s to %s." % ( requestName, requestStatus ) )
-      requestRPCClient = RPCClient( url, timeout = 120 )
-      return requestRPCClient.setRequestStatus( requestName, requestStatus )
-    except Exception, x:
-      errStr = "Request.setRequestStatus: Exception while setting request status."
-      gLogger.exception( errStr, requestName, lException = x )
-      return S_ERROR( errStr )
+    self.log.info("deleteRequest: attempt to delete '%s' request" % requestName )
+    deleteRequest = self.requestManager().deleteRequest( requestName )
+    if not deleteRequest["OK"]:
+      self.log.error( "deleteRequest: unable to delete '%s' request: %s" % ( requestName, 
+                                                                             deleteRequest["Message"] ) )
+    return deleteRequest
 
-  def getRequestForJobs( self, jobID, url = '' ):
-    """ Get the request names for the supplied jobIDs
+  def setRequestStatus( self, requestName, requestStatus  ):
+    """ Set the status of a request. If url parameter is not present, the central 
+    request RPC client would be used.
+    
+    :param self: self reference
+    :param str requestName: request name
+    :param str requestStatus: new status
     """
-    try:
-      if not url:
-        url = self.central
-      gLogger.verbose( "RequestDBClient.getRequestForJobs: Attempting to get request names for %s jobs." % len( jobID ) )
-      requestRPCClient = RPCClient( self.central, timeout = 120 )
-      return requestRPCClient.getRequestForJobs( jobID )
-    except Exception, x:
-      errStr = "Request.getRequestForJobs: Exception while getting request names."
-      gLogger.exception( errStr, '', lException = x )
-      return S_ERROR( errStr )
+    self.log.info( "setRequestStatus: attempt to set '%s' status for '%s' request" % ( requestStatus, requestName ) )
+    requestStatus = self.requestManager().setRequestStatus( requestName, requestStatus )
+    if not requestStatus["OK"]:
+      self.log.error( "setRequestStatus: unable to set status for '%s' request: %s" % ( requestName, 
+                                                                                        requestStatus["Message"] ) )
+    return requestStatus
 
-  ##############################################################################
-  #
-  # These are the methods which require URL manipulation
-  #
+  def getRequestForJobs( self, jobID ):
+    """ Get the request names for the supplied jobIDs.
 
-  def setRequest( self, requestName, requestString, url = '' ):
-    """ Set request. URL can be supplied if not a all VOBOXes will be tried in random order.
+    :param self: self reference
+    :param list jobID: list of job IDs (integers)
     """
-    try:
-      if url:
-        urls = [url]
-      elif self.central:
-        urls = [self.central]
-        if self.voBoxUrls:
-          urls += self.voBoxUrls
+    self.log.info( "getRequestForJobs: attempt to get request(s) for job %s" % jobID )
+    requests = self.requestManager().getRequestForJobs( jobID )
+    if not requests["OK"]:
+      self.log.error( "getRequestForJobs: unable to get request(s) for jobs %s: %s" % ( jobID, 
+                                                                                        requests["Message"] ) )
+    return requests
+
+  def setRequest( self, requestName, requestString ):
+    """ set request to RequestManager
+ 
+    :param self: self reference
+    :param str requestName: request name
+    :param str requestString: xml string represenation of request
+    """
+    errorsDict = {}
+    setRequestMgr = self.requestManager().setRequest( requestName, requestString )
+    if setRequestMgr["OK"]:
+      return setRequestMgr
+    errorsDict["RequestManager"] = setRequestMgr["Message"]
+    self.log.warn( "setRequest: unable to set request '%s' at RequestManager" % requestName )
+    proxies = self.requestProxies()
+    for proxyURL, proxyClient in proxies.items():
+      self.log.debug( "setRequest: trying RequestProxy at %s" % proxyURL )
+      setRequestProxy = proxyClient.setRequest( requestName, requestString )
+      if setRequestProxy["OK"]:
+        if setRequestProxy["Value"]["set"]:
+          self.log.info( "setRequest: request '%s' successfully set using RequestProxy %s" % ( requestName, 
+                                                                                               proxyURL ) )
+        elif setRequestProxy["Value"]["saved"]:
+          self.log.info( "setRequest: request '%s' successfully forwarded to RequestProxy %s" % ( requestName, 
+                                                                                                  proxyURL ) )
+        return setRequestProxy
       else:
-        return S_ERROR( "No urls defined" )
-      for url in urls:
-        requestRPCClient = RPCClient( url, timeout = 120 )
-        res = requestRPCClient.setRequest( requestName, requestString )
-        if res['OK']:
-          gLogger.info( "Succeded setting request  %s at %s" % ( requestName, url ) )
-          res["Server"] = url
-          return res
-        else:
-          errKey = "Failed setting request at %s" % url
-          errExpl = " : for %s because: %s" % ( requestName, res['Message'] )
-          gLogger.error( errKey, errExpl )
-      errKey = "Completely failed setting request"
-      errExpl = " : %s\n%s" % ( requestName, requestString )
-      gLogger.fatal( errKey, errExpl )
-      return S_ERROR( errKey )
-    except Exception, x:
-      errKey = "Completely failed setting request"
-      gLogger.exception( errKey, requestName, x )
-      return S_ERROR( errKey )
-
-  def getRequest( self, requestType, url = '' ):
-    """ Get request from RequestDB.
-        First try the local repository then if none available or error try random repository
+        self.log.warn( "setRequest: unable to set request using RequestProxy %s: %s" % ( proxyURL, 
+                                                                                         setRequestProxy["Message"] ) )
+        errorsDict["RequestProxy(%s)" % proxyURL] = setRequestProxy["Message"]
+    ## if we're here neither requestManager nor requestProxy were successfull
+    self.log.error( "setRequest: unable to set request '%s'" % requestName )
+    errorsDict["OK"] = False
+    errorsDict["Message"] = "RequestClient.setRequest: unable to set request '%s'"
+    return errorsDict
+      
+  def getRequest( self, requestType  ):
+    """ get request from RequestDB 
+    
+    :param self: self reference
+    :param str requestType: type of request
     """
-    try:
-      if url:
-        urls = [url]
-      elif self.local:
-        urls = [self.local]
-      elif self.central:
-        urls = [self.central]
-      elif self.voBoxUrls:
-        urls = self.voBoxUrls
-      else:
-        return S_ERROR( "No urls defined" )
-      for url in urls:
-        gLogger.info( "RequestDBClient.getRequest: Attempting to get request.", "%s %s" % ( url, requestType ) )
-        requestRPCClient = RPCClient( url, timeout = 120 )
-        res = requestRPCClient.getRequest( requestType )
-        if res['OK']:
-          if res['Value']:
-            gLogger.info( "Got '%s' request from RequestDB (%s)" % ( requestType, url ) )
-            res['Value']['Server'] = url
-            return res
+    self.log.info( "getRequest: attempting to get '%s' request." % requestType )
+    getRequest = self.requestManager().getRequest( requestType )
+    if not getRequest["OK"]:
+      self.log.error("getRequest: unable to get '%s' request: %s" % getRequest["Message"] )
+    return getRequest  
+
+  def serveRequest( self, requestType = "" ):
+    """ Get the request of type :requestType: from RequestDB.   
+
+    :param self: self reference
+    :param str requestType: request type
+    """
+    return self.getRequest( requestType  )
+
+  def getDBSummary( self ):
+    """ Get the summary of requests in the RequestDBs. """
+    self.log.info( "getDBSummary: attempting to get RequestDB summary." )
+    dbSummary = self.requestManager().getDBSummary()
+    if not dbSummary["OK"]:
+      self.log.error( "getDBSummary: unable to get RequestDB summary: %s" % dbSummary["Message"] )
+    return dbSummary
+
+  def getDigest( self, requestName ):
+    """ Get the request digest given a request name.
+
+    :param self: self reference
+    :param str requestName: request name
+    """
+    self.log.info( "getDigest: attempting to get digest for '%s' request." % requestName )
+    digest = self.requestManager().getDigest( requestName )
+    if not digest["OK"]:
+      self.log.error( "getDigest: unable to get digest for '%s' request: %s" % ( requestName, digest["Message"] ) )
+    return digest
+
+  def getCurrentExecutionOrder( self, requestName ):
+    """ Get the request execution order given a request name.
+
+    :param self: self reference
+    :param str requestName: name of the request
+    """
+    self.log.info( "getCurrentExecutionOrder: attempt to get execution order for '%s' request." % requestName )
+    executionOrder = self.requestManager().getCurrentExecutionOrder( requestName )
+    if not executionOrder["OK"]:
+      self.log.error( "getCurrentExecutionOrder: unable to get execution order for '%s' request: %s" %\
+                        ( requestName, executionOrder["Message"] ) )
+    return executionOrder
+
+  def getRequestStatus( self, requestName  ):
+    """ Get the request status given a request name.
+
+    :param self: self reference
+    :param str requestName: name of teh request
+    """
+    self.log.info( "getRequestStatus: attempting to get status for '%s' request." % requestName )
+    requestStatus = self.requestManager().getRequestStatus( requestName )
+    if not requestStatus["OK"]:
+      self.log.error( "getRequestStatus: unable to get status for '%s' request: %s" % ( requestName, 
+                                                                                        requestStatus["Message"] ) )
+    return requestStatus
+                     
+  def getRequestInfo( self, requestName ):
+    """ The the request info given a request name. 
+
+    :param self: self reference
+    :param str requestName: request name
+    """
+    self.log.info( "getRequestInfo: attempting to get info for '%s' request." % requestName )
+    requestInfo = self.requestManager().getRequestInfo( requestName )
+    if not requestInfo["OK"]:
+      self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestName, 
+                                                                                      requestInfo["Message"] ) )
+    return requestInfo
+
+  def getRequestFileStatus( self, requestName, lfns ):
+    """ Get fiel status for request given a request name.
+
+    :param self: self reference
+    :param str requestName: request name
+    :param list lfns: list of LFNs
+    """
+    self.log.info( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
+    fileStatus = self.requestManager().getRequestFileStatus( requestName, lfns )
+    if not fileStatus["OK"]:
+      self.log.error( "getRequestFileStatus: unable to get file status for '%s' request: %s" %\
+                        ( requestName, fileStatus["Message"] ) )
+    return fileStatus
+
+  def finalizeRequest( self, requestName, jobID ):
+    """ check request status and perform finalisation if necessary
+
+    :param self: self reference
+    :param str requestName: request name
+    :param int jobID: job id
+    """
+    stateServer = RPCClient( "WorkloadManagement/JobStateUpdate", useCertificates = True )
+    # update the request status and the corresponding job parameter
+    res = self.getRequestStatus( requestName )
+    if res["OK"]:
+      subRequestStatus = res["Value"]["SubRequestStatus"]
+      if subRequestStatus == "Done":
+        res = self.setRequestStatus( requestName, "Done" )
+        if not res["OK"]:
+          self.log.error( "finalizeRequest: Failed to set request status" )
+        # the request is completed, update the corresponding job status
+        if jobID:
+          monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
+          res = monitorServer.getJobPrimarySummary( int( jobID ) )
+          if not res["OK"] or not res["Value"]:
+            self.log.error( "finalizeRequest: Failed to get job status" )
           else:
-            gLogger.info( "Found no '%s' requests on RequestDB (%s)" % ( requestType, url ) )
-        else:
-          errKey = "Failed getting request from %s" % url
-          errExpl = " : %s : %s" % ( requestType, res['Message'] )
-          gLogger.error( errKey, errExpl )
-      return res
-    except Exception, x:
-      errKey = "Failed to get request"
-      gLogger.exception( errKey, lException = x )
-      return S_ERROR( errKey )
+            jobStatus = res["Value"]["Status"]
+            jobMinorStatus = res["Value"]["MinorStatus"]
+            if jobMinorStatus == "Pending Requests":
+              if jobStatus == "Completed":
+                self.log.info( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
+                res = stateServer.setJobStatus( jobID, "Done", "Requests done", "" )
+                if not res["OK"]:
+                  self.log.error( "finalizeRequest: Failed to set job status" )
+              elif jobStatus == "Failed":
+                self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
+                res = stateServer.setJobStatus( jobID, "", "Requests done", "" )
+                if not res["OK"]:
+                  self.log.error( "finalizeRequest: Failed to set job status" )
+    else:
+      self.log.error( "finalizeRequest: failed to get request status: %s" % res["Message"] )
 
-  def serveRequest( self, requestType = '', url = '' ):
-    """ Get a request from RequestDB.
+    # update the job pending request digest in any case since it is modified
+    self.log.info( "finalizeRequest: Updating request digest for job %d" % jobID )
+    digest = self.getDigest( requestName )
+    if digest["OK"]:
+      digest = digest["Value"]
+      self.log.verbose( digest )
+      res = stateServer.setJobParameter( jobID, "PendingRequest", digest )
+      if not res["OK"]:
+        self.log.error( "finalizeRequest: Failed to set job parameter: %s" % res["Message"] )
+    else:
+      self.log.error( "finalizeRequest: Failed to get request digest for %s: %s" % ( requestName,
+                                                                                     digest["Message"] ) )
+
+    return S_OK()
+  
+  def readRequestsForJobs( self, jobIDs ):
+    """ read requests for jobs 
+    
+    :param list jobIDs: list with jobIDs
+    
+    :return: S_OK( { "Successful" : { jobID1 : RequestContainer, ... },
+                     "Failed" : { jobIDn : "Fail reason" } } ) 
     """
-    try:
-      if url:
-        urls = [url]
-      elif self.local:
-        urls = [self.local]
-      elif self.central:
-        urls = [self.central]
-      elif self.voBoxUrls:
-        urls = self.voBoxUrls
-      else:
-        return S_ERROR( "No urls defined" )
-      for url in urls:
-        gLogger.info( "RequestDBClient.serveRequest: Attempting to obtain request.", "%s %s" % ( url, requestType ) )
-        requestRPCClient = RPCClient( url, timeout = 120 )
-        res = requestRPCClient.serveRequest( requestType )
-        if res['OK']:
-          if res['Value']:
-            gLogger.info( "Got '%s' request from RequestDB (%s)" % ( requestType, url ) )
-            res['Value']['Server'] = url
-            return res
-          else:
-            gLogger.info( "Found no '%s' requests on RequestDB (%s)" % ( requestType, url ) )
-        else:
-          errKey = "Failed getting request from %s" % url
-          errExpl = " : %s : %s" % ( requestType, res['Message'] )
-          gLogger.error( errKey, errExpl )
-      return res
-    except Exception, x:
-      errKey = "Failed to get request"
-      gLogger.exception( errKey, lException = x )
-      return S_ERROR( errKey )
-
-  def getDBSummary( self, url = '' ):
-    """ Get the summary of requests in the RequestDBs. If a URL is not supplied will get status for all.
-    """
-
-    urlDict = {}
-    try:
-      if url:
-        urls = [url]
-      elif self.local:
-        urls = [self.local]
-      elif self.central:
-        urls = [self.central]
-      elif self.voBoxUrls:
-        urls = self.voBoxUrls
-      else:
-        return S_ERROR( "No urls defined" )
-      for url in urls:
-        requestRPCClient = RPCClient( url, timeout = 120 )
-        urlDict[url] = {}
-        result = requestRPCClient.getDBSummary()
-        if result['OK']:
-          gLogger.info( "Succeded getting request summary at %s" % url )
-          urlDict[url] = result['Value']
-        else:
-          errKey = "Failed getting request summary"
-          errExpl = " : at %s because %s" % ( url, result['Message'] )
-          gLogger.error( errKey, errExpl )
-      return S_OK( urlDict )
-    except Exception, x:
-      errKey = "Failed getting request summary"
-      gLogger.exception( errKey, lException = x )
-      return S_ERROR( errKey )
-
-  def getDigest( self, requestName, url = '' ):
-    """ Get the reuest digest
-    """
-
-    lurl = url
-    if not lurl:
-      lurl = self.central
-
-    if not lurl:
-      return S_ERROR( "URL not defined" )
-
-    requestRPCClient = RPCClient( lurl, timeout = 120 )
-    result = requestRPCClient.getDigest( requestName )
-    return result
-
-  def getCurrentExecutionOrder( self, requestName, url = '' ):
-    """ Get the reuest digest
-    """
-
-    lurl = url
-    if not lurl:
-      lurl = self.central
-
-    if not lurl:
-      return S_ERROR( "URL not defined" )
-
-    requestRPCClient = RPCClient( lurl, timeout = 120 )
-    result = requestRPCClient.getCurrentExecutionOrder( requestName )
-    return result
-
-  def getRequestStatus( self, requestName, url = '' ):
-    """ Get the reuest digest
-    """
-
-    lurl = url
-    if not lurl:
-      lurl = self.central
-
-    if not lurl:
-      return S_ERROR( "URL not defined" )
-
-    requestRPCClient = RPCClient( lurl, timeout = 120 )
-    result = requestRPCClient.getRequestStatus( requestName )
-    return result
-
-  def getRequestInfo( self, requestName, url = '' ):
-    """ The the request info given a request name """
-    lurl = url
-    if not lurl:
-      lurl = self.central
-    if not lurl:
-      return S_ERROR( "URL not defined" )
-    requestRPCClient = RPCClient( lurl, timeout = 120 )
-    result = requestRPCClient.getRequestInfo( requestName )
-    return result
-
-  def getRequestFileStatus( self, requestName, lfns, url = '' ):
-    lurl = url
-    if not lurl:
-      lurl = self.central
-    if not lurl:
-      return S_ERROR( "URL not defined" )
-    requestRPCClient = RPCClient( lurl, timeout = 120 )
-    return requestRPCClient.getRequestFileStatus( requestName, lfns )
+    readReqsForJobs = self.requestManager().readRequestsForJobs( jobIDs )
+    if not readReqsForJobs["OK"]:
+      return readReqsForJobs
+    ret = readReqsForJobs["Value"] if readReqsForJobs["Value"] else None
+    if not ret:
+      return S_ERROR("No values returned")
+    ## create RequestContainers out of xml strings for successful reads
+    if "Successful" in ret:    
+      for jobID, xmlStr in ret["Successful"].items():
+        req = RequestContainer( init = False )
+        req.parseRequest( request=xmlStr )
+        ret["Successful"][jobID] = req
+    return S_OK( ret )

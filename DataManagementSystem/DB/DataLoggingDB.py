@@ -1,8 +1,13 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-""" DataLoggingDB class is a front-end to the Data Logging Database.
-    The following methods are provided
+""" :mod: DataLoggingDB
+    ===================
+ 
+    .. module: DataLoggingDB
+    :synopsis: front-end to the Data Logging database
+
+    The following methods are provided:
 
     addFileRecord()
     getFileLoggingInfo()
@@ -10,125 +15,228 @@
 
 __RCSID__ = "$Id$"
 
-import re, os, sys, time, datetime
-from types import *
+## imports
+import os
+import sys
+from types import StringTypes
+## from DIRAC
+from DIRAC.Core.Utilities import Time
+from DIRAC import gConfig, gLogger, S_OK
+from DIRAC.Core.Base.DB import DB
 
-from DIRAC                                      import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.DB                         import DB
-MAGIC_EPOC_NUMBER = 1270000000
+## DIRAC epoc timestamp
+#MAGIC_EPOC_NUMBER = 1270000000
+NEW_MAGIC_EPOCH_2K = 323322400
 
 #############################################################################
-class DataLoggingDB(DB):
+class DataLoggingDB( DB ):
+  """ .. class:: DataLoggingDB 
 
+  Python interface to DataLoggingDB.
 
-  def __init__( self, maxQueueSize=10 ):
-    """ Standard Constructor
+  DROP TABLE IF EXISTS DataLoggingInfo;
+  CREATE TABLE DataLoggingInfo (
+    FileID INTEGER NOT NULL AUTO_INCREMENT,
+    LFN VARCHAR(255) NOT NULL,
+    Status VARCHAR(255) NOT NULL,
+    MinorStatus VARCHAR(255) NOT NULL DEFAULT 'Unknown',
+    StatusTime DATETIME,
+    StatusTimeOrder DOUBLE(11,3) NOT NULL,
+    Source VARCHAR(127) NOT NULL DEFAULT 'Unknown',
+    PRIMARY KEY (FileID),
+    INDEX (LFN)
+    );
+  """
+  ## table name
+  tableName = 'DataLoggingInfo'
+  ## table def
+  tableDict = { tableName: { 'Fields' : { 'FileID': 'INTEGER NOT NULL AUTO_INCREMENT',
+                                          'LFN': 'VARCHAR(255) NOT NULL',
+                                          'Status': 'VARCHAR(255) NOT NULL',
+                                          'MinorStatus': 'VARCHAR(255) NOT NULL DEFAULT "Unknown" ',
+                                          'StatusTime':'DATETIME NOT NULL',
+                                          'StatusTimeOrder': 'DOUBLE(11,3) NOT NULL',
+                                          'Source': 'VARCHAR(127) NOT NULL DEFAULT "Unknown"',
+                                         },
+                             'PrimaryKey': 'FileID',
+                             'Indexes': { 'LFN': ['LFN']
+                                         }
+                            }
+               }
+
+  def __init__( self, maxQueueSize = 10 ):
+    """ c'tor
+
+    :param self: self reference
+    :param int maxQueueSize: query queue size
     """
-    DB.__init__(self,'DataLoggingDB','DataManagement/DataLoggingDB',maxQueueSize)
+    DB.__init__( self, "DataLoggingDB", "DataManagement/DataLoggingDB", maxQueueSize )
     self.gLogger = gLogger
 
-#############################################################################
-
-  def addFileRecords(self,fileTuples):
-    """ Simple wrapper around multiple insertion of file records
+  def _checkTable( self ):
+    """ Make sure the table is created
     """
-    for lfn,status,minor,date,source in fileTuples:
-      res = self.addFileRecord([lfn], status, minor, date, source)
+    return self._createTables( self.tableDict, force = False )
+
+  def addFileRecords( self, fileTuples ):
+    """ Simple wrapper around multiple insertion of file records
+
+    :param self: self reference
+    :param list fileTuples: list of tuples ( lfn, status, minor, date, source )
+    """
+    result = S_OK( 0 )
+    for lfn, status, minor, date, source in fileTuples:
+      res = self.addFileRecord( [lfn], status, minor, date, source )
+      if not res["OK"]:
+        return res
+      result['Value'] += res['Value']
+      result['lastRowId'] = res['lastRowId']
+    return result
+
+  def addFileRecord( self, lfns, status, minor = "Unknown", date = None, source = "Unknown" ):
+    """ Add a new entry to the DataLoggingDB table. 
+
+    :warning: Optionally the time stamp of the status can be provided in a form of a string 
+    in a format '%Y-%m-%d %H:%M:%S' or as datetime.datetime object. If the time stamp is not 
+    provided the current UTC time is used.
+
+    :param self: self reference
+    :param list lfns: list of LFNs
+    :param str status: status
+    :param str minor: additional information
+    :param mixed date: date and time
+    :param str source: source setting the new status
+    """
+    self.gLogger.info( "Entering records for %s lfns: %s/%s from source %s" % ( len( lfns ), status, minor, source ) )
+    _date = date
+    if not date:
+      _date = Time.dateTime()
+    if type( date ) in StringTypes:
+      _date = Time.fromString( date )
+
+    try:
+      time_order = Time.to2K( _date ) - NEW_MAGIC_EPOCH_2K
+    except AttributeError:
+      gLogger.error( 'Wrong date argument given using current time stamp' )
+      date = Time.dateTime()
+      time_order = Time.to2K( date ) - NEW_MAGIC_EPOCH_2K
+
+    inDict = { 'Status': status,
+               'MinorStatus': minor,
+               'StatusTime': date,
+               'StatusTimeOrder': time_order,
+               'Source': source
+              }
+    result = S_OK( 0 )
+    for lfn in lfns:
+      inDict['LFN'] = lfn
+      res = self.insertFields( self.tableName, inDict = inDict )
       if not res['OK']:
         return res
-    return S_OK()
+      result['Value'] += res['Value']
+      result['lastRowId'] = res['lastRowId']
+    return result
 
-  def addFileRecord(self,lfns,status,minor='Unknown',date='',source='Unknown'):
-    """ Add a new entry to the DataLoggingDB table. Optionaly the time stamp of the status can
-        be provided in a form of a string in a format '%Y-%m-%d %H:%M:%S' or
-        as datetime.datetime object. If the time stamp is not provided the current
-        UTC time is used.
-    """
-    self.gLogger.info('Entering records for %s lfns: %s/%s from source %s' % (len(lfns),status,minor,source))
-    if not date:
-      # Make the UTC datetime string and float
-      _date = datetime.datetime.utcnow()
-      epoc = time.mktime(_date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
-      time_order = round(epoc,3)
-    else:
-      try:
-        if type(date) in StringTypes:
-          # The date is provided as a string in UTC
-          epoc = time.mktime(time.strptime(date,'%Y-%m-%d %H:%M:%S'))
-          _date = datetime.datetime.fromtimestamp(epoc)
-          time_order = epoc - MAGIC_EPOC_NUMBER
-        elif type(date) == datetime.datetime:
-          _date = date
-          epoc = time.mktime(date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
-          time_order = round(epoc,3)
-        else:
-          self.gLogger.error('Incorrect date for the logging record')
-          _date = datetime.datetime.utcnow()
-          epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
-          time_order = round(epoc,3)
-      except:
-        self.gLogger.exception('Exception while date evaluation')
-        _date = datetime.datetime.utcnow()
-        epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
-        time_order = round(epoc,3)
-
-    cmd = "INSERT INTO DataLoggingInfo (LFN, Status, MinorStatus, StatusTime, StatusTimeOrder, Source) VALUES"
-    for lfn in lfns:
-      cmd = "%s ('%s','%s','%s','%s',%f,'%s')," % (cmd,lfn,status,minor,str(_date),time_order,source)
-    cmd = cmd.rstrip(',')
-    cmd = "%s;" % cmd
-    return self._update(cmd)
-
-#############################################################################
-
-  def getFileLoggingInfo(self, lfn):
+  def getFileLoggingInfo( self, lfn ):
     """ Returns a Status,StatusTime,StatusSource tuple
         for each record found for the file specified by its LFN in historical order
     """
+    return self.getFields( self.tableName, ['Status', 'MinorStatus', 'StatusTime', 'Source'],
+                           condDict = {'LFN': lfn }, orderAttribute = ['StatusTimeOrder', 'StatusTime'] )
 
-    cmd = "SELECT Status,MinorStatus,StatusTime,Source FROM" \
-          " DataLoggingInfo WHERE LFN='%s' ORDER BY StatusTimeOrder,StatusTime" % lfn
+  def getUniqueStates( self ):
+    """ Returns the distinct status from the data logging DB
+    """
+    return self.getDistinctAttributeValues( self.tableName, 'Status' )
 
-    result = self._query( cmd )
+def test():
+  """ Some test cases
+  """
+
+  # building up some fake CS values
+  gConfig.setOptionValue( 'DIRAC/Setup', 'Test' )
+  gConfig.setOptionValue( '/DIRAC/Setups/Test/DataManagement', 'Test' )
+
+  host = '127.0.0.1'
+  user = 'Dirac'
+  pwd = 'Dirac'
+  db = 'AccountingDB'
+
+  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataLoggingDB/Host', host )
+  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataLoggingDB/DBName', db )
+  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataLoggingDB/User', user )
+  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataLoggingDB/Password', pwd )
+
+  db = DataLoggingDB()
+  assert db._connect()['OK']
+
+  lfns = ['/Test/00001234/File1', '/Test/00001234/File2']
+  status = 'TestStatus'
+  minor = 'MinorStatus'
+  date1 = Time.toString()
+  date2 = Time.dateTime()
+  source = 'Somewhere'
+
+  fileTuples = ( ( lfns[0], status, minor, date1, source ), ( lfns[1], status, minor, date2, source ) )
+
+  try:
+    gLogger.info( '\n Creating Table\n' )
+    # Make sure it is there and it has been created for this test
+    result = db._checkTable()
+    assert result['OK']
+
+    result = db._checkTable()
+    assert not result['OK']
+    assert result['Message'] == 'The requested table already exist'
+
+    gLogger.info( '\n Inserting some records\n' )
+
+    result = db.addFileRecord( lfns, status, date = '2012-04-28 09:49:02.545466' )
+    assert result['OK']
+    assert result['Value'] == 2
+    assert result['lastRowId'] == 2
+
+    result = db.addFileRecords( fileTuples )
+    assert result['OK']
+
+    gLogger.info( '\n Retrieving some records\n' )
+
+    result = db.getFileLoggingInfo( lfns[0] )
+    assert result['OK']
+    assert len( result['Value'] ) == 2
+
+    result = db.getFileLoggingInfo( lfns[1] )
+    assert result['OK']
+    assert len( result['Value'] ) == 2
+
+    result = db.getUniqueStates()
+    assert result['OK']
+    assert result['Value'] == [status]
+
+
+    gLogger.info( '\n Removing Table\n' )
+    result = db._update( 'DROP TABLE `%s`' % db.tableName )
+    assert result['OK']
+
+    gLogger.info( '\n OK\n' )
+
+
+  except AssertionError:
+    print 'ERROR ',
     if not result['OK']:
-      return result
-    if result['OK'] and not result['Value']:
-      return S_ERROR('No Logging information for LFN')
+      print result['Message']
+    else:
+      print result
 
-    return_value = []
-    for row in result['Value']:
-      return_value.append((str(row[0]),str(row[1]),str(row[2]),str(row[3])))
-    return S_OK(return_value)
+    sys.exit( 1 )
 
-  def getUniqueStates(self):
-    """ Returns the distinct staus from the data logging DB
-    """
-    req = "SELECT DISTINCT Status FROM DataLoggingInfo;"
-    res = self._query(req)
-    if not res['OK']:
-      return res
-    uniqueStatus = []
-    for status in res['Value']:
-      uniqueStatus.append(status[0])
-    return S_OK(uniqueStatus)
+if __name__ == '__main__':
+  from DIRAC.Core.Base import Script
+  Script.parseCommandLine()
+  gLogger.setLevel( 'VERBOSE' )
 
-  def getStateDiff(self,state1,state2,fromTime='',endTime=''):
-    """ Get all the event time stamps for the supplied arguments
-    """
-    req = "SELECT TIME_TO_SEC(TIMEDIFF(t2.StatusTime,t1.StatusTime)) FROM DataLoggingInfo AS t1, DataLoggingInfo AS t2 WHERE t2.LFN=t1.LFN AND t1.Status='%s' and t2.Status='%s'" % (state1,state2)
-    cond = ''
-    if fromTime:
-      cond = "%s AND t1.StatusTime > '%s'" % (cond,fromTime)
-    if endTime:
-      cond = "%s AND t1.StatusTime < '%s'" % (cond,endTime)
-    if cond:
-      req = "%s %s" % (req,cond)
+  if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
+    gLogger.info( 'Unset pyhthon optimization "PYTHONOPTIMIZE"' )
+    sys.exit( 0 )
 
-    res = self._query(req)
-    if not res['OK']:
-      return res
-    timeDiffs = []
-    for timeDiff in res['Value']:
-      timeDiffs.append(timeDiff[0])
-    return S_OK(timeDiffs)
-
+  test()

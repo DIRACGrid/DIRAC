@@ -50,7 +50,7 @@ from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 
 result = diracAdmin.getBDIICEVOView( ceName, useVO = vo, host = host )
-if not ['OK']:
+if not result['OK']:
   print result['Message']
   DIRAC.exit( 2 )
 

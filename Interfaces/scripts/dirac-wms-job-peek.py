@@ -29,7 +29,7 @@ errorList = []
 
 for job in args:
 
-  result = dirac.peek( job )
+  result = dirac.peek( job, printout=True )
   if not result['OK']:
     errorList.append( ( job, result['Message'] ) )
     exitCode = 2

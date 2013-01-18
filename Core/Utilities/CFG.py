@@ -67,7 +67,7 @@ except Exception:
 
 #START OF CFG MODULE
 
-class CFG:
+class CFG( object ):
 
   def __init__( self ):
     """
@@ -100,12 +100,12 @@ class CFG:
     @param contents: Optional cfg with the contents of the section.
     """
     if sectionName == "":
-      raise Exception( "Creating a section with empty name! You shouldn't do that!" )
+      raise ValueError( "Creating a section with empty name! You shouldn't do that!" )
     if sectionName.find( "/" ) > -1:
       recDict = self.getRecursive( sectionName, -1 )
       parentSection = recDict[ 'value' ]
       if type( parentSection ) in ( types.StringType, types.UnicodeType ):
-        raise Exception( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
+        raise KeyError( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
       return parentSection.createNewSection( recDict[ 'levelsBelow' ], comment, contents )
     self.__addEntry( sectionName, comment )
     if sectionName not in self.__dataDict:
@@ -114,7 +114,7 @@ class CFG:
       else:
         self.__dataDict[ sectionName ] = contents
     else:
-      raise Exception( "%s key already exists" % sectionName )
+      raise KeyError( "%s key already exists" % sectionName )
     return self.__dataDict[ sectionName ]
 
   def __overrideAndCloneSection( self, sectionName, oCFGToClone ):
@@ -127,7 +127,7 @@ class CFG:
     @param oCFGToClone: CFG with the contents of the section
     """
     if sectionName not in self.listSections():
-      raise Exception( "Section %s does not exist" % sectionName )
+      raise KeyError( "Section %s does not exist" % sectionName )
     self.__dataDict[ sectionName ] = oCFGToClone.clone()
 
   @gCFGSynchro
@@ -143,12 +143,12 @@ class CFG:
     @param comment: Comment for the option
     """
     if optionName == "":
-      raise Exception( "Creating an option with empty name! You shouldn't do that!" )
+      raise ValueError( "Creating an option with empty name! You shouldn't do that!" )
     if optionName.find( "/" ) > -1:
       recDict = self.getRecursive( optionName, -1 )
       parentSection = recDict[ 'value' ]
       if type( parentSection ) in ( types.StringType, types.UnicodeType ):
-        raise Exception( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
+        raise KeyError( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
       return parentSection.setOption( recDict[ 'levelsBelow' ], value, comment )
     self.__addEntry( optionName, comment )
     self.__dataDict[ optionName ] = str( value )
@@ -179,13 +179,20 @@ class CFG:
   def sortAlphabetically( self, ascending = True ):
     """
     Order this cfg alphabetically
-    returns true if modified
+    returns True if modified
+    """
+    if not ascending:
+      return self.sortByKey( reverse = True )
+    return self.sortByKey()
+
+  def sortByKey( self, key = None , reverse = False ):
+    """
+    Order this cfg by function refered in key, default is None
+    corresponds to alphabetic sort
+    returns True if modified
     """
     unordered = list( self.__orderedList )
-    if ascending:
-      self.__orderedList.sort()
-    else:
-      self.__orderedList.reverse()
+    self.__orderedList.sort( key = key , reverse = reverse )
     return unordered != self.__orderedList
 
   @gCFGSynchro
@@ -197,35 +204,52 @@ class CFG:
     @param key: Name of the option/section to delete
     @return: Boolean with the result
     """
-    if key in self.__orderedList:
-      del( self.__commentDict[ key ] )
-      del( self.__dataDict[ key ] )
-      pos = self.__orderedList.index( key )
-      del( self.__orderedList[ pos ] )
+    result = self.getRecursive( key, -1 )
+    if not result:
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( key, "/" )[:-1] ) )
+    cfg = result[ 'value' ]
+    end = result[ 'levelsBelow' ]
+
+    if end in cfg.__orderedList:
+      del( cfg.__commentDict[ end ] )
+      del( cfg.__dataDict[ end ] )
+      cfg.__orderedList.remove( end )
       return True
     return False
 
   @gCFGSynchro
-  def copyKey( self, originalKey, newKey ):
+  def copyKey( self, oldName, newName ):
     """
     Copy an option/section
 
-    @type originalKey: string
-    @param originalKey: Name of the option/section to copy
-    @type newKey: string
-    @param newKey: Destination name
+    @type oldName: string
+    @param oldName: Name of the option / section to copy
+    @type newName: string
+    @param newName: Destination name
     @return: Boolean with the result
     """
-    if originalKey == newKey:
-      return False
-    if newKey in self.__orderedList:
-      return False
-    if originalKey in self.__orderedList:
-      self.__dataDict[ newKey ] = copy.copy( self.__dataDict[ originalKey ] )
-      self.__commentDict[ newKey ] = copy.copy( self.__commentDict[ originalKey ] )
-      self.__orderedList.append( newKey )
+    if oldName == newName:
       return True
-    return False
+    result = self.getRecursive( oldName, -1 )
+    if not result:
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[:-1] ) )
+    oldCfg = result[ 'value' ]
+    oldEnd = result[ 'levelsBelow' ]
+    if oldEnd in oldCfg.__dataDict:
+      result = self.getRecursive( newName, -1 )
+      if not result:
+        raise KeyError( "%s does not exist" % "/".join( List.fromChar( newName, "/" )[:-1] ) )
+      newCfg = result[ 'value' ]
+      newEnd = result[ 'levelsBelow' ]
+
+      newCfg.__dataDict[ newEnd ] = oldCfg.__dataDict[ oldEnd ]
+      newCfg.__commentDict[ newEnd ] = oldCfg.__commentDict[ oldEnd ]
+      refKeyPos = oldCfg.__orderedList.index( oldEnd )
+      newCfg.__orderedList.insert( refKeyPos + 1, newEnd )
+
+      return True
+    else:
+      return False
 
   @gCFGSynchro
   def listOptions( self, ordered = True ):
@@ -342,7 +366,10 @@ class CFG:
     if len( pathList ) - levelsAbove < 0:
       return False
     if len( pathList ) - levelsAbove == 0:
-      return { 'key' : "", 'value' : self, 'comment' : "", 'levelsBelow' : "" }
+      lBel = ""
+      if levelsAbove > 0:
+        lBel = "/".join( pathList[len( pathList ) - levelsAbove: ] )
+      return { 'key' : "", 'value' : self, 'comment' : "", 'levelsBelow' : lBel }
     levelsBelow = ""
     if levelsAbove > 0:
       levelsBelow = "/".join( pathList[-levelsAbove:] )
@@ -443,9 +470,14 @@ class CFG:
     @type value: string
     @param value: Value to append to the option
     """
-    if optionName not in self.__dataDict:
-      raise Exception( "Option %s has not been declared" % optionName )
-    self.__dataDict[ optionName ] += str( value )
+    result = self.getRecursive( optionName, -1 )
+    if not result:
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( optionName, "/" )[:-1] ) )
+    cfg = result[ 'value' ]
+    end = result[ 'levelsBelow' ]
+    if end not in cfg.__dataDict:
+      raise KeyError( "Option %s has not been declared" % end )
+    cfg.__dataDict[ end ] += str( value )
 
   @gCFGSynchro
   def addKey( self, key, value, comment, beforeKey = "" ):
@@ -462,15 +494,20 @@ class CFG:
     @param beforeKey: Name of the option/section to add the entry above. By default
                         the new entry will be added at the end.
     """
-    if key in self.__dataDict:
-      raise Exception( "%s already exists" % key )
-    self.__dataDict[ key ] = value
-    self.__commentDict[ key ] = comment
+    result = self.getRecursive( key, -1 )
+    if not result:
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( key, "/" )[:-1] ) )
+    cfg = result[ 'value' ]
+    end = result[ 'levelsBelow' ]
+    if end in cfg.__dataDict:
+      raise KeyError( "%s already exists" % key )
+    cfg.__dataDict[ end ] = value
+    cfg.__commentDict[ end ] = comment
     if beforeKey == "":
-      self.__orderedList.append( key )
+      cfg.__orderedList.append( end )
     else:
-      refKeyPos = self.__orderedList.index( beforeKey )
-      self.__orderedList.insert( refKeyPos, key )
+      refKeyPos = cfg.__orderedList.index( beforeKey )
+      cfg.__orderedList.insert( refKeyPos, end )
 
   @gCFGSynchro
   def renameKey( self, oldName, newName ):
@@ -485,13 +522,26 @@ class CFG:
     """
     if oldName == newName:
       return True
-    if oldName in self.__dataDict:
-      self.__dataDict[ newName ] = self.__dataDict[ oldName ]
-      self.__commentDict[ newName ] = self.__commentDict[ oldName ]
-      refKeyPos = self.__orderedList.index( oldName )
-      self.__orderedList[ refKeyPos ] = newName
-      del( self.__dataDict[ oldName ] )
-      del( self.__commentDict[ oldName ] )
+    result = self.getRecursive( oldName, -1 )
+    if not result:
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[:-1] ) )
+    oldCfg = result[ 'value' ]
+    oldEnd = result[ 'levelsBelow' ]
+    if oldEnd in oldCfg.__dataDict:
+      result = self.getRecursive( newName, -1 )
+      if not result:
+        raise KeyError( "%s does not exist" % "/".join( List.fromChar( newName, "/" )[:-1] ) )
+      newCfg = result[ 'value' ]
+      newEnd = result[ 'levelsBelow' ]
+
+      newCfg.__dataDict[ newEnd ] = oldCfg.__dataDict[ oldEnd ]
+      newCfg.__commentDict[ newEnd ] = oldCfg.__commentDict[ oldEnd ]
+      refKeyPos = oldCfg.__orderedList.index( oldEnd )
+      oldCfg.__orderedList.remove( oldEnd )
+      newCfg.__orderedList.insert( refKeyPos, newEnd )
+
+      del( oldCfg.__dataDict[ oldEnd ] )
+      del( oldCfg.__commentDict[ oldEnd ] )
       return True
     else:
       return False
@@ -522,7 +572,7 @@ class CFG:
     """
     Check if a key is defined
     """
-    return key in self.__orderedList
+    return self.getRecursive( key )
 
   def __str__( self ):
     """
@@ -571,7 +621,7 @@ class CFG:
     try:
       return self.__commentDict[ entryName ]
     except:
-      raise Exception( "%s does not have any comment defined" % entryName )
+      raise ValueError( "%s does not have any comment defined" % entryName )
 
   @gCFGSynchro
   def setComment( self, entryName, comment ):
@@ -616,7 +666,7 @@ class CFG:
           for value in valueList[1:]:
             cfgString += "%s%s += %s\n" % ( tabLevelString, entryName, value )
       else:
-        raise Exception( "Oops. There is an entry in the order which is not a section nor an option" )
+        raise ValueError( "Oops. There is an entry in the order which is not a section nor an option" )
     return cfgString
 
   @gCFGSynchro
@@ -674,7 +724,7 @@ class CFG:
   def getModifications( self, newerCfg, ignoreMask = None, parentPath = "" ):
     """
     Compare two cfgs
-    
+
     @type newerCfg: CFG
     @param newerCfg: Cfg to compare with
     @type prefix: string
@@ -749,7 +799,7 @@ class CFG:
   def applyModifications( self, modList, parentSection = "" ):
     """
     Apply modifications to a CFG
-    
+
     @type modList: List
     @param modList: Modifications from a getModifications call
     @return: True/False
@@ -883,6 +933,19 @@ class CFG:
           break
         else:
           currentlyParsedString += line[ index ]
+    return self
+
+  @gCFGSynchro
+  def loadFromDict( self, data ):
+    for k in data:
+      value = data[ k ]
+      vType = type( value )
+      if type( value ) == types.DictType:
+        self.createNewSection( k , "", CFG().loadFromDict( value ) )
+      elif vType in ( types.ListType, types.TupleType ):
+        self.setOption( k , ", ".join( value ), "" )
+      else:
+        self.setOption( k , str( value ), "" )
     return self
 
   def writeToFile( self, fileName ):

@@ -4,10 +4,10 @@ __RCSID__ = "$Id$"
 import time
 import copy
 import os.path
-import threading
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.Network import checkHostsMatch
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -16,7 +16,7 @@ class SocketInfo:
 
   __cachedCAsCRLs = False
   __cachedCAsCRLsLastLoaded = 0
-  __cachedCAsCRLsLoadLock = threading.Lock()
+  __cachedCAsCRLsLoadLock = LockRing().getLock()
 
 
   def __init__( self, infoDict, sslContext = False ):
@@ -129,7 +129,7 @@ class SocketInfo:
       if not SocketInfo.__cachedCAsCRLs or time.time() - SocketInfo.__cachedCAsCRLsLastLoaded > 900:
         #Need to generate the CA Store
         casDict = {}
-        crlsDict = []
+        crlsDict = {}
         casPath = Locations.getCAsLocation()
         if not casPath:
           return S_ERROR( "No valid CAs location found" )
@@ -156,13 +156,13 @@ class SocketInfo:
               casFound += 1
             else:
               if casDict[ caID ][0] < caNotAfter:
-                casDict[ caID ] = ( caNotAfter, caCert ) 
+                casDict[ caID ] = ( caNotAfter, caCert )
             continue
           except:
             if fileName.find( ".0" ) == len( fileName ) - 2:
               gLogger.exception( "LOADING %s" % filePath )
           if 'IgnoreCRLs' not in self.infoDict or not self.infoDict[ 'IgnoreCRLs' ]:
-            #Try to load CRL 
+            #Try to load CRL
             try:
               crl = GSI.crypto.load_crl( GSI.crypto.FILETYPE_PEM, pemData )
               if crl.has_expired():
@@ -174,14 +174,14 @@ class SocketInfo:
                 crlsFound += 1
               else:
                 if crlsDict[ crlID ][0] < crlNotAfter:
-                  crlsDict[ crlID ] = ( crlNotAfter, crl ) 
+                  crlsDict[ crlID ] = ( crlNotAfter, crl )
               continue
             except:
               if fileName.find( ".r0" ) == len( fileName ) - 2:
                 gLogger.exception( "LOADING %s" % filePath )
 
         gLogger.debug( "Loaded %s CAs [%s CRLs]" % ( casFound, crlsFound ) )
-        SocketInfo.__cachedCAsCRLs = ( [ casDict[k][1] for k in casDict ], 
+        SocketInfo.__cachedCAsCRLs = ( [ casDict[k][1] for k in casDict ],
                                        [ crlsDict[k][1] for k in crlsDict ] )
         SocketInfo.__cachedCAsCRLsLastLoaded = time.time()
     except:
@@ -313,9 +313,9 @@ class SocketInfo:
         self.sslSocket.do_handshake()
         break
       except GSI.SSL.WantReadError:
-        time.sleep( 0.1 )
+        time.sleep( 0.001 )
       except GSI.SSL.WantWriteError:
-        time.sleep( 0.1 )
+        time.sleep( 0.001 )
       except GSI.SSL.Error, v:
         #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
         gLogger.warn( "Error while handshaking", v )

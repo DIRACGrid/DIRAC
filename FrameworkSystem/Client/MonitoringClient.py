@@ -10,6 +10,24 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time, ExitCallback, Network, ThreadScheduler
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
+class MonitoringClientActivityNotDefined( Exception ):
+  def __init__( self, message ):
+    self.message = str(message)
+  def __str__( self ):
+    return self.message
+
+class MonitoringClientActivityValueTypeError( Exception ):
+  def __init__( self, message ):
+    self.message = message 
+  def __str__( self ):
+    return self.message
+
+class MonitoringClientUnknownParameter( Exception ):
+  def __init__( self, message ):
+    self.message = message 
+  def __str__( self ):
+    return self.message
+    
 class MonitoringFlusher:
   """
   This class flushes all monitoring clients registered
@@ -76,7 +94,8 @@ class MonitoringClient:
     elif name in ( 'cycles', 'queries' ):
       self.__compCommitExtraDict[ name ] = str( value )
     else:
-      raise Exception( "Unknown parameter %s" % name )
+      raise MonitoringClientUnknownParameter( "Unknown parameter %s" % name )
+      #raise Exception( "Unknown parameter %s" % name )
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
@@ -186,9 +205,11 @@ class MonitoringClient:
     if not self.__enabled:
       return
     if name not in self.activitiesDefinitions:
-      raise Exception( "You must register activity %s before adding marks to it" % name )
+      raise MonitoringClientActivityNotDefined( "You must register activity %s before adding marks to it" % name )
+      #raise Exception( "You must register activity %s before adding marks to it" % name )
     if type( value ) not in self.__validMonitoringValues:
-      raise Exception( "Value %s is not valid" % value )
+      raise MonitoringClientActivityValueTypeError( "Activity '%s' value's type (%s) is not valid" % ( name, type(value) ) )
+      #raise Exception( "Value's type %s is not valid" % value )
     self.activitiesLock.acquire()
     try:
       self.logger.debug( "Adding mark to %s" % name )

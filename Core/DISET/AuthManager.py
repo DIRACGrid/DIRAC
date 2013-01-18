@@ -2,7 +2,6 @@
 __RCSID__ = "$Id$"
 
 import types
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import CS
@@ -10,6 +9,9 @@ from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import List
 
 class AuthManager:
+  """
+    Handle Service Authorization
+  """
 
   __authLogger = gLogger.getSubLogger( "Authorization" )
   KW_HOSTS_GROUP = 'hosts'
@@ -86,7 +88,10 @@ class AuthManager:
     #Get the username
     if self.KW_DN in credDict and credDict[ self.KW_DN ]:
       if not self.KW_GROUP in credDict:
-        credDict[ self.KW_GROUP ] = CS.getDefaultUserGroup()
+        result = CS.findDefaultGroupForDN( credDict[ self.KW_DN ] )
+        if not result['OK']:
+          return False
+        credDict[ self.KW_GROUP ] = result['Value']
       if credDict[ self.KW_GROUP ] == self.KW_HOSTS_GROUP:
       #For host
         if not self.getHostNickName( credDict ):
@@ -112,7 +117,8 @@ class AuthManager:
     if "authenticated" in lowerCaseProperties:
       return True
     if not self.matchProperties( credDict, requiredProperties ):
-      self.__authLogger.warn( "Client is not authorized\nValid properties: %s\Client: %s" % ( requiredProperties, credDict ) )
+      self.__authLogger.warn( "Client is not authorized\nValid properties: %s\nClient: %s" %
+                               ( requiredProperties, credDict ) )
       return False
     return True
 
@@ -202,7 +208,10 @@ class AuthManager:
     if not self.KW_DN in credDict:
       return True
     if not self.KW_GROUP in credDict:
-      credDict[ self.KW_GROUP ] = CS.getDefaultUserGroup()
+      result = CS.findDefaultGroupForDN( credDict[ self.KW_DN ] )
+      if not result['OK']:
+        return False
+      credDict[ self.KW_GROUP ] = result['Value']
     credDict[ self.KW_PROPERTIES ] = CS.getPropertiesForGroup( credDict[ self.KW_GROUP ], [] )
     usersInGroup = CS.getUsersInGroup( credDict[ self.KW_GROUP ], [] )
     if not usersInGroup:

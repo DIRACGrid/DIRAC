@@ -1,5 +1,4 @@
 # $HeadURL$
-__RCSID__ = "$Id$"
 """
 SystemLoggingHandler is the implementation of the Logging service
     in the DISET framework
@@ -9,43 +8,55 @@ SystemLoggingHandler is the implementation of the Logging service
     addMessages()
 
 """
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Utilities import Time
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.FrameworkSystem.private.logging.Message import tupleToMessage
-from DIRAC.FrameworkSystem.DB.SystemLoggingDB import SystemLoggingDB
+__RCSID__ = "$Id$"
+
+from types import ListType, StringTypes, StringTypes
+
+from DIRAC                                            import S_OK, S_ERROR, gLogger
+from DIRAC.Core.DISET.RequestHandler                  import RequestHandler
+from DIRAC.FrameworkSystem.private.logging.Message    import tupleToMessage
+from DIRAC.FrameworkSystem.DB.SystemLoggingDB         import SystemLoggingDB
+
+# This is a global instance of the SystemLoggingDB class
+gLogDB = False
 
 def initializeSystemLoggingHandler( serviceInfo ):
+  """ Check that we can connect to the DB and that the tables are properly created or updated
+  """
+  global gLogDB
+  gLogDB = SystemLoggingDB()
+  res = gLogDB._connect()
+  if not res['OK']:
+    return res
+  res = gLogDB._checkTable()
+  if not res['OK'] and not res['Message'] == 'The requested table already exist':
+    return res
 
-  global LogDB
-  LogDB = SystemLoggingDB()
   return S_OK()
 
-
 class SystemLoggingHandler( RequestHandler ):
+  """ This is server
+  """
 
   def __addMessage( self, messageObject, site, nodeFQDN ):
     """  This is the function that actually adds the Message to 
          the log Database
     """
-    Credentials = self.getRemoteCredentials()
-    if Credentials.has_key('DN'):
-      userDN = Credentials['DN']
+    credentials = self.getRemoteCredentials()
+    if credentials.has_key( 'DN' ):
+      userDN = credentials['DN']
     else:
       userDN = 'unknown'
-    if Credentials.has_key('group'):
-      userGroup = Credentials['group']
+    if credentials.has_key( 'group' ):
+      userGroup = credentials['group']
     else:
       userGroup = 'unknown'
-      
+
     remoteAddress = self.getRemoteAddress()[0]
-    return LogDB._insertMessageIntoSystemLoggingDB( messageObject, site,
-                                                    nodeFQDN, userDN,
-                                                    userGroup, remoteAddress )
+    return gLogDB.insertMessage( messageObject, site, nodeFQDN, userDN, userGroup, remoteAddress )
 
-        
-  types_addMessages = []
 
+  types_addMessages = [ ListType, StringTypes, StringTypes ]
   #A normal exported function (begins with export_)
   def export_addMessages( self, messagesList, site, nodeFQDN ):
     """ This is the interface to the service
@@ -57,15 +68,10 @@ class SystemLoggingHandler( RequestHandler ):
     """
     for messageTuple in messagesList:
       messageObject = tupleToMessage( messageTuple )
-      try:
-        result = self.__addMessage( messageObject, site, nodeFQDN )
-        if not result['OK']:
-          gLogger.error('The Log Message could not be inserted into the DB',
-                        'because: "%s"' % result['Message'])
-      except Exception, v:
-        errorString = 'Message was not added because of exception: '
-        exceptionString = str(v)
-        gLogger.exception( errorString ,exceptionString )
-        return S_ERROR( "%s %s" % ( errorString, exceptionString ) )
+      result = self.__addMessage( messageObject, site, nodeFQDN )
+      if not result['OK']:
+        gLogger.error( 'The Log Message could not be inserted into the DB',
+                       'because: "%s"' % result['Message'] )
+        return S_ERROR( result['Message'] )
     return S_OK()
 

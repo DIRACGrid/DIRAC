@@ -17,7 +17,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 ########################################################################
 class DB( MySQL ):
 
-  def __init__( self, dbname, fullname, maxQueueSize ):
+  def __init__( self, dbname, fullname, maxQueueSize, debug = False ):
 
     self.database_name = dbname
     self.fullname = fullname
@@ -28,8 +28,7 @@ class DB( MySQL ):
     self.dbHost = ''
     result = gConfig.getOption( self.cs_path + '/Host' )
     if not result['OK']:
-      self.log.fatal( 'Failed to get the configuration parameters: Host' )
-      return
+      raise RuntimeError( 'Failed to get the configuration parameters: Host' )
     self.dbHost = result['Value']
     # Check if the host is the local one and then set it to 'localhost' to use
     # a socket connection
@@ -37,25 +36,24 @@ class DB( MySQL ):
       localHostName = socket.getfqdn()
       if localHostName == self.dbHost:
         self.dbHost = 'localhost'
-        
+
     self.dbPort = 3306
     result = gConfig.getOption( self.cs_path + '/Port' )
     if not result['OK']:
       # No individual port number found, try at the common place
       result = gConfig.getOption( '/Systems/Databases/Port' )
       if result['OK']:
-        self.dbPort = int(result['Value'])
+        self.dbPort = int( result['Value'] )
     else:
-      self.dbPort = int(result['Value'])
-        
+      self.dbPort = int( result['Value'] )
+
     self.dbUser = ''
     result = gConfig.getOption( self.cs_path + '/User' )
     if not result['OK']:
       # No individual user name found, try at the common place
       result = gConfig.getOption( '/Systems/Databases/User' )
       if not result['OK']:
-        self.log.fatal( 'Failed to get the configuration parameters: User' )
-        return
+        raise RuntimeError( 'Failed to get the configuration parameters: User' )
     self.dbUser = result['Value']
     self.dbPass = ''
     result = gConfig.getOption( self.cs_path + '/Password' )
@@ -63,14 +61,12 @@ class DB( MySQL ):
       # No individual password found, try at the common place
       result = gConfig.getOption( '/Systems/Databases/Password' )
       if not result['OK']:
-        self.log.fatal( 'Failed to get the configuration parameters: Password' )
-        return
+        raise RuntimeError( 'Failed to get the configuration parameters: Password' )
     self.dbPass = result['Value']
     self.dbName = ''
     result = gConfig.getOption( self.cs_path + '/DBName' )
     if not result['OK']:
-      self.log.fatal( 'Failed to get the configuration parameters: DBName' )
-      return
+      raise RuntimeError( 'Failed to get the configuration parameters: DBName' )
     self.dbName = result['Value']
     self.maxQueueSize = maxQueueSize
     result = gConfig.getOption( self.cs_path + '/MaxQueueSize' )
@@ -78,112 +74,21 @@ class DB( MySQL ):
       self.maxQueueSize = int( result['Value'] )
 
     MySQL.__init__( self, self.dbHost, self.dbUser, self.dbPass,
-                   self.dbName, self.dbPort, maxQueueSize = maxQueueSize )
+                   self.dbName, self.dbPort, maxQueueSize = maxQueueSize, debug = debug )
 
     if not self._connected:
-      err = 'Can not connect to DB, exiting...'
-      self.log.fatal( err )
-      sys.exit( err )
+      raise RuntimeError( 'Can not connect to DB %s, exiting...' % self.dbName )
 
 
     self.log.info( "==================================================" )
     #self.log.info("SystemInstance: "+self.system)
     self.log.info( "User:           " + self.dbUser )
     self.log.info( "Host:           " + self.dbHost )
-    self.log.info( "Port:           " + str(self.dbPort) )
+    self.log.info( "Port:           " + str( self.dbPort ) )
     #self.log.info("Password:       "+self.dbPass)
     self.log.info( "DBName:         " + self.dbName )
-    self.log.info( "MaxQueue:       " + str(self.maxQueueSize) )
+    self.log.info( "MaxQueue:       " + str( self.maxQueueSize ) )
     self.log.info( "==================================================" )
-
-########################################################################################
-#
-#  Utility functions
-#
-########################################################################################
-  def buildCondition( self, condDict = None, older = None, newer = None,
-                      timeStamp = None, orderAttribute = None, limit = False ):
-    """ Build SQL condition statement from provided condDict and other extra check on
-        a specified time stamp.
-        The conditions dictionary specifies for each attribute one or a List of possible
-        values
-    """
-    condition = ''
-    conjunction = "WHERE"
-
-    if condDict != None:
-      for attrName, attrValue in condDict.items():
-        if type( attrValue ) == types.ListType:
-          multiValue = ','.join( ['"' + str( x ).strip() + '"' for x in attrValue] )
-          condition = ' %s %s %s in (%s)' % ( condition,
-                                              conjunction,
-                                              str( attrName ),
-                                              multiValue )
-        else:
-          condition = ' %s %s %s=\'%s\'' % ( condition,
-                                             conjunction,
-                                             str( attrName ),
-                                             str( attrValue ) )
-        conjunction = "AND"
-
-    if timeStamp:
-      if older:
-        condition = ' %s %s %s < \'%s\'' % ( condition,
-                                             conjunction,
-                                             timeStamp,
-                                             str( older ) )
-        conjunction = "AND"
-
-      if newer:
-        condition = ' %s %s %s >= \'%s\'' % ( condition,
-                                               conjunction,
-                                               timeStamp,
-                                               str( newer ) )
-
-    if type( orderAttribute ) in types.StringTypes:
-      orderFields = orderAttribute.split( ':' )
-      condition = "%s ORDER BY %s" % ( condition, ' '.join( orderFields ) )
-
-    if limit:
-      condition = "%s LIMIT %d" % ( condition, limit )
-
-    return condition
-
-#########################################################################################
-  def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False ):
-    """ Count the number of records on each distinct combination of AttrList, selected
-        with condition defined by condDict and time stamps
-    """
-
-    cond = self.buildCondition( condDict, older, newer, timeStamp )
-    attrNames = ','.join( [ str( x ) for x in attrList ] )
-    # attrNames = ','.join( map( lambda x: str( x ), attrList ) )
-    cmd = 'SELECT %s,COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
-    result = self._query( cmd , connection )
-    if not result['OK']:
-      return result
-
-    resultList = []
-    for raw in result['Value']:
-      attrDict = {}
-      for i in range( len( attrList ) ):
-        attrDict[attrList[i]] = raw[i]
-      item = ( attrDict, raw[len( attrList )] )
-      resultList.append( item )
-    return S_OK( resultList )
-
-#############################################################################
-  def getDistinctAttributeValues( self, table, attribute, condDict = None, older = None,
-                                  newer = None, timeStamp = None, connection = False ):
-    """ Get distinct values of a table attribute under specified conditions
-    """
-    cond = self.buildCondition( condDict, older = older, newer = newer, timeStamp = timeStamp )
-    cmd = 'SELECT  DISTINCT(%s) FROM %s %s ORDER BY %s' % ( attribute, table, cond, attribute )
-    result = self._query( cmd, connection )
-    if not result['OK']:
-      return result
-    attr_list = [ x[0] for x in result['Value'] ]
-    return S_OK( attr_list )
 
 #############################################################################
   def getCSOption( self, optionName, defaultValue = None ):

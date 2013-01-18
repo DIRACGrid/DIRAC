@@ -466,25 +466,25 @@ class UserProfileDB( DB ):
     finally:
       connObj.close()
 
-  def __profilesCondGenerator( self, value, type, initialValue = False ):
+  def __profilesCondGenerator( self, value, varType, initialValue = False ):
     if type( value ) in types.StringTypes:
       value = [ value ]
     ids = []
     if initialValue:
       ids.append( initialValue )
     for val in value:
-      if type == 'user':
+      if varType == 'user':
         result = self.__getUserId( val, insertIfMissing = False )
-      elif type == 'group':
+      elif varType == 'group':
         result = self.__getGroupId( val, insertIfMissing = False )
       else:
         result = self.__getVOId( val, insertIfMissing = False )
       if not result[ 'OK' ]:
           continue
       ids.append( result[ 'Value' ] )
-    if type == 'user':
+    if varType == 'user':
       fieldName = 'UserId'
-    elif type == 'group':
+    elif varType == 'group':
       fieldName = 'GroupId'
     else:
       fieldName = 'VOId'
@@ -501,8 +501,10 @@ class UserProfileDB( DB ):
                 "`up_VOs`.Id = `up_ProfilesData`.VOId",
                 self.__webProfileReadAccessDataCond( userIds, userIds, sqlProfileName ) ]
     if filterDict:
+      fD = {}
       for k in filterDict:
-        filterDict[ k.lower() ] = filterDict[ k ]
+        fD[ k.lower() ] = filterDict[ k ]
+      filterDict = fD
       for k in ( 'user', 'group', 'vo' ):
         if k in filterDict:
           sqlCond.append( self.__profilesCondGenerator( filterDict[ k ], k ) )

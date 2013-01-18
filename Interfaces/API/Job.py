@@ -1,8 +1,3 @@
-########################################################################
-# $HeadURL$
-# File :    Job.py
-# Author :  Stuart Paterson
-########################################################################
 """
    Job Base Class
 
@@ -29,18 +24,16 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-from DIRAC.Core.Base import Script
-Script.initialize()
-
 __RCSID__ = "$Id$"
 
-import re, os, types
+import re, os, types, urllib
 
-from DIRAC.Core.Workflow.Parameter                            import *
-from DIRAC.Core.Workflow.Module                               import *
-from DIRAC.Core.Workflow.Step                                 import *
-from DIRAC.Core.Workflow.Workflow                             import *
-from DIRAC.Core.Workflow.WorkflowReader                       import *
+from DIRAC                                                    import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Workflow.Parameter                            import Parameter
+from DIRAC.Core.Workflow.Module                               import ModuleDefinition
+from DIRAC.Core.Workflow.Step                                 import StepDefinition
+from DIRAC.Core.Workflow.Workflow                             import Workflow
+from DIRAC.Core.Base.API                                      import API
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight                import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config                  import gConfig
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
@@ -48,19 +41,22 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGro
 from DIRAC.Core.Utilities.Subprocess                          import shellCall
 from DIRAC.Core.Utilities.List                                import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
-from DIRAC                                                    import gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 
-class Job:
+class Job( API ):
+  """ DIRAC jobs
+  """
 
   #############################################################################
 
   def __init__( self, script = None, stdout = 'std.out', stderr = 'std.err' ):
     """Instantiates the Workflow object and some default parameters.
     """
-    self.log = gLogger
-    self.section = COMPONENT_NAME
+
+    super( Job, self ).__init__()
+
     self.dbg = False
     if gConfig.getValue( self.section + '/LogLevel', 'DEBUG' ) == 'DEBUG':
       self.dbg = True
@@ -102,9 +98,6 @@ class Job:
       self.__setJobDefaults()
     else:
       self.workflow = Workflow( script )
-
-    #Global error dictionary
-    self.errorDict = {}
 
   #############################################################################
   def setExecutable( self, executable, arguments = '', logFile = '' ):
@@ -243,7 +236,7 @@ class Job:
     """Helper function.
 
        Specify input sandbox files to used as parameters in the Parametric jobs. The possibilities are identical to the setInputSandbox.
-       
+
 
        Example usage:
 
@@ -259,15 +252,13 @@ class Job:
         if not fileName.lower().count( "lfn:" ):
           return self._reportError( 'All files should be LFNs', **kwargs )
       resolvedFiles = self._resolveInputSandbox( files )
-      fileList = ";".join( resolvedFiles )
-      self.parametric['InputSandbox'] = fileList
+      self.parametric['InputSandbox'] = resolvedFiles
       #self.sandboxFiles=resolvedFiles
     elif type( files ) == type( " " ):
       if not files.lower().count( "lfn:" ):
         return self._reportError( 'All files should be LFNs', **kwargs )
       resolvedFiles = self._resolveInputSandbox( [files] )
-      fileList = ";".join( resolvedFiles )
-      self.parametric['InputSandbox'] = fileList
+      self.parametric['InputSandbox'] = resolvedFiles
       #self.sandboxFiles = [files]
     else:
       return self._reportError( 'Expected file string or list of files for input sandbox contents', **kwargs )
@@ -350,16 +341,35 @@ class Job:
     """
     if type( lfns ) == list and len( lfns ):
       for i in xrange( len( lfns ) ):
-        lfns[i] = lfns[i].replace( 'LFN:', '' )
-      inputData = map( lambda x: 'LFN:' + x, lfns )
-      inputDataStr = ';'.join( inputData )
-      self.parametric['InputData'] = inputDataStr
+        if type( lfns[i] ) == list and len( lfns[i] ):
+          for k in xrange( len( lfns[i] ) ):
+            lfns[i][k] = 'LFN:' + lfns[i][k].replace( 'LFN:', '' )
+        else:
+          lfns[i] = 'LFN:' + lfns[i].replace( 'LFN:', '' )
+      self.parametric['InputData'] = lfns
     elif type( lfns ) == type( ' ' ):  #single LFN
       self.parametric['InputData'] = lfns
     else:
       kwargs = {'lfns':lfns}
       return self._reportError( 'Expected lfn string or list of lfns for parametric input data', **kwargs )
 
+    return S_OK()
+
+  #############################################################################  
+  def setGenericParametricInput( self, inputlist ):
+    """ Helper function
+
+       Define a generic parametric job with this function. Should not be used when
+       the ParametricInputData of ParametricInputSandbox are used.
+
+       @param inputlist: Input list of parameters to build the parametric job
+       @type inputlist: list
+
+    """
+    kwargs = {'inputlist':inputlist}
+    if not type( inputlist ) == type( [] ):
+      return self._reportError( 'Expected list for parameters', **kwargs )
+    self.parametric['GenericParameters'] = inputlist
     return S_OK()
 
   #############################################################################
@@ -370,7 +380,7 @@ class Job:
        global settings.
 
        Possible values for policy are 'Download' or 'Protocol' (case-insensitive). This
-       requires that the module locations are defined for the VO in the CS. 
+       requires that the module locations are defined for the VO in the CS.
 
        Example usage:
 
@@ -379,7 +389,7 @@ class Job:
 
     """
     kwargs = {'policy':policy, 'dataScheduling':dataScheduling}
-    csSection = '/Operations/InputDataPolicy'
+    csSection = 'InputDataPolicy'
     possible = ['Download', 'Protocol']
     finalPolicy = ''
     for value in possible:
@@ -390,9 +400,9 @@ class Job:
       return self._reportError( 'Expected one of %s for input data policy' % ( ', '.join( possible ) ),
                                 __name__, **kwargs )
 
-    jobPolicy = gConfig.getValue( '%s/%s' % ( csSection, finalPolicy ), '' )
+    jobPolicy = Operations().getValue( '%s/%s' % ( csSection, finalPolicy ), '' )
     if not jobPolicy:
-      return self._reportError( 'Could not get value for CS option %s/%s' % ( csSection, finalPolicy ),
+      return self._reportError( 'Could not get value for Operations option %s/%s' % ( csSection, finalPolicy ),
                                 __name__, **kwargs )
 
     description = 'User specified input data policy'
@@ -586,9 +596,9 @@ class Job:
 
   #############################################################################
   def setDestinationCE( self, ceName ):
-    """ Developer function. 
-        
-        Allows to direct a job to a particular Grid CE.         
+    """ Developer function.
+
+        Allows to direct a job to a particular Grid CE.
     """
     kwargs = {'ceName':ceName}
     diracSite = getSiteForCE( ceName )
@@ -669,7 +679,7 @@ class Job:
 
   #############################################################################
   def _setSoftwareTags( self, tags ):
-    """Developer function. 
+    """Developer function.
 
        Choose any software tags if desired.  These are not compulsory but will ensure jobs only
        arrive at an LCG site where the software is preinstalled.  Without the tags, missing software is
@@ -799,16 +809,17 @@ class Job:
     if not type( environmentDict ) == type( {} ):
       return self._reportError( 'Expected dictionary of environment variables', **kwargs )
 
-    environment = []
-    for var, val in environmentDict.items():
-      try:
-        environment.append( '='.join( [str( var ), str( val )] ) )
-      except Exception:
-        return self._reportError( 'Expected string for environment variable key value pairs', **kwargs )
+    if environmentDict:
+      environment = []
+      for var, val in environmentDict.items():
+        try:
+          environment.append( '='.join( [str( var ), urllib.quote( str( val ) )] ) )
+        except Exception:
+          return self._reportError( 'Expected string for environment variable key value pairs', **kwargs )
 
-    envStr = ';'.join( environment )
-    description = 'Env vars specified by user'
-    self._addParameter( self.workflow, 'ExecutionEnvironment', 'JDL', envStr, description )
+      envStr = ';'.join( environment )
+      description = 'Env vars specified by user'
+      self._addParameter( self.workflow, 'ExecutionEnvironment', 'JDL', envStr, description )
     return S_OK()
 
   #############################################################################
@@ -858,7 +869,7 @@ class Job:
     self.log.info( '--------------------------------------' )
     #print self.workflow.parameters
     #print params.getParametersNames()
-    for name, props in paramsDict.items():
+    for name, _props in paramsDict.items():
       ptype = paramsDict[name]['type']
       value = paramsDict[name]['value']
       if showType:
@@ -887,10 +898,12 @@ class Job:
     self._addParameter( self.workflow, 'InputData', 'JDL', '', 'Default null input data value' )
     self._addParameter( self.workflow, 'LogLevel', 'JDL', self.logLevel, 'Job Logging Level' )
     #Those 2 below are need for on-site resolution
-    self._addParameter( self.workflow, 'ParametricInputData', 'JDL', '',
+    self._addParameter( self.workflow, 'ParametricInputData', 'string', '',
                         'Default null parametric input data value' )
-    self._addParameter( self.workflow, 'ParametricInputSandbox', 'JDL', '',
+    self._addParameter( self.workflow, 'ParametricInputSandbox', 'string', '',
                         'Default null parametric input sandbox value' )
+    self._addParameter( self.workflow, 'ParametricParameters', 'string', '',
+                        'Default null parametric input parameters value' )
 
   #############################################################################
   def _addParameter( self, wObject, name, ptype, value, description, io = 'input' ):
@@ -972,6 +985,7 @@ class Job:
     return resolvedIS
 
   #############################################################################
+  @classmethod
   def __getScriptStep( self, name = 'Script' ):
     """Internal function. This method controls the definition for a script module.
     """
@@ -1095,34 +1109,39 @@ class Job:
         paramsDict['InputData']['value'] = extraFiles
         paramsDict['InputData']['type'] = 'JDL'
 
-    ###Here handle the Parametric values
+    # Handle here the Parametric values
     if self.parametric:
-      if self.parametric.has_key( 'InputData' ):
-        if paramsDict.has_key( 'InputData' ):
-          if paramsDict['InputData']['value']:
-            currentFiles = paramsDict['InputData']['value'] + ";%s"
-            paramsDict['InputData']['value'] = currentFiles
-          else:
-            paramsDict['InputData'] = {}
-            paramsDict['InputData']['value'] = "%s"
-            paramsDict['InputData']['type'] = 'JDL'
-        self.parametric['files'] = self.parametric['InputData']
-        arguments.append( ' -p ParametricInputData=%s' )
-      elif self.parametric.has_key( 'InputSandbox' ):
-        if paramsDict.has_key( 'InputSandbox' ):
-          currentFiles = paramsDict['InputSandbox']['value'] + ";%s"
-          paramsDict['InputSandbox']['value'] = currentFiles
-        else:
-          paramsDict['InputSandbox'] = {}
-          paramsDict['InputSandbox']['value'] = '%s'
-          paramsDict['InputSandbox']['type'] = 'JDL'
-        self.parametric['files'] = self.parametric['InputSandbox']
-        arguments.append( ' -p ParametricInputSandbox=%s' )
+      for pType in ['InputData', 'InputSandbox']:
+        if self.parametric.has_key( pType ):
+          if paramsDict.has_key( pType ) and paramsDict[pType]['value']:
+            pData = self.parametric[pType]
+            # List of lists case
+            currentFiles = paramsDict[pType]['value'].split( ';' )
+            tmpList = []
+            if type( pData[0] ) == list:
+              for pElement in pData:
+                tmpList.append( currentFiles + pElement )
+            else:
+              for pElement in pData:
+                tmpList.append( currentFiles + [pElement] )
+            self.parametric[pType] = tmpList
+
+          paramsDict[pType] = {}
+          paramsDict[pType]['value'] = "%s"
+          paramsDict[pType]['type'] = 'JDL'
+          self.parametric['files'] = self.parametric[pType]
+          arguments.append( ' -p Parametric' + pType + '=%s' )
+          break
+
       if self.parametric.has_key( 'files' ):
         paramsDict['Parameters'] = {}
         paramsDict['Parameters']['value'] = self.parametric['files']
         paramsDict['Parameters']['type'] = 'JDL'
-
+      if self.parametric.has_key( 'GenericParameters' ):
+        paramsDict['Parameters'] = {}
+        paramsDict['Parameters']['value'] = self.parametric['GenericParameters']
+        paramsDict['Parameters']['type'] = 'JDL'
+        arguments.append( ' -p ParametricParameters=%s' )
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
@@ -1136,7 +1155,14 @@ class Job:
         requirements = True
 
       if re.search( '^JDL', ptype ):
-        if not re.search( ';', value ) or name == 'GridRequirements': #not a nice fix...
+        if type( value ) == list:
+          if type( value[0] ) == list:
+            classadJob.insertAttributeVectorStringList( name, value )
+          else:
+            classadJob.insertAttributeVectorString( name, value )
+        elif value == "%s":
+          classadJob.insertAttributeInt( name, value )
+        elif not re.search( ';', value ) or name == 'GridRequirements': #not a nice fix...
           classadJob.insertAttributeString( name, value )
         else:
           classadJob.insertAttributeVectorString( name, value.split( ';' ) )
@@ -1185,37 +1211,5 @@ class Job:
     """
     self._addParameter( self.workflow, name, 'JDL', value, 'Optional JDL parameter added' )
     return self.workflow.setValue( name, value )
-
-  #############################################################################
-  def _getErrors( self ):
-    """Returns the dictionary of stored errors that will prevent submission or
-       execution. 
-    """
-    return self.errorDict
-
-  #############################################################################
-  def _reportError( self, message, name = '', **kwargs ):
-    """Internal Function. Gets caller method name and arguments, formats the 
-       information and adds an error to the global error dictionary to be 
-       returned to the user. 
-    """
-    className = name
-    if not name:
-      className = __name__
-    methodName = sys._getframe( 1 ).f_code.co_name
-    arguments = []
-    for key in kwargs:
-      if kwargs[key]:
-        arguments.append( '%s = %s ( %s )' % ( key, kwargs[key], type( kwargs[key] ) ) )
-    finalReport = 'Problem with %s.%s() call:\nArguments: %s\nMessage: %s\n' % ( className, methodName,
-                                                                                 ', '.join( arguments ), message )
-    if self.errorDict.has_key( methodName ):
-      tmp = self.errorDict[methodName]
-      tmp.append( finalReport )
-      self.errorDict[methodName] = tmp
-    else:
-      self.errorDict[methodName] = [finalReport]
-    self.log.verbose( finalReport )
-    return S_ERROR( finalReport )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

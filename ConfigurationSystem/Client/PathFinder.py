@@ -10,7 +10,7 @@ def getDIRACSetup():
 def divideFullName( entityName ):
   fields = [ field.strip() for field in entityName.split( "/" ) ]
   if len( fields ) < 2:
-    raise Exception( "Service (%s) name must be with the form system/service" % entityName )
+    raise RuntimeError( "Service (%s) name must be with the form system/service" % entityName )
   return tuple( fields )
 
 def getSystemInstance( systemName, setup = False ):
@@ -21,7 +21,7 @@ def getSystemInstance( systemName, setup = False ):
   if instance:
     return instance
   else:
-    raise Exception( "Option %s is not defined" % optionPath )
+    raise RuntimeError( "Option %s is not defined" % optionPath )
 
 def getSystemSection( serviceName, serviceTuple = False, instance = False, setup = False ):
   if not serviceTuple:
@@ -42,6 +42,12 @@ def getAgentSection( agentName, agentTuple = False, setup = False ):
   systemSection = getSystemSection( agentName, agentTuple, setup = setup )
   return "%s/Agents/%s" % ( systemSection, agentTuple[1] )
 
+def getExecutorSection( agentName, agentTuple = False, setup = False ):
+  if not agentTuple:
+    agentTuple = divideFullName( agentName )
+  systemSection = getSystemSection( agentName, agentTuple, setup = setup )
+  return "%s/Executors/%s" % ( systemSection, agentTuple[1] )
+
 def getDatabaseSection( dbName, dbTuple = False, setup = False ):
   if not dbTuple:
     dbTuple = divideFullName( dbName )
@@ -56,7 +62,12 @@ def getServiceURL( serviceName, serviceTuple = False, setup = False ):
   if not serviceTuple:
     serviceTuple = divideFullName( serviceName )
   systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
-  return gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
+  url = gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
+  if not url:
+    return ""
+  if len( url.split( "/" ) ) < 5:
+    url = "%s/%s" % ( url, serviceName )
+  return url
 
 def getGatewayURLs( serviceName = "" ):
   siteName = gConfigurationData.extractOptionFromCFG( "/LocalSite/Site" )
@@ -66,5 +77,5 @@ def getGatewayURLs( serviceName = "" ):
   if not gatewayList:
     return False
   if serviceName:
-    gatewayList = [ "%s/%s" % ( gw, serviceName ) for gw in List.fromChar( gatewayList, "," ) ]
+    gatewayList = [ "%s/%s" % ( "/".join( gw.split( "/" )[:3] ), serviceName ) for gw in List.fromChar( gatewayList, "," ) ]
   return List.randomize( gatewayList )

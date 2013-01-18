@@ -12,16 +12,16 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection, getExecutorSection
 
 class LocalConfiguration:
   """
     Main class to interface with Configuration of a running DIRAC Component.
 
-    For most cases this is handled via 
+    For most cases this is handled via
       - DIRAC.Core.Base.Script class for scripts
       - dirac-agent for agents
-      - dirac-service for services 
+      - dirac-service for services
   """
 
   def __init__( self, defaultSectionPath = "" ):
@@ -141,7 +141,7 @@ class LocalConfiguration:
       for optionPath in self.mandatoryEntryList:
         optionPath = self.__getAbsolutePath( optionPath )
         if not gConfigurationData.extractOptionFromCFG( optionPath ):
-          gLogger.fatal( "Missing mandatory option in the configuration", optionPath )
+          gLogger.fatal( "Missing mandatory local configuration option", optionPath )
           isMandatoryMissing = True
       if isMandatoryMissing:
         return S_ERROR()
@@ -191,7 +191,7 @@ class LocalConfiguration:
     This is the magic method that reads the command line and processes it
     It is used by the Script Base class and the dirac-service and dirac-agent scripts
     Before being called:
-     - any additional switches to be processed 
+     - any additional switches to be processed
      - mandatory and default configuration configuration options
     must be defined.
     """
@@ -291,6 +291,10 @@ class LocalConfiguration:
         self.__setDefaultSection( getServiceSection( self.componentName ) )
       elif self.componentType == "agent":
         self.__setDefaultSection( getAgentSection( self.componentName ) )
+      elif self.componentType == "executor":
+        self.__setDefaultSection( getExecutorSection( self.componentName ) )
+      elif self.componentType == "web":
+        self.__setDefaultSection( "/%s" % self.componentName )
       elif self.componentType == "script":
         if self.componentName and self.componentName[0] == "/":
           self.__setDefaultSection( self.componentName )
@@ -376,6 +380,20 @@ class LocalConfiguration:
     """
     self.componentName = agentName
     self.componentType = "agent"
+
+  def setConfigurationForExecutor( self, executorName ):
+    """
+    Declare this is a DIRAC agent
+    """
+    self.componentName = executorName
+    self.componentType = "executor"
+
+  def setConfigurationForWeb( self, webName ):
+    """
+    Declare this is a DIRAC agent
+    """
+    self.componentName = webName
+    self.componentType = "web"
 
   def setConfigurationForScript( self, scriptName ):
     """

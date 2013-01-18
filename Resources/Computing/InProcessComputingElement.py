@@ -64,6 +64,12 @@ class InProcessComputingElement( ComputingElement ):
       payloadEnv[ 'X509_USER_PROXY' ] = payloadProxy
 
     self.log.verbose( 'Starting process for monitoring payload proxy' )
+    
+    # Do not renew previous payload proxy, if any
+    taskID = gThreadScheduler.getNextTaskId()
+    if taskID:
+      gThreadScheduler.removeTask( taskID )
+      
     gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy, taskArgs = ( pilotProxy, payloadProxy ), executions = 0, elapsedTime = 0 )
 
     if not os.access( executableFile, 5 ):
@@ -78,10 +84,19 @@ class InProcessComputingElement( ComputingElement ):
 
     if not result['OK']:
       self.log.error( 'Fail to run InProcess', result['Message'] )
-    elif result['Value'][0] < 0:
+    elif result['Value'][0] > 128:
+      # negative exit values are returned as 256 - exit
       self.log.error( 'InProcess Job Execution Failed' )
-      self.log.info( 'Exit status:', result['Value'][0] )
-      return S_ERROR( 'InProcess Job Execution Failed' )
+      self.log.info( 'Exit status:', result['Value'][0] - 256 )
+      if result['Value'][0] - 256 == -2:
+        error = 'Error in the initialization of the DIRAC JobWrapper'
+      elif result['Value'][0] - 256 == -1:
+        error = 'Error in the execution of the DIRAC JobWrapper'
+      else:
+        error = 'InProcess Job Execution Failed'
+      res = S_ERROR( error )
+      res['Value'] = result['Value'][0] - 256
+      return res
     elif result['Value'][0] > 0:
       self.log.error( 'Fail in payload execution' )
       self.log.info( 'Exit status:', result['Value'][0] )
@@ -93,7 +108,7 @@ class InProcessComputingElement( ComputingElement ):
     return ret
 
   #############################################################################
-  def getDynamicInfo( self ):
+  def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()

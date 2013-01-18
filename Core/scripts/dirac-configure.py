@@ -61,7 +61,8 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, getVO
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath
+from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 
 import sys, os
 
@@ -92,7 +93,6 @@ def setGateway( optionValue ):
 def setServer( optionValue ):
   global configurationServer
   configurationServer = optionValue
-  DIRAC.gLogger.debug( '/DIRAC/Configuration/Servers =', configurationServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/Configuration/Servers', configurationServer )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'ConfigurationServer' ), configurationServer )
   return DIRAC.S_OK()
@@ -106,8 +106,7 @@ def setAllServers( optionValue ):
 def setSetup( optionValue ):
   global setup
   setup = optionValue
-  DIRAC.gLogger.debug( '/DIRAC/Setup =', setup )
-  Script.localCfg.addDefaultEntry( '/DIRAC/Setup', setup )
+  DIRAC.gConfig.setOptionValue( '/DIRAC/Setup', setup )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'Setup' ), setup )
   return DIRAC.S_OK()
 
@@ -115,7 +114,6 @@ def setSetup( optionValue ):
 def setSiteName( optionValue ):
   global siteName
   siteName = optionValue
-  DIRAC.gLogger.debug( '/LocalSite/Site =', siteName )
   Script.localCfg.addDefaultEntry( '/LocalSite/Site', siteName )
   DIRAC.__siteName = False
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'SiteName' ), siteName )
@@ -157,7 +155,6 @@ def setUseVersionsDir( optionValue ):
 def setArchitecture( optionValue ):
   global architecture
   architecture = optionValue
-  DIRAC.gLogger.debug( '/LocalSite/Architecture =', architecture )
   Script.localCfg.addDefaultEntry( '/LocalSite/Architecture', architecture )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'Architecture' ), architecture )
   return DIRAC.S_OK()
@@ -166,7 +163,6 @@ def setArchitecture( optionValue ):
 def setLocalSE( optionValue ):
   global localSE
   localSE = optionValue
-  DIRAC.gLogger.debug( '/LocalSite/localSE =', localSE )
   Script.localCfg.addDefaultEntry( '/LocalSite/localSE', localSE )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'LocalSE' ), localSE )
   return DIRAC.S_OK()
@@ -174,7 +170,6 @@ def setLocalSE( optionValue ):
 def setVO( optionValue ):
   global vo
   vo = optionValue
-  DIRAC.gLogger.debug( '/DIRAC/VirtualOrganization =', vo )
   Script.localCfg.addDefaultEntry( '/DIRAC/VirtualOrganization', vo )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'VirtualOrganization' ), vo )
   return DIRAC.S_OK()
@@ -182,7 +177,6 @@ def setVO( optionValue ):
 def forceUpdate( optionValue ):
   global update
   update = True
-  DIRAC.gLogger.notice( 'Will update dirac.cfg' )
   return DIRAC.S_OK()
 
 Script.disableCS()
@@ -287,19 +281,38 @@ if not vo:
     setVO( newVO )
 
 DIRAC.gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
-
 DIRAC.gLogger.notice( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 
+if update:
+  DIRAC.gLogger.notice( 'Will update dirac.cfg' )
+
+if setup:
+  DIRAC.gLogger.verbose( '/DIRAC/Setup =', setup )
+if vo:
+  DIRAC.gLogger.verbose( '/DIRAC/VirtualOrganization =', vo )
+if configurationServer:
+  DIRAC.gLogger.verbose( '/DIRAC/Configuration/Servers =', configurationServer )
+
+if siteName:
+  DIRAC.gLogger.verbose( '/LocalSite/Site =', siteName )
+if architecture:
+  DIRAC.gLogger.verbose( '/LocalSite/Architecture =', architecture )
+if localSE:
+  DIRAC.gLogger.verbose( '/LocalSite/localSE =', localSE )
+
 if not useServerCert:
-  DIRAC.gLogger.debug( '/DIRAC/Security/UseServerCertificate =', 'no' )
+  DIRAC.gLogger.verbose( '/DIRAC/Security/UseServerCertificate =', 'no' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'no' )
 else:
   # will be removed later but it is necessary to initialized the CS in script mode
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
 
+host = DIRAC.gConfig.getValue( cfgInstallPath( "Host" ), "" )
+if host:
+  DIRAC.gConfig.setOptionValue( cfgPath( "DIRAC", "Hostname" ), host )
 
 if skipCAChecks:
-  DIRAC.gLogger.debug( '/DIRAC/Security/SkipCAChecks =', 'yes' )
+  DIRAC.gLogger.verbose( '/DIRAC/Security/SkipCAChecks =', 'yes' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/SkipCAChecks', 'yes' )
 else:
   # Necessary to allow initial download of CA's
@@ -362,7 +375,11 @@ if ceName or siteName:
         Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
 
       if not localSE and siteName in sites:
-        localSE = DIRAC.gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, siteName ), 'None' )
+        localSE = getSEsForSite( siteName )
+        if localSE['OK'] and localSE['Value']:
+          localSE = ','.join( localSE['Value'] )
+        else:
+          localSE = 'None'
         DIRAC.gLogger.notice( 'Setting /LocalSite/LocalSE =', localSE )
         Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
         break
@@ -374,7 +391,7 @@ if useServerCert:
   Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
 if gatewayServer:
-  DIRAC.gLogger.debug( '/DIRAC/Gateways/%s =' % DIRAC.siteName(), gatewayServer )
+  DIRAC.gLogger.verbose( '/DIRAC/Gateways/%s =' % DIRAC.siteName(), gatewayServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/Gateways/%s' % DIRAC.siteName(), gatewayServer )
 
 # Create the local dirac.cfg if it is not yet there
@@ -390,66 +407,81 @@ if not useServerCert:
   result = getProxyInfo()
   if not result['OK']:
     DIRAC.gLogger.notice( 'No user proxy available' )
-    DIRAC.gLogger.notice( 'Create one using %s and execute again with -F option' % os.path.join( DIRAC.rootPath, 'scripts', 'dirac-proxy-init' ) )
+    DIRAC.gLogger.notice( 'Create one using %s and execute again with -x option' % os.path.join( DIRAC.rootPath, 'scripts', 'dirac-proxy-init' ) )
     sys.exit( 0 )
   else:
     Script.enableCS()
 else:
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
 
 if includeAllServers:
   DIRAC.gConfig.setOptionValue( '/DIRAC/Configuration/Servers', ','.join( DIRAC.gConfig.getServersList() ) )
-  DIRAC.gLogger.debug( '/DIRAC/Configuration/Servers =', ','.join( DIRAC.gConfig.getServersList() ) )
+  DIRAC.gLogger.verbose( '/DIRAC/Configuration/Servers =', ','.join( DIRAC.gConfig.getServersList() ) )
 
 if update:
   DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
 
 
 #Do the vomsdir magic
-voName = getVO()
-if not voName:
-  sys.exit( 0 )
-result = DIRAC.gConfig.getSections( "/Registry/VOMS/Servers/%s" % voName )
-if not result[ 'OK' ]:
-  sys.exit( 0 )
-DIRAC.gLogger.notice( "Creating VOMSDIR/VOMSES files" )
-vomsDirHosts = result[ 'Value' ]
-vomsDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomsdir', voName )
-vomsesDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomses' )
-for path in ( vomsDirPath, vomsesDirPath ):
-  if not os.path.isdir( path ):
-    try:
-      os.makedirs( path )
-    except Exception, e:
-      DIRAC.gLogger.error( "Could not create directory", str( e ) )
-      sys.exit( 1 )
-vomsesLines = []
-for vomsHost in vomsDirHosts:
-  hostFilePath = os.path.join( vomsDirPath, "%s.lsc" % vomsHost )
-  try:
-    DN = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/DN" % ( voName, vomsHost ), "" )
-    CA = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/CA" % ( voName, vomsHost ), "" )
-    Port = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/Port" % ( voName, vomsHost ), 0 )
-    if not DN or not CA or not Port:
-      DIRAC.gLogger.error( 'DN = %s' % DN )
-      DIRAC.gLogger.error( 'CA = %s' % CA )
-      DIRAC.gLogger.error( 'Port = %s' % Port )
-      DIRAC.gLogger.error( 'Missing Parameter for %s' % vomsHost )
-      continue
-    fd = open( hostFilePath, "wb" )
-    fd.write( "%s\n%s\n" % ( DN, CA ) )
-    fd.close()
-    vomsesLines.append( '"%s" "%s" "%s" "%s" "%s" "24"' % ( voName, vomsHost, Port, DN, voName ) )
-    DIRAC.gLogger.notice( "Created vomsdir file %s" % hostFilePath )
-  except:
-    DIRAC.gLogger.exception( "Could not generate vomsdir file for host", vomsHost )
+# This has to be done for all VOs in the installation
 
-try:
-  vomsesFilePath = os.path.join( vomsesDirPath, voName )
-  fd = open( vomsesFilePath, "wb" )
-  fd.write( "%s\n" % "\n".join( vomsesLines ) )
-  fd.close()
-  DIRAC.gLogger.notice( "Created vomses file %s" % vomsesFilePath )
-except:
-  DIRAC.gLogger.exception( "Could not generate vomses file" )
+result = DIRAC.gConfig.getSections( "/Registry/VOMS/Servers" )
+if not result['OK']:
+  sys.exit( 0 )
+
+voList = result[ 'Value' ]
+error = ''
+for voName in voList:
+
+  result = DIRAC.gConfig.getSections( "/Registry/VOMS/Servers/%s" % voName )
+  if not result[ 'OK' ]:
+    error = 'No VOMS server define for %s' % voName
+    DIRAC.gLogger.error( error )
+    continue
+  DIRAC.gLogger.notice( "Creating VOMSDIR/VOMSES files for", voName )
+  vomsDirHosts = result[ 'Value' ]
+  vomsDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomsdir', voName )
+  vomsesDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomses' )
+  for path in ( vomsDirPath, vomsesDirPath ):
+    if not os.path.isdir( path ):
+      try:
+        os.makedirs( path )
+      except Exception, e:
+        DIRAC.gLogger.error( "Could not create directory", str( e ) )
+        sys.exit( 1 )
+  vomsesLines = []
+  for vomsHost in vomsDirHosts:
+    hostFilePath = os.path.join( vomsDirPath, "%s.lsc" % vomsHost )
+    try:
+      DN = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/DN" % ( voName, vomsHost ), "" )
+      CA = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/CA" % ( voName, vomsHost ), "" )
+      Port = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/Port" % ( voName, vomsHost ), 0 )
+      if not DN or not CA or not Port:
+        DIRAC.gLogger.error( 'DN = %s' % DN )
+        DIRAC.gLogger.error( 'CA = %s' % CA )
+        DIRAC.gLogger.error( 'Port = %s' % Port )
+        DIRAC.gLogger.error( 'Missing Parameter for %s' % vomsHost )
+        continue
+      fd = open( hostFilePath, "wb" )
+      fd.write( "%s\n%s\n" % ( DN, CA ) )
+      fd.close()
+      vomsesLines.append( '"%s" "%s" "%s" "%s" "%s" "24"' % ( voName, vomsHost, Port, DN, voName ) )
+      DIRAC.gLogger.notice( "Created vomsdir file %s" % hostFilePath )
+    except:
+      DIRAC.gLogger.exception( "Could not generate vomsdir file for host", vomsHost )
+
+  try:
+    vomsesFilePath = os.path.join( vomsesDirPath, voName )
+    fd = open( vomsesFilePath, "wb" )
+    fd.write( "%s\n" % "\n".join( vomsesLines ) )
+    fd.close()
+    DIRAC.gLogger.notice( "Created vomses file %s" % vomsesFilePath )
+  except:
+    DIRAC.gLogger.exception( "Could not generate vomses file" )
+
+if error:
+  sys.exit( 1 )
+
+sys.exit( 0 )

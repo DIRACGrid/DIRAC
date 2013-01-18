@@ -20,16 +20,15 @@
 
 __RCSID__ = "$Id$"
 
+from DIRAC.Core.Utilities                               import Time
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ConfigurationSystem.Client.Config            import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder        import getSystemInstance
-from DIRAC.Core.Utilities.Subprocess                    import shellCall
 from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
 from DIRAC                                              import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Security                                import Properties
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
 
-import os, thread, time, shutil
+import os, time
 
 class Watchdog:
 
@@ -51,6 +50,7 @@ class Watchdog:
     self.peekRetry = 5
     self.processMonitor = ProcessMonitor()
     self.checkError = ''
+    self.currentStats = {}
     self.initialized = False
     self.count = 0
 
@@ -137,7 +137,7 @@ class Watchdog:
         if exec_cycle_time < self.pollingTime:
           time.sleep( self.pollingTime - exec_cycle_time )
       return S_OK()
-    except Exception, x:
+    except Exception:
       gLogger.exception()
       return S_ERROR( 'Exception' )
 
@@ -156,9 +156,7 @@ class Watchdog:
       if self.littleTimeLeftCount == 0 and self.__timeLeft() == -1:
         self.checkError = 'Job has reached the CPU limit of the queue'
         self.log.error( self.checkError, self.timeLeft )
-        self.checkError = 'Job has reached the CPU limit of the queue'
         self.__killRunningThread()
-        self.__getUsageSummary()
         return S_OK()
       else:
         self.littleTimeLeftCount -= 1
@@ -238,7 +236,6 @@ class Watchdog:
           self.log.info( '=================END=================' )
 
       self.__killRunningThread()
-      self.__getUsageSummary()
       return S_OK()
 
     recentStdOut = 'None'
@@ -247,10 +244,8 @@ class Watchdog:
       if result['OK']:
         outputList = result['Value']
         size = len( outputList )
-        recentStdOut = 'Last %s lines of application output from Watchdog on %s [UTC]:' % ( size, time.asctime( time.gmtime() ) )
-        border = ''
-        for i in xrange( len( recentStdOut ) ):
-          border += '='
+        recentStdOut = 'Last %s lines of application output from Watchdog on %s [UTC]:' % ( size, Time.dateTime() )
+        border = '=' * len( recentStdOut )
         cpuTotal = 'Last reported CPU consumed for job is %s (h:m:s)' % ( hmsCPU )
         if self.timeLeft:
           cpuTotal += ', Batch Queue Time Left %s (s @ HS06)' % self.timeLeft
@@ -283,7 +278,7 @@ class Watchdog:
     cpuTime = '00:00:00'
     try:
       cpuTime = self.processMonitor.getCPUConsumed( self.wrapperPID )
-    except Exception, x:
+    except Exception:
       self.log.warn( 'Could not determine CPU time consumed with exception' )
       self.log.exception()
       return S_OK( cpuTime ) #just return null CPU
@@ -317,7 +312,6 @@ class Watchdog:
         self.log.info( 'Received Kill signal, stopping job via control signal' )
         self.checkError = 'Received Kill signal'
         self.__killRunningThread()
-        self.__getUsageSummary()
       else:
         self.log.info( 'The following control signal was sent but not understood by the watchdog:' )
         self.log.info( signalDict )
@@ -415,16 +409,17 @@ class Watchdog:
 
     wallClockTime = self.parameters['WallClockTime'][-1] - self.parameters['WallClockTime'][-1 - intervals ]
     try:
-      cpuTime = self.__convertCPUTime( self.parameters['CPUConsumed'][-1] )['Value'] - self.__convertCPUTime( self.parameters['CPUConsumed'][-1 - intervals ] )['Value']
+      cpuTime = self.__convertCPUTime( self.parameters['CPUConsumed'][-1] )['Value']
+      cpuTime -= self.__convertCPUTime( self.parameters['CPUConsumed'][-1 - intervals ] )['Value']
 
       ratio = ( cpuTime / wallClockTime ) * 100.
 
       self.log.info( "CPU/Wallclock ratio is %.2f%%" % ratio )
       # in case of error cpuTime might be 0, exclude this
       if wallClockTime and ratio < self.minCPUWallClockRatio:
-        if os.path.exists('DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK'):
-          self.log.info('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
-          return S_OK()        
+        if os.path.exists( 'DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK' ):
+          self.log.info( 'N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload' )
+          return S_OK()
         self.log.info( "Job is stalled!" )
         return S_ERROR( 'Watchdog identified this job as stalled' )
     except Exception, e:
@@ -481,7 +476,7 @@ class Watchdog:
       limit = self.jobCPUtime + self.jobCPUtime * ( self.jobCPUMargin / 100 )
       cpuConsumed = float( currentCPU )
       if cpuConsumed > limit:
-        self.log.info( 'Job has consumed more than the specified CPU limit with an additional %s\% margin' % ( self.jobCPUMargin ) )
+        self.log.info( 'Job has consumed more than the specified CPU limit with an additional %s%% margin' % ( self.jobCPUMargin ) )
         return S_ERROR( 'Job has exceeded maximum CPU time limit' )
       else:
         return S_OK( 'Job within CPU limit' )
@@ -615,6 +610,8 @@ class Watchdog:
       result['LocalJobID'] = os.environ['PBS_JOBID']
     if os.environ.has_key( 'QSUB_REQNAME' ):
       result['LocalJobID'] = os.environ['QSUB_REQNAME']
+    if os.environ.has_key( 'JOB_ID' ):
+      result['LocalJobID'] = os.environ['JOB_ID']
 
     self.__reportParameters( result, 'NodeInformation', True )
     self.__reportParameters( self.initialValues, 'InitialValues' )
@@ -685,9 +682,7 @@ class Watchdog:
     if self.parameters.has_key( 'LoadAverage' ):
       laList = self.parameters['LoadAverage']
       if laList:
-        la = 0.0
-        for load in laList: la += load
-        summary['LoadAverage'] = float( la ) / float( len( laList ) )
+        summary['LoadAverage'] = float( sum( laList ) ) / float( len( laList ) )
       else:
         summary['LoadAverage'] = 'Could not be estimated'
 
@@ -696,6 +691,8 @@ class Watchdog:
     summary['WallClockTime(s)'] = wallClock
 
     self.__reportParameters( summary, 'UsageSummary', True )
+    self.currentStats = summary
+
 
   #############################################################################
   def __reportParameters( self, params, title = None, report = False ):

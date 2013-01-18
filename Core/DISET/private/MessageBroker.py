@@ -134,7 +134,10 @@ class MessageBroker:
           if len( inList ) == 0:
             continue
         except socket.error:
-          time.sleep( 0.1 )
+          time.sleep( 0.001 )
+          continue
+        except select.error:
+          time.sleep( 0.001 )
           continue
       except:
         from DIRAC import gLogger
@@ -228,7 +231,7 @@ class MessageBroker:
     if 'attrs' in msg:
       attrs = msg[ 'attrs' ]
       if type( attrs ) not in( types.TupleType, types.ListType ):
-        return S_ERROR( "Message args has to be a tuple or a list, not %s" % type( args ) )
+        return S_ERROR( "Message args has to be a tuple or a list, not %s" % type( attrs ) )
     else:
       attrs = None
     #Do we "unpack" or do we send the raw data to the callback?
@@ -406,11 +409,18 @@ class MessageBroker:
 
 class MessageSender:
 
-  def __init__( self, msgBroker ):
+  def __init__( self, serviceName, msgBroker ):
+    self.__serviceName = serviceName
     self.__msgBroker = msgBroker
 
-  def sendMessage( self, trid, msgName, *msgArgs ):
-    return self.__msgBroker.sendMessage( trid, msgName, msgArgs )
+  def getServiceName( self ):
+    return self.__serviceName
+
+  def sendMessage( self, trid, msgObj ):
+    return self.__msgBroker.sendMessage( trid, msgObj )
+
+  def createMessage( self, msgName ):
+    return self.__msgBroker.__msgFactory.createMessage( self.__serviceName, msgName )
 
 gMessageBroker = False
 def getGlobalMessageBroker():

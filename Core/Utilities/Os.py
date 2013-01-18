@@ -80,7 +80,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
       back the environment
   """
 
-  # add appropiated extension to first element of the tuple (the command)
+  # add appropriate extension to first element of the tuple (the command)
   envAsDict = '&& python -c "import os,sys ; print >> sys.stderr, os.environ"'
 
   # 1.- Choose the right version of the configuration file
@@ -182,3 +182,14 @@ def unifyLdLibraryPath( path, newpath ):
   else:
     # Windows does nothing for the moment
     return path
+
+def which( filetofind ):
+  """ Utility that mimics the 'which' command from the shell
+  """
+  if not "PATH" in os.environ:
+     return None
+  for path in os.environ["PATH"].split(":"):
+    if os.path.exists(path + "/" + filetofind):
+      return path + "/" + filetofind
+
+  return None

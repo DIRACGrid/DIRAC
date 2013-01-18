@@ -1,7 +1,6 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import sys
 import types
 import thread
 import DIRAC
@@ -10,9 +9,10 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import *
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 from DIRAC.Core.Security import CS
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
+from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 
 class BaseClient:
 
@@ -32,18 +32,22 @@ class BaseClient:
   KW_SKIP_CA_CHECK = "skipCACheck"
   KW_KEEP_ALIVE_LAPSE = "keepAliveLapse"
 
+  __threadConfig = ThreadConfig()
+
   def __init__( self, serviceName, **kwargs ):
-    if type( serviceName ) != types.StringType:
-      raise TypeError( "Service name expected to be a string. Received %s type %s" % ( str( serviceName ), type( serviceName ) ) )
+    if type( serviceName ) not in types.StringTypes:
+      raise TypeError( "Service name expected to be a string. Received %s type %s" %
+                       ( str( serviceName ), type( serviceName ) ) )
     self._destinationSrv = serviceName
+    self._serviceName = serviceName
     self.kwargs = kwargs
     self.__initStatus = S_OK()
     self.__idDict = {}
-    self.__trid = False
+    self.__extraCredentials = ""
     self.__enableThreadCheck = False
     for initFunc in ( self.__discoverSetup, self.__discoverVO, self.__discoverTimeout,
                       self.__discoverURL, self.__discoverCredentialsToUse,
-                      self.__discoverExtraCredentials, self.__checkTransportSanity,
+                      self.__checkTransportSanity,
                       self.__setKeepAliveLapse ):
       result = initFunc()
       if not result[ 'OK' ] and self.__initStatus[ 'OK' ]:
@@ -59,12 +63,17 @@ class BaseClient:
   def getDestinationService( self ):
     return self._destinationSrv
 
+  def getServiceName( self ):
+    return self._serviceName
+
   def __discoverSetup( self ):
     #Which setup to use?
     if self.KW_SETUP in self.kwargs and self.kwargs[ self.KW_SETUP ]:
       self.setup = str( self.kwargs[ self.KW_SETUP ] )
     else:
-      self.setup = gConfig.getValue( "/DIRAC/Setup", "Test" )
+      self.setup = self.__threadConfig.getSetup()
+      if not self.setup:
+        self.setup = gConfig.getValue( "/DIRAC/Setup", "Test" )
     return S_OK()
 
   def __discoverVO( self ):
@@ -132,12 +141,22 @@ class BaseClient:
     if self.KW_EXTRA_CREDENTIALS in self.kwargs:
       self.__extraCredentials = self.kwargs[ self.KW_EXTRA_CREDENTIALS ]
     #Are we delegating something?
+    delegatedDN, delegatedGroup = self.__threadConfig.getID()
     if self.KW_DELEGATED_DN in self.kwargs and self.kwargs[ self.KW_DELEGATED_DN ]:
-      if self.KW_DELEGATED_GROUP in self.kwargs and self.kwargs[ self.KW_DELEGATED_GROUP ]:
-        self.__extraCredentials = self.kwargs[ self.KW_DELEGATED_GROUP ]
-      else:
-        self.__extraCredentials = CS.getDefaultUserGroup()
-      self.__extraCredentials = ( self.kwargs[ self.KW_DELEGATED_DN ], self.__extraCredentials )
+      delegatedDN = self.kwargs[ self.KW_DELEGATED_DN ]
+    elif delegatedDN:
+      self.kwargs[ self.KW_DELEGATED_DN ] = delegatedDN
+    if self.KW_DELEGATED_GROUP in self.kwargs and self.kwargs[ self.KW_DELEGATED_GROUP ]:
+      delegatedGroup = self.kwargs[ self.KW_DELEGATED_GROUP ]
+    elif delegatedGroup:
+      self.kwargs[ self.KW_DELEGATED_GROUP ] = delegatedGroup
+    if delegatedDN:
+      if not delegatedGroup:
+        result = CS.findDefaultGroupForDN( self.kwargs[ self.KW_DELEGATED_DN ] )
+        if not result['OK']:
+          return result
+      self.__extraCredentials = ( delegatedDN, delegatedGroup )
+
     return S_OK()
 
   def __findServiceURL( self ):
@@ -195,7 +214,7 @@ and this is thread %s
 
 
   def _connect( self ):
-    self.__trid = False
+    self.__discoverExtraCredentials()
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     if self.__enableThreadCheck:
@@ -208,15 +227,11 @@ and this is thread %s
         return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, retVal ) )
     except Exception, e:
       return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, e ) )
-    self.__trid = getGlobalTransportPool().add( transport )
-    return S_OK( transport )
+    trid = getGlobalTransportPool().add( transport )
+    return S_OK( ( trid, transport ) )
 
-  def _getTrid( self ):
-    return self.__trid
-
-  def _disconnect( self ):
-    if self.__trid:
-      getGlobalTransportPool().close( self.__trid )
+  def _disconnect( self, trid ):
+    getGlobalTransportPool().close( trid )
 
   def _proposeAction( self, transport, action ):
     if not self.__initStatus[ 'OK' ]:
@@ -272,16 +287,24 @@ and this is thread %s
   def _getBaseStub( self ):
     newKwargs = dict( self.kwargs )
     #Set DN
-    if 'DN' in self.__idDict and not self.KW_DELEGATED_DN in newKwargs:
-      newKwargs[ self.KW_DELEGATED_DN ] = self.__idDict[ 'DN' ]
+    tDN, tGroup = self.__threadConfig.getID()
+    if not self.KW_DELEGATED_DN in newKwargs:
+      if tDN:
+        newKwargs[ self.KW_DELEGATED_DN ] = tDN
+      elif 'DN' in self.__idDict:
+        newKwargs[ self.KW_DELEGATED_DN ] = self.__idDict[ 'DN' ]
     #Discover group
     if not self.KW_DELEGATED_GROUP in newKwargs:
       if 'group' in self.__idDict:
         newKwargs[ self.KW_DELEGATED_GROUP ] = self.__idDict[ 'group' ]
+      elif tGroup:
+        newKwargs[ self.KW_DELEGATED_GROUP ] = tGroup
       else:
         if self.KW_DELEGATED_DN in newKwargs:
           if CS.getUsernameForDN( newKwargs[ self.KW_DELEGATED_DN ] )[ 'OK' ]:
-            newKwargs[ self.KW_DELEGATED_GROUP ] = CS.getDefaultUserGroup()
+            result = CS.findDefaultGroupForDN( newKwargs[ self.KW_DELEGATED_DN ] )
+            if result['OK']:
+              newKwargs[ self.KW_DELEGATED_GROUP ] = result['Value']
           if CS.getHostnameForDN( newKwargs[ self.KW_DELEGATED_DN ] )[ 'OK' ]:
             newKwargs[ self.KW_DELEGATED_GROUP ] = self.VAL_EXTRA_CREDENTIALS_HOST
 

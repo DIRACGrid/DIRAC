@@ -1,0 +1,111 @@
+#!/bin/bash         
+#########################################################################
+#
+#  Script for managing jobs on a SSH and SSHBatch Computing Elements
+#  15.11.2012
+#  Author: L.Dimitriu
+#
+#########################################################################
+                                  
+return_running()                                        
+{                                                       
+    local q;                                            
+    local running;                                      
+    let running=0;     
+    infoarea=$1
+    workarea=$2
+    user=$3                               
+
+    ls $infoarea | grep ".pid" > /dev/null && for i in `ls -1 $infoarea/*.pid`; do
+        test_pid=`cat $i`                        
+        q=`ps -f -p $test_pid | grep $user | wc -l`                     
+        if (( $q == 1 ))
+        then                          
+            let running=running+1    
+        else
+            pidfile=`basename $i`
+            stamp=`echo $pidfile | cut -d . -f 1`
+            clean_job $workarea $infoarea $stamp                      
+        fi                                              
+    done               
+    echo 0            
+    echo Waiting:::0                     
+    echo Running:::$running                                    
+}                                                       
+
+clean_job()
+{
+    workdir=$1
+    infodir=$2
+    stamp=$3
+    if [ -d $workdir/$stamp ]; then
+        rm -rf $workdir/$stamp
+    fi 
+    if [ -f $infodir/$stamp.pid ]; then
+        rm -f $infodir/$stamp.pid
+    fi  
+}
+
+submit_job()
+{
+    echo 0
+    local initial_dir;
+    initial_dir=`pwd`;
+    for stamp in `echo $6 | tr '#' ' '`; do
+      export SSHCE_JOBID=$stamp
+      mkdir -p $4/$stamp
+      cd $4/$stamp
+      chmod +x $1
+      $1 1>$2/$stamp.out 2>$3/$stamp.err &
+      echo $! > $5/$stamp.pid
+      echo $stamp
+    done
+    cd $initial_dir
+    exit 0
+}
+
+test_pid_if_running()
+{
+    local q;
+    local pid;
+    if [ -f $2/$1.pid ]
+    then
+        pid=`cat $2/$1.pid`
+        q=`ps -p $pid | wc -l`
+        if (( $q == 2 )); then
+            echo "$1:::Running";
+            return;
+        fi
+        echo "$1:::Done";
+    else
+        echo "$1:::Done";
+    fi        
+}
+
+echo '============= Start output ==============='
+
+case "$1" in
+    "status_info")
+        return_running $2 $3 $4;
+        exit;;
+    "submit_job")
+        submit_job $2 $3 $4 $5 $7 $8;
+        exit;;
+    "kill_job")
+        for stamp in `echo $2 | tr '#' ' '`; do
+            if [ -f $3/$stamp.pid ]; then
+                kill -9 `cat $3/$stamp.pid`;
+            fi    
+        done
+
+        echo -n 0 
+        exit ;; 
+    "job_status")
+        echo 0
+        for stamp in `echo $2 | tr '#' ' '`; do
+            test_pid_if_running $stamp $3;
+        done
+
+        echo -n;
+        exit ;;
+esac

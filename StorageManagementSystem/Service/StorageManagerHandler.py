@@ -1,8 +1,8 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Service/StorageManagerHandler.py,v 1.1 2009/10/30 19:38:56 acsmith Exp $
+# $Header$
 ########################################################################
 """ StorageManagerHandler is the implementation of the StorageManagementDB in the DISET framework """
-__RCSID__ = "$Id: StorageManagerHandler.py,v 1.1 2009/10/30 19:38:56 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from types import *
 from DIRAC                                                 import gLogger, gConfig, S_OK, S_ERROR

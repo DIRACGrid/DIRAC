@@ -1,368 +1,1023 @@
-# $HeadURL$
+########################################################################
+# $HeadURL $
+# File: TransferAgent.py
+# Author: Krzysztof.Ciba@NOSPAMgmail.com
+# Date: 2011/05/30 09:40:33
+########################################################################
+""" :mod: TransferAgent 
+    ===================
 
-"""  TransferAgent takes transfer requests from the RequestDB and replicates them
+    TransferAgent executes 'transfer' requests read from the RequestClient.
+    
+    This agent has two modes of operation:
+    - standalone, when all Requests are handled using ProcessPool and TransferTask
+    - scheduling for FTS with failback TransferTask functionality
+   
+    The failback mechanism is fired in case that:
+
+    - FTS channels between SourceSE and TargetSE is not defined 
+    - there is a trouble to define correct replication tree 
+    - request's owner is different from DataManager   
 """
 
 __RCSID__ = "$Id$"
 
-from DIRAC  import gLogger, gMonitor, S_OK
+## imports
+import time
+import re
+## from DIRAC (globals and Core)
+from DIRAC import gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool, ThreadedJob
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+## base class
+from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
+## replica manager
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
+## startegy handler
+from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler, SHGraphCreationError 
+## task to be executed
+from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
+## from RMS
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+## from Resources
+from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 
-from types import *
+## agent name
+AGENT_NAME = "DataManagement/TransferAgent"
 
-AGENT_NAME = 'DataManagement/TransferAgent'
+class TransferAgentError( Exception ):
+  """
+  .. class:: TransferAgentError
 
-class TransferAgent( AgentModule, RequestAgentMixIn ):
+  Exception raised when neither scheduling nor task execution is enabled in CS.
+  """
+  def __init__( self, msg ):
+    """ c'tor
+    
+    :param self: self reference
+    :param str msg: description
+    """
+    Exception.__init__( self )
+    self.msg = msg 
+  def __str__( self ):
+    """ str() operator
 
-  def initialize( self ):
+    :param self: self reference
+    """
+    return str( self.msg )
 
-    self.RequestDBClient = RequestClient()
-    self.ReplicaManager = ReplicaManager()
-    self.DataLog = DataLoggingClient()
+###################################################################################
+# AGENT
+###################################################################################
+class TransferAgent( RequestAgentBase ):
+  """ 
+  .. class:: TransferAgent
 
-    gMonitor.registerActivity( "Iteration", "Agent Loops", "TransferAgent", "Loops/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Execute", "Request Processed", "TransferAgent", "Requests/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Done", "Request Completed", "TransferAgent", "Requests/min", gMonitor.OP_SUM )
+  This class is dealing with 'transfer' DIRAC requests.
 
-    gMonitor.registerActivity( "Replicate and register", "Replicate and register operations", "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Replicate", "Replicate operations", "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Put and register", "Put and register operations", "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Put", "Put operations", "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
+  A request could be processed in a two different modes: request's files could be scheduled for FTS processing
+  or alternatively subrequests could be processed by TransferTask in a standalone subprocesses.
+  If FTS scheduling fails for any reason OR request itself cannot be processed using FTS machinery (i.e. its owner
+  is not a DataManager, FTS channel for at least on file doesn't exist), the processing will go through 
+  TransferTasks and ProcessPool.
 
-    gMonitor.registerActivity( "Replication successful", "Successful replications", "TransferAgent", "Successful/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Put successful", "Successful puts", "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+  By default FTS scheduling is disabled and all requests are processed using tasks.  
 
-    gMonitor.registerActivity( "Replication failed", "Failed replications", "TransferAgent", "Failed/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Put failed", "Failed puts", "TransferAgent", "Failed/min", gMonitor.OP_SUM )
+  Config options
+  --------------
 
-    gMonitor.registerActivity( "Replica registration successful", "Successful replica registrations", "TransferAgent", "Successful/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "File registration successful", "Successful file registrations", "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+  * maximal number of request to be executed in one cycle
+    RequestsPerCycle = 10
+  * minimal number of sub-processes working togehter
+    MinProcess = 1
+  * maximal number of sub-processes working togehter
+    MaxProcess = 4
+  * results queue size
+    ProcessPoolQueueSize = 10
+  * request type
+    RequestType = transfer
+  * proxy
+    shifterProxy = DataManager
+  * task executing
+    Taskmode = True
+  * FTS scheduling 
+    FTSMode = True
+  * time interval for throughput (FTS scheduling) in seconds
+    ThroughputTimescale = 3600
+  * for StrategyHandler
+     - hop time 
+      HopSigma = 0.0
+     - files/time or througput/time
+      SchedulingType = File
+     - list of active strategies
+      ActiveStrategies = MinimiseTotalWait 
+     - acceptable failure rate
+      AcceptableFailureRate = 75  
+  
+  """
+  ## placeholder for ReplicaManager instance
+  __replicaManager = None
+  ## placeholder for StorageFactory instance
+  __storageFactory = None
+  ## placeholder for StrategyHandler instance
+  __strategyHandler = None
+  ## placeholder for TransferDB instance (for FTS mode)
+  __transferDB = None
+  ## time scale for throughput
+  __throughputTimescale = 3600
+  ## exectuon modes
+  __executionMode = { "Tasks" : True, "FTS" : False }
 
-    gMonitor.registerActivity( "Replica registration failed", "Failed replica registrations", "TransferAgent", "Failed/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "File registration failed", "Failed file registrations", "TransferAgent", "Failed/min", gMonitor.OP_SUM )
+  def __init__( self, agentName, loadName, baseAgentName=False, properties=dict() ):
+    """ c'tor
+     
+    :param self: self reference
+    :param str agentName: agent name
+    :param str loadName: module name
+    :param str baseAgentName: base agent name
+    :param dict properties: whatever else properties
+    """
+    self.setRequestType( "transfer" )
+    self.setRequestTask( TransferTask )
+    RequestAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
 
-    self.maxNumberOfThreads = self.am_getOption( 'NumberOfThreads', 1 )
-    self.threadPoolDepth = self.am_getOption( 'ThreadPoolDepth', 1 )
-    self.threadPool = ThreadPool( 1, self.maxNumberOfThreads )
+    ## gMonitor stuff
+    self.monitor.registerActivity( "Replicate and register", "Replicate and register operations", 
+                                   "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Replicate", "Replicate operations", "TransferAgent", 
+                                   "Attempts/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Put and register", "Put and register operations", 
+                                   "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Put", "Put operations", 
+                                   "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
 
-    # This sets the Default Proxy to used as that defined under
-    # /Operations/Shifter/DataManager
-    # the shifterProxy option in the Configuration can be used to change this default.
-    self.am_setOption( 'shifterProxy', 'DataManager' )
+    self.monitor.registerActivity( "Replication successful", "Successful replications", 
+                                   "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Put successful", "Successful puts", 
+                                   "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    
+    self.monitor.registerActivity( "Replication failed", "Failed replications", 
+                                   "TransferAgent", "Failed/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Put failed", "Failed puts", 
+                                   "TransferAgent", "Failed/min", gMonitor.OP_SUM )
+    
+    self.monitor.registerActivity( "Replica registration successful", "Successful replica registrations", 
+                                   "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "File registration successful", "Successful file registrations", 
+                                   "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    
+    self.monitor.registerActivity( "Replica registration failed", "Failed replica registrations", 
+                                   "TransferAgent", "Failed/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "File registration failed", "Failed file registrations", 
+                                   "TransferAgent", "Failed/min", gMonitor.OP_SUM )
 
+    ## tasks mode enabled by default
+    self.__executionMode["Tasks"] = self.am_getOption( "TaskMode", True )
+    self.log.info( "Tasks execution mode is %s." % { True : "enabled", 
+                                                     False : "disabled" }[ self.__executionMode["Tasks"] ] )
+    ## but FTS only if requested
+    self.__executionMode["FTS"] = self.am_getOption( "FTSMode", False )
+    self.log.info( "FTS execution mode is %s." % { True : "enabled", 
+                                                   False : "disabled" }[ self.__executionMode["FTS"] ] )
+
+    ## get TransferDB instance 
+    if self.__executionMode["FTS"]:
+      transferDB = None
+      try:
+        transferDB = self.transferDB()
+      except Exception, error:
+        self.log.exception( error )
+      if not transferDB:
+        self.log.warn("Can't create TransferDB instance, disabling FTS execution mode.")
+        self.__executionMode["FTS"] = False
+      else:
+        ## throughptu time scale for monitoring in StrategyHandler
+        self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', self.__throughputTimescale )
+        self.log.info( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
+        ## OwnerGroups not allowed to execute FTS transfers
+        self.__ftsDisabledOwnerGroups = self.am_getOption( "FTSDisabledOwnerGroups", [ "lhcb_user" ] )
+        self.log.info("FTSDisabledOwnerGroups = %s" %  self.__ftsDisabledOwnerGroups )
+
+    ## is there any mode enabled?
+    if True not in self.__executionMode.values():
+      self.log.error("TransferAgent misconfiguration, neither FTS nor Tasks execution mode is enabled.")
+      raise TransferAgentError("TransferAgent misconfiguration, neither FTS nor Tasks execution mode is enabled.")
+
+    self.log.info("%s has been constructed" % agentName )
+
+  def finalize( self ):
+    """ agent finalisation
+
+    :param self: self reference
+    """
+    if self.hasProcessPool():
+      self.processPool().finalize( timeout = self.poolTimeout() )
+    self.resetAllRequests()
     return S_OK()
 
-  def execute( self ):
+  ###################################################################################
+  # facades for various DIRAC tools
+  ###################################################################################
+  def replicaManager( self ):
+    """ ReplicaManager instance getter 
 
-    for i in range( self.threadPoolDepth ):
-      requestExecutor = ThreadedJob( self.executeRequest )
-      self.threadPool.queueJob( requestExecutor )
-    self.threadPool.processResults()
-    return self.executeRequest()
+    :param self: self reference
+    """
+    if not self.__replicaManager:
+      self.__replicaManager = ReplicaManager()
+    return self.__replicaManager
 
-  def executeRequest( self ):
-    ################################################
-    # Get a request from request DB
-    gMonitor.addMark( "Iteration", 1 )
-    res = self.RequestDBClient.getRequest( 'transfer' )
-    if not res['OK']:
-      gLogger.info( "TransferAgent.execute: Failed to get request from database." )
-      return S_OK()
-    elif not res['Value']:
-      gLogger.info( "TransferAgent.execute: No requests to be executed found." )
-      return S_OK()
-    requestString = res['Value']['RequestString']
-    requestName = res['Value']['RequestName']
-    sourceServer = res['Value']['Server']
-    try:
-      jobID = int( res['Value']['JobID'] )
-    except:
-      jobID = 0
-    gLogger.info( "TransferAgent.execute: Obtained request %s" % requestName )
+  def storageFactory( self ):
+    """ StorageFactory instance getter 
 
-    result = self.RequestDBClient.getCurrentExecutionOrder( requestName, sourceServer )
-    if result['OK']:
-      currentOrder = result['Value']
+    :param self: self reference
+    """
+    if not self.__storageFactory:
+      self.__storageFactory = StorageFactory()
+    return self.__storageFactory
+
+  def transferDB( self ):
+    """ TransferDB instance getter
+
+    :warning: Need to put import over here, ONLINE hasn't got MySQLdb module.
+
+    :param self: self reference
+    """
+    if not self.__transferDB:
+      try:
+        from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
+        self.__transferDB = TransferDB()
+      except Exception, error:
+        self.log.error( "transferDB: unable to create TransferDB instance: %s" % str(error) )        
+    return self.__transferDB
+
+  ###################################################################################
+  # strategy handler helper functions 
+  ###################################################################################
+  def strategyHandler( self ):
+    """ facade for StrategyHandler. 
+
+    :param self: self reference
+    """
+    if not self.__strategyHandler:
+      try:
+        self.__strategyHandler = StrategyHandler( self.configPath() )      
+      except SHGraphCreationError, error:
+        self.log.exception( "strategyHandler: %s" % str(error) )
+    return self.__strategyHandler
+
+  def setupStrategyHandler( self ):
+    """Obtain information of current state of channel queues and throughput 
+    from TransferDB and setup StrategyHandler.
+
+    :param self: self reference
+    """
+    res = self.transferDB().getChannelQueues()
+    if not res["OK"]:
+      errStr = "setupStrategyHandler: Failed to get channel queues from TransferDB."
+      self.log.error( errStr, res['Message'] )
+      return S_ERROR( errStr )
+    channels = res["Value"] or {}
+    res = self.transferDB().getChannelObservedThroughput( self.__throughputTimescale )
+    if not res["OK"]:
+      errStr = "setupStrategyHandler: Failed to get observed throughput from TransferDB."
+      self.log.error( errStr, res['Message'] )
+      return S_ERROR( errStr )
+    bandwidths = res["Value"] or {}
+    res = self.transferDB().getCountFileToFTS(  self.__throughputTimescale, "Failed" )
+    if not res["OK"]:
+      errStr = "setupStrategyHandler: Failed to get Failed files counters from TransferDB."
+      self.log.error( errStr, res['Message'] )
+      return S_ERROR( errStr )
+    failedFiles = res["Value"] or {}
+    ## neither channels nor bandwidths 
+    if not ( channels and bandwidths ):
+      return S_ERROR( "setupStrategyHandler: No active channels found for replication" )
+    self.strategyHandler().setup( channels, bandwidths, failedFiles )
+    self.strategyHandler().reset()
+    return S_OK()
+
+  @staticmethod
+  def ancestorSortKeys( aDict, aKey="Ancestor" ):
+    """ sorting keys of replicationTree by its hopAncestor value 
+    
+    replicationTree is a dict ( channelID : { ... }, (...) }
+    
+    :param self: self reference
+    :param dict aDict: replication tree  to sort
+    :param str aKey: a key in value dict used to sort 
+    """
+    if False in [ bool(aKey in v) for v in aDict.values() ]:
+      return S_ERROR( "ancestorSortKeys: %s key in not present in all values" % aKey )
+    ## put parents of all parents
+    sortedKeys = [ k for k in aDict if aKey in aDict[k] and not aDict[k][aKey] ]
+    ## get children
+    pairs = dict( [ (  k, v[aKey] ) for k, v in aDict.items() if v[aKey] ] )
+    while pairs:
+      for key, ancestor in dict(pairs).items():
+        if key not in sortedKeys and ancestor in sortedKeys:
+          sortedKeys.insert( sortedKeys.index(ancestor), key )
+          del pairs[key]
+    ## need to revese this one, as we're instering child before its parent 
+    sortedKeys.reverse()
+    if sorted( sortedKeys ) != sorted( aDict.keys() ):
+      return S_ERROR( "ancestorSortKeys: cannot sort, some keys are missing!")
+    return S_OK( sortedKeys )
+
+  ###################################################################################
+  # SURL manipulation helpers 
+  ###################################################################################
+  def getTransferURLs( self, lfn, repDict, replicas, ancestorSwap=None ):
+    """ prepare TURLs for given LFN and replication tree
+
+    :param self: self reference
+    :param str lfn: LFN
+    :param dict repDict: replication dictionary
+    :param dict replicas: LFN replicas 
+    """
+
+    hopSourceSE = repDict["SourceSE"]
+    hopDestSE = repDict["DestSE"]
+    hopAncestor = repDict["Ancestor"]
+
+    if ancestorSwap and str(hopAncestor) in ancestorSwap:
+      self.log.debug("getTransferURLs: swapping Ancestor %s with %s" % ( hopAncestor, 
+                                                                         ancestorSwap[str(hopAncestor)] ) )
+      hopAncestor = ancestorSwap[ str(hopAncestor) ]
+    
+    ## get targetSURL
+    res = self.getSurlForLFN( hopDestSE, lfn )
+    if not res["OK"]:
+      errStr = res["Message"]
+      self.log.error( errStr )
+      return S_ERROR( errStr )
+    targetSURL = res["Value"]
+
+    # get the sourceSURL
+    if hopAncestor:
+      status = "Waiting%s" % ( hopAncestor )
+      res = self.getSurlForLFN( hopSourceSE, lfn )
+      if not res["OK"]:
+        errStr = res["Message"]
+        self.log.error( errStr )
+        return S_ERROR( errStr )
+      sourceSURL = res["Value"]
     else:
-      return S_OK( 'Can not get the request execution order' )
-
-    oRequest = RequestContainer( request = requestString )
-
-    ################################################
-    # Find the number of sub-requests from the request
-    res = oRequest.getNumSubRequests( 'transfer' )
-    if not res['OK']:
-      errStr = "TransferAgent.execute: Failed to obtain number of transfer subrequests."
-      gLogger.error( errStr, res['Message'] )
-      return S_OK()
-    gLogger.info( "TransferAgent.execute: Found %s sub requests." % res['Value'] )
-
-    ################################################
-    # For all the sub-requests in the request
-    modified = False
-    for ind in range( res['Value'] ):
-      gMonitor.addMark( "Execute", 1 )
-      gLogger.info( "TransferAgent.execute: Processing sub-request %s." % ind )
-      subRequestAttributes = oRequest.getSubRequestAttributes( ind, 'transfer' )['Value']
-      if subRequestAttributes['ExecutionOrder']:
-        subExecutionOrder = int( subRequestAttributes['ExecutionOrder'] )
+      status = "Waiting"
+      res = self.getSurlForPFN( hopSourceSE, replicas[hopSourceSE] )
+      if not res["OK"]:
+        sourceSURL = replicas[hopSourceSE]
       else:
-        subExecutionOrder = 0
-      subStatus = subRequestAttributes['Status']
-      if subStatus == 'Waiting' and subExecutionOrder <= currentOrder:
-        subRequestFiles = oRequest.getSubRequestFiles( ind, 'transfer' )['Value']
-        operation = subRequestAttributes['Operation']
+        sourceSURL = res["Value"]
 
-        subRequestError = ''       
-        ################################################
-        #  If the sub-request is a put and register operation
-        if operation == 'putAndRegister' or operation == 'putAndRegisterAndRemove':
-          gLogger.info( "TransferAgent.execute: Attempting to execute %s sub-request." % operation )
-          diracSE = str( subRequestAttributes['TargetSE'] )
-          catalog = ''
-          if  subRequestAttributes.has_key( 'Catalogue' ):
-            catalog = subRequestAttributes['Catalogue']
-          for subRequestFile in subRequestFiles:
-            if subRequestFile['Status'] == 'Waiting':
-              gMonitor.addMark( "Put and register", 1 )
-              lfn = str( subRequestFile['LFN'] )
-              file = subRequestFile['PFN']
-              guid = subRequestFile['GUID']
-              addler = subRequestFile['Addler']
-              res = self.ReplicaManager.putAndRegister( lfn, file, diracSE, guid = guid, checksum = addler, catalog = catalog )
-              if res['OK']:
-                if res['Value']['Successful'].has_key( lfn ):
-                  if not res['Value']['Successful'][lfn].has_key( 'put' ):
-                    gMonitor.addMark( "Put failed", 1 )
-                    self.DataLog.addFileRecord( lfn, 'PutFail', diracSE, '', 'TransferAgent' )
-                    gLogger.info( "TransferAgent.execute: Failed to put %s to %s." % ( lfn, diracSE ) )
-                    subRequestError = "Put operation failed for %s to %s" % ( lfn, diracSE )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Put failed' )
-                  elif not res['Value']['Successful'][lfn].has_key( 'register' ):
-                    gMonitor.addMark( "Put successful", 1 )
-                    gMonitor.addMark( "File registration failed", 1 )
-                    self.DataLog.addFileRecord( lfn, 'Put', diracSE, '', 'TransferAgent' )
-                    self.DataLog.addFileRecord( lfn, 'RegisterFail', diracSE, '', 'TransferAgent' )
-                    gLogger.info( "TransferAgent.execute: Successfully put %s to %s in %s seconds." % ( lfn, diracSE, res['Value']['Successful'][lfn]['put'] ) )
-                    gLogger.info( "TransferAgent.execute: Failed to register %s to %s." % ( lfn, diracSE ) )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Done' )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Registration failed' )
-                    subRequestError = "Registration failed for %s to %s" % ( lfn, diracSE )
-                    fileDict = res['Value']['Failed'][lfn]['register']
-                    registerRequestDict = {'Attributes':{'TargetSE': fileDict['TargetSE'], 'Operation':'registerFile'}, 
-                                           'Files':[{'LFN': fileDict['LFN'], 
-                                                     'PFN':fileDict['PFN'], 
-                                                     'Size':fileDict['Size'], 
-                                                     'Addler':fileDict['Addler'], 
-                                                     'GUID':fileDict['GUID']}]}
-                    gLogger.info( "TransferAgent.execute: Setting registration request for failed file." )
-                    oRequest.addSubRequest( registerRequestDict, 'register' )
-                    modified = True
-                  else:
-                    gMonitor.addMark( "Put successful", 1 )
-                    gMonitor.addMark( "File registration successful", 1 )
-                    self.DataLog.addFileRecord( lfn, 'Put', diracSE, '', 'TransferAgent' )
-                    self.DataLog.addFileRecord( lfn, 'Register', diracSE, '', 'TransferAgent' )
-                    gLogger.info( "TransferAgent.execute: Successfully put %s to %s in %s seconds." % ( lfn, diracSE, res['Value']['Successful'][lfn]['put'] ) )
-                    gLogger.info( "TransferAgent.execute: Successfully registered %s to %s in %s seconds." % ( lfn, diracSE, res['Value']['Successful'][lfn]['register'] ) )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Done' )
-                    modified = True
-                else:
-                  gMonitor.addMark( "Put failed", 1 )
-                  self.DataLog.addFileRecord( lfn, 'PutFail', diracSE, '', 'TransferAgent' )
-                  errStr = "TransferAgent.execute: Failed to put and register file."
-                  gLogger.error( errStr, "%s %s %s" % ( lfn, diracSE, res['Value']['Failed'][lfn] ) )
-                  oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Complete file failure' )
-                  subRequestError = "Failed to put and register file"
-              else:
-                gMonitor.addMark( "Put failed", 1 )
-                self.DataLog.addFileRecord( lfn, 'PutFail', diracSE, '', 'TransferAgent' )
-                errStr = "TransferAgent.execute: Completely failed to put and register file."
-                gLogger.error( errStr, res['Message'] )
-                oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'RM call failure' )
-                subRequestError = operation + " RM call file"
-            else:
-              gLogger.info( "TransferAgent.execute: File already completed." )
+    ## new status - Done or Done%d for TargetSURL = SourceSURL
+    if targetSURL == sourceSURL:
+      status = "Done"
+      if hopAncestor:
+        status = "Done%s" % hopAncestor
+        
+    return S_OK( ( sourceSURL, targetSURL, status ) )
 
-        ################################################
-        #  If the sub-request is a put operation
-        elif operation == 'put':
-          gLogger.info( "TransferAgent.execute: Attempting to execute %s sub-request." % operation )
-          diracSE = subRequestAttributes['TargetSE']
-          for subRequestFile in subRequestFiles:
-            if subRequestFile['Status'] == 'Waiting':
-              gMonitor.addMark( "Put", 1 )
-              lfn = subRequestFile['LFN']
-              file = subRequestFile['PFN']
-              res = self.ReplicaManager.put( lfn, file, diracSE )
-              if res['OK']:
-                if res['Value']['Successful'].has_key( lfn ):
-                  gMonitor.addMark( "Put successful", 1 )
-                  self.DataLog.addFileRecord( lfn, 'Put', diracSE, '', 'TransferAgent' )
-                  gLogger.info( "TransferAgent.execute: Successfully put %s to %s in %s seconds." % ( lfn, diracSE, res['Value']['Successful'][lfn] ) )
-                  oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Done' )
-                  modified = True
-                else:
-                  gMonitor.addMark( "Put failed", 1 )
-                  self.DataLog.addFileRecord( lfn, 'PutFail', diracSE, '', 'TransferAgent' )
-                  errStr = "TransferAgent.execute: Failed to put file."
-                  gLogger.error( errStr, "%s %s %s" % ( lfn, diracSE, res['Value']['Failed'][lfn] ) )
-                  subRequestError = "Put operation failed for %s to %s" % ( lfn, diracSE )
-                  oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Put failed' )
-              else:
-                gMonitor.addMark( "Put failed", 1 )
-                self.DataLog.addFileRecord( lfn, 'PutFail', diracSE, '', 'TransferAgent' )
-                errStr = "TransferAgent.execute: Completely failed to put file."
-                gLogger.error( errStr, res['Message'] )
-                subRequestError = "Put RM call failed for %s to %s" % ( lfn, diracSE )
-                oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Put RM call failed' )
-            else:
-              gLogger.info( "TransferAgent.execute: File already completed." )
+  def getSurlForLFN( self, targetSE, lfn ):
+    """ Get the targetSURL for the storage and LFN supplied.
 
-        ################################################
-        #  If the sub-request is a replicate and register operation
-        elif operation == 'replicateAndRegister' or operation == 'replicateAndRegisterAndRemove':
-          gLogger.info( "TransferAgent.execute: Attempting to execute %s sub-request." % operation )
-          targetSE = subRequestAttributes['TargetSE']
-          sourceSE = subRequestAttributes['SourceSE']
-          if sourceSE == "None":
-            sourceSE = ''
-          for subRequestFile in subRequestFiles:
-            if subRequestFile['Status'] == 'Waiting':
-              gMonitor.addMark( "Replicate and register", 1 )
-              lfn = subRequestFile['LFN']
-              res = self.ReplicaManager.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
-              if res['OK']:
-                if res['Value']['Successful'].has_key( lfn ):
-                  if not res['Value']['Successful'][lfn].has_key( 'replicate' ):
-                    gLogger.info( "TransferAgent.execute: Failed to replicate %s to %s." % ( lfn, targetSE ) )
-                    gMonitor.addMark( "Replication failed", 1 )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,"Error", "Replication failed" )
-                    subRequestError = "Replication failed for %s to %s" % ( lfn, targetSE )
-                  elif not res['Value']['Successful'][lfn].has_key( 'register' ):
-                    gMonitor.addMark( "Replication successful", 1 )
-                    gMonitor.addMark( "Replica registration failed", 1 )
-                    gLogger.info( "TransferAgent.execute: Successfully replicated %s to %s in %s seconds." % ( lfn, targetSE, res['Value']['Successful'][lfn]['replicate'] ) )
-                    gLogger.info( "TransferAgent.execute: Failed to register %s to %s." % ( lfn, targetSE ) )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Done' )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Error', 'Registration failed' )
-                    subRequestError = "Registration failed for %s to %s" % ( lfn, targetSE )
-                    fileDict = res['Value']['Failed'][lfn]['register']
-                    registerRequestDict = {'Attributes':{'TargetSE': fileDict['TargetSE'], 'Operation':'registerReplica'}, 'Files':[{'LFN': fileDict['LFN'], 'PFN':fileDict['PFN']}]}
-                    gLogger.info( "TransferAgent.execute: Setting registration request for failed replica." )
-                    oRequest.addSubRequest( registerRequestDict, 'register' )
-                    modified = True
-                  else:
-                    gMonitor.addMark( "Replication successful", 1 )
-                    gMonitor.addMark( "Replica registration successful", 1 )
-                    gLogger.info( "TransferAgent.execute: Successfully replicated %s to %s in %s seconds." % ( lfn, targetSE, res['Value']['Successful'][lfn]['replicate'] ) )
-                    gLogger.info( "TransferAgent.execute: Successfully registered %s to %s in %s seconds." % ( lfn, targetSE, res['Value']['Successful'][lfn]['register'] ) )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Done' )
-                    modified = True
-                else:
-                  gMonitor.addMark( "Replication failed", 1 )
-                  errStr = "TransferAgent.execute: Failed to replicate and register file."
-                  gLogger.error( errStr, "%s %s %s" % ( lfn, targetSE, res['Value']['Failed'][lfn] ) )
-                  
-              else:
-                gMonitor.addMark( "Replication failed", 1 )
-                errStr = "TransferAgent.execute: Completely failed to replicate and register file."
-                gLogger.error( errStr, res['Message'] )
-                oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'RM call failure' )
-                subRequestError = operation + " RM call failed"
-            else:
-              gLogger.info( "TransferAgent.execute: File already completed." )
+    :param self: self reference
+    :param str targetSURL: target SURL 
+    :param str lfn: LFN
+    """
+    res = self.storageFactory().getStorages( targetSE, protocolList = ["SRM2"] )
+    if not res["OK"]:
+      errStr = "getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res["Message"] )
+      self.log.error( errStr )
+      return S_ERROR( errStr )
+    storageObjects = res["Value"]["StorageObjects"]
+    for storageObject in storageObjects:
+      res = storageObject.getCurrentURL( lfn )
+      if res["OK"]:
+        return res
+    self.log.error( "getSurlForLFN: Failed to get SRM compliant storage.", targetSE )
+    return S_ERROR( "getSurlForLFN: Failed to get SRM compliant storage." )
 
-        ################################################
-        #  If the sub-request is a replicate operation
-        elif operation == 'replicate':
-          gLogger.info( "TransferAgent.execute: Attempting to execute %s sub-request." % operation )
-          targetSE = subRequestAttributes['TargetSE']
-          sourceSE = subRequestAttributes['SourceSE']
-          for subRequestFile in subRequestFiles:
-            if subRequestFile['Status'] == 'Waiting':
-              gMonitor.addMark( "Replicate", 1 )
-              lfn = subRequestFile['LFN']
-              res = self.ReplicaManager.replicate( lfn, targetSE, sourceSE = sourceSE )
-              if res['OK']:
-                if res['Value']['Successful'].has_key( lfn ):
-                  gMonitor.addMark( "Replication successful", 1 )
-                  gLogger.info( "TransferAgent.execute: Successfully replicated %s to %s in %s seconds." % ( lfn, diracSE, res['Value']['Successful'][lfn] ) )
-                  oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Done' )
-                  modified = True
-                else:
-                  gMonitor.addMark( "Replication failed", 1 )
-                  errStr = "TransferAgent.execute: Failed to replicate file."
-                  gLogger.error( errStr, "%s %s %s" % ( lfn, targetSE, res['Value']['Failed'][lfn] ) )
-                  subRequestError = "Replicate operation failed for %s to %s" % ( lfn, targetSE )
-                  oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Put failed' )
-              else:
-                gMonitor.addMark( "Replication failed", 1 )
-                errStr = "TransferAgent.execute: Completely failed to replicate file."
-                gLogger.error( errStr, res['Message'] )
-                subRequestError = "Replicate RM call failed for %s to %s" % ( lfn, targetSE )
-                oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Replicate RM call failed' )
-            else:
-              gLogger.info( "TransferAgent.execute: File already completed." )
+  def getSurlForPFN( self, sourceSE, pfn ):
+    """Creates the targetSURL for the storage and PFN supplied.
+    
+    :param self: self reference
+    :param str sourceSE: source storage element
+    :param str pfn: phisical file name
+    """
+    res = self.replicaManager().getPfnForProtocol( [pfn], sourceSE )
+    if not res["OK"]:
+      return res
+    if pfn in res["Value"]["Failed"]:
+      return S_ERROR( res["Value"]["Failed"][pfn] )
+    return S_OK( res["Value"]["Successful"][pfn] )
 
-        ################################################
-        #  If the sub-request is a get operation
-        elif operation == 'get':
-          gLogger.info( "TransferAgent.execute: Attempting to execute %s sub-request." % operation )
-          sourceSE = subRequestAttributes['TargetSE']
-          for subRequestFile in subRequestFiles:
-            if subRequestFile['Status'] == 'Waiting':
-              lfn = str( subRequestFile['LFN'] )
-              pfn = str( subRequestFile['PFN'] )
-              got = False
-              if sourceSE and pfn:
-                res = self.ReplicaManager.getStorageFile( pfn, sourceSE )
-                if res['Value']['Successful'].has_key( pfn ):
-                  got = True
-              else:
-                res = self.ReplicaManager.getFile( lfn )
-                if res['Value']['Successful'].has_key( lfn ):
-                  got = False
-              if got:
-                gLogger.info( "TransferAgent.execute: Successfully got %s." % lfn )
-                oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Done' )
-                modified = True
-              else:
-                errStr = "TransferAgent.execute: Failed to get file."
-                gLogger.error( errStr, lfn )
-            else:
-              gLogger.info( "TransferAgent.execute: File already completed." )
 
-        ################################################
-        #  If the sub-request is none of the above types
-        else:
-          gLogger.error( "TransferAgent.execute: Operation not supported.", operation )
+  ###################################################################################
+  # FTS mode helpers
+  ###################################################################################
+  def collectFiles( self, requestObj, iSubRequest, status='Waiting' ):
+    """ Get SubRequest files with status :status:, collect their replicas and metadata information from 
+    ReplicaManager.
 
-        if subRequestError:
-          oRequest.setSubRequestAttributeValue( ind, 'transfer', 'Error', subRequestError )
+    :param self: self reference
+    :param RequestContainer requestObj: request being processed
+    :param int iSubRequest: SubRequest index
+    :return: S_OK( (waitingFilesDict, replicas, metadata) ) or S_ERROR( errMsg )
+    """
 
-        ################################################
-        #  Determine whether there are any active files
-        if oRequest.isSubRequestEmpty( ind, 'transfer' )['Value']:
-          oRequest.setSubRequestStatus( ind, 'transfer', 'Done' )
-          gMonitor.addMark( "Done", 1 )
+    waitingFiles = {}
+    replicas = {}
+    metadata = {}
 
-      ################################################
-      #  If the sub-request is already in terminal state
+    subRequestFiles = requestObj.getSubRequestFiles( iSubRequest, "transfer" )
+    if not subRequestFiles["OK"]:
+      return subRequestFiles
+    subRequestFiles = subRequestFiles["Value"]
+    self.log.debug( "collectFiles: subrequest %s found with %d files." % ( iSubRequest, 
+                                                                           len( subRequestFiles ) ) )
+    
+    for subRequestFile in subRequestFiles:
+      fileStatus = subRequestFile["Status"]
+      fileLFN = subRequestFile["LFN"]
+      if fileStatus != status:
+        self.log.debug("collectFiles: skipping %s file, status is '%s'" % ( fileLFN, fileStatus ) )
+        continue
       else:
-        gLogger.info( "TransferAgent.execute: Sub-request %s is status '%s' and  not to be executed." % ( ind, subRequestAttributes['Status'] ) )
+        waitingFiles.setdefault( fileLFN, subRequestFile["FileID"] )
 
-    ################################################
-    #  Generate the new request string after operation
-    requestString = oRequest.toXML()['Value']
-    res = self.RequestDBClient.updateRequest( requestName, requestString, sourceServer )
+    if waitingFiles:     
+      replicas = self.replicaManager().getCatalogReplicas( waitingFiles.keys() )
+      if not replicas["OK"]:
+        self.log.error( "collectFiles: failed to get replica information", replicas["Message"] )
+        return replicas
+      for lfn, failure in replicas["Value"]["Failed"].items():
+        self.log.error( "collectFiles: Failed to get replicas %s: %s" % ( lfn, failure ) )    
+      replicas = replicas["Value"]["Successful"]
 
-    if modified and jobID:
-      result = self.finalizeRequest( requestName, jobID, sourceServer )
+      if replicas:
+        metadata = self.replicaManager().getCatalogFileMetadata( replicas.keys() )
+        if not metadata["OK"]:
+          self.log.error( "collectFiles: failed to get file size information", metadata["Message"] )
+          return metadata
+        for lfn, failure in metadata["Value"]["Failed"].items():
+          self.log.error( "collectFiles: failed to get file size %s: %s" % ( lfn, failure ) )
+        metadata = metadata["Value"]["Successful"] 
+   
+    self.log.debug( "collectFiles: waitingFiles=%d replicas=%d metadata=%d" % ( len(waitingFiles), 
+                                                                                len(replicas), 
+                                                                                len(metadata) ) )
+    
+    if not ( len( waitingFiles ) == len( replicas ) == len( metadata ) ):
+      self.log.warn( "collectFiles: Not all requested information available!" )
+          
+    return S_OK( ( waitingFiles, replicas, metadata ) )
+
+  ###################################################################################
+  # agent execution 
+  ###################################################################################
+  def execute( self ):
+    """ agent execution in one cycle 
+
+    :param self: self reference
+    """
+    requestCounter = self.requestsPerCycle()
+    failback = False
+
+    strategyHandlerSetupError = False
+    if self.__executionMode["FTS"]:
+      self.log.info( "execute: will setup StrategyHandler for FTS scheduling...")
+      self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', self.__throughputTimescale )
+      self.log.debug( "execute: ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
+      ## setup strategy handler
+      setupStrategyHandler = self.setupStrategyHandler()
+      if not setupStrategyHandler["OK"]:
+        self.log.error( setupStrategyHandler["Message"] )
+        self.log.error( "execute: disabling FTS scheduling in this cycle...")
+        strategyHandlerSetupError = True 
+
+    ## loop over requests
+    while requestCounter:
+      failback = strategyHandlerSetupError if strategyHandlerSetupError else False
+      requestDict = self.getRequest( "transfer" )
+      if not requestDict["OK"]:
+        self.log.error("execute: error when getteing 'transfer' request: %s" % requestDict["Message"] )
+        return requestDict 
+      if not requestDict["Value"]:
+        self.log.info("execute: no more 'Waiting' requests found in RequestDB")
+        return S_OK()
+      requestDict = requestDict["Value"]
+
+      self.log.info("execute: processing request (%d) %s" %  ( self.requestsPerCycle() - requestCounter + 1, 
+                                                               requestDict["requestName"] ) )
+
+      ## FTS scheduling
+      if self.__executionMode["FTS"] and not failback:
+        self.log.debug("execute: using FTS")
+        executeFTS = self.executeFTS( requestDict )
+        if not executeFTS["OK"]:
+          self.log.error( executeFTS["Message"] )
+          failback = True
+        elif executeFTS["OK"]:
+          if executeFTS["Value"]:
+            self.log.info("execute: request %s has been processed in FTS" % requestDict["requestName"] )
+            requestCounter = requestCounter - 1
+            self.deleteRequest( requestDict["requestName"] )
+            continue 
+          else:
+            failback = True
+
+      ## failback 
+      if failback and not self.__executionMode["Tasks"]:
+        self.log.error("execute: not able to process %s request" % requestDict["requestName"] )
+        self.log.error("execute: FTS scheduling has failed and Task mode is disabled" ) 
+        ## put request back to RequestClient
+        res = self.requestClient().updateRequest( requestDict["requestName"], requestDict["requestString"] )
+        if not res["OK"]:
+          self.log.error( "execute: failed to update request %s: %s" % ( requestDict["requestName"], 
+                                                                         res["Message"] ) )
+        ## delete it from requestHolder
+        self.deleteRequest( requestDict["requestName"] )
+        ## decrease request counter 
+        requestCounter = requestCounter - 1
+        continue
+
+      ## Task execution
+      if self.__executionMode["Tasks"]: 
+        self.log.debug("execute: using TransferTask")
+        res = self.executeTask( requestDict )
+        if res["OK"]:
+          requestCounter = requestCounter - 1
+          continue
+
     return S_OK()
+
+  def executeFTS( self, requestDict ):
+    """ execute Request in FTS mode
+
+    :return: S_ERROR on error in scheduling, S_OK( False ) for failover tasks and S_OK( True )
+    if scheduling was OK
+
+    :param self: self reference
+    :param dict requestDict: request dictionary
+    """
+    requestObj = RequestContainer( requestDict["requestString"] )
+    requestDict["requestObj"] = requestObj
+
+    ## check request owner
+    ownerGroup = requestObj.getAttribute( "OwnerGroup" )
+    if ownerGroup["OK"] and ownerGroup["Value"] in self.__ftsDisabledOwnerGroups:
+      self.log.info("excuteFTS: request %s OwnerGroup=%s is banned from FTS" % ( requestDict["requestName"], 
+                                                                                 ownerGroup["Value"] ) )
+      return S_OK( False )
+
+    ## check operation
+    res = requestObj.getNumSubRequests( "transfer" )
+    if not res["OK"]:
+      self.log.error( "executeFTS: failed to get number of 'transfer' subrequests", res["Message"] )
+      return S_OK( False )
+    numberRequests = res["Value"]
+    for iSubRequest in range( numberRequests ):
+      subAttrs = requestObj.getSubRequestAttributes( iSubRequest, "transfer" )["Value"]
+      status = subAttrs["Status"]
+      operation = subAttrs["Operation"]
+      if status == "Waiting" and operation != "replicateAndRegister":
+        self.log.error("executeFTS: operation %s for subrequest %s is not supported in FTS mode" % ( operation, 
+                                                                                                     iSubRequest ) )
+        return S_OK( False )
+     
+    schedule = self.schedule( requestDict )
+    if schedule["OK"]:
+      self.log.info("executeFTS: request %s has been processed" % requestDict["requestName"] )
+    else:
+      self.log.error( schedule["Message"] )
+      return schedule 
+
+    return S_OK( True )
+          
+  def executeTask( self, requestDict ):
+    """ create and queue task into the processPool
+
+    :param self: self reference
+    :param dict requestDict: requestDict
+    """
+    ## add confing path
+    requestDict["configPath"] = self.configPath()
+    ## remove requestObj
+    if "requestObj" in requestDict:
+      del requestDict["requestObj"]
+
+    taskID = requestDict["requestName"]
+    while True:
+      if not self.processPool().getFreeSlots():
+        self.log.info("executeTask: no free slots available in pool, will wait 2 seconds to proceed...")
+        time.sleep( 2 )
+      else:
+        self.log.info("executeTask: spawning task %s for request %s" % ( taskID, taskID ) )
+        enqueue = self.processPool().createAndQueueTask( TransferTask,
+                                                         kwargs = requestDict,
+                                                         taskID = taskID,
+                                                         blocking = True,
+                                                         usePoolCallbacks = True,
+                                                         timeOut = self.taskTimeout() )
+        if not enqueue["OK"]:
+          self.log.error( enqueue["Message"] )
+        else:
+          self.log.info("executeTask: successfully enqueued request %s" % taskID )
+          ## task created, a little time kick to proceed
+          time.sleep( 0.2 )
+          break
+
+    return S_OK()
+
+
+  ###################################################################################
+  # FTS scheduling 
+  ###################################################################################
+  def schedule( self, requestDict ):
+    """ scheduling files for FTS
+
+    here requestDict
+    requestDict = { "requestString" : str,
+                    "requestName" : str,
+                    "sourceServer" : str,
+                    "executionOrder" : int,
+                    "jobID" : int,
+                    "requestObj" : RequestContainer }
+
+    :param self: self reference
+    :param dict requestDict: request dictionary 
+    """
+
+    requestObj = requestDict["requestObj"]
+    requestName = requestDict["requestName"]
+
+    res = requestObj.getNumSubRequests( "transfer" )
+    if not res["OK"]:
+      self.log.error( "schedule: Failed to get number of 'transfer' subrequests", res["Message"] )
+      return S_ERROR( "schedule: Failed to get number of 'transfer' subrequests" )
+    numberRequests = res["Value"]
+    self.log.debug( "schedule: request '%s' has got %s 'transfer' subrequest(s)" % ( requestName, 
+                                                                                     numberRequests ) )
+    for iSubRequest in range( numberRequests ):
+      self.log.info( "schedule: treating subrequest %s from '%s'" % ( iSubRequest, 
+                                                                      requestName ) )
+      subAttrs = requestObj.getSubRequestAttributes( iSubRequest, "transfer" )["Value"]
+      
+      subRequestStatus = subAttrs["Status"]
+
+      #execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
+      #if execOrder > requestDict["executionOrder"]:
+      #  strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
+      #  self.info.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder" % strTup )  
+      #  continue 
+
+      if subRequestStatus != "Waiting" :
+        ## sub-request is already in terminal state
+        self.log.info( "schedule: subrequest %s status is '%s', it won't be executed" % ( iSubRequest, 
+                                                                                          subRequestStatus ) )
+        continue
+
+      ## check already replicated files
+      checkReadyReplicas = self.checkReadyReplicas( requestObj, iSubRequest, subAttrs )
+      if not checkReadyReplicas["OK"]:
+        self.log.error("schedule: %s" % checkReadyReplicas["Message"] )
+        continue
+      requestObj = checkReadyReplicas["Value"]
+
+      ## failover registration (file has been transfered but registration failed)
+      registerFiles = self.registerFiles( requestObj, iSubRequest )
+      if not registerFiles["OK"]:
+        self.log.error("schedule: %s" % registerFiles["Message"] )
+        continue
+      ## get modified request obj
+      requestObj = registerFiles["Value"]
+
+      ## get subrequest files, filer not-Done
+      subRequestFiles = requestObj.getSubRequestFiles( iSubRequest, "transfer" )
+      if not subRequestFiles["OK"]:
+        return subRequestFiles
+      subRequestFiles = subRequestFiles["Value"]
+      ## collect not done LFNs
+      notDoneLFNs = []
+      for subRequestFile in subRequestFiles:
+        status = subRequestFile["Status"]
+        if status != "Done":
+          notDoneLFNs.append( subRequestFile["LFN"] )
+
+      subRequestEmpty = requestObj.isSubRequestEmpty( iSubRequest, "transfer" )
+      subRequestEmpty = subRequestEmpty["Value"] if "Value" in subRequestEmpty else False
+
+      ## schedule files, some are still in Waiting State
+      if not subRequestEmpty:
+        scheduleFiles = self.scheduleFiles( requestObj, iSubRequest, subAttrs )
+        if not scheduleFiles["OK"]:
+          self.log.error("schedule: %s" % scheduleFiles["Message"] )
+          continue
+        ## get modified request obj
+        requestObj = scheduleFiles["Value"]
+      elif notDoneLFNs:
+        ## maybe some are not Done yet?
+        self.log.info("schedule: not-Done files found in subrequest")
+      else:
+        ## nope, all Done or no Waiting found
+        self.log.info("schedule: subrequest %d is empty" % iSubRequest )
+        self.log.debug("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
+        requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
+
+      ## check if all files are in 'Done' status
+      subRequestDone = requestObj.isSubRequestDone( iSubRequest, "transfer" )
+      subRequestDone = subRequestDone["Value"] if "Value" in subRequestDone else False
+      ## all files Done, make this subrequest Done too 
+      if subRequestDone:
+        self.log.info("schedule: subrequest %s is done" % iSubRequest )
+        self.log.debug("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
+        requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
+
+    ## update Request in DB after operation 
+    ## if all subRequests are statuses = Done, 
+    ## this will also set the Request status to Done
+    requestString = requestObj.toXML()["Value"]
+    res = self.requestClient().updateRequest( requestName, requestString )
+    if not res["OK"]:
+      self.log.error( "schedule: failed to update request", "%s %s" % ( requestName, res["Message"] ) )
+      return res
+
+    ## finalisation only if jobID is set
+    if requestDict["jobID"]:
+      requestStatus = self.requestClient().getRequestStatus( requestName )
+      if not requestStatus["OK"]:
+        self.log.error( "schedule: failed to get request status", "%s %s" % ( requestName, requestStatus["Message"] ) )
+        return requestStatus
+      requestStatus = requestStatus["Value"]
+      self.log.debug( "schedule: requestStatus is %s" % requestStatus )
+      ## ...and request status == 'Done' (or subrequests statuses not in Waiting or Assigned 
+      if ( requestStatus["SubRequestStatus"] not in ( "Waiting", "Assigned" ) ) and \
+            ( requestStatus["RequestStatus"] == "Done" ):
+        self.log.info( "schedule: will finalize request: %s" % requestName )
+        finalize = self.requestClient().finalizeRequest( requestName, requestDict["jobID"] )
+        if not finalize["OK"]:
+          self.log.error("schedule: error in request finalization: %s" % finalize["Message"] )
+          return finalize
+
+    return S_OK()
+
+  def scheduleFiles( self, requestObj, index, subAttrs ):
+    """ schedule files for subrequest :index:
+
+    :param self: self reference
+    :param index: subrequest index
+    :param RequestContainer requestObj: request being processed
+    :param dict subAttrs: subrequest's attributes
+    """
+    self.log.info( "scheduleFiles: FTS scheduling, processing subrequest %s" % index )
+    ## get source SE
+    sourceSE = subAttrs["SourceSE"] if subAttrs["SourceSE"] not in ( None, "None", "" ) else None
+    ## get target SEs, no matter what's a type we need a list
+    targetSEs = [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") if targetSE.strip() ]
+    ## get replication strategy
+    operation = subAttrs["Operation"]
+    strategy = { False : None, 
+                 True: operation }[ operation in self.strategyHandler().getSupportedStrategies() ]
+
+    ## get subrequest files
+    subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
+    if not subRequestFiles["OK"]:
+      return subRequestFiles
+    subRequestFiles = subRequestFiles["Value"]
+    self.log.debug( "scheduleFiles: found %s files" % len( subRequestFiles ) ) 
+    ## collect not done LFNS
+    notDoneLFNs = []
+    for subRequestFile in subRequestFiles:
+      status = subRequestFile["Status"]
+      if status != "Done":
+        notDoneLFNs.append( subRequestFile["LFN"] )
+
+    ## get subrequest files  
+    self.log.debug( "scheduleFiles: obtaining 'Waiting' files for %d subrequest" % index )
+    files = self.collectFiles( requestObj, index, status = "Waiting" )
+    if not files["OK"]:
+      self.log.debug("scheduleFiles: failed to get 'Waiting' files from subrequest", files["Message"] )
+      return files
+
+    waitingFiles, replicas, metadata = files["Value"]
+
+    if not waitingFiles:
+      self.log.debug("scheduleFiles: not 'Waiting' files found in this subrequest" )
+      return S_OK( requestObj )
+
+    if not replicas or not metadata:
+      return S_ERROR( "replica or metadata info is missing" )
+
+    ## loop over waiting files, get replication tree 
+    for waitingFileLFN, waitingFileID in sorted( waitingFiles.items() ):
+        
+      self.log.info("scheduleFiles: processing file FileID=%s LFN=%s" % ( waitingFileID, waitingFileLFN ) )
+
+      waitingFileReplicas = [] if waitingFileLFN not in replicas else replicas[waitingFileLFN]
+      if not waitingFileReplicas:
+        self.log.warn("scheduleFiles: no replica information available for LFN %s" % waitingFileLFN )
+        continue 
+      waitingFileMetadata = None if waitingFileLFN not in metadata else metadata[waitingFileLFN]
+      if not waitingFileMetadata:
+        self.log.warn("scheduleFiles: no metadata information available for LFN %s" % waitingFileLFN )
+        continue 
+      waitingFileSize = None if not waitingFileMetadata else waitingFileMetadata["Size"]
+        
+      ## set target SEs for this file
+      waitingFileTargets = [ targetSE for targetSE in targetSEs if targetSE not in waitingFileReplicas ]
+      if not waitingFileTargets:
+        self.log.info( "scheduleFiles: %s is replicated, setting its status to 'Done'" % waitingFileLFN )
+        requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, "Status", "Done" )
+        continue
+        
+      self.log.info( "scheduleFiles: file %s size=%s replicas=%d targetSEs=%s" % ( waitingFileLFN, 
+                                                                                   waitingFileSize, 
+                                                                                   len(waitingFileReplicas), 
+                                                                                   str(waitingFileTargets) ) ) 
+      ## get the replication tree at least
+      tree = self.strategyHandler().replicationTree( waitingFileReplicas.keys(),  
+                                                     waitingFileTargets, 
+                                                     waitingFileSize, 
+                                                     strategy )
+      if not tree["OK"]:
+        self.log.warn("scheduleFiles: file %s cannot be scheduled: %s" % ( waitingFileLFN, tree["Message"] ) )
+        continue
+
+      tree = tree["Value"]
+      self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
+ 
+      ## sorting keys by hopAncestor
+      sortedKeys = self.ancestorSortKeys( tree, "Ancestor" )
+      if not sortedKeys["OK"]:
+        self.log.warn( "scheduleFiles: unable to sort replication tree by Ancestor: %s"% sortedKeys["Message"] )
+        sortedKeys = tree.keys()
+      else:
+        sortedKeys = sortedKeys["Value"]
+      ## dict holding swap parent with child for same SURLs
+      ancestorSwap = {} 
+      for channelID in sortedKeys:
+        repDict = tree[channelID]
+        self.log.info( "scheduleFiles: processing channel %d %s" % ( channelID, str( repDict ) ) )
+        transferURLs = self.getTransferURLs( waitingFileLFN, repDict, waitingFileReplicas )
+        if not transferURLs["OK"]:
+          return transferURLs
+        sourceSURL, targetSURL, waitingFileStatus = transferURLs["Value"]
+
+        ## save ancestor to swap
+        if sourceSURL == targetSURL and waitingFileStatus.startswith( "Done" ):
+          oldAncestor = str(channelID)            
+          newAncestor = waitingFileStatus[5:]
+          ancestorSwap[ oldAncestor ] = newAncestor
+
+        ## add file to channel
+        res = self.transferDB().addFileToChannel( channelID, 
+                                                  waitingFileID, 
+                                                  repDict["SourceSE"], 
+                                                  sourceSURL, 
+                                                  repDict["DestSE"], 
+                                                  targetSURL, 
+                                                  waitingFileSize, 
+                                                  waitingFileStatus )
+        if not res["OK"]:
+          self.log.error( "scheduleFiles: failed to add file to channel" , "%s %s" % ( str(waitingFileID), 
+                                                                                       str(channelID) ) )
+          return res
+        ## add file registration 
+        res = self.transferDB().addFileRegistration( channelID, 
+                                                     waitingFileID, 
+                                                     waitingFileLFN, 
+                                                     targetSURL, 
+                                                     repDict["DestSE"] )
+        if not res["OK"]:
+          errStr = res["Message"]
+          self.log.error( "scheduleFiles: failed to add File registration", "%s %s" % ( waitingFileID, 
+                                                                                        channelID ) )
+          result = self.transferDB().removeFileFromChannel( channelID, waitingFileID )
+          if not result["OK"]:
+            errStr += result["Message"]
+            self.log.error( "scheduleFiles: failed to remove file from channel" , "%s %s" % ( waitingFileID, 
+                                                                                              channelID ) )
+            return S_ERROR( errStr )
+        ## add replication tree
+        res = self.transferDB().addReplicationTree( waitingFileID, tree )
+        if not res["OK"]:
+          self.log.error("schedule: error adding replication tree for file %s: %s" % ( waitingFileLFN, 
+                                                                                       res["Message"]) )
+          continue
+
+        ## update File status to 'Scheduled'
+        requestObj.setSubRequestFileAttributeValue( index, "transfer", 
+                                                    waitingFileLFN, "Status", "Scheduled" )
+        self.log.info( "scheduleFiles: status of %s file set to 'Scheduled'" % waitingFileLFN )
+  
+    ## return modified requestObj 
+    return S_OK( requestObj )
+
+
+  def checkReadyReplicas( self, requestObj, index, subAttrs ):
+    """ check if Files are already replicated, mark thiose as Done
+
+    :param self: self reference
+    :param RequestContainer requestObj: request being processed
+    :param index: subrequest index
+    :param dict subAttrs: subrequest attributes
+    """
+    self.log.debug( "checkReadyReplicas: obtaining all files in %d subrequest" % index )
+    ## get targetSEs
+    targetSEs = [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") if targetSE.strip() ]
+    ## get subrequest files
+    subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
+    if not subRequestFiles["OK"]:
+      return subRequestFiles
+    subRequestFiles = subRequestFiles["Value"]
+    self.log.debug( "checkReadyReplicas: found %s files" % len( subRequestFiles ) ) 
+
+    fileLFNs = []
+    for subRequestFile in subRequestFiles:
+      status = subRequestFile["Status"]
+      if status != "Done":
+        fileLFNs.append( subRequestFile["LFN"] )
+  
+    replicas = None
+    if fileLFNs:      
+      self.log.debug( "checkReadyReplicas: got %s not-done files" % str(len(fileLFNs) ) )
+      replicas = self.replicaManager().getCatalogReplicas( fileLFNs )
+      if not replicas["OK"]:
+        return replicas
+      for lfn, failure in replicas["Value"]["Failed"].items():
+        self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
+        if re.search( "no such file or directory", str(failure).lower() ):
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
+      replicas = replicas["Value"]["Successful"]
+
+    ## are there any replicas?
+    if replicas:
+      for fileLFN in fileLFNs:
+        self.log.debug( "checkReadyReplicas: processing file %s" % fileLFN )
+        fileReplicas = [] if fileLFN not in replicas else replicas[fileLFN]
+        fileTargets = [ targetSE for targetSE in targetSEs if targetSE not in fileReplicas ]
+        if not fileTargets:
+          self.log.info( "checkReadyReplicas: %s is present at all targets, setting its status to 'Done'" % fileLFN )
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", fileLFN, "Status", "Done" )
+          continue    
+        else:
+          self.log.debug( "checkReadyReplicas: file %s still needs to be replicated at %s" % ( fileLFN, fileTargets ) )
+      
+    return S_OK( requestObj )
+  
+  def registerFiles( self, requestObj, index ):
+    """ failover registration for files in subrequest :index:
+
+    :param self: self reference
+    :param index: subrequest index
+    :param RequestContainer requestObj: request being processed
+    :param dict subAttrs: subrequest's attributes
+    """
+    self.log.debug( "registerFiles: failover registration, processing %s subrequest" % index )
+    subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
+    if not subRequestFiles["OK"]:
+      return subRequestFiles
+    subRequestFiles = subRequestFiles["Value"]
+    self.log.debug( "registerFiles: found %s files" % len( subRequestFiles ) ) 
+    for subRequestFile in subRequestFiles:
+      status = subRequestFile["Status"]
+      lfn = subRequestFile["LFN"]
+      fileID = subRequestFile["FileID"]
+      self.log.debug("registerFiles: processing file FileID=%s LFN=%s Status=%s" % ( fileID, lfn, status ) )
+      if status in ( "Waiting", "Scheduled" ):
+        ## get failed to register [ ( PFN, SE, ChannelID ), ... ] 
+        toRegister = self.transferDB().getRegisterFailover( fileID )
+        if not toRegister["OK"]:
+          self.log.error( "registerFiles: %s" % toRegister["Message"] )
+          return toRegister
+        if not toRegister["Value"] or len(toRegister["Value"]) == 0:
+          self.log.debug("registerFiles: no waiting registrations found for %s file" % lfn )
+          continue
+        ## loop and try to register
+        toRegister = toRegister["Value"]
+        for pfn, se, channelID in toRegister:
+          self.log.info("registerFiles: failover registration of %s to %s" % ( lfn, se ) )
+          ## register replica now
+          registerReplica = self.replicaManager().registerReplica( ( lfn, pfn, se ) )
+          if ( ( not registerReplica["OK"] ) 
+               or ( not registerReplica["Value"] ) 
+               or ( lfn in registerReplica["Value"]["Failed"] ) ):
+            error = registerReplica["Message"] if "Message" in registerReplica else None 
+            if "Value" in registerReplica:
+              if not registerReplica["Value"]:
+                error = "RM call returned empty value"
+              else:
+                error = registerReplica["Value"]["Failed"][lfn]
+            self.log.error( "registerFiles: unable to register %s at %s: %s" %  ( lfn, se, error ) )
+            return S_ERROR( error )
+          elif lfn in registerReplica["Value"]["Successful"]:
+            ## no other option, it must be in successfull
+            register = self.transferDB().setRegistrationDone( channelID, fileID )
+            if not register["OK"]:
+              self.log.error("registerFiles: set status error %s fileID=%s channelID=%s: %s" % ( lfn,
+                                                                                                 fileID,
+                                                                                                 channelID,
+                                                                                                 register["Message"] ) )
+              return register
+
+    return S_OK( requestObj )

@@ -31,7 +31,7 @@ class Logger:
     self._outputList = []
     self._subLoggersDict = {}
     self._logLevels = LogLevels()
-    self.__backendOptions = { 'showHeaders' : True, 'showThreads' : False }
+    self.__backendOptions = { 'showHeaders' : True, 'showThreads' : False, 'Color' : False }
     self.__preinitialize()
     self.__initialized = False
 
@@ -107,6 +107,8 @@ class Logger:
 
     self.__backendOptions[ 'Site' ] = DIRAC.siteName()
 
+    self.__backendOptions[ 'Color' ] = gConfig.getValue( "%s/LogColor" % cfgPath, False )
+
     #Configure outputs
     desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath, 'stdout' )
     self.registerBackends( List.fromChar( desiredBackends ) )
@@ -125,11 +127,17 @@ class Logger:
 
   def setLevel( self, levelName ):
     levelName = levelName.upper()
-    if levelName.upper() in self._logLevels.getLevels():
+    if levelName in self._logLevels.getLevels():
       self._minLevel = abs( self._logLevels.getLevelValue( levelName ) )
       return True
     return False
 
+
+  def shown( self, levelName ):
+    levelName = levelName.upper()
+    if levelName in self._logLevels.getLevels():
+      return self._logLevels.getLevelValue( levelName ) <= levelName
+    return False
 
   def getName( self ):
     return self._systemName
@@ -270,7 +278,7 @@ class Logger:
         lExcInfo = sys.exc_info()
       type, value = ( lExcInfo[0], lExcInfo[1] )
       stack = "\n".join( traceback.format_tb( lExcInfo[2] ) )
-    return "== EXCEPTION ==\n%s:%s\n%s===============" % ( 
+    return "== EXCEPTION ==\n%s:%s\n%s===============" % (
                          type,
                          value,
                          stack )
@@ -342,8 +350,8 @@ class Logger:
     return self._subLoggersDict[ subName ]
 
   def __printDebug( self, debugString ):
-    """ This function is implemented to debug problems with initialization 
-     of the logger. We have to use it because the Logger is obviously unusable 
+    """ This function is implemented to debug problems with initialization
+     of the logger. We have to use it because the Logger is obviously unusable
      during its initialization.
     """
     if DEBUG:

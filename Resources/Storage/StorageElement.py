@@ -13,7 +13,7 @@
 __RCSID__ = "$Id$"
 
 
-from DIRAC                                              import gLogger, S_OK, S_ERROR
+from DIRAC                                              import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Storage.StorageFactory             import StorageFactory
 from DIRAC.Core.Utilities.Pfn                           import pfnparse
 from DIRAC.Core.Utilities.List                          import sortList
@@ -46,12 +46,12 @@ class StorageElement:
     self.readMethods = [   'getFile',
                            'getAccessUrl',
                            'getTransportURL',
+                           'prestageFile',
+                           'prestageFileStatus',
                            'getDirectory']
     self.writeMethods = [  'retransferOnlineFile',
                            'putFile',
                            'replicateFile',
-                           'prestageFile',
-                           'prestageFileStatus',
                            'pinFile',
                            'releaseFile',
                            'createDirectory',
@@ -87,6 +87,9 @@ class StorageElement:
       Dump to the logger a summary of the StorageElement items
     """
     gLogger.info( "StorageElement.dump: Preparing dump for StorageElement %s." % self.name )
+    if not self.valid:
+      gLogger.error( "StorageElement.dump: Failed to create StorageElement plugins.", self.errorReason )
+      return
     i = 1
     outStr = "\n\n============ Options ============\n"
     for key in sortList( self.options.keys() ):
@@ -110,13 +113,21 @@ class StorageElement:
     gLogger.verbose( "StorageElement.getStorageElementName: The Storage Element name is %s." % self.name )
     return S_OK( self.name )
 
+  def getChecksumType( self ):
+    """ get local /Resources/StorageElements/SEName/ChecksumType option if defined, otherwise 
+        global /Resources/StorageElements/ChecksumType
+    """
+    return S_OK( str(gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" )).upper() 
+                 if "ChecksumType" not in self.options else str(self.options["ChecksumType"]).upper() )
+     
   def getStatus( self ):
     """
      Return Status of the SE, a dictionary with:
       - Read: True (is allowed), False (it is not allowed)
       - Write: True (is allowed), False (it is not allowed)
       - Remove: True (is allowed), False (it is not allowed)
-      - Check: True (is allowed), False (it is not allowed). NB: Check always allowed IF Read is allowed (regardless of what set in the Check option of the configuration)
+      - Check: True (is allowed), False (it is not allowed). 
+      NB: Check always allowed IF Read is allowed (regardless of what set in the Check option of the configuration)
       - DiskSE: True if TXDY with Y > 0 (defaults to True)
       - TapeSE: True if TXDY with X > 0 (defaults to False)
       - TotalCapacityTB: float (-1 if not defined)
@@ -136,13 +147,17 @@ class StorageElement:
 
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
-    retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active' )
-    retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active' )
-    retDict['Remove'] = not ( self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active' )
+    retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] not in ( 'Active', 'Degraded' ) )
+    #retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active' )
+    retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] not in ( 'Active', 'Degraded' ) )
+    #retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active' )
+    retDict['Remove'] = not ( self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] not in ( 'Active', 'Degraded' ) )
+    #retDict['Remove'] = not ( self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active' )
     if retDict['Read']:
       retDict['Check'] = True
     else:
-      retDict['Check'] = not ( self.options.has_key( 'CheckAccess' ) and self.options['CheckAccess'] != 'Active' )
+      #retDict['Check'] = not ( self.options.has_key( 'CheckAccess' ) and self.options['CheckAccess'] != 'Active' )
+      retDict['Check'] = not ( self.options.has_key( 'CheckAccess' ) and self.options['CheckAccess'] not in ( 'Active', 'Degraded' ) )
     diskSE = True
     tapeSE = False
     if self.options.has_key( 'SEType' ):
@@ -224,6 +239,8 @@ class StorageElement:
   def getProtocols( self ):
     """ Get the list of all the protocols defined for this Storage Element
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getProtocols: Obtaining all protocols for %s." % self.name )
     allProtocols = self.localProtocols + self.remoteProtocols
     return S_OK( allProtocols )
@@ -231,18 +248,24 @@ class StorageElement:
   def getRemoteProtocols( self ):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getRemoteProtocols: Obtaining remote protocols for %s." % self.name )
     return S_OK( self.remoteProtocols )
 
   def getLocalProtocols( self ):
     """ Get the list of all the local access protocols defined for this Storage Element
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getLocalProtocols: Obtaining local protocols for %s." % self.name )
     return S_OK( self.localProtocols )
 
   def getStorageElementOption( self, option ):
     """ Get the value for the option supplied from self.options
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getStorageElementOption: Obtaining %s option for Storage Element %s." % ( option, self.name ) )
     if self.options.has_key( option ):
       optionValue = self.options[option]
@@ -257,10 +280,12 @@ class StorageElement:
     """
     gLogger.verbose( "StorageElement.getStorageParameters: Obtaining storage parameters for %s protocol %s." % ( self.name, protocol ) )
     res = self.getProtocols()
+    if not res['OK']:
+      return res
     availableProtocols = res['Value']
     if not protocol in availableProtocols:
       errStr = "StorageElement.getStorageParameters: Requested protocol not available for SE."
-      gLogger.error( errStr, '%s for %s' % ( protocol, self.name ) )
+      gLogger.warn( errStr, '%s for %s' % ( protocol, self.name ) )
       return S_ERROR( errStr )
     for storage in self.storages:
       res = storage.getParameters()
@@ -291,6 +316,8 @@ class StorageElement:
     """ Transform the input pfn into another with the given protocol for the Storage Element.
     """
     res = self.getProtocols()
+    if not res['OK']:
+      return res
     if type( protocol ) == types.StringType:
       protocols = [protocol]
     elif type( protocol ) == types.ListType:
@@ -326,8 +353,10 @@ class StorageElement:
 
   def getPfnPath( self, pfn ):
     """  Get the part of the PFN path below the basic storage path.
-         This path must coinside with the LFN of the file in order to be compliant with the LHCb conventions.
+         This path must coincide with the LFN of the file in order to be compliant with the LHCb conventions.
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     res = pfnparse( pfn )
     if not res['OK']:
       return res
@@ -358,6 +387,8 @@ class StorageElement:
   def getPfnForLfn( self, lfn ):
     """ Get the full PFN constructed from the LFN.
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     for storage in self.storages:
       res = storage.getPFNBase()
       if res['OK']:
@@ -531,6 +562,8 @@ class StorageElement:
         'pfn' is the physical file name (as registered in the LFC)
         'method' is the functionality to be executed
     """
+    ## default args  = no args  
+    argsDict = argsDict if argsDict else {}
     if type( pfn ) in types.StringTypes:
       pfns = {pfn:False}
     elif type( pfn ) == types.ListType:
@@ -553,6 +586,10 @@ class StorageElement:
       res = self.isValid( operation = method )
       if not res['OK']:
         return res
+    else:
+      if not self.valid:
+        return S_ERROR( self.errorReason )
+
 
     successful = {}
     failed = {}
@@ -583,25 +620,17 @@ class StorageElement:
           gLogger.verbose( "StorageElement.__executeFunction No pfns generated for protocol %s." % protocolName )
         else:
           gLogger.verbose( "StorageElement.__executeFunction: Attempting to perform '%s' for %s physical files." % ( method, len( pfnDict.keys() ) ) )
+          fcn = None
+          if hasattr( storage, method ) and callable( getattr( storage, method ) ):
+            fcn = getattr( storage, method )
+          if not fcn:
+            return S_ERROR( "StorageElement.__executeFunction: unable to invoke %s, it isn't a member function of storage" )
+
           pfnsToUse = {}
           for pfn in pfnDict.keys():
             pfnsToUse[pfn] = pfns[pfnDict[pfn]]
-          if argsDict:
-            execString = "res = storage.%s(pfnsToUse" % method
-            for argument, value in argsDict.items():
-              if type( value ) == types.StringType:
-                execString = "%s, %s='%s'" % ( execString, argument, value )
-              else:
-                execString = "%s, %s=%s" % ( execString, argument, value )
-            execString = "%s)" % execString
-          else:
-            execString = "res = storage.%s(pfnsToUse)" % method
-          try:
-            exec( execString )
-          except AttributeError, errMessage:
-            exceptStr = "StorageElement.__executeFunction: Exception while performing %s." % method
-            gLogger.exception( exceptStr, str( errMessage ) )
-            res = S_ERROR( exceptStr )
+
+          res = fcn( pfnsToUse, **argsDict )
 
           if not res['OK']:
             errStr = "StorageElement.__executeFunction: Completely failed to perform %s." % method

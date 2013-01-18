@@ -1,363 +1,455 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceStatusDB
 
-from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckDBExecution, ValidateDBTypes
+  Module that provides basic methods to access the ResourceStatusDB.
+
+'''
+
+from datetime                                              import datetime 
+
+from DIRAC                                                 import S_OK, S_ERROR 
+from DIRAC.Core.Base.DB                                    import DB
+from DIRAC.ResourceStatusSystem.Utilities                  import MySQLWrapper
+from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration 
+
+__RCSID__ = '$Id: $'
 
 class ResourceStatusDB( object ):
-  """
-  The ResourceStatusDB class is a front-end to the ResourceStatusDB MySQL db.
-  It exposes four basic methods:
+  '''
+    Class that defines the tables for the ResourceStatusDB on a python dictionary.
+  '''
   
-  - insert
-  - update
-  - get
-  - delete
+  # Written PrimaryKey as list on purpose !!
+  _tablesDB = {}
   
-  all them defined on the MySQL monkey class.
-  Moreover, there are a set of key-worded parameters that can be used, specially
-  on the getX and deleteX functions ( to know more, again, check the MySQL monkey
-  documentation ).
-  
-  The DB schema has NO foreign keys, so there may be some small consistency checks,
-  called validators on the insert and update functions.  
-  
-  The simplest way to instantiate an object of type :class:`ResourceStatusDB`
-  is simply by calling
-
-   >>> rsDB = ResourceStatusDB()
-
-  This way, it will use the standard :mod:`DIRAC.Core.Base.DB`.
-  But there's the possibility to use other DB classes.
-  For example, we could pass custom DB instantiations to it,
-  provided the interface is the same exposed by :mod:`DIRAC.Core.Base.DB`.
-
-   >>> AnotherDB = AnotherDBClass()
-   >>> rsDB = ResourceStatusDB( DBin = AnotherDB )
-
-  Alternatively, for testing purposes, you could do:
-
-   >>> from mock import Mock
-   >>> mockDB = Mock()
-   >>> rsDB = ResourceStatusDB( DBin = mockDB )
-
-  Or, if you want to work with a local DB, providing it's mySQL:
-
-   >>> rsDB = ResourceStatusDB( DBin = [ 'UserName', 'Password' ] )
-   
-  The ResourceStatusDB also exposes database Schema information, either on a 
-  dictionary or on a MySQLSchema tree object.
-  
-  - getSchema
-  - inspectSchema
+  _tablesLike = {}
+  _tablesLike[ 'ElementStatus' ]    = { 'Fields' : 
+                    {
+                     'Name'            : 'VARCHAR(64) NOT NULL',
+                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT "all"',
+                     'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
+                     'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
+                     'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
+                     'DateEffective'   : 'DATETIME NOT NULL',
+                     'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT "1000-01-01 00:00:00"',
+                     'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
+                     'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
+                    },
+                    #FIXME: elementType is needed to be part of the key ??
+                    'PrimaryKey' : [ 'Name', 'StatusType' ]#, 'ElementType' ]              
+                                    }
     
-  Alternatively, we can access the MySQLSchema XML and tree as follows:
+  _tablesLike[ 'ElementWithID' ]       = { 'Fields' : 
+                    {
+                     'ID'              : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                     'Name'            : 'VARCHAR(64) NOT NULL',
+                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT "all"',
+                     'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
+                     'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
+                     'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
+                     'DateEffective'   : 'DATETIME NOT NULL',
+                     'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT "1000-01-01 00:00:00"',
+                     'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
+                     'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
+                    },
+                    'PrimaryKey' : [ 'ID' ]                
+                                    }
+
+  _likeToTable = { 
+                    'SiteStatus'        : 'ElementStatus',
+                    'SiteLog'           : 'ElementWithID',
+                    'SiteHistory'       : 'ElementWithID',
+                    'ResourceStatus'    : 'ElementStatus',
+                    'ResourceLog'       : 'ElementWithID',
+                    'ResourceHistory'   : 'ElementWithID',
+                    'NodeStatus'        : 'ElementStatus',
+                    'NodeLog'           : 'ElementWithID',
+                    'NodeHistory'       : 'ElementWithID'            
+                   }
+
+# No idea whether they make sense or not
+#  __tables[ 'ElementPresent' ]   = {} #????  
+#  __tables[ 'Element' ]          = {} #????
   
-   >>> rsDB = ResourceStatusDB()
-   >>> xml  = rsDB.mm.SCHEMA
-   >>> tree = rsDB.mm.mSchema
-   >>> tree
-   >>> tree.GridSite
-   >>> tree.GridSite.GridTier
+  def __init__( self, maxQueueSize = 10, mySQL = None ):
+    '''
+      Constructor, accepts any DB or mySQL connection, mostly used for testing
+      purposes.
+    '''
 
-  """ 
-
-  def __init__( self, *args, **kwargs ):
-    """Constructor."""
-
-    if len( args ) == 1:
-      if isinstance( args[ 0 ], str ):
-        maxQueueSize = 10
-      if isinstance( args[ 0 ], int ):
-        maxQueueSize = args[ 0 ]
-    elif len( args ) == 2:
-      maxQueueSize = args[ 1 ]
-    elif len( args ) == 0:
-      maxQueueSize = 10
-
-    if 'DBin' in kwargs.keys():
-      DBin = kwargs[ 'DBin' ]
-      if isinstance( DBin, list ):
-        from DIRAC.Core.Utilities.MySQL import MySQL
-        self.db = MySQL( 'localhost', DBin[ 0 ], DBin[ 1 ], 'ResourceStatusDB' )
-      else:
-        self.db = DBin
+    self._tableDict = self.__generateTables()
+    
+    if mySQL is not None:
+      self.database = mySQL
     else:
-      from DIRAC.Core.Base.DB import DB
-      self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
-   
-    self.mm    = MySQLMonkey( self )  
+      self.database = DB( 'ResourceStatusDB', 
+                          'ResourceStatus/ResourceStatusDB', maxQueueSize )  
 
-#  @CheckDBExecution
-  @ValidateDBTypes
+    self.recordLogs = RssConfiguration().getConfigRecordLogs() == 'Active'
+
+  ## SQL Methods ###############################################################
+
   def insert( self, params, meta ):
-    """    
+    '''
     Inserts args in the DB making use of kwargs where parameters such as
-    the table are specified ( filled automatically by the Client). In order to 
-    do the insertion, it uses MySQLMonkey to do the parsing, execution and
-    error handling. Typically you will not pass kwargs to this function, unless
-    you know what are you doing and you have a very special use case.    
-      
+    the 'table' are specified ( filled automatically by the Client). Typically you 
+    will not pass kwargs to this function, unless you know what are you doing 
+    and you have a very special use case.
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    """
-    return self.mm.insert( params, meta )
+    '''
+   
+    
+    utcnow = datetime.utcnow().replace( microsecond = 0 )
+    # We force lastCheckTime to utcnow if it is not present on the params
+    #if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+    if 'lastCheckTime' in params and params[ 'lastCheckTime' ] is None:  
+      params[ 'lastCheckTime' ] = utcnow
+    
+    # If it is a XStatus table, we force dateEffective to now.
+    if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
+      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+        params[ 'dateEffective' ] = utcnow      
+        
+    return MySQLWrapper.insert( self, params, meta )
 
-#  @CheckDBExecution
-  @ValidateDBTypes
   def update( self, params, meta ):
-    """    
+    '''
     Updates row with values given on args. The row selection is done using the
     default of MySQLMonkey ( column.primary or column.keyColumn ). It can be
-    modified using kwargs, but it is not explained here. The table keyword 
-    argument is mandatory, and filled automatically by the Client. Typically 
-    you will not pass kwargs to this function, unless you know what are you 
-    doing and you have a very special use case.
-       
+    modified using kwargs. The 'table' keyword argument is mandatory, and 
+    filled automatically by the Client. Typically you will not pass kwargs to 
+    this function, unless you know what are you doing and you have a very 
+    special use case.
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    """
-    return self.mm.update( params, meta )
+    '''
+    # We force lastCheckTime to utcnow if it is not present on the params
+    if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+      params[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )    
+    
+    return MySQLWrapper.update( self, params, meta )
 
-#  @CheckDBExecution
-  @ValidateDBTypes
-  def get( self, params, meta ):
-    """   
-    Uses arguments to build conditional SQL statement ( WHERE ... ). If the 
+  def select( self, params, meta ):
+    '''
+    Uses arguments to build conditional SQL statement ( WHERE ... ). If the
     sql statement desired is more complex, you can use kwargs to interact with
-    the MySQLStatement parser and generate a more sophisticated query.
-       
+    the MySQL buildCondition parser and generate a more sophisticated query.
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    """
-    return self.mm.get( params, meta )
+    '''
+    return MySQLWrapper.select( self, params, meta )
 
-#  @CheckDBExecution
-  @ValidateDBTypes
   def delete( self, params, meta ):
-    """     
-    Uses arguments to build conditional SQL statement ( WHERE ... ). If the 
+    '''
+    Uses arguments to build conditional SQL statement ( WHERE ... ). If the
     sql statement desired is more complex, you can use kwargs to interact with
-    the MySQLStatement parser and generate a more sophisticated query. There is
-    only one forbidden query, with all parameters None ( this would mean a query
-    of the type `DELETE * from TableName` ). The usage of kwargs is the same as in
-    the get function.
-      
+    the MySQL buildCondition parser and generate a more sophisticated query. 
+    There is only one forbidden query, with all parameters None ( this would 
+    mean a query of the type `DELETE * from TableName` ). The usage of kwargs 
+    is the same as in the get function.
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    """
-    return self.mm.delete( params, meta )
+    '''
+    return MySQLWrapper.delete( self, params, meta )
+
+  ## Extended SQL methods ######################################################
   
-  @CheckDBExecution
-  def getSchema( self ):
-    """      
-    Returns a dictionary with database schema, this includes table and column
-    names. It has two variants, columns and keyUsage. The first one has at least,
-    as many keys as keyUsage, it is the complete schema. The second one is the 
-    one used for the default updates and selects -- not taking into account 
-    auto_increment fields, but taking into account primary and keyUsage fields.
-      
+  def addOrModify( self, params, meta ):
+    '''
+    Using the PrimaryKeys of the table, it looks for the record in the database.
+    If it is there, it is updated, if not, it is inserted as a new entry. 
+    
     :Parameters:
-      `None`
-    
-    :return: S_OK()
-    """    
-    return { 'OK': True, 'Value' : self.mm.SCHEMA }
-    
-  @CheckDBExecution  
-  def inspectSchema( self ):
-    """     
-    Returns an object which represents the database schema and can be browsed.
-     >>> db = ResourceStatusDB()
-     >>> schema = db.inspectSchema()[ 'Value' ]
-     >>> schema
-         Schema 123:
-         <TableName1>,<TableName2>...
-     >>> schema.TableName1
-         Table TableName1:
-         <ColumnName1>,<ColumnName2>..
-    
-    Every column has a few attributes ( primary, keyUsage, extra, position,
-    dataType and charMaxLen ). 
+      **params** - `dict`
+        arguments for the mysql query ( must match table columns ! ).
+
+      **meta** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+        
+    selectQuery = self.select( params, meta )
+    if not selectQuery[ 'OK' ]:
+      return selectQuery 
+       
+    isUpdate = False
+       
+    if selectQuery[ 'Value' ]:      
       
-    :Parameters:
-      `None`
+      columns = selectQuery[ 'Columns' ]
+      values  = selectQuery[ 'Value' ]
+      
+      if len( values ) != 1:
+        return S_ERROR( 'More than one value returned on addOrModify, please report !!' )
+
+      selectDict = dict( zip( columns, values[ 0 ] ) )
+      
+      newDateEffective = None
+      
+      for key, value in params.items():
+        if key in ( 'lastCheckTime', 'dateEffective' ):
+          continue
+
+        if value is None:
+          continue
+        
+        if value != selectDict[ key[0].upper() + key[1:] ]:
+          newDateEffective = datetime.utcnow().replace( microsecond = 0 ) 
+          break  
+      
+      if 'dateEffective' in params:
+        params[ 'dateEffective' ] = newDateEffective              
+      
+      userQuery  = self.update( params, meta )
+      isUpdate   = True
+    else:      
+      userQuery = self.insert( params, meta )
     
-    :return: S_OK()
-    """    
-    return { 'OK': True, 'Value' : self.mm.mSchema }
+    logResult = self._logRecord( params, meta, isUpdate )
+    if not logResult[ 'OK' ]:
+      return logResult
+    
+    return userQuery      
 
-      ################################################################
-      #                                                              #
-      #                    VALIDATION ??                             #
-      #                                                              #                                       
-      #  o Site             ->(IU) SiteType                          #
-      #  o Service          ->(IU) ServiceType, Site                 #
-      #  o Resource         ->(IU) ResourceType, ServiceType         #
-      #  o StorageElement   ->(IU) Resource                          #
-      #  o GridSite         ->(IU) __none__                          #
-      #  o *Status          ->(IU) *,StatusType,Status               #
-      #  o *ScheduledStatus ->(IU) *,StatusType,Status               #
-      #  o *History         ->(IU) *,StatusType,Status               #
-      ################################################################
+  def modify( self, params, meta ):
+    '''
+    Using the PrimaryKeys of the table, it looks for the record in the database.
+    If it is there, it is updated, if not, it does nothing. 
+    
+    :Parameters:
+      **params** - `dict`
+        arguments for the mysql query ( must match table columns ! ).
 
-#################################################################################
-##EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+      **meta** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
 
+    :return: S_OK() || S_ERROR()
+    '''
+        
+    selectQuery = self.select( params, meta )
+    if not selectQuery[ 'OK' ]:
+      return selectQuery 
+             
+    if not selectQuery[ 'Value' ]:
+      return S_ERROR( 'Nothing to update for %s' % str( params ) )      
+      
+    columns = selectQuery[ 'Columns' ]
+    values  = selectQuery[ 'Value' ]
+      
+    if len( values ) != 1:
+      return S_ERROR( 'More than one value returned on addOrModify, please report !!' )
 
-##  '''
-##  ##############################################################################
-##  # MISC FUNCTIONS
-##  ##############################################################################
-##  '''
-##  Check the booster ResourceStatusSystem.Utilities.ResourceStatusBooster
-##  def setMonitoredToBeChecked( self, monitoreds, granularity, name ):
-##    """
-##    Set LastCheckTime to 0 to monitored(s)
-##
-##    :params:
-##      :attr:`monitoreds`: string, or a list of strings where each is a ValidRes:
-##      which granularity has to be set to be checked
-##
-##      :attr:`granularity`: string, a ValidRes: from who this set comes
-##
-##      :attr:`name`: string, name of Site or Resource
-##    """
-##
-##    znever = datetime.min
-##
-##    if type( monitoreds ) is not list:
-##      monitoreds = [ monitoreds ]
-##
-##    for monitored in monitoreds:
-##
-##      if monitored == 'Site':
-##
-##        siteName = self.getGeneralName( granularity, name, monitored )[ 'Value' ]
-##        self.updateSiteStatus(siteName = siteName, lastCheckTime = znever )
-##
-##      elif monitored == 'Service' :
-##
-##        if granularity =='Site':
-##          serviceName = self.getMonitoredsList( 'Service', paramsList = [ 'ServiceName' ],
-##                                                siteName = name )[ 'Value' ]
-##          if type( serviceName ) is not list:
-##            serviceName = [ serviceName ]
-##          if serviceName != []:
-###            raise RSSDBException, where( self, self.setMonitoredToBeChecked ) + " No services for site %s" %name
-###          else:
-##            serviceName = [ x[0] for x in serviceName ]
-##            self.updateServiceStatus( serviceName = serviceName, lastCheckTime = znever )
-##        else:
-##          serviceName = self.getGeneralName( granularity, name, monitored )[ 'Value' ]
-##          self.updateServiceStatus( serviceName = serviceName, lastCheckTime = znever )
-##
-##      elif monitored == 'Resource':
-##
-##        if granularity == 'Site' :
-##          resourceName = self.getMonitoredsList( 'Resource', paramsList = [ 'ResourceName' ],
-##                                                 siteName = name )[ 'Value' ]
-##          if type( resourceName ) is not list:
-##            resourceName = [ resourceName ]
-##          if resourceName != []:
-##            #raise RSSDBException, where( self, self.setMonitoredToBeChecked ) + " No resources for site %s" %name
-##          #else:
-##            resourceName = [ x[0] for x in resourceName ]
-##            self.updateResourceStatus( resourceName = resourceName, lastCheckTime = znever )
-##
-##        elif granularity == 'Service' :
-##
-##          #siteName = self.getGeneralName( granularity, name, 'Resource' )
-##          serviceType, siteName = name.split('@')
-##          gridSiteName          = self.getGridSiteName('Site', siteName)[ 'Value' ]
-##
-##          resourceName = self.getMonitoredsList( monitored, paramsList = [ 'ResourceName' ],
-##                                                 gridSiteName = gridSiteName,
-##                                                 serviceType = serviceType )[ 'Value' ]
-##          if type( resourceName ) is not list:
-##            resourceName = [ resourceName ]
-##          if resourceName != []:
-##         #   raise RSSDBException, where( self, self.setMonitoredToBeChecked ) + " No resources for service %s" %name
-##         # else:
-##            resourceName = [ x[0] for x in resourceName ]
-##            self.updateResourceStatus( resourceName = resourceName, lastCheckTime = znever )
-##
-##        elif granularity == 'StorageElement':
-##          resourceName = self.getGeneralName( granularity,  name, monitored )[ 'Value' ]
-##          self.updateResourceStatus( resourceName = resourceName, lastCheckTime = znever )
-##
-##      # Put read and write together here... too much fomr copy/paste
-##      elif monitored == 'StorageElement':
-##
-##        if granularity == 'Site':
-##
-##          gridSiteName          = self.getGridSiteName('Site', siteName)[ 'Value' ]
-##          SEName = self.getMonitoredsList( monitored, paramsList = [ 'StorageElementName' ],
-##                                           gridSiteName = gridSiteName )[ 'Value' ]
-##          if type( SEName ) is not list:
-##            SEName = [ SEName ]
-##          if SEName != []:
-##            #pass
-##          #else:
-##            SEName = [ x[0] for x in SEName ]
-##            self.updateStorageElementStatus( storageElementName = SEName, lastCheckTime = znever )
-##
-##        elif granularity == 'Resource':
-##          SEName = self.getMonitoredsList( monitored, paramsList = [ 'StorageElementName' ],
-##                                           resourceName = name )[ 'Value' ]
-##          if type( SEName ) is not list:
-##            SEName = [ SEName ]
-##          if SEName == []:
-##            pass
-###            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No storage elements for resource %s" %name
-##          else:
-##            SEName = [ x[0] for x in SEName ]
-##            self.updateStorageElementStatus( storageElementName = SEName, lastCheckTime = znever )
-##
-##        elif granularity == 'Service':
-##
-##          serviceType, siteName = name.split('@')
-##          gridSiteName          = self.getGridSiteName('Site', siteName)[ 'Value' ]
-##
-##          SEName = self.getMonitoredsList( monitored, paramsList = [ 'StorageElementName' ],
-##                                           gridSiteName = gridSiteName )[ 'Value' ]#name.split('@').pop() )[ 'Value' ]
-##          if type( SEName ) is not list:
-##            SEName = [ SEName ]
-##          if SEName != []:
-##            #pass
-###            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No storage elements for service %s" %name
-##          #else:
-##            SEName = [ x[0] for x in SEName ]
-##            self.updateStorageElementStatus( storageElementName = SEName, lastCheckTime = znever )
+    selectDict = dict( zip( columns, values[ 0 ] ) )
+      
+    newDateEffective = None
+      
+    for key, value in params.items():
+      if key in ( 'lastCheckTime', 'dateEffective' ):
+        continue
+
+      if value is None:
+        continue
+        
+      if value != selectDict[ key[0].upper() + key[1:] ]:
+        newDateEffective = datetime.utcnow().replace( microsecond = 0 ) 
+        break  
+      
+    if 'dateEffective' in params:
+      params[ 'dateEffective' ] = newDateEffective              
+      
+    userQuery = self.update( params, meta )
+    
+    logResult = self._logRecord( params, meta, True )
+    if not logResult[ 'OK' ]:
+      return logResult
+    
+    return userQuery
+
+  def addIfNotThere( self, params, meta ):
+    '''
+    Using the PrimaryKeys of the table, it looks for the record in the database.
+    If it is not there, it is inserted as a new entry. 
+    
+    :Parameters:
+      **params** - `dict`
+        arguments for the mysql query ( must match table columns ! ).
+
+      **meta** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+        
+    selectQuery = self.select( params, meta )
+    if not selectQuery[ 'OK' ]:
+      return selectQuery 
+       
+    if selectQuery[ 'Value' ]:      
+      return selectQuery
+    
+    insertQuery = self.insert( params, meta )  
+  
+    if self.recordLogs:
+      
+      if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
+                
+        meta[ 'table' ] = meta[ 'table' ].replace( 'Status', 'Log' )
+
+        logRes = self.insert( params, meta )
+        if not logRes[ 'OK' ]:
+          return logRes  
+        
+    return insertQuery        
+      
+  ## Auxiliar methods ##########################################################
+
+  def getTable( self, tableName ):
+    '''
+      Returns a table dictionary description given its name 
+    '''
+    if tableName in self._tableDict:
+      return S_OK( self._tableDict[ tableName ] )
+    
+    return S_ERROR( '%s is not on the schema' % tableName )
+    
+  def getTablesList( self ):
+    '''
+      Returns a list of the table names in the schema.
+    '''
+    return S_OK( self._tableDict.keys() )
+
+  ## Protected methods #########################################################
+
+  def _checkTable( self ):
+    '''
+      Method used by database tools to write the schema
+    '''  
+    return self.__createTables()
+
+  def _logRecord( self, params, meta, isUpdate ):
+    '''
+      Method that records every change on a LogTable, if activated on the CS.
+    '''
+
+    if not self.recordLogs:
+      return S_OK()
+      
+    if not ( 'table' in meta and meta[ 'table' ].endswith( 'Status' ) ):
+      return S_OK()
+        
+    if isUpdate:
+      updateRes = self.select( params, meta )
+      if not updateRes[ 'OK' ]:
+        return updateRes
+          
+      # If we are updating more that one result at a time, this is most likely
+      # going to be a mess. All queries must be one at a time, if need to do
+      if len( updateRes[ 'Value' ] ) != 1:
+        return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
+      if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
+        # Uyyy, something went seriously wrong !!
+        return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
+                    
+      params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] )) 
+                
+    meta[ 'table' ] = meta[ 'table' ].replace( 'Status', 'Log' )
+
+    logRes = self.insert( params, meta )
+    
+    return logRes
+
+  ## Private methods ###########################################################
+
+  def __createTables( self, tableName = None ):
+    '''
+      Writes the schema in the database. If no tableName is given, all tables
+      are written in the database. If a table is already in the schema, it is
+      skipped to avoid problems trying to create a table that already exists.
+    '''
+
+    # Horrible SQL here !!
+    tablesCreatedRes = self.database._query( "show tables" )
+    if not tablesCreatedRes[ 'OK' ]:
+      return tablesCreatedRes
+    tablesCreated = [ tableCreated[0] for tableCreated in tablesCreatedRes[ 'Value' ] ]
+
+    tables = {}
+    if tableName is None:
+      tables.update( self._tableDict )
+   
+    elif tableName in self._tableDict:
+      tables = { tableName : self._tableDict[ tableName ] }
+    
+    else:
+      return S_ERROR( '"%s" is not a known table' % tableName )    
+      
+    for tableName in tablesCreated:
+      if tableName in tables:
+        del tables[ tableName ]  
+              
+    res = self.database._createTables( tables )
+    if not res[ 'OK' ]:
+      return res
+    
+    # Human readable S_OK message
+    if res[ 'Value' ] == 0:
+      res[ 'Value' ] = 'No tables created'
+    else:
+      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
+    return res       
+
+  def __generateTables( self ):
+    '''
+      Method used to transform the class variables into instance variables,
+      for safety reasons.
+    '''
+  
+    # Avoids copying object.
+    tables = {}
+    tables.update( self._tablesDB )
+    
+    for tableName, tableLike in self._likeToTable.items():
+      
+      tables[ tableName ] = self._tablesLike[ tableLike ]
+       
+    return tables
+    
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF   

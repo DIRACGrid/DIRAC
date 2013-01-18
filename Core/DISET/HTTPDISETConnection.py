@@ -20,7 +20,7 @@ class HTTPDISETSocket:
     self.instances += 1
     return self
 
-  def close(self):
+  def close( self ):
     self.instances -= 1
     if self.instances == 0:
       self.gsiSocket.shutdown()
@@ -52,17 +52,17 @@ class HTTPDISETSocket:
         data = self.gsiSocket.recv( bufSize )
         return S_OK( data )
       except GSI.SSL.WantReadError:
-        time.sleep(0.1)
+        time.sleep( 0.001 )
       except GSI.SSL.WantWriteError:
-        time.sleep(0.1)
+        time.sleep( 0.001 )
       except GSI.SSL.ZeroReturnError:
         return S_OK( "" )
       except Exception, e:
         return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
-  def readline(self):
+  def readline( self ):
     buf = ""
-    sepPos = self._storedBufer.find( "\n")
+    sepPos = self._storedBufer.find( "\n" )
     while sepPos == -1 :
       result = self._read( 128 )
       if not result[ 'OK' ]:
@@ -71,13 +71,13 @@ class HTTPDISETSocket:
       if not data:
         break
       self._storedBufer += data
-      sepPos = self._storedBufer.find( "\n")
+      sepPos = self._storedBufer.find( "\n" )
     if sepPos == -1:
       line = self._storedBufer
       self._storedBufer = ""
     else:
-      line = self._storedBufer[:sepPos+1]
-      self._storedBufer = self._storedBufer[sepPos+1:]
+      line = self._storedBufer[:sepPos + 1]
+      self._storedBufer = self._storedBufer[sepPos + 1:]
     return line
 
 class HTTPDISETResponse( httplib.HTTPResponse ):
@@ -93,10 +93,10 @@ class HTTPDISETConnection( httplib.HTTPConnection ):
     httplib.HTTPConnection.__init__( self, *args, **kwargs )
     self.set_debuglevel( 10 )
 
-  def connect(self):
+  def connect( self ):
     errorMsg = ""
-    for res in socket.getaddrinfo(self.host, self.port, 0,
-                                  socket.SOCK_STREAM):
+    for res in socket.getaddrinfo( self.host, self.port, 0,
+                                  socket.SOCK_STREAM ):
       af, socktype, proto, canonname, addTuple = res
       result = gSSLSocketFactory.createClientSocket( addTuple, useCertificates = gConfig._useServerCertificate() )
       if not result[ 'OK' ]:

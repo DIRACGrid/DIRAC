@@ -2,46 +2,50 @@
 ########################################################################
 # $HeadURL:  $
 ########################################################################
-__RCSID__   = "$Id:  $"
+__RCSID__ = "$Id:  $"
 
-from DIRAC.Core.Base import Script  
+from DIRAC.Core.Base import Script
 
-Script.setUsageMessage("""
+Script.setUsageMessage( """
 Monitor the status of the given FTS request
 
 Usage:
-   %s <lfn|fileOfLFN> sourceSE targetSE guid server
-""" % Script.scriptName)
+   %s <lfn|fileOfLFN> sourceSE targetSE server GUID
+""" % Script.scriptName )
 
 Script.parseCommandLine()
 
 
 from DIRAC.DataManagementSystem.Client.FTSRequest     import FTSRequest
-import os,sys
+import DIRAC
+import os
 
-if not len(sys.argv) >= 6:
+args = Script.getPositionalArgs()
+
+if not len( args ) == 5:
   Script.showHelp()
-  DIRAC.exit( -1 )
 else:
-  inputFileName = sys.argv[1]
-  sourceSE = sys.argv[2]
-  targetSE = sys.argv[3]
-  guid = sys.argv[4]
-  server = sys.argv[5]
+  inputFileName = args[0]
+  sourceSE = args[1]
+  targetSE = args[2]
+  server = args[3]
+  guid = args[4]
 
-if not os.path.exists(inputFileName):
+if not os.path.exists( inputFileName ):
   lfns = [inputFileName]
 else:
-  inputFile = open(inputFileName,'r')
+  inputFile = open( inputFileName, 'r' )
   string = inputFile.read()
   inputFile.close()
   lfns = string.splitlines()
 
 oFTSRequest = FTSRequest()
 for lfn in lfns:
-  oFTSRequest.setLFN(lfn)
-oFTSRequest.setFTSGUID(guid)
-oFTSRequest.setFTSServer(server)
-oFTSRequest.setSourceSE(sourceSE)
-oFTSRequest.setTargetSE(targetSE)
-oFTSRequest.monitor(untilTerminal=True)
+  oFTSRequest.setLFN( lfn )
+oFTSRequest.setFTSGUID( guid )
+oFTSRequest.setSourceSE( sourceSE )
+oFTSRequest.setTargetSE( targetSE )
+oFTSRequest.setFTSServer( server )
+result = oFTSRequest.monitor( untilTerminal = True, printOutput = True )
+if not result['OK']:
+  DIRAC.gLogger.error( 'Failed to issue FTS Request', result['Message'] )

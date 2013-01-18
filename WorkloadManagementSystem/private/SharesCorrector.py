@@ -8,34 +8,37 @@ __RCSID__ = "$Id$"
 
 import datetime
 import time as nativetime
-from DIRAC.Core.Utilities import List, Time
+from DIRAC.Core.Utilities import List, Time, ObjectLoader
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.WorkloadManagementSystem.private.correctors.BaseCorrector import BaseCorrector
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 
-class SharesCorrector:
-  
-  def __init__( self, csBasePath = "" ):
-    if not csBasePath:
-      csBasePath = "/Operations/Scheduling/%s/" % gConfig.getValue( "/DIRAC/Setup" )
-    self.__baseCSPath = "%s/ShareCorrections" % csBasePath 
+class SharesCorrector( object ):
+
+  def __init__( self, opsHelper ):
+    if not opsHelper:
+      opsHelper = Operations()
+    self.__opsHelper = opsHelper
     self.__log = gLogger.getSubLogger( "SharesCorrector" )
     self.__shareCorrectors = {}
     self.__correctorsOrder = []
-    
+    self.__baseCS = "JobScheduling/ShareCorrections"
+    self.__objLoader = ObjectLoader.ObjectLoader()
+
   def __getCSValue( self, path, defaultValue = '' ):
-    return gConfig.getValue( "%s/%s" % ( self.__baseCSPath, path ), defaultValue )
-    
+    return self.__opsHelper.getValue( "%s/%s" % ( self.__baseCS, path), defaultValue )
+
   def __getCorrectorClass( self, correctorName ):
-    fullCN = "%sCorrector" % correctorName
-    try:
-      correctorModule = __import__( "DIRAC.WorkloadManagementSystem.private.correctors.%s" % fullCN,
-                                    globals(),
-                                    locals(), fullCN )
-      correctorClass  = getattr( correctorModule, fullCN )
-    except Exception, e:
-      self.__log.exception()
-      return S_ERROR( "Can't import corrector %s: %s" % ( fullCN, str( e ) ) )
-    return S_OK( correctorClass )
-      
+    baseImport = "WorkloadManagementSystem.private.correctors"
+    fullCN = "%s.%sCorrector" % ( baseImport, correctorName )
+    result = self.__objLoader.getObjects( baseImport, ".*Corrector", parentClass = BaseCorrector )
+    if not result[ 'OK' ]:
+      return result
+    data = result[ 'Value' ]
+    if fullCN not in data:
+      return S_ERROR( "Can't find corrector %s" % fullCN )
+    return S_OK( data[ fullCN ] )
+
   def instantiateRequiredCorrectors( self ):
     correctorsToStart = self.__getCSValue( "ShareCorrectorsToStart", [] )
     self.__correctorsOrder = correctorsToStart
@@ -47,9 +50,9 @@ class SharesCorrector:
     for corrector in correctorsToStart:
       if corrector not in self.__shareCorrectors:
         self.__log.info( "Starting corrector %s" % corrector )
-        result = gConfig.getSections( "%s/%s" % ( self.__baseCSPath, corrector ) )
+        result = self.__opsHelper.getSections( "%s/%s" % ( self.__baseCS, corrector ) )
         if not result[ 'OK' ]:
-          self.__log.error( "Cannot get list of correctors to instantiate", 
+          self.__log.error( "Cannot get list of correctors to instantiate",
                          " for corrector type %s: %s" % ( corrector, result[ 'Message' ] ) )
           continue
         groupCorrectors = result[ 'Value' ]
@@ -66,24 +69,28 @@ class SharesCorrector:
             groupKey = "gr:%s" % groupToCorrect
           else:
             groupKey = "global"
-          self.__log.info( "Instantiating group corrector %s (%s) of type %s" % ( groupCor, 
+          self.__log.info( "Instantiating group corrector %s (%s) of type %s" % ( groupCor,
                                                                                   groupToCorrect,
                                                                                   corrector ) )
           if groupKey in self.__shareCorrectors[ corrector ]:
             self.__log.error( "There are two group correctors defined",
                            " for %s type (group %s)" % ( corrector, groupToCorrect ) )
           else:
-            groupCorPath = "/%s/%s/%s" % ( self.__baseCSPath, corrector, groupCor )
-            self.__shareCorrectors[ corrector ][ groupKey ] = correctorClass( groupCorPath, 
-                                                                              groupToCorrect )
+            groupCorPath = "%s/%s/%s" % ( self.__baseCS, corrector, groupCor )
+            correctorObj = correctorClass( self.__opsHelper, groupCorPath, groupToCorrect )
+            result = correctorObj.initialize()
+            if not result[ 'OK' ]:
+              self.__log.error( "Could not initialize corrector %s for %s: %s" % ( corrector, groupKey, result[ 'Message' ] ) )
+            else:
+              self.__shareCorrectors[ corrector ][ groupKey ] = correctorObj
     return S_OK()
-  
-  def updateCorrectorsKnowledge(self):
+
+  def updateCorrectorsKnowledge( self ):
     for corrector in self.__shareCorrectors:
       for groupTC in self.__shareCorrectors[ corrector ]:
         self.__shareCorrectors[ corrector ][ groupTC ].updateHistoryKnowledge()
-        
-  def update(self):
+
+  def update( self ):
     self.instantiateRequiredCorrectors()
     self.updateCorrectorsKnowledge()
 
@@ -96,11 +103,11 @@ class SharesCorrector:
       if groupKey in self.__shareCorrectors[ corrector ]:
         shareDict = self.__shareCorrectors[ corrector ][ groupKey ].applyCorrection( shareDict )
     return shareDict
-          
-          
-        
-        
-        
-        
-      
-    
+
+
+
+
+
+
+
+

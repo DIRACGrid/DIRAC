@@ -1,7 +1,7 @@
-import threading
+import threading, thread
 import types
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import CFG
+from DIRAC.Core.Utilities import CFG, LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
@@ -9,32 +9,33 @@ class Operations( object ):
 
   __cache = {}
   __cacheVersion = 0
-  __cacheLock = threading.Lock()
+  __cacheLock = LockRing.LockRing().getLock()
 
   def __init__( self, vo = False, group = False, setup = False ):
-    self.__threadData = threading.local()
-    self.__threadData.uVO = vo
-    self.__threadData.uGroup = group
-    self.__threadData.uSetup = setup
-    self.__threadData.vo = False
-    self.__threadData.setup = False
+    self.__uVO = vo
+    self.__uGroup = group
+    self.__uSetup = setup
+    self.__vo = False
+    self.__setup = False
     self.__discoverSettings()
 
   def __discoverSettings( self ):
     #Set the VO
-    self.__threadData.vo = False
-    if self.__threadData.uVO:
-      self.__threadData.vo = self.__threadData.uVO
+    globalVO = CSGlobals.getVO()
+    if globalVO:
+      self.__vo = globalVO
+    elif self.__uVO:
+      self.__vo = self.__uVO
     else:
-      self.__threadData.vo = Registry.getVOForGroup( self.__threadData.uGroup )
-      if not self.__threadData.vo:
-        raise RuntimeError( "Don't know how to discover VO. Please check your VO and groups configuration" )
+      self.__vo = Registry.getVOForGroup( self.__uGroup )
+      if not self.__vo:
+        self.__vo = False
     #Set the setup
-    self.__threadData.setup = False
-    if self.__threadData.uSetup:
-      self.__threadData.setup = self.__threadData.uSetup
+    self.__setup = False
+    if self.__uSetup:
+      self.__setup = self.__uSetup
     else:
-      self.__threadData.setup = CSGlobals.getSetup()
+      self.__setup = CSGlobals.getSetup()
 
   def __getCache( self ):
     Operations.__cacheLock.acquire()
@@ -44,13 +45,13 @@ class Operations( object ):
         Operations.__cache = {}
         Operations.__cacheVersion = currentVersion
 
-      cacheKey = ( self.__threadData.vo, self.__threadData.setup )
+      cacheKey = ( self.__vo, self.__setup )
       if cacheKey in Operations.__cache:
         return Operations.__cache[ cacheKey ]
 
       mergedCFG = CFG.CFG()
 
-      for path in ( self.__getDefaultPath(), self.__getSetupPath() ):
+      for path in self.__getSearchPaths():
         pathCFG = gConfigurationData.mergedCFG[ path ]
         if pathCFG:
           mergedCFG = mergedCFG.mergeWith( pathCFG )
@@ -59,38 +60,39 @@ class Operations( object ):
 
       return Operations.__cache[ cacheKey ]
     finally:
-      Operations.__cacheLock.release()
+      try:
+        Operations.__cacheLock.release()
+      except thread.error:
+        pass
 
   def setVO( self, vo ):
     """ False to auto detect VO
     """
-    self.__threadData.uVO = vo
+    self.__uVO = vo
     self.__discoverSettings()
 
   def setGroup( self, group ):
     """ False to auto detect VO
     """
-    self.__threadData.uGroup = group
+    self.__uGroup = group
     self.__discoverSettings()
 
   def setSetup( self, setup ):
     """ False to auto detect
     """
-    self.__threadData.uSetup = setup
+    self.__uSetup = setup
     self.__discoverSettings()
 
-
-  def __getVOPath( self ):
-    if CSGlobals.getVO():
-      return "/Operations"
-    return "/Operations/%s" % self.__threadData.vo
-
-  def __getDefaultPath( self ):
-    return "%s/Defaults/" % self.__getVOPath()
-
-  def __getSetupPath( self ):
-    return "%s/%s" % ( self.__getVOPath(), self.__threadData.setup )
-
+  def __getSearchPaths( self ):
+    paths = [ "/Operations/Defaults", "/Operations/%s" % self.__setup ]
+    if not self.__vo:
+      globalVO = CSGlobals.getVO()
+      if not globalVO:
+        return paths
+      self.__vo = CSGlobals.getVO()
+    paths.append( "/Operations/%s/Defaults" % self.__vo )
+    paths.append( "/Operations/%s/%s" % ( self.__vo, self.__setup ) )
+    return paths
 
   def getValue( self, optionPath, defaultValue = None ):
     return self.__getCache().getOption( optionPath, defaultValue )
@@ -128,3 +130,28 @@ class Operations( object ):
     for opName in sectionCFG.listOptions():
       data[ opName ] = sectionCFG[ opName ]
     return S_OK( data )
+
+  def generatePath( self, option, vo = False, setup = False ):
+    """
+    Generate the CS path for an option
+    if vo is not defined, the helper's vo will be used for multi VO installations
+    if setup evaluates False (except None) -> The helpers setup will  be used
+    if setup is defined -> whatever is defined will be used as setup
+    if setup is None -> Defaults will be used
+    """
+    path = "/Operations"
+    if not CSGlobals.getVO():
+      if not vo:
+        vo = self.__vo
+      if vo:
+        path += "/%s" % vo
+    if not setup and setup != None:
+      if not setup:
+        setup = self.__setup
+    if setup:
+      path += "/%s" % setup
+    else:
+      path += "/Defaults" 
+    return "%s/%s" % ( path, option )
+      
+

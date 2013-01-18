@@ -216,6 +216,9 @@ class CE2CSAgent( AgentModule ):
       return
     grids = result['Value']
 
+    changed = False
+    body = ""
+
     for grid in grids:
 
       gridSection = cfgPath( sitesSection, grid )
@@ -223,9 +226,6 @@ class CE2CSAgent( AgentModule ):
       if not result['OK']:
         return
       sites = result['Value']
-
-      changed = False
-      body = ""
 
       for site in sites:
   #      if site[-2:]!='ru':
@@ -281,7 +281,7 @@ class CE2CSAgent( AgentModule ):
                 if mail == 'Unknown':
                   self.csAPI.setOption( cfgPath( siteSection, 'Mail' ), newmail )
                 else:
-                  self.csAPI.modifyValue( cfgPath( siteSection, 'Coordinates' ), newmail )
+                  self.csAPI.modifyValue( cfgPath( siteSection, 'Mail' ), newmail )
                 changed = True
 
         celist = List.fromChar( opt.get( 'CE', '' ) )
@@ -382,7 +382,7 @@ class CE2CSAgent( AgentModule ):
 
             try:
               rte = bdiice['GlueHostApplicationSoftwareRunTimeEnvironment']
-              if self.voName == 'lhcb':
+              if self.voName.lower() == 'lhcb':
                 if 'VO-lhcb-pilot' in rte:
                   newpilot = 'True'
                 else:

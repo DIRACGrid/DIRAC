@@ -33,6 +33,7 @@ def initializeSandboxStoreHandler( serviceInfo ):
   global sandboxDB, gSBDeletionPool
   random.seed()
   sandboxDB = SandboxMetadataDB()
+  print sandboxDB
   return S_OK()
 
 class SandboxStoreHandler( RequestHandler ):
@@ -319,27 +320,8 @@ class SandboxStoreHandler( RequestHandler ):
     """
     if not entitySetup:
       entitySetup = self.serviceInfoDict[ 'clientSetup' ]
-    assignList = []
-    for entityId in enDict:
-      for sbTuple in enDict[ entityId ]:
-        if type( sbTuple ) not in ( types.TupleType, types.ListType ):
-          return S_ERROR( "Entry for entity %s is not a itterable of tuples/lists" % entityId )
-        if len( sbTuple ) != 2:
-          return S_ERROR( "SB definition is not ( SBLocation, Type )! It's '%s'" % str( sbTuple ) )
-        SBLocation = sbTuple[0]
-        if SBLocation.find( "SB:" ) != 0:
-          return S_ERROR( "%s doesn't seem to be a sandbox" % SBLocation )
-        SBLocation = SBLocation[3:]
-        splitted = List.fromChar( SBLocation, "|" )
-        if len( splitted ) < 2:
-          return S_ERROR( "SB Location has to have SEName|SEPFN form" )
-        SEName = splitted[0]
-        SEPFN = ":".join( splitted[1:] )
-        assignList.append( ( entityId, entitySetup, sbTuple[1], SEName, SEPFN ) )
-    if not assignList:
-      return S_OK()
     credDict = self.getRemoteCredentials()
-    return sandboxDB.assignSandboxesToEntities( assignList, credDict[ 'username' ], credDict[ 'group' ],
+    return sandboxDB.assignSandboxesToEntities( enDict, credDict[ 'username' ], credDict[ 'group' ], entitySetup,
                                                 ownerName, ownerGroup )
 
   ##################
@@ -484,7 +466,7 @@ class SandboxStoreHandler( RequestHandler ):
         fileDict = { 'PFN' : SEPFN, 'Status' : 'Waiting' }
         request.setSubRequestFiles( index, 'removal', [ fileDict ] )
         return RequestClient().setRequest( "RemoteSBDeletion:%s|%s:%s" % ( SEName, SEPFN, time.time() ),
-                                    request.toXML()[ 'Value' ] )
+                                           request.toXML()[ 'Value' ] )
       except Exception, e:
         gLogger.exception( "Exception while setting deletion request" )
         return S_ERROR( "Cannot set deletion request: %s" % str( e ) )
