@@ -50,6 +50,9 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 
 [v6r6p9]
 
+*Core
+FIX: Utilities/PromptUser.py - better user prompt
+
 *Accounting
 NEW: Add some validation to the job records because of weird data coming from YANDEX.ru
 
