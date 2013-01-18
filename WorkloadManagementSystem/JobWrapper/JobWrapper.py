@@ -282,10 +282,6 @@ class JobWrapper:
 
     if self.jobArgs.has_key( 'Executable' ):
       executable = self.jobArgs['Executable'].strip()
-      #HACK: To be removed after SVN migration is successful
-      if executable == "$DIRACROOT/scripts/jobexec":
-        executable = "$DIRACROOT/scripts/dirac-jobexec"
-      #END HACK
     else:
       msg = 'Job %s has no specified executable' % ( self.jobID )
       self.log.warn( msg )
