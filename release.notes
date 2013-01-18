@@ -1,4 +1,4 @@
-[v6r7-pre6]
+[v6r7-pre7]
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
@@ -8,10 +8,15 @@ NEW: SystemAdministratorIntegrator client for collecting info from several hosts
 NEW: SystemAdministrator - added getHostInfo()
 FIX: dirac-proxy-init - always check for errors in S_OK/ERROR returned structures
 
+*Accounting
+NEW: Accounting/Job - added validation of reported values to cope with the weird Yandex case
+
 *DMS
 FIX: FTSSubmitAgent - file for some reason rejected from submission should stay in 'Waiting' in 
      TransferDB.Channel table
 FIX: FTSRequest - fix in the log printout     
+CHANGE: dirac-dms-add-file removed, dirac-dms-add-files renamed to dirac-dms-add-file
+FIX: FileCatalogCLI - check the result of removeFile call
 
 *RSS
 NEW:  general reimplementation: 
@@ -31,6 +36,9 @@ NEW:  general reimplementation:
       Caching parameters are defined in the CS
 FIX: dirac-admin-allow/ban-se - allow a SE on Degraded ( Degraded->Active ) and ban a SE on Probing 
      ( Probing -> Banned ). In practice, Active and Degraded are "usable" states anyway.            
+      
+*WMS
+FIX: OptimizerExecutor - failed optimizations will still update the job      
       
 *Resources    
 NEW: glexecCE - add new possible locations of the glexec binary: OSG specific stuff and in last resort 
