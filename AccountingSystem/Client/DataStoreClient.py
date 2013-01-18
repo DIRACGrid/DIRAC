@@ -102,7 +102,13 @@ class DataStoreClient:
       return retVal
     if gConfig.getValue( '/LocalSite/DisableAccounting', False ):
       return S_OK()
-    return self.__getRPCClient().remove( register.getValues() )
+    return self.__getRPCClient().remove( *register.getValues() )
+
+  def ping( self ):
+    """
+    Ping the DataStore service
+    """
+    return self.__getRPCClient().ping()
 
 def _sendToFailover( rpcStub ):
   requestClient = RequestClient()

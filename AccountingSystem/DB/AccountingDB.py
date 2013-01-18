@@ -120,7 +120,7 @@ class AccountingDB( DB ):
           bucketsLength.sort()
           if bucketsLength != self.dbBucketsLength[ typeName ]:
             bucketsLength = self.dbBucketsLength[ typeName ]
-            self.log.error( "Bucket length has changed for type %s" % typeName )
+            self.log.warn( "Bucket length has changed for type %s" % typeName )
           keyFields = [ f[0] for f in definitionKeyFields ]
           if keyFields != self.dbCatalog[ typeName ][ 'keys' ]:
             keyFields = self.dbCatalog[ typeName ][ 'keys' ]
@@ -715,24 +715,15 @@ class AccountingDB( DB ):
     retVal = self.__startTransaction( connObj )
     if not retVal[ 'OK' ]:
       return retVal
-    retVal = self._query( "SELECT COUNT( startTime ) FROM `%s` WHERE %s" % ( mainTable,
-                                                                             " AND ".join( sqlCond ) ),
-                          conn = connObj )
-    if not retVal[ 'OK' ]:
-      return retVal
-    #Record is not in the db
-    if len( retVal[ 'Value' ] ) == 0:
-      return S_OK( 0 )
-    numInsertions = retVal[ 'Value' ][0][0]
-    if numInsertions == 0:
-      return S_OK( 0 )
-    #Delete from type
     retVal = self._update( "DELETE FROM `%s` WHERE %s" % ( mainTable, " AND ".join( sqlCond ) ),
                            conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
+    numInsertions = retVal[ 'Value' ]
     #Deleted from type, now the buckets
     #HACK: One more record to split in the buckets to be able to count total entries
+    if numInsertions == 0:
+      return S_OK( 0 )
     sqlValues.append( 1 )
     retVal = self.__deleteFromBuckets( typeName, startTime, endTime, sqlValues, numInsertions, connObj = connObj )
     if not retVal[ 'OK' ]:
@@ -873,11 +864,11 @@ class AccountingDB( DB ):
       valueField = self.dbCatalog[ typeName ][ 'values' ][ pos ]
       value = bucketValues[ pos ]
       fullFieldName = "`%s`.`%s`" % ( tableName, valueField )
-      sqlValList.append( "%s=%s-(%s*%s)" % ( fullFieldName, fullFieldName, value, proportion ) )
-    sqlValList.append( "`%s`.`entriesInBucket`=`%s`.`entriesInBucket`-(%s*%s)" % ( tableName,
-                                                                                    tableName,
-                                                                                    bucketValues[-1],
-                                                                                    proportion ) )
+      sqlValList.append( "%s=GREATEST(0,%s-(%s*%s))" % ( fullFieldName, fullFieldName, value, proportion ) )
+    sqlValList.append( "`%s`.`entriesInBucket`=GREATEST(0,`%s`.`entriesInBucket`-(%s*%s))" % ( tableName,
+                                                                                               tableName,
+                                                                                               bucketValues[-1],
+                                                                                               proportion ) )
     cmd += ", ".join( sqlValList )
     cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                             tableName,

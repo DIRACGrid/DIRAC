@@ -120,7 +120,7 @@ class TransportPool:
     except KeyError:
       return S_ERROR( "No transport with id %s defined" % trid )
     else:
-      self.__close( trid )
+      self.close( trid )
 
   def sendAndClose( self, trid, msg ):
     try:
