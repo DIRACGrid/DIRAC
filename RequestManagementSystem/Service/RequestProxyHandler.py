@@ -26,7 +26,6 @@ __RCSID__ = "$Id$"
 
 ## imports 
 import os
-import threading
 from types import StringType
 try:
   from hashlib import md5
@@ -34,16 +33,16 @@ except ImportError:
   from md5 import md5
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities.File import makeGuid
 
 def initializeRequestProxyHandler( serviceInfo ):
   """ init RequestProxy handler 
 
-  :param serviceInfo:
+  :param serviceInfo: whatever
   """
   gLogger.info("Initalizing RequestProxyHandler")
   gThreadScheduler.addPeriodicTask( 120, RequestProxyHandler.sweeper )  
@@ -101,25 +100,23 @@ class RequestProxyHandler( RequestHandler ):
                          sorted( filter( os.path.isfile,
                                          [ os.path.join( cacheDir, requestName ) 
                                            for requestName in os.listdir( cacheDir ) ] ),
-                                 key = os.path.getctime ) ][:10]
-      managerOK = True 
+                                 key = os.path.getctime ) ][:30]
       ## set cached requests to the central RequestManager
       for cachedFile in cachedRequests:
-        ## break if something went wrong last time
-        if not managerOK:
-          break
         try:
           requestString = "".join( open( cachedFile, "r" ).readlines() )
           cachedRequest = RequestContainer( requestString )
           requestName = cachedRequest.getAttribute("RequestName")["Value"]
+          ## cibak: hack for DISET requests
+          if requestName == "Unknown":
+            cachedRequest.setAttribute( "RequestName", makeGuid() )
+            requestName = cachedRequest.getAttribute("RequestName")["Value"]
           setRequest = cls.requestManager().setRequest( requestName, requestString )
           if not setRequest["OK"]:
-            gLogger.error("sweeper: unable to set request %s @ RequestManager: %s" % ( requestName, 
-                                                                                       setRequest["Message"] ) )
-            ## revert managerOK flag
-            managerOK = False
+            gLogger.error("sweeper: unable to set request '%s' @ RequestManager: %s" % ( requestName, 
+                                                                                         setRequest["Message"] ) )
             continue
-          gLogger.info("sweeper: successfully set request %s @ RequestManager" % requestName  )
+          gLogger.info("sweeper: successfully set request '%s' @ RequestManager" % requestName  )
           os.unlink( cachedFile )
         except Exception, error:
           gLogger.exception( "sweeper: hit by exception %s" % str(error) )
@@ -160,7 +157,8 @@ class RequestProxyHandler( RequestHandler ):
     """ forward request from local RequestDB to central RequestClient
 
     :param self: self reference
-    :param str requestType: request type
+    :param str requestName: request name
+    :param str requestString: request serilised to xml
     """
     gLogger.info("setRequest: got '%s' request" %  requestName )
     forwardable = self.__forwardable( requestString )
@@ -179,8 +177,7 @@ class RequestProxyHandler( RequestHandler ):
         return save
       gLogger.info("setRequest: %s is saved to %s file" % ( requestName, save["Value"] ) )
       return S_OK( { "set" : False, "saved" : True } )
-    
-    gLogger.info("setRequest: request '%s' has been set to %s" % ( requestName, self.centralURL() ) )
+    gLogger.info("setRequest: request '%s' has been set to the RequestManager" % requestName )
     return S_OK( { "set" : True, "saved" : False } )
 
   @staticmethod
