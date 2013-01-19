@@ -1325,15 +1325,15 @@ class JobDB( DB ):
           classAdJob.insertAttributeString( param, val )
 
     priority = classAdJob.getAttributeInt( 'Priority' )
-    systemConfig = classAdJob.getAttributeString( 'SystemConfig' )
-    if not systemConfig:
-      systemConfig = classAdJob.getAttributeString( 'Platform' )
-    cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
+    systemConfig = classAdJob.getAttributeString( 'Platform' )
+    cpuTime = classAdJob.getAttributeInt( 'CPUTime' )
     if cpuTime == 0:
-      cpuTime = classAdJob.getAttributeInt( 'CPUTime' )
+      # Just in case check for MaxCPUTime for backward compatibility
+      cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
+      if cpuTime > 0:
+        classAdJob.insertAttributeInt( 'CPUtime', cpuTime )
 
     classAdReq.insertAttributeInt( 'UserPriority', priority )
-
     classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
 
     if systemConfig and systemConfig.lower() != 'any':

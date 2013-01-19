@@ -274,8 +274,8 @@ class JobWrapper:
     if self.jobArgs.has_key( 'StdOutput' ):
       outputFile = self.jobArgs['StdOutput']
 
-    if self.jobArgs.has_key( 'MaxCPUTime' ):
-      jobCPUTime = int( self.jobArgs['MaxCPUTime'] )
+    if self.jobArgs.has_key( 'CPUTime' ):
+      jobCPUTime = int( self.jobArgs['CPUTime'] )
     else:
       self.log.info( 'Job %s has no CPU time limit specified, '
                      'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
@@ -283,10 +283,6 @@ class JobWrapper:
 
     if self.jobArgs.has_key( 'Executable' ):
       executable = self.jobArgs['Executable'].strip()
-      #HACK: To be removed after SVN migration is successful
-      if executable == "$DIRACROOT/scripts/jobexec":
-        executable = "$DIRACROOT/scripts/dirac-jobexec"
-      #END HACK
     else:
       msg = 'Job %s has no specified executable' % ( self.jobID )
       self.log.warn( msg )
