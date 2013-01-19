@@ -8,7 +8,8 @@ from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalog
 from DIRAC.Core.Utilities.Time                                import fromEpoch
 from DIRAC.Core.Utilities.List                                import sortList, breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getDNForUsername, getVOMSAttributeForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getDNForUsername, getVOMSAttributeForGroup, \
+                                                                     getVOForGroup, getVOOption
 from stat import *
 import os, re, types, time
 
@@ -190,10 +191,16 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       errStr = "ReplicaManager.__getClientCertGroup: Error getting known proxies for user."
       gLogger.error( errStr, res['Message'] )
       return S_ERROR( errStr )
+    diracGroup = proxyInfo.get( 'group', 'Unknown' )
+    vo = getVoForGroup( diracGroup )
+    vomsVO = getVOOption( vo, 'VOMSVO', '')
     resDict = { 'DN'       : proxyInfo['identity'],
                 'Role'     : proxyInfo['VOMS'],
                 'User'     : proxyInfo['username'],
-                'AllDNs'   : res['Value']
+                'AllDNs'   : res['Value'],
+                'Group'    : diracGroup,
+                'VO'       : vo,
+                'VOMSVO'   : vomsVO
               }
     return S_OK( resDict )
 
@@ -1712,7 +1719,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getUserDirectory( self, username ):
     """ Takes a list of users and determines whether their directories already exist
     """
-    vo = getVO( 'lhcb' )
+    result = __getClientCertInfo()
+    if not result['OK']:
+      return result
+    vo = result['Value']['VO']
     res = self.__checkArgumentFormat( username )
     if not res['OK']:
       return res
@@ -1736,7 +1746,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def createUserDirectory( self, username ):
     """ Creates the user directory
     """
-    vo = getVO( 'lhcb' )
+    result = __getClientCertInfo()
+    if not result['OK']:
+      return result
+    vo = result['Value']['VO']
     res = self.__checkArgumentFormat( username )
     if not res['OK']:
       return res
