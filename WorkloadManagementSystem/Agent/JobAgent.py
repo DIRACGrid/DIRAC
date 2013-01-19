@@ -47,15 +47,15 @@ class JobAgent( AgentModule ):
    # self.log.setLevel('debug') #temporary for debugging
     self.am_setOption( 'MaxCycles', loops )
 
-    ceUniqueID = self.am_getOption( 'CEUniqueID', 'InProcess' )
+    ceType = self.am_getOption( 'CEType', 'InProcess' )
     localCE = gConfig.getValue( '/LocalSite/LocalCE', '' )
     if localCE:
       self.log.info( 'Defining CE from local configuration = %s' % localCE )
-      ceUniqueID = localCE
+      ceType = localCE
 
     ceFactory = ComputingElementFactory()
-    self.ceName = ceUniqueID
-    ceInstance = ceFactory.getCE( ceUniqueID )
+    self.ceName = ceType
+    ceInstance = ceFactory.getCE( ceType )
     if not ceInstance['OK']:
       self.log.warn( ceInstance['Message'] )
       return ceInstance
@@ -236,7 +236,7 @@ class JobAgent( AgentModule ):
           self.log.warn( '/LocalSite/Architecture is not defined' )
         params['SystemConfig'] = systemConfig
 
-    if not params.has_key( 'MaxCPUTime' ):
+    if not params.has_key( 'CPUTime' ):
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
 
     self.log.verbose( 'Job request successful: \n %s' % ( jobRequest['Value'] ) )
