@@ -1,4 +1,4 @@
-[v6r7-pre7]
+[v6r7-pre8]
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
@@ -17,6 +17,7 @@ FIX: FTSSubmitAgent - file for some reason rejected from submission should stay 
 FIX: FTSRequest - fix in the log printout     
 CHANGE: dirac-dms-add-file removed, dirac-dms-add-files renamed to dirac-dms-add-file
 FIX: FileCatalogCLI - check the result of removeFile call
+FIX: LcgFileCatalogClient - get rid of LHCb specific VO evaluation
 
 *RSS
 NEW:  general reimplementation: 
@@ -38,7 +39,16 @@ FIX: dirac-admin-allow/ban-se - allow a SE on Degraded ( Degraded->Active ) and 
      ( Probing -> Banned ). In practice, Active and Degraded are "usable" states anyway.            
       
 *WMS
-FIX: OptimizerExecutor - failed optimizations will still update the job      
+FIX: OptimizerExecutor - failed optimizations will still update the job     
+NEW: JobWrapper - added LFNUserPrefix VO specific Operations option used for building user LFNs
+CHANGE: JobDB - do not interpret SystemConfig in the WMS/JobDB
+CHANGE: JobDB - Use CPUTime JDL only, keep MaxCPUTime for backward compatibility
+CHANGE: JobWrapper - use CPUTime job parameter instead of MaxCPUTime
+CHANGE: JobAgent - use CEType option instead of CEUniqueID
+ 
+*SMS
+FIX: StorageManagementDB - when removing unlinked replicas, take into account the case where a
+     staging request had been submitted, but failed
       
 *Resources    
 NEW: glexecCE - add new possible locations of the glexec binary: OSG specific stuff and in last resort 
