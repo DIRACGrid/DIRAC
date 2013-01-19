@@ -48,6 +48,11 @@ NEW: LcgFileCatalogClient - in removeReplica() get the needed PFN inside instead
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p10]
+
+*RMS
+FIX: RequestDBMySQL - better escaping of queries 
+
 [v6r6p9]
 
 *Core
