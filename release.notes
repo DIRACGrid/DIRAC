@@ -20,6 +20,9 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 *RMS
 FIX: RequestDBMySQL - better escaping of queries 
 
+*WMS
+FIX: SiteDirector - get compatible platforms before checking Task Queues for a site
+
 [v6r6p9]
 
 *Core
