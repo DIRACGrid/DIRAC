@@ -352,6 +352,11 @@ class SiteDirector( AgentModule ):
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools  
 
+      result = Resources.getCompatiblePlatforms( self.platforms )
+      if not result['OK']:
+        continue
+      ceDict['Platform'] = result['Value']
+
       # Get the number of eligible jobs for the target site/queue
       result = rpcMatcher.getMatchingTaskQueues( ceDict )
       if not result['OK']:
