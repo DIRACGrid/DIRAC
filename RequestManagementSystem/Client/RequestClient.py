@@ -165,7 +165,7 @@ class RequestClient( Client ):
     self.log.info( "getRequest: attempting to get '%s' request." % requestType )
     getRequest = self.requestManager().getRequest( requestType )
     if not getRequest["OK"]:
-      self.log.error("getRequest: unable to get '%s' request: %s" % getRequest["Message"] )
+      self.log.error("getRequest: unable to get '%s' request: %s" % ( requestType, getRequest["Message"] ) )
     return getRequest  
 
   def serveRequest( self, requestType = "" ):
