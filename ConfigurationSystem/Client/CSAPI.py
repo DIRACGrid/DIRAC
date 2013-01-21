@@ -91,6 +91,7 @@ class CSAPI:
     result = self.__csMod.loadFromRemote()
     if not result[ 'OK' ]:
       return result
+    self.__csModified = False
     self.__csMod.updateGConfigurationData()
     return S_OK()
 
@@ -478,7 +479,6 @@ class CSAPI:
       if not retVal[ 'OK' ]:
         gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
         return retVal
-      self.__csModified = False
       return self.downloadCSData()
     return S_OK()
 
@@ -492,7 +492,6 @@ class CSAPI:
       if not retVal[ 'OK' ]:
         gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
         return retVal
-      self.__csModified = False
       return self.downloadCSData()
     return S_OK()
 
