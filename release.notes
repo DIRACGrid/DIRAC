@@ -18,6 +18,7 @@ FIX: FTSRequest - fix in the log printout
 CHANGE: dirac-dms-add-file removed, dirac-dms-add-files renamed to dirac-dms-add-file
 FIX: FileCatalogCLI - check the result of removeFile call
 FIX: LcgFileCatalogClient - get rid of LHCb specific VO evaluation
+NEW: New FileCatalogProxy service - a generalization of a deprecated LcgFileCatalog service
 
 *RSS
 NEW:  general reimplementation: 
