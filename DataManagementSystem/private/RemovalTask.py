@@ -123,7 +123,9 @@ class RemovalTask( RequestTask ):
         ## not OK but request belongs to DataManager? 
         if not self.requestOwnerDN and \
            ( not removal["OK"] and "Write access not permitted for this credential." in removal["Message"] ) or \
-           ( removal["OK"] and "Failed" in removal["Value"] and lfn in removal["Value"]["Failed"] and "permission denied" in str(removal["Value"]["Failed"][lfn]).lower() ):  
+           ( removal["OK"] and "Failed" in removal["Value"] and 
+             lfn in removal["Value"]["Failed"] and 
+             "permission denied" in str(removal["Value"]["Failed"][lfn]).lower() ):  
           self.debug("removeFile: retrieving proxy for %s" % lfn )
           getProxyForLFN = self.getProxyForLFN( lfn )
           ## can't get correct proxy? continue...
@@ -158,7 +160,15 @@ class RemovalTask( RequestTask ):
     ## update File statuses and errors
     for lfn, error in removalStatus.items():
 
-      if not error or "no such file or directory" in str(error).lower():
+      ## set file error if any
+      if error:
+        self.debug("removeFile: %s: %s" % (lfn, str(error) ) ) 
+        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", str(error)[:255] )  
+        if not fileError["OK"]:
+          self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
+      ## no error? file not exists? - we are able to recover 
+      if not error or "no such file or directory" in str(error).lower() or \
+            "file does not exist in the catalog" in str(error).lower():
         filesRemoved += 1
         self.info("removeFile: successfully removed %s" % lfn )
         updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
@@ -171,10 +181,6 @@ class RemovalTask( RequestTask ):
         if type(error) == DictType:
           errorStr = ";".join( [ "%s:%s" % ( key, value ) for key, value in error.items() ] )
         subRequestError.append( "%s:%s" % ( lfn, errorStr ) )
-        ## set file error
-        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", errorStr[:255] )  
-        if not fileError["OK"]:
-          self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
 
     self.addMark( "RemoveFileDone", filesRemoved )
     self.addMark( "RemoveFileFail", filesFailed )
@@ -227,8 +233,11 @@ class RemovalTask( RequestTask ):
           removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
           ## not OK but request belongs to DataManager?
           if not self.requestOwnerDN and \
-                ( not removeReplica["OK"] and "Write access not permitted for this credential." in removeReplica["Message"] ) or \
-                ( removeReplica["OK"] and "Failed" in removeReplica["Value"] and lfn in removeReplica["Value"]["Failed"] and "permission denied" in str(removeReplica["Value"]["Failed"][lfn]).lower() ):  
+                ( not removeReplica["OK"] and 
+                  "Write access not permitted for this credential." in removeReplica["Message"] ) or \
+                ( removeReplica["OK"] and "Failed" in removeReplica["Value"] and 
+                  lfn in removeReplica["Value"]["Failed"] and 
+                  "permission denied" in str(removeReplica["Value"]["Failed"][lfn]).lower() ):  
             ## get proxy for LFN
             getProxyForLFN = self.getProxyForLFN( lfn )
             ## can't get correct proxy? 
