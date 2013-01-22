@@ -11,7 +11,7 @@
 """
 ## imports
 import os
-from types import StringType, DictType, TupleType
+from types import StringTypes, DictType, TupleType
 ## from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -21,13 +21,8 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 __RCSID__ = "$Id$"
 
-gFileCatalogName = None
-
 def initializeFileCatalogProxyHandler( serviceInfo ):
-  """ service initalisation """
-  
-  csPath = serviceInfo['serviceSectionPath']
-  gFileCatalogName = gConfig.getValue( '%s/FileCatalog' % csPath, 'LcgFileCatalog' )  
+  """ service initalisation """ 
   return S_OK()
 
 class FileCatalogProxyHandler( RequestHandler ):
@@ -35,17 +30,17 @@ class FileCatalogProxyHandler( RequestHandler ):
   .. class:: FileCatalogProxyHandler
   """
 
-  types_callProxyMethod = [ StringType, TupleType, DictType ]
-  def export_callProxyMethod( self, name, args, kargs ):
+  types_callProxyMethod = [ StringTypes, StringTypes, TupleType, DictType ]
+  def export_callProxyMethod( self, fcName, methodName, args, kargs ):
     """ A generic method to call methods of the Storage Element.
     """
-    res = pythonCall( 0, self.__proxyWrapper, name, args, kargs )
+    res = pythonCall( 0, self.__proxyWrapper, fcName, methodName, args, kargs )
     if res['OK']:
       return res['Value']
     else:
       return res
 
-  def __proxyWrapper( self, name, args, kwargs ):
+  def __proxyWrapper( self, fcName, methodName, args, kwargs ):
     """ The wrapper will obtain the client proxy and set it up in the environment.
         The required functionality is then executed and returned to the client.
 
@@ -58,21 +53,21 @@ class FileCatalogProxyHandler( RequestHandler ):
     if not res['OK']:
       return res
     try:
-      fileCatalog = FileCatalog( [gFileCatalogName] )
-      method = getattr( fileCatalog, name )
+      fileCatalog = FileCatalog( [fcName] )
+      method = getattr( fileCatalog, methodName )
     except AttributeError, error:
-      errStr = "%sProxy: no method named %s" % ( gFileCatalogName, name )
-      gLogger.exception( errStr, name, error )
+      errStr = "%sProxy: no method named %s" % ( fcName, methodName )
+      gLogger.exception( errStr, methodName, error )
       return S_ERROR( errStr )
     try:
       result = method( *args, **kwargs )
       return result
     except Exception, error:
-      errStr = "%sProxy: Exception while performing %s" % ( gFileCatalogName, name )
-      gLogger.exception( errStr, name, error )
+      errStr = "%sProxy: Exception while performing %s" % ( fcName, methodName )
+      gLogger.exception( errStr, methodName, error )
       return S_ERROR( errStr )
 
-  def __prepareSecurityDetails( self ):
+  def __prepareSecurityDetails( self, vomsFlag = True ):
     """ Obtains the connection details for the client """
     try:
       credDict = self.getRemoteCredentials()
@@ -80,7 +75,10 @@ class FileCatalogProxyHandler( RequestHandler ):
       clientUsername = credDict['username']
       clientGroup = credDict['group']
       gLogger.debug( "Getting proxy for %s@%s (%s)" % ( clientUsername, clientGroup, clientDN ) )
-      res = gProxyManager.downloadVOMSProxy( clientDN, clientGroup )
+      if vomsFlag:
+        res = gProxyManager.downloadVOMSProxy( clientDN, clientGroup )
+      else:
+        res = gProxyManager.downloadProxy( clientDN, clientGroup )    
       if not res['OK']:
         return res
       chain = res['Value']
