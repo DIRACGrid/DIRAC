@@ -347,7 +347,7 @@ class StorageElement:
           res = storage.getProtocolPfn( res['Value'], withPort )
           if res['OK']:
             return res
-    errStr = "StorageElement.getPfnForProtocol: Failed to get PFN for requested protocols."
+    errStr = "StorageElement.getPfnForProtocol: Failed to get PFN for requested protocols:"
     gLogger.error( errStr, "%s for %s" % ( protocols, self.name ) )
     return S_ERROR( errStr )
 
@@ -438,11 +438,11 @@ class StorageElement:
     else:
       return self.__executeFunction( pfn, 'getFile', {'localPath':localPath} )
 
-  def putFile( self, pfn, singleFile = False ):
+  def putFile( self, pfn, singleFile = False, sourceSize = 0 ):
     if singleFile:
-      return self.__executeSingleFile( pfn, 'putFile' )
+      return self.__executeSingleFile( pfn, 'putFile', {'sourceSize':sourceSize} )
     else:
-      return self.__executeFunction( pfn, 'putFile' )
+      return self.__executeFunction( pfn, 'putFile', {'sourceSize':sourceSize} )
 
   def replicateFile( self, pfn, sourceSize = 0, singleFile = False ):
     if singleFile:
