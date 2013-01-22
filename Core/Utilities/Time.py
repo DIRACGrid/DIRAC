@@ -67,7 +67,7 @@ def toEpoch( dateTimeObject = None ):
   """
   Get seconds since epoch
   """
-  if dateTimeObject == None:
+  if not dateTimeObject:
     dateTimeObject = dateTime()
   return nativetime.mktime( dateTimeObject.timetuple() )
 
@@ -81,7 +81,7 @@ def to2K( dateTimeObject = None ):
   """
   Get seconds, with microsecond precission, since 2K
   """
-  if dateTimeObject == None:
+  if not dateTimeObject:
     dateTimeObject = dateTime()
   delta = dateTimeObject - dt
   return delta.days * 86400 + delta.seconds + delta.microseconds / 1000000.
@@ -90,7 +90,7 @@ def from2K( seconds2K = None ):
   """
   Get date from seconds since 2K
   """
-  if seconds2K == None:
+  if not seconds2K:
     seconds2K = to2K( dt )
   return dt + int( seconds2K ) * second + int( seconds2K % 1 * 1000000 ) * microsecond
 
