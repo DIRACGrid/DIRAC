@@ -90,12 +90,17 @@ class DBUtils:
     def addToNormData( bucketDate, data, proportion = 1.0 ):
       if bucketDate in normData:
         for iP in range( len( data ) ):
-          normData[ bucketDate ][iP] += float( data[iP] ) * proportion
+          val = data[ iP ]
+          if val == None:
+            val = 0
+          normData[ bucketDate ][iP] += float( val ) * proportion
         normData[ bucketDate ][ -1 ] += proportion
       else:
         normData[ bucketDate ] = []
         for fD in data:
-          normData[ bucketDate ].append( float( fD ) * proportion ) 
+          if fD == None:
+            fD = 0
+          normData[ bucketDate ].append( float( fD ) * proportion )
         normData[ bucketDate ].append( proportion )
 
     for bucketData in bucketsData:
