@@ -591,8 +591,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
     transList = trList[ini:last]
 
     statusDict = {}
-    extendableTranfs = Operations().getValue( "Production/%s/ExtendableTransfTypes" % database.__class__.__name__,
-                                              'mcsimulation' )
+    extendableTranfs = Operations().getValue( 'Transformations/ExtendableTransfTypes',
+                                                ['Simulation', 'MCsimulation'] )
     # Add specific information for each selected transformation
     for trans in transList:
       transDict = dict( zip( paramNames, trans ) )
@@ -613,19 +613,18 @@ class TransformationManagerHandlerBase( RequestHandler ):
       # Get the statistics for the number of files for the transformation
       fileDict = {}
       transType = transDict['Type']
-      extendableTranfs = Operations().getValue( 'Transformations/ExtendableTransfTypes',
-                                                ['Simulation', 'MCsimulation'] )
       if transType.lower() in extendableTranfs:
         fileDict['PercentProcessed'] = '-'
       else:
         res = database.getTransformationStats( transID )
         if res['OK']:
           fileDict = res['Value']
-          if fileDict['Total'] == 0:
+          total = fileDict['Total'] - fileDict.get( 'NotProcessed', 0 )
+          if total == 0:
             fileDict['PercentProcessed'] = 0
           else:
             processed = fileDict.get( 'Processed', 0 )
-            fileDict['PercentProcessed'] = "%.1f" % ( int( processed * 1000. / fileDict['Total'] ) / 10. )
+            fileDict['PercentProcessed'] = "%.1f" % ( int( processed * 1000. / total ) / 10. )
       for state in fileStateNames:
         trans.append( fileDict.get( state, 0 ) )
 
