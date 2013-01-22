@@ -337,9 +337,7 @@ class ConfigurationData:
     fd.write( str( self.remoteCFG ) )
     fd.close()
 
-  def __backupCurrentConfiguration( self, backupName = False ):
-    if not backupName:
-      backupName = self.getVersion()
+  def __backupCurrentConfiguration( self, backupName ):
     configurationFilename = "%s.cfg" % self.getName()
     configurationFile = os.path.join( DIRAC.rootPath, "etc", configurationFilename )
     today = Time.date()
@@ -372,7 +370,8 @@ class ConfigurationData:
       gLogger.fatal( "Cannot write new configuration to disk!",
                      "file %s" % configurationFile )
       return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, str( e ) ) )
-    self.__backupCurrentConfiguration( backupName )
+    if backupName:
+      self.__backupCurrentConfiguration( backupName )
     return S_OK()
 
   def setRemoteCFG( self, cfg, disableSync = False ):

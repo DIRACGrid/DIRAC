@@ -111,7 +111,7 @@ class ServiceInterface( threading.Thread ):
   def getCompressedConfiguration( self ):
     sData = gConfigurationData.getCompressedData()
 
-  def updateConfiguration( self, sBuffer, commiterDN = "", updateVersionOption = False ):
+  def updateConfiguration( self, sBuffer, commiter = "", updateVersionOption = False ):
     if not gConfigurationData.isMaster():
       return S_ERROR( "Configuration modification is not allowed in this server" )
     #Load the data in a ConfigurationData object
@@ -152,7 +152,7 @@ class ServiceInterface( threading.Thread ):
     gConfigurationData.generateNewVersion()
     #self.__checkSlavesStatus( forceWriteConfiguration = True )
     gLogger.info( "Writing new version to disk!" )
-    retVal = gConfigurationData.writeRemoteConfigurationToDisk( "%s@%s" % ( commiterDN, gConfigurationData.getVersion() ) )
+    retVal = gConfigurationData.writeRemoteConfigurationToDisk( "%s@%s" % ( commiter, gConfigurationData.getVersion() ) )
     gLogger.info( "New version it is!" )
     return retVal
 
@@ -164,7 +164,7 @@ class ServiceInterface( threading.Thread ):
 
   def getCommitHistory( self ):
     files = self.__getCfgBackups( gConfigurationData.getBackupDir() )
-    backups = [ ".".join( fileName.split( "." )[1:3] ).split( "@" ) for fileName in files ]
+    backups = [ ".".join( fileName.split( "." )[1:-1] ).split( "@" ) for fileName in files ]
     return backups
 
   def run( self ):
