@@ -65,7 +65,7 @@ class Dirac( API ):
         gLogger.error( "Unable to write to supplied repository location" )
         self.jobRepo = False
 
-    self.scratchDir = gConfig.getValue( self.section + '/LocalSite/ScratchDir', '/tmp' )
+    self.scratchDir = gConfig.getValue( self.section + 'ScratchDir', '/tmp' )
     self.sandboxClient = SandboxStoreClient( rpcClient=sbRPCClient, 
                                              transferClient=sbTransferClient, 
                                              useCertificates=useCertificates  )
