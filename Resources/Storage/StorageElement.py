@@ -25,7 +25,7 @@ class StorageElement:
   def __init__( self, name, protocols = None, overwride = False ):
     self.overwride = overwride
     self.valid = True
-    if protocols == None:
+    if protocols is None:
       res = StorageFactory().getStorages( name, protocolList = [] )
     else:
       res = StorageFactory().getStorages( name, protocolList = protocols )
@@ -383,6 +383,16 @@ class StorageElement:
     errStr = "StorageElement.getPfnPath: Failed to get the pfn path for any of the protocols!!"
     gLogger.error( errStr )
     return S_ERROR( errStr )
+
+  def getPFNBase( self ):
+    """ Get the base of the PFN to be complemented by LFN to suit the DIRAC convention
+    """ 
+    for storage in self.storages:
+      result = storage.getPFNBase()      
+      if result['OK']:
+        return result
+    
+    return result
 
   def getPfnForLfn( self, lfn ):
     """ Get the full PFN constructed from the LFN.
