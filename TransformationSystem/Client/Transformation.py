@@ -348,9 +348,7 @@ class Transformation( API ):
     for parameter in requiredParameters:
       if not self.paramValues[parameter]:
         gLogger.info( "%s is not defined for this transformation. This is required..." % parameter )
-        res = self.__promptForParameter( parameter )
-        if not res['OK']:
-          return res
+        self.paramValues[parameter] = raw_input( "Please enter the value of " + parameter + " " )
 
     plugin = self.paramValues['Plugin']
     if not plugin in self.supportedPlugins:
@@ -358,6 +356,8 @@ class Transformation( API ):
       res = self.__promptForParameter( 'Plugin', choices = self.supportedPlugins, default = 'Standard' )
       if not res['OK']:
         return res
+      self.paramValues['Plugin'] = res['Value']
+
     plugin = self.paramValues['Plugin']
     checkPlugin = "_check%sPlugin" % plugin
     fcn = None
@@ -384,14 +384,13 @@ class Transformation( API ):
     return S_OK()
 
   def _checkBroadcastPlugin( self ):
-    gLogger.info( "The Broadcast plugin requires the following parameters be set: %s" % ( string.join( ['SourceSE', 'TargetSE'], ', ' ) ) )
+    gLogger.info( "The Broadcast plugin requires the following parameters be set: %s" % ( string.join( ['SourceSE',
+                                                                                                        'TargetSE'],
+                                                                                                      ', ' ) ) )
     requiredParams = ['SourceSE', 'TargetSE']
     for requiredParam in requiredParams:
       if ( not self.paramValues.has_key( requiredParam ) ) or ( not self.paramValues[requiredParam] ):
-        res = self.__promptForParameter( requiredParam, insert = False )
-        if not res['OK']:
-          return res
-        paramValue = res['Value']
+        paramValue = raw_input( "Please enter " + requiredParam + " " )
         setter = None
         setterName = "set%s" % requiredParam
         if hasattr( self, setterName ) and callable( getattr( self, setterName ) ):
