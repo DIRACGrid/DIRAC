@@ -306,7 +306,6 @@ class StorageElementProxyHandler(RequestHandler):
 
     fileDescriptor = result['Value']
     result = fileHelper.FDToNetwork(fileDescriptor)
-    fileHelper.oFile.close()
     if not result['OK']:
       return S_ERROR('Failed to get file %s' % fileID )
     return result

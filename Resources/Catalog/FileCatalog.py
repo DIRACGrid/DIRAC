@@ -18,7 +18,7 @@ class FileCatalog:
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'getLFNForPFN']
+                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups']
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory', 'setDirectoryStatus',
@@ -130,17 +130,20 @@ class FileCatalog:
       method = getattr( oCatalog, self.call )
       res = method( *parms, **kws )
       if res['OK']:
-        for key, item in res['Value']['Successful'].items():
-          if not successful.has_key( key ):
-            successful[key] = item
-            if failed.has_key( key ):
-              failed.pop( key )
-        for key, item in res['Value']['Failed'].items():
-          if not successful.has_key( key ):
-            failed[key] = item
-        if len( failed ) == 0:
-          resDict = {'Failed':failed, 'Successful':successful}
-          return S_OK( resDict )
+        if 'Successful' in res['Value']:
+          for key, item in res['Value']['Successful'].items():
+            if not successful.has_key( key ):
+              successful[key] = item
+              if failed.has_key( key ):
+                failed.pop( key )
+          for key, item in res['Value']['Failed'].items():
+            if not successful.has_key( key ):
+              failed[key] = item
+          if len( failed ) == 0:
+            resDict = {'Failed':failed, 'Successful':successful}
+            return S_OK( resDict )
+        else:
+          return res  
     if ( len( successful ) == 0 ) and ( len( failed ) == 0 ):
       return S_ERROR( 'Failed to perform %s from any catalog' % self.call )
     resDict = {'Failed':failed, 'Successful':successful}
