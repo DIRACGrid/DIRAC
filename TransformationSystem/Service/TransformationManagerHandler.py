@@ -606,8 +606,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     transList = trList[ini:last]
 
     statusDict = {}
-    extendableTranfs = Operations().getValue( "Transformations/%s/ExtendableTransfTypes" % database.__class__.__name__,
-                                              ['simulation', 'mcsimulation'] )
+    extendableTranfs = Operations().getValue( "Transformations/ExtendableTransfTypes", ['Simulation', 'MCsimulation'] )
     # Add specific information for each selected transformation
     for trans in transList:
       transDict = dict( zip( paramNames, trans ) )
