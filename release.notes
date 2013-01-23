@@ -59,6 +59,20 @@ NEW: LcgFileCatalogClient - in removeReplica() get the needed PFN inside instead
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p11]
+
+*RMS:
+BUGFIX: RequestClient - log string formatting
+
+*DMS
+BUGFIX: RemovalTask - handling for files not existing in the catalogue
+
+*Transformation
+FIX: TransformationManager - ignore files in NotProcessed status to get the % of processed files
+
+*Interfaces
+FIX: Fixes due to the recent changes in PromptUser utility
+
 [v6r6p10]
 
 *RMS
