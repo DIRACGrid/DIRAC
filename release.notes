@@ -1,15 +1,25 @@
-[v6r7-pre8]
+[v6r7-pre9]
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
+BUGFIX: Time - proper interpreting of 0's instead of None
+CHANGE: DISET - use cStringIO for ANY read that's longer than 16k (speed improvement) 
+        + Less mem when writing data to the net
 
 *Framework
 NEW: SystemAdministratorIntegrator client for collecting info from several hosts
 NEW: SystemAdministrator - added getHostInfo()
 FIX: dirac-proxy-init - always check for errors in S_OK/ERROR returned structures
+CHANGE: Do not accept VOMS proxies when uploading a proxy to the proxy manager
+
+*Configuration
+FIX: CE2CSAgent - get a fresh copy of the cs data before attempting to modify it, closes #1151
+FIX: Do not create useless backups due to slaves connecting and disconnecting
+FIX: Refresher - prevent retrying with 'Insane environment'
 
 *Accounting
 NEW: Accounting/Job - added validation of reported values to cope with the weird Yandex case
+FIX: DBUtils - take into account invalid values, closes #949
 
 *DMS
 FIX: FTSSubmitAgent - file for some reason rejected from submission should stay in 'Waiting' in 
@@ -19,6 +29,8 @@ CHANGE: dirac-dms-add-file removed, dirac-dms-add-files renamed to dirac-dms-add
 FIX: FileCatalogCLI - check the result of removeFile call
 FIX: LcgFileCatalogClient - get rid of LHCb specific VO evaluation
 NEW: New FileCatalogProxy service - a generalization of a deprecated LcgFileCatalog service
+FIX: Restored StorageElementProxy functionality
+CHANGE: dirac-dms-add-file - added printout
 
 *RSS
 NEW:  general reimplementation: 
@@ -46,6 +58,7 @@ CHANGE: JobDB - do not interpret SystemConfig in the WMS/JobDB
 CHANGE: JobDB - Use CPUTime JDL only, keep MaxCPUTime for backward compatibility
 CHANGE: JobWrapper - use CPUTime job parameter instead of MaxCPUTime
 CHANGE: JobAgent - use CEType option instead of CEUniqueID
+FIX: JobWrapper - do not attempt to untar directories before having checked if they are tarfiles 
  
 *SMS
 FIX: StorageManagementDB - when removing unlinked replicas, take into account the case where a
@@ -58,6 +71,9 @@ NEW: LcgFileCatalogClient - in removeReplica() get the needed PFN inside instead
       
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
+
+*Interfaces
+FIX: Dirac.py - CS option Scratchdir was in LocalSite/LocalSite
 
 [v6r6p11]
 
