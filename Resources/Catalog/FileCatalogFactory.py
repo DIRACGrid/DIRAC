@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getInstalledExtensions
+from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
 
 class FileCatalogFactory:
   
@@ -18,6 +19,15 @@ class FileCatalogFactory:
   def createCatalog( self, catalogName ):
     """ Create a file catalog object from its name and CS description
     """
+    
+    useProxyFlag = gConfig.getValue( '/Resources/Catalogs/UseProxy', False )
+    if useProxyFlag:
+      catalog = FileCatalogProxyClient( catalogName )
+      if catalog.isOK():
+        return S_OK( catalog )
+      else:
+        return S_ERROR( 'Failed to create a proxy client to %s' % catalogName )
+    
     # get the CS description first
     catalogPath = getCatalogPath( catalogName )
     catalogType = gConfig.getValue(catalogPath+'/CatalogType',catalogName)

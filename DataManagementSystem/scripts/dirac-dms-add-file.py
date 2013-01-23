@@ -78,10 +78,13 @@ for lfn in lfns:
     exitCode = 2
     continue
 
-  gLogger.info("\nUploading %s"%lfn['lfn'])
+  gLogger.notice("\nUploading %s"%lfn['lfn'])
   res = rm.putAndRegister(lfn['lfn'],lfn['localfile'],lfn['SE'],lfn['guid'])
   if not res['OK']:
     exitCode = 3
+    gLogger.error( 'Error: failed to upload %s to %s' % ( lfn['lfn'], lfn['SE'] ) )
     continue
+  else:
+    gLogger.notice( 'Successfully uploaded file to %s' % lfn['SE'] )
 
 DIRAC.exit( exitCode )

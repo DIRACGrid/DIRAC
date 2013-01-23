@@ -20,6 +20,7 @@ class FileCatalogClient(Client):
     if url:
       self.setServer(url)
     self.available = False
+    gConfig.setOptionValue( '/DIRAC/Security/UseServerCertificate', 'no' )
 #    res = self.isOK()
 #    if res['OK']:
 #      self.available = res['Value']

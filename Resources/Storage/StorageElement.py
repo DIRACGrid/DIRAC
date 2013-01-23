@@ -25,7 +25,7 @@ class StorageElement:
   def __init__( self, name, protocols = None, overwride = False ):
     self.overwride = overwride
     self.valid = True
-    if protocols == None:
+    if protocols is None:
       res = StorageFactory().getStorages( name, protocolList = [] )
     else:
       res = StorageFactory().getStorages( name, protocolList = protocols )
@@ -347,7 +347,7 @@ class StorageElement:
           res = storage.getProtocolPfn( res['Value'], withPort )
           if res['OK']:
             return res
-    errStr = "StorageElement.getPfnForProtocol: Failed to get PFN for requested protocols."
+    errStr = "StorageElement.getPfnForProtocol: Failed to get PFN for requested protocols:"
     gLogger.error( errStr, "%s for %s" % ( protocols, self.name ) )
     return S_ERROR( errStr )
 
@@ -383,6 +383,16 @@ class StorageElement:
     errStr = "StorageElement.getPfnPath: Failed to get the pfn path for any of the protocols!!"
     gLogger.error( errStr )
     return S_ERROR( errStr )
+
+  def getPFNBase( self ):
+    """ Get the base of the PFN to be complemented by LFN to suit the DIRAC convention
+    """ 
+    for storage in self.storages:
+      result = storage.getPFNBase()      
+      if result['OK']:
+        return result
+    
+    return result
 
   def getPfnForLfn( self, lfn ):
     """ Get the full PFN constructed from the LFN.
@@ -428,11 +438,11 @@ class StorageElement:
     else:
       return self.__executeFunction( pfn, 'getFile', {'localPath':localPath} )
 
-  def putFile( self, pfn, singleFile = False ):
+  def putFile( self, pfn, singleFile = False, sourceSize = 0 ):
     if singleFile:
-      return self.__executeSingleFile( pfn, 'putFile' )
+      return self.__executeSingleFile( pfn, 'putFile', {'sourceSize':sourceSize} )
     else:
-      return self.__executeFunction( pfn, 'putFile' )
+      return self.__executeFunction( pfn, 'putFile', {'sourceSize':sourceSize} )
 
   def replicateFile( self, pfn, sourceSize = 0, singleFile = False ):
     if singleFile:
