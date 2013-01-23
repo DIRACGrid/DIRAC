@@ -395,7 +395,7 @@ class Transformation( API ):
 
   def _checkBroadcastPlugin( self ):
     gLogger.info( "The Broadcast plugin requires the following parameters be set: %s" % ( ', '.join( ['SourceSE',
-                                                                                                      'TargetSE'] ) ) )
+                                                                                                      'TargetSE'] ) ) ) 
     requiredParams = ['SourceSE', 'TargetSE']
     for requiredParam in requiredParams:
       if ( not self.paramValues.has_key( requiredParam ) ) or ( not self.paramValues[requiredParam] ):
