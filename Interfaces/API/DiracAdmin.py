@@ -892,6 +892,9 @@ class DiracAdmin( API ):
                          ' %s for SE(s):\n%s' % ( ', '.join( protocolsList ), ', '.join( siteSEs ) ) )
     if not result['OK']:
       return result
+    if result['Value'].lower() != 'y':
+      self.log.always( 'No protocols will be added' )
+      return S_OK()
 
     for se in siteSEs:
       sections = gConfig.getSections( '/Resources/StorageElements/%s/' % ( se ) )
