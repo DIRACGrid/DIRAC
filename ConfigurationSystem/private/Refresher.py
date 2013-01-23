@@ -156,6 +156,8 @@ class Refresher( threading.Thread ):
       else:
         updatingErrorsList.append( dRetVal[ 'Message' ] )
         gLogger.warn( "Can't update from server", "Error while updating from %s: %s" % ( sServer, dRetVal[ 'Message' ] ) )
+        if dRetVal[ 'Message' ].find( "Insane environment" ) > -1:
+          break
     return S_ERROR( "Reason(s):\n\t%s" % "\n\t".join( List.uniqueElements( updatingErrorsList ) ) )
 
   def daemonize( self ):

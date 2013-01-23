@@ -36,10 +36,10 @@ class ConfigurationClient:
   def addListenerToNewVersionEvent( self, functor ):
     gRefresher.addListenerToNewVersionEvent( functor )
 
-  def dumpCFGAsLocalCache( self, fileName = None ):
+  def dumpCFGAsLocalCache( self, fileName = None, raw = False ):
     cfg = gConfigurationData.mergedCFG.clone()
     try:
-      if cfg.isSection( 'DIRAC' ):
+      if not raw and cfg.isSection( 'DIRAC' ):
         diracSec = cfg[ 'DIRAC' ]
         if diracSec.isSection( 'Configuration' ):
           confSec = diracSec[ 'Configuration' ]

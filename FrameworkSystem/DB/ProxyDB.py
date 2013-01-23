@@ -28,15 +28,14 @@ class ProxyDB( DB ):
 
   NOTIFICATION_TIMES = [ 2592000, 1296000 ]
 
-  def __init__( self, requireVoms = False,
-               useMyProxy = False,
-               maxQueueSize = 10 ):
+  def __init__( self,
+                useMyProxy = False,
+                maxQueueSize = 10 ):
     DB.__init__( self, 'ProxyDB', 'Framework/ProxyDB', maxQueueSize )
     random.seed()
     self.__defaultRequestLifetime = 300 # 5min
     self.__defaultTokenLifetime = 86400 * 7 # 1 week
     self.__defaultTokenMaxUses = 50
-    self.__vomsRequired = requireVoms
     self.__useMyProxy = useMyProxy
     self._minSecsToAllowStore = 3600
     self.__notifClient = NotificationClient()
@@ -244,29 +243,6 @@ class ProxyDB( DB ):
     cmd = "DELETE FROM `ProxyDB_Requests` WHERE Id=%s" % requestId
     return self._update( cmd )
 
-  def __checkVOMSisAlignedWithGroup( self, userGroup, chain ):
-    #HACK: We deny proxies with VOMS extensions
-    result = chain.isVOMS()
-    if result[ 'OK' ] and result[ 'Value' ]:
-      return S_ERROR( "Proxies with VOMS extensions are not allowed to be uploaded" )
-    #END HACK
-    voms = VOMS()
-    if not voms.vomsInfoAvailable():
-      if self.__vomsRequired:
-        return S_ERROR( "VOMS is required, but it's not available" )
-      self.log.warn( "voms-proxy-info is not available" )
-      return S_OK()
-    retVal = voms.getVOMSAttributes( chain )
-    if not retVal[ 'OK' ]:
-      return retVal
-    attr = retVal[ 'Value' ]
-    validVOMSAttr = Registry.getVOMSAttributeForGroup( userGroup )
-    if len( attr ) == 0 or attr[0] == validVOMSAttr:
-      return S_OK( 'OK' )
-    msg = "VOMS attributes are not aligned with dirac group"
-    msg += "Attributes are %s and allowed is %s for group %s" % ( attr, validVOMSAttr, userGroup )
-    return S_ERROR( msg )
-
   def completeDelegation( self, requestId, userDN, delegatedPem ):
     """
     Complete a delegation and store it in the db
@@ -282,6 +258,10 @@ class ProxyDB( DB ):
     retVal = chain.isValidProxy( ignoreDefault = True )
     if not retVal[ 'OK' ]:
       return retVal
+
+    result = chain.isVOMS()
+    if result[ 'OK' ] and result[ 'Value' ]:
+      return S_ERROR( "Proxies with VOMS extensions are not allowed to be uploaded" )
 
     retVal = request.checkChain( chain )
     if not retVal[ 'OK' ]:
@@ -301,10 +281,6 @@ class ProxyDB( DB ):
       return retVal
     if not userGroup in retVal[ 'Value' ]:
       return S_ERROR( "%s group is not valid for %s" % ( userGroup, userDN ) )
-
-    retVal = self.__checkVOMSisAlignedWithGroup( userGroup, chain )
-    if not retVal[ 'OK' ]:
-      return retVal
 
     retVal = self.storeProxy( userDN, userGroup, chain )
     if not retVal[ 'OK' ]:
