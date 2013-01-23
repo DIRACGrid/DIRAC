@@ -29,7 +29,7 @@ class FileCatalogProxyHandler( RequestHandler ):
   """
   .. class:: FileCatalogProxyHandler
   """
-
+  
   types_callProxyMethod = [ StringTypes, StringTypes, TupleType, DictType ]
   def export_callProxyMethod( self, fcName, methodName, args, kargs ):
     """ A generic method to call methods of the Storage Element.
@@ -49,22 +49,27 @@ class FileCatalogProxyHandler( RequestHandler ):
     :param tuple args: fcn args
     :param dict kwargs: fcn keyword args 
     """
-    res = self.__prepareSecurityDetails()
-    if not res['OK']:
-      return res
+    result = self.__prepareSecurityDetails()
+    if not result['OK']:
+      return result
+    proxyLocation =result['Value']
     try:
       fileCatalog = FileCatalog( [fcName] )
       method = getattr( fileCatalog, methodName )
     except AttributeError, error:
-      errStr = "%sProxy: no method named %s" % ( fcName, methodName )
+      errStr = "%s proxy: no method named %s" % ( fcName, methodName )
       gLogger.exception( errStr, methodName, error )
       return S_ERROR( errStr )
     try:
       result = method( *args, **kwargs )
+      if os.path.exists(proxyLocation):
+        os.remove(proxyLocation)
       return result
     except Exception, error:
-      errStr = "%sProxy: Exception while performing %s" % ( fcName, methodName )
-      gLogger.exception( errStr, methodName, error )
+      if os.path.exists(proxyLocation):
+        os.remove(proxyLocation)
+      errStr = "%s proxy: Exception while performing %s" % ( fcName, methodName )
+      gLogger.exception( errStr, error )
       return S_ERROR( errStr )
 
   def __prepareSecurityDetails( self, vomsFlag = True ):
@@ -76,23 +81,14 @@ class FileCatalogProxyHandler( RequestHandler ):
       clientGroup = credDict['group']
       gLogger.debug( "Getting proxy for %s@%s (%s)" % ( clientUsername, clientGroup, clientDN ) )
       if vomsFlag:
-        res = gProxyManager.downloadVOMSProxy( clientDN, clientGroup )
+        result = gProxyManager.downloadVOMSProxyToFile( clientDN, clientGroup )
       else:
-        res = gProxyManager.downloadProxy( clientDN, clientGroup )    
-      if not res['OK']:
-        return res
-      chain = res['Value']
-      proxyBase = "/tmp/proxies"
-      if not os.path.exists( proxyBase ):
-        os.makedirs( proxyBase )
-      proxyLocation = "%s/%s-%s" % ( proxyBase, clientUsername, clientGroup )
-      gLogger.debug( "Obtained proxy chain, dumping to %s." % proxyLocation )
-      res = gProxyManager.dumpProxyToFile( chain, proxyLocation )
-      if not res['OK']:
-        return res
+        result = gProxyManager.downloadProxyToFile( clientDN, clientGroup )    
+      if not result['OK']:
+        return result
       gLogger.debug( "Updating environment." )
-      os.environ['X509_USER_PROXY'] = res['Value']
-      return res
+      os.environ['X509_USER_PROXY'] = result['Value']
+      return result
     except Exception, error:
       exStr = "__getConnectionDetails: Failed to get client connection details."
       gLogger.exception( exStr, '', error )
