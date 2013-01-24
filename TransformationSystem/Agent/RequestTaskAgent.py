@@ -11,7 +11,7 @@ AGENT_NAME = 'Transformation/RequestTaskAgent'
 class RequestTaskAgent( TaskManagerAgentBase ):
   ''' An AgentModule to submit requests tasks
   '''
-  def __init__( self, agentName, loadName, baseAgentName, properties ):
+  def __init__( self, agentName, loadName, baseAgentName, properties = {} ):
     ''' c'tor
     '''
     TaskManagerAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
