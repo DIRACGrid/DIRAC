@@ -752,9 +752,18 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
 database = False
 def initializeTransformationManagerHandler( serviceInfo ):
+
   global database
-  database = TransformationDB( 'TransformationDB', 'Transformation/TransformationDB' )
+  database = TransformationDB()
+  res = database._connect()
+  if not res['OK']:
+    return res
+  res = database._checkTable()
+  if not res['OK'] and not res['Message'] == 'The requested table already exist':
+    return res
+
   return S_OK()
+
 
 class TransformationManagerHandler( TransformationManagerHandlerBase ):
 

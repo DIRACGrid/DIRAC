@@ -10,67 +10,84 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Opera
 
 AGENT_NAME = 'Transformation/UpdateTransformationCounters'
 
-class UpdateTransformationCounters(AgentModule):
+class UpdateTransformationCounters( AgentModule ):
   """ This agent is doing what getTransformationSummaryWeb does, but can take the time it needs
   """
-  def __init__( self, agentName, loadName, baseAgentName, properties ):
-    ''' c'tor
-    '''
-    AgentModule.__init__( agentName, loadName, baseAgentName, properties )
+  def __init__( self, *args, **kwargs ):
+    """ c'tor
 
-    self.fileLog = {}
-    self.timeLog = {}
-    self.fullTimeLog = {}
-    self.pollingTime = self.am_getOption( 'PollingTime', 800 )
-    self.TransfStatuses = Operations().getValue( 'Transformations/TransformationStatuses', ['Active',"Stopped"] )
+    :param self: self reference
+    :param str agentName: name of agent
+    :param bool baseAgentName: whatever
+    :param dict properties: whatever else
+    """
+    AgentModule.__init__( self, *args, **kwargs )
+
     self.transClient = TransformationClient()
+    self.transfStatuses = self.am_getOption( 'TransformationStatuses', ['Active', 'Stopped'] )
 
   def initialize( self ):
     ''' Make the necessary initializations
     '''
     gMonitor.registerActivity( "Iteration", "Agent Loops", AGENT_NAME, "Loops/min", gMonitor.OP_SUM )
     return S_OK()
-  
+
   def execute( self ):
     ''' Main execution method
     '''
 
     gMonitor.addMark( 'Iteration', 1 )
     # Get all the transformations
-    result = self.transClient.getTransformations( condDict = {'Status': self.TransfStatuses }, timeout = 320  )
+    result = self.transClient.getTransformations( condDict = {'Status': self.transfStatuses }, timeout = 320 )
     if not result['OK']:
       gLogger.error( "UpdateTransformationCounters.execute: Failed to get transformations.", result['Message'] )
       return S_OK()
     # Process each transformation
-    self.JobsStates = self.transClient.getTransformationCountersStatuses('Tasks')
-    self.FilesStates= self.transClient.getTransformationCountersStatuses('Files')
+    jobsStates = self.transClient.getTransformationCountersStatuses( 'Tasks' )
+    filesStates = self.transClient.getTransformationCountersStatuses( 'Files' )
+
     for transDict in result['Value']:
       transID = long( transDict['TransformationID'] )
+      gLogger.debug( "Looking at transformationID %d" % transID )
       counterDict = {}
       counterDict['TransformationID'] = transID
-      
+
       #Take care of the Tasks' states
       res = self.transClient.getTransformationTaskStats( transID )
-      taskDict = {}
-      if res['OK'] and res['Value']:
-        taskDict = res['Value']
-      else:
-        gLogger.warn("UpdateTransformationCounters.execute: Something wrong with Task Statuses")  
-      for state in self.JobsStates:
-        counterDict[state] = taskDict.get( state, 0 ) 
-      
-      #Now look for the files' states  
-      res = self.transClient.getTransformationStats( transID ) 
-      fileDict = {}
-      if res['OK'] and res['Value']:
-        fileDict = res['Value']
-      else:
-        gLogger.warn("UpdateTransformationCounters.execute: Something wrong with File Statuses")
-      for state in self.FilesStates:
-        counterDict[state] = fileDict.get( state, 0 ) 
-        
-      res = self.transClient.updateTransformationCounters( counterDict )  
       if not res['OK']:
-        gLogger.error("UpdateTransformationCounters.execute: failed updating counters", res['Message'])
-    return S_OK()  
-      
+        gLogger.warn( "Could not get Transformation Task Stats for transformation %s : %s" % ( transID,
+                                                                                               res['Message'] ) )
+        break
+      else:
+        taskDict = {}
+        if res['Value']:
+          taskDict = res['Value']
+          gLogger.debug( "Got %s tasks dict for transformation %s" % ( str( taskDict ), transID ) )
+          for state in jobsStates:
+            counterDict[state] = taskDict.get( state, 0 )
+        else:
+          gLogger.warn( "No Task Statuses found" )
+          break
+
+      #Now look for the files' states  
+      res = self.transClient.getTransformationStats( transID )
+      if not res['OK']:
+        gLogger.warn( "Could not get Transformation Stats for transformation %s : %s" % ( transID,
+                                                                                          res['Message'] ) )
+        break
+      else:
+        fileDict = {}
+        if res['Value']:
+          fileDict = res['Value']
+          gLogger.debug( "Got %s file dict for transformation %s" % ( str( fileDict ), transID ) )
+          for state in filesStates:
+            counterDict[state] = fileDict.get( state, 0 )
+        else:
+          gLogger.warn( "No File Statuses found" )
+          break
+
+      res = self.transClient.updateTransformationCounters( counterDict )
+      if not res['OK']:
+        gLogger.error( "Failed updating counters: %s" % res['Message'] )
+
+    return S_OK()
