@@ -1,10 +1,11 @@
-[v6r7-pre10]
+[v6r7-pre11]
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
 BUGFIX: Time - proper interpreting of 0's instead of None
 CHANGE: DISET - use cStringIO for ANY read that's longer than 16k (speed improvement) 
         + Less mem when writing data to the net
+FIX: Os.py - protection against failed "df" command execution        
 
 *Framework
 NEW: SystemAdministratorIntegrator client for collecting info from several hosts
@@ -74,6 +75,7 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 
 *Interfaces
 FIX: Dirac.py - CS option Scratchdir was in LocalSite/LocalSite
+FIX: Dirac.py - do not define default catalog, use FileCatalog utility instead
 
 [v6r6p12]
 
