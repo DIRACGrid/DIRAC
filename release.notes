@@ -75,6 +75,12 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 *Interfaces
 FIX: Dirac.py - CS option Scratchdir was in LocalSite/LocalSite
 
+[v6r6p12]
+
+*DMS
+BUGFIX: RemovalTask - Replacing "'" by "" in error str set as attribute for a subRequest file. 
+        Without that request cannot be updated when some nasty error occurs.
+
 [v6r6p11]
 
 *RMS:
