@@ -11,7 +11,7 @@ AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 class WorkflowTaskAgent( TaskManagerAgentBase ):
   ''' An AgentModule class to submit workflow tasks
   '''
-  def __init__( self, agentName, loadName, baseAgentName, properties ):
+  def __init__( self, agentName, loadName, baseAgentName, properties = {} ):
     ''' c'tor
     '''
     TaskManagerAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
