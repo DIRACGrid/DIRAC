@@ -4,7 +4,6 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2011/10/25 07:52:37
 ########################################################################
-
 """ :mod: RemovalTask 
     =======================
  
@@ -14,9 +13,7 @@
 
     removal requests processing 
 """
-
 __RCSID__ = "$Id $"
-
 ##
 # @file RemoveTask.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -36,8 +33,12 @@ class RemovalTask( RequestTask ):
   """
   .. class:: RemovalTask
   
+  supported operations are:
+  - physicalRemoval - remove PFN from TargetSE
+  - removeFile - completely remove LFNs from catalogues and SEs  
+  - replicaRemoval - remove replicas at specified TargetSEs
+  - reTransfer - delete file at source and issue a transfer request using ReplicaManager::onlineRetransfer
   """
-
   def __init__( self, *args, **kwargs ):
     """c'tor
 
@@ -118,8 +119,13 @@ class RemovalTask( RequestTask ):
     for lfn in lfns:
       self.debug("removeFile: processing file %s" % lfn )
       try:
+
         ## try to remove using proxy already defined in os.environ 
         removal = self.replicaManager().removeFile( lfn )
+        ## file is not existing?  
+        if not removal["OK"] and "no such file or directory" in str(removal["Message"]).lower():
+          removalStatus[lfn] = removal["Message"]
+          continue
         ## not OK but request belongs to DataManager? 
         if not self.requestOwnerDN and \
            ( not removal["OK"] and "Write access not permitted for this credential." in removal["Message"] ) or \
@@ -162,8 +168,10 @@ class RemovalTask( RequestTask ):
 
       ## set file error if any
       if error:
-        self.debug("removeFile: %s: %s" % (lfn, str(error) ) ) 
-        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", str(error)[:255] )  
+        self.debug("removeFile: %s: %s" % ( lfn, str(error) ) ) 
+        fileError = str(error).replace("'", "")[:255]
+        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, 
+                                                                "Error", fileError )  
         if not fileError["OK"]:
           self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
       ## no error? file not exists? - we are able to recover 
@@ -180,6 +188,7 @@ class RemovalTask( RequestTask ):
         errorStr = str(error)
         if type(error) == DictType:
           errorStr = ";".join( [ "%s:%s" % ( key, value ) for key, value in error.items() ] )
+        errorStr = errorStr.replace( "'", "" )
         subRequestError.append( "%s:%s" % ( lfn, errorStr ) )
 
     self.addMark( "RemoveFileDone", filesRemoved )
@@ -191,7 +200,7 @@ class RemovalTask( RequestTask ):
       requestObj.setSubRequestStatus( index, "removal", "Done" )
     elif filesFailed:
       self.info("removeFile: all files processed, %s files failed to remove" % filesFailed )
-      subRequestError = "".join( subRequestError )[:255]
+      subRequestError = ";".join( subRequestError )[:255]
       subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError )
     return S_OK( requestObj )
 
@@ -231,6 +240,11 @@ class RemovalTask( RequestTask ):
         for targetSE in targetSEs: 
           ## try to remove using current proxy 
           removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
+          ## file is not existing?  
+          if not removeReplica["OK"] and "no such file or directory" in str(removeReplica["Message"]).lower():
+            removalStatus[lfn][targetSE] = removeReplica["Message"]
+            continue
+
           ## not OK but request belongs to DataManager?
           if not self.requestOwnerDN and \
                 ( not removeReplica["OK"] and 
