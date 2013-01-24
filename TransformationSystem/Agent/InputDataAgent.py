@@ -18,7 +18,7 @@ AGENT_NAME = 'Transformation/InputDataAgent'
 
 class InputDataAgent( AgentModule ):
 
-  def __init__( self, agentName, loadName, baseAgentName, properties ):
+  def __init__( self, agentName, loadName, baseAgentName, properties = {} ):
     ''' c'tor
     '''
     AgentModule.__init__( agentName, loadName, baseAgentName, properties )

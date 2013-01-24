@@ -22,7 +22,7 @@ class TaskManagerAgentBase( AgentModule ):
   def __init__( self, agentName, loadName, baseAgentName, properties ):
     ''' c'tor
     '''
-    AgentModule.__init__( agentName, loadName, baseAgentName, properties )
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
 
     self.taskManager = None
     self.shifterProxy = ''
