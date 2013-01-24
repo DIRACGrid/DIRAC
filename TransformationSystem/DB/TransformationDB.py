@@ -104,14 +104,12 @@ class TransformationDB( DB ):
     default_task_statuses = ['Created','Submitted','Checking','Staging','Waiting','Running','Done','Completed','Killed','Stalled',
                              'Failed','Rescheduled']
     default_file_statuses = ['Unused','Assigned','Processed','Problematic']
-    self.TasksStatuses = default_task_statuses
-    res = Operations().getValue( 'Transformations/TasksStates', [] )
+    self.tasksStatuses = default_task_statuses + Operations().getValue( 'Transformations/TasksStates', [] )
+    self.fileStatuses = default_file_statuses + Operations().getValue( 'Transformations/FilesStatuses', [] )
+    self.TSCounterFields = []
+
     if res['OK']:
-      self.TasksStatuses += res['Value']
-    res = Operations().getValue( 'Transformations/FilesStates', [] )
-    self.FileStatuses = default_file_statuses
-    if res['OK']:
-      self.FileStatuses += res['Value']
+      self.fileStatuses += res['Value']
   
     ##Create the tables. Does not require the use of the sql file
     result = self.__initializeDB()
@@ -217,7 +215,7 @@ class TransformationDB( DB ):
       tablesToCreate['TransformationCounters']= {'Fields': {'TransformationID' : "INTEGER NOT NULL"},
                                                  'PrimaryKey': ['TransformationID']}
       self.TSCounterFields.append('TransformationID')
-      for status in self.TasksStatuses+self.FileStatuses:
+      for status in self.tasksStatuses + self.fileStatuses:
         tablesToCreate['TransformationCounters']['Fields'][status] = 'INTEGER DEFAULT 0'
     else:
       needupdate = True
@@ -235,7 +233,7 @@ class TransformationDB( DB ):
     if not retVal[ 'OK' ]:
       return retVal
     self.TSCounterFields = [ t[0] for t in retVal[ 'Value' ] ]
-    for status in self.TasksStatuses+self.FileStatuses:
+    for status in self.tasksStatuses + self.fileStatuses:
       if not status in self.TSCounterFields:
         altertable = "ALTER TABLE TransformationCounters ADD COLUMN `%s` INTEGER DEFAULT 0" % status
         retVal = self._query( altertable )
@@ -1099,7 +1097,8 @@ class TransformationDB( DB ):
       res = self.getCounters( 'TransformationTasks', ['ExternalStatus'], {'TransformationID':res['Value']},
                               connection = connection )
     else:
-      res = self.getCounters( 'TransformationTasks', ['ExternalStatus', 'TransformationID'], {}, connection = connection )
+      res = self.getCounters( 'TransformationTasks', ['ExternalStatus', 'TransformationID'], {},
+                              connection = connection )
     if not res['OK']:
       return res
     if not res['Value']:
@@ -1466,30 +1465,32 @@ class TransformationDB( DB ):
   def getTasksTransformationCountersStatuses(self, connection = False):
     """ Need to get all the statuses to update
     """
-    return self.TasksStatuses
+    return self.tasksStatuses
   def getFilesTransformationCountersStatuses(self, connection = False):
     """ Need to get all the statuses to update
     """
-    return self.FileStatuses
+    return self.fileStatuses
    
   def updateTransformationCounters(self, counterDict, connection = False ):
     """ Insert in the table or update the transformation counters given a dict
     """
     ##first, check that all the keys in this dict are among those expected
     for key in counterDict.keys():
-      if key not in self.TasksStatuses+self.FileStatuses:
+      if key not in self.tasksStatuses + self.fileStatuses:
         return S_ERROR("Key %s not in the table" % key)
     if not 'TransformationID' in counterDict.keys():
       return S_ERROR("TransformationID key is mandatory")
     
-    res = self.getFields("TransformationCounters", ['TransformationID'], 
-                         condDict = {'TransformationID' : counterDict['TransformationID']}, conn = connection)
+    res = self.getFields( "TransformationCounters", ['TransformationID'],
+                          condDict = {'TransformationID' : counterDict['TransformationID']}, conn = connection )
     if not res['Value']:
       return res
     
     if len(res['Value']): #if the Transformation is already in:
-      res = self.updateFields("TransformationCounters", condDict = {'TransformationID' : counterDict['TransformationID']},
-                              updateDict = counterDict, conn = connection)
+      res = self.updateFields( "TransformationCounters",
+                               condDict = {'TransformationID' : counterDict['TransformationID']},
+                               updateDict = counterDict,
+                               conn = connection )
       if not res['OK']:
         return res
     else:
@@ -1502,8 +1503,10 @@ class TransformationDB( DB ):
   def getTransformationsCounters(self, TransIDs, connection = False):
     """ Get all the counters for the given transformationIDs 
     """
-    fields = ['TransformationID']+self.TasksStatuses+self.FileStatuses
-    res = self.getFields("TransformationCounters", outFields = fields, condDict = {'TransformationID' : TransIDs}, conn = connection)
+    fields = ['TransformationID'] + self.tasksStatuses + self.fileStatuses
+    res = self.getFields( "TransformationCounters",
+                          outFields = fields, condDict = {'TransformationID' : TransIDs},
+                          conn = connection )
     if not res['OK']:
       return res
     resList = []
