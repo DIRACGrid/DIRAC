@@ -71,17 +71,10 @@ class Dirac( API ):
                                              useCertificates=useCertificates  )
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
     # Determine the default file catalog
-    self.defaultFileCatalog = ''
+    self.defaultFileCatalog = None
     defaultFC = gConfig.getValue( self.section + '/FileCatalog', [] )
-    if not defaultFC:
-      result = gConfig.getSections( 'Resources/FileCatalogs', listOrdered = True )
-      if result['OK']:
-        if result['Value']:
-          self.defaultFileCatalog = result['Value'][0]
-    else:
+    if defaultFC:
       self.defaultFileCatalog = defaultFC
-    if not self.defaultFileCatalog:
-      self.defaultFileCatalog = 'FileCatalog'
 
   #############################################################################
   # Repository specific methods

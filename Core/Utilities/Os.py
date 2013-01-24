@@ -37,7 +37,7 @@ def getDiskSpace( path = '.' ):
   """
 
   if not os.path.exists( path ):
-    return - 1
+    return -1
   comm = 'df -P -m %s | tail -1' % path
   resultDF = shellCall( 0, comm )
   if resultDF['OK'] and not resultDF['Value'][0]:
@@ -53,13 +53,17 @@ def getDiskSpace( path = '.' ):
         space = ( quota - used ) / 1024
         return int( space )
       else:
-        return - 1
+        return -1
     else:
-      print output
       fields = output.split()
-      return int( fields[3] )
+      try:
+        value = int( fields[3] )
+      except Exception, error:
+        print "Exception during disk space evaluation:", str( error )  
+        value = -1
+      return value
   else:
-    return - 1
+    return -1
 
 def getDirectorySize( path ):
   """ Get the total size of the given directory in MB
