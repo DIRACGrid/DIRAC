@@ -71,7 +71,7 @@ class CE2CSAgent( AgentModule ):
     #Get a "fresh" copy of the CS data
     result = self.csAPI.downloadCSData()
     if not result[ 'OK' ]:
-      gLogger.warn( "Could not download a fresh copy of the CS data", result[ 'Message' ] )
+      self.log.warn( "Could not download a fresh copy of the CS data", result[ 'Message' ] )
 
     self.__lookForCE()
     self.__infoFromCE()

@@ -12,7 +12,7 @@ class JobManifest( object ):
     self.__manifest = CFG()
     self.__dirty = False
     if manifest:
-      result = self.loadManifest( manifest )
+      result = self.load( manifest )
       if not result[ 'OK' ]:
         raise Exception( result[ 'Message' ] )
 
@@ -60,7 +60,7 @@ class JobManifest( object ):
     return str( self.__manifest )
 
   def getAsCFG( self ):
-    return self.__manifest.copy()
+    return self.__manifest.clone()
 
   def dumpAsJDL( self ):
     return dumpCFGAsJDL( self.__manifest )
@@ -180,7 +180,7 @@ class JobManifest( object ):
       if contents and not isinstance( contents, CFG ):
         return S_ERROR( "Contents for section %s is not a cfg object" % secName )
       self.__dirty = True
-      S_OK( self.__manifest.createSection( secName, contents = contents ) )
+      S_OK( self.__manifest.createNewSection( secName, contents = contents ) )
     return S_ERROR( "Section %s already exists" % secName )
 
   def getSection( self, secName ):

@@ -30,8 +30,8 @@ from DIRAC.Core.Utilities.Subprocess                                import syste
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
-from DIRAC.Core.Utilities                                           import List
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List, Time
+from DIRAC.Core.Utilities                                           import List, Time
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
 
 import DIRAC
@@ -699,9 +699,12 @@ class JobWrapper:
       self.log.verbose( 'OutputSandbox files are: %s' % ', '.join( outputSandbox ) )
     outputData = []
     if self.jobArgs.has_key( 'OutputData' ):
-      outputData = self.jobArgs['OutputData']
-      if not type( outputData ) == type( [] ):
-        outputData = outputData.split( ';' )
+      #HACK: This absurdity is to please pylint and shut it up
+      outputDataJar = self.jobArgs['OutputData']
+      if not type( outputDataJar ) == type( [] ):
+        outputData = outputDataJar.split( ';' )
+      else:
+        outputData = outputDataJar
       self.log.verbose( 'OutputData files are: %s' % ', '.join( outputData ) )
 
     #First resolve any wildcards for output files and work out if any files are missing

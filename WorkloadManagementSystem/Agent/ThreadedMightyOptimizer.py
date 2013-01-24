@@ -5,7 +5,7 @@
 ########################################################################
 """
   SuperOptimizer
-  One optimizer to rule them all, one optimizer to find them, 
+  One optimizer to rule them all, one optimizer to find them,
   one optimizer to bring them all, and in the darkness bind them.
 """
 __RCSID__ = "$Id$"
@@ -123,12 +123,11 @@ class ThreadedMightyOptimizer( AgentModule ):
     """ Determine next Optimizer
     """
     if jobAttrs[ 'Status' ] == 'Received':
-      optList = "JobPath"
+      optList = [ "JobPath" ]
     elif jobAttrs[ 'Status' ] == 'Checking':
-      optList = jobAttrs[ 'MinorStatus' ]
+      optList = List.fromChar( jobAttrs[ 'MinorStatus' ], "/" )
     else:
       return False
-    optList = List.fromChar( optList, "/" )
     if len( optList ) == 1:
       optList.insert( 0, "WorkloadManagement" )
     if len( optList ) > 2:
