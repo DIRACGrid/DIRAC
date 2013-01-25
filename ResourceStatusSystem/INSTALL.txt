@@ -10,11 +10,13 @@ WARNING: REPORT FIRST to the DIRAC FORUM !
 
 0.- CS Configuration
 
-  The configuration for RSS sits under the following path on the CS
-    /Operations/Defaults/RSSConfiguration2
+  The configuration for RSS sits under the following path on the CS following the usual
+  /Operations section convention
+  
+    /Operations/Defaults/ResourceStatus
   
   Please, make sure you have the following schema:
-    /Operations/Defaults/RSSConfiguration2
+    /Operations/Defaults/ResourceStatus
         /Config
           State        = InActive
           Cache        = 300
@@ -84,7 +86,7 @@ WARNING: REPORT FIRST to the DIRAC FORUM !
 7.- Activate RSS
 
   If you did not see any problem, activate RSS.
-    /Operations/Defaults/RSSConfiguration2/Config
+    /Operations/Defaults/ResourceStatus/Config
         State = Active 
 
 8.- Agents
