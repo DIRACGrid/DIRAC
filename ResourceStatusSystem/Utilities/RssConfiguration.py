@@ -15,7 +15,7 @@ __RCSID__ = '$Id:  $'
 
 ## RssConfiguration config path ################################################
 
-_rssConfigPath = 'RSSConfiguration2'
+_rssConfigPath = 'ResourceStatus'
 
 ## RssConfiguration ############################################################
 
