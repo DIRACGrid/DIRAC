@@ -21,10 +21,7 @@ class FileCatalogFactory:
     """
     if useProxy:
       catalog = FileCatalogProxyClient( catalogName )
-      if catalog.isOK():
-        return S_OK( catalog )
-      else:
-        return S_ERROR( 'Failed to create a proxy client to %s' % catalogName )
+      return S_OK( catalog )
     
     # get the CS description first
     catalogPath = getCatalogPath( catalogName )
@@ -68,10 +65,10 @@ class FileCatalogFactory:
           else:  
             evalString = "catalogModule.%s()" % moduleName
         catalog = eval( evalString )
-        if not catalog.isOK():
-          errStr = "Failed to instantiate catalog plug in"
-          gLogger.error( errStr, moduleName )
-          return S_ERROR( errStr )
+        #if not catalog.isOK():
+        #  errStr = "Failed to instantiate catalog plug in"
+        #  gLogger.error( errStr, moduleName )
+        #  return S_ERROR( errStr )
         self.log.debug('Loaded module %sClient from %s' % ( catalogType, moduleRootPath ) )
         return S_OK( catalog )
       except Exception, x:
