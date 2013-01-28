@@ -268,6 +268,9 @@ class Subprocess:
 
   def pythonCall( self, function, *stArgs, **stKeyArgs ):
     """ call python function :function: with :stArgs: and :stKeyArgs: """
+    
+    self.log.debug( 'pythonCall:', function.__name__ )
+    
     readFD, writeFD = os.pipe()
     pid = os.fork()
     self.childPID = pid
@@ -375,6 +378,12 @@ class Subprocess:
 
   def systemCall( self, cmdSeq, callbackFunction = None, shell = False, env = None ):
     """ system call (no shell) - execute :cmdSeq: """
+    
+    if shell:
+      self.log.debug( 'shellCall:', cmdSeq )
+    else:
+      self.log.debug( 'systemCall:', cmdSeq )
+        
     self.cmdSeq = cmdSeq
     self.callback = callbackFunction
     if sys.platform.find( "win" ) == 0:
