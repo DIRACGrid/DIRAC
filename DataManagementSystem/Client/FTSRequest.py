@@ -1244,7 +1244,6 @@ class FTSRequest(object):
 
     :param self: self reference
     """
-
     missingSourceErrors = [
       'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
       'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
