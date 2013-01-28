@@ -24,7 +24,7 @@ class FileCatalog:
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory', 'setDirectoryStatus',
                    'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset']
 
-  def __init__( self, catalogs = [] ):
+  def __init__( self, catalogs = [], vo = None  ):
     """ Default constructor
     """
     self.valid = True
@@ -32,6 +32,13 @@ class FileCatalog:
     self.readCatalogs = []
     self.writeCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
+    self.vo = vo
+    if not vo:
+      result = getVOfromProxyGroup()
+      if not result['OK']:
+        return result
+      slef.vo = result['Value']
+    self.opHelper = Operations( vo = self.vo )
 
     if type( catalogs ) in types.StringTypes:
       catalogs = [catalogs]
@@ -209,12 +216,7 @@ class FileCatalog:
     
     # Get the eligible catalogs first
     # First, look in the Operations, if nothing defined look in /Resources for backward compatibility
-    result = getVOfromProxyGroup()
-    if not result['OK']:
-      return result
-    vo = result['Value']
-    opHelper = Operations( vo = vo )
-    result = opHelper.getSections( '/Services/FileCatalogs' )
+    result = self.opHelper.getSections( '/Services/FileCatalogs' )
     fileCatalogs = []
     operationsFlag = False
     if result['OK']:
@@ -235,7 +237,7 @@ class FileCatalog:
         return res
       catalogConfig = res['Value']
       if operationsFlag:
-        result = opHelper.getOptionsDict( '/Services/FileCatalogs/%s' % catalogName )
+        result = self.opHelper.getOptionsDict( '/Services/FileCatalogs/%s' % catalogName )
         if not result['OK']:
           return result
         catalogConfig.update( result['Value'] )        
@@ -294,4 +296,8 @@ class FileCatalog:
   def _generateCatalogObject( self, catalogName ):
     """ Create a file catalog object from its name and CS description
     """
-    return FileCatalogFactory().createCatalog(catalogName)
+    useProxy = gConfig.getValue( '/LocalSite/Catalogs/%s' % catalogName, False )
+    if not useProxy:
+      useProxy = self.opHelper.getValue( '/Services/Catalogs/%s/UseProxy' % catalogName, False )
+    return FileCatalogFactory().createCatalog( catalogName, useProxy )
+

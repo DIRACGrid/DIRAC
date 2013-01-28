@@ -22,14 +22,12 @@ import os
 
 class StorageFactory:
 
-  def __init__( self ):
+  def __init__( self, useProxy=False ):
 
     self.rootConfigPath = '/Resources/StorageElements'
     self.valid = True
     self.proxy = False
-    res = gConfig.getOption( "%s/UseProxy" % self.rootConfigPath )
-    if res['OK'] and ( res['Value'] == 'True' ):
-      self.proxy = True
+    self.proxy = useProxy
     self.resourceStatus = ResourceStatus()
 
 

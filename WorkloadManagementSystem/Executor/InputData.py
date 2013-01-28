@@ -126,6 +126,7 @@ class InputData( OptimizerExecutor ):
 
       if not guidDict['OK']:
         self.log.warn( guidDict['Message'] )
+        return guidDict
 
       failed = guidDict['Value']['Failed']
       if failed:
