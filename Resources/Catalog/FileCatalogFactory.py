@@ -16,12 +16,10 @@ class FileCatalogFactory:
   def __init__(self):
     self.log = gLogger.getSubLogger('FileCatalogFactory')
   
-  def createCatalog( self, catalogName ):
+  def createCatalog( self, catalogName, useProxy=False ):
     """ Create a file catalog object from its name and CS description
     """
-    
-    useProxyFlag = gConfig.getValue( '/Resources/Catalogs/UseProxy', False )
-    if useProxyFlag:
+    if useProxy:
       catalog = FileCatalogProxyClient( catalogName )
       if catalog.isOK():
         return S_OK( catalog )

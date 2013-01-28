@@ -18,17 +18,30 @@ from DIRAC.Resources.Storage.StorageFactory             import StorageFactory
 from DIRAC.Core.Utilities.Pfn                           import pfnparse
 from DIRAC.Core.Utilities.List                          import sortList
 from DIRAC.Core.Utilities.SiteSEMapping                 import getSEsForSite
+from DIRAC.Core.Security.ProxyInfo                      import getVOfromProxyGroup
 import re, types
 
 class StorageElement:
 
-  def __init__( self, name, protocols = None, overwride = False ):
+  def __init__( self, name, protocols = None, overwride = False, vo = None ):
+    
+    self.vo = vo
+    if not vo:
+      result = getVOfromProxyGroup()
+      if not result['OK']:
+        return result
+      slef.vo = result['Value']
+    self.opHelper = Operations( vo = self.vo )
+    useProxy = gConfig.getValue( '/LocalSite/StorageElements/%s' % name, False )
+    if not useProxy:
+      useProxy = self.opHelper.getValue( '/Services/StorageElements/%s/UseProxy' % name, False )
+    
     self.overwride = overwride
     self.valid = True
     if protocols is None:
-      res = StorageFactory().getStorages( name, protocolList = [] )
+      res = StorageFactory( useProxy ).getStorages( name, protocolList = [] )
     else:
-      res = StorageFactory().getStorages( name, protocolList = protocols )
+      res = StorageFactory( useProxy ).getStorages( name, protocolList = protocols )
     if not res['OK']:
       self.valid = False
       self.name = name
