@@ -16,17 +16,12 @@ class FileCatalogFactory:
   def __init__(self):
     self.log = gLogger.getSubLogger('FileCatalogFactory')
   
-  def createCatalog( self, catalogName ):
+  def createCatalog( self, catalogName, useProxy=False ):
     """ Create a file catalog object from its name and CS description
     """
-    
-    useProxyFlag = gConfig.getValue( '/Resources/Catalogs/UseProxy', False )
-    if useProxyFlag:
+    if useProxy:
       catalog = FileCatalogProxyClient( catalogName )
-      if catalog.isOK():
-        return S_OK( catalog )
-      else:
-        return S_ERROR( 'Failed to create a proxy client to %s' % catalogName )
+      return S_OK( catalog )
     
     # get the CS description first
     catalogPath = getCatalogPath( catalogName )
@@ -70,10 +65,10 @@ class FileCatalogFactory:
           else:  
             evalString = "catalogModule.%s()" % moduleName
         catalog = eval( evalString )
-        if not catalog.isOK():
-          errStr = "Failed to instantiate catalog plug in"
-          gLogger.error( errStr, moduleName )
-          return S_ERROR( errStr )
+        #if not catalog.isOK():
+        #  errStr = "Failed to instantiate catalog plug in"
+        #  gLogger.error( errStr, moduleName )
+        #  return S_ERROR( errStr )
         self.log.debug('Loaded module %sClient from %s' % ( catalogType, moduleRootPath ) )
         return S_OK( catalog )
       except Exception, x:

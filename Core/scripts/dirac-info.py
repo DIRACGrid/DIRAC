@@ -30,6 +30,18 @@ if ret['OK'] and 'group' in ret['Value']:
   infoDict['VirtualOrganization'] = getVOForGroup( ret['Value']['group'] )
 else:
   infoDict['VirtualOrganization'] = getVOForGroup( '' )
+  
+try:
+  import gfalthr
+  infoDict['gfal version'] = gfalthr.gfal_version()
+except:
+  pass
+
+try:
+  import lcg_util
+  infoDict['lcg_util version'] = lcg_util.lcg_util_version()
+except:
+  pass    
 
 print 'DIRAC version'.rjust( 20 ), ':', DIRAC.version
 
