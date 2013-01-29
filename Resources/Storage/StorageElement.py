@@ -30,7 +30,7 @@ class StorageElement:
       result = getVOfromProxyGroup()
       if not result['OK']:
         return result
-      slef.vo = result['Value']
+      self.vo = result['Value']
     self.opHelper = Operations( vo = self.vo )
     useProxy = gConfig.getValue( '/LocalSite/StorageElements/%s' % name, False )
     if not useProxy:
