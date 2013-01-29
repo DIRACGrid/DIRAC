@@ -1,4 +1,4 @@
-[v6r7-pre12]
+[v6r7]
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
