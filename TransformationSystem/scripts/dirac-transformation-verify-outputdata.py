@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__ = "$Id$"
 
 import sys
 if len( sys.argv ) < 2:
@@ -18,7 +14,9 @@ from DIRAC.TransformationSystem.Client.TransformationClient         import Trans
 from DIRAC import gLogger
 import DIRAC
 
-agent = ValidateOutputDataAgent( 'Transformation/ValidateOutputDataAgent', 'dirac-transformation-verify-outputdata' )
+agent = ValidateOutputDataAgent( 'Transformation/ValidateOutputDataAgent',
+                                 'Transformation/ValidateOutputDataAgent',
+                                 'dirac-transformation-verify-outputdata' )
 agent.initialize()
 
 client = TransformationClient()
