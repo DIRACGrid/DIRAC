@@ -1,11 +1,14 @@
-[v6r7-pre11]
+[v6r7-pre12]
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
 BUGFIX: Time - proper interpreting of 0's instead of None
 CHANGE: DISET - use cStringIO for ANY read that's longer than 16k (speed improvement) 
         + Less mem when writing data to the net
-FIX: Os.py - protection against failed "df" command execution        
+FIX: Os.py - protection against failed "df" command execution       
+NEW: dirac-info prints lcg bindings versions
+CHANGE: PlotBase - made a new style class 
+NEW: Subprocess - added debug level log message
 
 *Framework
 NEW: SystemAdministratorIntegrator client for collecting info from several hosts
@@ -32,6 +35,7 @@ FIX: LcgFileCatalogClient - get rid of LHCb specific VO evaluation
 NEW: New FileCatalogProxy service - a generalization of a deprecated LcgFileCatalog service
 FIX: Restored StorageElementProxy functionality
 CHANGE: dirac-dms-add-file - added printout
+NEW: FileCatalog(Factory), StorageElement(Factory) - UseProxy flag moved to /Operations and /LocalSite sections
 
 *RSS
 NEW:  general reimplementation: 
