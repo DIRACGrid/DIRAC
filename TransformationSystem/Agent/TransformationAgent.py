@@ -20,7 +20,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   """ Usually subclass of AgentModule
   """
 
-  def __init__( self, agentName, loadName, baseAgentName = False, properties = dict() ):
+  def __init__( self, *args, **kwargs ):
     """ c'tor
 
     :param self: self reference
@@ -28,7 +28,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     :param bool baseAgentName: whatever
     :param dict properties: whatever else
     """
-    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
+    AgentModule.__init__( self, *args, **kwargs )
 
     #few parameters
     self.pluginLocation = self.am_getOption( 'PluginLocation',
