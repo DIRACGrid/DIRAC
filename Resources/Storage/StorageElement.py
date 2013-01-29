@@ -13,12 +13,13 @@
 __RCSID__ = "$Id$"
 
 
-from DIRAC                                              import gLogger, S_OK, S_ERROR, gConfig
-from DIRAC.Resources.Storage.StorageFactory             import StorageFactory
-from DIRAC.Core.Utilities.Pfn                           import pfnparse
-from DIRAC.Core.Utilities.List                          import sortList
-from DIRAC.Core.Utilities.SiteSEMapping                 import getSEsForSite
-from DIRAC.Core.Security.ProxyInfo                      import getVOfromProxyGroup
+from DIRAC                                               import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC.Resources.Storage.StorageFactory              import StorageFactory
+from DIRAC.Core.Utilities.Pfn                            import pfnparse
+from DIRAC.Core.Utilities.List                           import sortList
+from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
+from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 import re, types
 
 class StorageElement:
