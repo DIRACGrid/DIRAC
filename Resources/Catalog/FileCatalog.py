@@ -37,7 +37,7 @@ class FileCatalog:
       result = getVOfromProxyGroup()
       if not result['OK']:
         return result
-      slef.vo = result['Value']
+      self.vo = result['Value']
     self.opHelper = Operations( vo = self.vo )
 
     if type( catalogs ) in types.StringTypes:
