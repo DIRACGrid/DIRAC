@@ -15,6 +15,12 @@ NEW:  general reimplementation:
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
 
+[v6r6p13]
+
+*DMS
+CHANGE: TransferAgent - change RM call from getCatalogueReplicas to getActiveReplicas. 
+        Lowering log printouts here and there
+
 [v6r6p12]
 
 *DMS
