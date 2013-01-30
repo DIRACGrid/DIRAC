@@ -216,7 +216,7 @@ class FileCatalog:
     
     # Get the eligible catalogs first
     # First, look in the Operations, if nothing defined look in /Resources for backward compatibility
-    result = self.opHelper.getSections( '/Services/FileCatalogs' )
+    result = self.opHelper.getSections( '/Services/Catalogs' )
     fileCatalogs = []
     operationsFlag = False
     if result['OK']:
@@ -237,7 +237,7 @@ class FileCatalog:
         return res
       catalogConfig = res['Value']
       if operationsFlag:
-        result = self.opHelper.getOptionsDict( '/Services/FileCatalogs/%s' % catalogName )
+        result = self.opHelper.getOptionsDict( '/Services/Catalogs/%s' % catalogName )
         if not result['OK']:
           return result
         catalogConfig.update( result['Value'] )        
