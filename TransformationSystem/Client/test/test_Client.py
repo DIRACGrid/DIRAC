@@ -24,7 +24,9 @@ class ClientsTestCase( unittest.TestCase ):
     self.mockRequestClient = Mock()
 
     self.jobMock = Mock()
-    self.jobMock.setDestination.return_value = {'OK':True}
+    self.jobMock2 = Mock()
+    self.jobMock2.setDestination.return_value = {'OK':True}
+    self.jobMock.return_value = self.jobMock2
 
     self.taskBase = TaskBase( transClient = self.mockTransClient )
     self.wfTasks = WorkflowTasks( transClient = self.mockTransClient,
@@ -56,7 +58,8 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 2:{'TransformationID':1, 'a2':'aa2', 'b2':'bb2', 'InputData':['a1', 'a2']},
                 3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'},
                 }
-    res = self.wfTasks.prepareTransformationTasks( Mock(), taskDict, 'test_user', 'test_group' )
+
+    res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group' )
 
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'},
@@ -80,6 +83,8 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     self.assertEqual( res, ['Site2', 'Site3'] )
     res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'}, getSitesForSE )
     self.assertEqual( res, ['Site2', 'Site3'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'}, getSitesForSE )
+    self.assertEqual( res, [] )
 
 
 
