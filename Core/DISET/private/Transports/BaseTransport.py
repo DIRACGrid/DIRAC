@@ -197,7 +197,7 @@ class BaseTransport:
           rcvData = retVal[ 'Value' ]
           readSize += len( rcvData )
           pkgMem.write( rcvData )
-          if maxBufferSize and len( readSize ) > maxBufferSize:
+          if maxBufferSize and readSize > maxBufferSize:
             return S_ERROR( "Read limit exceeded (%s chars)" % maxBufferSize )
         #Data is here! take it out from the bytestream, dencode and return
         if readSize == pkgSize:
