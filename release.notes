@@ -64,6 +64,7 @@ CHANGE: JobDB - Use CPUTime JDL only, keep MaxCPUTime for backward compatibility
 CHANGE: JobWrapper - use CPUTime job parameter instead of MaxCPUTime
 CHANGE: JobAgent - use CEType option instead of CEUniqueID
 FIX: JobWrapper - do not attempt to untar directories before having checked if they are tarfiles 
+NEW: dirac-wms-job-status - get job statuses for jobs in a given job group
  
 *SMS
 FIX: StorageManagementDB - when removing unlinked replicas, take into account the case where a
