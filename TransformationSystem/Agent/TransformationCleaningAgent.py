@@ -430,6 +430,7 @@ class TransformationCleaningAgent( AgentModule ):
       self.log.error( "Failed to update status of transformation %s to Deleted" % ( transID ), res['Message'] )
       return res
     self.log.info( "Updated status of transformation %s to Deleted" % ( transID ) )
+    return S_OK()
 
   def cleanMetadataCatalogFiles( self, transID ):
     ''' wipe out files from catalog '''
