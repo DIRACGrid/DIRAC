@@ -7,16 +7,24 @@ COMPONENT_NAME = 'TaskManager'
 import re, time, types, os, copy
 
 from DIRAC                                                      import gConfig, S_OK, S_ERROR, gLogger
+from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.Core.Utilities.List                                  import sortList, fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
+from DIRAC.Interfaces.API.Job                                   import Job
+from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
+from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
+from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
+
 
 class TaskBase( object ):
 
   def __init__( self, transClient = None, logger = None ):
 
     if not transClient:
-      from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+
       self.transClient = TransformationClient()
     else:
       self.transClient = transClient
@@ -69,7 +77,6 @@ class RequestTasks( TaskBase ):
     super( RequestTasks, self ).__init__( transClient, logger )
 
     if not requestClient:
-      from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
       self.requestClient = RequestClient()
     else:
       self.requestClient = requestClient
@@ -213,13 +220,11 @@ class WorkflowTasks( TaskBase ):
     super( WorkflowTasks, self ).__init__( transClient, logger )
 
     if not submissionClient:
-      from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
       self.submissionClient = WMSClient()
     else:
       self.submissionClient = submissionClient
 
     if not jobMonitoringClient:
-      from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
       self.jobMonitoringClient = JobMonitoringClient()
     else:
       self.jobMonitoringClient = jobMonitoringClient
@@ -230,13 +235,11 @@ class WorkflowTasks( TaskBase ):
       self.outputDataModule = outputDataModule
 
     if not jobClass:
-      from DIRAC.Interfaces.API.Job import Job
       self.jobClass = Job
     else:
       self.jobClass = jobClass
 
     if not opsH:
-      from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
       self.opsH = Operations()
     else:
       self.opsH = opsH
@@ -247,7 +250,6 @@ class WorkflowTasks( TaskBase ):
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
     """
     if ( not owner ) or ( not ownerGroup ):
-      from DIRAC.Core.Security.ProxyInfo import getProxyInfo
       res = getProxyInfo( False, False )
       if not res['OK']:
         return res
@@ -280,7 +282,7 @@ class WorkflowTasks( TaskBase ):
       #These helper functions do the real job
       sites = self._handleDestination( paramsDict )
       if not sites:
-        self.log.error( 'Could not get a list a sites', ', '.join( sites ) )
+        self.log.error( 'Could not get a list a sites' )
         taskDict[taskNumber]['TaskObject'] = ''
         continue
       else:
@@ -374,7 +376,7 @@ class WorkflowTasks( TaskBase ):
         oJob.setInputData( paramsDict['InputData'] )
 
   def _handleRest( self, oJob, paramsDict ):
-    """ add as JDL parameters all the other parameters that are not for inputs or destination 
+    """ add as JDL parameters all the other parameters that are not for inputs or destination
     """
     for paramName, paramValue in paramsDict.items():
       if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
