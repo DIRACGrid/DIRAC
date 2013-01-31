@@ -44,7 +44,7 @@ def getDiskSpace( path = '.' ):
     output = resultDF['Value'][1]
     if output.find( ' /afs' ) >= 0 :    # AFS disk space
       comm = 'fs lq | tail -1'
-      resultAFS = shellCall( 0, comm )
+      resultAFS = shellCall( 10, comm )
       if resultAFS['OK'] and not resultAFS['Value'][0]:
         output = resultAFS['Value'][1]
         fields = output.split()
@@ -70,7 +70,7 @@ def getDirectorySize( path ):
   """
 
   comm = "du -s -m %s" % path
-  result = shellCall( 0, comm )
+  result = shellCall( 10, comm )
   if not result['OK'] or result['Value'][0] != 0:
     return 0
   else:
