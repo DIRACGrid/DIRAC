@@ -1,6 +1,6 @@
 # $HeadURL$
 """
-   Collection of DIRAC useful os related modules
+   Collection of DIRAC useful operating system related modules
    by default on Error they return None
 """
 __RCSID__ = "$Id$"
