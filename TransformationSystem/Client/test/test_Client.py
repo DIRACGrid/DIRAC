@@ -81,6 +81,8 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     self.assertEqual( res, ['Site2'] )
     res = self.wfTasks._handleDestination( {'Site':'Site1, Site2, Site3', 'TargetSE':'pippo, pluto'}, getSitesForSE )
     self.assertEqual( res, ['Site2', 'Site3'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
+    self.assertEqual( res, ['Site2'] )
     res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'}, getSitesForSE )
     self.assertEqual( res, ['Site2', 'Site3'] )
     res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'}, getSitesForSE )

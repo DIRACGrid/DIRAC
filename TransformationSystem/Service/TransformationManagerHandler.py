@@ -10,16 +10,58 @@ from types import StringType, ListType, DictType, IntType, LongType, StringTypes
 
 transTypes = list( StringTypes ) + [IntType, LongType]
 
-class TransformationManagerHandlerBase( RequestHandler ):
+#database = False
+def initializeTransformationManagerHandler( _serviceInfo ):
+
+  print 'AAAAAAAAAAAAAAAAAA - Base'
+  global database
+  database = TransformationDB()
+  res = database._connect()
+  if not res['OK']:
+    return res
+#  res = database._checkTable()
+#  print 'AAAAAAAAAAAAAAAAAA - Base', res
+#  if not res['OK'] and not res['Message'] == 'The requested table already exist':
+#    return res
+
+  return S_OK()
+
+#
+#class TransformationManagerHandler( TransformationManagerHandlerBase ):
+#
+#  def __init__( self, *args, **kargs ):
+#    self.setDatabase( database )
+#    TransformationManagerHandlerBase.__init__( self, *args, **kargs )
+
+#class TransformationManagerHandlerBase( RequestHandler ):
+class TransformationManagerHandler( RequestHandler ):
+
+#  def __init__( self, *args, **kwargs ):
+#    super( TransformationManagerHandler, self ).__init__( *args, **kwargs )
+
+#  def initialize( self ):
+#    print 'AAAAAAAAAAAAAAAAAA - Base'
+#    global database
+#    database = TransformationDB()
+#    res = database._connect()
+#    if not res['OK']:
+#      return res
+#    res = database._checkTable()
+#    print 'AAAAAAAAAAAAAAAAAA - Base', res
+#    if not res['OK'] and not res['Message'] == 'The requested table already exist':
+#      return res
+#
+#    return S_OK()
+
 
   def _parseRes( self, res ):
     if not res['OK']:
       gLogger.error( res['Message'] )
     return res
 
-  def setDatabase( self, oDatabase ):
-    global database
-    database = oDatabase
+#  def setDatabase( self, oDatabase ):
+#    global database
+#    database = oDatabase
 
   types_getName = []
   def export_getName( self ):
@@ -750,23 +792,3 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
   ###########################################################################
 
-database = False
-def initializeTransformationManagerHandler( serviceInfo ):
-
-  global database
-  database = TransformationDB()
-  res = database._connect()
-  if not res['OK']:
-    return res
-  res = database._checkTable()
-  if not res['OK'] and not res['Message'] == 'The requested table already exist':
-    return res
-
-  return S_OK()
-
-
-class TransformationManagerHandler( TransformationManagerHandlerBase ):
-
-  def __init__( self, *args, **kargs ):
-    self.setDatabase( database )
-    TransformationManagerHandlerBase.__init__( self, *args, **kargs )
