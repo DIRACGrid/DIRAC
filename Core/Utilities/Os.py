@@ -3,6 +3,7 @@
    Collection of DIRAC useful operating system related modules
    by default on Error they return None
 """
+
 __RCSID__ = "$Id$"
 
 from types                          import StringTypes
@@ -11,7 +12,6 @@ import os
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
-
 
 DEBUG = 0
 
@@ -191,7 +191,7 @@ def which( filetofind ):
   """ Utility that mimics the 'which' command from the shell
   """
   if not "PATH" in os.environ:
-     return None
+    return None
   for path in os.environ["PATH"].split(":"):
     if os.path.exists(path + "/" + filetofind):
       return path + "/" + filetofind
