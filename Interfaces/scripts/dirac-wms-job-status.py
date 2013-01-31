@@ -8,7 +8,9 @@
   Retrieve status of the given DIRAC job
 """
 __RCSID__ = "$Id$"
+
 import DIRAC
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -38,6 +40,7 @@ for key, value in Script.getUnprocessedSwitches():
     result = dirac.selectJobs( jobGroup=value )    
     if not result['OK']:
       print "Error:", result['Message']
+      DIRACExit( -1 )
     jobs += result['Value']  
         
 if len( args ) < 1 and not jobs:
