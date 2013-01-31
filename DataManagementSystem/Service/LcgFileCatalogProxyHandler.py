@@ -34,7 +34,7 @@ class LcgFileCatalogProxyHandler( RequestHandler ):
   def export_callProxyMethod( self, name, args, kargs ):
     """ A generic method to call methods of the Storage Element.
     """
-    res = pythonCall( 0, self.__proxyWrapper, name, args, kargs )
+    res = pythonCall( 120, self.__proxyWrapper, name, args, kargs )
     if res['OK']:
       return res['Value']
     else:

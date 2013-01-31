@@ -34,7 +34,7 @@ class FileCatalogProxyHandler( RequestHandler ):
   def export_callProxyMethod( self, fcName, methodName, args, kargs ):
     """ A generic method to call methods of the Storage Element.
     """
-    res = pythonCall( 0, self.__proxyWrapper, fcName, methodName, args, kargs )
+    res = pythonCall( 120, self.__proxyWrapper, fcName, methodName, args, kargs )
     if res['OK']:
       return res['Value']
     else:
