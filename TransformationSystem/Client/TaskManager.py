@@ -259,6 +259,8 @@ class WorkflowTasks( TaskBase ):
 
     for taskNumber in sortList( taskDict.keys() ):
       paramsDict = taskDict[taskNumber]
+      site = oJob.workflow.findParameter( 'Site' ).getValue()
+      paramsDict['Site'] = site
       transID = paramsDict['TransformationID']
       self.log.verbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ) )
       oJob.setOwner( owner )
