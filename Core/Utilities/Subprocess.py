@@ -113,6 +113,11 @@ class Watchdog( object ):
     except Exception, error:
       return { "OK" : False, "Message" : str(error) }
     return ret
+  
+  def __del__(self):
+    """ destructor """
+    self.parentPipe.close()
+    self.childPipe.close()
 
 class Subprocess:
   """
