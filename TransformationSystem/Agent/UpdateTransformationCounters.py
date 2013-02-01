@@ -1,12 +1,12 @@
 """ Update all the Transformation counters, to speed up the production monitoring page loading
-It requires the definition of Operations section Transformation/TasksStates and Transformation/FilesStates
-Those are also used to define the columns in the TransformationCounters table
+    It requires the definition of Operations section Transformation/TasksStates and Transformation/FilesStates
+    Those are also used to define the columns in the TransformationCounters table
 """
 
-from DIRAC                                                          import S_OK, S_ERROR, gLogger, gMonitor
+from DIRAC                                                          import S_OK, gLogger, gMonitor
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
+
 
 AGENT_NAME = 'Transformation/UpdateTransformationCounters'
 
@@ -43,8 +43,8 @@ class UpdateTransformationCounters( AgentModule ):
       gLogger.error( "UpdateTransformationCounters.execute: Failed to get transformations.", result['Message'] )
       return S_OK()
     # Process each transformation
-    jobsStates = self.transClient.getTransformationCountersStatuses( 'Tasks' )
-    filesStates = self.transClient.getTransformationCountersStatuses( 'Files' )
+    jobsStates = self.transClient.getTransformationCountersStatuses( 'Tasks' )['Value']
+    filesStates = self.transClient.getTransformationCountersStatuses( 'Files' )['Value']
 
     for transDict in result['Value']:
       transID = long( transDict['TransformationID'] )
@@ -53,6 +53,7 @@ class UpdateTransformationCounters( AgentModule ):
       counterDict['TransformationID'] = transID
 
       #Take care of the Tasks' states
+      gLogger.verbose( "Getting the tasks stats for Transformation %s" % transID )
       res = self.transClient.getTransformationTaskStats( transID )
       if not res['OK']:
         gLogger.warn( "Could not get Transformation Task Stats for transformation %s : %s" % ( transID,
@@ -62,7 +63,7 @@ class UpdateTransformationCounters( AgentModule ):
         taskDict = {}
         if res['Value']:
           taskDict = res['Value']
-          gLogger.debug( "Got %s tasks dict for transformation %s" % ( str( taskDict ), transID ) )
+          gLogger.verbose( "Got %s tasks dict for transformation %s" % ( str( taskDict ), transID ) )
           for state in jobsStates:
             counterDict[state] = taskDict.get( state, 0 )
         else:
@@ -70,6 +71,7 @@ class UpdateTransformationCounters( AgentModule ):
           break
 
       #Now look for the files' states  
+      gLogger.verbose( "Getting the files stats for Transformation %s" % transID )
       res = self.transClient.getTransformationStats( transID )
       if not res['OK']:
         gLogger.warn( "Could not get Transformation Stats for transformation %s : %s" % ( transID,
@@ -86,8 +88,11 @@ class UpdateTransformationCounters( AgentModule ):
           gLogger.warn( "No File Statuses found" )
           break
 
+      gLogger.verbose( "Updating the counters for transformation %s" % transID )
       res = self.transClient.updateTransformationCounters( counterDict )
       if not res['OK']:
-        gLogger.error( "Failed updating counters: %s" % res['Message'] )
+        gLogger.error( "Failed updating counters for transformation %s: %s" % ( transID, res['Message'] ) )
+      else:
+        gLogger.verbose( "Updated the counters of transformation %s" % transID )
 
     return S_OK()

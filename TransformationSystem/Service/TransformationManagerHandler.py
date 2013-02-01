@@ -15,9 +15,9 @@ def initializeTransformationManagerHandler( serviceIndo, db = TransformationDB )
 
   global database
   database = db()
-#  res = database._connect()
-#  if not res['OK']:
-#    return res
+  res = database._connect()
+  if not res['OK']:
+    return res
 
   return S_OK()
 
@@ -545,9 +545,9 @@ class TransformationManagerHandler( RequestHandler ):
     """ Return all statuses that are considered
     """
     if type_counter == 'Tasks':
-      return database.getTasksTransformationCountersStatuses()
+      return S_OK( database.tasksStatuses )
     elif type_counter == 'Files':
-      return database.getFilesTransformationCountersStatuses()
+      return S_OK( database.fileStatuses )
     else:
       return S_ERROR( "Only 'Tasks' and 'Files' allowed" )
 
@@ -596,9 +596,9 @@ class TransformationManagerHandler( RequestHandler ):
     resultDict['ParameterNames'] = paramNames
 
     # Add the job states to the ParameterNames entry: the order here matters
-    taskStateNames = database.getTasksTransformationCountersStatuses()
+    taskStateNames = database.tasksStatuses
     resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
-    fileStateNames = database.getFilesTransformationCountersStatuses()
+    fileStateNames = database.fileStatuses
     fileStateNames += ['PercentProcessed', 'Total']
     resultDict['ParameterNames'] += ['Files_' + x for x in fileStateNames]
     # Get the transformations which are within the selected window

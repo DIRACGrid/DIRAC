@@ -94,6 +94,12 @@ class TransformationDB( DB ):
                                  'ParameterType'
                                  ]
 
+    default_task_statuses = ['Created', 'Submitted', 'Checking', 'Staging', 'Waiting', 'Running',
+                             'Done', 'Completed', 'Killed', 'Stalled', 'Failed', 'Rescheduled']
+    default_file_statuses = ['Unused', 'Assigned', 'Processed', 'Problematic']
+    self.tasksStatuses = default_task_statuses + Operations().getValue( 'Transformations/TasksStates', [] )
+    self.fileStatuses = default_file_statuses + Operations().getValue( 'Transformations/FilesStatuses', [] )
+
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       self.log.fatal( "Cannot initialize TransformationDB!", result[ 'Message' ] )
@@ -102,11 +108,6 @@ class TransformationDB( DB ):
     """ Initialize: create tables if needed
     """
 
-    default_task_statuses = ['Created', 'Submitted', 'Checking', 'Staging', 'Waiting', 'Running',
-                             'Done', 'Completed', 'Killed', 'Stalled', 'Failed', 'Rescheduled']
-    default_file_statuses = ['Unused', 'Assigned', 'Processed', 'Problematic']
-    tasksStatuses = default_task_statuses + Operations().getValue( 'Transformations/TasksStates', [] )
-    fileStatuses = default_file_statuses + Operations().getValue( 'Transformations/FilesStatuses', [] )
 
 
     retVal = self._query( "SHOW tables" )
@@ -241,7 +242,7 @@ class TransformationDB( DB ):
                                            'Engine': 'InnoDB'
                                            }
       ##Get from the CS the list of columns names
-      for status in tasksStatuses + fileStatuses:
+      for status in self.tasksStatuses + self.fileStatuses:
         tablesD['TransformationCounters']['Fields'][status] = 'INTEGER DEFAULT 0'
 
     if tablesD:
@@ -255,7 +256,7 @@ class TransformationDB( DB ):
     if not retVal[ 'OK' ]:
       return retVal
     TSCounterFields = [ t[0] for t in retVal[ 'Value' ] ]
-    for status in list( set( tasksStatuses + fileStatuses ) - set( TSCounterFields ) ):
+    for status in list( set( self.tasksStatuses + self.fileStatuses ) - set( TSCounterFields ) ):
       altertable = "ALTER TABLE TransformationCounters ADD COLUMN `%s` INTEGER DEFAULT 0" % status
       retVal = self._update( altertable )
       if not retVal['OK']:
@@ -1118,7 +1119,7 @@ class TransformationDB( DB ):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR( 'No records found' )
+      return S_ERROR( 'No recorded tasks found for transformation %s' % transName )
     statusDict = {}
     total = 0
     for attrDict, count in res['Value']:
@@ -1478,30 +1479,19 @@ class TransformationDB( DB ):
   #
   # Fill in / get the counters
   #
-  def getTasksTransformationCountersStatuses( self, connection = False ):
-    """ Need to get all the statuses to update
-    """
-    return self.tasksStatuses
-  def getFilesTransformationCountersStatuses( self, connection = False ):
-    """ Need to get all the statuses to update
-    """
-    return self.fileStatuses
 
   def updateTransformationCounters( self, counterDict, connection = False ):
     """ Insert in the table or update the transformation counters given a dict
     """
     ##first, check that all the keys in this dict are among those expected
-    for key in counterDict.keys():
-      if key not in self.tasksStatuses + self.fileStatuses:
+    for key in self.tasksStatuses + self.fileStatuses:
+      if key not in counterDict.keys():
         return S_ERROR( "Key %s not in the table" % key )
-    if not 'TransformationID' in counterDict.keys():
-      return S_ERROR( "TransformationID key is mandatory" )
 
     res = self.getFields( "TransformationCounters", ['TransformationID'],
                           condDict = {'TransformationID' : counterDict['TransformationID']}, conn = connection )
-    if not res['Value']:
+    if not res['OK']:
       return res
-
     if len( res['Value'] ): #if the Transformation is already in:
       res = self.updateFields( "TransformationCounters",
                                condDict = {'TransformationID' : counterDict['TransformationID']},
