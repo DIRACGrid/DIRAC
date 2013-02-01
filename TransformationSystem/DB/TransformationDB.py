@@ -9,7 +9,7 @@
 import re, time, threading, copy
 from types import IntType, LongType, StringType, StringTypes, ListType, TupleType, DictType
 
-from DIRAC                                                import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
 from DIRAC.DataManagementSystem.Client.ReplicaManager     import CatalogDirectory
 from DIRAC.Core.Security.ProxyInfo                        import getProxyInfo
@@ -24,21 +24,15 @@ MAX_ERROR_COUNT = 10
 
 class TransformationDB( DB ):
 
-  def __init__( self, dbname = None, dbconfig = None, maxQueueSize = 10, dbIn = None ):
+  def __init__( self, maxQueueSize = 10, dbIn = None ):
     """ The standard constructor takes the database name (dbname) and the name of the
         configuration section (dbconfig)
     """
 
-    if not dbname:
-      dbname = 'TransformationDB'
-    if not dbconfig:
-      dbconfig = 'Transformation/TransformationDB'
-
     if not dbIn:
-      DB.__init__( self, dbname, dbconfig, maxQueueSize )
+      DB.__init__( self, 'TransformationDB', 'Transformation/TransformationDB', maxQueueSize )
 
     self.lock = threading.Lock()
-    self.dbname = dbname
     res = self.__updateFilters()
     if not res['OK']:
       gLogger.fatal( "Failed to create filters" )
@@ -100,152 +94,174 @@ class TransformationDB( DB ):
                                  'ParameterType'
                                  ]
 
-    ##Get from the CS the list of columns names
-    default_task_statuses = ['Created','Submitted','Checking','Staging','Waiting','Running','Done','Completed','Killed','Stalled',
-                             'Failed','Rescheduled']
-    default_file_statuses = ['Unused','Assigned','Processed','Problematic']
-    self.tasksStatuses = default_task_statuses + Operations().getValue( 'Transformations/TasksStates', [] )
-    self.fileStatuses = default_file_statuses + Operations().getValue( 'Transformations/FilesStatuses', [] )
-    self.TSCounterFields = []
-
-    if res['OK']:
-      self.fileStatuses += res['Value']
-  
-    ##Create the tables. Does not require the use of the sql file
     result = self.__initializeDB()
     if not result[ 'OK' ]:
-      self.log.fatal( "Cannot initialize DB!", result[ 'Message' ] )
+      self.log.fatal( "Cannot initialize TransformationDB!", result[ 'Message' ] )
 
-  def __initializeDB(self):
+  def __initializeDB( self ):
     """ Initialize: create tables if needed
     """
-    
-    tablesToCreate = {'AdditionalParameters': {'Fields': {'ParameterName': 'VARCHAR(32) NOT NULL',
-                                                          'ParameterType': "VARCHAR(32) DEFAULT 'StringType'",
-                                                          'ParameterValue': 'LONGBLOB NOT NULL',
-                                                          'TransformationID': 'INTEGER NOT NULL'},
-                                               'PrimaryKey': ['TransformationID', 'ParameterName']},
-                      'DataFiles': {'Fields': {'FileID': 'INTEGER NOT NULL AUTO_INCREMENT',
-                                               'LFN': 'VARCHAR(255) UNIQUE',
-                                               'Status': "varchar(32) DEFAULT 'AprioriGood'"},
-                                    'Indexes': {'Status': ['Status']},
-                                    'PrimaryKey': ['FileID', 'LFN']},
-                      'Replicas': {'Fields': {'FileID': 'INTEGER NOT NULL',
-                                              'PFN': 'VARCHAR(255)',
-                                              'SE': 'VARCHAR(32)',
-                                              'Status': "VARCHAR(32) DEFAULT 'AprioriGood'"},
-                                   'Indexes': {'Status': ['Status']},
-                                   'PrimaryKey': ['FileID', 'SE']},
-                      'TaskInputs': {'Fields': {'InputVector': 'BLOB',
-                                                'TaskID': 'INTEGER NOT NULL',
-                                                'TransformationID': 'INTEGER NOT NULL'},
-                                     'PrimaryKey': ['TransformationID', 'TaskID']},
-                      'TransformationFileTasks': {'Fields': {'FileID': 'INTEGER NOT NULL',
-                                                             'TaskID': 'INTEGER NOT NULL',
-                                                             'TransformationID': 'INTEGER NOT NULL'},
-                                                  'PrimaryKey': ['TransformationID',
-                                                                 'FileID',
-                                                                 'TaskID']},
-                      'TransformationFiles': {'Fields': {'ErrorCount': 'INT(4) NOT NULL DEFAULT 0',
-                                                         'FileID': 'INTEGER NOT NULL',
-                                                         'InsertedTime': 'DATETIME',
-                                                         'LastUpdate': 'DATETIME',
-                                                         'Status': 'VARCHAR(32) DEFAULT "Unused"',
-                                                         'TargetSE': 'VARCHAR(255) DEFAULT "Unknown"',
-                                                         'TaskID': 'VARCHAR(32)',
-                                                         'TransformationID': 'INTEGER NOT NULL',
-                                                         'UsedSE': 'VARCHAR(255) DEFAULT "Unknown"'},
-                                              'Indexes': {'Status': ['Status'],
-                                                          'TransformationID': ['TransformationID']},
-                                              'PrimaryKey': ['TransformationID', 'FileID']},
-                      'TransformationInputDataQuery': {'Fields': {'ParameterName': 'VARCHAR(512) NOT NULL',
-                                                                  'ParameterType': 'VARCHAR(8) NOT NULL',
-                                                                  'ParameterValue': 'BLOB NOT NULL',
-                                                                  'TransformationID': 'INTEGER NOT NULL'},
-                                                       'PrimaryKey': ['TransformationID',
-                                                                      'ParameterName']},
-                      'TransformationLog': {'Fields': {'Author': 'VARCHAR(255) NOT NULL DEFAULT "Unknown"',
-                                                       'Message': 'VARCHAR(255) NOT NULL',
-                                                       'MessageDate': 'DATETIME NOT NULL',
-                                                       'TransformationID': 'INTEGER NOT NULL'},
-                                            'Indexes': {'MessageDate': ['MessageDate'],
-                                                        'TransformationID': ['TransformationID']}},
-                      'TransformationTasks': {'Fields': {'CreationTime': 'DATETIME NOT NULL',
-                                                         'ExternalID': "char(16) DEFAULT ''",
-                                                         'ExternalStatus': "char(16) DEFAULT 'Created'",
-                                                         'LastUpdateTime': 'DATETIME NOT NULL',
-                                                         'TargetSE': "char(255) DEFAULT 'Unknown'",
-                                                         'TaskID': 'INTEGER NOT NULL AUTO_INCREMENT',
-                                                         'TransformationID': 'INTEGER NOT NULL'},
-                                              'Indexes': {'ExternalStatus': ['ExternalStatus'],
-                                                          'TaskID': ['TaskID']},
-                                              'PrimaryKey': ['TransformationID', 'TaskID']},
-                      'Transformations': {'Fields': {'AgentType': "CHAR(32) DEFAULT 'Manual'",
-                                                     'AuthorDN': 'VARCHAR(255) NOT NULL',
-                                                     'AuthorGroup': 'VARCHAR(255) NOT NULL',
-                                                     'Body': 'LONGBLOB',
-                                                     'CreationDate': 'DATETIME',
-                                                     'Description': 'VARCHAR(255)',
-                                                     'EventsPerTask': 'INT NOT NULL DEFAULT 0',
-                                                     'FileMask': 'VARCHAR(255)',
-                                                     'GroupSize': 'INT NOT NULL DEFAULT 1',
-                                                     'InheritedFrom': 'INTEGER DEFAULT 0',
-                                                     'LastUpdate': 'DATETIME',
-                                                     'LongDescription': 'BLOB',
-                                                     'MaxNumberOfTasks': 'INT NOT NULL DEFAULT 0',
-                                                     'Plugin': "CHAR(32) DEFAULT 'None'",
-                                                     'Status': "CHAR(32) DEFAULT 'New'",
-                                                     'TransformationFamily': "varchar(64) default '0'",
-                                                     'TransformationGroup': "varchar(64) NOT NULL default 'General'",
-                                                     'TransformationID': 'INTEGER NOT NULL AUTO_INCREMENT',
-                                                     'TransformationName': 'VARCHAR(255) NOT NULL',
-                                                     'Type': "CHAR(32) DEFAULT 'Simulation'"},
-                                          'Indexes': {'TransformationName': ['TransformationName']},
-                                          'PrimaryKey': ['TransformationID']}
-                      }
-      
 
-    needupdate = False
-    # make sure the TransformationCounters table is in, otherwise, we need to use the alter table
-    retVal = self._query( "show tables" )
+    default_task_statuses = ['Created', 'Submitted', 'Checking', 'Staging', 'Waiting', 'Running',
+                             'Done', 'Completed', 'Killed', 'Stalled', 'Failed', 'Rescheduled']
+    default_file_statuses = ['Unused', 'Assigned', 'Processed', 'Problematic']
+    tasksStatuses = default_task_statuses + Operations().getValue( 'Transformations/TasksStates', [] )
+    fileStatuses = default_file_statuses + Operations().getValue( 'Transformations/FilesStatuses', [] )
+
+
+    retVal = self._query( "SHOW tables" )
     if not retVal[ 'OK' ]:
       return retVal
-    tablesInDB = [ t[0] for t in retVal[ 'Value' ] ]  
-    if not "TransformationCounters" in tablesInDB:
-      tablesToCreate['TransformationCounters']= {'Fields': {'TransformationID' : "INTEGER NOT NULL"},
-                                                 'PrimaryKey': ['TransformationID']}
-      self.TSCounterFields.append('TransformationID')
-      for status in self.tasksStatuses + self.fileStatuses:
-        tablesToCreate['TransformationCounters']['Fields'][status] = 'INTEGER DEFAULT 0'
-    else:
-      needupdate = True
-      
-    
-    res =  self._createTables( tablesToCreate ) 
-    if not res['OK']:
-      return res
-    
-    if not needupdate:
-      return res
-    
+
+    tablesInDB = [ t[0] for t in retVal[ 'Value' ] ]
+    tablesD = {}
+
+    if 'AdditionalParameters' not in tablesInDB:
+      tablesD[ 'AdditionalParameters' ] = {'Fields': {'ParameterName': 'VARCHAR(32) NOT NULL',
+                                                      'ParameterType': "VARCHAR(32) DEFAULT 'StringType'",
+                                                      'ParameterValue': 'LONGBLOB NOT NULL',
+                                                      'TransformationID': 'INTEGER NOT NULL'},
+                                           'PrimaryKey': ['TransformationID', 'ParameterName'],
+                                           'Engine': 'InnoDB'
+                                           }
+
+    if 'DataFiles' not in tablesInDB:
+      tablesD['DataFiles'] = {'Fields': {'FileID': 'INTEGER NOT NULL AUTO_INCREMENT',
+                                         'LFN': 'VARCHAR(255) UNIQUE',
+                                         'Status': "VARCHAR(32) DEFAULT 'AprioriGood'"},
+                              'Indexes': {'Status': ['Status']},
+                              'PrimaryKey': ['FileID', 'LFN'],
+                              'Engine': 'InnoDB'
+                              }
+
+    if 'Replicas' not in tablesInDB:
+      tablesD['Replicas'] = {'Fields': {'FileID': 'INTEGER NOT NULL',
+                                        'PFN': 'VARCHAR(255)',
+                                        'SE': 'VARCHAR(32)',
+                                        'Status': "VARCHAR(32) DEFAULT 'AprioriGood'"},
+                             'Indexes': {'Status': ['Status']},
+                             'PrimaryKey': ['FileID', 'SE'],
+                             'Engine': 'InnoDB'
+                             }
+
+    if 'TaskInputs' not in tablesInDB:
+      tablesD['TaskInputs'] = {'Fields': {'InputVector': 'BLOB',
+                                          'TaskID': 'INTEGER NOT NULL',
+                                          'TransformationID': 'INTEGER NOT NULL'},
+                               'PrimaryKey': ['TransformationID', 'TaskID'],
+                               'Engine': 'InnoDB'
+                               }
+
+    if 'TransformationFileTasks' not in tablesInDB:
+      tablesD['TransformationFileTasks'] = {'Fields': {'FileID': 'INTEGER NOT NULL',
+                                                       'TaskID': 'INTEGER NOT NULL',
+                                                       'TransformationID': 'INTEGER NOT NULL'},
+                                            'PrimaryKey': ['TransformationID', 'FileID', 'TaskID'],
+                                            'Engine': 'InnoDB'
+                                            }
+
+    if 'TransformationFiles' not in tablesInDB:
+      tablesD['TransformationFiles'] = {'Fields': {'ErrorCount': 'INT(4) NOT NULL DEFAULT 0',
+                                                    'FileID': 'INTEGER NOT NULL',
+                                                    'InsertedTime': 'DATETIME',
+                                                    'LastUpdate': 'DATETIME',
+                                                    'Status': 'VARCHAR(32) DEFAULT "Unused"',
+                                                    'TargetSE': 'VARCHAR(255) DEFAULT "Unknown"',
+                                                    'TaskID': 'VARCHAR(32)',
+                                                    'TransformationID': 'INTEGER NOT NULL',
+                                                    'UsedSE': 'VARCHAR(255) DEFAULT "Unknown"'},
+                                         'Indexes': {'Status': ['Status'],
+                                                     'TransformationID': ['TransformationID']},
+                                         'PrimaryKey': ['TransformationID', 'FileID'],
+                                         'Engine': 'InnoDB'
+                                         }
+
+    if 'TransformationInputDataQuery' not in tablesInDB:
+      tablesD['TransformationInputDataQuery'] = {'Fields': {'ParameterName': 'VARCHAR(512) NOT NULL',
+                                                            'ParameterType': 'VARCHAR(8) NOT NULL',
+                                                            'ParameterValue': 'BLOB NOT NULL',
+                                                            'TransformationID': 'INTEGER NOT NULL'},
+                                                 'PrimaryKey': ['TransformationID', 'ParameterName'],
+                                                 'Engine': 'InnoDB'
+                                                 }
+
+    if 'TransformationLog' not in tablesInDB:
+      tablesD['TransformationLog'] = {'Fields': {'Author': 'VARCHAR(255) NOT NULL DEFAULT "Unknown"',
+                                                 'Message': 'VARCHAR(255) NOT NULL',
+                                                 'MessageDate': 'DATETIME NOT NULL',
+                                                 'TransformationID': 'INTEGER NOT NULL'},
+                                      'Indexes': {'MessageDate': ['MessageDate'],
+                                                  'TransformationID': ['TransformationID']},
+                                      'Engine': 'InnoDB'
+                                      }
+
+    if 'TransformationTasks' not in tablesInDB:
+      tablesD['TransformationTasks'] = {'Fields': {'CreationTime': 'DATETIME NOT NULL',
+                                                   'ExternalID': "char(16) DEFAULT ''",
+                                                   'ExternalStatus': "char(16) DEFAULT 'Created'",
+                                                   'LastUpdateTime': 'DATETIME NOT NULL',
+                                                   'TargetSE': "char(255) DEFAULT 'Unknown'",
+                                                   'TaskID': 'INTEGER NOT NULL AUTO_INCREMENT',
+                                                   'TransformationID': 'INTEGER NOT NULL'},
+                                        'Indexes': {'ExternalStatus': ['ExternalStatus'],
+                                                    'TaskID': ['TaskID']},
+                                        'PrimaryKey': ['TransformationID', 'TaskID'],
+                                        'Engine': 'InnoDB'
+                                        },
+
+    if 'Transformations' not in tablesInDB:
+      tablesD['Transformations'] = {'Fields': {'AgentType': "CHAR(32) DEFAULT 'Manual'",
+                                               'AuthorDN': 'VARCHAR(255) NOT NULL',
+                                               'AuthorGroup': 'VARCHAR(255) NOT NULL',
+                                               'Body': 'LONGBLOB',
+                                               'CreationDate': 'DATETIME',
+                                               'Description': 'VARCHAR(255)',
+                                               'EventsPerTask': 'INT NOT NULL DEFAULT 0',
+                                               'FileMask': 'VARCHAR(255)',
+                                               'GroupSize': 'INT NOT NULL DEFAULT 1',
+                                               'InheritedFrom': 'INTEGER DEFAULT 0',
+                                               'LastUpdate': 'DATETIME',
+                                               'LongDescription': 'BLOB',
+                                               'MaxNumberOfTasks': 'INT NOT NULL DEFAULT 0',
+                                               'Plugin': "CHAR(32) DEFAULT 'None'",
+                                               'Status': "CHAR(32) DEFAULT 'New'",
+                                               'TransformationFamily': "varchar(64) default '0'",
+                                               'TransformationGroup': "varchar(64) NOT NULL default 'General'",
+                                               'TransformationID': 'INTEGER NOT NULL AUTO_INCREMENT',
+                                               'TransformationName': 'VARCHAR(255) NOT NULL',
+                                               'Type': "CHAR(32) DEFAULT 'Simulation'"},
+                                    'Indexes': {'TransformationName': ['TransformationName']},
+                                    'PrimaryKey': ['TransformationID'],
+                                    'Engine': 'InnoDB'
+                                    }
+
+    if 'TransformationCounters' not in tablesInDB:
+      tablesD['TransformationCounters'] = {'Fields': {'TransformationID' : "INTEGER NOT NULL"},
+                                           'PrimaryKey': ['TransformationID'],
+                                           'Engine': 'InnoDB'
+                                           }
+      ##Get from the CS the list of columns names
+      for status in tasksStatuses + fileStatuses:
+        tablesD['TransformationCounters']['Fields'][status] = 'INTEGER DEFAULT 0'
+
+    if tablesD:
+      gLogger.verbose( "Creating tables %s" % ( ', '.join( tablesD.keys() ) ) )
+      res = self._createTables( tablesD )
+      if not res['OK']:
+        return res
+
     #Get the available counters
-    retVal =  self._query( "explain TransformationCounters" )
+    retVal = self._query( "EXPLAIN TransformationCounters" )
     if not retVal[ 'OK' ]:
       return retVal
-    self.TSCounterFields = [ t[0] for t in retVal[ 'Value' ] ]
-    for status in self.tasksStatuses + self.fileStatuses:
-      if not status in self.TSCounterFields:
-        altertable = "ALTER TABLE TransformationCounters ADD COLUMN `%s` INTEGER DEFAULT 0" % status
-        retVal = self._query( altertable )
-        if not retVal['OK']:
-          return retVal
+    TSCounterFields = [ t[0] for t in retVal[ 'Value' ] ]
+    for status in list( set( tasksStatuses + fileStatuses ) - set( TSCounterFields ) ):
+      altertable = "ALTER TABLE TransformationCounters ADD COLUMN `%s` INTEGER DEFAULT 0" % status
+      retVal = self._update( altertable )
+      if not retVal['OK']:
+        return retVal
+
     return S_OK()
-    
-    
-  def getName( self ):
-    """  Get the database name
-    """
-    return self.dbname
 
   ###########################################################################
   #
@@ -254,14 +270,14 @@ class TransformationDB( DB ):
 
   def addTransformation( self, transName, description, longDescription, authorDN, authorGroup, transType,
                          plugin, agentType, fileMask,
-                        transformationGroup = 'General',
-                        groupSize = 1,
-                        inheritedFrom = 0,
-                        body = '',
-                        maxTasks = 0,
-                        eventsPerTask = 0,
-                        addFiles = True,
-                        connection = False ):
+                         transformationGroup = 'General',
+                         groupSize = 1,
+                         inheritedFrom = 0,
+                         body = '',
+                         maxTasks = 0,
+                         eventsPerTask = 0,
+                         addFiles = True,
+                         connection = False ):
     """ Add new transformation definition including its input streams
     """
     connection = self.__getConnection( connection )
@@ -769,11 +785,11 @@ class TransformationDB( DB ):
         if errorCount >= MAX_ERROR_COUNT:
           if force:
             req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=0"
-            req = ( req + " WHERE TransformationID=%d AND FileID=%d;") % ( status, transID, fileID )
+            req = ( req + " WHERE TransformationID=%d AND FileID=%d;" ) % ( status, transID, fileID )
           else:
             failed[lfn] = 'Max number of resets reached'
             req = "UPDATE TransformationFiles SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP()"
-            req = ( req + " WHERE TransformationID=%d AND FileID=%d;") % ( transID, fileID )
+            req = ( req + " WHERE TransformationID=%d AND FileID=%d;" ) % ( transID, fileID )
         else:
           req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=ErrorCount+1"
           req = ( req + " WHERE TransformationID=%d AND FileID=%d;" ) % ( status, transID, fileID )
@@ -1462,31 +1478,31 @@ class TransformationDB( DB ):
   #
   # Fill in / get the counters
   #
-  def getTasksTransformationCountersStatuses(self, connection = False):
+  def getTasksTransformationCountersStatuses( self, connection = False ):
     """ Need to get all the statuses to update
     """
     return self.tasksStatuses
-  def getFilesTransformationCountersStatuses(self, connection = False):
+  def getFilesTransformationCountersStatuses( self, connection = False ):
     """ Need to get all the statuses to update
     """
     return self.fileStatuses
-   
-  def updateTransformationCounters(self, counterDict, connection = False ):
+
+  def updateTransformationCounters( self, counterDict, connection = False ):
     """ Insert in the table or update the transformation counters given a dict
     """
     ##first, check that all the keys in this dict are among those expected
     for key in counterDict.keys():
       if key not in self.tasksStatuses + self.fileStatuses:
-        return S_ERROR("Key %s not in the table" % key)
+        return S_ERROR( "Key %s not in the table" % key )
     if not 'TransformationID' in counterDict.keys():
-      return S_ERROR("TransformationID key is mandatory")
-    
+      return S_ERROR( "TransformationID key is mandatory" )
+
     res = self.getFields( "TransformationCounters", ['TransformationID'],
                           condDict = {'TransformationID' : counterDict['TransformationID']}, conn = connection )
     if not res['Value']:
       return res
-    
-    if len(res['Value']): #if the Transformation is already in:
+
+    if len( res['Value'] ): #if the Transformation is already in:
       res = self.updateFields( "TransformationCounters",
                                condDict = {'TransformationID' : counterDict['TransformationID']},
                                updateDict = counterDict,
@@ -1494,14 +1510,14 @@ class TransformationDB( DB ):
       if not res['OK']:
         return res
     else:
-      res = self.insertFields("TransformationCounters", inDict = counterDict, conn = connection)
+      res = self.insertFields( "TransformationCounters", inDict = counterDict, conn = connection )
       if not res['OK']:
         return res
-      
+
     return S_OK()
 
-  def getTransformationsCounters(self, TransIDs, connection = False):
-    """ Get all the counters for the given transformationIDs 
+  def getTransformationsCounters( self, TransIDs, connection = False ):
+    """ Get all the counters for the given transformationIDs
     """
     fields = ['TransformationID'] + self.tasksStatuses + self.fileStatuses
     res = self.getFields( "TransformationCounters",
@@ -1512,8 +1528,8 @@ class TransformationDB( DB ):
     resList = []
     for row in res['Value']:
       resList.append( dict( zip( fields, row ) ) )
-      
-    return S_OK(resList)
+
+    return S_OK( resList )
 
   ###########################################################################
   #
