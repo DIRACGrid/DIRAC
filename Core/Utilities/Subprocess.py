@@ -501,34 +501,33 @@ class Subprocess:
 
 def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit = 52428800 ):
   """
-     Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
-     with a timeout wrapper, it is executed directly without calling a shell
+  Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
+  with a timeout wrapper, it is executed directly without calling a shell
   """
-  spObject = Subprocess( timeout=False, bufferLimit = bufferLimit )
-  sysCall =  Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
-                                                                         "env" : env,
-                                                                         "shell" : False } )
-  return sysCall(timeout)
+  spObject = Subprocess( timeout, bufferLimit = bufferLimit )
+  return spObject.systemCall( cmdSeq,
+                              callbackFunction = callbackFunction,
+                              env = env,
+                              shell = False )
 
 def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit = 52428800 ):
   """
-     Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
-     with a timeout wrapper, cmdSeq it is invoque by /bin/sh
+  Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
+  with a timeout wrapper, cmdSeq it is invoque by /bin/sh
   """
-  spObject = Subprocess( timeout=False, bufferLimit = bufferLimit )
-  shCall = Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
-                                                                          "env" : env,
-                                                                          "shell" : True } )
-  return shCall(timeout)
+  spObject = Subprocess( timeout, bufferLimit = bufferLimit )
+  return spObject.systemCall( cmdSeq,
+                              callbackFunction = callbackFunction,
+                              env = env,
+                              shell = True )
 
 def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
   """
-     Use SubprocessExecutor class to execute function with provided arguments,
-     with a timeout wrapper.
+  Use SubprocessExecutor class to execute function with provided arguments,
+  with a timeout wrapper.
   """
-  spObject = Subprocess( timeout=False )
-  pyCall = Watchdog( spObject.pythonCall, args=( function, ) + stArgs, kwargs=stKeyArgs )
-  return pyCall( timeout )
+  spObject = Subprocess( timeout )
+  return spObject.pythonCall( function, *stArgs, **stKeyArgs )
 
 def __getChildrenForPID( ppid ):
   """
