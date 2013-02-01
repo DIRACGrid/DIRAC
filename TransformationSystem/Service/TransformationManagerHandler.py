@@ -756,4 +756,3 @@ class TransformationManagerHandler( RequestHandler ):
     return S_OK( resultDict )
 
   ###########################################################################
-

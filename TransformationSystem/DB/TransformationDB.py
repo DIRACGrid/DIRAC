@@ -9,7 +9,7 @@
 import re, time, threading, copy
 from types import IntType, LongType, StringType, StringTypes, ListType, TupleType, DictType
 
-from DIRAC                                                import gLogger, S_OK, S_ERROR
+from DIRAC                                                import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.DB                                   import DB
 from DIRAC.DataManagementSystem.Client.ReplicaManager     import CatalogDirectory
 from DIRAC.Core.Security.ProxyInfo                        import getProxyInfo
@@ -107,8 +107,6 @@ class TransformationDB( DB ):
   def __initializeDB( self ):
     """ Initialize: create tables if needed
     """
-
-
 
     retVal = self._query( "SHOW tables" )
     if not retVal[ 'OK' ]:
