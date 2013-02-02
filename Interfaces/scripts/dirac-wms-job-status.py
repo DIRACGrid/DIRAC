@@ -19,8 +19,8 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Arguments:',
                                      '  JobID:    DIRAC Job ID' ] ) )
 
-Script.registerSwitch( "f:", "file=", "Get status for jobs with IDs from the file" )
-Script.registerSwitch( "g:", "group=", "Get status for jobs in the given group" )
+Script.registerSwitch( "f:", "File=", "Get status for jobs with IDs from the file" )
+Script.registerSwitch( "g:", "JobGroup=", "Get status for jobs in the given group" )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -31,12 +31,12 @@ exitCode = 0
 
 jobs = []
 for key, value in Script.getUnprocessedSwitches():  
-  if key in ( 'f', 'file' ):
+  if key.lower() in ( 'f', 'file' ):
     if os.path.exists( value ):
       jFile = open( value )
       jobs += jFile.read().split()
       jFile.close()
-  elif key in ( 'g', 'group' ):    
+  elif key.lower() in ( 'g', 'jobgroup' ):    
     result = dirac.selectJobs( jobGroup=value )    
     if not result['OK']:
       print "Error:", result['Message']
