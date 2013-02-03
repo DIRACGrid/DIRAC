@@ -65,12 +65,14 @@ class FTSMonitorAgent( AgentModule ):
       return S_OK()
     ftsReqs = res["Value"]
     self.log.info( "Found %s FTS jobs" % len( ftsReqs ) )
+    i = 1
     for ftsJob in ftsReqs:
       while True:
-        self.log.info()
+        self.log.info("submitting FTS Job %s FTSReqID=%s" % ( i, ftsJob["FTSReqID"] ) )
         ret = self.threadPool.generateJobAndQueueIt( self.monitorTransfer, args = ( ftsJob, ), )
         if ret["OK"]:
-          self.log.info("FTS request %s has been enqueued" % ftsJob["FTSReqID"] )
+          self.log.info("FTS Job %s FTSReqID=%s has been enqueued" % ( i, ftsJob["FTSReqID"] ) )
+          i += 1
           break
         ## sleep 1 second to proceed
         time.sleep(1)
@@ -84,7 +86,7 @@ class FTSMonitorAgent( AgentModule ):
     :param int ftsReqID: FTSReq.FTSReqID
     :param int channelID: FTSReq.ChannelID
     """
-    log = gLogger.getSubLogger( "monitor@%s" % str(ftsReqID) )
+    log = gLogger.getSubLogger( "@%s" % str(ftsReqID) )
     fileIDs = self.transferDB.getFTSReqFileIDs( ftsReqID )
     if not fileIDs["OK"]:
       log.error("Unable to retrieve FileIDs associated to %s request" % ftsReqID )
@@ -138,7 +140,7 @@ class FTSMonitorAgent( AgentModule ):
     oFTSRequest.setSourceSE( sourceSE )
     oFTSRequest.setTargetSE( targetSE )
 
-    log = gLogger.getSubLogger( "monitor@%s" % str(ftsReqID) )
+    log = gLogger.getSubLogger( "@%s" % str(ftsReqID) )
 
     #########################################################################
     # Perform summary update of the FTS Request and update FTSReq entries.
@@ -191,7 +193,7 @@ class FTSMonitorAgent( AgentModule ):
     :param int channelID: FTSReq.ChannelID
     :param str sourceSE: FTSReq.SourceSE
     """
-    log = gLogger.getSubLogger( "monitor@%s" % ftsReqID )
+    log = gLogger.getSubLogger( "@%s" % ftsReqID )
 
     log.info( "FTS Request found to be terminal, updating file states" )
     #########################################################################
@@ -306,7 +308,7 @@ class FTSMonitorAgent( AgentModule ):
     :param list completedFileIDs: files completed
     :param list fileToFTSUpdates: ???
     """
-    log = gLogger.getSubLogger( "monitor@%s" % ftsReqID )
+    log = gLogger.getSubLogger( "@%s" % ftsReqID )
 
     allUpdated = True
 
