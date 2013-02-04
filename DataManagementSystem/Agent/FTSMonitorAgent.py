@@ -35,6 +35,11 @@ class FTSMonitorAgent( AgentModule ):
   transferDB = None
   ## thread pool
   threadPool = None
+  ## min threads
+  minThreads = 1
+  ## max threads
+  maxThreads = 10
+
   ## missing source regexp patterns
   missingSourceErrors = [ 
     re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed" ),
@@ -49,7 +54,13 @@ class FTSMonitorAgent( AgentModule ):
     """ agent's initialisation """
     self.transferDB = TransferDB()
     self.am_setOption( "shifterProxy", "DataManager" )
-    self.threadPool = ThreadPool( 1, 10 )
+    self.minThreads = self.am_getOption( "MinThreads", self.minThreads )
+    self.maxThreads = self.am_getOption( "MaxThreads", self.maxThreads )
+    minmax = ( abs(self.minThreads), abs(self.maxThreads) )
+    self.minThreads, self.maxThreads = min( minmax ), max( minmax )
+    self.log.info("ThreadPool min threads = %s" % self.minThreads )
+    self.log.info("ThreadPool max threads = %s" % self.maxThreads )
+    self.threadPool = ThreadPool( self.minThreads, self.maxThreads )
     self.threadPool.daemonize()
     return S_OK()
 
@@ -68,10 +79,9 @@ class FTSMonitorAgent( AgentModule ):
     i = 1
     for ftsJob in ftsReqs:
       while True:
-        self.log.info("submitting FTS Job %s FTSReqID=%s" % ( i, ftsJob["FTSReqID"] ) )
+        self.log.info("submitting FTS Job %s FTSReqID=%s to monitor" % ( i, ftsJob["FTSReqID"] ) )
         ret = self.threadPool.generateJobAndQueueIt( self.monitorTransfer, args = ( ftsJob, ), )
         if ret["OK"]:
-          self.log.info("FTS Job %s FTSReqID=%s has been enqueued" % ( i, ftsJob["FTSReqID"] ) )
           i += 1
           break
         ## sleep 1 second to proceed
