@@ -1,19 +1,13 @@
-[v6r7-pre1]
+[v6r6p14]
 
-*RSS
-NEW:  general reimplementation: 
-      New DB schema using python definition of tables, having three big blocks: Site, Resource and Node.
-      MySQLMonkey functionality almost fully covered by DB module, eventually will disappear.
-      Services updated to use new database.
-      Clients updated to use new database.
-      Synchronizer updated to fill the new database. When helpers will be ready, it will need an update.
-      One ElementInspectorAgent, configurable now is hardcoded.
-      New Generic StateMachine using OOP.
-      Commands and Policies simplified.
-      ResourceStatus using internal cache, needs to be tested with real load.
-      
-*TS      
-CHANGE: Transformation types definition are moved to the Operations CS section
+*Transformation
+FIX: Correct instantiation of agents inside several scripts
+CHANGE: TransformationCleaningAgent - added verbosity to logs
+CHANGE: TransformationAgent - missingLFC to MissingInFC as it could be the DFC as well
+FIX: TransformationAgent - return an entry for all LFNs in __getDataReplicasRM
+
+*DMS
+FIX: TransferAgent - fix exception reason in registerFiles()
 
 [v6r6p13]
 
