@@ -34,7 +34,7 @@ class TransformationCleaningAgent( AgentModule ):
 
   '''
 
-  def __init__( self, agentName, loadName, baseAgentName = False, properties = dict() ):
+  def __init__( self, *args, **kwargs ):
     ''' c'tor
 
     :param self: self reference
@@ -43,7 +43,7 @@ class TransformationCleaningAgent( AgentModule ):
     :param bool baseAgentName: whatever
     :param dict properties: whatever else
     '''
-    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
+    AgentModule.__init__( self, *args, **kwargs )
     ## replica manager
     self.replicaManager = ReplicaManager()
     ## transformation client
@@ -129,9 +129,16 @@ class TransformationCleaningAgent( AgentModule ):
         ## if transformation is of type `Replication` or `Removal`, there is nothing to clean.
         ## We just archive
         if transDict[ 'Type' ] in [ 'Replication', 'Removal' ]:
-          self.archiveTransformation( transDict['TransformationID'] )
+          res = self.archiveTransformation( transDict['TransformationID'] )
+          if not res['OK']:
+            self.log.error("Problems archiving transformation %s: %s" %( transDict['TransformationID'], 
+                                                                         res['Message']))
         else:
-          self.cleanTransformation( transDict['TransformationID'] )
+          res = self.cleanTransformation( transDict['TransformationID'] )
+          if not res['OK']:
+            self.log.error("Problems cleaning transformation %s: %s" %( transDict['TransformationID'], 
+                                                                        res['Message']))
+          
 
     ## Obtain the transformations in RemovingFiles status and (wait for it) removes the output files
     res = self.transClient.getTransformations( { 'Status' : 'RemovingFiles',
@@ -139,6 +146,9 @@ class TransformationCleaningAgent( AgentModule ):
     if res['OK']:
       for transDict in res['Value']:
         self.removeTransformationOutput( transDict['TransformationID'] )
+        if not res['OK']:
+          self.log.error("Problems removing transformation %s: %s" % ( transDict['TransformationID'], 
+                                                                       res['Message']))
 
     ## Obtain the transformations in Completed status and archive if inactive for X days
     olderThanTime = datetime.utcnow() - timedelta( days = self.archiveAfter )
@@ -148,7 +158,10 @@ class TransformationCleaningAgent( AgentModule ):
                                                  timeStamp = 'LastUpdate' )
     if res['OK']:
       for transDict in res['Value']:
-        self.archiveTransformation( transDict['TransformationID'] )
+        res = self.archiveTransformation( transDict['TransformationID'] )
+        if not res['OK']:
+          self.log.error("Problems archiving transformation %s: %s" %( transDict['TransformationID'], 
+                                                                       res['Message'] ) )
 
     return S_OK()
 
@@ -416,6 +429,7 @@ class TransformationCleaningAgent( AgentModule ):
       self.log.error( "Failed to update status of transformation %s to Deleted" % ( transID ), res['Message'] )
       return res
     self.log.info( "Updated status of transformation %s to Deleted" % ( transID ) )
+    return S_OK()
 
   def cleanMetadataCatalogFiles( self, transID ):
     ''' wipe out files from catalog '''

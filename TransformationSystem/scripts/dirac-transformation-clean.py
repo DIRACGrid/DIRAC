@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__ = "$Id$"
 
 import sys
 if len( sys.argv ) < 2:
@@ -19,7 +15,9 @@ from DIRAC.TransformationSystem.Client.TransformationClient         import Trans
 from DIRAC                                                            import gLogger
 import DIRAC
 
-agent = TransformationCleaningAgent( 'Transformation/TransformationCleaningAgent', 'dirac-transformation-clean' )
+agent = TransformationCleaningAgent( 'Transformation/TransformationCleaningAgent',
+                                     'Transformation/TransformationCleaningAgent',
+                                     'dirac-transformation-clean' )
 agent.initialize()
 
 client = TransformationClient()
