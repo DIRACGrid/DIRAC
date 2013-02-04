@@ -1,3 +1,26 @@
+[v6r7p1]
+
+*Core
+FIX: Subprocess - finalize the Watchdog closing internal connections after a command execution
+CHANGE: add timeout for py(shell,system)Call calls where appropriate
+CHANGE: Shifter - use gProxyManager in a way that allows proxy caching
+
+*Framework
+NEW: ProxyManagerClient - allow to specify validity and caching time separately
+FIX: ProxyDB - replace instead of delete+insert proxy in __storeVOMSProxy
+
+*DMS
+NEW: FTSMonitorAgent - made multithreaded for better efficiency
+FIX: dirac-dms-add-file - allow LFN: prefix for lfn argument
+
+*WMS
+NEW: dirac-wms-job-get-output, dirac-wms-job-status - allow to retrieve output for a job group
+FIX: TaskQueueDB - fixed selection SQL in __generateTQMatchSQL()
+CHANGE: OptimizerExecutor - reduce diversity of MinorStatuses for failed executors
+
+*Resources
+FIX: CREAMComputingElement - remove temporary JDL right after the submission 
+
 [v6r7]
 
 *Core
