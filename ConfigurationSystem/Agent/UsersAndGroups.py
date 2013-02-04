@@ -55,7 +55,7 @@ class UsersAndGroups( AgentModule ):
       cmdEnv[ 'X509_USER_PROXY' ] = self.proxyLocation
     lfcDNs = []
     try:
-      retlfc = Subprocess.systemCall( 0, ( 'lfc-listusrmap', ), env = cmdEnv )
+      retlfc = Subprocess.systemCall( 30, ( 'lfc-listusrmap', ), env = cmdEnv )
       if not retlfc['OK']:
         self.log.fatal( 'Can not get LFC User List', retlfc['Message'] )
         return retlfc

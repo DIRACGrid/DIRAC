@@ -597,10 +597,6 @@ class ProxyDB( DB ):
     if not retVal[ 'OK' ]:
       return retVal
     connObj = retVal[ 'Value' ]
-    cmd = "DELETE FROM `ProxyDB_VOMSProxies` WHERE UserDN='%s' AND UserGroup='%s' AND VOMSAttr='%s'" % ( userDN, userGroup, vomsAttr )
-    retVal = self._update( cmd, conn = connObj )
-    if not retVal[ 'OK' ]:
-      return retVal
     retVal1 = VOMS().getVOMSProxyInfo( chain, 'actimeleft' )
     retVal2 = VOMS().getVOMSProxyInfo( chain, 'timeleft' )
     if not retVal1[ 'OK' ]:
@@ -620,7 +616,7 @@ class ProxyDB( DB ):
       userName = ""
     else:
       userName = result[ 'Value' ]
-    cmd = "INSERT INTO `ProxyDB_VOMSProxies` ( UserName, UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
+    cmd = "REPLACE INTO `ProxyDB_VOMSProxies` ( UserName, UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
     cmd += "( '%s', '%s', '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userName, userDN, userGroup,
                                                                                               vomsAttr, pemData, secsLeft )
     result = self._update( cmd, conn = connObj )

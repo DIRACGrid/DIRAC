@@ -1381,7 +1381,7 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
     mailAddress = DIRAC.alarmMail
     site = DIRAC.siteName()
     subject = 'Job rescheduled at %s' % site
-    ret = systemCall( 0, 'hostname' )
+    ret = systemCall( 5, 'hostname' )
     wn = ret['Value'][1]
     msg = 'Job %s rescheduled at %s, wn=%s\n' % ( jobID, site, wn )
     msg += message

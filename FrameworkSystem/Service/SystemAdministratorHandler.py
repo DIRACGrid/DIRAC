@@ -212,7 +212,7 @@ class SystemAdministratorHandler( RequestHandler ):
     if oracleFlag.lower() in ['yes', 'true', '1']:
       installOracleClient = True
     elif oracleFlag.lower() == "unknown":
-      result = systemCall( 0, ['python', '-c', 'import cx_Oracle'] )
+      result = systemCall( 30, ['python', '-c', 'import cx_Oracle'] )
       if result['OK'] and result['Value'][0] == 0:
         installOracleClient = True
 
@@ -239,7 +239,7 @@ class SystemAdministratorHandler( RequestHandler ):
     else:
       return S_ERROR( 'Local configuration not found' )
 
-    result = systemCall( 0, cmdList )
+    result = systemCall( 240, cmdList )
     if not result['OK']:
       return result
     status = result['Value'][0]
@@ -269,7 +269,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # For LHCb we need to check Oracle client
     if installOracleClient:
-      result = systemCall( 0, 'install_oracle-client.sh' )
+      result = systemCall( 30, 'install_oracle-client.sh' )
       if not result['OK']:
         return result
       status = result['Value'][0]

@@ -1,8 +1,9 @@
 # $HeadURL$
 """
-   Collection of DIRAC useful os related modules
+   Collection of DIRAC useful operating system related modules
    by default on Error they return None
 """
+
 __RCSID__ = "$Id$"
 
 from types                          import StringTypes
@@ -11,7 +12,6 @@ import os
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
-
 
 DEBUG = 0
 
@@ -39,12 +39,12 @@ def getDiskSpace( path = '.' ):
   if not os.path.exists( path ):
     return -1
   comm = 'df -P -m %s | tail -1' % path
-  resultDF = shellCall( 0, comm )
+  resultDF = shellCall( 10, comm )
   if resultDF['OK'] and not resultDF['Value'][0]:
     output = resultDF['Value'][1]
     if output.find( ' /afs' ) >= 0 :    # AFS disk space
       comm = 'fs lq | tail -1'
-      resultAFS = shellCall( 0, comm )
+      resultAFS = shellCall( 10, comm )
       if resultAFS['OK'] and not resultAFS['Value'][0]:
         output = resultAFS['Value'][1]
         fields = output.split()
@@ -70,7 +70,7 @@ def getDirectorySize( path ):
   """
 
   comm = "du -s -m %s" % path
-  result = shellCall( 0, comm )
+  result = shellCall( 10, comm )
   if not result['OK'] or result['Value'][0] != 0:
     return 0
   else:
@@ -191,7 +191,7 @@ def which( filetofind ):
   """ Utility that mimics the 'which' command from the shell
   """
   if not "PATH" in os.environ:
-     return None
+    return None
   for path in os.environ["PATH"].split(":"):
     if os.path.exists(path + "/" + filetofind):
       return path + "/" + filetofind
