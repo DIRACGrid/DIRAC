@@ -1772,7 +1772,7 @@ class TransformationDB( DB ):
   def addDirectory( self, path, force = False ):
     """ Adds all the files stored in a given directory in file catalog """
     gLogger.info( "TransformationDB.addDirectory: Attempting to populate %s." % path )
-    res = pythonCall( 0, self.__addDirectory, path, force )
+    res = pythonCall( 30, self.__addDirectory, path, force )
     if not res['OK']:
       gLogger.error( "Failed to invoke addDirectory with shifter proxy" )
       return res

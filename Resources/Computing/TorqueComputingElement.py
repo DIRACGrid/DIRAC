@@ -125,7 +125,7 @@ shutil.rmtree( workingDirectory )
       commands = self.ceParameters['AdminCommands'].split( ';' )
       for command in commands:
         self.log.verbose( 'Executing site admin command: %s' % command )
-        result = shellCall( 0, command, callbackFunction = self.sendOutput )
+        result = shellCall( 30, command, callbackFunction = self.sendOutput )
         if not result['OK'] or result['Value'][0]:
           self.log.error( 'Error during "%s":' % command, result )
           return S_ERROR( 'Error executing %s CE AdminCommands' % CE_NAME )
@@ -153,7 +153,7 @@ shutil.rmtree( workingDirectory )
     batchIDList = []
     for i in range( numberOfJobs ):
 
-      result = shellCall( 0, cmd )
+      result = shellCall( 30, cmd )
       if not result['OK'] or result['Value'][0]:
         self.log.warn( '===========>Torque CE result NOT OK' )
         self.log.debug( result )

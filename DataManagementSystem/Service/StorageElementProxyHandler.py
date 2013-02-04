@@ -115,7 +115,7 @@ class StorageElementProxyHandler(RequestHandler):
   def export_callProxyMethod( self, se, name, args, kargs ):
     """ A generic method to call methods of the Storage Element.
     """
-    res = pythonCall( 0, self.__proxyWrapper, se, name, args, kargs )
+    res = pythonCall( 200, self.__proxyWrapper, se, name, args, kargs )
     if res['OK']:
       return res['Value']   
     return res
@@ -140,7 +140,7 @@ class StorageElementProxyHandler(RequestHandler):
   def export_uploadFile( self, se, pfn ):
     """ This method uploads a file present in the local cache to the specified storage element
     """
-    res = pythonCall( 0, self.__uploadFile, se, pfn )
+    res = pythonCall( 300, self.__uploadFile, se, pfn )
     if res['OK']:
       return res['Value']
     return res
@@ -175,7 +175,7 @@ class StorageElementProxyHandler(RequestHandler):
   def export_prepareFile(self, se, pfn):
     """ This method simply gets the file to the local storage area
     """
-    res = pythonCall( 0, self.__prepareFile, se, pfn )
+    res = pythonCall( 300, self.__prepareFile, se, pfn )
     if res['OK']:
       return res['Value']
     return res
@@ -217,7 +217,7 @@ class StorageElementProxyHandler(RequestHandler):
     gRegister.purgeExpired()
 
     key = str( random.getrandbits( 128 ) )
-    result = pythonCall( 0, self.__prepareFileForHTTP, lfn, key )
+    result = pythonCall( 300, self.__prepareFileForHTTP, lfn, key )
     if result['OK']:
       result = result['Value']
       if result['OK']:

@@ -693,14 +693,14 @@ class TaskQueueDB( DB ):
         if field in self.__bannedJobMatchFields:
           fullTableN = '`tq_TQToBanned%ss`' % field
           csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                    fullTableN, fullTableN ), tqMatchDict[ field ], boolOp = 'AND' )
+                                                                    fullTableN, fullTableN ), tqMatchDict[ field ], boolOp = 'OR' )
           sqlCondList.append( csql )
       #Resource banning
       bannedField = "Banned%s" % field
       if bannedField in tqMatchDict and tqMatchDict[ bannedField ]:
         fullTableN = '`tq_TQTo%ss`' % field
         csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                  fullTableN, fullTableN ), tqMatchDict[ bannedField ], boolOp = 'AND' )
+                                                                  fullTableN, fullTableN ), tqMatchDict[ bannedField ], boolOp = 'OR' )
         sqlCondList.append( csql )
 
     #For certain fields, the require is strict. If it is not in the tqMatchDict, the job cannot require it
