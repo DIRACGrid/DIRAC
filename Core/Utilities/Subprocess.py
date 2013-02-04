@@ -138,6 +138,7 @@ class Subprocess:
     except Exception, x:
       self.log.exception( 'Failed initialisation of Subprocess object' )
       raise x
+    
     self.child = None
     self.childPID = 0
     self.childKilled = False
@@ -153,7 +154,7 @@ class Subprocess:
     self.timeout = int( timeout )
     if self.timeout == 0:
       self.timeout = False
-    self.log.debug( 'Timeout set to', timeout )
+    #self.log.debug( 'Timeout set to', timeout )
 
   def __readFromFD( self, fd, baseLength = 0 ):
     """ read from file descriptior :fd:
@@ -274,7 +275,7 @@ class Subprocess:
   def pythonCall( self, function, *stArgs, **stKeyArgs ):
     """ call python function :function: with :stArgs: and :stKeyArgs: """
     
-    self.log.debug( 'pythonCall:', function.__name__ )
+    self.log.verbose( 'pythonCall:', function.__name__ )
     
     readFD, writeFD = os.pipe()
     pid = os.fork()
@@ -385,9 +386,9 @@ class Subprocess:
     """ system call (no shell) - execute :cmdSeq: """
     
     if shell:
-      self.log.debug( 'shellCall:', cmdSeq )
+      self.log.verbose( 'shellCall:', cmdSeq )
     else:
-      self.log.debug( 'systemCall:', cmdSeq )
+      self.log.verbose( 'systemCall:', cmdSeq )
         
     self.cmdSeq = cmdSeq
     self.callback = callbackFunction
@@ -508,6 +509,7 @@ def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimi
   sysCall =  Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
                                                                          "env" : env,
                                                                          "shell" : False } )
+  spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )
   result = sysCall(timeout)
   sysCall.finalize()
   return result
@@ -521,6 +523,7 @@ def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit
   shCall = Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
                                                                           "env" : env,
                                                                           "shell" : True } )
+  spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )
   result = shCall(timeout)
   shCall.finalize()
   return result
@@ -532,6 +535,7 @@ def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
   """
   spObject = Subprocess( timeout=False )
   pyCall = Watchdog( spObject.pythonCall, args=( function, ) + stArgs, kwargs=stKeyArgs )
+  spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )  
   result = pyCall(timeout)
   pyCall.finalize()
   return result
