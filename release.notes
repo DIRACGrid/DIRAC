@@ -82,6 +82,17 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 FIX: Dirac.py - CS option Scratchdir was in LocalSite/LocalSite
 FIX: Dirac.py - do not define default catalog, use FileCatalog utility instead
 
+[v6r6p14]
+
+*Transformation
+FIX: Correct instantiation of agents inside several scripts
+CHANGE: TransformationCleaningAgent - added verbosity to logs
+CHANGE: TransformationAgent - missingLFC to MissingInFC as it could be the DFC as well
+FIX: TransformationAgent - return an entry for all LFNs in __getDataReplicasRM
+
+*DMS
+FIX: TransferAgent - fix exception reason in registerFiles()
+
 [v6r6p13]
 
 *DMS
