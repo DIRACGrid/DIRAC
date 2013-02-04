@@ -46,6 +46,9 @@ for key, value in Script.getUnprocessedSwitches():
 if len( args ) < 1 and not jobs:
   Script.showHelp()
 
+if len(args) > 0:
+  jobs += args
+
 try:
   jobs = [ int( job ) for job in jobs ]
 except Exception, x:
