@@ -119,7 +119,7 @@ class TransformationCleaningAgent( AgentModule ):
 
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
     if not self.enableFlag == 'True':
-      self.log.info( 'MCExtensionAgent is disabled by configuration option EnableFlag' )
+      self.log.info( 'TransformationCleaningAgent is disabled by configuration option EnableFlag' )
       return S_OK( 'Disabled via CS flag' )
 
     ## Obtain the transformations in Cleaning status and remove any mention of the jobs/files
@@ -130,16 +130,22 @@ class TransformationCleaningAgent( AgentModule ):
         ## if transformation is of type `Replication` or `Removal`, there is nothing to clean.
         ## We just archive
         if transDict[ 'Type' ] in [ 'Replication', 'Removal' ]:
-          self.archiveTransformation( transDict['TransformationID'] )
+          res = self.archiveTransformation( transDict['TransformationID'] )
+          if not res['OK']:
+            self.log.error( "Failure during archival of %s" % str( transDict['TransformationID'] ) )
         else:
-          self.cleanTransformation( transDict['TransformationID'] )
+          res = self.cleanTransformation( transDict['TransformationID'] )
+          if not res['OK']:
+            self.log.error( "Failure during cleaning of %s" % str( transDict['TransformationID'] ) )
 
     ## Obtain the transformations in RemovingFiles status and (wait for it) removes the output files
     res = self.transClient.getTransformations( { 'Status' : 'RemovingFiles',
                                                  'Type' : self.transformationTypes} )
     if res['OK']:
       for transDict in res['Value']:
-        self.removeTransformationOutput( transDict['TransformationID'] )
+        res = self.removeTransformationOutput( transDict['TransformationID'] )
+        if not res['OK']:
+          self.log.error( "Failure during removing output of %s" % str( transDict['TransformationID'] ) )
 
     ## Obtain the transformations in Completed status and archive if inactive for X days
     olderThanTime = datetime.utcnow() - timedelta( days = self.archiveAfter )
@@ -149,7 +155,11 @@ class TransformationCleaningAgent( AgentModule ):
                                                  timeStamp = 'LastUpdate' )
     if res['OK']:
       for transDict in res['Value']:
-        self.archiveTransformation( transDict['TransformationID'] )
+        res = self.archiveTransformation( transDict['TransformationID'] )
+        if not res['OK']:
+          self.log.error( "Failure during archival of %s" % str( transDict['TransformationID'] ) )
+    else:
+      self.log.error( "Could not get the transformations" )
 
     return S_OK()
 
