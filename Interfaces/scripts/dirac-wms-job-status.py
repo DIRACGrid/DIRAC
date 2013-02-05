@@ -9,6 +9,7 @@
 """
 __RCSID__ = "$Id$"
 
+import os
 import DIRAC
 from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
