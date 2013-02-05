@@ -12,7 +12,8 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.Core.Utilities import InstallTools, CFG
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
-
+from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
+from DIRAC.Core.Security.X509Chain import X509Chain
 
 class SystemAdministratorHandler( RequestHandler ):
 
@@ -447,5 +448,16 @@ class SystemAdministratorHandler( RequestHandler ):
     infoResult = InstallTools.getInfo( getCSExtensions() )
     if infoResult['OK']:
       result.update( infoResult['Value'] )
+
+    # Host certificate properties
+    certFile,keyFile = getHostCertificateAndKeyLocation()
+    chain = X509Chain()
+    chain.loadChainFromFile( certFile )
+    resultCert = chain.getCredentials()
+    if resultCert['OK']:
+      result['CertificateValidity'] = resultCert['Value']['secondsLeft']
+      result['CertificateDN'] = resultCert['Value']['subject']
+      result['HostProperties'] = ','.join( resultCert['Value']['groupProperties'] )
+      result['CertificateIssuer'] = resultCert['Value']['issuer']
 
     return S_OK(result)
