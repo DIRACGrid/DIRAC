@@ -489,6 +489,28 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     else:
       print "Unknown option:", option
 
+  def do_uninstall( self, args ):
+    """
+        Uninstall DIRAC component
+
+        usage:
+
+          uninstall <system> <component>
+    """
+    argss = args.split()
+    if not argss or len(argss) != 2:
+      print self.do_uninstall.__doc__
+      return
+    
+    system,component = argss
+    client = SystemAdministratorClient( self.host, self.port )
+    result = client.uninstallComponent( system, component )
+    if not result['OK']:
+      print "Error:", result['Message']
+    else:
+      print "Successfully uninstalled %s/%s" % (system,component)  
+    
+
   def do_start( self, args ):
     """ Start services or agents or database server
 
