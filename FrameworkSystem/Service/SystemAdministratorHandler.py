@@ -6,7 +6,7 @@
 __RCSID__ = "$Id$"
 
 from types import *
-import os, re, commands
+import os, re, commands, getpass
 from datetime import timedelta
 from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -467,6 +467,27 @@ class SystemAdministratorHandler( RequestHandler ):
         summary += ",%s:%s" % (partition,occupancy)
     result['DiskOccupancy'] = summary[1:]
     result['RootDiskSpace'] = Os.getDiskSpace( DIRAC.rootPath )
+    
+    # Open files
+    puser= getpass.getuser()
+    status,output = commands.getstatusoutput('lsof')
+    pipes = 0
+    files = 0
+    sockets = 0
+    lines = output.split('\n')
+    for line in lines:
+      fType = line.split()[4]
+      user = line.split()[2]
+      if user == puser:
+        if fType in ['REG']:
+          files += 1
+        elif fType in ['unix','IPv4']:
+          sockets += 1
+        elif fType in ['FIFO']:
+          pipes += 1
+    result['OpenSockets'] = sockets
+    result['OpenFiles'] = files
+    result['OpenPipes'] = pipes
     
     infoResult = InstallTools.getInfo( getCSExtensions() )
     if infoResult['OK']:
