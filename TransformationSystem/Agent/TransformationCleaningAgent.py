@@ -146,7 +146,7 @@ class TransformationCleaningAgent( AgentModule ):
                                                  'Type' : self.transformationTypes} )
     if res['OK']:
       for transDict in res['Value']:
-        self.removeTransformationOutput( transDict['TransformationID'] )
+        res = self.removeTransformationOutput( transDict['TransformationID'] )
         if not res['OK']:
           self.log.error( "Problems removing transformation %s: %s" % ( transDict['TransformationID'],
                                                                        res['Message'] ) )
