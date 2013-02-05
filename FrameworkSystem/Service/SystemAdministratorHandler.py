@@ -7,6 +7,7 @@ __RCSID__ = "$Id$"
 
 from types import *
 import os, re, commands
+from datetime import timedelta
 from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
@@ -459,5 +460,14 @@ class SystemAdministratorHandler( RequestHandler ):
       result['CertificateDN'] = resultCert['Value']['subject']
       result['HostProperties'] = ','.join( resultCert['Value']['groupProperties'] )
       result['CertificateIssuer'] = resultCert['Value']['issuer']
+
+    # Host uptime
+    try:
+      upFile = open('/proc/uptime', 'r')
+      uptime_seconds = float(upFile.readline().split()[0])
+      upFile.close()
+      result['Uptime'] = str(timedelta(seconds = uptime_seconds))
+    except:
+      pass
 
     return S_OK(result)
