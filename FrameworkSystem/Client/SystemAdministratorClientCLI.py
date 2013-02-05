@@ -663,6 +663,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "You should restart the services to use the new software version."
       print "Think of updating /Operation/<vo>/<setup>/Versions section in the CS"
 
+  def do_revert( self, args ):
+    """ Revert the last installed version of software to the previous one
+    
+        usage:
+        
+            revert
+    """ 
+    client = SystemAdministratorClient( self.host, self.port )
+    result = client.revertSoftware()
+    if not result['OK']:
+      print "Error:", result['Message']
+    else:
+      print "Software reverted to", result['Value']  
+
   def do_add( self, args ):
     """
         Add new entity to the Configuration Service

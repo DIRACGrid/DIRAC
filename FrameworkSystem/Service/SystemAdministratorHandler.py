@@ -283,6 +283,18 @@ class SystemAdministratorHandler( RequestHandler ):
         error.append( 'Failed to install Oracle client module' )
         return S_ERROR( '\n'.join( error ) )
     return S_OK()
+  
+  types_revertSoftware = [ ]
+  def export_revertSoftware( self ):
+    """ Revert the last installed version of software to the previous one
+    """
+    oldLink = os.path.join( InstallTools.instancePath, 'old' )
+    oldPath = os.readlink( oldLink )
+    proLink = os.path.join( InstallTools.instancePath, 'pro' )
+    os.remove(proLink)
+    os.symlink( oldPath, proLink )
+    
+    return S_OK( oldPath )
 
   def __loadDIRACCFG( self ):
     installPath = gConfig.getValue( '/LocalInstallation/TargetPath',
