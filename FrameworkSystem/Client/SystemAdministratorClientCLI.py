@@ -146,6 +146,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           show log  <system> <service|agent> [nlines]
                              - show last <nlines> lines in the component log file
           show info          - show version of software and setup
+          show host          - show host related parameters
           show errors [*|<system> <service|agent>]
                              - show error count for the given component or all the components
                                in the last hour and day
@@ -270,6 +271,23 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           for e, v in result['Value']['Extensions'].items():
             print "%s version" % e, v
         print
+    elif option == "host":
+      client = SystemAdministratorClient( self.host, self.port )
+      result = client.getHostInfo()
+      if not result['OK']:
+        self.__errMsg( result['Message'] )
+      else:   
+        print   
+        print "Host info:"
+        print
+        
+        fields = ['Parameter','Value']
+        records = []
+        for key,value in result['Value'].items():
+          records.append( [key, str(value) ] )
+          
+        printTable( fields, records )  
+            
     elif option == "errors":
       self.getErrors( argss )
     else:

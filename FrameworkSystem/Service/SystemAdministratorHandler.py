@@ -443,5 +443,9 @@ class SystemAdministratorHandler( RequestHandler ):
         occupancy = fields[4]
         summary += ",%s:%s" % (partition,occupancy)
     result['DiskOccupancy'] = summary[1:]
+    
+    infoResult = InstallTools.getInfo( getCSExtensions() )
+    if infoResult['OK']:
+      result.update( infoResult['Value'] )
 
     return S_OK(result)
