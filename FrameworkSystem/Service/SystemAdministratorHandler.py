@@ -11,10 +11,11 @@ from datetime import timedelta
 from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
-from DIRAC.Core.Utilities import InstallTools, CFG
+from DIRAC.Core.Utilities import InstallTools, CFG, Os
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain
+import DIRAC
 
 class SystemAdministratorHandler( RequestHandler ):
 
@@ -430,6 +431,26 @@ class SystemAdministratorHandler( RequestHandler ):
     result['Load5'] = l5
     result['Load15'] = l15
     result['Load'] = '/'.join([l1,l5,l15])
+    
+    # CPU info
+    lines = open( '/proc/cpuinfo', 'r' ).readlines()
+    processors = 0
+    physCores = {}
+    for line in lines:
+      if line.strip():
+        parameter, value = line.split(':')
+        parameter = parameter.strip()
+        value = value.strip()
+        if parameter.startswith('processor'):
+          processors += 1
+        if parameter.startswith('physical id'):
+          physCores[value] = parameter
+        if parameter.startswith('model name'):
+          result['CPUModel'] = value
+        if parameter.startswith('cpu MHz'):     
+          result['CPUClock'] = value
+    result['Cores'] = processors
+    result['PhysicalCores'] = len(physCores)      
 
     # Disk occupancy
     summary = ''
@@ -445,6 +466,7 @@ class SystemAdministratorHandler( RequestHandler ):
         occupancy = fields[4]
         summary += ",%s:%s" % (partition,occupancy)
     result['DiskOccupancy'] = summary[1:]
+    result['RootDiskSpace'] = Os.getDiskSpace( DIRAC.rootPath )
     
     infoResult = InstallTools.getInfo( getCSExtensions() )
     if infoResult['OK']:
@@ -456,7 +478,8 @@ class SystemAdministratorHandler( RequestHandler ):
     chain.loadChainFromFile( certFile )
     resultCert = chain.getCredentials()
     if resultCert['OK']:
-      result['CertificateValidity'] = resultCert['Value']['secondsLeft']
+      result['SecondsLeft'] = resultCert['Value']['secondsLeft']
+      result['CertificateValidity'] = str( timedelta( seconds = resultCert['Value']['secondsLeft'] ) )
       result['CertificateDN'] = resultCert['Value']['subject']
       result['HostProperties'] = ','.join( resultCert['Value']['groupProperties'] )
       result['CertificateIssuer'] = resultCert['Value']['issuer']
