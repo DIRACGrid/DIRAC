@@ -404,13 +404,12 @@ if not os.path.exists( DIRAC.gConfig.diracConfigFilePath ):
 
 # We need user proxy or server certificate to continue
 if not useServerCert:
+  Script.enableCS()
   result = getProxyInfo()
   if not result['OK']:
-    DIRAC.gLogger.notice( 'No user proxy available' )
-    DIRAC.gLogger.notice( 'Create one using %s and execute again with -x option' % os.path.join( DIRAC.rootPath, 'scripts', 'dirac-proxy-init' ) )
+    DIRAC.gLogger.notice( 'Configuration is not completed because no user proxy is available' )
+    DIRAC.gLogger.notice( 'Create one using dirac-proxy-init and execute again with -F option' )
     sys.exit( 0 )
-  else:
-    Script.enableCS()
 else:
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()

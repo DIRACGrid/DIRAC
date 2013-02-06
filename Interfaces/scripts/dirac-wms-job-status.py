@@ -13,6 +13,7 @@ import os
 import DIRAC
 from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.Time import toString, date, day
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -38,7 +39,9 @@ for key, value in Script.getUnprocessedSwitches():
       jobs += jFile.read().split()
       jFile.close()
   elif key.lower() in ( 'g', 'jobgroup' ):    
-    result = dirac.selectJobs( jobGroup=value )    
+    jobDate = toString( date() - 30*day )
+    # Choose jobs no more than 30 days old
+    result = dirac.selectJobs( jobGroup=value, date=jobDate )    
     if not result['OK']:
       print "Error:", result['Message']
       DIRACExit( -1 )
