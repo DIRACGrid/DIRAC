@@ -105,6 +105,18 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 FIX: Dirac.py - CS option Scratchdir was in LocalSite/LocalSite
 FIX: Dirac.py - do not define default catalog, use FileCatalog utility instead
 
+[v6r6p15]
+
+*Framework
+BUGFIX: ErrorMessageMonitor - corrected updateFields call 
+
+*DMS:
+NEW: FTSMonitorAgent completely rewritten in a multithreaded way
+
+*Transformation
+FIX: InputDataAgent - proper instantiation of TransformationClient
+CHANGE: Transformation - several log message promoted from info to notice level
+
 [v6r6p14]
 
 *Transformation
