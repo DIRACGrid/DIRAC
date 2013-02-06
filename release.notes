@@ -1,3 +1,17 @@
+[v6r7p2]
+
+*Core
+FIX: dirac-configure - switch to use CS before checking proxy info
+
+*Framework
+NEW: dirac-sys-sendmail new command
+NEW: SystemAdmininistratorCLI - added show host, uninstall, revert commands
+NEW: SystemAdmininistratorHandler - added more info in getHostInfo()
+NEW: SystemAdmininistratorHandler - added revertSoftware() interface
+
+*Transformation
+FIX: TransformationCleaningAgent - check the status of returned results
+
 [v6r7p1]
 
 *Core
