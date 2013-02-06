@@ -6,7 +6,8 @@ from DIRAC                                                          import S_OK,
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
 from DIRAC.Core.Utilities.ThreadSafe                                import Synchronizer
-from DIRAC.Core.Utilities.List                                      import breakListIntoChunks
+from DIRAC.Core.Utilities.List                                      import sortList, breakListIntoChunks
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -22,11 +23,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
   def __init__( self, *args, **kwargs ):
     """ c'tor
-
-    :param self: self reference
-    :param str agentName: name of agent
-    :param bool baseAgentName: whatever
-    :param dict properties: whatever else
     """
     AgentModule.__init__( self, *args, **kwargs )
 
@@ -35,7 +31,14 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                                              'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
     self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
-    self.transformationTypes = self.am_getOption( 'TransformationTypes', [] )
+
+    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
+    if agentTSTypes:
+      self.transformationTypes = sortList( agentTSTypes )
+    else:
+      dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
+      dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
+      self.transformationTypes = sortList( dataProc + dataManip )
 
     #clients
     self.transfClient = TransformationClient()
@@ -77,6 +80,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     for i in xrange( maxNumberOfThreads ):
       threadPool.generateJobAndQueueIt( self._execute, [i] )
+
+    self.log.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
 
     return S_OK()
 

@@ -37,12 +37,6 @@ class TransformationCleaningAgent( AgentModule ):
 
   def __init__( self, *args, **kwargs ):
     ''' c'tor
-
-    :param self: self reference
-    :param str agentName: name of agent
-    :param str loadName: name of module
-    :param bool baseAgentName: whatever
-    :param dict properties: whatever else
     '''
     AgentModule.__init__( self, *args, **kwargs )
     # # replica manager
@@ -87,8 +81,9 @@ class TransformationCleaningAgent( AgentModule ):
     if agentTSTypes:
       self.transformationTypes = sortList( agentTSTypes )
     else:
-      self.transformationTypes = sortList( Operations().getValue( 'Transformations/DataProcessing',
-                                                                  ['MCSimulation', 'Merge'] ) )
+      dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
+      dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
+      self.transformationTypes = sortList( dataProc + dataManip )
     self.log.info( "Will consider the following transformation types: %s" % str( self.transformationTypes ) )
     # # directory locations
     self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', [ 'TransformationDB',
