@@ -1529,7 +1529,12 @@ def uninstallComponent( system, component ):
   """
   Remove startup and runit directories
   """
-  unsetupComponent( system, component )
+  
+  result = runsvctrlComponent( system, component, 'd' )
+  if not result['OK']:
+    pass
+  
+  result = unsetupComponent( system, component )
 
   for runitCompDir in glob.glob( os.path.join( runitDir, system, component ) ):
     try:
