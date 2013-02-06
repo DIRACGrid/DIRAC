@@ -34,7 +34,7 @@ class InputDataAgent(AgentModule):
     self.refreshonly = self.am_getOption( 'RefreshOnly', False )
     self.dateKey = self.am_getOption( 'DateKey', None )
     gMonitor.registerActivity("Iteration","Agent Loops",AGENT_NAME,"Loops/min",gMonitor.OP_SUM)
-    self.transClient = TransformationClient('TransformationDB')
+    self.transClient = TransformationClient()
     self.metadataClient = FileCatalogClient()
     return S_OK()
 
