@@ -81,6 +81,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     for i in xrange( maxNumberOfThreads ):
       threadPool.generateJobAndQueueIt( self._execute, [i] )
 
+    self.log.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
+
     return S_OK()
 
   def finalize( self ):
