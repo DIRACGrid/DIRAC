@@ -83,6 +83,9 @@ if group:
   else:
     outputDir = group  
 
+if not os.path.exists(outputDir):
+  os.makedirs( outputDir)
+
 jobs = [ str(job) for job in jobs ]
 doneJobs = os.listdir( outputDir )
 todoJobs = [ job for job in jobs if not job in doneJobs ]
