@@ -11,10 +11,10 @@ AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 class WorkflowTaskAgent( TaskManagerAgentBase ):
   ''' An AgentModule class to submit workflow tasks
   '''
-  def __init__( self, agentName, loadName, baseAgentName, properties = {} ):
+  def __init__( self, *args, **kwargs ):
     ''' c'tor
     '''
-    TaskManagerAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
+    TaskManagerAgentBase.__init__( self, *args, **kwargs )
 
     self.taskManager = WorkflowTasks( transClient = self.transClient )
     self.shifterProxy = 'ProductionManager'

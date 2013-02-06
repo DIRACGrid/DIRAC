@@ -19,10 +19,10 @@ class TaskManagerAgentBase( AgentModule ):
       - provide a transType (list of strings) as data member
   '''
 
-  def __init__( self, agentName, loadName, baseAgentName, properties ):
+  def __init__( self, *args, **kwargs ):
     ''' c'tor
     '''
-    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
+    AgentModule.__init__( self, *args, **kwargs )
 
     self.taskManager = None
     self.shifterProxy = ''
