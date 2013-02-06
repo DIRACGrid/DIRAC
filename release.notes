@@ -1,3 +1,9 @@
+[v6r7p3]
+
+*Transformation
+FIX: TransformationAgent - use the new CS defaults locations
+FIX: Proper agent initialization
+
 [v6r7p2]
 
 *Core
