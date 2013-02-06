@@ -843,7 +843,17 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         if res['OK']:
           successful[lfn] = True
         else:
-          failed[lfn] = res['Message']
+          if res['Message'] == 'No such file or directory':
+            # The PFN didn't exist, but maybe it wsa changed...
+            res1 = self.getReplicas( lfn )
+            if res1['OK']:
+              pfn1 = res1['Value']['Successful'].get( lfn, {} ).get( se )
+              if pfn1 and pfn1 != pfn:
+                res = self.__removeReplica( pfn1 )
+          if res['OK']:
+            successful[lfn] = True
+          else:
+            failed[lfn] = res['Message']
     lfnRemoved = successful.keys()
     if len( lfnRemoved ) > 0:
       res = self.getReplicas( lfnRemoved, True )
