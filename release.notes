@@ -119,6 +119,12 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 FIX: Dirac.py - CS option Scratchdir was in LocalSite/LocalSite
 FIX: Dirac.py - do not define default catalog, use FileCatalog utility instead
 
+[v6r6p16]
+
+*DMS
+FIX: Agents - proper __init__ implementation with arguments passing to the super class
+FIX: LcgFileCatalogClient - in removeReplica() reload PFN in case it has changed
+
 [v6r6p15]
 
 *Framework
