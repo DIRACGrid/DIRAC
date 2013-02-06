@@ -226,11 +226,6 @@ class WorkflowTasks( TaskBase ):
     else:
       self.jobMonitoringClient = jobMonitoringClient
 
-    if not outputDataModule:
-      self.outputDataModule = gConfig.getValue( "/DIRAC/VOPolicy/OutputDataModule", "" )
-    else:
-      self.outputDataModule = outputDataModule
-
     if not jobClass:
       self.jobClass = Job
     else:
@@ -240,6 +235,11 @@ class WorkflowTasks( TaskBase ):
       self.opsH = Operations()
     else:
       self.opsH = opsH
+
+    if not outputDataModule:
+      self.outputDataModule = self.opsH.getValue( "Transformations/OutputDataModule", "" )
+    else:
+      self.outputDataModule = outputDataModule
 
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
