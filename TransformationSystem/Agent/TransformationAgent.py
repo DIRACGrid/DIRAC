@@ -6,7 +6,8 @@ from DIRAC                                                          import S_OK,
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
 from DIRAC.Core.Utilities.ThreadSafe                                import Synchronizer
-from DIRAC.Core.Utilities.List                                      import breakListIntoChunks
+from DIRAC.Core.Utilities.List                                      import sortList, breakListIntoChunks
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -20,22 +21,24 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   """ Usually subclass of AgentModule
   """
 
-  def __init__( self, agentName, loadName, baseAgentName = False, properties = dict() ):
+  def __init__( self, *args, **kwargs ):
     """ c'tor
-
-    :param self: self reference
-    :param str agentName: name of agent
-    :param bool baseAgentName: whatever
-    :param dict properties: whatever else
     """
-    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
+    AgentModule.__init__( self, *args, **kwargs )
 
     #few parameters
     self.pluginLocation = self.am_getOption( 'PluginLocation',
                                              'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
     self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
-    self.transformationTypes = self.am_getOption( 'TransformationTypes', [] )
+
+    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
+    if agentTSTypes:
+      self.transformationTypes = sortList( agentTSTypes )
+    else:
+      dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
+      dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
+      self.transformationTypes = sortList( dataProc + dataManip )
 
     #clients
     self.transfClient = TransformationClient()
@@ -77,6 +80,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     for i in xrange( maxNumberOfThreads ):
       threadPool.generateJobAndQueueIt( self._execute, [i] )
+
+    self.log.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
 
     return S_OK()
 
@@ -370,10 +375,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       for chunk in breakListIntoChunks( newLFNs, 1000 ):
         res = self.__getDataReplicasRM( transID, chunk, clients, active = active )
         if res['OK']:
-          for lfn in res['Value']:
-            if res['Value'][lfn]:
+          for lfn, ses in res['Value'].items():
+            if ses:
               # Keep only the list of SEs as SURLs are useless
-              newReplicas[lfn] = sorted( res['Value'][lfn] )
+              newReplicas[lfn] = sorted( ses )
             else:
               noReplicas.append( lfn )
         else:
@@ -404,32 +409,45 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       res = clients['ReplicaManager'].getReplicas( lfns )
     if not res['OK']:
       return res
+    replicas = res['Value']
+    # Prepare a dictionary for all LFNs
+    dataReplicas = dict.fromkeys( lfns, [] )
     self._logInfo( "Replica results for %d files obtained in %.2f seconds" % ( len( lfns ), time.time() - startTime ),
                     method = method, transID = transID )
+    #If files are neither Successful nor Failed, they are set problematic in the FC
+    problematicLfns = [lfn for lfn in lfns if lfn not in replicas['Successful'] and lfn not in replicas['Failed']]
+    if problematicLfns:
+      self._logInfo( "%d files found problematic in the catalog" % len( problematicLfns ) )
+      res = clients['TransformationClient'].setFileStatusForTransformation( transID, 'ProbInFC', problematicLfns )
+      if not res['OK']:
+        self._logError( "Failed to update status of problematic files: %s." % res['Message'],
+                        method = method, transID = transID )
     # Create a dictionary containing all the file replicas
-    dataReplicas = {}
-    for lfn, replicaDict in res['Value']['Successful'].items():
+    failoverLfns = []
+    for lfn, replicaDict in replicas['Successful'].items():
       ses = replicaDict.keys()
       for se in ses:
+        #### This should definitely be included in the SE definition (i.e. not used for transformations)
         if active and re.search( 'failover', se.lower() ):
-          self._logWarn( "Ignoring failover replica for %s." % lfn, method = method, transID = transID )
+          self._logVerbose( "Ignoring failover replica for %s." % lfn, method = method, transID = transID )
         else:
-          if not dataReplicas.has_key( lfn ):
-            dataReplicas[lfn] = {}
-          dataReplicas[lfn][se] = replicaDict[se]
+          dataReplicas[lfn].append( se )
+      if not dataReplicas[lfn]:
+        failoverLfns.append( lfn )
+    if failoverLfns:
+      self._logInfo( "%d files only found in Failover SE" % len( failoverLfns ) )
     # Make sure that file missing from the catalog are marked in the transformation DB.
     missingLfns = []
-    for lfn, reason in res['Value']['Failed'].items():
+    for lfn, reason in replicas['Failed'].items():
       if re.search( "No such file or directory", reason ):
-        self._logWarn( "%s not found in the catalog." % lfn, method = method, transID = transID )
+        self._logVerbose( "%s not found in the catalog." % lfn, method = method, transID = transID )
         missingLfns.append( lfn )
     if missingLfns:
-      res = clients['TransformationClient'].setFileStatusForTransformation( transID, 'MissingLFC', missingLfns )
+      self._logInfo( "%d files not found in the catalog" % len( missingLfns ) )
+      res = clients['TransformationClient'].setFileStatusForTransformation( transID, 'MissingInFC', missingLfns )
       if not res['OK']:
-        self._logWarn( "Failed to update status of missing files: %s." % res['Message'],
+        self._logError( "Failed to update status of missing files: %s." % res['Message'],
                         method = method, transID = transID )
-    if not dataReplicas:
-      return S_ERROR( "No replicas obtained" )
     return S_OK( dataReplicas )
 
 

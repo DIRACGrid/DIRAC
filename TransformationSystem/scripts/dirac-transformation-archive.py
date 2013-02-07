@@ -15,7 +15,9 @@ from DIRAC.TransformationSystem.Client.TransformationClient           import Tra
 from DIRAC                                                            import gLogger
 import DIRAC
 
-agent = TransformationCleaningAgent( 'Transformation/TransformationCleaningAgent', 'dirac-transformation-archive' )
+agent = TransformationCleaningAgent( 'Transformation/TransformationCleaningAgent',
+                                     'Transformation/TransformationCleaningAgent',
+                                     'dirac-transformation-archive' )
 agent.initialize()
 
 client = TransformationClient()

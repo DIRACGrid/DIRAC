@@ -8,8 +8,12 @@
   Retrieve status of the given DIRAC job
 """
 __RCSID__ = "$Id$"
+
+import os
 import DIRAC
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.Time import toString, date, day
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -17,8 +21,8 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Arguments:',
                                      '  JobID:    DIRAC Job ID' ] ) )
 
-Script.registerSwitch( "f:", "file=", "Get status for jobs with IDs from the file" )
-Script.registerSwitch( "g:", "group=", "Get status for jobs in the given group" )
+Script.registerSwitch( "f:", "File=", "Get status for jobs with IDs from the file" )
+Script.registerSwitch( "g:", "JobGroup=", "Get status for jobs in the given group" )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -29,19 +33,25 @@ exitCode = 0
 
 jobs = []
 for key, value in Script.getUnprocessedSwitches():  
-  if key in ( 'f', 'file' ):
+  if key.lower() in ( 'f', 'file' ):
     if os.path.exists( value ):
       jFile = open( value )
       jobs += jFile.read().split()
       jFile.close()
-  elif key in ( 'g', 'group' ):    
-    result = dirac.selectJobs( jobGroup=value )    
+  elif key.lower() in ( 'g', 'jobgroup' ):    
+    jobDate = toString( date() - 30*day )
+    # Choose jobs no more than 30 days old
+    result = dirac.selectJobs( jobGroup=value, date=jobDate )    
     if not result['OK']:
       print "Error:", result['Message']
+      DIRACExit( -1 )
     jobs += result['Value']  
         
 if len( args ) < 1 and not jobs:
   Script.showHelp()
+
+if len(args) > 0:
+  jobs += args
 
 try:
   jobs = [ int( job ) for job in jobs ]

@@ -1,3 +1,40 @@
+[v6r7p2]
+
+*Core
+FIX: dirac-configure - switch to use CS before checking proxy info
+
+*Framework
+NEW: dirac-sys-sendmail new command
+NEW: SystemAdmininistratorCLI - added show host, uninstall, revert commands
+NEW: SystemAdmininistratorHandler - added more info in getHostInfo()
+NEW: SystemAdmininistratorHandler - added revertSoftware() interface
+
+*Transformation
+FIX: TransformationCleaningAgent - check the status of returned results
+
+[v6r7p1]
+
+*Core
+FIX: Subprocess - finalize the Watchdog closing internal connections after a command execution
+CHANGE: add timeout for py(shell,system)Call calls where appropriate
+CHANGE: Shifter - use gProxyManager in a way that allows proxy caching
+
+*Framework
+NEW: ProxyManagerClient - allow to specify validity and caching time separately
+FIX: ProxyDB - replace instead of delete+insert proxy in __storeVOMSProxy
+
+*DMS
+NEW: FTSMonitorAgent - made multithreaded for better efficiency
+FIX: dirac-dms-add-file - allow LFN: prefix for lfn argument
+
+*WMS
+NEW: dirac-wms-job-get-output, dirac-wms-job-status - allow to retrieve output for a job group
+FIX: TaskQueueDB - fixed selection SQL in __generateTQMatchSQL()
+CHANGE: OptimizerExecutor - reduce diversity of MinorStatuses for failed executors
+
+*Resources
+FIX: CREAMComputingElement - remove temporary JDL right after the submission 
+
 [v6r7]
 
 *Core
@@ -81,6 +118,29 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 *Interfaces
 FIX: Dirac.py - CS option Scratchdir was in LocalSite/LocalSite
 FIX: Dirac.py - do not define default catalog, use FileCatalog utility instead
+
+[v6r6p15]
+
+*Framework
+BUGFIX: ErrorMessageMonitor - corrected updateFields call 
+
+*DMS:
+NEW: FTSMonitorAgent completely rewritten in a multithreaded way
+
+*Transformation
+FIX: InputDataAgent - proper instantiation of TransformationClient
+CHANGE: Transformation - several log message promoted from info to notice level
+
+[v6r6p14]
+
+*Transformation
+FIX: Correct instantiation of agents inside several scripts
+CHANGE: TransformationCleaningAgent - added verbosity to logs
+CHANGE: TransformationAgent - missingLFC to MissingInFC as it could be the DFC as well
+FIX: TransformationAgent - return an entry for all LFNs in __getDataReplicasRM
+
+*DMS
+FIX: TransferAgent - fix exception reason in registerFiles()
 
 [v6r6p13]
 

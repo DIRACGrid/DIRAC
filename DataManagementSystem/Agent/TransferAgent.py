@@ -1012,7 +1012,7 @@ class TransferAgent( RequestAgentBase ):
             return S_ERROR( error )
           elif lfn in registerReplica["Value"]["Successful"]:
             ## no other option, it must be in successfull
-            register = self.transferDB().setRegistrationDone( channelID, fileID )
+            register = self.transferDB().setRegistrationDone( channelID, [ fileID ] )
             if not register["OK"]:
               self.log.error("registerFiles: set status error %s fileID=%s channelID=%s: %s" % ( lfn,
                                                                                                  fileID,

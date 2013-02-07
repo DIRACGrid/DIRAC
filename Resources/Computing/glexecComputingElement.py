@@ -131,14 +131,14 @@ class glexecComputingElement( ComputingElement ):
 
     userID = None
 
-    res = shellCall( 0, 'ls -al' )
+    res = shellCall( 10, 'ls -al' )
     if res['OK'] and res['Value'][0] == 0:
       self.log.info( 'Contents of the working directory before permissions change:' )
       self.log.info( str( res['Value'][1] ) )
     else:
       self.log.error( 'Failed to list the log directory contents', str( res['Value'][2] ) )
 
-    res = shellCall( 0, 'id -u' )
+    res = shellCall( 10, 'id -u' )
     if res['OK'] and res['Value'][0] == 0:
       userID = res['Value'][1]
       self.log.info( 'Current user ID is: %s' % ( userID ) )
@@ -146,7 +146,7 @@ class glexecComputingElement( ComputingElement ):
       self.log.error( 'Failed to obtain current user ID', str( res['Value'][2] ) )
       return res
 
-    res = shellCall( 0, 'ls -al %s/../' % currentDir )
+    res = shellCall( 10, 'ls -al %s/../' % currentDir )
     if res['OK'] and res['Value'][0] == 0:
       self.log.info( 'Contents of the parent directory before permissions change:' )
       self.log.info( str( res['Value'][1] ) )
@@ -167,14 +167,14 @@ class glexecComputingElement( ComputingElement ):
         self.log.error( 'Problem changing directory permissions', str( x ) )
 
     self.log.info( 'Permissions in current directory %s updated successfully' % ( currentDir ) )
-    res = shellCall( 0, 'ls -al' )
+    res = shellCall( 10, 'ls -al' )
     if res['OK'] and res['Value'][0] == 0:
       self.log.info( 'Contents of the working directory after changing permissions:' )
       self.log.info( str( res['Value'][1] ) )
     else:
       self.log.error( 'Failed to list the log directory contents', str( res['Value'][2] ) )
 
-    res = shellCall( 0, 'ls -al %s/../' % currentDir )
+    res = shellCall( 10, 'ls -al %s/../' % currentDir )
     if res['OK'] and res['Value'][0] == 0:
       self.log.info( 'Contents of the parent directory after permissions change:' )
       self.log.info( str( res['Value'][1] ) )

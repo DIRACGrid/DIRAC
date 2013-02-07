@@ -7,10 +7,10 @@
 
 __RCSID__ = "$Id$"
 
-## imports
+# # imports
 import re
 from datetime import datetime, timedelta
-## from DIRAC
+# # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
@@ -21,7 +21,7 @@ from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 
-## agent's name
+# # agent's name
 AGENT_NAME = 'Transformation/TransformationCleaningAgent'
 
 class TransformationCleaningAgent( AgentModule ):
@@ -35,42 +35,36 @@ class TransformationCleaningAgent( AgentModule ):
 
   '''
 
-  def __init__( self, agentName, loadName, baseAgentName = False, properties = dict() ):
+  def __init__( self, *args, **kwargs ):
     ''' c'tor
-
-    :param self: self reference
-    :param str agentName: name of agent
-    :param str loadName: name of module
-    :param bool baseAgentName: whatever
-    :param dict properties: whatever else
     '''
-    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
-    ## replica manager
+    AgentModule.__init__( self, *args, **kwargs )
+    # # replica manager
     self.replicaManager = ReplicaManager()
-    ## transformation client
+    # # transformation client
     self.transClient = TransformationClient()
-    ## wms client
+    # # wms client
     self.wmsClient = WMSClient()
-    ## request client
+    # # request client
     self.requestClient = RequestClient()
-    ## file catalog clinet
+    # # file catalog clinet
     self.metadataClient = FileCatalogClient()
 
-    ## placeholders for CS options
+    # # placeholders for CS options
 
-    ## transformations types
+    # # transformations types
     self.transformationTypes = None
-    ## directory locations
+    # # directory locations
     self.directoryLocations = None
-    ## transformation metadata
+    # # transformation metadata
     self.transfidmeta = None
-    ## archive periof in days
+    # # archive periof in days
     self.archiveAfter = None
-    ## active SEs
+    # # active SEs
     self.activeStorages = None
-    ## transformation log SEs
+    # # transformation log SEs
     self.logSE = None
-    ## enable/disable execution
+    # # enable/disable execution
     self.enableFlag = None
 
   def initialize( self ):
@@ -80,33 +74,34 @@ class TransformationCleaningAgent( AgentModule ):
 
     :param self: self reference
     '''
-    ## shifter proxy
+    # # shifter proxy
     self.am_setOption( 'shifterProxy', 'DataManager' )
-    ## transformations types
+    # # transformations types
     agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
     if agentTSTypes:
-      self.transformationTypes = sortList(agentTSTypes)
+      self.transformationTypes = sortList( agentTSTypes )
     else:
-      self.transformationTypes = sortList( Operations().getValue( 'Transformations/DataProcessing', 
-                                                                  ['MCSimulation', 'Merge'] ) )
+      dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
+      dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
+      self.transformationTypes = sortList( dataProc + dataManip )
     self.log.info( "Will consider the following transformation types: %s" % str( self.transformationTypes ) )
-    ## directory locations
+    # # directory locations
     self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', [ 'TransformationDB',
                                                                                    'MetadataCatalog' ] ) )
     self.log.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
-    ## transformation metadata
+    # # transformation metadata
     self.transfidmeta = self.am_getOption( 'TransfIDMeta', "TransformationID" )
     self.log.info( "Will use %s as metadata tag name for TransformationID" % self.transfidmeta )
-    ## archive periof in days
-    self.archiveAfter = self.am_getOption( 'ArchiveAfter', 7 ) # days
+    # # archive periof in days
+    self.archiveAfter = self.am_getOption( 'ArchiveAfter', 7 )  # days
     self.log.info( "Will archive Completed transformations after %d days" % self.archiveAfter )
-    ## active SEs
+    # # active SEs
     self.activeStorages = sortList( self.am_getOption( 'ActiveSEs', [] ) )
     self.log.info( "Will check the following storage elements: %s" % str( self.activeStorages ) )
-    ## transformation log SEs
+    # # transformation log SEs
     self.logSE = self.am_getOption( 'TransformationLogSE', 'LogSE' )
     self.log.info( "Will remove logs found on storage element: %s" % self.logSE )
-    ## enable/disable execution, should be using CS option Status?? with default value as 'Active'?? 
+    # # enable/disable execution, should be using CS option Status?? with default value as 'Active'??
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
     return S_OK()
 
@@ -119,29 +114,39 @@ class TransformationCleaningAgent( AgentModule ):
 
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
     if not self.enableFlag == 'True':
-      self.log.info( 'MCExtensionAgent is disabled by configuration option EnableFlag' )
+      self.log.info( 'TransformationCleaningAgent is disabled by configuration option EnableFlag' )
       return S_OK( 'Disabled via CS flag' )
 
-    ## Obtain the transformations in Cleaning status and remove any mention of the jobs/files
+    # # Obtain the transformations in Cleaning status and remove any mention of the jobs/files
     res = self.transClient.getTransformations( { 'Status' : 'Cleaning',
                                                  'Type' : self.transformationTypes } )
     if res['OK']:
       for transDict in res['Value']:
-        ## if transformation is of type `Replication` or `Removal`, there is nothing to clean.
-        ## We just archive
+        # # if transformation is of type `Replication` or `Removal`, there is nothing to clean.
+        # # We just archive
         if transDict[ 'Type' ] in [ 'Replication', 'Removal' ]:
-          self.archiveTransformation( transDict['TransformationID'] )
+          res = self.archiveTransformation( transDict['TransformationID'] )
+          if not res['OK']:
+            self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'],
+                                                                         res['Message'] ) )
         else:
-          self.cleanTransformation( transDict['TransformationID'] )
+          res = self.cleanTransformation( transDict['TransformationID'] )
+          if not res['OK']:
+            self.log.error( "Problems cleaning transformation %s: %s" % ( transDict['TransformationID'],
+                                                                        res['Message'] ) )
 
-    ## Obtain the transformations in RemovingFiles status and (wait for it) removes the output files
+
+    # # Obtain the transformations in RemovingFiles status and (wait for it) removes the output files
     res = self.transClient.getTransformations( { 'Status' : 'RemovingFiles',
                                                  'Type' : self.transformationTypes} )
     if res['OK']:
       for transDict in res['Value']:
-        self.removeTransformationOutput( transDict['TransformationID'] )
+        res = self.removeTransformationOutput( transDict['TransformationID'] )
+        if not res['OK']:
+          self.log.error( "Problems removing transformation %s: %s" % ( transDict['TransformationID'],
+                                                                       res['Message'] ) )
 
-    ## Obtain the transformations in Completed status and archive if inactive for X days
+    # # Obtain the transformations in Completed status and archive if inactive for X days
     olderThanTime = datetime.utcnow() - timedelta( days = self.archiveAfter )
     res = self.transClient.getTransformations( { 'Status' : 'Completed',
                                                  'Type' : self.transformationTypes },
@@ -149,7 +154,12 @@ class TransformationCleaningAgent( AgentModule ):
                                                  timeStamp = 'LastUpdate' )
     if res['OK']:
       for transDict in res['Value']:
-        self.archiveTransformation( transDict['TransformationID'] )
+        res = self.archiveTransformation( transDict['TransformationID'] )
+        if not res['OK']:
+          self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'],
+                                                                       res['Message'] ) )
+    else:
+      self.log.error( "Could not get the transformations" )
 
     return S_OK()
 
@@ -417,6 +427,7 @@ class TransformationCleaningAgent( AgentModule ):
       self.log.error( "Failed to update status of transformation %s to Deleted" % ( transID ), res['Message'] )
       return res
     self.log.info( "Updated status of transformation %s to Deleted" % ( transID ) )
+    return S_OK()
 
   def cleanMetadataCatalogFiles( self, transID ):
     ''' wipe out files from catalog '''

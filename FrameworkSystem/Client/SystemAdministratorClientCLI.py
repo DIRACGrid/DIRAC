@@ -146,6 +146,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           show log  <system> <service|agent> [nlines]
                              - show last <nlines> lines in the component log file
           show info          - show version of software and setup
+          show host          - show host related parameters
           show errors [*|<system> <service|agent>]
                              - show error count for the given component or all the components
                                in the last hour and day
@@ -270,6 +271,23 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           for e, v in result['Value']['Extensions'].items():
             print "%s version" % e, v
         print
+    elif option == "host":
+      client = SystemAdministratorClient( self.host, self.port )
+      result = client.getHostInfo()
+      if not result['OK']:
+        self.__errMsg( result['Message'] )
+      else:   
+        print   
+        print "Host info:"
+        print
+        
+        fields = ['Parameter','Value']
+        records = []
+        for key,value in result['Value'].items():
+          records.append( [key, str(value) ] )
+          
+        printTable( fields, records )  
+            
     elif option == "errors":
       self.getErrors( argss )
     else:
@@ -471,6 +489,28 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     else:
       print "Unknown option:", option
 
+  def do_uninstall( self, args ):
+    """
+        Uninstall DIRAC component
+
+        usage:
+
+          uninstall <system> <component>
+    """
+    argss = args.split()
+    if not argss or len(argss) != 2:
+      print self.do_uninstall.__doc__
+      return
+    
+    system,component = argss
+    client = SystemAdministratorClient( self.host, self.port )
+    result = client.uninstallComponent( system, component )
+    if not result['OK']:
+      print "Error:", result['Message']
+    else:
+      print "Successfully uninstalled %s/%s" % (system,component)  
+    
+
   def do_start( self, args ):
     """ Start services or agents or database server
 
@@ -622,6 +662,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Software successfully updated."
       print "You should restart the services to use the new software version."
       print "Think of updating /Operation/<vo>/<setup>/Versions section in the CS"
+
+  def do_revert( self, args ):
+    """ Revert the last installed version of software to the previous one
+    
+        usage:
+        
+            revert
+    """ 
+    client = SystemAdministratorClient( self.host, self.port )
+    result = client.revertSoftware()
+    if not result['OK']:
+      print "Error:", result['Message']
+    else:
+      print "Software reverted to", result['Value']  
 
   def do_add( self, args ):
     """
