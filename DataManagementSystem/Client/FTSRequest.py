@@ -843,7 +843,6 @@ class FTSRequest(object):
       source = self.fileDict[lfn].get( 'Source' )
       target = self.fileDict[lfn].get( 'Target' )
       if ( lfnStatus not in ( 'Failed', 'Done' ) ) and source and target:
-        submitted[lfn] = self.fileDict[lfn]
         cksmStr = ""
         ## add chsmType:cksm only if cksmType is specified, else let FTS decide by itself
         if self.__cksmTest and self.__cksmType:
