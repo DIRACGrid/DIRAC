@@ -1,3 +1,8 @@
+[v6r6p17]
+
+*Transformation
+BUGFIX: TransformationAgent - corrected  __getDataReplicasRM()
+
 [v6r6p16]
 
 *DMS
