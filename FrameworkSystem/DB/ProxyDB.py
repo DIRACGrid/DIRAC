@@ -623,6 +623,7 @@ class ProxyDB( DB ):
     cmd = "INSERT INTO `ProxyDB_VOMSProxies` ( UserName, UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
     cmd += "( '%s', '%s', '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userName, userDN, userGroup,
                                                                                               vomsAttr, pemData, secsLeft )
+    cmd += "ON DUPLICATE KEY UPDATE Pem = '%s', ExpirationTime = TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )" % ( pemData, secsLeft )
     result = self._update( cmd, conn = connObj )
     if not result[ 'OK' ]:
       return result
