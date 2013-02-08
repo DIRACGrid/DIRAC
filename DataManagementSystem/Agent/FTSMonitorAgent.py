@@ -66,7 +66,7 @@ class FTSMonitorAgent( AgentModule ):
 
   def execute( self ):
     """ push jobs to the thread pool """
-    self.log.info( "Obtaining requests to monitor" )
+    self.log.debug( "Obtaining requests to monitor" )
     res = self.transferDB.getFTSReq()
     if not res["OK"]:
       self.log.error( "Failed to get FTS requests", res['Message'] )
@@ -79,7 +79,7 @@ class FTSMonitorAgent( AgentModule ):
     i = 1
     for ftsJob in ftsReqs:
       while True:
-        self.log.info("submitting FTS Job %s FTSReqID=%s to monitor" % ( i, ftsJob["FTSReqID"] ) )
+        self.log.debug("submitting FTS Job %s FTSReqID=%s to monitor" % ( i, ftsJob["FTSReqID"] ) )
         ret = self.threadPool.generateJobAndQueueIt( self.monitorTransfer, args = ( ftsJob, ), )
         if ret["OK"]:
           i += 1
@@ -154,7 +154,7 @@ class FTSMonitorAgent( AgentModule ):
 
     #########################################################################
     # Perform summary update of the FTS Request and update FTSReq entries.
-    log.info( "Perform summary update of the FTS Request" )
+    log.debug( "Perform summary update of the FTS Request" )
     infoStr = [ "glite-transfer-status -s %s -l %s" % ( ftsServer, ftsGUID ) ]
     infoStr.append( "FTS GUID:   %s" % ftsGUID  )
     infoStr.append( "FTS Server: %s" % ftsServer )
@@ -206,7 +206,6 @@ class FTSMonitorAgent( AgentModule ):
     log = gLogger.getSubLogger( "@%s" % ftsReqID )
 
     log.info( "FTS Request found to be terminal, updating file states" )
-    #########################################################################
     # Get the LFNS associated to the FTS request
     log.info( "Obtaining the LFNs associated to this request" )
     res = self.transferDB.getFTSReqLFNs( ftsReqID, channelID, sourceSE )
@@ -219,7 +218,7 @@ class FTSMonitorAgent( AgentModule ):
       return S_ERROR( "No files were found in the DB" )
 
     lfns = files.keys()
-    log.info( "Obtained %s files" % len( lfns ) )
+    log.debug( "Obtained %s files" % len( lfns ) )
     for lfn in lfns:
       oFTSRequest.setLFN( lfn )
 
@@ -290,7 +289,7 @@ class FTSMonitorAgent( AgentModule ):
         log.error( "Failed to perform the finalization for the FTS request", res["Message"] )
         return res
 
-      log.info( 'Adding logging event for FTS request' )
+      log.debug( 'Adding logging event for FTS request' )
       # Now set the FTSReq status to terminal so that it is not monitored again
       res = self.transferDB.addLoggingEvent( ftsReqID, 'Finished' )
       if not res['OK']:
@@ -301,7 +300,7 @@ class FTSMonitorAgent( AgentModule ):
       if not updateFileToCat["OK"]:
         log.error( updateFileToCat["Message"] )
 
-      log.info( "Updating FTS request status" )
+      log.debug( "Updating FTS request status" )
       res = self.transferDB.setFTSReqStatus( ftsReqID, 'Finished' )
       if not res['OK']:
         log.error( 'Failed update FTS Request status', res['Message'] )
@@ -328,7 +327,7 @@ class FTSMonitorAgent( AgentModule ):
       allUpdated = False
 
     for fileID in filesToFail:
-      log.info( "Updating the Channel table for files to reschedule" )
+      log.debug( "Updating the Channel table for files to reschedule" )
       res = self.transferDB.setFileChannelStatus( channelID, fileID, "Failed" )
       # should also update RequestDB.Files table!!!
       if not res["OK"]:

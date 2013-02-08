@@ -24,7 +24,6 @@ from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface, ReplicaManager
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-#from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
 ## RCSID
 __RCSID__ = "$Id$"
@@ -751,15 +750,16 @@ class FTSRequest(object):
     if not res['OK']:
       return res
     atTarget = []
-    for lfn in sortList( toResolve ):
-      if self.fileDict[lfn].get( 'Status' ) == 'Failed':
-        continue
-      replicas = self.catalogReplicas.get( lfn, {} )
-      if self.targetSE in replicas:
-        gLogger.warn("resolveTarget: skipping %s - file already at target %s" % ( lfn, self.targetSE ) )
-        self.__setFileParameter( lfn, 'Reason', "File already at Target" )
-        self.__setFileParameter( lfn, 'Status', 'Done' )
-        atTarget.append( lfn )
+    # overwrite is allowed by default
+    #for lfn in sortList( toResolve ):
+    #  if self.fileDict[lfn].get( 'Status' ) == 'Failed':
+    #    continue
+    #  replicas = self.catalogReplicas.get( lfn, {} )
+    #  if self.targetSE in replicas:
+    #    gLogger.warn("resolveTarget: skipping %s - file already at target %s" % ( lfn, self.targetSE ) )
+    #    self.__setFileParameter( lfn, 'Reason', "File already at Target" )
+    #    self.__setFileParameter( lfn, 'Status', 'Done' )
+    #    atTarget.append( lfn )
     for lfn in toResolve:
       if ( self.fileDict[lfn].get( 'Status' ) == 'Failed' ) or ( lfn in atTarget ):
         continue
@@ -843,7 +843,6 @@ class FTSRequest(object):
       source = self.fileDict[lfn].get( 'Source' )
       target = self.fileDict[lfn].get( 'Target' )
       if ( lfnStatus not in ( 'Failed', 'Done' ) ) and source and target:
-        submitted[lfn] = self.fileDict[lfn]
         cksmStr = ""
         ## add chsmType:cksm only if cksmType is specified, else let FTS decide by itself
         if self.__cksmTest and self.__cksmType:
