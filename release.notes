@@ -1,3 +1,17 @@
+[v6r7]
+
+[v6r6p18]
+
+*Transformation
+CHANGE: /DIRAC/VOPolicy/OutputDataModule option moved to <Operations>/Transformations/OutputDataModule
+
+*Resources
+FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the payload 
+     when updating it
+
+*WMS
+BUGFIX: JobSanity - fixed misspelled method call SetParam -> SetParameter
+
 [v6r6p17]
 
 *Transformation
