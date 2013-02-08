@@ -1,8 +1,22 @@
 [v6r7p3]
 
+*DMS
+FIX: FTSMonitorAgent - logging less verbose
+
 *Transformation
 FIX: TransformationAgent - use the new CS defaults locations
 FIX: Proper agent initialization
+NEW: TransformationPlaugin - in Broadcast plugin added file groupings by number of files, 
+     make the TargetSE always defined, even if the SourceSE list contains it 
+
+*ResourceStatus
+FIX: Added the shifter's proxy to several agents
+
+*RMS
+FIX: RequestContainer - the execution order was not properly set for the single files 
+
+*Framework:
+BUGFIX: ProxyManagerClient - proxy time can not be shorter than what was requested
 
 [v6r7p2]
 
