@@ -105,7 +105,10 @@ class TransformationPlugin( object ):
     if destinations and ( destinations >= len(targetSEs) ):
       destinations = 0
 
-    fileGroups = self._getFileGroups( self.data )
+    status = self.params['Status']
+    groupSize = self.params['GroupSize']#Number of files per tasks
+
+    fileGroups = self._getFileGroups( self.data )#groups by SE
     targetSELfns = {}
     for replicaSE, lfns in fileGroups.items():
       ses = replicaSE.split( ',' )
@@ -125,15 +128,19 @@ class TransformationPlugin( object ):
           if not site in sources:
             if ( destinations ) and ( len( targets ) >= destinations ):
               continue
-            targets.append( targetSE )
             sources.append( site )
+          targets.append( targetSE )#after all, if someone wants to copy to the source, it's his choice
         strTargetSEs = str.join( ',', sortList( targets ) )
         if not targetSELfns.has_key( strTargetSEs ):
           targetSELfns[strTargetSEs] = []
         targetSELfns[strTargetSEs].append( lfn )
     tasks = []
     for ses, lfns in targetSELfns.items():
-      tasks.append( ( ses, lfns ) )
+      tasksLfns = breakListIntoChunks(lfns, groupSize)
+      for taskLfns in tasksLfns:
+        if ( status == 'Flush' ) or ( len( taskLfns ) >= int( groupSize ) ):
+          #do not allow groups smaller than the groupSize, except if transformation is in flush state
+          tasks.append( ( ses, taskLfns ) )
     return S_OK( tasks )
 
   def _ByShare( self, shareType = 'CPU' ):
