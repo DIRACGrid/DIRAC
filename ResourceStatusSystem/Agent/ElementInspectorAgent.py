@@ -44,9 +44,11 @@ class ElementInspectorAgent( AgentModule ):
   # queue size limit to stop feeding
   __limitQueueFeeder = 15
   
-  def __init__( self, agentName, loadName, baseAgentName = False, properties = {} ):
+  def __init__( self, *args, **kwargs ):
+    ''' c'tor
+    '''
     
-    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties ) 
+    AgentModule.__init__( self, *args, **kwargs )
 
     # members initialization
 
@@ -61,7 +63,12 @@ class ElementInspectorAgent( AgentModule ):
     self.clients             = {}
 
   def initialize( self ):
+    ''' Standard initialize.
+        Uses the ProductionManager shifterProxy to modify the ResourceStatus DB
+    '''
     
+    self.am_setOption( 'shifterProxy', 'ProductionManager' )
+
     self.maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', self.maxNumberOfThreads )   
     self.elementType        = self.am_getOption( 'elementType',        self.elementType )
     self.checkingFreqs      = self.am_getOption( 'checkingFreqs',      self.checkingFreqs )
