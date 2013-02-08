@@ -235,11 +235,12 @@ class RequestContainer:
 
     for subReqTypes in self.subRequests:
       for operationDict in self.subRequests[subReqTypes]:
-        if fileIn is None:  #gets the last in total
+        if fileIn is None:  # gets the last in total
           execOrdersSoFar.append( operationDict['Attributes']['ExecutionOrder'] )
         else:
-          if fileIn == operationDict['Files']:
-            execOrdersSoFar.append( operationDict['Attributes']['ExecutionOrder'] )
+          for fileDict in operationDict['Files']:
+            if fileIn == fileDict['LFN']:
+              execOrdersSoFar.append( operationDict['Attributes']['ExecutionOrder'] )
 
     try:
       last = max( execOrdersSoFar )
@@ -679,16 +680,16 @@ class RequestContainer:
 
 
   def __listToXML_new( self, xmldoc, tagName, aList ):
-    ## create 
+    # # create
     tag = xmldoc.createElement( tagName )
     tag.setAttribute( "element_type", "list" )
     encodedStringTag = xmldoc.createElement( "EncodedString" )
     encodedStringTag.setAttribute( "element_type", "leaf" )
     encodedStringCDATA = xmldoc.createCDATASection( DEncode.encode( aList ) )
-    ## appending 
+    # # appending
     encodedStringTag.appendChild( encodedStringCDATA )
     tag.appendChild( encodedStringTag )
-    ## returning 
+    # # returning
     return tag
 
   def __dictToXML( self, xmldoc, tagName, aDict ):
@@ -700,23 +701,23 @@ class RequestContainer:
       elif type( value ) == ListType:
         tag.appendChild( self.__listToXML_new( xmldoc, key, value ) )
       else:
-        ## creating
+        # # creating
         childTag = xmldoc.createElement( str( key ) )
         childTag.setAttribute( "element_type", "leaf" )
         childText = xmldoc.createCDATASection( str( value ) )
-        ## appending
+        # # appending
         childTag.appendChild( childText )
         tag.appendChild( childTag )
     return tag
 
   def toXML_new( self, desiredType = None ):
-    ## create new doc
+    # # create new doc
     xmlDoc = xml.dom.minidom.Document()
-    ## <DIRAC_REQUEST />
+    # # <DIRAC_REQUEST />
     requestTag = xmlDoc.createElement( "DIRAC_REQUEST" )
-    ## <Header/> 
+    # # <Header/>
     headerTag = xmlDoc.createElement( "Header" )
-    ## <Header> attrs 
+    # # <Header> attrs
     for attrName, attrValue in self.attributes.items():
       headerTag.setAttribute( str( attrName ), str( attrValue ) )
     requestTag.appendChild( headerTag )
@@ -730,7 +731,7 @@ class RequestContainer:
 
     for requestType in requestTypes:
       for i in range( self.getNumSubRequests( requestType )['Value'] ):
-        ## <REQUESTTYPE_SUBREQUEST />
+        # # <REQUESTTYPE_SUBREQUEST />
         requestTag.appendChild ( self.__dictToXML( xmlDoc,
                                                    "%s_SUBREQUEST" % requestType.upper(),
                                                    self.subRequests[requestType][i] ) )

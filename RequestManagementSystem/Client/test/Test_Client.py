@@ -12,6 +12,58 @@ class reqContainerTestCase( unittest.TestCase ):
       os.remove( 'testRequest.xml' )
     except OSError:
       pass
+    
+class testBasic(reqContainerTestCase):
+  
+  def test__getLastOrder(self):
+    # no files
+    req = RequestContainer()
+    res = req._getLastOrder()
+    self.assertEqual( res, 0 )
+
+    self.assertEqual( req.subRequests, {} )
+
+    req.addSubRequest( {'Attributes':{'Operation':'replicateAndRegister',
+                                      'TargetSE':'SE', 'ExecutionOrder': 0}},
+                      'transfer' )
+    res = req._getLastOrder()
+    self.assertEqual( res, 0 )
+
+    req.addSubRequest( {'Attributes':{'Operation':'replicateAndRegister',
+                                      'TargetSE':'SE', 'ExecutionOrder': 1}},
+                      'transfer' )
+    res = req._getLastOrder()
+    self.assertEqual( res, 1 )
+
+    del( req )
+
+    # with files
+    req = RequestContainer()
+    res = req._getLastOrder( 'foo' )
+    self.assertEqual( res, 0 )
+
+    req.addSubRequest( {'Attributes':{'Operation':'replicateAndRegister',
+                                      'TargetSE':'SE', 'ExecutionOrder': 1}},
+                      'transfer' )
+    res = req._getLastOrder( 'foo' )
+    self.assertEqual( res, 0 )
+
+    req.setSubRequestFiles( 0, 'transfer', [{'LFN':'foo', 'Status':'Waiting'}] )
+    res = req._getLastOrder( 'foo' )
+    self.assertEqual( res, 1 )
+
+
+    req.addSubRequest( {'Attributes':{'Operation':'replicateAndRegister',
+                                      'TargetSE':'SE', 'ExecutionOrder': 2}},
+                      'removal' )
+    res = req._getLastOrder( 'foo' )
+    self.assertEqual( res, 1 )
+
+    req.setSubRequestFiles( 0, 'removal', [{'LFN':'foo', 'Status':'Waiting'}] )
+    res = req._getLastOrder( 'foo' )
+    self.assertEqual( res, 2 )
+
+
 
 class GetSetTestCase( reqContainerTestCase ):
 
