@@ -395,6 +395,20 @@ class FileCatalogHandler(RequestHandler):
     """
     return gFileCatalogDB.fmeta.findFilesByMetadata( metaDict, path, self.getRemoteCredentials() )
   
+  types_findFilesByMetadataDetailed = [ DictType, StringTypes ]
+  def export_findFilesByMetadataDetailed( self, metaDict, path='/' ):
+    """ Find all the files satisfying the given metadata set
+    """
+    result = gFileCatalogDB.fmeta.findFilesByMetadata( metaDict, path, self.getRemoteCredentials() )
+    if not result['OK'] or not result['Value']:
+      return result
+
+    lfns = []
+    for dir in result['Value']:
+      for fname in result['Value'][dir]:
+        lfns.append( os.path.join( dir, fname) )
+    return gFileCatalogDB.getFileDetails( lfns, self.getRemoteCredentials() )
+  
   types_getCompatibleMetadata = [ DictType ]
   def export_getCompatibleMetadata( self, metaDict ):
     """ Get metadata values compatible with the given metadata subset

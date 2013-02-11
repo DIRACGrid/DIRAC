@@ -137,6 +137,28 @@ class FileManager(FileManagerBase):
       files[filesDict[fileID]].update(rowDict)
     return S_OK(files)
 
+  def _getFileMetadataByID( self, fileIDs, connection=False ):
+    """ Get standard file metadata for a list of files specified by FileID
+    """
+    stringIDs = ','.join( [ '%s' % id for id in fileIDs ] )
+    req = "SELECT FileID,Size,UID,GID,Status FROM FC_Files WHERE FileID in ( %s )" % stringIDs
+    result = self.db._query(req,connection)
+    if not result['OK']:
+      return result
+    resultDict = {}
+    for fileID, size, uid, gid, status in result['Value']:
+      resultDict[fileID] = { "Size": int(size), "UID": int(uid), "GID": int(gid), "Status": status }
+      
+    req = "SELECT FileID,GUID,CreationDate from FC_FileInfo WHERE FileID in ( %s )" % stringIDs  
+    result = self.db._query(req,connection)
+    if not result['OK']:
+      return result
+    for fileID, guid, date in result['Value']:
+      resultDict.setdefault( fileID, {} )
+      resultDict[fileID].update( { "GUID": guid, "CreationDate": date } )
+      
+    return S_OK( resultDict )  
+
   ######################################################
   #
   # _addFiles related methods
