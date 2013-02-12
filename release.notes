@@ -1,5 +1,10 @@
 [v6r7]
 
+[v6r6p19]
+
+*DMS
+BUGFIX: All DMS agents  - set up agent name in the initialization
+
 [v6r6p18]
 
 *Transformation
