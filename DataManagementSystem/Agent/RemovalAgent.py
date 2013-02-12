@@ -48,6 +48,9 @@ class RemovalAgent( RequestAgentBase ):
     self.setRequestType( "removal" )
     self.setRequestTask( RemovalTask )
     RequestAgentBase.__init__( self, *args, **kwargs )
+
+    agentName = args[0]
+
     # gMonitor stuff goes here
     self.monitor.registerActivity( "PhysicalRemovalAtt", "Physical removals attempted",
                                    "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
