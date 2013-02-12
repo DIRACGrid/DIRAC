@@ -77,7 +77,9 @@ class Watchdog( object ):
     """ watchdog thread target """
     while True:
       if time.time() < self.end:
-        time.sleep(5)
+        time.sleep(1)
+        if not self.__executor.is_alive():
+          return 
       else:
         break
     if not self.__executor.is_alive():
@@ -94,7 +96,7 @@ class Watchdog( object ):
     ret = { "OK" : True, "Value" : "" }
     if timeout:
       self.start = int( time.time() )
-      self.end = self.start + timeout
+      self.end = self.start + timeout + 2
       self.__watchdogThread = threading.Thread( target = self.watchdog )
       self.__watchdogThread.daemon = True
       self.__watchdogThread.start()

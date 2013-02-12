@@ -202,10 +202,10 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     if token:
       retVal = rpcClient.getProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
-                                   long( cacheTime ), token )
+                                   long( cacheTime + requiredTimeLeft ), token )
     else:
       retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
-                                   long( cacheTime ) )
+                                   long( cacheTime + requiredTimeLeft ) )
     if not retVal[ 'OK' ]:
       return retVal
     chain = X509Chain( keyObj = req.getPKey() )
@@ -248,11 +248,11 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     if token:
       retVal = rpcClient.getVOMSProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
-                                                long( cacheTime ), token, requiredVOMSAttribute )
+                                                long( cacheTime + requiredTimeLeft ), token, requiredVOMSAttribute )
 
     else:
       retVal = rpcClient.getVOMSProxy( userDN, userGroup, req.dumpRequest()['Value'],
-                                       long( cacheTime ), requiredVOMSAttribute )
+                                       long( cacheTime + requiredTimeLeft ), requiredVOMSAttribute )
     if not retVal[ 'OK' ]:
       return retVal
     chain = X509Chain( keyObj = req.getPKey() )
