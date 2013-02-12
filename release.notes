@@ -1,3 +1,12 @@
+[v6r7p4]
+
+*RSS
+FIX: removed obsoleted methods
+
+*DMS
+NEW: FileCatalog - added findFilesByMetadataDetailed - provides detailed metadata for 
+     selected files
+
 [v6r7p3]
 
 *DMS
