@@ -40,8 +40,32 @@ POLICIESMETA = {
       'module'      : 'AlwaysActivePolicy',
       'command'     : None,
       'args'        : None
+    },
+
+  'AlwaysDegraded' :
+    {
+      'description' : "A Policy that always returns Degraded",
+      'module'      : 'AlwaysDegradedPolicy',
+      'command'     : None,
+      'args'        : None
+    },
+                
+  'AlwaysProbing' :
+    {
+      'description' : "A Policy that always returns Probing",
+      'module'      : 'AlwaysProbingPolicy',
+      'command'     : None,
+      'args'        : None
+    },                
+
+  'AlwaysBanned' :
+    {
+      'description' : "A Policy that always returns Banned",
+      'module'      : 'AlwaysBannedPolicy',
+      'command'     : None,
+      'args'        : None
     }
-            
+                      
   }
 
 ################################################################################
