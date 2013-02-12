@@ -1,5 +1,5 @@
 # $HeadURL:  $
-''' AlwaysActivePolicy module 
+''' AlwaysBannedPolicy module 
 '''
 
 from DIRAC                                              import S_OK
@@ -7,22 +7,22 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
 __RCSID__ = '$Id:  $'
 
-class AlwaysActivePolicy( PolicyBase ):
+class AlwaysBannedPolicy( PolicyBase ):
   '''
-    The AlwaysActivePolicy is a dummy module that can be used as example, it 
-    always returns Active status.   
+    The AlwaysBannedPolicy is a dummy module that can be used as example, it 
+    always returns Banned status.   
   '''
 
   @staticmethod
   def _evaluate( commandResult ):
     '''
-      It returns Active status, evaluates the default command, but its output
+      It returns Banned status, evaluates the default command, but its output
       is completely ignored.
     '''
 
     policyResult = { 
-                     'Status' : 'Active', 
-                     'Reason' : 'This is the AlwaysActive policy' 
+                     'Status' : 'Banned', 
+                     'Reason' : 'This is the AlwaysBanned policy' 
                    }
     
     return S_OK( policyResult )
