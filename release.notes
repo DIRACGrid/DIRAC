@@ -119,6 +119,34 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 FIX: Dirac.py - CS option Scratchdir was in LocalSite/LocalSite
 FIX: Dirac.py - do not define default catalog, use FileCatalog utility instead
 
+[v6r6p19]
+
+*DMS
+BUGFIX: All DMS agents  - set up agent name in the initialization
+
+[v6r6p18]
+
+*Transformation
+CHANGE: /DIRAC/VOPolicy/OutputDataModule option moved to <Operations>/Transformations/OutputDataModule
+
+*Resources
+FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the payload 
+     when updating it
+
+*WMS
+BUGFIX: JobSanity - fixed misspelled method call SetParam -> SetParameter
+
+[v6r6p17]
+
+*Transformation
+BUGFIX: TransformationAgent - corrected  __getDataReplicasRM()
+
+[v6r6p16]
+
+*DMS
+FIX: Agents - proper __init__ implementation with arguments passing to the super class
+FIX: LcgFileCatalogClient - in removeReplica() reload PFN in case it has changed
+
 [v6r6p15]
 
 *Framework

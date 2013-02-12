@@ -40,14 +40,17 @@ class RemovalAgent( RequestAgentBase ):
     shifterProxy = DataManager
   """
 
-  def __init__( self, agentName, loadName, baseAgentName = False, properties = dict() ):
+  def __init__( self, *args, **kwargs ):
     """ agent initialisation
  
     :param self: self reference
     """
     self.setRequestType( "removal" )
     self.setRequestTask( RemovalTask )
-    RequestAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
+    RequestAgentBase.__init__( self, *args, **kwargs )
+
+    agentName = args[0]
+
     # gMonitor stuff goes here
     self.monitor.registerActivity( "PhysicalRemovalAtt", "Physical removals attempted",
                                    "RemovalAgent", "Removal/min", gMonitor.OP_SUM )

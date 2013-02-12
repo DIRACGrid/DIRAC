@@ -406,7 +406,9 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       return res
     replicas = res['Value']
     # Prepare a dictionary for all LFNs
-    dataReplicas = dict.fromkeys( lfns, [] )
+    dataReplicas = {}
+    for lfn in lfns:
+      dataReplicas[lfn] = []
     self._logInfo( "Replica results for %d files obtained in %.2f seconds" % ( len( lfns ), time.time() - startTime ),
                     method = method, transID = transID )
     #If files are neither Successful nor Failed, they are set problematic in the FC

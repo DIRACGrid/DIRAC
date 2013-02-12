@@ -70,7 +70,7 @@ class RequestAgentBase( AgentModule ):
   ## read request holder 
   __requestHolder = dict()
 
-  def __init__( self, agentName, loadName, baseAgentName=False, properties=dict() ):
+  def __init__( self, *args, **kwargs ):
     """ c'tor
 
     :param self: self reference
@@ -79,7 +79,10 @@ class RequestAgentBase( AgentModule ):
     :param bool baseAgentName: whatever  
     :param dict properties: whatever else
     """
-    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
+    
+    AgentModule.__init__( self, *args, **kwargs )
+
+    agentName = args[0]
 
     ## save config path
     self.__configPath = PathFinder.getAgentSection( agentName )
