@@ -451,6 +451,35 @@ class FileCatalogDB(DB):
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )     
+  
+  def getFileDetails( self, lfnList, credDict ):
+    """ Get all the metadata for the given files
+    """  
+    connection = False
+    result = self.fileManager._findFiles( lfnList, connection=connection )
+    if not result['OK']:
+      return result
+    resultDict = {}
+    fileIDDict = {}
+    lfnDict = result['Value']['Successful']
+    for lfn in lfnDict:
+      fileIDDict[lfnDict[lfn]['FileID']] = lfn
+      
+    result = self.fileManager._getFileMetadataByID( fileIDDict.keys(), connection=connection )
+    if not result['OK']:
+      return result
+    for fileID in result['Value']:
+      resultDict[ fileIDDict[fileID] ] = result['Value'][fileID]
+      
+    result = self.fmeta._getFileUserMetadataByID( fileIDDict.keys(), credDict, connection=connection )
+    if not result['OK']:
+      return result
+    for fileID in fileIDDict:
+      resultDict[ fileIDDict[fileID] ].setdefault( 'Metadata', {} )
+      if fileID in result['Value']:
+        resultDict[ fileIDDict[fileID] ]['Metadata'] = result['Value'][fileID]    
+      
+    return S_OK(resultDict) 
 
   ########################################################################
   #
@@ -674,4 +703,4 @@ class FileCatalogDB(DB):
       else:  
         successful[lfn] = lfns[lfn]
     return S_OK( {'Successful':successful,'Failed':failed} )
-  
+ 
