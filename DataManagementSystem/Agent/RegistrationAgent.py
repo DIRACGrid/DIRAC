@@ -46,6 +46,7 @@ class RegistrationAgent( RequestAgentBase ):
     self.setRequestType( "register" )
     self.setRequestTask( RegistrationTask )
     RequestAgentBase.__init__( self, *args, **kwargs )
+    agentName = args[0]
     self.log.info("%s has been constructed" % agentName  )
     
   

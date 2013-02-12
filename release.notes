@@ -139,6 +139,11 @@ CHANGE: Transformation types definition are moved to the Operations CS section
 FIX: Dirac.py - CS option Scratchdir was in LocalSite/LocalSite
 FIX: Dirac.py - do not define default catalog, use FileCatalog utility instead
 
+[v6r6p19]
+
+*DMS
+BUGFIX: All DMS agents  - set up agent name in the initialization
+
 [v6r6p18]
 
 *Transformation
