@@ -40,7 +40,7 @@ POLICIESMETA = {
       'module'      : 'AlwaysActivePolicy',
       'command'     : None,
       'args'        : None
-    }
+    },
 
   'AlwaysDegraded' :
     {
@@ -48,7 +48,7 @@ POLICIESMETA = {
       'module'      : 'AlwaysDegradedPolicy',
       'command'     : None,
       'args'        : None
-    }
+    },
                 
   'AlwaysProbing' :
     {
@@ -56,7 +56,7 @@ POLICIESMETA = {
       'module'      : 'AlwaysProbingPolicy',
       'command'     : None,
       'args'        : None
-    }                
+    },                
 
   'AlwaysBanned' :
     {
