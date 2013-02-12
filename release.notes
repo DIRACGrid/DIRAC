@@ -1,5 +1,11 @@
 [v6r7p4]
 
+*Core
+FIX: Subprocess - avoid that watchdog kills the executor process before it returns itself
+
+*Framework
+BUGFIX: ProxuManagerClient - wrong time for caching proxies
+
 *RSS
 FIX: removed obsoleted methods
 
