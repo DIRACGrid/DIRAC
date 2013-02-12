@@ -82,6 +82,8 @@ class RequestAgentBase( AgentModule ):
     
     AgentModule.__init__( self, *args, **kwargs )
 
+    agentName = args[0]
+
     ## save config path
     self.__configPath = PathFinder.getAgentSection( agentName )
     self.log.info( "Will use %s config path" % self.__configPath )

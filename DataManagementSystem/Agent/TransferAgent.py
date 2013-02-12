@@ -139,6 +139,7 @@ class TransferAgent( RequestAgentBase ):
     self.setRequestType( "transfer" )
     self.setRequestTask( TransferTask )
     RequestAgentBase.__init__( self, *args, **kwargs )
+    agentName = args[0]
 
     ## gMonitor stuff
     self.monitor.registerActivity( "Replicate and register", "Replicate and register operations", 
