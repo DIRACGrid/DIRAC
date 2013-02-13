@@ -246,7 +246,7 @@ class TransferDB( DB ):
     req = req % ( maxJobsPerChannel, strChannelIDs )
     res = self._query( req )
     if not res['OK']:
-      err = 'TransferDB._selectChannelsForSubmission: Failed to count FTSJobs on Channels %s.' % strChannelIDs
+      err = 'TransferDB.selectChannelsForSubmission: Failed to count FTSJobs on Channels %s.' % strChannelIDs
       return S_ERROR( err )
 
     channelJobs = {}
@@ -291,8 +291,6 @@ class TransferDB( DB ):
     strChannelIDs = intListToString( candidateChannels.keys() )
     req = "SELECT ChannelID,%s-SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;"
     req = req % ( maxJobsPerChannel, strChannelIDs )
-    #req = "SELECT ChannelID,SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" 
-    #req = req % strChannelIDs
     res = self._query( req )
     if not res['OK']:
       err = 'TransferDB._selectChannelForSubmission: Failed to count FTSJobs on Channels %s.' % strChannelIDs
@@ -300,9 +298,6 @@ class TransferDB( DB ):
 
     ## c'tor using a tuple of pairs ;)
     withJobs = dict( res["Value"] )
-    # withJobs = {}
-    #for channelID, numberOfJobs in res['Value']:
-    #  withJobs[channelID] = numberOfJobs
 
     minJobs = maxJobsPerChannel
     maxFiles = 0
@@ -324,7 +319,6 @@ class TransferDB( DB ):
     if not possibleChannels:
       return S_OK()
 
-    #resDict = {}
     selectedChannel = random.choice( possibleChannels ) # randomize(possibleChannels)[0]
     resDict = channels[selectedChannel]
     resDict['ChannelID'] = selectedChannel
@@ -353,10 +347,10 @@ class TransferDB( DB ):
     """
     res = self.checkFileChannelExists( channelID, fileID )
     if not res['OK']:
-      err = 'TransferDB._addFileToChannel: Failed check existance of File %s on Channel %s.' % ( fileID, channelID )
+      err = 'TransferDB.addFileToChannel: Failed check existance of File %s on Channel %s.' % ( fileID, channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     if res['Value']:
-      err = 'TransferDB._addFileToChannel: File %s already exists on Channel %s.' % ( fileID, channelID )
+      err = 'TransferDB.addFileToChannel: File %s already exists on Channel %s.' % ( fileID, channelID )
       return S_ERROR( err )
     time_order = self.__getFineTime()
     values = "%s,%s,'%s','%s','%s','%s',UTC_TIMESTAMP(),%s,UTC_TIMESTAMP(),%s,%s,'%s'" % ( channelID, fileID,
@@ -374,7 +368,7 @@ class TransferDB( DB ):
     req = "INSERT INTO Channel (%s) VALUES (%s);" % ( columns, values )
     res = self._update( req )
     if not res['OK']:
-      err = 'TransferDB._addFileToChannel: Failed to insert File %s to Channel %s.' % ( fileID, channelID )
+      err = 'TransferDB.addFileToChannel: Failed to insert File %s to Channel %s.' % ( fileID, channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
 
@@ -389,7 +383,7 @@ class TransferDB( DB ):
     req = "SELECT FileID FROM Channel WHERE ChannelID = %s and FileID = %s;" % ( channelID, fileID )
     res = self._query( req )
     if not res['OK']:
-      err = 'TransferDB._checkFileChannelExists: Failed to check existance of File %s on Channel %s.' % ( fileID,
+      err = 'TransferDB.checkFileChannelExists: Failed to check existance of File %s on Channel %s.' % ( fileID,
                                                                                                           channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     if res['Value']:
@@ -411,7 +405,7 @@ class TransferDB( DB ):
                                                                               channelID )
     res = self._update( req )
     if not res['OK']:
-      err = 'TransferDB._setChannelFilesExecuting: Failed to set file executing.'
+      err = 'TransferDB.setChannelFilesExecuting: Failed to set file executing.'
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
 
@@ -453,6 +447,38 @@ class TransferDB( DB ):
         return res
     return res
 
+  def setFileToReschedule( self, fileID ):
+    """ allow reschedule for file
+
+    :param int fileID: Files.FileID
+    """
+    req = "SELECT `Attempt` FROM `Files` WHERE FileID = %s;" % fileID
+    res = self._update( req )
+    if not res["OK"]:
+      gLogger.error("setFileToReschedule: %s" % res["Message"] )
+      return res
+    res = res["Value"]
+    if res["Value"][0][0] > self.maxAttempt:
+      return S_OK("max reschedule attempt reached")
+
+    req = "DELETE FROM `Channel` WHERE `FileID` = %s;" % fileID 
+    res = self._update( req )
+    if not res["OK"]:
+      gLogger.error("setFileToReschedule: %s" % res["Message"] )
+      return res
+    req = "DELETE FROM `ReplicationTree` WHERE FileID =%s;" % fileID
+    res = self._update( req )
+    if not res["OK"]:
+      gLogger.error("setFileToReschedule: %s" % res["Message"] )
+      return res
+    req = "UPDATE `Files` SET `Status`='Waiting',`Attempt`=`Attempt`+1 WHERE `Status` = 'Scheduled' AND  `FileID` = %s;" % fileID
+    res = self._update( req )
+    if not res["OK"]:
+      gLogger.error("setFileToReschedule: %s" % res["Message"] )
+      return res
+    return S_OK()
+    
+
   def removeFileFromChannel( self, channelID, fileID ):
     """ remove single file from Channel given FileID and ChannelID
 
@@ -460,7 +486,6 @@ class TransferDB( DB ):
     :param int channelID: Channel.ChannelID
     :param int FileID: Files.FileID
     """
-
     req = "DELETE FROM Channel WHERE ChannelID = %s and FileID = %s;" % ( channelID, fileID )
     res = self._update( req )
     if not res['OK']:
@@ -493,13 +518,13 @@ class TransferDB( DB ):
       res = self._update( req )
       if not res['OK']:
         return res
-    req = "UPDATE Channel SET Status = 'Done',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder=%s" \
-        ",CompletionTime=UTC_TIMESTAMP() WHERE FileID IN (%s) AND ChannelID = %s;" % ( time_order,
-                                                                                       strFileIDs,
-                                                                                       channelID )
+      req = "UPDATE Channel SET Status = 'Done',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder=%s" \
+          ",CompletionTime=UTC_TIMESTAMP() WHERE FileID IN (%s) AND ChannelID = %s;" % ( time_order,
+                                                                                         strFileIDs,
+                                                                                         channelID )
     res = self._update( req )
     if not res['OK']:
-      err = 'TransferDB._updateCompletedChannelStatus: Failed to update %s files from Channel %s.' % ( len( fileIDs ),
+      err = 'TransferDB.updateCompletedChannelStatus: Failed to update %s files from Channel %s.' % ( len( fileIDs ),
                                                                                                        channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
@@ -518,8 +543,8 @@ class TransferDB( DB ):
                                                                          channelID )
     res = self._update( req )
     if not res['OK']:
-      err = 'TransferDB._resetFileChannelStatus: Failed to reset %s files from Channel %s.' % ( len( fileIDs ),
-                                                                                                channelID )
+      err = 'TransferDB.resetFileChannelStatus: Failed to reset %s files from Channel %s.' % ( len( fileIDs ),
+                                                                                               channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
 
@@ -534,12 +559,12 @@ class TransferDB( DB ):
     req = "SELECT %s from Channel WHERE ChannelID = %s and FileID = %s;" % ( attribute, channelID, fileID )
     res = self._query( req )
     if not res['OK']:
-      err = "TransferDB._getFileChannelAttribute: Failed to get %s for File %s on Channel %s." % ( attribute,
-                                                                                                   fileID,
-                                                                                                   channelID )
+      err = "TransferDB.getFileChannelAttribute: Failed to get %s for File %s on Channel %s." % ( attribute,
+                                                                                                  fileID,
+                                                                                                  channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     if not res['Value']:
-      err = "TransferDB._getFileChannelAttribute: File %s doesn't exist on Channel %s." % ( fileID, channelID )
+      err = "TransferDB.getFileChannelAttribute: File %s doesn't exist on Channel %s." % ( fileID, channelID )
       return S_ERROR( err )
     attrValue = res['Value'][0][0]
     return S_OK( attrValue )
@@ -547,7 +572,6 @@ class TransferDB( DB ):
   def setFileChannelStatus( self, channelID, fileID, status ):
     """ set Channel.Status to :status:, if :status: is 'Failed', it will also set
     Files.Status to it
-
 
     :param self: self reference
     :param int channelID: Channel.ChannelID
@@ -653,6 +677,10 @@ class TransferDB( DB ):
 
 
   def getCompletedChannels( self, limit = 100 ):
+    """ get list of completed channels
+
+    :param int limit: select limit
+    """
     query = "SELECT DISTINCT FileID FROM Channel where Status = 'Done' AND FileID NOT IN ( SELECT FileID from Files ) LIMIT %s;" % limit
     return self._query( query )
 
@@ -1281,7 +1309,6 @@ class TransferDB( DB ):
       err = "TransferDB.getSites: Failed to get channel DestinationSite: %s" % res['Message']
       return S_ERROR( err )
     destSites = [ record[0] for record in res["Value"] ]
-
     return S_OK( { 'SourceSites' : sourceSites, 'DestinationSites' : destSites } )
 
 
