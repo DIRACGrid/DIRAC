@@ -1,3 +1,8 @@
+[v6r7p5]
+
+*Interfaces
+BUGFIX: dirac-wms-job-get-output - properly treat the case when output directory is not specified 
+
 [v6r7p4]
 
 *Core
