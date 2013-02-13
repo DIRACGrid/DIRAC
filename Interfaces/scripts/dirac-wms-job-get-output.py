@@ -34,7 +34,7 @@ dirac = Dirac()
 exitCode = 0
 errorList = []
 
-outputDir = None
+outputDir = '.'
 group = None
 jobs = []
 for sw, value in Script.getUnprocessedSwitches():
@@ -66,10 +66,12 @@ for sw, value in Script.getUnprocessedSwitches():
       jobs += result['Value']      
 
 for arg in args:
-  if os.path.exists(arg):
+  if os.path.isfile(arg):
     jFile = open(arg)
     jobs += jFile.read().split()
     jFile.close()
+  elif os.path.isdir(arg):  
+    print "Output for job %s already retrieved, remove the output directory to redownload" % arg
   else:
     jobs.append(arg)
 
@@ -83,8 +85,11 @@ if group:
   else:
     outputDir = group  
 
-if outputDir and not os.path.exists(outputDir):
-  os.makedirs( outputDir)
+if outputDir: 
+  if not os.path.exists(outputDir):
+    os.makedirs( outputDir)
+else:
+  outputDir = os.getcwd()    
 
 jobs = [ str(job) for job in jobs ]
 doneJobs = os.listdir( outputDir )
