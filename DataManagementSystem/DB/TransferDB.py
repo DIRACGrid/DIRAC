@@ -50,6 +50,8 @@ class TransferDB( DB ):
     """
     DB.__init__( self, "TransferDB", "RequestManagement/RequestDB", maxQueueSize )
     self.getIdLock = threading.Lock()
+    ## max attmprt for reschedule
+    self.maxAttempt = 100
 
   def __getFineTime( self ):
     """ 
