@@ -83,7 +83,7 @@ if group:
   else:
     outputDir = group  
 
-if not os.path.exists(outputDir):
+if outputDir and not os.path.exists(outputDir):
   os.makedirs( outputDir)
 
 jobs = [ str(job) for job in jobs ]
