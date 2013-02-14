@@ -129,11 +129,11 @@ class ElementInspectorAgent( AgentModule ):
         
         # We add lowerElementDict to the queue
         self.elementsToBeChecked.put( lowerElementDict )
-        self.log.info( '%s # "%s" # "%s" # %s # %s' % ( elemDict[ 'Name' ], 
-                                                        elemDict[ 'ElementType' ],
-                                                        elemDict[ 'StatusType' ],
-                                                        elemDict[ 'Status' ],
-                                                        elemDict[ 'LastCheckTime' ]) )
+        self.log.verbose( '%s # "%s" # "%s" # %s # %s' % ( elemDict[ 'Name' ], 
+                                                           elemDict[ 'ElementType' ],
+                                                           elemDict[ 'StatusType' ],
+                                                           elemDict[ 'Status' ],
+                                                           elemDict[ 'LastCheckTime' ]) )
        
     # Measure size of the queue, more or less, to know how many threads should
     # we start !
