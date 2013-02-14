@@ -15,12 +15,11 @@ class SMSAction( BaseAction ):
     him run to his or her office.
   '''
   
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
+  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, 
+                clients = None ):
     
-    super( SMSAction, self ).__init__( decissionParams, enforcementResult, 
+    super( SMSAction, self ).__init__( name, decissionParams, enforcementResult, 
                                        singlePolicyResults, clients )
-    self.actionName = 'SMSAction'
-    
   def run( self ):
     '''
       Checks it has the parameters it needs and tries to send an sms to the users

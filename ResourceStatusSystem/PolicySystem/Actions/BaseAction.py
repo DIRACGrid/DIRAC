@@ -14,7 +14,7 @@ class BaseAction( object ):
     Base class for all actions. It defines a constructor an a run main method.
   '''
   
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients ):
+  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, clients ):
 
     # enforcementResult supposed to look like:
     # { 
@@ -35,7 +35,7 @@ class BaseAction( object ):
     #   'tokenOwner'  : None
     # }
 
-    self.actionName          = 'BaseAction'
+    self.actionName          = name # 'BaseAction'
     self.decissionParams     = decissionParams
     self.enforcementResult   = enforcementResult
     self.singlePolicyResults = singlePolicyResults

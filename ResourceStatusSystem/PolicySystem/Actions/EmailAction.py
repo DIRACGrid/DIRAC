@@ -15,11 +15,11 @@ class EmailAction( BaseAction ):
     the policies run.
   '''
   
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
+  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, 
+                clients = None ):
     
-    super( EmailAction, self ).__init__( decissionParams, enforcementResult, 
+    super( EmailAction, self ).__init__( name, decissionParams, enforcementResult, 
                                          singlePolicyResults, clients )
-    self.actionName = 'EmailAction'
 
   def run( self ):
     '''

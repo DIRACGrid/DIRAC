@@ -59,24 +59,26 @@ class PEP:
     policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
     singlePolicyResults  = resDecisions[ 'singlePolicyResults' ]
     
-    for policyAction in policyCombinedResult[ 'PolicyAction' ]:
+    for policyActionName, policyActionType in policyCombinedResult[ 'PolicyAction' ]:
       
       try:
-        actionMod = Utils.voimport( 'DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s' % policyAction )
+        actionMod = Utils.voimport( 'DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s' % policyActionType )
       except ImportError:
-        gLogger.error( 'Error importing %s action' % policyAction )
-        
-      if not hasattr( actionMod, policyAction ):
-        gLogger.error( 'Error importing %s action class' % policyAction )
+        gLogger.error( 'Error importing %s action' % policyActionType )
+        continue
       
-      action = getattr( actionMod, policyAction )( decissionParams, 
-                                                   policyCombinedResult,
-                                                   singlePolicyResults, 
-                                                   self.clients )
+      try:
+        action = getattr( actionMod, policyActionType )
+      except AttributeError:
+        gLogger.error( 'Error importing %s action class' % policyActionType )
+        continue  
+              
+      actionObj = action( policyActionName, decissionParams, policyCombinedResult,
+                          singlePolicyResults, self.clients )
       
-      gLogger.debug( policyAction )
+      gLogger.debug( ( policyActionName, policyActionType ) )
       
-      actionResult = action.run()
+      actionResult = actionObj.run()
       if not actionResult[ 'OK' ]:
         gLogger.error( actionResult[ 'Message' ] ) 
         

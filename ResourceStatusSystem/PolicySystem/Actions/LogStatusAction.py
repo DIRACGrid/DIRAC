@@ -15,11 +15,11 @@ class LogStatusAction( BaseAction ):
     It adds or modifies if the record exists on the table.
   '''
 
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None):
+  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, 
+                clients = None ):
     
-    super( LogStatusAction, self ).__init__( decissionParams, enforcementResult, 
+    super( LogStatusAction, self ).__init__( name, decissionParams, enforcementResult, 
                                              singlePolicyResults, clients )
-    self.actionName = 'LogStatusAction'
     
     if clients is not None and 'ResourceStatusClient' in clients:
       self.rsClient = clients[ 'ResourceStatusClient' ]
