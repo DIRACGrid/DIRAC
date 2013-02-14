@@ -96,12 +96,9 @@ class PDP:
       return policyCombinedResults
     policyCombinedResults = policyCombinedResults[ 'Value' ]
 
-    #FIXME: should also pass the result of the combination to the InfoGetter : YES !
-
-    #policyActionsThatApply = self.iGetter.getPolicyActionsThatApply( self.decissionParams )
     policyActionsThatApply = self.iGetter.getPolicyActionsThatApply( self.decissionParams,
-                                                                      singlePolicyResults,
-                                                                      policyCombinedResults )
+                                                                     singlePolicyResults,
+                                                                     policyCombinedResults )
     if not policyActionsThatApply[ 'OK' ]:
       return policyActionsThatApply
     policyActionsThatApply = policyActionsThatApply[ 'Value' ]

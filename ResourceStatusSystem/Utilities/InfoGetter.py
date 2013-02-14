@@ -37,8 +37,12 @@ class InfoGetter:
     
     for key in params:
       if key in decissionParams:
+        
+        # We can get rid of this now
         # In CS names are with upper case, capitalize them here
-        sanitizedParams[ key[0].upper() + key[1:] ] = decissionParams[ key ]
+        # sanitizedParams[ key[0].upper() + key[1:] ] = decissionParams[ key ]
+        
+        sanitizedParams[ key ] = decissionParams[ key ]
             
     return sanitizedParams
 
