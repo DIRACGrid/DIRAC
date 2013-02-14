@@ -333,7 +333,7 @@ class FTSMonitorAgent( AgentModule ):
       if not res["OK"]:
         log.error( "Failed to update Channel table for failed files.", res["Message"] )
         allUpdated = False
-      else if res["Value"] = "max reschedule attempt reached":
+      elif res["Value"] == "max reschedule attempt reached":
         log.error( "setting Channel status to 'Failed' : " % res["Value"] )
         res = self.transferDB.setFileChannelStatus( channelID, fileID, 'Failed' )
         if not res["OK"]:
