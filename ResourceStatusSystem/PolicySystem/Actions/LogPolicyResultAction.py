@@ -69,7 +69,7 @@ class LogPolicyResultAction( BaseAction ):
                                                             reason = reason )
       
       if not polUpdateRes[ 'OK' ]:
-        return polUpdateRes   
+        return polUpdateRes
     
     return S_OK()
 

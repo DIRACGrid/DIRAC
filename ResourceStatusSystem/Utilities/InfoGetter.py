@@ -7,7 +7,7 @@
 
 import copy
 
-from DIRAC                                import S_OK, S_ERROR
+from DIRAC                                import S_OK#, S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration, Utils
 
 __RCSID__ = '$Id: $'
@@ -78,15 +78,15 @@ class InfoGetter:
     return self.__getPolicyActionsThatApply2( decissionParams, singlePolicyResults,
                                               policyCombinedResults )
 
-  def getNotificationsThatApply( self, decissionParams, notificationAction ):
-    '''
-      Method that sanitizes the input parameters and returns the users that will
-      be notified.
-    '''
-
-    decissionParams = self.sanitizeDecissionParams( decissionParams )
-
-    return self.__getNotificationsThatApply( decissionParams, notificationAction )
+#  def getNotificationsThatApply( self, decissionParams, notificationAction ):
+#    '''
+#      Method that sanitizes the input parameters and returns the users that will
+#      be notified.
+#    '''
+#
+#    decissionParams = self.sanitizeDecissionParams( decissionParams )
+#
+#    return self.__getNotificationsThatApply( decissionParams, notificationAction )
 
   ## Private methods ###########################################################
 
@@ -290,36 +290,36 @@ class InfoGetter:
                
     return S_OK( policyActionsThatApply )
 
-  @staticmethod
-  def __getNotificationsThatApply( decissionParams, notificationAction ):
-    '''
-      Method that matches the input dictionary with the notifications 
-      configuration in the CS. It returns a list of notification dictionaries that 
-      matched.
-    '''
-
-    notificationsThatApply = []
-    
-    # Get notifications configuration metadata from CS.
-    notificationsConfig = RssConfiguration.getNotifications()
-    if not notificationsConfig[ 'OK' ]:
-      return notificationsConfig
-    notificationsConfig = notificationsConfig[ 'Value' ]
-    
-    if not notificationAction in notificationsConfig:
-      return S_ERROR( '"%s" not in notifications configuration' % notificationAction )
-    
-    notificationsConfig = notificationsConfig[ notificationAction ]
-    
-    # Get notifications that match the given decissionParameters
-    for notificationName, notificationConfig in notificationsConfig.items():
-      notificationMatch = Utils.configMatch( decissionParams, notificationConfig )   
-      if notificationMatch:
-        
-        notificationConfig[ 'name' ] = notificationName
-        notificationsThatApply.append( notificationConfig )
-               
-    return S_OK( notificationsThatApply )    
+#  @staticmethod
+#  def __getNotificationsThatApply( decissionParams, notificationAction ):
+#    '''
+#      Method that matches the input dictionary with the notifications 
+#      configuration in the CS. It returns a list of notification dictionaries that 
+#      matched.
+#    '''
+#
+#    notificationsThatApply = []
+#    
+#    # Get notifications configuration metadata from CS.
+#    notificationsConfig = RssConfiguration.getNotifications()
+#    if not notificationsConfig[ 'OK' ]:
+#      return notificationsConfig
+#    notificationsConfig = notificationsConfig[ 'Value' ]
+#    
+#    if not notificationAction in notificationsConfig:
+#      return S_ERROR( '"%s" not in notifications configuration' % notificationAction )
+#    
+#    notificationsConfig = notificationsConfig[ notificationAction ]
+#    
+#    # Get notifications that match the given decissionParameters
+#    for notificationName, notificationConfig in notificationsConfig.items():
+#      notificationMatch = Utils.configMatch( decissionParams, notificationConfig )   
+#      if notificationMatch:
+#        
+#        notificationConfig[ 'name' ] = notificationName
+#        notificationsThatApply.append( notificationConfig )
+#               
+#    return S_OK( notificationsThatApply )    
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
