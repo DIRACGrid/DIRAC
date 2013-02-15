@@ -116,7 +116,7 @@ class SummarizeLogsAgent( AgentModule ):
       return selectedRes
     selectedRes = selectedRes[ 'Value' ]
 
-    selectedStatus = None,
+    selectedStatus = None
     if selectedRes:
 
       # Get the last selectedRes, which will be the newest one. Each selectedRes
