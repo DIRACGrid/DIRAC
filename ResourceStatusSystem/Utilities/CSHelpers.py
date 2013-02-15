@@ -184,9 +184,9 @@ def getStorageElementSpaceToken( storageElement ):
   
   _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken' % storageElement
   
-  res = gConfig.getValue( _basePath  )
-  if not res:
-    return S_ERROR( '%s not found' % _basePath )
+  res = gConfig.getValue( _basePath, '' )
+#  if not res:
+#    return S_ERROR( '%s not found' % _basePath )
   return S_OK( res )
 
 def getStorageElementEndpoint( storageElement ):
@@ -195,9 +195,11 @@ def getStorageElementEndpoint( storageElement ):
   
   host  = gConfig.getValue( _basePath + '/Host' )
   port  = gConfig.getValue( _basePath + '/Port' ) 
-  wsurl = gConfig.getValue( _basePath + '/WSUrl' )
+  wsurl = gConfig.getValue( _basePath + '/WSUrl', '' )
   
-  if host and port and wsurl:
+  # MAYBE wusrl is not defined
+  #if host and port and wsurl:
+  if host and port:
      
     url = 'httpg://%s:%s%s' % ( host, port, wsurl )
     url = url.replace( '?SFN=', '' )
