@@ -460,7 +460,7 @@ class TransferDB( DB ):
       gLogger.error("setFileToReschedule: %s" % res["Message"] )
       return res
     res = res["Value"]
-    if res["Value"][0][0] > self.maxAttempt:
+    if res > self.maxAttempt:
       return S_OK("max reschedule attempt reached")
 
     req = "DELETE FROM `Channel` WHERE `FileID` = %s;" % fileID 
