@@ -158,10 +158,11 @@ class FTSSubmitAgent( AgentModule ):
 
     oFTSRequest.resolveSource()
     toReschedule = [ fileInfo for fileInfo in oFTSRequest.fileDict.values() 
-                     if fileInfo.get("Status", "") == "Failed" and fileInfo.get("Reason", "") == "No replica at SourceSE" ]
+                     if fileInfo.get("Status", "") == "Failed" and fileInfo.get("Reason", "") in ( "No replica at SourceSE", 
+                                                                                                   "Source file does not exist" ) ]
     if toReschedule:
       self.log.info("Found %s files to reschedule" % len(toReschedule) )
-      for fielID in toReschedule:
+      for fileID in toReschedule:
         res = self.transferDB.setFileToReschedule( fileID )
         if not res["OK"]:
           self.log.error( "Failed to update Channel table for failed files.", res["Message"] )
