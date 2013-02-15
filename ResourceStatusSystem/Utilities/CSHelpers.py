@@ -199,7 +199,7 @@ def getStorageElementEndpoint( storageElement ):
   
   if host and port and wsurl:
      
-    url = 'httpg://%s:%s/%s' % ( host, port, wsurl )
+    url = 'httpg://%s:%s%s' % ( host, port, wsurl )
     url = url.replace( '?SFN=', '' )
     return S_OK( url )
   
