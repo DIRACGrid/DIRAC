@@ -203,15 +203,25 @@ class DowntimeCommand( Command ):
     uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
 
     # We return only one downtime, if its ongoind at dtDate
-    dtDate = datetime.now()     
-    if hours:
-      dtDate = dtDate + timedelta( hours = hours )
-           
-    result = None       
-    for dt in uniformResult:
-      if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
-        result = dt
-        break        
+    dtDate = datetime.now()
+    result = None
+       
+    if not hours:
+      # If not hours defined, we want the downtimes running now, which means,
+      # the ones that already started and will finish later.
+  
+      for dt in uniformResult:
+        if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
+          result = dt
+          break        
+
+    else:
+      # If hours are defined, we want the downtimes starting in the next <hours>
+      dtDateFuture = dtDate + timedelta( hours = hours )       
+      for dt in uniformResult:
+        if ( dt[ 'StartDate' ] > dtDate ) and ( dt[ 'StartDate' ] < dtDateFuture ):
+          result = dt
+          break
            
     return S_OK( result )       
 
