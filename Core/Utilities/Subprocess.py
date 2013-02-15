@@ -45,7 +45,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import DEncode
 
-
 class Watchdog( object ):
   """
   .. class Watchdog
@@ -58,6 +57,8 @@ class Watchdog( object ):
     self.args = args if args else tuple()
     self.kwargs = kwargs if kwargs else {}
     self.start = self.end = self.pid = None
+    self.rwEvent = threading.Event()
+    self.rwEvent.clear()
     self.__watchdogThread = None
     self.parentPipe, self.childPipe = Pipe()
     self.__executor = Process( target = self.run_func, args = (self.childPipe, ) )
@@ -69,22 +70,33 @@ class Watchdog( object ):
     """
     try:
       ret = self.func( *self.args, **self.kwargs )
+      ## set rw event
+      self.rwEvent.set()
       pipe.send( ret )
     except Exception, error:
       pipe.send( { "OK" : False, "Message" : str(error) } )
-    
+    finally:
+      ## clear rw event
+      self.rwEvent.clear()
+
   def watchdog( self ):
     """ watchdog thread target """
     while True:
-      if time.time() < self.end:
+      if self.rwEvent.is_set() or time.time() < self.end:
         time.sleep(5)
       else:
         break
     if not self.__executor.is_alive():
       return
     else:
+      ## wait until r/w operation finishes
+      while self.rwEvent.is_set():
+        time.sleep(5)
+        continue
+      ## SIGTERM
       os.kill( self.pid, signal.SIGTERM )
       time.sleep(5)
+      ## SIGKILL
       if self.__executor.is_alive():
         os.kill( self.pid, signal.SIGKILL )
       
@@ -107,9 +119,11 @@ class Watchdog( object ):
         self.__executor.join( timeout )
       else:
         self.__executor.join()
-      ## get results if any
+      ## get results if any, block watchdog by setting rwEvent
       if not self.__executor.is_alive():
+        self.rwEvent.set()
         ret = self.parentPipe.recv()
+        self.rwEvent.clear()
     except Exception, error:
       return { "OK" : False, "Message" : str(error) }
     return ret
