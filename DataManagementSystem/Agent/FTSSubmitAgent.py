@@ -14,7 +14,6 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
 
-
 __RCSID__ = "$Id$"
 
 class FTSSubmitAgent( AgentModule ):
@@ -50,7 +49,7 @@ class FTSSubmitAgent( AgentModule ):
     ## save tarsnferDB handler
     self.transferDB = TransferDB()
     ## read config options
-    self.maxJobsPerChannel = self.am_getOption( 'MaxJobsPerChannel', 2 )
+    self.maxJobsPerChannel = self.am_getOption( 'MaxJobsPerChannel', self.maxJobsPerChannel )
     self.log.info("max jobs/channel = %s" % self.maxJobsPerChannel )
 
     ## checksum test
@@ -61,7 +60,6 @@ class FTSSubmitAgent( AgentModule ):
       if self.cksmType and self.cksmType not in ( "ADLER32", "MD5", "SHA1" ):
         self.log.warn("unknown checksum type: %s, will use default %s" % ( self.cksmType, self.__defaultCksmType ) )
         self.cksmType = self.__defaultCksmType                      
-
 
     self.log.info( "checksum test is %s" % ( { True : "enabled using %s checksum" % self.cksmType,
                                                False : "disabled"}[self.cksmTest] ) )
@@ -158,6 +156,10 @@ class FTSSubmitAgent( AgentModule ):
       totalSize += fileMeta['Size']
       fileIDSizes[fileID] = fileMeta['Size']
 
+    failedFiles = [ (lfn, fileInfo) for lfn, fileInfo in oFTSRequest.fileDict.items() 
+                    if fileInfo.get("Status", "") == "Failed" ]
+    
+
     #########################################################################
     #  Submit the FTS request and retrieve the FTS GUID/Server
     self.log.info( 'Submitting the FTS request' )
@@ -183,6 +185,8 @@ class FTSSubmitAgent( AgentModule ):
 
 """ % ( ftsGUID, ftsServer, str( channelID ), sourceSE, targetSE, str( len( files ) ) )
     self.log.info( infoStr )
+
+    
 
     #########################################################################
     #  Insert the FTS Req details and add the number of files and size
