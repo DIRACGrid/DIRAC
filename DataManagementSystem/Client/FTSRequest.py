@@ -587,8 +587,8 @@ class FTSRequest(object):
       res = self.__resolveFTSServer()
       if not res['OK']:
         return S_ERROR( "FTSServer not valid" )
-    self.__resolveSource()
-    self.__resolveTarget()
+    self.resolveSource()
+    self.resolveTarget()
     res = self.__filesToSubmit()
     if not res['OK']:
       return S_ERROR( "No files to submit" )
@@ -656,7 +656,7 @@ class FTSRequest(object):
       self.catalogMetadata[lfn] = metadata
     return S_OK()
 
-  def __resolveSource( self ):
+  def resolveSource( self ):
     """ resolve source SE eligible for submission
 
     :param self: self reference
@@ -739,7 +739,7 @@ class FTSRequest(object):
         self.__setFileParameter( lfn, 'Status', 'Failed' )
     return S_OK()
 
-  def __resolveTarget( self ):
+  def resolveTarget( self ):
     """ find target SE eligible for submission 
 
     :param self: self reference
@@ -750,18 +750,8 @@ class FTSRequest(object):
     res = self.__updateReplicaCache( toResolve )
     if not res['OK']:
       return res
-    atTarget = []
-    for lfn in sortList( toResolve ):
-      if self.fileDict[lfn].get( 'Status' ) == 'Failed':
-        continue
-      replicas = self.catalogReplicas.get( lfn, {} )
-      if self.targetSE in replicas:
-        gLogger.warn("resolveTarget: skipping %s - file already at target %s" % ( lfn, self.targetSE ) )
-        self.__setFileParameter( lfn, 'Reason', "File already at Target" )
-        self.__setFileParameter( lfn, 'Status', 'Done' )
-        atTarget.append( lfn )
     for lfn in toResolve:
-      if ( self.fileDict[lfn].get( 'Status' ) == 'Failed' ) or ( lfn in atTarget ):
+      if ( self.fileDict[lfn].get( 'Status' ) == 'Failed' ):
         continue
       res = self.oTargetSE.getPfnForLfn( lfn )
       if not res['OK']:

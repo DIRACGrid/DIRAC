@@ -156,10 +156,21 @@ class FTSSubmitAgent( AgentModule ):
       totalSize += fileMeta['Size']
       fileIDSizes[fileID] = fileMeta['Size']
 
-    failedFiles = [ (lfn, fileInfo) for lfn, fileInfo in oFTSRequest.fileDict.items() 
-                    if fileInfo.get("Status", "") == "Failed" ]
-    
-
+    oFTSRequest.resolveSource()
+    toReschedule = [ fileInfo for fileInfo in oFTSRequest.fileDict.values() 
+                     if fileInfo.get("Status", "") == "Failed" and fileInfo.get("Reason", "") == "No replica at SourceSE" ]
+    if toReschedule:
+      self.log.info("Found %s files to reschedule" % len(toReschedule) )
+      for fielID in toReschedule:
+        res = self.transferDB.setFileToReschedule( fileID )
+        if not res["OK"]:
+          self.log.error( "Failed to update Channel table for failed files.", res["Message"] )
+        elif res["Value"] == "max reschedule attempt reached":
+          self.log.error( "setting Channel status to 'Failed' : " % res["Value"] )
+          res = self.transferDB.setFileChannelStatus( channelID, fileID, 'Failed' )
+          if not res["OK"]:
+            self.log.error( "Failed to update Channel table for failed files.", res["Message"] )
+      
     #########################################################################
     #  Submit the FTS request and retrieve the FTS GUID/Server
     self.log.info( 'Submitting the FTS request' )
@@ -185,8 +196,6 @@ class FTSSubmitAgent( AgentModule ):
 
 """ % ( ftsGUID, ftsServer, str( channelID ), sourceSE, targetSE, str( len( files ) ) )
     self.log.info( infoStr )
-
-    
 
     #########################################################################
     #  Insert the FTS Req details and add the number of files and size
