@@ -157,9 +157,9 @@ class FTSSubmitAgent( AgentModule ):
       fileIDSizes[fileID] = fileMeta['Size']
 
     oFTSRequest.resolveSource()
-    toReschedule = [ fileInfo for fileInfo in oFTSRequest.fileDict.values() 
-                     if fileInfo.get("Status", "") == "Failed" and fileInfo.get("Reason", "") in ( "No replica at SourceSE", 
-                                                                                                   "Source file does not exist" ) ]
+    toReschedule = [ fileInfo["FileID"] for fileInfo in oFTSRequest.fileDict.values() 
+                     if fileInfo["Status"] == "Failed" and fileInfo["Reason"] in ( "No replica at SourceSE", 
+                                                                                   "Source file does not exist" ) ]
     if toReschedule:
       self.log.info("Found %s files to reschedule" % len(toReschedule) )
       for fileID in toReschedule:
