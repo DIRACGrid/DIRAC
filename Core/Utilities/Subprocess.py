@@ -27,7 +27,7 @@
 """
 __RCSID__ = "$Id$"
 
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Manager
 import threading
 import time
 import select
@@ -60,10 +60,11 @@ class Watchdog( object ):
     self.rwEvent = threading.Event()
     self.rwEvent.clear()
     self.__watchdogThread = None
-    self.parentPipe, self.childPipe = Pipe()
-    self.__executor = Process( target = self.run_func, args = (self.childPipe, ) )
+    self.manager = Manager()
+    self.s_ok_error = self.manager.dict()
+    self.__executor = Process( target = self.run_func, args = (self.s_ok_error, ) )
 
-  def run_func( self, pipe ):
+  def run_func( self, s_ok_error ):
     """ subprocess target 
 
     :param Pipe pipe: pipe used for communication
@@ -72,9 +73,11 @@ class Watchdog( object ):
       ret = self.func( *self.args, **self.kwargs )
       ## set rw event
       self.rwEvent.set()
-      pipe.send( ret )
+      for k in ret:
+        s_ok_error[k] = ret[k]
     except Exception, error:
-      pipe.send( { "OK" : False, "Message" : str(error) } )
+      s_ok_error["OK"] =  False
+      s_ok_error["Message"] = str(error)
     finally:
       ## clear rw event
       self.rwEvent.clear()
@@ -122,7 +125,8 @@ class Watchdog( object ):
       ## get results if any, block watchdog by setting rwEvent
       if not self.__executor.is_alive():
         self.rwEvent.set()
-        ret = self.parentPipe.recv()
+        for k in self.s_ok_error.keys():
+          ret[k] = self.s_ok_error[k]
         self.rwEvent.clear()
     except Exception, error:
       return { "OK" : False, "Message" : str(error) }
@@ -130,8 +134,7 @@ class Watchdog( object ):
   
   def finalize(self):
     """ destructor """
-    self.parentPipe.close()
-    self.childPipe.close()
+    pass
 
 class Subprocess:
   """
