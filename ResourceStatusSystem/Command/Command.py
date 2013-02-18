@@ -46,10 +46,10 @@ class Command( object ):
     '''
     
     if self.masterMode:
-      gLogger.info( 'doMaster')
+      gLogger.verbose( 'doMaster')
       return self.returnSObj( self.doMaster() )
     
-    gLogger.info( 'doCache' )      
+    gLogger.verbose( 'doCache' )      
     result = self.doCache()
     if not result[ 'OK' ]:
       return self.returnERROR( result )
@@ -58,7 +58,7 @@ class Command( object ):
     if result[ 'Value' ] or self.args[ 'onlyCache' ]:
       return result
     
-    gLogger.info( 'doNew' )
+    gLogger.verbose( 'doNew' )
     return self.returnSObj( self.doNew() )
       
   def returnERROR( self, s_obj ):
