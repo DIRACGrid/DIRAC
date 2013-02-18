@@ -665,11 +665,11 @@ class TransferAgent( RequestAgentBase ):
       
       subRequestStatus = subAttrs["Status"]
 
-      #execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
-      #if execOrder > requestDict["executionOrder"]:
-      #  strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
-      #  self.log.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder" % strTup )  
-      #  continue 
+      execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
+      if execOrder > requestDict["executionOrder"]:
+        strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
+        self.log.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder" % strTup )  
+        continue 
 
       if subRequestStatus != "Waiting" :
         ## sub-request is already in terminal state
@@ -835,7 +835,8 @@ class TransferAgent( RequestAgentBase ):
                                                                                    len(waitingFileReplicas), 
                                                                                    str(waitingFileTargets) ) ) 
       ## get the replication tree at least
-      tree = self.strategyHandler().replicationTree( waitingFileReplicas.keys(),  
+      tree = self.strategyHandler().replicationTree( waitingFileLFN,
+                                                     waitingFileReplicas.keys(),  
                                                      waitingFileTargets, 
                                                      waitingFileSize, 
                                                      strategy )

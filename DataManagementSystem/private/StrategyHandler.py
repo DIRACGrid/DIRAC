@@ -322,7 +322,6 @@ class StrategyHandler( object ):
                                    "DestSE" : targetSE, "Strategy" : "Swarm" } 
     return S_OK( tree )
           
-
   def minimiseTotalWait( self, sourceSEs, targetSEs ):
     """ find dag that minimises start time 
     
@@ -366,21 +365,16 @@ class StrategyHandler( object ):
         return S_ERROR("minimiseTotalWait: no active FTS channels found" )
       
       candidates = []
-      #selTimeToStart = None
       for channel, sourceSE, targetSE in channels:
         timeToStart = channel.timeToStart
         if sourceSE not in primarySources:
           timeToStart += self.sigma        
-        #if sourceSE in timeToSite:
-        #  timeToStart += timeToSite[sourceSE]
         ## local found 
         if channel.fromNode == channel.toNode:
           self.log.debug("minimiseTotalWait: found local channel '%s'" % channel.channelName )
           candidates = [ ( channel, sourceSE, targetSE ) ]
-          #selTimeToStart = timeToStart
           break
         if timeToStart <= minTimeToStart:
-          #selTimeToStart = timeToStart
           minTimeToStart = timeToStart
           candidates = [ ( channel, sourceSE, targetSE ) ]
         elif timeToStart == minTimeToStart:
@@ -502,7 +496,7 @@ class StrategyHandler( object ):
     """    
     return self.supportedStrategies
 
-  def replicationTree( self, sourceSEs, targetSEs, size, strategy=None ):
+  def replicationTree( self, LFN, sourceSEs, targetSEs, size, strategy=None ):
     """ get replication tree
 
     :param list sourceSEs: list of sources SE names to use
@@ -525,6 +519,11 @@ class StrategyHandler( object ):
 
     self.log.info("replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" %\
                     ( strategy, sourceSEs, targetSEs, size ) )
+    ## filter out worng sources
+    sourceSEs = [ self.checkSourceSE( sourceSE, LFN ) for sourceSE in sourceSEs ]  
+    if not sourceSEs:
+      self.log.error("replicationTree: no valid SourceSEs for %s found" % LFN )
+      return S_ERROR("replicationTree: no valid SourceSEs for %s found" % LFN )
     ## fire action from dispatcher
     tree = self.strategyDispatcher[strategy]( sourceSEs, targetSEs )
     if not tree["OK"]:
@@ -569,5 +568,19 @@ class StrategyHandler( object ):
       rwDict[se]["write"] = se in wAccess
     return S_OK( rwDict )
    
+  def checkSourceSE( self, sourceSE, lfn ):
+    """ filter out SourceSE where PFN is not existing 
 
-
+    :param self: self reference
+    :param str lfn: LFN
+    """
+    se = StorageElement( sourceSE )
+    isValid = se.isValid("Read")    
+    if not isValid["OK"]:
+      self.log.error("StorageElement is banned for reading: %s" % ( sourceSE, isValid["Message"] ) )
+      return isValid
+    meta = se.getFileMetadata( lfn )
+    if not meta["OK"]:
+      self.log.error("unable to get metadata for %s @ %s: %s" % ( lfn, seName, meta["Message"] ) )
+      return meta
+    return S_OK()

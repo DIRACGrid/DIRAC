@@ -24,7 +24,6 @@ from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface, ReplicaManager
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-#from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
 ## RCSID
 __RCSID__ = "$Id$"
