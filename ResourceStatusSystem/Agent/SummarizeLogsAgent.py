@@ -28,7 +28,6 @@ class SummarizeLogsAgent( AgentModule ):
         Uses the ProductionManager shifterProxy to modify the ResourceStatus DB
     '''
 
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
     self.rsClient = ResourceStatusClient()
 
     return S_OK()

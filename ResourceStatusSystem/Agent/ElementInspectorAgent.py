@@ -148,8 +148,15 @@ class ElementInspectorAgent( AgentModule ):
       threadsToStart = max( 0, threadsToStart - threadsRunning )
       self.log.info( 'Starting %d threads to process %d elements' % ( threadsToStart, queueSize ) )
     
+    # It may happen that we start two threads, 0 and 1. 1 goes DOWN, but 0 keeps 
+    # running. In next loop we will start a new thread, and will be called 0 
+    # again. To have a mechanism to see which thread is where, we append the
+    # cycle number before the threadId.
+    cycle = self.__moduleProperties[ 'cyclesDone' ]
+    
     for _x in xrange( threadsToStart ):
-      jobUp = self.threadPool.generateJobAndQueueIt( self._execute, args = ( _x, ) )
+      threadId = '%s_%s' % ( cycle, _x )
+      jobUp = self.threadPool.generateJobAndQueueIt( self._execute, args = ( threadId, ) )
       if not jobUp[ 'OK' ]:
         self.log.error( jobUp[ 'Message' ] )
         
