@@ -27,6 +27,7 @@ import datetime
 ## from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge 
 
 class FTSGraph( Graph ):
@@ -159,6 +160,8 @@ class StrategyHandler( object ):
     self.ftsGraph = None
     ## timestamp for last update
     self.lastRssUpdate = datetime.datetime.now()    
+    ## se cache
+    self.seCache = {}
     # dispatcher
     self.strategyDispatcher = { "MinimiseTotalWait" : self.minimiseTotalWait, 
                                 "DynamicThroughput" : self.dynamicThroughput,
@@ -496,9 +499,10 @@ class StrategyHandler( object ):
     """    
     return self.supportedStrategies
 
-  def replicationTree( self, LFN, sourceSEs, targetSEs, size, strategy=None ):
+  def replicationTree( self, lfn, sourceSEs, targetSEs, size, strategy=None ):
     """ get replication tree
 
+    :param str lfn: LFN
     :param list sourceSEs: list of sources SE names to use
     :param list targetSEs: liost of target SE names to use
     :param long size: file size
@@ -519,11 +523,14 @@ class StrategyHandler( object ):
 
     self.log.info("replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" %\
                     ( strategy, sourceSEs, targetSEs, size ) )
-    ## filter out worng sources
-    sourceSEs = [ self.checkSourceSE( sourceSE, LFN ) for sourceSE in sourceSEs ]  
+    ## filter out wrong sources
+    sourceSEs = dict.fromkeys( sourceSEs, S_OK() )
+    for sourceSE in sourceSEs:
+      sourceSEs[sourceSE] = self.checkSourceSE( sourceSE, lfn )
+    sourceSEs = [ key for key, value in sourceSEs.items() if value["OK"] ]  
     if not sourceSEs:
-      self.log.error("replicationTree: no valid SourceSEs for %s found" % LFN )
-      return S_ERROR("replicationTree: no valid SourceSEs for %s found" % LFN )
+      self.log.error("replicationTree: no valid SourceSEs for %s found" % lfn )
+      return S_ERROR("replicationTree: no valid SourceSEs for %s found" % lfn )
     ## fire action from dispatcher
     tree = self.strategyDispatcher[strategy]( sourceSEs, targetSEs )
     if not tree["OK"]:
@@ -574,13 +581,21 @@ class StrategyHandler( object ):
     :param self: self reference
     :param str lfn: LFN
     """
-    se = StorageElement( sourceSE )
+    se = self.seCache.get( sourceSE, None )
+    if not se:
+      se = StorageElement( sourceSE, "SRM2" )
+      self.seCache[sourceSE] = se
     isValid = se.isValid("Read")    
     if not isValid["OK"]:
-      self.log.error("StorageElement is banned for reading: %s" % ( sourceSE, isValid["Message"] ) )
+      self.log.error("checkSourceSE: storageElement %s is banned for reading: %s" % ( sourceSE, isValid["Message"] ) )
       return isValid
-    meta = se.getFileMetadata( lfn )
-    if not meta["OK"]:
-      self.log.error("unable to get metadata for %s @ %s: %s" % ( lfn, seName, meta["Message"] ) )
-      return meta
+    pfn = se.getPfnForLfn( lfn )
+    if not pfn["OK"]:
+      self.log.error("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
+      return pfn
+    exists = se.exists( pfn["Value"] )
+    if not exists["OK"]:
+      self.log.error("checkSourceSE: %s" % exists["Message"] )
+      return exists
+    ## if we're here everything is OK
     return S_OK()
