@@ -185,6 +185,11 @@ class JobState( object ):
       if not result[ 'OK' ]:
         return result
 
+    if 'inputData' in cache:
+      result = self.__retryFunction( 5, jobDB.setInputData, ( self.__jid, cache[ 'inputData' ] ) )
+      if not result[ 'OK' ]:
+        return result
+
     logDB = JobState.__db.log
     gLogger.verbose( "Adding logging records for %s" % self.__jid )
     for record, updateTime, source in jobLog:
@@ -478,6 +483,28 @@ class JobState( object ):
   def getInputData( self ):
     return JobState.__db.job.getInputData( self.__jid )
 
+  @classmethod
+  def checkInputDataStructure( self, pDict ):
+    if type( pDict ) != types.DictType:
+      return S_ERROR( "Input data has to be a dictionary" )
+    for lfn in pDict:
+      if 'Replicas' not in pDict[ lfn ]:
+        return S_ERROR( "Missing replicas for lfn %s" % lfn )
+        replicas = pDict[ lfn ][ 'Replicas' ]
+        for seName in replicas:
+          if 'SURL' not in replias or 'Disk' not in replicas:
+            return S_ERROR( "Missing SURL or Disk for %s:%s replica" % ( seName, lfn ) )
+    return S_OK()
+
+  right_setInputData = RIGHT_GET_INFO
+  @RemoteMethod
+  def set_InputData( self, lfnData ):
+    result = self.checkInputDataStructure( lfnData )
+    if not result[ 'OK' ]:
+      return result
+    return self.__db.job.setInputData( self.__jid, lfnData )
+
+
   right_insertIntoTQ = RIGHT_CHANGE_STATUS
   @RemoteMethod
   def insertIntoTQ( self ):
@@ -492,6 +519,8 @@ class JobState( object ):
     if not result[ 'OK' ]:
       return S_ERROR( "No %s section in the job manifest" % reqSection )
     reqCfg = result[ 'Value' ]
+
+    print reqCfg
 
     jobReqDict = {}
     for name in JobState.__db.tq.getSingleValueTQDefFields():

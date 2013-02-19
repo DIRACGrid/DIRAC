@@ -367,10 +367,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if not res['OK']:
       return res
     lfns = res['Value']
-    lfnChunks = breakListIntoChunks( lfns.keys(), 1000 )
+    lfnChunks = breakListIntoChunks( lfns.keys(), 2 )
     # If we have less than three groups to query a session doesn't make sense
     created = False
-    if len( lfnChunks ) > 2:
+    if False and len( lfnChunks ) > 2:
       created = self.__openSession()
     failed = {}
     successful = {}
@@ -717,7 +717,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       if not res['OK']:
         continue
     lfc.lfc_umask( 0000 )
-    for lfnList in breakListIntoChunks( sortList( lfns.keys() ), 1000 ):
+    for lfnList in breakListIntoChunks( sortList( lfns.keys() ), 4 ):
       fileChunk = []
       for lfn in list( lfnList ):
         lfnInfo = lfns[lfn]
@@ -1936,7 +1936,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if not res['OK']:
       return res
     lfns = res['Value']
-    lfnChunks = breakListIntoChunks( sortList( lfns.keys() ), 1000 )
+    lfnChunks = breakListIntoChunks( sortList( lfns.keys() ), 4 )
     # If we have less than three groups to query a session doesn't make sense
     created = False
     if len( lfnChunks ) > 2:

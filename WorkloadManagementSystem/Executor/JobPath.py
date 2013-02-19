@@ -69,7 +69,6 @@ class JobPath( OptimizerExecutor ):
       extraPath = List.fromChar( result['Value'] )
     return S_OK( extraPath )
 
-
   def optimizeJob( self, jid, jobState ):
     result = jobState.getManifest()
     if not result[ 'OK' ]:
@@ -80,38 +79,36 @@ class JobPath( OptimizerExecutor ):
       self.jobLog.info( 'Job defines its own optimizer chain %s' % opChain )
       return self.__setOptimizerChain( jobState, opChain )
     #Construct path
-    opPath = self.ex_getOption( 'BasePath', ['JobPath', 'JobSanity'] )
+    #Add JobPath
+    opPath = [ 'JobSanity' ]
+    if jobManifest.getOption( "InputData", "" ):
+      self.jobLog.info( 'Input data requirement found' )
+      opPath.extend( self.ex_getOption( "InputData", [ 'InputDataResolution', 'InputDataValidation' ] ) )
+    else:
+      self.jobLog.info( 'No input data requirement' )
+    opPath.extend( self.ex_getOption( 'EndPath', ['JobScheduling'] ) )
+
     voPlugin = self.ex_getOption( 'VOPlugin', '' )
     #Specific VO path
     if voPlugin:
-      result = self.__executeVOPlugin( voPlugin, jobState )
+      result = self.__executeVOPlugin( voPlugin, jobState, opPath )
       if not result[ 'OK' ]:
         return result
-      extraPath = result[ 'Value' ]
-      if extraPath:
-        opPath.extend( extraPath )
-        self.jobLog.verbose( 'Adding extra VO specific optimizers to path: %s' % ( extraPath ) )
+      voPath = result[ 'Value' ]
+      if voPath:
+        self.jobLog.verbose( 'Setting specific VO path' % ( voPath ) )
+        opPath = voPath
     else:
-      #Generic path: Should only rely on an input data setting in absence of VO plugin
       self.jobLog.verbose( 'No VO specific plugin module specified' )
-      result = jobState.getInputData()
-      if not result['OK']:
-        return result
-      if result['Value']:
-        # if the returned tuple is not empty it will evaluate true
-        self.jobLog.info( 'Input data requirement found' )
-        opPath.extend( self.ex_getOption( 'InputData', ['InputData'] ) )
-      else:
-        self.jobLog.info( 'No input data requirement' )
-    #End of path
-    opPath.extend( self.ex_getOption( 'EndPath', ['JobScheduling'] ) )
-    uPath = []
+    #Make sure there are no duplicates
+    finalPath = [ 'JobPath' ]
     for opN in opPath:
-      if opN not in uPath:
-        uPath.append( opN )
-    opPath = uPath
-    self.jobLog.info( 'Constructed path is: %s' % "->".join( opPath ) )
-    result = self.__setOptimizerChain( jobState, opPath )
+      if opN not in finalPath:
+        finalPath.append( opN )
+      else:
+        self.jobLog.notice( "Duplicate optimizer %s in path: %s" % ( opN, opPath ) )
+    self.jobLog.info( 'Constructed path is: %s' % "->".join( finalPath ) )
+    result = self.__setOptimizerChain( jobState, finalPath )
     if not result['OK']:
       return result
     return self.setNextOptimizer( jobState )

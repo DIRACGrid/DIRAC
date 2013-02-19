@@ -59,7 +59,7 @@ class JobSanity( OptimizerExecutor ):
       voName = manifest.getOption( "VirtualOrganization", "" )
       if not voName:
         return S_ERROR( "No VirtualOrganization defined in manifest" )
-      result = self.checkInputData( jobState, jobType, voName )
+      result = self.checkInputData( manifest, jobType, voName )
       if not result[ 'OK' ]:
         return result
       finalMsg.append( "%s LFNs" % result[ 'Value' ] )
@@ -90,33 +90,33 @@ class JobSanity( OptimizerExecutor ):
       finalMsg.append( "Assigned %s ISBs" % result[ 'Value' ] )
       self.jobLog.info( "Assigned %s ISBs" % result[ 'Value' ] )
 
+    #Check site
+    if self.ex_getOption( 'RequirementsCheck', True ):
+      result = self.checkRequirementsSanity( jobState, manifest )
+      if not result[ 'OK' ]:
+        return result
+      finalMsg.append( "Requirements OK" )
+      self.jobLog.info( "Requirements OK" )
+
     jobState.setParameter( 'JobSanityCheck', " | ".join( finalMsg ) )
     return self.setNextOptimizer( jobState )
 
   #############################################################################
-  def checkInputData( self, jobState, jobType, voName ):
+  def checkInputData( self, manifest, jobType, voName ):
     """This method checks both the amount of input
        datasets for the job and whether the LFN conventions
        are correct.
     """
-
-    result = jobState.getInputData()
-    if not result[ 'OK' ]:
-      self.jobLog.warn( 'Failed to get input data from JobDB' )
-      self.jobLog.warn( result['Message'] )
-      return S_ERROR( "Input Data Specification" )
-
-    data = result[ 'Value' ] # seems to be [''] when null, which isn't an empty list ;)
-    data = [ lfn.strip() for lfn in data if lfn.strip() ]
-    if not data:
+    inputData = manifest.getOption( "InputData", [] )
+    if not inputData:
       return S_OK( 0 )
 
     self.jobLog.debug( 'Input data requirement will be checked' )
-    self.jobLog.debug( 'Data is:\n\t%s' % "\n\t".join( data ) )
+    self.jobLog.debug( 'Data is:\n\t%s' % "\n\t".join( inputData ) )
 
     voRE = re.compile( "^(LFN:)?/%s/" % voName )
 
-    for lfn in data:
+    for lfn in inputData:
       if not voRE.match( lfn ):
         return S_ERROR( "Input data not correctly specified" )
       if lfn.find( "//" ) > -1:
@@ -125,12 +125,12 @@ class JobSanity( OptimizerExecutor ):
     #only check limit for user jobs
     if jobType == 'user':
       maxLFNs = self.ex_getOption( 'MaxInputDataPerJob', 100 )
-      if len( data ) > maxLFNs:
+      if len( inputData ) > maxLFNs:
         message = '%s datasets selected. Max limit is %s.' % ( len( data ), maxLFNs )
         jobState.setParameter( "DatasetCheck", message )
         return S_ERROR( "Exceeded Maximum Dataset Limit (%s)" % maxLFNs )
 
-    return S_OK( len( data ) )
+    return S_OK( len( inputData ) )
 
   #############################################################################
   def  checkOutputDataExists( self, jobState ):
@@ -194,4 +194,8 @@ class JobSanity( OptimizerExecutor ):
       self.jobLog.error( "Could not assign all sandboxes (%s). Only assigned %s" % ( numSBsToAssign, assigned ) )
     return S_OK( numSBsToAssign )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+  def checkRequirementsSanity( self, jobState, manifest ):
+    #Check if sites exist
+    sites = manifest.getOption( "Site", [] )
+    if sites:
+      pass

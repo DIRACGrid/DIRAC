@@ -4,6 +4,7 @@ from DIRAC.Core.Utilities import DEncode, ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
+from DIRAC.WorkloadManagementSystem.Client.JobState.OptimizationTask import OptimizationTask
 
 class OptimizationMindHandler( ExecutorMindHandler ):
 
@@ -24,7 +25,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
         continue
       #Forget and add task to ensure state is reset
       self.forgetTask( jid )
-      result = self.executeTask( jid, CachedJobState( jid ) )
+      result = self.executeTask( jid, OptimizationTask( jid ) )
       if not result[ 'OK' ]:
         self.log.error( "Could not add job %s to optimization: %s" % ( jid, result[ 'Value' ] ) )
       else:
@@ -70,7 +71,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
         jid = long( jid )
         if jid not in knownJids:
           #Same as before. Check that the state is ok.
-          cls.executeTask( jid, CachedJobState( jid ) )
+          cls.executeTask( jid, OptimizationTask( jid ) )
           added += 1
       log.info( "Added %s/%s jobs for %s state" % ( added, len( jidList ), opState ) )
     return S_OK()
@@ -100,7 +101,8 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return cls.__loadJobs( eTypes )
 
   @classmethod
-  def exec_taskProcessed( cls, jid, jobState, eType ):
+  def exec_taskProcessed( cls, jid, taskObj, eType ):
+    jobState = taskObj.jobState
     cls.log.info( "Saving changes for job %s after %s" % ( jid, eType ) )
     result = jobState.commitChanges()
     if not result[ 'OK' ]:
@@ -108,7 +110,8 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return result
 
   @classmethod
-  def exec_taskFreeze( cls, jid, jobState, eType ):
+  def exec_taskFreeze( cls, jid, taskObj, eType ):
+    jobState = taskObj.jobState
     cls.log.info( "Saving changes for job %s before freezing from %s" % ( jid, eType ) )
     result = jobState.commitChanges()
     if not result[ 'OK' ]:
@@ -116,7 +119,8 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return result
 
   @classmethod
-  def exec_dispatch( cls, jid, jobState, pathExecuted ):
+  def exec_dispatch( cls, jid, taskObj, pathExecuted ):
+    jobState = taskObj.jobState
     result = jobState.getStatus()
     if not result[ 'OK' ]:
       cls.log.error( "Could not get status for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
@@ -146,20 +150,20 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return S_OK( "WorkloadManagement/%s" % minorStatus )
 
   @classmethod
-  def exec_prepareToSend( cls, jid, jobState, eId ):
-    return jobState.recheckValidity()
+  def exec_prepareToSend( cls, jid, taskObj, eId ):
+    return taskObj.jobState.recheckValidity()
 
   @classmethod
-  def exec_serializeTask( cls, jobState ):
-    return S_OK( jobState.serialize() )
+  def exec_serializeTask( cls, taskObj ):
+    return S_OK( taskObj.serialize() )
 
   @classmethod
   def exec_deserializeTask( cls, taskStub ):
-    return CachedJobState.deserialize( taskStub )
+    return OptimizationTask.deserialize( taskStub )
 
   @classmethod
-  def exec_taskError( cls, jid, cachedJobState, errorMsg ):
-    result = cachedJobState.commitChanges()
+  def exec_taskError( cls, jid, taskObj, errorMsg ):
+    result = taskObj.jobState.commitChanges()
     if not result[ 'OK' ]:
       cls.log.error( "Cannot write changes to job %s: %s" % ( jid, result[ 'Message' ] ) )
     jobState = JobState( jid )

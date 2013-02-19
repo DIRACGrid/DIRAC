@@ -152,5 +152,5 @@ class JobPolicy:
           ownerJobList.append( jobID )
       else:
         invalidJobList.append( jobID )
-  
+
     return validJobList, invalidJobList, nonauthJobList, ownerJobList

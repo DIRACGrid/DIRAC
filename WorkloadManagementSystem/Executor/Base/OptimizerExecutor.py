@@ -3,8 +3,10 @@ import threading
 import datetime
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DEncode, List
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
+from DIRAC.WorkloadManagementSystem.Client.JobState.OptimizationTask import OptimizationTask
 
 class OptimizerExecutor( ExecutorModule ):
 
@@ -35,7 +37,6 @@ class OptimizerExecutor( ExecutorModule ):
     def __getattr__( self, name ):
       return self.LogWrap( self.__log, self.__jid, name )
 
-
   @classmethod
   def initialize( cls ):
     opName = cls.ex_getProperty( 'fullName' )
@@ -45,7 +46,6 @@ class OptimizerExecutor( ExecutorModule ):
     cls.__optimizerName = opName
     maxTasks = cls.ex_getOption( 'Tasks', 1 )
     cls.__jobData = threading.local()
-
     cls.__jobData.jobState = None
     cls.__jobData.jobLog = None
     cls.ex_setProperty( 'optimizerName', cls.__optimizerName )
@@ -66,18 +66,28 @@ class OptimizerExecutor( ExecutorModule ):
   def initializeOptimizer( self ):
     return S_OK()
 
-  def processTask( self, jid, jobState ):
+
+  def setManifestsFromParametric( self, manifestList ):
+    self.disableFastTrackForTask()
+    self.__jobData.task.setParametricManifests( manifestList )
+
+  def processTask( self, jid, taskObj ):
+    jobState = taskObj.jobState
+    self.__jobData.task = taskObj
     self.__jobData.jobState = jobState
     self.__jobData.jobLog = self.JobLog( self.log, jid )
     try:
       self.jobLog.info( "Processing" )
       optResult = self.optimizeJob( jid, jobState )
-      # If the manifest is dirty, update it!
+      if not isReturnStructure( optResult ):
+        raise RuntimeError( "Executor does not return S_OK/S_ERROR!" )
+      #If the manifest is dirty, update it!
       result = jobState.getManifest()
       if not result[ 'OK' ]:
         return result
       manifest = result[ 'Value' ]
       if manifest.isDirty():
+        manifest.expand()
         jobState.setManifest( manifest )
       # Did it go as expected? If not Failed!
       if not optResult[ 'OK' ]:
@@ -157,12 +167,13 @@ class OptimizerExecutor( ExecutorModule ):
     return self.__jobData.jobLog
 
   def deserializeTask( self, taskStub ):
-    return CachedJobState.deserialize( taskStub )
+    return OptimizationTask.deserialize( taskStub )
 
-  def serializeTask( self, cjs ):
-    return S_OK( cjs.serialize() )
+  def serializeTask( self, taskObj ):
+    return S_OK( taskObj.serialize() )
 
-  def fastTrackDispatch( self, jid, jobState ):
+  def fastTrackDispatch( self, jid, taskObj ):
+    jobState = taskObj.jobState
     result = jobState.getStatus()
     if not result[ 'OK' ]:
       return S_ERROR( "Could not retrieve job status for %s: %s" % ( jid, result[ 'Message' ] ) )

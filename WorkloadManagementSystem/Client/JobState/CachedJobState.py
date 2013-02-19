@@ -57,6 +57,17 @@ class CachedJobState( object ):
   def commitChanges( self ):
     if self.__initState == None:
       return S_ERROR( "CachedJobState( %d ) is not valid" % self.__jid )
+    #Save manifest
+    if self.__manifest and self.__manifest.isDirty():
+      result = self.__jobState.setManifest( self.__manifest )
+      if not result[ 'OK' ]:
+        self.cleanState()
+        for i in range( 5 ):
+          if self.__jobState.rescheduleJob()[ 'OK' ]:
+            break
+        return result
+      self.__manifest.clearDirty()
+    #Save changes
     changes = {}
     for k in self.__dirtyKeys:
       changes[ k ] = self.__cache[ k ]
@@ -74,16 +85,6 @@ class CachedJobState( object ):
     newState = result[ 'Value' ]
     self.__jobLog = []
     self.__dirtyKeys.clear()
-    #Save manifest
-    if self.__manifest and self.__manifest.isDirty():
-      result = self.__jobState.setManifest( self.__manifest )
-      if not result[ 'OK' ]:
-        self.cleanState()
-        for i in range( 5 ):
-          if self.__jobState.rescheduleJob()[ 'OK' ]:
-            break
-        return result
-      self.__manifest.clearDirty()
     #Insert into TQ
     if self.__insertIntoTQ:
       result = self.__jobState.insertIntoTQ()
@@ -377,8 +378,17 @@ class CachedJobState( object ):
   def getInputData( self ):
     return self.__cacheResult( "inputData" , self.__jobState.getInputData )
 
+  def setInputData( self, pDict ):
+    result = self.__jobState.checkInputDataStructure( pDict )
+    if not result[ 'OK' ]:
+      return result
+    self.__cacheAdd( 'inputData', pDict )
+    return S_OK()
+
+
   def insertIntoTQ( self ):
     if self.valid:
       self.__insertIntoTQ = True
       return S_OK()
     return S_ERROR( "Cached state is invalid" )
+

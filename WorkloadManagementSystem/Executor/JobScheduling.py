@@ -9,6 +9,7 @@
 
 """
 
+import types
 import random
 
 from DIRAC                                                          import S_OK, S_ERROR
@@ -59,7 +60,10 @@ class JobScheduling( OptimizerExecutor ):
     if reschedules != 0:
       delays = self.ex_getOption( 'RescheduleDelays', [60, 180, 300, 600] )
       delay = delays[ min( reschedules, len( delays ) - 1 ) ]
-      waited = toEpoch() - toEpoch( fromString( attDict[ 'RescheduleTime' ] ) )
+      reschTime = attDict[ 'RescheduleTime' ]
+      if type( reschTime ) == types.StringType:
+        reschTime = fromString( reschTime )
+      waited = toEpoch() - toEpoch( reschTime )
       if waited < delay:
         return self.__holdJob( jobState, 'On Hold: after rescheduling %s' % reschedules, delay )
 
@@ -205,7 +209,7 @@ class JobScheduling( OptimizerExecutor ):
       self.jobLog.info( "Banned %s sites" % ", ".join( bannedSites ) )
 
     sites = manifest.getOption( "Site", [] )
-    # TODO: Only accept known sites after removing crap like ANY set in the original manifest
+    #TODO: Only accept known sites after removing crap like ANY set in the original manifest
     sites = [ site for site in sites if site.strip().lower() not in ( "any", "" ) ]
 
     if len( sites ) == 1:
@@ -235,7 +239,7 @@ class JobScheduling( OptimizerExecutor ):
     else:
       result = manifest.createSection( reqSection )
     if not result[ 'OK' ]:
-      self.jobLog.error( "Cannot create %s: %s" % reqSection, result[ 'Value' ] )
+      self.jobLog.error( "Cannot create %s: %s" % ( reqSection, result[ 'Message' ] ) )
       return S_ERROR( "Cannot create %s in the manifest" % reqSection )
     reqCfg = result[ 'Value' ]
 
@@ -244,18 +248,37 @@ class JobScheduling( OptimizerExecutor ):
     if bannedSites:
       reqCfg.setOption( "BannedSites", ", ".join( bannedSites ) )
 
-    for key in ( 'SubmitPools', "GridMiddleware", "PilotTypes", "JobType", "GridRequiredCEs" ):
-      reqKey = key
+    for key in ( 'SubmitPools', "GridMiddleware", "PilotTypes", "JobType", "GridRequiredCEs",
+                 "OwnerDN", "OwnerGroup", "VirtualOrganization", 'Priority', 'DIRACSetup',
+                 'CPUTime' ):
       if key == "JobType":
         reqKey = "JobTypes"
       elif key == "GridRequiredCEs":
         reqKey = "GridCEs"
-      if key in manifest:
-        reqCfg.setOption( reqKey, ", ".join( manifest.getOption( key, [] ) ) )
+      elif key == 'Priority':
+        reqkey = 'UserPriority'
+      elif key == "DIRACSetup":
+        reqKey = 'Setup'
+      else:
+        reqKey = key
 
-    result = self._setJobSite( jobState, sites )
-    if not result[ 'OK' ]:
-      return result
+      if key in manifest:
+        reqCfg.setOption( reqKey, manifest.getOption( key, "" ) )
+
+    #Platform
+    userPlatform = manifest.getOption( "Platform" )
+    if userPlatform and userPlatform != 'any':
+      preqs = [ userPlatform ]
+      result = gConfig.getOptionsDict( "/Resources/Computing/OSCompatibility" )
+      if result[ 'OK' ]:
+        compatDict = result[ 'Value' ]
+        for compatPlatform in compatDict:
+          if compatPlatform != userPlatform:
+            if userPlatform in List.fromChar( compatDict[ compatPlatform ] ):
+              preqs.append( compatPlatform )
+      reqCfg.setOption( "Platforms", ", ".join( preqs ) )
+
+    self.__setJobSite( jobState, sites )
 
     self.jobLog.info( "Done" )
     return self.setNextOptimizer( jobState )
