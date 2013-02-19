@@ -30,7 +30,7 @@ class DirectoryMetadata:
         pname - parameter name, ptype - parameter type in the MySQL notation
     """
 
-    result = self.db.fmeta.getMetadataFields( credDict )
+    result = self.db.fmeta.getFileMetadataFields( credDict )
     if not result['OK']:
       return result
     if pname in result['Value'].keys():
