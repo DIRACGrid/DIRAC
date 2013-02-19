@@ -11,8 +11,9 @@ class JobManifest( object ):
   def __init__( self, manifest = "" ):
     self.__manifest = CFG()
     self.__dirty = False
+    self.__ops = False
     if manifest:
-      result = self.loadManifest( manifest )
+      result = self.load( manifest )
       if not result[ 'OK' ]:
         raise Exception( result[ 'Message' ] )
 
@@ -60,10 +61,17 @@ class JobManifest( object ):
     return str( self.__manifest )
 
   def getAsCFG( self ):
-    return self.__manifest.copy()
+    return self.__manifest.clone()
 
   def dumpAsJDL( self ):
     return dumpCFGAsJDL( self.__manifest )
+
+  def __getCSValue( self, varName, defaultVal = None ):
+    if not self.__ops:
+      self.__ops = Operations( group = self.__manifest[ 'OwnerGroup' ], setup = self.__manifest[ 'DIRACSetup' ] )
+    if varName[0] != "/":
+      varName = "JobDescription/%s" % varName
+    return self.__ops.getValue( varName, defaultVal )
 
   def __checkNumericalVar( self, varName, defaultVal, minVal, maxVal ):
     """
@@ -71,7 +79,7 @@ class JobManifest( object ):
     """
     initialVal = False
     if varName not in self.__manifest:
-      varValue = gConfig.getValue( "/JobManifest/Default%s" % varName , defaultVal )
+      varValue = self.__getCSValue( "Default%s" % varName , defaultVal )
     else:
       varValue = self.__manifest[ varName ]
       initialVal = varValue
@@ -79,8 +87,8 @@ class JobManifest( object ):
       varValue = long( varValue )
     except:
       return S_ERROR( "%s must be a number" % varName )
-    minVal = gConfig.getValue( "/JobManifest/Min%s" % varName, minVal )
-    maxVal = gConfig.getValue( "/JobManifest/Max%s" % varName, maxVal )
+    minVal = self.__getCSValue( "Min%s" % varName, minVal )
+    maxVal = self.__getCSValue( "Max%s" % varName, maxVal )
     varValue = max( minVal, min( varValue, maxVal ) )
     if initialVal != varValue:
       self.__manifest.setOption( varName, varValue )
@@ -92,11 +100,11 @@ class JobManifest( object ):
     """
     initialVal = False
     if varName not in self.__manifest:
-      varValue = gConfig.getValue( "/JobManifest/Default%s" % varName , defaultVal )
+      varValue = self.__getCSValue( "Default%s" % varName , defaultVal )
     else:
       varValue = self.__manifest[ varName ]
       initialVal = varValue
-    if varValue not in gConfig.getValue( "/JobManifest/Choices%s" % varName , choices ):
+    if varValue not in self.__getCSValue( "Choices%s" % varName , choices ):
       return S_ERROR( "%s is not a valid value for %s" % ( varValue, varName ) )
     if initialVal != varValue:
       self.__manifest.setOption( varName, varValue )
@@ -112,7 +120,7 @@ class JobManifest( object ):
     else:
       varValue = self.__manifest[ varName ]
       initialVal = varValue
-    choices = gConfig.getValue( "/JobManifest/Choices%s" % varName , choices )
+    choices = self.__getCSValue( "Choices%s" % varName , choices )
     for v in List.fromChar( varValue ):
       if v not in choices:
         return S_ERROR( "%s is not a valid value for %s" % ( v, varName ) )
@@ -159,7 +167,7 @@ class JobManifest( object ):
       return result
     allowedSubmitPools = []
     for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools = gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
+      allowedSubmitPools = self.__getCSValue( "/%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
                                              allowedSubmitPools )
     result = self.__checkMultiChoice( "SubmitPools", allowedSubmitPools )
     if not result[ 'OK' ]:
@@ -170,7 +178,7 @@ class JobManifest( object ):
     result = self.__checkMaxInputData( 500 )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMultiChoice( "JobType", Operations().getValue( "JobDescription/AllowedJobTypes", [] ) )
+    result = self.__checkMultiChoice( "JobType", self.__getCSValue( "AllowedJobTypes", [] ) )
     if not result[ 'OK' ]:
       return result
     return S_OK()
@@ -180,7 +188,7 @@ class JobManifest( object ):
       if contents and not isinstance( contents, CFG ):
         return S_ERROR( "Contents for section %s is not a cfg object" % secName )
       self.__dirty = True
-      S_OK( self.__manifest.createSection( secName, contents = contents ) )
+      return S_OK( self.__manifest.createNewSection( secName, contents = contents ) )
     return S_ERROR( "Section %s already exists" % secName )
 
   def getSection( self, secName ):
@@ -214,7 +222,7 @@ class JobManifest( object ):
       cfg = cfg[ l ]
     cfg.setOption( levels[-1], varValue )
 
-  def removeOption( self, opName ):
+  def remove( self, opName ):
     levels = List.fromChar( opName, "/" )
     cfg = self.__manifest
     for l in levels[:-1]:
@@ -242,6 +250,12 @@ class JobManifest( object ):
       return []
     cfg = cfg[ 'value' ]
     return cfg.listOptions()
+
+  def isOption( self, opName ):
+    """
+    Check if it is a valid option
+    """
+    return self.__manifest.isOption( opName )
 
   def getSectionList( self, section = "" ):
     """
