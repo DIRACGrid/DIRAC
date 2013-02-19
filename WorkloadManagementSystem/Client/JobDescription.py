@@ -62,7 +62,7 @@ class JobDescription:
     """
     initialVal = 0
     if varName not in self.__description:
-      varValue = gConfig.getValue( "/JobDescription/Default%s" % varName , defaultVal )
+      varValue = Operations().getValue( "JobDescription/Default%s" % varName , defaultVal )
     else:
       varValue = self.__description[ varName ]
       initialVal = varValue
@@ -70,8 +70,8 @@ class JobDescription:
       varValue = long( varValue )
     except:
       return S_ERROR( "%s must be a number" % varName )
-    minVal = gConfig.getValue( "/JobDescription/Min%s" % varName, minVal )
-    maxVal = gConfig.getValue( "/JobDescription/Max%s" % varName, maxVal )
+    minVal = Operations().getValue( "JobDescription/Min%s" % varName, minVal )
+    maxVal = Operations().getValue( "JobDescription/Max%s" % varName, maxVal )
     varValue = max( minVal, min( varValue, maxVal ) )
     if initialVal != varValue:
       self.__description.setOption( varName, varValue )
@@ -83,11 +83,11 @@ class JobDescription:
     """
     initialVal = False
     if varName not in self.__description:
-      varValue = gConfig.getValue( "/JobDescription/Default%s" % varName , defaultVal )
+      varValue = Operations().getValue( "JobDescription/Default%s" % varName , defaultVal )
     else:
       varValue = self.__description[ varName ]
       initialVal = varValue
-    if varValue not in gConfig.getValue( "/JobDescription/Choices%s" % varName , choices ):
+    if varValue not in Operations().getValue( "JobDescription/Choices%s" % varName , choices ):
       return S_ERROR( "%s is not a valid value for %s" % ( varValue, varName ) )
     if initialVal != varValue:
       self.__description.setOption( varName, varValue )
@@ -103,7 +103,7 @@ class JobDescription:
     else:
       varValue = self.__description[ varName ]
       initialVal = varValue
-    choices = gConfig.getValue( "/JobDescription/Choices%s" % varName , choices )
+    choices = Operations().getValue( "JobDescription/Choices%s" % varName , choices )
     for v in List.fromChar( varValue ):
       if v not in choices:
         return S_ERROR( "%s is not a valid value for %s" % ( v, varName ) )
@@ -153,7 +153,8 @@ class JobDescription:
     result = self.__checkMultiChoiceInDescription( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMaxInputData( 500 )
+    maxInputData = Operations().getValue( "JobDescription/MaxInputData", 500 )
+    result = self.__checkMaxInputData( maxInputData )
     if not result[ 'OK' ]:
       return result
     result = self.__checkMultiChoiceInDescription( "JobType",
