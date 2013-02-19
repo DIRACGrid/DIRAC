@@ -468,7 +468,12 @@ class TransferDB( DB ):
     if not res["OK"]:
       gLogger.error("setFileToReschedule: %s" % res["Message"] )
       return res
-    req = "DELETE FROM `ReplicationTree` WHERE FileID =%s;" % fileID
+    req = "DELETE FROM `ReplicationTree` WHERE `FileID` = %s;" % fileID
+    res = self._update( req )
+    if not res["OK"]:
+      gLogger.error("setFileToReschedule: %s" % res["Message"] )
+      return res
+    req = "DELETE FROM `FileToCat` WHERE `FileID` = %s;" % fileID
     res = self._update( req )
     if not res["OK"]:
       gLogger.error("setFileToReschedule: %s" % res["Message"] )
