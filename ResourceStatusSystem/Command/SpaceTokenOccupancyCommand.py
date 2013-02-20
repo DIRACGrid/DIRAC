@@ -155,7 +155,7 @@ class SpaceTokenOccupancyCommand( Command ):
 #
 #    elementsToQuery = list( set( elementsToCheck ).difference( set( resQuery ) ) )
     
-    gLogger.info( 'Processing %s' % elementsToCheck )
+    gLogger.verbose( 'Processing %s' % elementsToCheck )
     
     for elementToQuery in elementsToCheck:
 

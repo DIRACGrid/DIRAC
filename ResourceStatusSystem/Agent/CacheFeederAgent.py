@@ -43,6 +43,7 @@ class CacheFeederAgent( AgentModule ):
     self.rmClient = ResourceManagementClient()
 
     self.commands[ 'Downtime' ]            = [ { 'Downtime'            : {} } ]
+    self.commands[ 'SpaceTokenOccupancy' ] = [ { 'SpaceTokenOccupancy' : {} } ]
  
     
     #PilotsCommand
@@ -131,6 +132,7 @@ class CacheFeederAgent( AgentModule ):
           self.log.info( 'Empty results' )
           continue
           
+        self.log.verbose( 'Command OK Results' )  
         self.log.verbose( results )
           
     return S_OK()  

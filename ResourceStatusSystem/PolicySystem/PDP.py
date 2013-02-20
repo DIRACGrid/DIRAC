@@ -96,9 +96,9 @@ class PDP:
       return policyCombinedResults
     policyCombinedResults = policyCombinedResults[ 'Value' ]
 
-    #FIXME: should also pass the result of the combination to the InfoGetter ?
-
-    policyActionsThatApply = self.iGetter.getPolicyActionsThatApply( self.decissionParams )
+    policyActionsThatApply = self.iGetter.getPolicyActionsThatApply( self.decissionParams,
+                                                                     singlePolicyResults,
+                                                                     policyCombinedResults )
     if not policyActionsThatApply[ 'OK' ]:
       return policyActionsThatApply
     policyActionsThatApply = policyActionsThatApply[ 'Value' ]
@@ -120,7 +120,7 @@ class PDP:
     if decissionParams is None:
       decissionParams = self.decissionParams
     
-    validStatus             = RssConfiguration.getValidStatus()
+    validStatus = RssConfiguration.getValidStatus()
     if not validStatus[ 'OK' ]:
       return validStatus
     validStatus = validStatus[ 'Value' ]
