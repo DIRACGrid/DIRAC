@@ -54,7 +54,7 @@ import time, operator
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
 from DIRAC                                                   import S_OK, S_ERROR, Time
 from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
@@ -1303,11 +1303,15 @@ class JobDB( DB ):
     classAdJob.insertAttributeString( 'Owner', owner )
     classAdJob.insertAttributeString( 'OwnerDN', ownerDN )
     classAdJob.insertAttributeString( 'OwnerGroup', ownerGroup )
+    
+    submitPools = getGroupOption( ownerGroup, "SubmitPools" )
+    if not submitPools and vo:
+      submitPools = getVOOption( vo, 'SubmitPools' )
+    if submitPools and not classAdJob.lookupAttribute( 'SubmitPools' ):
+      classAdJob.insertAttributeString( 'SubmitPools', submitPools )  
+      
     if vo:
-      classAdJob.insertAttributeString( 'VirtualOrganization', vo )
-      submitPool = getVOOption( vo, 'SubmitPools' )
-      if submitPool and not classAdJob.lookupAttribute( 'SubmitPools' ):
-        classAdJob.insertAttributeString( 'SubmitPools', submitPool )
+      classAdJob.insertAttributeString( 'VirtualOrganization', vo )      
 
     classAdReq.insertAttributeString( 'Setup', diracSetup )
     classAdReq.insertAttributeString( 'OwnerDN', ownerDN )
