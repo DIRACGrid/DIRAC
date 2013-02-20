@@ -32,10 +32,14 @@ These are the methods for manipulating the client:
 """
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 import re
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 class StorageBase:
+  """
+  .. class:: StorageBase
+  
+  """
 
   def __init__( self, name, rootdir ):
     self.isok = True
