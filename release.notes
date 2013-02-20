@@ -1,3 +1,22 @@
+[v6r7p6]
+
+*Core
+FIX: dirac-install - restore signal alarm if downloadable file is not found
+FIX: Subprocess - using Manager proxy object to pass results from the working process
+
+*DMS:
+CHANGE: StorageElement - removed overwride mode
+CHANGE: removed obsoleted dirac-dms-remove-lfn-replica, dirac-dms-remove-lfn
+
+*RSS
+NEW: ElementInspectorAgent runs with a variable number of threads which are automatically adjusted
+NEW: Added policies to force a particular state, can be very convenient to keep something Banned for example.
+NEW: policy system upgrade, added finer granularity when setting policies and actions
+
+*WMS
+NEW: SiteDirector- allow to define pilot DN/Group in the agent options
+CHANGE: JobDescription, JobManifest - take values for job parameter verification from Operations CS section
+
 [v6r7p5]
 
 *Interfaces
