@@ -3,9 +3,11 @@
 
 '''
 
-from DIRAC                                                      import S_ERROR, S_OK, gConfig
+from DIRAC                                                      import gConfig, gLogger, S_ERROR, S_OK
+from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
+from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration
+#from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
 
 __RCSID__ = '$Id:  $'
 
@@ -15,11 +17,12 @@ class EmailAction( BaseAction ):
     the policies run.
   '''
   
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
+  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, 
+                clients = None ):
     
-    super( EmailAction, self ).__init__( decissionParams, enforcementResult, 
+    super( EmailAction, self ).__init__( name, decissionParams, enforcementResult, 
                                          singlePolicyResults, clients )
-    self.actionName = 'EmailAction'
+    self.diracAdmin = DiracAdmin()
 
   def run( self ):
     '''
@@ -49,22 +52,23 @@ class EmailAction( BaseAction ):
     if reason is None:
       return S_ERROR( 'reason should not be None' )
     
-    if self.decissionParams[ 'status' ] == status:
-      # If status has not changed, we skip
-      return S_OK()
+#    if self.decissionParams[ 'status' ] == status:
+#      # If status has not changed, we skip
+#      return S_OK()
 
-    if self.decissionParams[ 'reason' ] == reason:
-      # If reason has not changed, we skip
-      return S_OK()
+#    if self.decissionParams[ 'reason' ] == reason:
+#      # If reason has not changed, we skip
+#      return S_OK()
 
-    if not set( ( 'Banned', 'Error', 'Unknown' ) ) & set( ( status, self.decissionParams[ 'status' ] ) ):
-      # if not 'Banned', 'Error', 'Unknown' in ( status, self.decissionParams[ 'status' ] ):
-      # not really interesting to send an email
-      return S_OK()
+#    if not set( ( 'Banned', 'Error', 'Unknown' ) ) & set( ( status, self.decissionParams[ 'status' ] ) ):
+#      # if not 'Banned', 'Error', 'Unknown' in ( status, self.decissionParams[ 'status' ] ):
+#      # not really interesting to send an email
+#      return S_OK()
       
     setup = gConfig.getValue( 'DIRAC/Setup' )  
       
-    subject = '[%s]%s %s %s is on status %s' % ( setup, element, name, statusType, status )
+    #subject2 = '[%s]%s %s %s is on status %s' % ( setup, element, name, statusType, status )
+    subject = '[RSS](%s) %s (%s) %s' % ( setup, name, statusType, self.actionName )
     
     body = 'ENFORCEMENT RESULT\n\n'
     body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in self.enforcementResult.items() ] )
@@ -85,31 +89,46 @@ class EmailAction( BaseAction ):
         
     return self._sendMail( subject, body )
 
+  def _getUserEmails( self ):
+
+    policyActions = RssConfiguration.getPolicyActions()
+    if not policyActions[ 'OK' ]:
+      return policyActions
+    try:
+      notificationGroups = policyActions[ 'Value' ][ self.actionName ][ 'notificationGroups' ]
+    except KeyError:
+      return S_ERROR( '%s/notificationGroups not found' % self.actionName )  
+    
+    notifications = RssConfiguration.getNotifications()
+    if not notifications[ 'OK' ]:
+      return notifications
+    notifications = notifications[ 'Value' ]  
+
+    userEmails = []
+    
+    for notificationGroupName in notificationGroups:
+      try:
+        userEmails.extend( notifications[ notificationGroupName ][ 'users' ] ) 
+      except KeyError:
+        gLogger.error( '%s not present' % notificationGroupName )
+
+    return S_OK( userEmails )
+
   def _sendMail( self, subject, body ):
     
-    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-    diracAdmin = DiracAdmin()
+    userEmails = self._getUserEmails()
+    if not userEmails[ 'OK' ]:
+      return userEmails
     
-    address = InfoGetter().getNotificationsThatApply( self.decissionParams, self.actionName )
-    if not address[ 'OK' ]:
-      return address 
-    address = address[ 'Value' ]
-    
-    for addressDict in address:
-      if not 'name' in addressDict:
-        return S_ERROR( 'Malformed address dict %s' % addressDict ) 
-      if not 'users' in addressDict:
-        return S_ERROR( 'Malformed address dict %s' % addressDict )     
-      
-      for user in addressDict[ 'users' ]:
+    for user in userEmails[ 'Value' ]:
       
       #FIXME: should not I get the info from the RSS User cache ?
       
-        resEmail = diracAdmin.sendMail( user, subject, body )
-        if not resEmail[ 'OK' ]:
-          return S_ERROR( 'Cannot send email to user "%s"' % user )    
+      resEmail = self.diracAdmin.sendMail( user, subject, body )
+      if not resEmail[ 'OK' ]:
+        return S_ERROR( 'Cannot send email to user "%s"' % user )    
       
-    return resEmail 
+    return S_OK() 
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

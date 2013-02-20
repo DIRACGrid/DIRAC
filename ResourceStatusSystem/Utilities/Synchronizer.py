@@ -32,7 +32,7 @@ class Synchronizer( object ):
       
     self.rssConfig = RssConfiguration()  
   
-  def sync( self ):
+  def sync( self, _eventName, _params ):
     '''
       Main synchronizer method. It syncs the three types of elements: Sites,
       Resources and Nodes.
@@ -61,7 +61,7 @@ class Synchronizer( object ):
       Sync sites: compares CS with DB and does the necessary modifications.
     '''
     
-    gLogger.verbose( '-- Synchronizing sites --')
+    gLogger.info( '-- Synchronizing sites --')
     
     domainSitesCS = CSHelpers.getDomainSites()
     if not domainSitesCS[ 'OK' ]:
@@ -124,7 +124,7 @@ class Synchronizer( object ):
       ( StorageElements, FTS, FileCatalogs and ComputingElements )
     '''
     
-    gLogger.verbose( '-- Synchronizing Resources --' )
+    gLogger.info( '-- Synchronizing Resources --' )
     
     gLogger.verbose( '-> StorageElements' )
     ses = self.__syncStorageElements()
@@ -155,7 +155,7 @@ class Synchronizer( object ):
       Sync resources: compares CS with DB and does the necessary modifications.
       ( Queues )
     '''
-    gLogger.verbose( '-- Synchronizing Nodes --' )
+    gLogger.info( '-- Synchronizing Nodes --' )
   
     gLogger.verbose( '-> Queues' )
     queues = self.__syncQueues()
