@@ -90,7 +90,9 @@ class SiteDirector( AgentModule ):
     self.platforms = [] 
     self.sites = []
     self.defaultSubmitPools = ''
-    if self.vo:
+    if self.group:
+      self.defaultSubmitPools = Registry.getGroupOption( self.group, 'SubmitPools', '' )
+    elif self.vo:
       self.defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
       
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
