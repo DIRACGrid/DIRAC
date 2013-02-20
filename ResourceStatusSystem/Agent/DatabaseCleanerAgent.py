@@ -24,8 +24,8 @@ class DatabaseCleanerAgent( AgentModule ):
   # Max number of days for the history tables
   __maxHistoryLifetime = 10
 
-  # Max number of days for the log tables
-  __maxLogLifetime = 20
+  # Max number of days for the log tables ( in principle, we do not delete ! )
+  __maxLogLifetime = 10000
 
   # List of caches to be processed
   __cacheNames = ( 'DowntimeCache', 'GGUSTicketsCache', 'JobCache',
@@ -48,8 +48,6 @@ class DatabaseCleanerAgent( AgentModule ):
     ''' Standard initialize.
         Uses the ProductionManager shifterProxy to modify the ResourceStatus DB
     '''
-
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
     self.maxCacheLifetime = self.am_getOption( 'maxCacheLifetime', self.maxCacheLifetime )
     self.maxHistoryLifetime = self.am_getOption( 'maxHistoryLifetime', self.maxHistoryLifetime )

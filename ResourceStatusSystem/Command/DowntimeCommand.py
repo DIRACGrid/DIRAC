@@ -203,15 +203,25 @@ class DowntimeCommand( Command ):
     uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
 
     # We return only one downtime, if its ongoind at dtDate
-    dtDate = datetime.now()     
-    if hours:
-      dtDate = dtDate + timedelta( hours = hours )
-           
-    result = None       
-    for dt in uniformResult:
-      if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
-        result = dt
-        break        
+    dtDate = datetime.now()
+    result = None
+       
+    if not hours:
+      # If not hours defined, we want the downtimes running now, which means,
+      # the ones that already started and will finish later.
+  
+      for dt in uniformResult:
+        if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
+          result = dt
+          break        
+
+    else:
+      # If hours are defined, we want the downtimes starting in the next <hours>
+      dtDateFuture = dtDate + timedelta( hours = hours )       
+      for dt in uniformResult:
+        if ( dt[ 'StartDate' ] > dtDate ) and ( dt[ 'StartDate' ] < dtDateFuture ):
+          result = dt
+          break
            
     return S_OK( result )       
 
@@ -251,13 +261,13 @@ class DowntimeCommand( Command ):
     if ce[ 'OK' ]:
       resources = resources + ce[ 'Value' ]
     
-    gLogger.info( 'Processing Sites: %s' % ', '.join( gocSites ) )
+    gLogger.verbose( 'Processing Sites: %s' % ', '.join( gocSites ) )
     
     siteRes = self.doNew( ( 'Site', gocSites ) )
     if not siteRes[ 'OK' ]:
       self.metrics[ 'failed' ].append( siteRes[ 'Message' ] )
 
-    gLogger.info( 'Processing Resources: %s' % ', '.join( resources ) )
+    gLogger.verbose( 'Processing Resources: %s' % ', '.join( resources ) )
 
     resourceRes = self.doNew( ( 'Resource', resources ) ) 
     if not resourceRes[ 'OK' ]:

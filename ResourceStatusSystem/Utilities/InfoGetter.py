@@ -7,7 +7,7 @@
 
 import copy
 
-from DIRAC                                import S_OK, S_ERROR
+from DIRAC                                import S_OK#, S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration, Utils
 
 __RCSID__ = '$Id: $'
@@ -37,8 +37,12 @@ class InfoGetter:
     
     for key in params:
       if key in decissionParams:
+        
+        # We can get rid of this now
         # In CS names are with upper case, capitalize them here
-        sanitizedParams[ key[0].upper() + key[1:] ] = decissionParams[ key ]
+        # sanitizedParams[ key[0].upper() + key[1:] ] = decissionParams[ key ]
+        
+        sanitizedParams[ key ] = decissionParams[ key ]
             
     return sanitizedParams
 
@@ -52,7 +56,18 @@ class InfoGetter:
     
     return self.__getPoliciesThatApply(decissionParams)
 
-  def getPolicyActionsThatApply( self, decissionParams ):
+#  def getPolicyActionsThatApply( self, decissionParams ):
+#    '''
+#      Method that sanitizes the input parameters and returns the policies actions
+#      that match them.
+#    '''
+#
+#    decissionParams = self.sanitizeDecissionParams( decissionParams )    
+#    
+#    return self.__getPolicyActionsThatApply( decissionParams )
+
+  def getPolicyActionsThatApply( self, decissionParams, singlePolicyResults,
+                                  policyCombinedResults ):
     '''
       Method that sanitizes the input parameters and returns the policies actions
       that match them.
@@ -60,19 +75,55 @@ class InfoGetter:
 
     decissionParams = self.sanitizeDecissionParams( decissionParams )    
     
-    return self.__getPolicyActionsThatApply( decissionParams )
+    return self.__getPolicyActionsThatApply2( decissionParams, singlePolicyResults,
+                                              policyCombinedResults )
 
-  def getNotificationsThatApply( self, decissionParams, notificationAction ):
-    '''
-      Method that sanitizes the input parameters and returns the users that will
-      be notified.
-    '''
-
-    decissionParams = self.sanitizeDecissionParams( decissionParams )
-
-    return self.__getNotificationsThatApply( decissionParams, notificationAction )
+#  def getNotificationsThatApply( self, decissionParams, notificationAction ):
+#    '''
+#      Method that sanitizes the input parameters and returns the users that will
+#      be notified.
+#    '''
+#
+#    decissionParams = self.sanitizeDecissionParams( decissionParams )
+#
+#    return self.__getNotificationsThatApply( decissionParams, notificationAction )
 
   ## Private methods ###########################################################
+
+#  def __getPoliciesThatApply( self, decissionParams ):
+#    '''
+#      Method that matches the input dictionary with the policies configuration in
+#      the CS. It returns a list of policy dictionaries that matched.
+#    '''
+#    
+#    policiesThatApply = []
+#    
+#    # Get policies configuration metadata from CS.
+#    policiesConfig = RssConfiguration.getPolicies()
+#    if not policiesConfig[ 'OK' ]:
+#      return policiesConfig
+#    policiesConfig = policiesConfig[ 'Value' ]
+#    
+#    # Get policies that match the given decissionParameters
+#    for policyName, policyConfig in policiesConfig.items():
+#      policyMatch = Utils.configMatch( decissionParams, policyConfig )   
+#      if policyMatch:
+#        policiesThatApply.append( policyName )
+#        
+#    policiesToBeLoaded = []    
+#    
+#    # Gets policies parameters from code.    
+#    for policyName in policiesThatApply:
+#      
+#      if not policyName in self.policies:
+#        continue
+#      
+#      policyDict = { 'name' : policyName }
+#      policyDict.update( self.policies[ policyName ] ) 
+#      
+#      policiesToBeLoaded.append( policyDict )
+#       
+#    return S_OK( policiesToBeLoaded )
 
   def __getPoliciesThatApply( self, decissionParams ):
     '''
@@ -88,26 +139,132 @@ class InfoGetter:
       return policiesConfig
     policiesConfig = policiesConfig[ 'Value' ]
     
+    # Each policy, has the following format
+    # <policyName>
+    # \
+    #  policyType = <policyType>
+    #  matchParams
+    #  \
+    #   ...        
+    #  configParams
+    #  \
+    #   ...
+    
     # Get policies that match the given decissionParameters
-    for policyName, policyConfig in policiesConfig.items():
-      policyMatch = Utils.configMatch( decissionParams, policyConfig )   
+    for policyName, policySetup in policiesConfig.items():
+      
+      # The parameter policyType replaces policyName, so if it is not present,
+      # we pick policyName
+      try:
+        policyType = policySetup[ 'policyType' ][ 0 ]
+      except KeyError:
+        policyType = policyName
+        #continue
+      
+      # The section matchParams is not mandatory, so we set {} as default.
+      policyMatchParams  = policySetup.get( 'matchParams',  {} )
+      
+      # FIXME: make sure the values in the policyConfigParams dictionary are typed !!
+      policyConfigParams = {}
+      #policyConfigParams = policySetup.get( 'configParams', {} )
+      
+      policyMatch = Utils.configMatch( decissionParams, policyMatchParams )   
       if policyMatch:
-        policiesThatApply.append( policyName )
+        policiesThatApply.append( ( policyName, policyType, policyConfigParams ) )
         
     policiesToBeLoaded = []    
     
     # Gets policies parameters from code.    
-    for policyName in policiesThatApply:
+    for policyName, policyType, _policyConfigParams in policiesThatApply:
       
-      if not policyName in self.policies:
-        continue
+      try:
+        policyMeta = self.policies[ policyType ]
+      except KeyError:
+        continue  
       
-      policyDict = { 'name' : policyName }
-      policyDict.update( self.policies[ policyName ] ) 
+      # We are not going to use name / type anymore, but we keep them for debugging
+      # and future usage.
+      policyDict = { 
+                     'name' : policyName, 
+                     'type' : policyType,
+                     'args' : {}
+                   }
+      
+      # args is one of the parameters we are going to use on the policies. We copy
+      # the defaults and then we update if with whatever comes from the CS.
+      policyDict.update( policyMeta )
+      # FIXME: watch out, args can be None !
+      #policyDict[ 'args' ].update( policyConfigParams )
       
       policiesToBeLoaded.append( policyDict )
        
     return S_OK( policiesToBeLoaded )
+
+  @staticmethod
+  def __getPolicyActionsThatApply2( decissionParams, singlePolicyResults,
+                                    policyCombinedResults ):
+    '''
+      Method that matches the input dictionary with the policy actions 
+      configuration in the CS. It returns a list of policy actions names that 
+      matched.
+    '''
+    
+    policyActionsThatApply = []
+    
+    # Get policies configuration metadata from CS.
+    policyActionsConfig = RssConfiguration.getPolicyActions()
+    if not policyActionsConfig[ 'OK' ]:
+      return policyActionsConfig
+    policyActionsConfig = policyActionsConfig[ 'Value' ]
+    
+    # Let's create a dictionary to use it with configMatch
+    policyResults = {}
+    for policyResult in singlePolicyResults:
+      try:
+        policyResults[ policyResult[ 'Policy' ][ 'name' ] ] = policyResult[ 'Status' ]
+      except KeyError:
+        continue
+    
+    # Get policies that match the given decissionParameters
+    for policyActionName, policyActionConfig in policyActionsConfig.items():
+      
+      # The parameter policyType is mandatory. If not present, we pick policyActionName
+      try:
+        policyActionType = policyActionConfig[ 'actionType' ][ 0 ]
+      except KeyError:
+        policyActionType = policyActionName
+        #continue
+      
+      # We get matchParams to be compared against decissionParams
+      policyActionMatchParams = policyActionConfig.get( 'matchParams', {} )
+      policyMatch = Utils.configMatch( decissionParams, policyActionMatchParams )   
+      #policyMatch = Utils.configMatch( decissionParams, policyActionConfig )
+      if not policyMatch:
+        continue
+    
+      # Let's check single policy results
+      # Assumed structure:
+      # ...
+      # policyResults
+      # <PolicyName> = <PolicyResult1>,<PolicyResult2>...
+      policyActionPolicyResults = policyActionConfig.get( 'policyResults', {} )
+      policyResultsMatch = Utils.configMatch( policyResults, policyActionPolicyResults )
+      if not policyResultsMatch:
+        continue
+      
+      # combinedResult
+      # \Status = X,Y
+      # \Reason = asdasd,asdsa
+      policyActionCombinedResult = policyActionConfig.get( 'combinedResult', {} )
+      policyCombinedMatch = Utils.configMatch( policyCombinedResults, policyActionCombinedResult )
+      if not policyCombinedMatch:
+        continue
+            
+      #policyActionsThatApply.append( policyActionName )
+      # They may not be necessarily the same
+      policyActionsThatApply.append( ( policyActionName, policyActionType ) )    
+      
+    return S_OK( policyActionsThatApply )
 
   @staticmethod
   def __getPolicyActionsThatApply( decissionParams ):
@@ -133,36 +290,36 @@ class InfoGetter:
                
     return S_OK( policyActionsThatApply )
 
-  @staticmethod
-  def __getNotificationsThatApply( decissionParams, notificationAction ):
-    '''
-      Method that matches the input dictionary with the notifications 
-      configuration in the CS. It returns a list of notification dictionaries that 
-      matched.
-    '''
-
-    notificationsThatApply = []
-    
-    # Get notifications configuration metadata from CS.
-    notificationsConfig = RssConfiguration.getNotifications()
-    if not notificationsConfig[ 'OK' ]:
-      return notificationsConfig
-    notificationsConfig = notificationsConfig[ 'Value' ]
-    
-    if not notificationAction in notificationsConfig:
-      return S_ERROR( '"%s" not in notifications configuration' % notificationAction )
-    
-    notificationsConfig = notificationsConfig[ notificationAction ]
-    
-    # Get notifications that match the given decissionParameters
-    for notificationName, notificationConfig in notificationsConfig.items():
-      notificationMatch = Utils.configMatch( decissionParams, notificationConfig )   
-      if notificationMatch:
-        
-        notificationConfig[ 'name' ] = notificationName
-        notificationsThatApply.append( notificationConfig )
-               
-    return S_OK( notificationsThatApply )    
+#  @staticmethod
+#  def __getNotificationsThatApply( decissionParams, notificationAction ):
+#    '''
+#      Method that matches the input dictionary with the notifications 
+#      configuration in the CS. It returns a list of notification dictionaries that 
+#      matched.
+#    '''
+#
+#    notificationsThatApply = []
+#    
+#    # Get notifications configuration metadata from CS.
+#    notificationsConfig = RssConfiguration.getNotifications()
+#    if not notificationsConfig[ 'OK' ]:
+#      return notificationsConfig
+#    notificationsConfig = notificationsConfig[ 'Value' ]
+#    
+#    if not notificationAction in notificationsConfig:
+#      return S_ERROR( '"%s" not in notifications configuration' % notificationAction )
+#    
+#    notificationsConfig = notificationsConfig[ notificationAction ]
+#    
+#    # Get notifications that match the given decissionParameters
+#    for notificationName, notificationConfig in notificationsConfig.items():
+#      notificationMatch = Utils.configMatch( decissionParams, notificationConfig )   
+#      if notificationMatch:
+#        
+#        notificationConfig[ 'name' ] = notificationName
+#        notificationsThatApply.append( notificationConfig )
+#               
+#    return S_OK( notificationsThatApply )    
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

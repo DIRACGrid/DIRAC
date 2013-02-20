@@ -5,7 +5,7 @@
 
 '''
 
-from DIRAC import S_OK
+from DIRAC import gLogger, S_OK
 
 __RCSID__ = '$Id:  $'
 
@@ -46,8 +46,10 @@ class Command( object ):
     '''
     
     if self.masterMode:
+      gLogger.verbose( 'doMaster')
       return self.returnSObj( self.doMaster() )
-          
+    
+    gLogger.verbose( 'doCache' )      
     result = self.doCache()
     if not result[ 'OK' ]:
       return self.returnERROR( result )
@@ -56,6 +58,7 @@ class Command( object ):
     if result[ 'Value' ] or self.args[ 'onlyCache' ]:
       return result
     
+    gLogger.verbose( 'doNew' )
     return self.returnSObj( self.doNew() )
       
   def returnERROR( self, s_obj ):

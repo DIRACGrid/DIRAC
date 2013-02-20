@@ -129,11 +129,11 @@ class ElementInspectorAgent( AgentModule ):
         
         # We add lowerElementDict to the queue
         self.elementsToBeChecked.put( lowerElementDict )
-        self.log.info( '%s # "%s" # "%s" # %s # %s' % ( elemDict[ 'Name' ], 
-                                                        elemDict[ 'ElementType' ],
-                                                        elemDict[ 'StatusType' ],
-                                                        elemDict[ 'Status' ],
-                                                        elemDict[ 'LastCheckTime' ]) )
+        self.log.verbose( '%s # "%s" # "%s" # %s # %s' % ( elemDict[ 'Name' ], 
+                                                           elemDict[ 'ElementType' ],
+                                                           elemDict[ 'StatusType' ],
+                                                           elemDict[ 'Status' ],
+                                                           elemDict[ 'LastCheckTime' ]) )
        
     # Measure size of the queue, more or less, to know how many threads should
     # we start !
@@ -148,8 +148,15 @@ class ElementInspectorAgent( AgentModule ):
       threadsToStart = max( 0, threadsToStart - threadsRunning )
       self.log.info( 'Starting %d threads to process %d elements' % ( threadsToStart, queueSize ) )
     
+    # It may happen that we start two threads, 0 and 1. 1 goes DOWN, but 0 keeps 
+    # running. In next loop we will start a new thread, and will be called 0 
+    # again. To have a mechanism to see which thread is where, we append the
+    # cycle number before the threadId.
+    cycle = self.__moduleProperties[ 'cyclesDone' ]
+    
     for _x in xrange( threadsToStart ):
-      jobUp = self.threadPool.generateJobAndQueueIt( self._execute, args = ( _x, ) )
+      threadId = '%s_%s' % ( cycle, _x )
+      jobUp = self.threadPool.generateJobAndQueueIt( self._execute, args = ( threadId, ) )
       if not jobUp[ 'OK' ]:
         self.log.error( jobUp[ 'Message' ] )
         
@@ -187,7 +194,9 @@ class ElementInspectorAgent( AgentModule ):
         self.log.info( '%s DOWN' % tHeader )
         return S_OK()
       
-      self.log.info( '%s ( %s ) being processed' % ( element[ 'name' ], element[ 'status' ] ) )
+      self.log.info( '%s ( %s / %s ) being processed' % ( element[ 'name' ], 
+                                                          element[ 'status' ],
+                                                          element[ 'statusType' ] ) )
       
       resEnforce = pep.enforce( element )
       if not resEnforce[ 'OK' ]:

@@ -28,7 +28,6 @@ class SummarizeLogsAgent( AgentModule ):
         Uses the ProductionManager shifterProxy to modify the ResourceStatus DB
     '''
 
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
     self.rsClient = ResourceStatusClient()
 
     return S_OK()
@@ -116,7 +115,7 @@ class SummarizeLogsAgent( AgentModule ):
       return selectedRes
     selectedRes = selectedRes[ 'Value' ]
 
-    selectedStatus = None,
+    selectedStatus = None
     if selectedRes:
 
       # Get the last selectedRes, which will be the newest one. Each selectedRes
