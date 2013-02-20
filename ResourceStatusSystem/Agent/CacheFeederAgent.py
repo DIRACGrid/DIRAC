@@ -40,8 +40,6 @@ class CacheFeederAgent( AgentModule ):
 
   def initialize( self ):
 
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
-
     self.rmClient = ResourceManagementClient()
 
     self.commands[ 'Downtime' ]            = [ { 'Downtime'            : {} } ]

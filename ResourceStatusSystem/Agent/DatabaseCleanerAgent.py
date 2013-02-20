@@ -49,8 +49,6 @@ class DatabaseCleanerAgent( AgentModule ):
         Uses the ProductionManager shifterProxy to modify the ResourceStatus DB
     '''
 
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
-
     self.maxCacheLifetime = self.am_getOption( 'maxCacheLifetime', self.maxCacheLifetime )
     self.maxHistoryLifetime = self.am_getOption( 'maxHistoryLifetime', self.maxHistoryLifetime )
     self.maxLogLifetime = self.am_getOption( 'maxLogLifetime', self.maxLogLifetime )
