@@ -202,7 +202,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: name of the request
     """
-    self.log.info( "getCurrentExecutionOrder: attempt to get execution order for '%s' request." % requestName )
+    self.log.debug( "getCurrentExecutionOrder: attempt to get execution order for '%s' request." % requestName )
     executionOrder = self.requestManager().getCurrentExecutionOrder( requestName )
     if not executionOrder["OK"]:
       self.log.error( "getCurrentExecutionOrder: unable to get execution order for '%s' request: %s" %\
