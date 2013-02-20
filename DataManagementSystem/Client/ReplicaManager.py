@@ -530,11 +530,7 @@ class StorageBase( object ):
       self.log.error( errMessage )
       return S_ERROR( errMessage )
     self.log.debug( "_callStorageElementFcn: Will execute '%s' with %s pfns." % ( method, len( pfns ) ) )
-    ## make sure StorageElement is valid
-    overwrite = False
-    if method  in [ "removeFile", "removeDirectory"]:
-      overwrite = True
-    storageElement = StorageElement( storageElementName, overwride = overwrite )
+    storageElement = StorageElement( storageElementName )
     res = storageElement.isValid( method )
     if not res['OK']:
       errStr = "_callStorageElementFcn: Failed to instantiate Storage Element"
@@ -713,7 +709,7 @@ class StorageFile( StorageBase ):
     :param bool singleFile: flag to prestage only one file
     """
     return self._seFuncWrapper( singleFile )( storageElementName, physicalFile,
-                                            "prestageFile", argsDict = {"lifetime" : lifetime} )
+                                              "prestageFile", argsDict = {"lifetime" : lifetime} )
 
   def getPrestageStorageFileStatus( self, physicalFile, storageElementName, singleFile = False ):
     """ get the status of a pre-stage request
@@ -735,7 +731,7 @@ class StorageFile( StorageBase ):
     :param bool singleFile: execute for the first PFN only
     """
     return self._seFuncWrapper( singleFile )( storageElementName, physicalFile,
-                                            "pinFile", argsDict = {"lifetime": lifetime} )
+                                              "pinFile", argsDict = {"lifetime": lifetime} )
 
   def releaseStorageFile( self, physicalFile, storageElementName, singleFile = False ):
     """ release the pin on physical files
@@ -757,7 +753,7 @@ class StorageFile( StorageBase ):
     :param bool singleFile: execute for the first PFN only
     """
     return self._seFuncWrapper( singleFile )( storageElementName, physicalFile,
-                                            "getFile", argsDict = {"localPath": localPath} )
+                                              "getFile", argsDict = {"localPath": localPath} )
 
   def putStorageFile( self, physicalFile, storageElementName, singleFile = False ):
     """ put the local file to the storage element
@@ -779,7 +775,7 @@ class StorageFile( StorageBase ):
     :param bool singleFile: execute for the first PFN only
     """
     return self._seFuncWrapper( singleFile )( storageElementName, physicalFile,
-                                            'replicateFile', argsDict = {'sourceSize': size} )
+                                              'replicateFile', argsDict = {'sourceSize': size} )
 
 class StorageDirectory( StorageBase ):
   """
@@ -841,7 +837,7 @@ class StorageDirectory( StorageBase ):
     :param bool singleDirectory: execute for the first PFN only
     """
     return self._seFuncWrapper( singleDirectory )( storageElementName, storageDirectory,
-                                                 "getDirectory", argsDict = {'localPath': localPath} )
+                                                   "getDirectory", argsDict = {'localPath': localPath} )
 
   def putStorageDirectory( self, storageDirectory, storageElementName, singleDirectory = False ):
     """ put the local directory to the storage element
@@ -862,7 +858,7 @@ class StorageDirectory( StorageBase ):
     :param bool singleDirectory: execute for the first PFN only
     """
     return self._seFuncWrapper( singleDirectory )( storageElementName, storageDirectory,
-                                                 "removeDirectory", argsDict = {"recursive": recursive} )
+                                                   "removeDirectory", argsDict = {"recursive": recursive} )
 
 class StorageInterface( StorageFile, StorageDirectory ):
   """
@@ -1158,6 +1154,7 @@ class ReplicaManager( CatalogToStorage ):
     if not res['OK']:
       return res
     return S_OK()
+
   def __removeStorageDirectory( self, directory, storageElement ):
     """ delete SE directory
 
@@ -1319,14 +1316,13 @@ class ReplicaManager( CatalogToStorage ):
     failed.update( res['Value']['Failed'] )
     fileMetadata = res['Value']['Successful']
     successful = {}
-    for lfn in fileMetadata.keys():
+    for lfn in fileMetadata:
       res = self.__getFile( lfn, lfnReplicas[lfn], fileMetadata[lfn], destinationDir )
       if not res['OK']:
         failed[lfn] = res['Message']
       else:
         successful[lfn] = res['Value']
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
+    return S_OK( { 'Successful': successful, 'Failed' : failed } )
 
   def __getFile( self, lfn, replicas, metadata, destinationDir ):
     if not replicas:
@@ -1361,6 +1357,7 @@ class ReplicaManager( CatalogToStorage ):
     return S_ERROR( "ReplicaManager.getFile: Failed to get local copy from any replicas." )
 
   def _getSEProximity( self, ses ):
+    """ get SE proximity """
     siteName = DIRAC.siteName()
     localSEs = getSEsForSite( siteName )['Value']
     countrySEs = []
@@ -1513,8 +1510,7 @@ class ReplicaManager( CatalogToStorage ):
     startTime = time.time()
     gDataStoreClient.commit()
     self.log.info( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
-    resDict = {'Successful': successful, 'Failed':failed}
-    return S_OK( resDict )
+    return S_OK( {'Successful': successful, 'Failed': failed } )
 
   def replicateAndRegister( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' , catalog = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
@@ -1563,8 +1559,7 @@ class ReplicaManager( CatalogToStorage ):
         errStr = "replicateAndRegister: Failed to register replica."
         self.log.info( errStr, res['Value']['Failed'][lfn] )
         failed[lfn] = { 'Registration' : { 'LFN' : lfn, 'TargetSE' : destSE, 'PFN' : destPfn } }
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
+    return S_OK({'Successful': successful, 'Failed': failed} )
 
   def replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
@@ -1738,14 +1733,14 @@ class ReplicaManager( CatalogToStorage ):
     # Check whether the destination storage element is banned
 
     self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
-    
-    destSEStatus = self.resourceStatus.getStorageElementStatus( destSE, 'WriteAccess' )
+
+    destSEStatus = self.resourceStatus.getStorageElementStatus( destSE, 'Write' )
     if not destSEStatus[ 'OK' ]:
       self.log.error( destSEStatus[ 'Message' ] )
       return destSEStatus
-    destSEStatus = destSEStatus[ 'Value' ][ destSE ][ 'WriteAccess' ] 
- 
-    # For RSS, the Active and Degraded statuses are OK. Probing and Banned are NOK statuses
+    destSEStatus = destSEStatus[ 'Value' ][ destSE ][ 'Write' ]
+
+    # For RSS, the Active and Bad statuses are OK. Probing and Banned are NOK statuses
     if not destSEStatus in ( 'Active', 'Degraded' ):
       infoStr = "%s Destination Storage Element is currently '%s' for Write" % ( logStr, destSEStatus )
       self.log.info( infoStr, destSE )
@@ -1771,18 +1766,19 @@ class ReplicaManager( CatalogToStorage ):
 #    bannedSources = gConfig.getValue( configStr, [] )
 
     if sourceSE:
-      
-      sourceSEStatus = self.resourceStatus.getStorageElementStatus( sourceSE, 'ReadAccess' )
+
+      sourceSEStatus = self.resourceStatus.getStorageElementStatus( sourceSE, 'Read' )
       if not sourceSEStatus[ 'OK' ]:
         self.log.error( sourceSEStatus[ 'Message' ] )
         return sourceSEStatus
-      sourceSEStatus = sourceSEStatus[ 'Value' ][ sourceSE ][ 'ReadAccess' ] 
-      
+      sourceSEStatus = sourceSEStatus[ 'Value' ][ sourceSE ][ 'Read' ]
+
       if sourceSE not in lfnReplicas:
         errStr = "%s LFN does not exist at supplied source SE." % logStr
         self.log.error( errStr, "%s %s" % ( lfn, sourceSE ) )
-        return S_ERROR( errStr )      
-      elif not sourceSEStatus in ( 'Active', 'Degraded' ):      
+        return S_ERROR( errStr )
+
+      elif not sourceSEStatus in ( 'Active', 'Degraded' ):
 #      elif sourceSE in bannedSources:
         infoStr = "%s Supplied source Storage Element is currently '%s' for Read." % ( logStr, sourceSEStatus )
         self.log.info( infoStr, sourceSE )
@@ -1800,7 +1796,8 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( resDict )
 
   def __resolveBestReplicas( self, sourceSE, lfnReplicas, catalogueSize ):
-
+    """ find best replicas """
+    
     ###########################################################
     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
 
@@ -1816,13 +1813,13 @@ class ReplicaManager( CatalogToStorage ):
       if sourceSE and diracSE != sourceSE:
         self.log.info( "%s %s replica not requested." % ( logStr, diracSE ) )
         continue
-      
-      diracSEStatus = self.resourceStatus.getStorageElementStatus( diracSE, 'ReadAccess' )
+
+      diracSEStatus = self.resourceStatus.getStorageElementStatus( diracSE, 'Read' )
       if not diracSEStatus[ 'OK' ]:
         self.log.error( diracSEStatus[ 'Message' ] )
         continue
-      diracSEStatus = diracSEStatus[ 'Value' ][ diracSE ][ 'ReadAccess' ]         
-      
+      diracSEStatus = diracSEStatus[ 'Value' ][ diracSE ][ 'Read' ]
+
       if not diracSEStatus in ( 'Active', 'Degraded' ):
         self.log.info( "%s %s is currently '%s' as a source." % ( logStr, diracSE, diracSEStatus ) )
 
@@ -1903,6 +1900,7 @@ class ReplicaManager( CatalogToStorage ):
     return res
 
   def __registerFile( self, fileTuples, catalog ):
+    """ register file to cataloge """
     seDict = {}
     for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuples:
       if storageElementName not in seDict:
@@ -1912,7 +1910,7 @@ class ReplicaManager( CatalogToStorage ):
     failed = {}
     fileDict = {}
     for storageElementName, fileTuple in seDict.items():
-      destStorageElement = StorageElement( storageElementName, overwride = True )
+      destStorageElement = StorageElement( storageElementName )
       res = destStorageElement.isValid()
       if not res['OK']:
         errStr = "__registerFile: The storage element is not currently valid."
@@ -1965,6 +1963,7 @@ class ReplicaManager( CatalogToStorage ):
     return res
 
   def __registerReplica( self, replicaTuples, catalog ):
+    """ register replica to catalogue """
     seDict = {}
     for lfn, pfn, storageElementName in replicaTuples:
       if storageElementName not in seDict:
@@ -2075,6 +2074,7 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( resDict )
 
   def __removeFile( self, lfnDict ):
+    """ remove file """
     storageElementDict = {}
     ## sorted and reversed
     for lfn, repDict in sorted( lfnDict.items(), reverse = True ):
@@ -2165,6 +2165,7 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
   def __removeReplica( self, storageElementName, fileTuple ):
+    """ remove replica """
     pfnDict = {}
     failed = {}
     for lfn, pfn in fileTuple:
@@ -2260,6 +2261,7 @@ class ReplicaManager( CatalogToStorage ):
     return res
 
   def __removeCatalogReplica( self, replicaTuple ):
+    """ remove replica form catalogue """
     oDataOperation = self.__initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuple ) )
     oDataOperation.setStartTime()
     start = time.time()
@@ -2340,9 +2342,10 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( resDict )
 
   def __removePhysicalReplica( self, storageElementName, pfnsToRemove ):
+    """ remove replica from storage element """
     self.log.verbose( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ),
                                                                                          storageElementName ) )
-    storageElement = StorageElement( storageElementName, overwride = True )
+    storageElement = StorageElement( storageElementName )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "__removePhysicalReplica: The storage element is not currently valid."
@@ -2493,7 +2496,7 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( replicaDict )
 
   def __SEActive( self, se ):
-
+    """ check is SE is active """
     res = self.resourceStatus.getStorageElementStatus( se, default = None )
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )
@@ -2507,6 +2510,7 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( seStatus )
 
   def __initialiseAccountingObject( self, operation, se, files ):
+    """ create accouting record """
     import DIRAC
     accountingDict = {}
     accountingDict['OperationType'] = operation
@@ -2540,8 +2544,10 @@ class ReplicaManager( CatalogToStorage ):
     return self._callStorageElementFcn( storageElementName, physicalFile, 'retransferOnlineFile' )
 
   def getReplicas( self, lfn ):
+    """ ger replicas from catalogue """
     return self.getCatalogReplicas( lfn )
 
   def getFileSize( self, lfn ):
+    """ get file size from catalogue """
     return self.getCatalogFileSize( lfn )
 
