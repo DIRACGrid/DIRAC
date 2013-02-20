@@ -75,7 +75,21 @@ CHANGE: OptimizerExecutor - reduce diversity of MinorStatuses for failed executo
 *Resources
 FIX: CREAMComputingElement - remove temporary JDL right after the submission 
 
-[v6r7]
+[v6r6p20]
+
+*DMS
+FIX: RegistrationTask - properly escaped error messages
+BUGFIX: DirectoryMetadata - use getFileMetadataFields from FileMetadata in addMetadataField()
+NEW: When there is a missing source error spotted during FTS transfer, file should be reset 
+     and rescheduled again until maxAttempt (set to 100) is reached
+
+*WMS
+FIX: JobScheduling - fix the site group logic in case of Tier0
+
+[v6r6p19]
+
+*DMS
+BUGFIX: All DMS agents  - set up agent name in the initialization
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
