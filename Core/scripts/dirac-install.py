@@ -818,6 +818,8 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
   except urllib2.HTTPError, x:
     if x.code == 404:
       logERROR( "%s does not exist" % url )
+      if timeout:
+        signal.alarm( 0 )
       return False
   except urllib2.URLError:
     logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
