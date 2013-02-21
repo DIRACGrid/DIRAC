@@ -27,7 +27,7 @@
 """
 __RCSID__ = "$Id$"
 
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Manager
 import threading
 import time
 import select
@@ -58,35 +58,49 @@ class Watchdog( object ):
     self.args = args if args else tuple()
     self.kwargs = kwargs if kwargs else {}
     self.start = self.end = self.pid = None
+    self.rwEvent = threading.Event()
+    self.rwEvent.clear()
     self.__watchdogThread = None
-    self.parentPipe, self.childPipe = Pipe()
-    self.__executor = Process( target = self.run_func, args = (self.childPipe, ) )
+    self.manager = Manager()
+    self.s_ok_error = self.manager.dict()
+    self.__executor = Process( target = self.run_func, args = (self.s_ok_error, ) )
 
-  def run_func( self, pipe ):
+  def run_func( self, s_ok_error ):
     """ subprocess target 
 
     :param Pipe pipe: pipe used for communication
     """
     try:
       ret = self.func( *self.args, **self.kwargs )
-      pipe.send( ret )
+      ## set rw event
+      self.rwEvent.set()
+      for k in ret:
+        s_ok_error[k] = ret[k]
     except Exception, error:
-      pipe.send( { "OK" : False, "Message" : str(error) } )
-    
+      s_ok_error["OK"] =  False
+      s_ok_error["Message"] = str(error)
+    finally:
+      ## clear rw event
+      self.rwEvent.clear()
+
   def watchdog( self ):
     """ watchdog thread target """
     while True:
-      if time.time() < self.end:
-        time.sleep(1)
-        if not self.__executor.is_alive():
-          return 
+      if self.rwEvent.is_set() or time.time() < self.end:
+        time.sleep(5)
       else:
         break
     if not self.__executor.is_alive():
       return
     else:
+      ## wait until r/w operation finishes
+      while self.rwEvent.is_set():
+        time.sleep(5)
+        continue
+      ## SIGTERM
       os.kill( self.pid, signal.SIGTERM )
       time.sleep(5)
+      ## SIGKILL
       if self.__executor.is_alive():
         os.kill( self.pid, signal.SIGKILL )
       
@@ -109,17 +123,19 @@ class Watchdog( object ):
         self.__executor.join( timeout )
       else:
         self.__executor.join()
-      ## get results if any
+      ## get results if any, block watchdog by setting rwEvent
       if not self.__executor.is_alive():
-        ret = self.parentPipe.recv()
+        self.rwEvent.set()
+        for k in self.s_ok_error.keys():
+          ret[k] = self.s_ok_error[k]
+        self.rwEvent.clear()
     except Exception, error:
       return { "OK" : False, "Message" : str(error) }
     return ret
   
   def finalize(self):
     """ destructor """
-    self.parentPipe.close()
-    self.childPipe.close()
+    pass
 
 class Subprocess:
   """
