@@ -127,7 +127,7 @@ class TransferAgent( RequestAgentBase ):
   ## exectuon modes
   __executionMode = { "Tasks" : True, "FTS" : False }
 
-  def __init__( self, *args, **kwargs ):
+  def __init__( self, agentName, loadName, baseAgentName=False, properties=dict() ):
     """ c'tor
      
     :param self: self reference
@@ -138,8 +138,7 @@ class TransferAgent( RequestAgentBase ):
     """
     self.setRequestType( "transfer" )
     self.setRequestTask( TransferTask )
-    RequestAgentBase.__init__( self, *args, **kwargs )
-    agentName = args[0]
+    RequestAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
 
     ## gMonitor stuff
     self.monitor.registerActivity( "Replicate and register", "Replicate and register operations", 
@@ -666,11 +665,11 @@ class TransferAgent( RequestAgentBase ):
       
       subRequestStatus = subAttrs["Status"]
 
-      #execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
-      #if execOrder > requestDict["executionOrder"]:
-      #  strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
-      #  self.log.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder" % strTup )  
-      #  continue 
+      execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
+      if execOrder > requestDict["executionOrder"]:
+        strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
+        self.log.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder" % strTup )  
+        continue 
 
       if subRequestStatus != "Waiting" :
         ## sub-request is already in terminal state
@@ -836,7 +835,9 @@ class TransferAgent( RequestAgentBase ):
                                                                                    len(waitingFileReplicas), 
                                                                                    str(waitingFileTargets) ) ) 
       ## get the replication tree at least
-      tree = self.strategyHandler().replicationTree( waitingFileReplicas.keys(),  
+      tree = self.strategyHandler().replicationTree( waitingFileLFN,
+                                                     waitingFileMetadata,
+                                                     waitingFileReplicas.keys(),  
                                                      waitingFileTargets, 
                                                      waitingFileSize, 
                                                      strategy )

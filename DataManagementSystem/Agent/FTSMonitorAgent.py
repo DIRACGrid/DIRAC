@@ -66,7 +66,7 @@ class FTSMonitorAgent( AgentModule ):
 
   def execute( self ):
     """ push jobs to the thread pool """
-    self.log.debug( "Obtaining requests to monitor" )
+    self.log.info( "Obtaining requests to monitor" )
     res = self.transferDB.getFTSReq()
     if not res["OK"]:
       self.log.error( "Failed to get FTS requests", res['Message'] )
@@ -79,7 +79,7 @@ class FTSMonitorAgent( AgentModule ):
     i = 1
     for ftsJob in ftsReqs:
       while True:
-        self.log.debug("submitting FTS Job %s FTSReqID=%s to monitor" % ( i, ftsJob["FTSReqID"] ) )
+        self.log.info("submitting FTS Job %s FTSReqID=%s to monitor" % ( i, ftsJob["FTSReqID"] ) )
         ret = self.threadPool.generateJobAndQueueIt( self.monitorTransfer, args = ( ftsJob, ), )
         if ret["OK"]:
           i += 1
@@ -154,7 +154,7 @@ class FTSMonitorAgent( AgentModule ):
 
     #########################################################################
     # Perform summary update of the FTS Request and update FTSReq entries.
-    log.debug( "Perform summary update of the FTS Request" )
+    log.info( "Perform summary update of the FTS Request" )
     infoStr = [ "glite-transfer-status -s %s -l %s" % ( ftsServer, ftsGUID ) ]
     infoStr.append( "FTS GUID:   %s" % ftsGUID  )
     infoStr.append( "FTS Server: %s" % ftsServer )
@@ -206,6 +206,7 @@ class FTSMonitorAgent( AgentModule ):
     log = gLogger.getSubLogger( "@%s" % ftsReqID )
 
     log.info( "FTS Request found to be terminal, updating file states" )
+    #########################################################################
     # Get the LFNS associated to the FTS request
     log.info( "Obtaining the LFNs associated to this request" )
     res = self.transferDB.getFTSReqLFNs( ftsReqID, channelID, sourceSE )
@@ -218,7 +219,7 @@ class FTSMonitorAgent( AgentModule ):
       return S_ERROR( "No files were found in the DB" )
 
     lfns = files.keys()
-    log.debug( "Obtained %s files" % len( lfns ) )
+    log.info( "Obtained %s files" % len( lfns ) )
     for lfn in lfns:
       oFTSRequest.setLFN( lfn )
 
@@ -270,6 +271,9 @@ class FTSMonitorAgent( AgentModule ):
         res = oFTSRequest.getFailReason( lfn )
         if res["OK"]:
           failReason = res["Value"]
+        if "Source file/user checksum mismatch" in failReason:
+          filesToFail.append( fileID )
+          continue
         if self.missingSource( failReason ):
           log.error( "The source SURL does not exist.", "%s %s" % ( lfn, oFTSRequest.getSourceSURL( lfn ) ) )
           filesToFail.append( fileID )
@@ -289,7 +293,7 @@ class FTSMonitorAgent( AgentModule ):
         log.error( "Failed to perform the finalization for the FTS request", res["Message"] )
         return res
 
-      log.debug( 'Adding logging event for FTS request' )
+      log.info( 'Adding logging event for FTS request' )
       # Now set the FTSReq status to terminal so that it is not monitored again
       res = self.transferDB.addLoggingEvent( ftsReqID, 'Finished' )
       if not res['OK']:
@@ -300,7 +304,7 @@ class FTSMonitorAgent( AgentModule ):
       if not updateFileToCat["OK"]:
         log.error( updateFileToCat["Message"] )
 
-      log.debug( "Updating FTS request status" )
+      log.info( "Updating FTS request status" )
       res = self.transferDB.setFTSReqStatus( ftsReqID, 'Finished' )
       if not res['OK']:
         log.error( 'Failed update FTS Request status', res['Message'] )
@@ -327,12 +331,17 @@ class FTSMonitorAgent( AgentModule ):
       allUpdated = False
 
     for fileID in filesToFail:
-      log.debug( "Updating the Channel table for files to reschedule" )
-      res = self.transferDB.setFileChannelStatus( channelID, fileID, "Failed" )
-      # should also update RequestDB.Files table!!!
+      log.info( "Updating the Channel table for files to reschedule" )
+      res = self.transferDB.setFileToReschedule( fileID )
       if not res["OK"]:
         log.error( "Failed to update Channel table for failed files.", res["Message"] )
         allUpdated = False
+      elif res["Value"] == "max reschedule attempt reached":
+        log.error( "setting Channel status to 'Failed' : " % res["Value"] )
+        res = self.transferDB.setFileChannelStatus( channelID, fileID, 'Failed' )
+        if not res["OK"]:
+          log.error( "Failed to update Channel table for failed files.", res["Message"] )
+          allUpdated = False
 
     if completedFileIDs:
       res = self.transferDB.updateCompletedChannelStatus( channelID, completedFileIDs )

@@ -27,6 +27,7 @@ import datetime
 ## from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge 
 
 class FTSGraph( Graph ):
@@ -70,9 +71,11 @@ class FTSChannel( Edge ):
     successRate = 100.0
     attempted = self.successfulAttempts + self.failedAttempts  
     if attempted:
-      successRate *= self.successfulAttempts / attempted  
-    if ( self.status != "Active" ) or ( self.distinctFailedFiles > self.acceptableFailedFiles ) or \
-          ( successRate < self.acceptableFailureRate ):    
+      successRate *= self.successfulAttempts / attempted
+    if successRate < self.acceptableFailureRate:
+      if self.distinctFailedFiles > self.acceptableFailedFiles:
+        return float("inf")
+    if self.status != "Active": 
       return float("inf")
     transferSpeed = { "File" : self.fileput, "Throughput" : self.throughput }[self.schedulingType]
     waitingTransfers = { "File" : self.files, "Throughput" : self.size }[self.schedulingType]
@@ -159,6 +162,8 @@ class StrategyHandler( object ):
     self.ftsGraph = None
     ## timestamp for last update
     self.lastRssUpdate = datetime.datetime.now()    
+    ## se cache
+    self.seCache = {}
     # dispatcher
     self.strategyDispatcher = { "MinimiseTotalWait" : self.minimiseTotalWait, 
                                 "DynamicThroughput" : self.dynamicThroughput,
@@ -322,7 +327,6 @@ class StrategyHandler( object ):
                                    "DestSE" : targetSE, "Strategy" : "Swarm" } 
     return S_OK( tree )
           
-
   def minimiseTotalWait( self, sourceSEs, targetSEs ):
     """ find dag that minimises start time 
     
@@ -366,21 +370,16 @@ class StrategyHandler( object ):
         return S_ERROR("minimiseTotalWait: no active FTS channels found" )
       
       candidates = []
-      #selTimeToStart = None
       for channel, sourceSE, targetSE in channels:
         timeToStart = channel.timeToStart
         if sourceSE not in primarySources:
           timeToStart += self.sigma        
-        #if sourceSE in timeToSite:
-        #  timeToStart += timeToSite[sourceSE]
         ## local found 
         if channel.fromNode == channel.toNode:
           self.log.debug("minimiseTotalWait: found local channel '%s'" % channel.channelName )
           candidates = [ ( channel, sourceSE, targetSE ) ]
-          #selTimeToStart = timeToStart
           break
         if timeToStart <= minTimeToStart:
-          #selTimeToStart = timeToStart
           minTimeToStart = timeToStart
           candidates = [ ( channel, sourceSE, targetSE ) ]
         elif timeToStart == minTimeToStart:
@@ -502,9 +501,10 @@ class StrategyHandler( object ):
     """    
     return self.supportedStrategies
 
-  def replicationTree( self, sourceSEs, targetSEs, size, strategy=None ):
+  def replicationTree( self, lfn, metadata, sourceSEs, targetSEs, size, strategy=None ):
     """ get replication tree
 
+    :param str lfn: LFN
     :param list sourceSEs: list of sources SE names to use
     :param list targetSEs: liost of target SE names to use
     :param long size: file size
@@ -525,6 +525,14 @@ class StrategyHandler( object ):
 
     self.log.info("replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" %\
                     ( strategy, sourceSEs, targetSEs, size ) )
+    ## filter out wrong sources
+    sourceSEs = dict.fromkeys( sourceSEs, S_OK() )
+    for sourceSE in sourceSEs:
+      sourceSEs[sourceSE] = self.checkSourceSE( sourceSE, lfn, metadata )
+    sourceSEs = [ key for key, value in sourceSEs.items() if value["OK"] ]  
+    if not sourceSEs:
+      self.log.error("replicationTree: no valid SourceSEs for %s found" % lfn )
+      return S_ERROR("replicationTree: no valid SourceSEs for %s found" % lfn )
     ## fire action from dispatcher
     tree = self.strategyDispatcher[strategy]( sourceSEs, targetSEs )
     if not tree["OK"]:
@@ -559,15 +567,47 @@ class StrategyHandler( object ):
     rAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "ReadAccess", default = 'Unknown' )
     if not rAccess["OK"]:
       return rAccess["Message"]
-    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadReadAccess"] in ( "Active", "Degraded" ) ]
-    wAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "WriteReadAccess", default = 'Unknown' )
+    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadAccess"] in ( "Active", "Degraded" ) ]
+    wAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "WriteAccess", default = 'Unknown' )
     if not wAccess["OK"]:
       return wAccess["Message"]
-    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteReadAccess" in v and v["WriteReadAccess"] in ( "Active", "Degraded" ) ]
+    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteAccess" in v and v["WriteAccess"] in ( "Active", "Degraded" ) ]
     for se in rwDict:
       rwDict[se]["read"] = se in rAccess
       rwDict[se]["write"] = se in wAccess
     return S_OK( rwDict )
    
+  def checkSourceSE( self, sourceSE, lfn, metadata ):
+    """ filter out SourceSE where PFN is not existing 
 
-
+    :param self: self reference
+    :param str lfn: LFN
+    """
+    se = self.seCache.get( sourceSE, None )
+    if not se:
+      se = StorageElement( sourceSE, "SRM2" )
+      self.seCache[sourceSE] = se
+    isValid = se.isValid("Read")    
+    if not isValid["OK"]:
+      self.log.error("checkSourceSE: storageElement %s is banned for reading: %s" % ( sourceSE, isValid["Message"] ) )
+      return isValid
+    pfn = se.getPfnForLfn( lfn )
+    if not pfn["OK"]:
+      self.log.error("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
+      return pfn
+    pfn = pfn["Value"]
+    exists = se.exists( pfn )
+    if not exists["OK"]:
+      self.log.error("checkSourceSE: %s" % exists["Message"] )
+      return exists
+    meta = se.getFileMetadata( pfn, singleFile=True )
+    if not meta["OK"]:
+      self.log.error("checkSourceSE: %s" % meta["Message"] )
+      return S_ERROR("checkSourceSE: failed to get metadata")
+    meta = meta["Value"]
+    if meta.get("Checksum", "") != metadata.get("Checksum", ""):
+      self.log.error("checkSourceSE: checksum mismatch between catalogue and storage element!")
+      return S_ERROR("checkSourceSE: checksum mismatch")
+    
+    ## if we're here everything is OK
+    return S_OK()
