@@ -127,7 +127,7 @@ class TransferAgent( RequestAgentBase ):
   ## exectuon modes
   __executionMode = { "Tasks" : True, "FTS" : False }
 
-  def __init__( self, *args, **kwargs ): # agentName, loadName, baseAgentName=False, properties=dict() ):
+  def __init__( self, *args, **kwargs ):
     """ c'tor
      
     :param self: self reference
