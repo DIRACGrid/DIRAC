@@ -837,6 +837,7 @@ class TransferAgent( RequestAgentBase ):
                                                                                    str(waitingFileTargets) ) ) 
       ## get the replication tree at least
       tree = self.strategyHandler().replicationTree( waitingFileLFN,
+                                                     waitingFileMetadata,
                                                      waitingFileReplicas.keys(),  
                                                      waitingFileTargets, 
                                                      waitingFileSize, 

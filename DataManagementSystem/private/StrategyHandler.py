@@ -71,9 +71,11 @@ class FTSChannel( Edge ):
     successRate = 100.0
     attempted = self.successfulAttempts + self.failedAttempts  
     if attempted:
-      successRate *= self.successfulAttempts / attempted  
-    if ( self.status != "Active" ) or ( self.distinctFailedFiles > self.acceptableFailedFiles ) or \
-          ( successRate < self.acceptableFailureRate ):    
+      successRate *= self.successfulAttempts / attempted
+    if successRate < self.acceptableFailureRate:
+      if self.distinctFailedFiles > self.acceptableFailedFiles:
+        return float("inf")
+    if self.status != "Active": 
       return float("inf")
     transferSpeed = { "File" : self.fileput, "Throughput" : self.throughput }[self.schedulingType]
     waitingTransfers = { "File" : self.files, "Throughput" : self.size }[self.schedulingType]
@@ -499,7 +501,7 @@ class StrategyHandler( object ):
     """    
     return self.supportedStrategies
 
-  def replicationTree( self, lfn, sourceSEs, targetSEs, size, strategy=None ):
+  def replicationTree( self, lfn, metadata, sourceSEs, targetSEs, size, strategy=None ):
     """ get replication tree
 
     :param str lfn: LFN
@@ -526,7 +528,7 @@ class StrategyHandler( object ):
     ## filter out wrong sources
     sourceSEs = dict.fromkeys( sourceSEs, S_OK() )
     for sourceSE in sourceSEs:
-      sourceSEs[sourceSE] = self.checkSourceSE( sourceSE, lfn )
+      sourceSEs[sourceSE] = self.checkSourceSE( sourceSE, lfn, metadata )
     sourceSEs = [ key for key, value in sourceSEs.items() if value["OK"] ]  
     if not sourceSEs:
       self.log.error("replicationTree: no valid SourceSEs for %s found" % lfn )
@@ -565,17 +567,17 @@ class StrategyHandler( object ):
     rAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "ReadAccess", default = 'Unknown' )
     if not rAccess["OK"]:
       return rAccess["Message"]
-    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadReadAccess"] in ( "Active", "Degraded" ) ]
-    wAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "WriteReadAccess", default = 'Unknown' )
+    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadAccess"] in ( "Active", "Degraded" ) ]
+    wAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "WriteAccess", default = 'Unknown' )
     if not wAccess["OK"]:
       return wAccess["Message"]
-    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteReadAccess" in v and v["WriteReadAccess"] in ( "Active", "Degraded" ) ]
+    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteAccess" in v and v["WriteAccess"] in ( "Active", "Degraded" ) ]
     for se in rwDict:
       rwDict[se]["read"] = se in rAccess
       rwDict[se]["write"] = se in wAccess
     return S_OK( rwDict )
    
-  def checkSourceSE( self, sourceSE, lfn ):
+  def checkSourceSE( self, sourceSE, lfn, metadata ):
     """ filter out SourceSE where PFN is not existing 
 
     :param self: self reference
@@ -593,9 +595,19 @@ class StrategyHandler( object ):
     if not pfn["OK"]:
       self.log.error("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
       return pfn
-    exists = se.exists( pfn["Value"] )
+    pfn = pfn["Value"]
+    exists = se.exists( pfn )
     if not exists["OK"]:
       self.log.error("checkSourceSE: %s" % exists["Message"] )
       return exists
+    meta = se.getFileMetadata( pfn, singleFile=True )
+    if not meta["OK"]:
+      self.log.error("checkSourceSE: %s" % meta["Message"] )
+      return S_ERROR("checkSourceSE: failed to get metadata")
+    meta = meta["Value"]
+    if meta.get("Checksum", "") != metadata.get("Checksum", ""):
+      self.log.error("checkSourceSE: checksum mismatch between catalogue and storage element!")
+      return S_ERROR("checkSourceSE: checksum mismatch")
+    
     ## if we're here everything is OK
     return S_OK()
