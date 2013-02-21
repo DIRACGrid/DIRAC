@@ -127,7 +127,7 @@ class TransferAgent( RequestAgentBase ):
   ## exectuon modes
   __executionMode = { "Tasks" : True, "FTS" : False }
 
-  def __init__( self, agentName, loadName, baseAgentName=False, properties=dict() ):
+  def __init__( self, *args, **kwargs ): # agentName, loadName, baseAgentName=False, properties=dict() ):
     """ c'tor
      
     :param self: self reference
@@ -138,7 +138,8 @@ class TransferAgent( RequestAgentBase ):
     """
     self.setRequestType( "transfer" )
     self.setRequestTask( TransferTask )
-    RequestAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
+    RequestAgentBase.__init__( self, *args, **kwargs )
+    agentName = args[0]
 
     ## gMonitor stuff
     self.monitor.registerActivity( "Replicate and register", "Replicate and register operations", 
