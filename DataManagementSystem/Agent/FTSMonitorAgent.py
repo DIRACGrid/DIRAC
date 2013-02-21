@@ -79,7 +79,7 @@ class FTSMonitorAgent( AgentModule ):
     i = 1
     for ftsJob in ftsReqs:
       while True:
-        self.log.info("submitting FTS Job %s FTSReqID=%s to monitor" % ( i, ftsJob["FTSReqID"] ) )
+        self.log.debug("submitting FTS Job %s FTSReqID=%s to monitor" % ( i, ftsJob["FTSReqID"] ) )
         ret = self.threadPool.generateJobAndQueueIt( self.monitorTransfer, args = ( ftsJob, ), )
         if ret["OK"]:
           i += 1
@@ -219,7 +219,7 @@ class FTSMonitorAgent( AgentModule ):
       return S_ERROR( "No files were found in the DB" )
 
     lfns = files.keys()
-    log.info( "Obtained %s files" % len( lfns ) )
+    log.debug( "Obtained %s files" % len( lfns ) )
     for lfn in lfns:
       oFTSRequest.setLFN( lfn )
 
@@ -304,7 +304,7 @@ class FTSMonitorAgent( AgentModule ):
       if not updateFileToCat["OK"]:
         log.error( updateFileToCat["Message"] )
 
-      log.info( "Updating FTS request status" )
+      log.debug( "Updating FTS request status" )
       res = self.transferDB.setFTSReqStatus( ftsReqID, 'Finished' )
       if not res['OK']:
         log.error( 'Failed update FTS Request status', res['Message'] )
