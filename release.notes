@@ -7,6 +7,8 @@ FIX: Subprocess - using Manager proxy object to pass results from the working pr
 *DMS:
 CHANGE: StorageElement - removed overwride mode
 CHANGE: removed obsoleted dirac-dms-remove-lfn-replica, dirac-dms-remove-lfn
+NEW: FTSMonitorAgent - filter out sources with checksum mismatch
+FIX: FTSMonitorAgent, TransferAgent - fix the names of the RSS states
 
 *RSS
 NEW: ElementInspectorAgent runs with a variable number of threads which are automatically adjusted
