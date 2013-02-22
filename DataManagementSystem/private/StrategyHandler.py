@@ -620,8 +620,8 @@ class StrategyHandler( object ):
       self.log.warn("checkSourceSE: %s" % seMetadata["Message"] )
       return S_ERROR("checkSourceSE: failed to get metadata")
     seMetadata = seMetadata["Value"]
-    catalogChecksum = "%08d" % int( catalogMetadata["Checksum"].replace("x", "0" ) ) if "Checksum" in catalogMetadata else None
-    storageChecksum = "%08d" % int( seMetadata["Checksum"].replace("x", "0") ) if "Checksum" in seMetadata else None
+    catalogChecksum = catalogMetadata["Checksum"].replace("x", "0" ).zfill(8) if "Checksum" in catalogMetadata else None
+    storageChecksum = seMetadata["Checksum"].replace("x", "0").zfill(8) if "Checksum" in seMetadata else None
     if catalogChecksum != storageChecksum:
       self.log.warn( "checkSourceSE: %s checksum mismatch catalogue:%s %s:%s" % ( lfn,
                                                                                   catalogChecksum,
