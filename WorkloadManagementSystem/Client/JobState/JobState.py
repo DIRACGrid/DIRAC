@@ -426,7 +426,7 @@ class JobState( object ):
 #Other
 
   @classmethod
-  def cleanTaskQueues( cls ):
+  def cleanTaskQueues( cls, source = '' ):
     result = JobState.__db.tq.enableAllTaskQueues()
     if not result[ 'OK' ]:
       return result
