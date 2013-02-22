@@ -128,6 +128,8 @@ class StrategyHandler( object ):
     """
     ## save config section
     self.configSection = configSection + "/" + self.__class__.__name__
+    ## 
+
     ## sublogger
     self.log = gLogger.getSubLogger( "StrategyHandler", child=True )
     self.log.setLevel( gConfig.getValue( self.configSection + "/LogLevel", "DEBUG"  ) )
@@ -254,16 +256,22 @@ class StrategyHandler( object ):
           channel.files += 1
     return S_OK()
           
-  def simple( self, sourceSEs, targetSEs ):
+  def simple( self, sourceSEs, targetSEs, lfn, metadata ):
     """ simple strategy - one source, many targets
 
     :param list sourceSEs: list with only one sourceSE name
     :param list targetSEs: list with target SE names
+    :param str lfn: logical file name
+    :param dict metadata: file metadata read from catalogue
     """
     ## make targetSEs list unique 
     if len(sourceSEs) != 1:
       return S_ERROR( "simple: wrong argument supplied for sourceSEs, only one sourceSE allowed" )
     sourceSE = sourceSEs[0]
+    checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+    if not checkSourceSE["OK"]:
+      self.log.error("simple: %s" % checkSourceSE["Message"] )
+      return S_ERROR( "simple: %s" % checkSourceSE["Message"] )
     tree = {}
     for targetSE in targetSEs:
       channel = self.ftsGraph.findChannel( sourceSE, targetSE )
@@ -282,11 +290,13 @@ class StrategyHandler( object ):
 
     return S_OK(tree)
     
-  def swarm( self, sourceSEs, targetSEs ):
+  def swarm( self, sourceSEs, targetSEs, lfn, metadata ):
     """ swarm strategy - one target, many sources, pick up the fastest 
     
     :param list sourceSEs: list of source SE 
     :param str targetSEs: on element list with name of target SE
+    :param str lfn: logical file name
+    :param dict metadata: file metadata read from catalogue
     """
     tree = {}
     channels = []
@@ -298,6 +308,10 @@ class StrategyHandler( object ):
       channel = self.ftsGraph.findChannel( sourceSE, targetSE )
       if not channel["OK"]:
         self.log.warn( "swarm: %s" % channel["Message"] )
+        continue
+      checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+      if not checkSourceSE["OK"]:
+        self.log.warn("swarm: %s" % checkSourceSE["Message"] )
         continue
       channels.append( ( sourceSE, channel["Value"] ) )      
     ## exit - no channels 
@@ -327,11 +341,13 @@ class StrategyHandler( object ):
                                    "DestSE" : targetSE, "Strategy" : "Swarm" } 
     return S_OK( tree )
           
-  def minimiseTotalWait( self, sourceSEs, targetSEs ):
+  def minimiseTotalWait( self, sourceSEs, targetSEs, lfn, metadata ):
     """ find dag that minimises start time 
     
     :param list sourceSEs: list of avialable source SEs
     :param list targetSEs: list of target SEs
+    :param str lfn: logical file name
+    :param dict metadata: file metadata read from catalogue
     """
     tree = {}
     primarySources = sourceSEs
@@ -346,6 +362,10 @@ class StrategyHandler( object ):
             self.log.warn( "minimiseTotalWait: %s" % ftsChannel["Message"] )
             continue 
           ftsChannel = ftsChannel["Value"]
+          checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+          if not checkSourceSE["OK"]:
+            self.log.warn("minimiseTotalWait: %s" % checkSourceSE["Message"] )
+            continue
           channels.append( ( ftsChannel, sourceSE, targetSE ) )
       if not channels:
         msg = "minimiseTotalWait: FTS channels between %s and %s not defined" % ( ",".join(sourceSEs), 
@@ -404,11 +424,13 @@ class StrategyHandler( object ):
 
     return S_OK(tree)        
 
-  def dynamicThroughput( self, sourceSEs, targetSEs ):
+  def dynamicThroughput( self, sourceSEs, targetSEs, lfn, metadata ):
     """ dynamic throughput - many sources, many targets - find dag that minimises overall throughput 
 
     :param list sourceSEs: list of available source SE names
     :param list targetSE: list of target SE names
+    :param str lfn: logical file name
+    :param dict metadata: file metadata read from catalogue
     """
     tree = {}
     primarySources = sourceSEs
@@ -450,6 +472,10 @@ class StrategyHandler( object ):
       candidates = []
       selTimeToStart = None
       for channel, sourceSE, targetSE in channels:
+        checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+        if not checkSourceSE["OK"]:
+          self.log.warn("dynamicThroughput: %s" % checkSourceSE["Message"] )
+          continue
         timeToStart = channel.timeToStart
         if sourceSE not in primarySources:
           timeToStart += self.sigma        
@@ -523,25 +549,17 @@ class StrategyHandler( object ):
     if strategy not in self.getSupportedStrategies():
       return S_ERROR("replicationTree: unsupported strategy '%s'" % strategy )
 
-    self.log.info("replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" %\
-                    ( strategy, sourceSEs, targetSEs, size ) )
-    ## filter out wrong sources
-    sourceSEs = dict.fromkeys( sourceSEs, S_OK() )
-    for sourceSE in sourceSEs:
-      sourceSEs[sourceSE] = self.checkSourceSE( sourceSE, lfn, metadata )
-    sourceSEs = [ key for key, value in sourceSEs.items() if value["OK"] ]  
-    if not sourceSEs:
-      self.log.error("replicationTree: no valid SourceSEs for %s found" % lfn )
-      return S_ERROR("replicationTree: no valid SourceSEs for %s found" % lfn )
+    self.log.info( "replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" %\
+                     ( strategy, sourceSEs, targetSEs, size ) )
     ## fire action from dispatcher
-    tree = self.strategyDispatcher[strategy]( sourceSEs, targetSEs )
+    tree = self.strategyDispatcher[strategy]( sourceSEs, targetSEs, lfn, metadata )
     if not tree["OK"]:
       self.log.error( "replicationTree: %s" % tree["Message"] )
       return tree
     ## update graph edges
     update = self.updateGraph( replicationTree=tree["Value"], size=size )
     if not update["OK"]:
-      self.log.error("replicationTree: unable to update FTS graph: %s" % update["Message"] )
+      self.log.error( "replicationTree: unable to update FTS graph: %s" % update["Message"] )
       return update
     return tree
     
@@ -577,11 +595,12 @@ class StrategyHandler( object ):
       rwDict[se]["write"] = se in wAccess
     return S_OK( rwDict )
    
-  def checkSourceSE( self, sourceSE, lfn, metadata ):
+  def checkSourceSE( self, sourceSE, lfn, catalogMetadata ):
     """ filter out SourceSE where PFN is not existing 
 
     :param self: self reference
-    :param str lfn: LFN
+    :param str lfn: logical file name
+    :param dict catalogMetadata: catalog metadata
     """
     se = self.seCache.get( sourceSE, None )
     if not se:
@@ -593,20 +612,21 @@ class StrategyHandler( object ):
       return isValid
     pfn = se.getPfnForLfn( lfn )
     if not pfn["OK"]:
-      self.log.error("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
+      self.log.warn("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
       return pfn
     pfn = pfn["Value"]
-    exists = se.exists( pfn )
-    if not exists["OK"]:
-      self.log.error("checkSourceSE: %s" % exists["Message"] )
-      return exists
-    meta = se.getFileMetadata( pfn, singleFile=True )
-    if not meta["OK"]:
-      self.log.error("checkSourceSE: %s" % meta["Message"] )
+    seMetadata = se.getFileMetadata( pfn, singleFile=True )
+    if not seMetadata["OK"]:
+      self.log.warn("checkSourceSE: %s" % seMetadata["Message"] )
       return S_ERROR("checkSourceSE: failed to get metadata")
-    meta = meta["Value"]
-    if meta.get("Checksum", "") != metadata.get("Checksum", ""):
-      self.log.error("checkSourceSE: checksum mismatch between catalogue and storage element!")
+    seMetadata = seMetadata["Value"]
+    catalogChecksum = "%08d" % int( catalogMetadata["Checksum"].replace("x", "0" ) ) if "Checksum" in catalogMetadata else None
+    storageChecksum = "%08d" % int( seMetadata["Checksum"].replace("x", "0") ) if "Checksum" in seMetadata else None
+    if catalogChecksum != storageChecksum:
+      self.log.warn( "checkSourceSE: %s checksum mismatch catalogue:%s %s:%s" % ( lfn,
+                                                                                  catalogChecksum,
+                                                                                  sourceSE,
+                                                                                  storageChecksum ) )
       return S_ERROR("checkSourceSE: checksum mismatch")
     
     ## if we're here everything is OK
