@@ -279,7 +279,7 @@ class TransformationCleaningAgent( AgentModule ):
     if not filesFound:
       return S_OK()
     self.log.info( "Attempting to remove %d possible remnants from the catalog and storage" % len( filesFound ) )
-    res = self.replicaManager.removeFile( filesFound )
+    res = self.replicaManager.removeFile( filesFound, force = True )
     if not res['OK']:
       return res
     for lfn, reason in res['Value']['Failed'].items():
@@ -438,7 +438,7 @@ class TransformationCleaningAgent( AgentModule ):
     if not fileToRemove:
       self.log.info( 'No files found for transID %s' % transID )
       return S_OK()
-    res = self.replicaManager.removeFile( fileToRemove )
+    res = self.replicaManager.removeFile( fileToRemove, force = True )
     if not res['OK']:
       return res
     for lfn, reason in res['Value']['Failed'].items():
