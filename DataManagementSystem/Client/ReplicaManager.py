@@ -2014,7 +2014,7 @@ class ReplicaManager( CatalogToStorage ):
   # These are the removal methods for physical and catalogue removal
   #
 
-  def removeFile( self, lfn ):
+  def removeFile( self, lfn, force = False ):
     """ Remove the file (all replicas) from Storage Elements and file catalogue
 
         'lfn' is the file to be removed
@@ -2048,7 +2048,10 @@ class ReplicaManager( CatalogToStorage ):
     existingFiles = []
     for lfn, exists in res['Value']['Successful'].items():
       if not exists:
-        failed[lfn] = "File does not exist in the catalog"
+        if force:
+          successful[lfn] = True
+        else:
+          failed[lfn] = "File does not exist in the catalog"
       else:
         existingFiles.append( lfn )
     res = self.fileCatalogue.getReplicas( existingFiles, True )
