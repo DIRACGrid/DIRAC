@@ -606,28 +606,20 @@ class StrategyHandler( object ):
     if not se:
       se = StorageElement( sourceSE, "SRM2" )
       self.seCache[sourceSE] = se
-    isValid = se.isValid("Read")    
-    if not isValid["OK"]:
-      self.log.error("checkSourceSE: storageElement %s is banned for reading: %s" % ( sourceSE, isValid["Message"] ) )
-      return isValid
     pfn = se.getPfnForLfn( lfn )
     if not pfn["OK"]:
-      self.log.warn("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
-      return pfn
+      return S_ERROR( "checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
     pfn = pfn["Value"]
     seMetadata = se.getFileMetadata( pfn, singleFile=True )
     if not seMetadata["OK"]:
-      self.log.warn("checkSourceSE: %s" % seMetadata["Message"] )
-      return S_ERROR("checkSourceSE: failed to get metadata")
+      return S_ERROR("checkSourceSE: failed to get metadata %s" % seMetadata["Message"] )
     seMetadata = seMetadata["Value"]
     catalogChecksum = catalogMetadata["Checksum"].replace("x", "0" ).zfill(8) if "Checksum" in catalogMetadata else None
     storageChecksum = seMetadata["Checksum"].replace("x", "0").zfill(8) if "Checksum" in seMetadata else None
     if catalogChecksum != storageChecksum:
-      self.log.warn( "checkSourceSE: %s checksum mismatch catalogue:%s %s:%s" % ( lfn,
-                                                                                  catalogChecksum,
-                                                                                  sourceSE,
-                                                                                  storageChecksum ) )
-      return S_ERROR("checkSourceSE: checksum mismatch")
-    
+      return S_ERROR( "checkSourceSE: %s checksum mismatch catalogue:%s %s:%s" % ( lfn,
+                                                                                   catalogChecksum,
+                                                                                   sourceSE,
+                                                                                   storageChecksum ) )    
     ## if we're here everything is OK
     return S_OK()
