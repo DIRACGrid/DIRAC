@@ -2,7 +2,7 @@
 # $HeadURL$
 ########################################################################
 """ Queries BDII for unknown CE.
-    Queries BDII for CE information and put it to CS.
+    Queries BDII for CE information and puts it to CS.
 """
 __RCSID__ = "$Id$"
 
@@ -15,6 +15,7 @@ from DIRAC.ConfigurationSystem.Client.CSAPI             import CSAPI
 from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 class CE2CSAgent( AgentModule ):
 
@@ -98,22 +99,31 @@ class CE2CSAgent( AgentModule ):
 
     knownces = self.am_getOption( 'BannedCEs', [] )
 
-    result = gConfig.getSections( '/Resources/Sites' )
+    resources = Resources( self.voName )
+    result = resource.getEligibleResources( 'Computing', {'CEType':['LCG','CREAM'] } ) 
     if not result['OK']:
-      return
-    grids = result['Value']
+      return result
+    
+    siteDict = result['Value']
+    for site in siteDict:
+      knownces += siteDict[site]
 
-    for grid in grids:
-
-      result = gConfig.getSections( '/Resources/Sites/%s' % grid )
-      if not result['OK']:
-        return
-      sites = result['Value']
-
-      for site in sites:
-        opt = gConfig.getOptionsDict( '/Resources/Sites/%s/%s' % ( grid, site ) )['Value']
-        ces = List.fromChar( opt.get( 'CE', '' ) )
-        knownces += ces
+#    result = gConfig.getSections( '/Resources/Sites' )
+#    if not result['OK']:
+#      return
+#    grids = result['Value']
+#
+#    for grid in grids:
+#
+#      result = gConfig.getSections( '/Resources/Sites/%s' % grid )
+#      if not result['OK']:
+#        return
+#      sites = result['Value']
+#
+#      for site in sites:
+#        opt = gConfig.getOptionsDict( '/Resources/Sites/%s/%s' % ( grid, site ) )['Value']
+#        ces = List.fromChar( opt.get( 'CE', '' ) )
+#        knownces += ces
 
     response = ldapCEState( '', vo = self.voName )
     if not response['OK']:

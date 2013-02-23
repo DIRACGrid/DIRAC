@@ -61,7 +61,7 @@ class Modificator:
 
   def getDictRootedAt(self, relpath = "", root = ""):
     """Gives the configuration rooted at path in a Python dict. The
-    result is a Python dictionnary that reflects the structure of the
+    result is a Python dictionary that reflects the structure of the
     config file."""
     def getDictRootedAt(path):
       retval = {}
