@@ -541,7 +541,7 @@ class Job( API ):
           return self._reportError( 'Expected numerical string or int for CPU time in seconds', **kwargs )
 
     description = 'CPU time in secs'
-    self._addParameter( self.workflow, 'MaxCPUTime', 'JDLReqt', timeInSecs, description )
+    self._addParameter( self.workflow, 'CPUTime', 'JDLReqt', timeInSecs, description )
     return S_OK()
 
   #############################################################################
