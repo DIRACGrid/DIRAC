@@ -18,6 +18,7 @@ class CSAPI:
     """
     self.__csModified = False
     self.__baseSecurity = "/Registry"
+    self.__baseResources = '/Resources'
 
     self.__userDN = ''
     self.__userGroup = ''
@@ -468,6 +469,73 @@ class CSAPI:
         self.__csMod.setOptionValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ),
                                      ",".join( filteredUsers ) )
 
+  def __addResourceLikeSection( self, resourcePath, resourceDict ):
+    """ Add one of Resource level entries ( site, resource, access point )
+    """
+    self.__csMod.createSection( resourcePath )
+    for property in resourceDict:
+      value = resourceDict[property]
+      if type( value ) in types.StringTypes:
+        self.__csMod.setOptionValue( "%s/%s" % ( resourcePath, property ), value )
+      elif type( value ) == types.ListType: 
+        optValue = ','.join(value)
+        self.__csMod.setOptionValue( "%s/%s" % ( resourcePath, property ), optValue )
+      elif type( value ) == types.DictType:   
+        self.__csMod.createSection( "%s/%s" % ( resourcePath, property ) )
+        for option in value:
+          newValue = value[option]
+          if type( newValue ) in types.StringTypes:
+            self.__csMod.setOptionValue( "%s/%s/%s" % ( resourcePath, property, option ), newValue )
+          elif type( value ) == types.ListType: 
+            optValue = ','.join( newValue)
+            self.__csMod.setOptionValue( "%s/%s/%s" % ( resourcePath, property, option ), optValue )
+    self.__csModified = True
+    return S_OK( True )        
+
+  def addSite( self, siteName, siteDict ):
+    """ Add a new Site to the CS
+    """
+    if not self.__initialized[ 'OK' ]:
+      return self.__initialized
+    
+    sitePath = "%s/Sites/%s" % ( self.__baseResources, siteName )
+    if self.__csMod.existsSection( sitePath ):
+      return S_ERROR( 'Site %s already exists ' % siteName )
+    return self.__addResourceLikeSection( sitePath, siteDict )
+  
+  def addResource( self, siteName, resourceType, resourceName, resourceDict ):
+    """ Add a new Resource to the CS
+    """
+    if not self.__initialized[ 'OK' ]:
+      return self.__initialized
+    sitePath = "%s/Sites/%s" % ( self.__baseResources, siteName )
+    if not self.__csMod.existsSection( sitePath ):
+      return S_ERROR( 'Site %s does not exist' % siteName )
+    resourcePath = "%s/Sites/%s/%s/%s" % ( self.__baseResources, siteName, resourceType, resource )
+    if self.__csMod.existsSection( resourcePath ):
+      return S_ERROR( '%s resource %s at site %s already exists' % ( resourceType, resource, siteName ) )
+    return self.__addResourceLikeSection( resourcePath, resourceDict )
+  
+  def addAccessPoint( self, siteName, resourceType, resourceName, apType, apName, apDict ):
+    """ Add a new site to the CS
+    """
+    if not self.__initialized[ 'OK' ]:
+      return self.__initialized
+    sitePath = "%s/Sites/%s" % ( self.__baseResources, siteName )
+    if not self.__csMod.existsSection( sitePath ):
+      return S_ERROR( 'Site %s does not exist' % siteName )
+    resourcePath = "%s/Sites/%s/%s/%s" % ( self.__baseResources, siteName, resourceType, resource )
+    if not self.__csMod.existsSection( resourcePath ):
+      return S_ERROR( '%s resource %s at site %s does not exist' % ( resourceType, resource, siteName ) )
+    apPath = "%s/Sites/%s/%s/%s/%s/%s" % ( self.__baseResources, siteName, resourceType, resource, apType, apName )
+    if self.__csMod.existsSection( apPath ):
+      return S_ERROR( '%s access point %s at %s resource %s at site %s already exists ' % \
+                                              ( apType, apName, resourceType, resource, siteName ) )
+    return self.__addResourceLikeSection( apPath, apDict )
+    
+  def sortSection( self, section ):  
+    self.__csMod.sortAlphabetically( section )
+    
   def commitChanges( self, sortUsers = True ):
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -536,7 +604,7 @@ class CSAPI:
     self.__csModified = True
     return S_OK( 'Set option comment %s : %s' % ( optionPath, comment ) )
 
-  def delOption( self, optionPath ):
+  def deleteOption( self, optionPath ):
     """ Delete an option
     """
     if not self.__initialized[ 'OK' ]:
@@ -557,13 +625,40 @@ class CSAPI:
       self.__csMod.setComment( sectionPath, comment )
     return S_OK()
 
-  def delSection( self, sectionPath ):
+  def deleteSection( self, sectionPath ):
     """ Delete a section
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     if not self.__csMod.removeSection( sectionPath ):
       return S_ERROR( "Could not delete section %s " % sectionPath )
+    self.__csModified = True
+    return S_OK()
+  
+  def copySection( self, originalPath, targetPath ):
+    """ Copy a whole section to a new location
+    """
+    if not self.__initialized[ 'OK' ]:
+      return self.__initialized
+    cfg = self.__csMod.getCFG()
+    sectionCfg = cfg[originalPath]
+    result = self.createSection( targetPath )
+    if not result[ 'OK' ]:
+      return result
+    if not self.__csMod.mergeSectionFromCFG( targetPath, sectionCfg ):
+      return S_ERROR( "Could not merge cfg into section %s" % targetPath )
+    self.__csModified = True
+    return S_OK()
+    
+  def moveSection( self, originalPath, targetPath ):  
+    """  Move a whole section to a new location
+    """
+    result = self.copySection( originalPath, targetPath )
+    if not result['OK']:
+      return result
+    result = self.deleteSection( originalPath )
+    if not result[ 'OK' ]:
+      return result
     self.__csModified = True
     return S_OK()
 

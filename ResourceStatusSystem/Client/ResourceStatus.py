@@ -362,7 +362,7 @@ class ResourceStatus( object ):
 
 def getDictFromList( fromList ):
   '''
-  Auxiliar method that given a list returns a dictionary of dictionaries:
+  Auxiliary method that given a list returns a dictionary of dictionaries:
   { site1 : { statusType1 : st1, statusType2 : st2 }, ... }
   '''
     
@@ -376,7 +376,7 @@ def getDictFromList( fromList ):
 
 def getCacheDictFromList( rawList ):
   '''
-  Auxiliar method that given a list returns a dictionary looking like:
+  Auxiliary method that given a list returns a dictionary looking like:
   { 
     ( <resourceName>, <statusType> )  : status,
     ( <resourceName>, <statusType1> ) : status1
