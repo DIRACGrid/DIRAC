@@ -23,6 +23,7 @@ class PlotCache:
     self.__graphCache = DictCache( deleteFunction = _deleteGraph )
     self.__graphLifeTime = 600
     self.purgeThread = threading.Thread( target = self.purgeExpired )
+    self.purgeThread.setDaemon( 1 )
     self.purgeThread.start()
 
   def setPlotsLocation( self, plotsDir ):

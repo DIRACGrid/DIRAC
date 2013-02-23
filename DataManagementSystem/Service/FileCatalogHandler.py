@@ -5,8 +5,8 @@
 """ :mod: FileCatalogHandler 
     ========================
  
-  .. module: FileCatalogHandler
-  :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service 
+    .. module: FileCatalogHandler
+    :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service 
 """
 
 __RCSID__ = "$Id$"
