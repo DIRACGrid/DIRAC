@@ -1,10 +1,9 @@
 # $HeadURL$
 
-""" :mod: Pfn 
-    =========
- 
+""":mod:`Pfn`
+
     .. module: Pfn
-    :synopsis: pfn URI (un)parsing
+      :synopsis: pfn URI (un)parsing
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 """
 
