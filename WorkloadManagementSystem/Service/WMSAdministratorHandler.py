@@ -28,7 +28,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
+import DIRAC.ConfigurationSystem.Client.Helpers.Resources 
 
 import threading
 
@@ -354,7 +354,7 @@ class WMSAdministratorHandler(RequestHandler):
     else:
       # Instantiate the appropriate CE
       ceFactory = ComputingElementFactory()
-      result = getQueue( pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'] )
+      result = Resources().getQueueDescription( pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'] )
       if not result['OK']:
         return result
       queueDict = result['Value']
@@ -543,7 +543,7 @@ class WMSAdministratorHandler(RequestHandler):
     for key, pilotDict in pilotRefDict.items():
       
       owner,group,site,ce,queue = key.split( '@@@' )
-      result = getQueue( site, ce, queue )
+      result = Resources().getQueueDescription( site, ce, queue )
       if not result['OK']:
         return result
       queueDict = result['Value']
