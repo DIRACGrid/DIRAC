@@ -25,7 +25,14 @@ class ClientsTestCase( unittest.TestCase ):
 
     self.jobMock = Mock()
     self.jobMock2 = Mock()
+    mockWF = Mock()
+    mockPar = Mock()
+    mockWF.findParameter.return_value = mockPar
+    mockPar.getValue.return_value = 'MySite'
+
+    self.jobMock2.workflow = mockWF
     self.jobMock2.setDestination.return_value = {'OK':True}
+    self.jobMock.workflow.return_value = ''
     self.jobMock.return_value = self.jobMock2
 
     self.taskBase = TaskBase( transClient = self.mockTransClient )
@@ -37,6 +44,8 @@ class ClientsTestCase( unittest.TestCase ):
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
                                       requestClient = self.mockRequestClient
                                       )
+
+    self.maxDiff = None
 
   def tearDown( self ):
     pass
@@ -60,11 +69,16 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 }
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group' )
-
     self.assertEqual( res, {'OK': True,
-                           'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'},
-                                     2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1, 'InputData': ['a1', 'a2'], 'b2': 'bb2'},
-                                     3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2, 'b3': 'bb3'}}} )
+                           'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
+                                          'b1': 'bb1', 'Site': 'MySite'},
+                                     2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
+                                         'InputData': ['a1', 'a2'], 'b2': 'bb2'},
+                                     3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
+                                         'b3': 'bb3'}
+                                     }
+                            }
+                    )
 
   def test__handleDestination( self ):
     res = self.wfTasks._handleDestination( {'Site':'', 'TargetSE':''} )
