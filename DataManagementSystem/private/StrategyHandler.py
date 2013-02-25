@@ -587,14 +587,14 @@ class StrategyHandler( object ):
     rwDict = dict.fromkeys( seList )
     for se in rwDict:
       rwDict[se] = { "read" : False, "write" : False  }
-    rAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "Read", default = 'Unknown' )
+    rAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "ReadAccess", default = 'Unknown' )
     if not rAccess["OK"]:
       return rAccess["Message"]
-    rAccess = [ k for k, v in rAccess["Value"].items() if "Read" in v and v["Read"] in ( "Active", "Bad" ) ]
+    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccees" in v and v["ReadAccess"] in ( "Active", "Degraded" ) ]
     wAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "Write", default = 'Unknown' )
     if not wAccess["OK"]:
       return wAccess["Message"]
-    wAccess = [ k for k, v in wAccess["Value"].items() if "Write" in v and v["Write"] in ( "Active", "Bad" ) ]
+    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteAccess" in v and v["WriteAccess"] in ( "Active", "Degraded" ) ]
     for se in rwDict:
       rwDict[se]["read"] = se in rAccess
       rwDict[se]["write"] = se in wAccess
