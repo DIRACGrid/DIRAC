@@ -53,16 +53,22 @@ if not 'CSAdministrator' in getPropertiesForGroup( group ):
    gLogger.notice( "Please issue 'dirac-proxy-init -g [group with CSAdministrator Property]'" )
    DIRAC.exit( 2 )
 
-cfgBase = "/Resources/Sites/%s/%s" % ( diracGridType, diracSiteName )
-res = gConfig.getOptionsDict( cfgBase )
-if res['OK'] and res['Value']:
-  gLogger.error( "The site %s is already defined:" % diracSiteName )
-  for key, value in res['Value'].items():
-    gLogger.notice( "%s = %s" % ( key, value ) )
-  DIRAC.exit( 2 )
+siteDict = {}
+siteDict['Name'] = gridSiteName
+siteDict['Domains'] = diracGridType
+siteDict['Computing'] = {}
+siteName = '.'.join( [place, country] )  
+result = csAPI.addSite( siteName, siteDict )
+if not result['OK']:
+  gLogger.error( "Error: %s" % result['Message'] )
+  DIRAC.exit( -1 )
 
-csAPI.setOption( "%s/Name" % cfgBase, gridSiteName )
-csAPI.setOption( "%s/CE" % cfgBase, ','.join( ces ) )
+for ce in ces:
+  result = csAPI.addResource( siteName, 'Computing', ce, { 'CEType': "LCG" } )
+  if not result['OK']:
+    gLogger.error( "Error: %s" % result['Message'] )
+    DIRAC.exit( -1 )
+
 res = csAPI.commitChanges()
 if not res['OK']:
   gLogger.error( "Failed to commit changes to CS", res['Message'] )
