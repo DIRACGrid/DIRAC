@@ -69,11 +69,11 @@ for switch in Script.getUnprocessedSwitches():
   elif switch[0].lower() == "ownerGroup":
     ownerGroup = switch[1]
 
-conditions = {'RequestID':requestID, 'RequestName':requestName, 'JobID':jobID, 'OwnerDN':ownerDN,
-              'OwnerGroup':ownerGroup, 'RequestType':requestType, 'Status':status, 'Operation':operation}
-
 diracAdmin = DiracAdmin()
-result = diracAdmin.selectRequests( JobID = jobID, RequestID = requestID, RequestName = requestName, RequestType = requestType, Status = status, Operation = operation, OwnerDN = ownerDN, OwnerGroup = ownerGroup, RequestStart = requestStart, Limit = limit, printOutput = True )
+result = diracAdmin.selectRequests( jobID = jobID, requestID = requestID, requestName = requestName, 
+                                    requestType = requestType, status = status, operation = operation, 
+                                    ownerDN = ownerDN, ownerGroup = ownerGroup, requestStart = requestStart, 
+                                    limit = limit, printOutput = True )
 if not result['OK']:
   print 'ERROR %s' % result['Message']
   exitCode = 2
