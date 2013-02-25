@@ -69,13 +69,14 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 }
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group' )
+
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
                                           'b1': 'bb1', 'Site': 'MySite'},
                                      2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
-                                         'InputData': ['a1', 'a2'], 'b2': 'bb2'},
+                                         'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'MySite'},
                                      3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
-                                         'b3': 'bb3'}
+                                         'b3': 'bb3', 'Site': 'MySite'}
                                      }
                             }
                     )
