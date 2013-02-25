@@ -222,10 +222,10 @@ def checkElementProperties( elementPath, selectDict ):
     if not property in elementDict:
       return False 
     if type( selectDict[property] ) == ListType:
-      if not elemenDict[property] in selectDict[property]:
+      if not elementDict[property] in selectDict[property]:
         return False
     else:
-      if elemenDict[property] != selectDict[property]:
+      if elementDict[property] != selectDict[property]:
         return False     
 
   return finalResult
@@ -327,10 +327,10 @@ class Resources( object ):
         if not property in elementDict:
           return False 
         if type( selectDict[property] ) == ListType:
-          if not elemenDict[property] in selectDict[property]:
+          if not elementDict[property] in selectDict[property]:
             return False
         else:
-          if elemenDict[property] != selectDict[property]:
+          if elementDict[property] != selectDict[property]:
             return False     
 
       return finalResult
