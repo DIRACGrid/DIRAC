@@ -568,7 +568,7 @@ class Resources( object ):
     if not result['OK']:
       return result 
     resultDict = result['Value']  
-    result = self.getQueuesOptionsDict( site, ce, queue )
+    result = self.getQueueOptionsDict( site, ce, queue )
     if not result['OK']:
       return result  
     resultDict.update( result['Value'] )
@@ -614,6 +614,11 @@ class Resources( object ):
 ############################################################################################
 #
 #  Other methods
+
+def getSiteTier( site ):
+  """ Get the site Tier level according to the MoU agreement
+  """
+  return getSiteOption( site, 'MoUTierLevel' )
 
 def getCompatiblePlatforms( originalPlatforms ):
   """ Get a list of platforms compatible with the given list 
