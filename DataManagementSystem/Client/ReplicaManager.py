@@ -1559,7 +1559,7 @@ class ReplicaManager( CatalogToStorage ):
         errStr = "replicateAndRegister: Failed to register replica."
         self.log.info( errStr, res['Value']['Failed'][lfn] )
         failed[lfn] = { 'Registration' : { 'LFN' : lfn, 'TargetSE' : destSE, 'PFN' : destPfn } }
-    return S_OK({'Successful': successful, 'Failed': failed} )
+    return S_OK( {'Successful': successful, 'Failed': failed} )
 
   def replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
@@ -1734,13 +1734,13 @@ class ReplicaManager( CatalogToStorage ):
 
     self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
 
-    destSEStatus = self.resourceStatus.getStorageElementStatus( destSE, 'Write' )
+    destSEStatus = self.resourceStatus.getStorageElementStatus( destSE, 'WriteAccess' )
     if not destSEStatus[ 'OK' ]:
       self.log.error( destSEStatus[ 'Message' ] )
       return destSEStatus
-    destSEStatus = destSEStatus[ 'Value' ][ destSE ][ 'Write' ]
+    destSEStatus = destSEStatus[ 'Value' ][ destSE ][ 'WriteAccess' ]
 
-    # For RSS, the Active and Bad statuses are OK. Probing and Banned are NOK statuses
+    # For RSS, the Active and Degraded statuses are OK. Probing and Banned are NOK statuses
     if not destSEStatus in ( 'Active', 'Degraded' ):
       infoStr = "%s Destination Storage Element is currently '%s' for Write" % ( logStr, destSEStatus )
       self.log.info( infoStr, destSE )
@@ -1767,17 +1767,16 @@ class ReplicaManager( CatalogToStorage ):
 
     if sourceSE:
 
-      sourceSEStatus = self.resourceStatus.getStorageElementStatus( sourceSE, 'Read' )
+      sourceSEStatus = self.resourceStatus.getStorageElementStatus( sourceSE, 'ReadAccess' )
       if not sourceSEStatus[ 'OK' ]:
         self.log.error( sourceSEStatus[ 'Message' ] )
         return sourceSEStatus
-      sourceSEStatus = sourceSEStatus[ 'Value' ][ sourceSE ][ 'Read' ]
+      sourceSEStatus = sourceSEStatus[ 'Value' ][ sourceSE ][ 'ReadAccess' ]
 
       if sourceSE not in lfnReplicas:
         errStr = "%s LFN does not exist at supplied source SE." % logStr
         self.log.error( errStr, "%s %s" % ( lfn, sourceSE ) )
         return S_ERROR( errStr )
-
       elif not sourceSEStatus in ( 'Active', 'Degraded' ):
 #      elif sourceSE in bannedSources:
         infoStr = "%s Supplied source Storage Element is currently '%s' for Read." % ( logStr, sourceSEStatus )
@@ -1797,7 +1796,7 @@ class ReplicaManager( CatalogToStorage ):
 
   def __resolveBestReplicas( self, sourceSE, lfnReplicas, catalogueSize ):
     """ find best replicas """
-    
+
     ###########################################################
     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
 
@@ -1814,11 +1813,11 @@ class ReplicaManager( CatalogToStorage ):
         self.log.info( "%s %s replica not requested." % ( logStr, diracSE ) )
         continue
 
-      diracSEStatus = self.resourceStatus.getStorageElementStatus( diracSE, 'Read' )
+      diracSEStatus = self.resourceStatus.getStorageElementStatus( diracSE, 'ReadAccess' )
       if not diracSEStatus[ 'OK' ]:
         self.log.error( diracSEStatus[ 'Message' ] )
         continue
-      diracSEStatus = diracSEStatus[ 'Value' ][ diracSE ][ 'Read' ]
+      diracSEStatus = diracSEStatus[ 'Value' ][ diracSE ][ 'ReadAccess' ]
 
       if not diracSEStatus in ( 'Active', 'Degraded' ):
         self.log.info( "%s %s is currently '%s' as a source." % ( logStr, diracSE, diracSEStatus ) )
@@ -2370,16 +2369,20 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     else:
-      oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'].keys() ) )
-      gDataStoreClient.addRegister( oDataOperation )
-      infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
-      self.log.info( infoStr )
-      for surl, value in res['Value']['Successful'].items():
+      for surl, value in res['Value']['Failed'].items():
+        if 'No such file or directory' in value:
+          res['Value']['Successful'][surl] = surl
+          res['Value']['Failed'].pop( surl )
+      for surl in res['Value']['Successful']:
         ret = storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False )
         if not ret['OK']:
           res['Value']['Successful'][surl] = surl
         else:
           res['Value']['Successful'][surl] = ret['Value']
+      oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'].keys() ) )
+      gDataStoreClient.addRegister( oDataOperation )
+      infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
+      self.log.verbose( infoStr )
       return res
 
   #########################################################################
