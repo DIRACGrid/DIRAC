@@ -278,7 +278,7 @@ class FileMetadata:
     metaDict = {}
     for fileID, key, value in result['Value']:
       if metaDict.has_key( key ):
-        if type( metaDict[key] ) == ListType:
+        if type( metaDict[key] ) == types.ListType:
           metaDict[key].append( value )
         else:
           metaDict[key] = [metaDict[key]].append( value )
