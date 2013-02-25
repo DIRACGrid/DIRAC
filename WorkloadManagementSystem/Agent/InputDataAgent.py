@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.List                             import uniqueElements
 from DIRAC                                                 import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import getStorageElementOptions
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import Resources
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus      import ResourceStatus
 
 import time
@@ -49,11 +49,13 @@ class InputDataAgent( OptimizerModule ):
       self.log.exception( msg )
       return S_ERROR( msg + str( e ) )
     
-    self.resourceStatus = ResourceStatus()
+    self.resourceStatus  = ResourceStatus()
+    self.resourcesHelper = Resources()
 
     self.seToSiteMapping = {}
     self.lastCScheck = 0
     self.cacheLength = 600
+    
 
     return S_OK()
 
@@ -288,7 +290,7 @@ class InputDataAgent( OptimizerModule ):
             if not result['OK']:
               continue
             seDict[se] = { 'Sites': sites['Value'], 'SEParams': result['Value'][se] }
-            result = getStorageElementOptions( se )
+            result = self.resourcesHelper.getStorageElementOptionsDict( se )
             if not result['OK']:
               continue
             seDict[se]['SEParams'].update(result['Value'])
