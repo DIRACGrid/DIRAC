@@ -11,10 +11,18 @@
 
 import random
 
+<<<<<<< HEAD
 from DIRAC                                                          import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
 from DIRAC.Core.Utilities.Time                                      import fromString, toEpoch
 from DIRAC.Core.Security                                            import Properties
+=======
+from DIRAC                                                          import S_OK, S_ERROR
+from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
+from DIRAC.Core.Utilities.Time                                      import fromString, toEpoch
+from DIRAC.Core.Security                                            import Properties
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources             import getSiteTier
+>>>>>>> 56b606265769e565454f35cb4a48ac9c54bf2ab7
 from DIRAC.ConfigurationSystem.Client.Helpers                       import Registry
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import StorageManagerClient
