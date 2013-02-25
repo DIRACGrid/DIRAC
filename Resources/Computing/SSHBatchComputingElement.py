@@ -10,6 +10,7 @@
 """
 
 from DIRAC.Resources.Computing.SSHComputingElement       import SSHComputingElement
+from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 from DIRAC.Core.Utilities.Pfn                            import pfnparse
