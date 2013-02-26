@@ -1,3 +1,15 @@
+[v6r7p8]
+
+*Core
+FIX: Subprocess - consistent timeout error message
+
+*DMS
+NEW: RemovalTask - added bulk removal
+FIX: StrategyHandler - check file source CEs
+CHANGE: DataIntegrityClient - code beautification
+CHANGE: ReplicaManager - do not check file existence if replica information is queried anyway,
+        do not fail if file to be removed does not exist already. 
+
 [v6r7p7]
 
 FIX: Several fixes to allow automatic code documentation
