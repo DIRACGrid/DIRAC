@@ -74,7 +74,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers           import CSGlobals, Registry
 from DIRAC.Core.Utilities.List                          import uniqueElements
 import re, os  
-from types import ListType, StringTypes
+from types import ListType
 
 ############################################################################
 #
