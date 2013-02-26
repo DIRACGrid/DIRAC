@@ -1,4 +1,8 @@
-[v6r8-pre1]
+[v6r8-pre2]
+
+NEW: Change the schema of the Resources description in CS, use new Resources helper to 
+     interpret this information
+NEW: Base RSS resources representation on the new CS Resources schema     
 
 *Core
 FIX: multiple fixes to remove pylint complaints
