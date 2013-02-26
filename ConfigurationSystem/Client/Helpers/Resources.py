@@ -56,7 +56,7 @@
     The following methods allow to get a list of Resources and Nodes across sites
       
       getEligibleResources( resourceType, selectDict )
-      getEligibleNodes( apType, resourceSelectDict, apSelectDict )
+      getEligibleNodes( nodeType, resourceSelectDict, nodeSelectDict )
 
     The following are methods specialized for particular resources:
     
@@ -230,6 +230,19 @@ def checkElementProperties( elementPath, selectDict ):
 
   return finalResult
 
+def getSiteForResource( resourceType, resourceName ):
+  """ Get the site name for the given resource specified by type and name
+  """
+  for site in getSites():
+    result = Resources().getResources( site, resourceType )
+    if not result['OK']:
+      continue
+    resources = result['Value']
+    for resource in resources:
+      if resource == resourceName:
+        return S_OK( site )
+      
+  return S_ERROR( 'Resource %s of type %s is not found' % ( resourceType, resourceName ) )    
 
 ####################################################################################
 #
@@ -476,16 +489,16 @@ class Resources( object ):
 
     return S_OK( resultDict ) 
 
-  def getEligibleNodes( self, apType, resourceSelectDict={}, apSelectDict={} ):
+  def getEligibleNodes( self, nodeType, resourceSelectDict={}, apSelectDict={} ):
     """ Get all the Access Points eligible according to the selection criteria
     """
 
     resourceType = None
     for rType in RESOURCE_ACCESS_MAPPING:
-      if RESOURCE_ACCESS_MAPPING[rType] == apType:
+      if RESOURCE_ACCESS_MAPPING[rType] == nodeType:
         resourceType = rType
     if resourceType is None:
-      return S_ERROR( 'Invalid Access Point type %s' % apType ) 
+      return S_ERROR( 'Invalid Access Point type %s' % nodeType ) 
 
     result = self.getSites()
     if not result['OK']:
@@ -499,7 +512,7 @@ class Resources( object ):
       if not result['OK']:
         continue
       for resource in result['Value']:
-        result = self.getNodes( site, resourceType, resource, apType, apSelectDict )
+        result = self.getNodes( site, resourceType, resource, nodeType, apSelectDict )
         if not result['OK']:
           continue
         if result['Value']:  
@@ -507,6 +520,8 @@ class Resources( object ):
           resultDict[site][resource] = result['Value']
 
     return S_OK( resultDict )
+  
+  
 
   ####################################################################################
   #
@@ -618,7 +633,7 @@ class Resources( object ):
 def getSiteTier( site ):
   """ Get the site Tier level according to the MoU agreement
   """
-  return getSiteOption( site, 'MoUTierLevel' )
+  return Resources().getSiteOption( site, 'MoUTierLevel' )
 
 def getCompatiblePlatforms( originalPlatforms ):
   """ Get a list of platforms compatible with the given list 
