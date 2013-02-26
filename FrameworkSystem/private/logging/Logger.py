@@ -132,6 +132,8 @@ class Logger:
       return True
     return False
 
+  def getLevel( self ):
+    return self._logLevels.getLevel( self._minLevel )
 
   def shown( self, levelName ):
     levelName = levelName.upper()
