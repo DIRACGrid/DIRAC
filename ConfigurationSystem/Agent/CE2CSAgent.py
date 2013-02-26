@@ -100,7 +100,7 @@ class CE2CSAgent( AgentModule ):
     knownces = self.am_getOption( 'BannedCEs', [] )
 
     resources = Resources( self.voName )
-    result = resource.getEligibleResources( 'Computing', {'CEType':['LCG','CREAM'] } ) 
+    result    = resources.getEligibleResources( 'Computing', {'CEType':['LCG','CREAM'] } ) 
     if not result['OK']:
       return result
     
