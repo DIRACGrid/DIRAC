@@ -115,11 +115,31 @@ class RemovalTask( RequestTask ):
     removalStatus = dict.fromkeys( lfns, "" )  
     self.addMark( "RemoveFileAtt", len( lfns ) )
 
-    ## loop over LFNs
-    for lfn in lfns:
+    ## bulk removal 1st
+    bulkRemoval = self.replicaManager().removeFile( lfns )
+    if not bulkRemoval["OK"]:
+      self.error("removeFile: unable to remove files: %s" % bulkRemoval["Message"] )
+      subRequestError = bulkRemoval["Message"][:255]
+      subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError )
+      return S_OK( requestObj )
+    bulkRemoval = bulkRemoval["Value"]
+    successfulLfns = bulkRemoval["Successful"] if "Successful" in bulkRemoval else []
+    failedLfns = bulkRemoval["Failed"] if "Failed" in bulkRemoval else []
+    toRemove = []
+    for lfn in removalStatus:
+      if lfn in failedLfns and "no such file or directory" in str(bulkRemoval["Failed"][lfn]).lower():
+        removalStatus[lfn] = bulkRemoval["Failed"][lfn]
+        removeCatalog = self.replicaManager().removeCatalogFile( lfn, singleFile = True  )
+        if not removeCatalog["OK"]:
+          removalStatus[lfn] = removeCatalog["Message"]
+          continue
+      else:
+        toRemove.append(lfn)
+      
+    ## loop over LFNs to remove
+    for lfn in toRemove:
       self.debug("removeFile: processing file %s" % lfn )
       try:
-
         ## try to remove using proxy already defined in os.environ 
         removal = self.replicaManager().removeFile( lfn )
         ## file is not existing?  
@@ -212,6 +232,8 @@ class RemovalTask( RequestTask ):
     :param RequestContainer requestObj: request 
     :param dict subRequestAttrs: subRequest's attributes
     :param dict subRequestFiles: subRequest's files
+
+    TODO: add bulk removal first
     """
     self.info( "replicaRemoval: processing subrequest %s" % index )
     if requestObj.isSubRequestEmpty( index, "removal" )["Value"]:
