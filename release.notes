@@ -1,3 +1,8 @@
+[v6r7p9]
+
+*Core
+BUGFIX: InstallTools - MySQL Port should be an integer
+
 [v6r7p8]
 
 *Core
