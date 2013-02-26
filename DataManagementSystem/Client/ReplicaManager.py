@@ -2008,16 +2008,12 @@ class ReplicaManager( CatalogToStorage ):
   # These are the removal methods for physical and catalogue removal
   #
 
-<<<<<<< HEAD
-  def removeFile( self, lfn, force = False ):
-=======
   def removeFile( self, lfn, force = None ):
->>>>>>> rel-v6r7
     """ Remove the file (all replicas) from Storage Elements and file catalogue
 
         'lfn' is the file to be removed
     """
-    if force == None:
+    if force is None:
       force = self.ignoreMissingInFC
     if type( lfn ) == ListType:
       lfns = lfn
@@ -2038,21 +2034,8 @@ class ReplicaManager( CatalogToStorage ):
 
     successful = {}
     failed = {}
-<<<<<<< HEAD
-    existingFiles = []
-    for lfn, exists in res['Value']['Successful'].items():
-      if not exists:
-        if force:
-          successful[lfn] = True
-        else:
-          failed[lfn] = "File does not exist in the catalog"
-      else:
-        existingFiles.append( lfn )
-    res = self.fileCatalogue.getReplicas( existingFiles, True )
-=======
     self.log.verbose( "removeFile: Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
     res = self.fileCatalogue.getReplicas( lfns, True )
->>>>>>> rel-v6r7
     if not res['OK']:
       errStr = "ReplicaManager.removeFile: Completely failed to get replicas for lfns."
       self.log.error( errStr, res['Message'] )
