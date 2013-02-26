@@ -836,7 +836,7 @@ class FileManagerBase:
       fields = []
       if not self.db.lfnPfnConvention:
         fields = ['PFN']
-      res = self._getFileReplicas( fileIDLFNs.keys(), fields_input=fields, connection = connection )
+      res = self._getFileReplicas( fileIDLFNs.keys(), fields=fields, connection = connection )
       #print '_getFileReplicas',time.time()-startTime
       if not res['OK']:
         return res
