@@ -18,7 +18,7 @@ class CSAPI:
     """
     self.__csModified = False
     self.__baseSecurity = "/Registry"
-    self.__baseResources = '/Resources'
+    self.__baseResources = '/Resources_new'
 
     self.__userDN = ''
     self.__userGroup = ''
@@ -516,7 +516,7 @@ class CSAPI:
       return S_ERROR( '%s resource %s at site %s already exists' % ( resourceType, resourceName, siteName ) )
     return self.__addResourceLikeSection( resourcePath, resourceDict )
   
-  def addAccessPoint( self, siteName, resourceType, resourceName, apType, apName, apDict ):
+  def addNode( self, siteName, resourceType, resourceName, apType, apName, apDict ):
     """ Add a new site to the CS
     """
     if not self.__initialized[ 'OK' ]:
