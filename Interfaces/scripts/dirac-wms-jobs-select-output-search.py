@@ -67,6 +67,8 @@ selDate = date
 if not date:
   selDate = 'Today'
 
+from DIRAC.Interfaces.API.Dirac import Dirac
+
 dirac = Dirac()
 exitCode = 0
 errorList = []
