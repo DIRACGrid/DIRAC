@@ -164,7 +164,7 @@ def loadDiracCfg( verbose = False ):
     # if it is not defined use the same as for dirac services
     mysqlHost = host
 
-  mysqlPort = localCfg.getOption( cfgInstallPath( 'Database', 'Port' ), '' )
+  mysqlPort = localCfg.getOption( cfgInstallPath( 'Database', 'Port' ), 0 )
   if mysqlPort:
     if verbose:
       gLogger.notice( 'Using MySQL Port from local configuration ', mysqlPort )
