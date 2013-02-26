@@ -192,7 +192,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       gLogger.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     diracGroup = proxyInfo.get( 'group', 'Unknown' )
-    vo = getVoForGroup( diracGroup )
+    vo = getVOForGroup( diracGroup )
     vomsVO = getVOOption( vo, 'VOMSVO', '')
     resDict = { 'DN'       : proxyInfo['identity'],
                 'Role'     : proxyInfo['VOMS'],
@@ -1729,7 +1729,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getUserDirectory( self, username ):
     """ Takes a list of users and determines whether their directories already exist
     """
-    result = __getClientCertInfo()
+    result = self.__getClientCertInfo()
     if not result['OK']:
       return result
     vo = result['Value']['VO']
@@ -1756,7 +1756,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def createUserDirectory( self, username ):
     """ Creates the user directory
     """
-    result = __getClientCertInfo()
+    result = self.__getClientCertInfo()
     if not result['OK']:
       return result
     vo = result['Value']['VO']
