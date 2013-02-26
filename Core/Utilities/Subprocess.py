@@ -114,7 +114,7 @@ class Watchdog( object ):
       self.__watchdogThread = threading.Thread( target = self.watchdog )
       self.__watchdogThread.daemon = True
       self.__watchdogThread.start()
-      ret = { "OK" : False, "Message" : "Timed out after %s seconds" % timeout  }
+      ret = { "OK" : False, "Message" : "Timeout after %s seconds" % timeout  }
     try:
       self.__executor.start()
       time.sleep(0.5)
