@@ -299,6 +299,12 @@ class StrategyHandler( object ):
     :param dict metadata: file metadata read from catalogue
     """
     tree = {}
+    goodSources = []
+    for sourceSE in sourceSEs:
+      checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+      if checkSourceSE["OK"]:
+        goodSources.append( sourceSE )
+    sourceSEs = goodSources
     channels = []
     if len(targetSEs) > 1:
       return S_ERROR("swarm: wrong argument supplied for targetSEs, only one targetSE allowed")
@@ -308,10 +314,6 @@ class StrategyHandler( object ):
       channel = self.ftsGraph.findChannel( sourceSE, targetSE )
       if not channel["OK"]:
         self.log.warn( "swarm: %s" % channel["Message"] )
-        continue
-      checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
-      if not checkSourceSE["OK"]:
-        self.log.warn("swarm: %s" % checkSourceSE["Message"] )
         continue
       channels.append( ( sourceSE, channel["Value"] ) )      
     ## exit - no channels 
@@ -350,8 +352,13 @@ class StrategyHandler( object ):
     :param dict metadata: file metadata read from catalogue
     """
     tree = {}
+    goodSources = []
+    for sourceSE in sourceSEs:
+      checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+      if checkSourceSE["OK"]:
+        goodSources.append( sourceSE )
+    sourceSEs = goodSources
     primarySources = sourceSEs
-    #timeToSite = {}
     while targetSEs:
       minTimeToStart = float("inf")
       channels = []
@@ -362,10 +369,6 @@ class StrategyHandler( object ):
             self.log.warn( "minimiseTotalWait: %s" % ftsChannel["Message"] )
             continue 
           ftsChannel = ftsChannel["Value"]
-          checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
-          if not checkSourceSE["OK"]:
-            self.log.warn("minimiseTotalWait: %s" % checkSourceSE["Message"] )
-            continue
           channels.append( ( ftsChannel, sourceSE, targetSE ) )
       if not channels:
         msg = "minimiseTotalWait: FTS channels between %s and %s not defined" % ( ",".join(sourceSEs), 
@@ -380,11 +383,12 @@ class StrategyHandler( object ):
                                                                                                    ",".join(targetSEs) )
         self.log.error( msg )
         return S_ERROR( msg )
-
+      
       self.log.debug("minimiseTotalWait: found %s candiate channels, checking activity" % len( channels) )
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
                    if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"] 
                    and channel.status == "Active" and channel.timeToStart < float("inf") ]
+      
       if not channels:
         self.log.error("minimiseTotalWait: no active FTS channels found" )
         return S_ERROR("minimiseTotalWait: no active FTS channels found" )
@@ -418,7 +422,6 @@ class StrategyHandler( object ):
                                      "SourceSE" : selSourceSE,
                                      "DestSE" : selTargetSE,
                                      "Strategy" : "MinimiseTotalWait" }
-      #timeToSite[selTargetSE] = selTimeToStart 
       sourceSEs.append( selTargetSE )
       targetSEs.remove( selTargetSE )
 
@@ -433,6 +436,12 @@ class StrategyHandler( object ):
     :param dict metadata: file metadata read from catalogue
     """
     tree = {}
+    goodSources = []
+    for sourceSE in sourceSEs:
+      checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+      if checkSourceSE["OK"]:
+        goodSources.append( sourceSE )
+    sourceSEs = goodSources
     primarySources = sourceSEs
     timeToSite = {}
     while targetSEs:
@@ -472,10 +481,6 @@ class StrategyHandler( object ):
       candidates = []
       selTimeToStart = None
       for channel, sourceSE, targetSE in channels:
-        checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
-        if not checkSourceSE["OK"]:
-          self.log.warn("dynamicThroughput: %s" % checkSourceSE["Message"] )
-          continue
         timeToStart = channel.timeToStart
         if sourceSE not in primarySources:
           timeToStart += self.sigma        
@@ -608,18 +613,21 @@ class StrategyHandler( object ):
       self.seCache[sourceSE] = se
     pfn = se.getPfnForLfn( lfn )
     if not pfn["OK"]:
-      return S_ERROR( "checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
+      self.log.warn("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
+      return pfn
     pfn = pfn["Value"]
     seMetadata = se.getFileMetadata( pfn, singleFile=True )
     if not seMetadata["OK"]:
-      return S_ERROR("checkSourceSE: failed to get metadata %s" % seMetadata["Message"] )
+      self.log.warn("checkSourceSE: %s" % seMetadata["Message"] )
+      return S_ERROR("checkSourceSE: failed to get metadata")
     seMetadata = seMetadata["Value"]
     catalogChecksum = catalogMetadata["Checksum"].replace("x", "0" ).zfill(8) if "Checksum" in catalogMetadata else None
     storageChecksum = seMetadata["Checksum"].replace("x", "0").zfill(8) if "Checksum" in seMetadata else None
     if catalogChecksum != storageChecksum:
-      return S_ERROR( "checkSourceSE: %s checksum mismatch catalogue:%s %s:%s" % ( lfn,
-                                                                                   catalogChecksum,
-                                                                                   sourceSE,
-                                                                                   storageChecksum ) )    
+      self.log.warn( "checkSourceSE: %s checksum mismatch catalogue:%s %s:%s" % ( lfn,
+                                                                                  catalogChecksum,
+                                                                                  sourceSE,
+                                                                                  storageChecksum ) )
+      return S_ERROR("checkSourceSE: checksum mismatch")
     ## if we're here everything is OK
     return S_OK()

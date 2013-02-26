@@ -340,7 +340,7 @@ class StorageElement:
         protocolsToTry.append( protocol )
       else:
         errStr = "getPfnForProtocol: Requested protocol not available for SE."
-        self.log.warn( errStr, '%s for %s' % ( protocol, self.name ) )
+        self.log.debug( errStr, '%s for %s' % ( protocol, self.name ) )
     if not protocolsToTry:
       errStr = "getPfnForProtocol: None of the requested protocols were available for SE."
       self.log.error( errStr, '%s for %s' % ( protocol, self.name ) )
