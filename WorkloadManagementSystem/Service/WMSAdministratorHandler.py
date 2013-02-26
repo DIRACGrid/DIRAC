@@ -145,16 +145,10 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     # Get all the configured site names
-    result = gConfig.getSections('/Resources/Sites')
+    result = Resources().getSites()
     if not result['OK']:
       return result
-    grids = result['Value']
-    sites = []
-    for grid in grids:
-      result = gConfig.getSections('/Resources/Sites/%s' % grid)
-      if not result['OK']:
-        return result
-      sites += result['Value']
+    sites = result['Value']
 
     # Get the current mask status
     result = jobDB.getSiteMaskStatus()
@@ -354,7 +348,7 @@ class WMSAdministratorHandler(RequestHandler):
     else:
       # Instantiate the appropriate CE
       ceFactory = ComputingElementFactory()
-      result = Resources().getQueueDescription( pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'] )
+      result = Resources( group=group ).getQueueDescription( pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'] )
       if not result['OK']:
         return result
       queueDict = result['Value']
@@ -543,7 +537,7 @@ class WMSAdministratorHandler(RequestHandler):
     for key, pilotDict in pilotRefDict.items():
       
       owner,group,site,ce,queue = key.split( '@@@' )
-      result = Resources().getQueueDescription( site, ce, queue )
+      result = Resources( group=group ).getQueueDescription( site, ce, queue )
       if not result['OK']:
         return result
       queueDict = result['Value']
