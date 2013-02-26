@@ -18,22 +18,22 @@
       getResourceOptionsDict( site, resourceType, resource )
       getResourceValue( site, resourceType, resource, option, default )
 
-      getAccessPointOption( site, resourceType, resource, accessPoint, option )
-      getAccessPointOptionsDict( site, resourceType, resource, accessPoint )
-      getAccessPointValue( site, resourceType, resource, accessPoint, option, default )
+      getNodeOption( site, resourceType, resource, node, option )
+      getNodeOptionsDict( site, resourceType, resource, node )
+      getNodeValue( site, resourceType, resource, node, option, default )
 
-    For particular Resource and AccessPoint types the following methods can be used
+    For particular Resource and Node types the following methods can be used
 
       get<ResourceType>Option( site, option )
       get<ResourceType>OptionsDict( site )
       get<ResourceType>Value( site, option, default )
 
-      get<AccessPointType>Option( site, accessPoint, option )
-      get<AccessPointType>OptionsDict( site, accessPoint )
-      get<AccessPointType>Value( site, accessPoint, option, default )
+      get<NodeType>Option( site, node, option )
+      get<NodeType>OptionsDict( site, node )
+      get<NodeType>Value( site, node, option, default )
 
-    The eligible Resource types and AccessPoint types are defined in the RESOURCE_ACCESS_MAPPING global
-    dictionary, there is a one-to-one correspondence as we have a single accessPoint type per given
+    The eligible Resource types and Node types are defined in the RESOURCE_ACCESS_MAPPING global
+    dictionary, there is a one-to-one correspondence as we have a single node type per given
     Resource type, mostly for clarity/readability reasons
 
     For example, 
@@ -46,17 +46,17 @@
 
       getSites( selectDict )
       get<ResourceType>Elements( site, selectDict )
-      get<AccessPointType>s( site, ceName, selectDict )
+      get<NodeType>s( site, ceName, selectDict )
 
     selectDict is an optional dictionary of resource selection criteria. For example:
 
       getStorageElements( site, {'ReadAccess':'Active'} )
       getQueues( site, ceName, { 'Platform' : ['Linux_x86_64_glibc-2.5','x86_64_ScientificSL_Boron_5.4'] } )
 
-    The following methods allow to get a list of Resources and AccessPoints across sites
+    The following methods allow to get a list of Resources and Nodes across sites
       
       getEligibleResources( resourceType, selectDict )
-      getEligibleAccessPoints( apType, resourceSelectDict, apSelectDict )
+      getEligibleNodes( nodeType, resourceSelectDict, nodeSelectDict )
 
     The following are methods specialized for particular resources:
     
@@ -218,18 +218,31 @@ def checkElementProperties( elementPath, selectDict ):
     return False
   elementDict = result['Value']
   finalResult = True  
-  for property in selectDict:
-    if not property in elementDict:
+  for property_ in selectDict:
+    if not property_ in elementDict:
       return False 
-    if type( selectDict[property] ) == ListType:
-      if not elemenDict[property] in selectDict[property]:
+    if type( selectDict[property_] ) == ListType:
+      if not elementDict[property_] in selectDict[property_]:
         return False
     else:
-      if elemenDict[property] != selectDict[property]:
+      if elementDict[property_] != selectDict[property_]:
         return False     
 
   return finalResult
 
+def getSiteForResource( resourceType, resourceName ):
+  """ Get the site name for the given resource specified by type and name
+  """
+  for site in getSites():
+    result = Resources().getResources( site, resourceType )
+    if not result['OK']:
+      continue
+    resources = result['Value']
+    for resource in resources:
+      if resource == resourceName:
+        return S_OK( site )
+      
+  return S_ERROR( 'Resource %s of type %s is not found' % ( resourceType, resourceName ) )    
 
 ####################################################################################
 #
@@ -237,7 +250,7 @@ def checkElementProperties( elementPath, selectDict ):
 
 class Resources( object ):
   """ Class to access Resources configuration data according to a standard three-level
-      hierarchy: Site > Resource > AccessPoint
+      hierarchy: Site > Resource > Node
   """
 
   class __InnerResources( object ):
@@ -323,14 +336,14 @@ class Resources( object ):
         return False
       elementDict = result['Value']
       finalResult = True  
-      for property in selectDict:
-        if not property in elementDict:
+      for property_ in selectDict:
+        if not property_ in elementDict:
           return False 
-        if type( selectDict[property] ) == ListType:
-          if not elemenDict[property] in selectDict[property]:
+        if type( selectDict[property_] ) == ListType:
+          if not elementDict[property_] in selectDict[property_]:
             return False
         else:
-          if elemenDict[property] != selectDict[property]:
+          if elementDict[property_] != selectDict[property_]:
             return False     
 
       return finalResult
@@ -393,7 +406,7 @@ class Resources( object ):
       siteType = True
     elif "Resource" in name:
       resourceType = args.pop()
-    elif "AccessPoint" in name:
+    elif "Node" in name:
       resourceType = args.pop()
       accessType = RESOURCE_ACCESS_MAPPING[resourceType]    
     else:  
@@ -418,8 +431,8 @@ class Resources( object ):
       resource = args.pop()
       typePath = cfgPath( sitePath, resourceType, resource, accessType+'s' ) 
       if len( args ) > 0:
-        accessPoint = args.pop()
-        optionPath = cfgPath( sitePath, resourceType, resource, accessType+'s', accessPoint )        
+        node = args.pop()
+        optionPath = cfgPath( sitePath, resourceType, resource, accessType+'s', node )        
         if self.__vo is not None:
           optionVOPath = cfgPath( optionPath, self.__vo )
     elif resourceType is not None:
@@ -476,16 +489,16 @@ class Resources( object ):
 
     return S_OK( resultDict ) 
 
-  def getEligibleAccessPoints( self, apType, resourceSelectDict={}, apSelectDict={} ):
+  def getEligibleNodes( self, nodeType, resourceSelectDict={}, apSelectDict={} ):
     """ Get all the Access Points eligible according to the selection criteria
     """
 
     resourceType = None
     for rType in RESOURCE_ACCESS_MAPPING:
-      if RESOURCE_ACCESS_MAPPING[rType] == apType:
+      if RESOURCE_ACCESS_MAPPING[rType] == nodeType:
         resourceType = rType
     if resourceType is None:
-      return S_ERROR( 'Invalid Access Point type %s' % apType ) 
+      return S_ERROR( 'Invalid Access Point type %s' % nodeType ) 
 
     result = self.getSites()
     if not result['OK']:
@@ -499,7 +512,7 @@ class Resources( object ):
       if not result['OK']:
         continue
       for resource in result['Value']:
-        result = self.getAccessPoints( site, resourceType, resource, apType, apSelectDict )
+        result = self.getNodes( site, resourceType, resource, nodeType, apSelectDict )
         if not result['OK']:
           continue
         if result['Value']:  
@@ -507,6 +520,8 @@ class Resources( object ):
           resultDict[site][resource] = result['Value']
 
     return S_OK( resultDict )
+  
+  
 
   ####################################################################################
   #
@@ -568,7 +583,7 @@ class Resources( object ):
     if not result['OK']:
       return result 
     resultDict = result['Value']  
-    result = self.getQueuesOptionsDict( site, ce, queue )
+    result = self.getQueueOptionsDict( site, ce, queue )
     if not result['OK']:
       return result  
     resultDict.update( result['Value'] )
@@ -586,7 +601,7 @@ class Resources( object ):
     if mode is not None:
       ceSelectDict['SubmissionMode'] = mode 
 
-    result = self.getEligibleAccessPoints( 'Queue', resourceSelectDict=ceSelectDict )
+    result = self.getEligibleNodes( 'Queue', resourceSelectDict=ceSelectDict )
     if not result['OK']:
       return result
 
@@ -614,6 +629,11 @@ class Resources( object ):
 ############################################################################################
 #
 #  Other methods
+
+def getSiteTier( site ):
+  """ Get the site Tier level according to the MoU agreement
+  """
+  return Resources().getSiteOption( site, 'MoUTierLevel' )
 
 def getCompatiblePlatforms( originalPlatforms ):
   """ Get a list of platforms compatible with the given list 

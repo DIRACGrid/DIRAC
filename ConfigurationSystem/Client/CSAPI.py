@@ -18,7 +18,7 @@ class CSAPI:
     """
     self.__csModified = False
     self.__baseSecurity = "/Registry"
-    self.__baseResources = '/Resources'
+    self.__baseResources = '/Resources_new'
 
     self.__userDN = ''
     self.__userGroup = ''
@@ -511,12 +511,12 @@ class CSAPI:
     sitePath = "%s/Sites/%s" % ( self.__baseResources, siteName )
     if not self.__csMod.existsSection( sitePath ):
       return S_ERROR( 'Site %s does not exist' % siteName )
-    resourcePath = "%s/Sites/%s/%s/%s" % ( self.__baseResources, siteName, resourceType, resource )
+    resourcePath = "%s/Sites/%s/%s/%s" % ( self.__baseResources, siteName, resourceType, resourceName )
     if self.__csMod.existsSection( resourcePath ):
-      return S_ERROR( '%s resource %s at site %s already exists' % ( resourceType, resource, siteName ) )
+      return S_ERROR( '%s resource %s at site %s already exists' % ( resourceType, resourceName, siteName ) )
     return self.__addResourceLikeSection( resourcePath, resourceDict )
   
-  def addAccessPoint( self, siteName, resourceType, resourceName, apType, apName, apDict ):
+  def addNode( self, siteName, resourceType, resourceName, apType, apName, apDict ):
     """ Add a new site to the CS
     """
     if not self.__initialized[ 'OK' ]:
@@ -524,13 +524,13 @@ class CSAPI:
     sitePath = "%s/Sites/%s" % ( self.__baseResources, siteName )
     if not self.__csMod.existsSection( sitePath ):
       return S_ERROR( 'Site %s does not exist' % siteName )
-    resourcePath = "%s/Sites/%s/%s/%s" % ( self.__baseResources, siteName, resourceType, resource )
+    resourcePath = "%s/Sites/%s/%s/%s" % ( self.__baseResources, siteName, resourceType, resourceName )
     if not self.__csMod.existsSection( resourcePath ):
-      return S_ERROR( '%s resource %s at site %s does not exist' % ( resourceType, resource, siteName ) )
-    apPath = "%s/Sites/%s/%s/%s/%s/%s" % ( self.__baseResources, siteName, resourceType, resource, apType, apName )
+      return S_ERROR( '%s resource %s at site %s does not exist' % ( resourceType, resourceName, siteName ) )
+    apPath = "%s/Sites/%s/%s/%s/%s/%s" % ( self.__baseResources, siteName, resourceType, resourceName, apType, apName )
     if self.__csMod.existsSection( apPath ):
       return S_ERROR( '%s access point %s at %s resource %s at site %s already exists ' % \
-                                              ( apType, apName, resourceType, resource, siteName ) )
+                                              ( apType, apName, resourceType, resourceName, siteName ) )
     return self.__addResourceLikeSection( apPath, apDict )
     
   def sortSection( self, section ):  

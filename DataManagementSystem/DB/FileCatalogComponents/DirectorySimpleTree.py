@@ -7,7 +7,7 @@
 
 __RCSID__ = "$Id:  $"
 
-import time, os, types
+import os, types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase     import DirectoryTreeBase
 
@@ -131,7 +131,7 @@ class DirectorySimpleTree(DirectoryTreeBase):
       
     pathString = [ "'"+p+"'" for p in pelements ]
     req = "SELECT DirID FROM FC_DirectoryTree WHERE DirName in (%s) ORDER BY DirID" % pathString
-    result = self._query(req)
+    result = self.db._query(req)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -151,7 +151,7 @@ class DirectorySimpleTree(DirectoryTreeBase):
       dirID = path
         
     req = "SELECD DirID FROM FC_DirectoryTree WHERE Parent=%d" % dirID
-    result = self._query(req)
+    result = self.db._query(req)
     if not result['OK']:
       return result
     if not result['Value']:

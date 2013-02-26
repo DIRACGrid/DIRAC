@@ -11,7 +11,7 @@ __RCSID__ = "$Id$"
 
 import time, os, types
 from types import *
-from DIRAC import S_OK, S_ERROR
+from DIRAC import gLogger,S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 
 MAX_LEVELS = 15
