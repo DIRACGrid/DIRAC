@@ -1,5 +1,5 @@
 import threading
-#Because eval(valenc) might require it
+# Because eval(valenc) might require it
 import datetime
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DEncode, List
@@ -72,14 +72,14 @@ class OptimizerExecutor( ExecutorModule ):
     try:
       self.jobLog.info( "Processing" )
       optResult = self.optimizeJob( jid, jobState )
-      #If the manifest is dirty, update it!
+      # If the manifest is dirty, update it!
       result = jobState.getManifest()
       if not result[ 'OK' ]:
         return result
       manifest = result[ 'Value' ]
       if manifest.isDirty():
         jobState.setManifest( manifest )
-      #Did it go as expected? If not Failed!
+      # Did it go as expected? If not Failed!
       if not optResult[ 'OK' ]:
         self.jobLog.info( "Set to Failed/%s" % optResult[ 'Message' ] )
         minorStatus = "%s optimizer" % self.ex_optimizerName()
@@ -107,7 +107,7 @@ class OptimizerExecutor( ExecutorModule ):
       return S_ERROR( "Optimizer %s is not in the chain!" % opName )
     chainLength = len( opChain )
     if chainLength - 1 == opIndex:
-      #This is the last optimizer in the chain!
+      # This is the last optimizer in the chain!
       result = jobState.setStatus( self.ex_getOption( 'WaitingStatus', 'Waiting' ),
                                    minorStatus = self.ex_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ),
                                    appStatus = "Unknown",
@@ -120,7 +120,7 @@ class OptimizerExecutor( ExecutorModule ):
         return result
 
       return S_OK()
-    #Keep optimizing!
+    # Keep optimizing!
     nextOp = opChain[ opIndex + 1 ]
     self.jobLog.info( "Set to Checking/%s" % nextOp )
     return jobState.setStatus( "Checking", nextOp, source = opName )
@@ -149,8 +149,11 @@ class OptimizerExecutor( ExecutorModule ):
 
   @property
   def jobLog( self ):
-    if not self.__jobData.jobLog:
-      raise RuntimeError( "jobLog can only be invoked inside the optimizeJob function" )
+    try:
+      if not self.__jobData.jobLog:
+        raise RuntimeError( "jobLog can only be invoked inside the optimizeJob function" )
+    except AttributeError:
+      return gLogger
     return self.__jobData.jobLog
 
   def deserializeTask( self, taskStub ):
