@@ -6,16 +6,12 @@ __RCSID__ = "$Id$"
 
 import sys
 import traceback
-import os
-import os.path
-import re
 import inspect
-import Queue
 from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.logging.Message import Message
 from DIRAC.Core.Utilities import Time, List
 from DIRAC.FrameworkSystem.private.logging.backends.BackendIndex import gBackendIndex
-from DIRAC.Core.Utilities import ExitCallback, ColorCLI
+from DIRAC.Core.Utilities import ExitCallback
 import DIRAC
 
 DEBUG = 1
