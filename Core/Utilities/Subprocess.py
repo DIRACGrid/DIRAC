@@ -114,7 +114,8 @@ class Watchdog( object ):
       self.__watchdogThread = threading.Thread( target = self.watchdog )
       self.__watchdogThread.daemon = True
       self.__watchdogThread.start()
-      ret = { "OK" : False, "Message" : "Timeout after %s seconds" % timeout  }
+      ret = { "OK" : False, "Message" : "Timeout after %s seconds" % timeout,
+              "Value": ( 1, '', '' )  }
     try:
       self.__executor.start()
       time.sleep(0.5)
@@ -130,12 +131,9 @@ class Watchdog( object ):
           ret[k] = self.s_ok_error[k]
         self.rwEvent.clear()
     except Exception, error:
-      return { "OK" : False, "Message" : str(error) }
+      return { "OK" : False, "Message" : str(error),
+               "Value": ( 2, '', '' )  }
     return ret
-  
-  def finalize(self):
-    """ destructor """
-    pass
 
 class Subprocess:
   """
@@ -165,7 +163,7 @@ class Subprocess:
     self.cmdSeq = []
 
   def changeTimeout( self, timeout ):
-    """ set the tim out limit to :timeout: seconds 
+    """ set the time out limit to :timeout: seconds 
 
     :param int timeout: time out in seconds
     """
