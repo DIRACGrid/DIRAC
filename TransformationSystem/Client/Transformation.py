@@ -336,15 +336,15 @@ class Transformation( API ):
     transID = res['Value']
     self.exists = True
     self.setTransformationID( transID )
-    gLogger.info( "Created transformation %d" % transID )
+    gLogger.notice( "Created transformation %d" % transID )
     for paramName, paramValue in self.paramValues.items():
       if not self.paramTypes.has_key( paramName ):
         res = self.transClient.setTransformationParameter( transID, paramName, paramValue )
         if not res['OK']:
           gLogger.error( "Failed to add parameter", "%s %s" % ( paramName, res['Message'] ) )
-          gLogger.info( "To add this parameter later please execute the following." )
-          gLogger.info( "oTransformation = Transformation(%d)" % transID )
-          gLogger.info( "oTransformation.set%s(...)" % paramName )
+          gLogger.notice( "To add this parameter later please execute the following." )
+          gLogger.notice( "oTransformation = Transformation(%d)" % transID )
+          gLogger.notice( "oTransformation.set%s(...)" % paramName )
     return S_OK( transID )
 
   def _checkCreation( self ):
@@ -358,9 +358,7 @@ class Transformation( API ):
     for parameter in requiredParameters:
       if not self.paramValues[parameter]:
         gLogger.info( "%s is not defined for this transformation. This is required..." % parameter )
-        res = self.__promptForParameter( parameter )
-        if not res['OK']:
-          return res
+        self.paramValues[parameter] = raw_input( "Please enter the value of " + parameter + " " )
 
     plugin = self.paramValues['Plugin']
     if not plugin in self.supportedPlugins:
@@ -368,6 +366,8 @@ class Transformation( API ):
       res = self.__promptForParameter( 'Plugin', choices = self.supportedPlugins, default = 'Standard' )
       if not res['OK']:
         return res
+      self.paramValues['Plugin'] = res['Value']
+
     plugin = self.paramValues['Plugin']
     checkPlugin = "_check%sPlugin" % plugin
     fcn = None
@@ -395,14 +395,11 @@ class Transformation( API ):
 
   def _checkBroadcastPlugin( self ):
     gLogger.info( "The Broadcast plugin requires the following parameters be set: %s" % ( ', '.join( ['SourceSE',
-                                                                                                      'TargetSE'] ) ) )
+                                                                                                      'TargetSE'] ) ) ) 
     requiredParams = ['SourceSE', 'TargetSE']
     for requiredParam in requiredParams:
       if ( not self.paramValues.has_key( requiredParam ) ) or ( not self.paramValues[requiredParam] ):
-        res = self.__promptForParameter( requiredParam, insert = False )
-        if not res['OK']:
-          return res
-        paramValue = res['Value']
+        paramValue = raw_input( "Please enter " + requiredParam + " " )
         setter = None
         setterName = "set%s" % requiredParam
         if hasattr( self, setterName ) and callable( getattr( self, setterName ) ):
@@ -432,7 +429,7 @@ class Transformation( API ):
     res = promptUser( "Please enter %s" % parameter, choices = choices, default = default )
     if not res['OK']:
       return self._errorReport( res )
-    gLogger.info( "%s will be set to '%s'" % ( parameter, res['Value'] ) )
+    gLogger.notice( "%s will be set to '%s'" % ( parameter, res['Value'] ) )
     paramValue = res['Value']
     if insert:
       setter = None

@@ -73,7 +73,7 @@ class RequestClient( Client ):
     :param str requestName: request name
     :param str requestString: xml string 
     """
-    self.log.info("updateRequest: attempt to update '%s' request" % requestName )
+    self.log.debug("updateRequest: attempt to update '%s' request" % requestName )
     updateRequest = self.requestManager().updateRequest( requestName, requestString )
     if not updateRequest["OK"]:
       self.log.error( "updateRequest: unable to update '%s' request: %s" % ( requestName, 
@@ -86,7 +86,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.info("deleteRequest: attempt to delete '%s' request" % requestName )
+    self.log.debug("deleteRequest: attempt to delete '%s' request" % requestName )
     deleteRequest = self.requestManager().deleteRequest( requestName )
     if not deleteRequest["OK"]:
       self.log.error( "deleteRequest: unable to delete '%s' request: %s" % ( requestName, 
@@ -101,7 +101,7 @@ class RequestClient( Client ):
     :param str requestName: request name
     :param str requestStatus: new status
     """
-    self.log.info( "setRequestStatus: attempt to set '%s' status for '%s' request" % ( requestStatus, requestName ) )
+    self.log.debug( "setRequestStatus: attempt to set '%s' status for '%s' request" % ( requestStatus, requestName ) )
     requestStatus = self.requestManager().setRequestStatus( requestName, requestStatus )
     if not requestStatus["OK"]:
       self.log.error( "setRequestStatus: unable to set status for '%s' request: %s" % ( requestName, 
@@ -114,7 +114,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param list jobID: list of job IDs (integers)
     """
-    self.log.info( "getRequestForJobs: attempt to get request(s) for job %s" % jobID )
+    self.log.debug( "getRequestForJobs: attempt to get request(s) for job %s" % jobID )
     requests = self.requestManager().getRequestForJobs( jobID )
     if not requests["OK"]:
       self.log.error( "getRequestForJobs: unable to get request(s) for jobs %s: %s" % ( jobID, 
@@ -140,10 +140,10 @@ class RequestClient( Client ):
       setRequestProxy = proxyClient.setRequest( requestName, requestString )
       if setRequestProxy["OK"]:
         if setRequestProxy["Value"]["set"]:
-          self.log.info( "setRequest: request '%s' successfully set using RequestProxy %s" % ( requestName, 
+          self.log.debug( "setRequest: request '%s' successfully set using RequestProxy %s" % ( requestName, 
                                                                                                proxyURL ) )
         elif setRequestProxy["Value"]["saved"]:
-          self.log.info( "setRequest: request '%s' successfully forwarded to RequestProxy %s" % ( requestName, 
+          self.log.debug( "setRequest: request '%s' successfully forwarded to RequestProxy %s" % ( requestName, 
                                                                                                   proxyURL ) )
         return setRequestProxy
       else:
@@ -162,10 +162,10 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestType: type of request
     """
-    self.log.info( "getRequest: attempting to get '%s' request." % requestType )
+    self.log.debug( "getRequest: attempting to get '%s' request." % requestType )
     getRequest = self.requestManager().getRequest( requestType )
     if not getRequest["OK"]:
-      self.log.error("getRequest: unable to get '%s' request: %s" % getRequest["Message"] )
+      self.log.error("getRequest: unable to get '%s' request: %s" % ( requestType, getRequest["Message"] ) )
     return getRequest  
 
   def serveRequest( self, requestType = "" ):
@@ -178,7 +178,7 @@ class RequestClient( Client ):
 
   def getDBSummary( self ):
     """ Get the summary of requests in the RequestDBs. """
-    self.log.info( "getDBSummary: attempting to get RequestDB summary." )
+    self.log.debug( "getDBSummary: attempting to get RequestDB summary." )
     dbSummary = self.requestManager().getDBSummary()
     if not dbSummary["OK"]:
       self.log.error( "getDBSummary: unable to get RequestDB summary: %s" % dbSummary["Message"] )
@@ -190,7 +190,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.info( "getDigest: attempting to get digest for '%s' request." % requestName )
+    self.log.debug( "getDigest: attempting to get digest for '%s' request." % requestName )
     digest = self.requestManager().getDigest( requestName )
     if not digest["OK"]:
       self.log.error( "getDigest: unable to get digest for '%s' request: %s" % ( requestName, digest["Message"] ) )
@@ -202,7 +202,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: name of the request
     """
-    self.log.info( "getCurrentExecutionOrder: attempt to get execution order for '%s' request." % requestName )
+    self.log.debug( "getCurrentExecutionOrder: attempt to get execution order for '%s' request." % requestName )
     executionOrder = self.requestManager().getCurrentExecutionOrder( requestName )
     if not executionOrder["OK"]:
       self.log.error( "getCurrentExecutionOrder: unable to get execution order for '%s' request: %s" %\
@@ -215,7 +215,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: name of teh request
     """
-    self.log.info( "getRequestStatus: attempting to get status for '%s' request." % requestName )
+    self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestName )
     requestStatus = self.requestManager().getRequestStatus( requestName )
     if not requestStatus["OK"]:
       self.log.error( "getRequestStatus: unable to get status for '%s' request: %s" % ( requestName, 
@@ -228,7 +228,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.info( "getRequestInfo: attempting to get info for '%s' request." % requestName )
+    self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestName )
     requestInfo = self.requestManager().getRequestInfo( requestName )
     if not requestInfo["OK"]:
       self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestName, 
@@ -242,7 +242,7 @@ class RequestClient( Client ):
     :param str requestName: request name
     :param list lfns: list of LFNs
     """
-    self.log.info( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
+    self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
     fileStatus = self.requestManager().getRequestFileStatus( requestName, lfns )
     if not fileStatus["OK"]:
       self.log.error( "getRequestFileStatus: unable to get file status for '%s' request: %s" %\
@@ -276,12 +276,12 @@ class RequestClient( Client ):
             jobMinorStatus = res["Value"]["MinorStatus"]
             if jobMinorStatus == "Pending Requests":
               if jobStatus == "Completed":
-                self.log.info( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
+                self.log.debug( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
                 res = stateServer.setJobStatus( jobID, "Done", "Requests done", "" )
                 if not res["OK"]:
                   self.log.error( "finalizeRequest: Failed to set job status" )
               elif jobStatus == "Failed":
-                self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
+                self.log.debug( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
                 res = stateServer.setJobStatus( jobID, "", "Requests done", "" )
                 if not res["OK"]:
                   self.log.error( "finalizeRequest: Failed to set job status" )
@@ -289,7 +289,7 @@ class RequestClient( Client ):
       self.log.error( "finalizeRequest: failed to get request status: %s" % res["Message"] )
 
     # update the job pending request digest in any case since it is modified
-    self.log.info( "finalizeRequest: Updating request digest for job %d" % jobID )
+    self.log.debug( "finalizeRequest: Updating request digest for job %d" % jobID )
     digest = self.getDigest( requestName )
     if digest["OK"]:
       digest = digest["Value"]

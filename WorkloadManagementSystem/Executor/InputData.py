@@ -126,6 +126,7 @@ class InputData( OptimizerExecutor ):
 
       if not guidDict['OK']:
         self.log.warn( guidDict['Message'] )
+        return guidDict
 
       failed = guidDict['Value']['Failed']
       if failed:
@@ -171,7 +172,7 @@ class InputData( OptimizerExecutor ):
       result = jobState.setParameter( self.ex_getProperty( 'optimizerName' ), errorMsg )
       if not result['OK']:
         self.log.error( result['Message'] )
-      return S_ERROR( 'Input Data Not Available' )
+      return S_ERROR( 'Input data not available' )
 
     return self.__getSiteCandidates( okReplicas )
 

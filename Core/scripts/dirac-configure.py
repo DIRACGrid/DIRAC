@@ -61,8 +61,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath
-from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Resources
 
 import sys, os
 
@@ -343,46 +342,39 @@ if not skipCADownload:
 if ceName or siteName:
   # This is used in the pilot context, we should have a proxy and access to CS
   Script.enableCS()
-  # Get the site resource section
-  gridSections = DIRAC.gConfig.getSections( '/Resources/Sites/' )
-  if not gridSections['OK']:
-    DIRAC.gLogger.warn( 'Could not get grid sections list' )
-    grids = []
-  else:
-    grids = gridSections['Value']
-  # try to get siteName from ceName or Local SE from siteName using Remote Configuration
-  for grid in grids:
-    siteSections = DIRAC.gConfig.getSections( '/Resources/Sites/%s/' % grid )
-    if not siteSections['OK']:
-      DIRAC.gLogger.warn( 'Could not get %s site list' % grid )
-      sites = []
-    else:
-      sites = siteSections['Value']
+  
+  resources = Resources( vo=vo )
+  
+  result = resources.getSites()
+  if not result['OK']:
+    return result
+  
+  sites = result['Value']
+  if not siteName:
+    if ceName:
+      for site in sites:
+        result = resources.getComputingElements( site )
+        siteCEs = result['Value']
+        if ceName in siteCEs:
+          siteName = getSiteName( site )        
+          
+  if siteName:
+    DIRAC.gLogger.notice( 'Setting /LocalSite/Site = %s' % siteName )
+    Script.localCfg.addDefaultEntry( '/LocalSite/Site', siteName )
+    DIRAC.__siteName = False
+    if ceName:
+      DIRAC.gLogger.notice( 'Setting /LocalSite/GridCE = %s' % ceName )
+      Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
 
-    if not siteName:
-      if ceName:
-        for site in sites:
-          siteCEs = DIRAC.gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( grid, site ), [] )
-          if ceName in siteCEs:
-            siteName = site
-            break
-    if siteName:
-      DIRAC.gLogger.notice( 'Setting /LocalSite/Site = %s' % siteName )
-      Script.localCfg.addDefaultEntry( '/LocalSite/Site', siteName )
-      DIRAC.__siteName = False
-      if ceName:
-        DIRAC.gLogger.notice( 'Setting /LocalSite/GridCE = %s' % ceName )
-        Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
-
-      if not localSE and siteName in sites:
-        localSE = getSEsForSite( siteName )
-        if localSE['OK'] and localSE['Value']:
-          localSE = ','.join( localSE['Value'] )
-        else:
-          localSE = 'None'
-        DIRAC.gLogger.notice( 'Setting /LocalSite/LocalSE =', localSE )
-        Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
-        break
+    if not localSE and siteName in sites:
+      localSE = resources.getStorageElements( siteName )
+      if localSE['OK'] and localSE['Value']:
+        localSE = ','.join( localSE['Value'] )
+      else:
+        localSE = 'None'
+      DIRAC.gLogger.notice( 'Setting /LocalSite/LocalSE =', localSE )
+      Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
+      break
 
 if useServerCert:
   Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
@@ -404,13 +396,12 @@ if not os.path.exists( DIRAC.gConfig.diracConfigFilePath ):
 
 # We need user proxy or server certificate to continue
 if not useServerCert:
+  Script.enableCS()
   result = getProxyInfo()
   if not result['OK']:
-    DIRAC.gLogger.notice( 'No user proxy available' )
-    DIRAC.gLogger.notice( 'Create one using %s and execute again with -x option' % os.path.join( DIRAC.rootPath, 'scripts', 'dirac-proxy-init' ) )
+    DIRAC.gLogger.notice( 'Configuration is not completed because no user proxy is available' )
+    DIRAC.gLogger.notice( 'Create one using dirac-proxy-init and execute again with -F option' )
     sys.exit( 0 )
-  else:
-    Script.enableCS()
 else:
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()

@@ -24,18 +24,16 @@ class ProxyManagerHandler( RequestHandler ):
 
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
-    requireVoms = cls.srv_getCSOption( "RequireVOMS", False )
     useMyProxy = cls.srv_getCSOption( "UseMyProxy", False )
     try:
-      cls.__proxyDB = ProxyDB( requireVoms = requireVoms,
-                              useMyProxy = useMyProxy )
+      cls.__proxyDB = ProxyDB( useMyProxy = useMyProxy )
     except RuntimeError, excp:
       return S_ERROR( "Can't connect to ProxyDB: %s" % excp )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredTokens, elapsedTime = 900 )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredRequests, elapsedTime = 900 )
     gThreadScheduler.addPeriodicTask( 3600, cls.__proxyDB.purgeLogs )
     gThreadScheduler.addPeriodicTask( 3600, cls.__proxyDB.purgeExpiredProxies )
-    gLogger.info( "VOMS: %s\nMyProxy: %s\n MyProxy Server: %s" % ( requireVoms, useMyProxy, cls.__proxyDB.getMyProxyServer() ) )
+    gLogger.info( "MyProxy: %s\n MyProxy Server: %s" % ( useMyProxy, cls.__proxyDB.getMyProxyServer() ) )
     return S_OK()
 
   def __generateUserProxiesInfo( self ):

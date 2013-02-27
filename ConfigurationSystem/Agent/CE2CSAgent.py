@@ -2,7 +2,7 @@
 # $HeadURL$
 ########################################################################
 """ Queries BDII for unknown CE.
-    Queries BDII for CE information and put it to CS.
+    Queries BDII for CE information and puts it to CS.
 """
 __RCSID__ = "$Id$"
 
@@ -15,19 +15,19 @@ from DIRAC.ConfigurationSystem.Client.CSAPI             import CSAPI
 from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 class CE2CSAgent( AgentModule ):
 
   addressTo = ''
   addressFrom = ''
   voName = ''
-  csAPI = CSAPI()
   subject = "CE2CSAgent"
   alternativeBDIIs = []
 
   def initialize( self ):
 
-    # TODO: Have no default and if no mail is found then use the diracAdmin group 
+    # TODO: Have no default and if no mail is found then use the diracAdmin group
     # and resolve all associated mail addresses.
     self.addressTo = self.am_getOption( 'MailTo', self.addressTo )
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
@@ -44,7 +44,7 @@ class CE2CSAgent( AgentModule ):
       self.log.info( "AlternativeBDII URLs:", self.alternativeBDIIs )
     self.subject = "CE2CSAgent"
 
-    # This sets the Default Proxy to used as that defined under 
+    # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/SAMManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'SAMManager' )
@@ -56,7 +56,9 @@ class CE2CSAgent( AgentModule ):
     if not self.voName:
       self.log.fatal( "VO option not defined for agent" )
       return S_ERROR()
-    return S_OK()
+
+    self.csAPI = CSAPI()
+    return self.csAPI.initialize()
 
   def execute( self ):
 
@@ -66,6 +68,11 @@ class CE2CSAgent( AgentModule ):
       return result
     infoDict = result[ 'Value' ]
     self.log.info( formatProxyInfoAsString( infoDict ) )
+
+    #Get a "fresh" copy of the CS data
+    result = self.csAPI.downloadCSData()
+    if not result[ 'OK' ]:
+      self.log.warn( "Could not download a fresh copy of the CS data", result[ 'Message' ] )
 
     self.__lookForCE()
     self.__infoFromCE()
@@ -92,22 +99,31 @@ class CE2CSAgent( AgentModule ):
 
     knownces = self.am_getOption( 'BannedCEs', [] )
 
-    result = gConfig.getSections( '/Resources/Sites' )
+    resources = Resources( self.voName )
+    result    = resources.getEligibleResources( 'Computing', {'CEType':['LCG','CREAM'] } ) 
     if not result['OK']:
-      return
-    grids = result['Value']
+      return result
+    
+    siteDict = result['Value']
+    for site in siteDict:
+      knownces += siteDict[site]
 
-    for grid in grids:
-
-      result = gConfig.getSections( '/Resources/Sites/%s' % grid )
-      if not result['OK']:
-        return
-      sites = result['Value']
-
-      for site in sites:
-        opt = gConfig.getOptionsDict( '/Resources/Sites/%s/%s' % ( grid, site ) )['Value']
-        ces = List.fromChar( opt.get( 'CE', '' ) )
-        knownces += ces
+#    result = gConfig.getSections( '/Resources/Sites' )
+#    if not result['OK']:
+#      return
+#    grids = result['Value']
+#
+#    for grid in grids:
+#
+#      result = gConfig.getSections( '/Resources/Sites/%s' % grid )
+#      if not result['OK']:
+#        return
+#      sites = result['Value']
+#
+#      for site in sites:
+#        opt = gConfig.getOptionsDict( '/Resources/Sites/%s/%s' % ( grid, site ) )['Value']
+#        ces = List.fromChar( opt.get( 'CE', '' ) )
+#        knownces += ces
 
     response = ldapCEState( '', vo = self.voName )
     if not response['OK']:
@@ -490,7 +506,7 @@ class CE2CSAgent( AgentModule ):
         notification = NotificationClient()
         result = notification.sendMail( self.addressTo, self.subject, body, self.addressFrom, localAttempt = False )
 
-      return self.csAPI.commitChanges( sortUsers = False )
+      return self.csAPI.commit()
     else:
       self.log.info( "No changes found" )
       return S_OK()

@@ -6,7 +6,8 @@ from DIRAC                                                          import S_OK,
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
 from DIRAC.Core.Utilities.ThreadSafe                                import Synchronizer
-from DIRAC.Core.Utilities.List                                      import breakListIntoChunks
+from DIRAC.Core.Utilities.List                                      import sortList, breakListIntoChunks
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -20,22 +21,24 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   """ Usually subclass of AgentModule
   """
 
-  def __init__( self, agentName, loadName, baseAgentName = False, properties = dict() ):
+  def __init__( self, *args, **kwargs ):
     """ c'tor
-
-    :param self: self reference
-    :param str agentName: name of agent
-    :param bool baseAgentName: whatever
-    :param dict properties: whatever else
     """
-    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
+    AgentModule.__init__( self, *args, **kwargs )
 
     #few parameters
     self.pluginLocation = self.am_getOption( 'PluginLocation',
                                              'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
     self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
-    self.transformationTypes = self.am_getOption( 'TransformationTypes', [] )
+
+    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
+    if agentTSTypes:
+      self.transformationTypes = sortList( agentTSTypes )
+    else:
+      dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
+      dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
+      self.transformationTypes = sortList( dataProc + dataManip )
 
     #clients
     self.transfClient = TransformationClient()
@@ -47,13 +50,16 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     #for caching using a pickle file
     self.workDirectory = self.am_getWorkDirectory()
     self.cacheFile = os.path.join( self.workDirectory, 'ReplicaCache.pkl' )
-    self.dateWriteCache = datetime.datetime.now()
+    self.dateWriteCache = datetime.datetime.utcnow()
 
     # Validity of the cache
     self.replicaCache = None
-    self.replicaCacheValidity = 2
+    self.replicaCacheValidity = self.am_getOption( 'ReplicaCacheValidity', 2 )
+    self.writingCache = False
 
+    self.noUnusedDelay = self.am_getOption( 'NoUnusedDelay', 6 )
     self.unusedFiles = {}
+    self.unusedTimeStamp = {}
 
     self.debug = False
     self.transInThread = {}
@@ -63,7 +69,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """
 
     self.__readCache()
-    self.dateWriteCache = datetime.datetime.now()
+    self.dateWriteCache = datetime.datetime.utcnow()
 
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
@@ -75,13 +81,15 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     for i in xrange( maxNumberOfThreads ):
       threadPool.generateJobAndQueueIt( self._execute, [i] )
 
+    self.log.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
+
     return S_OK()
 
   def finalize( self ):
     """ graceful finalization
     """
     if self.transInQueue:
-      self._loginfo( "Wait for threads to get empty before terminating the agent (%d tasks)" % len( self.transInThread ) )
+      self._logInfo( "Wait for threads to get empty before terminating the agent (%d tasks)" % len( self.transInThread ) )
       self.transInQueue = []
       while self.transInThread:
         time.sleep( 2 )
@@ -103,7 +111,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       transID = long( transDict['TransformationID'] )
       if transDict.get( 'InheritedFrom' ):
         # Try and move datasets from the ancestor production
-        res = self.transClient.moveFilesToDerivedTransformation( transDict )
+        res = self.transfClient.moveFilesToDerivedTransformation( transDict )
         if not res['OK']:
           self._logError( "Error moving files from an inherited transformation", res['Message'], transID = transID )
         else:
@@ -197,6 +205,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     transFiles = self._getTransformationFiles( transDict, clients )
     if not transFiles['OK']:
       return transFiles
+    if not transFiles['Value']:
+      return S_OK()
 
     transFiles = transFiles['Value']
     lfns = [ f['LFN'] for f in transFiles ]
@@ -296,11 +306,15 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                           method = "_getTransformationFiles", transID = transID )
       return S_OK()
     #Check if something new happened
-    if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush':
+    now = datetime.datetime.utcnow()
+    nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = self.noUnusedDelay )
+    skip = now < nextStamp
+    if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
       self._logInfo( "No new 'Unused' files found for transformation.",
                       method = "_getTransformationFiles", transID = transID )
       return S_OK()
 
+    self.unusedTimeStamp[transID] = now
     return S_OK( transFiles )
 
   def __applyReduction( self, lfns ):
@@ -361,10 +375,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       for chunk in breakListIntoChunks( newLFNs, 1000 ):
         res = self.__getDataReplicasRM( transID, chunk, clients, active = active )
         if res['OK']:
-          for lfn in res['Value']:
-            if res['Value'][lfn]:
+          for lfn, ses in res['Value'].items():
+            if ses:
               # Keep only the list of SEs as SURLs are useless
-              newReplicas[lfn] = sorted( res['Value'][lfn] )
+              newReplicas[lfn] = sorted( ses )
             else:
               noReplicas.append( lfn )
         else:
@@ -395,32 +409,47 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       res = clients['ReplicaManager'].getReplicas( lfns )
     if not res['OK']:
       return res
+    replicas = res['Value']
+    # Prepare a dictionary for all LFNs
+    dataReplicas = {}
+    for lfn in lfns:
+      dataReplicas[lfn] = []
     self._logInfo( "Replica results for %d files obtained in %.2f seconds" % ( len( lfns ), time.time() - startTime ),
                     method = method, transID = transID )
+    #If files are neither Successful nor Failed, they are set problematic in the FC
+    problematicLfns = [lfn for lfn in lfns if lfn not in replicas['Successful'] and lfn not in replicas['Failed']]
+    if problematicLfns:
+      self._logInfo( "%d files found problematic in the catalog" % len( problematicLfns ) )
+      res = clients['TransformationClient'].setFileStatusForTransformation( transID, 'ProbInFC', problematicLfns )
+      if not res['OK']:
+        self._logError( "Failed to update status of problematic files: %s." % res['Message'],
+                        method = method, transID = transID )
     # Create a dictionary containing all the file replicas
-    dataReplicas = {}
-    for lfn, replicaDict in res['Value']['Successful'].items():
+    failoverLfns = []
+    for lfn, replicaDict in replicas['Successful'].items():
       ses = replicaDict.keys()
       for se in ses:
+        #### This should definitely be included in the SE definition (i.e. not used for transformations)
         if active and re.search( 'failover', se.lower() ):
-          self._logWarn( "Ignoring failover replica for %s." % lfn, method = method, transID = transID )
+          self._logVerbose( "Ignoring failover replica for %s." % lfn, method = method, transID = transID )
         else:
-          if not dataReplicas.has_key( lfn ):
-            dataReplicas[lfn] = {}
-          dataReplicas[lfn][se] = replicaDict[se]
+          dataReplicas[lfn].append( se )
+      if not dataReplicas[lfn]:
+        failoverLfns.append( lfn )
+    if failoverLfns:
+      self._logInfo( "%d files only found in Failover SE" % len( failoverLfns ) )
     # Make sure that file missing from the catalog are marked in the transformation DB.
     missingLfns = []
-    for lfn, reason in res['Value']['Failed'].items():
+    for lfn, reason in replicas['Failed'].items():
       if re.search( "No such file or directory", reason ):
-        self._logWarn( "%s not found in the catalog." % lfn, method = method, transID = transID )
+        self._logVerbose( "%s not found in the catalog." % lfn, method = method, transID = transID )
         missingLfns.append( lfn )
     if missingLfns:
-      res = clients['TransformationClient'].setFileStatusForTransformation( transID, 'MissingLFC', missingLfns )
+      self._logInfo( "%d files not found in the catalog" % len( missingLfns ) )
+      res = clients['TransformationClient'].setFileStatusForTransformation( transID, 'MissingInFC', missingLfns )
       if not res['OK']:
-        self._logWarn( "Failed to update status of missing files: %s." % res['Message'],
+        self._logError( "Failed to update status of missing files: %s." % res['Message'],
                         method = method, transID = transID )
-    if not dataReplicas:
-      return S_ERROR( "No replicas obtained" )
     return S_OK( dataReplicas )
 
 
@@ -468,15 +497,18 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ Writes the cache
     """
     method = '__writeCache'
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
     if ( now - self.dateWriteCache ) < datetime.timedelta( minutes = 60 ) and not force:
       return
-    while force:
+    while force and self.writingCache:
       #If writing is forced, wait until the previous write is over
       time.sleep( 10 )
     try:
       startTime = time.time()
       self.dateWriteCache = now
+      if self.writingCache:
+        return
+      self.writingCache = True
       # Protect the copy of the cache
       tmpCache = self.replicaCache.copy()
       # write to a temporary file in order to avoid corrupted files
@@ -490,6 +522,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                         % ( self.cacheFile, time.time() - startTime ), method = method )
     except Exception:
       self._logException( "Could not write replica cache file %s" % self.cacheFile, method = method )
+    finally:
+      self.writingCache = False
 
   def __generatePluginObject( self, plugin, clients ):
     """ This simply instantiates the TransformationPlugin class with the relevant plugin name

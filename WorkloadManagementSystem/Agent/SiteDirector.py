@@ -61,7 +61,7 @@ class SiteDirector( AgentModule ):
     # The SiteDirector is for a particular user community
     self.vo = self.am_getOption( "Community", '' )
     if not self.vo:
-      self.vo = gConfig.getValue( "DIRAC/VirtualOrganization" )
+      self.vo = CSGlobals.getVO()
     # The SiteDirector is for a particular user group
     self.group = self.am_getOption( "Group", '' )
     # self.voGroups contain all the eligible user groups for pilots submutted by this SiteDirector
@@ -83,12 +83,16 @@ class SiteDirector( AgentModule ):
     result = findGenericPilotCredentials( vo = self.vo )
     if not result[ 'OK' ]:
       return result
-    self.genericPilotDN, self.genericPilotGroup = result[ 'Value' ]
+    self.pilotDN, self.pilotGroup = result[ 'Value' ]
+    self.pilotDN = self.am_getOption( "PilotDN", self.pilotDN )
+    self.pilotGroup = self.am_getOption( "PilotGroup", self.pilotGroup )
    
     self.platforms = [] 
     self.sites = []
     self.defaultSubmitPools = ''
-    if self.vo:
+    if self.group:
+      self.defaultSubmitPools = Registry.getGroupOption( self.group, 'SubmitPools', '' )
+    elif self.vo:
       self.defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
       
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
@@ -146,8 +150,8 @@ class SiteDirector( AgentModule ):
     self.log.always( 'Sites:', siteNames )
     self.log.always( 'CETypes:', ceTypes )
     self.log.always( 'CEs:', ces )
-    self.log.always( 'GenericPilotDN:', self.genericPilotDN )
-    self.log.always( 'GenericPilotGroup:', self.genericPilotGroup )
+    self.log.always( 'PilotDN:', self.pilotDN )
+    self.log.always( 'PilotGroup:', self.pilotGroup )
     self.log.always( 'MaxPilotsToSubmit:', self.maxPilotsToSubmit )
     self.log.always( 'MaxJobsInFillMode:', self.maxJobsInFillMode )
 
@@ -319,8 +323,8 @@ class SiteDirector( AgentModule ):
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
 
-      self.log.verbose( "Getting generic pilot proxy for %s/%s %d long" % ( self.genericPilotDN, self.genericPilotGroup, cpuTime ) )
-      result = gProxyManager.getPilotProxyFromDIRACGroup( self.genericPilotDN, self.genericPilotGroup, cpuTime )
+      self.log.verbose( "Getting pilot proxy for %s/%s %d long" % ( self.pilotDN, self.pilotGroup, cpuTime ) )
+      result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, cpuTime )
       if not result['OK']:
         return result
       self.proxy = result['Value']
@@ -351,6 +355,11 @@ class SiteDirector( AgentModule ):
       
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools  
+
+      result = Resources.getCompatiblePlatforms( self.platforms )
+      if not result['OK']:
+        continue
+      ceDict['Platform'] = result['Value']
 
       # Get the number of eligible jobs for the target site/queue
       result = rpcMatcher.getMatchingTaskQueues( ceDict )
@@ -439,8 +448,8 @@ class SiteDirector( AgentModule ):
         for tqID, pilotList in tqDict.items():
           result = pilotAgentsDB.addPilotTQReference( pilotList,
                                                      tqID,
-                                                     self.genericPilotDN,
-                                                     self.genericPilotGroup,
+                                                     self.pilotDN,
+                                                     self.pilotGroup,
                                                      self.localhost,
                                                      ceType,
                                                      '',
@@ -485,7 +494,7 @@ class SiteDirector( AgentModule ):
       self.log.error( 'Setup is not defined in the configuration' )
       return [ None, None ]
     pilotOptions.append( '-S %s' % setup )
-    opsHelper = Operations.Operations( group = self.genericPilotGroup, setup = setup )
+    opsHelper = Operations.Operations( group = self.pilotGroup, setup = setup )
 
     #Installation defined?
     installationName = opsHelper.getValue( "Pilot/Installation", "" )
@@ -507,8 +516,8 @@ class SiteDirector( AgentModule ):
     #diracVersion is a list of accepted releases. Just take the first one
     pilotOptions.append( '-r %s' % diracVersion[0] )
 
-    ownerDN = self.genericPilotDN
-    ownerGroup = self.genericPilotGroup
+    ownerDN = self.pilotDN
+    ownerGroup = self.pilotGroup
     # Request token for maximum pilot efficiency
     result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit * self.maxJobsInFillMode )
     if not result[ 'OK' ]:
@@ -686,7 +695,7 @@ EOF
 
       result = ce.isProxyValid()
       if not result['OK']:
-        result = gProxyManager.getPilotProxyFromDIRACGroup( self.genericPilotDN, self.genericPilotGroup, 600 )
+        result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, 600 )
         if not result['OK']:
           return result
         self.proxy = result['Value']
@@ -742,7 +751,7 @@ EOF
       ce = self.queueDict[queue]['CE']
 
       if not ce.isProxyValid( 120 ):
-        result = gProxyManager.getPilotProxyFromDIRACGroup( self.genericPilotDN, self.genericPilotGroup, 1000 )
+        result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, 1000 )
         if not result['OK']:
           return result
         ce.setProxy( self.proxy, 940 )

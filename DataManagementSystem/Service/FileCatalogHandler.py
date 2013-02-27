@@ -5,14 +5,15 @@
 """ :mod: FileCatalogHandler 
     ========================
  
-  .. module: FileCatalogHandler
-  :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service 
+    .. module: FileCatalogHandler
+    :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service 
 """
 
 __RCSID__ = "$Id$"
 
 ## imports
-from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType 
+import os
+from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType
 ## from DIRAC
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -394,6 +395,20 @@ class FileCatalogHandler(RequestHandler):
     """ Find all the files satisfying the given metadata set
     """
     return gFileCatalogDB.fmeta.findFilesByMetadata( metaDict, path, self.getRemoteCredentials() )
+  
+  types_findFilesByMetadataDetailed = [ DictType, StringTypes ]
+  def export_findFilesByMetadataDetailed( self, metaDict, path='/' ):
+    """ Find all the files satisfying the given metadata set
+    """
+    result = gFileCatalogDB.fmeta.findFilesByMetadata( metaDict, path, self.getRemoteCredentials() )
+    if not result['OK'] or not result['Value']:
+      return result
+
+    lfns = []
+    for dir in result['Value']:
+      for fname in result['Value'][dir]:
+        lfns.append( os.path.join( dir, fname) )
+    return gFileCatalogDB.getFileDetails( lfns, self.getRemoteCredentials() )
   
   types_getCompatibleMetadata = [ DictType ]
   def export_getCompatibleMetadata( self, metaDict ):

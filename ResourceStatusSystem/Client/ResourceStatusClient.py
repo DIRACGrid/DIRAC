@@ -6,8 +6,8 @@
 '''
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-#from DIRAC.Core.DISET.RPCClient                      import RPCClient                   
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
+from DIRAC.Core.DISET.RPCClient                      import RPCClient                   
+#from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
 from DIRAC.ResourceStatusSystem.Utilities            import RssConfiguration  
 
 __RCSID__ = '$Id:  $'
@@ -48,9 +48,8 @@ class ResourceStatusClient( object ):
     '''
     
     if not serviceIn:
-      self.gate = ResourceStatusDB()
-      # FIXME: commented out duriing development           
-      # self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
+      #self.gate = ResourceStatusDB()           
+      self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
     else:
       self.gate = serviceIn 
 
@@ -76,7 +75,7 @@ class ResourceStatusClient( object ):
       **statusType** - `string`
         it has to be a valid status type for the element class
       **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `string`
         column to distinguish between the diferent elements in the same element
@@ -117,7 +116,7 @@ class ResourceStatusClient( object ):
       **statusType** - `string`
         it has to be a valid status type for the element class
       **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `string`
         column to distinguish between the diferent elements in the same element
@@ -159,7 +158,7 @@ class ResourceStatusClient( object ):
       **statusType** - `[, string, list]`
         it has to be a valid status type for the element class
       **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `[, string, list]`
         column to distinguish between the diferent elements in the same element
@@ -201,7 +200,7 @@ class ResourceStatusClient( object ):
       **statusType** - `[, string, list]`
         it has to be a valid status type for the element class
       **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `[, string, list]`
         column to distinguish between the diferent elements in the same element
@@ -246,7 +245,7 @@ class ResourceStatusClient( object ):
       **statusType** - `string`
         it has to be a valid status type for the element class
       **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `string`
         column to distinguish between the diferent elements in the same element
@@ -289,7 +288,7 @@ class ResourceStatusClient( object ):
       **statusType** - `string`
         it has to be a valid status type for the element class
       **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `string`
         column to distinguish between the diferent elements in the same element
@@ -335,7 +334,7 @@ class ResourceStatusClient( object ):
       **statusType** - `string`
         it has to be a valid status type for the element class
       **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `string`
         column to distinguish between the diferent elements in the same element
@@ -455,7 +454,7 @@ class ResourceStatusClient( object ):
 
 #  def getServiceStats( self, siteName, statusType = None ):
 #    '''
-#    Computes simple statistics of `Active`, `Bad`, `Probing` and `Banned` 
+#    Computes simple statistics of `Active`, `Degraded`, `Probing` and `Banned` 
 #    Services of a Site;
 #    
 #    :Parameters:
@@ -480,7 +479,7 @@ class ResourceStatusClient( object ):
 #
 #  def getResourceStats( self, element, name, statusType = None ):
 #    '''
-#    Computes simple statistics of `Active`, `Bad`, `Probing` and `Banned` 
+#    Computes simple statistics of `Active`, `Degraded`, `Probing` and `Banned` 
 #    Resources of a Site or a Service;
 #    
 #    :Parameters:
@@ -539,7 +538,7 @@ class ResourceStatusClient( object ):
 # 
 #  def getStorageElementStats( self, element, name, statusType = None ):
 #    '''
-#    Computes simple statistics of `Active`, `Bad`, `Probing` and `Banned` 
+#    Computes simple statistics of `Active`, `Degraded`, `Probing` and `Banned` 
 #    StorageElements of a Site or a Resource;
 #    
 #    :Parameters:

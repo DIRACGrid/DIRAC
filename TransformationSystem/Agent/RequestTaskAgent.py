@@ -11,10 +11,10 @@ AGENT_NAME = 'Transformation/RequestTaskAgent'
 class RequestTaskAgent( TaskManagerAgentBase ):
   ''' An AgentModule to submit requests tasks
   '''
-  def __init__( self, agentName, loadName, baseAgentName, properties ):
+  def __init__( self, *args, **kwargs ):
     ''' c'tor
     '''
-    TaskManagerAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
+    TaskManagerAgentBase.__init__( self, *args, **kwargs )
 
     self.taskManager = RequestTasks( transClient = self.transClient )
     self.shifterProxy = 'ProductionManager'

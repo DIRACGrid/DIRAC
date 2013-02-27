@@ -13,6 +13,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                        import shellCall
+from DIRAC.Core.Utilities.Os                                import which
 from DIRAC                                                  import S_OK, S_ERROR
 
 import DIRAC
@@ -130,14 +131,14 @@ class glexecComputingElement( ComputingElement ):
 
     userID = None
 
-    res = shellCall( 0, 'ls -al' )
+    res = shellCall( 10, 'ls -al' )
     if res['OK'] and res['Value'][0] == 0:
       self.log.info( 'Contents of the working directory before permissions change:' )
       self.log.info( str( res['Value'][1] ) )
     else:
       self.log.error( 'Failed to list the log directory contents', str( res['Value'][2] ) )
 
-    res = shellCall( 0, 'id -u' )
+    res = shellCall( 10, 'id -u' )
     if res['OK'] and res['Value'][0] == 0:
       userID = res['Value'][1]
       self.log.info( 'Current user ID is: %s' % ( userID ) )
@@ -145,7 +146,7 @@ class glexecComputingElement( ComputingElement ):
       self.log.error( 'Failed to obtain current user ID', str( res['Value'][2] ) )
       return res
 
-    res = shellCall( 0, 'ls -al %s/../' % currentDir )
+    res = shellCall( 10, 'ls -al %s/../' % currentDir )
     if res['OK'] and res['Value'][0] == 0:
       self.log.info( 'Contents of the parent directory before permissions change:' )
       self.log.info( str( res['Value'][1] ) )
@@ -166,14 +167,14 @@ class glexecComputingElement( ComputingElement ):
         self.log.error( 'Problem changing directory permissions', str( x ) )
 
     self.log.info( 'Permissions in current directory %s updated successfully' % ( currentDir ) )
-    res = shellCall( 0, 'ls -al' )
+    res = shellCall( 10, 'ls -al' )
     if res['OK'] and res['Value'][0] == 0:
       self.log.info( 'Contents of the working directory after changing permissions:' )
       self.log.info( str( res['Value'][1] ) )
     else:
       self.log.error( 'Failed to list the log directory contents', str( res['Value'][2] ) )
 
-    res = shellCall( 0, 'ls -al %s/../' % currentDir )
+    res = shellCall( 10, 'ls -al %s/../' % currentDir )
     if res['OK'] and res['Value'][0] == 0:
       self.log.info( 'Contents of the parent directory after permissions change:' )
       self.log.info( str( res['Value'][1] ) )
@@ -292,13 +293,19 @@ class glexecComputingElement( ComputingElement ):
   def glexecLocate( self ):
     """Try to find glexec on the local system, if not found default to InProcess.
     """
-    if not os.environ.has_key( 'GLITE_LOCATION' ):
-      self.log.info( 'Unable to locate glexec, site does not have GLITE_LOCATION defined' )
+    glexecPath = ""
+    if os.environ.has_key( 'OSG_GLEXEC_LOCATION' ):
+      glexecPath = '%s' % ( os.environ['OSG_GLEXEC_LOCATION'] )
+    elif os.environ.has_key( 'GLITE_LOCATION' ):
+      glexecPath = '%s/sbin/glexec' % ( os.environ['GLITE_LOCATION'] )
+    else: #try to locate the excutable in the PATH
+      glexecPath = which( "glexec" )    
+    if not glexecPath:
+      self.log.info( 'Unable to locate glexec, site does not have GLITE_LOCATION nor OSG_GLEXEC_LOCATION defined' )
       return S_ERROR( 'glexec not found' )
 
-    glexecPath = '%s/sbin/glexec' % ( os.environ['GLITE_LOCATION'] )
     if not os.path.exists( glexecPath ):
-      self.log.info( '$GLITE_LOCATION/sbin/glexec not found at path %s' % ( glexecPath ) )
+      self.log.info( 'glexec not found at path %s' % ( glexecPath ) )
       return S_ERROR( 'glexec not found' )
 
     return S_OK( glexecPath )

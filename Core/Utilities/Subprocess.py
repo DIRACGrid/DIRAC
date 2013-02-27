@@ -27,7 +27,7 @@
 """
 __RCSID__ = "$Id$"
 
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Manager
 import threading
 import time
 import select
@@ -58,33 +58,49 @@ class Watchdog( object ):
     self.args = args if args else tuple()
     self.kwargs = kwargs if kwargs else {}
     self.start = self.end = self.pid = None
+    self.rwEvent = threading.Event()
+    self.rwEvent.clear()
     self.__watchdogThread = None
-    self.parentPipe, self.childPipe = Pipe()
-    self.__executor = Process( target = self.run_func, args = (self.childPipe, ) )
+    self.manager = Manager()
+    self.s_ok_error = self.manager.dict()
+    self.__executor = Process( target = self.run_func, args = (self.s_ok_error, ) )
 
-  def run_func( self, pipe ):
+  def run_func( self, s_ok_error ):
     """ subprocess target 
 
     :param Pipe pipe: pipe used for communication
     """
     try:
       ret = self.func( *self.args, **self.kwargs )
-      pipe.send( ret )
+      ## set rw event
+      self.rwEvent.set()
+      for k in ret:
+        s_ok_error[k] = ret[k]
     except Exception, error:
-      pipe.send( { "OK" : False, "Message" : str(error) } )
-    
+      s_ok_error["OK"] =  False
+      s_ok_error["Message"] = str(error)
+    finally:
+      ## clear rw event
+      self.rwEvent.clear()
+
   def watchdog( self ):
     """ watchdog thread target """
     while True:
-      if time.time() < self.end:
+      if self.rwEvent.is_set() or time.time() < self.end:
         time.sleep(5)
       else:
         break
     if not self.__executor.is_alive():
       return
     else:
+      ## wait until r/w operation finishes
+      while self.rwEvent.is_set():
+        time.sleep(5)
+        continue
+      ## SIGTERM
       os.kill( self.pid, signal.SIGTERM )
       time.sleep(5)
+      ## SIGKILL
       if self.__executor.is_alive():
         os.kill( self.pid, signal.SIGKILL )
       
@@ -94,11 +110,11 @@ class Watchdog( object ):
     ret = { "OK" : True, "Value" : "" }
     if timeout:
       self.start = int( time.time() )
-      self.end = self.start + timeout
+      self.end = self.start + timeout + 2
       self.__watchdogThread = threading.Thread( target = self.watchdog )
       self.__watchdogThread.daemon = True
       self.__watchdogThread.start()
-      ret = { "OK" : False, "Message" : "Timed out after %s seconds" % timeout  }
+      ret = { "OK" : False, "Message" : "Timeout after %s seconds" % timeout  }
     try:
       self.__executor.start()
       time.sleep(0.5)
@@ -107,12 +123,19 @@ class Watchdog( object ):
         self.__executor.join( timeout )
       else:
         self.__executor.join()
-      ## get results if any
+      ## get results if any, block watchdog by setting rwEvent
       if not self.__executor.is_alive():
-        ret = self.parentPipe.recv()
+        self.rwEvent.set()
+        for k in self.s_ok_error.keys():
+          ret[k] = self.s_ok_error[k]
+        self.rwEvent.clear()
     except Exception, error:
       return { "OK" : False, "Message" : str(error) }
     return ret
+  
+  def finalize(self):
+    """ destructor """
+    pass
 
 class Subprocess:
   """
@@ -133,6 +156,7 @@ class Subprocess:
     except Exception, x:
       self.log.exception( 'Failed initialisation of Subprocess object' )
       raise x
+    
     self.child = None
     self.childPID = 0
     self.childKilled = False
@@ -148,7 +172,7 @@ class Subprocess:
     self.timeout = int( timeout )
     if self.timeout == 0:
       self.timeout = False
-    self.log.debug( 'Timeout set to', timeout )
+    #self.log.debug( 'Timeout set to', timeout )
 
   def __readFromFD( self, fd, baseLength = 0 ):
     """ read from file descriptior :fd:
@@ -268,6 +292,9 @@ class Subprocess:
 
   def pythonCall( self, function, *stArgs, **stKeyArgs ):
     """ call python function :function: with :stArgs: and :stKeyArgs: """
+    
+    self.log.verbose( 'pythonCall:', function.__name__ )
+    
     readFD, writeFD = os.pipe()
     pid = os.fork()
     self.childPID = pid
@@ -375,6 +402,12 @@ class Subprocess:
 
   def systemCall( self, cmdSeq, callbackFunction = None, shell = False, env = None ):
     """ system call (no shell) - execute :cmdSeq: """
+    
+    if shell:
+      self.log.verbose( 'shellCall:', cmdSeq )
+    else:
+      self.log.verbose( 'systemCall:', cmdSeq )
+        
     self.cmdSeq = cmdSeq
     self.callback = callbackFunction
     if sys.platform.find( "win" ) == 0:
@@ -494,7 +527,10 @@ def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimi
   sysCall =  Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
                                                                          "env" : env,
                                                                          "shell" : False } )
-  return sysCall(timeout)
+  spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )
+  result = sysCall(timeout)
+  sysCall.finalize()
+  return result
 
 def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit = 52428800 ):
   """
@@ -505,7 +541,10 @@ def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit
   shCall = Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
                                                                           "env" : env,
                                                                           "shell" : True } )
-  return shCall(timeout)
+  spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )
+  result = shCall(timeout)
+  shCall.finalize()
+  return result
 
 def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
   """
@@ -514,7 +553,10 @@ def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
   """
   spObject = Subprocess( timeout=False )
   pyCall = Watchdog( spObject.pythonCall, args=( function, ) + stArgs, kwargs=stKeyArgs )
-  return pyCall( timeout )
+  spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )  
+  result = pyCall(timeout)
+  pyCall.finalize()
+  return result
 
 def __getChildrenForPID( ppid ):
   """

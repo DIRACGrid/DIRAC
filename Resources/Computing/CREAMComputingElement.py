@@ -119,6 +119,7 @@ class CREAMComputingElement( ComputingElement ):
                '%s/%s' % ( self.ceName, self.queue ),
                '-D', '%s' % delegationID, '%s' % jdlName ]
         result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+        os.unlink( jdlName )
         if not result['OK']:
           break
         if result['Value'][0] != 0:
@@ -128,8 +129,7 @@ class CREAMComputingElement( ComputingElement ):
           batchIDList.append( pilotJobReference )
           stampDict[pilotJobReference] = diracStamp
         else:
-          break  
-        os.unlink( jdlName )
+          break    
 
     os.unlink( executableFile )
     if batchIDList:

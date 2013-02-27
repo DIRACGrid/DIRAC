@@ -5,7 +5,7 @@
 
 from DIRAC                                                      import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
+#from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
 
 __RCSID__ = '$Id:  $'
 
@@ -15,12 +15,11 @@ class SMSAction( BaseAction ):
     him run to his or her office.
   '''
   
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
+  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, 
+                clients = None ):
     
-    super( SMSAction, self ).__init__( decissionParams, enforcementResult, 
+    super( SMSAction, self ).__init__( name, decissionParams, enforcementResult, 
                                        singlePolicyResults, clients )
-    self.actionName = 'SMSAction'
-    
   def run( self ):
     '''
       Checks it has the parameters it needs and tries to send an sms to the users
@@ -62,29 +61,32 @@ class SMSAction( BaseAction ):
 
   def _sendSMS( self, text ):
     
-    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-    diracAdmin = DiracAdmin()
+    #FIXME: implement it !
+    return S_ERROR( 'Not implemented yet' ) 
     
-    address = InfoGetter().getNotificationsThatApply( self.decissionParams, self.actionName )
-    if not address[ 'OK' ]:
-      return address 
-    address = address[ 'Value' ]
-    
-    for addressDict in address:
-      if not 'name' in addressDict:
-        return S_ERROR( 'Malformed address dict %s' % addressDict ) 
-      if not 'users' in addressDict:
-        return S_ERROR( 'Malformed address dict %s' % addressDict )     
-      
-      for user in addressDict[ 'users' ]:
-      
-        # Where are the SMS numbers defined ?
-      
-        resSMS = diracAdmin.sendSMS( user, text )
-        if not resSMS[ 'OK' ]:
-          return S_ERROR( 'Cannot send SMS to user "%s"' % user )    
-      
-    return resSMS 
+#    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+#    diracAdmin = DiracAdmin()
+#    
+#    address = InfoGetter().getNotificationsThatApply( self.decissionParams, self.actionName )
+#    if not address[ 'OK' ]:
+#      return address 
+#    address = address[ 'Value' ]
+#    
+#    for addressDict in address:
+#      if not 'name' in addressDict:
+#        return S_ERROR( 'Malformed address dict %s' % addressDict ) 
+#      if not 'users' in addressDict:
+#        return S_ERROR( 'Malformed address dict %s' % addressDict )     
+#      
+#      for user in addressDict[ 'users' ]:
+#      
+#        # Where are the SMS numbers defined ?
+#      
+#        resSMS = diracAdmin.sendSMS( user, text )
+#        if not resSMS[ 'OK' ]:
+#          return S_ERROR( 'Cannot send SMS to user "%s"' % user )    
+#      
+#    return resSMS 
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    

@@ -394,6 +394,28 @@ class TransformationCLI( cmd.Cmd, API ):
       else:
         print "Updated file statuses to 'Unused' for %d file(s)" % len( lfns )
 
+  def do_resetProcessedFile( self, args ):
+    """ Reset file status for the given transformation
+        usage: resetFile <transName|ID> <lfn>
+    """
+    argss = args.split() 
+    
+    if not len( argss ) > 1:
+      print "transformation and file(s) not supplied"
+      return
+    transName = argss[0]
+    lfns = argss[1:]
+    res = self.server.setFileStatusForTransformation( transName, 'Unused', lfns, force = True )
+    if not res['OK']:
+      print "Failed to reset file status: %s" % res['Message']
+    else:
+      if res['Value']['Failed']:
+        print "Could not reset some files: "
+        for lfn, reason in res['Value']['Failed'].items():
+          print lfn, reason
+      else:
+        print "Updated file statuses to 'Unused' for %d file(s)" % len( lfns )
+
   ####################################################################
   #
   # These are the methods for file manipulation

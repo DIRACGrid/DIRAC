@@ -1,7 +1,9 @@
 ''' Runs few integrity checks
 '''
 
-from DIRAC                                                     import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
+__RCSID__ = "$Id$"
+
+from DIRAC                                                     import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.AgentModule                               import AgentModule
 from DIRAC.Core.Utilities.List                                 import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
@@ -9,41 +11,50 @@ from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegr
 from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
 from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient    import TransformationClient
-import re, os
+import re
 
 AGENT_NAME = 'Transformation/ValidateOutputDataAgent'
 
 class ValidateOutputDataAgent( AgentModule ):
 
-  #############################################################################
-  def initialize( self ):
-    """Sets defaults
+  def __init__( self, *args, **kwargs ):
+    """ c'tor
     """
+    AgentModule.__init__( self, *args, **kwargs )
+
     self.integrityClient = DataIntegrityClient()
     self.replicaManager = ReplicaManager()
     self.transClient = TransformationClient()
     self.fileCatalogClient = FileCatalogClient()
-
-    # This sets the Default Proxy to used as that defined under 
-    # /Operations/Shifter/DataManager
-    # the shifterProxy option in the Configuration can be used to change this default.
-    self.am_setOption( 'shifterProxy', 'DataManager' )
 
     agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
     if agentTSTypes:
       self.transformationTypes = agentTSTypes
     else:
       self.transformationTypes = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
-    gLogger.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
+
     self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', ['TransformationDB', 'MetadataCatalog'] ) )
-    gLogger.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
     self.activeStorages = sortList( self.am_getOption( 'ActiveSEs', [] ) )
-    gLogger.info( "Will check the following storage elements: %s" % str( self.activeStorages ) )
     self.transfidmeta = self.am_getOption( 'TransfIDMeta', "TransformationID" )
+
+  #############################################################################
+
+  def initialize( self ):
+    """Sets defaults
+    """
+    # This sets the Default Proxy to used as that defined under
+    # /Operations/Shifter/DataManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'DataManager' )
+
+    gLogger.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
+    gLogger.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
+    gLogger.info( "Will check the following storage elements: %s" % str( self.activeStorages ) )
     gLogger.info( "Will use %s as metadata tag name for TransformationID" % self.transfidmeta )
     return S_OK()
 
   #############################################################################
+
   def execute( self ):
     """ The VerifyOutputData execution method """
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
@@ -172,7 +183,7 @@ class ValidateOutputDataAgent( AgentModule ):
         gLogger.error( iRes['Message'] )
         return iRes
 
-    ###################################################### 
+    ######################################################
     #
     # This check performs SE->Catalog for possible output directories
     #

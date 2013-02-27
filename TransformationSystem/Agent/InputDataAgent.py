@@ -18,10 +18,10 @@ AGENT_NAME = 'Transformation/InputDataAgent'
 
 class InputDataAgent( AgentModule ):
 
-  def __init__( self, agentName, loadName, baseAgentName, properties ):
+  def __init__( self, *args, **kwargs ):
     ''' c'tor
     '''
-    AgentModule.__init__( agentName, loadName, baseAgentName, properties )
+    AgentModule.__init__( self, *args, **kwargs )
 
     self.fileLog = {}
     self.timeLog = {}

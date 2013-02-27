@@ -6,6 +6,8 @@
 
 __RCSID__ = "$Id$"
 
+from DIRAC import S_ERROR, S_OK
+
 class BaseCorrector( object ):
 
   def __init__( self, opsHelper, baseCSPath, group ):

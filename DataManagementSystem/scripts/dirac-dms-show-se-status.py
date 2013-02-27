@@ -42,11 +42,11 @@ for k,v in res[ 'Value' ].items():
   
   readState, writeState = 'Active', 'Active'
   
-  if v.has_key( 'Read' ):
-    readState = v[ 'Read' ]  
+  if v.has_key( 'ReadAccess' ):
+    readState = v[ 'ReadAccess' ]  
   
-  if v.has_key( 'Write' ):
-    writeState = v[ 'Write']
+  if v.has_key( 'WriteAccess' ):
+    writeState = v[ 'WriteAccess']
   gLogger.notice("%s %s %s" % ( k.ljust(25),readState.rjust(15),writeState.rjust(15)) )
 
 

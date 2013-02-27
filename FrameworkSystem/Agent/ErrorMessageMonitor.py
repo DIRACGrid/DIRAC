@@ -90,11 +90,11 @@ class ErrorMessageMonitor( AgentModule ):
 
     messageIDs = [ message[0] for message in messageList ]
     condDict = {'FixedTextID': messageIDs}
-    result = self.systemLoggingDB.updateFields( 'FixedTextMessages', 'ReviewedMessage', 1, condDict = condDict )
+    result = self.systemLoggingDB.updateFields( 'FixedTextMessages', ['ReviewedMessage'], [1], condDict = condDict )
     if not result['OK']:
       self.log.error( 'Could not update message Status', result['ERROR'] )
       return S_OK()
-    self.log.verbose( 'Updated message Status for:', ', '.join( messageList ) )
+    self.log.verbose( 'Updated message Status for:', str( messageList ) )
 
     self.log.info( "The messages have been sent for review",
                     "There are %s new descriptions" % len( messageList ) )

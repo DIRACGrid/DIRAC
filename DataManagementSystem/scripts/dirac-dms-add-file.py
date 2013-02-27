@@ -19,7 +19,9 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  Path:     Local path to the file',
                                      '  SE:       DIRAC Storage Element',
                                      '  GUID:     GUID to use in the registration (optional)' ,
+                                     '',
                                      ' ++ OR ++',
+                                     '',
                                      'Usage:',
                                      '  %s [option|cfgfile] ... LocalFile' % Script.scriptName,
                                      'Arguments:',
@@ -38,7 +40,7 @@ def getDict(item_list):
     From the input list, populate the dictionary
   """
   lfn_dict = {}
-  lfn_dict['lfn'] = item_list[0]
+  lfn_dict['lfn'] = item_list[0].replace('LFN:','').replace('lfn:','')
   lfn_dict['localfile'] = item_list[1]
   lfn_dict['SE'] = item_list[2]
   guid = None
@@ -53,9 +55,10 @@ if len(args)==1:
   if os.path.exists( inputFileName ):
     inputFile = open( inputFileName, 'r' )
     for line in inputFile:
-        line = line.rstrip()
-        items = line.split()
-        lfns.append(getDict(items))
+      line = line.rstrip()
+      items = line.split()
+      items[0] = item[0].replace('LFN:','').replace('lfn:','')
+      lfns.append(getDict(items))
     inputFile.close()
 else:
   lfns.append(getDict(args))
@@ -76,10 +79,13 @@ for lfn in lfns:
     exitCode = 2
     continue
 
-  gLogger.info("\nUploading %s"%lfn['lfn'])
+  gLogger.notice("\nUploading %s"%lfn['lfn'])
   res = rm.putAndRegister(lfn['lfn'],lfn['localfile'],lfn['SE'],lfn['guid'])
   if not res['OK']:
     exitCode = 3
+    gLogger.error( 'Error: failed to upload %s to %s' % ( lfn['lfn'], lfn['SE'] ) )
     continue
+  else:
+    gLogger.notice( 'Successfully uploaded file to %s' % lfn['SE'] )
 
 DIRAC.exit( exitCode )

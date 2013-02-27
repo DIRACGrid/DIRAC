@@ -127,7 +127,7 @@ class TransferAgent( RequestAgentBase ):
   ## exectuon modes
   __executionMode = { "Tasks" : True, "FTS" : False }
 
-  def __init__( self, agentName, loadName, baseAgentName=False, properties=dict() ):
+  def __init__( self, *args, **kwargs ):
     """ c'tor
      
     :param self: self reference
@@ -138,7 +138,8 @@ class TransferAgent( RequestAgentBase ):
     """
     self.setRequestType( "transfer" )
     self.setRequestTask( TransferTask )
-    RequestAgentBase.__init__( self, agentName, loadName, baseAgentName, properties )
+    RequestAgentBase.__init__( self, *args, **kwargs )
+    agentName = args[0]
 
     ## gMonitor stuff
     self.monitor.registerActivity( "Replicate and register", "Replicate and register operations", 
@@ -446,7 +447,7 @@ class TransferAgent( RequestAgentBase ):
         waitingFiles.setdefault( fileLFN, subRequestFile["FileID"] )
 
     if waitingFiles:     
-      replicas = self.replicaManager().getCatalogReplicas( waitingFiles.keys() )
+      replicas = self.replicaManager().getActiveReplicas( waitingFiles.keys() )
       if not replicas["OK"]:
         self.log.error( "collectFiles: failed to get replica information", replicas["Message"] )
         return replicas
@@ -519,7 +520,7 @@ class TransferAgent( RequestAgentBase ):
           failback = True
         elif executeFTS["OK"]:
           if executeFTS["Value"]:
-            self.log.info("execute: request %s has been processed in FTS" % requestDict["requestName"] )
+            self.log.debug("execute: request %s has been processed in FTS" % requestDict["requestName"] )
             requestCounter = requestCounter - 1
             self.deleteRequest( requestDict["requestName"] )
             continue 
@@ -587,7 +588,7 @@ class TransferAgent( RequestAgentBase ):
      
     schedule = self.schedule( requestDict )
     if schedule["OK"]:
-      self.log.info("executeFTS: request %s has been processed" % requestDict["requestName"] )
+      self.log.debug("executeFTS: request %s has been processed" % requestDict["requestName"] )
     else:
       self.log.error( schedule["Message"] )
       return schedule 
@@ -665,11 +666,11 @@ class TransferAgent( RequestAgentBase ):
       
       subRequestStatus = subAttrs["Status"]
 
-      #execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
-      #if execOrder > requestDict["executionOrder"]:
-      #  strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
-      #  self.info.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder" % strTup )  
-      #  continue 
+      execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
+      if execOrder > requestDict["executionOrder"]:
+        strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
+        self.log.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder" % strTup )  
+        continue 
 
       if subRequestStatus != "Waiting" :
         ## sub-request is already in terminal state
@@ -769,7 +770,7 @@ class TransferAgent( RequestAgentBase ):
     :param RequestContainer requestObj: request being processed
     :param dict subAttrs: subrequest's attributes
     """
-    self.log.info( "scheduleFiles: FTS scheduling, processing subrequest %s" % index )
+    self.log.debug( "scheduleFiles: FTS scheduling, processing subrequest %s" % index )
     ## get source SE
     sourceSE = subAttrs["SourceSE"] if subAttrs["SourceSE"] not in ( None, "None", "" ) else None
     ## get target SEs, no matter what's a type we need a list
@@ -835,12 +836,15 @@ class TransferAgent( RequestAgentBase ):
                                                                                    len(waitingFileReplicas), 
                                                                                    str(waitingFileTargets) ) ) 
       ## get the replication tree at least
-      tree = self.strategyHandler().replicationTree( waitingFileReplicas.keys(),  
+      tree = self.strategyHandler().replicationTree( waitingFileLFN,
+                                                     waitingFileMetadata,
+                                                     waitingFileReplicas.keys(),  
                                                      waitingFileTargets, 
                                                      waitingFileSize, 
                                                      strategy )
       if not tree["OK"]:
-        return tree
+        self.log.warn("scheduleFiles: file %s cannot be scheduled: %s" % ( waitingFileLFN, tree["Message"] ) )
+        continue
 
       tree = tree["Value"]
       self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
@@ -1011,7 +1015,7 @@ class TransferAgent( RequestAgentBase ):
             return S_ERROR( error )
           elif lfn in registerReplica["Value"]["Successful"]:
             ## no other option, it must be in successfull
-            register = self.transferDB().setRegistrationDone( channelID, fileID )
+            register = self.transferDB().setRegistrationDone( channelID, [ fileID ] )
             if not register["OK"]:
               self.log.error("registerFiles: set status error %s fileID=%s channelID=%s: %s" % ( lfn,
                                                                                                  fileID,

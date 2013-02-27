@@ -9,15 +9,20 @@ __RCSID__ = "$Id$"
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getInstalledExtensions
+from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
 
 class FileCatalogFactory:
   
   def __init__(self):
     self.log = gLogger.getSubLogger('FileCatalogFactory')
   
-  def createCatalog( self, catalogName ):
+  def createCatalog( self, catalogName, useProxy=False ):
     """ Create a file catalog object from its name and CS description
     """
+    if useProxy:
+      catalog = FileCatalogProxyClient( catalogName )
+      return S_OK( catalog )
+    
     # get the CS description first
     catalogPath = getCatalogPath( catalogName )
     catalogType = gConfig.getValue(catalogPath+'/CatalogType',catalogName)
@@ -60,10 +65,10 @@ class FileCatalogFactory:
           else:  
             evalString = "catalogModule.%s()" % moduleName
         catalog = eval( evalString )
-        if not catalog.isOK():
-          errStr = "Failed to instantiate catalog plug in"
-          gLogger.error( errStr, moduleName )
-          return S_ERROR( errStr )
+        #if not catalog.isOK():
+        #  errStr = "Failed to instantiate catalog plug in"
+        #  gLogger.error( errStr, moduleName )
+        #  return S_ERROR( errStr )
         self.log.debug('Loaded module %sClient from %s' % ( catalogType, moduleRootPath ) )
         return S_OK( catalog )
       except Exception, x:

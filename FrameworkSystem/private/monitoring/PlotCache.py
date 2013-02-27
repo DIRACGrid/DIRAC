@@ -30,6 +30,7 @@ class PlotCache:
     self.alive = True
     self.graceTime = 60
     self.purgeThread = threading.Thread( target = self.purgeCached )
+    self.purgeThread.setDaemon( 1 )
     self.purgeThread.start()
 
   def __generateName( self, *args, **kwargs ):

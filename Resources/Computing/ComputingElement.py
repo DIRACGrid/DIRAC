@@ -84,7 +84,7 @@ class ComputingElement:
         result = self.__getCEParameters( '/Resources/Computing/CEDefaults' ) #can be overwritten by other sections
         if not result['OK']:
           self.log.warn( result['Message'] )
-      if self.ceName in ceSections:    
+      if self.ceName in ceSections:
         result = self.__getCEParameters( '/Resources/Computing/%s' % self.ceName )
         if not result['OK']:
           self.log.warn( result['Message'] )
@@ -96,7 +96,7 @@ class ComputingElement:
     result = self.__getSiteParameters()
     if not result['OK']:
       self.log.warn( result['Message'] )
-   
+
     self._addCEConfigDefaults()
 
   def isValid( self ):
@@ -167,7 +167,7 @@ class ComputingElement:
         self.ceParameters[key] = int( self.ceParameters[key] )
       if key in FLOAT_PARAMETERS:
         self.ceParameters[key] = float( self.ceParameters[key] )
-        
+
     self._reset()
     return S_OK()
 
@@ -283,9 +283,9 @@ class ComputingElement:
         additionalJobs = maxWaitingJobs - waitingJobs
         if totalJobs + additionalJobs >= maxTotalJobs:
           additionalJobs = maxTotalJobs - totalJobs
-      #For SSH CE case  
+      #For SSH CE case
       if int(self.__getParameters( 'MaxWaitingJobs')['Value']) == 0:
-        additionalJobs = maxTotalJobs - runningJobs    
+        additionalJobs = maxTotalJobs - runningJobs
 
       result['Value'] = additionalJobs
 
@@ -324,7 +324,7 @@ class ComputingElement:
   #############################################################################
   def _monitorProxy( self, pilotProxy, payloadProxy ):
     """Base class for the monitor and update of the payload proxy, to be used in
-      derived classes for the basic renewal of the proxy, if further actions are 
+      derived classes for the basic renewal of the proxy, if further actions are
       necessary they should be implemented there
     """
     retVal = getProxyInfo( payloadProxy )
@@ -346,8 +346,8 @@ class ComputingElement:
                                        newProxyLifeTime = self.defaultProxyTime,
                                        proxyToConnect = pilotProxy )
 
-    # if there is pilot proxy 
-    retVal = getProxyInfo( pilotProxy, disableVOMS = True )
+    # if there is pilot proxy
+    retVal = getProxyInfo( pilotProxy )
     if not retVal['OK']:
       return retVal
     pilotProxyDict = retVal['Value']
@@ -393,7 +393,7 @@ class ComputingElement:
       self.log.error( errorStr )
       return S_ERROR( 'Can not renew by copy: %s' % errorStr )
 
-    if not 'hasVOMS' in payloadProxyDict or not payloadProxyDict[ 'hasVOMS' ]:
+    if pilotProxyDict.get( 'hasVOMS', False ):
       return pilotProxyDict[ 'chain' ].dumpAllToFile( payloadProxy )
 
     attribute = CS.getVOMSAttributeForGroup( payloadGroup )
@@ -408,8 +408,8 @@ class ComputingElement:
 
   def getDescription( self ):
     """ Get CE description as a dictionary
-    """  
-    
+    """
+
     ceDict = {}
     for option, value in self.ceParameters.items():
       if type( value ) == type( [] ):
@@ -434,8 +434,8 @@ class ComputingElement:
     project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
     if project:
       ceDict['ReleaseProject'] = project
-      
-    return S_OK( ceDict )   
+
+    return S_OK( ceDict )
 
   #############################################################################
   def sendOutput( self, stdid, line ):

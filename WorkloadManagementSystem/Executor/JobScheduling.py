@@ -464,6 +464,11 @@ class JobScheduling( OptimizerExecutor ):
         self.jobLog.error( "Cannot get tier for site %s" % ( siteName ) )
         continue
       siteTier = result[ 'Value' ]
+
+      # FIXME: hack for cases where you get a T0 together with T1(s) in the list of sites and you want to see "multiple"
+      if siteTier == 0:
+        siteTier = 1
+
       if tierLevel == -1 or tierLevel > siteTier:
         tierLevel = siteTier
         tierSite = []

@@ -27,6 +27,7 @@ import datetime
 ## from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge 
 
 class FTSGraph( Graph ):
@@ -70,9 +71,11 @@ class FTSChannel( Edge ):
     successRate = 100.0
     attempted = self.successfulAttempts + self.failedAttempts  
     if attempted:
-      successRate *= self.successfulAttempts / attempted  
-    if ( self.status != "Active" ) or ( self.distinctFailedFiles > self.acceptableFailedFiles ) or \
-          ( successRate < self.acceptableFailureRate ):    
+      successRate *= self.successfulAttempts / attempted
+    if successRate < self.acceptableFailureRate:
+      if self.distinctFailedFiles > self.acceptableFailedFiles:
+        return float("inf")
+    if self.status != "Active": 
       return float("inf")
     transferSpeed = { "File" : self.fileput, "Throughput" : self.throughput }[self.schedulingType]
     waitingTransfers = { "File" : self.files, "Throughput" : self.size }[self.schedulingType]
@@ -125,6 +128,8 @@ class StrategyHandler( object ):
     """
     ## save config section
     self.configSection = configSection + "/" + self.__class__.__name__
+    ## 
+
     ## sublogger
     self.log = gLogger.getSubLogger( "StrategyHandler", child=True )
     self.log.setLevel( gConfig.getValue( self.configSection + "/LogLevel", "DEBUG"  ) )
@@ -159,6 +164,8 @@ class StrategyHandler( object ):
     self.ftsGraph = None
     ## timestamp for last update
     self.lastRssUpdate = datetime.datetime.now()    
+    ## se cache
+    self.seCache = {}
     # dispatcher
     self.strategyDispatcher = { "MinimiseTotalWait" : self.minimiseTotalWait, 
                                 "DynamicThroughput" : self.dynamicThroughput,
@@ -249,16 +256,22 @@ class StrategyHandler( object ):
           channel.files += 1
     return S_OK()
           
-  def simple( self, sourceSEs, targetSEs ):
+  def simple( self, sourceSEs, targetSEs, lfn, metadata ):
     """ simple strategy - one source, many targets
 
     :param list sourceSEs: list with only one sourceSE name
     :param list targetSEs: list with target SE names
+    :param str lfn: logical file name
+    :param dict metadata: file metadata read from catalogue
     """
     ## make targetSEs list unique 
     if len(sourceSEs) != 1:
       return S_ERROR( "simple: wrong argument supplied for sourceSEs, only one sourceSE allowed" )
     sourceSE = sourceSEs[0]
+    checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+    if not checkSourceSE["OK"]:
+      self.log.error("simple: %s" % checkSourceSE["Message"] )
+      return S_ERROR( "simple: %s" % checkSourceSE["Message"] )
     tree = {}
     for targetSE in targetSEs:
       channel = self.ftsGraph.findChannel( sourceSE, targetSE )
@@ -277,13 +290,21 @@ class StrategyHandler( object ):
 
     return S_OK(tree)
     
-  def swarm( self, sourceSEs, targetSEs ):
+  def swarm( self, sourceSEs, targetSEs, lfn, metadata ):
     """ swarm strategy - one target, many sources, pick up the fastest 
     
     :param list sourceSEs: list of source SE 
     :param str targetSEs: on element list with name of target SE
+    :param str lfn: logical file name
+    :param dict metadata: file metadata read from catalogue
     """
     tree = {}
+    goodSources = []
+    for sourceSE in sourceSEs:
+      checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+      if checkSourceSE["OK"]:
+        goodSources.append( sourceSE )
+    sourceSEs = goodSources
     channels = []
     if len(targetSEs) > 1:
       return S_ERROR("swarm: wrong argument supplied for targetSEs, only one targetSE allowed")
@@ -322,16 +343,22 @@ class StrategyHandler( object ):
                                    "DestSE" : targetSE, "Strategy" : "Swarm" } 
     return S_OK( tree )
           
-
-  def minimiseTotalWait( self, sourceSEs, targetSEs ):
+  def minimiseTotalWait( self, sourceSEs, targetSEs, lfn, metadata ):
     """ find dag that minimises start time 
     
     :param list sourceSEs: list of avialable source SEs
     :param list targetSEs: list of target SEs
+    :param str lfn: logical file name
+    :param dict metadata: file metadata read from catalogue
     """
     tree = {}
+    goodSources = []
+    for sourceSE in sourceSEs:
+      checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+      if checkSourceSE["OK"]:
+        goodSources.append( sourceSE )
+    sourceSEs = goodSources
     primarySources = sourceSEs
-    #timeToSite = {}
     while targetSEs:
       minTimeToStart = float("inf")
       channels = []
@@ -356,31 +383,27 @@ class StrategyHandler( object ):
                                                                                                    ",".join(targetSEs) )
         self.log.error( msg )
         return S_ERROR( msg )
-
+      
       self.log.debug("minimiseTotalWait: found %s candiate channels, checking activity" % len( channels) )
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
                    if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"] 
                    and channel.status == "Active" and channel.timeToStart < float("inf") ]
+      
       if not channels:
         self.log.error("minimiseTotalWait: no active FTS channels found" )
         return S_ERROR("minimiseTotalWait: no active FTS channels found" )
       
       candidates = []
-      #selTimeToStart = None
       for channel, sourceSE, targetSE in channels:
         timeToStart = channel.timeToStart
         if sourceSE not in primarySources:
           timeToStart += self.sigma        
-        #if sourceSE in timeToSite:
-        #  timeToStart += timeToSite[sourceSE]
         ## local found 
         if channel.fromNode == channel.toNode:
           self.log.debug("minimiseTotalWait: found local channel '%s'" % channel.channelName )
           candidates = [ ( channel, sourceSE, targetSE ) ]
-          #selTimeToStart = timeToStart
           break
         if timeToStart <= minTimeToStart:
-          #selTimeToStart = timeToStart
           minTimeToStart = timeToStart
           candidates = [ ( channel, sourceSE, targetSE ) ]
         elif timeToStart == minTimeToStart:
@@ -399,19 +422,26 @@ class StrategyHandler( object ):
                                      "SourceSE" : selSourceSE,
                                      "DestSE" : selTargetSE,
                                      "Strategy" : "MinimiseTotalWait" }
-      #timeToSite[selTargetSE] = selTimeToStart 
       sourceSEs.append( selTargetSE )
       targetSEs.remove( selTargetSE )
 
     return S_OK(tree)        
 
-  def dynamicThroughput( self, sourceSEs, targetSEs ):
+  def dynamicThroughput( self, sourceSEs, targetSEs, lfn, metadata ):
     """ dynamic throughput - many sources, many targets - find dag that minimises overall throughput 
 
     :param list sourceSEs: list of available source SE names
     :param list targetSE: list of target SE names
+    :param str lfn: logical file name
+    :param dict metadata: file metadata read from catalogue
     """
     tree = {}
+    goodSources = []
+    for sourceSE in sourceSEs:
+      checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
+      if checkSourceSE["OK"]:
+        goodSources.append( sourceSE )
+    sourceSEs = goodSources
     primarySources = sourceSEs
     timeToSite = {}
     while targetSEs:
@@ -502,9 +532,10 @@ class StrategyHandler( object ):
     """    
     return self.supportedStrategies
 
-  def replicationTree( self, sourceSEs, targetSEs, size, strategy=None ):
+  def replicationTree( self, lfn, metadata, sourceSEs, targetSEs, size, strategy=None ):
     """ get replication tree
 
+    :param str lfn: LFN
     :param list sourceSEs: list of sources SE names to use
     :param list targetSEs: liost of target SE names to use
     :param long size: file size
@@ -523,17 +554,17 @@ class StrategyHandler( object ):
     if strategy not in self.getSupportedStrategies():
       return S_ERROR("replicationTree: unsupported strategy '%s'" % strategy )
 
-    self.log.info("replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" %\
-                    ( strategy, sourceSEs, targetSEs, size ) )
+    self.log.info( "replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" %\
+                     ( strategy, sourceSEs, targetSEs, size ) )
     ## fire action from dispatcher
-    tree = self.strategyDispatcher[strategy]( sourceSEs, targetSEs )
+    tree = self.strategyDispatcher[strategy]( sourceSEs, targetSEs, lfn, metadata )
     if not tree["OK"]:
       self.log.error( "replicationTree: %s" % tree["Message"] )
       return tree
     ## update graph edges
     update = self.updateGraph( replicationTree=tree["Value"], size=size )
     if not update["OK"]:
-      self.log.error("replicationTree: unable to update FTS graph: %s" % update["Message"] )
+      self.log.error( "replicationTree: unable to update FTS graph: %s" % update["Message"] )
       return update
     return tree
     
@@ -556,18 +587,47 @@ class StrategyHandler( object ):
     rwDict = dict.fromkeys( seList )
     for se in rwDict:
       rwDict[se] = { "read" : False, "write" : False  }
-    rAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "Read", default = 'Unknown' )
+    rAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "ReadAccess", default = 'Unknown' )
     if not rAccess["OK"]:
       return rAccess["Message"]
-    rAccess = [ k for k, v in rAccess["Value"].items() if "Read" in v and v["Read"] in ( "Active", "Bad" ) ]
-    wAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "Write", default = 'Unknown' )
+    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadAccess"] in ( "Active", "Degraded" ) ]
+    wAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "WriteAccess", default = 'Unknown' )
     if not wAccess["OK"]:
       return wAccess["Message"]
-    wAccess = [ k for k, v in wAccess["Value"].items() if "Write" in v and v["Write"] in ( "Active", "Bad" ) ]
+    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteAccess" in v and v["WriteAccess"] in ( "Active", "Degraded" ) ]
     for se in rwDict:
       rwDict[se]["read"] = se in rAccess
       rwDict[se]["write"] = se in wAccess
     return S_OK( rwDict )
    
+  def checkSourceSE( self, sourceSE, lfn, catalogMetadata ):
+    """ filter out SourceSE where PFN is not existing 
 
-
+    :param self: self reference
+    :param str lfn: logical file name
+    :param dict catalogMetadata: catalog metadata
+    """
+    se = self.seCache.get( sourceSE, None )
+    if not se:
+      se = StorageElement( sourceSE, "SRM2" )
+      self.seCache[sourceSE] = se
+    pfn = se.getPfnForLfn( lfn )
+    if not pfn["OK"]:
+      self.log.warn("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
+      return pfn
+    pfn = pfn["Value"]
+    seMetadata = se.getFileMetadata( pfn, singleFile=True )
+    if not seMetadata["OK"]:
+      self.log.warn("checkSourceSE: %s" % seMetadata["Message"] )
+      return S_ERROR("checkSourceSE: failed to get metadata")
+    seMetadata = seMetadata["Value"]
+    catalogChecksum = catalogMetadata["Checksum"].replace("x", "0" ).zfill(8) if "Checksum" in catalogMetadata else None
+    storageChecksum = seMetadata["Checksum"].replace("x", "0").zfill(8) if "Checksum" in seMetadata else None
+    if catalogChecksum != storageChecksum:
+      self.log.warn( "checkSourceSE: %s checksum mismatch catalogue:%s %s:%s" % ( lfn,
+                                                                                  catalogChecksum,
+                                                                                  sourceSE,
+                                                                                  storageChecksum ) )
+      return S_ERROR("checkSourceSE: checksum mismatch")
+    ## if we're here everything is OK
+    return S_OK()

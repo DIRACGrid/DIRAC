@@ -415,7 +415,7 @@ class StorageElementHandler( RequestHandler ):
     """ Get the total size of the given directory in bytes
     """
     comm = "du -sb %s" % path
-    result = shellCall( 0, comm )
+    result = shellCall( 10, comm )
     if not result['OK'] or result['Value'][0]:
       return 0
     else:

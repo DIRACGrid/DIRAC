@@ -127,7 +127,7 @@ class JobSanity( OptimizerExecutor ):
       maxLFNs = self.ex_getOption( 'MaxInputDataPerJob', 100 )
       if len( data ) > maxLFNs:
         message = '%s datasets selected. Max limit is %s.' % ( len( data ), maxLFNs )
-        jobState.setParam( "DatasetCheck", message )
+        jobState.setParameter( "DatasetCheck", message )
         return S_ERROR( "Exceeded Maximum Dataset Limit (%s)" % maxLFNs )
 
     return S_OK( len( data ) )

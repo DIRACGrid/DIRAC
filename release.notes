@@ -1,7 +1,214 @@
-[v6r7-pre1]
+[v6r8-pre2]
+
+NEW: Change the schema of the Resources description in CS, use new Resources helper to 
+     interpret this information
+NEW: Base RSS resources representation on the new CS Resources schema     
+
+*Core
+FIX: multiple fixes to remove pylint complaints
+
+*Accounting
+FIX: AccountingDB - align properly days with MySQL bucketing. Closes #1219
+
+*Framework
+FIX: ProxyDB - prevent duplicate key errors on writing VOMSProxies to DB. Closes #1228
+
+*Configuration
+NEW: Resources helper class to work with the new /Resources structure according to RFC #5
+NEW: dirac-configuration-convert-resources-schema - command to convert old /Resources schema
+     to the new one
+
+*WMS
+CHANGE: JobScheduling - is now extensible. Added unit test
+
+*Transformation
+NEW: TaskManager - if a site is specified in the job definition, it is now taken into account 
+     when submitting the task
+NEW: Speeding up the getTransformationSummary call, using an UpdateTransformationCounters agent     
+
+
+*Resources
+FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
+     payload when updating it
+
+[v6r7p9]
+
+*Core
+BUGFIX: InstallTools - MySQL Port should be an integer
+
+[v6r7p8]
+
+*Core
+FIX: Subprocess - consistent timeout error message
+
+*DMS
+NEW: RemovalTask - added bulk removal
+FIX: StrategyHandler - check file source CEs
+CHANGE: DataIntegrityClient - code beautification
+CHANGE: ReplicaManager - do not check file existence if replica information is queried anyway,
+        do not fail if file to be removed does not exist already. 
+
+[v6r7p7]
+
+FIX: Several fixes to allow automatic code documentation
+
+*Core
+NEW: InstallTools - added mysqlPort and mysqlRootUser
+
+*DMS
+CHANGE: ReplicaManager - set possibility to force the deletion of non existing files
+CHANGE: StrategyHandler - better handling of checksum check during scheduling 
+
+[v6r7p6]
+
+*Core
+FIX: dirac-install - restore signal alarm if downloadable file is not found
+FIX: Subprocess - using Manager proxy object to pass results from the working process
+
+*DMS:
+CHANGE: StorageElement - removed overwride mode
+CHANGE: removed obsoleted dirac-dms-remove-lfn-replica, dirac-dms-remove-lfn
+NEW: FTSMonitorAgent - filter out sources with checksum mismatch
+FIX: FTSMonitorAgent, TransferAgent - fix the names of the RSS states
+
+*RSS
+NEW: ElementInspectorAgent runs with a variable number of threads which are automatically adjusted
+NEW: Added policies to force a particular state, can be very convenient to keep something Banned for example.
+NEW: policy system upgrade, added finer granularity when setting policies and actions
+
+*WMS
+NEW: SiteDirector- allow to define pilot DN/Group in the agent options
+CHANGE: JobDescription, JobManifest - take values for job parameter verification from Operations CS section
+
+[v6r7p5]
+
+*Interfaces
+BUGFIX: dirac-wms-job-get-output - properly treat the case when output directory is not specified 
+
+[v6r7p4]
+
+*Core
+FIX: Subprocess - avoid that watchdog kills the executor process before it returns itself
+
+*Framework
+BUGFIX: ProxuManagerClient - wrong time for caching proxies
+
+*RSS
+FIX: removed obsoleted methods
+
+*DMS
+NEW: FileCatalog - added findFilesByMetadataDetailed - provides detailed metadata for 
+     selected files
+
+[v6r7p3]
+
+*DMS
+FIX: FTSMonitorAgent - logging less verbose
+
+*Transformation
+FIX: TransformationAgent - use the new CS defaults locations
+FIX: Proper agent initialization
+NEW: TransformationPlaugin - in Broadcast plugin added file groupings by number of files, 
+     make the TargetSE always defined, even if the SourceSE list contains it 
+
+*ResourceStatus
+FIX: Added the shifter's proxy to several agents
+
+*RMS
+FIX: RequestContainer - the execution order was not properly set for the single files 
+
+*Framework:
+BUGFIX: ProxyManagerClient - proxy time can not be shorter than what was requested
+
+[v6r7p2]
+
+*Core
+FIX: dirac-configure - switch to use CS before checking proxy info
+
+*Framework
+NEW: dirac-sys-sendmail new command
+NEW: SystemAdmininistratorCLI - added show host, uninstall, revert commands
+NEW: SystemAdmininistratorHandler - added more info in getHostInfo()
+NEW: SystemAdmininistratorHandler - added revertSoftware() interface
+
+*Transformation
+FIX: TransformationCleaningAgent - check the status of returned results
+
+[v6r7p1]
+
+*Core
+FIX: Subprocess - finalize the Watchdog closing internal connections after a command execution
+CHANGE: add timeout for py(shell,system)Call calls where appropriate
+CHANGE: Shifter - use gProxyManager in a way that allows proxy caching
+
+*Framework
+NEW: ProxyManagerClient - allow to specify validity and caching time separately
+FIX: ProxyDB - replace instead of delete+insert proxy in __storeVOMSProxy
+
+*DMS
+NEW: FTSMonitorAgent - made multithreaded for better efficiency
+FIX: dirac-dms-add-file - allow LFN: prefix for lfn argument
+
+*WMS
+NEW: dirac-wms-job-get-output, dirac-wms-job-status - allow to retrieve output for a job group
+FIX: TaskQueueDB - fixed selection SQL in __generateTQMatchSQL()
+CHANGE: OptimizerExecutor - reduce diversity of MinorStatuses for failed executors
+
+*Resources
+FIX: CREAMComputingElement - remove temporary JDL right after the submission 
+
+[v6r6p20]
+
+*DMS
+FIX: RegistrationTask - properly escaped error messages
+BUGFIX: DirectoryMetadata - use getFileMetadataFields from FileMetadata in addMetadataField()
+NEW: When there is a missing source error spotted during FTS transfer, file should be reset 
+     and rescheduled again until maxAttempt (set to 100) is reached
+
+*WMS
+FIX: JobScheduling - fix the site group logic in case of Tier0
+
+[v6r6p19]
+
+*DMS
+BUGFIX: All DMS agents  - set up agent name in the initialization
 
 *Core
 NEW: Subprocess - timeout wrapper for subprocess calls
+BUGFIX: Time - proper interpreting of 0's instead of None
+CHANGE: DISET - use cStringIO for ANY read that's longer than 16k (speed improvement) 
+        + Less mem when writing data to the net
+FIX: Os.py - protection against failed "df" command execution       
+NEW: dirac-info prints lcg bindings versions
+CHANGE: PlotBase - made a new style class 
+NEW: Subprocess - added debug level log message
+
+*Framework
+NEW: SystemAdministratorIntegrator client for collecting info from several hosts
+NEW: SystemAdministrator - added getHostInfo()
+FIX: dirac-proxy-init - always check for errors in S_OK/ERROR returned structures
+CHANGE: Do not accept VOMS proxies when uploading a proxy to the proxy manager
+
+*Configuration
+FIX: CE2CSAgent - get a fresh copy of the cs data before attempting to modify it, closes #1151
+FIX: Do not create useless backups due to slaves connecting and disconnecting
+FIX: Refresher - prevent retrying with 'Insane environment'
+
+*Accounting
+NEW: Accounting/Job - added validation of reported values to cope with the weird Yandex case
+FIX: DBUtils - take into account invalid values, closes #949
+
+*DMS
+FIX: FTSSubmitAgent - file for some reason rejected from submission should stay in 'Waiting' in 
+     TransferDB.Channel table
+FIX: FTSRequest - fix in the log printout     
+CHANGE: dirac-dms-add-file removed, dirac-dms-add-files renamed to dirac-dms-add-file
+FIX: FileCatalogCLI - check the result of removeFile call
+FIX: LcgFileCatalogClient - get rid of LHCb specific VO evaluation
+NEW: New FileCatalogProxy service - a generalization of a deprecated LcgFileCatalog service
+FIX: Restored StorageElementProxy functionality
+CHANGE: dirac-dms-add-file - added printout
+NEW: FileCatalog(Factory), StorageElement(Factory) - UseProxy flag moved to /Operations and /LocalSite sections
 
 *RSS
 NEW:  general reimplementation: 
@@ -14,9 +221,198 @@ NEW:  general reimplementation:
       New Generic StateMachine using OOP.
       Commands and Policies simplified.
       ResourceStatus using internal cache, needs to be tested with real load.
+      Fixes for the state machine
+      Replaced Bad with Degraded status ( outside RSS ).
+      Added "Access" to Read|Write|Check|Remove SE statuses wherever it applies.
+      ResourceStatus returns by default "Active" instead of "Allowed" for CS calls.
+      Caching parameters are defined in the CS
+FIX: dirac-admin-allow/ban-se - allow a SE on Degraded ( Degraded->Active ) and ban a SE on Probing 
+     ( Probing -> Banned ). In practice, Active and Degraded are "usable" states anyway.            
+      
+*WMS
+FIX: OptimizerExecutor - failed optimizations will still update the job     
+NEW: JobWrapper - added LFNUserPrefix VO specific Operations option used for building user LFNs
+CHANGE: JobDB - do not interpret SystemConfig in the WMS/JobDB
+CHANGE: JobDB - Use CPUTime JDL only, keep MaxCPUTime for backward compatibility
+CHANGE: JobWrapper - use CPUTime job parameter instead of MaxCPUTime
+CHANGE: JobAgent - use CEType option instead of CEUniqueID
+FIX: JobWrapper - do not attempt to untar directories before having checked if they are tarfiles 
+NEW: dirac-wms-job-status - get job statuses for jobs in a given job group
+ 
+*SMS
+FIX: StorageManagementDB - when removing unlinked replicas, take into account the case where a
+     staging request had been submitted, but failed
+      
+*Resources    
+NEW: glexecCE - add new possible locations of the glexec binary: OSG specific stuff and in last resort 
+     looking in the PATH    
+NEW: LcgFileCatalogClient - in removeReplica() get the needed PFN inside instead of providing it as an argument     
       
 *TS      
 CHANGE: Transformation types definition are moved to the Operations CS section
+
+*Interfaces
+FIX: Dirac.py - CS option Scratchdir was in LocalSite/LocalSite
+FIX: Dirac.py - do not define default catalog, use FileCatalog utility instead
+
+[v6r6p19]
+
+*DMS
+BUGFIX: All DMS agents  - set up agent name in the initialization
+
+[v6r6p18]
+
+*Transformation
+CHANGE: /DIRAC/VOPolicy/OutputDataModule option moved to <Operations>/Transformations/OutputDataModule
+
+*Resources
+FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the payload 
+     when updating it
+
+*WMS
+BUGFIX: JobSanity - fixed misspelled method call SetParam -> SetParameter
+
+[v6r6p17]
+
+*Transformation
+BUGFIX: TransformationAgent - corrected  __getDataReplicasRM()
+
+[v6r6p16]
+
+*DMS
+FIX: Agents - proper __init__ implementation with arguments passing to the super class
+FIX: LcgFileCatalogClient - in removeReplica() reload PFN in case it has changed
+
+[v6r6p15]
+
+*Framework
+BUGFIX: ErrorMessageMonitor - corrected updateFields call 
+
+*DMS:
+NEW: FTSMonitorAgent completely rewritten in a multithreaded way
+
+*Transformation
+FIX: InputDataAgent - proper instantiation of TransformationClient
+CHANGE: Transformation - several log message promoted from info to notice level
+
+[v6r6p14]
+
+*Transformation
+FIX: Correct instantiation of agents inside several scripts
+CHANGE: TransformationCleaningAgent - added verbosity to logs
+CHANGE: TransformationAgent - missingLFC to MissingInFC as it could be the DFC as well
+FIX: TransformationAgent - return an entry for all LFNs in __getDataReplicasRM
+
+*DMS
+FIX: TransferAgent - fix exception reason in registerFiles()
+
+[v6r6p13]
+
+*DMS
+CHANGE: TransferAgent - change RM call from getCatalogueReplicas to getActiveReplicas. 
+        Lowering log printouts here and there
+
+[v6r6p12]
+
+*DMS
+BUGFIX: RemovalTask - Replacing "'" by "" in error str set as attribute for a subRequest file. 
+        Without that request cannot be updated when some nasty error occurs.
+
+[v6r6p11]
+
+*RMS:
+BUGFIX: RequestClient - log string formatting
+
+*DMS
+BUGFIX: RemovalTask - handling for files not existing in the catalogue
+
+*Transformation
+FIX: TransformationManager - ignore files in NotProcessed status to get the % of processed files
+
+*Interfaces
+FIX: Fixes due to the recent changes in PromptUser utility
+
+[v6r6p10]
+
+*RMS
+FIX: RequestDBMySQL - better escaping of queries 
+
+*WMS
+FIX: SiteDirector - get compatible platforms before checking Task Queues for a site
+
+[v6r6p9]
+
+*Core
+FIX: Utilities/PromptUser.py - better user prompt
+
+*Accounting
+NEW: Add some validation to the job records because of weird data coming from YANDEX.ru
+
+*DMS
+BUGFIX: ReplicaManager - typo errStr -> infoStr in __replicate()
+FIX: FTSRequest - fixed log message
+
+*WMS
+FIX: SiteDirector - use CSGlobals.getVO() call instead of explicit CS option
+
+[v6r6p8]
+
+*Transformation
+BUGFIX: TransformationDB - typo in getTransformationFiles(): iterValues -> itervalues
+
+[v6r6p7]
+
+*Resources
+FIX: StorageFactory - uncommented line that was preventing the status to be returned 
+BUGFIX: CE remote scripts - should return status and not call exit()
+BUGFIX: SSHComputingElement - wrong pilot ID reference
+
+[v6r6p6]
+
+*WMS
+FIX: TaskQueueDB - in findOrphanJobs() retrieve orphaned jobs as list of ints instead of list of tuples
+FIX: OptimizerExecutor - added import of datetime to cope with the old style optimizer parameters
+
+*Transformation
+FIX: TransformationAgent - fix finalization entering in an infinite loop
+NEW: TransformationCLI - added resetProcessedFile command
+FIX: TransformationCleaningAgent - treating the archiving delay 
+FIX: TransformationDB - fix in getTransformationFiles() in case of empty file list
+
+[v6r6p5]
+
+*Transformation
+FIX: TransformationAgent - type( transClient -> transfClient )
+FIX: TransformationAgent - self._logInfo -> self.log.info
+FIX: TransformationAgent - skip if no Unused files
+FIX: TransformationAgent - Use CS option for replica cache lifetime
+CHANGE: TransformationAgent - accept No new Unused files every [6] hours
+
+[v6r6p4]
+
+*DMS
+FIX: TransferAgent - protection for files that can not be scheduled
+BUGFIX: TransferDB - typo (instIDList - > idList ) fixed
+
+*Transformation
+BUGFIX: TransformationAgent - typo ( loginfo -> logInfo )
+
+[v6r6p3]
+
+FIX: merged in patch v6r5p14
+
+*Core
+BUGFIX: X509Chain - return the right structure in getCredentials() in case of failure
+FIX: dirac-deploy-scripts.py - allow short scripts starting from "d"
+FIX: dirac-deploy-scripts.py - added DCOMMANDS_PPID env variable in the script wrapper
+FIX: ExecutorReactor - reduced error message dropping redundant Task ID 
+
+*Interfaces
+BUGFIX: Dirac.py - allow to pass LFN list to replicateFile()
+
+*DMS
+FIX: FileManager - extra check if all files are available in _findFiles()
+BUGFIX: FileCatalogClientCLI - bug in DirectoryListing
 
 [v6r6p2]
 
@@ -181,6 +577,16 @@ NEW: InputDataAgent - possibility to refresh only data registered in the last pr
 NEW: TransformationAgent(Client) - management of derived transformations and more ported from LHCbDIRAC
 BUGFIX: TransformationDB - wrong SQL statement generation in setFileStatusForTransformation()
 
+[v6r5p14]
+
+*Core
+NEW: Utilities - added Backports utility
+
+*WMS
+FIX: Use /Operations/JobScheduling section consistently, drop /Operations/Matching section
+NEW: Allow VO specific share correction plugins from extensions
+FIX: Executors - several fixes
+
 [v6r5p13]
 
 *WMS
@@ -195,6 +601,9 @@ FIX: merged in patch v6r4p34
 [v6r5p11]
 
 FIX: merged in patch v6r4p33
+
+*Core
+FIX: MySQL - added offset argument to buildConditions()
 
 [v6r5p10]
 
@@ -1078,7 +1487,7 @@ BUGFIX: Minor bugfixes spotted on the Web development
 FIX: Removed useless decorator from RSS handlers
 CHANGE: ResourceStatus helper tool moved to RSS/Client directory, no RSS objects created if the system is InActive
 CHANGE: Removed ClientFastDec decorator, using a more verbose alternative.
-CHANGE: Removed useless usage of "**kwargs" on helper functions.  
+CHANGE: Removed useless usage of kwargs on helper functions.  
 NEW: added getSESitesList method to RSSClient      
 FIX: _checkFloat() checks INTEGERS, not datetimes
 

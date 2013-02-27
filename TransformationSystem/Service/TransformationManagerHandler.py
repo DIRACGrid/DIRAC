@@ -10,16 +10,23 @@ from types import StringType, ListType, DictType, IntType, LongType, StringTypes
 
 transTypes = list( StringTypes ) + [IntType, LongType]
 
-class TransformationManagerHandlerBase( RequestHandler ):
+database = False
+def initializeTransformationManagerHandler( serviceIndo, db = TransformationDB ):
+
+  global database
+  database = db()
+  res = database._connect()
+  if not res['OK']:
+    return res
+
+  return S_OK()
+
+class TransformationManagerHandler( RequestHandler ):
 
   def _parseRes( self, res ):
     if not res['OK']:
       gLogger.error( res['Message'] )
     return res
-
-  def setDatabase( self, oDatabase ):
-    global database
-    database = oDatabase
 
   types_getName = []
   def export_getName( self ):
@@ -533,10 +540,126 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
     return S_OK( resultDict )
 
+  types_getTransformationCountersStatuses = [StringTypes]
+  def export_getTransformationCountersStatuses( self, type_counter ):
+    """ Return all statuses that are considered
+    """
+    if type_counter == 'Tasks':
+      return S_OK( database.tasksStatuses )
+    elif type_counter == 'Files':
+      return S_OK( database.fileStatuses )
+    else:
+      return S_ERROR( "Only 'Tasks' and 'Files' allowed" )
+
+  types_updateTransformationCounters = [DictType]
+  def export_updateTransformationCounters( self, counterDict ):
+    """ Update or insert transformation counters
+    """
+    if 'TransformationID' not in counterDict:
+      return S_ERROR( "Missing mandatory key TransformationID" )
+    return database.updateTransformationCounters( counterDict )
+
   types_getTransformationSummaryWeb = [DictType, ListType, IntType, IntType]
   def export_getTransformationSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the transformation information for a given page in the generic format """
+    # Obtain the timing information from the selectDict
+    last_update = selectDict.get( 'CreationDate', None )
+    if last_update:
+      del selectDict['CreationDate']
+    fromDate = selectDict.get( 'FromDate', None )
+    if fromDate:
+      del selectDict['FromDate']
+    if not fromDate:
+      fromDate = last_update
+    toDate = selectDict.get( 'ToDate', None )
+    if toDate:
+      del selectDict['ToDate']
+    # Sorting instructions. Only one for the moment.
+    if sortList:
+      orderAttribute = sortList[0][0] + ":" + sortList[0][1]
+    else:
+      orderAttribute = None
 
+    # Get the transformations that match the selection
+    res = database.getTransformations( condDict = selectDict, older = toDate, newer = fromDate,
+                                       orderAttribute = orderAttribute )
+    if not res['OK']:
+      return self._parseRes( res )
+    # Prepare the standard structure now within the resultDict dictionary
+    resultDict = {}
+    trList = res['Records']
+    # Create the total records entry
+    nTrans = len( trList )
+    resultDict['TotalRecords'] = nTrans
+    # Create the ParameterNames entry
+    paramNames = res['ParameterNames']
+    resultDict['ParameterNames'] = paramNames
+
+    # Add the job states to the ParameterNames entry: the order here matters
+    taskStateNames = database.tasksStatuses
+    resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
+    fileStateNames = database.fileStatuses
+    fileStateNames += ['PercentProcessed', 'Total']
+    resultDict['ParameterNames'] += ['Files_' + x for x in fileStateNames]
+    # Get the transformations which are within the selected window
+    if nTrans == 0:
+      return S_OK( resultDict )
+    ini = startItem
+    last = ini + maxItems
+    if ini >= nTrans:
+      return S_ERROR( 'Item number out of range' )
+    if last > nTrans:
+      last = nTrans
+    transList = trList[ini:last]
+
+    statusDict = {}
+    extendableTranfs = Operations().getValue( "Transformations/ExtendableTransfTypes", ['Simulation', 'MCsimulation'] )
+    # Add specific information for each selected transformation
+    for trans in transList:
+      transDict = dict( zip( paramNames, trans ) )
+      # Update the status counters
+      status = transDict['Status']
+      statusDict[status] = statusDict.setdefault( status, 0 ) + 1
+      # Get the statistics on the number of Tasks for the transformation
+      transID = transDict['TransformationID']
+      res = database.getTransformationsCounters( transID )
+      if not res['OK']:
+        return S_ERROR( "Failed getting the Counters" )
+      counters = res['Value'] #We now have the full table
+
+      #Get busy with the tasks statuses
+      taskscounter = []
+      for state in taskStateNames:
+        taskscounter.append( counters.get( state, 0 ) )
+      trans.extend( taskscounter ) ##add at the bottom of the list
+
+      ##Now take a look at the Files
+      transType = transDict['Type']
+      filestats = []
+      total = 0
+      for state in fileStateNames:
+        filestats.append( counters.get( state, 0 ) )
+        total += counters.get( state, 0 )
+        PercentProcessed = 0
+      if transType.lower() in extendableTranfs:
+        PercentProcessed = '-'
+      elif total != 0:
+        PercentProcessed = "%.1f" % ( int( counters.get( "Processed", 0 ) * 1000. / total ) / 10. )
+      else:
+        PercentProcessed = '0.0'
+      filestats.append( PercentProcessed )
+      filestats.append( total )
+      trans.extend( filestats ) #add at the bottom if the list
+      #Now the trans list contains all the values, and resultDict contains all the ParameterNames and the 
+      #updated transList
+
+    resultDict['Records'] = transList
+    resultDict['Extras'] = statusDict
+    return S_OK( resultDict )
+
+  types_getTransformationSummaryWebOld = [DictType, ListType, IntType, IntType]
+  def export_getTransformationSummaryWebOld( self, selectDict, sortList, startItem, maxItems ):
+    """ Get the summary of the transformation information for a given page in the generic format """
     # Obtain the timing information from the selectDict
     last_update = selectDict.get( 'CreationDate', None )
     if last_update:
@@ -591,8 +714,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
     transList = trList[ini:last]
 
     statusDict = {}
-    extendableTranfs = Operations().getValue( "Production/%s/ExtendableTransfTypes" % database.__class__.__name__,
-                                              'mcsimulation' )
+    extendableTranfs = Operations().getValue( 'Transformations/ExtendableTransfTypes',
+                                                ['Simulation', 'MCsimulation'] )
     # Add specific information for each selected transformation
     for trans in transList:
       transDict = dict( zip( paramNames, trans ) )
@@ -613,19 +736,18 @@ class TransformationManagerHandlerBase( RequestHandler ):
       # Get the statistics for the number of files for the transformation
       fileDict = {}
       transType = transDict['Type']
-      extendableTranfs = Operations().getValue( 'Transformations/ExtendableTransfTypes',
-                                                ['Simulation', 'MCsimulation'] )
       if transType.lower() in extendableTranfs:
         fileDict['PercentProcessed'] = '-'
       else:
         res = database.getTransformationStats( transID )
         if res['OK']:
           fileDict = res['Value']
-          if fileDict['Total'] == 0:
+          total = fileDict['Total'] - fileDict.get( 'NotProcessed', 0 )
+          if total == 0:
             fileDict['PercentProcessed'] = 0
           else:
             processed = fileDict.get( 'Processed', 0 )
-            fileDict['PercentProcessed'] = "%.1f" % ( int( processed * 1000. / fileDict['Total'] ) / 10. )
+            fileDict['PercentProcessed'] = "%.1f" % ( int( processed * 1000. / total ) / 10. )
       for state in fileStateNames:
         trans.append( fileDict.get( state, 0 ) )
 
@@ -634,15 +756,3 @@ class TransformationManagerHandlerBase( RequestHandler ):
     return S_OK( resultDict )
 
   ###########################################################################
-
-database = False
-def initializeTransformationManagerHandler( serviceInfo ):
-  global database
-  database = TransformationDB( 'TransformationDB', 'Transformation/TransformationDB' )
-  return S_OK()
-
-class TransformationManagerHandler( TransformationManagerHandlerBase ):
-
-  def __init__( self, *args, **kargs ):
-    self.setDatabase( database )
-    TransformationManagerHandlerBase.__init__( self, *args, **kargs )

@@ -164,8 +164,12 @@ class ProxyInit:
     return S_OK()
 
   def printInfo( self ):
-    gLogger.notice( "Proxy generated:" )
-    gLogger.notice( ProxyInfo.getProxyInfoAsString( self.__proxyGenerated )[ 'Value' ] )
+    result = ProxyInfo.getProxyInfoAsString( self.__proxyGenerated )
+    if not result['OK']:
+      gLogger.error( 'Failed to get the new proxy info: %s' % result['Message'] )
+    else:  
+      gLogger.notice( "Proxy generated:" )
+      gLogger.notice( result[ 'Value' ] )
     if self.__uploadedInfo:
       gLogger.notice( "\nProxies uploaded:" )
       maxDNLen = 0

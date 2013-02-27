@@ -33,6 +33,7 @@ class TaskQueueDB( DB ):
     self.__strictRequireMatchFields = ( 'SubmitPool', 'Platform', 'PilotType' )
     self.__singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime' )
     self.__mandatoryMatchFields = ( 'Setup', 'CPUTime' )
+    self.__priorityIgnoredFields = ( 'Sites', 'BannedSites' )
     self.__defaultCPUSegments = maxCPUSegments
     self.__maxMatchRetry = 3
     self.__jobPriorityBoundaries = ( 0.001, 10 )
@@ -53,7 +54,10 @@ class TaskQueueDB( DB ):
   def findOrphanJobs( self ):
     """ Find jobs that are not in any task queue
     """
-    return self._query( "select JobID from tq_Jobs WHERE TQId not in (SELECT TQId from tq_TaskQueues)" )
+    result = self._query( "select JobID from tq_Jobs WHERE TQId not in (SELECT TQId from tq_TaskQueues)" )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( [ row[0] for row in result[ 'Value' ] ] )
 
   def isSharesCorrectionEnabled( self ):
     return self.__getCSOption( "EnableSharesCorrection", False )
@@ -177,12 +181,12 @@ class TaskQueueDB( DB ):
     """
     Check a task queue definition dict is valid
     """
-    
+
     # Confine the LHCbPlatform legacy option here, use Platform everywhere else
     # until the LHCbPlatform is no more used in the TaskQueueDB
     if 'LHCbPlatforms' in tqDefDict and not "Platforms" in tqDefDict:
       tqDefDict['Platforms'] = tqDefDict['LHCbPlatforms']
-    
+
     for field in self.__singleValueDefFields:
       if field not in tqDefDict:
         return S_ERROR( "Missing mandatory field '%s' in task queue definition" % field )
@@ -689,14 +693,14 @@ class TaskQueueDB( DB ):
         if field in self.__bannedJobMatchFields:
           fullTableN = '`tq_TQToBanned%ss`' % field
           csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                    fullTableN, fullTableN ), tqMatchDict[ field ], boolOp = 'AND' )
+                                                                    fullTableN, fullTableN ), tqMatchDict[ field ], boolOp = 'OR' )
           sqlCondList.append( csql )
       #Resource banning
       bannedField = "Banned%s" % field
       if bannedField in tqMatchDict and tqMatchDict[ bannedField ]:
         fullTableN = '`tq_TQTo%ss`' % field
         csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                  fullTableN, fullTableN ), tqMatchDict[ bannedField ], boolOp = 'AND' )
+                                                                  fullTableN, fullTableN ), tqMatchDict[ bannedField ], boolOp = 'OR' )
         sqlCondList.append( csql )
 
     #For certain fields, the require is strict. If it is not in the tqMatchDict, the job cannot require it
@@ -1072,17 +1076,53 @@ class TaskQueueDB( DB ):
     for k in tqDict:
       if tqDict[k] > 0.1 or not allowBgTQs:
         totalPrio += tqDict[ k ]
-    #Group by priorities
-    prioDict = {}
+    #Update prio for each TQ
     for tqId in tqDict:
       if tqDict[ tqId ] > 0.1 or not allowBgTQs:
         prio = ( share / totalPrio ) * tqDict[ tqId ]
       else:
         prio = TQ_MIN_SHARE
       prio = max( prio, TQ_MIN_SHARE )
+      tqDict[ tqId ] = prio
+
+    #Generate groups of TQs that will have the same prio=sum(prios) maomenos
+    result = self.retrieveTaskQueues( list( tqDict ) )
+    if not result[ 'OK' ]:
+      return result
+    allTQsData = result[ 'Value' ]
+    tqGroups = {}
+    for tqid in allTQsData:
+      tqData = allTQsData[ tqid ]
+      for field in ( 'Jobs', 'Priority' ) + self.__priorityIgnoredFields:
+        if field in tqData:
+          tqData.pop( field )
+      tqHash = []
+      for f in sorted( tqData ):
+        tqHash.append( "%s:%s" % ( f, tqData[ f ] ) )
+      tqHash = "|".join( tqHash )
+      if tqHash not in tqGroups:
+        tqGroups[ tqHash ] = []
+      tqGroups[ tqHash ].append( tqid )
+    tqGroups = [ tqGroups[ td ] for td in tqGroups ]
+
+    #Do the grouping
+    for tqGroup in tqGroups:
+      totalPrio = 0
+      if len( tqGroup ) < 2:
+        continue
+      for tqid in tqGroup:
+        totalPrio += tqDict[ tqid ]
+      for tqid in tqGroup:
+        tqDict[ tqid ] = totalPrio
+
+    #Group by priorities
+    prioDict = {}
+    for tqId in tqDict:
+      prio = tqDict[ tqId ]
       if prio not in prioDict:
         prioDict[ prio ] = []
       prioDict[ prio ].append( tqId )
+
     #Execute updates
     for prio in prioDict:
       tqList = ", ".join( [ str( tqId ) for tqId in prioDict[ prio ] ] )

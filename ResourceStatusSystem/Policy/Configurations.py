@@ -18,17 +18,17 @@ __RCSID__ = '$Id:  $'
 
 POLICIESMETA = {
             
-#  'DTOnGoingOnly' :
-#    {
-#      'description' : "Ongoing down-times",
-#      'module'      : 'DTPolicy',
-#      'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
-#      'args'        : None
-#    },
+  'DTOngoing' :
+    {
+      'description' : "Ongoing and scheduled down-times",
+      'module'      : 'DowntimePolicy',
+      'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
+      'args'        : { 'hours' : 0, 'onlyCache' : True },
+    },
 
   'DTScheduled' :
     {
-      'description' : "Ongoing and scheduled down-times",
+      'description' : "Scheduled down-times, starting in <hours>",
       'module'      : 'DowntimePolicy',
       'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
       'args'        : { 'hours' : 12, 'onlyCache' : True },
@@ -40,8 +40,32 @@ POLICIESMETA = {
       'module'      : 'AlwaysActivePolicy',
       'command'     : None,
       'args'        : None
+    },
+
+  'AlwaysDegraded' :
+    {
+      'description' : "A Policy that always returns Degraded",
+      'module'      : 'AlwaysDegradedPolicy',
+      'command'     : None,
+      'args'        : None
+    },
+                
+  'AlwaysProbing' :
+    {
+      'description' : "A Policy that always returns Probing",
+      'module'      : 'AlwaysProbingPolicy',
+      'command'     : None,
+      'args'        : None
+    },                
+
+  'AlwaysBanned' :
+    {
+      'description' : "A Policy that always returns Banned",
+      'module'      : 'AlwaysBannedPolicy',
+      'command'     : None,
+      'args'        : None
     }
-            
+                      
   }
 
 ################################################################################

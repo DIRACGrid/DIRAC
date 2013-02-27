@@ -123,8 +123,6 @@ class ObjectLoader( object ):
       modules = {}
 
     if type( reFilter ) in types.StringTypes:
-      if reFilter[-2:] != 'py':
-        reFilter += r'\.py$'
       reFilter = re.compile( reFilter )
 
 

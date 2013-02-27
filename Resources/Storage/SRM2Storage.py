@@ -235,7 +235,7 @@ class SRM2Storage( StorageBase ):
 ################################################################################
 
   def getPFNBase( self, withPort = False ):
-    """ This will get the pfn base. This is then appended with the LFN in LHCb convention.
+    """ This will get the pfn base. This is then appended with the LFN in DIRAC convention.
 
     :param self: self reference
     :param bool withPort: flag to include port 

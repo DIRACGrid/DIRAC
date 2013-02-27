@@ -87,7 +87,7 @@ def loadDiracCfg( verbose = False ):
   global localCfg, cfgFile, setup, instance, logLevel, linkedRootPath, host
   global basePath, instancePath, runitDir, startDir
   global db, mysqlDir, mysqlDbDir, mysqlLogDir, mysqlMyOrg, mysqlMyCnf, mysqlStartupScript
-  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode, mysqlSmallMem, mysqlLargeMem
+  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode, mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
 
   from DIRAC.Core.Utilities.Network import getFQDN
 
@@ -154,7 +154,7 @@ def loadDiracCfg( verbose = False ):
 
   mysqlPassword = localCfg.getOption( cfgInstallPath( 'Database', 'Password' ), mysqlPassword )
   if verbose and mysqlPassword:
-    gLogger.notice( 'Reading %s MySQL Password from local configuration' % mysqlUser )
+    gLogger.notice( 'Reading %s MySQL Password from local configuration ' % mysqlUser )
 
   mysqlHost = localCfg.getOption( cfgInstallPath( 'Database', 'Host' ), '' )
   if mysqlHost:
@@ -163,6 +163,22 @@ def loadDiracCfg( verbose = False ):
   else:
     # if it is not defined use the same as for dirac services
     mysqlHost = host
+
+  mysqlPort = localCfg.getOption( cfgInstallPath( 'Database', 'Port' ), 0 )
+  if mysqlPort:
+    if verbose:
+      gLogger.notice( 'Using MySQL Port from local configuration ', mysqlPort )
+  else:
+    # if it is not defined use the same as for dirac services
+    mysqlPort = 3306
+
+  mysqlRootUser = localCfg.getOption( cfgInstallPath( 'Database', 'RootUser' ), '' )
+  if mysqlRootUser:
+    if verbose:
+      gLogger.notice( 'Using MySQL root user from local configuration ', mysqlRootUser )
+  else:
+    # if it is not defined use root
+    mysqlRootUser = 'root'
 
   mysqlMode = localCfg.getOption( cfgInstallPath( 'Database', 'MySQLMode' ), '' )
   if verbose and mysqlMode:
@@ -200,6 +216,8 @@ mysqlMyCnf = ''
 mysqlStartupScript = ''
 mysqlUser = ''
 mysqlHost = ''
+mysqlPort = ''
+mysqlRootUser = ''
 mysqlSmallMem = ''
 mysqlLargeMem = ''
 loadDiracCfg()
@@ -1529,7 +1547,12 @@ def uninstallComponent( system, component ):
   """
   Remove startup and runit directories
   """
-  unsetupComponent( system, component )
+  
+  result = runsvctrlComponent( system, component, 'd' )
+  if not result['OK']:
+    pass
+  
+  result = unsetupComponent( system, component )
 
   for runitCompDir in glob.glob( os.path.join( runitDir, system, component ) ):
     try:
@@ -2073,7 +2096,7 @@ def execMySQL( cmd, dbName = 'mysql' ):
   if not mysqlRootPwd:
     return S_ERROR( 'MySQL root password is not defined' )
   if dbName not in db:
-    db[dbName] = MySQL( mysqlHost, 'root', mysqlRootPwd, dbName )
+    db[dbName] = MySQL( mysqlHost, mysqlRootUser, mysqlRootPwd, dbName, mysqlPort )
   if not db[dbName]._connected:
     error = 'Could not connect to MySQL server'
     gLogger.error( error )

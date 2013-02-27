@@ -4,11 +4,9 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                                                import S_OK,S_ERROR,gLogger
+from DIRAC                                                                import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase  import FileManagerBase
-from DIRAC.Core.Utilities.List                                            import stringListToString,intListToString
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities        import * 
-from DIRAC.Core.Utilities.Pfn                                             import pfnparse, pfnunparse
+from DIRAC.Core.Utilities.List                                            import stringListToString, intListToString
 
 DEBUG = 0
 
@@ -23,12 +21,12 @@ class FileManager(FileManagerBase):
   #
 
   def _findFiles(self,lfns,metadata=['FileID'],connection=False):
-    connection = self._getConnection(connection)
     """ Find file ID if it exists for the given list of LFNs """
+    connection = self._getConnection(connection)
     dirDict = self._getFileDirectories(lfns)
     failed = {}
     directoryIDs = {}
-    for dirPath in dirDict.keys():
+    for dirPath in dirDict:
       res = self.db.dtree.findDir(dirPath)
       if (not res['OK']) or (not res['Value']):
         error = res.get('Message','No such file or directory')
@@ -39,7 +37,7 @@ class FileManager(FileManagerBase):
       else:
         directoryIDs[dirPath] = res['Value']
     successful = {}
-    for dirPath in directoryIDs.keys():
+    for dirPath in directoryIDs:
       fileNames = dirDict[dirPath]
       res = self._getDirectoryFiles(directoryIDs[dirPath],fileNames,metadata,connection=connection)
       if (not res['OK']) or (not res['Value']):
@@ -53,6 +51,11 @@ class FileManager(FileManagerBase):
           fname = '%s/%s' % (dirPath,fileName)
           fname = fname.replace('//','/')
           successful[fname] = fileDict
+      for fileName in fileNames:
+        if not fileName in res['Value']:
+          fname = '%s/%s' % (dirPath,fileName)
+          fname = fname.replace('//','/')
+          failed[fname] = 'No such file or directory'    
     return S_OK({"Successful":successful,"Failed":failed})
 
   def _getDirectoryFiles(self,dirID,fileNames,metadata_input,allStatus=False,connection=False):
@@ -133,6 +136,28 @@ class FileManager(FileManagerBase):
       rowDict = dict(zip(metadata,tuple))
       files[filesDict[fileID]].update(rowDict)
     return S_OK(files)
+
+  def _getFileMetadataByID( self, fileIDs, connection=False ):
+    """ Get standard file metadata for a list of files specified by FileID
+    """
+    stringIDs = ','.join( [ '%s' % id for id in fileIDs ] )
+    req = "SELECT FileID,Size,UID,GID,Status FROM FC_Files WHERE FileID in ( %s )" % stringIDs
+    result = self.db._query(req,connection)
+    if not result['OK']:
+      return result
+    resultDict = {}
+    for fileID, size, uid, gid, status in result['Value']:
+      resultDict[fileID] = { "Size": int(size), "UID": int(uid), "GID": int(gid), "Status": status }
+      
+    req = "SELECT FileID,GUID,CreationDate from FC_FileInfo WHERE FileID in ( %s )" % stringIDs  
+    result = self.db._query(req,connection)
+    if not result['OK']:
+      return result
+    for fileID, guid, date in result['Value']:
+      resultDict.setdefault( fileID, {} )
+      resultDict[fileID].update( { "GUID": guid, "CreationDate": date } )
+      
+    return S_OK( resultDict )  
 
   ######################################################
   #

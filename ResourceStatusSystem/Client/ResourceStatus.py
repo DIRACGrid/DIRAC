@@ -33,10 +33,15 @@ class ResourceStatus( object ):
     self.rssConfig  = RssConfiguration()
     self.__opHelper = Operations()    
     self.rssClient  = None 
+    
+    # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
+    cacheLifeTime   = int( self.rssConfig.getConfigCache() )
+    cacheHistory    = int( self.rssConfig.getConfigCacheHistory() )
 
     # RSSCache only affects the calls directed to RSS, if using the CS it is not
     # used.  
-    self.seCache   = RSSCache( 300, updateFunc = self.__updateSECache, cacheHistoryLifeTime = 24 ) 
+    self.seCache   = RSSCache( cacheLifeTime, updateFunc = self.__updateSECache, 
+                               cacheHistoryLifeTime = cacheHistory ) 
     self.seCache.startRefreshThread()           
             
   def getStorageElementStatus( self, elementName, statusType = None, default = None ):
@@ -246,18 +251,14 @@ class ResourceStatus( object ):
     statuses = self.rssConfig.getConfigStatusType( 'StorageElement' )
     #statuses = self.__opHelper.getOptionsDict( 'RSSConfiguration/GeneralConfig/Resources/StorageElement' )
     #statuses = gConfig.getOptionsDict( '/Operations/RSSConfiguration/GeneralConfig/Resources/StorageElement' )
-    
-    if statuses[ 'OK' ]:
-      statuses = statuses[ 'Value' ][ 'StatusType' ]
-    else:
-      statuses = [ 'ReadAccess', 'WriteAccess' ]  
-    
+       
     result = {}
     for element in elementName:
     
       if statusType is not None:
-        # Added Allowed by default
-        res = gConfig.getOption( "%s/%s/%s" % ( cs_path, element, statusType ), 'Allowed' )
+        # Added Active by default
+        #res = gConfig.getOption( "%s/%s/%s" % ( cs_path, element, statusType ), 'Allowed' )
+        res = gConfig.getOption( "%s/%s/%s" % ( cs_path, element, statusType ), 'Active' )
         if res[ 'OK' ] and res[ 'Value' ]:
           result[ element ] = { statusType : res[ 'Value' ] }
         
@@ -271,9 +272,10 @@ class ResourceStatus( object ):
               elementStatuses[ elementStatusType ] = value
           
           # If there is no status defined in the CS, we add by default Read and 
-          # Write as Allowed.
+          # Write as Active.
           if elementStatuses == {}:
-            elementStatuses = { 'ReadAccess' : 'Allowed', 'WriteAccess' : 'Allowed' }
+            #elementStatuses = { 'ReadAccess' : 'Allowed', 'WriteAccess' : 'Allowed' }
+            elementStatuses = { 'ReadAccess' : 'Active', 'WriteAccess' : 'Active' }
                 
           result[ element ] = elementStatuses             
     
@@ -317,17 +319,21 @@ class ResourceStatus( object ):
     
     return res
 
-  @staticmethod
-  def __setCSStorageElementStatus( elementName, statusType, status ):
+  def __setCSStorageElementStatus( self, elementName, statusType, status ):
     '''
     Sets on the CS the StorageElements status
     '''
+
+    statuses = self.rssConfig.getConfigStatusType( 'StorageElement' )
+    if not statusType in statuses:
+      gLogger.error( "%s is not a valid statusType" % statusType )
+      return S_ERROR( "%s is not a valid statusType: %s" % ( statusType, statuses ) )    
 
     csAPI = CSAPI()
   
     cs_path     = "/Resources/StorageElements"
     
-    csAPI.setOption( "%s/%s/%sAccess" % ( cs_path, elementName, statusType ), status )  
+    csAPI.setOption( "%s/%s/%s" % ( cs_path, elementName, statusType ), status )  
   
     res = csAPI.commitChanges()
     if not res[ 'OK' ]:
@@ -356,7 +362,7 @@ class ResourceStatus( object ):
 
 def getDictFromList( fromList ):
   '''
-  Auxiliar method that given a list returns a dictionary of dictionaries:
+  Auxiliary method that given a list returns a dictionary of dictionaries:
   { site1 : { statusType1 : st1, statusType2 : st2 }, ... }
   '''
     
@@ -370,7 +376,7 @@ def getDictFromList( fromList ):
 
 def getCacheDictFromList( rawList ):
   '''
-  Auxiliar method that given a list returns a dictionary looking like:
+  Auxiliary method that given a list returns a dictionary looking like:
   { 
     ( <resourceName>, <statusType> )  : status,
     ( <resourceName>, <statusType1> ) : status1

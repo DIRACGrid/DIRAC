@@ -15,11 +15,11 @@ class LogPolicyResultAction( BaseAction ):
     list singlePolicyResults.
   '''
 
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
+  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, 
+                clients = None ):
     
-    super( LogPolicyResultAction, self ).__init__( decissionParams, enforcementResult, 
+    super( LogPolicyResultAction, self ).__init__( name, decissionParams, enforcementResult, 
                                                    singlePolicyResults, clients )
-    self.actionName = 'LogPolicyResultAction'
 
     if clients is not None and 'ResourceManagementClient' in clients:
       self.rmClient = clients[ 'ResourceManagementClient' ]
@@ -69,7 +69,7 @@ class LogPolicyResultAction( BaseAction ):
                                                             reason = reason )
       
       if not polUpdateRes[ 'OK' ]:
-        return polUpdateRes   
+        return polUpdateRes
     
     return S_OK()
 
