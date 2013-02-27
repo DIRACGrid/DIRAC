@@ -172,14 +172,15 @@ class DowntimeCommand( Command ):
       return storeRes
     
     # We return only one downtime, if its ongoind at dtDate
-    dtDate = datetime.now()     
+    startDate = datetime.now()
+    endDate   = startDate     
     if hours:
-      dtDate = dtDate + timedelta( hours = hours )
+      startDate = startDate + timedelta( hours = hours )
 
     result = None           
     for dt in uniformResult:
       
-      if ( dt[ 'StartDate' ] < str( dtDate ) ) and ( dt[ 'EndDate' ] > str( dtDate ) ):
+      if ( dt[ 'StartDate' ] < str( startDate ) ) and ( dt[ 'EndDate' ] > str( endDate ) ):
         result = dt
         break        
            
