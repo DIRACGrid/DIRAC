@@ -66,8 +66,6 @@ class ElementInspectorAgent( AgentModule ):
     ''' Standard initialize.
         Uses the ProductionManager shifterProxy to modify the ResourceStatus DB
     '''
-    
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
     self.maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', self.maxNumberOfThreads )   
     self.elementType        = self.am_getOption( 'elementType',        self.elementType )
@@ -152,7 +150,7 @@ class ElementInspectorAgent( AgentModule ):
     # running. In next loop we will start a new thread, and will be called 0 
     # again. To have a mechanism to see which thread is where, we append the
     # cycle number before the threadId.
-    cycle = self.__moduleProperties[ 'cyclesDone' ]
+    cycle = self._AgentModule__moduleProperties[ 'cyclesDone' ]
     
     for _x in xrange( threadsToStart ):
       threadId = '%s_%s' % ( cycle, _x )
@@ -180,7 +178,7 @@ class ElementInspectorAgent( AgentModule ):
       queue, the loop is finished.
     '''
 
-    tHeader = '%sJob%d' % ( '* '*30, threadNumber )
+    tHeader = '%sJob%s' % ( '* '*30, threadNumber )
     
     self.log.info( '%s UP' % tHeader )
     
