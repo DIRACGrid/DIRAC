@@ -27,7 +27,7 @@ __RCSID__ = "$Id$"
 
 import socket
 
-from DIRAC                                              import gLogger, exit
+from DIRAC                                              import gLogger, exit as DIRACexit
 from DIRAC.Core.Base                                    import Script
 from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
 
@@ -42,7 +42,7 @@ try:
   head , body = arg.split( "\\n\\n" )
 except Exception , x:
   gLogger.error( "Failed to get e-mail header and body from: %s" % arg )
-  exit( 2 )
+  DIRACexit( 2 )
 
 body = "".join( body )
 
@@ -51,11 +51,11 @@ try:
               ( item.split( ':' ) for item in head.split( '\\n' ) ) )
 except:
   gLogger.error( "Failed to convert string: %s to email headers" % head )
-  exit( 3 )
+  DIRACexit( 3 )
 
 if not "To" in headers:
   gLogger.error( "Failed to get 'To:' field from headers %s" % head )
-  exit( 4 )
+  DIRACexit( 4 )
 to = headers[ "To" ]
 
 origin = socket.gethostname()
@@ -70,6 +70,6 @@ ntc = NotificationClient()
 result = ntc.sendMail( to , subject , body , origin , localAttempt = True )
 if not result[ "OK" ]:
   gLogger.error( result[ "Message" ] )
-  exit( 5 )
+  DIRACexit( 5 )
 
-exit( 0 )
+DIRACexit( 0 )
