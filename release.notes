@@ -31,6 +31,17 @@ NEW: Speeding up the getTransformationSummary call, using an UpdateTransformatio
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
      payload when updating it
 
+[v6r7p10]
+
+*Core
+NEW: Logger - added getLevel() method, closes #1292
+FIX: Subprocess - returns correct structure in case of timeout, closes #1295, #1294
+CHANGE: TimeOutExec - dropped unused utility
+FIX: Logger - cleaned unused imports
+
+*RSS
+CHANGE: ElementInspectorAgent - do not use mangled name and removed shifterProxy agentOption
+
 [v6r7p9]
 
 *Core
