@@ -114,7 +114,8 @@ class Watchdog( object ):
       self.__watchdogThread = threading.Thread( target = self.watchdog )
       self.__watchdogThread.daemon = True
       self.__watchdogThread.start()
-      ret = { "OK" : False, "Message" : "Timeout after %s seconds" % timeout  }
+      ret = { "OK" : False, "Message" : "Timeout after %s seconds" % timeout,
+              "Value": ( 1, '', '' )  }
     try:
       self.__executor.start()
       time.sleep(0.5)
@@ -130,12 +131,9 @@ class Watchdog( object ):
           ret[k] = self.s_ok_error[k]
         self.rwEvent.clear()
     except Exception, error:
-      return { "OK" : False, "Message" : str(error) }
+      return { "OK" : False, "Message" : str(error),
+               "Value": ( 2, '', '' )  }
     return ret
-  
-  def finalize(self):
-    """ destructor """
-    pass
 
 class Subprocess:
   """
@@ -165,7 +163,7 @@ class Subprocess:
     self.cmdSeq = []
 
   def changeTimeout( self, timeout ):
-    """ set the tim out limit to :timeout: seconds 
+    """ set the time out limit to :timeout: seconds 
 
     :param int timeout: time out in seconds
     """
@@ -523,13 +521,19 @@ def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimi
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, it is executed directly without calling a shell
   """
-  spObject = Subprocess( timeout=False, bufferLimit = bufferLimit )
-  sysCall =  Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
-                                                                         "env" : env,
-                                                                         "shell" : False } )
-  spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )
-  result = sysCall(timeout)
-  sysCall.finalize()
+  if timeout > 0:
+    spObject = Subprocess( timeout=timeout, bufferLimit = bufferLimit )
+    sysCall =  Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
+                                                                           "env" : env,
+                                                                           "shell" : False } )
+    spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )
+    result = sysCall(timeout+1)
+  else:
+    spObject = Subprocess( timeout, bufferLimit = bufferLimit )
+    result = spObject.systemCall( cmdSeq,
+                                  callbackFunction = callbackFunction,
+                                  env = env,
+                                  shell = False )  
   return result
 
 def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit = 52428800 ):
@@ -537,13 +541,19 @@ def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, cmdSeq it is invoque by /bin/sh
   """
-  spObject = Subprocess( timeout=False, bufferLimit = bufferLimit )
-  shCall = Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
-                                                                          "env" : env,
-                                                                          "shell" : True } )
-  spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )
-  result = shCall(timeout)
-  shCall.finalize()
+  if timeout > 0:
+    spObject = Subprocess( timeout=timeout, bufferLimit = bufferLimit )
+    shCall = Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
+                                                                            "env" : env,
+                                                                            "shell" : True } )
+    spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )
+    result = shCall(timeout+1)
+  else:
+    spObject = Subprocess( timeout, bufferLimit = bufferLimit )
+    result = spObject.systemCall( cmdSeq,
+                                  callbackFunction = callbackFunction,
+                                  env = env,
+                                  shell = True )
   return result
 
 def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
@@ -551,11 +561,14 @@ def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
      Use SubprocessExecutor class to execute function with provided arguments,
      with a timeout wrapper.
   """
-  spObject = Subprocess( timeout=False )
-  pyCall = Watchdog( spObject.pythonCall, args=( function, ) + stArgs, kwargs=stKeyArgs )
-  spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )  
-  result = pyCall(timeout)
-  pyCall.finalize()
+  if timeout > 0:
+    spObject = Subprocess( timeout=timeout )
+    pyCall = Watchdog( spObject.pythonCall, args=( function, ) + stArgs, kwargs=stKeyArgs )
+    spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )  
+    result = pyCall(timeout+1)
+  else:
+    spObject = Subprocess( timeout )
+    result = spObject.pythonCall( function, *stArgs, **stKeyArgs )  
   return result
 
 def __getChildrenForPID( ppid ):
