@@ -35,6 +35,7 @@ class BaseTransport:
     self.sentKeepAlives = 0
     self.waitingForKeepAlivePong = False
     self.__keepAliveLapse = 0
+    self.oSocket = None
     if 'keepAliveLapse' in kwargs:
       try:
         self.__keepAliveLapse = max( 150, int( kwargs[ 'keepAliveLapse' ] ) )
@@ -79,9 +80,6 @@ class BaseTransport:
 
   def serverMode( self ):
     return self.bServerMode
-
-  def getTransportName( self ):
-    return self.sTransportName
 
   def getRemoteAddress( self ):
     return self.remoteAddress

@@ -31,10 +31,6 @@ class WMSHistoryCorrector( BaseCorrector ):
     self._fillSlices()
     return S_OK()
 
-  def _applyHistoryCorrections( self, entityShares, baseSection = "" ):
-    if baseSection not in self.__historyForCorrections or not self.__historyForCorrections[ baseSection ]:
-      return entityShares
-
   def _fillSlices( self ):
     self.__log.info( "Filling time slices..." )
     self.__slices = {}

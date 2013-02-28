@@ -32,6 +32,7 @@ class LCGPilotDirector( GridPilotDirector ):
     GridPilotDirector.__init__( self, submitPool )
 
     self.resourceBrokers = BROKERS
+    self.loggingServers = []
 
   def configure( self, csSection, submitPool ):
     """
