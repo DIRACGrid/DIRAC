@@ -45,6 +45,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import DEncode
 
+USE_WATCHDOG = False
 
 class Watchdog( object ):
   """
@@ -521,7 +522,11 @@ def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimi
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, it is executed directly without calling a shell
   """
+<<<<<<< HEAD
   if timeout > 0:
+=======
+  if timeout > 0 and USE_WATCHDOG:
+>>>>>>> rel-v6r7
     spObject = Subprocess( timeout=timeout, bufferLimit = bufferLimit )
     sysCall =  Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
                                                                            "env" : env,
@@ -541,7 +546,11 @@ def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, cmdSeq it is invoque by /bin/sh
   """
+<<<<<<< HEAD
   if timeout > 0:
+=======
+  if timeout > 0 and USE_WATCHDOG:
+>>>>>>> rel-v6r7
     spObject = Subprocess( timeout=timeout, bufferLimit = bufferLimit )
     shCall = Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
                                                                             "env" : env,
@@ -561,7 +570,11 @@ def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
      Use SubprocessExecutor class to execute function with provided arguments,
      with a timeout wrapper.
   """
+<<<<<<< HEAD
   if timeout > 0:
+=======
+  if timeout > 0 and USE_WATCHDOG:
+>>>>>>> rel-v6r7
     spObject = Subprocess( timeout=timeout )
     pyCall = Watchdog( spObject.pythonCall, args=( function, ) + stArgs, kwargs=stKeyArgs )
     spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )  
