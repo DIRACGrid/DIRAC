@@ -180,7 +180,7 @@ class JobManifest( object ):
       if contents and not isinstance( contents, CFG ):
         return S_ERROR( "Contents for section %s is not a cfg object" % secName )
       self.__dirty = True
-      S_OK( self.__manifest.createNewSection( secName, contents = contents ) )
+      return S_OK( self.__manifest.createNewSection( secName, contents = contents ) )
     return S_ERROR( "Section %s already exists" % secName )
 
   def getSection( self, secName ):
