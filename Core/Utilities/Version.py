@@ -1,6 +1,7 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
+import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 
@@ -45,3 +46,44 @@ def getVersion():
       pass
 
   return S_OK( vDict )
+
+def getReleasenoteVersion():
+
+  """
+  Scan the sub-directories of DIRAC root for release.notes files and return a dict
+  { "subdirectory" : "version_from_release.notes" }
+  """
+
+  try:
+    path = os.environ[ "DIRAC" ]
+  except Exception, x:
+    return S_ERROR( x )
+  filename = "release.notes"
+
+  notes = dict()
+  entrylist = os.listdir( path )
+
+  for entry in entrylist:
+
+    normalentry = os.path.join( path , entry )
+
+    if not os.path.isdir( normalentry ):
+      continue
+
+    name = os.path.join( normalentry , filename )
+    if not os.path.exists( name ):
+      continue
+
+    f = open( name , "r" )
+    version = ""
+
+    while len( version ) < 1:
+      version = f.readline()
+      if len( version ) == 0:
+        break
+      version = version.strip().lstrip("[").rstrip("]")
+
+    f.close()
+    notes[ entry ] = version
+
+  return S_OK( notes )
