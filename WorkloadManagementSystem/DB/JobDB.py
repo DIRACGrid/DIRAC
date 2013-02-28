@@ -52,12 +52,13 @@ import sys, types
 import time, operator
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
-from DIRAC                                                   import S_OK, S_ERROR, Time
+from DIRAC                                                   import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
+from DIRAC.Core.Utilities                                    import Time
 
 DEBUG = False
 JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
@@ -1346,14 +1347,14 @@ class JobDB( DB ):
       platformReqs = [systemConfig]
       result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
       if result['OK'] and result['Value']:
-        platforms = result['Value'] 
+        platforms = result['Value']
         for platform in platforms:
           if systemConfig in [ x.strip() for x in platforms[platform].split( ',' ) ] and platform != systemConfig:
             platformReqs.append( platform )
-        classAdReq.insertAttributeVectorString( 'Platforms', platformReqs )    
-      else: 
+        classAdReq.insertAttributeVectorString( 'Platforms', platformReqs )
+      else:
         error = "OS compatibility info not found"
-      
+
     if error:
 
       retVal = S_ERROR( error )

@@ -8,7 +8,8 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import S_OK, S_ERROR, Time
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import Time
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
@@ -150,22 +151,22 @@ class JobReport:
       return result
     else:
       return S_OK('Empty')
-    
+
   def commit(self):
     """ Send all the accumulated information
     """
-    
+
     success = True
     result = self.sendStoredStatusInfo()
     if not result['OK']:
       success = False
     result = self.sendStoredJobParameters()
     if not result['OK']:
-      success = False    
-      
+      success = False
+
     if success:
       return S_OK()
-    return S_ERROR('Information upload to JobStateUpdate service failed')  
+    return S_ERROR('Information upload to JobStateUpdate service failed')
 
   def dump(self):
     """ Print out the contents of the internal cached information

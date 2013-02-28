@@ -138,7 +138,7 @@ class Service:
       gLogger.debug( "%s is not a valid file" % filePath )
     return False
 
-  def __searchInitFunctions( self, handlerClass, currentClass = False ):
+  def __searchInitFunctions( self, handlerClass, currentClass = None ):
     if not currentClass:
       currentClass = handlerClass
     initFuncs = []
@@ -326,7 +326,7 @@ class Service:
         self.__endReportToMonitoring( *monReport )
 
 
-  def _createIdentityString( self, credDict, clientTransport = False ):
+  def _createIdentityString( self, credDict, clientTransport = None ):
     if 'username' in credDict:
       if 'group' in credDict:
         identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ] )
@@ -418,7 +418,7 @@ class Service:
                                       self._name, "/".join( actionTuple ) )
     return result
 
-  def _instantiateHandler( self, trid, proposalTuple = False ):
+  def _instantiateHandler( self, trid, proposalTuple = None ):
     """
     Generate an instance of the handler for a given service
     """
@@ -479,7 +479,7 @@ class Service:
     result[ 'closeTransport' ] = not messageConnection or not result[ 'OK' ]
     return result
 
-  def _mbConnect( self, trid, handlerObj = False ):
+  def _mbConnect( self, trid, handlerObj = None ):
     if not handlerObj:
       result = self._instantiateHandler( trid )
       if not result[ 'OK' ]:

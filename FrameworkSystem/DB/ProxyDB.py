@@ -619,6 +619,7 @@ class ProxyDB( DB ):
     cmd = "REPLACE INTO `ProxyDB_VOMSProxies` ( UserName, UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
     cmd += "( '%s', '%s', '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userName, userDN, userGroup,
                                                                                               vomsAttr, pemData, secsLeft )
+    cmd += "ON DUPLICATE KEY UPDATE Pem = '%s', ExpirationTime = TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )" % ( pemData, secsLeft )
     result = self._update( cmd, conn = connObj )
     if not result[ 'OK' ]:
       return result
@@ -790,7 +791,7 @@ class ProxyDB( DB ):
     """
     Purge expired requests from the db
     """
-    cmd = "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 15552000"
+    cmd = "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, Timestamp, UTC_TIMESTAMP() ) > 15552000"
     return self._update( cmd )
 
   def getLogsContent( self, selDict, sortList, start = 0, limit = 0 ):
