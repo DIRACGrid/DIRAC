@@ -11,13 +11,20 @@ from datetime import timedelta
 from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
-from DIRAC.Core.Utilities import InstallTools, CFG, Os
+from DIRAC.Core.Utilities import InstallTools, CFG, Os, Version
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain
 import DIRAC
 
 class SystemAdministratorHandler( RequestHandler ):
+
+  types_getReleaseNotesVersion = [ ]
+  def export_getReleaseNotesVersion( self ):
+    """  Returns a dict of first meaningful lines from release.notes file in each
+         sub-directory of DIRAC root
+    """
+    return Version.getReleasenoteVersion()
 
   types_getInfo = [ ]
   def export_getInfo( self ):
