@@ -20,10 +20,10 @@ class FTSSubmitAgent( AgentModule ):
   """ 
   .. class:: FTSSubmitAgent
 
-  This class is submitting previosly scheduled files to the FTS system using helper class FTSRequest. 
+  This class is submitting previously scheduled files to the FTS system using helper class FTSRequest. 
 
   Files to be transferred are read from TransferDB.Channel table, only those with Status = 'Waiting'.
-  After submision TransferDB.Channel.Status is set to 'Executing'. The rest of state propagation is 
+  After submission TransferDB.Channel.Status is set to 'Executing'. The rest of state propagation is 
   done in FTSMonitorAgent.
 
   An information about newly created FTS request is hold in TransferDB.FTSReq (request itself) table and  
