@@ -10,11 +10,13 @@
 __RCSID__ = "$Id$"
 
 import time
-import pprint
+import random
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Resources.Storage.StorageElement                          import StorageElement
-from DIRAC.Core.Utilities.SiteSEMapping                              import getSitesForSE
+from DIRAC.Core.Utilities.SiteSEMapping                              import getSitesForSE, getSEsForSite
 from DIRAC.Core.Utilities                                            import DictCache
+from DIRAC.Core.Security                                             import Properties
+from DIRAC.ConfigurationSystem.Client.Helpers                        import Registry
 from DIRAC                                                           import S_OK, S_ERROR
 
 
@@ -27,7 +29,22 @@ class InputDataValidation( OptimizerExecutor ):
 
   @classmethod
   def initializeOptimizer( cls ):
+    """ Initialization of the Agent.
+    """
+    random.seed()
     cls.__SEStatus = DictCache()
+    cls.__sitesForSE = DictCache()
+    try:
+      from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+    except ImportError, excp :
+      return S_ERROR( "Could not import JobDB: %s" % str( excp ) )
+
+    try:
+      cls.__jobDB = JobDB()
+    except RuntimeError:
+      return S_ERROR( "Cannot connect to JobDB" )
+    return S_OK()
+
 
   def optimizeJob( self, jid, jobState ):
     result = self.doTheThing( jobState )
@@ -43,17 +60,160 @@ class InputDataValidation( OptimizerExecutor ):
       return result
     lfnData = result[ 'Value' ]
 
-    result = self.getCandidateSEs( lfnData )
+    result = jobState.getManifest()
+    if not result[ 'OK' ]:
+      return result
+    manifest = result[ 'Value' ]
 
-    #Now check if banned SE's might prevent jobs to be scheduled
-    result = self.__checkActiveSEs( jobState, resolvedData['Value']['Value'] )
-    if not result['OK']:
-      # if after checking SE's input data can not be resolved any more
-      # then keep the job in the same status and update the application status
+    result = self.freezeByBannedSE( manifest, lfnData )
+    if not result[ 'OK' ]:
+      return result
+    if result[ 'Value' ]:
       self.freezeTask( 600 )
-      return jobState.setAppStatus( result['Message'] )
+      self.jobLog.info( "On hold -> Banned SE make access to lfn impossible" )
+      return S_OK()
 
+    result = self.selectSiteStage( lfnData )
+    if not result[ 'OK' ]:
+      return result
+    candidates, lfn2Stage = result[ 'Value' ]
+
+    if not lfn2Stage:
+      jobState.setOptimizerParameter( "SiteCandidates", ",".join( candidates ) )
+      return self.setNextOptimizer()
+
+    if self.ex_getOption( "RestrictDataStage", False ):
+      if not self.__checkStageAllowed( jobState ):
+        return S_ERROR( "Stage not allowed" )
+
+    result = jobState.getOptimizerParameter( "StageRequestedForSite" )
+    if not result[ 'OK' ]:
+      raise RuntimeError( "Can't retrieve optimizer parameter! (%s)" % result[ 'Message' ] )
+    stageRequested = result[ 'Value' ]
+    if stageRequested:
+      jobState.setOptimizerParameter( "SiteCandidates", stageRequested )
+      return self.setNextOptimizer()
+
+    result = self.requestStage( jobState, candidates, lfnData )
+    if not result[ 'OK' ]:
+      return result
+
+    jobState.setOptimizerParameter( "StageRequestedForSite", result[ 'Value' ] )
     return self.setNextOptimizer()
+
+  def __checkStageAllowed( self, jobState ):
+    """Check if the job credentials allow to stage date """
+    result = jobState.getAttribute( "OwnerGroup" )
+    if not result[ 'OK' ]:
+      self.jobLog.error( "Cannot retrieve OwnerGroup from DB: %s" % result[ 'Message' ] )
+      return S_ERROR( "Cannot get OwnerGroup" )
+    group = result[ 'Value' ]
+    return Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup( group )
+
+  def freezeByBannedSE( self, manifest, lfnData ):
+    targetSEs = manigest.getOption( "TargetSEs", [] )
+    if not targetSEs:
+      return S_OK( False )
+    for lfn in lfnData:
+      replicas = lfnData[ lfn ][ 'Replicas' ]
+      anyBanned = False
+      for seName in list( replicas.keys() ):
+        if seName not in targetSEs:
+          replicas.pop( seName )
+          continue
+        result = self.__getSEStatus( seName )
+        if not result[ 'OK' ]:
+          self.jobLog.error( "Can't retrieve status for SE %s" % seName )
+          replicas.pop( seName )
+          anyBanned = True
+          continue
+        seStatus = result[ 'Value' ]
+        if not seStatus[ 'Read' ]:
+          replicas.pop( seName )
+          anyBanned = True
+          continue
+      if anyBanned:
+        return S_OK( True )
+      if not replicas:
+        return S_ERROR( "%s has no replicas in any target SE" % lfn )
+
+    return S_OK( False )
+
+  def selectSiteStage( self, manifest, lfnData ):
+    lfnSite = {}
+    tapelfn = {}
+    disklfn = set()
+    for lfn in lfnData:
+      replicas = lfnData[ lfn ][ 'Replicas' ]
+      lfnSite[ lfn ] = set()
+      for seName in replicas:
+        result = self.__getSiteForSE( seName )
+        if not result[ 'OK' ]:
+          return result
+        sites = result[ 'Value' ]
+        lfnSite[ lfn ].update( sites )
+        if lfn not in disklfn:
+          if replicas[ seName ][ 'Disk' ]:
+            disklfn.add( lfn )
+            try:
+              tapelfn.pop( lfn )
+            except KeyError:
+              pass
+          else:
+            if lfn not in tapelfn:
+              tapelfn[ lfn ] = set()
+            tapelfn[ lfn ].add( sites )
+
+    candidates = set.intersection( *[ lfnSite[ lfn ] for lfn in lfnSite ] )
+    userSites = manifest.getOption( "Site", [] )
+    if userSites:
+      candidates = set.intersection( candidates, userSites )
+    if not candidates:
+      return S_ERROR( "No candidate sites available" )
+
+    if not tapelfn:
+      return S_OK( ( candidates, False ) )
+
+    tapeInSite = {}
+    for lfn in tapelfn:
+      for site in tapelfn[ lfn ]:
+        if site not in tapeInSite:
+          tapeInSite[ site ] = 0
+        tapeInSite[ site ] += 1
+
+    result = self.__jobDB.getSiteMask( 'Banned' )
+    if not result[ 'OK' ]:
+      bannedSites = []
+    else:
+      bannedSites = result[ 'Value' ]
+
+    for site in bannedSites:
+      try:
+        tapeInSite.pop( site )
+      except KeyError:
+        pass
+
+    minTape = None
+    for site in tapeInSite:
+      if minTape == None:
+        minTape = tapeInSite[ site ]
+      else:
+        minTape = min( minTape, tapeInSite[ site ] )
+
+    #Sites with min stage
+    stageSites = [ site for site in tapeInSite if tapeInSite[ site ] == minTape ]
+
+    return S_OK( stageSites, set( tapelfn ) )
+
+
+  def __getSiteForSE( self, seName ):
+    result = self.__sitesForSE.get( seName )
+    if result == False:
+      result = getSitesForSE( seName )
+      if not result['OK']:
+        return result
+      self.__sitesForSE.add( seName, 600, result )
+    return result
 
   def __getSEStatus( self, seName ):
     result = self.__SEStatus.get( seName )
@@ -65,141 +225,97 @@ class InputDataValidation( OptimizerExecutor ):
       self.__SEStatus.add( seName, 600, result )
     return result
 
-  def __checkActiveSEs( self, jobState, replicaDict ):
-    """
-    Check active SE and replicas and identify possible Site candidates for
-    the execution of the job
-    """
-    # Now let's check if some replicas might not be available due to banned SE's
-    self.jobLog.info( "Checking active replicas" )
-    startTime = time.time()
-    result = self.__replicaMan.checkActiveReplicas( replicaDict )
-    self.jobLog.info( "Active replica check took %.2f secs" % ( time.time() - startTime ) )
+  def requestStage( self, jobState, candidates, lfnData ):
+    #Any site is as good as any so random time!
+    if len( candidates ) > 1:
+      random.shuffle( candidates )
+    stageSite = candidate[0]
+    result = getSEsForSite( stageSite )
     if not result['OK']:
-      # due to banned SE's input data might no be available
-      msg = "On Hold: Input data not Available for SE"
-      self.jobLog.warn( result['Message'] )
-      return S_ERROR( result['Message'] )
+      return S_ERROR( 'Could not determine SEs for site %s' % stageSite )
+    siteSEs = result['Value']
 
-    activeReplicaDict = result['Value']
+    tapeSEs = []
+    diskSEs = []
+    for seName in siteSEs:
+      result = self.__getSEStatus( seName )
+      if not result[ 'OK' ]:
+        self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
+        return S_ERROR( "Cannot retrieve SE status" )
+      seStatus = result[ 'Value' ]
+      if seStatus[ 'Read' ] and seStatus[ 'TapeSE' ]:
+        tapeSEs.append( seName )
+      if seStatus[ 'Read' ] and seStatus[ 'DiskSE' ]:
+        diskSEs.append( seName )
 
-    result = self.__checkReplicas( jobState, activeReplicaDict )
+    if not tapeSEs:
+      return S_ERROR( "No Local SEs for site %s" % stageSite )
 
-    if not result['OK']:
-      # due to a banned SE's input data is not available at a single site
-      msg = "On Hold: Input data not Available due to banned SE"
-      self.jobLog.warn( result['Message'] )
-      return S_ERROR( msg )
+    self.jobLog.verbose( "Tape SEs are %s" % ( ", ".join( tapeSEs ) ) )
 
-    resolvedData = {}
-    #THIS IS ONE OF THE MOST HORRIBLE HACKS. I hate the creator of the Value of Value of Successful of crap...
-    resolvedData['Value'] = S_OK( activeReplicaDict )
-    resolvedData['SiteCandidates'] = result['Value']
-    result = self.storeOptimizerParam( self.ex_getProperty( 'optimizerName' ), resolvedData )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-      return result
-    return S_OK( resolvedData )
-
-
-  #############################################################################
-  def __getSitesForSE( self, seName ):
-    """ Returns a list of sites having the given SE as a local one.
-        Uses the local cache of the site-se information
-    """
-
-    # Empty the cache if too old
-    now = time.time()
-    if ( now - self.__lastCacheUpdate ) > self.__cacheLifeTime:
-      self.log.verbose( 'Resetting the SE to site mapping cache' )
-      self.__SEToSiteMap = {}
-      self.__lastCacheUpdate = now
-
-    if seName not in self.__SEToSiteMap:
-      result = getSitesForSE( seName )
-      if not result['OK']:
-        return result
-      self.__SEToSiteMap[ seName ] = list( result['Value'] )
-    return S_OK( self.__SEToSiteMap[ seName ] )
-
-  #############################################################################
-  def __getSiteCandidates( self, lfnData ):
-    """This method returns a list of possible site candidates based on the
-       job input data requirement.  For each site candidate, the number of files
-       on disk and tape is resolved.
-    """
-
-    lfnSites = {}
-    for lfn in okReplicas:
-      replicas = okReplicas[ lfn ]
-      diskSiteSet = set()
-      tapeSiteSet = set()
+    stageLFNs = {}
+    lfnToStage = []
+    for lfn in lfnData:
+      replicas = inputData[ lfn ][ 'Replicas' ]
+      # Check SEs
+      seStage = []
       for seName in replicas:
-        result = self.__getSitesForSE( seName )
-        if result['OK']:
-          if replicas[ seName ][ 'Disk' ]:
-            diskSiteSet.update( result['Value'] )
+        _surl = replicas[ seName ][ 'SURL' ]
+        if seName in diskSEs:
+          # This lfn is in disk. Skip it
+          seStage = []
+          break
+        if seName not in tapeSEs:
+          # This lfn is not in this tape SE. Check next SE
+          continue
+        seStage.append( seName )
+      for seName in seStage:
+        if seName not in stageLFNs:
+          stageLFNs[ seName ] = []
+        stageLFNs[ seName ].append( lfn )
+        if lfn not in lfnToStage:
+          lfnToStage.append( lfn )
+
+    if not stageLFNs:
+      return S_ERROR( "Cannot find tape replicas" )
+
+    # Check if any LFN is in more than one SE
+    # If that's the case, try to stage from the SE that has more LFNs to stage to group the request
+    # 1.- Get the SEs ordered by ascending replicas
+    sortedSEs = reversed( sorted( [ ( len( stageLFNs[ seName ] ), seName ) for seName in stageLFNs.keys() ] ) )
+    for lfn in lfnToStage:
+      found = False
+      # 2.- Traverse the SEs
+      for _stageCount, seName in sortedSEs:
+        if lfn in stageLFNs[ seName ]:
+          # 3.- If first time found, just mark as found. Next time delete the replica from the request
+          if found:
+            stageLFNs[ seName ].remove( lfn )
           else:
-            tapeSiteSet.update( result['Value'] )
-      lfnSites[ lfn ] = { 'Disk' : diskSiteSet, 'Tape' : tapeSiteSet }
+            found = True
+        # 4.-If empty SE, remove
+        if len( stageLFNs[ seName ] ) == 0:
+          stageLFNs.pop( seName )
 
-    #First
+    self.jobLog.verbose( "Stage request will be \n\t%s" % "\n\t".join( [ "%s:%s" % ( lfn, stageLFNs[ lfn ] ) for lfn in stageLFNs ] ) )
 
-    #This makes an intersection of all sets in the dictionary and returns a set with it
-    siteCandidates = set.intersection( *[ lfnSEs[ lfn ] for lfn in lfnSEs ] )
+    stagerClient = StorageManagerClient()
+    result = stagerClient.setRequest( stageLFNs, 'WorkloadManagement',
+                                      'updateJobFromStager@WorkloadManagement/JobStateUpdate',
+                                      int( jobState.jid ) )
+    if not result[ 'OK' ]:
+      self.jobLog.error( "Could not send stage request: %s" % result[ 'Message' ] )
+      return S_ERROR( "Problem sending staging request" )
 
-    if not siteCandidates:
-      return S_ERROR( 'No candidate sites available' )
+    rid = str( result[ 'Value' ] )
+    self.jobLog.info( "Stage request %s sent" % rid )
+    jobState.setParameter( "StageRequest", rid )
+    result = jobState.setStatus( self.ex_getOption( 'StagingStatus', 'Staging' ),
+                                 self.ex_getOption( 'StagingMinorStatus', 'Request Sent' ),
+                                 appStatus = "",
+                                 source = self.ex_optimizerName() )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( stageSite )
 
-    #In addition, check number of files on tape and disk for each site
-    #for optimizations during scheduling
-    sitesData = {}
-    for siteName in siteCandidates:
-      sitesData[ siteName ] = { 'disk': set(), 'tape': set() }
 
-    #Loop time!
-    seDict = {}
-    for lfn in okReplicas:
-      replicas = okReplicas[ lfn ]
-      #Check each SE in the replicas
-      for seName in replicas:
-        #If not already "loaded" the add it to the dict
-        if seName not in seDict:
-          result = self.__getSitesForSE( seName )
-          if not result['OK']:
-            self.jobLog.warn( "Could not get sites for SE %s: %s" % ( seName, result[ 'Message' ] ) )
-            continue
-          siteList = result[ 'Value' ]
-          seObj = StorageElement( seName )
-          result = seObj.getStatus()
-          if not result[ 'OK' ]:
-            self.jobLog.error( "Could not retrieve status for SE %s: %s" % ( seName, result[ 'Message' ] ) )
-            continue
-          seStatus = result[ 'Value' ]
-          seDict[ seName ] = { 'Sites': siteList, 'Status': seStatus }
-        #Get SE info from the dict
-        seData = seDict[ seName ]
-        siteList = seData[ 'Sites' ]
-        seStatus = seData[ 'Status' ]
-        for siteName in siteList:
-          #If not a candidate site then skip it
-          if siteName not in siteCandidates:
-            continue
-          #Add the LFNs to the disk/tape lists
-          diskLFNs = sitesData[ siteName ][ 'disk' ]
-          tapeLFNs = sitesData[ siteName ][ 'tape' ]
-          if seStatus[ 'Read' ] and seStatus[ 'DiskSE' ]:
-            #Sets contain only unique elements, no need to check if it's there
-            diskLFNs.add( lfn )
-            if lfn in tapeLFNs:
-              tapeLFNs.remove( lfn )
-          if seStatus[ 'Read' ] and seStatus[ 'TapeSE' ]:
-            if lfn not in diskLFNs:
-              tapeLFNs.add( lfn )
-
-    for siteName in sitesData:
-      sitesData[siteName]['disk'] = len( sitesData[siteName]['disk'] )
-      sitesData[siteName]['tape'] = len( sitesData[siteName]['tape'] )
-    return S_OK( sitesData )
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

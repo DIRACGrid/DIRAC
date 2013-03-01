@@ -180,7 +180,7 @@ class CachedJobState( object ):
           return result
         data = result[ 'Value' ]
         self.__cache[ cKey ] = data
-      return S_OK( self.__cache[ cKey ] )
+      return S_OK( copy.deepcopy( self.__cache[ cKey ] ) )
     #Tuple/List
     elif keyType in ( types.ListType, types.TupleType ):
       if not self.__cacheExists( cKey ):
@@ -199,7 +199,7 @@ class CachedJobState( object ):
         for i in range( len( cKey ) ):
           self.__cache[ cKey[ i ] ] = data[i]
       #Prepare result
-      return S_OK( tuple( [ self.__cache[ cK ]  for cK in cKey ] ) )
+      return S_OK( tuple( [ copy.deepcopy( self.__cache[ cK ] )  for cK in cKey ] ) )
     else:
       raise RuntimeError( "Cache key %s does not have a valid type" % cKey )
 

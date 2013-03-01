@@ -16,6 +16,7 @@ __RCSID__ = "$Id$"
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient   import SandboxStoreClient
 import re
 
@@ -198,4 +199,22 @@ class JobSanity( OptimizerExecutor ):
     #Check if sites exist
     sites = manifest.getOption( "Site", [] )
     if sites:
-      pass
+      allSites = Resources.getSites()
+      for site in sites:
+        if site not in allSites:
+          return S_ERROR( "Unknown site %s" % site )
+    ses = manifest.getOption( "TargetSE", [] )
+    if ses:
+      resources = Resources.Resources( vo = manifest.getOption( "VirtualOrganization", "" ) )
+      result = resources.getEligibleResources('Storage')
+      if not result[ 'OK' ]:
+        #TODO: Raise excp to retry job?
+        return S_ERROR( "Can't retrieve SEs" )
+      validSEs = result[ 'Value' ]
+      for se in ses:
+        if se not in validSEs:
+          return S_ERROR( "Unknown Target SE %s" % se )
+
+    return S_OK()
+
+
