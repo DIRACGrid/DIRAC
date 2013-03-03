@@ -120,11 +120,12 @@ class SiteDirector( AgentModule ):
     ces = None
     if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
       ces = self.am_getOption( 'CEs', [] )
-    result = Resources.getQueues( community = self.vo,
-                                  siteList = siteNames,
-                                  ceList = ces,
-                                  ceTypeList = ceTypes,
-                                  mode = 'Direct' )
+      
+    self._resources = Resources.Resources( vo = self.vo )  
+    result = self._resources.getEligibleQueues( siteList = siteNames,
+                                                ceList = ces,
+                                                ceTypeList = ceTypes,
+                                                mode = 'Direct' )
     if not result['OK']:
       return result
     resourceDict = result['Value']
@@ -675,16 +676,11 @@ EOF
       if not pilotRefs:
         continue
 
-      #print "AT >>> pilotRefs", pilotRefs
-
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
         self.log.error( 'Failed to get pilots info from DB', result['Message'] )
         continue
       pilotDict = result['Value']
-
-      #print "AT >>> pilotDict", pilotDict
-
       stampedPilotRefs = []
       for pRef in pilotDict:
         if pilotDict[pRef]['PilotStamp']:
@@ -706,8 +702,6 @@ EOF
         self.log.error( 'Failed to get pilots status from CE', '%s: %s' % ( ceName, result['Message'] ) )
         continue
       pilotCEDict = result['Value']
-
-      #print "AT >>> pilotCEDict", pilotCEDict
 
       for pRef in pilotRefs:
         newStatus = ''
