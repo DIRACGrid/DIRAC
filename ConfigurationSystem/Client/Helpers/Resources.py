@@ -157,23 +157,6 @@ def getSitePath( site ):
   siteName = result['Value']
   return S_OK( cfgPath( gBaseResourcesSection, 'Sites', siteName ) )
 
-def getSiteDomain( site ):
-  """ Return Domain component from Site Name
-  """
-  siteTuple = site.split( "." )
-  if len( siteTuple ) != 3:
-    # Site does not contain the Domain, check what we can do still
-    result = getSiteDomains( site )
-    if not result['OK']:
-      return None
-    domains = result['Value']
-    if domains:
-      return domains[0]
-    else:
-      return None
-  else:
-    return siteTuple[0]  
-
 def getSiteDomains( site ):
   """ Get the domains to which the site participates
   """
@@ -653,6 +636,42 @@ class Resources( object ):
           resultDict[site][ce]['Queues'][queue] = queueDict
    
     return S_OK( resultDict )
+
+  def getSiteFullName( self, site ):
+    """ Get the site full name including the domain prefix, site name and country code
+    """
+    # Check if the site name is already in a full form 
+    if '.' in site and len( site.split('.') ) == 3:
+      return S_OK( site )
+    
+    result = getSiteName( site )
+    if not result['OK']:
+      return result
+    siteShortName = result['Value']
+    result = self.getSiteDomain( site )
+    if not result['OK']:
+      return result
+    domain = result['Value']
+    
+    siteFullName = '.'.join( [domain, siteShortName] )
+    return S_OK( siteFullName )
+
+  def getSiteDomain( self, site ):
+    """ Return Domain component from Site Name
+    """
+    siteTuple = site.split( "." )
+    if len( siteTuple ) != 3:
+      # Site does not contain the Domain, check what we can do still
+      result = getSiteDomains( site )
+      if not result['OK']:
+        return None
+      domains = result['Value']
+      if domains:
+        return domains[0]
+      else:
+        return None
+    else:
+      return siteTuple[0]  
 
 ############################################################################################
 #
