@@ -80,7 +80,7 @@ from types import ListType
 #
 #  Global constants
 
-gBaseResourcesSection = "/Resources"
+gBaseResourcesSection = "/Resources_new"
 RESOURCE_ACCESS_MAPPING = {
   'Computing':'Queue',
   'Storage':'AccessProtocol',
@@ -94,10 +94,23 @@ RESOURCE_ACCESS_MAPPING = {
 #
 #  General utilities
 
-def getSites():
-  """ Get the complete list of sites
+def getSites( siteList = [] ):
+  """ Get the list of site names in a canonical form <Site>.<Country>
   """
-  return gConfig.getSections( cfgPath( gBaseResourcesSection, 'Sites' ) )
+  if not siteList:
+    return gConfig.getSections( cfgPath( gBaseResourcesSection, 'Sites' ) )
+
+  if not type( siteList ) == ListType:
+    siteList = [ siteList ]
+
+  canonicalSiteList = []
+  for site in siteList:
+    result = getSiteName( site )
+    if not result['OK']:
+      continue
+    canonicalSiteList.append( result['Value'] )  
+
+  return S_OK( canonicalSiteList )
 
 def getSiteName( site_ ):
   """ Get the site name in a canonical form <Site>.<country>
@@ -392,7 +405,6 @@ class Resources( object ):
       opType = "Elements"    
     method = getattr( self.__innerResources, 'get'+opType )
 
-    sitePath = None
     if len( args ) > 0:
       site = args.pop()
     else:
@@ -473,15 +485,23 @@ class Resources( object ):
   def getEligibleResources( self, resourceType, selectDict={} ):
     """ Get all the resources eligible according to the selection criteria
     """
-    result = self.getSites()
+
+    sites = selectDict.get( 'Sites', selectDict.get( 'Site', [] ) )
+    if type( sites ) != ListType:
+      sites = [sites]
+    for key in ['Site','Sites']:
+      if key in selectDict:
+        selectDict.pop(key)
+
+    result = getSites( sites )
     if not result['OK']:
       return result
-    sites = result['Value']
-    
+    eligibleSites = result['Value']
+   
     resultDict = {}
 
-    for site in sites:
-      result = self.getResources( site, resourceType, selectDict )
+    for site in eligibleSites:
+      result = self.getResources( site, resourceType, selectDict=selectDict )
       if not result['OK']:
         continue
       if result['Value']:  
@@ -489,30 +509,37 @@ class Resources( object ):
 
     return S_OK( resultDict ) 
 
-  def getEligibleNodes( self, nodeType, resourceSelectDict={}, apSelectDict={} ):
+  def getEligibleNodes( self, nodeType, resourceSelectDict={}, nodeSelectDict={} ):
     """ Get all the Access Points eligible according to the selection criteria
     """
 
+    sites = resourceSelectDict.get( 'Sites', resourceSelectDict.get( 'Site', [] ) )
+    if type( sites ) != ListType:
+      sites = [sites]
+    for key in ['Site','Sites']:
+      if key in resourceSelectDict:
+        resourceSelectDict.pop(key) 
+
+    result = getSites( sites )
+    if not result['OK']:
+      return result
+    eligibleSites = result['Value']
+      
     resourceType = None
     for rType in RESOURCE_ACCESS_MAPPING:
       if RESOURCE_ACCESS_MAPPING[rType] == nodeType:
         resourceType = rType
     if resourceType is None:
-      return S_ERROR( 'Invalid Access Point type %s' % nodeType ) 
+      return S_ERROR( 'Invalid Node type %s' % nodeType ) 
 
-    result = self.getSites()
-    if not result['OK']:
-      return result
-    sites = result['Value']
-    
     resultDict = {}
 
-    for site in sites:
-      result = self.getResources( site, resourceType, resourceSelectDict )
+    for site in eligibleSites:
+      result = self.getResources( site, resourceType, selectDict=resourceSelectDict )
       if not result['OK']:
         continue
       for resource in result['Value']:
-        result = self.getNodes( site, resourceType, resource, nodeType, apSelectDict )
+        result = self.getNodes( site, resourceType, resource, nodeType, selectDict=nodeSelectDict )
         if not result['OK']:
           continue
         if result['Value']:  
@@ -557,7 +584,6 @@ class Resources( object ):
       return result
     site = result['Value']  
 
-    storageConfigPath = cfgPath( gBaseResourcesSection, site, 'Storage', seElement )
     result = self.getStorageOptionsDict( site, seElement )
     if not result['OK']:
       return result
@@ -594,9 +620,11 @@ class Resources( object ):
   def getEligibleQueues( self, siteList = None, ceList = None, ceTypeList = None, mode = None ):
     """ Get CE/queue options according to the specified selection
     """
-   
+
     ceSelectDict = {}
-    if ceList is not None:
+    if siteList:
+      ceSelectDict['Sites'] = siteList
+    if ceTypeList is not None:
       ceSelectDict['CEType'] = ceTypeList
     if mode is not None:
       ceSelectDict['SubmissionMode'] = mode 
