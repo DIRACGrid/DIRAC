@@ -6,20 +6,20 @@
 
 __RCSID__ = "$Id$"
 
-import time,os
-from DIRAC import S_OK, S_ERROR, gConfig
+import os
+from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 from DIRAC.Core.Security.Properties import *
 
 class SecurityManagerBase:
 
-  def __init__(self,database=False):
+  def __init__( self, database=None ):
     self.db = database
 
-  def setDatabase(self,database):
+  def setDatabase( self, database ):
     self.db = database
 
-  def getPathPermissions(self,paths,credDict):
+  def getPathPermissions( self, paths, credDict ):
     """ Get path permissions according to the policy
     """
     return S_ERROR('The getPathPermissions method must be implemented in the inheriting class')

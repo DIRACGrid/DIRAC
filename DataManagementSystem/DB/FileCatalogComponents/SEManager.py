@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 from DIRAC                        import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities.Pfn     import pfnunparse
 import threading,time
-from types import *
+from types import StringTypes, IntType, LongType
 
 class SEManagerBase:
 
@@ -17,6 +17,9 @@ class SEManagerBase:
     self.lock = threading.Lock()
     self._refreshSEs()
     self.seUpdatePeriod = 600
+    
+  def _refreshSEs( self ):
+    return S_ERROR( 'Should be implemented in a derived class' )  
     
   def setUpdatePeriod(self,period): 
     self.seUpdatePeriod = period
