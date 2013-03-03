@@ -40,6 +40,24 @@ class DirectoryTreeBase:
 
   def makeDirectory(self,path,credDict,status=0):
     return self.makeDirectory_andrei(path,credDict,status)
+  
+  def makeDir( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )
+  
+  def removeDir( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )
+  
+  def findDir( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )
+  
+  def getChildren( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )
+    
+  def getDirectoryPath( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )  
+
+  def getSubdirectoriesByID( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )  
     
   def makeDirectory_andrew(self,path,credDict,status=0):
     """Create a new directory. The return value is the dictionary containing all the parameters of the newly created directory """
