@@ -543,7 +543,7 @@ class DirectoryTreeBase:
     if type(dirID) != ListType:
       dirs = [dirID]
       
-    dirListString = ','.join( [ str(dir) for dir in dirs ] )
+    dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
 
     req = "SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID IN ( %s )" % dirListString
     result = self.db._query(req)
@@ -556,7 +556,7 @@ class DirectoryTreeBase:
     if type(dirID) != ListType:
       dirs = [dirID]
       
-    dirListString = ','.join( [ str(dir) for dir in dirs ] )
+    dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
     treeTable = self.getTreeTable()
     req = "SELECT CONCAT(D.DirName,'/',F.FileName) FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
     req = req % ( treeTable,dirListString )
@@ -573,7 +573,7 @@ class DirectoryTreeBase:
     if type(dirID) != ListType:
       dirs = [dirID]
 
-    dirListString = ','.join( [ str(dir) for dir in dirs ] )
+    dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
     treeTable = self.getTreeTable()
     req = "SELECT D.DirName,F.FileName FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
     req = req % ( treeTable,dirListString )
@@ -582,9 +582,9 @@ class DirectoryTreeBase:
       return result
 
     lfnDict = {}
-    for dir,fname in result['Value']:
-      lfnDict.setdefault(dir,[])
-      lfnDict[dir].append(fname)
+    for dir_,fname in result['Value']:
+      lfnDict.setdefault(dir_,[])
+      lfnDict[dir_].append(fname)
 
     return S_OK(lfnDict)
  
@@ -596,7 +596,6 @@ class DirectoryTreeBase:
       return result
     directoryID = result['Value']
     directories = {}
-    files = {}
     links = {}
     result = self.getChildren(path)
     if not result['OK']:
