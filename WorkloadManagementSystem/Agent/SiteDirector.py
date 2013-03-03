@@ -176,6 +176,7 @@ class SiteDirector( AgentModule ):
     ceFactory = ComputingElementFactory()
 
     for site in resourceDict:
+      siteFullName = self._resources.getSiteFullName( site )
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
         qDict = ceDict.pop( 'Queues' )
@@ -184,7 +185,7 @@ class SiteDirector( AgentModule ):
           self.queueDict[queueName] = {}
           self.queueDict[queueName]['ParametersDict'] = qDict[queue]
           self.queueDict[queueName]['ParametersDict']['Queue'] = queue
-          self.queueDict[queueName]['ParametersDict']['Site'] = site
+          self.queueDict[queueName]['ParametersDict']['Site'] = siteFullName
           self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv
           self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'unknown' )
           # Evaluate the CPU limit of the queue according to the Glue convention
@@ -230,7 +231,7 @@ class SiteDirector( AgentModule ):
           self.queueDict[queueName]['CE'] = result['Value']
           self.queueDict[queueName]['CEName'] = ce
           self.queueDict[queueName]['CEType'] = ceDict['CEType']
-          self.queueDict[queueName]['Site'] = site
+          self.queueDict[queueName]['Site'] = siteFullName
           self.queueDict[queueName]['QueueName'] = queue
           result = self.queueDict[queueName]['CE'].isValid()
           if not result['OK']:
@@ -241,8 +242,8 @@ class SiteDirector( AgentModule ):
           elif 'BundleProxy' in ceDict:
             self.queueDict[queueName]['BundleProxy'] = True  
 
-          if site not in self.sites:
-            self.sites.append( site )
+          if siteFullName not in self.sites:
+            self.sites.append( siteFullName )
 
     return S_OK()
 
