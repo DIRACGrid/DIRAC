@@ -7,7 +7,7 @@
 
 __RCSID__ = "$Id$"
 
-import time, os, types
+import os, types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 

@@ -8,7 +8,8 @@
 __RCSID__ = "$Id$"
 
 try:
-  import hashlib as md5
+  import hashlib
+  md5 = hashlib
 except:
   import md5
 

@@ -345,18 +345,14 @@ if ceName or siteName:
   
   resources = Resources( vo=vo )
   
-  result = resources.getSites()
-  if not result['OK']:
-    return result
-  
-  sites = result['Value']
   if not siteName:
     if ceName:
-      for site in sites:
-        result = resources.getComputingElements( site )
-        siteCEs = result['Value']
-        if ceName in siteCEs:
-          siteName = getSiteName( site )        
+      result = resources.getSiteForResource( 'Computing', ceName )
+      if result['OK']:
+        site = result['Value']
+        result = resources.getSiteFullName( site )
+        if result['OK']:
+          siteName = result['Value']    
           
   if siteName:
     DIRAC.gLogger.notice( 'Setting /LocalSite/Site = %s' % siteName )
