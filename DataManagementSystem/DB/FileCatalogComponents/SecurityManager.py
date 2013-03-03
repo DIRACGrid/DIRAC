@@ -6,8 +6,8 @@
 
 __RCSID__ = "$Id$"
 
-import time,os
-from DIRAC import S_OK, S_ERROR, gConfig
+import os
+from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 from DIRAC.Core.Security.Properties import *
 

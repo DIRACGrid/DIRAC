@@ -5,10 +5,10 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import * 
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import checkArgumentFormat
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
-import string, time, datetime,threading, re, os, sys, md5, random
-from types import *
+import time,threading, os
+from types import StringTypes, ListType
 import stat
 
 DEBUG = 0
@@ -189,14 +189,14 @@ class DirectoryTreeBase:
     dirs = paths.keys()
     successful = {}
     failed = {}
-    for dir in dirs:
-      result = self.existsDir(dir)
+    for dir_ in dirs:
+      result = self.existsDir( dir_ )
       if not result['OK']:
-        failed[dir] = result['Message']
+        failed[dir_] = result['Message']
       elif result['Value']['Exists']:
-        successful[dir] = True
+        successful[dir_] = True
       else: 
-        successful[dir] = False  
+        successful[dir_] = False  
           
     return S_OK({'Successful':successful,'Failed':failed})
   
@@ -206,12 +206,12 @@ class DirectoryTreeBase:
     """
     successful = {}
     failed = {}
-    for dir in dirs:
-      result = self.makeDirectories(dir,credDict)
+    for dir_ in dirs:
+      result = self.makeDirectories( dir_, credDict )
       if not result['OK']:
-        failed[dir] = result['Message']
+        failed[dir_] = result['Message']
       else: 
-        successful[dir] = True  
+        successful[dir_] = True  
           
     return S_OK({'Successful':successful,'Failed':failed}) 
 
@@ -246,18 +246,18 @@ class DirectoryTreeBase:
     """Remove an empty directory from the catalog """
     successful = {}
     failed = {}
-    for dir in dirs:
-      result = self.isEmpty( dir )
+    for dir_ in dirs:
+      result = self.isEmpty( dir_ )
       if not result['OK']:
         return result
       if not result['Value']:
-        failed[dir] = 'Failed to remove non-empty directory'
+        failed[dir_] = 'Failed to remove non-empty directory'
         continue
-      result = self.removeDir(dir)
+      result = self.removeDir(dir_)
       if not result['OK']:
-        failed[dir] = result['Message']
+        failed[dir_] = result['Message']
       else: 
-        successful[dir] = result
+        successful[dir_] = result
     return S_OK({'Successful':successful,'Failed':failed}) 
 
 #####################################################################
@@ -375,8 +375,8 @@ class DirectoryTreeBase:
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path,dict in arguments.items():
-      owner = dict['Owner']
+    for path,dict_ in arguments.items():
+      owner = dict_['Owner']
       result = self.setDirectoryOwner(path,owner)
       if not result['OK']:
         failed[path] = result['Message']

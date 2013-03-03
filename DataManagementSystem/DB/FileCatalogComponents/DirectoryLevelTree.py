@@ -9,7 +9,7 @@
 
 __RCSID__ = "$Id$"
 
-import time, os
+import os
 from types import ListType, StringTypes
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
