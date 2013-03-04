@@ -362,7 +362,7 @@ if ceName or siteName:
       DIRAC.gLogger.notice( 'Setting /LocalSite/GridCE = %s' % ceName )
       Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
 
-    if not localSE and siteName in sites:
+    if not localSE:
       localSE = resources.getStorageElements( siteName )
       if localSE['OK'] and localSE['Value']:
         localSE = ','.join( localSE['Value'] )
@@ -370,7 +370,6 @@ if ceName or siteName:
         localSE = 'None'
       DIRAC.gLogger.notice( 'Setting /LocalSite/LocalSE =', localSE )
       Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
-      break
 
 if useServerCert:
   Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
