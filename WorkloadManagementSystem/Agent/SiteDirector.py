@@ -176,7 +176,10 @@ class SiteDirector( AgentModule ):
     ceFactory = ComputingElementFactory()
 
     for site in resourceDict:
-      siteFullName = self._resources.getSiteFullName( site )
+      result = self._resources.getSiteFullName( site )
+      if not result['OK']:
+        continue
+      siteFullName = result['Value']
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
         qDict = ceDict.pop( 'Queues' )
