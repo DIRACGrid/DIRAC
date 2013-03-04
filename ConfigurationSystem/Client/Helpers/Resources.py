@@ -664,14 +664,14 @@ class Resources( object ):
       # Site does not contain the Domain, check what we can do still
       result = getSiteDomains( site )
       if not result['OK']:
-        return None
+        return S_ERROR('No domains defined for site')
       domains = result['Value']
       if domains:
-        return domains[0]
+        return S_OK( domains[0] )
       else:
-        return None
+        return S_ERROR('No domains defined for site')
     else:
-      return siteTuple[0]  
+      return S_OK( siteTuple[0] )  
 
 ############################################################################################
 #
