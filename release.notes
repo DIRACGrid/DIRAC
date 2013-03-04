@@ -1,3 +1,15 @@
+[v6r7p12]
+
+*WMS
+BUGFIX: JobManifest - get AllowedSubmitPools from the /Systems section, not from /Operations
+
+*Core
+NEW: Resources helper - added getSites(), getStorageElementSiteMapping()
+
+*DMS
+CHANGE: StrategyHandler - use getStorageElementSiteMapping helper function
+BUGFIX: ReplicaManager - do not modify the loop dictionary inside the loop
+
 [v6r7p11]
 
 *Core
