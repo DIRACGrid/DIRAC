@@ -56,7 +56,7 @@ class DirectoryTreeBase:
   def getDirectoryPath( self, path ):    
     return S_ERROR( 'Should be implemented in a derived class' )  
 
-  def getSubdirectoriesByID( self, path ):    
+  def getSubdirectoriesByID( self, path, requestString, includeParent ):    
     return S_ERROR( 'Should be implemented in a derived class' )  
     
   def makeDirectory_andrew(self,path,credDict,status=0):
