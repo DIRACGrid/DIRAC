@@ -8,6 +8,38 @@ import re
 
 gBaseResourcesSection = "/Resources"
 
+def getSites():
+  """ Get the list of all the sites defined in the CS
+  """
+  result = gConfig.getSections( cfgPath( gBaseResourcesSection, 'Sites' ) )
+  if not result['OK']:
+    return result
+  grids = result['Value']
+  sites = []
+  for grid in grids:
+    result = gConfig.getSections( cfgPath( gBaseResourcesSection, 'Sites', grid ) )
+    if not result['OK']:
+      return result
+    sites += result['Value']
+    
+  return S_OK( sites )  
+
+def getStorageElementSiteMapping( siteList=[] ):
+  """ Get Storage Element belonging to the given sites 
+  """ 
+  if not siteList:
+    result = getSites()
+    if not result['OK']:
+      return result
+    siteList = result['Value']
+  siteDict = {}
+  for site in siteList:
+    grid = site.split('.')[0]
+    ses = gConfig.getValue( cfgPath( gBaseResourcesSection, 'Sites', grid, site, 'SE' ), [] )
+    siteDict[site] = ses
+    
+  return S_OK( siteDict )  
+
 def getSiteTier( site ):
   """
     Return Tier level of the given Site
