@@ -29,6 +29,7 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge 
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping
 
 class FTSGraph( Graph ):
   """
@@ -190,22 +191,21 @@ class StrategyHandler( object ):
     channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }  
     """
     graph = FTSGraph( "sites" )
-    sites = gConfig.getSections( "/Resources/Sites/LCG" ) 
-    if not sites["OK"]:
-      return sites
-    sites = sites["Value"] 
-    sitesDict = {}
-    for site in sites:
-      ses = gConfig.getOption( "/Resources/Sites/LCG/%s/SE" %  site, [] )    
-      siteName = site.split(".")[1] if "." in site else site 
-      if ses["OK"] and ses["Value"]:
-        sitesDict[siteName] = ses["Value"]
+   
+    result = getStorageElementSiteMapping()
+    if not result['OK']:
+      return result
+    sitesDict = result['Value']
+
     ## create nodes 
     for site, ses in sitesDict.items():
       rwDict = self.__getRWAccessForSE( ses )
       if not rwDict["OK"]:
         return rwDict
-      graph.addNode( LCGSite( site, { "SEs" : rwDict["Value"] } ) )
+      siteName = site
+      if '.' in site:
+        siteName = site.split('.')[1]  
+      graph.addNode( LCGSite( siteName, { "SEs" : rwDict["Value"] } ) )
     ## channels { channelID : { "Files" : long , Size = long, "ChannelName" : str, 
     ##                          "Source" : str, "Destination" : str , 
     ##                          "ChannelName" : str, "Status" : str  } }
