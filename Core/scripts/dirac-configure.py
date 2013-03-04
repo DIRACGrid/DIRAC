@@ -343,7 +343,7 @@ if ceName or siteName:
   # This is used in the pilot context, we should have a proxy and access to CS
   Script.enableCS()
   
-  resources = Resources( vo=vo )
+  resources = Resources.Resources( vo=vo )
   
   if not siteName:
     if ceName:
