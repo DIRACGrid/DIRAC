@@ -6,12 +6,11 @@ __RCSID__ = "$Id$"
     It ensures that all operations are performed on the desired catalogs.
 """
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR, rootPath
-from DIRAC.Core.Utilities.List import uniqueElements
+from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
-import types, re, os
+import types, re
 
 class FileCatalog:
 
@@ -296,7 +295,7 @@ class FileCatalog:
   def _generateCatalogObject( self, catalogName ):
     """ Create a file catalog object from its name and CS description
     """
-    useProxy = gConfig.getValue( '/LocalSite/Catalogs/%s' % catalogName, False )
+    useProxy = gConfig.getValue( '/LocalSite/Catalogs/%s/UseProxy' % catalogName, False )
     if not useProxy:
       useProxy = self.opHelper.getValue( '/Services/Catalogs/%s/UseProxy' % catalogName, False )
     return FileCatalogFactory().createCatalog( catalogName, useProxy )
