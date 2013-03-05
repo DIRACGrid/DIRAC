@@ -152,6 +152,11 @@ CHANGE: OptimizerExecutor - reduce diversity of MinorStatuses for failed executo
 *Resources
 FIX: CREAMComputingElement - remove temporary JDL right after the submission 
 
+[v6r6p21]
+
+*DMS
+BUGFIX: TransformationCleaningAgent - use the right signature of cleanMetadataCatalogFiles() call
+
 [v6r6p20]
 
 *DMS
