@@ -36,7 +36,8 @@ def getStorageElementSiteMapping( siteList=[] ):
   for site in siteList:
     grid = site.split('.')[0]
     ses = gConfig.getValue( cfgPath( gBaseResourcesSection, 'Sites', grid, site, 'SE' ), [] )
-    siteDict[site] = ses
+    if ses:
+      siteDict[site] = ses
     
   return S_OK( siteDict )  
 
