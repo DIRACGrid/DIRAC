@@ -20,6 +20,8 @@ from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 class StorageElement:
   """
@@ -28,17 +30,29 @@ class StorageElement:
   common interface to the grid storage element
   """
 
-  def __init__( self, name, protocols = None ):
+  def __init__( self, name, protocols = None, vo = None ):
     """ c'tor
     
     :param str name: SE name
     :param list protocols: requested protocols
     """
+    
+    self.vo = vo
+    if not vo:
+      result = getVOfromProxyGroup()
+      if not result['OK']:
+        return result
+      self.vo = result['Value']
+    self.opHelper = Operations( vo = self.vo )
+    useProxy = gConfig.getValue( '/LocalSite/StorageElements/%s/UseProxy' % name, False )
+    if not useProxy:
+      useProxy = self.opHelper.getValue( '/Services/StorageElements/%s/UseProxy' % name, False )
+    
     self.valid = True
     if protocols == None:
-      res = StorageFactory().getStorages( name, protocolList = [] )
+      res = StorageFactory( useProxy ).getStorages( name, protocolList = [] )
     else:
-      res = StorageFactory().getStorages( name, protocolList = protocols )
+      res = StorageFactory( useProxy ).getStorages( name, protocolList = protocols )
     if not res['OK']:
       self.valid = False
       self.name = name
