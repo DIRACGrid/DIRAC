@@ -121,7 +121,6 @@ def getSiteName( site_ ):
     result = getSites()
     if not result['OK']:
       return result
-<<<<<<< HEAD
     sites = result['Value']
     for siteName in sites:
       if siteName.startswith( site_ ):
@@ -148,17 +147,6 @@ def getSiteName( site_ ):
       return result
   else:
     return S_ERROR( 'Invalid site name %s' % site )    
-=======
-    siteList = result['Value']
-  siteDict = {}
-  for site in siteList:
-    grid = site.split('.')[0]
-    ses = gConfig.getValue( cfgPath( gBaseResourcesSection, 'Sites', grid, site, 'SE' ), [] )
-    if ses:
-      siteDict[site] = ses
-    
-  return S_OK( siteDict )  
->>>>>>> rel-v6r7
 
 def getSitePath( site ):
   """ Return path to the Site section on CS
