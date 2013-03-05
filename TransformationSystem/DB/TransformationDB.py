@@ -1389,7 +1389,7 @@ class TransformationDB( DB ):
     transType = res['Value']['Type']
     transID = res['Value']['TransformationID']
     extendableProds = Operations().getValue( 'Transformations/ExtendableTransfTypes', ['Simulation', 'MCSimulation'] )
-    if transType.lower() not in extendableProds:
+    if transType.lower() not in [ep.lower() for ep in extendableProds]:
       return S_ERROR( 'Can not extend non-SIMULATION type production' )
     taskIDs = []
     for _task in range( nTasks ):
