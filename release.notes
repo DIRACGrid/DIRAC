@@ -1,3 +1,15 @@
+[v6r7p13]
+
+*Core
+FIX: Resources - in getStorageElementSiteMapping() return only sites with non-empty list of SEs
+
+*DMS
+FIX: StorageElement - restored the dropped logic of using proxy SEs
+FIX: FileCatalog - fix the UseProxy /LocalSite/Catalog option
+
+*Transformation
+FIX: TransformationDB - use lower() string comparison in extendTransformation()
+
 [v6r7p12]
 
 *WMS
