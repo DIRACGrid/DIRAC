@@ -17,7 +17,6 @@
 __RCSID__ = "$Id$"
 
 import re, os, sys, time, shutil, types, tempfile, glob, tarfile, urllib
-import pprint
 import DIRAC
 
 from DIRAC.Core.Base.API                                 import API
@@ -1553,10 +1552,10 @@ class Dirac( API ):
        @return: S_OK,S_ERROR
 
     """
-    if type( lfn ) == type( " " ):
+    if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    else:
-      return self._errorReport( 'Expected single string for LFN' )
+    elif type( lfn ) != types.ListType:   
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     rm = ReplicaManager()
     result = rm.removeFile( lfn )
@@ -1580,10 +1579,10 @@ class Dirac( API ):
        @type storageElement: string
        @return: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
+    if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    else:
-      return self._errorReport( 'Expected single string for LFN' )
+    elif type( lfn ) != types.ListType:   
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     rm = ReplicaManager()
     result = rm.removeReplica( storageElement, lfn )
