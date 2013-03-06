@@ -3,7 +3,7 @@
 
 import time
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import S_ERROR, S_OK
+from DIRAC import S_OK
 
 class SiteMapClient:
 
