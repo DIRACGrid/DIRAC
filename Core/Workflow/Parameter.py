@@ -6,7 +6,7 @@
 """
 __RCSID__ = "$Revision: 1.33 $"
 
-from DIRAC.Core.Workflow.Utility import *
+from DIRAC.Core.Workflow.Utility import getSubstitute, substitute
 
 # unbound method, returns indentated string
 def indent( indent = 0 ):
@@ -14,7 +14,7 @@ def indent( indent = 0 ):
 
 class Parameter( object ):
 
-  def __init__( self, name = None, value = None, type = None, linked_module = None,
+  def __init__( self, name = None, value = None, type_ = None, linked_module = None,
              linked_parameter = None, typein = None, typeout = None, description = None, parameter = None ):
     # the priority to assign values
     # if parameter exists all values taken from there
@@ -41,8 +41,8 @@ class Parameter( object ):
 
     if name != None:
       self.name = name
-    if type != None:
-      self.type = type
+    if type_ != None:
+      self.type = type_
     if value != None:
       self.setValue( value )
     if description != None:
@@ -79,14 +79,14 @@ class Parameter( object ):
     self.setValueByType( value )
 
   def setValueByType( self, value ):
-    type = self.type.lower() # change the register
+    type_ = self.type.lower() # change the register
     if self.isTypeString():
       self.value = str( value )
-    elif type == 'float':
+    elif type_ == 'float':
       self.value = float( value )
-    elif type == 'int':
+    elif type_ == 'int':
       self.value = int( value )
-    elif type == 'bool':
+    elif type_ == 'bool':
       self.value = bool( value )
     else:
       #raise TypeError('Can not assing value '+value+' of unknown type '+ self.type + ' to the Parameter '+ str(self.name))
@@ -101,10 +101,8 @@ class Parameter( object ):
 
   def isTypeString( self ):
     """returns True if type is the string kind"""
-    type = self.type.lower() # change the register
-    if type == 'string' or type == 'jdl' or \
-      type == 'option'  or type == 'parameter' or \
-      type == 'jdlreqt':
+    type_ = self.type.lower() # change the register
+    if type_ in ['string','jdl','option','parameter','jdlreqt']:
       return True
     return False
 
@@ -323,20 +321,20 @@ class ParameterCollection( list ):
 
     return self.get( input = True, output = True )
 
-  def get( self, input = False, output = False ):
+  def get( self, input_ = False, output_ = False ):
     """ Get a copy of parameters. If input or output is True, get corresponding
         io type parameters only. Otherwise, get all the parameters
     """
-    all = not input and not output
+    all_ = not input_ and not output_
 
     params = ParameterCollection()
     for p in self:
       OK = False
-      if all:
+      if all_:
         OK = True
-      elif input and p.isInput():
+      elif input_ and p.isInput():
         OK = True
-      elif output and p.isOutput():
+      elif output_ and p.isOutput():
         OK = True
       if OK:
         params.append( Parameter( parameter = p ) )
@@ -476,10 +474,10 @@ class ParameterCollection( list ):
     return - 1
 
   def getParametersNames( self ):
-    list = []
+    list_ = []
     for v in self:
-      list.append( v.getName() )
-    return list
+      list_.append( v.getName() )
+    return list_
 
   def compare( self, s ):
       # we comparing parameters only, the attributes will be compared in hierarhy above
@@ -513,11 +511,11 @@ class ParameterCollection( list ):
     return ret
 
   def createParametersCode( self, indent = 0, instance_name = None ):
-    str = ''
+    str_ = ''
     for v in self:
       if v.preExecute():
-        str = str + v.createParameterCode( indent, instance_name )
-    return str
+        str_ = str_ + v.createParameterCode( indent, instance_name )
+    return str_
 
   def resolveGlobalVars( self, wf_parameters = None, step_parameters = None ):
     """This function resolves global parameters of type @{value} within the ParameterCollection

@@ -4,10 +4,14 @@
 """
 __RCSID__ = "$Revision: 1.30 $"
 
-import os, time, types, traceback, sys
+import os
+import time
+import types
+import traceback
+import sys
 #try: # this part to inport as part of the DIRAC framework
-from DIRAC.Core.Workflow.Parameter import *
-from DIRAC.Core.Workflow.Module import *
+from DIRAC.Core.Workflow.Parameter import Parameter, AttributeCollection, ParameterCollection, indent
+from DIRAC.Core.Workflow.Module import InstancesPool, DefinitionsPool, ModuleInstance
 from DIRAC import S_OK, S_ERROR
 #except: # this part is to import code without DIRAC
 #  from Parameter import *
@@ -108,27 +112,27 @@ class StepDefinition( AttributeCollection ):
       ret = ret and self.module_definitions.compare( s )
     return ret
 
-  def updateParent( self, parent ):
+  def updateParents( self, parent ):
     """
     """
-    AttributeCollection.updateParents( self, parent )
-    self.module_instances.updateParent( self )
+    #AttributeCollection.updateParents( self, parent )
+    self.module_instances.updateParents( self )
     if( self.module_definitions != None ):
-      self.module_definitions.updateParent( self )
+      self.module_definitions.updateParents( self )
 
   def createCode( self ):
     """ Create Step code
     """
 
-    str = 'class ' + self.getType() + ':\n'
-    str = str + indent( 1 ) + 'def execute(self):\n'
-    str = str + self.module_instances.createCode()
-    str = str + indent( 2 ) + '# output assignment\n'
+    str_ = 'class ' + self.getType() + ':\n'
+    str_ = str_ + indent( 1 ) + 'def execute(self):\n'
+    str_ = str_ + self.module_instances.createCode()
+    str_ = str_ + indent( 2 ) + '# output assignment\n'
     for v in self.parameters:
       if v.isOutput():
-        str = str + v.createParameterCode( 2, 'self' )
-    str += '\n'
-    return str
+        str_ = str_ + v.createParameterCode( 2, 'self' )
+    str_ += '\n'
+    return str_
 
 
 class StepInstance( AttributeCollection ):
@@ -192,10 +196,10 @@ class StepInstance( AttributeCollection ):
   def createCode( self, ind = 2 ):
     """ Create the Step code
     """
-    str = indent( ind ) + self.getName() + ' = ' + self.getType() + '()\n'
-    str = str + self.parameters.createParametersCode( ind, self.getName() )
-    str = str + indent( ind ) + self.getName() + '.execute()\n\n'
-    return str
+    str_ = indent( ind ) + self.getName() + ' = ' + self.getType() + '()\n'
+    str_ = str_ + self.parameters.createParametersCode( ind, self.getName() )
+    str_ = str_ + indent( ind ) + self.getName() + '.execute()\n\n'
+    return str_
 
   def __str__( self ):
     """ Step string representation
