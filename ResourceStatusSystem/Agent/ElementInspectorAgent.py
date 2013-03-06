@@ -110,6 +110,14 @@ class ElementInspectorAgent( AgentModule ):
       # of elements returned by mySQL on tuples
       elemDict = dict( zip( elements[ 'Columns' ], element ) )
       
+      # We skip the elements with token different than "rs_svc"
+      if elemDict[ 'TokenOwner' ] != 'rs_svc':
+        self.log.info( 'Skipping %s ( %s ) with token %s' % ( elemDict[ 'Name' ],
+                                                              elemDict[ 'StatusType' ],
+                                                              elemDict[ 'TokenOwner' ]
+                                                             ))
+        continue
+      
       if not elemDict[ 'ElementType' ] in self.checkingFreqs:
         #self.log.warn( '"%s" not in inspectionFreqs, getting default' % elemDict[ 'ElementType' ] )
         timeToNextCheck = self.checkingFreqs[ 'Default' ][ elemDict[ 'Status' ] ]
