@@ -372,7 +372,7 @@ class CachedJobState( object ):
     """
     result = self.__jobState.resetJob( source = source )
     if result[ 'OK' ]:
-      self.__resetState()
+      self.cleanState()
     return result
 
   def getInputData( self ):

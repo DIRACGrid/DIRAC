@@ -4,12 +4,12 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                  import S_OK,S_ERROR,gLogger
-from DIRAC.Core.Utilities.List              import stringListToString,intListToString,sortList
+from DIRAC                                  import S_OK, S_ERROR
+from DIRAC.Core.Utilities.List              import stringListToString, intListToString, sortList
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
 
 import time,os
-from types import *
+from types import TupleType, ListType, StringTypes
 
 class FileManagerFlat(FileManagerBase):
   

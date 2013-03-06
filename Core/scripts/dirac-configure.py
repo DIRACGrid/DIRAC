@@ -343,20 +343,16 @@ if ceName or siteName:
   # This is used in the pilot context, we should have a proxy and access to CS
   Script.enableCS()
   
-  resources = Resources( vo=vo )
+  resources = Resources.Resources( vo=vo )
   
-  result = resources.getSites()
-  if not result['OK']:
-    return result
-  
-  sites = result['Value']
   if not siteName:
     if ceName:
-      for site in sites:
-        result = resources.getComputingElements( site )
-        siteCEs = result['Value']
-        if ceName in siteCEs:
-          siteName = getSiteName( site )        
+      result = resources.getSiteForResource( 'Computing', ceName )
+      if result['OK']:
+        site = result['Value']
+        result = resources.getSiteFullName( site )
+        if result['OK']:
+          siteName = result['Value']    
           
   if siteName:
     DIRAC.gLogger.notice( 'Setting /LocalSite/Site = %s' % siteName )
@@ -366,7 +362,7 @@ if ceName or siteName:
       DIRAC.gLogger.notice( 'Setting /LocalSite/GridCE = %s' % ceName )
       Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
 
-    if not localSE and siteName in sites:
+    if not localSE:
       localSE = resources.getStorageElements( siteName )
       if localSE['OK'] and localSE['Value']:
         localSE = ','.join( localSE['Value'] )
@@ -374,7 +370,6 @@ if ceName or siteName:
         localSE = 'None'
       DIRAC.gLogger.notice( 'Setting /LocalSite/LocalSE =', localSE )
       Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
-      break
 
 if useServerCert:
   Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )

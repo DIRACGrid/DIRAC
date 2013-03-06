@@ -1,4 +1,6 @@
-[v6r8-pre3]
+[v6r8-pre6]
+
+FIX: removed __init__ files from test directories to avoid importing
 
 NEW: Change the schema of the Resources description in CS, use new Resources helper to 
      interpret this information
@@ -6,6 +8,7 @@ NEW: Base RSS resources representation on the new CS Resources schema
 
 *Core
 FIX: multiple fixes to remove pylint complaints
+CHANGE: Moved log coloring to utilities so it can be used consistently across DIRAC
 
 *Accounting
 FIX: AccountingDB - align properly days with MySQL bucketing. Closes #1219
@@ -17,6 +20,9 @@ FIX: ProxyDB - prevent duplicate key errors on writing VOMSProxies to DB. Closes
 NEW: Resources helper class to work with the new /Resources structure according to RFC #5
 NEW: dirac-configuration-convert-resources-schema - command to convert old /Resources schema
      to the new one
+
+*DMS
+CHANGE: MigrationMonitoringAgent - removed obsoleted
 
 *WMS
 CHANGE: JobScheduling - is now extensible. Added unit test
@@ -30,6 +36,30 @@ NEW: Speeding up the getTransformationSummary call, using an UpdateTransformatio
 *Resources
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
      payload when updating it
+
+[v6r7p13]
+
+*Core
+FIX: Resources - in getStorageElementSiteMapping() return only sites with non-empty list of SEs
+
+*DMS
+FIX: StorageElement - restored the dropped logic of using proxy SEs
+FIX: FileCatalog - fix the UseProxy /LocalSite/Catalog option
+
+*Transformation
+FIX: TransformationDB - use lower() string comparison in extendTransformation()
+
+[v6r7p12]
+
+*WMS
+BUGFIX: JobManifest - get AllowedSubmitPools from the /Systems section, not from /Operations
+
+*Core
+NEW: Resources helper - added getSites(), getStorageElementSiteMapping()
+
+*DMS
+CHANGE: StrategyHandler - use getStorageElementSiteMapping helper function
+BUGFIX: ReplicaManager - do not modify the loop dictionary inside the loop
 
 [v6r7p11]
 
@@ -172,6 +202,11 @@ CHANGE: OptimizerExecutor - reduce diversity of MinorStatuses for failed executo
 
 *Resources
 FIX: CREAMComputingElement - remove temporary JDL right after the submission 
+
+[v6r6p21]
+
+*DMS
+BUGFIX: TransformationCleaningAgent - use the right signature of cleanMetadataCatalogFiles() call
 
 [v6r6p20]
 

@@ -120,11 +120,12 @@ class SiteDirector( AgentModule ):
     ces = None
     if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
       ces = self.am_getOption( 'CEs', [] )
-    result = Resources.getQueues( community = self.vo,
-                                  siteList = siteNames,
-                                  ceList = ces,
-                                  ceTypeList = ceTypes,
-                                  mode = 'Direct' )
+      
+    self._resources = Resources.Resources( vo = self.vo )  
+    result = self._resources.getEligibleQueues( siteList = siteNames,
+                                                ceList = ces,
+                                                ceTypeList = ceTypes,
+                                                mode = 'Direct' )
     if not result['OK']:
       return result
     resourceDict = result['Value']
@@ -175,6 +176,10 @@ class SiteDirector( AgentModule ):
     ceFactory = ComputingElementFactory()
 
     for site in resourceDict:
+      result = self._resources.getSiteFullName( site )
+      if not result['OK']:
+        continue
+      siteFullName = result['Value']
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
         qDict = ceDict.pop( 'Queues' )
@@ -183,7 +188,7 @@ class SiteDirector( AgentModule ):
           self.queueDict[queueName] = {}
           self.queueDict[queueName]['ParametersDict'] = qDict[queue]
           self.queueDict[queueName]['ParametersDict']['Queue'] = queue
-          self.queueDict[queueName]['ParametersDict']['Site'] = site
+          self.queueDict[queueName]['ParametersDict']['Site'] = siteFullName
           self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv
           self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'unknown' )
           # Evaluate the CPU limit of the queue according to the Glue convention
@@ -229,7 +234,7 @@ class SiteDirector( AgentModule ):
           self.queueDict[queueName]['CE'] = result['Value']
           self.queueDict[queueName]['CEName'] = ce
           self.queueDict[queueName]['CEType'] = ceDict['CEType']
-          self.queueDict[queueName]['Site'] = site
+          self.queueDict[queueName]['Site'] = siteFullName
           self.queueDict[queueName]['QueueName'] = queue
           result = self.queueDict[queueName]['CE'].isValid()
           if not result['OK']:
@@ -240,8 +245,8 @@ class SiteDirector( AgentModule ):
           elif 'BundleProxy' in ceDict:
             self.queueDict[queueName]['BundleProxy'] = True  
 
-          if site not in self.sites:
-            self.sites.append( site )
+          if siteFullName not in self.sites:
+            self.sites.append( siteFullName )
 
     return S_OK()
 
@@ -675,16 +680,11 @@ EOF
       if not pilotRefs:
         continue
 
-      #print "AT >>> pilotRefs", pilotRefs
-
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
         self.log.error( 'Failed to get pilots info from DB', result['Message'] )
         continue
       pilotDict = result['Value']
-
-      #print "AT >>> pilotDict", pilotDict
-
       stampedPilotRefs = []
       for pRef in pilotDict:
         if pilotDict[pRef]['PilotStamp']:
@@ -706,8 +706,6 @@ EOF
         self.log.error( 'Failed to get pilots status from CE', '%s: %s' % ( ceName, result['Message'] ) )
         continue
       pilotCEDict = result['Value']
-
-      #print "AT >>> pilotCEDict", pilotCEDict
 
       for pRef in pilotRefs:
         newStatus = ''

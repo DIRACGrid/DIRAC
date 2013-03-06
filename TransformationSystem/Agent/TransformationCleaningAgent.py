@@ -351,7 +351,7 @@ class TransformationCleaningAgent( AgentModule ):
           return res
     self.log.info( "Removed directories in the catalog and storage for transformation" )
     # Clean ALL the possible remnants found in the metadata catalog
-    res = self.cleanMetadataCatalogFiles( transID, directories )
+    res = self.cleanMetadataCatalogFiles( transID )
     if not res['OK']:
       return res
     self.log.info( "Successfully removed output of transformation %d" % transID )
@@ -413,7 +413,7 @@ class TransformationCleaningAgent( AgentModule ):
       if not res['OK']:
         return res
     # Clean ALL the possible remnants found in the BK
-    res = self.cleanMetadataCatalogFiles( transID, directories )
+    res = self.cleanMetadataCatalogFiles( transID )
     if not res['OK']:
       return res
     # Clean the transformation DB of the files and job information

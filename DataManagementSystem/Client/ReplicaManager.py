@@ -2457,7 +2457,7 @@ class ReplicaManager( CatalogToStorage ):
         del replicaDict['Successful'][ lfn ]
         replicaDict['Failed'][lfn] = 'Wrong replica info'
         continue
-      for se in replicas:
+      for se in replicas.keys():
         if se not in seReadStatus:
           res = self.getSEStatus( se )
           if res['OK']:

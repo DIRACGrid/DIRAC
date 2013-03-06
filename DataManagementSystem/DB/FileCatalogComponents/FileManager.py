@@ -10,8 +10,8 @@ from DIRAC.Core.Utilities.List                                            import
 
 DEBUG = 0
 
-import time,os
-from types import *
+import os
+from types import StringTypes, ListType, TupleType
 
 class FileManager(FileManagerBase):
 

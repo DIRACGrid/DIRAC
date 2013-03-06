@@ -1023,9 +1023,6 @@ class AccountingDB( DB ):
     retVal = self.__checkIncomingFieldsForQuery( typeName, selectFields, condDict, groupFields, orderFields, "bucket" )
     if not retVal[ 'OK' ]:
       return retVal
-    nowEpoch = Time.toEpoch( Time.dateTime () )
-    bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch , startTime )
-    startTime = startTime - startTime % bucketTimeLength
     result = self.__queryType( typeName,
                              startTime,
                              endTime,
@@ -1082,10 +1079,16 @@ class AccountingDB( DB ):
     #Calculate time conditions
     sqlTimeCond = []
     if startTime:
+      if tableType == 'bucket':
+        #HACK because MySQL and UNIX do not start epoch at the same time
+        startTime = startTime + 3600
+        startTime = self.calculateBuckets( typeName, startTime, startTime )[0][0]
       sqlTimeCond.append( "`%s`.`startTime` >= %s" % ( tableName, startTime ) )
     if endTime:
       if tableType == "bucket":
         endTimeSQLVar = "startTime"
+        endTime = endTime + 3600
+        endTime = self.calculateBuckets( typeName, endTime, endTime )[0][0]
       else:
         endTimeSQLVar = "endTime"
       sqlTimeCond.append( "`%s`.`%s` <= %s" % ( tableName, endTimeSQLVar, endTime ) )

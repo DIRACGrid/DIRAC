@@ -63,7 +63,8 @@ class OptimizerExecutor( ExecutorModule ):
   def ex_optimizerName( cls ):
     return cls.__optimizerName
 
-  def initializeOptimizer( self ):
+  @classmethod
+  def initializeOptimizer( cls ):
     return S_OK()
 
 

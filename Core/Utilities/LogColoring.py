@@ -22,8 +22,13 @@ LEVEL_MAP = {
     'DEBUG'  : ( None, 'blue', False ),
     'WARN'   : ( None, 'yellow', False ),
     'ERROR'  : ( None, 'red', False ),
+<<<<<<< HEAD
     'EXCEPT' : ( 'red', 'black', True ),
     'FATAL'  : ( 'red', 'black', True )
+=======
+    'EXCEPT' : ( 'red', 'white', False ),
+    'FATAL'  : ( 'red', 'black', False )
+>>>>>>> upstream/integration
   }
 
 def colorMessage( level, msg ):

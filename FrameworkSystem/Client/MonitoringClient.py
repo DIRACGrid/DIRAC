@@ -7,7 +7,7 @@ import types
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities import Time, ExitCallback, Network, ThreadScheduler
+from DIRAC.Core.Utilities import Time, Network, ThreadScheduler
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class MonitoringClientActivityNotDefined( Exception ):

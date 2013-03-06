@@ -56,6 +56,7 @@ from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers                import Registry
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
+from DIRAC.Core.Utilities                                    import Time
 
 DEBUG = False
 JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
@@ -1303,7 +1304,6 @@ class JobDB( DB ):
       return result
 
     jobManifest.expand()
-
     return S_OK()
 
 

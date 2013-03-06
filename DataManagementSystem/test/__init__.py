@@ -1,3 +1,0 @@
-"""
-   DIRAC.DataManagementSystem test package
-"""

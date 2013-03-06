@@ -6,6 +6,8 @@ from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManife
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import *
 
+__RCSID__ = "$Id"
+
 class JobState( object ):
 
   class DBHold:
@@ -15,9 +17,9 @@ class JobState( object ):
       self.reset()
 
     def reset( self ):
-      self.job = False
-      self.log = False
-      self.tq = False
+      self.job = None
+      self.log = None
+      self.tq = None
 
   __db = DBHold()
 
@@ -447,7 +449,7 @@ class JobState( object ):
       if not result[ 'OK' ]:
         gLogger.error( "Cannot reschedule in JobDB job %s: %s" % ( jid, result[ 'Message' ] ) )
         continue
-      JobState.__db.log.addLoggingRecord( jid, "Received", "", "", source = source )
+      JobState.__db.log.addLoggingRecord( jid, "Received", "", "", source = "JobState" )
     return S_OK()
 
 
@@ -543,7 +545,7 @@ class JobState( object ):
       result = JobState.__db.tq.deleteJob( self.__jid )
       if result['OK']:
         if result['Value']:
-          self.log.info( "Job %s removed from the TQ" % self.__jid )
+          gLogger.info( "Job %s removed from the TQ" % self.__jid )
       return S_ERROR( "Cannot insert in task queue: %s" % errMsg )
     return S_OK()
 

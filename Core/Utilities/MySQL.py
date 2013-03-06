@@ -67,7 +67,7 @@
 
 
 
-    Some high level methods have been added to avoid the need to write SQL 
+    Some high level methods have been added to avoid the need to write SQL
     statement in most common cases. They should be used instead of low level
     _insert, _update methods when ever possible.
 
@@ -79,9 +79,9 @@
       a specified time stamp.
       The conditions dictionary specifies for each attribute one or a List of possible
       values
-      greater and smaller are dictionaries in which the keys are the names of the fields, 
+      greater and smaller are dictionaries in which the keys are the names of the fields,
       that are requested to be >= or < than the corresponding value.
-      For compatibility with current usage it uses Exceptions to exit in case of 
+      For compatibility with current usage it uses Exceptions to exit in case of
       invalid arguments
 
 
@@ -135,7 +135,7 @@
       for compatibility with other methods condDict keyed argument is added
 
 
-    getCounters( self, table, attrList, condDict = None, older = None, 
+    getCounters( self, table, attrList, condDict = None, older = None,
                  newer = None, timeStamp = None, connection = False ):
 
       Count the number of records on each distinct combination of AttrList, selected
@@ -201,7 +201,7 @@ def _quotedList( fieldList = None ):
   """
     Quote a list of MySQL Field Names with "`"
     Return a comma separated list of quoted Field Names
-    
+
     To be use for Table and Field Names
   """
   if fieldList == None:
@@ -255,7 +255,9 @@ class MySQL:
     self.__connectionSemaphore = threading.Semaphore( maxQueueSize )
 
     self.__initialized = True
-    self._connect()
+    result = self._connect()
+    if not result[ 'OK' ]:
+      gLogger.error( "Cannot connecto to DB: %s" % result[ 'Message' ] )
 
     if debug:
       try:
@@ -541,18 +543,18 @@ class MySQL:
 
 
   def _transaction( self, cmdList, conn = None ):
-    """ dummy transaction support 
+    """ dummy transaction support
 
     :param self: self reference
     :param list cmdList: list of queries to be executed within the transaction
-    :param MySQLDB.Connection conn: connection 
+    :param MySQLDB.Connection conn: connection
 
-    :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR 
+    :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR
     """
     if type( cmdList ) != ListType:
       return S_ERROR( "_transaction: wrong type (%s) for cmdList" % type( cmdList ) )
 
-    ## get connection 
+    ## get connection
     connection = conn
     if not connection:
       retDict = self._getConnection()
@@ -560,7 +562,7 @@ class MySQL:
         return retDict
       connection = retDict[ 'Value' ]
 
-    ## list with cmds and their results   
+    ## list with cmds and their results
     cmdRet = []
     try:
       cursor = connection.cursor()
@@ -569,7 +571,7 @@ class MySQL:
       connection.commit()
     except Exception, error:
       self.logger.execption( error )
-      ## rollback, put back connection to the pool 
+      ## rollback, put back connection to the pool
       connection.rollback()
       self.__putConnection( connection )
       return S_ERROR( error )
@@ -638,7 +640,7 @@ class MySQL:
     i = 0
     extracted = True
     while tableList and extracted:
-      # iterate extracting tables from list if they only depend on 
+      # iterate extracting tables from list if they only depend on
       # already extracted tables.
       extracted = False
       auxiliaryTableList += tableCreationList[i]
@@ -720,7 +722,7 @@ class MySQL:
         else:
           engine = 'InnoDB'
 
-        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % ( 
+        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % (
                table, ',\n'.join( cmdList ), engine )
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
@@ -899,7 +901,7 @@ class MySQL:
 ########################################################################################
   def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False,
                    greater = None, smaller = None ):
-    """ 
+    """
       Count the number of records on each distinct combination of AttrList, selected
       with condition defined by condDict and time stamps
     """
@@ -975,9 +977,9 @@ class MySQL:
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
         values
-        greater and smaller are dictionaries in which the keys are the names of the fields, 
+        greater and smaller are dictionaries in which the keys are the names of the fields,
         that are requested to be >= or < than the corresponding value.
-        For compatibility with current usage it uses Exceptions to exit in case of 
+        For compatibility with current usage it uses Exceptions to exit in case of
         invalid arguments
     """
     condition = ''

@@ -16,7 +16,7 @@ import os, commands
 
 class WMSClient:
 
-  def __init__( self, jobManagerClient = False, sbRPCClient = False, sbTransferClient = False, useCertificates = False, timeout = 120 ):
+  def __init__( self, jobManagerClient = None, sbRPCClient = False, sbTransferClient = False, useCertificates = False, timeout = 120 ):
     """ WMS Client constructor
     """
     self.useCertificates = useCertificates
@@ -56,7 +56,7 @@ class WMSClient:
     realFiles = []
     for file in inputSandbox:
       valid = True
-      for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s' ):#in case of parametric input sandbox, there is %s passed, so have to ignore it also 
+      for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s' ):#in case of parametric input sandbox, there is %s passed, so have to ignore it also
         if file.find( tag ) == 0:
           valid = False
           break
