@@ -37,6 +37,21 @@ NEW: Speeding up the getTransformationSummary call, using an UpdateTransformatio
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
      payload when updating it
 
+[v6r7p14]
+
+*DMS
+CHANGE: StorageElementProxy - removed getParameters(), closes #1280
+
+*Interfaces
+CHANGE: Dirac API - allow lists of LFNs in removeFile() and removeReplica()
+
+*WMS
+CHANGE: JobSchedulingAgent(Executor) - allow both BannedSite and BannedSites JDL option
+
+*RSS
+FIX: ElementInspectorAgent - should only pick elements with rss token ( rs_svc ).
+FIX: TokenAgent - using 4th element instead of the 5th. Added option to set admin email on the CS.
+
 [v6r7p13]
 
 *Core

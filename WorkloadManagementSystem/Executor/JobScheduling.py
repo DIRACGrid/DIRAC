@@ -201,6 +201,8 @@ class JobScheduling( OptimizerExecutor ):
     manifest = result[ 'Value' ]
 
     bannedSites = manifest.getOption( "BannedSites", [] )
+    if not bannedSites:
+      bannedSites = manifest.getOption( "BannedSite", [] )
     if bannedSites:
       self.jobLog.info( "Banned %s sites" % ", ".join( bannedSites ) )
 

@@ -104,13 +104,6 @@ class StorageElementProxyHandler(RequestHandler):
   .. class:: StorageElementProxyHandler
   """
 
-  types_getParameters = [StringType]
-  @staticmethod
-  def export_getParameters( se ):
-    """ Get the storage element parameters
-    """
-    return StorageElement( se ).getParameters()
-
   types_callProxyMethod = [ StringType, StringType, ListType, DictType ]
   def export_callProxyMethod( self, se, name, args, kargs ):
     """ A generic method to call methods of the Storage Element.
