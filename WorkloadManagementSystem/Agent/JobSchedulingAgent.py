@@ -489,7 +489,10 @@ class JobSchedulingAgent( OptimizerModule ):
 
     result = S_OK()
 
-    bannedSites = classAdJob.getAttributeString( 'BannedSites' )
+    bannedSites = classAdJob.getAttributeString( 'BannedSite' )
+    if not bannedSites:
+      # Just try out the legacy option variant
+      bannedSites = classAdJob.getAttributeString( 'BannedSites' )
     bannedSites = bannedSites.replace( '{', '' ).replace( '}', '' )
     bannedSites = List.fromChar( bannedSites )
 
