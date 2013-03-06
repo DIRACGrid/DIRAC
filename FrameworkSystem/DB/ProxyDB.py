@@ -10,7 +10,8 @@ import time
 import random
 import types
 try:
-  import hashlib as md5
+  import hashlib
+  md5 = hashlib
 except:
   import md5
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
