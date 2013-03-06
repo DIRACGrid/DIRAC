@@ -15,7 +15,7 @@
 """
 __RCSID__ = "$Id: $"
 
-from DIRAC import S_OK, S_ERROR, List
+from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.Time import fromString, toEpoch
@@ -207,6 +207,8 @@ class JobScheduling( OptimizerExecutor ):
     manifest = result[ 'Value' ]
 
     bannedSites = manifest.getOption( "BannedSites", [] )
+    if not bannedSites:
+      bannedSites = manifest.getOption( "BannedSite", [] )
     if bannedSites:
       self.jobLog.info( "Banned %s sites" % ", ".join( bannedSites ) )
 
