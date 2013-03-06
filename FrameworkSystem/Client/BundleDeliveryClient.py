@@ -2,10 +2,9 @@
 import os
 import tarfile
 import cStringIO
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
-from DIRAC.Core.Utilities import File
 from DIRAC.Core.Security import Locations, CS
 
 class BundleDeliveryClient:
