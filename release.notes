@@ -2,6 +2,8 @@
 
 *DMS
 CHANGE: StorageElementProxy - removed getParameters(), closes #1280
+FIX: StorageElementProxy - free the getFile space before the next file
+FIX: StorageElement - added getPFNBase() to comply with the interface
 
 *Interfaces
 CHANGE: Dirac API - allow lists of LFNs in removeFile() and removeReplica()
