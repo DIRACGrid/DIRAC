@@ -102,7 +102,7 @@ class SocketInfo:
       hostCN_m = hostCN.split( '/' )[1]
     if hostCN_m == hostConn:
       return True
-    result = checkHostsMatch( hostCN_m, hostCN )
+    result = checkHostsMatch( hostCN_m, hostConn )
     if not result[ 'OK' ]:
       return False
     return result[ 'Value' ]
