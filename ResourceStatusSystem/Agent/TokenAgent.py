@@ -11,8 +11,6 @@ from DIRAC.Core.Base.AgentModule                                import AgentModu
 from DIRAC.FrameworkSystem.Client.NotificationClient            import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-# from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
-# from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration
 
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
@@ -56,6 +54,8 @@ class TokenAgent( AgentModule ):
     '''
 
     self.notifyHours = self.am_getOption( 'notifyHours', self.notifyHours )
+    self.adminMail   = self.am_getOption( 'adminMail', self.adminMail )
+
 
     self.rsClient = ResourceStatusClient()
     self.rmClient = ResourceManagementClient()
@@ -187,7 +187,7 @@ class TokenAgent( AgentModule ):
 
       for tokenList in tokenLists:
 
-        if tokenList[ 4 ] < now:
+        if tokenList[ 5 ] < now:
           expired.append( tokenList )
           adminExpired.append( tokenList )
         else:
@@ -198,7 +198,7 @@ class TokenAgent( AgentModule ):
       if not resNotify[ 'OK' ]:
         self.log.error( resNotify[ 'Message' ] )
 
-    if adminExpired or adminExpiring:
+    if ( adminExpired or adminExpiring ) and self.__adminMail:
       return self._notify( self.__adminMail, adminExpired, adminExpiring )
 
     return S_OK()
@@ -214,13 +214,13 @@ class TokenAgent( AgentModule ):
     mail = '\nEXPIRED tokens ( RSS has taken control of them )\n'
     for tokenList in expired:
 
-      mail += ' '.join( tokenList )
+      mail += ' '.join( [ str(x) for x in tokenList ] )
       mail += '\n'
 
-    mail = '\nEXPIRING tokens ( RSS will taken control of them )\n'
+    mail = '\nEXPIRING tokens ( RSS will take control of them )\n'
     for tokenList in expiring:
 
-      mail += ' '.join( tokenList )
+      mail += ' '.join( [ str(x) for x in tokenList ] )
       mail += '\n'
 
     # FIXME: you can re-take control of them using this or that...
