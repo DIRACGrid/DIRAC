@@ -8,7 +8,7 @@
 __RCSID__ = "$Revision: 1.1 $"
 
 from DIRAC.Core.Workflow.Workflow import Workflow
-from DIRAC.Core.Workflow.Step import *
+from DIRAC.Core.Workflow.Step import StepDefinition
 
 def createSingleModuleWorkflow(module,name):
   """ Creates a workflow based on a single module definition

@@ -4,12 +4,12 @@
 """
 __RCSID__ = "$Revision: 1.38 $"
 
-import os, re, types
+import os
 import xml.sax
-from DIRAC.Core.Workflow.Parameter import *
-from DIRAC.Core.Workflow.Module import *
-from DIRAC.Core.Workflow.Step import *
-from DIRAC.Core.Workflow.Utility import *
+from DIRAC.Core.Workflow.Parameter import Parameter, AttributeCollection, ParameterCollection, indent
+from DIRAC.Core.Workflow.Module import InstancesPool, DefinitionsPool
+from DIRAC.Core.Workflow.Step import StepInstance
+from DIRAC.Core.Workflow.Utility import resolveVariables
 from DIRAC import S_OK, S_ERROR
 
 class Workflow( AttributeCollection ):
@@ -105,15 +105,15 @@ class Workflow( AttributeCollection ):
     # we have to join all Modules definition from all added steps in the single dictionary
     # and we have to share this dictionary between all included steps
     # we also have to check versions of the modules and instances
-    for type in step.module_definitions.keys():
+    for type_ in step.module_definitions.keys():
       #if self.module_definitions.has_key(type):
         # we have the same ModuleDefinition in 2 places
         # we need to find way to synchronise it
         #print "Workflow:addStep - we need to write ModuleDefinitions synchronisation code"
       #else:
         # new module - just append it
-      if not self.module_definitions.has_key( type ):
-        self.module_definitions.append( step.module_definitions[type] )
+      if not self.module_definitions.has_key( type_ ):
+        self.module_definitions.append( step.module_definitions[type_] )
     self.step_definitions.append( step )
     del step.module_definitions # we need to clean up all unwanted definitions
     step.module_definitions = None
@@ -124,15 +124,15 @@ class Workflow( AttributeCollection ):
     self.module_definitions.append( module )
     return module
 
-  def createStepInstance( self, type, name ):
+  def createStepInstance( self, type_, name ):
     """ Creates step instance of type 'type' with the name 'name'
     """
-    if self.step_definitions.has_key( type ):
-      stepi = StepInstance( name, self.step_definitions[type] )
+    if self.step_definitions.has_key( type_ ):
+      stepi = StepInstance( name, self.step_definitions[type_] )
       self.step_instances.append( stepi )
       return stepi
     else:
-      raise KeyError( 'Can not find StepDefinition ' + type + ' to create StepInstrance ' + name )
+      raise KeyError( 'Can not find StepDefinition ' + type_ + ' to create StepInstrance ' + name )
 
   def removeStepInstance( self, name ):
     self.instances[name].setParents( None )
@@ -182,42 +182,42 @@ class Workflow( AttributeCollection ):
 
   def createCode( self, combine_steps = False ):
     self.resolveGlobalVars()
-    str = ''
-    str = str + self.module_definitions.createCode()
-    str = str + self.step_definitions.createCode()
-    str = str + "\nclass job:\n"
-    str = str + indent( 1 ) + 'def execute(self):\n'
-    #str=str+indent(2)+'# flush self.step_instances\n'
-    str = str + self.step_instances.createCode()
+    str_ = ''
+    str_ = str_ + self.module_definitions.createCode()
+    str_ = str_ + self.step_definitions.createCode()
+    str_ = str_ + "\nclass job:\n"
+    str_ = str_ + indent( 1 ) + 'def execute(self):\n'
+    #str_=str_+indent(2)+'# flush self.step_instances\n'
+    str_ = str_ + self.step_instances.createCode()
     # it seems we do not need it on this level
-    str = str + indent( 2 ) + '# output assignment\n'
+    str_ = str_ + indent( 2 ) + '# output assignment\n'
     for v in self.parameters:
       if v.isOutput():
-        str = str + v.createParameterCode( 2, 'self' )
+        str_ = str_ + v.createParameterCode( 2, 'self' )
 
-    str = str + '\nj=job()\n'
-    str = str + self.parameters.createParametersCode( 0, 'j' )
-    str = str + 'j.execute()'
-    return str
+    str_ = str_ + '\nj=job()\n'
+    str_ = str_ + self.parameters.createParametersCode( 0, 'j' )
+    str_ = str_ + 'j.execute()'
+    return str_
 
   def showCode( self, combine_steps = False ):
-    str = ''
-    str = str + self.module_definitions.createCode()
-    str = str + self.step_definitions.createCode()
-    str = str + "\nclass job:\n"
-    str = str + indent( 1 ) + 'def execute(self):\n'
-    #str=str+indent(2)+'# flush self.step_instances\n'
-    str = str + self.step_instances.createCode()
+    str_ = ''
+    str_ = str_ + self.module_definitions.createCode()
+    str_ = str_ + self.step_definitions.createCode()
+    str_ = str_ + "\nclass job:\n"
+    str_ = str_ + indent( 1 ) + 'def execute(self):\n'
+    #str_=str_+indent(2)+'# flush self.step_instances\n'
+    str_ = str_ + self.step_instances.createCode()
     # it seems we do not need it on this level
-    str = str + indent( 2 ) + '# output assignment\n'
+    str_ = str_ + indent( 2 ) + '# output assignment\n'
     for v in self.parameters:
       if v.isOutput():
-        str = str + v.createParameterCode( 2, 'self' )
+        str_ = str_ + v.createParameterCode( 2, 'self' )
 
-    str = str + '\nj=job()\n'
-    str = str + self.parameters.createParametersCode( 0, 'j' )
-    str = str + 'j.execute()'
-    return str
+    str_ = str_ + '\nj=job()\n'
+    str_ = str_ + self.parameters.createParametersCode( 0, 'j' )
+    str_ = str_ + 'j.execute()'
+    return str_
 
   def execute( self ):
     self.resolveGlobalVars()
@@ -252,9 +252,9 @@ class Workflow( AttributeCollection ):
     step_result = ''
     for step_inst in self.step_instances:
       step_inst_name = step_inst.getName()
-      step_inst_type = step_inst.getType()
       wf_exec_steps[step_inst_name] = {}
-      #print "WorkflowInstance creating Step instance ",step_inst_name," of type", step_inst_type
+      # step_inst_type = step_inst.getType()
+      # print "WorkflowInstance creating Step instance ",step_inst_name," of type", step_inst_type
       for parameter in step_inst.parameters:
         if parameter.preExecute():
           # print '>> Input', parameter

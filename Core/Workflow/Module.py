@@ -7,10 +7,11 @@ __RCSID__ = "$Revision: 1.19 $"
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
 
 import copy
-import new, sys, os
+import os
 
 #try: # this part to import as part of the DIRAC framework
-from DIRAC.Core.Workflow.Parameter import *
+from DIRAC.Core.Workflow.Parameter import AttributeCollection, ParameterCollection, indent
+from DIRAC.Core.Workflow.Step import StepDefinition, StepInstance
 
 #RICARDO PLEASE DO NOT CHANGE THIS BACK. IT BREAKS THE EXECUTION OF WORKFLOWS!
 #from DIRAC.Core.Workflow.Step import *
@@ -19,7 +20,7 @@ from DIRAC.Core.Workflow.Parameter import *
 
 class ModuleDefinition( AttributeCollection ):
 
-  def __init__( self, type = None, obj = None, parent = None ):
+  def __init__( self, type_ = None, obj = None, parent = None ):
     # we can create an object from another module
     # or from the ParameterCollection
     AttributeCollection.__init__( self )
@@ -48,8 +49,8 @@ class ModuleDefinition( AttributeCollection ):
       self.parameters = ParameterCollection( obj.parameters )
     else:
       raise TypeError( 'Can not create object type ' + str( type( self ) ) + ' from the ' + str( type( obj ) ) )
-    if type :
-      self.setType( type )
+    if type_ :
+      self.setType( type_ )
 
 
   def createCode( self ):
@@ -136,10 +137,10 @@ class ModuleInstance( AttributeCollection ):
 
 
   def createCode( self, ind = 2 ):
-    str = indent( ind ) + self.getName() + ' = ' + self.getType() + '()\n'
-    str = str + self.parameters.createParametersCode( ind, self.getName() )
-    str = str + indent( ind ) + self.getName() + '.execute()\n\n'
-    return str
+    str_ = indent( ind ) + self.getName() + ' = ' + self.getType() + '()\n'
+    str_ = str_ + self.parameters.createParametersCode( ind, self.getName() )
+    str_ = str_ + indent( ind ) + self.getName() + '.execute()\n\n'
+    return str_
 
   def __str__( self ):
     return str( type( self ) ) + ':\n' + AttributeCollection.__str__( self ) + self.parameters.__str__()
@@ -237,11 +238,11 @@ class DefinitionsPool( dict ):
     return ret
 
   def createCode( self ):
-    str = ''
+    str_ = ''
     for k in self.keys():
       #str=str+indent(2)+'# flush code for instance\n'
-      str = str + self[k].createCode()
-    return str
+      str_ = str_ + self[k].createCode()
+    return str_
 
   def loadCode( self ):
     for k in self.keys():
@@ -336,13 +337,13 @@ class InstancesPool( list ):
     return True
 
   def createCode( self ):
-    str = ''
+    str_ = ''
     for inst in self:
-      str = str + inst.createCode()
-      str = str + indent( 2 ) + '# output assignment\n'
+      str_ = str_ + inst.createCode()
+      str_ = str_ + indent( 2 ) + '# output assignment\n'
       for v in inst.parameters:
         if v.isOutput():
-          str = str + v.createParameterCode( 2, 'self' )
-      str = str + '\n'
-    return str
+          str_ = str_ + v.createParameterCode( 2, 'self' )
+      str_ = str_ + '\n'
+    return str_
 
