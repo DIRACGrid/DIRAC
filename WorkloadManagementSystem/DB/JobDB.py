@@ -48,8 +48,8 @@
 
 __RCSID__ = "$Id$"
 
-import sys, types
-import time, operator
+import sys
+import operator
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
 from DIRAC                                                   import S_OK, S_ERROR, Time
