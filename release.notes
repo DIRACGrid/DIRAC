@@ -1,3 +1,18 @@
+[v6r7p14]
+
+*DMS
+CHANGE: StorageElementProxy - removed getParameters(), closes #1280
+
+*Interfaces
+CHANGE: Dirac API - allow lists of LFNs in removeFile() and removeReplica()
+
+*WMS
+CHANGE: JobSchedulingAgent(Executor) - allow both BannedSite and BannedSites JDL option
+
+*RSS
+FIX: ElementInspectorAgent - should only pick elements with rss token ( rs_svc ).
+FIX: TokenAgent - using 4th element instead of the 5th. Added option to set admin email on the CS.
+
 [v6r7p13]
 
 *Core
