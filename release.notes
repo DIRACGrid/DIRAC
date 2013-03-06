@@ -21,6 +21,9 @@ NEW: Resources helper class to work with the new /Resources structure according 
 NEW: dirac-configuration-convert-resources-schema - command to convert old /Resources schema
      to the new one
 
+*DMS
+CHANGE: MigrationMonitoringAgent - removed obsoleted
+
 *WMS
 CHANGE: JobScheduling - is now extensible. Added unit test
 
