@@ -181,7 +181,10 @@ class JobManifest( object ):
     result = self.__checkMaxInputData( [500] )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMultiChoice( "JobType", self.__getCSValue( "AllowedJobTypes", [] ) )
+    transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
+    if transformationTypes:
+      transformationTypes = transformationTypes.replace( ' ', '' ).split( ',' )
+    result = self.__checkMultiChoice( "JobType", ['User', 'SAM', 'Hospital'] + transformationTypes )
     if not result[ 'OK' ]:
       return result
     return S_OK()
