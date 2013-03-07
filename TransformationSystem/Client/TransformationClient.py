@@ -8,9 +8,6 @@ from DIRAC.Core.Utilities.List                      import breakListIntoChunks
 from DIRAC.Resources.Catalog.FileCatalogueBase      import FileCatalogueBase
 import types
 
-rpc = None
-url = None
-
 class TransformationClient( Client, FileCatalogueBase ):
 
   ''' Exposes the functionality available in the DIRAC/TransformationHandler
@@ -97,7 +94,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
 
     transformations = []
-    #getting transformations - incrementally
+    # getting transformations - incrementally
     offsetToApply = 0
     while True:
       res = rpcClient.getTransformations( condDict, older, newer, timeStamp, orderAttribute, limit,
@@ -124,7 +121,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     '''
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     transformationFiles = []
-    #getting transformationFiles - incrementally
+    # getting transformationFiles - incrementally
     offsetToApply = 0
     while True:
       res = rpcClient.getTransformationFiles( condDict, older, newer, timeStamp, orderAttribute, limit, offsetToApply )
@@ -148,7 +145,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     '''
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     transformationTasks = []
-    #getting transformationFiles - incrementally
+    # getting transformationFiles - incrementally
     offsetToApply = 0
     while True:
       res = rpcClient.getTransformationTasks( condDict, older, newer, timeStamp, orderAttribute, limit,
@@ -230,7 +227,7 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     return S_OK( ( parentProd, movedFiles ) )
 
-  def setFileStatusForTransformation( self, transName, status, lfns, force = False, timeout = 120 ):
+  def setFileStatusForTransformation( self, transName, status, lfns, force = False, rpc = '', url = '', timeout = 120 ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.setFileStatusForTransformation( transName, status, lfns, force )
 
