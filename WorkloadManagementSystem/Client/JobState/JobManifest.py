@@ -158,7 +158,7 @@ class JobManifest( object ):
     for k in [ 'OwnerName', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ]:
       if k not in self.__manifest:
         return S_ERROR( "Missing var %s in manifest" % k )
-    #Check CPUTime
+    # Check CPUTime
     result = self.__checkNumericalVar( "CPUTime", 86400, 0, 500000 )
     if not result[ 'OK' ]:
       return result
@@ -167,20 +167,20 @@ class JobManifest( object ):
       return result
     allowedSubmitPools = []
     for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools = gConfig.getValue( "/%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
+      allowedSubmitPools = gConfig.getValue( "/%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
+                                                          option ),
                                              allowedSubmitPools )
-      #allowedSubmitPools = self.__getCSValue( "/%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
-      #                                       allowedSubmitPools )
-    result = self.__checkMultiChoice( "SubmitPools", allowedSubmitPools )
-    if not result[ 'OK' ]:
-      return result
+      result = self.__checkMultiChoice( "SubmitPools", allowedSubmitPools )
+      if not result[ 'OK' ]:
+        return result
     result = self.__checkMultiChoice( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMaxInputData( 500 )
+    result = self.__checkMaxInputData( [500] )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMultiChoice( "JobType", self.__getCSValue( "AllowedJobTypes", [] ) )
+    transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
+    result = self.__checkMultiChoice( "JobType", ['User', 'SAM', 'Hospital'] + transformationTypes )
     if not result[ 'OK' ]:
       return result
     return S_OK()
