@@ -44,10 +44,11 @@ class InputDataResolution( OptimizerExecutor ):
   def optimizeJob( self, jid, jobState ):
     result = self.doTheThing( jobState )
     if not result[ 'OK' ]:
+      self.jobLog.error( result[ 'Message' ] )
       jobState.setAppStatus( result[ 'Message' ] )
-      return S_ERROR( cls.ex_getOption( "FailedJobStatus", "Input Data Not Available" ) )
+      return S_ERROR( self.ex_getOption( "FailedJobStatus", "Input Data Not Available" ) )
     #Reset the stage info
-    return jobState.setOptimizerParameter( "StageRequestedForSite", "" )
+    return jobState.setOptParameter( "StageRequestedForSite", "" )
 
   def doTheThing( self, jobState ):
     result = jobState.getManifest()

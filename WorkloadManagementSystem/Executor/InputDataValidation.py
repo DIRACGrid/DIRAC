@@ -17,6 +17,7 @@ from DIRAC.Core.Utilities.SiteSEMapping                              import getS
 from DIRAC.Core.Utilities                                            import DictCache
 from DIRAC.Core.Security                                             import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers                        import Registry
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient       import StorageManagerClient
 from DIRAC                                                           import S_OK, S_ERROR
 
 
@@ -47,10 +48,10 @@ class InputDataValidation( OptimizerExecutor ):
 
 
   def optimizeJob( self, jid, jobState ):
-    result = self.doTheThing( jobState )
+    result = self.doTheThing( jid, jobState )
     if not result[ 'OK' ]:
       jobState.setAppStatus( result[ 'Message' ] )
-      return S_ERROR( cls.ex_getOption( "FailedJobStatus", "Input Data Not Available" ) )
+      return S_ERROR( self.ex_getOption( "FailedJobStatus", "Input Data Not Available" ) )
     return S_OK()
 
   def doTheThing( self, jid, jobState ):
@@ -68,38 +69,38 @@ class InputDataValidation( OptimizerExecutor ):
     result = self.freezeByBannedSE( manifest, lfnData )
     if not result[ 'OK' ]:
       return result
-    if result[ 'Value' ]:
-      self.freezeTask( 600 )
-      self.jobLog.info( "On hold -> Banned SE make access to lfn impossible" )
-      return S_OK()
 
-    result = self.selectSiteStage( lfnData )
+    result = self.selectSiteStage( manifest, lfnData )
     if not result[ 'OK' ]:
       return result
     candidates, lfn2Stage = result[ 'Value' ]
 
     if not lfn2Stage:
-      jobState.setOptimizerParameter( "SiteCandidates", ",".join( candidates ) )
+      jobState.setOptParameter( "SiteCandidates", ",".join( candidates ) )
+      self.jobLog.notice( "No need to stage. Sending to next optimizer" )
       return self.setNextOptimizer()
 
     if self.ex_getOption( "RestrictDataStage", False ):
       if not self.__checkStageAllowed( jobState ):
         return S_ERROR( "Stage not allowed" )
 
-    result = jobState.getOptimizerParameter( "StageRequestedForSite" )
+    result = jobState.getOptParameter( "StageRequestedForSite" )
     if not result[ 'OK' ]:
       raise RuntimeError( "Can't retrieve optimizer parameter! (%s)" % result[ 'Message' ] )
     stageRequested = result[ 'Value' ]
     if stageRequested:
-      jobState.setOptimizerParameter( "SiteCandidates", stageRequested )
+      jobState.setOptParameter( "SiteCandidates", stageRequested )
+      self.jobLog.info( "Stage already requested. Sending to next optimizer" )
       return self.setNextOptimizer()
 
     result = self.requestStage( jobState, candidates, lfnData )
     if not result[ 'OK' ]:
       return result
 
-    jobState.setOptimizerParameter( "StageRequestedForSite", result[ 'Value' ] )
-    return self.setNextOptimizer()
+    self.jobLog.notice( "Requested stage at site %s" % result[ 'Value' ] )
+    jobState.setOptParameter( "StageRequestedForSite", result[ 'Value' ] )
+
+    return S_OK()
 
   def __checkStageAllowed( self, jobState ):
     """Check if the job credentials allow to stage date """
@@ -111,14 +112,15 @@ class InputDataValidation( OptimizerExecutor ):
     return Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup( group )
 
   def freezeByBannedSE( self, manifest, lfnData ):
-    targetSEs = manigest.getOption( "TargetSEs", [] )
-    if not targetSEs:
-      return S_OK( False )
+    targetSEs = manifest.getOption( "TargetSEs", [] )
+    if targetSEs:
+      self.jobLog.info( "TargetSEs defined: %s" % ", ".join( targetSEs ) )
     for lfn in lfnData:
       replicas = lfnData[ lfn ][ 'Replicas' ]
       anyBanned = False
       for seName in list( replicas.keys() ):
-        if seName not in targetSEs:
+        if targetSEs and seName not in targetSEs:
+          self.jobLog.info( "Ignoring replica in %s (not in TargetSEs)" % seName )
           replicas.pop( seName )
           continue
         result = self.__getSEStatus( seName )
@@ -129,15 +131,16 @@ class InputDataValidation( OptimizerExecutor ):
           continue
         seStatus = result[ 'Value' ]
         if not seStatus[ 'Read' ]:
+          self.jobLog.info( "Ignoring replica in %s (SE is not readable)" % seName )
           replicas.pop( seName )
           anyBanned = True
           continue
       if anyBanned:
-        return S_OK( True )
+        raise OptimizerExecutor.FreezeTask( 600, "Banned SE makes access to Input Data impossible" )
       if not replicas:
         return S_ERROR( "%s has no replicas in any target SE" % lfn )
 
-    return S_OK( False )
+    return S_OK()
 
   def selectSiteStage( self, manifest, lfnData ):
     lfnSite = {}
@@ -162,48 +165,58 @@ class InputDataValidation( OptimizerExecutor ):
           else:
             if lfn not in tapelfn:
               tapelfn[ lfn ] = set()
-            tapelfn[ lfn ].add( sites )
+            for site in sites:
+              tapelfn[ lfn ].add( site )
 
     candidates = set.intersection( *[ lfnSite[ lfn ] for lfn in lfnSite ] )
     userSites = manifest.getOption( "Site", [] )
     if userSites:
       candidates = set.intersection( candidates, userSites )
+    bannedSites = manifest.getOption( "BannedSites", [] )
+    candidates = candidates.difference( bannedSites )
     if not candidates:
       return S_ERROR( "No candidate sites available" )
 
+    self.jobLog.info( "Sites with access to input data are %s" % ",".join( candidates ) )
+
     if not tapelfn:
+      self.jobLog.info( "No need to stage. Candidates are %s" % ", ".join( candidates ) )
       return S_OK( ( candidates, False ) )
 
-    tapeInSite = {}
+    self.jobLog.info( "Need to stage %s files at most" % len( tapelfn ) )
+
+    tapeCandidates = {}
     for lfn in tapelfn:
-      for site in tapelfn[ lfn ]:
-        if site not in tapeInSite:
-          tapeInSite[ site ] = 0
-        tapeInSite[ site ] += 1
+      for site in set.intersection( candidates, tapelfn[lfn] ):
+        if site not in tapeCandidates:
+          tapeCandidates[ site ] = 0
+        tapeCandidates[ site ] += 1
+
+    if len( tapeCandidates ) == 1:
+      stageSite = tapeCandidates.keys()[0]
+      minStage = tapeCandidates[ stageSite ]
+      tapeCandidates = set( [ stageSite ] )
+    else:
+      minStage = min( *[ tapeCandidates[ site ] for site in tapeCandidates ] )
+      tapeCandidates = set( [ site for site in tapeCandidates if tapeCandidates[ site ] == minStage ] )
+
+    self.jobLog.info( "Sites %s need to stage %d files" % ( ",".join( tapeCandidates ), minStage ) )
 
     result = self.__jobDB.getSiteMask( 'Banned' )
-    if not result[ 'OK' ]:
-      bannedSites = []
-    else:
-      bannedSites = result[ 'Value' ]
+    if result[ 'OK' ]:
+      for site in result[ 'Value' ]:
+        tapeCandidates.discard( site )
+      if not tapeCandidates:
+        raise OptimizerExecutor.FreezeTask( 600, "All stageable sites are banned" )
 
-    for site in bannedSites:
-      try:
-        tapeInSite.pop( site )
-      except KeyError:
-        pass
+    finalCandidates = set.intersection( tapeCandidates, candidates )
+    if not finalCandidates:
+      self.jobLog.error( "No site that can stage is allowed to run" )
+      return S_ERROR( "No site can fullfill requirements" )
 
-    minTape = None
-    for site in tapeInSite:
-      if minTape == None:
-        minTape = tapeInSite[ site ]
-      else:
-        minTape = min( minTape, tapeInSite[ site ] )
+    self.jobLog.info( "Candidate sites for staging are %s" % ", ".join( finalCandidates ) )
 
-    #Sites with min stage
-    stageSites = [ site for site in tapeInSite if tapeInSite[ site ] == minTape ]
-
-    return S_OK( stageSites, set( tapelfn ) )
+    return S_OK( ( finalCandidates, set( tapelfn ) ) )
 
 
   def __getSiteForSE( self, seName ):
@@ -227,9 +240,8 @@ class InputDataValidation( OptimizerExecutor ):
 
   def requestStage( self, jobState, candidates, lfnData ):
     #Any site is as good as any so random time!
-    if len( candidates ) > 1:
-      random.shuffle( candidates )
-    stageSite = candidate[0]
+    stageSite = random.sample( candidates, 1 )[0]
+    self.jobLog.info( "Site selected %s for staging" % stageSite )
     result = getSEsForSite( stageSite )
     if not result['OK']:
       return S_ERROR( 'Could not determine SEs for site %s' % stageSite )
@@ -256,7 +268,7 @@ class InputDataValidation( OptimizerExecutor ):
     stageLFNs = {}
     lfnToStage = []
     for lfn in lfnData:
-      replicas = inputData[ lfn ][ 'Replicas' ]
+      replicas = lfnData[ lfn ][ 'Replicas' ]
       # Check SEs
       seStage = []
       for seName in replicas:
@@ -301,7 +313,7 @@ class InputDataValidation( OptimizerExecutor ):
 
     stagerClient = StorageManagerClient()
     result = stagerClient.setRequest( stageLFNs, 'WorkloadManagement',
-                                      'updateJobFromStager@WorkloadManagement/JobStateUpdate',
+                                      'stageCallback@WorkloadManagement/OptimizationMind',
                                       int( jobState.jid ) )
     if not result[ 'OK' ]:
       self.jobLog.error( "Could not send stage request: %s" % result[ 'Message' ] )

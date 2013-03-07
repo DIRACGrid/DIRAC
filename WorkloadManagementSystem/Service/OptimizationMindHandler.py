@@ -1,6 +1,7 @@
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, ThreadScheduler
+from DIRAC.Core.Security import Properties
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
@@ -176,3 +177,41 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     cls.log.notice( "Job %s: Setting to Failed|%s" % ( jid, errorMsg ) )
     return jobState.setStatus( "Failed", errorMsg, source = 'OptimizationMindHandler' )
 
+  auth_stageCallback = [ Properties.OPERATOR ]
+  types_stageCallback = ( ( types.StringType, types.IntType, types.LongType ), types.StringType )
+  def export_stageCallback( self, jid, stageStatus ):
+    """ Simple call back method to be used by the stager. """
+    try:
+      jid = int( jid )
+    except ValueError:
+      return S_ERROR( "Job ID is not a number!" )
+
+    failed = False
+    if stageStatus == 'Done':
+      major = 'Checking'
+      minor = 'InputDataValidation'
+    elif stageStatus == 'Failed':
+      major = 'Failed'
+      minor = 'Staging input files failed'
+      failed = True
+    else:
+      return S_ERROR( "%s status not known." % stageStatus )
+
+    result = cls.__jobDB.getJobAttributes( jid, ['Status'] )
+    if not result['OK']:
+      return result
+    data = result[ 'Value' ]
+    if not data:
+      return S_OK( 'No Matching Job' )
+    if data[ 'Status' ] != 'Staging':
+      return S_OK( 'Job %s is not in Staging' % jid )
+
+    jobState = JobState( jid )
+    result = jobState.setStatus( major, minor, source = "StagerSystem" )
+    if not result[ 'OK' ]:
+      return result
+
+    if failed:
+      return S_OK()
+
+    return self.executeTask( jid, OptimizationTask( jid ) )

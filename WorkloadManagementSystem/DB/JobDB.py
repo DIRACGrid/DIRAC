@@ -594,13 +594,24 @@ class JobDB( DB ):
     for lfn, checksum, creationDate, modifDate, size, surl, SEName, onDisk in result[ 'Value' ]:
       if lfn not in data:
         data[ lfn ] = { 'Metadata' : { 'Checksum' : checksum, 'CreationDate' : creationDate,
-                                       'ModificationDate' : modDate, 'Size' : size },
+                                       'ModificationDate' : modifDate, 'Size' : size },
                         'Replicas' : {} }
-      rD = data[ lfn ][ 'replicas' ]
-      if SEName not in rD:
-        rD[ SEName ] = []
-      rD[ SEName ].append( { 'SURL' : surl, 'Disk' : onDisk } )
+      rD = data[ lfn ][ 'Replicas' ]
+      rD[ SEName ] = { 'SURL' : surl, 'Disk' : onDisk }
     return S_OK( data )
+
+#############################################################################
+
+  def __cleanInputData( self, jid ):
+    cmd = "DELETE FROM Replicas WHERE LFNID IN ( SELECT LFNID FROM LFN WHERE JobID = %d )" % jid
+    result = self._update( cmd )
+    if not result['OK']:
+      return S_ERROR( "Could not clean input data for job %d: %s" % ( jid, result[ 'Message' ] ) )
+    cmd = "DELETE FROM LFN WHERE JobID = %d" % jid
+    result = self._update( cmd )
+    if not result['OK']:
+      return S_ERROR( "Could not clean input data for job %d: %s" % ( jid, result[ 'Message' ] ) )
+    return S_OK()
 
 #############################################################################
   def setInputData ( self, jid, lfnData ):
@@ -613,12 +624,7 @@ class JobDB( DB ):
     result = self.__checkInputDataStructure( lfnData )
     if not result['OK']:
       return result
-    cmd = "DELETE FROM Replicas WHERE LFNID IN ( SELECT LFNID FROM LFN WHERE JobID = %d )" % jid
-    result = self._update( cmd )
-    if not result['OK']:
-      return S_ERROR( "Could not clean input data for job %d: %s" % ( jid, result[ 'Message' ] ) )
-    cmd = "DELETE FROM LFN WHERE JobID = %d" % jid
-    result = self._update( cmd )
+    result = self.__cleanInputData( jid )
     if not result['OK']:
       return S_ERROR( "Could not clean input data for job %d: %s" % ( jid, result[ 'Message' ] ) )
     for lfn in lfnData:
@@ -1451,7 +1457,7 @@ class JobDB( DB ):
       parDict = result['Value']
       result = self.setAtticParameters( jid, rescheduleCounter - 1, parDict )
       if not result['OK']:
-        return self.__failJob( jid, "Error setting parameter", "Can't set attic parameter: %s" % result[ 'Value' ] )
+        return self.__failJob( jid, "Error setting parameter", "Can't set attic parameter: %s" % result[ 'Message' ] )
 
     for tableName in ( 'JobParameters', 'OptimizerParameters' ):
       cmd = 'DELETE FROM JobParameters WHERE JobID=%d' % jid
@@ -1459,6 +1465,10 @@ class JobDB( DB ):
       if not res['OK']:
         return self.__failJob( jid, "Error cleaning %s" % tableName,
                                     "Can't clean %s: %s" % ( tableName, res[ 'Message' ] ) )
+
+    result = self.__cleanInputData( jid )
+    if not result[ 'OK' ]:
+      return self.__failJob( jid, "Error rescheduling", "Can't clean input data: %s" % result[ 'Message' ] )
 
     # the Jobreceiver needs to know if there is InputData ??? to decide which optimizer to call
     # proposal: - use the getInputData method

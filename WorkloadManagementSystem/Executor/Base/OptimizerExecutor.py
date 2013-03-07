@@ -10,6 +10,21 @@ from DIRAC.WorkloadManagementSystem.Client.JobState.OptimizationTask import Opti
 
 class OptimizerExecutor( ExecutorModule ):
 
+
+  class FreezeTask( Exception ):
+
+    def __init__( self, secs, msg ):
+      self.__secs = secs
+      self.__msg = msg
+
+    @property
+    def freezeTime( self ):
+      return self.__secs
+
+    @property
+    def msg( self ):
+      return self.__msg
+
   class JobLog:
 
     class LogWrap:
@@ -79,7 +94,12 @@ class OptimizerExecutor( ExecutorModule ):
     self.__jobData.jobLog = self.JobLog( self.log, jid )
     try:
       self.jobLog.info( "Processing" )
-      optResult = self.optimizeJob( jid, jobState )
+      try:
+        optResult = self.optimizeJob( jid, jobState )
+      except self.FreezeTask, excp:
+        self.freezeTask( excp.freezeTime )
+        self.jobLog.info( "On hold -> %s" % excp.msg )
+        optResult = S_OK()
       if not isReturnStructure( optResult ):
         raise RuntimeError( "Executor does not return S_OK/S_ERROR!" )
       #If the manifest is dirty, update it!
