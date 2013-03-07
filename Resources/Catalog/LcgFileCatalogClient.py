@@ -3,13 +3,14 @@
 """
 import DIRAC
 from DIRAC                                                    import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers                 import getVO
 from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalogueBase
 from DIRAC.Core.Utilities.Time                                import fromEpoch
 from DIRAC.Core.Utilities.List                                import sortList, breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getDNForUsername, getVOMSAttributeForGroup, \
                                                                      getVOForGroup, getVOOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
+                                                                     
 from stat import *
 import os, re, types, time
 
@@ -18,10 +19,10 @@ importedLFC = None
 
 class LcgFileCatalogClient( FileCatalogueBase ):
 
-  def __init__( self, infosys = None, host = None ):
+  def __init__( self, infosys = None, host = None, name='LFC' ):
     global lfc, importedLFC
 
-    FileCatalogueBase.__init__( self, 'LFC' )
+    FileCatalogueBase.__init__( self, name )
 
     if importedLFC == None:
       try:
@@ -37,19 +38,25 @@ class LcgFileCatalogClient( FileCatalogueBase ):
 
     self.valid = importedLFC
 
-    if not infosys:
-      # if not provided, take if from CS
-      infosys = gConfig.getValue( '/Resources/FileCatalogs/LcgFileCatalog/LcgGfalInfosys', '' )
-    if not infosys and 'LCG_GFAL_INFOSYS' in os.environ:
-      # if not in CS take from environ
-      infosys = os.environ['LCG_GFAL_INFOSYS']
-
-    if not host:
-      # if not provided, take if from CS
-      host = gConfig.getValue( '/Resources/FileCatalogs/LcgFileCatalog/MasterHost', '' )
-    if not host and 'LFC_HOST' in os.environ:
-      # if not in CS take from environ
-      host = os.environ['LFC_HOST']
+    if not infosys or not host:
+      result = Resources().getCatalogOptionsDict( self.name )
+      catConfig = {}
+      if result['OK']:
+        catConfig = result['Value']
+    
+      if not infosys:
+        # if not provided, take if from CS
+        infosys = catConfig.get( 'LcgGfalInfosys', '' )
+      if not infosys and 'LCG_GFAL_INFOSYS' in os.environ:
+        # if not in CS take from environ
+        infosys = os.environ['LCG_GFAL_INFOSYS']
+  
+      if not host:
+        # if not provided, take if from CS
+        host = catConfig.get( 'MasterHost', '' )
+      if not host and 'LFC_HOST' in os.environ:
+        # if not in CS take from environ
+        host = os.environ['LFC_HOST']
 
     self.host = host
     result = gConfig.getOption( '/DIRAC/Setup' )
