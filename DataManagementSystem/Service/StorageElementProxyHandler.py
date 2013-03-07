@@ -187,6 +187,7 @@ class StorageElementProxyHandler(RequestHandler):
         gLogger.debug("Cleared existing getFile cache")
       except Exception, x:
         gLogger.exception("Failed to remove destination directory.", getFileDir, x )
+    os.mkdir(getFileDir)        
    
     # Get the file to the cache 
     try:
@@ -321,7 +322,6 @@ class StorageElementProxyHandler(RequestHandler):
 
     fileDescriptor = result['Value']
     result = fileHelper.networkToFD(fileDescriptor)
-    fileHelper.oFile.close()
     if not result['OK']:
       return S_ERROR('Failed to put file %s' % fileID )
     return result
