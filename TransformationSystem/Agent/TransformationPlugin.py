@@ -17,8 +17,8 @@ class TransformationPlugin( object ):
     """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
         plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
     """
-    self.params = False
-    self.data = False
+    self.params = {}
+    self.data = {}
     self.plugin = plugin
     self.files = False
     if transClient is None:
