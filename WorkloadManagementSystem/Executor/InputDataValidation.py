@@ -76,7 +76,7 @@ class InputDataValidation( OptimizerExecutor ):
     candidates, lfn2Stage = result[ 'Value' ]
 
     if not lfn2Stage:
-      jobState.setOptParameter( "SiteCandidates", ",".join( candidates ) )
+      jobState.setOptParameter( "DataSites", ",".join( candidates ) )
       self.jobLog.notice( "No need to stage. Sending to next optimizer" )
       return self.setNextOptimizer()
 
@@ -84,12 +84,12 @@ class InputDataValidation( OptimizerExecutor ):
       if not self.__checkStageAllowed( jobState ):
         return S_ERROR( "Stage not allowed" )
 
-    result = jobState.getOptParameter( "StageRequestedForSite" )
+    result = jobState.getOptParameter( "StageRequestedForSites" )
     if not result[ 'OK' ]:
       raise RuntimeError( "Can't retrieve optimizer parameter! (%s)" % result[ 'Message' ] )
     stageRequested = result[ 'Value' ]
     if stageRequested:
-      jobState.setOptParameter( "SiteCandidates", stageRequested )
+      jobState.setOptParameter( "DataSites", stageRequested )
       self.jobLog.info( "Stage already requested. Sending to next optimizer" )
       return self.setNextOptimizer()
 
@@ -97,8 +97,14 @@ class InputDataValidation( OptimizerExecutor ):
     if not result[ 'OK' ]:
       return result
 
-    self.jobLog.notice( "Requested stage at site %s" % result[ 'Value' ] )
-    jobState.setOptParameter( "StageRequestedForSite", result[ 'Value' ] )
+    stageCandidates = result[ 'Value' ]
+    self.jobLog.notice( "Requested stage at sites %s" % ",".join( stageCandidates ) )
+    result = jobState.setOptParameter( "StageRequestedForSites", list( stageCandidates ) )
+    if not result[ 'OK' ]:
+      return result
+
+    #TODO: What if more than one stage site?
+    jobState.setAttribute( 'Site', list( stageCandidates )[0] )
 
     return S_OK()
 
@@ -136,7 +142,7 @@ class InputDataValidation( OptimizerExecutor ):
           anyBanned = True
           continue
       if anyBanned:
-        raise OptimizerExecutor.FreezeTask( 600, "Banned SE makes access to Input Data impossible" )
+        raise OptimizerExecutor.FreezeTask( "Banned SE makes access to Input Data impossible" )
       if not replicas:
         return S_ERROR( "%s has no replicas in any target SE" % lfn )
 
@@ -150,7 +156,7 @@ class InputDataValidation( OptimizerExecutor ):
       replicas = lfnData[ lfn ][ 'Replicas' ]
       lfnSite[ lfn ] = set()
       for seName in replicas:
-        result = self.__getSiteForSE( seName )
+        result = self.__getSitesForSE( seName )
         if not result[ 'OK' ]:
           return result
         sites = result[ 'Value' ]
@@ -207,7 +213,7 @@ class InputDataValidation( OptimizerExecutor ):
       for site in result[ 'Value' ]:
         tapeCandidates.discard( site )
       if not tapeCandidates:
-        raise OptimizerExecutor.FreezeTask( 600, "All stageable sites are banned" )
+        raise OptimizerExecutor.FreezeTask( "All stageable sites are banned" )
 
     finalCandidates = set.intersection( tapeCandidates, candidates )
     if not finalCandidates:
@@ -219,7 +225,7 @@ class InputDataValidation( OptimizerExecutor ):
     return S_OK( ( finalCandidates, set( tapelfn ) ) )
 
 
-  def __getSiteForSE( self, seName ):
+  def __getSitesForSE( self, seName ):
     result = self.__sitesForSE.get( seName )
     if result == False:
       result = getSitesForSE( seName )
@@ -309,7 +315,7 @@ class InputDataValidation( OptimizerExecutor ):
         if len( stageLFNs[ seName ] ) == 0:
           stageLFNs.pop( seName )
 
-    self.jobLog.verbose( "Stage request will be \n\t%s" % "\n\t".join( [ "%s:%s" % ( lfn, stageLFNs[ lfn ] ) for lfn in stageLFNs ] ) )
+    self.jobLog.info( "Stage request will be \n\t%s" % "\n\t".join( [ "%s:%s" % ( lfn, stageLFNs[ lfn ] ) for lfn in stageLFNs ] ) )
 
     stagerClient = StorageManagerClient()
     result = stagerClient.setRequest( stageLFNs, 'WorkloadManagement',
@@ -328,6 +334,14 @@ class InputDataValidation( OptimizerExecutor ):
                                  source = self.ex_optimizerName() )
     if not result[ 'OK' ]:
       return result
-    return S_OK( stageSite )
+
+    stageCandidates = []
+    for seName in stageLFNs:
+      result = self.__getSitesForSE( seName )
+      if result[ 'OK' ]:
+        stageCandidates.append( result[ 'Value' ] )
+
+    stageCandidates = candidates.intersection( *[ sC for sC in stageCandidates ] ).union( [ stageSite ] )
+    return S_OK( stageCandidates )
 
 

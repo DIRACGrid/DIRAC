@@ -13,9 +13,9 @@ class OptimizerExecutor( ExecutorModule ):
 
   class FreezeTask( Exception ):
 
-    def __init__( self, secs, msg ):
-      self.__secs = secs
+    def __init__( self, msg, secs = 0 ):
       self.__msg = msg
+      self.__secs = secs
 
     @property
     def freezeTime( self ):
@@ -97,8 +97,12 @@ class OptimizerExecutor( ExecutorModule ):
       try:
         optResult = self.optimizeJob( jid, jobState )
       except self.FreezeTask, excp:
-        self.freezeTask( excp.freezeTime )
+        fT = excp.freezeTime
+        if fT == 0:
+          fT = self.ex_getOption( "HoldTime", 600 )
+        self.freezeTask( fT )
         self.jobLog.info( "On hold -> %s" % excp.msg )
+        jobState.setAppStatus( excp.msg, source = self.ex_optimizerName() )
         optResult = S_OK()
       if not isReturnStructure( optResult ):
         raise RuntimeError( "Executor does not return S_OK/S_ERROR!" )
