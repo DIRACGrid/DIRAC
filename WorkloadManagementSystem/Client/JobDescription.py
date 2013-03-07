@@ -147,21 +147,17 @@ class JobDescription:
       allowedSubmitPools = gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
                                                          option ),
                                              allowedSubmitPools )
-      if allowedSubmitPools:
-        allowedSubmitPools = allowedSubmitPools.replace( ' ', '' ).split( ',' )
       result = self.__checkMultiChoiceInDescription( "SubmitPools", allowedSubmitPools )
-    if not result[ 'OK' ]:
-      return result
+      if not result[ 'OK' ]:
+        return result
     result = self.__checkMultiChoiceInDescription( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
     maxInputData = Operations().getValue( "JobDescription/MaxInputData", 500 )
-    result = self.__checkMaxInputData( [maxInputData] )
+    result = self.__checkMaxInputData( maxInputData )
     if not result[ 'OK' ]:
       return result
     transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
-    if transformationTypes:
-      transformationTypes = transformationTypes.replace( ' ', '' ).split( ',' )
     result = self.__checkMultiChoiceInDescription( "JobType", ['User', 'SAM', 'Hospital'] + transformationTypes )
     return S_OK()
 

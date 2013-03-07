@@ -158,7 +158,7 @@ class JobManifest( object ):
     for k in [ 'OwnerName', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ]:
       if k not in self.__manifest:
         return S_ERROR( "Missing var %s in manifest" % k )
-    #Check CPUTime
+    # Check CPUTime
     result = self.__checkNumericalVar( "CPUTime", 86400, 0, 500000 )
     if not result[ 'OK' ]:
       return result
@@ -170,20 +170,16 @@ class JobManifest( object ):
       allowedSubmitPools = gConfig.getValue( "/%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
                                                           option ),
                                              allowedSubmitPools )
-      if allowedSubmitPools:
-        allowedSubmitPools = allowedSubmitPools.replace( ' ', '' ).split( ',' )
       result = self.__checkMultiChoice( "SubmitPools", allowedSubmitPools )
-    if not result[ 'OK' ]:
-      return result
+      if not result[ 'OK' ]:
+        return result
     result = self.__checkMultiChoice( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMaxInputData( [500] )
+    result = self.__checkMaxInputData( 500 )
     if not result[ 'OK' ]:
       return result
     transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
-    if transformationTypes:
-      transformationTypes = transformationTypes.replace( ' ', '' ).split( ',' )
     result = self.__checkMultiChoice( "JobType", ['User', 'SAM', 'Hospital'] + transformationTypes )
     if not result[ 'OK' ]:
       return result
