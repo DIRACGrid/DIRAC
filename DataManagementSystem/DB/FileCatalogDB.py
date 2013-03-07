@@ -18,7 +18,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager,FullSecurityManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import checkArgumentDict 
 
 #############################################################################
 class FileCatalogDB(DB):
