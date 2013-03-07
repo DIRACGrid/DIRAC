@@ -154,7 +154,7 @@ class JobDescription:
     if not result[ 'OK' ]:
       return result
     maxInputData = Operations().getValue( "JobDescription/MaxInputData", 500 )
-    result = self.__checkMaxInputData( maxInputData )
+    result = self.__checkMaxInputData( [maxInputData] )
     if not result[ 'OK' ]:
       return result
     transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
