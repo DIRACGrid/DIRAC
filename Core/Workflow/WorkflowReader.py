@@ -5,13 +5,12 @@
 __RCSID__ = "$Revision: 1.15 $"
 
 #try: # this part to inport as part of the DIRAC framework
-import xml.sax
 from xml.sax.handler import ContentHandler
 
-from DIRAC.Core.Workflow.Parameter import *
-from DIRAC.Core.Workflow.Module import *
-from DIRAC.Core.Workflow.Step import *
-from DIRAC.Core.Workflow.Workflow import *
+from DIRAC.Core.Workflow.Parameter import Parameter
+from DIRAC.Core.Workflow.Module import ModuleInstance, ModuleDefinition
+from DIRAC.Core.Workflow.Step import StepDefinition, StepInstance
+from DIRAC.Core.Workflow.Workflow import Workflow
 
 
 class WorkflowXMLHandler(ContentHandler):
