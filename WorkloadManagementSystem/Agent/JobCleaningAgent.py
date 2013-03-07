@@ -13,7 +13,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB              import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB        import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB       import JobLoggingDB
-from DIRAC                                                import S_OK, S_ERROR, gLogger
+from DIRAC                                                import S_OK, gLogger
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 import DIRAC.Core.Utilities.Time as Time
 import string
