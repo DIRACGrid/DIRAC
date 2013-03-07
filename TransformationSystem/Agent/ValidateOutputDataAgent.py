@@ -18,8 +18,8 @@ AGENT_NAME = 'Transformation/ValidateOutputDataAgent'
 class ValidateOutputDataAgent( AgentModule ):
 
   def __init__( self, *args, **kwargs ):
-    """ c'tor
-    """
+    ''' c'tor
+    '''
     AgentModule.__init__( self, *args, **kwargs )
 
     self.integrityClient = DataIntegrityClient()
@@ -36,12 +36,13 @@ class ValidateOutputDataAgent( AgentModule ):
     self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', ['TransformationDB', 'MetadataCatalog'] ) )
     self.activeStorages = sortList( self.am_getOption( 'ActiveSEs', [] ) )
     self.transfidmeta = self.am_getOption( 'TransfIDMeta', "TransformationID" )
+    self.enableFlag = True
 
   #############################################################################
 
   def initialize( self ):
-    """Sets defaults
-    """
+    '''Sets defaults
+    '''
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -56,10 +57,10 @@ class ValidateOutputDataAgent( AgentModule ):
   #############################################################################
 
   def execute( self ):
-    """ The VerifyOutputData execution method """
+    ''' The VerifyOutputData execution method '''
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
     if not self.enableFlag == 'True':
-      self.log.info( 'VerifyOutputData is disabled by configuration option %s/EnableFlag' % ( self.section ) )
+      self.log.info( "VerifyOutputData is disabled by configuration option 'EnableFlag'" )
       return S_OK( 'Disabled via CS flag' )
 
     gLogger.info( "-" * 40 )
@@ -118,7 +119,7 @@ class ValidateOutputDataAgent( AgentModule ):
   #
 
   def getTransformationDirectories( self, transID ):
-    """ Get the directories for the supplied transformation from the transformation system """
+    ''' Get the directories for the supplied transformation from the transformation system '''
     directories = []
     if 'TransformationDB' in self.directoryLocations:
       res = self.transClient.getTransformationParameters( transID, ['OutputDirectories'] )
@@ -140,8 +141,9 @@ class ValidateOutputDataAgent( AgentModule ):
     directories = sortList( directories )
     return S_OK( directories )
 
+  @staticmethod
   def _addDirs( self, transID, newDirs, existingDirs ):
-    for dir in newDirs:
+    for _dir in newDirs:
       transStr = str( transID ).zfill( 8 )
       if re.search( transStr, dir ):
         if not dir in existingDirs:
@@ -150,7 +152,7 @@ class ValidateOutputDataAgent( AgentModule ):
 
   #############################################################################
   def checkTransformationIntegrity( self, transID ):
-    """ This method contains the real work """
+    ''' This method contains the real work '''
     gLogger.info( "-" * 40 )
     gLogger.info( "Checking the integrity of transformation %s" % transID )
     gLogger.info( "-" * 40 )
