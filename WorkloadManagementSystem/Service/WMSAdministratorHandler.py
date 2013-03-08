@@ -16,21 +16,19 @@ Access to the pilot data:
 
 __RCSID__ = "$Id$"
 
-import os, sys, string, uu, shutil
-from types import *
+from types import DictType, ListType, IntType, LongType, StringTypes, FloatType
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getPilotOutput
+from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
-import DIRAC.ConfigurationSystem.Client.Helpers.Resources 
-
-import threading
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 # This is a global instance of the database classes
 jobDB = False
@@ -446,22 +444,16 @@ class WMSAdministratorHandler(RequestHandler):
     maskStatus = ['Active','Banned','NoMask','Reduced']
     resultDict['MaskStatus'] = maskStatus
 
-    gridTypes = []
-    result = gConfig.getSections('Resources/Sites/',[])
-    if result['OK']:
-      gridTypes = result['Value']
-
-    resultDict['GridType'] = gridTypes
-    siteList = []
-    for grid in gridTypes:
-      result = gConfig.getSections('Resources/Sites/%s' % grid,[])
-      if result['OK']:
-        siteList += result['Value']
+    resources = Resources()
+    result = resources.getSites()
+    if not result['OK']:
+      return result
+    siteList = result['Value']
 
     countryList = []
     for site in siteList:
       if site.find('.') != -1:
-        grid,sname,country = site.split('.')
+        country = site.split('.')[1]
         country = country.lower()
         if country not in countryList:
           countryList.append(country)
