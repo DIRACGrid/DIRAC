@@ -4,9 +4,7 @@
 import copy
 import os
 
-import DIRAC.Core.Workflow.Step
 from DIRAC.Core.Workflow.Parameter import AttributeCollection, ParameterCollection, indent
-
 
 class ModuleDefinition( AttributeCollection ):
 
@@ -19,7 +17,7 @@ class ModuleDefinition( AttributeCollection ):
     self.parent = parent
 
     if ( obj == None ) or isinstance( obj, ParameterCollection ):
-      self.setType( 'nitgiven' )
+      self.setType( 'notgiven' )
       self.setDescrShort( '' )
       self.setDescription( '' )
       self.setRequired( '' )
@@ -152,13 +150,16 @@ class DefinitionsPool( dict ):
 
   def __init__( self, parent, pool = None ):
     dict.__init__( self )
+
+    import DIRAC.Core.Workflow.Step
+
     self.parent = parent  # this is a cache value, we propagate it into next level
     if isinstance( pool, DefinitionsPool ):
       for k in pool.keys():
         v = pool[k]
         if isinstance( v, ModuleDefinition ):
           obj = ModuleDefinition( None, v, self.parent )
-        elif  isinstance( v, DIRAC.Core.Workflow.Step.StepDefinition ):
+        elif isinstance( v, DIRAC.Core.Workflow.Step.StepDefinition ):
           obj = DIRAC.Core.Workflow.Step.StepDefinition( None, v, self.parent )
         else:
           raise TypeError( 'Error: __init__ Wrong type of object stored in the DefinitionPool ' + str( type( pool[v] ) ) )
@@ -243,6 +244,8 @@ class InstancesPool( list ):
 
   def __init__( self, parent, pool = None ):
     list.__init__( self )
+
+    import DIRAC.Core.Workflow.Step
 
     self.parent = None  # this is a cache value, we propagate it into next level
     if isinstance( pool, InstancesPool ):
