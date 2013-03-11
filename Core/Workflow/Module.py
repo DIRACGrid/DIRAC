@@ -1,22 +1,12 @@
-# $Id$
-"""
-    This is a comment
-"""
-__RCSID__ = "$Revision: 1.19 $"
-
-# $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
+''' Module - modules are included in the steps. Modules can have parameters.
+'''
 
 import copy
 import os
 
-#try: # this part to import as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import AttributeCollection, ParameterCollection, indent
 from DIRAC.Core.Workflow.Step import StepDefinition, StepInstance
 
-#RICARDO PLEASE DO NOT CHANGE THIS BACK. IT BREAKS THE EXECUTION OF WORKFLOWS!
-#from DIRAC.Core.Workflow.Step import *
-#except: # this part is to import code without DIRAC
-#  from Parameter import *
 
 class ModuleDefinition( AttributeCollection ):
 
@@ -184,8 +174,8 @@ class DefinitionsPool( dict ):
 #       print 'For now we ignore it for the', obj.getType()
 
   def append( self, obj ):
-    """ We add new Definition (Module, Step)
-    """
+    ''' We add new Definition (Module, Step)
+    '''
     self[obj.getType()] = obj
     obj.setParent( self.parent )
     return obj
