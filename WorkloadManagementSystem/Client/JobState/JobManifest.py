@@ -167,12 +167,12 @@ class JobManifest( object ):
       return result
     allowedSubmitPools = []
     for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools = gConfig.getValue( "/%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
+      allowedSubmitPools += gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
                                                           option ),
-                                             allowedSubmitPools )
-      result = self.__checkMultiChoice( "SubmitPools", allowedSubmitPools )
-      if not result[ 'OK' ]:
-        return result
+                                             [] )
+    result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
+    if not result[ 'OK' ]:
+      return result
     result = self.__checkMultiChoice( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
