@@ -94,6 +94,7 @@ class SpaceTokenOccupancyCommand( Command ):
     occupancy = pythonCall( 20, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
     if not occupancy[ 'OK' ]:
       return occupancy
+    occupancy = occupancy[ 'Value' ]
     
     #Timeout does not work here...
     #occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )
