@@ -90,8 +90,8 @@ class SpaceTokenOccupancyCommand( Command ):
         return params
       spaceTokenEndpoint, spaceToken = params[ 'Value' ] 
       
-    # 20 secs of timeout. If it works, the reply is immediate.  
-    occupancy = pythonCall( 20, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
+    # 10 secs of timeout. If it works, the reply is immediate.  
+    occupancy = pythonCall( 10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
     if not occupancy[ 'OK' ]:
       return occupancy
     occupancy = occupancy[ 'Value' ]
