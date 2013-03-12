@@ -304,6 +304,8 @@ class StrategyHandler( object ):
       checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
       if checkSourceSE["OK"]:
         goodSources.append( sourceSE )
+    if not goodSources:
+      return S_ERROR("swarm: all supplied sources are not valid")
     sourceSEs = goodSources
     channels = []
     if len(targetSEs) > 1:
@@ -357,6 +359,8 @@ class StrategyHandler( object ):
       checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
       if checkSourceSE["OK"]:
         goodSources.append( sourceSE )
+    if not goodSources:
+      return S_ERROR("minimiseTotalWait: all supplied sources are not valid")
     sourceSEs = goodSources
     primarySources = sourceSEs
     while targetSEs:
@@ -441,6 +445,8 @@ class StrategyHandler( object ):
       checkSourceSE = self.checkSourceSE( sourceSE, lfn, metadata )
       if checkSourceSE["OK"]:
         goodSources.append( sourceSE )
+    if not goodSources:
+      return S_ERROR("dynamicThroughput: all supplied sources are not valid")
     sourceSEs = goodSources
     primarySources = sourceSEs
     timeToSite = {}
@@ -590,11 +596,13 @@ class StrategyHandler( object ):
     rAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "ReadAccess", default = 'Unknown' )
     if not rAccess["OK"]:
       return rAccess["Message"]
-    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadAccess"] in ( "Active", "Degraded" ) ]
+    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadAccess"] in ( "Active", 
+                                                                                                     "Degraded" ) ]
     wAccess = self.resourceStatus.getStorageElementStatus( seList, statusType = "WriteAccess", default = 'Unknown' )
     if not wAccess["OK"]:
       return wAccess["Message"]
-    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteAccess" in v and v["WriteAccess"] in ( "Active", "Degraded" ) ]
+    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteAccess" in v and v["WriteAccess"] in ( "Active", 
+                                                                                                       "Degraded" ) ]
     for se in rwDict:
       rwDict[se]["read"] = se in rAccess
       rwDict[se]["write"] = se in wAccess
@@ -611,6 +619,10 @@ class StrategyHandler( object ):
     if not se:
       se = StorageElement( sourceSE, "SRM2" )
       self.seCache[sourceSE] = se
+    isValid = se.isValid("Read")
+    if not isValid["OK"]:
+      self.log.error("checkSourceSE: storageElement %s is banned for reading" % ( sourceSE ) )
+      return isValid
     pfn = se.getPfnForLfn( lfn )
     if not pfn["OK"]:
       self.log.warn("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) ) 
