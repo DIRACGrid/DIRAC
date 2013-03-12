@@ -170,7 +170,7 @@ class JobManifest( object ):
       allowedSubmitPools += gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
                                                           option ),
                                              [] )
-    result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
+    result = self.__checkMultiChoice( "SubmitPools", list( set( allowedSubmitPools ) ) )
     if not result[ 'OK' ]:
       return result
     result = self.__checkMultiChoice( "PilotTypes", [ 'private' ] )
