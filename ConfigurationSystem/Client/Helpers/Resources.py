@@ -32,7 +32,7 @@
       get<NodeType>OptionsDict( site, node )
       get<NodeType>Value( site, node, option, default )
 
-    The eligible Resource types and Node types are defined in the RESOURCE_ACCESS_MAPPING global
+    The eligible Resource types and Node types are defined in the RESOURCE_NODE_MAPPING global
     dictionary, there is a one-to-one correspondence as we have a single node type per given
     Resource type, mostly for clarity/readability reasons
 
@@ -81,7 +81,7 @@ from types import ListType
 #  Global constants
 
 gBaseResourcesSection = "/Resources_new"
-RESOURCE_ACCESS_MAPPING = {
+RESOURCE_NODE_MAPPING = {
   'Computing':'Queue',
   'Storage':'AccessProtocol',
   'Catalog':'',
@@ -229,7 +229,13 @@ def checkElementProperties( elementPath, selectDict ):
 def getSiteForResource( resourceType, resourceName ):
   """ Get the site name for the given resource specified by type and name
   """
-  for site in getSites():
+  
+  result = getSites()
+  if not result['OK']:
+    return result
+  sites = result['Value']
+  
+  for site in sites:
     result = Resources().getResources( site, resourceType )
     if not result['OK']:
       continue
@@ -238,7 +244,7 @@ def getSiteForResource( resourceType, resourceName ):
       if resource == resourceName:
         return S_OK( site )
       
-  return S_ERROR( 'Resource %s of type %s is not found' % ( resourceType, resourceName ) )    
+  return S_ERROR( 'Resource %s of type %s is not found' % ( resourceName, resourceType ) )    
 
 ####################################################################################
 #
@@ -374,7 +380,7 @@ class Resources( object ):
 
     name = self.call
     resourceType = None
-    accessType = None
+    nodeType = None
     siteType = None
 
     args = list( params )
@@ -403,16 +409,16 @@ class Resources( object ):
       resourceType = args.pop()
     elif "Node" in name:
       resourceType = args.pop()
-      accessType = RESOURCE_ACCESS_MAPPING[resourceType]    
+      nodeType = RESOURCE_NODE_MAPPING[resourceType]    
     else:  
-      for rType in RESOURCE_ACCESS_MAPPING:
+      for rType in RESOURCE_NODE_MAPPING:
         if name.startswith( 'get'+rType ):
           resourceType = rType
-        aType = RESOURCE_ACCESS_MAPPING[rType]
-        if aType and name.startswith( 'get'+aType ):
-          accessType = aType
-          for rType in RESOURCE_ACCESS_MAPPING:
-            if aType == RESOURCE_ACCESS_MAPPING[rType]:
+        nType = RESOURCE_NODE_MAPPING[rType]
+        if nType and name.startswith( 'get'+nType ):
+          nodeType = nType
+          for rType in RESOURCE_NODE_MAPPING:
+            if nType == RESOURCE_NODE_MAPPING[rType]:
               resourceType = rType
 
     optionVOPath = None
@@ -422,12 +428,12 @@ class Resources( object ):
       typePath = os.path.dirname( sitePath )
       if self.__vo is not None:
         optionVOPath = cfgPath( sitePath, self.__vo )
-    elif accessType is not None:
+    elif nodeType is not None:
       resource = args.pop()
-      typePath = cfgPath( sitePath, resourceType, resource, accessType+'s' ) 
+      typePath = cfgPath( sitePath, resourceType, resource, nodeType+'s' ) 
       if len( args ) > 0:
         node = args.pop()
-        optionPath = cfgPath( sitePath, resourceType, resource, accessType+'s', node )        
+        optionPath = cfgPath( sitePath, resourceType, resource, nodeType+'s', node )        
         if self.__vo is not None:
           optionVOPath = cfgPath( optionPath, self.__vo )
     elif resourceType is not None:
@@ -507,10 +513,17 @@ class Resources( object ):
     if not result['OK']:
       return result
     eligibleSites = result['Value']
+    
+    eligibleResources = resourceSelectDict.get( 'Resources', resourceSelectDict.get( 'Resource', [] ) )
+    if type( eligibleResources ) != ListType:
+      eligibleResources = [eligibleResources]
+    for key in ['Resources','Resource']:
+      if key in resourceSelectDict:
+        resourceSelectDict.pop(key)    
       
     resourceType = None
-    for rType in RESOURCE_ACCESS_MAPPING:
-      if RESOURCE_ACCESS_MAPPING[rType] == nodeType:
+    for rType in RESOURCE_NODE_MAPPING:
+      if RESOURCE_NODE_MAPPING[rType] == nodeType:
         resourceType = rType
     if resourceType is None:
       return S_ERROR( 'Invalid Node type %s' % nodeType ) 
@@ -518,10 +531,12 @@ class Resources( object ):
     resultDict = {}
 
     for site in eligibleSites:
-      result = self.getResources( site, resourceType, selectDict=resourceSelectDict )
-      if not result['OK']:
-        continue
-      for resource in result['Value']:
+      if not eligibleResources:
+        result = self.getResources( site, resourceType, selectDict=resourceSelectDict )
+        if not result['OK']:
+          continue
+        eligibleResources = result['Value']
+      for resource in eligibleResources:
         result = self.getNodes( site, resourceType, resource, nodeType, selectDict=nodeSelectDict )
         if not result['OK']:
           continue
@@ -553,21 +568,26 @@ class Resources( object ):
 
     return S_OK( seList )    
 
+  def getCatalogOptionsDict( self, catalogName ):
+    """ Get the CS Catalog Options
+    """
+    result = getSiteForResource( 'Catalog', catalogName )
+    if not result['OK']:
+      return result
+    site = result['Value']  
+    result = self.getResourceOptionsDict( site, 'Catalog', catalogName )
+    return result
+
   def getStorageElementOptionsDict( self, seName ):
     """ Get the CS StorageElementOptions
     """
     # Construct the SE path first
-    ind = seName.rfind('-')
-    if ind == -1:
-      return S_ERROR( 'Invalid SE name %s' % seName )
-    seElement = seName[ind+1:]
-    siteName = seName[:ind]
-    result = getSiteName( siteName )
+    result = getSiteForResource( 'Storage', seName )
     if not result['OK']:
       return result
     site = result['Value']  
 
-    result = self.getStorageOptionsDict( site, seElement )
+    result = self.getStorageOptionsDict( site, seName )
     if not result['OK']:
       return result
     options = result['Value']
@@ -582,6 +602,13 @@ class Resources( object ):
       tapeSE = re.search( 'T[1-9]', seType ) != None
     options['DiskSE'] = diskSE
     options['TapeSE'] = tapeSE
+
+    result = self.getAccessProtocols( site, seName )
+    if result['OK']:
+      protocol = result['Value'][0]
+      result = self.getAccessProtocolOptionsDict( site, seName, protocol )
+      if result['OK']:
+        options.update( result['Value'] )
 
     return S_OK( options )
 
@@ -731,7 +758,3 @@ def getDIRACPlatform( platform ):
   
   return S_ERROR( 'No compatible DIRAC platform found for %s' % platform )
   
-def getCatalogPath( catalogName ):
-  """  Return the configuration path of the description for a a given catalog
-  """
-  return '/Resources/FileCatalogs/%s' % catalogName

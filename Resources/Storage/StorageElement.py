@@ -419,6 +419,18 @@ class StorageElement:
     errStr = "getPfnForLfn: Failed to get the full pfn for any of the protocols!!"
     self.log.error( errStr )
     return S_ERROR( errStr )
+  
+  def getPFNBase( self ):
+    """ Get the base to construct a PFN 
+    """
+    if not self.storages:
+      return S_ERROR( 'No storages defined' )
+    for storage in self.storages:
+      result = storage.getPFNBase()
+      if result['OK']:
+        return result
+
+    return result
 
   ###########################################################################################
   #

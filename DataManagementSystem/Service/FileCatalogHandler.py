@@ -13,7 +13,7 @@ __RCSID__ = "$Id$"
 
 ## imports
 import os
-from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType
+from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType 
 ## from DIRAC
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR

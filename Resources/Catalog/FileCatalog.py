@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 import types, re
 
@@ -30,7 +31,6 @@ class FileCatalog:
     self.timeout = 180
     self.readCatalogs = []
     self.writeCatalogs = []
-    self.rootConfigPath = '/Resources/FileCatalogs'
     self.vo = vo
     if not vo:
       result = getVOfromProxyGroup()
@@ -38,6 +38,7 @@ class FileCatalog:
         return result
       self.vo = result['Value']
     self.opHelper = Operations( vo = self.vo )
+    self.reHelper = Resources( vo = self.vo )
 
     if type( catalogs ) in types.StringTypes:
       catalogs = [catalogs]
@@ -120,10 +121,10 @@ class FileCatalog:
           successful[lfn][catalogName] = result
     # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
     for catalogName, errorMessage in failedCatalogs:
-      for file in allLfns:
-        if not failed.has_key( file ):
-          failed[file] = {}
-        failed[file][catalogName] = errorMessage
+      for lfn in allLfns:
+        if not failed.has_key( lfn ):
+          failed[lfn] = {}
+        failed[lfn][catalogName] = errorMessage
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -132,7 +133,8 @@ class FileCatalog:
     """
     successful = {}
     failed = {}
-    for catalogName, oCatalog, master in self.readCatalogs:
+    for catalogTuple in self.readCatalogs:
+      oCatalog = catalogTuple[1]
       method = getattr( oCatalog, self.call )
       res = method( *parms, **kws )
       if res['OK']:
@@ -184,13 +186,13 @@ class FileCatalog:
     catalog_removed = False
 
     for i in range( len( self.readCatalogs ) ):
-      catalog, object, master = self.readCatalogs[i]
+      catalog = self.readCatalogs[i][0]
       if catalog == catalogName:
         del self.readCatalogs[i]
         catalog_removed = True
         break
     for i in range( len( self.writeCatalogs ) ):
-      catalog, object, master = self.writeCatalogs[i]
+      catalog = self.writeCatalogs[i][0]
       if catalog == catalogName:
         del self.writeCatalogs[i]
         catalog_removed = True
@@ -214,7 +216,7 @@ class FileCatalog:
   def _getCatalogs( self ):
     
     # Get the eligible catalogs first
-    # First, look in the Operations, if nothing defined look in /Resources for backward compatibility
+    # First, look in the Operations, if nothing defined look in /Resources 
     result = self.opHelper.getSections( '/Services/Catalogs' )
     fileCatalogs = []
     operationsFlag = False
@@ -222,7 +224,7 @@ class FileCatalog:
       fileCatalogs = result['Value']
       operationsFlag = True
     else:   
-      res = gConfig.getSections( self.rootConfigPath, listOrdered = True )
+      res = self.reHelper.getEligibleResources( 'Catalog' )
       if not res['OK']:
         errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
         gLogger.error( errStr, res['Message'] )
@@ -262,25 +264,21 @@ class FileCatalog:
 
   def _getCatalogConfigDetails( self, catalogName ):
     # First obtain the options that are available
-    catalogConfigPath = '%s/%s' % ( self.rootConfigPath, catalogName )
-    res = gConfig.getOptions( catalogConfigPath )
-    if not res['OK']:
-      errStr = "FileCatalog._getCatalogConfigDetails: Failed to get catalog options."
+    
+    result = self.reHelper.getCatalogOptionsDict( catalogName )
+    if not result['OK']:
+      errStr = "FileCatalog._getCatalogConfigDetails: Failed to get catalog options"
       gLogger.error( errStr, catalogName )
       return S_ERROR( errStr )
-    catalogConfig = {}
-    for option in res['Value']:
-      configPath = '%s/%s' % ( catalogConfigPath, option )
-      optionValue = gConfig.getValue( configPath )
-      catalogConfig[option] = optionValue
+    catalogConfig = result['Value']
     # The 'Status' option should be defined (default = 'Active')
     if not catalogConfig.has_key( 'Status' ):
-      warnStr = "FileCatalog._getCatalogConfigDetails: 'Status' option not defined."
+      warnStr = "FileCatalog._getCatalogConfigDetails: 'Status' option not defined"
       gLogger.warn( warnStr, catalogName )
       catalogConfig['Status'] = 'Active'
     # The 'AccessType' option must be defined
     if not catalogConfig.has_key( 'AccessType' ):
-      errStr = "FileCatalog._getCatalogConfigDetails: Required option 'AccessType' not defined."
+      errStr = "FileCatalog._getCatalogConfigDetails: Required option 'AccessType' not defined"
       gLogger.error( errStr, catalogName )
       return S_ERROR( errStr )
     # Anything other than 'True' in the 'Master' option means it is not
