@@ -35,6 +35,7 @@ class StalledJobAgent( AgentModule ):
   logDB = None
   matchedTime = 7200
   rescheduledTime = 600
+  completedTime = 86400
 
   #############################################################################
   def initialize( self ):
@@ -63,6 +64,7 @@ class StalledJobAgent( AgentModule ):
 
     self.matchedTime = self.am_getOption( 'MatchedTime', self.matchedTime )
     self.rescheduledTime = self.am_getOption( 'RescheduledTime', self.rescheduledTime )
+    self.completedTime = self.am_getOption( 'CompletedTime', self.completedTime )
 
     self.log.verbose( 'StalledTime = %s cycles' % ( stalledTime ) )
     self.log.verbose( 'FailedTime = %s cycles' % ( failedTime ) )
@@ -83,6 +85,10 @@ class StalledJobAgent( AgentModule ):
     #stalled job agent.
 
     result = self.__failStalledJobs( failedTime )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+
+    result = self.__failedCompletedJobs()
     if not result['OK']:
       self.log.error( result['Message'] )
 
@@ -322,7 +328,7 @@ class StalledJobAgent( AgentModule ):
       lastCPUTime, lastWallTime, lastHeartBeatTime = self.__checkHeartBeat( jobID, jobDict )
       lastHeartBeatTime = fromString( lastHeartBeatTime )
       if lastHeartBeatTime is not None and lastHeartBeatTime > endTime:
-        endTime = lastHeartBeatTime 
+        endTime = lastHeartBeatTime
 
       cpuNormalization = self.jobDB.getJobParameter( jobID, 'CPUNormalizationFactor' )
       if not cpuNormalization['OK'] or not cpuNormalization['Value']:
@@ -330,8 +336,8 @@ class StalledJobAgent( AgentModule ):
       else:
         cpuNormalization = float( cpuNormalization['Value'] )
     except Exception:
-      self.log.exception( "Exception in __sendAccounting for job %s: endTime=%s, lastHBTime %s" %(str(jobID), str(endTime),str(lastHeartBeatTime)), '' , False)
-      return S_ERROR("Exception")
+      self.log.exception( "Exception in __sendAccounting for job %s: endTime=%s, lastHBTime %s" % ( str( jobID ), str( endTime ), str( lastHeartBeatTime ) ), '' , False )
+      return S_ERROR( "Exception" )
     processingType = self.__getProcessingType( jobID )
 
     accountingReport.setStartTime( startTime )
@@ -475,5 +481,40 @@ class StalledJobAgent( AgentModule ):
       return S_ERROR( message )
     else:
       return S_OK()
+
+  def __failedCompletedJobs( self ):
+    """ Failed Jobs stuck in Completed Status for a long time.
+      They are due to pilots being killed during the 
+      finalization of the job execution.
+    """
+
+    # Get old Completed Jobs
+    checkTime = str( dateTime() - self.completedTime * second )
+    result = self.jobDB.selectJobs( {'Status':'Completed'}, older = checkTime )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return result
+
+    jobIDs = result['Value']
+    if not jobIDs:
+      return S_OK()
+
+    # Remove those with Minor Status "Pending Requests"
+    for jobID in jobIDs:
+      result = self.jobDB.getJobAttribute( jobID, 'MinorStatus' )
+      if not result['OK']:
+        self.log.error( result['Message'] )
+        continue
+      if result['Value'] == "Pending Requests":
+        continue
+
+      result = self.__updateJobStatus( jobID, 'Failed',
+                                       "Job died during finalization" )
+      result = self.__sendAccounting( jobID )
+      if not result['OK']:
+        self.log.error( result['Message'] )
+        break
+
+    return S_OK()
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
