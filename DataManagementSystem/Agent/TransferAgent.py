@@ -919,11 +919,10 @@ class TransferAgent( RequestAgentBase ):
       ancestorSwap = {} 
       for channelID in sortedKeys:
         repDict = tree[channelID]
-        self.log.debug( "scheduleFiles: Channel=%d Strategy=%s Ancestor=%s SourceSE=%s DestSE=%s" % ( channelID, 
-                                                                                                      repDict["Strategy"],
-                                                                                                      repDict["Ancestor"],
-                                                                                                      repDict["SourceSE"],
-                                                                                                      repDict["DestSE"] ) )
+        self.log.debug( "scheduleFiles: Strategy=%s Ancestor=%s SrcSE=%s DesSE=%s" % ( repDict["Strategy"],
+                                                                                       repDict["Ancestor"],
+                                                                                       repDict["SourceSE"],
+                                                                                       repDict["DestSE"] ) )
         transferURLs = self.getTransferURLs( waitingFileLFN, repDict, waitingFileReplicas )
         if not transferURLs["OK"]:
           return transferURLs
@@ -1001,7 +1000,7 @@ class TransferAgent( RequestAgentBase ):
     fileLFNs = []
     for subRequestFile in subRequestFiles:
       status = subRequestFile["Status"]
-      if status != "Done":
+      if status not in ( "Done", "Failed" ):
         fileLFNs.append( subRequestFile["LFN"] )
   
     replicas = None
@@ -1013,7 +1012,10 @@ class TransferAgent( RequestAgentBase ):
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
         if re.search( "no such file or directory", str(failure).lower() ):
+          self.log.info("checkReadyReplicas: %s cannot be transferred, setting its status to 'Failed'" % lfn )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
+          
       replicas = replicas["Value"]["Successful"]
 
     ## are there any replicas?
@@ -1023,7 +1025,7 @@ class TransferAgent( RequestAgentBase ):
         fileReplicas = [] if fileLFN not in replicas else replicas[fileLFN]
         fileTargets = [ targetSE for targetSE in targetSEs if targetSE not in fileReplicas ]
         if not fileTargets:
-          self.log.info( "checkReadyReplicas: %s is present at all targets, setting its status to 'Done'" % fileLFN )
+          self.log.info( "checkReadyReplicas: all transfers of %s are done" % fileLFN )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", fileLFN, "Status", "Done" )
           continue    
         else:
