@@ -144,12 +144,12 @@ class JobDescription:
       return result
     allowedSubmitPools = []
     for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools = gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
-                                                         option ),
-                                             allowedSubmitPools )
-      result = self.__checkMultiChoiceInDescription( "SubmitPools", allowedSubmitPools )
-      if not result[ 'OK' ]:
-        return result
+      allowedSubmitPools += gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
+                                                          option ),
+                                             [] )
+    result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
+    if not result[ 'OK' ]:
+      return result
     result = self.__checkMultiChoiceInDescription( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
