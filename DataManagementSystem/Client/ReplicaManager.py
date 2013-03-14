@@ -2041,7 +2041,8 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, res['Message'] )
       return res
     lfnDict = res['Value']['Successful']
-    for lfn, reason in res['Value']['Failed']:
+    
+    for lfn, reason in res['Value'].get('Failed', {}).items():
       # Ignore files missing in FC if force is set
       if reason == 'No such file or directory' and force:
         successful[lfn] = True
