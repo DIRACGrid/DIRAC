@@ -465,6 +465,9 @@ class SRM2Storage( StorageBase ):
         elif urlDict['status'] == 1:
           self.log.debug( "prestageFile: File found to be already staged.", pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
+        elif urlDict['status'] == 22:
+          self.log.debug( "prestageFile: Stage request for file %s queued.", pathSURL )
+          successful[pathSURL] = urlDict['SRMReqID']  
         elif urlDict['status'] == 2:
           errMessage = "prestageFile: File does not exist."
           self.log.error( errMessage, pathSURL )
