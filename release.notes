@@ -1,3 +1,15 @@
+[v6r7p16]
+
+*DMS
+FIX: StrategyHandler - do not proceed when the source SE is not valid for read 
+BUGFIX: StorageElement - putFile can take an optional sourceSize argument
+
+*RSS
+FIX: SpaceTokenOccupancyCommand, CacheFeederAgent - add timeout when calling lcg_util commands
+
+*WMS
+FIX: JobManifest - take all the SubmitPools defined in the TaskQueueAgent 
+
 [v6r7p15]
 
 *Core
