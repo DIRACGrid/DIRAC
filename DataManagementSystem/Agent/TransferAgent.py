@@ -978,7 +978,6 @@ class TransferAgent( RequestAgentBase ):
     ## return modified requestObj 
     return S_OK( requestObj )
 
-
   def checkReadyReplicas( self, requestObj, index, subAttrs ):
     """ check if Files are already replicated, mark thiose as Done
 
@@ -1012,9 +1011,9 @@ class TransferAgent( RequestAgentBase ):
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
         if re.search( "no such file or directory", str(failure).lower() ):
-          self.log.info("checkReadyReplicas: %s cannot be transferred, setting its status to 'Failed'" % lfn )
+          #self.log.info("checkReadyReplicas: %s cannot be transferred, setting its status to 'Failed'" % lfn )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
-          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
+          #requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
           
       replicas = replicas["Value"]["Successful"]
 
