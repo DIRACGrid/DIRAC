@@ -41,7 +41,6 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 
-
 ## agent name
 AGENT_NAME = "DataManagement/TransferAgent"
 
@@ -229,7 +228,6 @@ class TransferAgent( RequestAgentBase ):
     if not self.__replicaManager:
       self.__replicaManager = ReplicaManager()
     return self.__replicaManager
-
 
   def storageFactory( self ):
     """ StorageFactory instance getter
@@ -475,7 +473,6 @@ class TransferAgent( RequestAgentBase ):
     subRequestFiles = subRequestFiles["Value"]
     self.log.debug( "collectFiles: subrequest %s found with %d files." % ( iSubRequest, 
                                                                            len( subRequestFiles ) ) )
-    
     for subRequestFile in subRequestFiles:
       fileStatus = subRequestFile["Status"]
       fileLFN = subRequestFile["LFN"]
@@ -493,15 +490,14 @@ class TransferAgent( RequestAgentBase ):
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.error( "collectFiles: Failed to get replicas %s: %s" % ( lfn, failure ) )    
       replicas = replicas["Value"]["Successful"]
-
+      
       if replicas:
         metadata = self.replicaManager().getCatalogFileMetadata( replicas.keys() )
         if not metadata["OK"]:
           self.log.error( "collectFiles: failed to get file size information", metadata["Message"] )
           return metadata
         for lfn, failure in metadata["Value"]["Failed"].items():
-          self.log.error( "collectFiles: failed to get file size %s: %s" % ( lfn, failure ) )
-          
+          self.log.error( "collectFiles: failed to get file size %s: %s" % ( lfn, failure ) )    
         metadata = metadata["Value"]["Successful"] 
    
     self.log.debug( "collectFiles: waitingFiles=%d replicas=%d metadata=%d" % ( len(waitingFiles), 
@@ -509,31 +505,34 @@ class TransferAgent( RequestAgentBase ):
                                                                                 len(metadata) ) )
 
     for waitingFile in waitingFiles:
-      validSourceSEs = []
+      validSourceSEs = {}
       downTime = False
-      for replicaSE in replicas[waitingFile]:
-        checkSourceSE = self.checkSourceSE( replicaSE, waitingFile, waitingFileMetadata )
+      for replicaSE, sURL in replicas.get(waitingFile, {}):
+        checkSourceSE = self.checkSourceSE( replicaSE, waitingFile, metadata.get(waitingFile, {} ) ) 
         if checkSourceSE["OK"]:
-          validSourceSEs.append( replicaSE )
+          validSourceSEs[replicaSE] = sURL
         elif "banned for reading" in checkSourceSE["Message"]: 
           downTime = True 
       ## no valid replicas 
       if not validSourceSEs:
         ## but there is a downtime at some of sourceSEs, skip this file rigth now
         if downTime:
-          self.log.warn("collectFiles: cannot find valid sources for %s at the moment" % waitingFileLFN )
+          self.log.warn("collectFiles: cannot find valid sources for %s at the moment" % waitingFile )
           continue
-      ## no downtime on SEs, no valid sourceSEs at all, mark transfer of this file as failed
-      self.log.error("collectFiles: valid sources not found for %s, marking file as 'Failed'" % waitingFileLFN )
-      requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, 
-                                                  "Status", "Failed" )
-      requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, 
-                                                  "Error", "valid source not found" )
-      continue
-    
-    if not ( len( waitingFiles ) == len( replicas ) == len( metadata ) ):
-      self.log.warn( "collectFiles: Not all requested information available!" )
-          
+        ## no downtime on SEs, no valid sourceSEs at all, mark transfer of this file as failed
+        self.log.error("collectFiles: valid sources not found for %s, marking file as 'Failed'" % waitingFile )
+        requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", waitingFile, 
+                                                    "Status", "Failed" )
+        requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", waitingFile, 
+                                                    "Error", "valid source not found" )
+        del waitingFiles[waitingFile]
+        if waitingFile in replicas:
+          del replicas[waitingFile]
+        if waitingFile in metadata:
+          del metadata[waitingFile]
+      else:
+        replicas[waitingFile] = validSourceSEs
+              
     return S_OK( ( waitingFiles, replicas, metadata ) )
 
   ###################################################################################
@@ -783,7 +782,7 @@ class TransferAgent( RequestAgentBase ):
         self.log.info("schedule: not-Done files found in subrequest")
       else:
         ## nope, all Done or no Waiting found
-        self.log.info("schedule: subrequest %d is empty" % iSubRequest )
+        self.log.debug("schedule: subrequest %d is empty" % iSubRequest )
         self.log.debug("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
 
@@ -897,30 +896,8 @@ class TransferAgent( RequestAgentBase ):
                                                                                    waitingFileSize, 
                                                                                    len(waitingFileReplicas), 
                                                                                    str(waitingFileTargets) ) ) 
-      validSourceSEs = []
-      downTime = False
-      for replicaSE in waitingFileReplicas:
-        checkSourceSE = self.checkSourceSE( replicaSE, waitingFileLFN, waitingFileMetadata )
-        if checkSourceSE["OK"]:
-          validSourceSEs.append( replicaSE )
-        elif "banned for reading" in checkSourceSE["Message"]: 
-          downTime = True 
-      ## no valid replicas 
-      if not validSourceSEs:
-        ## but there is a downtime at some of sourceSEs, skip this file rigth now
-        if downTime:
-          self.log.warn("scheduleFiles: cannot find valid sources for %s at the moment" % waitingFileLFN )
-          continue
-        ## no downtime on SEs, no valid sourceSEs at all, mark transfer of this file as failed
-        self.log.error("scheduleFiles: valid sources not found for %s, marking file as 'Failed'" % waitingFileLFN )
-        requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, 
-                                                    "Status", "Failed" )
-        requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, 
-                                                    "Error", "valid source not found" )
-        continue
-
       ## get the replication tree at least
-      tree = self.strategyHandler().replicationTree( validSourceSEs,  
+      tree = self.strategyHandler().replicationTree( waitingFileReplicas,  
                                                      waitingFileTargets, 
                                                      waitingFileSize, 
                                                      strategy )
@@ -942,7 +919,11 @@ class TransferAgent( RequestAgentBase ):
       ancestorSwap = {} 
       for channelID in sortedKeys:
         repDict = tree[channelID]
-        self.log.info( "scheduleFiles: processing channel %d %s" % ( channelID, str( repDict ) ) )
+        self.log.debug( "scheduleFiles: Channel=%d Strategy=%s Ancestor=%s SourceSE=%s DestSE=%s" % ( channelID, 
+                                                                                                      repDict["Strategy"],
+                                                                                                      repDict["Ancestor"],
+                                                                                                      repDict["SourceSE"],
+                                                                                                      repDict["DestSE"] ) )
         transferURLs = self.getTransferURLs( waitingFileLFN, repDict, waitingFileReplicas )
         if not transferURLs["OK"]:
           return transferURLs
@@ -993,7 +974,7 @@ class TransferAgent( RequestAgentBase ):
         ## update File status to 'Scheduled'
         requestObj.setSubRequestFileAttributeValue( index, "transfer", 
                                                     waitingFileLFN, "Status", "Scheduled" )
-        self.log.info( "scheduleFiles: status of %s file set to 'Scheduled'" % waitingFileLFN )
+        self.log.info( "scheduleFiles: %s has been scheduled for FTS" % waitingFileLFN )
   
     ## return modified requestObj 
     return S_OK( requestObj )
