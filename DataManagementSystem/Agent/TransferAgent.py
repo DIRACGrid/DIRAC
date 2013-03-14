@@ -501,16 +501,38 @@ class TransferAgent( RequestAgentBase ):
           return metadata
         for lfn, failure in metadata["Value"]["Failed"].items():
           self.log.error( "collectFiles: failed to get file size %s: %s" % ( lfn, failure ) )
+          
         metadata = metadata["Value"]["Successful"] 
    
     self.log.debug( "collectFiles: waitingFiles=%d replicas=%d metadata=%d" % ( len(waitingFiles), 
                                                                                 len(replicas), 
                                                                                 len(metadata) ) )
+
+    for waitingFile in waitingFiles:
+      validSourceSEs = []
+      downTime = False
+      for replicaSE in replicas[waitingFile]:
+        checkSourceSE = self.checkSourceSE( replicaSE, waitingFile, waitingFileMetadata )
+        if checkSourceSE["OK"]:
+          validSourceSEs.append( replicaSE )
+        elif "banned for reading" in checkSourceSE["Message"]: 
+          downTime = True 
+      ## no valid replicas 
+      if not validSourceSEs:
+        ## but there is a downtime at some of sourceSEs, skip this file rigth now
+        if downTime:
+          self.log.warn("collectFiles: cannot find valid sources for %s at the moment" % waitingFileLFN )
+          continue
+      ## no downtime on SEs, no valid sourceSEs at all, mark transfer of this file as failed
+      self.log.error("collectFiles: valid sources not found for %s, marking file as 'Failed'" % waitingFileLFN )
+      requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, 
+                                                  "Status", "Failed" )
+      requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, 
+                                                  "Error", "valid source not found" )
+      continue
     
     if not ( len( waitingFiles ) == len( replicas ) == len( metadata ) ):
       self.log.warn( "collectFiles: Not all requested information available!" )
-
-
           
     return S_OK( ( waitingFiles, replicas, metadata ) )
 

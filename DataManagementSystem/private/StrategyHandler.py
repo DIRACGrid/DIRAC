@@ -27,7 +27,6 @@ import datetime
 ## from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge 
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping
 
@@ -165,8 +164,6 @@ class StrategyHandler( object ):
     self.ftsGraph = None
     ## timestamp for last update
     self.lastRssUpdate = datetime.datetime.now()    
-    ## se cache
-    self.seCache = {}
     # dispatcher
     self.strategyDispatcher = { "MinimiseTotalWait" : self.minimiseTotalWait, 
                                 "DynamicThroughput" : self.dynamicThroughput,
