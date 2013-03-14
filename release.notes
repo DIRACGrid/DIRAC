@@ -1,3 +1,8 @@
+[v6r7p17]
+
+*Resources
+FIX: SRM2Storage - treat properly "22 SRM_REQUEST_QUEUED" result code
+
 [v6r7p16]
 
 *DMS
