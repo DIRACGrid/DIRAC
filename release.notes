@@ -3,6 +3,7 @@
 *DMS
 FIX: StrategyHandler - do not proceed when the source SE is not valid for read 
 BUGFIX: StorageElement - putFile can take an optional sourceSize argument
+BUGFIX: ReplicaManager - in removeFile() proper loop on failed replicas
 
 *RSS
 FIX: SpaceTokenOccupancyCommand, CacheFeederAgent - add timeout when calling lcg_util commands
