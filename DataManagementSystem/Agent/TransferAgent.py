@@ -38,7 +38,7 @@ from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 ## from RMS
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 ## from Resources
-from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ## agent name
 AGENT_NAME = "DataManagement/TransferAgent"
@@ -196,6 +196,8 @@ class TransferAgent( RequestAgentBase ):
         ## OwnerGroups not allowed to execute FTS transfers
         self.__ftsDisabledOwnerGroups = self.am_getOption( "FTSDisabledOwnerGroups", [ "lhcb_user" ] )
         self.log.info("FTSDisabledOwnerGroups = %s" %  self.__ftsDisabledOwnerGroups )
+        ## cache for SEs
+        self.seCache = {}
 
     ## is there any mode enabled?
     if True not in self.__executionMode.values():
@@ -225,15 +227,6 @@ class TransferAgent( RequestAgentBase ):
     if not self.__replicaManager:
       self.__replicaManager = ReplicaManager()
     return self.__replicaManager
-
-  def storageFactory( self ):
-    """ StorageFactory instance getter 
-
-    :param self: self reference
-    """
-    if not self.__storageFactory:
-      self.__storageFactory = StorageFactory()
-    return self.__storageFactory
 
   def transferDB( self ):
     """ TransferDB instance getter
@@ -294,6 +287,42 @@ class TransferAgent( RequestAgentBase ):
       return S_ERROR( "setupStrategyHandler: No active channels found for replication" )
     self.strategyHandler().setup( channels, bandwidths, failedFiles )
     self.strategyHandler().reset()
+    return S_OK()
+
+  def checkSourceSE( self, sourceSE, lfn, catalogMetadata ):
+    """ filter out SourceSEs where PFN is not existing or got wrong checksum
+
+    :param self: self reference
+    :param str lfn: logical file name
+    :param dict catalogMetadata: catalog metadata
+    """
+    se = self.seCache.get( sourceSE, None )
+    if not se:
+      se = StorageElement( sourceSE, "SRM2" )
+      self.seCache[sourceSE] = se
+    isValid = se.isValid("Read")
+    if not isValid["OK"]:
+      self.log.error("checkSourceSE: StorageElement '%s' is banned for reading" % ( sourceSE ) )
+      return S_ERROR("%s in banned for reading right now" % sourceSE )  
+    pfn = se.getPfnForLfn( lfn )
+    if not pfn["OK"]:
+      self.log.warn("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) )
+      return pfn
+    pfn = pfn["Value"]
+    seMetadata = se.getFileMetadata( pfn, singleFile=True )
+    if not seMetadata["OK"]:
+      self.log.warn("checkSourceSE: %s" % seMetadata["Message"] )
+      return S_ERROR("checkSourceSE: failed to get metadata")
+    seMetadata = seMetadata["Value"]
+    catalogChecksum = catalogMetadata["Checksum"].replace("x", "0" ).zfill(8) if "Checksum" in catalogMetadata else None
+    storageChecksum = seMetadata["Checksum"].replace("x", "0").zfill(8) if "Checksum" in seMetadata else None
+    if catalogChecksum != storageChecksum:
+      self.log.warn( "checkSourceSE: %s checksum mismatch catalogue:%s %s:%s" % ( lfn,
+                                                                                  catalogChecksum,
+                                                                                  sourceSE,
+                                                                                  storageChecksum ) )
+      return S_ERROR("checkSourceSE: checksum mismatch")
+    ## if we're here everything is OK
     return S_OK()
 
   @staticmethod
@@ -411,7 +440,6 @@ class TransferAgent( RequestAgentBase ):
       return S_ERROR( res["Value"]["Failed"][pfn] )
     return S_OK( res["Value"]["Successful"][pfn] )
 
-
   ###################################################################################
   # FTS mode helpers
   ###################################################################################
@@ -469,6 +497,8 @@ class TransferAgent( RequestAgentBase ):
     
     if not ( len( waitingFiles ) == len( replicas ) == len( metadata ) ):
       self.log.warn( "collectFiles: Not all requested information available!" )
+
+
           
     return S_OK( ( waitingFiles, replicas, metadata ) )
 
@@ -628,7 +658,6 @@ class TransferAgent( RequestAgentBase ):
           break
 
     return S_OK()
-
 
   ###################################################################################
   # FTS scheduling 
@@ -834,10 +863,28 @@ class TransferAgent( RequestAgentBase ):
                                                                                    waitingFileSize, 
                                                                                    len(waitingFileReplicas), 
                                                                                    str(waitingFileTargets) ) ) 
+      validReplicas = []
+      downTime = False
+      for replicaSE in waitingFileReplicas:
+        checkSourceSE = self.checkSourceSE( replicaSE, waitingFileLFN, waitingFileMetadata )
+        if checkSourceSE["OK"]:
+          validReplicas.append( replicaSE )
+        elif "banned for reading" in checkSourceSE["Message"]: 
+          downTime = True 
+      ## no valid replicas 
+      if not validReplicas:
+        ## but there is a downtime at some of sourceSEs, skip this file rigth now
+        if downTime:
+          self.log.warn("scheduleFiles: cannot find valid sources for %s at the moment" % waitingFileLFN )
+          continue
+        ## no downtime on SEs, no valid sourceSEs at all, mark transfer of this file as failed
+        self.log.error("scheduleFiles: cannot find valid sources for %s at all, marking file as 'Failed'" % waitingFileLFN )
+        requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, "Status", "Failed" )
+        requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, "Error", "valid source not found" )
+        continue
+
       ## get the replication tree at least
-      tree = self.strategyHandler().replicationTree( waitingFileLFN,
-                                                     waitingFileMetadata,
-                                                     waitingFileReplicas.keys(),  
+      tree = self.strategyHandler().replicationTree( validReplicas,  
                                                      waitingFileTargets, 
                                                      waitingFileSize, 
                                                      strategy )
