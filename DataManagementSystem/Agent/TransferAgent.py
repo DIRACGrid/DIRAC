@@ -39,6 +39,8 @@ from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 ## from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+
 
 ## agent name
 AGENT_NAME = "DataManagement/TransferAgent"
@@ -227,6 +229,16 @@ class TransferAgent( RequestAgentBase ):
     if not self.__replicaManager:
       self.__replicaManager = ReplicaManager()
     return self.__replicaManager
+
+
+  def storageFactory( self ):
+    """ StorageFactory instance getter
+
+    :param self: self reference
+    """
+    if not self.__storageFactory:
+      self.__storageFactory = StorageFactory()
+    return self.__storageFactory
 
   def transferDB( self ):
     """ TransferDB instance getter
@@ -863,28 +875,30 @@ class TransferAgent( RequestAgentBase ):
                                                                                    waitingFileSize, 
                                                                                    len(waitingFileReplicas), 
                                                                                    str(waitingFileTargets) ) ) 
-      validReplicas = []
+      validSourceSEs = []
       downTime = False
       for replicaSE in waitingFileReplicas:
         checkSourceSE = self.checkSourceSE( replicaSE, waitingFileLFN, waitingFileMetadata )
         if checkSourceSE["OK"]:
-          validReplicas.append( replicaSE )
+          validSourceSEs.append( replicaSE )
         elif "banned for reading" in checkSourceSE["Message"]: 
           downTime = True 
       ## no valid replicas 
-      if not validReplicas:
+      if not validSourceSEs:
         ## but there is a downtime at some of sourceSEs, skip this file rigth now
         if downTime:
           self.log.warn("scheduleFiles: cannot find valid sources for %s at the moment" % waitingFileLFN )
           continue
         ## no downtime on SEs, no valid sourceSEs at all, mark transfer of this file as failed
-        self.log.error("scheduleFiles: cannot find valid sources for %s at all, marking file as 'Failed'" % waitingFileLFN )
-        requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, "Status", "Failed" )
-        requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, "Error", "valid source not found" )
+        self.log.error("scheduleFiles: valid sources not found for %s, marking file as 'Failed'" % waitingFileLFN )
+        requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, 
+                                                    "Status", "Failed" )
+        requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, 
+                                                    "Error", "valid source not found" )
         continue
 
       ## get the replication tree at least
-      tree = self.strategyHandler().replicationTree( validReplicas,  
+      tree = self.strategyHandler().replicationTree( validSourceSEs,  
                                                      waitingFileTargets, 
                                                      waitingFileSize, 
                                                      strategy )
