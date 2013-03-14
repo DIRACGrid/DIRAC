@@ -9,6 +9,7 @@ FIX: SpaceTokenOccupancyCommand, CacheFeederAgent - add timeout when calling lcg
 
 *WMS
 FIX: JobManifest - take all the SubmitPools defined in the TaskQueueAgent 
+NEW: StalledJobAgent - declare jobs stuck in Completed status as Failed
 
 [v6r7p15]
 
