@@ -67,7 +67,7 @@
 
 
 
-    Some high level methods have been added to avoid the need to write SQL 
+    Some high level methods have been added to avoid the need to write SQL
     statement in most common cases. They should be used instead of low level
     _insert, _update methods when ever possible.
 
@@ -79,9 +79,9 @@
       a specified time stamp.
       The conditions dictionary specifies for each attribute one or a List of possible
       values
-      greater and smaller are dictionaries in which the keys are the names of the fields, 
+      greater and smaller are dictionaries in which the keys are the names of the fields,
       that are requested to be >= or < than the corresponding value.
-      For compatibility with current usage it uses Exceptions to exit in case of 
+      For compatibility with current usage it uses Exceptions to exit in case of
       invalid arguments
 
 
@@ -135,7 +135,7 @@
       for compatibility with other methods condDict keyed argument is added
 
 
-    getCounters( self, table, attrList, condDict = None, older = None, 
+    getCounters( self, table, attrList, condDict = None, older = None,
                  newer = None, timeStamp = None, connection = False ):
 
       Count the number of records on each distinct combination of AttrList, selected
@@ -164,6 +164,7 @@ gInstancesCount = 0
 gDebugFile = None
 
 import Queue
+import collections
 import types
 import time
 import threading
@@ -201,7 +202,7 @@ def _quotedList( fieldList = None ):
   """
     Quote a list of MySQL Field Names with "`"
     Return a comma separated list of quoted Field Names
-    
+
     To be use for Table and Field Names
   """
   if fieldList == None:
@@ -224,6 +225,124 @@ class MySQL:
   Basic multithreaded DIRAC MySQL Client Class
   """
   __initialized = False
+
+  class ConnectionPool( object ):
+    """
+    Management of connections per thread
+    """
+
+    def __init__( self, host, user, passwd, port = 3306, graceTime = 600 ):
+      self.__host = host
+      self.__user = user
+      self.__passwd = passwd
+      self.__port = port
+      self.__graceTime = graceTime
+      self.__spares = collections.deque()
+      self.__maxSpares = 10
+      self.__lastClean = 0
+      self.__assigned = {}
+
+    @property
+    def __thid( self ):
+      return threading.current_thread()
+
+    def __newConn( self ):
+      return MySQLdb.connect( host = self.__host,
+                              port = self.__port,
+                              user = self.__user,
+                              passwd = self.__passwd )
+
+
+    def get( self, dbName, retries = 10 ):
+      retries = max( 0, min( MAXCONNECTRETRY, retries ) )
+      self.clean()
+      return self.__getWithRetry( dbName, retries, retries )
+
+
+    def __getWithRetry( self, dbName, totalRetries, retriesLeft ):
+      time.sleep( 5 * ( totalRetries - retriesLeft ) )
+      try:
+        conn, lastName, thid = self.__innerGet()
+      except MySQLdb.MySQLError, excp:
+        if retriesLeft >= 0:
+          return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
+        return S_ERROR( "Could not connect: %s" % excp )
+
+      if not self.__ping( conn ):
+        try:
+          self.__assigned.pop( thid )
+        except KeyError:
+          pass
+        if retriesLeft >= 0:
+          return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
+        return S_ERROR( "Could not connect" )
+
+      if lastName != dbName:
+        try:
+          conn.select_db( dbName )
+        except MySQLdb.MySQLError, excp:
+          if retriesLeft >= 0:
+            return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
+          return S_ERROR( "Could not select db %s: %s" % ( dbName, excp ) )
+        try:
+          self.__assigned[ thid ][1] = dbName
+        except KeyError:
+          if retriesLeft >= 0:
+            return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
+          return S_ERROR( "Could not connect" )
+      return S_OK( conn )
+
+
+    def __ping( self, conn ):
+      try:
+        conn.ping( True )
+        return True
+      except:
+        return False
+
+    def __innerGet( self ):
+      thid = self.__thid
+      now = time.time()
+      if thid in self.__assigned:
+        data = self.__assigned[ thid ]
+        conn = data[0]
+        data[2] = now
+        return data[0], data[1], thid
+      #Not cached
+      try:
+        conn, dbName = self.__spares.pop()
+      except IndexError:
+        conn = self.__newConn()
+        dbName = ""
+
+      self.__assigned[ thid ] = [ conn, dbName, now ]
+      return conn, dbName, thid
+
+    def __pop( self, thid ):
+      try:
+        data = self.__assigned.pop( thid )
+        if len( self.__spares ) < self.__maxSpares:
+          self.__spares.append( ( data[0], data[1] ) )
+        else:
+          data[ 0 ].close()
+      except KeyError:
+        pass
+
+    def clean( self, now = False ):
+      if not now:
+        now = time.time()
+      self.__lastClean = now
+      for thid in list( self.__assigned ):
+        if not thid.isAlive():
+          self.__pop( thid )
+        try:
+          data = self.__assigned[ thid ]
+        except KeyError:
+          continue
+        if now - data[2] > self.__graceTime:
+          self.__pop( thid )
+
+  __connectionPools = {}
 
   def __init__( self, hostName, userName, passwd, dbName, port = 3306, maxQueueSize = 3, debug = False ):
     """
@@ -249,10 +368,10 @@ class MySQL:
     self.__passwd = str( passwd )
     self.__dbName = str( dbName )
     self.__port = port
-    # Create the connection Queue to reuse connections
-    self.__connectionQueue = Queue.Queue( maxQueueSize )
-    # Create the connection Semaphore to limit total number of open connection
-    self.__connectionSemaphore = threading.Semaphore( maxQueueSize )
+    cKey = ( self.__hostName, self.__userName, self.__passwd, self.__port )
+    if cKey not in MySQL.__connectionPools:
+      MySQL.__connectionPools[ cKey ] = MySQL.ConnectionPool( *cKey )
+    self.__connectionPool = MySQL.__connectionPools[ cKey ]
 
     self.__initialized = True
     self._connect()
@@ -267,18 +386,6 @@ class MySQL:
   def __del__( self ):
     global gInstancesCount
     try:
-      while 1 and self.__initialized:
-        self.__connectionSemaphore.release()
-        try:
-          connection = self.__connectionQueue.get_nowait()
-          connection.close()
-        except Queue.Empty:
-          self.log.debug( 'No more connection in Queue' )
-          break
-      if gInstancesCount == 1:
-        # only when the last instance of a MySQL object is deleted, the server
-        # can be ended
-        MySQLdb.server_end()
       gInstancesCount -= 1
     except Exception:
       pass
@@ -300,12 +407,17 @@ class MySQL:
       return S_ERROR( '%s: (%s)' % ( err, str( e ) ) )
 
 
-  def __escapeString( self, myString, connection ):
+  def __escapeString( self, myString ):
     """
     To be used for escaping any MySQL string before passing it to the DB
     this should prevent passing non-MySQL accepted characters to the DB
     It also includes quotation marks " around the given string
     """
+
+    retDict = self.__getConnection()
+    if not retDict['OK']:
+      return retDict
+    connection = retDict['Value']
 
     specialValues = ( 'UTC_TIMESTAMP', 'TIMESTAMPADD', 'TIMESTAMPDIFF' )
 
@@ -354,16 +466,7 @@ class MySQL:
     """
     self.log.debug( '_scapeString:', '"%s"' % myString )
 
-    retDict = self.__getConnection( conn )
-    if not retDict['OK']:
-      return retDict
-    connection = retDict['Value']
-
-    retDict = self.__escapeString( myString, connection )
-    if not conn:
-      self.__putConnection( connection )
-
-    return retDict
+    return self.__escapeString( myString )
 
 
   def _escapeValues( self, inValues = None ):
@@ -372,11 +475,6 @@ class MySQL:
     """
     self.log.debug( '_escapeValues:', inValues )
 
-    retDict = self.__getConnection()
-    if not retDict['OK']:
-      return retDict
-    connection = retDict['Value']
-
     inEscapeValues = []
 
     if not inValues:
@@ -384,18 +482,15 @@ class MySQL:
 
     for value in inValues:
       if type( value ) in StringTypes:
-        retDict = self.__escapeString( value, connection )
+        retDict = self.__escapeString( value )
         if not retDict['OK']:
-          self.__putConnection( connection )
           return retDict
         inEscapeValues.append( retDict['Value'] )
       else:
-        retDict = self.__escapeString( str( value ), connection )
+        retDict = self.__escapeString( str( value ) )
         if not retDict['OK']:
-          self.__putConnection( connection )
           return retDict
         inEscapeValues.append( retDict['Value'] )
-    self.__putConnection( connection )
     return S_OK( inEscapeValues )
 
 
@@ -418,11 +513,11 @@ class MySQL:
                        '[%s@%s] by user %s/%s.' %
                        ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) )
     try:
-      self.__newConnection()
       self.log.verbose( '_connect: Connected.' )
       self._connected = True
       return S_OK()
     except Exception, x:
+      print x
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
 
@@ -444,13 +539,10 @@ class MySQL:
     if gDebugFile:
       start = time.time()
 
-    if conn:
-      connection = conn
-    else:
-      retDict = self._getConnection()
-      if not retDict['OK']:
-        return retDict
-      connection = retDict[ 'Value' ]
+    retDict = self.__getConnection()
+    if not retDict['OK']:
+      return retDict
+    connection = retDict[ 'Value' ]
 
     try:
       cursor = connection.cursor()
@@ -530,8 +622,6 @@ class MySQL:
       cursor.close()
     except Exception:
       pass
-    if not conn:
-      self.__putConnection( connection )
 
     if gDebugFile:
       print >> gDebugFile, time.time() - start, cmd.replace( '\n', '' )
@@ -541,26 +631,26 @@ class MySQL:
 
 
   def _transaction( self, cmdList, conn = None ):
-    """ dummy transaction support 
+    """ dummy transaction support
 
     :param self: self reference
     :param list cmdList: list of queries to be executed within the transaction
-    :param MySQLDB.Connection conn: connection 
+    :param MySQLDB.Connection conn: connection
 
-    :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR 
+    :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR
     """
     if type( cmdList ) != ListType:
       return S_ERROR( "_transaction: wrong type (%s) for cmdList" % type( cmdList ) )
 
-    ## get connection 
+    ## get connection
     connection = conn
     if not connection:
-      retDict = self._getConnection()
+      retDict = self.__getConnection()
       if not retDict['OK']:
         return retDict
       connection = retDict[ 'Value' ]
 
-    ## list with cmds and their results   
+    ## list with cmds and their results
     cmdRet = []
     try:
       cursor = connection.cursor()
@@ -569,13 +659,11 @@ class MySQL:
       connection.commit()
     except Exception, error:
       self.logger.execption( error )
-      ## rollback, put back connection to the pool 
+      ## rollback, put back connection to the pool
       connection.rollback()
-      self.__putConnection( connection )
       return S_ERROR( error )
     ## close cursor, put back connection to the pool
     cursor.close()
-    self.__putConnection( connection )
     return S_OK( cmdRet )
 
   def _createTables( self, tableDict, force = False ):
@@ -638,7 +726,7 @@ class MySQL:
     i = 0
     extracted = True
     while tableList and extracted:
-      # iterate extracting tables from list if they only depend on 
+      # iterate extracting tables from list if they only depend on
       # already extracted tables.
       extracted = False
       auxiliaryTableList += tableCreationList[i]
@@ -720,7 +808,7 @@ class MySQL:
         else:
           engine = 'InnoDB'
 
-        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % ( 
+        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % (
                table, ',\n'.join( cmdList ), engine )
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
@@ -772,54 +860,14 @@ class MySQL:
     """
     return param[0].tostring()
 
-
-  def __newConnection( self ):
-    """
-    Create a New connection and put it in the Queue
-    """
-    self.log.debug( '__newConnection:' )
-
-    connection = MySQLdb.connect( host = self.__hostName,
-                                  port = self.__port,
-                                  user = self.__userName,
-                                  passwd = self.__passwd,
-                                  db = self.__dbName )
-    self.__putConnection( connection )
-
-
-  def __putConnection( self, connection ):
-    """
-    Put a connection in the Queue, if the queue is full, the connection is closed
-    """
-    self.log.debug( '__putConnection:' )
-
-    # Release the semaphore first, in case something fails
-    self.__connectionSemaphore.release()
-    try:
-      self.__connectionQueue.put_nowait( connection )
-    except Queue.Full, x:
-      self.log.debug( '__putConnection: Full Queue' )
-      try:
-        connection.close()
-      except:
-        pass
-    except Exception, x:
-      self._except( '__putConnection', x, 'Failed to put Connection in Queue' )
-
   def _getConnection( self ):
     """
     Return a new connection to the DB
     It uses the private method __getConnection
     """
-    if not self.__initialized:
-      error = 'DB not properly initialized'
-      gLogger.error( error )
-      return S_ERROR( error )
-
     self.log.debug( '_getConnection:' )
 
     retDict = self.__getConnection( trial = 0 )
-    self.__connectionSemaphore.release()
     return retDict
 
   def __getConnection( self, conn = None, trial = 0 ):
@@ -832,40 +880,12 @@ class MySQL:
     """
     self.log.debug( '__getConnection:' )
 
-    if conn:
-      return S_OK( conn )
+    if not self.__initialized:
+      error = 'DB not properly initialized'
+      gLogger.error( error )
+      return S_ERROR( error )
 
-    try:
-      self.__connectionSemaphore.acquire()
-      connection = self.__connectionQueue.get_nowait()
-      self.log.debug( '__getConnection: Got a connection from Queue' )
-      if connection:
-        try:
-          # This will try to reconnect if the connection has timeout
-          connection.ping( True )
-        except:
-          # if the ping fails try with a new connection from the Queue
-          self.__connectionSemaphore.release()
-          return self.__getConnection()
-        return S_OK( connection )
-    except Queue.Empty, x:
-      self.__connectionSemaphore.release()
-      self.log.debug( '__getConnection: Empty Queue' )
-      try:
-        if trial == min( 10, MAXCONNECTRETRY ):
-          return S_ERROR( 'Could not get a connection after %s retries.' % MAXCONNECTRETRY )
-        try:
-          self.__newConnection()
-          return self.__getConnection()
-        except Exception, x:
-          self.log.debug( '__getConnection: Fails to get connection from Queue', x )
-          time.sleep( trial * 5.0 )
-          newtrial = trial + 1
-          return self.__getConnection( trial = newtrial )
-      except Exception, x:
-        return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
-    except Exception, x:
-      return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
+    return self.__connectionPool.get( self.__dbName )
 
 ########################################################################################
 #
@@ -899,7 +919,7 @@ class MySQL:
 ########################################################################################
   def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False,
                    greater = None, smaller = None ):
-    """ 
+    """
       Count the number of records on each distinct combination of AttrList, selected
       with condition defined by condDict and time stamps
     """
@@ -975,9 +995,9 @@ class MySQL:
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
         values
-        greater and smaller are dictionaries in which the keys are the names of the fields, 
+        greater and smaller are dictionaries in which the keys are the names of the fields,
         that are requested to be >= or < than the corresponding value.
-        For compatibility with current usage it uses Exceptions to exit in case of 
+        For compatibility with current usage it uses Exceptions to exit in case of
         invalid arguments
     """
     condition = ''
