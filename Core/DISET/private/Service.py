@@ -70,9 +70,9 @@ class Service:
     #Initialize lock manager
     self._lockManager = LockManager( self._cfg.getMaxWaitingPetitions() )
     self._initMonitoring()
-    self._threadPool = ThreadPool( 1,
-                                    max( 0, self._cfg.getMaxThreads() ),
-                                    self._cfg.getMaxWaitingPetitions() )
+    self._threadPool = ThreadPool( max( 1, self.__cfg.getMinThreads() ),
+                                   max( 0, self._cfg.getMaxThreads() ),
+                                   self._cfg.getMaxWaitingPetitions() )
     self._threadPool.daemonize()
     self._msgBroker = MessageBroker( "%sMSB" % self._name, threadPool = self._threadPool )
     #Create static dict

@@ -15,6 +15,7 @@ import random
 from DIRAC                                                          import S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
 from DIRAC.Core.Utilities.Time                                      import fromString, toEpoch
+from DIRAC.Core.Utilities                                           import List
 from DIRAC.Core.Security                                            import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources             import getSiteTier
 from DIRAC.ConfigurationSystem.Client.Helpers                       import Registry
@@ -125,7 +126,7 @@ class JobScheduling( OptimizerExecutor ):
         if not sites:
           raise OptimizerExecutor.FreezeTask( "Sites %s are inactive or banned" % ", ".join( userSites ) )
 
-    result = jobManager.getOptParameters()
+    result = jobState.getOptParameters()
     if not result[ 'OK' ]:
       self.jobLog.error( "Can't retrieve optimizer parameters: %s" % result[ 'Value' ] )
       return S_ERROR( "Cant retrieve optimizer parameters" )
@@ -162,8 +163,8 @@ class JobScheduling( OptimizerExecutor ):
       reqCfg.setOption( "SEs", targetSEs )
     elif userSites:
       reqCfg.setOption( "Sites", ", ".join( userSites ) )
-    if bannedSites:
-      reqCfg.setOption( "BannedSites", ", ".join( bannedSites ) )
+    if userBannedSites:
+      reqCfg.setOption( "BannedSites", ", ".join( userBannedSites ) )
 
     for key in ( 'SubmitPools', "GridMiddleware", "PilotTypes", "JobType", "GridRequiredCEs",
                  "OwnerDN", "OwnerGroup", "VirtualOrganization", 'Priority', 'DIRACSetup',
@@ -196,7 +197,7 @@ class JobScheduling( OptimizerExecutor ):
       reqCfg.setOption( "Platforms", ", ".join( preqs ) )
 
     #TODO: FIX THIS CRAP!
-    self._setJobSite( jobState, sites )
+    self._setJobSite( jobState, userSites )
 
     self.jobLog.info( "Done" )
     return self.setNextOptimizer( jobState )
@@ -210,6 +211,7 @@ class JobScheduling( OptimizerExecutor ):
   def _getJobSite( self, siteList ):
     """ get the Job site
     """
+    siteList = list( siteList )
     numSites = len( siteList )
     if numSites == 0 or numSites == 1 and not siteList[0]:
       self.jobLog.info( "Any site is candidate" )
@@ -247,16 +249,6 @@ class JobScheduling( OptimizerExecutor ):
       siteTierDict.setdefault( siteName, siteTier )
 
     return siteTierDict
-
-
-  def __checkStageAllowed( self, jobState ):
-    """Check if the job credentials allow to stage date """
-    result = jobState.getAttribute( "OwnerGroup" )
-    if not result[ 'OK' ]:
-      self.jobLog.error( "Cannot retrieve OwnerGroup from DB: %s" % result[ 'Message' ] )
-      return S_ERROR( "Cannot get OwnerGroup" )
-    group = result[ 'Value' ]
-    return Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup( group )
 
 
 

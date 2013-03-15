@@ -56,6 +56,12 @@ class ServiceConfiguration:
     except:
       return 15
 
+  def getMinThreads( self ):
+    try:
+      return int( self.getOption( "MinThreads" ) )
+    except:
+      return 1
+
   def getMaxWaitingPetitions( self ):
     try:
       return int( self.getOption( "MaxWaitingPetitions" ) )
