@@ -1,3 +1,10 @@
+[v6r7p18]
+
+*WMS
+FIX: StalledJobAgent - do not exit the loop over Completed jobs if accounting sending fails
+NEW: dirac-wms-job-delete - allow to specify jobs to delete by job group and/or in a file
+FIX: JobManifest - If CPUTime is not set, set it to MaxCPUTime value
+
 [v6r7p17]
 
 *Resources
