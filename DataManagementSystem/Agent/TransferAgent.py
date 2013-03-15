@@ -507,7 +507,7 @@ class TransferAgent( RequestAgentBase ):
     for waitingFile in waitingFiles:
       validSourceSEs = {}
       downTime = False
-      for replicaSE, sURL in replicas.get(waitingFile, {}):
+      for replicaSE, sURL in replicas.get(waitingFile, {}).items():
         checkSourceSE = self.checkSourceSE( replicaSE, waitingFile, metadata.get(waitingFile, {} ) ) 
         if checkSourceSE["OK"]:
           validSourceSEs[replicaSE] = sURL
@@ -728,9 +728,9 @@ class TransferAgent( RequestAgentBase ):
       subRequestStatus = subAttrs["Status"]
 
       execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
-      if execOrder <= requestDict["executionOrder"]:
+      if execOrder != requestDict["executionOrder"]:
         strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
-        self.log.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder" % strTup )  
+        self.log.warn("schedule: skipping (%s) subrequest, executionOrder (%s) != request's executionOrder (%s)" % strTup )  
         continue 
 
       if subRequestStatus != "Waiting" :
@@ -897,7 +897,7 @@ class TransferAgent( RequestAgentBase ):
                                                                                    len(waitingFileReplicas), 
                                                                                    str(waitingFileTargets) ) ) 
       ## get the replication tree at least
-      tree = self.strategyHandler().replicationTree( waitingFileReplicas,  
+      tree = self.strategyHandler().replicationTree( waitingFileReplicas.keys(),  
                                                      waitingFileTargets, 
                                                      waitingFileSize, 
                                                      strategy )
@@ -969,11 +969,11 @@ class TransferAgent( RequestAgentBase ):
           self.log.error("schedule: error adding replication tree for file %s: %s" % ( waitingFileLFN, 
                                                                                        res["Message"]) )
           continue
-
-        ## update File status to 'Scheduled'
-        requestObj.setSubRequestFileAttributeValue( index, "transfer", 
-                                                    waitingFileLFN, "Status", "Scheduled" )
-        self.log.info( "scheduleFiles: %s has been scheduled for FTS" % waitingFileLFN )
+      
+      ## update File status to 'Scheduled'
+      requestObj.setSubRequestFileAttributeValue( index, "transfer", 
+                                                  waitingFileLFN, "Status", "Scheduled" )
+      self.log.info( "scheduleFiles: %s has been scheduled for FTS" % waitingFileLFN )
   
     ## return modified requestObj 
     return S_OK( requestObj )
@@ -1010,11 +1010,10 @@ class TransferAgent( RequestAgentBase ):
         return replicas
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
-        if re.search( "no such file or directory", str(failure).lower() ):
-          self.log.info("checkReadyReplicas: %s cannot be transferred, setting its status to 'Failed'" % lfn )
+        if re.search( "no such file or directory", str(failure).lower() ) and status == "Scheduled":
+          self.log.info("checkReadyReplicas: %s cannot be transferred" % lfn )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
-          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
-          
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )        
       replicas = replicas["Value"]["Successful"]
 
     ## are there any replicas?
