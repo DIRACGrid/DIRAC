@@ -1463,7 +1463,7 @@ class ReplicaManager( CatalogToStorage ):
     oDataOperation.setStartTime()
     oDataOperation.setValueByKey( 'TransferSize', size )
     startTime = time.time()
-    res = storageElement.putFile( fileDict, True )
+    res = storageElement.putFile( fileDict, singleFile = True )
     putTime = time.time() - startTime
     oDataOperation.setValueByKey( 'TransferTime', putTime )
     if not res['OK']:
