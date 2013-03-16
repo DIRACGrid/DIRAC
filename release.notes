@@ -1,3 +1,8 @@
+[v6r7p19]
+
+*DMS
+BUGFIX: ReplicaManager - in putAndRegister() SE.putFile() singleFile argument not used explicitly
+
 [v6r7p18]
 
 *WMS
