@@ -1,3 +1,34 @@
+[v6r7p19]
+
+*DMS
+BUGFIX: ReplicaManager - in putAndRegister() SE.putFile() singleFile argument not used explicitly
+
+[v6r7p18]
+
+*WMS
+FIX: StalledJobAgent - do not exit the loop over Completed jobs if accounting sending fails
+NEW: dirac-wms-job-delete - allow to specify jobs to delete by job group and/or in a file
+FIX: JobManifest - If CPUTime is not set, set it to MaxCPUTime value
+
+[v6r7p17]
+
+*Resources
+FIX: SRM2Storage - treat properly "22 SRM_REQUEST_QUEUED" result code
+
+[v6r7p16]
+
+*DMS
+FIX: StrategyHandler - do not proceed when the source SE is not valid for read 
+BUGFIX: StorageElement - putFile can take an optional sourceSize argument
+BUGFIX: ReplicaManager - in removeFile() proper loop on failed replicas
+
+*RSS
+FIX: SpaceTokenOccupancyCommand, CacheFeederAgent - add timeout when calling lcg_util commands
+
+*WMS
+FIX: JobManifest - take all the SubmitPools defined in the TaskQueueAgent 
+NEW: StalledJobAgent - declare jobs stuck in Completed status as Failed
+
 [v6r7p15]
 
 *Core

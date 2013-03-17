@@ -159,7 +159,13 @@ class JobManifest( object ):
       if k not in self.__manifest:
         return S_ERROR( "Missing var %s in manifest" % k )
     # Check CPUTime
-    result = self.__checkNumericalVar( "CPUTime", 86400, 0, 500000 )
+    
+    # Hack, sorry Adri, for v6r7 branch only
+    result = self.__checkNumericalVar( "MaxCPUTime", 86400, 0, 1500000 )
+    if not result[ 'OK' ]:
+      return result
+    cpuTime = result['Value']
+    result = self.__checkNumericalVar( "CPUTime", cpuTime, 0, 500000 )
     if not result[ 'OK' ]:
       return result
     result = self.__checkNumericalVar( "Priority", 1, 0, 10 )
@@ -167,12 +173,12 @@ class JobManifest( object ):
       return result
     allowedSubmitPools = []
     for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools = gConfig.getValue( "/%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
+      allowedSubmitPools += gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
                                                           option ),
-                                             allowedSubmitPools )
-      result = self.__checkMultiChoice( "SubmitPools", allowedSubmitPools )
-      if not result[ 'OK' ]:
-        return result
+                                             [] )
+    result = self.__checkMultiChoice( "SubmitPools", list( set( allowedSubmitPools ) ) )
+    if not result[ 'OK' ]:
+      return result
     result = self.__checkMultiChoice( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
