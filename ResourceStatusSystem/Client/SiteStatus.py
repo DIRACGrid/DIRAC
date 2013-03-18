@@ -5,7 +5,7 @@
 
 """
 
-from DIRAC                                                  import S_ERROR, S_OK 
+from DIRAC                                                  import gLogger, S_ERROR, S_OK 
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
@@ -22,16 +22,19 @@ class SiteStatus( object ):
   #FIXME: add cache. As it is now, is querying directly the server
   
   def __init__( self ):
-    '''
+    """
     Constructor, initializes the rssClient.
-    '''
+    """
     self.rssClient = ResourceStatusClient()
+    self.log       = gLogger.getSubLogger( 'SiteStatus' )
   
   def getSiteStatus( self, siteName ):
-    ''' 
+    """ 
     Given a siteName, returns its status: Unknown, Active, Degraded, Probing, Banned
     and Error.
-    '''
+    """
+    
+    self.log.debug( siteName )
     
     if not isinstance( siteName, str ):
       return S_ERROR( '%s is not of type str' % siteName )
@@ -40,33 +43,46 @@ class SiteStatus( object ):
                                               meta = { 'columns' : [ 'Status' ] } )
     
     if not res[ 'OK' ]:
+      self.log.verbose( res[ 'Message' ] )
       return res
+    
+    self.log.debug( res[ 'Value' ] )
+    
     return S_OK( res[ 'Value' ][ 0 ][ 0 ] )
 
-  def isSiteUsable( self, siteName ):
-    '''
+  def isUsableSite( self, siteName ):
+    """
     Given a site name, returns a bool if the site is usable: status is Active or
-    Degraded, or not ( encapsulated in a S_OK object ). 
-    '''
+    Degraded, or not. 
+    """
+    
+    self.log.debug( siteName )
     
     siteStatus = self.getSiteStatus( siteName )
     if not siteStatus[ 'OK' ]:
-      return siteStatus
+      self.log.error( siteStatus[ 'Message' ] )
+      return False
     
     if siteStatus[ 'Value' ] in ( 'Active', 'Degraded' ):
-      return S_OK( True )
+      self.log.debug( 'IsUsable' )
+      return True
     
-    return S_OK( False )  
+    self.log.debug( 'Is NOT Usable' )
+    return False  
     
   def getUsableSites( self ):
-    '''
+    """
     Returns all site names which status is either Active or Degraded, in a list.
-    '''
+    """
     
-    res = self.rssClient.selectStatusElement( 'Site', 'Status', status = [ 'Active', 'Degraded' ],  
+    res = self.rssClient.selectStatusElement( 'Site', 'Status', 
+                                              status = [ 'Active', 'Degraded' ],  
                                               meta = { 'columns' : [ 'Name' ] } )
     if not res[ 'OK' ]:
+      self.log.verbose( res[ 'Message' ] )
       return res
+    
+    self.log.debug( res[ 'Value' ] )
     
     return S_OK( [ siteTuple[0] for siteTuple in res[ 'Value' ] ] )
   
