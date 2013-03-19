@@ -251,13 +251,16 @@ class MySQL:
                               port = self.__port,
                               user = self.__user,
                               passwd = self.__passwd )
-      cursor = conn.cursor()
-      res = cursor.execute( "SET AUTOCOMMIT=1" )
-      conn.commit()
-      cursor.close()
+
+      self.__execute( conn, "SET AUTOCOMMIT=1" )
       return conn
 
-
+    def __execute( self, conn, cmd ):
+      cursor = conn.cursor()
+      res = cursor.execute( cmd )
+      conn.commit()
+      cursor.close()
+      return res
 
     def get( self, dbName, retries = 10 ):
       retries = max( 0, min( MAXCONNECTRETRY, retries ) )
@@ -349,6 +352,38 @@ class MySQL:
           continue
         if now - data[2] > self.__graceTime:
           self.__pop( thid )
+
+    def transactionStart( self, dbName ):
+      result = self.get( dbName )
+      if not result[ 'OK' ]:
+        return result
+      conn = result[ 'Value' ]
+      try:
+        return S_OK( self.__execute( conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT" ) )
+      except MySQLdb.MySQLError, excp:
+        return S_ERROR( "Could not begin transaction: %s" % excp )
+
+    def transactionCommit( self, dbName ):
+      result = self.get( dbName )
+      if not result[ 'OK' ]:
+        return result
+      conn = result[ 'Value' ]
+      try:
+        result = self.__execute( conn, "COMMIT" )
+        return S_OK( result )
+      except MySQLdb.MySQLError, excp:
+        return S_ERROR( "Could not commit transaction: %s" % excp )
+
+    def transactionRollback( self, dbName ):
+      result = self.get( dbName )
+      if not result[ 'OK' ]:
+        return result
+      conn = result[ 'Value' ]
+      try:
+        result = self.__execute( conn, "ROLLBACK" )
+        return S_OK( result )
+      except MySQLdb.MySQLError, excp:
+        return S_ERROR( "Could not rollback transaction: %s" % excp )
 
   __connectionPools = {}
 
@@ -897,9 +932,26 @@ class MySQL:
 
 ########################################################################################
 #
+#  Transaction functions
+#
+########################################################################################
+
+  def transactionStart( self ):
+    return self.__connectionPool.transactionStart( self.__dbName )
+
+  def transactionCommit( self ):
+    return self.__connectionPool.transactionCommit( self.__dbName )
+
+  def transactionRollback( self ):
+    return self.__connectionPool.transactionRollback( self.__dbName )
+
+
+########################################################################################
+#
 #  Utility functions
 #
 ########################################################################################
+
   def countEntries( self, table, condDict, older = None, newer = None, timeStamp = None, connection = False,
                     greater = None, smaller = None ):
     """
