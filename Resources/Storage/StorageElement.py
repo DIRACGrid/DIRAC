@@ -157,10 +157,10 @@ class StorageElement:
     """
     retDict = {}
     if not self.valid:
-      retDict['ReadAccess'] = False
-      retDict['WriteAccess'] = False
-      retDict['RemoveAccess'] = False
-      retDict['CheckAccess'] = False
+      retDict['Read'] = False
+      retDict['Write'] = False
+      retDict['Remove'] = False
+      retDict['Check'] = False
       retDict['DiskSE'] = False
       retDict['TapeSE'] = False
       retDict['TotalCapacityTB'] = -1
@@ -169,13 +169,13 @@ class StorageElement:
 
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
-    retDict['ReadAccess'] = not ( 'ReadAccess' in self.options and self.options['ReadAccess'] not in ( 'Active', 'Degraded' ) )
-    retDict['WriteAccess'] = not ( 'WriteAccess' in self.options and self.options['WriteAccess'] not in ( 'Active', 'Degraded' ) )
-    retDict['RemoveAccess'] = not ( 'RemoveAccess' in self.options and self.options['RemoveAccess'] not in ( 'Active', 'Degraded' ) )
-    if retDict['ReadAccess']:
-      retDict['CheckAccess'] = True
+    retDict['Read'] = not ( 'ReadAccess' in self.options and self.options['ReadAccess'] not in ( 'Active', 'Degraded' ) )
+    retDict['Write'] = not ( 'WriteAccess' in self.options and self.options['WriteAccess'] not in ( 'Active', 'Degraded' ) )
+    retDict['Remove'] = not ( 'RemoveAccess' in self.options and self.options['RemoveAccess'] not in ( 'Active', 'Degraded' ) )
+    if retDict['Read']:
+      retDict['Check'] = True
     else:
-      retDict['CheckAccess'] = not ( 'CheckAccess' in self.options and self.options['CheckAccess'] not in ( 'Active', 'Degraded' ) )
+      retDict['Check'] = not ( 'CheckAccess' in self.options and self.options['CheckAccess'] not in ( 'Active', 'Degraded' ) )
     diskSE = True
     tapeSE = False
     if 'SEType' in self.options:
@@ -211,10 +211,10 @@ class StorageElement:
     if not res[ 'OK' ]:
       self.log.error( "Could not call getStatus" )
       return S_ERROR( "StorageElement.isValid could not call the getStatus method" )
-    checking = res[ 'Value' ][ 'CheckAccess' ]
-    reading = res[ 'Value' ][ 'ReadAccess' ]
-    writing = res[ 'Value' ][ 'WriteAccess' ]
-    removing = res[ 'Value' ][ 'RemoveAccess' ]
+    checking = res[ 'Value' ][ 'Check' ]
+    reading = res[ 'Value' ][ 'Read' ]
+    writing = res[ 'Value' ][ 'Write' ]
+    removing = res[ 'Value' ][ 'Remove' ]
 
     # Determine whether the requested operation can be fulfilled    
     if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):
