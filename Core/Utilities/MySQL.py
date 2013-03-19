@@ -247,10 +247,16 @@ class MySQL:
       return threading.current_thread()
 
     def __newConn( self ):
-      return MySQLdb.connect( host = self.__host,
+      conn = MySQLdb.connect( host = self.__host,
                               port = self.__port,
                               user = self.__user,
                               passwd = self.__passwd )
+      cursor = conn.cursor()
+      res = cursor.execute( "SET AUTOCOMMIT=1" )
+      conn.commit()
+      cursor.close()
+      return conn
+
 
 
     def get( self, dbName, retries = 10 ):
@@ -260,7 +266,9 @@ class MySQL:
 
 
     def __getWithRetry( self, dbName, totalRetries, retriesLeft ):
-      time.sleep( 5 * ( totalRetries - retriesLeft ) )
+      sleepTime = 5 * ( totalRetries - retriesLeft )
+      if sleepTime > 0:
+        time.sleep( sleepTime )
       try:
         conn, lastName, thid = self.__innerGet()
       except MySQLdb.MySQLError, excp:
@@ -606,7 +614,7 @@ class MySQL:
     try:
       cursor = connection.cursor()
       res = cursor.execute( cmd )
-      connection.commit()
+      # connection.commit()
       if debug:
         self.log.debug( '_update:', res )
       else:
