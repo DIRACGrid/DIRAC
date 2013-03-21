@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleto
 from DIRAC.ConfigurationSystem.Client.CSAPI                 import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread  import RSSCache 
+from DIRAC.ResourceStatusSystem.Utilities.RSSCache          import RSSCache 
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
 
 __RCSID__  = '$Id:  $'
@@ -36,10 +36,13 @@ class ResourceStatus( object ):
     
     # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
     cacheLifeTime   = int( self.rssConfig.getConfigCache() )
-    
+    cacheHistory    = int( self.rssConfig.getConfigCacheHistory() )
+
     # RSSCache only affects the calls directed to RSS, if using the CS it is not
     # used.  
-    self.seCache   = RSSCache( 'StorageElement', cacheLifeTime, self.__updateSECache )       
+    self.seCache   = RSSCache( cacheLifeTime, updateFunc = self.__updateSECache, 
+                               cacheHistoryLifeTime = cacheHistory ) 
+    self.seCache.startRefreshThread()           
             
   def getStorageElementStatus( self, elementName, statusType = None, default = None ):
     '''
@@ -107,88 +110,88 @@ class ResourceStatus( object ):
     
     return S_OK( getCacheDictFromList( rawCache[ 'Value' ] ) )     
   
-#  def __cacheMatch( self, resourceNames, statusTypes ):
-#    '''
-#      Method that given a resourceName and a statusType, gives the match with the
-#      cache. Both arguments can be None, String of list( String, ). Being string,
-#      if not present in the cache, there is no match.
-#      
-#      Keys in the cache are stored as:
-#        ( <resourceName>, <statusType> )
-#        ( <resourceName>, <statusType> )
-#        ( <resourceName>, <statusType> )
-#      so, we first need some processing to see which of all possible combinations
-#      of resourceName and statusType are in the cache. ( If any of them is None,
-#      it is interpreted as all ).  
-#    '''
-#    
-#    cacheKeys = self.seCache.getCacheKeys()
-#    if not cacheKeys[ 'OK' ]:
-#      return cacheKeys
-#     
-#    cacheKeys = cacheKeys[ 'Value' ] 
-#      
-#    elementCandidates = cacheKeys
-#    
-#    if resourceNames is not None:
-#      
-#      elementCandidates = []
-#      
-#      if isinstance( resourceNames, str ):       
-#        resourceNames = [ resourceNames ]
-#        
-#      for resourceName in resourceNames:
-#        found = False
-#          
-#        for cK in cacheKeys:
-#          
-#          if cK[ 0 ] == resourceName:
-#            elementCandidates.append( cK )
-#            found = True
-#            
-#        if not found:
-#          return S_ERROR( '%s not found in the cache' % resourceName )  
-#    
-#    statusTypeCandidates = elementCandidates 
-#    
-#    # now we loop over elementCandidates, saves lots of iterations.        
-#    if statusTypes is not None:
-#
-#      statusTypeCandidates = []
-#      
-#      if isinstance( statusTypes, str ):
-#        statusTypes = [ statusTypes ]  
-#               
-#      for elementCandidate in elementCandidates:
-#        for statusType in statusTypes:  
-#                  
-#          if elementCandidate[ 1 ] == statusType:  
-#            statusTypeCandidates.append( elementCandidate )
-#                  
-#    return S_OK( statusTypeCandidates )   
+  def __cacheMatch( self, resourceNames, statusTypes ):
+    '''
+      Method that given a resourceName and a statusType, gives the match with the
+      cache. Both arguments can be None, String of list( String, ). Being string,
+      if not present in the cache, there is no match.
+      
+      Keys in the cache are stored as:
+        ( <resourceName>, <statusType> )
+        ( <resourceName>, <statusType> )
+        ( <resourceName>, <statusType> )
+      so, we first need some processing to see which of all possible combinations
+      of resourceName and statusType are in the cache. ( If any of them is None,
+      it is interpreted as all ).  
+    '''
+    
+    cacheKeys = self.seCache.getCacheKeys()
+    if not cacheKeys[ 'OK' ]:
+      return cacheKeys
+     
+    cacheKeys = cacheKeys[ 'Value' ] 
+      
+    elementCandidates = cacheKeys
+    
+    if resourceNames is not None:
+      
+      elementCandidates = []
+      
+      if isinstance( resourceNames, str ):       
+        resourceNames = [ resourceNames ]
+        
+      for resourceName in resourceNames:
+        found = False
+          
+        for cK in cacheKeys:
+          
+          if cK[ 0 ] == resourceName:
+            elementCandidates.append( cK )
+            found = True
+            
+        if not found:
+          return S_ERROR( '%s not found in the cache' % resourceName )  
+    
+    statusTypeCandidates = elementCandidates 
+    
+    # now we loop over elementCandidates, saves lots of iterations.        
+    if statusTypes is not None:
 
-#  def __getFromCache( self, elementName, statusType ):
-#    '''
-#    Given an elementName and a statusType, matches the cache, and in case
-#    of positive match, formats the output and returns
-#    '''
-#
-#    match = self.__cacheMatch( elementName, statusType )
-#    
-#    if not match[ 'OK' ]:
-#      return match
-#    
-#    cacheMatches = self.seCache.getBulk( match[ 'Value' ] )
-#    if not cacheMatches[ 'OK' ]:
-#      return cacheMatches
-#
-#    cacheMatches = cacheMatches[ 'Value' ]
-#    if not cacheMatches:
-#      return S_ERROR( 'Empty cache for ( %s, %s )' % ( elementName, statusType ) )   
-#    
-#    # We undo the key into <resourceName> and <statusType>
-#    fromList = [ list( key ) + [ value ] for key, value in cacheMatches.items() ]
-#    return S_OK( getDictFromList( fromList ) )
+      statusTypeCandidates = []
+      
+      if isinstance( statusTypes, str ):
+        statusTypes = [ statusTypes ]  
+               
+      for elementCandidate in elementCandidates:
+        for statusType in statusTypes:  
+                  
+          if elementCandidate[ 1 ] == statusType:  
+            statusTypeCandidates.append( elementCandidate )
+                  
+    return S_OK( statusTypeCandidates )   
+
+  def __getFromCache( self, elementName, statusType ):
+    '''
+    Given an elementName and a statusType, matches the cache, and in case
+    of positive match, formats the output and returns
+    '''
+
+    match = self.__cacheMatch( elementName, statusType )
+    
+    if not match[ 'OK' ]:
+      return match
+    
+    cacheMatches = self.seCache.getBulk( match[ 'Value' ] )
+    if not cacheMatches[ 'OK' ]:
+      return cacheMatches
+
+    cacheMatches = cacheMatches[ 'Value' ]
+    if not cacheMatches:
+      return S_ERROR( 'Empty cache for ( %s, %s )' % ( elementName, statusType ) )   
+    
+    # We undo the key into <resourceName> and <statusType>
+    fromList = [ list( key ) + [ value ] for key, value in cacheMatches.items() ]
+    return S_OK( getDictFromList( fromList ) )
   
 ################################################################################
   
@@ -198,34 +201,29 @@ class ResourceStatus( object ):
     '''
   
     #Checks cache first
-    #cache = self.__getFromCache( elementName, statusType )
-    cacheMatch = self.seCache.match( elementName, statusType )
-    if cacheMatch[ 'OK' ]:
-      return cacheMatch
+    cache = self.__getFromCache( elementName, statusType )
+    if cache[ 'OK' ]:
+      return cache
             
     #Humm, seems cache did not work     
     gLogger.info( 'Cache miss with %s %s' % ( elementName, statusType ) )          
+    
+    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
 
-# FIX: if it is not on the cache, end of the story !
-#    
-#    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
-#
-#    #This returns S_OK( [['StatusType1','Status1'],['StatusType2','Status2']...]
-#    res = self.rssClient.selectStatusElement( 'Resource', 'Status', 
-#                                              elementType = 'StorageElement',
-#                                              name = elementName,
-#                                              statusType = statusType, 
-#                                              meta = meta )      
-#      
-#    if res[ 'OK' ] and res[ 'Value' ]:
-#      return S_OK( getDictFromList( res[ 'Value' ] ) )
+    #This returns S_OK( [['StatusType1','Status1'],['StatusType2','Status2']...]
+    res = self.rssClient.selectStatusElement( 'Resource', 'Status', 
+                                              elementType = 'StorageElement',
+                                              name = elementName,
+                                              statusType = statusType, 
+                                              meta = meta )      
+      
+    if res[ 'OK' ] and res[ 'Value' ]:
+      return S_OK( getDictFromList( res[ 'Value' ] ) )
   
     if not isinstance( elementName, list ):
       elementName = [ elementName ]
   
     if default is not None:
- 
-      #FIXME: do cartesian product here as well.. 
     
       # sec check
       if statusType is None:
@@ -251,12 +249,15 @@ class ResourceStatus( object ):
       elementName = [ elementName ]
 
     statuses = self.rssConfig.getConfigStatusType( 'StorageElement' )
+    #statuses = self.__opHelper.getOptionsDict( 'RSSConfiguration/GeneralConfig/Resources/StorageElement' )
+    #statuses = gConfig.getOptionsDict( '/Operations/RSSConfiguration/GeneralConfig/Resources/StorageElement' )
        
     result = {}
     for element in elementName:
     
       if statusType is not None:
         # Added Active by default
+        #res = gConfig.getOption( "%s/%s/%s" % ( cs_path, element, statusType ), 'Allowed' )
         res = gConfig.getOption( "%s/%s/%s" % ( cs_path, element, statusType ), 'Active' )
         if res[ 'OK' ] and res[ 'Value' ]:
           result[ element ] = { statusType : res[ 'Value' ] }
@@ -266,12 +267,14 @@ class ResourceStatus( object ):
         if res[ 'OK' ] and res[ 'Value' ]:
           elementStatuses = {}
           for elementStatusType, value in res[ 'Value' ].items():
+            #k = k.replace( 'Access', '' )
             if elementStatusType in statuses:
               elementStatuses[ elementStatusType ] = value
           
           # If there is no status defined in the CS, we add by default Read and 
           # Write as Active.
           if elementStatuses == {}:
+            #elementStatuses = { 'ReadAccess' : 'Allowed', 'WriteAccess' : 'Allowed' }
             elementStatuses = { 'ReadAccess' : 'Active', 'WriteAccess' : 'Active' }
                 
           result[ element ] = elementStatuses             
@@ -305,7 +308,7 @@ class ResourceStatus( object ):
                                               reason = reason, tokenOwner = tokenOwner,
                                               tokenExpiration = expiration )
     if res[ 'OK' ]:
-      self.seCache.refreshCache()
+      self.seCache.refreshCacheAndHistory()
     
     # Looks dirty, but this way we avoid retaining the lock when using gLogger.   
     self.seCache.releaseLock()
@@ -381,6 +384,7 @@ def getCacheDictFromList( rawList ):
   }
   '''
     
+  #res = [ ( '%s#%s' % ( name, sType ), status ) for name, sType, status in rawList ]
   res = [ ( ( name, sType ), status ) for name, sType, status in rawList ]
   return dict( res )  
   
