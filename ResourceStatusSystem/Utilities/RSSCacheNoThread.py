@@ -117,13 +117,19 @@ class Cache( object ):
     :return: S_OK | S_ERROR. If the first, its content is the new cache.    
     """
 
+    self.log.verbose( 'refreshing...' )
+    
     self.__cache.purgeAll()
     
     newCache = self.__updateFunc()
     if not newCache[ 'OK' ]:
       return newCache
     
-    return self.__updateCache( newCache[ 'Value' ] )
+    newCache = self.__updateCache( newCache[ 'Value' ] )
+    
+    self.log.verbose( 'refreshed' )
+    
+    return newCache
 
   #.............................................................................
   # Private methods    
@@ -250,8 +256,8 @@ class RSSCache( Cache ):
        
     cacheMatches = cacheMatches[ 'Value' ]
     if not cacheMatches:
-      return S_ERROR( 'Empty cache for: %s, %s' % ( elementNames, statusTypes ) )   
-    
+      return S_ERROR( 'Empty cache for: %s, %s' % ( elementNames, statusTypes ) )
+        
     # We undo the key into <elementName> and <statusType>
     cacheMatchesDict = self.__getDictFromCacheMatches( cacheMatches )
     return S_OK( cacheMatchesDict )
@@ -265,11 +271,7 @@ class RSSCache( Cache ):
     :return: { ( elementName, statusType ) : status, ... } 
     """
     
-    cacheKeys = self.cacheKeys()
-    if not cacheKeys[ 'OK' ]:
-      return cacheKeys
-    cacheKeys = cacheKeys[ 'Value' ]
-    
+    cacheKeys = self.cacheKeys()   
     # If cache is empty, we refresh it.
     if not cacheKeys:
       cache = self.refreshCache()
@@ -318,16 +320,16 @@ class RSSCache( Cache ):
     # Remove duplicates, makes Cartesian product faster
     statusTypesSet = set( statusTypes )
 
-    cartesianProduct = itertools.product( elementNamesSet, statusTypesSet )
+    cartesianProduct = set( itertools.product( elementNamesSet, statusTypesSet ) )
 
     # Some users find funny sending empty lists, which will make the cartesianProduct
     # be []. Problem: [] is always subset, no matter what !
     
-    if not list( cartesianProduct ):
+    if not cartesianProduct:
       self.log.warn( 'Empty cartesian product' )
       return []
     
-    if set( cartesianProduct ).issubset( set( cacheKeys ) ):
+    if cartesianProduct.issubset( set( cacheKeys ) ):
       return cartesianProduct
     else:  
       return []
