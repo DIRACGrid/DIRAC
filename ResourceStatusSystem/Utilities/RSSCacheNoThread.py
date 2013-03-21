@@ -123,6 +123,7 @@ class Cache( object ):
     
     newCache = self.__updateFunc()
     if not newCache[ 'OK' ]:
+      self.log.error( newCache[ 'Message' ] )
       return newCache
     
     newCache = self.__updateCache( newCache[ 'Value' ] )
@@ -244,8 +245,9 @@ class RSSCache( Cache ):
     # Gets matched keys
     matchKeys = self.__match( validCache, elementNames, statusTypes )
     
-    if not matchKeys:
-      return S_ERROR( 'Cache miss with the following: %s %s' % ( elementNames, statusTypes ) )
+    if not matchKeys[ 'OK' ]:
+      return matchKeys
+    matchKeys = matchKeys[ 'Value' ]
     
     # Gets objects for matched keys. It will return S_ERROR if the cache value
     # has expired in between. It has 10 valid seconds, which means something was
@@ -327,12 +329,14 @@ class RSSCache( Cache ):
     
     if not cartesianProduct:
       self.log.warn( 'Empty cartesian product' )
-      return []
+      return S_ERROR( 'Empty cartesian product' )
     
-    if cartesianProduct.issubset( set( cacheKeys ) ):
-      return cartesianProduct
-    else:  
-      return []
+    notInCache = list( cartesianProduct.difference( set( cacheKeys ) ) )  
+    if notInCache:
+      self.log.warn( 'Cache misses: %s' % notInCache )
+      return S_ERROR( 'Cache misses: %s' % notInCache )
+    
+    return S_OK( cartesianProduct )
     
   @staticmethod  
   def __getDictFromCacheMatches( cacheMatches ):
