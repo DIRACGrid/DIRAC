@@ -8,7 +8,7 @@
 from DIRAC                                              import gConfig, S_OK, gLogger
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Utilities               import Utils
+from DIRAC.ResourceStatusSystem.Utilities               import Synchronizer
 
 __RCSID__ = '$Id: $'
 db        = False
@@ -21,8 +21,7 @@ def initializeResourceManagementHandler( _serviceInfo ):
   global db
   db = ResourceManagementDB()
 
-  syncModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Utilities.Synchronizer' )
-  syncObject = syncModule.Synchronizer()
+  syncObject = Synchronizer.Synchronizer()
   gConfig.addListenerToNewVersionEvent( syncObject.sync )
 
   return S_OK()
