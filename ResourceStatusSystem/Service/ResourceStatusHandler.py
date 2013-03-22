@@ -5,10 +5,9 @@
 
 '''
 
-from DIRAC                                             import gConfig, gLogger, S_OK
+from DIRAC                                             import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.Utilities              import Utils
 
 __RCSID__ = '$Id: $'
 db        = None
@@ -21,10 +20,6 @@ def initializeResourceStatusHandler( _serviceInfo ):
   
   global db
   db = ResourceStatusDB()
-
-  syncModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Utilities.Synchronizer' )
-  syncObject = syncModule.Synchronizer()
-  gConfig.addListenerToNewVersionEvent( syncObject.sync )
   
   return S_OK()
 
@@ -53,6 +48,9 @@ class ResourceStatusHandler( RequestHandler ):
    >>> from DIRAC.Core.DISET.RPCClient import RPCCLient
    >>> server = RPCCLient( "ResourceStatus/ResourceStatus" )
   '''
+
+  def __init__( self, *args, **kwargs ):
+    super( ResourceStatusHandler, self ).__init__( *args, **kwargs )
 
   @staticmethod
   def __logResult( methodName, result ):
