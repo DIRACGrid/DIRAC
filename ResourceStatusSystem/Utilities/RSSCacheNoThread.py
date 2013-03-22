@@ -10,6 +10,7 @@ After that, the cache is empty.
 """
 
 import itertools
+import random
 
 from DIRAC                                                 import gLogger, S_OK, S_ERROR 
 from DIRAC.Core.Utilities.DictCache                        import DictCache
@@ -39,9 +40,13 @@ class Cache( object ):
     
     """
     
+    # We set a 20% of the lifetime randomly, so that if we have thousands of jobs
+    # starting at the same time, all the caches will not end at the same time.
+    randomLifeTimeBias  = 0.2 * random.random()
+    
     self.log            = gLogger.getSubLogger( self.__class__.__name__ )
     
-    self.__lifeTime     = lifeTime
+    self.__lifeTime     = int( lifeTime * ( 1 + randomLifeTimeBias ) )
     self.__updateFunc   = updateFunc
     # The records returned from the cache must be valid at least 10 seconds.
     self.__validSeconds = 10
