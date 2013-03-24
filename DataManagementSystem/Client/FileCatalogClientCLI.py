@@ -1930,14 +1930,19 @@ File Catalog Client $Revision: 1.17 $Date:
         if not result['Value']:
           print "Error: no metadata fields defined"
           return
-        typeDict = result['Value']
+        typeDictfm = result['Value']['FileMetaFields']
+        typeDict = result['Value']['DirectoryMetaFields']
+
         
         del argss[0]
         for arg in argss:
           try:
             name,value = arg.split('=')
             if not name in typeDict:
-              print "Error: metadata field %s not defined" % name
+              if not name in typeDictfm:
+                print "Error: metadata field %s not defined" % name
+              else:
+                print 'No support for meta data at File level yet: %s' % name
               return
             mtype = typeDict[name]
             mvalue = value
