@@ -30,6 +30,7 @@ class RssConfiguration:
       RecordLogs   : Active | InActive,
       Cache        : 300,
       CacheHistory : 24,
+      FromAddress  : 'email@site.domain'
       StatusType   :
       { 
         default       : all,
@@ -69,6 +70,13 @@ class RssConfiguration:
     '''
     
     return self.opsHelper.getValue( '%s/Config/CacheHistory' % _rssConfigPath, default )
+
+  def getConfigFromAddress( self, default = None ):
+    '''
+      Gets from <pathToRSSConfiguration>/Config the value of FromAddress
+    '''
+    
+    return self.opsHelper.getValue( '%s/Config/FromAddress' % _rssConfigPath, default )
   
   def getConfigStatusType( self, elementType = None ):
     '''
