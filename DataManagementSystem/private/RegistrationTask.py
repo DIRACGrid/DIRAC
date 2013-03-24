@@ -61,8 +61,7 @@ class RegistrationTask( RequestTask ):
     targetSEs = list( set( [ targetSE.strip() for targetSE in  subRequestAttrs["TargetSE"].split(",") 
                              if targetSE.strip() ] ) )
     if not targetSEs:
-      self.error( "registerFile: no TargetSE specified!")
-      return S_ERROR( "registerFile: no TargetSE specified!" )
+      self.warn( "registerFile: no TargetSE specified!")
 
     ## dict for failed LFNs
     failed = {}
@@ -120,7 +119,7 @@ class RegistrationTask( RequestTask ):
       errors = []
       for lfn in failed:
         for targetSE, reason in failed[lfn].items():
-          error = "%s:%s:%s" % ( lfn, targetSE, reason.replace("'", "") )
+          error = "%s:%s:%s" % ( lfn, targetSE, str(reason).replace("'", "") )
           self.warn( "registerFile: %s@%s - %s" % ( lfn, targetSE, reason ) )
           errors.append( error )
       requestObj.setSubRequestAttributeValue( index, "register", "Error", ";".join( errors )[:255] )
