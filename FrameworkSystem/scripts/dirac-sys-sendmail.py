@@ -68,7 +68,7 @@ if "Subject" in headers:
   subject = headers[ "Subject" ]
 
 ntc = NotificationClient()
-result = ntc.sendMail( to , subject , body , origin , localAttempt = True )
+result = ntc.sendMail( to , subject , body , origin , localAttempt = False )
 if not result[ "OK" ]:
   gLogger.error( result[ "Message" ] )
   DIRAC.exit( 5 )
