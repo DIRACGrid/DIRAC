@@ -93,12 +93,16 @@ class TransferAgent( RequestAgentBase ):
     MaxProcess = 4
   * results queue size
     ProcessPoolQueueSize = 10
+  * pool timeout
+    ProcessPoolTimeout = 300
+  * task timeout
+    ProcessTaskTimeout = 300
   * request type
     RequestType = transfer
   * proxy
     shifterProxy = DataManager
   * task executing
-    Taskmode = True
+    TaskMode = True
   * FTS scheduling 
     FTSMode = True
   * time interval for throughput (FTS scheduling) in seconds
@@ -504,6 +508,7 @@ class TransferAgent( RequestAgentBase ):
                                                                                 len(replicas), 
                                                                                 len(metadata) ) )
 
+    toRemove = []
     for waitingFile in waitingFiles:
       validSourceSEs = {}
       downTime = False
@@ -525,13 +530,16 @@ class TransferAgent( RequestAgentBase ):
                                                     "Status", "Failed" )
         requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", waitingFile, 
                                                     "Error", "valid source not found" )
-        del waitingFiles[waitingFile]
+        toRemove.append( waitingFile )
         if waitingFile in replicas:
           del replicas[waitingFile]
         if waitingFile in metadata:
           del metadata[waitingFile]
       else:
         replicas[waitingFile] = validSourceSEs
+
+    ## fileter out not valid files
+    waitingFiles = dict( [ (k,v) for k,v in waitingFiles.items() if k not in toRemove ] )
               
     return S_OK( ( waitingFiles, replicas, metadata ) )
 
