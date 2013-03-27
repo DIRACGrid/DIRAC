@@ -107,7 +107,8 @@ class Cache( object ):
 
       cacheRow = self.__cache.get( cacheKey, validSeconds = self.__validSeconds )
       if not cacheRow:
-        return S_ERROR( 'Cannot get %s' % cacheKey )
+        self.log.error( str( cacheKey ) )
+        return S_ERROR( 'Cannot get %s' % str( cacheKey ) )
       result.update( { cacheKey : cacheRow } )
       
     return S_OK( result )
