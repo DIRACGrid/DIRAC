@@ -217,12 +217,15 @@ class RSSCache( Cache ):
     """
     
     self.acquireLock()
-    match = self._match( elementNames, statusTypes )
-    self.releaseLock()
-    
-    if not match[ 'OK' ]:
-      self.log.error( match[ 'Message' ] )
-    return match  
+    try:
+      match = self._match( elementNames, statusTypes )
+        
+      if not match[ 'OK' ]:
+        self.log.error( match[ 'Message' ] )
+      return match  
+    finally:
+      # Release lock, no matter what !
+      self.releaseLock()  
     
   #.............................................................................
   # Private methods: NOT THREAD SAFE !!

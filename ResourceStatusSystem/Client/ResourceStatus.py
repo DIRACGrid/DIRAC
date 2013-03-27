@@ -184,22 +184,23 @@ class ResourceStatus( object ):
     expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
       
     self.seCache.acquireLock()
+    try:
+      res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName, 
+                                                statusType = statusType, status = status,
+                                                reason = reason, tokenOwner = tokenOwner,
+                                                tokenExpiration = expiration )
+      if res[ 'OK' ]:
+        self.seCache.refreshCache()
+        
+      if not res[ 'OK' ]:
+        _msg = 'Error updating StorageElement (%s,%s,%s)' % ( elementName, statusType, status )
+        gLogger.warn( 'RSS: %s' % _msg )
     
-    res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName, 
-                                              statusType = statusType, status = status,
-                                              reason = reason, tokenOwner = tokenOwner,
-                                              tokenExpiration = expiration )
-    if res[ 'OK' ]:
-      self.seCache.refreshCache()
-    
-    # Looks dirty, but this way we avoid retaining the lock when using gLogger.   
-    self.seCache.releaseLock()
-    
-    if not res[ 'OK' ]:
-      _msg = 'Error updating StorageElement (%s,%s,%s)' % ( elementName, statusType, status )
-      gLogger.warn( 'RSS: %s' % _msg )
-    
-    return res
+      return res
+
+    finally:
+      # Release lock, no matter what.   
+      self.seCache.releaseLock()
 
   def __setCSStorageElementStatus( self, elementName, statusType, status ):
     """
