@@ -371,14 +371,14 @@ class Transformation( API ):
       self.paramValues['Plugin'] = res['Value']
 
     plugin = self.paramValues['Plugin']
-    checkPlugin = "_check%sPlugin" % plugin
-    fcn = None
-    if hasattr( self, checkPlugin ) and callable( getattr( self, checkPlugin ) ):
-      fcn = getattr( self, checkPlugin )
-    if not fcn:
-      return S_ERROR( "Unable to invoke %s, it isn't a member function" % checkPlugin )
-    res = fcn()
-    return res
+    #checkPlugin = "_check%sPlugin" % plugin
+    #fcn = None
+    #if hasattr( self, checkPlugin ) and callable( getattr( self, checkPlugin ) ):
+    #  fcn = getattr( self, checkPlugin )
+    #if not fcn:
+    #  return S_ERROR( "Unable to invoke %s, it isn't a member function" % checkPlugin )
+    #res = fcn()
+    return S_OK()
 
   def _checkBySizePlugin( self ):
     return self._checkStandardPlugin()
