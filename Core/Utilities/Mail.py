@@ -6,6 +6,7 @@ __RCSID__ = "$Id$"
 
 import socket
 from smtplib import SMTP
+from email.mime.text import MIMEText
 from getpass import getuser
 from DIRAC import gLogger, S_OK, S_ERROR
 
@@ -30,20 +31,19 @@ class Mail:
         gLogger.warn( "Subject and body empty. Mail not sent" )
         return S_ERROR ( "Subject and body empty. Mail not sent" )
 
-    mailString = "From: %s\nTo: %s\nSubject: %s\n%s\n"
+    mail = MIMEText( self._message , "plain" )
     addresses = self._mailAddress
     if not type( self._mailAddress ) == type( [] ):
       addresses = [self._mailAddress]
-
-    text = mailString % ( self._fromAddress, ', '.join( addresses ),
-                          self._subject, self._message )
+    mail[ "Subject" ] = self._subject
+    mail[ "From" ] = self._fromAddress
+    mail[ "To" ] = ', '.join( addresses )
 
     smtp = SMTP()
     smtp.set_debuglevel( 0 )
     try:
-      #smtp.connect( self._hostname )
       smtp.connect()
-      smtp.sendmail( self._fromAddress, self._mailAddress, text )
+      smtp.sendmail( self._fromAddress, addresses, mail.as_string() )
     except Exception, x:
       return S_ERROR( "Sending mail failed %s" % str( x ) )
 
