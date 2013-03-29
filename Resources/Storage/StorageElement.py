@@ -458,10 +458,10 @@ class StorageElement:
     return { True : self.__executeSingleFile,
              False : self.__executeFunction }[bool(singleFile)]( pfn, 'getFile', { 'localPath': localPath } )
 
-  def putFile( self, pfn, singleFile = False ):
+  def putFile( self, pfn, sourceSize=0, singleFile = False ):
     """ execute 'putFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'putFile' )
+             False : self.__executeFunction }[bool(singleFile)]( pfn, 'putFile', { 'sourceSize': sourceSize } )
 
   def replicateFile( self, pfn, sourceSize = 0, singleFile = False ):
     """ execute 'putFile' as replicate """

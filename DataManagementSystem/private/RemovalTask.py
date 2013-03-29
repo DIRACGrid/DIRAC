@@ -328,7 +328,7 @@ class RemovalTask( RequestTask ):
       for targetSE, error in failed:
         self.warn("replicaRemoval: failed to remove %s from %s: %s" % ( lfn, targetSE, error ) )
 
-      fileError = ";".join( [ "%s:%s" % ( targetSE, error.replace("'", "") ) for targetSE, error in failed ] )[:255]
+      fileError = ";".join( [ "%s:%s" % ( targetSE, str(error).replace("'", "") ) for targetSE, error in failed ] )[:255]
       subRequestError.append( fileError )
       fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", fileError )
       if not fileError["OK"]:
