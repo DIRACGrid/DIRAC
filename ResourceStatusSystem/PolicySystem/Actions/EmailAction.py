@@ -120,11 +120,14 @@ class EmailAction( BaseAction ):
     if not userEmails[ 'OK' ]:
       return userEmails
     
+    # User email address used to send the emails from.
+    fromAddress = RssConfiguration.RssConfiguration().getConfigFromAddress()
+    
     for user in userEmails[ 'Value' ]:
       
       #FIXME: should not I get the info from the RSS User cache ?
       
-      resEmail = self.diracAdmin.sendMail( user, subject, body )
+      resEmail = self.diracAdmin.sendMail( user, subject, body, fromAddress = fromAddress )
       if not resEmail[ 'OK' ]:
         return S_ERROR( 'Cannot send email to user "%s"' % user )    
       

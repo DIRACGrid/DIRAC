@@ -76,13 +76,13 @@ class InputData( OptimizerExecutor ):
         return result
       resolvedData = result['Value']
 
-    #Now check if banned SE's might prevent jobs to be scheduled
-    result = self.__checkActiveSEs( jobState, resolvedData['Value']['Value'] )
-    if not result['OK']:
-      # if after checking SE's input data can not be resolved any more
-      # then keep the job in the same status and update the application status
-      self.freezeTask( 600 )
-      return jobState.setAppStatus( result['Message'] )
+#    #Now check if banned SE's might prevent jobs to be scheduled
+#    result = self.__checkActiveSEs( jobState, resolvedData['Value']['Value'] )
+#    if not result['OK']:
+#      # if after checking SE's input data can not be resolved any more
+#      # then keep the job in the same status and update the application status
+#      self.freezeTask( 600 )
+#      return jobState.setAppStatus( result['Message'] )
 
     return self.setNextOptimizer()
 
@@ -102,7 +102,7 @@ class InputData( OptimizerExecutor ):
 
     print "LFNS", lfns
 
-    result = self.__replicaMan.getReplicas( lfns )
+    result = self.__replicaMan.getActiveReplicas( lfns )  # This will return already active replicas, excluding banned SEs
     self.jobLog.info( 'Catalog replicas lookup time: %.2f seconds ' % ( time.time() - startTime ) )
     if not result['OK']:
       self.log.warn( result['Message'] )

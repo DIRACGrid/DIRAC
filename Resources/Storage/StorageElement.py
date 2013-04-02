@@ -169,13 +169,13 @@ class StorageElement:
 
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
-    retDict['Read'] = not ( 'Read' in self.options and self.options['Read'] not in ( 'Active', 'Degraded' ) )
-    retDict['Write'] = not ( 'Write' in self.options and self.options['Write'] not in ( 'Active', 'Degraded' ) )
-    retDict['Remove'] = not ( 'Remove' in self.options and self.options['Remove'] not in ( 'Active', 'Degraded' ) )
+    retDict['Read'] = not ( 'ReadAccess' in self.options and self.options['ReadAccess'] not in ( 'Active', 'Degraded' ) )
+    retDict['Write'] = not ( 'WriteAccess' in self.options and self.options['WriteAccess'] not in ( 'Active', 'Degraded' ) )
+    retDict['Remove'] = not ( 'RemoveAccess' in self.options and self.options['RemoveAccess'] not in ( 'Active', 'Degraded' ) )
     if retDict['Read']:
       retDict['Check'] = True
     else:
-      retDict['Check'] = not ( 'Check' in self.options and self.options['Check'] not in ( 'Active', 'Degraded' ) )
+      retDict['Check'] = not ( 'CheckAccess' in self.options and self.options['CheckAccess'] not in ( 'Active', 'Degraded' ) )
     diskSE = True
     tapeSE = False
     if 'SEType' in self.options:
@@ -223,33 +223,33 @@ class StorageElement:
     if not operation:
       return S_OK()
     # The supplied operation can be 'Read','Write' or any of the possible StorageElement methods.
-    if ( operation in self.readMethods ) or ( operation.lower() == 'read' ):
-      operation = 'Read'
-    elif operation in self.writeMethods or ( operation.lower() == 'write' ):
-      operation = 'Write'
-    elif operation in self.removeMethods or ( operation.lower() == 'remove' ):
-      operation = 'Remove'
-    elif operation in self.checkMethods or ( operation.lower() == 'check' ):
-      operation = 'Check'
+    if ( operation in self.readMethods ) or ( operation.lower() in ( 'read', 'readaccess' ) ):
+      operation = 'ReadAccess'
+    elif operation in self.writeMethods or ( operation.lower() in ( 'write', 'writeaccess' ) ):
+      operation = 'WriteAccess'
+    elif operation in self.removeMethods or ( operation.lower() in ( 'remove', 'removeaccess' ) ):
+      operation = 'RemoveAccess'
+    elif operation in self.checkMethods or ( operation.lower() in ( 'check', 'checkaccess' ) ):
+      operation = 'CheckAccess'
     else:
       self.log.error( "isValid: The supplied operation is not known.", operation )
       return S_ERROR( "StorageElement.isValid: The supplied operation is not known." )
     self.log.debug( "in isValid check the operation: %s " % operation )
     # Check if the operation is valid
-    if operation == 'Check':
+    if operation == 'CheckAccess':
       if not reading:
         if not checking:
           self.log.error( "isValid: Check access not currently permitted." )
           return S_ERROR( "StorageElement.isValid: Check access not currently permitted." )
-    if operation == 'Read':
+    if operation == 'ReadAccess':
       if not reading:
         self.log.error( "isValid: Read access not currently permitted." )
         return S_ERROR( "StorageElement.isValid: Read access not currently permitted." )
-    if operation == 'Write':
+    if operation == 'WriteAccess':
       if not writing:
         self.log.error( "isValid: Write access not currently permitted." )
         return S_ERROR( "StorageElement.isValid: Write access not currently permitted." )
-    if operation == 'Remove':
+    if operation == 'RemoveAccess':
       if not removing:
         self.log.error( "isValid: Remove access not currently permitted." )
         return S_ERROR( "StorageElement.isValid: Remove access not currently permitted." )
@@ -458,10 +458,10 @@ class StorageElement:
     return { True : self.__executeSingleFile,
              False : self.__executeFunction }[bool(singleFile)]( pfn, 'getFile', { 'localPath': localPath } )
 
-  def putFile( self, pfn, singleFile = False ):
+  def putFile( self, pfn, sourceSize=0, singleFile = False ):
     """ execute 'putFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'putFile' )
+             False : self.__executeFunction }[bool(singleFile)]( pfn, 'putFile', { 'sourceSize': sourceSize } )
 
   def replicateFile( self, pfn, sourceSize = 0, singleFile = False ):
     """ execute 'putFile' as replicate """

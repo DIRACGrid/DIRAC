@@ -1,36 +1,36 @@
 ########################################################################
 # $HeadURL$
-# File :   StalledJobAgent.py
+# File : StalledJobAgent.py
 ########################################################################
-"""  The StalledJobAgent hunts for stalled jobs in the Job database. Jobs in "running"
-     state not receiving a heart beat signal for more than stalledTime
-     seconds will be assigned the "Stalled" state.
+""" The StalledJobAgent hunts for stalled jobs in the Job database. Jobs in "running"
+state not receiving a heart beat signal for more than stalledTime
+seconds will be assigned the "Stalled" state.
 """
 
 __RCSID__ = "$Id$"
 
-from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.Core.Base.AgentModule                    import AgentModule
-from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, dateTime, second
-from DIRAC                                          import S_OK, S_ERROR, gConfig
-from DIRAC.Core.DISET.RPCClient                     import RPCClient
-from DIRAC.AccountingSystem.Client.Types.Job        import Job
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
-from DIRAC.ConfigurationSystem.Client.Helpers       import cfgPath
-from DIRAC.ConfigurationSystem.Client.PathFinder    import getSystemInstance
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.Time import fromString, toEpoch, dateTime, second
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.AccountingSystem.Client.Types.Job import Job
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 import types
 
 class StalledJobAgent( AgentModule ):
   """
-      The specific agents must provide the following methods:
-      - initialize() for initial settings
-      - beginExecution()
-      - execute() - the main method called in the agent cycle
-      - endExecution()
-      - finalize() - the graceful exit of the method, this one is usually used
-                 for the agent restart
-  """
+The specific agents must provide the following methods:
+- initialize() for initial settings
+- beginExecution()
+- execute() - the main method called in the agent cycle
+- endExecution()
+- finalize() - the graceful exit of the method, this one is usually used
+for the agent restart
+"""
   jobDB = None
   logDB = None
   matchedTime = 7200
@@ -40,7 +40,7 @@ class StalledJobAgent( AgentModule ):
   #############################################################################
   def initialize( self ):
     """Sets default parameters
-    """
+"""
     self.jobDB = JobDB()
     self.logDB = JobLoggingDB()
     self.am_setOption( 'PollingTime', 60 * 60 )
@@ -51,7 +51,7 @@ class StalledJobAgent( AgentModule ):
   #############################################################################
   def execute( self ):
     """ The main agent execution method
-    """
+"""
     self.log.verbose( 'Waking up Stalled Job Agent' )
 
     wms_instance = getSystemInstance( 'WorkloadManagement' )
@@ -88,7 +88,11 @@ class StalledJobAgent( AgentModule ):
     if not result['OK']:
       self.log.error( result['Message'] )
 
+<<<<<<< HEAD
     result = self.__failedCompletedJobs()
+== == == =
+    result = self.__failCompletedJobs()
+>>>>>>> upstream / integration
     if not result['OK']:
       self.log.error( result['Message'] )
 
@@ -101,7 +105,7 @@ class StalledJobAgent( AgentModule ):
   #############################################################################
   def __markStalledJobs( self, stalledTime ):
     """ Identifies stalled jobs running without update longer than stalledTime.
-    """
+"""
     stalledCounter = 0
     runningCounter = 0
     result = self.jobDB.selectJobs( {'Status':'Running'} )
@@ -112,7 +116,7 @@ class StalledJobAgent( AgentModule ):
     jobs = result['Value']
     self.log.info( '%s Running jobs will be checked for being stalled' % ( len( jobs ) ) )
     jobs.sort()
-#      jobs = jobs[:10] #for debugging
+# jobs = jobs[:10] #for debugging
     for job in jobs:
       result = self.__getStalledJob( job, stalledTime )
       if result['OK']:
@@ -130,7 +134,7 @@ class StalledJobAgent( AgentModule ):
   #############################################################################
   def __failStalledJobs( self, failedTime ):
     """ Changes the Stalled status to Failed for jobs long in the Stalled status
-    """
+"""
 
     result = self.jobDB.selectJobs( {'Status':'Stalled'} )
     if not result['OK']:
@@ -175,7 +179,7 @@ class StalledJobAgent( AgentModule ):
     recoverCounter = 0
 
     for minor in ["Job stalled: pilot not running", 'Stalling for more than %d sec' % failedTime]:
-      result = self.jobDB.selectJobs( {'Status':'Failed', 'MinorStatus':  minor, 'AccountedFlag': 'False' } )
+      result = self.jobDB.selectJobs( {'Status':'Failed', 'MinorStatus': minor, 'AccountedFlag': 'False' } )
       if not result['OK']:
         return result
       if result['Value']:
@@ -200,7 +204,7 @@ class StalledJobAgent( AgentModule ):
   #############################################################################
   def __getJobPilotStatus( self, jobID ):
     """ Get the job pilot status
-    """
+"""
     result = self.jobDB.getJobParameter( jobID, 'Pilot_Reference' )
     if not result['OK']:
       return result
@@ -221,8 +225,8 @@ class StalledJobAgent( AgentModule ):
   #############################################################################
   def __getStalledJob( self, job, stalledTime ):
     """ Compares the most recent of LastUpdateTime and HeartBeatTime against
-        the stalledTime limit.
-    """
+the stalledTime limit.
+"""
     result = self.__getLatestUpdateTime( job )
     if not result['OK']:
       return result
@@ -241,7 +245,7 @@ class StalledJobAgent( AgentModule ):
   #############################################################################
   def __getLatestUpdateTime( self, job ):
     """ Returns the most recent of HeartBeatTime and LastUpdateTime
-    """
+"""
     result = self.jobDB.getJobAttributes( job, ['HeartBeatTime', 'LastUpdateTime'] )
     if not result['OK']:
       self.log.error( result['Message'] )
@@ -271,8 +275,8 @@ class StalledJobAgent( AgentModule ):
   #############################################################################
   def __updateJobStatus( self, job, status, minorstatus = None ):
     """ This method updates the job status in the JobDB, this should only be
-        used to fail jobs due to the optimizer chain.
-    """
+used to fail jobs due to the optimizer chain.
+"""
     self.log.verbose( "self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % ( job, status ) )
 
     if self.am_getOption( 'Enable', True ):
@@ -299,7 +303,7 @@ class StalledJobAgent( AgentModule ):
 
   def __getProcessingType( self, jobID ):
     """ Get the Processing Type from the JDL, until it is promoted to a real Attribute
-    """
+"""
     processingType = 'unknown'
     result = self.jobDB.getJobJDL( jobID, original = True )
     if not result['OK']:
@@ -313,7 +317,7 @@ class StalledJobAgent( AgentModule ):
   #############################################################################
   def __sendAccounting( self, jobID ):
     """ Send WMS accounting data for the given job
-    """
+"""
     try:
       accountingReport = Job()
       endTime = 'Unknown'
@@ -377,8 +381,8 @@ class StalledJobAgent( AgentModule ):
     return result
 
   def __checkHeartBeat( self, jobID, jobDict ):
-    """ Get info from HeartBeat 
-    """
+    """ Get info from HeartBeat
+"""
     result = self.jobDB.getHeartBeatData( jobID )
     lastCPUTime = 0
     lastWallTime = 0
@@ -409,7 +413,7 @@ class StalledJobAgent( AgentModule ):
 
   def __checkLoggingInfo( self, jobID, jobDict ):
     """ Get info from JobLogging
-    """
+"""
     logList = []
     result = self.logDB.getJobLoggingInfo( jobID )
     if result['OK']:
@@ -445,7 +449,7 @@ class StalledJobAgent( AgentModule ):
 
   def __kickStuckJobs( self ):
     """ Reschedule jobs stuck in initialization status Rescheduled, Matched
-    """
+"""
 
     message = ''
 
@@ -513,8 +517,16 @@ class StalledJobAgent( AgentModule ):
       result = self.__sendAccounting( jobID )
       if not result['OK']:
         self.log.error( result['Message'] )
+<<<<<<< HEAD
         break
 
     return S_OK()
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+== == == =
+        continue
+
+    return S_OK()
+
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+>>>>>>> upstream / integration
