@@ -88,11 +88,8 @@ for the agent restart
     if not result['OK']:
       self.log.error( result['Message'] )
 
-<<<<<<< HEAD
-    result = self.__failedCompletedJobs()
-== == == =
     result = self.__failCompletedJobs()
->>>>>>> upstream / integration
+
     if not result['OK']:
       self.log.error( result['Message'] )
 
@@ -486,7 +483,7 @@ used to fail jobs due to the optimizer chain.
     else:
       return S_OK()
 
-  def __failedCompletedJobs( self ):
+  def __failCompletedJobs( self ):
     """ Failed Jobs stuck in Completed Status for a long time.
       They are due to pilots being killed during the 
       finalization of the job execution.
@@ -517,16 +514,8 @@ used to fail jobs due to the optimizer chain.
       result = self.__sendAccounting( jobID )
       if not result['OK']:
         self.log.error( result['Message'] )
-<<<<<<< HEAD
-        break
-
-    return S_OK()
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
-== == == =
         continue
 
     return S_OK()
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
->>>>>>> upstream / integration
