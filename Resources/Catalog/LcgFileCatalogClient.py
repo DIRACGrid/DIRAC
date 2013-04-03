@@ -255,14 +255,18 @@ class LcgFileCatalogClient( FileCatalogueBase ):
 
   def __openSession( self ):
     """Open the LFC client/server session"""
-    if not self.session:
+    if self.session:
+      # Another thread is holding a session, can't create it
+      return 0
+    else:
       sessionName = 'DIRAC_%s.%s at %s at time %s' % ( DIRAC.majorVersion,
                                                        DIRAC.minorVersion,
                                                        DIRAC.siteName(),
                                                        time.time() )
       rc = lfc.lfc_startsess( self.host, sessionName )
-      self.session = not rc
-    return self.session
+      self.session = ( rc == 0 )
+      # if there was an error, return -1, to be tested just after the call...
+      return 1 if self.session else -1
 
   def __closeSession( self ):
     """Close the LFC client/server session"""
@@ -309,7 +313,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     lfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -359,7 +363,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     lfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -409,7 +413,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -435,7 +439,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -482,7 +486,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( lfns ) > 2:
       created = self.__openSession()
-      if not created:
+      if created < 0:
         return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -510,7 +514,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( lfnChunks ) > 2:
       created = self.__openSession()
-      if not created:
+      if created < 0:
         return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -573,7 +577,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( lfns ) > 2:
       created = self.__openSession()
-      if not created:
+      if created < 0:
         return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -594,7 +598,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     pfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -625,7 +629,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( lfns ) > 2:
       created = self.__openSession()
-      if not created:
+      if created < 0:
         return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -649,7 +653,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -692,7 +696,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     lfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -724,7 +728,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     lfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -745,7 +749,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     lfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -774,7 +778,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     failed = {}
     successful = {}
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     for link in links:
       res = self.__getLinkStat( link )
@@ -798,7 +802,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( links ) > 2:
       created = self.__openSession()
-      if not created:
+      if created < 0:
         return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -824,7 +828,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     datasets = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     successful = {}
     failed = {}
@@ -857,7 +861,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     lfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -940,7 +944,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     lfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -974,7 +978,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     lfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     res = self.exists( lfns )
     if not res['OK']:
@@ -1005,7 +1009,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( lfns ) > 2:
       created = self.__openSession()
-      if not created:
+      if created < 0:
         return S_ERROR( "Error opening LFC session" )
     res = self.getReplicas( lfn ) #We need the PFNs of the input lfn (list)
     if not res['OK']:
@@ -1071,7 +1075,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( lfns ) > 2:
       created = self.__openSession()
-      if not created:
+      if created < 0:
         return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -1098,7 +1102,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( lfns ) > 2:
       created = self.__openSession()
-      if not created:
+      if created < 0:
         return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -1126,7 +1130,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     lfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     res = self.exists( lfns )
     if not res['OK']:
@@ -1158,7 +1162,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     lfns = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -1185,7 +1189,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     links = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -1213,7 +1217,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( links ) > 2:
       created = self.__openSession()
-      if not created:
+      if created < 0:
         return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
@@ -1239,7 +1243,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     datasets = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     successful = {}
     failed = {}
@@ -1266,7 +1270,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     datasets = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     successful = {}
     failed = {}
@@ -1287,7 +1291,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     datasets = res['Value']
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     successful = {}
     failed = {}
@@ -1817,7 +1821,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     successful = {}
     failed = {}
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     for username in usernames:
       userDirectory = "/%s/user/%s/%s" % ( vo, username[0], username )
@@ -1835,7 +1839,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     """ Remove the user directory and remove the user mapping
     """
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     res = self.getUserDirectory( username )
     if not res['OK']:
@@ -1872,7 +1876,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     successful = {}
     failed = {}
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     for dirPath, dn in directory.items():
       res = __getDNUserID( dn )
@@ -1900,7 +1904,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     successful = {}
     failed = {}
     created = self.__openSession()
-    if not created:
+    if created < 0:
       return S_ERROR( "Error opening LFC session" )
     for userDN, uid in userDNs.items():
       if not uid:
@@ -1953,7 +1957,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = False
     if len( lfnChunks ) > 2:
       created = self.__openSession()
-      if not created:
+      if created < 0:
         return S_ERROR( "Error opening LFC session" )
     failed = {}
     successful = {}
