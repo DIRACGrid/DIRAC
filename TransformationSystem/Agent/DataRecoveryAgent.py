@@ -41,12 +41,13 @@ from ILCDIRAC.Core.Utilities.ProductionData import constructProductionLFNs
 import string
 import datetime
 
-AGENT_NAME = 'TrasnformationSystem/DataRecoveryAgent'
+AGENT_NAME = 'TransformationSystem/DataRecoveryAgent'
 
 
 class DataRecoveryAgent(AgentModule):
-  def __init__(self):
-    self.name = 'toto'
+  def __init__(self, *args, **kwargs):
+    AgentModule.__init__(self, *args, **kwargs)
+    self.name = 'DataRecoveryAgent'
     self.log = gLogger
   #############################################################################
 
