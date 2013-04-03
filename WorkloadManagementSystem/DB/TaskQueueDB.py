@@ -13,7 +13,8 @@ from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Utilities import List, DictCache
+from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
 
