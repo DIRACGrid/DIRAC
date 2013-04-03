@@ -37,7 +37,8 @@ from DIRAC.Core.Security.ProxyInfo                         import getProxyInfoAs
 from DIRAC.Core.Utilities.Grid                             import executeGridCommand
 from DIRAC.Core.Utilities                                  import Time
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
-from DIRAC import S_OK, S_ERROR, DictCache, List, gConfig
+from DIRAC import S_OK, S_ERROR, List, Time, gConfig
+from DIRAC.Core.Utilities.DictCache import DictCache
 
 class GridPilotDirector( PilotDirector ):
   """
