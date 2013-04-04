@@ -22,19 +22,6 @@ importedLFC = None
 # These are some functions used by all methods in the class
 #
 
-def __checkArgumentFormat( path ):
-  if type( path ) in types.StringTypes:
-    urls = {path:False}
-  elif type( path ) == types.ListType:
-    urls = {}
-    for url in path:
-      urls[url] = False
-  elif type( path ) == types.DictType:
-    urls = path
-  else:
-    return S_ERROR( "LcgFileCatalogClient.__checkArgumentFormat: Supplied path is not of the correct format." )
-  return S_OK( urls )
-
 def __getClientCertInfo():
   res = getProxyInfo( False, False )
   if not res['OK']:
@@ -244,6 +231,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     self.prefix = '/grid'
     self.session = False
     self.transaction = False
+    # Verify if the LFC can be accessed, if not, declare it invalid
+    created = self.__openSession()
+    if created < 0:
+      self.isValid = False
+    self.__closeSession()
 
   ####################################################################
   #
@@ -260,6 +252,21 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
   # These are the methods for session/transaction manipulation
   #
+
+  def __checkArgumentFormat( self, path ):
+    if not self.isOK():
+      return S_ERROR( "LcgFileCatalogClient: %s catalog is invalid" % self.getname() )
+    if type( path ) in types.StringTypes:
+      urls = {path:False}
+    elif type( path ) == types.ListType:
+      urls = {}
+      for url in path:
+        urls[url] = False
+    elif type( path ) == types.DictType:
+      urls = path
+    else:
+      return S_ERROR( "LcgFileCatalogClient.self.__checkArgumentFormat: Supplied path is not of the correct format." )
+    return S_OK( urls )
 
   def __openSession( self ):
     """Open the LFC client/server session"""
@@ -316,7 +323,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def exists( self, path ):
     """ Check if the path exists
     """
-    res = __checkArgumentFormat( path )
+    res = self.__checkArgumentFormat( path )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -400,7 +407,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getPathPermissions( self, path ):
     """ Determine the VOMs based ACL information for a supplied path
     """
-    res = __checkArgumentFormat( path )
+    res = self.__checkArgumentFormat( path )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -449,7 +456,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
 
   def isFile( self, lfn ):
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -475,7 +482,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getFileMetadata( self, lfn, ownership = False ):
     """ Returns the file metadata associated to a supplied LFN
     """
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -520,7 +527,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getFileSize( self, lfn ):
     """ Get the size of a supplied file
     """
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -547,7 +554,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getReplicas( self, lfn, allStatus = False ):
     """ Returns replicas for an LFN or list of LFNs
     """
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -611,7 +618,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def getReplicaStatus( self, lfn ):
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -635,7 +642,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def getLFNForPFN( self, pfn ):
-    res = __checkArgumentFormat( pfn )
+    res = self.__checkArgumentFormat( pfn )
     if not res['OK']:
       return res
     pfns = res['Value']
@@ -663,7 +670,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def isDirectory( self, lfn ):
     """ Determine whether the path is a directory
     """
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -689,7 +696,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def getDirectoryMetadata( self, lfn ):
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -733,7 +740,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getDirectoryReplicas( self, lfn, allStatus = False ):
     """ This method gets all of the pfns in the directory
     """
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -765,7 +772,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def listDirectory( self, lfn, verbose = False ):
     """ Returns the result of __getDirectoryContents for multiple supplied paths
     """
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -786,7 +793,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def getDirectorySize( self, lfn ):
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -812,7 +819,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
 
   def isLink( self, link ):
-    res = __checkArgumentFormat( link )
+    res = self.__checkArgumentFormat( link )
     if not res['OK']:
       return res
     links = res['Value']
@@ -836,7 +843,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def readLink( self, link ):
-    res = __checkArgumentFormat( link )
+    res = self.__checkArgumentFormat( link )
     if not res['OK']:
       return res
     links = res['Value']
@@ -865,7 +872,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
 
   def resolveDataset( self, dataset, allStatus = False ):
-    res = __checkArgumentFormat( dataset )
+    res = self.__checkArgumentFormat( dataset )
     if not res['OK']:
       return res
     datasets = res['Value']
@@ -898,7 +905,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
 
   def addFile( self, lfn ):
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -981,7 +988,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def addReplica( self, lfn ):
     """ This adds a replica to the catalogue.
     """
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -1015,7 +1022,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def removeFile( self, lfn ):
     """ Remove the supplied path
     """
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -1044,7 +1051,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def removeReplica( self, lfn ):
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -1110,7 +1117,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def setReplicaStatus( self, lfn ):
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -1137,7 +1144,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def setReplicaHost( self, lfn ):
     """ This modifies the replica metadata for the SE.
     """
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -1167,7 +1174,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
 
   def removeDirectory( self, lfn, recursive = False ):
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -1199,7 +1206,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def createDirectory( self, lfn ):
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -1225,7 +1232,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
 
   def createLink( self, link ):
-    res = __checkArgumentFormat( link )
+    res = self.__checkArgumentFormat( link )
     if not res['OK']:
       return res
     links = res['Value']
@@ -1251,7 +1258,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def removeLink( self, link ):
-    res = __checkArgumentFormat( link )
+    res = self.__checkArgumentFormat( link )
     if not res['OK']:
       return res
     links = res['Value']
@@ -1280,7 +1287,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
 
   def createDataset( self, dataset ):
-    res = __checkArgumentFormat( dataset )
+    res = self.__checkArgumentFormat( dataset )
     if not res['OK']:
       return res
     datasets = res['Value']
@@ -1307,7 +1314,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def removeDataset( self, dataset ):
-    res = __checkArgumentFormat( dataset )
+    res = self.__checkArgumentFormat( dataset )
     if not res['OK']:
       return res
     datasets = res['Value']
@@ -1328,7 +1335,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
   def removeFileFromDataset( self, dataset ):
-    res = __checkArgumentFormat( dataset )
+    res = self.__checkArgumentFormat( dataset )
     if not res['OK']:
       return res
     datasets = res['Value']
@@ -1829,7 +1836,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if not result['OK']:
       return result
     vo = result['Value']['VO']
-    res = __checkArgumentFormat( username )
+    res = self.__checkArgumentFormat( username )
     if not res['OK']:
       return res
     usernames = res['Value'].keys()
@@ -1856,7 +1863,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if not result['OK']:
       return result
     vo = result['Value']['VO']
-    res = __checkArgumentFormat( username )
+    res = self.__checkArgumentFormat( username )
     if not res['OK']:
       return res
     usernames = res['Value'].keys()
@@ -1911,7 +1918,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def changeDirectoryOwner( self, directory ):
     """ Change the ownership of the directory to the user associated to the supplied DN
     """
-    res = __checkArgumentFormat( directory )
+    res = self.__checkArgumentFormat( directory )
     if not res['OK']:
       return res
     directory = res['Value']
@@ -1939,7 +1946,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def createUserMapping( self, userDN ):
     """ Create a user with the supplied DN and return the userID
     """
-    res = __checkArgumentFormat( userDN )
+    res = self.__checkArgumentFormat( userDN )
     if not res['OK']:
       return res
     userDNs = res['Value']
@@ -1990,7 +1997,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getReplicasNew( self, lfn, allStatus = False ):
     """ Returns replicas for an LFN or list of LFNs
     """
-    res = __checkArgumentFormat( lfn )
+    res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value']
