@@ -56,6 +56,7 @@ CREATE TABLE SubRequests (
 DROP TABLE IF EXISTS Files;
 CREATE TABLE Files (
    SubRequestID INTEGER NOT NULL,
+   INDEX(SubRequestID),
    FileID INTEGER NOT NULL AUTO_INCREMENT,
    Status varchar(32) DEFAULT 'New',
    INDEX(Status),

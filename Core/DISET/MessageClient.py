@@ -44,7 +44,11 @@ class MessageClient( BaseClient ):
     return result[ 'Value' ]
 
   def createMessage( self, msgName ):
-    return self.__msgBroker.getMsgFactory().createMessage( self._serviceName, msgName )
+    return self.__msgBroker.getMsgFactory().createMessage( self.getServiceName(), msgName )
+
+  @property
+  def connected( self ):
+    return self.__trid
 
   def connect( self, **extraParams ):
     if extraParams:
@@ -86,6 +90,7 @@ class MessageClient( BaseClient ):
 
   def __cbRecvMsg( self, trid, msgObj ):
     msgName = msgObj.getName()
+    msgObj.setMsgClient( self )
     for cb in self.__specialCallbacks[ 'msg' ]:
       try:
         result = cb( self, msgObj )

@@ -128,7 +128,7 @@ def getQueueInfo( ceUniqueID ):
     Extract information from full CE Name including associate DIRAC Site
   """
   try:
-    subClusterUniqueID = ceUniqueID.split( ':' )[0]
+    subClusterUniqueID = ceUniqueID.split( '/' )[0].split( ':' )[0]
     queueID = ceUniqueID.split( '/' )[1]
   except:
     return S_ERROR( 'Wrong full queue Name' )

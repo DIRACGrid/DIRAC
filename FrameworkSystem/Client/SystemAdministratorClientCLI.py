@@ -146,6 +146,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           show log  <system> <service|agent> [nlines]
                              - show last <nlines> lines in the component log file
           show info          - show version of software and setup
+          show host          - show host related parameters
           show errors [*|<system> <service|agent>]
                              - show error count for the given component or all the components
                                in the last hour and day
@@ -200,7 +201,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         rDict = result['Value']
         for compType in rDict:
           for system in rDict[compType]:
-            for component in rDict[compType][system]:
+            components = rDict[compType][system].keys()
+            components.sort()
+            for component in components:
               record = []
               if rDict[compType][system][component]['Installed']:
                 module = str( rDict[compType][system][component]['Module'] )
@@ -268,6 +271,23 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           for e, v in result['Value']['Extensions'].items():
             print "%s version" % e, v
         print
+    elif option == "host":
+      client = SystemAdministratorClient( self.host, self.port )
+      result = client.getHostInfo()
+      if not result['OK']:
+        self.__errMsg( result['Message'] )
+      else:   
+        print   
+        print "Host info:"
+        print
+        
+        fields = ['Parameter','Value']
+        records = []
+        for key,value in result['Value'].items():
+          records.append( [key, str(value) ] )
+          
+        printTable( fields, records )  
+            
     elif option == "errors":
       self.getErrors( argss )
     else:
@@ -343,8 +363,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
           install mysql
           install db <database>
-          install service <system> <service>
-          install agent <system> <agent>
+          install service <system> <service> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
+          install agent <system> <agent> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
+          install executor <system> <executor> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
     """
     argss = args.split()
     if not argss:
@@ -427,7 +448,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           module = argss[i+1]
         if argss[i] == "-p":
           opt,value = argss[i+1].split('=')
-          specialOptions[opt] = value  
+          specialOptions[opt] = value           
+      if module == component:
+        module = ''
       
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
@@ -438,8 +461,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       hostSetup = result['Value']['Setup']
-      result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
-                                                   getCSExtensions(), hostSetup, specialOptions )
+      
+      # Install Module section if not yet there
+      if module:
+        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, module, 
+                                                     getCSExtensions(), hostSetup )
+        # Add component section with specific parameters only
+        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+                                                     getCSExtensions(), hostSetup, specialOptions, 
+                                                     addDefaultOptions = False )
+      else:  
+        # Install component section
+        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+                                                     getCSExtensions(), hostSetup, specialOptions )
+    
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
@@ -453,6 +488,28 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "%s %s_%s is installed, runit status: %s" % ( compType, system, component, runit )
     else:
       print "Unknown option:", option
+
+  def do_uninstall( self, args ):
+    """
+        Uninstall DIRAC component
+
+        usage:
+
+          uninstall <system> <component>
+    """
+    argss = args.split()
+    if not argss or len(argss) != 2:
+      print self.do_uninstall.__doc__
+      return
+    
+    system,component = argss
+    client = SystemAdministratorClient( self.host, self.port )
+    result = client.uninstallComponent( system, component )
+    if not result['OK']:
+      print "Error:", result['Message']
+    else:
+      print "Successfully uninstalled %s/%s" % (system,component)  
+    
 
   def do_start( self, args ):
     """ Start services or agents or database server
@@ -564,13 +621,40 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
         usage:
 
-          update <version>
+          update <version> [ -r <rootPath> ] [ -g <lcgVersion> ]
+          
+              where rootPath - path to the DIRAC installation
+                    lcgVersion - version of the LCG bindings to install
     """
     argss = args.split()
     version = argss[0]
+    rootPath = ''
+    lcgVersion = ''
+    del argss[0]
+    try:
+      while len( argss ) > 0:
+        if argss[0] == '-r':
+          rootPath = argss[1]
+          del argss[0]
+          del argss[0]
+        elif argss[0] == '-g':
+          lcgVersion = argss[1]  
+          del argss[0]
+          del argss[0]
+    except Exception, x:
+      print "ERROR: wrong input:", str(x)
+      print """usage:
+
+          update <version> [ -r <rootPath> ] [ -g <lcgVersion> ]
+          
+              where rootPath - path to the DIRAC installation
+                    lcgVersion - version of the LCG bindings to install
+"""           
+      return  
+    
     client = SystemAdministratorClient( self.host, self.port )
     print "Software update can take a while, please wait ..."
-    result = client.updateSoftware( version )
+    result = client.updateSoftware( version, rootPath, lcgVersion )
     if not result['OK']:
       self.__errMsg( "Failed to update the software" )
       print result['Message']
@@ -578,6 +662,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Software successfully updated."
       print "You should restart the services to use the new software version."
       print "Think of updating /Operation/<vo>/<setup>/Versions section in the CS"
+
+  def do_revert( self, args ):
+    """ Revert the last installed version of software to the previous one
+    
+        usage:
+        
+            revert
+    """ 
+    client = SystemAdministratorClient( self.host, self.port )
+    result = client.revertSoftware()
+    if not result['OK']:
+      print "Error:", result['Message']
+    else:
+      print "Software reverted to", result['Value']  
 
   def do_add( self, args ):
     """

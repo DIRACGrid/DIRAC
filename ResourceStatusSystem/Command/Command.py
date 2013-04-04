@@ -1,56 +1,83 @@
-# $HeadURL $
+# $HeadURL:  $
 ''' Command
 
   Base class for all commands.
 
 '''
 
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 class Command( object ):
-  """ 
+  ''' 
     The Command class is a simple base class for all the commands
     for interacting with the clients
-  """
+  '''
 
-  def __init__( self ):
-    self.args = None
-    self.APIs = {}
+  def __init__( self, args = None, clients = None ):
+          
+    self.apis       = ( 1 and clients ) or {}
+    self.masterMode = False
+    self.onlyCache  = False
+    self.metrics    = { 'failed' : [] }
+    
+    self.args       = { 'onlyCache' : False }
+    _args           = ( 1 and args ) or {}
+    self.args.update( _args )
 
-################################################################################
+  def doNew( self, masterParams = None ):
+    ''' To be extended by real commands
+    '''   
+    return S_OK( ( self.args, masterParams ) )
+  
+  def doCache( self ):
+    ''' To be extended by real commands
+    '''
+    return S_OK( self.args )
 
-  def setArgs( self, argsIn ):
-    """
-    Set the command arguments, as a tuple. The tuple has to contain at least 2 values.
-
-    :params:
-
-      :attr:`args`: a tuple
-        - `args[0]` should be a ValidElement
-
-        - `args[1]` should be the name of the ValidElement
-    """
-    if type(argsIn) != tuple:
-      raise TypeError("`Args` of commands should be in a tuple.")
-
-    self.args = argsIn
-
-################################################################################
-
-  def setAPI( self, apiName, apiInstance ):
-    self.APIs[ apiName ] = apiInstance
-
-################################################################################
-
-  #to be extended by real commands
+  def doMaster( self ):
+    ''' To be extended by real commands
+    '''
+    return S_OK( self.metrics )   
+      
   def doCommand( self ):
-    """ Before use, call at least `setArgs`.
-    """
-
-    if self.args is None:
-      gLogger.error( "Before, set `self.args` with `self.setArgs(a)` function." )
+    ''' To be extended by real commands
+    '''
+    
+    if self.masterMode:
+      gLogger.verbose( 'doMaster')
+      return self.returnSObj( self.doMaster() )
+    
+    gLogger.verbose( 'doCache' )      
+    result = self.doCache()
+    if not result[ 'OK' ]:
+      return self.returnERROR( result )
+    # We may be interested on running the commands only from the cache,
+    # without requesting new values. 
+    if result[ 'Value' ] or self.args[ 'onlyCache' ]:
+      return result
+    
+    gLogger.verbose( 'doNew' )
+    return self.returnSObj( self.doNew() )
+      
+  def returnERROR( self, s_obj ):
+    '''
+      Overwrites S_ERROR message with command name, much easier to debug
+    '''
+    
+    s_obj[ 'Message' ] = '%s %s' % ( self.__class__.__name__, s_obj[ 'Message' ] )
+    return s_obj
+  
+  def returnSObj( self, s_obj ):
+    '''
+      Overwrites S_ERROR message with command name, much easier to debug
+    '''
+    
+    if s_obj[ 'OK' ]:
+      return s_obj
+    
+    return self.returnERROR( s_obj )
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

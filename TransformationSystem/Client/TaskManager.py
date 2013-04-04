@@ -9,14 +9,18 @@ import re, time, types, os, copy
 from DIRAC                                                      import gConfig, S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List                                  import sortList, fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
+from DIRAC.Interfaces.API.Job                                   import Job
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
+from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
+from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 
 class TaskBase( object ):
 
   def __init__( self, transClient = None, logger = None ):
 
     if not transClient:
-      from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
       self.transClient = TransformationClient()
     else:
       self.transClient = transClient
@@ -140,7 +144,7 @@ class RequestTasks( TaskBase ):
       transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
       taskName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-      res = self.requestClient.getRequestInfo( taskName, 'RequestManagement/centralURL' )
+      res = self.requestClient.getRequestInfo( taskName )
       if res['OK']:
         taskNameIDs[taskName] = res['Value'][0]
       elif re.search( "Failed to retrieve RequestID for Request", res['Message'] ):
@@ -156,7 +160,7 @@ class RequestTasks( TaskBase ):
       taskID = taskDict['TaskID']
       oldStatus = taskDict['ExternalStatus']
       taskName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-      res = self.requestClient.getRequestStatus( taskName, 'RequestManagement/centralURL' )
+      res = self.requestClient.getRequestStatus( taskName )
       newStatus = ''
       if res['OK']:
         newStatus = res['Value']['RequestStatus']
@@ -183,7 +187,7 @@ class RequestTasks( TaskBase ):
     updateDict = {}
     for taskName in sortList( taskFiles.keys() ):
       lfnDict = taskFiles[taskName]
-      res = self.requestClient.getRequestFileStatus( taskName, lfnDict.keys(), 'RequestManagement/centralURL' )
+      res = self.requestClient.getRequestFileStatus( taskName, lfnDict.keys() )
       if not res['OK']:
         self.log.warn( "getSubmittedFileStatus: Failed to get files status for request", res['Message'] )
         continue
@@ -213,33 +217,29 @@ class WorkflowTasks( TaskBase ):
     super( WorkflowTasks, self ).__init__( transClient, logger )
 
     if not submissionClient:
-      from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
       self.submissionClient = WMSClient()
     else:
       self.submissionClient = submissionClient
 
     if not jobMonitoringClient:
-      from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
       self.jobMonitoringClient = JobMonitoringClient()
     else:
       self.jobMonitoringClient = jobMonitoringClient
 
-    if not outputDataModule:
-      self.outputDataModule = gConfig.getValue( "/DIRAC/VOPolicy/OutputDataModule", "" )
-    else:
-      self.outputDataModule = outputDataModule
-
     if not jobClass:
-      from DIRAC.Interfaces.API.Job import Job
       self.jobClass = Job
     else:
       self.jobClass = jobClass
 
     if not opsH:
-      from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
       self.opsH = Operations()
     else:
       self.opsH = opsH
+
+    if not outputDataModule:
+      self.outputDataModule = self.opsH.getValue( "Transformations/OutputDataModule", "" )
+    else:
+      self.outputDataModule = outputDataModule
 
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
@@ -330,6 +330,7 @@ class WorkflowTasks( TaskBase ):
     if not seList or seList == ['Unknown']:
       return sites
 
+    #from now on we know there is some TargetSE requested
     if not getSitesForSE:
       from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 
@@ -345,10 +346,10 @@ class WorkflowTasks( TaskBase ):
         if seSites == []:
           seSites = copy.deepcopy( thisSESites )
         else:
-          # If it is not the first SE, keep only those that are common
-          for nSE in list( seSites ):
-            if nSE not in thisSESites:
-              seSites.remove( nSE )
+          # We make an OR of the possible sites 
+          for nSE in list( thisSESites ):
+            if nSE not in seSites:
+              seSites.append( nSE )
 
     # Now we need to make the AND with the sites, if defined
     if sites == ['ANY']:
@@ -365,15 +366,13 @@ class WorkflowTasks( TaskBase ):
   def _handleInputs( self, oJob, paramsDict ):
     """ set job inputs (+ metadata)
     """
-    try:
+    if paramsDict.has_key( 'InputData' ):
       if paramsDict['InputData']:
         self.log.verbose( 'Setting input data to %s' % paramsDict['InputData'] )
-        oJob.setInputData( paramsDict['InputData'], runNumber = paramsDict['RunNumber'] )
-    except KeyError:
-      pass
+        oJob.setInputData( paramsDict['InputData'] )
 
   def _handleRest( self, oJob, paramsDict ):
-    """ add as JDL parameters all the other parameters that are not for inputs or destination 
+    """ add as JDL parameters all the other parameters that are not for inputs or destination
     """
     for paramName, paramValue in paramsDict.items():
       if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
@@ -436,7 +435,7 @@ class WorkflowTasks( TaskBase ):
       except Exception, x:
         self.log.exception( "Failed to create job object", '', x )
         return S_ERROR( "Failed to create job object" )
-    elif type( job ) == types.InstanceType:
+    elif isinstance( job, self.jobClass ):
       oJob = job
     else:
       self.log.error( "No valid job description found" )

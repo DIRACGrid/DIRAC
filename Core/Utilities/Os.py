@@ -1,8 +1,9 @@
 # $HeadURL$
 """
-   Collection of DIRAC useful os related modules
+   Collection of DIRAC useful operating system related modules
    by default on Error they return None
 """
+
 __RCSID__ = "$Id$"
 
 from types                          import StringTypes
@@ -11,7 +12,6 @@ import os
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
-
 
 DEBUG = 0
 
@@ -37,14 +37,14 @@ def getDiskSpace( path = '.' ):
   """
 
   if not os.path.exists( path ):
-    return - 1
+    return -1
   comm = 'df -P -m %s | tail -1' % path
-  resultDF = shellCall( 0, comm )
+  resultDF = shellCall( 10, comm )
   if resultDF['OK'] and not resultDF['Value'][0]:
     output = resultDF['Value'][1]
     if output.find( ' /afs' ) >= 0 :    # AFS disk space
       comm = 'fs lq | tail -1'
-      resultAFS = shellCall( 0, comm )
+      resultAFS = shellCall( 10, comm )
       if resultAFS['OK'] and not resultAFS['Value'][0]:
         output = resultAFS['Value'][1]
         fields = output.split()
@@ -53,20 +53,24 @@ def getDiskSpace( path = '.' ):
         space = ( quota - used ) / 1024
         return int( space )
       else:
-        return - 1
+        return -1
     else:
-      print output
       fields = output.split()
-      return int( fields[3] )
+      try:
+        value = int( fields[3] )
+      except Exception, error:
+        print "Exception during disk space evaluation:", str( error )  
+        value = -1
+      return value
   else:
-    return - 1
+    return -1
 
 def getDirectorySize( path ):
   """ Get the total size of the given directory in MB
   """
 
   comm = "du -s -m %s" % path
-  result = shellCall( 0, comm )
+  result = shellCall( 10, comm )
   if not result['OK'] or result['Value'][0] != 0:
     return 0
   else:
@@ -80,7 +84,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
       back the environment
   """
 
-  # add appropiated extension to first element of the tuple (the command)
+  # add appropriate extension to first element of the tuple (the command)
   envAsDict = '&& python -c "import os,sys ; print >> sys.stderr, os.environ"'
 
   # 1.- Choose the right version of the configuration file
@@ -182,3 +186,14 @@ def unifyLdLibraryPath( path, newpath ):
   else:
     # Windows does nothing for the moment
     return path
+
+def which( filetofind ):
+  """ Utility that mimics the 'which' command from the shell
+  """
+  if not "PATH" in os.environ:
+    return None
+  for path in os.environ["PATH"].split(":"):
+    if os.path.exists(path + "/" + filetofind):
+      return path + "/" + filetofind
+
+  return None

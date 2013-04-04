@@ -20,12 +20,12 @@ Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
-from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
-from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
-from DIRAC                                            import gConfig, gLogger
-from DIRAC.Core.Utilities.List                        import intListToString
-from DIRAC.Core.Security.CS                           import getPropertiesForGroup
+from DIRAC.ConfigurationSystem.Client.CSAPI                                      import CSAPI
+from DIRAC.FrameworkSystem.Client.NotificationClient                             import NotificationClient
+from DIRAC.Core.Security.ProxyInfo                                               import getProxyInfo
+from DIRAC                                                                       import gConfig, gLogger
+from DIRAC.Core.Utilities.List                                                   import intListToString
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry                           import getPropertiesForGroup
 csAPI = CSAPI()
 
 if len( args ) < 3:

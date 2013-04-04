@@ -115,7 +115,7 @@ class PilotStatusAgent( AgentModule ):
           continue
         refList = result['Value']
 
-        ret = gProxyManager.getPilotProxyFromVOMSGroup( ownerDN, ownerGroup )
+        ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup )
         if not ret['OK']:
           self.log.error( ret['Message'] )
           self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )

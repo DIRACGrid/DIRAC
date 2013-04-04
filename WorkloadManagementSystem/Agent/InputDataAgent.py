@@ -11,7 +11,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
-from DIRAC.Resources.Storage.StorageElement                import StorageElement
 
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.List                             import uniqueElements
@@ -89,12 +88,12 @@ class InputDataAgent( OptimizerModule ):
       resolvedData = result['Value']
 
     #Now check if banned SE's might prevent jobs to be scheduled
-    result = self.__checkActiveSEs( job, resolvedData['Value']['Value'] )
-    if not result['OK']:
-      # if after checking SE's input data can not be resolved any more
-      # then keep the job in the same status and update the application status
-      result = self.jobDB.setJobStatus( job, application = result['Message'] )
-      return S_OK()
+#    result = self.__checkActiveSEs( job, resolvedData['Value']['Value'] )
+#    if not result['OK']:
+#      # if after checking SE's input data can not be resolved any more
+#      # then keep the job in the same status and update the application status
+#      result = self.jobDB.setJobStatus( job, application = result['Message'] )
+#      return S_OK()
 
     return self.setNextOptimizer( job )
 
@@ -108,7 +107,7 @@ class InputDataAgent( OptimizerModule ):
     start = time.time()
     # In order to place jobs on Hold if a certain SE is banned we need first to check first if
     # if the replicas are really available
-    replicas = self.replicaManager.getReplicas( lfns )
+    replicas = self.replicaManager.getActiveReplicas( lfns )
     timing = time.time() - start
     self.log.verbose( 'Catalog Replicas Lookup Time: %.2f seconds ' % ( timing ) )
     if not replicas['OK']:
@@ -285,7 +284,7 @@ class InputDataAgent( OptimizerModule ):
             continue
           try:
             #storageElement = StorageElement( se )
-            result = self.resourceStatus.getStorageElementStatus( se, statusType = 'Read' )
+            result = self.resourceStatus.getStorageElementStatus( se, statusType = 'ReadAccess' )
             if not result['OK']:
               continue
             seDict[se] = { 'Sites': sites['Value'], 'SEParams': result['Value'][se] }
@@ -298,12 +297,12 @@ class InputDataAgent( OptimizerModule ):
             continue
         for site in seDict[se]['Sites']:
           if site in siteCandidates:
-            if seDict[se]['SEParams']['Read'] and seDict[se]['SEParams']['DiskSE']:
+            if seDict[se]['SEParams']['ReadAccess'] and seDict[se]['SEParams']['DiskSE']:
               if lfn not in siteResult[site]['disk']:
                 siteResult[site]['disk'].append( lfn )
                 if lfn in siteResult[site]['tape']:
                   siteResult[site]['tape'].remove( lfn )
-            if seDict[se]['SEParams']['Read'] and seDict[se]['SEParams']['TapeSE']:
+            if seDict[se]['SEParams']['ReadAccess'] and seDict[se]['SEParams']['TapeSE']:
               if lfn not in siteResult[site]['tape'] and lfn not in siteResult[site]['disk']:
                 siteResult[site]['tape'].append( lfn )
 

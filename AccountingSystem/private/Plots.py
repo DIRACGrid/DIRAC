@@ -21,7 +21,8 @@ def generateNoDataPlot( fileName, data, metadata ):
     fn = file( fileName, "wb" )
   except:
     return S_ERROR( "Can't open %s" % fileName )
-  textGraph( 'No data for this selection', fn, metadata )
+  text = "No data for this selection for the plot: %s" % metadata['title']
+  textGraph( text, fn, metadata )
   fn.close()
   return S_OK()
 

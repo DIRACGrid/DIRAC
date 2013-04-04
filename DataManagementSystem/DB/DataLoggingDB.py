@@ -25,7 +25,8 @@ from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Base.DB import DB
 
 ## DIRAC epoc timestamp
-MAGIC_EPOC_NUMBER = 1270000000
+#MAGIC_EPOC_NUMBER = 1270000000
+NEW_MAGIC_EPOCH_2K = 323322400
 
 #############################################################################
 class DataLoggingDB( DB ):
@@ -114,14 +115,11 @@ class DataLoggingDB( DB ):
       _date = Time.fromString( date )
 
     try:
-      time_order = Time.toEpoch( _date )
+      time_order = Time.to2K( _date ) - NEW_MAGIC_EPOCH_2K
     except AttributeError:
       gLogger.error( 'Wrong date argument given using current time stamp' )
       date = Time.dateTime()
-      time_order = Time.toEpoch( _date )
-
-    # Reduce to a smallest number and add more precision
-    time_order = time_order - MAGIC_EPOC_NUMBER + _date.microsecond / 1000000.
+      time_order = Time.to2K( date ) - NEW_MAGIC_EPOCH_2K
 
     inDict = { 'Status': status,
                'MinorStatus': minor,
@@ -150,3 +148,95 @@ class DataLoggingDB( DB ):
     """ Returns the distinct status from the data logging DB
     """
     return self.getDistinctAttributeValues( self.tableName, 'Status' )
+
+def test():
+  """ Some test cases
+  """
+
+  # building up some fake CS values
+  gConfig.setOptionValue( 'DIRAC/Setup', 'Test' )
+  gConfig.setOptionValue( '/DIRAC/Setups/Test/DataManagement', 'Test' )
+
+  host = '127.0.0.1'
+  user = 'Dirac'
+  pwd = 'Dirac'
+  db = 'AccountingDB'
+
+  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataLoggingDB/Host', host )
+  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataLoggingDB/DBName', db )
+  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataLoggingDB/User', user )
+  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataLoggingDB/Password', pwd )
+
+  db = DataLoggingDB()
+  assert db._connect()['OK']
+
+  lfns = ['/Test/00001234/File1', '/Test/00001234/File2']
+  status = 'TestStatus'
+  minor = 'MinorStatus'
+  date1 = Time.toString()
+  date2 = Time.dateTime()
+  source = 'Somewhere'
+
+  fileTuples = ( ( lfns[0], status, minor, date1, source ), ( lfns[1], status, minor, date2, source ) )
+
+  try:
+    gLogger.info( '\n Creating Table\n' )
+    # Make sure it is there and it has been created for this test
+    result = db._checkTable()
+    assert result['OK']
+
+    result = db._checkTable()
+    assert not result['OK']
+    assert result['Message'] == 'The requested table already exist'
+
+    gLogger.info( '\n Inserting some records\n' )
+
+    result = db.addFileRecord( lfns, status, date = '2012-04-28 09:49:02.545466' )
+    assert result['OK']
+    assert result['Value'] == 2
+    assert result['lastRowId'] == 2
+
+    result = db.addFileRecords( fileTuples )
+    assert result['OK']
+
+    gLogger.info( '\n Retrieving some records\n' )
+
+    result = db.getFileLoggingInfo( lfns[0] )
+    assert result['OK']
+    assert len( result['Value'] ) == 2
+
+    result = db.getFileLoggingInfo( lfns[1] )
+    assert result['OK']
+    assert len( result['Value'] ) == 2
+
+    result = db.getUniqueStates()
+    assert result['OK']
+    assert result['Value'] == [status]
+
+
+    gLogger.info( '\n Removing Table\n' )
+    result = db._update( 'DROP TABLE `%s`' % db.tableName )
+    assert result['OK']
+
+    gLogger.info( '\n OK\n' )
+
+
+  except AssertionError:
+    print 'ERROR ',
+    if not result['OK']:
+      print result['Message']
+    else:
+      print result
+
+    sys.exit( 1 )
+
+if __name__ == '__main__':
+  from DIRAC.Core.Base import Script
+  Script.parseCommandLine()
+  gLogger.setLevel( 'VERBOSE' )
+
+  if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
+    gLogger.info( 'Unset pyhthon optimization "PYTHONOPTIMIZE"' )
+    sys.exit( 0 )
+
+  test()

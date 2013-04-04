@@ -21,6 +21,7 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import Watch
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry              import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
@@ -35,7 +36,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient                import Notif
 
 import DIRAC
 
-import os, re, sys, time, shutil, threading, tarfile, glob, types
+import os, re, sys, time, shutil, threading, tarfile, glob, types, urllib
 
 EXECUTION_RESULT = {}
 
@@ -273,8 +274,8 @@ class JobWrapper:
     if self.jobArgs.has_key( 'StdOutput' ):
       outputFile = self.jobArgs['StdOutput']
 
-    if self.jobArgs.has_key( 'MaxCPUTime' ):
-      jobCPUTime = int( self.jobArgs['MaxCPUTime'] )
+    if self.jobArgs.has_key( 'CPUTime' ):
+      jobCPUTime = int( self.jobArgs['CPUTime'] )
     else:
       self.log.info( 'Job %s has no CPU time limit specified, '
                      'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
@@ -282,10 +283,6 @@ class JobWrapper:
 
     if self.jobArgs.has_key( 'Executable' ):
       executable = self.jobArgs['Executable'].strip()
-      #HACK: To be removed after SVN migration is successful
-      if executable == "$DIRACROOT/scripts/jobexec":
-        executable = "$DIRACROOT/scripts/dirac-jobexec"
-      #END HACK
     else:
       msg = 'Job %s has no specified executable' % ( self.jobID )
       self.log.warn( msg )
@@ -319,7 +316,7 @@ class JobWrapper:
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split( '=' )[0]
-        valEnv = var.split( '=' )[1]
+        valEnv = urllib.unquote( var.split( '=' )[1] )
         exeEnv[nameEnv] = valEnv
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
@@ -338,6 +335,7 @@ class JobWrapper:
       if not payloadPID:
         return S_ERROR( 'Payload process could not start after 10 seconds' )
     else:
+      self.__report( 'Failed', 'Application not found', sendFlag = True )
       return S_ERROR( 'Path to executable %s not found' % ( executable ) )
 
     self.__setJobParam( 'PayloadPID', payloadPID )
@@ -378,8 +376,14 @@ class JobWrapper:
       threadResult = EXECUTION_RESULT['Thread']
       if not threadResult['OK']:
         self.log.error( 'Failed to execute the payload', threadResult['Message'] )
+
+        self.__report( 'Failed', 'Application failed, check job parameters', sendFlag = True )
         if 'Value' in threadResult:
           outputs = threadResult['Value']
+        if outputs:
+          self.__setJobParam( 'ApplicationError', outputs[-200:], sendFlag = True )
+        else:
+          self.__setJobParam( 'ApplicationError', 'None reported', sendFlag = True )
       else:
         outputs = threadResult['Value']
 
@@ -826,7 +830,7 @@ class JobWrapper:
       else:
         nonlfnList.append( out )
 
-    # Check whether list of outputData has a globbable pattern    
+    # Check whether list of outputData has a globbable pattern
     globbedOutputList = List.uniqueElements( getGlobbedFiles( nonlfnList ) )
     if not globbedOutputList == nonlfnList and globbedOutputList:
       self.log.info( 'Found a pattern in the output data file list, files to upload are:',
@@ -894,8 +898,8 @@ class JobWrapper:
     #For files correctly uploaded must report LFNs to job parameters
     if uploaded:
       report = ', '.join( uploaded )
-      #In case the VO payload has also uploaded data using the same parameter 
-      #name this should be checked prior to setting. 
+      #In case the VO payload has also uploaded data using the same parameter
+      #name this should be checked prior to setting.
       monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
       result = monitoring.getJobParameter( int( self.jobID ), 'UploadedOutputData' )
       if result['OK']:
@@ -904,7 +908,7 @@ class JobWrapper:
 
       self.jobReport.setJobParameter( 'UploadedOutputData', report, sendFlag = False )
 
-    #Write out failover transfer request object in case of deferred operations 
+    #Write out failover transfer request object in case of deferred operations
     result = failoverTransfer.getRequestObject()
     if not result['OK']:
       self.log.error( result )
@@ -959,13 +963,16 @@ class JobWrapper:
       vo = getVOForGroup( self.userGroup )
       if not vo:
         vo = 'dirac'
-      basePath = '/' + vo + '/user/' + initial + '/' + self.owner
+
+      ops = Operations( vo = vo)
+      user_prefix = ops.getValue("LFNUserPrefix",'user')
+      basePath = '/' + vo + '/' + user_prefix + '/' + initial + '/' + self.owner
       if outputPath:
         # If output path is given, append it to the user path and put output files in this directory
         if outputPath.startswith( '/' ):
           outputPath = outputPath[1:]
       else:
-        # By default the output path is constructed from the job id 
+        # By default the output path is constructed from the job id
         subdir = str( self.jobID / 1000 )
         outputPath = subdir + '/' + str( self.jobID )
       lfn = os.path.join( basePath, outputPath, os.path.basename( localfile ) )
@@ -1035,10 +1042,10 @@ class JobWrapper:
 
     userFiles = sandboxFiles + [ os.path.basename( lfn ) for lfn in lfns ]
     for possibleTarFile in userFiles:
-      if not os.path.exists( possibleTarFile ):
+      if not os.path.exists( possibleTarFile ) :
         continue
       try:
-        if tarfile.is_tarfile( possibleTarFile ):
+        if os.path.isfile( possibleTarFile ) and tarfile.is_tarfile( possibleTarFile ):
           self.log.info( 'Unpacking input sandbox file %s' % ( possibleTarFile ) )
           tarFile = tarfile.open( possibleTarFile, 'r' )
           for member in tarFile.getmembers():
@@ -1148,10 +1155,12 @@ class JobWrapper:
       #To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
       if type( jobName ) == type( ' ' ) and jobName:
-        jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' )
+        jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' ).replace( '"', '' )
         jobName = jobName.replace( '.', '' ).replace( '{', '' ).replace( '}', '' ).replace( ':', '' )
         requestName = '%s_%s' % ( jobName, requestName )
 
+    if '"' in requestName:
+      requestName = requestName.replace( '"', '' )
     request.setRequestName( requestName )
     request.setJobID( self.jobID )
     request.setSourceComponent( "Job_%s" % self.jobID )
@@ -1337,6 +1346,9 @@ class ExecutionThread( threading.Thread ):
     return result
 
 def rescheduleFailedJob( jobID, message, jobReport = None ):
+
+  rescheduleResult = 'Rescheduled'
+
   try:
 
     gLogger.warn( 'Failure during %s' % ( message ) )
@@ -1361,23 +1373,25 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
     jobManager = RPCClient( 'WorkloadManagement/JobManager' )
     result = jobManager.rescheduleJob( int( jobID ) )
     if not result['OK']:
-      gLogger.warn( result )
+      gLogger.warn( result['Message'] )
+      if 'Maximum number of reschedulings is reached' in result['Message']:
+        rescheduleResult = 'Failed'
 
     # Send mail to debug errors
     mailAddress = DIRAC.alarmMail
     site = DIRAC.siteName()
     subject = 'Job rescheduled at %s' % site
-    ret = systemCall( 0, 'hostname' )
+    ret = systemCall( 5, 'hostname' )
     wn = ret['Value'][1]
     msg = 'Job %s rescheduled at %s, wn=%s\n' % ( jobID, site, wn )
     msg += message
 
     NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
 
-    return
+    return rescheduleResult
   except Exception:
     gLogger.exception( 'JobWrapperTemplate failed to reschedule Job' )
-    return
+    return 'Failed'
 
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

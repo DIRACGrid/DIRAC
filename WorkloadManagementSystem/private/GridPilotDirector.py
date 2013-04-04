@@ -123,8 +123,9 @@ class GridPilotDirector( PilotDirector ):
     """
     taskQueueID = taskQueueDict['TaskQueueID']
     # ownerDN = taskQueueDict['OwnerDN']
-    ownerDN = proxy.getCredentials()['Value']['identity']
-
+    credDict = proxy.getCredentials()['Value']
+    ownerDN = credDict['identity']
+    ownerGroup = credDict[ 'group' ]
 
     if not self.resourceBrokers:
       # Since we can exclude RBs from the list, it may become empty
@@ -194,14 +195,14 @@ class GridPilotDirector( PilotDirector ):
         pilotReference = self._getChildrenReferences( proxy, pilotReference, taskQueueID )
         submittedPilots += len( pilotReference )
         pilotAgentsDB.addPilotTQReference( pilotReference, taskQueueID, ownerDN,
-                      vomsGroup, resourceBroker, self.gridMiddleware,
+                      ownerGroup, resourceBroker, self.gridMiddleware,
                       pilotRequirements )
     else:
       for pilotReference, resourceBroker in submitRet:
         pilotReference = [pilotReference]
         submittedPilots += len( pilotReference )
         pilotAgentsDB.addPilotTQReference( pilotReference, taskQueueID, ownerDN,
-                      vomsGroup, resourceBroker, self.gridMiddleware, pilotRequirements )
+                      ownerGroup, resourceBroker, self.gridMiddleware, pilotRequirements )
 
     # add some sleep here
     time.sleep( 0.1 * submittedPilots )
@@ -209,24 +210,26 @@ class GridPilotDirector( PilotDirector ):
     if pilotsToSubmit > pilotsPerJob:
       # Additional submissions are necessary, need to get a new token and iterate.
       pilotsToSubmit -= pilotsPerJob
-      ownerDN = self.genericPilotDN
-      ownerGroup = self.genericPilotGroup
       result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
       if not result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
-        return S_ERROR( ERROR_TOKEN )
+        result = S_ERROR( ERROR_TOKEN )
+        result['Value'] = submittedPilots
+        return result
       ( token, numberOfUses ) = result[ 'Value' ]
       for option in pilotOptions:
         if option.find( '-o /Security/ProxyToken=' ) == 0:
           pilotOptions.remove( option )
       pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
-      pilotsPerJob = min( pilotsPerJob, int( numberOfUses / self.maxJobsInFillMode ) )
+      pilotsPerJob = max( 1, min( pilotsPerJob, int( numberOfUses / self.maxJobsInFillMode ) ) )
       result = self._submitPilots( workDir, taskQueueDict, pilotOptions,
                                    pilotsToSubmit, ceMask,
                                    submitPrivatePilot, privateTQ,
                                    proxy, pilotsPerJob )
       if not result['OK']:
-        result['Value'] = submittedPilots
+        if 'Value' not in result:
+          result['Value'] = 0
+        result['Value'] += submittedPilots
         return result
       submittedPilots += result['Value']
 

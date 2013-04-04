@@ -45,7 +45,7 @@ class FTSCleaningAgent( AgentModule ):
   ## TransferDB table names
   __tblNames = [ "FTSReq", "FTSReqLogging", "FileToFTS", "FileToCat", "Channel", "ReplicationTree" ]
 
-  def __init__( self, agentName, baseAgentName=False, properties=dict() ):
+  def __init__( self, agentName, loadName, baseAgentName=False, properties=dict() ):
     """ c'tor
 
     :param self: self reference
@@ -53,7 +53,7 @@ class FTSCleaningAgent( AgentModule ):
     :param bool baseAgentName: whatever  
     :param dict properties: whatever else
     """
-    AgentModule.__init__( self, agentName, baseAgentName, properties )
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
       
   def initialize( self ):
     """ Agent initialization.

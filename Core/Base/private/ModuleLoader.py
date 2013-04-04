@@ -5,6 +5,7 @@ import imp
 from DIRAC.Core.Utilities import List
 from DIRAC import gConfig, S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class ModuleLoader( object ):
 
@@ -26,7 +27,7 @@ class ModuleLoader( object ):
   def getModules( self ):
     data = dict( self.__modules )
     for k in data:
-      data[ k ][ 'standalone' ] = len( data ) > 1
+      data[ k ][ 'standalone' ] = len( data ) == 1
     return data
 
   def loadModules( self, modulesList, hideExceptions = False ):
@@ -140,7 +141,7 @@ class ModuleLoader( object ):
         className = List.fromChar( handlerPath, "." )[-1]
         result = self.__recurseImport( handlerPath )
         if not result[ 'OK' ]:
-          return S_ERROR( "Cannot load user defined handler %s: %s" % ( handlerPath, result[ 'Value' ] ) )
+          return S_ERROR( "Cannot load user defined handler %s: %s" % ( handlerPath, result[ 'Message' ] ) )
         gLogger.verbose( "Loaded %s" % handlerPath )
       elif parentModule:
         #If we've got a parent module, load from there.
@@ -176,7 +177,7 @@ class ModuleLoader( object ):
         if '__file__' in dir( modObj ):
           location = modObj.__file__
         else:
-          locateion = modObj.__path__
+          location = modObj.__path__
         gLogger.exception( "%s module does not have a %s class!" % ( location, module ) )
         return S_ERROR( "Cannot load %s" % module )
       #Check if it's subclass
@@ -206,7 +207,8 @@ class ModuleLoader( object ):
       if impData[0]:
         impData[0].close()
     except ImportError, excp:
-      if str( excp ).find( "No module named" ) == 0:
+      strExcp = str( excp )
+      if strExcp.find( "No module named" ) == 0 and strExcp.find( modName[0] ) == len( strExcp ) - len( modName[0] ):
         return S_OK()
       errMsg = "Can't load %s" % ".".join( modName )
       if not hideExceptions:

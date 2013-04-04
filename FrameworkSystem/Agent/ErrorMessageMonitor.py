@@ -25,11 +25,9 @@ class ErrorMessageMonitor( AgentModule ):
 
     self.notification = NotificationClient()
 
-    userString = self.am_getOption( "Reviewer", 'mseco' )
+    userList = self.am_getOption( "Reviewer", [] )
 
-    self.log.debug( "Users to be notified", ": " + userString )
-
-    userList = List.fromChar( userString, "," )
+    self.log.debug( "Users to be notified:", ', '.join( userList ) )
 
     mailList = []
     for user in userList:
@@ -43,10 +41,9 @@ class ErrorMessageMonitor( AgentModule ):
       mailList = Operations().getValue( 'EMail/Logging', [] )
 
     if not len( mailList ):
-      errString = "There are no valid users in the list"
+      errString = "There are no valid users in the mailing list"
       varString = "[" + ','.join( userList ) + "]"
-      self.log.error( errString, varString )
-      return S_ERROR( errString + varString )
+      self.log.warn( errString, varString )
 
     self.log.info( "List of mails to be notified", ','.join( mailList ) )
 
@@ -57,52 +54,48 @@ class ErrorMessageMonitor( AgentModule ):
   def execute( self ):
     """ The main agent execution method
     """
-    cmd = "SELECT count(*) FROM FixedTextMessages WHERE ReviewedMessage=0"
-    result = self.systemLoggingDB._query( cmd )
+    condDict = {'ReviewedMessage':0}
+    result = self.systemLoggingDB.getCounters( 'FixedTextMessages', ['ReviewedMessage'], condDict )
     if not result['OK']:
       return result
-    recordsToReview = result['Value'][0][0]
 
-    if recordsToReview == 0:
+    if not result['Value']:
       self.log.info( 'No messages need review' )
       return S_OK( 'No messages need review' )
-    else:
-      conds = { 'ReviewedMessage': '0' }
-      returnFields = [ 'FixedTextID', 'FixedTextString', 'SystemName',
-                       'SubSystemName' ]
-      result = self.systemLoggingDB._queryDB( showFieldList = returnFields,
-                                              groupColumn = 'FixedTextString',
-                                              condDict = conds )
-      if not result['OK']:
-        self.log.error( 'Failed to obtain the non reviewed Strings',
-                       result['Message'] )
-        return S_OK()
-      messageList = result['Value']
+    returnFields = [ 'FixedTextID', 'FixedTextString', 'SystemName',
+                     'SubSystemName' ]
+    result = self.systemLoggingDB._queryDB( showFieldList = returnFields,
+                                            groupColumn = 'FixedTextString',
+                                            condDict = condDict )
+    if not result['OK']:
+      self.log.error( 'Failed to obtain the non reviewed Strings',
+                     result['Message'] )
+      return S_OK()
+    messageList = result['Value']
 
-      if messageList == 'None' or messageList == ():
-        self.log.error( 'The DB query returned an empty result' )
-        return S_OK()
+    if messageList == 'None' or not messageList:
+      self.log.error( 'The DB query returned an empty result' )
+      return S_OK()
 
-      mailBody = 'These new messages have arrived to the Logging Service\n'
-      for message in messageList:
-        mailBody = mailBody + "String: '" + message[1] + "'\tSystem: '" \
-                   + message[2] + "'\tSubsystem: '" + message[3] + "'\n"
+    mailBody = 'These new messages have arrived to the Logging Service\n'
+    for message in messageList:
+      mailBody = mailBody + "String: '" + message[1] + "'\tSystem: '" \
+                 + message[2] + "'\tSubsystem: '" + message[3] + "'\n"
 
+    if self._mailAddress:
       result = self.notification.sendMail( self._mailAddress, self._subject, mailBody )
       if not result[ 'OK' ]:
         self.log.warn( "The mail could not be sent" )
         return S_OK()
 
-      for message in messageList:
-        cmd = "UPDATE LOW_PRIORITY FixedTextMessages SET ReviewedMessage=1"
-        cond = " WHERE FixedTextID=%s" % message[0]
-        result = self.systemLoggingDB._update( cmd + cond )
-        self.log.verbose( 'Message Status updated',
-                         '(%d, %s)' % ( message[0], message[1] ) )
-        if not result['OK']:
-          self.log.error( 'Could not update status of Message', message[1] )
-          return S_OK()
+    messageIDs = [ message[0] for message in messageList ]
+    condDict = {'FixedTextID': messageIDs}
+    result = self.systemLoggingDB.updateFields( 'FixedTextMessages', ['ReviewedMessage'], [1], condDict = condDict )
+    if not result['OK']:
+      self.log.error( 'Could not update message Status', result['ERROR'] )
+      return S_OK()
+    self.log.verbose( 'Updated message Status for:', str( messageList ) )
 
-      self.log.info( "The messages have been sent for review",
-                      "There are %s new descriptions" % recordsToReview )
-      return S_OK( "%s Messages have been sent for review" % recordsToReview )
+    self.log.info( "The messages have been sent for review",
+                    "There are %s new descriptions" % len( messageList ) )
+    return S_OK( "%s Messages have been sent for review" % len( messageList ) )

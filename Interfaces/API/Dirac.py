@@ -1,9 +1,3 @@
-########################################################################
-# $HeadURL$
-# File :   DIRAC.py
-# Author : Stuart Paterson
-########################################################################
-
 """
    DIRAC API Class
 
@@ -20,15 +14,12 @@
 
 """
 
-from DIRAC.Core.Base import Script
-Script.initialize()
-
 __RCSID__ = "$Id$"
 
-import re, os, sys, time, shutil, types, tempfile, glob, tarfile
-import pprint
+import re, os, sys, time, shutil, types, tempfile, glob, tarfile, urllib
 import DIRAC
 
+from DIRAC.Core.Base.API                                 import API
 from DIRAC.Interfaces.API.JobRepository                  import JobRepository
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -43,19 +34,16 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getVOForGroup
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
-from DIRAC.Core.Utilities.Version                        import getCurrentVersion
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.Core.Base.AgentReactor                        import AgentReactor
 from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
-from DIRAC.FrameworkSystem.Client.LoggerClient           import LoggerClient
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.Core.Utilities                                import Time
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME = 'DiracAPI'
 
-class Dirac:
+class Dirac( API ):
   """
    DIRAC API Class
   """
@@ -65,11 +53,9 @@ class Dirac:
                 sbRPCClient = False, sbTransferClient = False, useCertificates = False ):
     """Internal initialization of the DIRAC API.
     """
-    self.log = gLogger.getSubLogger( COMPONENT_NAME )
-    self.setup = gConfig.getValue( '/DIRAC/Setup', 'Unknown' )
+    super( Dirac, self ).__init__()
+
     self.section = '/LocalSite/'
-    self.cvsVersion = 'SVN version ' + __RCSID__
-    self.diracInfo = getCurrentVersion()['Value']
 
     self.jobRepo = False
     if withRepo:
@@ -78,26 +64,16 @@ class Dirac:
         gLogger.error( "Unable to write to supplied repository location" )
         self.jobRepo = False
 
-    self.scratchDir = gConfig.getValue( self.section + '/LocalSite/ScratchDir', '/tmp' )
-    self.sandboxClient = SandboxStoreClient( useCertificates, sbRPCClient, sbTransferClient )
+    self.scratchDir = gConfig.getValue( self.section + 'ScratchDir', '/tmp' )
+    self.sandboxClient = SandboxStoreClient( rpcClient=sbRPCClient, 
+                                             transferClient=sbTransferClient, 
+                                             useCertificates=useCertificates  )
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
-    self.pPrint = pprint.PrettyPrinter()
     # Determine the default file catalog
+    self.defaultFileCatalog = None
     defaultFC = gConfig.getValue( self.section + '/FileCatalog', [] )
-    if not defaultFC:
-      result = gConfig.getSections( 'Resources/FileCatalogs', listOrdered = True )
-      if result['OK']:
-        if result['Value']:
-          self.defaultFileCatalog = result['Value'][0]
-    else:
+    if defaultFC:
       self.defaultFileCatalog = defaultFC
-    if not self.defaultFileCatalog:
-      self.defaultFileCatalog = 'FileCatalog'
-
-  def version( self ):
-    """ Report DIRAC version
-    """
-    return S_OK( DIRAC.buildVersion )
 
   #############################################################################
   # Repository specific methods
@@ -138,7 +114,7 @@ class Dirac:
     jobIDs = jobs.keys()
     res = self.status( jobIDs )
     if not res['OK']:
-      return self.__errorReport( res['Message'], 'Failed to get status of jobs from WMS' )
+      return self._errorReport( res['Message'], 'Failed to get status of jobs from WMS' )
 
     jobs = self.jobRepo.readRepository()['Value']
     statusDict = {}
@@ -171,7 +147,7 @@ class Dirac:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
     if requestedStates == None:
-      requestedStates = ['Done', 'Failed']
+      requestedStates = ['Done', 'Failed', 'Completed']#because users dont care about completed
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sortList( jobs.keys() ):
       jobDict = jobs[jobID]
@@ -255,7 +231,7 @@ class Dirac:
     if jobIDs == None:
       jobIDs = []
     if not type( jobIDs ) == types.ListType:
-      return self.__errorReport( 'The jobIDs must be a list of (strings or ints).' )
+      return self._errorReport( 'The jobIDs must be a list of (strings or ints).' )
     self.jobRepo.resetRepository( jobIDs = jobIDs )
     return S_OK()
 
@@ -301,7 +277,7 @@ class Dirac:
         cleanPath = jdl
     else:
       try:
-        formulationErrors = job._getErrors()
+        formulationErrors = job.errorDict
       except Exception, x:
         self.log.verbose( 'Could not obtain job errors:%s' % ( x ) )
         formulationErrors = {}
@@ -360,7 +336,7 @@ class Dirac:
         os.chdir( curDir )
       if mode.lower() == 'agent':
         self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
-        result = self.runLocalAgent( jdl, jobDescription )
+        result = self.runLocalAgent( jdl )
       if mode.lower() == 'wms':
         self.log.verbose( 'Will submit job to WMS' ) #this will happen by default anyway
         result = self._sendJob( jdl )
@@ -401,7 +377,7 @@ class Dirac:
     return S_OK( 'Nothing to do' )
 
   #############################################################################
-  def runLocalAgent( self, jdl, jobDescription ):
+  def runLocalAgent( self, jdl ):
     """Internal function.  This method is equivalent to submit(job,mode='Agent').
        All output files are written to a <jobID> directory where <jobID> is the
        result of submission to the WMS.  Please note that the job must be eligible to the
@@ -430,6 +406,7 @@ class Dirac:
 
     return result
 
+  @classmethod
   def __forceLocal( self, job ):
     """Update Job description to avoid pilot submission by WMS
     """
@@ -602,6 +579,7 @@ class Dirac:
       time.sleep( pollingTime )
 
   #############################################################################
+  @classmethod
   def __getVOPolicyModule( self, module ):
     """ Utility to get the VO Policy module name
     """
@@ -649,9 +627,9 @@ class Dirac:
       try:
         lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected strings for LFNs' )
+        return self._errorReport( str( x ), 'Expected strings for LFNs' )
     else:
-      return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     if not siteName:
       siteName = DIRAC.siteName()
@@ -667,7 +645,7 @@ class Dirac:
 
     inputDataPolicy = self.__getVOPolicyModule( 'InputDataModule' )
     if not inputDataPolicy:
-      return self.__errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
+      return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
 
     catalogFailed = {}
     self.log.info( 'Attempting to resolve data for %s' % siteName )
@@ -730,7 +708,7 @@ class Dirac:
     """
     localSEList = gConfig.getValue( '/LocalSite/LocalSE', '' )
     if not localSEList:
-      return self.__errorReport( 'LocalSite/LocalSE should be defined in your config file' )
+      return self._errorReport( 'LocalSite/LocalSE should be defined in your config file' )
     if re.search( ',', localSEList ):
       localSEList = localSEList.replace( ' ', '' ).split( ',' )
     else:
@@ -738,7 +716,7 @@ class Dirac:
     self.log.verbose( localSEList )
     inputDataPolicy = self.__getVOPolicyModule( 'InputDataModule' )
     if not inputDataPolicy:
-      return self.__errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
+      return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
 
     self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
     self.log.verbose( '\n'.join( inputData ) )
@@ -823,7 +801,7 @@ class Dirac:
     if inputData:
       localSEList = gConfig.getValue( '/LocalSite/LocalSE', '' )
       if not localSEList:
-        return self.__errorReport( 'LocalSite/LocalSE should be defined in your config file' )
+        return self._errorReport( 'LocalSite/LocalSE should be defined in your config file' )
       if re.search( ',', localSEList ):
         localSEList = localSEList.replace( ' ', '' ).split( ',' )
       else:
@@ -831,7 +809,7 @@ class Dirac:
       self.log.verbose( localSEList )
       inputDataPolicy = self.__getVOPolicyModule( 'InputDataModule' )
       if not inputDataPolicy:
-        return self.__errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
+        return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
 
       self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
       self.log.verbose( '\n'.join( inputData ) )
@@ -894,7 +872,7 @@ class Dirac:
         return result
     else:
       self.log.verbose( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
-      #return self.__errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
+      #return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
 
     if parameters['Value'].has_key( 'InputSandbox' ):
       sandbox = parameters['Value']['InputSandbox']
@@ -918,13 +896,21 @@ class Dirac:
           if not getFile['OK']:
             self.log.warn( 'Failed to download %s with error:%s' % ( isFile, getFile['Message'] ) )
             return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
+        basefname = os.path.basename(isFile)
+        try:
+          if tarfile.is_tarfile(  basefname ):
+            tarFile = tarfile.open( basefname, 'r' )
+            for member in tarFile.getmembers():
+              tarFile.extract( member, os.getcwd() )
+        except Exception, x :
+          return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
     if parameters['Value'].has_key( 'Executable' ):
       executable = os.path.expandvars( parameters['Value']['Executable'] )
     else:
-      return self.__errorReport( 'Missing job "Executable"' )
+      return self._errorReport( 'Missing job "Executable"' )
 
     arguments = ''
     if parameters['Value'].has_key( 'Arguments' ):
@@ -941,7 +927,7 @@ class Dirac:
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split( '=' )[0]
-        valEnv = var.split( '=' )[1]
+        valEnv = urllib.unquote( var.split( '=' )[1] ) #this is needed to make the value contain strange things
         executionEnv[nameEnv] = valEnv
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
@@ -1016,6 +1002,7 @@ class Dirac:
     return S_OK( 'Execution completed successfully' )
 
   #############################################################################
+  @classmethod
   def __printOutput( self, fd = None, message = '' ):
     """Internal callback function to return standard output when running locally.
     """
@@ -1073,9 +1060,9 @@ class Dirac:
       try:
         lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected strings for LFNs' )
+        return self._errorReport( str( x ), 'Expected strings for LFNs' )
     else:
-      return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     start = time.time()
     rm = ReplicaManager()
@@ -1122,9 +1109,9 @@ class Dirac:
       try:
         lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected strings for LFNs' )
+        return self._errorReport( str( x ), 'Expected strings for LFNs' )
     else:
-      return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     rm = ReplicaManager()
     start = time.time()
@@ -1167,21 +1154,21 @@ class Dirac:
       try:
         lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected strings for LFNs' )
+        return self._errorReport( str( x ), 'Expected strings for LFNs' )
     else:
-      return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     if not type( maxFilesPerJob ) == types.IntType:
       try:
         maxFilesPerJob = int( maxFilesPerJob )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer for maxFilesPerJob' )
+        return self._errorReport( str( x ), 'Expected integer for maxFilesPerJob' )
 
     replicaDict = self.getReplicas( lfns )
     if not replicaDict['OK']:
       return replicaDict
     if len( replicaDict['Value']['Successful'] ) == 0:
-      return self.__errorReport( replicaDict['Value']['Failed'].items()[0], 'Failed to get replica information' )
+      return self._errorReport( replicaDict['Value']['Failed'].items()[0], 'Failed to get replica information' )
     siteLfns = {}
     for lfn, reps in replicaDict['Value']['Successful'].items():
       possibleSites = []
@@ -1196,7 +1183,7 @@ class Dirac:
       replicaDict['Value']['Successful'].pop( lfn )
 
     lfnGroups = []
-    for sites, files in siteLfns.items():
+    for _sites, files in siteLfns.items():
       lists = breakListIntoChunks( files, maxFilesPerJob )
       lfnGroups.extend( lists )
 
@@ -1227,9 +1214,9 @@ class Dirac:
       try:
         lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected strings for LFNs' )
+        return self._errorReport( str( x ), 'Expected strings for LFNs' )
     else:
-      return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     rm = ReplicaManager()
     start = time.time()
@@ -1273,18 +1260,18 @@ class Dirac:
     if type( lfn ) == type( " " ):
       lfn = lfn.replace( 'LFN:', '' )
     else:
-      return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     if not os.path.exists( fullPath ):
-      return self.__errorReport( 'File path %s must exist' % ( fullPath ) )
+      return self._errorReport( 'File path %s must exist' % ( fullPath ) )
 
     if not os.path.isfile( fullPath ):
-      return self.__errorReport( 'Expected path to file not %s' % ( fullPath ) )
+      return self._errorReport( 'Expected path to file not %s' % ( fullPath ) )
 
     rm = ReplicaManager()
     result = rm.putAndRegister( lfn, fullPath, diracSE, guid = fileGuid, catalog = self.defaultFileCatalog )
     if not result['OK']:
-      return self.__errorReport( 'Problem during putAndRegister call', result['Message'] )
+      return self._errorReport( 'Problem during putAndRegister call', result['Message'] )
     if not printOutput:
       return result
 
@@ -1316,14 +1303,14 @@ class Dirac:
       try:
         lfn = [str( lfnName.replace( 'LFN:', '' ) ) for lfnName in lfn]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected strings for LFN(s)' )
+        return self._errorReport( str( x ), 'Expected strings for LFN(s)' )
     else:
-      return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     rm = ReplicaManager()
     result = rm.getFile( lfn, destinationDir = destDir )
     if not result['OK']:
-      return self.__errorReport( 'Problem during getFile call', result['Message'] )
+      return self._errorReport( 'Problem during getFile call', result['Message'] )
 
     if result['Value']['Failed']:
       self.log.error( 'Failures occurred during rm.getFile' )
@@ -1363,24 +1350,24 @@ class Dirac:
        @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
+    if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    else:
-      return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
+    elif type( lfn ) != types.ListType:   
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     if not sourceSE:
       sourceSE = ''
     if not localCache:
       localCache = ''
-    if not type( sourceSE ) == type( " " ):
-      return self.__errorReport( 'Expected string for source SE name' )
+    if not type( sourceSE ) in types.StringTypes:
+      return self._errorReport( 'Expected string for source SE name' )
     if not type( localCache ) == type( " " ):
-      return self.__errorReport( 'Expected string for path to local cache' )
+      return self._errorReport( 'Expected string for path to local cache' )
 
     rm = ReplicaManager()
     result = rm.replicateAndRegister( lfn, destinationSE, sourceSE, '', localCache )
     if not result['OK']:
-      return self.__errorReport( 'Problem during replicateFile call', result['Message'] )
+      return self._errorReport( 'Problem during replicateFile call', result['Message'] )
     if not printOutput:
       return result
 
@@ -1412,18 +1399,18 @@ class Dirac:
     if type( lfn ) == type( " " ):
       lfn = lfn.replace( 'LFN:', '' )
     else:
-      return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     if not sourceSE:
       sourceSE = ''
 
     if not type( sourceSE ) == type( " " ):
-      return self.__errorReport( 'Expected string for source SE name' )
+      return self._errorReport( 'Expected string for source SE name' )
 
     rm = ReplicaManager()
     result = rm.replicate( lfn, destinationSE, sourceSE, '' )
     if not result['OK']:
-      return self.__errorReport( 'Problem during replicate call', result['Message'] )
+      return self._errorReport( 'Problem during replicate call', result['Message'] )
     if not printOutput:
       return result
 
@@ -1452,12 +1439,12 @@ class Dirac:
     if type( lfn ) == type( " " ):
       lfn = lfn.replace( 'LFN:', '' )
     else:
-      return self.__errorReport( 'Expected single string for LFN' )
+      return self._errorReport( 'Expected single string for LFN' )
 
     rm = ReplicaManager()
     result = rm.getReplicaAccessUrl( [lfn], storageElement )
     if not result['OK']:
-      return self.__errorReport( 'Problem during getAccessURL call', result['Message'] )
+      return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if not printOutput:
       return result
 
@@ -1485,20 +1472,20 @@ class Dirac:
     """
     if type( pfn ) == type( " " ):
       if re.search( 'LFN:', pfn ):
-        return self.__errorReport( 'Expected PFN not LFN' )
+        return self._errorReport( 'Expected PFN not LFN' )
       pfn = pfn.replace( 'PFN:', '' )
     elif type( pfn ) == type( [] ):
       try:
         pfn = [str( pfnName.replace( 'PFN:', '' ) ) for pfnName in pfn]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected strings for PFN(s)' )
+        return self._errorReport( str( x ), 'Expected strings for PFN(s)' )
     else:
-      return self.__errorReport( 'Expected single string for PFN' )
+      return self._errorReport( 'Expected single string for PFN' )
 
     rm = ReplicaManager()
     result = rm.getStorageFileAccessUrl( [pfn], storageElement )
     if not result['OK']:
-      return self.__errorReport( 'Problem during getAccessURL call', result['Message'] )
+      return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if not printOutput:
       return result
 
@@ -1527,21 +1514,21 @@ class Dirac:
     """
     if type( pfn ) == type( " " ):
       if re.search( 'LFN:', pfn ):
-        return self.__errorReport( 'Expected PFN not LFN' )
+        return self._errorReport( 'Expected PFN not LFN' )
       pfn = pfn.replace( 'PFN:', '' )
       pfn = [pfn]
     elif type( pfn ) == type( [] ):
       try:
         pfn = [str( pfile.replace( 'PFN:', '' ) ) for pfile in pfn]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected list of strings for PFNs' )
+        return self._errorReport( str( x ), 'Expected list of strings for PFNs' )
     else:
-      return self.__errorReport( 'Expected single string or list of strings for PFN(s)' )
+      return self._errorReport( 'Expected single string or list of strings for PFN(s)' )
 
     rm = ReplicaManager()
     result = rm.getStorageFileMetadata( pfn, storageElement )
     if not result['OK']:
-      return self.__errorReport( 'Problem during getStorageFileMetadata call', result['Message'] )
+      return self._errorReport( 'Problem during getStorageFileMetadata call', result['Message'] )
     if not printOutput:
       return result
 
@@ -1565,10 +1552,10 @@ class Dirac:
        @return: S_OK,S_ERROR
 
     """
-    if type( lfn ) == type( " " ):
+    if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    else:
-      return self.__errorReport( 'Expected single string for LFN' )
+    elif type( lfn ) != types.ListType:   
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     rm = ReplicaManager()
     result = rm.removeFile( lfn )
@@ -1592,10 +1579,10 @@ class Dirac:
        @type storageElement: string
        @return: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
+    if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    else:
-      return self.__errorReport( 'Expected single string for LFN' )
+    elif type( lfn ) != types.ListType:   
+      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     rm = ReplicaManager()
     result = rm.removeReplica( storageElement, lfn )
@@ -1621,12 +1608,12 @@ class Dirac:
     if type( lfn ) == type( " " ):
       lfn = lfn.replace( 'LFN:', '' )
     else:
-      return self.__errorReport( 'Expected single string for LFN' )
+      return self._errorReport( 'Expected single string for LFN' )
 
-    dataLogging = RPCClient( 'DataManagement/DataLogging', timeout = 120 )
+    dataLogging = RPCClient( 'DataManagement/DataLogging' )
     result = dataLogging.getFileLoggingInfo( lfn )
     if not result['OK']:
-      return self.__errorReport( 'Problem during getFileLoggingInfo call', result['Message'] )
+      return self._errorReport( 'Problem during getFileLoggingInfo call', result['Message'] )
     if not printOutput:
       return result
 
@@ -1702,23 +1689,23 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     #TODO: Do not check if dir already exists
     dirPath = ''
     if outputDir:
       dirPath = '%s/InputSandbox%s' % ( outputDir, jobID )
       if os.path.exists( dirPath ):
-        return self.__errorReport( 'Job input sandbox directory %s already exists' % ( dirPath ) )
+        return self._errorReport( 'Job input sandbox directory %s already exists' % ( dirPath ) )
     else:
       dirPath = '%s/InputSandbox%s' % ( os.getcwd(), jobID )
       if os.path.exists( dirPath ):
-        return self.__errorReport( 'Job input sandbox directory %s already exists' % ( dirPath ) )
+        return self._errorReport( 'Job input sandbox directory %s already exists' % ( dirPath ) )
 
     try:
       os.mkdir( dirPath )
     except Exception, x:
-      return self.__errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
+      return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
 
     result = self.sandboxClient.downloadSandboxForJob( jobID, 'Input', dirPath )
     if not result[ 'OK' ]:
@@ -1753,24 +1740,24 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     #TODO: Do not check if dir already exists
     dirPath = ''
     if outputDir:
       dirPath = '%s/%s' % ( outputDir, jobID )
       if os.path.exists( dirPath ):
-        return self.__errorReport( 'Job output directory %s already exists' % ( dirPath ) )
+        return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
     else:
       dirPath = '%s/%s' % ( os.getcwd(), jobID )
       if os.path.exists( dirPath ):
-        return self.__errorReport( 'Job output directory %s already exists' % ( dirPath ) )
+        return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
 
     try:
       if not os.path.exists( dirPath ):
         os.makedirs( dirPath )
     except Exception, x:
-      return self.__errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
+      return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
 
     #New download
     result = self.sandboxClient.downloadSandboxForJob( jobID, 'Output', dirPath )
@@ -1848,12 +1835,12 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
       try:
         jobID = [int( job ) for job in jobID]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     result = self.client.deleteJob( jobID )
     if result['OK']:
@@ -1883,12 +1870,12 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
       try:
         jobID = [int( job ) for job in jobID]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     result = self.client.rescheduleJob( jobID )
     if result['OK']:
@@ -1918,12 +1905,12 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
       try:
         jobID = [int( job ) for job in jobID]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     result = self.client.killJob( jobID )
     if result['OK']:
@@ -1949,16 +1936,16 @@ class Dirac:
       try:
         jobID = [int( jobID )]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
       try:
         jobID = [int( job ) for job in jobID]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == types.IntType:
       jobID = [jobID]
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     statusDict = monitoring.getJobsStatus( jobID )
     minorStatusDict = monitoring.getJobsMinorStatus( jobID )
     siteDict = monitoring.getJobsSites( jobID )
@@ -2010,17 +1997,17 @@ class Dirac:
       try:
         jobID = [int( jobID )]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
       try:
         jobID = [int( job ) for job in jobID]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( 1 ):
       jobID = [jobID]
 
     summary = {}
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     for job in jobID:
       result = monitoring.getInputData( job )
       if result['OK']:
@@ -2051,7 +2038,7 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     result = self.parameters( int( jobID ) )
     if not result['OK']:
@@ -2091,7 +2078,7 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     result = self.parameters( int( jobID ) )
     if not result['OK']:
@@ -2112,9 +2099,9 @@ class Dirac:
         try:
           outputFiles = [os.path.basename( fname ) for fname in outputFiles]
         except Exception, x:
-          return self.__errorReport( str( x ), 'Expected strings for output file names' )
+          return self._errorReport( str( x ), 'Expected strings for output file names' )
       else:
-        return self.__errorReport( 'Expected strings for output file names' )
+        return self._errorReport( 'Expected strings for output file names' )
       self.log.info( 'Found specific outputFiles to download:', ', '.join( outputFiles ) )
       newOutputData = []
       for outputFile in outputData:
@@ -2182,14 +2169,14 @@ class Dirac:
         try:
           conditions[key] = str( value )
         except Exception, x:
-          return self.__errorReport( str( x ), 'Expected string for %s field' % key )
+          return self._errorReport( str( x ), 'Expected string for %s field' % key )
 
     if not type( date ) == type( " " ):
       try:
         if date:
           date = str( date )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected yyyy-mm-dd string for date' )
+        return self._errorReport( str( x ), 'Expected yyyy-mm-dd string for date' )
 
     if not date:
       date = '%s' % Time.date()
@@ -2197,7 +2184,7 @@ class Dirac:
 
     self.log.verbose( 'Will select jobs with last update %s and following conditions' % date )
     self.log.verbose( self.pPrint.pformat( conditions ) )
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobs( conditions, date )
     if not result['OK']:
       self.log.warn( result['Message'] )
@@ -2236,12 +2223,12 @@ class Dirac:
       try:
         jobID = [int( jobID )]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
       try:
         jobID = [int( job ) for job in jobID]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     headers = ['Status', 'MinorStatus', 'ApplicationStatus', 'Site', 'JobGroup', 'LastUpdateTime',
                'HeartBeatTime', 'SubmissionTime', 'Owner']
@@ -2249,7 +2236,7 @@ class Dirac:
     if type( jobID ) == type( 1 ):
       jobID = [jobID]
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobsSummary( jobID )
     if not result['OK']:
       self.log.warn( result['Message'] )
@@ -2276,13 +2263,13 @@ class Dirac:
 
     if outputFile:
       if os.path.exists( outputFile ):
-        return self.__errorReport( 'Output file %s already exists' % ( outputFile ) )
+        return self._errorReport( 'Output file %s already exists' % ( outputFile ) )
       dirPath = os.path.basename( outputFile )
       if re.search( '/', dirPath ) and not os.path.exists( dirPath ):
         try:
           os.mkdir( dirPath )
         except Exception, x:
-          return self.__errorReport( str( x ), 'Could not create directory %s' % ( dirPath ) )
+          return self._errorReport( str( x ), 'Could not create directory %s' % ( dirPath ) )
 
       fopen = open( outputFile, 'w' )
       line = 'JobID'.ljust( 12 )
@@ -2323,7 +2310,7 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     result = self.status( jobID )
     if not result['OK']:
@@ -2336,7 +2323,7 @@ class Dirac:
     try:
       os.mkdir( debugDir )
     except Exception, x:
-      return self.__errorReport( str( x ), 'Could not create directory in %s' % ( debugDir ) )
+      return self._errorReport( str( x ), 'Could not create directory in %s' % ( debugDir ) )
 
     try:
       result = self.getOutputSandbox( jobID, '%s' % ( debugDir ) )
@@ -2444,23 +2431,23 @@ class Dirac:
       try:
         jobID = [int( jobID )]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
       try:
         jobID = [int( job ) for job in jobID]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     if type( jobID ) == type( 1 ):
       jobID = [jobID]
 
     summary = {}
     for job in jobID:
-      monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+      monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
       result = monitoring.getJobHeartBeatData( job )
       summary[job] = {}
       if not result['OK']:
-        return self.__errorReport( result['Message'], 'Could not get heartbeat data for job %s' % job )
+        return self._errorReport( result['Message'], 'Could not get heartbeat data for job %s' % job )
       if result['Value']:
         tupleList = result['Value']
         for tup in tupleList:
@@ -2499,14 +2486,14 @@ class Dirac:
       try:
         jobID = [int( jobID )]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
       try:
         jobID = [int( job ) for job in jobID]
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobAttributes( jobID )
     if not result['OK']:
       return result
@@ -2539,11 +2526,11 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
-      return self.__errorReport( 'Expected integer or string for jobID' )
+      return self._errorReport( 'Expected integer or string for jobID' )
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobParameters( jobID )
     if not result['OK']:
       return result
@@ -2578,11 +2565,11 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
-      return self.__errorReport( 'Expected int or string, not list' )
+      return self._errorReport( 'Expected int or string, not list' )
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobLoggingInfo( jobID )
     if not result['OK']:
       self.log.warn( 'Could not retrieve logging information for job %s' % jobID )
@@ -2626,21 +2613,21 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
-      return self.__errorReport( 'Expected int or string, not list' )
+      return self._errorReport( 'Expected int or string, not list' )
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobParameter( jobID, 'StandardOutput' )
     if not result['OK']:
-      return self.__errorReport( result, 'Could not retrieve job attributes' )
+      return self._errorReport( result, 'Could not retrieve job attributes' )
 
     stdout = 'Not available yet.'
     if result['Value'].has_key( 'StandardOutput' ):
       self.log.verbose( result['Value']['StandardOutput'] )
       stdout = result['Value']['StandardOutput']
       if printout:
-        print stdout 
+        print stdout
     else:
       self.log.info( 'No standard output available to print.' )
 
@@ -2666,7 +2653,7 @@ class Dirac:
        @return: S_OK,S_ERROR
     """
     if not type( system ) == type( " " ) and type( service ) == type( " " ):
-      return self.__errorReport( 'Expected string for system and service to ping()' )
+      return self._errorReport( 'Expected string for system and service to ping()' )
     result = S_ERROR()
     try:
       systemSection = getSystemSection( system + '/' )
@@ -2675,7 +2662,7 @@ class Dirac:
       self.log.verbose( 'Requested service should have CS path: %s' % ( section ) )
       serviceURL = getServiceURL( '%s/%s' % ( system, service ) )
       self.log.verbose( 'Service URL is: %s' % ( serviceURL ) )
-      client = RPCClient( '%s/%s' % ( system, service ), timeout = 120 )
+      client = RPCClient( '%s/%s' % ( system, service ) )
       result = client.ping()
       if result['OK']:
         result['Value']['service url'] = serviceURL
@@ -2686,23 +2673,6 @@ class Dirac:
     if printOutput:
       print self.pPrint.pformat( result )
     return result
-
-  #############################################################################
-  def uploadProxy( self, proxy = False ):
-    """The uploadProxy will try to upload a proxy to the proxy manager service.
-
-       If not explicitly specified, the current proxy is taken.
-
-       Example Usage:
-
-       >>> print dirac.uploadProxy()
-       {'OK': True}
-
-       @param proxy: optional proxy
-       @type proxy: string
-       @return: S_OK,S_ERROR
-    """
-    return gProxyManager.uploadProxy( proxy )
 
   #############################################################################
   def getJobJDL( self, jobID, printOutput = False ):
@@ -2724,9 +2694,9 @@ class Dirac:
       try:
         jobID = int( jobID )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobJDL( jobID )
     if not result['OK']:
       return result
@@ -2735,33 +2705,6 @@ class Dirac:
     if printOutput:
       print self.pPrint.pformat( result['Value'] )
 
-    return result
-
-  #############################################################################
-  def getLoggerMessages( self, logLevel = None, site = None, system = None, numberOfRecords = 10, printOutput = False ):
-    """Under Development, retrieve logging informations.
-    """
-    if not type( numberOfRecords ) == type( 1 ):
-      return self.__errorReport( 'Expected integer for number of records' )
-    logger = LoggerClient()
-    conditions = {}
-    result = logger.getMessages( conds = conditions, maxRecords = numberOfRecords )
-    if printOutput:
-      print self.pPrint.pformat( result['Value'] )
-    return result
-
-  #############################################################################
-  def getLoggerSummary( self, numberOfRecords = 10, printOutput = False ):
-    """Under Development, retrieve logging informations.
-    """
-    if not type( numberOfRecords ) == type( 1 ):
-      return self.__errorReport( 'Expected integer for number of records' )
-    logger = LoggerClient()
-    result = logger.getGroupedMessages( groupField = 'FixedTextString',
-                                        orderList = [['recordCount', 'DESC']],
-                                        maxRecords = numberOfRecords )
-    if printOutput:
-      print self.pPrint.pformat( result )
     return result
 
   #############################################################################
@@ -2799,21 +2742,10 @@ class Dirac:
       return S_ERROR( 'Exception while extracting JDL parameters for job' )
 
   #############################################################################
-  def __errorReport( self, error, message = None ):
-    """Internal function to return errors and exit with an S_ERROR()
-    """
-    if not message:
-      message = error
-
-    self.log.warn( error )
-    return S_ERROR( message )
-
-  #############################################################################
   def __printInfo( self ):
     """Internal function to print the DIRAC API version and related information.
     """
     self.log.info( '<=====%s=====>' % ( self.diracInfo ) )
-    self.log.verbose( self.cvsVersion )
     self.log.verbose( 'DIRAC is running at %s in setup %s' % ( DIRAC.siteName(), self.setup ) )
 
   def getConfigurationValue( self, option, default ):

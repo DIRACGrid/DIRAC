@@ -13,7 +13,7 @@ from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities import List, DictCache
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
 
@@ -26,23 +26,38 @@ class TaskQueueDB( DB ):
     random.seed()
     DB.__init__( self, 'TaskQueueDB', 'WorkloadManagement/TaskQueueDB', maxQueueSize )
     self.__multiValueDefFields = ( 'Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
-                                   'LHCbPlatforms', 'PilotTypes', 'SubmitPools', 'JobTypes' )
-    self.__multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'LHCbPlatform',
+                                   'Platforms', 'PilotTypes', 'SubmitPools', 'JobTypes' )
+    self.__multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'Platform',
                                      'PilotType', 'SubmitPool', 'JobType' )
     self.__bannedJobMatchFields = ( 'Site', )
-    self.__strictRequireMatchFields = ( 'SubmitPool', 'LHCbPlatform', 'PilotType' )
+    self.__strictRequireMatchFields = ( 'SubmitPool', 'Platform', 'PilotType' )
     self.__singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime' )
     self.__mandatoryMatchFields = ( 'Setup', 'CPUTime' )
+    self.__priorityIgnoredFields = ( 'Sites', 'BannedSites' )
     self.__defaultCPUSegments = maxCPUSegments
     self.__maxMatchRetry = 3
     self.__jobPriorityBoundaries = ( 0.001, 10 )
     self.__groupShares = {}
+    self.__deleteTQWithDelay = DictCache( self.__deleteTQIfEmpty )
     self.__opsHelper = Operations()
     self.__ensureInsertionIsSingle = False
     self.__sharesCorrector = SharesCorrector( self.__opsHelper )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ] )
+
+  def enableAllTaskQueues( self ):
+    """ Enable all Task queues
+    """
+    return self.updateFields( "tq_TaskQueues", updateDict = { "Enabled" :"1" } )
+
+  def findOrphanJobs( self ):
+    """ Find jobs that are not in any task queue
+    """
+    result = self._query( "select JobID from tq_Jobs WHERE TQId not in (SELECT TQId from tq_TaskQueues)" )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( [ row[0] for row in result[ 'Value' ] ] )
 
   def isSharesCorrectionEnabled( self ):
     return self.__getCSOption( "EnableSharesCorrection", False )
@@ -57,7 +72,7 @@ class TaskQueueDB( DB ):
     return self.__multiValueMatchFields
 
   def __getCSOption( self, optionName, defValue ):
-    return self.__opsHelper.getValue( "Matching/%s" % optionName, defValue )
+    return self.__opsHelper.getValue( "JobScheduling/%s" % optionName, defValue )
 
   def getPrivatePilots( self ):
     return self.__getCSOption( "PrivatePilotTypes", [ 'private' ] )
@@ -114,28 +129,6 @@ class TaskQueueDB( DB ):
 
     return self._createTables( tablesToCreate )
 
-  def enableAllTaskQueues( self ):
-
-    result = self._getConnection()
-    if not result[ 'OK' ]:
-      return result
-    connObj = result[ 'Value' ]
-
-    result = self._query( 'SELECT TQId from `tq_TaskQueues`', conn = connObj )
-    if not result['OK']:
-      return result
-    for ( tqId, ) in result['Value']:
-      result = self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
-      if not result['OK']:
-        return result
-      if result['Value']:
-        continue
-      result = self.setTaskQueueState( tqId, enabled = True, connObj = connObj )
-      if not result['OK']:
-        return result
-
-    return S_OK()
-
   def getGroupsInTQs( self ):
     cmdSQL = "SELECT DISTINCT( OwnerGroup ) FROM `tq_TaskQueues`"
     result = self._query( cmdSQL )
@@ -188,6 +181,12 @@ class TaskQueueDB( DB ):
     """
     Check a task queue definition dict is valid
     """
+
+    # Confine the LHCbPlatform legacy option here, use Platform everywhere else
+    # until the LHCbPlatform is no more used in the TaskQueueDB
+    if 'LHCbPlatforms' in tqDefDict and not "Platforms" in tqDefDict:
+      tqDefDict['Platforms'] = tqDefDict['LHCbPlatforms']
+
     for field in self.__singleValueDefFields:
       if field not in tqDefDict:
         return S_ERROR( "Missing mandatory field '%s' in task queue definition" % field )
@@ -241,6 +240,11 @@ class TaskQueueDB( DB ):
           return self._escapeString( value )
         return S_OK( value )
 
+    # Confine the LHCbPlatform legacy option here, use Platform everywhere else
+    # until the LHCbPlatform is no more used in the TaskQueueDB
+    if 'LHCbPlatform' in tqMatchDict and not "Platform" in tqMatchDict:
+      tqMatchDict['Platform'] = tqMatchDict['LHCbPlatform']
+
     for field in self.__singleValueDefFields:
       if field not in tqMatchDict:
         if field in self.__mandatoryMatchFields:
@@ -266,7 +270,7 @@ class TaskQueueDB( DB ):
 
     return S_OK( tqMatchDict )
 
-  def __createTaskQueue( self, tqDefDict, priority = 1, enabled = False, connObj = False ):
+  def __createTaskQueue( self, tqDefDict, priority = 1, connObj = False ):
     """
     Create a task queue
       Returns S_OK( tqId ) / S_ERROR
@@ -284,7 +288,7 @@ class TaskQueueDB( DB ):
       sqlValues.append( tqDefDict[ field ] )
     #Insert the TQ Disabled
     sqlSingleFields.append( "Enabled" )
-    sqlValues.append( str( int( enabled ) ) )
+    sqlValues.append( "0" )
     cmd = "INSERT INTO tq_TaskQueues ( %s ) VALUES ( %s )" % ( ", ".join( sqlSingleFields ), ", ".join( [ str( v ) for v in sqlValues ] ) )
     result = self._update( cmd, conn = connObj )
     if not result[ 'OK' ]:
@@ -319,7 +323,7 @@ class TaskQueueDB( DB ):
     Delete all empty task queues
     """
     self.log.info( "Cleaning orphaned TQs" )
-    result = self._update( "DELETE FROM `tq_TaskQueues` WHERE Enabled AND TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )", conn = connObj )
+    result = self._update( "DELETE FROM `tq_TaskQueues` WHERE Enabled >= 1 AND TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )", conn = connObj )
     if not result[ 'OK' ]:
       return result
     for mvField in self.__multiValueDefFields:
@@ -330,7 +334,11 @@ class TaskQueueDB( DB ):
     return S_OK()
 
   def setTaskQueueState( self, tqId, enabled = True, connObj = False ):
-    upSQL = "UPDATE `tq_TaskQueues` SET Enabled=%d WHERE TQId=%d" % ( int( enabled ), tqId )
+    if enabled:
+      enabled = "+ 1"
+    else:
+      enabled = "- 1"
+    upSQL = "UPDATE `tq_TaskQueues` SET Enabled = Enabled %s WHERE TQId=%d" % ( enabled, tqId )
     result = self._update( upSQL, conn = connObj )
     if not result[ 'OK' ]:
       self.log.error( "Error setting TQ state", "TQ %s State %s: %s" % ( tqId, enabled, result[ 'Message' ] ) )
@@ -370,7 +378,7 @@ class TaskQueueDB( DB ):
       tqDefDict = retVal[ 'Value' ]
     tqDefDict[ 'CPUTime' ] = self.fitCPUTimeToSegments( tqDefDict[ 'CPUTime' ] )
     self.log.info( "Inserting job %s with requirements: %s" % ( jobId, self.__strDict( tqDefDict ) ) )
-    retVal = self.findTaskQueue( tqDefDict, skipDefinitionCheck = True, connObj = connObj )
+    retVal = self.__findAndDisableTaskQueue( tqDefDict, skipDefinitionCheck = True, connObj = connObj )
     if not retVal[ 'OK' ]:
       return retVal
     tqInfo = retVal[ 'Value' ]
@@ -385,23 +393,16 @@ class TaskQueueDB( DB ):
     else:
       tqId = tqInfo[ 'tqId' ]
       self.log.info( "Found TQ %s for job %s requirements" % ( tqId, jobId ) )
-      result = self.setTaskQueueState( tqId, False )
+    try:
+      result = self.__insertJobInTaskQueue( jobId, tqId, int( jobPriority ), checkTQExists = False, connObj = connObj )
       if not result[ 'OK' ]:
+        self.log.error( "Error inserting job in TQ", "Job %s TQ %s: %s" % ( jobId, tqId, result[ 'Message' ] ) )
         return result
-      if self.__ensureInsertionIsSingle and not result[ 'Value' ]:
-        time.sleep( 0.1 )
-        if numRetries <= 0:
-          self.log.info( "Couldn't manage to disable TQ %s for job %s insertion, max retries reached. Aborting" % ( tqId, jobId ) )
-          return S_ERROR( "Max reties reached for inserting job %s" % jobId )
-        self.log.info( "Couldn't manage to disable TQ %s for job %s insertion, retrying" % ( tqId, jobId ) )
-        return self.insertJob( jobId, tqDefDict, jobPriority, skipTQDefCheck = True, numRetries = numRetries - 1 )
-    result = self.__insertJobInTaskQueue( jobId, tqId, int( jobPriority ), checkTQExists = False, connObj = connObj )
-    if not result[ 'OK' ]:
-      self.log.error( "Error inserting job in TQ", "Job %s TQ %s: %s" % ( jobId, tqId, result[ 'Message' ] ) )
-      return result
-    if newTQ:
-      self.recalculateTQSharesForEntity( tqDefDict[ 'OwnerDN' ], tqDefDict[ 'OwnerGroup' ], connObj = connObj )
-    return self.setTaskQueueState( tqId, True )
+      if newTQ:
+        self.recalculateTQSharesForEntity( tqDefDict[ 'OwnerDN' ], tqDefDict[ 'OwnerGroup' ], connObj = connObj )
+    finally:
+      self.setTaskQueueState( tqId, True )
+    return S_OK()
 
   def __insertJobInTaskQueue( self, jobId, tqId, jobPriority, checkTQExists = True, connObj = False ):
     """
@@ -418,9 +419,12 @@ class TaskQueueDB( DB ):
       if not result[ 'OK' ] or len ( result[ 'Value' ] ) == 0:
         return S_OK( "Can't find task queue with id %s: %s" % ( tqId, result[ 'Message' ] ) )
     hackedPriority = self.__hackJobPriority( jobPriority )
-    return self._update( "INSERT INTO tq_Jobs ( TQId, JobId, Priority, RealPriority ) VALUES ( %s, %s, %s, %f )" % ( tqId, jobId, jobPriority, hackedPriority ), conn = connObj )
+    result = self._update( "INSERT INTO tq_Jobs ( TQId, JobId, Priority, RealPriority ) VALUES ( %s, %s, %s, %f )" % ( tqId, jobId, jobPriority, hackedPriority ), conn = connObj )
+    if not result[ 'OK' ] and result[ 'Message' ].find( "Duplicate entry" ) == -1:
+      return result
+    return S_OK()
 
-  def findTaskQueue( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
+  def __generateTQFindSQL( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
     """
       Find a task queue that has exactly the same requirements
     """
@@ -430,7 +434,7 @@ class TaskQueueDB( DB ):
       if not result[ 'OK' ]:
         return result
       tqDefDict = result[ 'Value' ]
-    sqlCmd = "SELECT `tq_TaskQueues`.TQId FROM `tq_TaskQueues` WHERE"
+
     sqlCondList = []
     for field in self.__singleValueDefFields:
       sqlCondList.append( "`tq_TaskQueues`.%s = %s" % ( field, tqDefDict[ field ] ) )
@@ -449,7 +453,37 @@ class TaskQueueDB( DB ):
       else:
         sqlCondList.append( "`tq_TaskQueues`.TQId not in ( SELECT DISTINCT %s.TQId from %s )" % ( tableName, tableName ) )
     #END MAGIC: That was easy ;)
-    sqlCmd = "%s  %s" % ( sqlCmd, " AND ".join( sqlCondList ) )
+    return S_OK( " AND ".join( sqlCondList ) )
+
+
+  def __findAndDisableTaskQueue( self, tqDefDict, skipDefinitionCheck = False, retries = 10, connObj = False ):
+    """ Disable and find TQ
+    """
+    for i in range( retries ):
+      result = self.findTaskQueue( tqDefDict, skipDefinitionCheck = skipDefinitionCheck, connObj = connObj )
+      if not result[ 'OK' ]:
+        return result
+      data = result[ 'Value' ]
+      if not data[ 'found' ]:
+        return result
+      result = self._update( "UPDATE `tq_TaskQueues` SET Enabled = Enabled - 1 WHERE TQId = %d" % data[ 'tqId' ] )
+      if not result[ 'OK' ]:
+        return result
+      if result[ 'Value' ] > 0:
+        return S_OK( data )
+    return S_ERROR( "Could not disable TQ" )
+
+  def findTaskQueue( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
+    """
+      Find a task queue that has exactly the same requirements
+    """
+    result = self.__generateTQFindSQL( tqDefDict, skipDefinitionCheck = skipDefinitionCheck,
+                                       connObj = connObj )
+    if not result[ 'OK' ]:
+      return result
+
+    sqlCmd = "SELECT `tq_TaskQueues`.TQId FROM `tq_TaskQueues` WHERE"
+    sqlCmd = "%s  %s" % ( sqlCmd, result[ 'Value' ] )
     result = self._query( sqlCmd, conn = connObj )
     if not result[ 'OK' ]:
       return S_ERROR( "Can't find task queue: %s" % result[ 'Message' ] )
@@ -460,7 +494,8 @@ class TaskQueueDB( DB ):
       gLogger.warn( "Found two task queues for the same requirements", self.__strDict( tqDefDict ) )
     return S_OK( { 'found' : True, 'tqId' : data[0][0] } )
 
-  def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 10, numQueuesPerTry = 10, negativeCond = {} ):
+
+  def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 50, numQueuesPerTry = 10, negativeCond = {} ):
     """
     Match a job
     """
@@ -509,9 +544,7 @@ class TaskQueueDB( DB ):
         jobTQList = [ ( row[0], row[1] ) for row in retVal[ 'Value' ] ]
         if len( jobTQList ) == 0:
           gLogger.info( "Task queue %s seems to be empty, triggering a cleaning" % tqId )
-          result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup, connObj = connObj )
-          if not result[ 'OK' ]:
-            return result
+          self.__deleteTQWithDelay.add( tqId, 300, ( tqId, tqOwnerDN, tqOwnerGroup ) )
         while len( jobTQList ) > 0:
           jobId, tqId = jobTQList.pop( random.randint( 0, len( jobTQList ) - 1 ) )
           self.log.info( "Trying to extract job %s from TQ %s" % ( jobId, tqId ) )
@@ -550,14 +583,14 @@ class TaskQueueDB( DB ):
 
   def __generateSQLSubCond( self, sqlString, value, boolOp = 'OR' ):
     if type( value ) not in ( types.ListType, types.TupleType ):
-      return sqlString % str( value ).strip() 
+      return sqlString % str( value ).strip()
     sqlORList = []
     for v in value:
       sqlORList.append( sqlString % str( v ).strip() )
     return "( %s )" % ( " %s " % boolOp ).join( sqlORList )
 
   def __generateNotSQL( self, tableDict, negativeCond ):
-    """ Generate negative conditions 
+    """ Generate negative conditions
         Can be a list of dicts or a dict:
          - list of dicts will be  OR of conditional dicts
          - dicts will be normal conditional dict ( kay1 in ( v1, v2, ... ) AND key2 in ( v3, v4, ... ) )
@@ -566,7 +599,7 @@ class TaskQueueDB( DB ):
     if condType in ( types.ListType, types.TupleType ):
       sqlCond = []
       for cD in negativeCond:
-        sqlCond.append( self.__generateNotDictSQL( tableDict, cD ) ) 
+        sqlCond.append( self.__generateNotDictSQL( tableDict, cD ) )
       return " ( %s )" % " OR  ".join( sqlCond )
     elif condType == types.DictType:
       return self.__generateNotDictSQL( tableDict, negativeCond )
@@ -584,7 +617,7 @@ class TaskQueueDB( DB ):
           valList = ( valList, )
         for value in valList:
           value = self._escapeString( value )[ 'Value' ]
-          sql = "%s NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( value, 
+          sql = "%s NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( value,
                                                                     fullTableN, fullTableN, fullTableN )
           condList.append( sql )
       elif field in self.__singleValueDefFields:
@@ -600,7 +633,7 @@ class TaskQueueDB( DB ):
     if fullTableName not in sqlTables:
       tableN = field.lower()
       sqlTables[ fullTableName ] = tableN
-      return tableN, "`%s`" % fullTableName, 
+      return tableN, "`%s`" % fullTableName,
     return  sqlTables[ fullTableName ], "`%s`" % fullTableName
 
   def __generateTQMatchSQL( self, tqMatchDict, numQueuesToGet = 1, negativeCond = {} ):
@@ -608,7 +641,8 @@ class TaskQueueDB( DB ):
     Generate the SQL needed to match a task queue
     """
     #Only enabled TQs
-    sqlCondList = [ "Enabled" ]
+    #sqlCondList = [ "Enabled >= 1" ]
+    sqlCondList = []
     sqlTables = { "tq_TaskQueues" : "tq" }
     #If OwnerDN and OwnerGroup are defined only use those combinations that make sense
     if 'OwnerDN' in tqMatchDict and 'OwnerGroup' in tqMatchDict:
@@ -624,7 +658,7 @@ class TaskQueueDB( DB ):
           ownerConds.append( "tq.OwnerGroup = %s" % group )
         else:
           for dn in dns:
-            ownerConds.append( "( tq.OwnerDN = %s AND tq.OwnerGroup = %s )" % ( dn, sqlGroup ) )
+            ownerConds.append( "( tq.OwnerDN = %s AND tq.OwnerGroup = %s )" % ( dn, group ) )
       sqlCondList.append( " OR ".join( ownerConds ) )
     else:
       #If not both are defined, just add the ones that are defined
@@ -649,7 +683,7 @@ class TaskQueueDB( DB ):
         if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
-          # that the GridCE matches explicetly so the COUNT can not be 0. In this case we skip this 
+          # that the GridCE matches explicetly so the COUNT can not be 0. In this case we skip this
           # condition
           sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
         csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN, fullTableN, fullTableN ), tqMatchDict[ field ] )
@@ -659,14 +693,14 @@ class TaskQueueDB( DB ):
         if field in self.__bannedJobMatchFields:
           fullTableN = '`tq_TQToBanned%ss`' % field
           csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                    fullTableN, fullTableN ), tqMatchDict[ field ], boolOp = 'AND' )
+                                                                    fullTableN, fullTableN ), tqMatchDict[ field ], boolOp = 'OR' )
           sqlCondList.append( csql )
       #Resource banning
       bannedField = "Banned%s" % field
       if bannedField in tqMatchDict and tqMatchDict[ bannedField ]:
         fullTableN = '`tq_TQTo%ss`' % field
         csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                  fullTableN, fullTableN ), tqMatchDict[ bannedField ], boolOp = 'AND' )
+                                                                  fullTableN, fullTableN ), tqMatchDict[ bannedField ], boolOp = 'OR' )
         sqlCondList.append( csql )
 
     #For certain fields, the require is strict. If it is not in the tqMatchDict, the job cannot require it
@@ -674,7 +708,7 @@ class TaskQueueDB( DB ):
       if field in tqMatchDict:
         continue
       fullTableN = '`tq_TQTo%ss`' % field
-      sqlCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) ) 
+      sqlCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
 
     # Add extra conditions
     if negativeCond:
@@ -693,7 +727,6 @@ class TaskQueueDB( DB ):
     Delete a job from the task queues
     Return S_OK( True/False ) / S_ERROR
     """
-    self.log.info( "Deleting job %s" % jobId )
     if not connObj:
       retVal = self._getConnection()
       if not retVal[ 'OK' ]:
@@ -706,6 +739,7 @@ class TaskQueueDB( DB ):
     if not data:
       return S_OK( False )
     tqId, tqOwnerDN, tqOwnerGroup = data[0]
+    self.log.info( "Deleting job %s" % jobId )
     retVal = self._update( "DELETE FROM `tq_Jobs` WHERE JobId = %s" % jobId, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete job from task queue %s: %s" % ( jobId, retVal[ 'Message' ] ) )
@@ -715,16 +749,7 @@ class TaskQueueDB( DB ):
       return S_OK( False )
     retries = 10
     #Always return S_OK() because job has already been taken out from the TQ
-    while retries:
-      result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup, connObj = connObj )
-      if result[ 'OK' ]:
-        return S_OK( True )
-      if not result[ 'OK' ]:
-        if result[ 'Message' ].find( "try restarting transaction" ) == -1:
-          self.log.error( "Error on TQ deletion triggered by job deletion", "Job %s TQ %s : %s" % ( tqId, jobId, result[ 'Message' ] ) )
-          return S_OK( True )
-      retries -= 1
-    self.log.error( "Max retries when trying to delete TQ %s triggered by deletion of job %s" % ( tqId, jobId ) )
+    self.__deleteTQWithDelay.add( tqId, 300, ( tqId, tqOwnerDN, tqOwnerGroup ) )
     return S_OK( True )
 
   def getTaskQueueForJob( self, jobId, connObj = False ):
@@ -782,6 +807,17 @@ class TaskQueueDB( DB ):
       return S_OK( False )
     return S_OK( retVal[ 'Value' ][0] )
 
+  def __deleteTQIfEmpty( self, args ):
+    ( tqId, tqOwnerDN, tqOwnerGroup ) = args
+    retries = 3
+    while retries:
+      retries -= 1
+      result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup )
+      if result[ 'OK' ]:
+        return
+    gLogger.error( "Could not delete TQ %s: %s" % ( tqId, result[ 'Message' ] ) )
+
+
   def deleteTaskQueueIfEmpty( self, tqId, tqOwnerDN = False, tqOwnerGroup = False, connObj = False ):
     """
     Try to delete a task queue if its empty
@@ -799,7 +835,7 @@ class TaskQueueDB( DB ):
       if not data:
         return S_OK( False )
       tqOwnerDN, tqOwnerGroup = data
-    sqlCmd = "DELETE FROM `tq_TaskQueues` WHERE Enabled AND `tq_TaskQueues`.TQId = %s" % tqId
+    sqlCmd = "DELETE FROM `tq_TaskQueues` WHERE Enabled >= 1 AND `tq_TaskQueues`.TQId = %s" % tqId
     sqlCmd = "%s AND `tq_TaskQueues`.TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )" % sqlCmd
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
@@ -886,7 +922,7 @@ class TaskQueueDB( DB ):
       sqlSelectEntries.append( "`tq_TaskQueues`.%s" % field )
       sqlGroupEntries.append( "`tq_TaskQueues`.%s" % field )
     sqlCmd = "SELECT %s FROM `tq_TaskQueues`, `tq_Jobs`" % ", ".join( sqlSelectEntries )
-    sqlTQCond = "AND Enabled"
+    sqlTQCond = "AND Enabled >= 1"
     if tqIdList != False:
       if len( tqIdList ) == 0:
         return S_OK( {} )
@@ -1040,17 +1076,53 @@ class TaskQueueDB( DB ):
     for k in tqDict:
       if tqDict[k] > 0.1 or not allowBgTQs:
         totalPrio += tqDict[ k ]
-    #Group by priorities
-    prioDict = {}
+    #Update prio for each TQ
     for tqId in tqDict:
       if tqDict[ tqId ] > 0.1 or not allowBgTQs:
         prio = ( share / totalPrio ) * tqDict[ tqId ]
       else:
         prio = TQ_MIN_SHARE
       prio = max( prio, TQ_MIN_SHARE )
+      tqDict[ tqId ] = prio
+
+    #Generate groups of TQs that will have the same prio=sum(prios) maomenos
+    result = self.retrieveTaskQueues( list( tqDict ) )
+    if not result[ 'OK' ]:
+      return result
+    allTQsData = result[ 'Value' ]
+    tqGroups = {}
+    for tqid in allTQsData:
+      tqData = allTQsData[ tqid ]
+      for field in ( 'Jobs', 'Priority' ) + self.__priorityIgnoredFields:
+        if field in tqData:
+          tqData.pop( field )
+      tqHash = []
+      for f in sorted( tqData ):
+        tqHash.append( "%s:%s" % ( f, tqData[ f ] ) )
+      tqHash = "|".join( tqHash )
+      if tqHash not in tqGroups:
+        tqGroups[ tqHash ] = []
+      tqGroups[ tqHash ].append( tqid )
+    tqGroups = [ tqGroups[ td ] for td in tqGroups ]
+
+    #Do the grouping
+    for tqGroup in tqGroups:
+      totalPrio = 0
+      if len( tqGroup ) < 2:
+        continue
+      for tqid in tqGroup:
+        totalPrio += tqDict[ tqid ]
+      for tqid in tqGroup:
+        tqDict[ tqid ] = totalPrio
+
+    #Group by priorities
+    prioDict = {}
+    for tqId in tqDict:
+      prio = tqDict[ tqId ]
       if prio not in prioDict:
         prioDict[ prio ] = []
       prioDict[ prio ].append( tqId )
+
     #Execute updates
     for prio in prioDict:
       tqList = ", ".join( [ str( tqId ) for tqId in prioDict[ prio ] ] )

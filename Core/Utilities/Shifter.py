@@ -22,7 +22,6 @@ def getShifterProxy( shifterType, fileName = False ):
       os.makedirs( os.path.dirname( fileName ) )
     except OSError:
       pass
-  shifterSection = "Shifter/%s" % shifterType
   opsHelper = Operations()
   userName = opsHelper.getValue( cfgPath( 'Shifter', shifterType, 'User' ), '' )
   if not userName:
@@ -31,21 +30,26 @@ def getShifterProxy( shifterType, fileName = False ):
   if not result[ 'OK' ]:
     return result
   userDN = result[ 'Value' ][0]
-  userGroup = opsHelper.getValue( cfgPath( 'Shifter', shifterType, 'Group' ), CS.getDefaultUserGroup() )
+  result = CS.findDefaultGroupForDN( userDN )
+  if not result['OK']:
+    return result
+  defaultGroup = result['Value']
+  userGroup = opsHelper.getValue( cfgPath( 'Shifter', shifterType, 'Group' ), defaultGroup )
   vomsAttr = CS.getVOMSAttributeForGroup( userGroup )
   if vomsAttr:
     gLogger.info( "Getting VOMS [%s] proxy for shifter %s@%s (%s)" % ( vomsAttr, userName,
                                                                        userGroup, userDN ) )
-    result = gProxyManager.downloadVOMSProxy( userDN, userGroup, requiredTimeLeft = 4 * 43200 )
+    result = gProxyManager.downloadVOMSProxyToFile( userDN, userGroup, 
+                                                    requiredTimeLeft = 1200, 
+                                                    cacheTime = 4 * 43200 )
   else:
     gLogger.info( "Getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
-    result = gProxyManager.downloadProxy( userDN, userGroup, requiredTimeLeft = 4 * 43200 )
+    result = gProxyManager.downloadProxyToFile( userDN, userGroup, 
+                                                requiredTimeLeft = 1200, 
+                                                cacheTime = 4 * 43200 )
   if not result[ 'OK' ]:
     return result
-  chain = result[ 'Value' ]
-  result = gProxyManager.dumpProxyToFile( chain, destinationFile = fileName )
-  if not result[ 'OK' ]:
-    return result
+  chain = result[ 'chain' ]
   fileName = result[ 'Value' ]
   return S_OK( { 'DN' : userDN,
                  'username' : userName,

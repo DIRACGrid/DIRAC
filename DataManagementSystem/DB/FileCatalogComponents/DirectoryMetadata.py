@@ -30,6 +30,12 @@ class DirectoryMetadata:
         pname - parameter name, ptype - parameter type in the MySQL notation
     """
 
+    result = self.db.fmeta.getFileMetadataFields( credDict )
+    if not result['OK']:
+      return result
+    if pname in result['Value'].keys():
+      return S_ERROR( 'The metadata %s is already defined for Files' % pname )
+
     result = self.getMetadataFields( credDict )
     if not result['OK']:
       return result
@@ -41,8 +47,17 @@ class DirectoryMetadata:
                         ( ptype, result['Value'][pname] ) )
 
     valueType = ptype
-    if ptype == "MetaSet":
+    if ptype.lower()[:3] == 'int':
+      valueType = 'INT'
+    elif ptype.lower() == 'string':
+      valueType = 'VARCHAR(128)'
+    elif ptype.lower() == 'float':
+      valueType = 'FLOAT'
+    elif ptype.lower() == 'date':
+      valueType = 'DATETIME'
+    elif ptype == "MetaSet":
       valueType = "VARCHAR(64)"
+      
     req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" \
                               % ( pname, valueType )
     result = self.db._query( req )
@@ -140,7 +155,7 @@ class DirectoryMetadata:
         return S_ERROR( 'Unknown key %s' % key )
       if expandFlag:
         if metaTypeDict[key] == "MetaSet":
-          result = self.getMetadataSet( value, credDict )
+          result = self.getMetadataSet( value, expandFlag, credDict )
           if not result['OK']:
             return result
           resultDict.update( result['Value'] )
@@ -372,7 +387,7 @@ class DirectoryMetadata:
 
     insertValueList = []
     for dirID in dirList:
-      insertValueList.append( "( %d,'%s' )" % ( dirID, meta ) )
+      insertValueList.append( "( %d,'%s' )" % ( dirID, dirDict[dirID] ) )
 
     req = "INSERT INTO FC_Meta_%s (DirID,Value) VALUES %s" % ( metaname, ', '.join( insertValueList ) )
     result = self.db._update( req )

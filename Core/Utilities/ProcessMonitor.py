@@ -79,7 +79,7 @@ class ProcessMonitor:
   def __getProcListLinux( self ):
     """Gets list of process IDs from /proc/*.
     """
-    result = shellCall( 0, 'ls -d /proc/[0-9]*' )
+    result = shellCall( 10, 'ls -d /proc/[0-9]*' )
 
     if not result['OK']:
       if not 'Value' in result:
@@ -122,7 +122,7 @@ class ProcessMonitor:
   def __getProcGroupLinux( self, pid ):
     """Returns UID for given PID.
     """
-    result = shellCall( 0, 'ps --no-headers -o pgrp -p %s' % ( pid ) )
+    result = shellCall( 10, 'ps --no-headers -o pgrp -p %s' % ( pid ) )
     if not result['OK']:
       if  not 'Value' in result:
         return result

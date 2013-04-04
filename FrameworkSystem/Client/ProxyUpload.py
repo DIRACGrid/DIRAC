@@ -36,7 +36,7 @@ class CLIParams:
     try:
       fields = [ f.strip() for f in arg.split( ":" ) ]
       self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
-    except:
+    except ValueError:
       print "Can't parse %s time! Is it a HH:MM?" % arg
       return DIRAC.S_ERROR( "Can't parse time argument" )
     return DIRAC.S_OK()
@@ -97,9 +97,9 @@ class CLIParams:
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
     Script.addDefaultOptionValue( "LogLevel", "always" )
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain
-from DIRAC.Core.Security import Locations, CS
+from DIRAC.Core.Security import Locations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 def uploadProxy( params ):
@@ -154,7 +154,12 @@ def uploadProxy( params ):
 
     diracGroup = params.diracGroup
     if not diracGroup:
-      diracGroup = CS.getDefaultUserGroup()
+      result = proxyChain.getCredentials()
+      if not result['OK']:
+        return result
+      if 'group' not in result['Value']:
+        return S_ERROR( 'Can not get Group from existing credentials' )
+      diracGroup = result['Value']['group']
     restrictLifeTime = params.proxyLifeTime
 
   else:

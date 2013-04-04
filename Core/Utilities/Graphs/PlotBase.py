@@ -19,7 +19,7 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 from matplotlib.axes import Axes
 from matplotlib.pylab import setp
 
-class PlotBase:
+class PlotBase( object ):
 
   def __init__( self, data = None, axes = None, *aw, **kw ):
 

@@ -21,13 +21,12 @@ class CE2CSAgent( AgentModule ):
   addressTo = ''
   addressFrom = ''
   voName = ''
-  csAPI = CSAPI()
   subject = "CE2CSAgent"
   alternativeBDIIs = []
 
   def initialize( self ):
 
-    # TODO: Have no default and if no mail is found then use the diracAdmin group 
+    # TODO: Have no default and if no mail is found then use the diracAdmin group
     # and resolve all associated mail addresses.
     self.addressTo = self.am_getOption( 'MailTo', self.addressTo )
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
@@ -44,7 +43,7 @@ class CE2CSAgent( AgentModule ):
       self.log.info( "AlternativeBDII URLs:", self.alternativeBDIIs )
     self.subject = "CE2CSAgent"
 
-    # This sets the Default Proxy to used as that defined under 
+    # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/SAMManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'SAMManager' )
@@ -56,7 +55,9 @@ class CE2CSAgent( AgentModule ):
     if not self.voName:
       self.log.fatal( "VO option not defined for agent" )
       return S_ERROR()
-    return S_OK()
+
+    self.csAPI = CSAPI()
+    return self.csAPI.initialize()
 
   def execute( self ):
 
@@ -66,6 +67,11 @@ class CE2CSAgent( AgentModule ):
       return result
     infoDict = result[ 'Value' ]
     self.log.info( formatProxyInfoAsString( infoDict ) )
+
+    #Get a "fresh" copy of the CS data
+    result = self.csAPI.downloadCSData()
+    if not result[ 'OK' ]:
+      self.log.warn( "Could not download a fresh copy of the CS data", result[ 'Message' ] )
 
     self.__lookForCE()
     self.__infoFromCE()
@@ -216,6 +222,9 @@ class CE2CSAgent( AgentModule ):
       return
     grids = result['Value']
 
+    changed = False
+    body = ""
+
     for grid in grids:
 
       gridSection = cfgPath( sitesSection, grid )
@@ -223,9 +232,6 @@ class CE2CSAgent( AgentModule ):
       if not result['OK']:
         return
       sites = result['Value']
-
-      changed = False
-      body = ""
 
       for site in sites:
   #      if site[-2:]!='ru':
@@ -382,7 +388,7 @@ class CE2CSAgent( AgentModule ):
 
             try:
               rte = bdiice['GlueHostApplicationSoftwareRunTimeEnvironment']
-              if self.voName == 'lhcb':
+              if self.voName.lower() == 'lhcb':
                 if 'VO-lhcb-pilot' in rte:
                   newpilot = 'True'
                 else:
@@ -490,7 +496,7 @@ class CE2CSAgent( AgentModule ):
         notification = NotificationClient()
         result = notification.sendMail( self.addressTo, self.subject, body, self.addressFrom, localAttempt = False )
 
-      return self.csAPI.commitChanges( sortUsers = False )
+      return self.csAPI.commit()
     else:
       self.log.info( "No changes found" )
       return S_OK()

@@ -451,6 +451,35 @@ class FileCatalogDB(DB):
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )     
+  
+  def getFileDetails( self, lfnList, credDict ):
+    """ Get all the metadata for the given files
+    """  
+    connection = False
+    result = self.fileManager._findFiles( lfnList, connection=connection )
+    if not result['OK']:
+      return result
+    resultDict = {}
+    fileIDDict = {}
+    lfnDict = result['Value']['Successful']
+    for lfn in lfnDict:
+      fileIDDict[lfnDict[lfn]['FileID']] = lfn
+      
+    result = self.fileManager._getFileMetadataByID( fileIDDict.keys(), connection=connection )
+    if not result['OK']:
+      return result
+    for fileID in result['Value']:
+      resultDict[ fileIDDict[fileID] ] = result['Value'][fileID]
+      
+    result = self.fmeta._getFileUserMetadataByID( fileIDDict.keys(), credDict, connection=connection )
+    if not result['OK']:
+      return result
+    for fileID in fileIDDict:
+      resultDict[ fileIDDict[fileID] ].setdefault( 'Metadata', {} )
+      if fileID in result['Value']:
+        resultDict[ fileIDDict[fileID] ]['Metadata'] = result['Value'][fileID]    
+      
+    return S_OK(resultDict) 
 
   ########################################################################
   #
@@ -474,11 +503,17 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.removeDirectory(res['Value']['Successful'],credDict)
-    if not res['OK']:
-      return res
-    failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
+    if successful:
+      res = self.dtree.removeDirectory(res['Value']['Successful'],credDict)
+      if not res['OK']:
+        return res
+      failed.update(res['Value']['Failed'])
+      successful = res['Value']['Successful']
+      if not successful:
+        return S_OK( {'Successful':successful,'Failed':failed} )
+    else:
+      return S_OK( {'Successful':successful,'Failed':failed} )
     
     # Remove the directory metadata now
     dirIdList = [ successful[p]['DirID'] for p in successful ]
@@ -530,18 +565,34 @@ class FileCatalogDB(DB):
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
 
-  def getDirectorySize(self,lfns,longOutput,credDict):
+  def getDirectorySize(self,lfns,longOutput,fromFiles,credDict):
     res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectorySize(res['Value']['Successful'],longOutput)
+    res = self.dtree.getDirectorySize(res['Value']['Successful'],longOutput,fromFiles)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
     queryTime = res['Value'].get('QueryTime',-1.)
     return S_OK( {'Successful':successful,'Failed':failed,'QueryTime':queryTime} )
+  
+  def rebuildDirectoryUsage(self):
+    """ Rebuild DirectoryUsage table from scratch
+    """
+    
+    result = self.dtree._rebuildDirectoryUsage()
+    return result
+
+  def repairCatalog( self, directoryFlag=True, credDict={} ):
+    """ Repair catalog inconsistencies
+    """
+    result = S_OK()
+    if directoryFlag:
+      result = self.dtree.recoverOrphanDirectories( credDict )
+      
+    return result 
     
   #######################################################################
   #
@@ -652,4 +703,4 @@ class FileCatalogDB(DB):
       else:  
         successful[lfn] = lfns[lfn]
     return S_OK( {'Successful':successful,'Failed':failed} )
-  
+ 

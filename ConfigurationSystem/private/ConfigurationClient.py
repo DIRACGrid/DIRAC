@@ -10,8 +10,6 @@ from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-
-
 class ConfigurationClient:
 
   def __init__( self, fileToLoadList = None ):
@@ -26,6 +24,9 @@ class ConfigurationClient:
   def loadCFG( self, cfg ):
     return gConfigurationData.mergeWithLocal( cfg )
 
+  def forceRefresh( self ):
+    return gRefresher.forceRefresh()
+
   def dumpLocalCFGToFile( self, fileName ):
     return gConfigurationData.dumpLocalCFGToFile( fileName )
 
@@ -35,10 +36,10 @@ class ConfigurationClient:
   def addListenerToNewVersionEvent( self, functor ):
     gRefresher.addListenerToNewVersionEvent( functor )
 
-  def dumpCFGAsLocalCache( self, fileName = None ):
+  def dumpCFGAsLocalCache( self, fileName = None, raw = False ):
     cfg = gConfigurationData.mergedCFG.clone()
     try:
-      if cfg.isSection( 'DIRAC' ):
+      if not raw and cfg.isSection( 'DIRAC' ):
         diracSec = cfg[ 'DIRAC' ]
         if diracSec.isSection( 'Configuration' ):
           confSec = diracSec[ 'Configuration' ]
@@ -69,7 +70,6 @@ class ConfigurationClient:
     if retVal[ 'OK' ]:
       return retVal[ 'Value' ]
     else:
-      gLogger.debug( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
       return defaultValue
 
 #  def getSpecialValue( self, optionPath, defaultValue = None, vo = None, setup = None ):
@@ -129,7 +129,7 @@ class ConfigurationClient:
         return S_ERROR( "Type mismatch between default (%s) and configured value (%s) " % ( str( typeValue ), optionValue ) )
 
 
-  def getSections( self, sectionPath, listOrdered = False ):
+  def getSections( self, sectionPath, listOrdered = True ):
     gRefresher.refreshConfigurationIfNeeded()
     sectionList = gConfigurationData.getSectionsFromCFG( sectionPath, ordered = listOrdered )
     if type( sectionList ) == types.ListType:
@@ -137,7 +137,7 @@ class ConfigurationClient:
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
 
-  def getOptions( self, sectionPath, listOrdered = False ):
+  def getOptions( self, sectionPath, listOrdered = True ):
     gRefresher.refreshConfigurationIfNeeded()
     optionList = gConfigurationData.getOptionsFromCFG( sectionPath, ordered = listOrdered )
     if type( optionList ) == types.ListType:

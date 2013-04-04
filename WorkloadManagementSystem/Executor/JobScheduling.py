@@ -15,7 +15,7 @@
 """
 __RCSID__ = "$Id: $"
 
-from DIRAC import S_OK, S_ERROR, List
+from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.Time import fromString, toEpoch
@@ -207,6 +207,8 @@ class JobScheduling( OptimizerExecutor ):
     manifest = result[ 'Value' ]
 
     bannedSites = manifest.getOption( "BannedSites", [] )
+    if not bannedSites:
+      bannedSites = manifest.getOption( "BannedSite", [] )
     if bannedSites:
       self.jobLog.info( "Banned %s sites" % ", ".join( bannedSites ) )
 
@@ -308,7 +310,7 @@ class JobScheduling( OptimizerExecutor ):
       se = StorageElement( seName )
       result = se.getStatus()
       if not result[ 'OK' ]:
-        self.jobLog.error( "Cannot retrieve SE %s status: %s" ( seName, result[ 'Message' ] ) )
+        self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
         return S_ERROR( "Cannot retrieve SE status" )
       seStatus = result[ 'Value' ]
       if seStatus[ 'Read' ] and seStatus[ 'TapeSE' ]:
@@ -410,7 +412,7 @@ class JobScheduling( OptimizerExecutor ):
           seObj = StorageElement( seName )
           result = seObj.getStatus()
           if not result['OK' ]:
-            self.jobLog.error( "Cannot retrieve SE %s status: %s" ( seName, result[ 'Message' ] ) )
+            self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
             continue
           seStatus[ seName ] = result[ 'Value' ]
         #get the SE status from mem and add it if its disk
@@ -464,6 +466,11 @@ class JobScheduling( OptimizerExecutor ):
         self.jobLog.error( "Cannot get tier for site %s" % ( siteName ) )
         continue
       siteTier = result[ 'Value' ]
+
+      # FIXME: hack for cases where you get a T0 together with T1(s) in the list of sites and you want to see "multiple"
+      if siteTier == 0:
+        siteTier = 1
+
       if tierLevel == -1 or tierLevel > siteTier:
         tierLevel = siteTier
         tierSite = []

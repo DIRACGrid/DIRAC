@@ -4,7 +4,6 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2011/10/25 07:52:37
 ########################################################################
-
 """ :mod: RemovalTask 
     =======================
  
@@ -14,9 +13,7 @@
 
     removal requests processing 
 """
-
 __RCSID__ = "$Id $"
-
 ##
 # @file RemoveTask.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -36,8 +33,12 @@ class RemovalTask( RequestTask ):
   """
   .. class:: RemovalTask
   
+  supported operations are:
+  - physicalRemoval - remove PFN from TargetSE
+  - removeFile - completely remove LFNs from catalogues and SEs  
+  - replicaRemoval - remove replicas at specified TargetSEs
+  - reTransfer - delete file at source and issue a transfer request using ReplicaManager::onlineRetransfer
   """
-
   def __init__( self, *args, **kwargs ):
     """c'tor
 
@@ -114,16 +115,43 @@ class RemovalTask( RequestTask ):
     removalStatus = dict.fromkeys( lfns, "" )  
     self.addMark( "RemoveFileAtt", len( lfns ) )
 
-    ## loop over LFNs
-    for lfn in lfns:
+    ## bulk removal 1st
+    bulkRemoval = self.replicaManager().removeFile( lfns )
+    if not bulkRemoval["OK"]:
+      self.error("removeFile: unable to remove files: %s" % bulkRemoval["Message"] )
+      subRequestError = bulkRemoval["Message"][:255]
+      subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError )
+      return S_OK( requestObj )
+    bulkRemoval = bulkRemoval["Value"]
+    successfulLfns = bulkRemoval["Successful"] if "Successful" in bulkRemoval else []
+    failedLfns = bulkRemoval["Failed"] if "Failed" in bulkRemoval else []
+    toRemove = []
+    for lfn in removalStatus:
+      if lfn in failedLfns and "no such file or directory" in str(bulkRemoval["Failed"][lfn]).lower():
+        removalStatus[lfn] = bulkRemoval["Failed"][lfn]
+        removeCatalog = self.replicaManager().removeCatalogFile( lfn, singleFile = True  )
+        if not removeCatalog["OK"]:
+          removalStatus[lfn] = removeCatalog["Message"]
+          continue
+      else:
+        toRemove.append(lfn)
+      
+    ## loop over LFNs to remove
+    for lfn in toRemove:
       self.debug("removeFile: processing file %s" % lfn )
       try:
         ## try to remove using proxy already defined in os.environ 
         removal = self.replicaManager().removeFile( lfn )
+        ## file is not existing?  
+        if not removal["OK"] and "no such file or directory" in str(removal["Message"]).lower():
+          removalStatus[lfn] = removal["Message"]
+          continue
         ## not OK but request belongs to DataManager? 
         if not self.requestOwnerDN and \
            ( not removal["OK"] and "Write access not permitted for this credential." in removal["Message"] ) or \
-           ( removal["OK"] and "Failed" in removal["Value"] and lfn in removal["Value"]["Failed"] and "permission denied" in str(removal["Value"]["Failed"][lfn]).lower() ):  
+           ( removal["OK"] and "Failed" in removal["Value"] and 
+             lfn in removal["Value"]["Failed"] and 
+             "permission denied" in str(removal["Value"]["Failed"][lfn]).lower() ):  
           self.debug("removeFile: retrieving proxy for %s" % lfn )
           getProxyForLFN = self.getProxyForLFN( lfn )
           ## can't get correct proxy? continue...
@@ -158,7 +186,17 @@ class RemovalTask( RequestTask ):
     ## update File statuses and errors
     for lfn, error in removalStatus.items():
 
-      if not error or "no such file or directory" in str(error).lower():
+      ## set file error if any
+      if error:
+        self.debug("removeFile: %s: %s" % ( lfn, str(error) ) ) 
+        fileError = str(error).replace("'", "")[:255]
+        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, 
+                                                                "Error", fileError )  
+        if not fileError["OK"]:
+          self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
+      ## no error? file not exists? - we are able to recover 
+      if not error or "no such file or directory" in str(error).lower() or \
+            "file does not exist in the catalog" in str(error).lower():
         filesRemoved += 1
         self.info("removeFile: successfully removed %s" % lfn )
         updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
@@ -170,11 +208,8 @@ class RemovalTask( RequestTask ):
         errorStr = str(error)
         if type(error) == DictType:
           errorStr = ";".join( [ "%s:%s" % ( key, value ) for key, value in error.items() ] )
+        errorStr = errorStr.replace( "'", "" )
         subRequestError.append( "%s:%s" % ( lfn, errorStr ) )
-        ## set file error
-        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", errorStr[:255] )  
-        if not fileError["OK"]:
-          self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
 
     self.addMark( "RemoveFileDone", filesRemoved )
     self.addMark( "RemoveFileFail", filesFailed )
@@ -185,7 +220,7 @@ class RemovalTask( RequestTask ):
       requestObj.setSubRequestStatus( index, "removal", "Done" )
     elif filesFailed:
       self.info("removeFile: all files processed, %s files failed to remove" % filesFailed )
-      subRequestError = "".join( subRequestError )[:255]
+      subRequestError = ";".join( subRequestError )[:255]
       subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError )
     return S_OK( requestObj )
 
@@ -197,6 +232,8 @@ class RemovalTask( RequestTask ):
     :param RequestContainer requestObj: request 
     :param dict subRequestAttrs: subRequest's attributes
     :param dict subRequestFiles: subRequest's files
+
+    TODO: add bulk removal first
     """
     self.info( "replicaRemoval: processing subrequest %s" % index )
     if requestObj.isSubRequestEmpty( index, "removal" )["Value"]:
@@ -225,10 +262,18 @@ class RemovalTask( RequestTask ):
         for targetSE in targetSEs: 
           ## try to remove using current proxy 
           removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
+          ## file is not existing?  
+          if not removeReplica["OK"] and "no such file or directory" in str(removeReplica["Message"]).lower():
+            removalStatus[lfn][targetSE] = removeReplica["Message"]
+            continue
+
           ## not OK but request belongs to DataManager?
           if not self.requestOwnerDN and \
-                ( not removeReplica["OK"] and "Write access not permitted for this credential." in removeReplica["Message"] ) or \
-                ( removeReplica["OK"] and "Failed" in removeReplica["Value"] and lfn in removeReplica["Value"]["Failed"] and "permission denied" in str(removeReplica["Value"]["Failed"][lfn]).lower() ):  
+                ( not removeReplica["OK"] and 
+                  "Write access not permitted for this credential." in removeReplica["Message"] ) or \
+                ( removeReplica["OK"] and "Failed" in removeReplica["Value"] and 
+                  lfn in removeReplica["Value"]["Failed"] and 
+                  "permission denied" in str(removeReplica["Value"]["Failed"][lfn]).lower() ):  
             ## get proxy for LFN
             getProxyForLFN = self.getProxyForLFN( lfn )
             ## can't get correct proxy? 
@@ -283,7 +328,7 @@ class RemovalTask( RequestTask ):
       for targetSE, error in failed:
         self.warn("replicaRemoval: failed to remove %s from %s: %s" % ( lfn, targetSE, error ) )
 
-      fileError = ";".join( [ "%s:%s" % ( targetSE, error.replace("'", "") ) for targetSE, error in failed ] )[:255]
+      fileError = ";".join( [ "%s:%s" % ( targetSE, str(error).replace("'", "") ) for targetSE, error in failed ] )[:255]
       subRequestError.append( fileError )
       fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", fileError )
       if not fileError["OK"]:

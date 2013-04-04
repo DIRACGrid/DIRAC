@@ -1,17 +1,10 @@
-########################################################################
-# $HeadURL$
-# File :   API.py
-########################################################################
 """ DIRAC API Base Class """
-__RCSID__ = "$Id$"
 
-from DIRAC.Core.Base                import Script
-Script.initialize()
-
-from DIRAC                          import gLogger, S_OK, S_ERROR
+from DIRAC                          import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List      import sortList
 from DIRAC.Core.Security.ProxyInfo  import getProxyInfo, formatProxyInfoAsString
-from DIRAC.Core.Security.CS         import getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry         import getDNForUsername
+from DIRAC.Core.Utilities.Version   import getCurrentVersion
 
 import pprint, sys
 
@@ -48,79 +41,44 @@ def _printFormattedDictList( dictList, fields, uniqueField, orderBy ):
       print outStr
 
 
+#TODO: some of these can just be functions, and moved out of here
 
-class API:
+class API( object ):
+  """ An utilities class for APIs
+  """
 
   #############################################################################
+
   def __init__( self ):
+    """ c'tor
+    """
     self._printFormattedDictList = _printFormattedDictList
     self.log = gLogger.getSubLogger( COMPONENT_NAME )
     self.section = COMPONENT_NAME
     self.pPrint = pprint.PrettyPrinter()
     #Global error dictionary
     self.errorDict = {}
+    self.setup = gConfig.getValue( '/DIRAC/Setup', 'Unknown' )
+    self.diracInfo = getCurrentVersion()['Value']
 
   #############################################################################
+
   def _errorReport( self, error, message = None ):
     """Internal function to return errors and exit with an S_ERROR() """
     if not message:
       message = error
+
     self.log.warn( error )
     return S_ERROR( message )
+
+  #############################################################################
 
   def _prettyPrint( self, myObject ):
     """Helper function to pretty print an object. """
     print self.pPrint.pformat( myObject )
 
   #############################################################################
-  def _promptUser( self, message, choices = None, default = 'n' ):
-    """Internal function to pretty print an object. """
-    if choices == None:
-      choices = ['y', 'n']
-    if ( choices ) and ( default ) and ( not default in choices ):
-      return S_ERROR( "The default value is not a valid choice" )
-    choiceString = ''
-    if choices and default:
-      choiceString = '/'.join( choices ).replace( default, '[%s]' % default )
-    elif choices and ( not default ):
-      choiceString = '/'.join( choices )
-    elif ( not choices ) and ( default ):
-      choiceString = '[%s]' % default
 
-    if choiceString:
-      self.log.info( '%s %s :' % ( message, choiceString ) )
-    elif default:
-      self.log.info( '%s %s :' % ( message, default ) )
-    else:
-      self.log.info( '%s :' % message )
-    response = raw_input()
-    promptAgain = False
-    if ( not response ) and ( default ):
-      response = default
-    elif ( not response ) and ( not default ):
-      promptAgain = True
-    elif ( response ) and ( choices ) and ( not response in choices ):
-      promptAgain = True
-
-    if promptAgain:
-      if choices:
-        self.log.info( 'Possible responses are: %s' % ( '/'.join( choices ) ) )
-      if choiceString:
-        self.log.info( '%s %s :' % ( message, choiceString ) )
-      elif default:
-        self.log.info( '%s %s :' % ( message, default ) )
-      else:
-        self.log.info( '%s :' % message )
-      response = raw_input()
-      if ( response ) and ( choices ) and ( not response in choices ):
-        gLogger.error( "Failed to determine user selection" )
-        return S_ERROR( "Failed to determine user selection" )
-      elif ( not response ) and ( not default ):
-        gLogger.error( "Failed to determine user selection" )
-        return S_ERROR( "Failed to determine user selection" )
-    return S_OK( response )
-
-  #############################################################################
   def _getCurrentUser( self ):
     res = getProxyInfo( False, False )
     if not res['OK']:
@@ -135,10 +93,11 @@ class API:
     return S_OK( proxyInfo['username'] )
 
   #############################################################################
+
   def _reportError( self, message, name = '', **kwargs ):
-    """Internal Function. Gets caller method name and arguments, formats the 
-       information and adds an error to the global error dictionary to be 
-       returned to the user. 
+    """Internal Function. Gets caller method name and arguments, formats the
+       information and adds an error to the global error dictionary to be
+       returned to the user.
     """
     className = name
     if not name:
@@ -160,9 +119,3 @@ Message: %s
       self.errorDict[methodName] = [finalReport]
     self.log.verbose( finalReport )
     return S_ERROR( finalReport )
-
-  #############################################################################
-  def _getErrors( self ):
-    """Returns the dictionary of stored errors.
-    """
-    return self.errorDict

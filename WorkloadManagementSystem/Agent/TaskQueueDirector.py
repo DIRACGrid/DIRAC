@@ -138,7 +138,7 @@ from DIRAC.WorkloadManagementSystem.Client.ServerUtils           import pilotAge
 
 from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
 from DIRAC.Core.DISET.RPCClient                                  import RPCClient
-from DIRAC                                                       import S_OK, S_ERROR, List, Time, DictCache
+from DIRAC                                                       import S_OK, S_ERROR, List, Time, DictCache, gConfig
 
 import random, time
 import DIRAC
@@ -197,6 +197,13 @@ class TaskQueueDirector( AgentModule ):
     self.__checkSubmitPools()
 
     self.directorDict = getResourceDict()
+    #Add all submit pools
+    self.directorDict[ 'SubmitPool' ] = self.am_getOption( "SubmitPools" ) 
+    #Add all DIRAC platforms if not specified otherwise
+    if not 'Platform' in self.directorDict:
+      result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+      if result['OK']:
+        self.directorDict['Platform'] = result['Value'].keys()
 
     rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
     result = rpcMatcher.getMatchingTaskQueues( self.directorDict )

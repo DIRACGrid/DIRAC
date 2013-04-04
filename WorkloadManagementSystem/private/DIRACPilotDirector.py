@@ -85,7 +85,7 @@ class DIRACPilotDirector(PilotDirector):
 
     self.computingElement = computingElementDict['CE']
 
-    self.log.debug( self.computingElement.getDynamicInfo() )
+    self.log.debug( self.computingElement.getCEStatus() )
 
     self.log.info( ' SiteName:', self.siteName )
 

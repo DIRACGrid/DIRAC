@@ -36,9 +36,6 @@ ERROR_CLEAR_TIME = 60 * 60  # 1 hour
 ERROR_TICKET_TIME = 60 * 60  # 1 hour (added to the above)
 FROM_MAIL = "diracproject@gmail.com"
 
-PILOT_DN = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
-PILOT_GROUP = 'dirac_pilot'
-
 VIRTUAL_ORGANIZATION = 'dirac'
 
 ENABLE_LISTMATCH = 1
@@ -48,9 +45,11 @@ PRIVATE_PILOT_FRACTION = 0.5
 
 ERROR_PROXY = 'No proxy Available'
 ERROR_TOKEN = 'Invalid proxy token request'
+ERROR_GENERIC_CREDENTIALS = "Cannot find generic pilot credentials"
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
+from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
@@ -97,6 +96,7 @@ class PilotDirector:
       self.log = gLogger.getSubLogger( '%sPilotDirector/%s' % ( self.gridMiddleware, submitPool ) )
 
     self.pilot = DIRAC_PILOT
+    self.submitPoolOption = '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % submitPool
     self.extraPilotOptions = []
     self.installVersion = DIRAC_VERSION
     self.installProject = DIRAC_PROJECT
@@ -108,8 +108,6 @@ class PilotDirector:
     self.targetGrids = [ self.gridMiddleware ]
 
 
-    self.genericPilotDN = PILOT_DN
-    self.genericPilotGroup = PILOT_GROUP
     self.enableListMatch = ENABLE_LISTMATCH
     self.listMatchDelay = LISTMATCH_DELAY
     self.listMatchCache = DictCache()
@@ -191,8 +189,6 @@ class PilotDirector:
     self.errorMailAddress = gConfig.getValue( mySection + '/ErrorMailAddress'     , self.errorMailAddress )
     self.alarmMailAddress = gConfig.getValue( mySection + '/AlarmMailAddress'     , self.alarmMailAddress )
     self.mailFromAddress = gConfig.getValue( mySection + '/MailFromAddress'      , self.mailFromAddress )
-    self.genericPilotDN = gConfig.getValue( mySection + '/GenericPilotDN'       , self.genericPilotDN )
-    self.genericPilotGroup = gConfig.getValue( mySection + '/GenericPilotGroup'    , self.genericPilotGroup )
     self.privatePilotFraction = gConfig.getValue( mySection + '/PrivatePilotFraction' , self.privatePilotFraction )
 
     virtualOrganization = gConfig.getValue( mySection + '/VirtualOrganization' , '' )
@@ -279,7 +275,7 @@ class PilotDirector:
     # Need to limit the maximum number of pilots to submit at once
     # For generic pilots this is limited by the number of use of the tokens and the
     # maximum number of jobs in Filling mode, but for private Jobs we need an extra limitation:
-    pilotsToSubmit = min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) )
+    pilotsToSubmit = max( min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) ), 1 )
     pilotOptions = []
     privateIfGenericTQ = self.privatePilotFraction > random.random()
     privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
@@ -302,8 +298,13 @@ class PilotDirector:
     else:
       #For generic jobs we'll submit mixture of generic and private pilots
       self.log.verbose( 'Submitting generic pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
-      ownerDN = self.genericPilotDN
-      ownerGroup = self.genericPilotGroup
+      #ADRI: Find the generic group
+      result = findGenericPilotCredentials( group = taskQueueDict[ 'OwnerGroup' ] )
+      if not result[ 'OK' ]:
+        self.log.error( ERROR_GENERIC_CREDENTIALS, result[ 'Message' ] )
+        return S_ERROR( ERROR_GENERIC_CREDENTIALS )
+      ownerDN, ownerGroup = result[ 'Value' ]
+
       result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
       if not result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
@@ -313,7 +314,7 @@ class PilotDirector:
 
       pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
 
-      pilotsToSubmit = ( pilotsToSubmit - 1 ) / self.maxJobsInFillMode + 1
+      pilotsToSubmit = max( 1, ( pilotsToSubmit - 1 ) / self.maxJobsInFillMode + 1 )
 
       maxJobsInFillMode = int( numberOfUses / pilotsToSubmit )
     # Use Filling mode
@@ -349,6 +350,9 @@ class PilotDirector:
       pilotOptions.append( "-V %s" % installation )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
+
+    if self.submitPoolOption not in self.extraPilotOptions:
+      pilotOptions.append( self.submitPoolOption )
 
     if self.extraPilotOptions:
       pilotOptions.extend( self.extraPilotOptions )

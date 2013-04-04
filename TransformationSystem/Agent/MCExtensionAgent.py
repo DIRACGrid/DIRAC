@@ -1,40 +1,47 @@
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__ = "$Id$"
-
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
+from DIRAC                                                          import S_OK, gLogger
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.List                                      import sortList
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 
 AGENT_NAME = 'Transformation/MCExtensionAgent'
 
 class MCExtensionAgent( AgentModule ):
 
+  def __init__( self, agentName, loadName, baseAgentName, properties = {} ):
+    ''' c'tor
+    '''
+    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
+
+    self.transClient = TransformationClient()
+    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
+    if agentTSTypes:
+      self.transformationTypes = sortList( agentTSTypes )
+    else:
+      self.transformationTypes = sortList( Operations().getValue( 'Transformations/ExtendableTransfTypes',
+                                                                  ['MCSimulation', 'Simulation'] ) )
+    self.maxIterationTasks = self.am_getOption( 'TasksPerIteration', 50 )
+    self.maxFailRate = self.am_getOption( 'MaxFailureRate', 30 )
+    self.maxWaitingJobs = self.am_getOption( 'MaxWaitingJobs', 1000 )
+
   #############################################################################
   def initialize( self ):
-    """Sets defaults """
-    self.transClient = TransformationClient()
+    '''Sets defaults
+    '''
 
-    # This sets the Default Proxy to used as that defined under 
-    # /Operations/Shifter/DataManager
-    # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
 
-    self.transformationTypes = sortList( self.am_getOption( 'TransformationTypes', ['MCSimulation', 'Simulation'] ) )
     gLogger.info( "Will consider the following transformation types: %s" % str( self.transformationTypes ) )
-    self.maxIterationTasks = self.am_getOption( 'TasksPerIteration', 50 )
     gLogger.info( "Will create a maximum of %s tasks per iteration" % self.maxIterationTasks )
-    self.maxFailRate = self.am_getOption( 'MaxFailureRate', 30 )
-    gLogger.info( "Will not submit tasks for transformations with failure rate greater than %s%s" % ( self.maxFailRate, '%' ) )
-    self.maxWaitingJobs = self.am_getOption( 'MaxWaitingJobs', 1000 )
+    gLogger.info( "Will not submit tasks for transformations with failure rate greater than %s%%" % ( self.maxFailRate ) )
     gLogger.info( "Will not submit tasks for transformations with more than %d waiting jobs" % self.maxWaitingJobs )
+
     return S_OK()
 
   #############################################################################
   def execute( self ):
-    """ The MCExtensionAgent execution method."""
+    ''' The MCExtensionAgent execution method.
+    '''
 
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
     if not self.enableFlag == 'True':
@@ -67,7 +74,7 @@ class MCExtensionAgent( AgentModule ):
       statusCount = statusDict[status]
       gLogger.verbose( "%s : %s" % ( status.ljust( 20 ), str( statusCount ).rjust( 8 ) ) )
     # Determine the number of tasks to be created
-    numberOfTasks = self.calculateTaskNumber( maxTasks, statusDict )
+    numberOfTasks = self._calculateTaskNumber( maxTasks, statusDict )
     if not numberOfTasks:
       gLogger.info( "No tasks required for transformation %d" % transID )
       return S_OK()
@@ -79,7 +86,9 @@ class MCExtensionAgent( AgentModule ):
     gLogger.info( "Successfully extended transformation %d by %d tasks" % ( transID, numberOfTasks ) )
     return S_OK()
 
-  def calculateTaskNumber( self, maxTasks, statusDict ):
+  def _calculateTaskNumber( self, maxTasks, statusDict ):
+    ''' Utility function
+    '''
     done = statusDict.get( 'Done', 0 )
     failed = statusDict.get( 'Failed', 0 )
     running = statusDict.get( 'Running', 0 )

@@ -31,6 +31,12 @@ class FileMetadata:
         pname - parameter name, ptype - parameter type in the MySQL notation
     """
 
+    result = self.db.dmeta.getMetadataFields( credDict )
+    if not result['OK']:
+      return result
+    if pname in result['Value'].keys():
+      return S_ERROR( 'The metadata %s is already defined for Directories' % pname )
+
     result = self.getFileMetadataFields( credDict )
     if not result['OK']:
       return result
@@ -156,7 +162,7 @@ class FileMetadata:
           failedMeta[meta] = result['Value']
       else:
         # Meta parameter case
-        req = "DELETE FROM FC_FileMeta WHERE MetaKey='%s' AND FileID=%d" % (meta,FileID)
+        req = "DELETE FROM FC_FileMeta WHERE MetaKey='%s' AND FileID=%d" % (meta,fileID)
         result = self.db._update(req)
         if not result['OK']:
           failedMeta[meta] = result['Value']    
@@ -195,6 +201,36 @@ class FileMetadata:
       return result
     fileID = result['Value']
     return self.__setFileMetaParameter( fileID, metaName, metaValue, credDict )
+
+  def _getFileUserMetadataByID( self, fileIDList, credDict, connection=False ):
+    """ Get file user metadata for the list of file IDs
+    """
+    # First file metadata
+    result = self.getFileMetadataFields( credDict )
+    if not result['OK']:
+      return result
+    metaFields = result['Value']
+
+    stringIDs = ','.join( [ '%s' % id for id in fileIDList ] )
+    metaDict = {}
+    for meta in metaFields:
+      req = "SELECT Value,FileID FROM FC_FileMeta_%s WHERE FileID in (%s)" % ( meta, stringIDs )
+      result = self.db._query( req, conn=connection )
+      if not result['OK']:
+        return result
+      for value, fileID in result['Value']:
+        metaDict.setdefault( fileID, {} )
+        metaDict[fileID][meta] = value      
+      
+    req = "SELECT FileID,MetaKey,MetaValue from FC_FileMeta where FileID in (%s)" % stringIDs
+    result = self.db._query( req, conn=connection )
+    if not result['OK']:
+      return result  
+    for fileID,key,value in result['Value']:
+      metaDict.setdefault( fileID, {} )
+      metaDict[fileID][key] = value      
+        
+    return S_OK( metaDict )
 
   def getFileUserMetadata(self, path, credDict ):
     """ Get metadata for the given file
@@ -447,4 +483,3 @@ class FileMetadata:
       lfnList = [ x[1] for x in result['Value']['Successful'].items() ]
 
     return S_OK( lfnList ) 
-

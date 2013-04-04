@@ -76,13 +76,13 @@ class InputData( OptimizerExecutor ):
         return result
       resolvedData = result['Value']
 
-    #Now check if banned SE's might prevent jobs to be scheduled
-    result = self.__checkActiveSEs( jobState, resolvedData['Value']['Value'] )
-    if not result['OK']:
-      # if after checking SE's input data can not be resolved any more
-      # then keep the job in the same status and update the application status
-      self.freezeTask( 600 )
-      return jobState.setAppStatus( result['Message'] )
+#    #Now check if banned SE's might prevent jobs to be scheduled
+#    result = self.__checkActiveSEs( jobState, resolvedData['Value']['Value'] )
+#    if not result['OK']:
+#      # if after checking SE's input data can not be resolved any more
+#      # then keep the job in the same status and update the application status
+#      self.freezeTask( 600 )
+#      return jobState.setAppStatus( result['Message'] )
 
     return self.setNextOptimizer()
 
@@ -102,7 +102,7 @@ class InputData( OptimizerExecutor ):
 
     print "LFNS", lfns
 
-    result = self.__replicaMan.getReplicas( lfns )
+    result = self.__replicaMan.getActiveReplicas( lfns )  # This will return already active replicas, excluding banned SEs
     self.jobLog.info( 'Catalog replicas lookup time: %.2f seconds ' % ( time.time() - startTime ) )
     if not result['OK']:
       self.log.warn( result['Message'] )
@@ -126,6 +126,7 @@ class InputData( OptimizerExecutor ):
 
       if not guidDict['OK']:
         self.log.warn( guidDict['Message'] )
+        return guidDict
 
       failed = guidDict['Value']['Failed']
       if failed:
@@ -171,7 +172,7 @@ class InputData( OptimizerExecutor ):
       result = jobState.setParameter( self.ex_getProperty( 'optimizerName' ), errorMsg )
       if not result['OK']:
         self.log.error( result['Message'] )
-      return S_ERROR( 'Input Data Not Available' )
+      return S_ERROR( 'Input data not available' )
 
     return self.__getSiteCandidates( okReplicas )
 
@@ -188,8 +189,9 @@ class InputData( OptimizerExecutor ):
     self.jobLog.info( "Active replica check took %.2f secs" % ( time.time() - startTime ) )
     if not result['OK']:
       # due to banned SE's input data might no be available
+      msg = "On Hold: Input data not Available for SE"
       self.jobLog.warn( result['Message'] )
-      return S_ERROR( msg )
+      return S_ERROR( result['Message'] )
 
     activeReplicaDict = result['Value']
 

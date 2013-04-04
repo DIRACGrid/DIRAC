@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Utilities import InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 #
-from DIRAC import gConfig
+from DIRAC import gConfig, S_OK, S_ERROR
 InstallTools.exitOnError = True
 #
 from DIRAC.Core.Base import Script
@@ -28,7 +28,7 @@ specialOptions = {}
 def setModule( optVal ):
   global specialOptions,module
   specialOptions['Module'] = optVal
-  module = value
+  module = optVal
   return S_OK()
 
 def setSpecialOption( optVal ):
@@ -60,10 +60,20 @@ if len( args ) != 2:
 system = args[0]
 executor = args[1]
 
-result = InstallTools.addDefaultOptionsToCS( gConfig, 'executor', system, executor,
-                                             getCSExtensions(), 
-                                             specialOptions=specialOptions, 
-                                             overwrite = overwrite )
+if module:
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'executor', system, module,
+                                               getCSExtensions(),
+                                               overwrite = overwrite )
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'executor', system, executor,
+                                               getCSExtensions(),
+                                               specialOptions=specialOptions,
+                                               overwrite = overwrite,
+                                               addDefaultOptions = False )
+else:
+  result = InstallTools.addDefaultOptionsToCS( gConfig, 'executor', system, executor,
+                                               getCSExtensions(),
+                                               specialOptions=specialOptions,
+                                               overwrite = overwrite )
 if not result['OK']:
   print "ERROR:", result['Message']
 else:

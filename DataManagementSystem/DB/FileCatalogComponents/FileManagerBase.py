@@ -31,11 +31,46 @@ class FileManagerBase:
 
   def getFileCounters( self, connection = False ):
     connection = self._getConnection( connection )
+  
+    resultDict = {}
     req = "SELECT COUNT(*) FROM FC_Files;"
     res = self.db._query( req, connection )
     if not res['OK']:
       return res
-    return S_OK( {'Files':res['Value'][0][0]} )
+    resultDict['Files'] = res['Value'][0][0]
+
+    req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN ( SELECT FileID FROM FC_Replicas )"
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['Files w/o Replicas'] = res['Value'][0][0]
+    
+    req = "SELECT COUNT(RepID) FROM FC_Replicas WHERE FileID NOT IN ( SELECT FileID FROM FC_Files )"
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['Replicas w/o Files'] = res['Value'][0][0]
+
+    treeTable = self.db.dtree.getTreeTable()
+    req = "SELECT COUNT(FileID) FROM FC_Files WHERE DirID NOT IN ( SELECT DirID FROM %s)" % treeTable
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['Orphan Files'] = res['Value'][0][0]
+
+    req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN ( SELECT FileID FROM FC_FileInfo)"
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['Files w/o FileInfo'] = res['Value'][0][0]
+
+    req = "SELECT COUNT(FileID) FROM FC_FileInfo WHERE FileID NOT IN ( SELECT FileID FROM FC_Files)"
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    resultDict['FileInfo w/o Files'] = res['Value'][0][0]
+
+    return S_OK( resultDict )
 
   def getReplicaCounters( self, connection = False ):
     connection = self._getConnection( connection )
@@ -258,50 +293,39 @@ class FileManagerBase:
       if toPurge:
         self._deleteFiles( toPurge, connection = connection )
 
-    # Update storage usage
-    dirSEDict = {}
-    for lfn in newlyRegistered:
-      dirID = lfns[lfn]['DirID']
-      if not dirSEDict.has_key( dirID ):
-        dirSEDict[dirID] = {}
-      res = self.db.seManager.findSE( lfns[lfn]['SE'] )
-      if not res['OK']:
-        continue
-      seID = res['Value']
-      if not dirSEDict[dirID].has_key( seID ):
-        dirSEDict[dirID][seID] = {'Files':0, 'Size':0}
-      dirSEDict[dirID][seID]['Files'] += 1
-      dirSEDict[dirID][seID]['Size'] += lfns[lfn]['Size']
-    #if dirSEDict:
-    #  self._updateDirectoryUsage(dirSEDict,'+',connection=connection)
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def _updateDirectoryUsage( self, directorySEDict, change, connection = False ):
     connection = self._getConnection( connection )
-    for dirID in sortList( directorySEDict.keys() ):
-      dirDict = directorySEDict[dirID]
+    for directoryID in sortList( directorySEDict.keys() ):
+      result = self.db.dtree.getPathIDsByID( directoryID )
+      if not result['OK']:
+        return result
+      parentIDs = result['Value']
+      dirDict = directorySEDict[directoryID]
       for seID in sortList( dirDict.keys() ):
         seDict = dirDict[seID]
         files = seDict['Files']
         size = seDict['Size']
-        req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
-                                                         % ( change, size, change, files )
-        req += "WHERE DirID=%d AND SEID=%d;" % ( dirID, seID )
-        res = self.db._update( req )
-        if not res['OK']:
-          gLogger.warn( "Failed to update FC_DirectoryUsage", res['Message'] )
-        if res['Value']:
-          continue
-        if  change != '+':
-          gLogger.warn( "Decrement of usage for DirID,SEID that didnt exist", "%d %d" % ( dirID, seID ) )
-          continue
-        req = "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles, LastUpdate)"
-        req += " VALUES (%d, %d, %d, %d, UTC_TIMESTAMP());" % ( dirID, seID, size, files )
-        res = self.db._update( req )
-        if not res['OK']:
-          gLogger.warn( "Failed to insert FC_DirectoryUsage", res['Message'] )
+        for dirID in parentIDs:
+          req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
+                                                           % ( change, size, change, files )
+          req += "WHERE DirID=%d AND SEID=%d;" % ( dirID, seID )
+          res = self.db._update( req )
+          if not res['OK']:
+            gLogger.warn( "Failed to update FC_DirectoryUsage", res['Message'] )
+          if res['Value']:
+            continue
+          if  change != '+':
+            gLogger.warn( "Decrement of usage for DirID,SEID that didnt exist", "%d %d" % ( dirID, seID ) )
+            continue
+          req = "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles, LastUpdate)"
+          req += " VALUES (%d, %d, %d, %d, UTC_TIMESTAMP());" % ( dirID, seID, size, files )
+          res = self.db._update( req )
+          if not res['OK']:
+            gLogger.warn( "Failed to insert FC_DirectoryUsage", res['Message'] )
     return S_OK()
-
+    
   def _populateFileAncestors( self, lfns, connection = False ):
     connection = self._getConnection( connection )
     successful = {}
@@ -310,6 +334,8 @@ class FileManagerBase:
       originalFileID = lfnDict['FileID']
       originalDepth = lfnDict.get( 'AncestorDepth', 1 )
       ancestors = lfnDict.get( 'Ancestors', [] )
+      if type( ancestors ) == type( ' ' ):
+        ancestors = [ancestors]
       if lfn in ancestors:
         ancestors.remove( lfn )
       if not ancestors:
@@ -548,17 +574,19 @@ class FileManagerBase:
       return res
     directorySESizeDict = {}
     for fileID, seDict in res['Value'].items():
+      dirID = lfns[fileIDLfns[fileID]]['DirID']
+      size = lfns[lfn]['Size']
+      directorySESizeDict.setdefault( dirID, {} )
+      directorySESizeDict[dirID].setdefault( 0, {'Files':0,'Size':0} )
+      directorySESizeDict[dirID][0]['Size'] += size
+      directorySESizeDict[dirID][0]['Files'] += 1
       for seName in seDict.keys():
         res = self.db.seManager.findSE( seName )
         if not res['OK']:
           return res
         seID = res['Value']
-        dirID = lfns[fileIDLfns[fileID]]['DirID']
         size = lfns[fileIDLfns[fileID]]['Size']
-        if not directorySESizeDict.has_key( dirID ):
-          directorySESizeDict[dirID] = {}
-        if not directorySESizeDict[dirID].has_key( seID ):
-          directorySESizeDict[dirID][seID] = {'Files':0, 'Size':0}
+        directorySESizeDict[dirID].setdefault( seID, {'Files':0,'Size':0} )
         directorySESizeDict[dirID][seID]['Size'] += size
         directorySESizeDict[dirID][seID]['Files'] += 1
 

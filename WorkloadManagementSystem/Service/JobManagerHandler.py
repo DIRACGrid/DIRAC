@@ -24,10 +24,12 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
 from DIRAC.Core.DISET.MessageClient import MessageClient
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
-                                                                        RIGHT_DELETE, RIGHT_KILL, RIGHT_RESET
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
+                                                             RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
+                                                             RIGHT_DELETE, RIGHT_KILL, RIGHT_RESET
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 # This is a global instance of the JobDB class
 gJobDB = False
@@ -49,10 +51,17 @@ class JobManagerHandler( RequestHandler ):
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     cls.msgClient = MessageClient( "WorkloadManagement/OptimizationMind" )
-    result = cls.msgClient.connect( JobManager = True )
-    if not result[ 'OK' ]:
-      cls.log.error( "Cannot connect to OptimizationMind!", result[ 'Message' ] )
-    return result
+    cls.__connectToOptMind()
+    gThreadScheduler.addPeriodicTask( 60, cls.__connectToOptMind )
+    return S_OK()
+
+
+  @classmethod
+  def __connectToOptMind( cls ):
+    if not cls.msgClient.connected:
+      result = cls.msgClient.connect( JobManager = True )
+      if not result[ 'OK' ]:
+        cls.log.warn( "Cannot connect to OptimizationMind!", result[ 'Message' ] )
 
   def initialize( self ):
     credDict = self.getRemoteCredentials()
@@ -64,9 +73,12 @@ class JobManagerHandler( RequestHandler ):
     self.diracSetup = self.serviceInfoDict['clientSetup']
     self.maxParametricJobs = self.srv_getCSOption( 'MaxParametricJobs', MAX_PARAMETRIC_JOBS )
     self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
+    self.jobPolicy.setJobDB( gJobDB )
     return S_OK()
 
   def __sendNewJobsToMind( self, jids ):
+    if not self.msgClient.connected:
+      return
     result = self.msgClient.createMessage( "OptimizeJobs" )
     if not result[ 'OK' ]:
       self.log.error( "Cannot create Optimize message: %s" % result[ 'Message' ] )
@@ -77,6 +89,7 @@ class JobManagerHandler( RequestHandler ):
     if not result[ 'OK' ]:
       self.log.error( "Cannot send Optimize message: %s" % result[ 'Message' ] )
       return
+    self.log.info( "Optimize msg sent for %s jobs" % len( jids ) )
 
   ###########################################################################
   types_submitJob = [ StringType ]
@@ -112,6 +125,7 @@ class JobManagerHandler( RequestHandler ):
       else:
         pStep = 0
         pFactor = 1
+        pStart = 1
         nParameters = jobClassAd.getAttributeInt( 'Parameters' )
         if not nParameters:
           value = jobClassAd.get_expression( 'Parameters' )
@@ -152,17 +166,17 @@ class JobManagerHandler( RequestHandler ):
         return S_ERROR( 'The number of parametric jobs exceeded the limit of %d' % self.maxParametricJobs )
 
       jobDescList = []
-      nParam = len(parameterList) - 1
-      for n,p in enumerate(parameterList):
-        newJobDesc = jobDesc.replace('%s',str(p)).replace('%n',str(n).zfill(len(str(nParam))))
-        newClassAd = ClassAd(newJobDesc)
-        for attr in ['Parameters','ParameterStep','ParameterFactor']:
-          newClassAd.deleteAttribute(attr)
-        if type( p ) == type ( ' ' ) and p.startswith('{'):
-          newClassAd.insertAttributeInt( 'Parameter',str(p) )
+      nParam = len( parameterList ) - 1
+      for n, p in enumerate( parameterList ):
+        newJobDesc = jobDesc.replace( '%s', str( p ) ).replace( '%n', str( n ).zfill( len( str( nParam ) ) ) )
+        newClassAd = ClassAd( newJobDesc )
+        for attr in ['Parameters', 'ParameterStep', 'ParameterFactor']:
+          newClassAd.deleteAttribute( attr )
+        if type( p ) == type ( ' ' ) and p.startswith( '{' ):
+          newClassAd.insertAttributeInt( 'Parameter', str( p ) )
         else:
-          newClassAd.insertAttributeString( 'Parameter',str(p) )
-        newClassAd.insertAttributeInt('ParameterNumber',n)
+          newClassAd.insertAttributeString( 'Parameter', str( p ) )
+        newClassAd.insertAttributeInt( 'ParameterNumber', n )
         newJDL = newClassAd.asJDL()
         jobDescList.append( newJDL )
     else:
@@ -237,29 +251,6 @@ class JobManagerHandler( RequestHandler ):
     return []
 
 ###########################################################################
-  def __evaluate_rights( self, jobList, right ):
-    """ Get access rights to jobID for the user ownerDN/ownerGroup
-    """
-    self.jobPolicy.setJobDB( gJobDB )
-    validJobList = []
-    invalidJobList = []
-    nonauthJobList = []
-    ownerJobList = []
-    for jobID in jobList:
-      result = self.jobPolicy.getUserRightsForJob( jobID )
-      if result['OK']:
-        if result['Value'][right]:
-          validJobList.append( jobID )
-        else:
-          nonauthJobList.append( jobID )
-        if result[ 'UserIsOwner' ]:
-          ownerJobList.append( jobID )
-      else:
-        invalidJobList.append( jobID )
-
-    return validJobList, invalidJobList, nonauthJobList, ownerJobList
-
-###########################################################################
   types_rescheduleJob = [ ]
   def export_rescheduleJob( self, jobIDs ):
     """  Reschedule a single job. If the optional proxy parameter is given
@@ -270,8 +261,8 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.__evaluate_rights( jobList,
-                                                                        RIGHT_RESCHEDULE )
+    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
+                                                                                                   RIGHT_RESCHEDULE )
     for jobID in validJobList:
       gtaskQueueDB.deleteJob( jobID )
       #gJobDB.deleteJobFromQueue(jobID)
@@ -295,81 +286,71 @@ class JobManagerHandler( RequestHandler ):
     self.__sendNewJobsToMind( validJobList )
     return result
 
-
-###########################################################################
-  types_deleteJob = [  ]
-  def export_deleteJob( self, jobIDs ):
-    """  Delete jobs specified in the jobIDs list
+  def __deleteJob( self, jobID ):
+    """ Delete one job
     """
+    result = gJobDB.setJobStatus( jobID, 'Deleted', 'Checking accounting' )
+    if not result['OK']:
+      return result
 
-    jobList = self.__get_job_list( jobIDs )
-    if not jobList:
-      return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
+    result = gtaskQueueDB.deleteJob( jobID )
+    if not result['OK']:
+      gLogger.warn( 'Failed to delete job from the TaskQueue' )
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.__evaluate_rights( jobList,
-                                                                        RIGHT_DELETE )
+    return S_OK()
 
-    bad_ids = []
-    good_ids = []
-    for jobID in validJobList:
-      result = gJobDB.setJobStatus( jobID, 'Deleted', 'Checking accounting' )
+  def __killJob( self, jobID ):
+    """  Kill one job
+    """
+    result = gJobDB.setJobCommand( jobID, 'Kill' )
+    if not result['OK']:
+      return result
+    else:
+      gLogger.info( 'Job %d is marked for termination' % jobID )
+      result = gJobDB.setJobStatus( jobID, 'Killed', 'Marked for termination' )
       if not result['OK']:
-        bad_ids.append( jobID )
-      else:
-        good_ids.append( jobID )
-      #result = gJobDB.deleteJobFromQueue(jobID)
-      #if not result['OK']:
-      #  gLogger.warn('Failed to delete job from the TaskQueue (old)')
+        gLogger.warn( 'Failed to set job Killed status' )
       result = gtaskQueueDB.deleteJob( jobID )
       if not result['OK']:
         gLogger.warn( 'Failed to delete job from the TaskQueue' )
 
-    if invalidJobList or nonauthJobList:
-      result = S_ERROR( 'Some jobs failed deletion' )
-      if invalidJobList:
-        result['InvalidJobIDs'] = invalidJobList
-      if nonauthJobList:
-        result['NonauthorizedJobIDs'] = nonauthJobList
-      if bad_ids:
-        result['FailedJobIDs'] = bad_ids
-      return result
+    return S_OK()
 
-    result = S_OK( validJobList )
-    result[ 'requireProxyUpload' ] = len( ownerJobList ) > 0 and self.__checkIfProxyUploadIsRequired()
-    return result
-
-###########################################################################
-  types_killJob = [  ]
-  def export_killJob( self, jobIDs ):
-    """  Kill jobs specified in the jobIDs list
+  def __kill_delete_jobs( self, jobIDList, right ):
+    """  Kill or delete jobs as necessary
     """
 
-    jobList = self.__get_job_list( jobIDs )
+    jobList = self.__get_job_list( jobIDList )
     if not jobList:
-      return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
+      return S_ERROR( 'Invalid job specification: ' + str( jobIDList ) )
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.__evaluate_rights( jobList,
-                                                                             RIGHT_KILL )
+    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList, right )
+
+    # Get job status to see what is to be killed or deleted
+    result = gJobDB.getAttributesForJobList( validJobList, ['Status'] )
+    if not result['OK']:
+      return result
+    killJobList = []
+    deleteJobList = []
+    for jobID, sDict in result['Value'].items():
+      if sDict['Status'] in ['Running','Matched','Stalled']:
+        killJobList.append( jobID )
+      elif sDict['Status'] in ['Done','Failed']:
+        if not right == RIGHT_KILL:
+          deleteJobList.append( jobID )
+      else:
+        deleteJobList.append( jobID )
 
     bad_ids = []
-    good_ids = []
-    for jobID in validJobList:
-      # kill jobID
-      result = gJobDB.setJobCommand( jobID, 'Kill' )
+    for jobID in killJobList:
+      result = self.__killJob( jobID )
       if not result['OK']:
         bad_ids.append( jobID )
-      else:
-        gLogger.info( 'Job %d is marked for termination' % jobID )
-        good_ids.append( jobID )
-        result = gJobDB.setJobStatus( jobID, 'Killed', 'Marked for termination' )
-        if not result['OK']:
-          gLogger.warn( 'Failed to set job status' )
-        #result = gJobDB.deleteJobFromQueue(jobID)
-        #if not result['OK']:
-        #  gLogger.warn('Failed to delete job from the TaskQueue (old)')
-        result = gtaskQueueDB.deleteJob( jobID )
-        if not result['OK']:
-          gLogger.warn( 'Failed to delete job from the TaskQueue' )
+
+    for jobID in deleteJobList:
+      result = self.__deleteJob( jobID )
+      if not result['OK']:
+        bad_ids.append( jobID )
 
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR( 'Some jobs failed deletion' )
@@ -386,6 +367,22 @@ class JobManagerHandler( RequestHandler ):
     return result
 
 ###########################################################################
+  types_deleteJob = [  ]
+  def export_deleteJob( self, jobIDs ):
+    """  Delete jobs specified in the jobIDs list
+    """
+
+    return self.__kill_delete_jobs( jobIDs, RIGHT_DELETE )
+
+###########################################################################
+  types_killJob = [  ]
+  def export_killJob( self, jobIDs ):
+    """  Kill jobs specified in the jobIDs list
+    """
+
+    return self.__kill_delete_jobs( jobIDs, RIGHT_KILL )
+
+###########################################################################
   types_resetJob = [  ]
   def export_resetJob( self, jobIDs ):
     """  Reset jobs specified in the jobIDs list
@@ -395,8 +392,8 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.__evaluate_rights( jobList,
-                                                                        RIGHT_RESET )
+    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
+                                                                                                   RIGHT_RESET )
 
     bad_ids = []
     good_ids = []
@@ -416,7 +413,6 @@ class JobManagerHandler( RequestHandler ):
                                         application = 'Unknown', source = 'JobManager' )
 
     self.__sendNewJobsToMind( good_ids )
-
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR( 'Some jobs failed resetting' )
       if invalidJobList:

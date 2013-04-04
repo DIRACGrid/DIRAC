@@ -31,25 +31,30 @@ def getGroupsForDN( dn ):
     return retVal
   return getGroupsForUser( retVal[ 'Value' ] )
 
-def __getGroupsWithProperty( property,value ):
+def __getGroupsWithAttr( attrName, value ):
   retVal = gConfig.getSections( "%s/Groups" % gBaseSecuritySection )
   if not retVal[ 'OK' ]:
     return retVal
   groupsList = retVal[ 'Value' ]
   groups = []
   for group in groupsList:
-    if value in gConfig.getValue( "%s/Groups/%s/%s" % ( gBaseSecuritySection, group, property ), [] ):
+    if value in gConfig.getValue( "%s/Groups/%s/%s" % ( gBaseSecuritySection, group, attrName ), [] ):
       groups.append( group )
   if not groups:
-    return S_ERROR( "No groups found for %s=%s" % ( property,value ) )
+    return S_ERROR( "No groups found for %s=%s" % ( attrName,value ) )
   groups.sort()
-  return S_OK( groups )     
+  return S_OK( groups )
 
 def getGroupsForUser( username ):
-  return __getGroupsWithProperty( 'Users',username )
+  return __getGroupsWithAttr( 'Users', username )
 
 def getGroupsForVO( vo ):
-  return __getGroupsWithProperty( 'VO',vo )
+  if getVO():
+    return gConfig.getSections( "%s/Groups" % gBaseSecuritySection )
+  return __getGroupsWithAttr( 'VO', vo )
+
+def getGroupsWithProperty( propName ):
+  return __getGroupsWithAttr( "Properties", propName )
 
 def getHostnameForDN( dn ):
   retVal = gConfig.getSections( "%s/Hosts" % gBaseSecuritySection )
@@ -79,10 +84,18 @@ def findDefaultGroupForUser( userName ):
   for group in defGroups:
     if group in userGroups:
       return S_OK( group )
-  return S_OK( False )
+  if userGroups:
+    return S_OK( userGroups[0] )
+  return S_ERROR( "User %s has no groups" % userName )
 
 def getAllUsers():
   retVal = gConfig.getSections( "%s/Users" % gBaseSecuritySection )
+  if not retVal[ 'OK' ]:
+    return []
+  return retVal[ 'Value' ]
+
+def getAllGroups():
+  retVal = gConfig.getSections( "%s/Groups" % gBaseSecuritySection )
   if not retVal[ 'OK' ]:
     return []
   return retVal[ 'Value' ]
@@ -92,6 +105,14 @@ def getUsersInGroup( groupName, defaultValue = None ):
     defaultValue = []
   option = "%s/Groups/%s/Users" % ( gBaseSecuritySection, groupName )
   return gConfig.getValue( option, defaultValue )
+
+def getDNsInGroup( groupName ):
+  DNs = []
+  for user in getUsersInGroup( groupName ):
+    result = getDNForUsername( user )
+    if result[ 'OK' ]:
+      DNs.extend( result[ 'Value' ] )
+  return DNs
 
 def getPropertiesForGroup( groupName, defaultValue = None ):
   if defaultValue == None:
@@ -143,6 +164,9 @@ def getGroupOption( groupName, optName, defaultValue = "" ):
 
 def getHostOption( hostName, optName, defaultValue = "" ):
   return gConfig.getValue( "%s/Hosts/%s/%s" % ( gBaseSecuritySection, hostName, optName ), defaultValue )
+
+def getHosts():
+  return gConfig.getSections( '%s/Hosts' % gBaseSecuritySection )
 
 def getVOOption( voName, optName, defaultValue = "" ):
   return gConfig.getValue( "%s/VO/%s/%s" % ( gBaseSecuritySection, voName, optName ), defaultValue )

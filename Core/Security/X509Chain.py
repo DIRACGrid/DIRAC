@@ -37,6 +37,16 @@ class X509Chain:
     if self.__loadedChain:
       self.__checkProxyness()
 
+  @classmethod
+  def instanceFromFile( cls, chainLocation ):
+    """ Instance a X509Chain from a file
+    """
+    chain = cls()
+    result = chain.loadChainFromFile( chainLocation )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( chain )
+
   def loadChainFromFile( self, chainLocation ):
     """
     Load a x509 chain from a pem file
@@ -60,6 +70,8 @@ class X509Chain:
       self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, pemData )
     except Exception, e:
       return S_ERROR( "Can't load pem data: %s" % str( e ) )
+    if not self.__certList:
+      return S_ERROR( "No certificates in the contents" )
     self.__loadedChain = True
     #Update internals
     self.__checkProxyness()
@@ -137,7 +149,8 @@ class X509Chain:
     Get the list of extensions for a proxy
     """
     extList = []
-    extList.append( crypto.X509Extension( 'keyUsage', 'critical, digitalSignature, keyEncipherment, dataEncipherment' ) )
+    extList.append( crypto.X509Extension( 'keyUsage',
+                                          'critical, digitalSignature, keyEncipherment, dataEncipherment' ) )
     if diracGroup and type( diracGroup ) in self.__validExtensionValueTypes:
       extList.append( crypto.X509Extension( 'diracGroup', diracGroup ) )
     return extList
@@ -219,7 +232,7 @@ class X509Chain:
     proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
     proxyCert.gmtime_adj_notBefore( -900 )
     proxyCert.gmtime_adj_notAfter( lifeTime )
-    proxyCert.sign( self.__keyObj, 'md5' )
+    proxyCert.sign( self.__keyObj, 'sha1' )
 
     proxyString = "%s%s" % ( crypto.dump_certificate( crypto.FILETYPE_PEM, proxyCert ),
                                crypto.dump_privatekey( crypto.FILETYPE_PEM, proxyKey ) )
@@ -269,7 +282,7 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     return S_OK( self.__isProxy and self.__isLimitedProxy )
 
-  def isValidProxy( self ):
+  def isValidProxy( self, ignoreDefault = False ):
     """
     Check wether this chain is a valid proxy
       checks if its a proxy
@@ -277,13 +290,16 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    retVal = S_OK( False )
     if not self.__isProxy:
-      retVal[ 'Message' ] = "Chain is not a proxy"
+      return S_ERROR( "Chain is not a proxy" )
     elif self.hasExpired()['Value']:
-      retVal[ 'Message' ] = "Chain has expired"
-    if 'Message' in retVal:
-      return retVal
+      return S_ERROR( "Chain has expired" )
+    elif ignoreDefault:
+      groupRes = self.getDIRACGroup( ignoreDefault = ignoreDefault )
+      if not groupRes[ 'OK' ]:
+        return groupRes
+      if not groupRes[ 'Value' ]:
+        return S_ERROR( "Proxy does not have an explicit group" )
     return S_OK( True )
 
   def isVOMS( self ):
@@ -526,7 +542,7 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     data = ''
     for i in range( len( self.__certList ) ):
-      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[1] )
+      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
     return S_OK( data )
 
   def dumpPKeyToString( self ):
@@ -551,7 +567,7 @@ class X509Chain:
   def __repr__( self ):
     return self.__str__()
 
-  def getCredentials( self ):
+  def getCredentials( self, ignoreDefault = False ):
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
     credDict = { 'subject' : self.__certList[0].get_subject().one_line(),
@@ -560,31 +576,34 @@ class X509Chain:
                  'isProxy' : self.__isProxy,
                  'isLimitedProxy' : self.__isProxy and self.__isLimitedProxy,
                  'validDN' : False,
-                 'validGroup' : False }
+                 'validGroup' : False,
+                 'groupProperties' : [] }
     if self.__isProxy:
-      retVal = self.getDIRACGroup()
-      if not retVal[ 'OK' ]:
-        return retVal
-      diracGroup = retVal[ 'Value' ]
-      if not diracGroup:
-        diracGroup = Registry.getDefaultUserGroup()
-      credDict[ 'group' ] = diracGroup
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
       retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )
+      if not retVal[ 'OK' ]:
+        return retVal
+      credDict[ 'username' ] = retVal[ 'Value' ]
+      credDict[ 'validDN' ] = True
+      retVal = self.getDIRACGroup( ignoreDefault = ignoreDefault )
       if retVal[ 'OK' ]:
-        credDict[ 'username' ] = retVal[ 'Value' ]
-        credDict[ 'validDN' ] = True
+        diracGroup = retVal[ 'Value' ]
+        credDict[ 'group' ] = diracGroup
         retVal = Registry.getGroupsForUser( credDict[ 'username' ] )
-        if retVal[ 'OK' ] and diracGroup in retVal[ 'Value']:
+        if retVal[ 'OK' ] and diracGroup in retVal[ 'Value' ]:
           credDict[ 'validGroup' ] = True
           credDict[ 'groupProperties' ] = Registry.getPropertiesForGroup( diracGroup )
     else:
       retVal = Registry.getHostnameForDN( credDict['subject'] )
-      retVal[ 'group' ] = 'hosts'
       if retVal[ 'OK' ]:
+        credDict[ 'group' ] = 'hosts'
         credDict[ 'hostname' ] = retVal[ 'Value' ]
         credDict[ 'validDN' ] = True
         credDict[ 'validGroup' ] = True
+      retVal = Registry.getUsernameForDN( credDict[ 'subject' ] )
+      if retVal[ 'OK' ]:
+        credDict[ 'username' ] = retVal[ 'Value' ]
+        credDict[ 'validDN' ] = True
     return S_OK( credDict )
 
   def hash( self ):

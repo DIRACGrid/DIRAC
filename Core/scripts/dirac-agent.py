@@ -27,6 +27,7 @@ localCfg.setConfigurationForAgent( agentName )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
 localCfg.addDefaultEntry( "LogLevel", "INFO" )
+localCfg.addDefaultEntry( "LogColor", True )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )

@@ -293,6 +293,8 @@ class LocalConfiguration:
         self.__setDefaultSection( getAgentSection( self.componentName ) )
       elif self.componentType == "executor":
         self.__setDefaultSection( getExecutorSection( self.componentName ) )
+      elif self.componentType == "web":
+        self.__setDefaultSection( "/%s" % self.componentName )
       elif self.componentType == "script":
         if self.componentName and self.componentName[0] == "/":
           self.__setDefaultSection( self.componentName )
@@ -385,6 +387,13 @@ class LocalConfiguration:
     """
     self.componentName = executorName
     self.componentType = "executor"
+
+  def setConfigurationForWeb( self, webName ):
+    """
+    Declare this is a DIRAC agent
+    """
+    self.componentName = webName
+    self.componentType = "web"
 
   def setConfigurationForScript( self, scriptName ):
     """

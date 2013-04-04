@@ -92,13 +92,17 @@ class Service:
       if self._handler[ 'init' ]:
         for initFunc in self._handler[ 'init' ]:
           gLogger.verbose( "Executing initialization function" )
-          result = initFunc( dict( self._serviceInfoDict ) )
-        if not isReturnStructure( result ):
-          return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
-        if not result[ 'OK' ]:
-          return S_ERROR( "Error while initializing %s: %s" % ( self._name, result[ 'Message' ] ) )
+          try:
+            result = initFunc( dict( self._serviceInfoDict ) )
+          except Exception, excp:
+            gLogger.exception( "Exception while calling initialization function" )
+            return S_ERROR( "Exception while calling initialization function: %s" % str( excp ) )
+          if not isReturnStructure( result ):
+            return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
+          if not result[ 'OK' ]:
+            return S_ERROR( "Error while initializing %s: %s" % ( self._name, result[ 'Message' ] ) )
     except Exception, e:
-      errMsg = "Exception while intializing %s" % self._name
+      errMsg = "Exception while initializing %s" % self._name
       gLogger.exception( errMsg )
       return S_ERROR( errMsg )
 
@@ -154,7 +158,7 @@ class Service:
     handlerName = handlerClass.__name__
     handlerInitMethods = self.__searchInitFunctions( handlerClass )
     try:
-      handlerInitMethods.append( getattr( self._svcData[ 'moduleObj' ], "initialize%s" % handlerName) )
+      handlerInitMethods.append( getattr( self._svcData[ 'moduleObj' ], "initialize%s" % handlerName ) )
     except AttributeError:
       gLogger.verbose( "Not found global initialization function for service" )
 
@@ -252,9 +256,8 @@ class Service:
         value = 'unset'
       self._monitor.setComponentExtraParam( prop[1], value )
     for secondaryName in self._cfg.registerAlsoAs():
-      if secondaryName not in self.servicesDict:
-        gLogger.info( "Registering %s also as %s" % ( serviceName, secondaryName ) )
-        self._validNames.append( secondaryName )
+      gLogger.info( "Registering %s also as %s" % ( self._name, secondaryName ) )
+      self._validNames.append( secondaryName )
     return S_OK()
 
   def __reportThreadPoolContents( self ):
@@ -314,7 +317,7 @@ class Service:
       #Close the connection if required
       if result[ 'closeTransport' ] or not result[ 'OK' ]:
         if not result[ 'OK' ]:
-          gLogger.error( "Error processing proposal: %s" % result[ 'Message' ] )
+          gLogger.error( "Error processing proposal", result[ 'Message' ] )
         self._transportPool.close( trid )
       return result
     finally:

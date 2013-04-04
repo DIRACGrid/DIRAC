@@ -87,7 +87,7 @@ def loadDiracCfg( verbose = False ):
   global localCfg, cfgFile, setup, instance, logLevel, linkedRootPath, host
   global basePath, instancePath, runitDir, startDir
   global db, mysqlDir, mysqlDbDir, mysqlLogDir, mysqlMyOrg, mysqlMyCnf, mysqlStartupScript
-  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode, mysqlSmallMem, mysqlLargeMem
+  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode, mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
 
   from DIRAC.Core.Utilities.Network import getFQDN
 
@@ -154,7 +154,7 @@ def loadDiracCfg( verbose = False ):
 
   mysqlPassword = localCfg.getOption( cfgInstallPath( 'Database', 'Password' ), mysqlPassword )
   if verbose and mysqlPassword:
-    gLogger.notice( 'Reading %s MySQL Password from local configuration' % mysqlUser )
+    gLogger.notice( 'Reading %s MySQL Password from local configuration ' % mysqlUser )
 
   mysqlHost = localCfg.getOption( cfgInstallPath( 'Database', 'Host' ), '' )
   if mysqlHost:
@@ -163,6 +163,22 @@ def loadDiracCfg( verbose = False ):
   else:
     # if it is not defined use the same as for dirac services
     mysqlHost = host
+
+  mysqlPort = localCfg.getOption( cfgInstallPath( 'Database', 'Port' ), 0 )
+  if mysqlPort:
+    if verbose:
+      gLogger.notice( 'Using MySQL Port from local configuration ', mysqlPort )
+  else:
+    # if it is not defined use the same as for dirac services
+    mysqlPort = 3306
+
+  mysqlRootUser = localCfg.getOption( cfgInstallPath( 'Database', 'RootUser' ), '' )
+  if mysqlRootUser:
+    if verbose:
+      gLogger.notice( 'Using MySQL root user from local configuration ', mysqlRootUser )
+  else:
+    # if it is not defined use root
+    mysqlRootUser = 'root'
 
   mysqlMode = localCfg.getOption( cfgInstallPath( 'Database', 'MySQLMode' ), '' )
   if verbose and mysqlMode:
@@ -200,6 +216,8 @@ mysqlMyCnf = ''
 mysqlStartupScript = ''
 mysqlUser = ''
 mysqlHost = ''
+mysqlPort = ''
+mysqlRootUser = ''
 mysqlSmallMem = ''
 mysqlLargeMem = ''
 loadDiracCfg()
@@ -465,8 +483,9 @@ def addOptionToDiracCfg( option, value ):
   return S_ERROR( 'Could not merge %s=%s with local configuration' % ( option, value ) )
 
 def addDefaultOptionsToCS( gConfig, componentType, systemName,
-                           component, extensions, mySetup = setup, 
-                           specialOptions={}, overwrite = False ):
+                           component, extensions, mySetup = setup,
+                           specialOptions = {}, overwrite = False,
+                           addDefaultOptions = True ):
   """ Add the section with the component options to the CS
   """
   system = systemName.replace( 'System', '' )
@@ -497,7 +516,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
     return S_OK( 'Component options already exist' )
 
   # Add the component options now  
-  result = getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions )
+  result = getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions, addDefaultOptions )
   if not result['OK']:
     return result
   compCfg = result['Value']
@@ -562,7 +581,8 @@ def addCfgToComponentCfg( componentType, systemName, component, cfg ):
   gLogger.error( error )
   return S_ERROR( error )
 
-def getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions={} ):
+def getComponentCfg( componentType, system, component, compInstance, extensions, 
+                     specialOptions = {}, addDefaultOptions = True ):
   """
   Get the CFG object of the component configuration
   """
@@ -575,37 +595,39 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   componentModule = component
   if "Module" in specialOptions:
     componentModule = specialOptions['Module']
- 
-  extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
+
   compCfg = CFG()
-  for ext in extensionsDIRAC + ['DIRAC']:
-    cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
-    if os.path.exists( cfgTemplatePath ):
-      gLogger.notice( 'Loading configuration template', cfgTemplatePath )
-      # Look up the component in this template
-      loadCfg = CFG()
-      loadCfg.loadFromFile( cfgTemplatePath )
-      compCfg = loadCfg.mergeWith( compCfg )
+  
+  if addDefaultOptions:
+    extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
+    for ext in extensionsDIRAC + ['DIRAC']:
+      cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
+      if os.path.exists( cfgTemplatePath ):
+        gLogger.notice( 'Loading configuration template', cfgTemplatePath )
+        # Look up the component in this template
+        loadCfg = CFG()
+        loadCfg.loadFromFile( cfgTemplatePath )
+        compCfg = loadCfg.mergeWith( compCfg )
+  
+  
+    compPath = cfgPath( sectionName, componentModule )
+    if not compCfg.isSection( compPath ):
+      error = 'Can not find %s in template' % compPath
+      gLogger.error( error )
+      if exitOnError:
+        DIRAC.exit( -1 )
+      return S_ERROR( error )
 
+    compCfg = compCfg[sectionName][componentModule]
 
-  compPath = cfgPath( sectionName, componentModule )
-  if not compCfg.isSection( compPath ):
-    error = 'Can not find %s in template' % compPath
-    gLogger.error( error )
-    if exitOnError:
-      DIRAC.exit( -1 )
-    return S_ERROR( error )
-
-  compCfg = compCfg[sectionName][componentModule]
-
-  # Delete Dependencies section if any
-  compCfg.deleteKey( 'Dependencies' )
+    # Delete Dependencies section if any
+    compCfg.deleteKey( 'Dependencies' )
 
   sectionPath = cfgPath( 'Systems', system, compInstance, sectionName )
   cfg = __getCfg( sectionPath )
   cfg.createNewSection( cfgPath( sectionPath, component ), '', compCfg )
 
-  for option,value in specialOptions.items():
+  for option, value in specialOptions.items():
     cfg.setOption( cfgPath( sectionPath, component, option ), value )
 
   # Add the service URL
@@ -811,7 +833,7 @@ def getInstalledComponents():
         elif body.find( 'dirac-executor' ) != -1:
           if not executors.has_key( system ):
             executors[system] = []
-          executors[system].append( component )  
+          executors[system].append( component )
       except IOError:
         pass
 
@@ -839,20 +861,20 @@ def getSetupComponents():
       body = rfile.read()
       rfile.close()
       if body.find( 'dirac-service' ) != -1:
-        system, service = component.split( '_' )
+        system, service = component.split( '_' )[0:2]
         if not services.has_key( system ):
           services[system] = []
         services[system].append( service )
       elif body.find( 'dirac-agent' ) != -1:
-        system, agent = component.split( '_' )
+        system, agent = component.split( '_' )[0:2]
         if not agents.has_key( system ):
           agents[system] = []
         agents[system].append( agent )
       elif body.find( 'dirac-executor' ) != -1:
-        system, executor = component.split( '_' )
-        if not executorss.has_key( system ):
+        system, executor = component.split( '_' )[0:2]
+        if not executors.has_key( system ):
           executors[system] = []
-        executors[system].append( agent )  
+        executors[system].append( agent )
     except IOError:
       pass
 
@@ -928,17 +950,17 @@ def getStartupComponentStatus( componentTupleList ):
 
   return S_OK( componentDict )
 
-def getComponentModule( gConfig,system,component,compType ):
+def getComponentModule( gConfig, system, component, compType ):
   """ Get the component software module
   """
   setup = CSGlobals.getSetup()
-  instance = gConfig.getValue( cfgPath( 'DIRAC', 'Setups', setup, system ),'' )
+  instance = gConfig.getValue( cfgPath( 'DIRAC', 'Setups', setup, system ), '' )
   if not instance:
-    return S_OK(component)
-  module = gConfig.getValue( cfgPath( 'Systems',system,instance,compType,component,'Module' ),'' )
+    return S_OK( component )
+  module = gConfig.getValue( cfgPath( 'Systems', system, instance, compType, component, 'Module' ), '' )
   if not module:
     module = component
-  return S_OK(module)  
+  return S_OK( module )
 
 def getOverallStatus( extensions ):
   """  Get the list of all the components ( services and agents ) 
@@ -1009,7 +1031,7 @@ def getOverallStatus( extensions ):
           if compType in resultDict:
             if system in resultDict[compType]:
               if component in resultDict[compType][system]:
-                continue 
+                continue
           resultDict[compType][system][component] = {}
           resultDict[compType][system][component]['Setup'] = False
           resultDict[compType][system][component]['Installed'] = True
@@ -1405,7 +1427,7 @@ exec svlogd .
   os.chmod( logRunFile, gDefaultPerms )
 
 
-def installComponent( componentType, system, component, extensions, componentModule='' ):
+def installComponent( componentType, system, component, extensions, componentModule = '' ):
   """ Install runit directory for the specified component
   """
   # Check that the software for the component is installed
@@ -1448,7 +1470,7 @@ exec 2>&1
 #
 [ "%(componentType)s" = "agent" ] && renice 20 -p $$
 #
-exec dirac-%(componentType)s %(system)s/%(component)s %(componentCfg)s < /dev/null
+exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(component)s %(componentCfg)s < /dev/null
 """ % {'bashrc': os.path.join( instancePath, 'bashrc' ),
        'componentType': componentType,
        'system' : system,
@@ -1471,7 +1493,7 @@ exec dirac-%(componentType)s %(system)s/%(component)s %(componentCfg)s < /dev/nu
 
   return S_OK( runitCompDir )
 
-def setupComponent( componentType, system, component, extensions, componentModule='' ):
+def setupComponent( componentType, system, component, extensions, componentModule = '' ):
   """
   Install and create link in startup
   """
@@ -1525,7 +1547,12 @@ def uninstallComponent( system, component ):
   """
   Remove startup and runit directories
   """
-  unsetupComponent( system, component )
+  
+  result = runsvctrlComponent( system, component, 'd' )
+  if not result['OK']:
+    pass
+  
+  result = unsetupComponent( system, component )
 
   for runitCompDir in glob.glob( os.path.join( runitDir, system, component ) ):
     try:
@@ -1977,11 +2004,11 @@ def installDatabase( dbName ):
             DIRAC.exit( -1 )
           return S_ERROR( error )
         perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER"
-        for cmd in ["GRANT %s ON `%s`.* TO 'Dirac'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName,
+        for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
                                                                                        mysqlPassword ),
-                    "GRANT %s ON `%s`.* TO 'Dirac'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName,
+                    "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
                                                                                 mysqlHost, mysqlPassword ),
-                    "GRANT %s ON `%s`.* TO 'Dirac'@'%%' IDENTIFIED BY '%s'" % ( perms, dbName,
+                    "GRANT %s ON `%s`.* TO '%s'@'%%' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
                                                                                 mysqlPassword ),
                     ]:
           result = execMySQL( cmd )
@@ -2069,7 +2096,7 @@ def execMySQL( cmd, dbName = 'mysql' ):
   if not mysqlRootPwd:
     return S_ERROR( 'MySQL root password is not defined' )
   if dbName not in db:
-    db[dbName] = MySQL( mysqlHost, 'root', mysqlRootPwd, dbName )
+    db[dbName] = MySQL( mysqlHost, mysqlRootUser, mysqlRootPwd, dbName, mysqlPort )
   if not db[dbName]._connected:
     error = 'Could not connect to MySQL server'
     gLogger.error( error )

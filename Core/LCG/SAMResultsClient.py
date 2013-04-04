@@ -11,6 +11,7 @@ from xml.dom import minidom
 import socket
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
 class SAMResultsClient:
   # FIXME: Why is this a class and not just few methods?
@@ -18,20 +19,20 @@ class SAMResultsClient:
 #############################################################################
 
   def getStatus( self, granularity, name, siteName, tests = None, timeout = None ):
-    """  
+    """
     Return stats of entity in args
-    
+
     :params:
       :attr:`granularity`: string: 'Site'  or 'Resource'
-      
-      :attr:`name`: string: the name of the site or of the resource
-      
-      :attr:`siteName`: string for the sitename 
 
-      :attr:`tests`: optional (list of) tests. 
+      :attr:`name`: string: the name of the site or of the resource
+
+      :attr:`siteName`: string for the sitename
+
+      :attr:`tests`: optional (list of) tests.
       If omitted, takes only the service status metrics
-      
-      :attr:`timeout`: optional timeout. 
+
+      :attr:`timeout`: optional timeout.
       If omitted, there will be no timeout.
 
     :returns:
@@ -62,13 +63,6 @@ class SAMResultsClient:
 
 #############################################################################
 
-#  def getLink(self, name, tests):
-#
-#    link = 'http://dashb-lhcb-sam.cern.ch/dashboard/request.py/latestresultssmry?siteSelect3=500&serviceTypeSelect3=0&sites=LCG.Bologna.it&services=CE&tests=37535&tests=398&tests=404&tests=405&tests=406&tests=403&tests=407&tests=37624&tests=399&tests=2&tests=5&tests=7&tests=14&tests=25&tests=37732&exitStatus=all'
-
-#############################################################################
-
-
   def _curlDownload( self, granularity, site, tests ):
     """ Download SAM status for entity using the SAM DB programmatic interface
     """
@@ -86,8 +80,9 @@ class SAMResultsClient:
     if tests is None:
       samdbpi_test = "&only_ss"
 
-    # SAMDB-PI to query
-    samdb_ep = samdbpi_url + samdbpi_method + "VO_name=LHCb" + "&Site_name=" + samdbpi_site + samdbpi_test
+    extension = CSGlobals.getCSExtensions()[0]
+
+    samdb_ep = samdbpi_url + samdbpi_method + "VO_name=" + extension + "&Site_name=" + samdbpi_site + samdbpi_test
 
     req = urllib2.Request( samdb_ep )
     samPage = urllib2.urlopen( req )
@@ -99,7 +94,7 @@ class SAMResultsClient:
 #############################################################################
 
   def _xmlParsing( self, granularity, sam, entity, tests ):
-    """ Performs xml parsing from the sam string 
+    """ Performs xml parsing from the sam string
         Returns a dictionary containing status of entity
     """
 
@@ -129,7 +124,6 @@ class SAMResultsClient:
 
       if serviceToCheck is None:
         return S_ERROR( "There are no SAM tests for this service" )
-#        raise NoSAMTests
 
       if tests is None or tests == []:
         tests = ['SS']
@@ -154,16 +148,5 @@ class SAMResultsClient:
         status[test] = str( state[0].nodeValue )
 
     return status
-
-#############################################################################
-#
-#class NoSAMTests(Exception):
-#  
-#  def __init__(self, message = ""):
-#    self.message = message
-#    Exception.__init__(self, message)
-#  
-#  def __str__(self):
-#    return "There are no SAM tests for this service \n" + repr(self.message)
 
 #############################################################################

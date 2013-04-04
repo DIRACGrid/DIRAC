@@ -1,31 +1,26 @@
-########################################################################
-# $HeadURL$
-########################################################################
-"""  The Request Task Agent takes request tasks created in the transformation database and submits to the request management system. """
-__RCSID__ = "$Id$"
+''' The Request Task Agent takes request tasks created in the transformation database
+    and submits to the request management system
+'''
 
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
-from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
-from DIRAC.TransformationSystem.Client.TaskManager                  import RequestTasks
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
+from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAgentBase
+from DIRAC.TransformationSystem.Client.TaskManager          import RequestTasks
 
 AGENT_NAME = 'Transformation/RequestTaskAgent'
 
 class RequestTaskAgent( TaskManagerAgentBase ):
-  """ An AgentModule to submit requests tasks
-  """
+  ''' An AgentModule to submit requests tasks
+  '''
+  def __init__( self, *args, **kwargs ):
+    ''' c'tor
+    '''
+    TaskManagerAgentBase.__init__( self, *args, **kwargs )
 
-  #############################################################################
-  def initialize( self ):
-    """ Sets defaults """
+    self.taskManager = RequestTasks( transClient = self.transClient )
+    self.shifterProxy = 'ProductionManager'
+    agentTSTypes = self.am_getOption( 'TransType', [] )
+    if agentTSTypes:
+      self.transType = agentTSTypes
+    else:
+      self.transType = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
     
-    taskManager = RequestTasks()
-    
-    TaskManagerAgentBase.initialize( self, taskManager = taskManager )
-    self.transType = ['Replication', 'Removal']
-
-    # This sets the Default Proxy to used as that defined under 
-    # /Operations/Shifter/ProductionManager
-    # the shifterProxy option in the Configuration can be used to change this default.
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
-
-    return S_OK()

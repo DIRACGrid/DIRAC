@@ -6,23 +6,24 @@ __RCSID__ = "$Id$"
     It ensures that all operations are performed on the desired catalogs.
 """
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR, rootPath
-from DIRAC.Core.Utilities.List import uniqueElements
+from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
-import types, re, os
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+import types, re
 
 class FileCatalog:
 
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'getLFNForPFN']
+                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups','getFileUserMetadata']
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory', 'setDirectoryStatus',
                    'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset']
 
-  def __init__( self, catalogs = [] ):
+  def __init__( self, catalogs = [], vo = None  ):
     """ Default constructor
     """
     self.valid = True
@@ -30,6 +31,13 @@ class FileCatalog:
     self.readCatalogs = []
     self.writeCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
+    self.vo = vo
+    if not vo:
+      result = getVOfromProxyGroup()
+      if not result['OK']:
+        return result
+      self.vo = result['Value']
+    self.opHelper = Operations( vo = self.vo )
 
     if type( catalogs ) in types.StringTypes:
       catalogs = [catalogs]
@@ -128,17 +136,20 @@ class FileCatalog:
       method = getattr( oCatalog, self.call )
       res = method( *parms, **kws )
       if res['OK']:
-        for key, item in res['Value']['Successful'].items():
-          if not successful.has_key( key ):
-            successful[key] = item
-            if failed.has_key( key ):
-              failed.pop( key )
-        for key, item in res['Value']['Failed'].items():
-          if not successful.has_key( key ):
-            failed[key] = item
-        if len( failed ) == 0:
-          resDict = {'Failed':failed, 'Successful':successful}
-          return S_OK( resDict )
+        if 'Successful' in res['Value']:
+          for key, item in res['Value']['Successful'].items():
+            if not successful.has_key( key ):
+              successful[key] = item
+              if failed.has_key( key ):
+                failed.pop( key )
+          for key, item in res['Value']['Failed'].items():
+            if not successful.has_key( key ):
+              failed[key] = item
+          if len( failed ) == 0:
+            resDict = {'Failed':failed, 'Successful':successful}
+            return S_OK( resDict )
+        else:
+          return res  
     if ( len( successful ) == 0 ) and ( len( failed ) == 0 ):
       return S_ERROR( 'Failed to perform %s from any catalog' % self.call )
     resDict = {'Failed':failed, 'Successful':successful}
@@ -201,17 +212,34 @@ class FileCatalog:
     return S_OK()
 
   def _getCatalogs( self ):
-    res = gConfig.getSections( self.rootConfigPath, listOrdered = True )
-    if not res['OK']:
-      errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
-      gLogger.error( errStr, res['Message'] )
-      return S_ERROR( errStr )
-    fileCatalogs = res['Value']
+    
+    # Get the eligible catalogs first
+    # First, look in the Operations, if nothing defined look in /Resources for backward compatibility
+    result = self.opHelper.getSections( '/Services/Catalogs' )
+    fileCatalogs = []
+    operationsFlag = False
+    if result['OK']:
+      fileCatalogs = result['Value']
+      operationsFlag = True
+    else:   
+      res = gConfig.getSections( self.rootConfigPath, listOrdered = True )
+      if not res['OK']:
+        errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
+        gLogger.error( errStr, res['Message'] )
+        return S_ERROR( errStr )
+      fileCatalogs = res['Value']
+    
+    # Get the catalogs now    
     for catalogName in fileCatalogs:
       res = self._getCatalogConfigDetails( catalogName )
       if not res['OK']:
         return res
       catalogConfig = res['Value']
+      if operationsFlag:
+        result = self.opHelper.getOptionsDict( '/Services/Catalogs/%s' % catalogName )
+        if not result['OK']:
+          return result
+        catalogConfig.update( result['Value'] )        
       if catalogConfig['Status'] == 'Active':
         res = self._generateCatalogObject( catalogName )
         if not res['OK']:
@@ -267,4 +295,8 @@ class FileCatalog:
   def _generateCatalogObject( self, catalogName ):
     """ Create a file catalog object from its name and CS description
     """
-    return FileCatalogFactory().createCatalog(catalogName)
+    useProxy = gConfig.getValue( '/LocalSite/Catalogs/%s/UseProxy' % catalogName, False )
+    if not useProxy:
+      useProxy = self.opHelper.getValue( '/Services/Catalogs/%s/UseProxy' % catalogName, False )
+    return FileCatalogFactory().createCatalog( catalogName, useProxy )
+

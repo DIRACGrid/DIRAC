@@ -1,24 +1,32 @@
 """  TransformationPlugin is a class wrapping the supported transformation plugins
 """
-from DIRAC                                                               import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SiteSEMapping                                  import getSitesForSE, getSEsForSite
-from DIRAC.Core.Utilities.List                                           import breakListIntoChunks, sortList, uniqueElements, randomize
 import re
 
+from DIRAC                              import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE, getSEsForSite
+from DIRAC.Core.Utilities.List          import breakListIntoChunks, sortList, uniqueElements, randomize
+
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+
 class TransformationPlugin( object ):
+  """ A TransformationPlugin object should be instantiated by every transformation.
+  """
 
   def __init__( self, plugin, transClient = None, replicaManager = None ):
+    """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
+        plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
+    """
     self.params = False
     self.data = False
     self.plugin = plugin
     self.files = False
-    if transClient == None:
-      from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+    if transClient is None:
       self.transClient = TransformationClient()
     else:
       self.transClient = transClient
-    if replicaManager == None:
-      from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+
+    if replicaManager is None:
       self.rm = ReplicaManager()
     else:
       self.rm = replicaManager
@@ -40,6 +48,8 @@ class TransformationPlugin( object ):
     self.params = params
 
   def generateTasks( self ):
+    """ this is a wrapper to invoke the plugin (self._%s()" % self.plugin)
+    """
     try:
       evalString = "self._%s()" % self.plugin
       return eval( evalString )
@@ -53,19 +63,24 @@ class TransformationPlugin( object ):
       raise Exception, x
 
   def _Standard( self ):
+    """ Simply group by replica location
+    """
     res = self._groupByReplicas()
     if not res['OK']:
       return res
     newTasks = []
-    for se, lfns in res['Value']:
+    for _se, lfns in res['Value']:
       newTasks.append( ( '', lfns ) )
     return S_OK( newTasks )
 
   def _BySize( self ):
+    """ Alias for groupBySize
+    """
     return self._groupBySize()
 
   def _Broadcast( self ):
-    """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs. """
+    """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs.
+    """
     if not self.params:
       return S_ERROR( "TransformationPlugin._Broadcast: The 'Broadcast' plugin requires additional parameters." )
 
@@ -90,7 +105,10 @@ class TransformationPlugin( object ):
     if destinations and ( destinations >= len(targetSEs) ):
       destinations = 0
 
-    fileGroups = self._getFileGroups( self.data )
+    status = self.params['Status']
+    groupSize = self.params['GroupSize']#Number of files per tasks
+
+    fileGroups = self._getFileGroups( self.data )#groups by SE
     targetSELfns = {}
     for replicaSE, lfns in fileGroups.items():
       ses = replicaSE.split( ',' )
@@ -110,19 +128,25 @@ class TransformationPlugin( object ):
           if not site in sources:
             if ( destinations ) and ( len( targets ) >= destinations ):
               continue
-            targets.append( targetSE )
             sources.append( site )
+          targets.append( targetSE )#after all, if someone wants to copy to the source, it's his choice
         strTargetSEs = str.join( ',', sortList( targets ) )
         if not targetSELfns.has_key( strTargetSEs ):
           targetSELfns[strTargetSEs] = []
         targetSELfns[strTargetSEs].append( lfn )
     tasks = []
     for ses, lfns in targetSELfns.items():
-      tasks.append( ( ses, lfns ) )
+      tasksLfns = breakListIntoChunks(lfns, groupSize)
+      for taskLfns in tasksLfns:
+        if ( status == 'Flush' ) or ( len( taskLfns ) >= int( groupSize ) ):
+          #do not allow groups smaller than the groupSize, except if transformation is in flush state
+          tasks.append( ( ses, taskLfns ) )
     return S_OK( tasks )
 
-  def _ByShare( self, type = 'CPU' ):
-    res = self._getShares( type, normalise = True )
+  def _ByShare( self, shareType = 'CPU' ):
+    """ first get the shares from the CS, and then makes the grouping looking at the history
+    """
+    res = self._getShares( shareType, normalise = True )
     if not res['OK']:
       return res
     cpuShares = res['Value']
@@ -172,12 +196,14 @@ class TransformationPlugin( object ):
           existingCount[targetSite] += len( lfns )
     return S_OK( tasks )
 
-  def _getShares( self, type, normalise = False ):
-    res = gConfig.getOptionsDict( '/Resources/Shares/%s' % type )
+  def _getShares( self, shareType, normalise = False ):
+    """ Takes share from the CS, eventually normalize them
+    """
+    res = gConfig.getOptionsDict( '/Resources/Shares/%s' % shareType )
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR( "/Resources/Shares/%s option contains no shares" % type )
+      return S_ERROR( "/Resources/Shares/%s option contains no shares" % shareType )
     shares = res['Value']
     for site, value in shares.items():
       shares[site] = float( value )
@@ -188,7 +214,8 @@ class TransformationPlugin( object ):
     return S_OK( shares )
 
   def _getExistingCounters( self, normalise = False, requestedSites = [] ):
-    res = self.transClient.getCounters( 'TransformationFiles', ['UsedSE'], {'TransformationID':self.params['TransformationID']} )
+    res = self.transClient.getCounters( 'TransformationFiles', ['UsedSE'],
+                                        {'TransformationID':self.params['TransformationID']} )
     if not res['OK']:
       return res
     usageDict = {}
@@ -210,6 +237,7 @@ class TransformationPlugin( object ):
       usageDict = self._normaliseShares( usageDict )
     return S_OK( usageDict )
 
+  @classmethod
   def _normaliseShares( self, originalShares ):
     shares = originalShares.copy()
     total = 0.0
@@ -293,16 +321,22 @@ class TransformationPlugin( object ):
         tasks.append( ( replicaSE, taskLfns ) )
     return S_OK( tasks )
 
-  def _getFileGroups( self, fileReplicas ):
+  @classmethod
+  def _getFileGroups( cls, fileReplicas ):
+    """ get file groups dictionary { "SE1,SE2,SE3" : [ lfn1, lfn2 ], ... }
+    
+    :param dict fileReplicas: { lfn : [SE1, SE2, SE3], ... }
+    """
     fileGroups = {}
     for lfn, replicas in fileReplicas.items():
-      replicaSEs = str.join( ',', sortList( uniqueElements( replicas.keys() ) ) )
-      if not fileGroups.has_key( replicaSEs ):
+      replicaSEs = ",".join( sortList( uniqueElements( replicas ) ) )
+      if replicaSEs not in fileGroups:
         fileGroups[replicaSEs] = []
       fileGroups[replicaSEs].append( lfn )
     return fileGroups
 
-  def _getSiteForSE( self, se ):
+  @classmethod
+  def _getSiteForSE( cls, se ):
     """ Get site name for the given SE
     """
     result = getSitesForSE( se, gridName = 'LCG' )
@@ -312,7 +346,8 @@ class TransformationPlugin( object ):
       return S_OK( result['Value'][0] )
     return S_OK( '' )
 
-  def _getSitesForSEs( self, seList ):
+  @classmethod
+  def _getSitesForSEs( cls, seList ):
     """ Get all the sites for the given SE list
     """
     sites = []

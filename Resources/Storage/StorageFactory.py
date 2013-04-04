@@ -22,14 +22,12 @@ import os
 
 class StorageFactory:
 
-  def __init__( self ):
+  def __init__( self, useProxy=False ):
 
     self.rootConfigPath = '/Resources/StorageElements'
     self.valid = True
     self.proxy = False
-    res = gConfig.getOption( "%s/UseProxy" % self.rootConfigPath )
-    if res['OK'] and ( res['Value'] == 'True' ):
-      self.proxy = True
+    self.proxy = useProxy
     self.resourceStatus = ResourceStatus()
 
 
@@ -234,7 +232,7 @@ class StorageFactory:
 
     # We add the dictionary with the statusTypes and values
     # { 'statusType1' : 'status1', 'statusType2' : 'status2' ... }
-    #optionsDict.update( res[ 'Value' ][ storageName ] )
+    optionsDict.update( res[ 'Value' ][ storageName ] )
 
     return S_OK( optionsDict )
 
@@ -278,11 +276,6 @@ class StorageFactory:
       optionValue = gConfig.getValue( configPath, '' )
       protocolDict[option] = optionValue
 
-    # If the user has requested to use Proxy storage
-    if self.proxy:
-      if  protocolDict['ProtocolName'] != 'DIP':
-        protocolDict['ProtocolName'] = 'Proxy'
-
     # Now update the local and remote protocol lists.
     # A warning will be given if the Access option is not set.
     if protocolDict['Access'] == 'remote':
@@ -307,6 +300,11 @@ class StorageFactory:
 
   def __generateStorageObject( self, storageName, protocolName, protocol, path = None,
                               host = None, port = None, spaceToken = None, wsUrl = None ):
+    
+    storageType = protocolName
+    if self.proxy:
+      storageType = 'Proxy'
+    
     moduleRootPaths = getInstalledExtensions()
     moduleLoaded = False
     path = path.rstrip( '/' )
@@ -316,13 +314,13 @@ class StorageFactory:
       if moduleLoaded:
         break
       gLogger.verbose( "Trying to load from root path %s" % moduleRootPath )
-      moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Storage", "%sStorage.py" % protocolName )
+      moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Storage", "%sStorage.py" % storageType )
       gLogger.verbose( "Looking for file %s" % moduleFile )
       if not os.path.isfile( moduleFile ):
         continue
       try:
         # This inforces the convention that the plug in must be named after the protocol
-        moduleName = "%sStorage" % ( protocolName )
+        moduleName = "%sStorage" % ( storageType )
         storageModule = __import__( '%s.Resources.Storage.%s' % ( moduleRootPath, moduleName ),
                                     globals(), locals(), [moduleName] )
       except Exception, x:
@@ -341,6 +339,10 @@ class StorageFactory:
         errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s(): %s" % ( moduleName, x )
         gLogger.exception( errStr )
         return S_ERROR( errStr )
+      
+      # If use proxy, keep the original protocol name
+      if self.proxy:
+        storage.protocolName = protocolName
       return S_OK( storage )
 
     if not moduleLoaded:

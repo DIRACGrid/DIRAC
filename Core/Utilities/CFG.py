@@ -179,13 +179,20 @@ class CFG( object ):
   def sortAlphabetically( self, ascending = True ):
     """
     Order this cfg alphabetically
-    returns true if modified
+    returns True if modified
+    """
+    if not ascending:
+      return self.sortByKey( reverse = True )
+    return self.sortByKey()
+
+  def sortByKey( self, key = None , reverse = False ):
+    """
+    Order this cfg by function refered in key, default is None
+    corresponds to alphabetic sort
+    returns True if modified
     """
     unordered = list( self.__orderedList )
-    if ascending:
-      self.__orderedList.sort()
-    else:
-      self.__orderedList.reverse()
+    self.__orderedList.sort( key = key , reverse = reverse )
     return unordered != self.__orderedList
 
   @gCFGSynchro
@@ -199,7 +206,7 @@ class CFG( object ):
     """
     result = self.getRecursive( key, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( key, "/" )[-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( key, "/" )[:-1] ) )
     cfg = result[ 'value' ]
     end = result[ 'levelsBelow' ]
 
@@ -225,13 +232,13 @@ class CFG( object ):
       return True
     result = self.getRecursive( oldName, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[:-1] ) )
     oldCfg = result[ 'value' ]
     oldEnd = result[ 'levelsBelow' ]
     if oldEnd in oldCfg.__dataDict:
       result = self.getRecursive( newName, -1 )
       if not result:
-        raise KeyError( "%s does not exist" % "/".join( List.fromChar( newName, "/" )[-1] ) )
+        raise KeyError( "%s does not exist" % "/".join( List.fromChar( newName, "/" )[:-1] ) )
       newCfg = result[ 'value' ]
       newEnd = result[ 'levelsBelow' ]
 
@@ -465,7 +472,7 @@ class CFG( object ):
     """
     result = self.getRecursive( optionName, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( optionName, "/" )[:-1] ) )
     cfg = result[ 'value' ]
     end = result[ 'levelsBelow' ]
     if end not in cfg.__dataDict:
@@ -489,7 +496,7 @@ class CFG( object ):
     """
     result = self.getRecursive( key, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( key, "/" )[-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( key, "/" )[:-1] ) )
     cfg = result[ 'value' ]
     end = result[ 'levelsBelow' ]
     if end in cfg.__dataDict:
@@ -517,13 +524,13 @@ class CFG( object ):
       return True
     result = self.getRecursive( oldName, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[:-1] ) )
     oldCfg = result[ 'value' ]
     oldEnd = result[ 'levelsBelow' ]
     if oldEnd in oldCfg.__dataDict:
       result = self.getRecursive( newName, -1 )
       if not result:
-        raise KeyError( "%s does not exist" % "/".join( List.fromChar( newName, "/" )[-1] ) )
+        raise KeyError( "%s does not exist" % "/".join( List.fromChar( newName, "/" )[:-1] ) )
       newCfg = result[ 'value' ]
       newEnd = result[ 'levelsBelow' ]
 
@@ -717,7 +724,7 @@ class CFG( object ):
   def getModifications( self, newerCfg, ignoreMask = None, parentPath = "" ):
     """
     Compare two cfgs
-    
+
     @type newerCfg: CFG
     @param newerCfg: Cfg to compare with
     @type prefix: string
@@ -792,7 +799,7 @@ class CFG( object ):
   def applyModifications( self, modList, parentSection = "" ):
     """
     Apply modifications to a CFG
-    
+
     @type modList: List
     @param modList: Modifications from a getModifications call
     @return: True/False

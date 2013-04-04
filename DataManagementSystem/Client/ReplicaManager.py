@@ -23,15 +23,15 @@ from types import StringTypes, ListType, DictType, StringType, TupleType
 ## from DIRAC
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.Core.Utilities.File import makeGuid, getSize
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
+from DIRAC.Core.Utilities.File import makeGuid, getSize
 from DIRAC.Core.Utilities.List import sortList, randomize
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getSEsForCountry
-from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 class CatalogBase( object ):
   """
@@ -42,7 +42,7 @@ class CatalogBase( object ):
   def __init__( self ):
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
 
-  def _callFileCatalogFcnSingleFile( self, lfn, method, argsDict=None, catalogs=None ):
+  def _callFileCatalogFcnSingleFile( self, lfn, method, argsDict = None, catalogs = None ):
     """ A wrapper around :CatalogBase._callFileCatalogFcn: for a single file. It parses
     the output of :CatalogBase_callFileCatalogFcn: for the first file provided as input.
     If this file is found in::
@@ -63,8 +63,8 @@ class CatalogBase( object ):
     argsDict = argsDict if argsDict else dict()
     catalogs = catalogs if catalogs else list()
     ## checjk type
-    if not lfn or type(lfn) not in StringTypes + ( ListType, DictType ):
-      return S_ERROR( "wrong type (%s) for argument 'lfn'" % type(lfn) )
+    if not lfn or type( lfn ) not in StringTypes + ( ListType, DictType ):
+      return S_ERROR( "wrong type (%s) for argument 'lfn'" % type( lfn ) )
     singleLfn = lfn
     if type( lfn ) == ListType:
       singleLfn = lfn[0]
@@ -101,14 +101,14 @@ class CatalogBase( object ):
     argsDict = argsDict if argsDict else dict()
     catalogs = catalogs if catalogs else list()
     lfns = None
-    if not lfn or type(lfn) not in StringTypes + ( ListType, DictType ):
+    if not lfn or type( lfn ) not in StringTypes + ( ListType, DictType ):
       errStr = "_callFileCatalogFcn: Wrong 'lfn' argument."
       self.log.error( errStr )
       return S_ERROR( errStr )
     elif type( lfn ) in StringTypes:
       lfns = { lfn : False }
     elif type( lfn ) == ListType:
-      lfns = dict.fromkeys( lfn, False  )
+      lfns = dict.fromkeys( lfn, False )
     elif type( lfn ) == DictType:
       lfns = lfn.copy()
 
@@ -117,13 +117,13 @@ class CatalogBase( object ):
       errMsg = "_callFileCatalogFcn: No lfns supplied."
       self.log.error( errMsg )
       return S_ERROR( errMsg )
-    self.log.debug( "_callFileCatalogFcn: Will execute '%s' method with %s lfns." % ( method, len(lfns) ) )
+    self.log.debug( "_callFileCatalogFcn: Will execute '%s' method with %s lfns." % ( method, len( lfns ) ) )
     ## create FileCatalog instance
-    fileCatalog = FileCatalog( catalogs=catalogs )
+    fileCatalog = FileCatalog( catalogs = catalogs )
     ## get symbol
     fcFcn = getattr( fileCatalog, method ) if hasattr( fileCatalog, method ) else None
     ## check if it is callable
-    fcFcn = fcFcn if callable(fcFcn) else None
+    fcFcn = fcFcn if callable( fcFcn ) else None
     if not fcFcn:
       errMsg = "_callFileCatalogFcn: '%s' isn't a member function in FileCatalog." % method
       self.log.error( errMsg )
@@ -134,7 +134,7 @@ class CatalogBase( object ):
       self.log.error( "_callFileCatalogFcn: Failed to execute '%s'." % method, res["Message"] )
     return res
 
-  def _fcFuncWrapper( self, singleFile=False ):
+  def _fcFuncWrapper( self, singleFile = False ):
     """ choose wrapper to call
 
     :param self: self reference
@@ -154,7 +154,7 @@ class CatalogFile( CatalogBase ):
     """ c'tor """
     CatalogBase.__init__( self )
 
-  def getCatalogExists( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogExists( self, lfn, singleFile = False, catalogs = None ):
     """ determine whether the path is registered in the :FileCatalog: by calling
     :FileCatalog.exists: method.
 
@@ -164,9 +164,9 @@ class CatalogFile( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "exists", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "exists", catalogs = catalogs )
 
-  def getCatalogIsFile( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogIsFile( self, lfn, singleFile = False, catalogs = None ):
     """ determine whether the path is registered as a file in the :FileCatalog:
 
     :param self: self reference
@@ -175,9 +175,9 @@ class CatalogFile( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "isFile", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "isFile", catalogs = catalogs )
 
-  def getCatalogFileMetadata( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogFileMetadata( self, lfn, singleFile = False, catalogs = None ):
     """ get the metadata associated to the LFN in the :FileCatalog:
 
     :param self: self reference
@@ -186,9 +186,9 @@ class CatalogFile( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "getFileMetadata", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "getFileMetadata", catalogs = catalogs )
 
-  def getCatalogFileSize( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogFileSize( self, lfn, singleFile = False, catalogs = None ):
     """ get the size registered for files in the FileCatalog
 
     :param self: self reference
@@ -197,9 +197,9 @@ class CatalogFile( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "getFileSize", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "getFileSize", catalogs = catalogs )
 
-  def getCatalogReplicas( self, lfn, allStatus=False, singleFile=False, catalogs=None ):
+  def getCatalogReplicas( self, lfn, allStatus = False, singleFile = False, catalogs = None ):
     """ Get the replicas registered for files in the FileCatalog
 
     :param self: self reference
@@ -209,10 +209,10 @@ class CatalogFile( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "getReplicas", argsDict={ "allStatus" : allStatus },
-                                            catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "getReplicas", argsDict = { "allStatus" : allStatus },
+                                            catalogs = catalogs )
 
-  def getCatalogLFNForPFN( self, pfn, singleFile=False, catalogs=None ):
+  def getCatalogLFNForPFN( self, pfn, singleFile = False, catalogs = None ):
     """ get the LFNs registered with the supplied PFNs from the FileCatalog
 
     :param self: self reference
@@ -221,9 +221,9 @@ class CatalogFile( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( pfn, 'getLFNForPFN', catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( pfn, 'getLFNForPFN', catalogs = catalogs )
 
-  def addCatalogFile( self, lfn, singleFile=False, catalogs=None ):
+  def addCatalogFile( self, lfn, singleFile = False, catalogs = None ):
     """ Add a new file to the FileCatalog
 
     :param self: self reference
@@ -232,9 +232,9 @@ class CatalogFile( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "addFile", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "addFile", catalogs = catalogs )
 
-  def removeCatalogFile( self, lfn, singleFile=False, catalogs=None ):
+  def removeCatalogFile( self, lfn, singleFile = False, catalogs = None ):
     """ remove a file from the FileCatalog
 
     :param self: self reference
@@ -244,9 +244,9 @@ class CatalogFile( CatalogBase ):
     """
     catalogs = catalogs if catalogs else list()
     ## make sure lfns are sorted from the longest to the shortest
-    if type(lfn) == ListType:
+    if type( lfn ) == ListType:
       lfn = sorted( lfn, reverse = True )
-    return self._fcFuncWrapper(singleFile)( lfn, "removeFile", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "removeFile", catalogs = catalogs )
 
 class CatalogReplica( CatalogBase ):
   """
@@ -254,7 +254,7 @@ class CatalogReplica( CatalogBase ):
 
   Wrappers for various :FileCatalog: methods concering operations on replicas.
   """
-  def getCatalogReplicaStatus( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogReplicaStatus( self, lfn, singleFile = False, catalogs = None ):
     """ get the status of the replica as registered in the :FileCatalog:
 
     :param self: self reference
@@ -263,9 +263,9 @@ class CatalogReplica( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "getReplicaStatus", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "getReplicaStatus", catalogs = catalogs )
 
-  def addCatalogReplica( self, lfn, singleFile=False, catalogs=None ):
+  def addCatalogReplica( self, lfn, singleFile = False, catalogs = None ):
     """ add a new replica to the :FileCatalog:
 
     :param self: self reference
@@ -274,9 +274,9 @@ class CatalogReplica( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "addReplica", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "addReplica", catalogs = catalogs )
 
-  def removeCatalogReplica( self, lfn, singleFile=False, catalogs=None ):
+  def removeCatalogReplica( self, lfn, singleFile = False, catalogs = None ):
     """ remove a replica from the :FileCatalog:
 
     :param self: self reference
@@ -285,9 +285,9 @@ class CatalogReplica( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "removeReplica", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "removeReplica", catalogs = catalogs )
 
-  def setCatalogReplicaStatus( self, lfn, singleFile=False, catalogs=None ):
+  def setCatalogReplicaStatus( self, lfn, singleFile = False, catalogs = None ):
     """ Change the status for a replica in the :FileCatalog:
 
     :param self: self reference
@@ -296,9 +296,9 @@ class CatalogReplica( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "setReplicaStatus", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "setReplicaStatus", catalogs = catalogs )
 
-  def setCatalogReplicaHost( self, lfn, singleFile=False, catalogs=None ):
+  def setCatalogReplicaHost( self, lfn, singleFile = False, catalogs = None ):
     """ change the registered SE for a replica in the :FileCatalog:
 
     :param self: self reference
@@ -307,7 +307,7 @@ class CatalogReplica( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "setReplicaHost", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "setReplicaHost", catalogs = catalogs )
 
 class CatalogDirectory( CatalogBase ):
   """
@@ -319,7 +319,7 @@ class CatalogDirectory( CatalogBase ):
     """ c'tor """
     CatalogBase.__init__( self )
 
-  def getCatalogIsDirectory( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogIsDirectory( self, lfn, singleFile = False, catalogs = None ):
     """ determine whether the path is registered as a directory in the :FileCatalog:
 
     :param self: self reference
@@ -328,9 +328,9 @@ class CatalogDirectory( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "isDirectory", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "isDirectory", catalogs = catalogs )
 
-  def getCatalogDirectoryMetadata( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogDirectoryMetadata( self, lfn, singleFile = False, catalogs = None ):
     """ get the metadata associated to a directory in the :FileCatalog:
 
     :param self: self reference
@@ -339,9 +339,9 @@ class CatalogDirectory( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "getDirectoryMetadata", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "getDirectoryMetadata", catalogs = catalogs )
 
-  def getCatalogDirectoryReplicas( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogDirectoryReplicas( self, lfn, singleFile = False, catalogs = None ):
     """ get the replicas for the contents of a directory in the FileCatalog
 
     :param self: self reference
@@ -350,9 +350,9 @@ class CatalogDirectory( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "getDirectoryReplicas", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "getDirectoryReplicas", catalogs = catalogs )
 
-  def getCatalogListDirectory( self, lfn, verbose=False, singleFile=False, catalogs=None ):
+  def getCatalogListDirectory( self, lfn, verbose = False, singleFile = False, catalogs = None ):
     """ get the contents of a directory in the :FileCatalog:
 
     :param self: self reference
@@ -362,10 +362,10 @@ class CatalogDirectory( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "listDirectory", argsDict={"verbose": verbose},
-                                            catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "listDirectory", argsDict = {"verbose": verbose},
+                                            catalogs = catalogs )
 
-  def getCatalogDirectorySize( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogDirectorySize( self, lfn, singleFile = False, catalogs = None ):
     """ get the size a directory in the :FileCatalog:
 
     :param self: self reference
@@ -374,9 +374,9 @@ class CatalogDirectory( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "getDirectorySize", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "getDirectorySize", catalogs = catalogs )
 
-  def createCatalogDirectory( self, lfn, singleFile=False, catalogs=None ):
+  def createCatalogDirectory( self, lfn, singleFile = False, catalogs = None ):
     """ mkdir in the :FileCatalog:
 
     :param self: self reference
@@ -385,9 +385,9 @@ class CatalogDirectory( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "createDirectory", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "createDirectory", catalogs = catalogs )
 
-  def removeCatalogDirectory( self, lfn, recursive=False, singleFile=False, catalogs=None ):
+  def removeCatalogDirectory( self, lfn, recursive = False, singleFile = False, catalogs = None ):
     """ rmdir from the :FileCatalog:
 
     :param self: self reference
@@ -396,8 +396,8 @@ class CatalogDirectory( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "removeDirectory", argsDict={"recursive" : recursive},
-                                            catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "removeDirectory", argsDict = {"recursive" : recursive},
+                                            catalogs = catalogs )
 
 class CatalogLink( CatalogBase ):
   """
@@ -409,7 +409,7 @@ class CatalogLink( CatalogBase ):
     """ c'tor """
     CatalogBase.__init__( self )
 
-  def getCatalogIsLink( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogIsLink( self, lfn, singleFile = False, catalogs = None ):
     """ determine whether the path is registered as a link in the :FileCatalog:
 
     :param self: self reference
@@ -418,9 +418,9 @@ class CatalogLink( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "isLink", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "isLink", catalogs = catalogs )
 
-  def getCatalogReadLink( self, lfn, singleFile=False, catalogs=None ):
+  def getCatalogReadLink( self, lfn, singleFile = False, catalogs = None ):
     """ get the target of a link as registered in the :FileCatalog:
 
     :param self: self reference
@@ -429,9 +429,9 @@ class CatalogLink( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "readLink", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "readLink", catalogs = catalogs )
 
-  def createCatalogLink( self, lfn, singleFile=False, catalogs=None ):
+  def createCatalogLink( self, lfn, singleFile = False, catalogs = None ):
     """ ln in the :FileCatalog: (create the link)
 
     :param self: self reference
@@ -440,9 +440,9 @@ class CatalogLink( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper(singleFile)( lfn, "createLink", catalogs=catalogs )
+    return self._fcFuncWrapper( singleFile )( lfn, "createLink", catalogs = catalogs )
 
-  def removeCatalogLink( self, lfn, singleFile=False, catalogs=None ):
+  def removeCatalogLink( self, lfn, singleFile = False, catalogs = None ):
     """ rm the link supplied from the :FileCatalog:
 
     :param self: self reference
@@ -451,7 +451,7 @@ class CatalogLink( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    self._fcFuncWrapper(singleFile)( lfn, "removeLink", catalogs=catalogs )
+    self._fcFuncWrapper( singleFile )( lfn, "removeLink", catalogs = catalogs )
 
 class CatalogInterface( CatalogFile, CatalogReplica, CatalogDirectory, CatalogLink ):
   """
@@ -471,7 +471,7 @@ class StorageBase( object ):
     """ c'tor """
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
 
-  def _callStorageElementFcnSingleFile( self, storageElementName, pfn, method, argsDict=None ):
+  def _callStorageElementFcnSingleFile( self, storageElementName, pfn, method, argsDict = None ):
     """ wrapper around :StorageBase._callStorageElementFcn: for single file execution
 
     It parses the output of :StorageBase._callStorageElementFcn: for the first pfn provided as input.
@@ -503,7 +503,7 @@ class StorageBase( object ):
     else:
       return S_OK( res["Value"]["Successful"][pfn] )
 
-  def _callStorageElementFcn( self, storageElementName, pfn, method, argsDict=None ):
+  def _callStorageElementFcn( self, storageElementName, pfn, method, argsDict = None ):
     """ a simple wrapper around the :StorageElement: functionality
 
     :param self: self reference
@@ -530,11 +530,7 @@ class StorageBase( object ):
       self.log.error( errMessage )
       return S_ERROR( errMessage )
     self.log.debug( "_callStorageElementFcn: Will execute '%s' with %s pfns." % ( method, len( pfns ) ) )
-    ## make sure StorageElement is valid
-    overwrite = False
-    if method  in [ "removeFile", "removeDirectory"]:
-      overwrite = True
-    storageElement = StorageElement( storageElementName, overwride=overwrite )
+    storageElement = StorageElement( storageElementName )
     res = storageElement.isValid( method )
     if not res['OK']:
       errStr = "_callStorageElementFcn: Failed to instantiate Storage Element"
@@ -543,7 +539,7 @@ class StorageBase( object ):
     ## get sybmbol
     fcFcn = getattr( storageElement, method ) if hasattr( storageElement, method ) else None
     ## make sure it is callable
-    fcFcn = fcFcn if callable(fcFcn) else None
+    fcFcn = fcFcn if callable( fcFcn ) else None
     if not fcFcn:
       errMsg = "_callStorageElementFcn: '%s' isn't a member function in StorageElement." % method
       self.log.error( errMsg )
@@ -556,7 +552,7 @@ class StorageBase( object ):
       self.log.error( errStr, '%s : %s' % ( storageElementName, res["Message"] ) )
     return res
 
-  def _seFuncWrapper( self, singleFile=False ):
+  def _seFuncWrapper( self, singleFile = False ):
     """ choose wrapper to call
 
     :param self: self reference
@@ -608,7 +604,7 @@ class StorageBase( object ):
         retDict["Failed"][pfn] = res["Message"]
     return S_OK( retDict )
 
-  def getPfnForProtocol( self, pfns, storageElementName, protocol="SRM2", withPort=True ):
+  def getPfnForProtocol( self, pfns, storageElementName, protocol = "SRM2", withPort = True ):
     """ create PFNs strings at :storageElementName: SE using protocol :protocol:
 
     :param self: self reference
@@ -620,11 +616,11 @@ class StorageBase( object ):
     storageElement = StorageElement( storageElementName )
     res = storageElement.isValid( "getPfnForProtocol" )
     if not res["OK"]:
-      self.log.error("getPfnForProtocol: Failed to instantiate StorageElement at %s" % storageElementName)
+      self.log.error( "getPfnForProtocol: Failed to instantiate StorageElement at %s" % storageElementName )
       return res
     retDict = { "Successful" : {}, "Failed" : {}}
     for pfn in pfns:
-      res = storageElement.getPfnForProtocol( pfn, protocol, withPort=withPort )
+      res = storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort )
       if res["OK"]:
         retDict["Successful"][pfn] = res["Value"]
       else:
@@ -641,7 +637,7 @@ class StorageFile( StorageBase ):
     """ c'tor """
     StorageBase.__init__( self )
 
-  def getStorageFileExists( self, physicalFile, storageElementName, singleFile=False ):
+  def getStorageFileExists( self, physicalFile, storageElementName, singleFile = False ):
     """ determine the existance of the physical files
 
     :param self: self reference
@@ -649,9 +645,9 @@ class StorageFile( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile, "exists" )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile, "exists" )
 
-  def getStorageFileIsFile( self, physicalFile, storageElementName, singleFile=False ):
+  def getStorageFileIsFile( self, physicalFile, storageElementName, singleFile = False ):
     """ determine if supplied physical paths are files
 
     :param self: self reference
@@ -659,9 +655,9 @@ class StorageFile( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile, "isFile" )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile, "isFile" )
 
-  def getStorageFileSize( self, physicalFile, storageElementName, singleFile=False ):
+  def getStorageFileSize( self, physicalFile, storageElementName, singleFile = False ):
     """ get the size of the physical files
 
     :param self: self reference
@@ -669,9 +665,9 @@ class StorageFile( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile, "getFileSize" )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile, "getFileSize" )
 
-  def getStorageFileAccessUrl( self, physicalFile, storageElementName, protocol=None, singleFile=False ):
+  def getStorageFileAccessUrl( self, physicalFile, storageElementName, protocol = None, singleFile = False ):
     """ get the access url for a physical file
 
     :param self: self reference
@@ -680,10 +676,10 @@ class StorageFile( StorageBase ):
     :param bool singleFile: execute for the first PFN only
     """
     protocol = protocol if protocol else list()
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile,
-                                            "getAccessUrl", argsDict={"protocol" : protocol} )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile,
+                                            "getAccessUrl", argsDict = {"protocol" : protocol} )
 
-  def getStorageFileMetadata( self, physicalFile, storageElementName, singleFile=False ):
+  def getStorageFileMetadata( self, physicalFile, storageElementName, singleFile = False ):
     """ get the metadatas for physical files
 
     :param self: self reference
@@ -691,9 +687,9 @@ class StorageFile( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile, "getFileMetadata" )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile, "getFileMetadata" )
 
-  def removeStorageFile( self, physicalFile, storageElementName, singleFile=False ):
+  def removeStorageFile( self, physicalFile, storageElementName, singleFile = False ):
     """ rm supplied physical files from :storageElementName: DIRAC SE
 
     :param self: self reference
@@ -701,9 +697,9 @@ class StorageFile( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile, "removeFile" )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile, "removeFile" )
 
-  def prestageStorageFile( self, physicalFile, storageElementName, lifetime=86400, singleFile=False ):
+  def prestageStorageFile( self, physicalFile, storageElementName, lifetime = 86400, singleFile = False ):
     """ prestage physical files
 
     :param self: self reference
@@ -712,10 +708,10 @@ class StorageFile( StorageBase ):
     :param int lifetime: 24h in seconds
     :param bool singleFile: flag to prestage only one file
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile,
-                                            "prestageFile", argsDict={"lifetime" : lifetime} )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile,
+                                              "prestageFile", argsDict = {"lifetime" : lifetime} )
 
-  def getPrestageStorageFileStatus( self, physicalFile, storageElementName, singleFile=False ):
+  def getPrestageStorageFileStatus( self, physicalFile, storageElementName, singleFile = False ):
     """ get the status of a pre-stage request
 
     :param self: self reference
@@ -723,9 +719,9 @@ class StorageFile( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile, "prestageFileStatus" )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile, "prestageFileStatus" )
 
-  def pinStorageFile( self, physicalFile, storageElementName, lifetime=86400, singleFile=False ):
+  def pinStorageFile( self, physicalFile, storageElementName, lifetime = 86400, singleFile = False ):
     """ pin physical files with a given lifetime
 
     :param self: self reference
@@ -734,10 +730,10 @@ class StorageFile( StorageBase ):
     :param int lifetime: 24h in seconds
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile,
-                                            "pinFile", argsDict={"lifetime": lifetime} )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile,
+                                              "pinFile", argsDict = {"lifetime": lifetime} )
 
-  def releaseStorageFile( self, physicalFile, storageElementName, singleFile=False ):
+  def releaseStorageFile( self, physicalFile, storageElementName, singleFile = False ):
     """ release the pin on physical files
 
     :param self: self reference
@@ -745,9 +741,9 @@ class StorageFile( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile, "releaseFile" )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile, "releaseFile" )
 
-  def getStorageFile( self, physicalFile, storageElementName, localPath=False, singleFile=False ):
+  def getStorageFile( self, physicalFile, storageElementName, localPath = False, singleFile = False ):
     """ create a local copy of a physical file
 
     :param self: self reference
@@ -756,10 +752,10 @@ class StorageFile( StorageBase ):
     :param mixed localPath: string with local paht to use or False (if False, os.getcwd() will be used)
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile,
-                                            "getFile", argsDict={"localPath": localPath} )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile,
+                                              "getFile", argsDict = {"localPath": localPath} )
 
-  def putStorageFile( self, physicalFile, storageElementName, singleFile=False ):
+  def putStorageFile( self, physicalFile, storageElementName, singleFile = False ):
     """ put the local file to the storage element
 
     :param self: self reference
@@ -767,7 +763,7 @@ class StorageFile( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile, "putFile" )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile, "putFile" )
 
   def replicateStorageFile( self, physicalFile, size, storageElementName, singleFile = False ):
     """ replicate a physical file to a storage element
@@ -778,8 +774,8 @@ class StorageFile( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleFile)( storageElementName, physicalFile,
-                                            'replicateFile', argsDict ={'sourceSize': size} )
+    return self._seFuncWrapper( singleFile )( storageElementName, physicalFile,
+                                              'replicateFile', argsDict = {'sourceSize': size} )
 
 class StorageDirectory( StorageBase ):
   """
@@ -791,7 +787,7 @@ class StorageDirectory( StorageBase ):
     """ c'tor """
     StorageBase.__init__( self )
 
-  def getStorageDirectoryIsDirectory( self, storageDirectory, storageElementName, singleDirectory=False ):
+  def getStorageDirectoryIsDirectory( self, storageDirectory, storageElementName, singleDirectory = False ):
     """ determine if the storage paths are directories
 
     :param self: self reference
@@ -799,9 +795,9 @@ class StorageDirectory( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleDirectory: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleDirectory)( storageElementName, storageDirectory, "isDirectory" )
+    return self._seFuncWrapper( singleDirectory )( storageElementName, storageDirectory, "isDirectory" )
 
-  def getStorageDirectoryMetadata( self, storageDirectory, storageElementName, singleDirectory=False ):
+  def getStorageDirectoryMetadata( self, storageDirectory, storageElementName, singleDirectory = False ):
     """ get the metadata for storage directories
 
     :param self: self reference
@@ -809,9 +805,9 @@ class StorageDirectory( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleDirectory: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleDirectory)( storageElementName, storageDirectory, "getDirectoryMetadata" )
+    return self._seFuncWrapper( singleDirectory )( storageElementName, storageDirectory, "getDirectoryMetadata" )
 
-  def getStorageDirectorySize( self, storageDirectory, storageElementName, singleDirectory=False ):
+  def getStorageDirectorySize( self, storageDirectory, storageElementName, singleDirectory = False ):
     """ get the size of the storage directories
 
     :param self: self reference
@@ -819,9 +815,9 @@ class StorageDirectory( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleDirectory: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleDirectory)( storageElementName, storageDirectory, "getDirectorySize" )
+    return self._seFuncWrapper( singleDirectory )( storageElementName, storageDirectory, "getDirectorySize" )
 
-  def getStorageListDirectory( self, storageDirectory, storageElementName, singleDirectory=False ):
+  def getStorageListDirectory( self, storageDirectory, storageElementName, singleDirectory = False ):
     """ ls of a directory in the Storage Element
 
     :param self: self reference
@@ -829,9 +825,9 @@ class StorageDirectory( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleDirectory: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleDirectory)( storageElementName, storageDirectory, "listDirectory" )
+    return self._seFuncWrapper( singleDirectory )( storageElementName, storageDirectory, "listDirectory" )
 
-  def getStorageDirectory( self, storageDirectory, storageElementName, localPath=False, singleDirectory=False ):
+  def getStorageDirectory( self, storageDirectory, storageElementName, localPath = False, singleDirectory = False ):
     """  copy the contents of a directory from the Storage Element to local folder
 
     :param self: self reference
@@ -840,10 +836,10 @@ class StorageDirectory( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleDirectory: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleDirectory)( storageElementName, storageDirectory,
-                                                 "getDirectory", argsDict={'localPath': localPath} )
+    return self._seFuncWrapper( singleDirectory )( storageElementName, storageDirectory,
+                                                   "getDirectory", argsDict = {'localPath': localPath} )
 
-  def putStorageDirectory( self, storageDirectory, storageElementName, singleDirectory=False ):
+  def putStorageDirectory( self, storageDirectory, storageElementName, singleDirectory = False ):
     """ put the local directory to the storage element
 
     :param self: self reference
@@ -851,9 +847,9 @@ class StorageDirectory( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleDirectory: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleDirectory)( storageElementName, storageDirectory, "putDirectory" )
+    return self._seFuncWrapper( singleDirectory )( storageElementName, storageDirectory, "putDirectory" )
 
-  def removeStorageDirectory( self, storageDirectory, storageElementName, recursive=False, singleDirectory=False ):
+  def removeStorageDirectory( self, storageDirectory, storageElementName, recursive = False, singleDirectory = False ):
     """ rmdir a directory from the storage element
 
     :param self: self reference
@@ -861,8 +857,8 @@ class StorageDirectory( StorageBase ):
     :param str storageElementName: DIRAC SE name
     :param bool singleDirectory: execute for the first PFN only
     """
-    return self._seFuncWrapper(singleDirectory)( storageElementName, storageDirectory,
-                                                 "removeDirectory", argsDict={"recursive": recursive} )
+    return self._seFuncWrapper( singleDirectory )( storageElementName, storageDirectory,
+                                                   "removeDirectory", argsDict = {"recursive": recursive} )
 
 class StorageInterface( StorageFile, StorageDirectory ):
   """
@@ -888,7 +884,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     StorageInterface.__init__( self )
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
 
-  def _replicaSEFcnWrapper( self, singleFile=False):
+  def _replicaSEFcnWrapper( self, singleFile = False ):
     """ choose wrapper to call
 
     :param self: self reference
@@ -898,7 +894,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     return { True: self._callReplicaSEFcnSingleFile,
              False: self._callReplicaSEFcn }[singleFile]
 
-  def _callReplicaSEFcnSingleFile( self, storageElementName, lfn, method, argsDict=None ):
+  def _callReplicaSEFcnSingleFile( self, storageElementName, lfn, method, argsDict = None ):
     """ call :method: of StorageElement :storageElementName: for single :lfn: using :argsDict: kwargs
 
     :param self: self reference
@@ -924,7 +920,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
       return S_ERROR( res["Value"]["Failed"][singleLfn] )
     return S_OK( res["Value"]["Successful"][singleLfn] )
 
-  def _callReplicaSEFcn( self, storageElementName, lfn, method, argsDict=None ):
+  def _callReplicaSEFcn( self, storageElementName, lfn, method, argsDict = None ):
     """ a simple wrapper that allows replica querying then perform the StorageElement operation
 
     :param self: self reference
@@ -970,7 +966,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
       retDict["Failed"][pfnDict[pfn]] = errorMessage
     return S_OK( retDict )
 
-  def getReplicaIsFile( self, lfn, storageElementName, singleFile=False ):
+  def getReplicaIsFile( self, lfn, storageElementName, singleFile = False ):
     """ determine whether the supplied lfns are files at the supplied StorageElement
 
     :param self: self reference
@@ -978,9 +974,9 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first LFN only
     """
-    return self._replicaSEFcnWrapper(singleFile)( storageElementName, lfn, "isFile" )
+    return self._replicaSEFcnWrapper( singleFile )( storageElementName, lfn, "isFile" )
 
-  def getReplicaSize( self, lfn, storageElementName, singleFile=False ):
+  def getReplicaSize( self, lfn, storageElementName, singleFile = False ):
     """ get the size of files for the lfns at the supplied StorageElement
 
     :param self: self reference
@@ -988,9 +984,9 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first LFN only
     """
-    return self._replicaSEFcnWrapper(singleFile)( storageElementName, lfn, "getFileSize" )
+    return self._replicaSEFcnWrapper( singleFile )( storageElementName, lfn, "getFileSize" )
 
-  def getReplicaAccessUrl( self, lfn, storageElementName, singleFile=False ):
+  def getReplicaAccessUrl( self, lfn, storageElementName, singleFile = False ):
     """ get the access url for lfns at the supplied StorageElement
 
     :param self: self reference
@@ -998,9 +994,9 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first LFN only
     """
-    return self._replicaSEFcnWrapper(singleFile)( storageElementName, lfn, "getAccessUrl" )
+    return self._replicaSEFcnWrapper( singleFile )( storageElementName, lfn, "getAccessUrl" )
 
-  def getReplicaMetadata( self, lfn, storageElementName, singleFile=False ):
+  def getReplicaMetadata( self, lfn, storageElementName, singleFile = False ):
     """ get the file metadata for lfns at the supplied StorageElement
 
     :param self: self reference
@@ -1008,9 +1004,9 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first LFN only
     """
-    return self._replicaSEFcnWrapper(singleFile)( storageElementName, lfn, "getFileMetadata" )
+    return self._replicaSEFcnWrapper( singleFile )( storageElementName, lfn, "getFileMetadata" )
 
-  def prestageReplica( self, lfn, storageElementName, lifetime=86400, singleFile=False ):
+  def prestageReplica( self, lfn, storageElementName, lifetime = 86400, singleFile = False ):
     """ issue a prestage requests for the lfns at the supplied StorageElement
 
     :param self: self reference
@@ -1019,17 +1015,17 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param int lifetime: 24h in seconds
     :param bool singleFile: execute for the first LFN only
     """
-    return self._replicaSEFcnWrapper(singleFile)( storageElementName, lfn,
-                                                  "prestageFile", argsDict={"lifetime": lifetime} )
+    return self._replicaSEFcnWrapper( singleFile )( storageElementName, lfn,
+                                                  "prestageFile", argsDict = {"lifetime": lifetime} )
 
-  def getPrestageReplicaStatus( self, lfn, storageElementName, singleFile=False ):
+  def getPrestageReplicaStatus( self, lfn, storageElementName, singleFile = False ):
     """ This functionality is not supported.
 
     Then what is it doing here? Not supported -> delete it!
     """
     return S_ERROR( "Not supported functionality. Please use getReplicaMetadata and check the 'Cached' element." )
 
-  def pinReplica( self, lfn, storageElementName, lifetime=86400, singleFile=False ):
+  def pinReplica( self, lfn, storageElementName, lifetime = 86400, singleFile = False ):
     """ pin the lfns at the supplied StorageElement
 
     :param self: self reference
@@ -1038,10 +1034,10 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param int lifetime: 24h in seconds
     :param bool singleFile: execute for the first LFN only
     """
-    return self._replicaSEFcnWrapper(singleFile)( storageElementName, lfn,
-                                                  "pinFile", argsDict={"lifetime": lifetime} )
+    return self._replicaSEFcnWrapper( singleFile )( storageElementName, lfn,
+                                                  "pinFile", argsDict = {"lifetime": lifetime} )
 
-  def releaseReplica( self, lfn, storageElementName, singleFile=False ):
+  def releaseReplica( self, lfn, storageElementName, singleFile = False ):
     """ release pins for the lfns at the supplied StorageElement
 
     :param self: self reference
@@ -1049,9 +1045,9 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first LFN only
     """
-    return self._replicaSEFcnWrapper(singleFile)( storageElementName, lfn, "releaseFile" )
+    return self._replicaSEFcnWrapper( singleFile )( storageElementName, lfn, "releaseFile" )
 
-  def getReplica( self, lfn, storageElementName, localPath=False, singleFile=False ):
+  def getReplica( self, lfn, storageElementName, localPath = False, singleFile = False ):
     """ copy replicas from DIRAC SE to local directory
 
     :param self: self reference
@@ -1060,8 +1056,8 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param mixed localPath: path in the local file system, if False, os.getcwd() will be used
     :param bool singleFile: execute for the first LFN only
     """
-    return self._replicaSEFcnWrapper(singleFile)( storageElementName, lfn,
-                                                  "getFile", argsDict={"localPath": localPath} )
+    return self._replicaSEFcnWrapper( singleFile )( storageElementName, lfn,
+                                                  "getFile", argsDict = {"localPath": localPath} )
 
 class ReplicaManager( CatalogToStorage ):
   """
@@ -1080,6 +1076,8 @@ class ReplicaManager( CatalogToStorage ):
     self.registrationProtocol = ['SRM2', 'DIP']
     self.thirdPartyProtocols = ['SRM2', 'DIP']
     self.resourceStatus = ResourceStatus()
+    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+    self.ignoreMissingInFC = Operations().getValue( 'DataManagement/IgnoreMissingInFC', False )
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -1141,21 +1139,11 @@ class ReplicaManager( CatalogToStorage ):
     res = self.__getCatalogDirectoryContents( [ folder ] )
     if not res['OK']:
       return res
-    replicaDict = {}
-    for lfn, lfnDict in res['Value'].items():
-      lfnReplicas = lfnDict['Replicas']
-      replicaDict[lfn] = {}
-      for se, seDict in lfnReplicas.items():
-        replicaDict[lfn][se] = seDict['PFN']
-    if replicaDict:
-      self.log.info( "Attempting to remove %d files from the catalog and storage" % len( replicaDict ) )
-      res = self.__removeFile( replicaDict )
-      if not res['OK']:
-        return res
-      for lfn, reason in res['Value']['Failed'].items():
-        self.log.error( "Failed to remove file found in the catalog", "%s %s" % ( lfn, reason ) )
-      if res['Value']['Failed']:
-        return S_ERROR( "Failed to remove all files found in the catalog" )
+    res = self.removeFile( res['Value'].keys() + [ '%s/dirac_directory' % folder ] )
+    if not res['OK']:
+      return res
+    for lfn, reason in res['Value']['Failed'].items():
+      gLogger.error( "Failed to remove file found in the catalog", "%s %s" % ( lfn, reason ) )
     storageElements = gConfig.getValue( 'Resources/StorageElementGroups/SE_Cleaning_List', [] )
     failed = False
     for storageElement in sortList( storageElements ):
@@ -1186,7 +1174,7 @@ class ReplicaManager( CatalogToStorage ):
     if res['Value']['Failed']:
       return S_ERROR( 'Failed to obtain directory PFN from LFNs' )
     storageDirectory = res['Value']['Successful'].values()[0]
-    res = self.getStorageFileExists( storageDirectory, storageElement, singleFile=True )
+    res = self.getStorageFileExists( storageDirectory, storageElement, singleFile = True )
     if not res['OK']:
       self.log.error( "Failed to obtain existance of directory", res['Message'] )
       return res
@@ -1194,7 +1182,7 @@ class ReplicaManager( CatalogToStorage ):
     if not exists:
       self.log.info( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
-    res = self.removeStorageDirectory( storageDirectory, storageElement, recursive=True, singleDirectory=True )
+    res = self.removeStorageDirectory( storageDirectory, storageElement, recursive = True, singleDirectory = True )
     if not res['OK']:
       self.log.error( "Failed to remove storage directory", res['Message'] )
       return res
@@ -1216,7 +1204,7 @@ class ReplicaManager( CatalogToStorage ):
     allFiles = {}
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
-      res = self.getCatalogListDirectory( currentDir, singleFile=True )
+      res = self.getCatalogListDirectory( currentDir, singleFile = True )
       activeDirs.remove( currentDir )
       if not res['OK'] and res['Message'].endswith( 'The supplied path does not exist' ):
         self.log.info( "The supplied directory %s does not exist" % currentDir )
@@ -1247,7 +1235,7 @@ class ReplicaManager( CatalogToStorage ):
       allReplicas[lfn] = metadata['Replicas']
     return S_OK( allReplicas )
 
-  def getFilesFromDirectory( self, directory, days=0, wildcard='*' ):
+  def getFilesFromDirectory( self, directory, days = 0, wildcard = '*' ):
     """ get all files from :directory: older than :days: days matching to :wildcard:
 
     :param self: self reference
@@ -1278,14 +1266,14 @@ class ReplicaManager( CatalogToStorage ):
             if subdir[0] != '/':
               subdir = currentDir + '/' + subdir
             activeDirs.append( subdir )
-        for filename, fileInfo in dirContents['Files'].items():
+        for fileName, fileInfo in dirContents['Files'].items():
           if "MetaData" in fileInfo:
             fileInfo = fileInfo['MetaData']
           if ( not days ) or self.__isOlderThan( fileInfo['CreationDate'], days ):
-            if fnmatch.fnmatch( filename, wildcard ):
+            if fnmatch.fnmatch( fileName, wildcard ):
               if "LFN" in fileInfo:
-                filename = fileInfo['LFN']
-              allFiles.append( filename )
+                fileName = fileInfo['LFN']
+              allFiles.append( fileName )
         files = dirContents['Files'].keys()
         self.log.info( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
     return S_OK( allFiles )
@@ -1330,14 +1318,13 @@ class ReplicaManager( CatalogToStorage ):
     failed.update( res['Value']['Failed'] )
     fileMetadata = res['Value']['Successful']
     successful = {}
-    for lfn in fileMetadata.keys():
+    for lfn in fileMetadata:
       res = self.__getFile( lfn, lfnReplicas[lfn], fileMetadata[lfn], destinationDir )
       if not res['OK']:
         failed[lfn] = res['Message']
       else:
         successful[lfn] = res['Value']
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
+    return S_OK( { 'Successful': successful, 'Failed' : failed } )
 
   def __getFile( self, lfn, replicas, metadata, destinationDir ):
     if not replicas:
@@ -1372,10 +1359,11 @@ class ReplicaManager( CatalogToStorage ):
     return S_ERROR( "ReplicaManager.getFile: Failed to get local copy from any replicas." )
 
   def _getSEProximity( self, ses ):
+    """ get SE proximity """
     siteName = DIRAC.siteName()
     localSEs = getSEsForSite( siteName )['Value']
     countrySEs = []
-    countryCode = siteName.split('.')[-1]
+    countryCode = str( siteName ).split( '.' )[-1]
     res = getSEsForCountry( countryCode )
     if res['OK']:
       countrySEs = res['Value']
@@ -1388,7 +1376,7 @@ class ReplicaManager( CatalogToStorage ):
         sortedSEs.append( se )
     return S_OK( sortedSEs )
 
-  def putAndRegister( self, lfn, file, diracSE, guid=None, path=None, checksum=None, catalog=None, ancestors=None ):
+  def putAndRegister( self, lfn, fileName, diracSE, guid = None, path = None, checksum = None, catalog = None, ancestors = None ):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
         'lfn' is the file LFN
@@ -1411,25 +1399,25 @@ class ReplicaManager( CatalogToStorage ):
     else:
       self.fileCatalogue = FileCatalog()
     # Check that the local file exists
-    if not os.path.exists( file ):
+    if not os.path.exists( fileName ):
       errStr = "putAndRegister: Supplied file does not exist."
-      self.log.error( errStr, file )
+      self.log.error( errStr, fileName )
       return S_ERROR( errStr )
     # If the path is not provided then use the LFN path
     if not path:
       path = os.path.dirname( lfn )
     # Obtain the size of the local file
-    size = getSize( file )
+    size = getSize( fileName )
     if size == 0:
       errStr = "putAndRegister: Supplied file is zero size."
-      self.log.error( errStr, file )
+      self.log.error( errStr, fileName )
       return S_ERROR( errStr )
     # If the GUID is not given, generate it here
     if not guid:
-      guid = makeGuid( file )
+      guid = makeGuid( fileName )
     if not checksum:
       self.log.info( "putAndRegister: Checksum information not provided. Calculating adler32." )
-      checksum = fileAdler( file )
+      checksum = fileAdler( fileName )
       self.log.info( "putAndRegister: Checksum calculated to be %s." % checksum )
     res = self.fileCatalogue.exists( {lfn:guid} )
     if not res['OK']:
@@ -1449,12 +1437,6 @@ class ReplicaManager( CatalogToStorage ):
             "Please remove it and try again."
         self.log.error( errStr, res['Value']['Successful'][lfn] )
       return S_ERROR( "%s %s" % ( errStr, res['Value']['Successful'][lfn] ) )
-    # If the local file name is not the same as the LFN filename then use the LFN file name
-    alternativeFile = None
-    lfnFileName = os.path.basename( lfn )
-    localFileName = os.path.basename( file )
-    if not lfnFileName == localFileName:
-      alternativeFile = lfnFileName
 
     ##########################################################
     #  Instantiate the destination storage element here.
@@ -1471,7 +1453,7 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     destPfn = res['Value']
-    fileDict = {destPfn:file}
+    fileDict = {destPfn:fileName}
 
     successful = {}
     failed = {}
@@ -1481,7 +1463,7 @@ class ReplicaManager( CatalogToStorage ):
     oDataOperation.setStartTime()
     oDataOperation.setValueByKey( 'TransferSize', size )
     startTime = time.time()
-    res = storageElement.putFile( fileDict, True )
+    res = storageElement.putFile( fileDict, singleFile = True )
     putTime = time.time() - startTime
     oDataOperation.setValueByKey( 'TransferTime', putTime )
     if not res['OK']:
@@ -1492,8 +1474,8 @@ class ReplicaManager( CatalogToStorage ):
       gDataStoreClient.addRegister( oDataOperation )
       startTime = time.time()
       gDataStoreClient.commit()
-      self.log.info( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time()-startTime ) )
-      self.log.error( errStr, "%s: %s" % ( file, res['Message'] ) )
+      self.log.info( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
+      self.log.error( errStr, "%s: %s" % ( fileName, res['Message'] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     successful[lfn] = {'put': putTime}
 
@@ -1524,8 +1506,7 @@ class ReplicaManager( CatalogToStorage ):
     startTime = time.time()
     gDataStoreClient.commit()
     self.log.info( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
-    resDict = {'Successful': successful, 'Failed':failed}
-    return S_OK( resDict )
+    return S_OK( {'Successful': successful, 'Failed': failed } )
 
   def replicateAndRegister( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' , catalog = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
@@ -1574,8 +1555,7 @@ class ReplicaManager( CatalogToStorage ):
         errStr = "replicateAndRegister: Failed to register replica."
         self.log.info( errStr, res['Value']['Failed'][lfn] )
         failed[lfn] = { 'Registration' : { 'LFN' : lfn, 'TargetSE' : destSE, 'PFN' : destPfn } }
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
+    return S_OK( {'Successful': successful, 'Failed': failed} )
 
   def replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
@@ -1654,7 +1634,8 @@ class ReplicaManager( CatalogToStorage ):
     localReplicas = []
     otherReplicas = []
     for sourceSE, sourcePfn in replicaPreference:
-      if sourcePfn == destPfn: continue
+      if sourcePfn == destPfn:
+        continue
       res = isSameSiteSE( sourceSE, destSE )
       if res['OK'] and res['Value']:
         localReplicas.append( ( sourceSE, sourcePfn ) )
@@ -1678,7 +1659,7 @@ class ReplicaManager( CatalogToStorage ):
         fileDict = {destPfn:localFile}
 
       res = destStorageElement.replicateFile( fileDict, catalogueSize, singleFile = True )
-      if localFile:
+      if localFile and os.path.exists( localFile ):
         os.remove( localFile )
 
       if res['OK']:
@@ -1695,130 +1676,194 @@ class ReplicaManager( CatalogToStorage ):
     return S_ERROR( errStr )
 
   def __initializeReplication( self, lfn, sourceSE, destSE ):
+
+    # Horrible, but kept to not break current log messages
+    logStr = "__initializeReplication:"
+
     ###########################################################
     # Check that the destination storage element is sane and resolve its name
-    self.log.verbose( "__initializeReplication: Verifying dest StorageElement validity (%s)." % destSE )
+    self.log.verbose( "%s Verifying dest StorageElement validity (%s)." % ( logStr, destSE ) )
     destStorageElement = StorageElement( destSE )
     res = destStorageElement.isValid()
     if not res['OK']:
-      errStr = "__initializeReplication: The storage element is not currently valid."
+      errStr = "%s The storage element is not currently valid." % logStr
       self.log.error( errStr, "%s %s" % ( destSE, res['Message'] ) )
       return S_ERROR( errStr )
     destSE = destStorageElement.getStorageElementName()['Value']
-    self.log.info( "__initializeReplication: Destination Storage Element verified." )
+    self.log.info( "%s Destination Storage Element verified." % logStr )
+
     ###########################################################
     # Get the LFN replicas from the file catalogue
-    self.log.verbose( "ReplicaManager.__initializeReplication: Attempting to obtain replicas for %s." % lfn )
+    self.log.verbose( "%s Attempting to obtain replicas for %s." % ( logStr, lfn ) )
     res = self.fileCatalogue.getReplicas( lfn )
-    if not res['OK']:
-      errStr = "__initializeReplication: Completely failed to get replicas for LFN."
+    if not res[ 'OK' ]:
+      errStr = "%s Completely failed to get replicas for LFN." % logStr
       self.log.error( errStr, "%s %s" % ( lfn, res['Message'] ) )
       return res
     if lfn not in res['Value']['Successful']:
-      errStr = "__initializeReplication: Failed to get replicas for LFN."
+      errStr = "%s Failed to get replicas for LFN." % logStr
       self.log.error( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
-    self.log.info( "__initializeReplication: Successfully obtained replicas for LFN." )
+    self.log.info( "%s Successfully obtained replicas for LFN." % logStr )
     lfnReplicas = res['Value']['Successful'][lfn]
+
     ###########################################################
     # If the file catalogue size is zero fail the transfer
-    self.log.verbose( "__initializeReplication: Attempting to obtain size for %s." % lfn )
+    self.log.verbose( "%s Attempting to obtain size for %s." % ( logStr, lfn ) )
     res = self.fileCatalogue.getFileSize( lfn )
     if not res['OK']:
-      errStr = "__initializeReplication: Completely failed to get size for LFN."
+      errStr = "%s Completely failed to get size for LFN." % logStr
       self.log.error( errStr, "%s %s" % ( lfn, res['Message'] ) )
       return res
     if lfn not in res['Value']['Successful']:
-      errStr = "__initializeReplication: Failed to get size for LFN."
+      errStr = "%s Failed to get size for LFN." % logStr
       self.log.error( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
     catalogueSize = res['Value']['Successful'][lfn]
     if catalogueSize == 0:
-      errStr = "__initializeReplication: Registered file size is 0."
+      errStr = "%s Registered file size is 0." % logStr
       self.log.error( errStr, lfn )
       return S_ERROR( errStr )
-    self.log.info( "__initializeReplication: File size determined to be %s." % catalogueSize )
+    self.log.info( "%s File size determined to be %s." % ( logStr, catalogueSize ) )
+
     ###########################################################
     # Check whether the destination storage element is banned
-    self.log.verbose( "__initializeReplication: Determining whether %s is banned." % destSE )
-    configStr = '/Resources/StorageElements/BannedTarget'
-    bannedTargets = gConfig.getValue( configStr, [] )
-    if destSE in bannedTargets:
-      infoStr = "__initializeReplication: Destination Storage Element is currently banned."
+
+    self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
+
+    destSEStatus = self.resourceStatus.getStorageElementStatus( destSE, 'WriteAccess' )
+    if not destSEStatus[ 'OK' ]:
+      self.log.error( destSEStatus[ 'Message' ] )
+      return destSEStatus
+    destSEStatus = destSEStatus[ 'Value' ][ destSE ][ 'WriteAccess' ]
+
+    # For RSS, the Active and Degraded statuses are OK. Probing and Banned are NOK statuses
+    if not destSEStatus in ( 'Active', 'Degraded' ):
+      infoStr = "%s Destination Storage Element is currently '%s' for Write" % ( logStr, destSEStatus )
       self.log.info( infoStr, destSE )
       return S_ERROR( infoStr )
-    self.log.info( "__initializeReplication: Destination site not banned." )
+
+    self.log.info( "%s Destination site not banned for Write." % logStr )
+
+#    configStr = '/Resources/StorageElements/BannedTarget'
+#    bannedTargets = gConfig.getValue( configStr, [] )
+#    if destSE in bannedTargets:
+#      infoStr = "__initializeReplication: Destination Storage Element is currently banned."
+#      self.log.info( infoStr, destSE )
+#      return S_ERROR( infoStr )
+#
+#    self.log.info( "__initializeReplication: Destination site not banned." )
+
     ###########################################################
     # Check whether the supplied source SE is sane
-    self.log.verbose( "__initializeReplication: Determining whether source Storage Element is sane." )
-    configStr = '/Resources/StorageElements/BannedSource'
-    bannedSources = gConfig.getValue( configStr, [] )
+
+    self.log.verbose( "%s: Determining whether source Storage Element is sane." % logStr )
+
+#    configStr = '/Resources/StorageElements/BannedSource'
+#    bannedSources = gConfig.getValue( configStr, [] )
+
     if sourceSE:
+
+      sourceSEStatus = self.resourceStatus.getStorageElementStatus( sourceSE, 'ReadAccess' )
+      if not sourceSEStatus[ 'OK' ]:
+        self.log.error( sourceSEStatus[ 'Message' ] )
+        return sourceSEStatus
+      sourceSEStatus = sourceSEStatus[ 'Value' ][ sourceSE ][ 'ReadAccess' ]
+
       if sourceSE not in lfnReplicas:
-        errStr = "__initializeReplication: LFN does not exist at supplied source SE."
+        errStr = "%s LFN does not exist at supplied source SE." % logStr
         self.log.error( errStr, "%s %s" % ( lfn, sourceSE ) )
         return S_ERROR( errStr )
-      elif sourceSE in bannedSources:
-        infoStr = "__initializeReplication: Supplied source Storage Element is currently banned."
+      elif not sourceSEStatus in ( 'Active', 'Degraded' ):
+#      elif sourceSE in bannedSources:
+        infoStr = "%s Supplied source Storage Element is currently '%s' for Read." % ( logStr, sourceSEStatus )
         self.log.info( infoStr, sourceSE )
-        return S_ERROR( errStr )
-    self.log.info( "__initializeReplication: Replication initialization successful." )
-    resDict = {'DestStorage':destStorageElement, 'DestSE':destSE, 'Replicas':lfnReplicas, 'CatalogueSize':catalogueSize}
+        return S_ERROR( infoStr )
+
+    self.log.info( "%s Replication initialization successful." % logStr )
+
+    resDict = {
+               'DestStorage'   : destStorageElement,
+               'DestSE'        : destSE,
+               'Replicas'      : lfnReplicas,
+               'CatalogueSize' : catalogueSize
+               }
+
     return S_OK( resDict )
 
   def __resolveBestReplicas( self, sourceSE, lfnReplicas, catalogueSize ):
+    """ find best replicas """
+
     ###########################################################
     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
-    configStr = '/Resources/StorageElements/BannedSource'
-    bannedSources = gConfig.getValue( configStr, [] )
-    self.log.info( "__resolveBestReplicas: Obtained current banned sources." )
+
+    logStr = "__resolveBestReplicas:"
+
+    #configStr = '/Resources/StorageElements/BannedSource'
+    #bannedSources = gConfig.getValue( configStr, [] )
+    self.log.info( "%s Obtained current banned sources." % logStr )
     replicaPreference = []
+
     for diracSE, pfn in lfnReplicas.items():
+
       if sourceSE and diracSE != sourceSE:
-        self.log.info( "__resolveBestReplicas: %s replica not requested." % diracSE )
-      elif diracSE in bannedSources:
-        self.log.info( "__resolveBestReplicas: %s is currently banned as a source." % diracSE )
+        self.log.info( "%s %s replica not requested." % ( logStr, diracSE ) )
+        continue
+
+      diracSEStatus = self.resourceStatus.getStorageElementStatus( diracSE, 'ReadAccess' )
+      if not diracSEStatus[ 'OK' ]:
+        self.log.error( diracSEStatus[ 'Message' ] )
+        continue
+      diracSEStatus = diracSEStatus[ 'Value' ][ diracSE ][ 'ReadAccess' ]
+
+      if not diracSEStatus in ( 'Active', 'Degraded' ):
+        self.log.info( "%s %s is currently '%s' as a source." % ( logStr, diracSE, diracSEStatus ) )
+
+      #elif diracSE in bannedSources:
+      #  self.log.info( "__resolveBestReplicas: %s is currently banned as a source." % diracSE )
       else:
-        self.log.info( "__resolveBestReplicas: %s is available for use." % diracSE )
+        self.log.info( "%s %s is available for use." % ( logStr, diracSE ) )
         storageElement = StorageElement( diracSE )
         res = storageElement.isValid()
         if not res['OK']:
-          errStr = "__resolveBestReplicas: The storage element is not currently valid."
+          errStr = "%s The storage element is not currently valid." % logStr
           self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
           if storageElement.getRemoteProtocols()['Value']:
-            self.log.verbose( "__resolveBestReplicas: Attempting to get source pfns for remote protocols." )
+            self.log.verbose( "%s Attempting to get source pfns for remote protocols." % logStr )
             res = storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols )
             if res['OK']:
               sourcePfn = res['Value']
-              self.log.verbose( "__resolveBestReplicas: Attempting to get source file size." )
+              self.log.verbose( "%s Attempting to get source file size." % logStr )
               res = storageElement.getFileSize( sourcePfn )
               if res['OK']:
                 if sourcePfn in res['Value']['Successful']:
                   sourceFileSize = res['Value']['Successful'][sourcePfn]
-                  self.log.info( "__resolveBestReplicas: Source file size determined to be %s." % sourceFileSize )
+                  self.log.info( "%s Source file size determined to be %s." % ( logStr, sourceFileSize ) )
                   if catalogueSize == sourceFileSize:
                     fileTuple = ( diracSE, sourcePfn )
                     replicaPreference.append( fileTuple )
                   else:
-                    errStr = "__resolveBestReplicas: Catalogue size and physical file size mismatch."
+                    errStr = "%s Catalogue size and physical file size mismatch." % logStr
                     self.log.error( errStr, "%s %s" % ( diracSE, sourcePfn ) )
                 else:
-                  errStr = "__resolveBestReplicas: Failed to get physical file size."
+                  errStr = "%s Failed to get physical file size." % logStr
                   self.log.error( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Value']['Failed'][sourcePfn] ) )
               else:
-                errStr = "__resolveBestReplicas: Completely failed to get physical file size."
+                errStr = "%s Completely failed to get physical file size." % logStr
                 self.log.error( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Message'] ) )
             else:
-              errStr = "__resolveBestReplicas: Failed to get PFN for replication for StorageElement."
+              errStr = "%s Failed to get PFN for replication for StorageElement." % logStr
               self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
           else:
-            errStr = "__resolveBestReplicas: Source Storage Element has no remote protocols."
+            errStr = "%s Source Storage Element has no remote protocols." % logStr
             self.log.info( errStr, diracSE )
+
     if not replicaPreference:
-      errStr = "__resolveBestReplicas: Failed to find any valid source Storage Elements."
+      errStr = "%s Failed to find any valid source Storage Elements." % logStr
       self.log.error( errStr )
       return S_ERROR( errStr )
+
     else:
       return S_OK( replicaPreference )
 
@@ -1851,16 +1896,16 @@ class ReplicaManager( CatalogToStorage ):
     return res
 
   def __registerFile( self, fileTuples, catalog ):
+    """ register file to cataloge """
     seDict = {}
     for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuples:
       if storageElementName not in seDict:
         seDict[storageElementName] = []
       seDict[storageElementName].append( ( lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum ) )
-    successful = {}
     failed = {}
     fileDict = {}
     for storageElementName, fileTuple in seDict.items():
-      destStorageElement = StorageElement( storageElementName, overwride = True )
+      destStorageElement = StorageElement( storageElementName )
       res = destStorageElement.isValid()
       if not res['OK']:
         errStr = "__registerFile: The storage element is not currently valid."
@@ -1877,7 +1922,7 @@ class ReplicaManager( CatalogToStorage ):
             pfn = res['Value']
           #tuple = ( lfn, pfn, fileSize, storageElementName, fileGuid, checksum )
           fileDict[lfn] = {'PFN':pfn, 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
-    self.log.verbose( "__registerFile: Resolved %s files for registration." % len( fileDict.keys() ) )
+    self.log.verbose( "__registerFile: Resolved %s files for registration." % len( fileDict ) )
     if catalog:
       fileCatalog = FileCatalog( catalog )
       res = fileCatalog.addFile( fileDict )
@@ -1913,12 +1958,12 @@ class ReplicaManager( CatalogToStorage ):
     return res
 
   def __registerReplica( self, replicaTuples, catalog ):
+    """ register replica to catalogue """
     seDict = {}
     for lfn, pfn, storageElementName in replicaTuples:
       if storageElementName not in seDict:
         seDict[storageElementName] = []
       seDict[storageElementName].append( ( lfn, pfn ) )
-    successful = {}
     failed = {}
     replicaTuples = []
     for storageElementName, replicaTuple in seDict.items():
@@ -1963,11 +2008,13 @@ class ReplicaManager( CatalogToStorage ):
   # These are the removal methods for physical and catalogue removal
   #
 
-  def removeFile( self, lfn ):
+  def removeFile( self, lfn, force = None ):
     """ Remove the file (all replicas) from Storage Elements and file catalogue
 
         'lfn' is the file to be removed
     """
+    if force == None:
+      force = self.ignoreMissingInFC
     if type( lfn ) == ListType:
       lfns = lfn
     elif type( lfn ) == StringType:
@@ -1985,31 +2032,25 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, lfns )
       return S_ERROR( errStr )
 
-    self.log.verbose( "removeFile: Attempting to remove %s files from Storage and Catalogue." % len( lfns ) )
-    self.log.verbose( "removeFile: Attempting to obtain replicas for %s lfns." % len( lfns ) )
-    res = self.fileCatalogue.exists( lfns )
-    if not res['OK']:
-      errStr = "removeFile: Completely failed to determine existance of lfns."
-      self.log.error( errStr, res['Message'] )
-      return res
     successful = {}
-    existingFiles = []
-    for lfn, exists in res['Value']['Successful'].items():
-      if not exists:
-        successful[lfn] = True
-      else:
-        existingFiles.append( lfn )
-    res = self.fileCatalogue.getReplicas( existingFiles, True )
+    failed = {}
+    self.log.verbose( "removeFile: Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
+    res = self.fileCatalogue.getReplicas( lfns, True )
     if not res['OK']:
       errStr = "ReplicaManager.removeFile: Completely failed to get replicas for lfns."
       self.log.error( errStr, res['Message'] )
       return res
     lfnDict = res['Value']['Successful']
-    failed = res['Value']['Failed']
-    for lfn, reason in failed.items():
-      if reason == 'File has zero replicas':
+    
+    for lfn, reason in res['Value'].get('Failed', {}).items():
+      # Ignore files missing in FC if force is set
+      if reason == 'No such file or directory' and force:
+        successful[lfn] = True
+      elif reason == 'File has zero replicas':
         lfnDict[lfn] = {}
-        failed.pop( lfn )
+      else:
+        failed[lfn] = reason
+
     res = self.__removeFile( lfnDict )
     if not res['OK']:
       errStr = "removeFile: Completely failed to remove files."
@@ -2022,32 +2063,27 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( resDict )
 
   def __removeFile( self, lfnDict ):
+    """ remove file """
     storageElementDict = {}
     ## sorted and reversed
     for lfn, repDict in sorted( lfnDict.items(), reverse = True ):
       for se, pfn in repDict.items():
-        if se not in storageElementDict:
-          storageElementDict[se] = []
-        storageElementDict[se].append( ( lfn, pfn ) )
+        storageElementDict.setdefault( se, [] ).append( ( lfn, pfn ) )
     failed = {}
     successful = {}
-    for storageElementName, fileTuple in sorted( storageElementDict.items() ):
+    for storageElementName in sorted( storageElementDict ):
+      fileTuple = storageElementDict[storageElementName]
       res = self.__removeReplica( storageElementName, fileTuple )
       if not res['OK']:
         errStr = res['Message']
         for lfn, pfn in fileTuple:
-          if lfn not in failed:
-            failed[lfn] = ''
-          failed[lfn] = "%s %s" % ( failed[lfn], errStr )
+          failed[lfn] = failed.setdefault( lfn, '' ) + " %s" % errStr
       else:
-        for lfn, error in res['Value']['Failed'].items():
-          if lfn not in failed:
-            failed[lfn] = ''
-          failed[lfn] = "%s %s" % ( failed[lfn], error )
+        for lfn, errStr in res['Value']['Failed'].items():
+          failed[lfn] = failed.setdefault( lfn, '' ) + " %s" % errStr
     completelyRemovedFiles = []
-    for lfn in lfnDict:
-      if lfn not in failed:
-        completelyRemovedFiles.append( lfn )
+    for lfn in [lfn for lfn in lfnDict if lfn not in failed]:
+      completelyRemovedFiles.append( lfn )
     if completelyRemovedFiles:
       res = self.fileCatalogue.removeFile( completelyRemovedFiles )
       if not res['OK']:
@@ -2080,7 +2116,7 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "removaReplica: Write access not permitted for this credential."
       self.log.error( errStr, lfns )
       return S_ERROR( errStr )
-    self.log.verbose( "removeReplica: Will remove catalogue entry for %s lfns at %s." % ( len(lfns),
+    self.log.verbose( "removeReplica: Will remove catalogue entry for %s lfns at %s." % ( len( lfns ),
                                                                                           storageElementName ) )
     res = self.fileCatalogue.getReplicas( lfns, True )
     if not res['OK']:
@@ -2094,15 +2130,13 @@ class ReplicaManager( CatalogToStorage ):
       if storageElementName not in repDict:
         # The file doesn't exist at the storage element so don't have to remove it
         successful[lfn] = True
-      elif len( repDict.keys() ) == 1:
+      elif len( repDict ) == 1:
         # The file has only a single replica so don't remove
         self.log.error( "The replica you are trying to remove is the only one.", "%s @ %s" % ( lfn,
                                                                                                storageElementName ) )
         failed[lfn] = "Failed to remove sole replica"
       else:
-        sePfn = repDict[storageElementName]
-        replicaTuple = ( lfn, sePfn )
-        replicaTuples.append( replicaTuple )
+        replicaTuples.append( ( lfn, repDict[storageElementName] ) )
     res = self.__removeReplica( storageElementName, replicaTuples )
     if not res['OK']:
       return res
@@ -2112,6 +2146,7 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
   def __removeReplica( self, storageElementName, fileTuple ):
+    """ remove replica """
     pfnDict = {}
     failed = {}
     for lfn, pfn in fileTuple:
@@ -2120,8 +2155,8 @@ class ReplicaManager( CatalogToStorage ):
         errStr = "__removeReplica: Write access not permitted for this credential."
         self.log.error( errStr, lfn )
         failed[lfn] = errStr
-        continue
-      pfnDict[pfn] = lfn
+      else:
+        pfnDict[pfn] = lfn
     res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
     if not res['OK']:
       errStr = "__removeReplica: Failed to remove catalog replicas."
@@ -2129,22 +2164,17 @@ class ReplicaManager( CatalogToStorage ):
       return S_ERROR( errStr )
     for pfn, error in res['Value']['Failed'].items():
       failed[pfnDict[pfn]] = error
-    replicaTuples = []
-    for pfn, surl in res['Value']['Successful'].items():
-      replicaTuple = ( pfnDict[pfn], surl, storageElementName )
-      replicaTuples.append( replicaTuple )
+    replicaTuples = [( pfnDict[pfn], surl, storageElementName ) for pfn, surl in res['Value']['Successful'].items()]
     successful = {}
     res = self.__removeCatalogReplica( replicaTuples )
     if not res['OK']:
       errStr = "__removeReplica: Completely failed to remove physical files."
       self.log.error( errStr, res['Message'] )
-      for lfn in pfnDict.values():
-        if lfn not in failed:
-          failed[lfn] = errStr
+      failed.update( dict.fromkeys( [lfn for lfn in pfnDict.values() if lfn not in failed], errStr ) )
     else:
       failed.update( res['Value']['Failed'] )
       successful = res['Value']['Successful']
-    return S_OK( { 'Successful' : successful, 'Failed' : failed } ) 
+    return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
   def removeReplicaFromCatalog( self, storageElementName, lfn ):
     """ remove :lfn: replica from :storageElementName: SE
@@ -2171,17 +2201,20 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "removeReplicaFromCatalog: Completely failed to get replicas for lfns."
       self.log.error( errStr, res['Message'] )
       return res
-    failed = res['Value']['Failed']
+    failed = {}
     successful = {}
+    for lfn, reason in res['Value']['Failed'].items():
+      if reason in ( 'No such file or directory', 'File has zero replicas' ):
+        successful[lfn] = True
+      else:
+        failed[lfn] = reason
     replicaTuples = []
     for lfn, repDict in res['Value']['Successful'].items():
       if storageElementName not in repDict:
         # The file doesn't exist at the storage element so don't have to remove it
         successful[lfn] = True
       else:
-        sePfn = repDict[storageElementName]
-        replicaTuple = ( lfn, sePfn, storageElementName )
-        replicaTuples.append( replicaTuple )
+        replicaTuples.append( ( lfn, repDict[storageElementName], storageElementName ) )
     self.log.verbose( "removeReplicaFromCatalog: Resolved %s pfns for catalog removal at %s." % ( len( replicaTuples ),
                                                                                                   storageElementName ) )
     res = self.__removeCatalogReplica( replicaTuples )
@@ -2203,10 +2236,10 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "removeCatalogPhysicalFileNames: Supplied info must be tuple or list of tuples."
       self.log.error( errStr )
       return S_ERROR( errStr )
-    res = self.__removeCatalogReplica( replicaTuples )
-    return res
+    return self.__removeCatalogReplica( replicaTuples )
 
   def __removeCatalogReplica( self, replicaTuple ):
+    """ remove replica form catalogue """
     oDataOperation = self.__initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuple ) )
     oDataOperation.setStartTime()
     start = time.time()
@@ -2224,7 +2257,7 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "__removeCatalogReplica: Completely failed to remove replica."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    for lfn in res['Value']['Successful'].keys():
+    for lfn in res['Value']['Successful']:
       infoStr = "__removeCatalogReplica: Successfully removed replica."
       self.log.debug( infoStr, lfn )
     if res['Value']['Successful']:
@@ -2232,7 +2265,7 @@ class ReplicaManager( CatalogToStorage ):
     for lfn, error in res['Value']['Failed'].items():
       errStr = "__removeCatalogReplica: Failed to remove replica."
       self.log.error( errStr, "%s %s" % ( lfn, error ) )
-    oDataOperation.setValueByKey( 'RegistrationOK', len( res['Value']['Successful'].keys() ) )
+    oDataOperation.setValueByKey( 'RegistrationOK', len( res['Value']['Successful'] ) )
     gDataStoreClient.addRegister( oDataOperation )
     return res
 
@@ -2276,7 +2309,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         sePfn = repDict[storageElementName]
         pfnDict[sePfn] = lfn
-    self.log.verbose( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( pfnDict.keys() ),
+    self.log.verbose( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( pfnDict ),
                                                                                        storageElementName ) )
     res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
     for pfn, error in res['Value']['Failed'].items():
@@ -2287,9 +2320,10 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( resDict )
 
   def __removePhysicalReplica( self, storageElementName, pfnsToRemove ):
+    """ remove replica from storage element """
     self.log.verbose( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ),
                                                                                          storageElementName ) )
-    storageElement = StorageElement( storageElementName, overwride = True )
+    storageElement = StorageElement( storageElementName )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "__removePhysicalReplica: The storage element is not currently valid."
@@ -2311,16 +2345,20 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     else:
-      oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'].keys() ) )
-      gDataStoreClient.addRegister( oDataOperation )
-      infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
-      self.log.info( infoStr )
-      for surl, value in res['Value']['Successful'].items():
+      for surl, value in res['Value']['Failed'].items():
+        if 'No such file or directory' in value:
+          res['Value']['Successful'][surl] = surl
+          res['Value']['Failed'].pop( surl )
+      for surl in res['Value']['Successful']:
         ret = storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False )
         if not ret['OK']:
           res['Value']['Successful'][surl] = surl
         else:
           res['Value']['Successful'][surl] = ret['Value']
+      oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'] ) )
+      gDataStoreClient.addRegister( oDataOperation )
+      infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
+      self.log.verbose( infoStr )
       return res
 
   #########################################################################
@@ -2328,7 +2366,7 @@ class ReplicaManager( CatalogToStorage ):
   # File transfer methods
   #
 
-  def put( self, lfn, file, diracSE, path = None ):
+  def put( self, lfn, fileName, diracSE, path = None ):
     """ Put a local file to a Storage Element
 
     :param self: self reference
@@ -2341,25 +2379,19 @@ class ReplicaManager( CatalogToStorage ):
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
     # Check that the local file exists
-    if not os.path.exists( file ):
+    if not os.path.exists( fileName ):
       errStr = "put: Supplied file does not exist."
-      self.log.error( errStr, file )
+      self.log.error( errStr, fileName )
       return S_ERROR( errStr )
     # If the path is not provided then use the LFN path
     if not path:
       path = os.path.dirname( lfn )
     # Obtain the size of the local file
-    size = getSize( file )
+    size = getSize( fileName )
     if size == 0:
       errStr = "put: Supplied file is zero size."
-      self.log.error( errStr, file )
+      self.log.error( errStr, fileName )
       return S_ERROR( errStr )
-    # If the local file name is not the same as the LFN filename then use the LFN file name
-    alternativeFile = None
-    lfnFileName = os.path.basename( lfn )
-    localFileName = os.path.basename( file )
-    if not lfnFileName == localFileName:
-      alternativeFile = lfnFileName
 
     ##########################################################
     #  Instantiate the destination storage element here.
@@ -2369,14 +2401,13 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "put: The storage element is not currently valid."
       self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
-    destinationSE = storageElement.getStorageElementName()['Value']
     res = storageElement.getPfnForLfn( lfn )
     if not res['OK']:
       errStr = "put: Failed to generate destination PFN."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     destPfn = res['Value']
-    fileDict = {destPfn:file}
+    fileDict = {destPfn:fileName}
 
     successful = {}
     failed = {}
@@ -2388,7 +2419,7 @@ class ReplicaManager( CatalogToStorage ):
     if not res['OK']:
       errStr = "put: Failed to put file to Storage Element."
       failed[lfn] = res['Message']
-      self.log.error( errStr, "%s: %s" % ( file, res['Message'] ) )
+      self.log.error( errStr, "%s: %s" % ( fileName, res['Message'] ) )
     else:
       self.log.info( "put: Put file to storage in %s seconds." % putTime )
       successful[lfn] = destPfn
@@ -2440,21 +2471,21 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( replicaDict )
 
   def __SEActive( self, se ):
-
+    """ check is SE is active """
     res = self.resourceStatus.getStorageElementStatus( se, default = None )
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )
 
     seStatus = { 'Read' : True, 'Write' : True }
-    if ( "Read" in res['Value'][se] ) and ( res['Value'][se]['Read'] not in ( 'Active', 'Bad' ) ):
+    if ( "Read" in res['Value'][se] ) and ( res['Value'][se]['Read'] not in ( 'Active', 'Degraded' ) ):
       seStatus[ 'Read' ] = False
-    if ( "Write" in res['Value'][se] ) and ( res['Value'][se]['Write'] not in ( 'Active', 'Bad' ) ):
+    if ( "Write" in res['Value'][se] ) and ( res['Value'][se]['Write'] not in ( 'Active', 'Degraded' ) ):
       seStatus[ 'Write' ] = False
 
     return S_OK( seStatus )
 
   def __initialiseAccountingObject( self, operation, se, files ):
-    import DIRAC
+    """ create accouting record """
     accountingDict = {}
     accountingDict['OperationType'] = operation
     accountingDict['User'] = 'acsmith'
@@ -2487,8 +2518,10 @@ class ReplicaManager( CatalogToStorage ):
     return self._callStorageElementFcn( storageElementName, physicalFile, 'retransferOnlineFile' )
 
   def getReplicas( self, lfn ):
+    """ ger replicas from catalogue """
     return self.getCatalogReplicas( lfn )
 
   def getFileSize( self, lfn ):
+    """ get file size from catalogue """
     return self.getCatalogFileSize( lfn )
 

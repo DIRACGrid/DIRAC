@@ -1,0 +1,100 @@
+================================================================================
+ResourceStatusSystem v6r7 installation procedure
+================================================================================
+
+Setup for BASIC USAGE 
+=====================
+
+WARNING: If you have doubts about the success of any step, DO NOT ACTIVATE RSS.
+WARNING: REPORT FIRST to the DIRAC FORUM ! 
+
+0.- CS Configuration
+
+  The configuration for RSS sits under the following path on the CS following the usual
+  /Operations section convention
+  
+    /Operations/Defaults/ResourceStatus
+  
+  Please, make sure you have the following schema:
+    /Operations/Defaults/ResourceStatus
+        /Config
+          State        = InActive
+          Cache        = 300
+          CacheHistory = 24
+          RecordLogs   = Active
+          /StatusTypes
+              default = all
+              StorageElement = ReadAccess,WriteAccess,CheckAccess,RemoveAccess
+            
+  For a more detailed explanation, take a look to the official documentation:
+  http://diracgrid.org/files/docs/AdministratorGuide/Systems/ResourceStatus/configuration.html            
+
+
+1.- Fresh DB 
+
+  Needs a fresh DB installation. Only `ResourceStatusDB` is needed. Information
+  on former ResourceStatusDB can be discarded. Delete the old database tables. If
+  there is no old database, just install a new one as follows:
+    $ dirac-install-db ResourceStatusDB
+
+2.- Generate DB tables
+
+  Issue the command to populate the DB with the tables that are actually going to
+  be used.
+    $ dirac-rss-setup -o LogLevel=INFO
+
+3.- Run service(s)
+
+  RSS - basic - needs the following service to be up and running:
+  ResourceStatusSystem/ResourceStatus, please install it and make sure it is 
+  running.  
+
+4.- Populate tables
+  
+  Let's do it one by one to make it easier:
+    $ dirac-rss-sync --element Site -o LogLevel=VERBOSE
+    $ dirac-rss-sync --element Resource -o LogLevel=VERBOSE 
+    $ dirac-rss-sync --element Node -o LogLevel=VERBOSE
+
+  You can check the DB. You will find there are 4 times StorageElements on the 
+  Resources table ( if you are still using the default config of step 0 ). If not,
+  please report and DO NOT ACTIVATE RSS.
+
+
+5.- Initialize Statuses for StorageElements 
+
+  Copy over the values that we had on the CS for the StorageElements 
+    $ dirac-rss-sync --init -o LogLevel=VERBOSE
+    
+  WARNING !: If the StorageElement does not have a particular StatusType declared
+  WARNING !: on the CS, this script will set it to Banned. If that happens, you will
+  WARNING !: have to issue the dirac-rss-status script over the elements that need
+  WARNING !: to be fixed.
+
+
+6.- Set statuses by HAND
+
+  In case you entered the WARNING ! on point 4, you may need to identify the status
+  of your StorageElements. Try to detect the Banned SEs using the following:
+    $ dirac-rss-list-status --element Resource --elementType StorageElement --status Banned
+    
+  If is there any SE to be modified, you can do it as follows:
+    $ dirac-rss-set-status --element Resource --name CERN-USER --statusType ReadAccess --status Active --reason "Why not?"
+    # This matches all StatusTypes
+    $ dirac-rss-set-status --element Resource --name CERN-USER --status Active --reason "Why not?"
+       
+7.- Activate RSS
+
+  If you did not see any problem, activate RSS.
+    /Operations/Defaults/ResourceStatus/Config
+        State = Active 
+
+8.- Agents
+
+  There are few agents that are required:
+    - SummarizeLogsAgent
+    - DatabaseCleanerAgent   
+  Please, install them and make sure they are up and running.
+  
+-------------------------------------------------------------------------------- 
+INSTALL.txt

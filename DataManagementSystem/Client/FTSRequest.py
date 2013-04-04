@@ -1,13 +1,11 @@
 #############################################################################
 # $HeadURL$
 #############################################################################
-
 """ ..mod: FTSRequest
     =================
 
     Helper class to perform FTS job submission and monitoring.
 """
-
 ## imports
 import os
 import sys
@@ -24,9 +22,8 @@ from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface
+from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface, ReplicaManager
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-#from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
 ## RCSID
 __RCSID__ = "$Id$"
@@ -64,7 +61,6 @@ class FTSRequest(object):
 
     self.newlyCompletedFiles = []
     self.newlyFailedFiles = []
-
 
     self.statusSummary = {}
     
@@ -128,7 +124,9 @@ class FTSRequest(object):
     ## disable checksum test by default
     self.__cksmTest = False 
  
-  
+    ## replica manager handler
+    self.replicaManager = ReplicaManager()
+
   ####################################################################
   #
   #  Methods for setting/getting/checking the SEs
@@ -187,6 +185,21 @@ class FTSRequest(object):
     if not res['OK']:
       self.log.error( "FTSRequest failed to get SRM Space Token for SourceSE", res['Message'] )
       return S_ERROR( "SourceSE does not support FTS transfers" )
+
+    if self.__cksmTest:
+      res = self.oSourceSE.getChecksumType()
+      if not res["OK"]:
+        self.log.error("Unable to get checksum type for SourceSE %s: %s" % ( self.sourceSE, 
+                                                                             res["Message"] ) )
+        cksmType = res["Value"]
+        if cksmType in ( "NONE", "NULL" ):
+          self.log.warn("Checksum type set to %s at SourceSE %s, disabling checksum test" % ( cksmType,
+                                                                                              self.sourceSE ) )
+          self.__cksmTest = False
+        elif cksmType != self.__cksmType:
+          self.log.warn("Checksum type mismatch, disabling checksum test")
+          self.__cksmTest = False
+          
     self.sourceToken = res['Value']
     self.sourceValid = True
     return S_OK()
@@ -243,7 +256,23 @@ class FTSRequest(object):
     res = self.__getSESpaceToken( self.oTargetSE )
     if not res['OK']:
       self.log.error( "FTSRequest failed to get SRM Space Token for TargetSE", res['Message'] )
-      return S_ERROR( "SourceSE does not support FTS transfers" )
+      return S_ERROR( "TargetSE does not support FTS transfers" )
+
+    ## check checksum types
+    if self.__cksmTest:
+      res = self.oTargetSE.getChecksumType()
+      if not res["OK"]:
+        self.log.error("Unable to get checksum type for TargetSE %s: %s" % ( self.targetSE, 
+                                                                             res["Message"] ) )
+        cksmType = res["Value"]
+        if cksmType in ( "NONE", "NULL" ):
+          self.log.warn("Checksum type set to %s at TargetSE %s, disabling checksum test" % ( cksmType,
+                                                                                              self.targetSE ) )
+          self.__cksmTest = False
+        elif cksmType != self.__cksmType:
+          self.log.warn("Checksum type mismatch, disabling checksum test")
+          self.__cksmTest = False
+
     self.targetToken = res['Value']
     self.targetValid = True
     return S_OK()
@@ -536,7 +565,7 @@ class FTSRequest(object):
     res = self.__submitFTSTransfer()
     if not res['OK']:
       return res
-    resDict = {'ftsGUID':self.ftsGUID, 'ftsServer':self.ftsServer}
+    resDict = { 'ftsGUID' : self.ftsGUID, 'ftsServer' : self.ftsServer }
     print "Submitted %s @ %s" % ( self.ftsGUID, self.ftsServer )
     if monitor:
       self.monitor( untilTerminal = True, printOutput = printOutput )
@@ -557,8 +586,8 @@ class FTSRequest(object):
       res = self.__resolveFTSServer()
       if not res['OK']:
         return S_ERROR( "FTSServer not valid" )
-    self.__resolveSource()
-    self.__resolveTarget()
+    self.resolveSource()
+    self.resolveTarget()
     res = self.__filesToSubmit()
     if not res['OK']:
       return S_ERROR( "No files to submit" )
@@ -626,13 +655,12 @@ class FTSRequest(object):
       self.catalogMetadata[lfn] = metadata
     return S_OK()
 
-  def __resolveSource( self ):
+  def resolveSource( self ):
     """ resolve source SE eligible for submission
 
     :param self: self reference
     """
-    toResolve = [ lfn for lfn in self.fileDict 
-                  if ( "Source" not in self.fileDict[lfn] ) and ( self.fileDict[lfn].get( "Status", "" ) != "Failed" ) ]
+    toResolve = [ lfn for lfn in self.fileDict ]
     if not toResolve:
       return S_OK()
     res = self.__updateMetadataCache( toResolve )
@@ -646,16 +674,19 @@ class FTSRequest(object):
         continue
       replicas = self.catalogReplicas.get( lfn, {} )
       if self.sourceSE not in replicas:
+        gLogger.warn("resolveSource: skipping %s - not replicas at SourceSE %s" % ( lfn, self.sourceSE ) )
         self.__setFileParameter( lfn, 'Reason', "No replica at SourceSE" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
       res = self.oSourceSE.getPfnForProtocol( replicas[self.sourceSE], 'SRM2', withPort = True )
       if not res['OK']:
+        gLogger.warn("resolveSource: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
       res = self.setSourceSURL( lfn, res['Value'] )
       if not res['OK']:
+        gLogger.warn("resolveSource: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
@@ -672,66 +703,70 @@ class FTSRequest(object):
     for pfn, error in res['Value']['Failed'].items():
       lfn = toResolve[pfn]
       if re.search( 'File does not exist', error ):
+        gLogger.warn("resolveSource: skipping %s - source file does not exists" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source file does not exist" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
       else:
+        gLogger.warn("resolveSource: skipping %s - failed to get source metadata" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Failed to get Source metadata" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
     for pfn, metadata in res['Value']['Successful'].items():
       lfn = toResolve[pfn]
       if metadata['Unavailable']:
+        gLogger.warn("resolveSource: skipping %s - source file unavailable" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source file Unavailable" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
       elif metadata['Lost']:
+        gLogger.warn("resolveSource: skipping %s - source file lost" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source file Lost" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
       elif not metadata['Cached']:
-        self.__setFileParameter( lfn, 'Reason', "Source file not Cached" )
-        self.__setFileParameter( lfn, 'Status', 'Failed' )
+        gLogger.warn("resolveSource: source file %s not cached, prestaging..." % lfn )
+        stage = self.replicaManager.prestageStorageFile( pfn, self.sourceSE, singleFile = True )
+        if not stage["OK"]:
+          gLogger.warn("resolveSource: skipping %s - %s" % ( lfn, stage["Message"] ) )
+          self.__setFileParameter( lfn, 'Reason', stage["Message"] )
+          self.__setFileParameter( lfn, 'Status', 'Failed' )
       elif metadata['Size'] != self.catalogMetadata[lfn]['Size']:
+        gLogger.warn("resolveSource: skipping %s - source file size mismatch" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source size mismatch" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
-      elif self.catalogMetadata[lfn]['Checksum'] and metadata['Checksum'] and not ( compareAdler( metadata['Checksum'], self.catalogMetadata[lfn]['Checksum'] ) ):
+      elif self.catalogMetadata[lfn]['Checksum'] and metadata['Checksum'] and \
+            not ( compareAdler( metadata['Checksum'], self.catalogMetadata[lfn]['Checksum'] ) ):
+        gLogger.warn("resolveSource: skipping %s - source file checksum mismatch" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source checksum mismatch" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
     return S_OK()
 
-  def __resolveTarget( self ):
+  def resolveTarget( self ):
     """ find target SE eligible for submission 
 
     :param self: self reference
     """
-    toResolve = [ lfn for lfn in self.fileDict 
-                  if ( "Target" not in self.fileDict[lfn] ) and ( self.fileDict[lfn].get( "Status", "" ) != "Failed" ) ]
+    toResolve = [ lfn for lfn in self.fileDict ] 
     if not toResolve:
       return S_OK()
     res = self.__updateReplicaCache( toResolve )
     if not res['OK']:
       return res
-    atTarget = []
-    for lfn in sortList( toResolve ):
-      if self.fileDict[lfn].get( 'Status' ) == 'Failed':
-        continue
-      replicas = self.catalogReplicas.get( lfn, {} )
-      if self.targetSE in replicas:
-        self.__setFileParameter( lfn, 'Reason', "File already at Target" )
-        self.__setFileParameter( lfn, 'Status', 'Done' )
-        atTarget.append( lfn )
     for lfn in toResolve:
-      if ( self.fileDict[lfn].get( 'Status' ) == 'Failed' ) or ( lfn in atTarget ):
+      if ( self.fileDict[lfn].get( 'Status' ) == 'Failed' ):
         continue
       res = self.oTargetSE.getPfnForLfn( lfn )
       if not res['OK']:
+        gLogger.warn("resolveTarget: skipping %s - failed to create target pfn" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Failed to create Target" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
       res = self.oTargetSE.getPfnForProtocol( res['Value'], 'SRM2', withPort = True )
       if not res['OK']:
+        gLogger.warn("resolveTarget: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
       res = self.setTargetSURL( lfn, res['Value'] )
       if not res['OK']:
+        gLogger.warn("resolveTarget: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
@@ -754,9 +789,11 @@ class FTSRequest(object):
         lfn = toResolve[pfn]
         res = self.getSourceSURL( lfn )
         if not res['OK']:
+          gLogger.warn("resolveTarget: skipping %s - target exists" % lfn  )
           self.__setFileParameter( lfn, 'Reason', "Target exists" )
           self.__setFileParameter( lfn, 'Status', 'Failed' )
         elif res['Value'] == pfn:
+          gLogger.warn("resolveTarget: skipping %s - source and target pfns are teh same" % lfn )
           self.__setFileParameter( lfn, 'Reason', "Source and Target the same" )
           self.__setFileParameter( lfn, 'Status', 'Failed' )
         else:
@@ -767,9 +804,9 @@ class FTSRequest(object):
 
   def __filesToSubmit( self ):
     """
-    
-    TODO: exit after first eligible file? that wrong!
+    check if there is at least one file to submit 
 
+    :return: S_OK if at least one file is present, S_ERROR otherwise
     """
     for lfn in self.fileDict:
       lfnStatus = self.fileDict[lfn].get( 'Status' )
@@ -794,11 +831,11 @@ class FTSRequest(object):
       lfnStatus = self.fileDict[lfn].get( 'Status' )
       source = self.fileDict[lfn].get( 'Source' )
       target = self.fileDict[lfn].get( 'Target' )
-      if ( lfnStatus != 'Failed' ) and ( lfnStatus != 'Done' ) and source and target:
+      if ( lfnStatus not in ( 'Failed', 'Done' ) ) and source and target:
         cksmStr = ""
         ## add chsmType:cksm only if cksmType is specified, else let FTS decide by itself
         if self.__cksmTest and self.__cksmType:
-          if lfn in self.catalogMetadata and "Checksum" in self.catalogMetadata:
+          if lfn in self.catalogMetadata and "Checksum" in self.catalogMetadata[lfn]:
             cksmStr = " %s:%s" % ( self.__cksmType, self.catalogMetadata[lfn]["Checksum"] )
         surlFile.write( "%s %s%s\n" % ( source, target, cksmStr ) )
     surlFile.close()
@@ -838,8 +875,6 @@ class FTSRequest(object):
   def __resolveFTSServer( self ):
     """
     resolve FTS server to use, it should be the closest one from target SE
-
-    TODO: exception? here? really?
 
     :param self: self reference
     """
@@ -934,7 +969,7 @@ class FTSRequest(object):
     outStr = ''
     for status in sortList( self.statusSummary.keys() ):
       if self.statusSummary[status]:
-        outStr = '%s\t%s : %s\n' % ( outStr, status.ljust( 10 ), str( self.statusSummary[status] ).ljust( 10 ) )
+        outStr = '%s\t%-10s : %-10s\n' % ( outStr, status, str( self.statusSummary[status] ) )
     outStr = outStr.rstrip( '\n' )
     if printOutput:
       print outStr
@@ -959,15 +994,15 @@ class FTSRequest(object):
 
     :param self: self reference
     """
-    print "%s : %s" % ( "Status".ljust( 10 ), self.requestStatus.ljust( 10 ) )
-    print "%s : %s" % ( "Source".ljust( 10 ), self.sourceSE.ljust( 10 ) )
-    print "%s : %s" % ( "Target".ljust( 10 ), self.targetSE.ljust( 10 ) )
-    print "%s : %s" % ( "Server".ljust( 10 ), self.ftsServer.ljust( 100 ) )
-    print "%s : %s" % ( "GUID".ljust( 10 ), self.ftsGUID.ljust( 100 ) )
+    print "%-10s : %-10s" % ( "Status", self.requestStatus )
+    print "%-10s : %-10s" % ( "Source", self.sourceSE )
+    print "%-10s : %-10s" % ( "Target", self.targetSE )
+    print "%-10s : %-128s" % ( "Server", self.ftsServer )
+    print "%-10s : %-128s" % ( "GUID", self.ftsGUID )
     for lfn in sortList( self.fileDict.keys() ):
-      print "\n  %s : %s" % ( 'LFN'.ljust( 15 ), lfn.ljust( 128 ) )
+      print "\n  %-15s : %-128s" % ( 'LFN', lfn )
       for key in ['Source', 'Target', 'Status', 'Reason', 'Duration']:
-        print "  %s : %s" % ( key.ljust( 15 ), str( self.fileDict[lfn].get( key ) ).ljust( 128 ) )
+        print "  %-15s : %-128s" % ( key, str( self.fileDict[lfn].get( key ) ) )
     return S_OK()
 
   def __isSummaryValid( self ):
@@ -1197,13 +1232,13 @@ class FTSRequest(object):
 
     :param self: self reference
     """
-
-    missingSourceErrors = ['SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
-                           'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
-                           'SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed',
-                           'SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist',
-                           'TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory',
-                           'SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist']
+    missingSourceErrors = [
+      'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
+      'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
+      'SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed',
+      'SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist',
+      'TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory',
+      'SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist' ]
     missingSource = []
     for lfn in sortList( self.fileDict.keys() ):
       if self.fileDict[lfn].get( 'Status', '' ) == 'Failed':

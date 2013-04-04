@@ -1,8 +1,3 @@
-########################################################################
-# $HeadURL$
-# File :    Job.py
-# Author :  Stuart Paterson
-########################################################################
 """
    Job Base Class
 
@@ -29,18 +24,16 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-from DIRAC.Core.Base import Script
-Script.initialize()
-
 __RCSID__ = "$Id$"
 
-import re, os, types
+import re, os, types, urllib
 
-from DIRAC.Core.Workflow.Parameter                            import *
-from DIRAC.Core.Workflow.Module                               import *
-from DIRAC.Core.Workflow.Step                                 import *
-from DIRAC.Core.Workflow.Workflow                             import *
-from DIRAC.Core.Workflow.WorkflowReader                       import *
+from DIRAC                                                    import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Workflow.Parameter                            import Parameter
+from DIRAC.Core.Workflow.Module                               import ModuleDefinition
+from DIRAC.Core.Workflow.Step                                 import StepDefinition
+from DIRAC.Core.Workflow.Workflow                             import Workflow
+from DIRAC.Core.Base.API                                      import API
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight                import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config                  import gConfig
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
@@ -49,19 +42,21 @@ from DIRAC.Core.Utilities.Subprocess                          import shellCall
 from DIRAC.Core.Utilities.List                                import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
-from DIRAC                                                    import gLogger
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 
-class Job:
+class Job( API ):
+  """ DIRAC jobs
+  """
 
   #############################################################################
 
   def __init__( self, script = None, stdout = 'std.out', stderr = 'std.err' ):
     """Instantiates the Workflow object and some default parameters.
     """
-    self.log = gLogger
-    self.section = COMPONENT_NAME
+
+    super( Job, self ).__init__()
+
     self.dbg = False
     if gConfig.getValue( self.section + '/LogLevel', 'DEBUG' ) == 'DEBUG':
       self.dbg = True
@@ -103,9 +98,6 @@ class Job:
       self.__setJobDefaults()
     else:
       self.workflow = Workflow( script )
-
-    #Global error dictionary
-    self.errorDict = {}
 
   #############################################################################
   def setExecutable( self, executable, arguments = '', logFile = '' ):
@@ -244,7 +236,7 @@ class Job:
     """Helper function.
 
        Specify input sandbox files to used as parameters in the Parametric jobs. The possibilities are identical to the setInputSandbox.
-       
+
 
        Example usage:
 
@@ -366,13 +358,13 @@ class Job:
   #############################################################################  
   def setGenericParametricInput( self, inputlist ):
     """ Helper function
-    
-       Define a generic parametric job with this function. Should not be used when 
+
+       Define a generic parametric job with this function. Should not be used when
        the ParametricInputData of ParametricInputSandbox are used.
-       
+
        @param inputlist: Input list of parameters to build the parametric job
        @type inputlist: list
-    
+
     """
     kwargs = {'inputlist':inputlist}
     if not type( inputlist ) == type( [] ):
@@ -388,7 +380,7 @@ class Job:
        global settings.
 
        Possible values for policy are 'Download' or 'Protocol' (case-insensitive). This
-       requires that the module locations are defined for the VO in the CS. 
+       requires that the module locations are defined for the VO in the CS.
 
        Example usage:
 
@@ -604,9 +596,9 @@ class Job:
 
   #############################################################################
   def setDestinationCE( self, ceName ):
-    """ Developer function. 
-        
-        Allows to direct a job to a particular Grid CE.         
+    """ Developer function.
+
+        Allows to direct a job to a particular Grid CE.
     """
     kwargs = {'ceName':ceName}
     diracSite = getSiteForCE( ceName )
@@ -687,7 +679,7 @@ class Job:
 
   #############################################################################
   def _setSoftwareTags( self, tags ):
-    """Developer function. 
+    """Developer function.
 
        Choose any software tags if desired.  These are not compulsory but will ensure jobs only
        arrive at an LCG site where the software is preinstalled.  Without the tags, missing software is
@@ -817,16 +809,17 @@ class Job:
     if not type( environmentDict ) == type( {} ):
       return self._reportError( 'Expected dictionary of environment variables', **kwargs )
 
-    environment = []
-    for var, val in environmentDict.items():
-      try:
-        environment.append( '='.join( [str( var ), str( val )] ) )
-      except Exception:
-        return self._reportError( 'Expected string for environment variable key value pairs', **kwargs )
+    if environmentDict:
+      environment = []
+      for var, val in environmentDict.items():
+        try:
+          environment.append( '='.join( [str( var ), urllib.quote( str( val ) )] ) )
+        except Exception:
+          return self._reportError( 'Expected string for environment variable key value pairs', **kwargs )
 
-    envStr = ';'.join( environment )
-    description = 'Env vars specified by user'
-    self._addParameter( self.workflow, 'ExecutionEnvironment', 'JDL', envStr, description )
+      envStr = ';'.join( environment )
+      description = 'Env vars specified by user'
+      self._addParameter( self.workflow, 'ExecutionEnvironment', 'JDL', envStr, description )
     return S_OK()
 
   #############################################################################
@@ -876,7 +869,7 @@ class Job:
     self.log.info( '--------------------------------------' )
     #print self.workflow.parameters
     #print params.getParametersNames()
-    for name, props in paramsDict.items():
+    for name, _props in paramsDict.items():
       ptype = paramsDict[name]['type']
       value = paramsDict[name]['value']
       if showType:
@@ -992,6 +985,7 @@ class Job:
     return resolvedIS
 
   #############################################################################
+  @classmethod
   def __getScriptStep( self, name = 'Script' ):
     """Internal function. This method controls the definition for a script module.
     """
@@ -1217,37 +1211,5 @@ class Job:
     """
     self._addParameter( self.workflow, name, 'JDL', value, 'Optional JDL parameter added' )
     return self.workflow.setValue( name, value )
-
-  #############################################################################
-  def _getErrors( self ):
-    """Returns the dictionary of stored errors that will prevent submission or
-       execution. 
-    """
-    return self.errorDict
-
-  #############################################################################
-  def _reportError( self, message, name = '', **kwargs ):
-    """Internal Function. Gets caller method name and arguments, formats the 
-       information and adds an error to the global error dictionary to be 
-       returned to the user. 
-    """
-    className = name
-    if not name:
-      className = __name__
-    methodName = sys._getframe( 1 ).f_code.co_name
-    arguments = []
-    for key in kwargs:
-      if kwargs[key]:
-        arguments.append( '%s = %s ( %s )' % ( key, kwargs[key], type( kwargs[key] ) ) )
-    finalReport = 'Problem with %s.%s() call:\nArguments: %s\nMessage: %s\n' % ( className, methodName,
-                                                                                 ', '.join( arguments ), message )
-    if self.errorDict.has_key( methodName ):
-      tmp = self.errorDict[methodName]
-      tmp.append( finalReport )
-      self.errorDict[methodName] = tmp
-    else:
-      self.errorDict[methodName] = [finalReport]
-    self.log.verbose( finalReport )
-    return S_ERROR( finalReport )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

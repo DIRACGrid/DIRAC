@@ -1,21 +1,20 @@
-# $HeadURL:  $
 ''' TokenAgent
 
   This agent inspect all elements, and resets their tokens if necessary.
 
 '''
 
-import datetime
+from datetime import datetime, timedelta
 
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.FrameworkSystem.Client.NotificationClient            import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
-from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration 
 
-__RCSID__  = '$Id: $'
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+
+__RCSID__ = '$Id: $'
 AGENT_NAME = 'ResourceStatus/TokenAgent'
 
 class TokenAgent( AgentModule ):
@@ -24,128 +23,213 @@ class TokenAgent( AgentModule ):
     Notifications are sent to those users owning expiring tokens.
   '''
 
-  # Too many public methods
-  # pylint: disable-msg=R0904
+  # Hours to notify a user
+  __notifyHours = 12
+
+  # Rss token
+  __rssToken = 'rs_svc'
+
+  # Admin mail
+  __adminMail = None
+
+  def __init__( self, *args, **kwargs ):
+    ''' c'tor
+    '''
+
+    AgentModule.__init__( self, *args, **kwargs )
+
+    self.notifyHours = self.__notifyHours
+    self.adminMail = self.__adminMail
+
+    self.rsClient = None
+    self.rmClient = None
+    self.noClient = None
+
+    self.tokenDict = None
+    self.diracAdmin = None
 
   def initialize( self ):
+    ''' TokenAgent initialization
+        Uses the ProductionManager shifterProxy to modify the ResourceStatus DB
     '''
-    TokenAgent initialization
-    '''
-    
-    # Attribute defined outside __init__
-    # pylint: disable-msg=W0201
 
-    self.notifyHours = self.am_getOption( 'notifyHours', 10 )
+    self.notifyHours = self.am_getOption( 'notifyHours', self.notifyHours )
+    self.adminMail   = self.am_getOption( 'adminMail', self.adminMail )
 
-    try:
-      self.rsClient = ResourceStatusClient()
-      self.rmClient = ResourceManagementClient()
-      self.noClient = NotificationClient()
 
-      return S_OK()
-    except Exception:
-      errorStr = "TokenAgent initialization"
-      self.log.exception( errorStr )
-      return S_ERROR( errorStr )
+    self.rsClient = ResourceStatusClient()
+    self.rmClient = ResourceManagementClient()
+    self.noClient = NotificationClient()
+
+    self.diracAdmin = DiracAdmin()
+
+    return S_OK()
 
   def execute( self ):
     '''
-      The main TokenAgent execution method.
-      Checks for tokens owned by users that are expiring, and notifies those users.
-      Calls rsClient.setToken() to set 'RS_SVC' as owner for those tokens that expired.
+      Looks for user tokens. If they are expired, or expiring, it notifies users.
     '''
 
-    adminMail = ''
+    # Initialized here, as it is needed empty at the beginning of the execution
+    self.tokenDict = {}
 
-    try:
+    # FIXME: probably this can be obtained from RssConfiguration instead
+    elements = ( 'Site', 'Resource', 'Node' )
 
-      reason = 'Out of date token'
+    for element in elements:
 
-      #reAssign the token to RS_SVC
-      #for g in self.ELEMENTS:
+      self.log.info( 'Processing %s' % element )
 
-      validElements = RssConfiguration.getValidElements()
+      interestingTokens = self._getInterestingTokens( element )
+      if not interestingTokens[ 'OK' ]:
+        self.log.error( interestingTokens[ 'Message' ] )
+        continue
+      interestingTokens = interestingTokens[ 'Value' ]
 
-      for granularity in validElements:
-        tokensExpired = self.rsClient.getTokens( granularity, 
-                                                 tokenExpiration = datetime.datetime.utcnow() )
+      processTokens = self._processTokens( element, interestingTokens )
+      if not processTokens[ 'OK' ]:
+        self.log.error( processTokens[ 'Message' ] )
+        continue
 
-        if tokensExpired[ 'Value' ]:
-          adminMail += '\nLIST OF EXPIRED %s TOKENS\n' % granularity
-          adminMail += '%s|%s|%s\n' % ( 'user'.ljust(20), 'name'.ljust(15), 'status type')
+    notificationResult = self._notifyOfTokens()
+    if not notificationResult[ 'OK' ]:
+      self.log.error( notificationResult[ 'Message' ] )
 
-        for token in tokensExpired[ 'Value' ]:
+    return S_OK()
 
-          name  = token[ 1 ]
-          stype = token[ 2 ]
-          user  = token[ 9 ]
+  ## Protected methods #########################################################
 
-          self.rsClient.setToken( granularity, name, stype, reason, 'RS_SVC', 
-                                  datetime.datetime( 9999, 12, 31, 23, 59, 59 ) )
-          adminMail += ' %s %s %s\n' %( user.ljust(20), name.ljust(15), stype )
+  def _getInterestingTokens( self, element ):
+    '''
+      Given an element, picks all the entries with TokenExpiration < now + X<hours>
+      If the TokenOwner is not the rssToken ( rs_svc ), it is selected.
+    '''
 
-      #notify token owners
-      inNHours = datetime.datetime.utcnow() + datetime.timedelta( hours = self.notifyHours )
-      #for g in self.ELEMENTS:
-      for granularity in validElements:
+    tokenExpLimit = datetime.utcnow() + timedelta( hours = self.notifyHours )
 
-        tokensExpiring = self.rsClient.getTokens( granularity, tokenExpiration = inNHours )
+    tokenElements = self.rsClient.selectStatusElement( element, 'Status',
+                                                       meta = { 'older' : ( 'TokenExpiration', tokenExpLimit ) } )
 
-        if tokensExpiring[ 'Value' ]:
-          adminMail += '\nLIST OF EXPIRING %s TOKENS\n' % granularity
-          adminMail += '%s|%s|%s\n' % ( 'user'.ljust(20),'name'.ljust(15),'status type')
+    if not tokenElements[ 'OK' ]:
+      return tokenElements
 
-        for token in tokensExpiring[ 'Value' ]:
+    tokenColumns = tokenElements[ 'Columns' ]
+    tokenElements = tokenElements[ 'Value' ]
 
-          name  = token[ 1 ]
-          stype = token[ 2 ]
-          user  = token[ 9 ]
+    interestingTokens = []
 
-          adminMail += '\n %s %s %s\n' %( user.ljust(20), name.ljust(15), stype )
+    for tokenElement in tokenElements:
 
-          #If user is RS_SVC, we ignore this, whenever the token is out, this
-          #agent will set again the token to RS_SVC
-          if user == 'RS_SVC':
-            continue
+      tokenElement = dict( zip( tokenColumns, tokenElement ) )
 
-          pdp = PDP( granularity = granularity, name = name, statusType = stype )
+      if tokenElement[ 'TokenOwner' ] != self.__rssToken:
+        interestingTokens.append( tokenElement )
 
-          decision = pdp.takeDecision()
-          pcresult = decision[ 'PolicyCombinedResult' ]
-          spresult = decision[ 'SinglePolicyResults' ]
+    return S_OK( interestingTokens )
 
-          expiration = token[ 10 ]
+  def _processTokens( self, element, tokenElements ):
+    '''
+      Given an element and a list of interesting token elements, updates the
+      database if the token is expired, logs a message and adds
+    '''
 
-          mailMessage = "The token for %s %s ( %s )" % ( granularity, name, stype )
-          mailMessage = mailMessage + " will expire on %s\n\n" % expiration
-          mailMessage = mailMessage + "You can renew it with command 'dirac-rss-renew-token'.\n"
-          mailMessage = mailMessage + "If you don't take any action, RSS will take control of the resource.\n\n"
+    never = datetime.max
 
-          policyMessage = ''
+    for tokenElement in tokenElements:
 
-          if pcresult[ 'Action' ]:
+      try:
+        name = tokenElement[ 'Name' ]
+        statusType = tokenElement[ 'StatusType' ]
+        status = tokenElement[ 'Status' ]
+        tokenOwner = tokenElement[ 'TokenOwner' ]
+        tokenExpiration = tokenElement[ 'TokenExpiration' ]
+      except KeyError, e:
+        return S_ERROR( e )
 
-            policyMessage += "  Policies applied will set status to %s.\n" % pcresult[ 'Status' ]
+      # If token has already expired
+      if tokenExpiration < datetime.utcnow():
+        _msg = '%s with statusType "%s" and owner %s EXPIRED'
+        self.log.info( _msg % ( name, statusType, tokenOwner ) )
 
-            for spr in spresult:
-              policyMessage += "    %s Status->%s\n" % ( spr[ 'PolicyName' ].ljust(25), spr[ 'Status' ] )
+        result = self.rsClient.addOrModifyStatusElement( element, 'Status', name = name,
+                                                         statusType = statusType,
+                                                         tokenOwner = self.__rssToken,
+                                                         tokenExpiration = never )
+        if not result[ 'OK' ]:
+          return result
 
-          mailMessage += policyMessage
-          adminMail   += policyMessage
+      else:
+        _msg = '%s with statusType "%s" and owner %s -> %s'
+        self.log.info( _msg % ( name, statusType, tokenOwner, tokenExpiration ) )
 
-          self.noClient.sendMail( self.rmClient.getUserRegistryCache( user )[ 'Value' ][ 0 ][ 2 ],
-                            'Token for %s is expiring' % name, mailMessage )
-      if adminMail != '':
-        #FIXME: 'ubeda' is not generic ;p
-        self.noClient.sendMail( self.rmClient.getUserRegistryCache( 'ubeda' )[ 'Value' ][ 0 ][ 2 ],
-                            "Token's summary", adminMail )
+      if not tokenOwner in self.tokenDict:
+        self.tokenDict[ tokenOwner ] = []
 
-      return S_OK()
+      self.tokenDict[ tokenOwner ].append( [ tokenOwner, element, name, statusType, status, tokenExpiration ] )
 
-    except Exception:
-      errorStr = "TokenAgent execution"
-      self.log.exception( errorStr )
-      return S_ERROR( errorStr )
+    return S_OK()
+
+  def _notifyOfTokens( self ):
+    '''
+      Splits interesing tokens between expired and expiring. Also splits them
+      among users. It ends sending notifications to the users.
+    '''
+
+    now = datetime.utcnow()
+
+    adminExpired = []
+    adminExpiring = []
+
+    for tokenOwner, tokenLists in self.tokenDict.items():
+
+      expired = []
+      expiring = []
+
+      for tokenList in tokenLists:
+
+        if tokenList[ 5 ] < now:
+          expired.append( tokenList )
+          adminExpired.append( tokenList )
+        else:
+          expiring.append( tokenList )
+          adminExpiring.append( tokenList )
+
+      resNotify = self._notify( tokenOwner, expired, expiring )
+      if not resNotify[ 'OK' ]:
+        self.log.error( resNotify[ 'Message' ] )
+
+    if ( adminExpired or adminExpiring ) and self.__adminMail:
+      return self._notify( self.__adminMail, adminExpired, adminExpiring )
+
+    return S_OK()
+
+  def _notify( self, tokenOwner, expired, expiring ):
+    '''
+      Given a token owner and a list of expired and expiring tokens, sends an
+      email to the user.
+    '''
+
+    subject = 'RSS token summary for tokenOwner %s' % tokenOwner
+
+    mail = '\nEXPIRED tokens ( RSS has taken control of them )\n'
+    for tokenList in expired:
+
+      mail += ' '.join( [ str(x) for x in tokenList ] )
+      mail += '\n'
+
+    mail = '\nEXPIRING tokens ( RSS will take control of them )\n'
+    for tokenList in expiring:
+
+      mail += ' '.join( [ str(x) for x in tokenList ] )
+      mail += '\n'
+
+    # FIXME: you can re-take control of them using this or that...
+
+    resEmail = self.diracAdmin.sendMail( tokenOwner, subject, mail )
+    if not resEmail[ 'OK' ]:
+      return S_ERROR( 'Cannot send email to user "%s"' % tokenOwner )
+
+    return resEmail
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

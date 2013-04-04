@@ -45,7 +45,7 @@ class BaseBackend:
       messageName += "[%s]" % messageObject.getFrameInfo()
     timeToShow = Time.toString( messageObject.getTime() ).split( '.' )[0]
     lines = []
-    prefix = [ timeToShow, "UTC", messageName, "%s:" % messageObject.getLevel().rjust( 5 ) ]
+    prefix = [ timeToShow, "UTC", messageName, "%s:" % messageObject.getLevel().rjust( 6 ) ]
     if self._optionsDictionary[ 'showThreads' ]:
       prefix[2] += "[%s]" % self.getThreadId()
     prefix = " ".join( prefix )

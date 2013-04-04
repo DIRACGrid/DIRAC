@@ -89,7 +89,7 @@ class AgentReactor:
       except Exception, excp:
         if not hideExceptions:
           gLogger.exception( "Can't load agent %s" % agentName )
-        return S_ERROR(  "Can't load agent %s" % ( agentName, excp ) )
+        return S_ERROR(  "Can't load agent %s: \n %s" % ( agentName, excp ) )
       agentPeriod = instanceObj.am_getPollingTime()
       result = self.__scheduler.addPeriodicTask( agentPeriod, instanceObj.am_go,
                                                  executions = instanceObj.am_getMaxCycles(),
@@ -112,7 +112,7 @@ class AgentReactor:
       Run all defined agents a given number of cycles
     """
     if agentName:
-      self.loadAgentModule( agentName )
+      self.loadAgentModules( [ agentName ] )
     error = ''
     for aName in self.__agentModules:
       result = self.setAgentModuleCyclesToExecute( aName, numCycles )

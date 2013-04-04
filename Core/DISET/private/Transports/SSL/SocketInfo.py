@@ -102,7 +102,7 @@ class SocketInfo:
       hostCN_m = hostCN.split( '/' )[1]
     if hostCN_m == hostConn:
       return True
-    result = checkHostsMatch( hostCN_m, hostCN )
+    result = checkHostsMatch( hostCN_m, hostConn )
     if not result[ 'OK' ]:
       return False
     return result[ 'Value' ]
@@ -129,7 +129,7 @@ class SocketInfo:
       if not SocketInfo.__cachedCAsCRLs or time.time() - SocketInfo.__cachedCAsCRLsLastLoaded > 900:
         #Need to generate the CA Store
         casDict = {}
-        crlsDict = []
+        crlsDict = {}
         casPath = Locations.getCAsLocation()
         if not casPath:
           return S_ERROR( "No valid CAs location found" )

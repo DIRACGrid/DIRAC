@@ -108,7 +108,7 @@ class InProcessComputingElement( ComputingElement ):
     return ret
 
   #############################################################################
-  def getDynamicInfo( self ):
+  def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()

@@ -17,7 +17,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 ########################################################################
 class DB( MySQL ):
 
-  def __init__( self, dbname, fullname, maxQueueSize ):
+  def __init__( self, dbname, fullname, maxQueueSize, debug = False ):
 
     self.database_name = dbname
     self.fullname = fullname
@@ -74,10 +74,10 @@ class DB( MySQL ):
       self.maxQueueSize = int( result['Value'] )
 
     MySQL.__init__( self, self.dbHost, self.dbUser, self.dbPass,
-                   self.dbName, self.dbPort, maxQueueSize = maxQueueSize )
+                   self.dbName, self.dbPort, maxQueueSize = maxQueueSize, debug = debug )
 
     if not self._connected:
-      raise RuntimeError( 'Can not connect to DB %s, exiting...' % dbname )
+      raise RuntimeError( 'Can not connect to DB %s, exiting...' % self.dbName )
 
 
     self.log.info( "==================================================" )

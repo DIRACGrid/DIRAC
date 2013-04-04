@@ -1,6 +1,3 @@
-###################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/LHCbDIRAC/trunk/LHCbDIRAC/ConfigurationSystem/Agent/UsersAndGroups.py $
-########################################################################
 __RCSID__ = "$Id: UsersAndGroups.py 34413 2011-02-19 06:10:18Z rgracian $"
 """
   Update Users and Groups from VOMS on CS
@@ -58,7 +55,7 @@ class UsersAndGroups( AgentModule ):
       cmdEnv[ 'X509_USER_PROXY' ] = self.proxyLocation
     lfcDNs = []
     try:
-      retlfc = Subprocess.systemCall( 0, ( 'lfc-listusrmap', ), env = cmdEnv )
+      retlfc = Subprocess.systemCall( 30, ( 'lfc-listusrmap', ), env = cmdEnv )
       if not retlfc['OK']:
         self.log.fatal( 'Can not get LFC User List', retlfc['Message'] )
         return retlfc

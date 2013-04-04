@@ -466,7 +466,7 @@ class SandboxStoreHandler( RequestHandler ):
         fileDict = { 'PFN' : SEPFN, 'Status' : 'Waiting' }
         request.setSubRequestFiles( index, 'removal', [ fileDict ] )
         return RequestClient().setRequest( "RemoteSBDeletion:%s|%s:%s" % ( SEName, SEPFN, time.time() ),
-                                    request.toXML()[ 'Value' ] )
+                                           request.toXML()[ 'Value' ] )
       except Exception, e:
         gLogger.exception( "Exception while setting deletion request" )
         return S_ERROR( "Cannot set deletion request: %s" % str( e ) )

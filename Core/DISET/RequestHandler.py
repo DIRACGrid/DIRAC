@@ -64,13 +64,6 @@ class RequestHandler( object ):
     cls.__monitor = monitor
     cls.log = gLogger
 
-  def initialize( self ):
-    """
-    Dummy function to be inherited by real handlers. This function will be called when initializing
-    the server.
-    """
-    pass
-
   def getRemoteAddress( self ):
     """
     Get the address of the remote peer.
@@ -118,8 +111,8 @@ class RequestHandler( object ):
         retVal = self.__doConnection( actionTuple[1] )
       else:
         return S_ERROR( "Unknown action %s" % actionType )
-    except self.ConnectionError, excp:
-      gLogger.error( str( excp ) )
+    except RequestHandler.ConnectionError, excp:
+      gLogger.error( "ConnectionError", str( excp ) )
       return S_ERROR( excp )
     if  not isReturnStructure( retVal ):
       message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
@@ -144,7 +137,7 @@ class RequestHandler( object ):
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      raise self.ConnectionError( "Error while receiving file description %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+      raise RequestHandler.ConnectionError( "Error while receiving file description %s %s" % ( self.srv_getFormattedRemoteCredentials(),
                                                                                 retVal[ 'Message' ] ) )
     fileInfo = retVal[ 'Value' ]
     sDirection = "%s%s" % ( sDirection[0].lower(), sDirection[1:] )
@@ -219,7 +212,7 @@ class RequestHandler( object ):
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      raise self.ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+      raise RequestHandler.ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
                                                                          retVal[ 'Message' ] ) )
     args = retVal[ 'Value' ]
     self.__logRemoteQuery( "RPC/%s" % method, args )
@@ -311,7 +304,7 @@ class RequestHandler( object ):
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      raise self.ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+      raise RequestHandler.ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
                                                                          retVal[ 'Message' ] ) )
     args = retVal[ 'Value' ]
     return self._rh_executeConnectionCallback( methodName, args )

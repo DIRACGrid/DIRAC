@@ -44,7 +44,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       log.info( "No optimizer connected. Skipping load" )
       return S_OK()
     log.info( "Getting jobs for %s" % ",".join( eTypes ) )
-    checkingMinors = [ eType.split("/")[1] for eType in eTypes if eType != "WorkloadManagement/JobPath" ]
+    checkingMinors = [ eType.split( "/" )[1] for eType in eTypes if eType != "WorkloadManagement/JobPath" ]
     for opState in cls.__optimizationStates:
       #For Received states
       if opState == "Received":
@@ -86,6 +86,8 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     cls.setFreezeOnFailedDispatch( False )
     cls.setFreezeOnUnknownExecutor( False )
     cls.setAllowedClients( "JobManager" )
+    JobState.checkDBAccess()
+    JobState.cleanTaskQueues()
     period = cls.srv_getCSOption( "LoadJobPeriod", 60 )
     result = ThreadScheduler.gThreadScheduler.addPeriodicTask( period, cls.__loadJobs )
     if not result[ 'OK' ]:
@@ -130,8 +132,12 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       return S_OK( "WorkloadManagement/JobPath" )
     result = jobState.getOptParameter( 'OptimizerChain' )
     if not result[ 'OK' ]:
-      cls.log.error( "Could not get optimizer chain for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
-      return S_ERROR( "Couldn't get OptimizerChain: %s" % result[ 'Message' ] )
+      cls.log.error( "Could not get optimizer chain for job, auto resetting job", "%s: %s" % ( jid, result[ 'Message' ] ) )
+      result = jobState.resetJob()
+      if not result[ 'OK' ]:
+        cls.log.error( "Could not reset job", "%s: %s" % ( jid, result[ 'Message' ] ) )
+        return S_ERROR( "Cound not get OptimizationChain or reset job %s" % jid )
+      return S_OK( "WorkloadManagement/JobPath" )
     optChain = result[ 'Value' ]
     if minorStatus not in optChain:
       cls.log.error( "Next optimizer is not in the chain for job", "%s: %s not in %s" % ( jid, minorStatus, optChain ) )
@@ -164,5 +170,5 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     else:
       cls.log.error( "Could not get status of job %s: %s" % ( jid, result[ 'Message ' ] ) )
     cls.log.notice( "Job %s: Setting to Failed|%s" % ( jid, errorMsg ) )
-    return jobState.setStatus( "Failed", errorMsg )
+    return jobState.setStatus( "Failed", errorMsg, source = 'OptimizationMindHandler' )
 

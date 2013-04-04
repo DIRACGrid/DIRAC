@@ -8,7 +8,8 @@
      resource JDL for subsequent use during the matching process.
 """
 
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight        import *
+__RCSID__ = "$Id$"
+
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
 from DIRAC.Core.Security                              import File
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfoAsString
@@ -20,8 +21,6 @@ from DIRAC.Core.Security                              import CS
 from DIRAC.Core.Security                              import Properties
 from DIRAC.Core.Utilities.Time                        import dateTime, second
 from DIRAC                                            import S_OK, S_ERROR, gLogger, version
-
-import os, re, string
 
 INTEGER_PARAMETERS = ['CPUTime']
 FLOAT_PARAMETERS = []
@@ -39,11 +38,10 @@ class ComputingElement:
     self.ceName = ceName
     self.ceType = ''
     #self.log.setLevel('debug') #temporary for debugging
-    self.classAd = ClassAd( '[]' )
-    self.ceRequirementDict = {}
     self.ceParameters = {}
     self.proxy = ''
     self.valid = None
+    self.mandatoryParameters = []
 
     self.minProxyTime = gConfig.getValue( '/Registry/MinProxyLifeTime', 10800 ) #secs
     self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 ) #secs
@@ -79,21 +77,23 @@ class ComputingElement:
     """
 
     # Collect global defaults first
-    result = self.__getCEParameters( '/Resources/Computing/CEDefaults' ) #can be overwritten by other sections
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-    result = self.__getCEParameters( '/Resources/Computing/%s' % self.ceName )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
+    result = gConfig.getSections( '/Resources/Computing' )
+    if result['OK'] and result['Value']:
+      ceSections = result['Value']
+      if 'CEDefaults' in ceSections:
+        result = self.__getCEParameters( '/Resources/Computing/CEDefaults' ) #can be overwritten by other sections
+        if not result['OK']:
+          self.log.warn( result['Message'] )
+      if self.ceName in ceSections:
+        result = self.__getCEParameters( '/Resources/Computing/%s' % self.ceName )
+        if not result['OK']:
+          self.log.warn( result['Message'] )
 
     # Get local CE configuration
     localConfigDict = getCEConfigDict( self.ceName )
     self.ceParameters.update( localConfigDict )
 
     result = self.__getSiteParameters()
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-    result = self.__getResourceRequirements()
     if not result['OK']:
       self.log.warn( result['Message'] )
 
@@ -112,75 +112,23 @@ class ComputingElement:
   def _addCEConfigDefaults( self ):
     """Method to make sure all necessary Configuration Parameters are defined
     """
-    try:
-      self.ceParameters['WaitingToRunningRatio'] = float( self.ceParameters['WaitingToRunningRatio'] )
-    except:
-      # if it does not exist or it can not be converted, take the default
-      self.ceParameters['WaitingToRunningRatio'] = WAITING_TO_RUNNING_RATIO
-
-    try:
-      self.ceParameters['MaxWaitingJobs'] = int( self.ceParameters['MaxWaitingJobs'] )
-    except:
-      # if it does not exist or it can not be converted, take the default
-      self.ceParameters['MaxWaitingJobs'] = MAX_WAITING_JOBS
-
-    try:
-      self.ceParameters['MaxTotalJobs'] = int( self.ceParameters['MaxTotalJobs'] )
-    except:
-      # if it does not exist or it can not be converted, take the default
-      self.ceParameters['MaxTotalJobs'] = MAX_TOTAL_JOBS
-
-
-
-  #############################################################################
-  def __getResourceRequirements( self ):
-    """Adds resource requirements to the ClassAd.
-    """
-    reqtSection = '/AgentJobRequirements'
-    result = gConfig.getOptionsDict( reqtSection )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-      return S_OK( result['Message'] )
-
-    reqsDict = result['Value']
-    self.ceRequirementDict.update( reqsDict )
-
-    return S_OK( 'Added requirements' )
+    self.ceParameters['WaitingToRunningRatio'] = float( self.ceParameters.get( 'WaitingToRunningRatio', WAITING_TO_RUNNING_RATIO ) )
+    self.ceParameters['MaxWaitingJobs'] = int( self.ceParameters.get( 'MaxWaitingJobs', MAX_WAITING_JOBS ) )
+    self.ceParameters['MaxTotalJobs'] = int( self.ceParameters.get( 'MaxTotalJobs', MAX_TOTAL_JOBS ) )
 
   #############################################################################
   def __getInt( self, value ):
-    """To deal with JDL integer values.
+    """ To deal with JDL integer values.
     """
-    tmpValue = None
-
     try:
-     tmpValue = int( value.replace( '"', '' ) )
+      return int( value.replace( '"', '' ) )
     except Exception, x:
-      pass
-
-    if tmpValue:
-      value = tmpValue
-
-    return value
+      return None
 
   #############################################################################
   def __getSiteParameters( self ):
     """Adds site specific parameters to the resource ClassAd.
     """
-    osSection = '/Resources/Computing/OSCompatibility'
-    platforms = {}
-    result = gConfig.getOptionsDict( osSection )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-      # return S_ERROR(result['Message'])
-    else:
-      if not result['Value']:
-        self.log.warn( 'Could not obtain %s section from CS' % ( osSection ) )
-        # return S_ERROR('Could not obtain %s section from CS' %(osSection))
-      else:
-        platforms = result['Value']
-    self.log.debug( 'Platforms are %s' % ( platforms ) )
-
     section = '/LocalSite'
     options = gConfig.getOptionsDict( section )
     if not options['OK']:
@@ -195,11 +143,8 @@ class ComputingElement:
 
     for option, value in localSite.items():
       if option == 'Architecture':
-        self.ceParameters['LHCbPlatform'] = value
+        self.ceParameters['Platform'] = value
         self.ceParameters['Architecture'] = value
-        if value in platforms.keys():
-          compatiblePlatforms = platforms[value]
-          self.ceParameters['CompatiblePlatforms'] = compatiblePlatforms.split( ', ' )
       elif option == 'LocalSE':
         self.ceParameters['LocalSE'] = value.split( ', ' )
       else:
@@ -207,7 +152,7 @@ class ComputingElement:
 
     return S_OK()
 
-  def reset( self ):
+  def _reset( self ):
     """ Make specific CE parameter adjustments here
     """
     pass
@@ -222,7 +167,8 @@ class ComputingElement:
         self.ceParameters[key] = int( self.ceParameters[key] )
       if key in FLOAT_PARAMETERS:
         self.ceParameters[key] = float( self.ceParameters[key] )
-    self.reset()
+
+    self._reset()
     return S_OK()
 
   def getParameterDict( self ):
@@ -264,9 +210,9 @@ class ComputingElement:
     elif type( param ) == type( [] ):
       result = {}
       for p in param:
-        if param in self.ceParameters.keys():
-          result[param] = self.ceParameters[param]
-      if len( result.keys() ) == len( p ):
+        if p in self.ceParameters:
+          result[p] = self.ceParameters[p]
+      if len( result.keys() ) == len( param ):
         return S_OK( result )
       else:
         return S_ERROR( 'Not all specified parameters available' )
@@ -283,7 +229,6 @@ class ComputingElement:
     except:
       return S_ERROR( 'Wrong type for setCPUTimeLeft argument' )
 
-    self.classAd.insertAttributeInt( 'CPUTime', intCPUTimeLeft )
     self.ceParameters['CPUTime'] = intCPUTimeLeft
 
     return S_OK( intCPUTimeLeft )
@@ -297,7 +242,8 @@ class ComputingElement:
     """
     # FIXME: need to take into account the possible requirements from the pilots,
     #        so far the cputime
-    result = self.getDynamicInfo()
+    ciInfoDict = {}
+    result = self.getCEStatus()
     if not result['OK']:
       self.log.warn( 'Could not obtain CE dynamic information' )
       self.log.warn( result['Message'] )
@@ -306,8 +252,10 @@ class ComputingElement:
       runningJobs = result['RunningJobs']
       waitingJobs = result['WaitingJobs']
       submittedJobs = result['SubmittedJobs']
+      ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.__getParameters( 'MaxTotalJobs' )['Value'] )
+    ceInfoDict['MaxTotalJobs'] = maxTotalJobs
     waitingToRunningRatio = float( self.__getParameters( 'WaitingToRunningRatio' )['Value'] )
     # if there are no Running job we can submit to get at most 'MaxWaitingJobs'
     # if there are Running jobs we can increase this to get a ratio W / R 'WaitingToRunningRatio'
@@ -335,10 +283,9 @@ class ComputingElement:
         additionalJobs = maxWaitingJobs - waitingJobs
         if totalJobs + additionalJobs >= maxTotalJobs:
           additionalJobs = maxTotalJobs - totalJobs
-      #For SSH CE case	
+      #For SSH CE case
       if int(self.__getParameters( 'MaxWaitingJobs')['Value']) == 0:
         additionalJobs = maxTotalJobs - runningJobs
-        
 
       result['Value'] = additionalJobs
 
@@ -351,6 +298,7 @@ class ComputingElement:
     # if totalCPU:
     #  message +=', TotalCPU=%s' %(totalCPU)
     result['Message'] = message
+    result['CEInfoDict'] = ceInfoDict
     return result
 
   #############################################################################
@@ -376,7 +324,7 @@ class ComputingElement:
   #############################################################################
   def _monitorProxy( self, pilotProxy, payloadProxy ):
     """Base class for the monitor and update of the payload proxy, to be used in
-      derived classes for the basic renewal of the proxy, if further actions are 
+      derived classes for the basic renewal of the proxy, if further actions are
       necessary they should be implemented there
     """
     retVal = getProxyInfo( payloadProxy )
@@ -398,8 +346,8 @@ class ComputingElement:
                                        newProxyLifeTime = self.defaultProxyTime,
                                        proxyToConnect = pilotProxy )
 
-    # if there is pilot proxy 
-    retVal = getProxyInfo( pilotProxy, disableVOMS = True )
+    # if there is pilot proxy
+    retVal = getProxyInfo( pilotProxy )
     if not retVal['OK']:
       return retVal
     pilotProxyDict = retVal['Value']
@@ -445,7 +393,7 @@ class ComputingElement:
       self.log.error( errorStr )
       return S_ERROR( 'Can not renew by copy: %s' % errorStr )
 
-    if not 'hasVOMS' in payloadProxyDict or not payloadProxyDict[ 'hasVOMS' ]:
+    if pilotProxyDict.get( 'hasVOMS', False ):
       return pilotProxyDict[ 'chain' ].dumpAllToFile( payloadProxy )
 
     attribute = CS.getVOMSAttributeForGroup( payloadGroup )
@@ -458,67 +406,36 @@ class ComputingElement:
     chain = retVal['Value']
     return chain.dumpAllToFile( payloadProxy )
 
-  #############################################################################
-  def getJDL( self ):
-    """Returns CE JDL as a string.
+  def getDescription( self ):
+    """ Get CE description as a dictionary
     """
 
-    # Add the CE parameters
+    ceDict = {}
     for option, value in self.ceParameters.items():
-      if type( option ) == type( [] ):
-        self.classAd.insertAttributeVectorString( option, value.split( ', ' ) )
+      if type( value ) == type( [] ):
+        ceDict[option] = value
       elif type( value ) == type( ' ' ):
-        jdlInt = self.__getInt( value )
-        if type( jdlInt ) == type( 1 ):
-          self.log.debug( 'Found JDL integer attribute: %s = %s' % ( option, jdlInt ) )
-          self.classAd.insertAttributeInt( option, jdlInt )
+        tmpInt = self.__getInt( value )
+        if tmpInt is not None:
+          self.log.debug( 'Found CE integer attribute: %s = %s' % ( option, tmpInt ) )
+          ceDict[option] = tmpInt
         else:
           self.log.debug( 'Found string attribute: %s = %s' % ( option, value ) )
-          self.classAd.insertAttributeString( option, value )
-      elif type( value ) == type( 1 ):
+          ceDict[option] = value
+      elif type( value ) == type( 1 ) or type( value ) == type( 1. ):
         self.log.debug( 'Found integer attribute: %s = %s' % ( option, value ) )
-        self.classAd.insertAttributeInt( option, value )
+        ceDict[option] = value
       else:
         self.log.warn( 'Type of option %s = %s not determined' % ( option, value ) )
 
-    # Add the CE requirements if any
-    requirements = ''
-    for option, value in self.ceRequirementDict.items():
-      if type( value ) == type( ' ' ):
-        jdlInt = self.__getInt( value )
-        if type( jdlInt ) == type( 1 ):
-          requirements += ' other.' + option + ' == %d &&' % ( jdlInt )
-          self.log.debug( 'Found JDL reqt integer attribute: %s = %s' % ( option, jdlInt ) )
-          self.classAd.insertAttributeInt( option, jdlInt )
-        else:
-          requirements += ' other.' + option + ' == "%s" &&' % ( value )
-          self.log.debug( 'Found string reqt attribute: %s = %s' % ( option, value ) )
-          self.classAd.insertAttributeString( option, value )
-      elif type( value ) == type( 1 ):
-        requirements += ' other.' + option + ' == %d &&' % ( value )
-        self.log.debug( 'Found integer reqt attribute: %s = %s' % ( option, value ) )
-        self.classAd.insertAttributeInt( option, value )
-      else:
-        self.log.warn( 'Could not determine type of:  %s = %s' % ( option, value ) )
-
-    if requirements:
-      if re.search( '&&$', requirements ):
-        requirements = requirements[:-3]
-      self.classAd.set_expression( 'Requirements', requirements )
-    else:
-      self.classAd.set_expression( 'Requirements', 'True' )
-
     release = gConfig.getValue( '/LocalSite/ReleaseVersion', version )
-    self.classAd.insertAttributeString( 'DIRACVersion', release )
-    self.classAd.insertAttributeString( 'ReleaseVersion', release )
+    ceDict['DIRACVersion'] = release
+    ceDict['ReleaseVersion'] = release
     project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
     if project:
-      self.classAd.insertAttributeString( 'ReleaseProject', project )
-    if self.classAd.isOK():
-      jdl = self.classAd.asJDL()
-      return S_OK( jdl )
-    else:
-      return S_ERROR( 'ClassAd job is not valid' )
+      ceDict['ReleaseProject'] = project
+
+    return S_OK( ceDict )
 
   #############################################################################
   def sendOutput( self, stdid, line ):
@@ -535,10 +452,10 @@ class ComputingElement:
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
 
   #############################################################################
-  def getDynamicInfo( self ):
+  def getCEStatus( self ):
     """ Method to get dynamic job information, can be overridden in sub-class.
     """
-    name = 'getDynamicInfo()'
+    name = 'getCEStatus()'
     self.log.error( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
 

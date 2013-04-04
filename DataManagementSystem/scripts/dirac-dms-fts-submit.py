@@ -19,13 +19,13 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 
 Script.parseCommandLine()
 from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
+import DIRAC
 import os
 
 args = Script.getPositionalArgs()
 
 if not len( args ) == 3:
   Script.showHelp()
-  DIRAC.exit( -1 )
 else:
   inputFileName = args[0]
   sourceSE = args[1]
@@ -45,4 +45,6 @@ oFTSRequest.setTargetSE( targetSE )
 
 for lfn in lfns:
   oFTSRequest.setLFN( lfn )
-oFTSRequest.submit( monitor = True, printOutput = False )
+result = oFTSRequest.submit( monitor = True, printOutput = False )
+if not result['OK']:
+  DIRAC.gLogger.error( 'Failed to issue FTS Request', result['Message'] )

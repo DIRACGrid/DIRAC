@@ -19,90 +19,51 @@ import stat
 import imp
 import shutil
 
-svnPublicRoot = "http://svnweb.cern.ch/guest/dirac/Externals/%s"
-tarWebRoot = "http://svnweb.cern.ch/world/wsvn/dirac/Externals/%s/?op=dl&rev=0&isdir=1"
+gitRepo = "https://github.com/DIRACGrid/Externals.git"
 
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
-def downloadExternalsSVN( destPath, version = False ):
-  if version and not version.lower() in ( "trunk", "head" ):
-    snapshotPath = "tags/%s" % version
-  else:
-    snapshotPath = "trunk"
-    version = "trunk"
-  extPath = os.path.join( destPath, "Externals" )
-  osCmd = "svn export http://svnweb.cern.ch/guest/dirac/Externals/%s '%s'" % ( snapshotPath, extPath )
-  return not os.system( osCmd )
+DIRACRoot = False
 
-def downloadExternalsTar( destPath, version = False ):
-  netReadSize = 1024 * 1024
-  if version and not version.lower() in ( "trunk", "head" ):
-    snapshotPath = "tags/%s" % version
-  else:
-    snapshotPath = "trunk"
-    version = "trunk"
-  print "Requesting externals..."
-  remoteDesc = urllib2.urlopen( tarWebRoot % snapshotPath )
-  fd, filePath = tempfile.mkstemp()
-  data = remoteDesc.read( netReadSize )
-  print "Downloading..."
-  sizeDown = 0
-  while data:
-    os.write( fd, data )
-    sizeDown += len( data )
-    data = remoteDesc.read( netReadSize )
-  ret = os.system( "cd '%s'; tar xzf '%s'" % ( destPath, filePath ) )
-  os.unlink( filePath )
-  if ret:
+def downloadExternals( destPath, version = False ):
+  destPath = os.path.join( destPath, "Externals" )
+  if 0 != os.system( "git clone %s %s" % ( gitRepo, destPath ) ):
+      print "Cannot clone git repo"
+      return False
+  if version and 0 != os.system( "cd '%s'; git checkout -b 'comp-%s' '%s'" % ( destPath, version, version ) ):
+    print "Cannot find version %s" % version
     return False
-  print "Downloaded %s bytes" % sizeDown
-  for entry in os.listdir( destPath ):
-    if entry.find( version ) == 0:
-      os.rename( os.path.join( destPath, entry ), os.path.join( destPath, "Externals" ) )
-      break
   return True
 
-def downloadFileFromSVN( filePath, destPath, isExecutable = False, filterLines = [] ):
-  fileName = os.path.basename( filePath )
-  print " - Downloading %s" % fileName
-  viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/DIRAC/trunk/%s?op=dl&rev=0" % filePath
-  anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/%s' % filePath
-  downOK = False
-  localPath = os.path.join( destPath, fileName )
-  for remoteLocation in ( viewSVNLocation, anonymousLocation ):
-    try:
-      remoteFile = urllib2.urlopen( remoteLocation )
-    except urllib2.URLError:
-      continue
-    remoteData = remoteFile.read()
-    remoteFile.close()
-    if remoteData:
-      localFile = open( localPath , "wb" )
-      localFile.write( remoteData )
-      localFile.close()
-      downOK = True
-      break
-  if not downOK:
-    osCmd = "svn cat 'http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/%s' > %s" % ( filePath, localPath )
-    if os.system( osCmd ):
-      print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
-      sys.exit( 1 )
-  if filterLines:
-    fd = open( localPath, "rb" )
-    fileContents = fd.readlines()
+def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = [] ):
+  global DIRACRoot
+  if not DIRACRoot:
+    basePath = os.path.dirname( os.path.realpath( __file__ ) )
+    DIRACRoot = findDIRACRoot( basePath )
+  try:
+    fd = open( os.path.join( DIRACRoot, filePath ), "r" )
+    data = fd.readlines()
     fd.close()
-    fd = open( localPath, "wb" )
-    for line in fileContents:
-      isFiltered = False
-      for filter in filterLines:
-        if line.find( filter ) > -1:
-          isFiltered = True
-          break
-      if not isFiltered:
-        fd.write( line )
-    fd.close()
+  except IOError, e:
+    print "Could not open %s: %s" % ( filePath, e )
+    sys.exit( 1 )
+  destFilePath = os.path.join( destPath, os.path.basename( filePath ) )
+  try:
+    fd = open( destFilePath, "w" )
+  except IOError, e:
+    print "Could not write into %s: %s" % ( destFilePath, e )
+    sys.exit( 1 )
+  for line in data:
+    found = False
+    for fstr in filterLines:
+      if line.find( fstr ) > -1:
+        found = True
+        break
+    if not found:
+      fd.write( line )
+  fd.close()
   if isExecutable:
-    os.chmod( localPath , executablePerms )
+    os.chmod( destFilePath, executablePerms )
 
 def findDIRACRoot( path ):
   dirContents = os.listdir( path )
@@ -161,9 +122,9 @@ def fixAbsoluteLinks( path ):
 cmdOpts = ( ( 'D:', 'destination=', 'Destination where to build the externals' ),
             ( 't:', 'type=', 'Type of compilation (default: client)' ),
             ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
-            ( 'v:', 'version=', 'Version of the externals to compile (default will be trunk)' ),
+            ( 'v:', 'version=', 'Version of the externals to compile (default will be the latest commit)' ),
             ( 'h', 'help', 'Show this help' ),
-            ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' ),
+            ( 'i:', 'pythonVersion=', 'Python version to compile (default 26)' ),
             ( 'f', 'fixLinksOnly', 'Only fix absolute soft links' ),
             ( 'j:', 'makeJobs=', 'Number of make jobs, by default is 1' )
           )
@@ -174,7 +135,7 @@ compDest = False
 compExtSource = False
 onlyFixLinks = False
 makeArgs = []
-compVersionDict = { 'PYTHONVERSION' : '2.5' }
+compVersionDict = { 'PYTHONVERSION' : '2.6' }
 
 optList, args = getopt.getopt( sys.argv[1:],
                                "".join( [ opt[0] for opt in cmdOpts ] ),
@@ -196,7 +157,7 @@ for o, v in optList:
   elif o in ( '-v', '--version' ):
     compExtVersion = v
   elif o in ( '-i', '--pythonversion' ):
-    compVersionDict[ 'PYTHONVERSION' ] = ".".join( [ c for c in v ] )
+    compVersionDict[ 'PYTHONVERSION' ] = ".".join( [ c for c in v if c in "0123456789" ] )
   elif o in ( '-f', '--fixLinksOnly' ):
     onlyFixLinks = True
   elif o in ( '-j', '--makeJobs' ):
@@ -212,23 +173,23 @@ for o, v in optList:
 
 #Find platform
 basePath = os.path.dirname( os.path.realpath( __file__ ) )
-diracRoot = findDIRACRoot( basePath )
-if diracRoot:
-  platformPath = os.path.join( diracRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
+DIRACRoot = findDIRACRoot( basePath )
+if DIRACRoot:
+  platformPath = os.path.join( DIRACRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
   platFD = open( platformPath, "r" )
   Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
   platFD.close()
   platform = Platform.getPlatformString()
 
 if not compDest:
-  if not diracRoot:
+  if not DIRACRoot:
     print "Error: Could not find DIRAC root"
     sys.exit( 1 )
   print "Using platform %s" % platform
   if not platform or platform == "ERROR":
     print >> sys.stderr, "Can not determine local platform"
     sys.exit( -1 )
-  compDest = os.path.join( diracRoot, platform )
+  compDest = os.path.join( DIRACRoot, platform )
 
 if onlyFixLinks:
   print "Fixing absolute links"
@@ -247,19 +208,15 @@ if not compExtSource:
   workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
   print "Creating temporary work dir at %s" % workDir
   downOK = False
-  for fnc in ( downloadExternalsSVN, downloadExternalsTar ):
-    if fnc( workDir, compExtVersion ):
-      downOK = True
-      break
-  if not downOK:
+  if not downloadExternals( workDir, compExtVersion ):
     print "Oops! Could not download Externals!"
     sys.exit( 1 )
   externalsDir = os.path.join( workDir, "Externals" )
 else:
   externalsDir = compExtSource
 
-downloadFileFromSVN( "DIRAC/Core/scripts/dirac-platform.py", externalsDir, True )
-downloadFileFromSVN( "DIRAC/Core/Utilities/CFG.py", externalsDir, False, [ '@gCFGSynchro' ] )
+copyFromDIRAC( "DIRAC/Core/scripts/dirac-platform.py", externalsDir, True )
+copyFromDIRAC( "DIRAC/Core/Utilities/CFG.py", externalsDir, False, [ '@gCFGSynchro' ] )
 
 #Load CFG
 cfgPath = os.path.join( externalsDir, "CFG.py" )
@@ -280,14 +237,14 @@ packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
 if compDest:
   makeArgs.append( "-p '%s'" % os.path.realpath( compDest ) )
 
-#Substitution of versions 
+#Substitution of versions
 finalPackages = []
 for prog in packagesToBuild:
   for k in compVersionDict:
     finalPackages.append( prog.replace( "$%s$" % k, compVersionDict[k] ) )
 
 print "Trying to get a raw environment"
-patDet = os.path.join( diracRoot, platform )
+patDet = os.path.join( DIRACRoot, platform )
 for envVar in ( 'LD_LIBRARY_PATH', 'PATH' ):
   if envVar not in os.environ:
     continue

@@ -14,8 +14,7 @@ import re
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Core.Utilities.File import getSize, getGlobbedTotalSize
-from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.File import getGlobbedTotalSize
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
 class SandboxStoreClient:
@@ -23,15 +22,12 @@ class SandboxStoreClient:
   __validSandboxTypes = ( 'Input', 'Output' )
   __smdb = None
 
-  def __init__( self, useCertificates = False, rpcClient = False, transferClient = False,
-                delegatedDN = None, delegatedGroup = None, setup = None ):
+  def __init__( self, rpcClient = False, transferClient = False, **kwargs ):
+               
     self.__serviceName = "WorkloadManagement/SandboxStore"
     self.__rpcClient = rpcClient
     self.__transferClient = transferClient
-    self.__useCertificates = useCertificates
-    self.__delegatedDN = delegatedDN
-    self.__delegatedGroup = delegatedGroup
-    self.__setup = setup
+    self.__kwargs = kwargs
     if SandboxStoreClient.__smdb == None:
       try:
         from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
@@ -48,15 +44,13 @@ class SandboxStoreClient:
     if self.__rpcClient:
       return self.__rpcClient
     else:
-      return RPCClient( self.__serviceName, useCertificates = self.__useCertificates,
-                        delegatedGroup = self.__delegatedGroup, delegatedDN = self.__delegatedDN, setup = self.__setup )
+      return RPCClient( self.__serviceName, **self.__kwargs )
 
   def __getTransferClient( self ):
     if self.__transferClient:
       return self.__transferClient
     else:
-      return TransferClient( self.__serviceName, useCertificates = self.__useCertificates,
-                             delegatedGroup = self.__delegatedGroup, delegatedDN = self.__delegatedDN, setup = self.__setup )
+      return TransferClient( self.__serviceName, **self.__kwargs )
 
   #Upload sandbox to jobs and pilots
 
@@ -129,6 +123,7 @@ class SandboxStoreClient:
 
     transferClient = self.__getTransferClient()
     result = transferClient.sendFile( tmpFilePath, ( "%s.tar.bz2" % oMD5.hexdigest(), assignTo ) )
+    result[ 'SandboxFileName' ] = tmpFilePath
     try:
       os.unlink( tmpFilePath )
     except:
@@ -285,7 +280,8 @@ class SandboxStoreClient:
     """
     Get the sandboxes assigned to jobs and the relation type
     """
-    return self.__getRPCClient().getSandboxesAssignedToEntity( eId )
+    rpcClient = self.__getRPCClient()
+    return rpcClient.getSandboxesAssignedToEntity( eId )
 
   def __assignSandboxesToEntity( self, eId, sbList, ownerName = "", ownerGroup = "", eSetup = "" ):
     """
@@ -300,7 +296,8 @@ class SandboxStoreClient:
       if not eSetup:
         eSetup = gConfig.getValue( "/DIRAC/Setup", "Production" )
       return SandboxStoreClient.__smdb.assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
-    return self.__getRPCClient().assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
+    rpcClient = self.__getRPCClient()
+    return rpcClient.assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
 
   def __assignSandboxToEntity( self, eId, sbLocation, sbType, ownerName = "", ownerGroup = "", eSetup = "" ):
     """
@@ -314,4 +311,5 @@ class SandboxStoreClient:
     """
     Unassign a list of jobs of their respective sandboxes
     """
-    return self.__getRPCClient().unassignEntities( eIdList )
+    rpcClient = self.__getRPCClient()
+    return rpcClient.unassignEntities( eIdList )

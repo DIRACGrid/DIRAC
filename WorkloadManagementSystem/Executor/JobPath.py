@@ -54,7 +54,7 @@ class JobPath( OptimizerExecutor ):
 
     argsDict = { 'JobID': jobState.jid,
                  'JobState' : jobState,
-                 'ConfigPath':self.ex_getModuleParam( "section" ) }
+                 'ConfigPath':self.ex_getProperty( "section" ) }
     try:
       modInstance = self.__voPlugins[ voPlugin ]( argsDict )
       result = modInstance.execute()
@@ -77,7 +77,7 @@ class JobPath( OptimizerExecutor ):
     jobManifest = result[ 'Value' ]
     opChain = jobManifest.getOption( "JobPath", [] )
     if opChain:
-      self.jobLog.info( 'Job defines its own optimizer chain %s' % jobPath )
+      self.jobLog.info( 'Job defines its own optimizer chain %s' % opChain )
       return self.__setOptimizerChain( jobState, opChain )
     #Construct path
     opPath = self.ex_getOption( 'BasePath', ['JobPath', 'JobSanity'] )
@@ -105,6 +105,11 @@ class JobPath( OptimizerExecutor ):
         self.jobLog.info( 'No input data requirement' )
     #End of path
     opPath.extend( self.ex_getOption( 'EndPath', ['JobScheduling'] ) )
+    uPath = []
+    for opN in opPath:
+      if opN not in uPath:
+        uPath.append( opN )
+    opPath = uPath
     self.jobLog.info( 'Constructed path is: %s' % "->".join( opPath ) )
     result = self.__setOptimizerChain( jobState, opPath )
     if not result['OK']:

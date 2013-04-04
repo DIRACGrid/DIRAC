@@ -61,17 +61,14 @@ class RegistrationTask( RequestTask ):
     targetSEs = list( set( [ targetSE.strip() for targetSE in  subRequestAttrs["TargetSE"].split(",") 
                              if targetSE.strip() ] ) )
     if not targetSEs:
-      self.warn( "registerFile: no TargetSE specified! will use default 'CERN-FAILOVER'")
-      targetSEs = [ "CERN-FAILOVER" ]
+      self.warn( "registerFile: no TargetSE specified!")
 
     ## dict for failed LFNs
     failed = {}
     failedFiles = 0
 
+    ## get catalogue
     catalogue = subRequestAttrs["Catalogue"] if subRequestAttrs["Catalogue"] else ""
-    if catalogue == "BookkeepingDB":
-      self.warn( "registerFile: catalogue set to 'BookkeepingDB', set it to 'CERN-HIST'")
-      catalogue = "CERN-HIST"
 
     for subRequestFile in subRequestFiles:
       lfn = subRequestFile.get( "LFN", "" ) 
@@ -110,7 +107,7 @@ class RegistrationTask( RequestTask ):
         self.info( "registerFile: file %s has been registered at all targetSEs" % lfn )        
       else:
         fileError = ";".join( [ "%s:%s" % (targetSE, reason) for targetSE, reason in failed[lfn].items() ] )
-        requestObj.setSubRequestFileAttributeValue( index, "register", lfn, "Error", fileError[:255] )
+        requestObj.setSubRequestFileAttributeValue( index, "register", lfn, "Error", fileError.replace("'","")[:255] )
 
     ##################################################################
     ## all files were registered or no files at all in this subrequest
@@ -122,7 +119,7 @@ class RegistrationTask( RequestTask ):
       errors = []
       for lfn in failed:
         for targetSE, reason in failed[lfn].items():
-          error = "%s:%s:%s" % ( lfn, targetSE, reason )
+          error = "%s:%s:%s" % ( lfn, targetSE, str(reason).replace("'", "") )
           self.warn( "registerFile: %s@%s - %s" % ( lfn, targetSE, reason ) )
           errors.append( error )
       requestObj.setSubRequestAttributeValue( index, "register", "Error", ";".join( errors )[:255] )

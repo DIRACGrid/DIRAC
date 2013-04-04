@@ -1,4 +1,6 @@
 import threading
+#Because eval(valenc) might require it
+import datetime
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DEncode, List
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
@@ -69,9 +71,7 @@ class OptimizerExecutor( ExecutorModule ):
     self.__jobData.jobLog = self.JobLog( self.log, jid )
     try:
       self.jobLog.info( "Processing" )
-      result = self.optimizeJob( jid, jobState )
-      if not result[ 'OK' ]:
-        return result
+      optResult = self.optimizeJob( jid, jobState )
       #If the manifest is dirty, update it!
       result = jobState.getManifest()
       if not result[ 'OK' ]:
@@ -80,9 +80,10 @@ class OptimizerExecutor( ExecutorModule ):
       if manifest.isDirty():
         jobState.setManifest( manifest )
       #Did it go as expected? If not Failed!
-      if not result[ 'OK' ]:
-        self.jobLog.info( "Set to Failed/%s" % result[ 'Message' ] )
-        return jobState.setStatus( "Failed", result[ 'Message' ] )
+      if not optResult[ 'OK' ]:
+        self.jobLog.info( "Set to Failed/%s" % optResult[ 'Message' ] )
+        minorStatus = "%s optimizer" % self.ex_optimizerName()
+        return jobState.setStatus( "Failed", minorStatus )
 
       return S_OK()
     finally:
@@ -109,7 +110,7 @@ class OptimizerExecutor( ExecutorModule ):
       #This is the last optimizer in the chain!
       result = jobState.setStatus( self.ex_getOption( 'WaitingStatus', 'Waiting' ),
                                    minorStatus = self.ex_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ),
-                                   appStatus = "",
+                                   appStatus = "Unknown",
                                    source = opName )
       if not result[ 'OK' ]:
         return result
@@ -142,7 +143,6 @@ class OptimizerExecutor( ExecutorModule ):
       if encLength == len( valenc ):
         return S_OK( value )
     except Exception:
-      raise
       self.jobLog.warn( "Opt param %s doesn't seem to be dencoded %s" % ( name, valenc ) )
     return S_OK( eval( valenc ) )
 
@@ -158,3 +158,21 @@ class OptimizerExecutor( ExecutorModule ):
 
   def serializeTask( self, cjs ):
     return S_OK( cjs.serialize() )
+
+  def fastTrackDispatch( self, jid, jobState ):
+    result = jobState.getStatus()
+    if not result[ 'OK' ]:
+      return S_ERROR( "Could not retrieve job status for %s: %s" % ( jid, result[ 'Message' ] ) )
+    status, minorStatus = result[ 'Value' ]
+    if status != "Checking":
+      self.log.info( "[JID %s] Not in checking state. Avoid fast track" % jid )
+      return S_OK()
+    result = jobState.getOptParameter( "OptimizerChain" )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Could not retrieve OptimizerChain for job %s: %s" % ( jid, result[ 'Message' ] ) )
+    optChain = result[ 'Value' ]
+    if minorStatus not in optChain:
+      self.log.info( "[JID %s] End of chain for job" % jid )
+      return S_OK()
+    self.log.info( "[JID %s] Fast track possible to %s" % ( jid, minorStatus ) )
+    return S_OK( "WorkloadManagement/%s" % minorStatus )

@@ -2,6 +2,8 @@ import re
 import os
 import types
 import imp
+import pkgutil
+import collections
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List, DIRACSingleton
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
@@ -10,15 +12,19 @@ from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 class ObjectLoader( object ):
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
-  def __init__( self ):
+  def __init__( self, baseModules = False ):
     """ init
     """
+    if not baseModules:
+      baseModules = [ 'DIRAC' ]
+    self.__rootModules = baseModules
     self.__objs = {}
-    
+    self.__generateRootModules( baseModules )
+
   def __rootImport( self, modName, hideExceptions = False ):
     """ Auto search which root module has to be used
     """
-    for rootModule in self.__rootModules():
+    for rootModule in self.__rootModules:
       impName = modName
       if rootModule:
         impName = "%s.%s" % ( rootModule, impName )
@@ -33,7 +39,7 @@ class ObjectLoader( object ):
       #Nothing found, continue
     #Return nothing found
     return S_OK()
-        
+
 
   def __recurseImport( self, modName, parentModule = False, hideExceptions = False, fullName = False ):
     """ Internal function to load modules
@@ -53,27 +59,26 @@ class ObjectLoader( object ):
       if impData[0]:
         impData[0].close()
     except ImportError, excp:
-      if str( excp ).find( "No module named" ) == 0:
+      if str( excp ).find( "No module named %s" % modName[0] ) == 0:
         return S_OK( None )
-      errMsg = "Can't load %s" % ".".join( modName )
+      errMsg = "Can't load %s in %s" % ( ".".join( modName ), parentModule.__path__[0] )
       if not hideExceptions:
         gLogger.exception( errMsg )
       return S_ERROR( errMsg )
     if len( modName ) == 1:
       self.__objs[ fullName ] = impModule
       return S_OK( impModule )
-    return self.__recurseImport( modName[1:], impModule, 
+    return self.__recurseImport( modName[1:], impModule,
                                  hideExceptions = hideExceptions, fullName = fullName )
 
-  def __rootModules( self ):
+  def __generateRootModules( self, baseModules ):
     """ Iterate over all the possible root modules
     """
-    for rootModule in CSGlobals.getCSExtensions():
-      if rootModule[-5:] != "DIRAC":
-        rootModule = "%sDIRAC" % rootModule
-      yield rootModule
-    yield 'DIRAC'
-    yield ''
+    self.__rootModules = baseModules
+    for rootModule in reversed( CSGlobals.getCSExtensions() ):
+      if rootModule[-5:] != "DIRAC" and rootModule not in self.__rootModules:
+        self.__rootModules.append( "%sDIRAC" % rootModule )
+    self.__rootModules.append( "" )
 
 
   def loadModule( self, importString ):
@@ -102,7 +107,7 @@ class ObjectLoader( object ):
     except AttributeError:
       return S_ERROR( "%s does not contain a %s object" % ( importString, objName ) )
 
-  def getObjects( self, modulePath, reFilter = None, parentClass = None ):
+  def getObjects( self, modulePath, reFilter = None, parentClass = None, recurse = False ):
     """
     Search for modules under a certain path
 
@@ -111,16 +116,17 @@ class ObjectLoader( object ):
     reFilter is a regular expression to filter what to load. For instance ".*Handler"
     parentClass is a class object from which the loaded modules have to import from. For instance RequestHandler
     """
-    
-    modules = {}
+
+    if 'OrderedDict' in dir( collections ):
+      modules = collections.OrderedDict()
+    else:
+      modules = {}
 
     if type( reFilter ) in types.StringTypes:
-      if reFilter[-2:] != 'py':
-        reFilter += r'\.py$'
       reFilter = re.compile( reFilter )
 
 
-    for rootModule in self.__rootModules():
+    for rootModule in self.__rootModules:
       if rootModule:
         impPath = "%s.%s" % ( rootModule, modulePath )
       else:
@@ -137,14 +143,17 @@ class ObjectLoader( object ):
       fsPath = parentModule.__path__[0]
       gLogger.verbose( "Loaded module %s at %s" % ( impPath, fsPath ) )
 
-      for entry in os.listdir( fsPath ):
-        if entry[-3:] != ".py" or entry == "__init__.py":
+      for modLoader, modName, isPkg in pkgutil.walk_packages( parentModule.__path__ ):
+        if reFilter and not reFilter.match( modName ):
           continue
-        if reFilter and not reFilter.match( entry ):
+        if isPkg:
+          if recurse:
+            result = self.getObjects( "%s.%s" % ( modulePath, modName ), reFilter = reFilter,
+                                      parentClass = parentClass, recurse = recurse )
+            if not result[ 'OK' ]:
+              return result
+            modules.update( result[ 'Value' ] )
           continue
-        if not os.path.isfile( os.path.join( fsPath, entry ) ):
-          continue
-        modName = entry[:-3] 
         modKeyName = "%s.%s" % ( modulePath, modName )
         if modKeyName in modules:
           continue

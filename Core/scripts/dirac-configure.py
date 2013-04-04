@@ -93,7 +93,6 @@ def setGateway( optionValue ):
 def setServer( optionValue ):
   global configurationServer
   configurationServer = optionValue
-  DIRAC.gLogger.debug( '/DIRAC/Configuration/Servers =', configurationServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/Configuration/Servers', configurationServer )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'ConfigurationServer' ), configurationServer )
   return DIRAC.S_OK()
@@ -107,8 +106,7 @@ def setAllServers( optionValue ):
 def setSetup( optionValue ):
   global setup
   setup = optionValue
-  DIRAC.gLogger.debug( '/DIRAC/Setup =', setup )
-  Script.localCfg.addDefaultEntry( '/DIRAC/Setup', setup )
+  DIRAC.gConfig.setOptionValue( '/DIRAC/Setup', setup )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'Setup' ), setup )
   return DIRAC.S_OK()
 
@@ -116,7 +114,6 @@ def setSetup( optionValue ):
 def setSiteName( optionValue ):
   global siteName
   siteName = optionValue
-  DIRAC.gLogger.debug( '/LocalSite/Site =', siteName )
   Script.localCfg.addDefaultEntry( '/LocalSite/Site', siteName )
   DIRAC.__siteName = False
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'SiteName' ), siteName )
@@ -158,7 +155,6 @@ def setUseVersionsDir( optionValue ):
 def setArchitecture( optionValue ):
   global architecture
   architecture = optionValue
-  DIRAC.gLogger.debug( '/LocalSite/Architecture =', architecture )
   Script.localCfg.addDefaultEntry( '/LocalSite/Architecture', architecture )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'Architecture' ), architecture )
   return DIRAC.S_OK()
@@ -167,7 +163,6 @@ def setArchitecture( optionValue ):
 def setLocalSE( optionValue ):
   global localSE
   localSE = optionValue
-  DIRAC.gLogger.debug( '/LocalSite/localSE =', localSE )
   Script.localCfg.addDefaultEntry( '/LocalSite/localSE', localSE )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'LocalSE' ), localSE )
   return DIRAC.S_OK()
@@ -175,7 +170,6 @@ def setLocalSE( optionValue ):
 def setVO( optionValue ):
   global vo
   vo = optionValue
-  DIRAC.gLogger.debug( '/DIRAC/VirtualOrganization =', vo )
   Script.localCfg.addDefaultEntry( '/DIRAC/VirtualOrganization', vo )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'VirtualOrganization' ), vo )
   return DIRAC.S_OK()
@@ -183,7 +177,6 @@ def setVO( optionValue ):
 def forceUpdate( optionValue ):
   global update
   update = True
-  DIRAC.gLogger.notice( 'Will update dirac.cfg' )
   return DIRAC.S_OK()
 
 Script.disableCS()
@@ -288,11 +281,27 @@ if not vo:
     setVO( newVO )
 
 DIRAC.gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
-
 DIRAC.gLogger.notice( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 
+if update:
+  DIRAC.gLogger.notice( 'Will update dirac.cfg' )
+
+if setup:
+  DIRAC.gLogger.verbose( '/DIRAC/Setup =', setup )
+if vo:
+  DIRAC.gLogger.verbose( '/DIRAC/VirtualOrganization =', vo )
+if configurationServer:
+  DIRAC.gLogger.verbose( '/DIRAC/Configuration/Servers =', configurationServer )
+
+if siteName:
+  DIRAC.gLogger.verbose( '/LocalSite/Site =', siteName )
+if architecture:
+  DIRAC.gLogger.verbose( '/LocalSite/Architecture =', architecture )
+if localSE:
+  DIRAC.gLogger.verbose( '/LocalSite/localSE =', localSE )
+
 if not useServerCert:
-  DIRAC.gLogger.debug( '/DIRAC/Security/UseServerCertificate =', 'no' )
+  DIRAC.gLogger.verbose( '/DIRAC/Security/UseServerCertificate =', 'no' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'no' )
 else:
   # will be removed later but it is necessary to initialized the CS in script mode
@@ -303,7 +312,7 @@ if host:
   DIRAC.gConfig.setOptionValue( cfgPath( "DIRAC", "Hostname" ), host )
 
 if skipCAChecks:
-  DIRAC.gLogger.debug( '/DIRAC/Security/SkipCAChecks =', 'yes' )
+  DIRAC.gLogger.verbose( '/DIRAC/Security/SkipCAChecks =', 'yes' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/SkipCAChecks', 'yes' )
 else:
   # Necessary to allow initial download of CA's
@@ -382,7 +391,7 @@ if useServerCert:
   Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
 if gatewayServer:
-  DIRAC.gLogger.debug( '/DIRAC/Gateways/%s =' % DIRAC.siteName(), gatewayServer )
+  DIRAC.gLogger.verbose( '/DIRAC/Gateways/%s =' % DIRAC.siteName(), gatewayServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/Gateways/%s' % DIRAC.siteName(), gatewayServer )
 
 # Create the local dirac.cfg if it is not yet there
@@ -395,13 +404,12 @@ if not os.path.exists( DIRAC.gConfig.diracConfigFilePath ):
 
 # We need user proxy or server certificate to continue
 if not useServerCert:
+  Script.enableCS()
   result = getProxyInfo()
   if not result['OK']:
-    DIRAC.gLogger.notice( 'No user proxy available' )
-    DIRAC.gLogger.notice( 'Create one using %s and execute again with -F option' % os.path.join( DIRAC.rootPath, 'scripts', 'dirac-proxy-init' ) )
+    DIRAC.gLogger.notice( 'Configuration is not completed because no user proxy is available' )
+    DIRAC.gLogger.notice( 'Create one using dirac-proxy-init and execute again with -F option' )
     sys.exit( 0 )
-  else:
-    Script.enableCS()
 else:
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()
@@ -409,7 +417,7 @@ else:
 
 if includeAllServers:
   DIRAC.gConfig.setOptionValue( '/DIRAC/Configuration/Servers', ','.join( DIRAC.gConfig.getServersList() ) )
-  DIRAC.gLogger.debug( '/DIRAC/Configuration/Servers =', ','.join( DIRAC.gConfig.getServersList() ) )
+  DIRAC.gLogger.verbose( '/DIRAC/Configuration/Servers =', ','.join( DIRAC.gConfig.getServersList() ) )
 
 if update:
   DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
