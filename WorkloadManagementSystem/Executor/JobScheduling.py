@@ -131,6 +131,18 @@ class JobScheduling( OptimizerExecutor ):
     for site in siteCandidates:
       idSites[ site ] = opData[ 'SiteCandidates' ][ site ]
 
+    #Check if sites have correct count of disk+tape replicas
+    numData = len( inputData )
+    errorSites = set()
+    for site in idSites:
+      if numData != idSites[ site ][ 'disk' ] + idSites[ site ][ 'tape' ]:
+        self.jobLog.error( "Site candidate %s does not have all the input data" % site )
+        errorSites.add( site )
+    for site in errorSites:
+      idSites.pop( site )
+    if not idSites:
+      return S_ERROR( "Site candidates do not have all the input data" )
+
     #Check if staging is required
     stageRequired, siteCandidates = self.__resolveStaging( jobState, inputData, idSites )
     if not siteCandidates:
@@ -213,8 +225,8 @@ class JobScheduling( OptimizerExecutor ):
       self.jobLog.info( "Banned %s sites" % ", ".join( bannedSites ) )
 
     sites = manifest.getOption( "Site", [] )
-    #TODO: Only accept known sites after removing crap like ANY set in the original manifest 
-    sites = [ site for site in sites if site.strip().lower() not in ( "any", "" ) ] 
+    #TODO: Only accept known sites after removing crap like ANY set in the original manifest
+    sites = [ site for site in sites if site.strip().lower() not in ( "any", "" ) ]
 
     if len( sites ) == 1:
       self.jobLog.info( 'Single chosen site %s specified' % ( sites[0] ) )
