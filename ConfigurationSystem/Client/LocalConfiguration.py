@@ -447,6 +447,7 @@ class LocalConfiguration:
     for iPos in range( len( self.commandOptionList ) ):
       optionTuple = self.commandOptionList[ iPos ]
       gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 3 ), optionTuple[1].ljust( 15 ), optionTuple[2] ) )
+
       iLastOpt = iPos
       if optionTuple[0] == 'h':
         #Last general opt is always help
@@ -455,7 +456,10 @@ class LocalConfiguration:
       gLogger.notice( " \nOptions:" )
       for iPos in range( iLastOpt + 1, len( self.commandOptionList ) ):
         optionTuple = self.commandOptionList[ iPos ]
-        gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 3 ), optionTuple[1].ljust( 15 ), optionTuple[2] ) )
+        if optionTuple[0]:
+          gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 3 ), optionTuple[1].ljust( 15 ), optionTuple[2] ) )
+        else:
+          gLogger.notice( "   %s --%s : %s" % ( '   ', optionTuple[1].ljust( 15 ), optionTuple[2] ) )
 
     DIRAC.exit( 0 )
 
