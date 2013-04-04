@@ -125,8 +125,20 @@ class JobScheduling( OptimizerExecutor ):
     for site in siteCandidates:
       idSites[ site ] = opData[ 'SiteCandidates' ][ site ]
 
-    # Check if staging is required
-    stageRequired, siteCandidates = self._resolveStaging( jobState, inputData, idSites )
+    #Check if sites have correct count of disk+tape replicas
+    numData = len( inputData )
+    errorSites = set()
+    for site in idSites:
+      if numData != idSites[ site ][ 'disk' ] + idSites[ site ][ 'tape' ]:
+        self.jobLog.error( "Site candidate %s does not have all the input data" % site )
+        errorSites.add( site )
+    for site in errorSites:
+      idSites.pop( site )
+    if not idSites:
+      return S_ERROR( "Site candidates do not have all the input data" )
+
+    #Check if staging is required
+    stageRequired, siteCandidates = self.__resolveStaging( jobState, inputData, idSites )
     if not siteCandidates:
       return S_ERROR( "No destination sites available" )
 
