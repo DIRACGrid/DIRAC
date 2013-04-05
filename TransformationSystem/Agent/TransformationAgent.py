@@ -25,6 +25,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ c'tor
     """
     AgentModule.__init__( self, *args, **kwargs )
+    TransformationAgentsUtilities.__init__( self )
 
     #few parameters
     self.pluginLocation = self.am_getOption( 'PluginLocation',

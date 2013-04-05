@@ -24,4 +24,4 @@ if len( args ) < 3 or len( args ) > 4:
 
 gLogger.notice( 'This is an obsoleted command, use dirac-dms-add-file instead' )
 
-DIRACexit( exitCode )
+DIRACexit( 0 )
