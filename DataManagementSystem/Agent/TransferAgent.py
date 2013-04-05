@@ -28,6 +28,7 @@ import re
 ## from DIRAC (globals and Core)
 from DIRAC import gMonitor, S_OK, S_ERROR
 ## base class
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 ## replica manager
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
