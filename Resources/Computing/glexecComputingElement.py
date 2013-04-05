@@ -5,13 +5,13 @@
 __RCSID__ = "$Id$"
 
 
-import os, stat
+import os, stat, tempfile, pickle, shutil
 
 from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
-from DIRAC.Core.Utilities.Subprocess                        import shellCall
+from DIRAC.Core.Utilities.Subprocess                        import systemCall
 from DIRAC.Core.Utilities.Os                                import which
-from DIRAC                                                  import S_OK, S_ERROR
+from DIRAC                                                  import S_OK, S_ERROR, gConfig
 
 import DIRAC
 
@@ -29,10 +29,20 @@ class glexecComputingElement( ComputingElement ):
                           203 : 'glexec failed with authorization error'
                         }
     self.__gl = False
+    self.__mktmp = False
+    self.__proxyObj = False
+    self.__execFile = False
+    self.__glDir = False
+    self.__pilotProxyLocation = False
+    self.__payloadProxyLocation = False
+    self.__glCommand = False
+    self.__jobData = {}
+    if os.environ.has_key( 'X509_USER_PROXY' ):
+      self.__pilotProxyLocation = os.environ['X509_USER_PROXY']
     ComputingElement.__init__( self, ceUniqueID )
     self.submittedJobs = 0
 
-  def __locate( self ):
+  def __locate_glexec( self ):
     """ Try to find glexec
     """
     if 'OSG_GLEXEC_LOCATION' in os.environ:
@@ -49,8 +59,13 @@ class glexecComputingElement( ComputingElement ):
       self.__gl = glpath
       return S_OK()
 
-    self.log.info( 'Unable to locate glexec' )
-    return S_ERROR( 'glexec not found' )
+    return S_ERROR( "Unable to locate glexec" )
+
+  def __locate_mkgltempdir( self ):
+    self.__mktmp = os.path.join( os.path.dirname( self.__gl ), "mkgltempdir" )
+    if os.path.exists( self.__mktmp ):
+      return S_OK()
+    return S_ERROR( "Can't find mkgltempdir at %s" % self.__mktmp )
 
 
   def writeProxyToFile( self, proxyObj ):
@@ -63,51 +78,192 @@ class glexecComputingElement( ComputingElement ):
     os.chmod( location, stat.S_IREAD | stat.S_IWRITE )
     return S_OK( location )
 
-
-  def submitJob( self, executableFile, proxyObj, dummy = None ):
-    """ Method to submit job
-    """
-    self.log.info( "Executable file is %s" % executableFile )
+  def __prepare_glenv( self ):
     self.log.verbose( 'Setting up proxy for payload' )
-    result = self.writeProxyToFile( proxyObj )
+    result = self.writeProxyToFile( self.__proxyObj )
     if not result['OK']:
       return result
 
-    payloadProxy = result['Value']
-    if not os.environ.has_key( 'X509_USER_PROXY' ):
-      self.log.error( 'X509_USER_PROXY variable for pilot proxy not found in local environment' )
-      return S_ERROR( 'X509_USER_PROXY not found' )
+    self.__payloadProxyLocation = result['Value']
+    os.environ[ 'GLEXEC_CLIENT_CERT' ] = self.__payloadProxyLocation
+    os.environ[ 'GLEXEC_SOURCE_PROXY' ] = self.__payloadProxyLocation
+    self.log.info( "Payload proxy deployed to %s" % self.__payloadProxyLocation )
+    return S_OK()
 
-    pilotProxy = os.environ['X509_USER_PROXY']
-    self.log.info( 'Pilot proxy X509_USER_PROXY=%s' % pilotProxy )
-    os.environ[ 'GLEXEC_CLIENT_CERT' ] = payloadProxy
-    os.environ[ 'GLEXEC_SOURCE_PROXY' ] = payloadProxy
-    self.log.info( '\n'.join( [ 'Set payload proxy variables:',
-                                'GLEXEC_CLIENT_CERT=%s' % payloadProxy,
-                                'GLEXEC_SOURCE_PROXY=%s' % payloadProxy ] ) )
+  def __prepare_tmpdir( self ):
+    result = systemCall( 10, [ self.__mktmp ] )
+    if not result[ 'OK' ] or result[ 'Value' ][0]:
+      return S_ERROR( "OOOPS. Something went bad when doobedobedooo: %s" % result )
 
-    #Determine glexec location (default to standard InProcess behaviour if not found)
-    if self.__locate():
-      self.log.info( 'glexec found for local site at %s' % self.__gl )
-      #Test glexec with payload proxy prior to submitting the job
-      result = self.__test()
-      if not result['OK']:
-        if 'RescheduleOnError' in self.ceParameters and self.ceParameters['RescheduleOnError']:
-          result = S_ERROR( 'gLexec Test Failed: %s' % res['Value'] )
+    self.__glDir = result[ 'Value' ][1].strip()
+    self.log.info( "mkgltmpdir is %s" % self.__glDir )
+    return S_OK()
+
+  def __test( self ):
+
+    #Because glexec is SOOOOPER easy to use
+    fd, testFile = tempfile.mkstemp( "glexec.test", dir = os.path.dirname( self.__glDir ) )
+
+    self.log.info( "Test script lives in %s" % testFile )
+
+    testdata = """#!/usr/bin/env python
+
+import os
+import urllib
+print "# glexec test"
+print "CWD=%s" % os.getcwd()
+print "UID=%s" % os.geteuid()
+print "GID=%s" % os.getegid()
+print "LOGIN=%s" % os.getlogin()
+for k in os.environ:
+  print "ENV:%s=%s" % ( k, os.environ[ k ] )
+try:
+  open( os.environ[ 'X509_USER_PROXY' ], "r" ).read()
+  print "TEST:READ_PROXY=true"
+except Exception, excp:
+  print "TEST_READ_PROXY=false,%s" % str( excp )
+try:
+  urllib.urlopen( "http://google.com" ).read()
+  print "TEST:OUTBOUND_TCP=true"
+except Exception, excp:
+  print "TEST:OUTBOUND_TCP=false,%s" % str( excp )
+"""
+    os.write( fd, testdata )
+    os.close( fd )
+    self.log.info( 'Changing permissions of test script to 0755' )
+    try:
+      os.chmod( os.path.abspath( testFile ), stat.S_IRWXU | stat.S_IREAD | stat.S_IEXEC )
+    except Exception, x:
+      self.log.error( 'Failed to change permissions of test script to 0755 with exception:\n%s' % ( x ) )
+      return S_ERROR( 'Could not change permissions of test script' )
+
+    return self.__execute( testFile )
+
+  def __construct_payload( self ):
+    writeDir = os.path.dirname( self.__glDir )
+    glwrapper = os.path.join( writeDir, "glwrapper" )
+    with open( self.__jobData[ 'wrapperTemplate' ] ) as fd:
+      wrapperTemplate = fd.read()
+      wrapperTemplate = wrapperTemplate.replace( "@SIGNATURE@", str( self.__jobData[ 'signature' ] ) )
+      wrapperTemplate = wrapperTemplate.replace( "@JOBID@", str( self.__jobData[ 'jid' ] ) )
+      wrapperTemplate = wrapperTemplate.replace( "@DATESTRING@", str( self.__jobData[ 'datetime' ] ) )
+      wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str( self.__jobData[ 'jobArgs' ] ) )
+      wrapperTemplate = wrapperTemplate.replace( "@SITEPYTHON@", "" )
+      with open( glwrapper, "w" ) as fd:
+        fd.write( wrapperTemplate )
+      os.chmod( glwrapper, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
+
+    self.log.info( "Written %s" % glwrapper )
+
+    for scn in ( 'DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot.py',
+                 'DIRAC/Core/scripts/dirac-install.py' ):
+      fname = os.path.basename( scn )
+      local = os.path.join( os.getcwd(), fname )
+      dest = os.path.join( writeDir, fname )
+      ok = False
+      errMsg = False
+      for tf in ( local, os.path.join( DIRAC.rootPath, scn ) ):
+        if os.path.exists( tf ):
+          try:
+            shutil.copy( tf, dest )
+            self.log.info( "Copied %s to %s" % ( tf, dest ) )
+            ok = True
+          except Exception, excp:
+            errMsg = str( excp )
+        if ok:
+          continue
+      if not ok:
+        return S_ERROR( "Could not find or copy %s: %s" % ( fname, errMsg ) )
+
+    pilotArgs = []
+    try:
+      with open( os.path.join( os.getcwd(), "dirac-pilot.py.run" ) ) as fd:
+          pilotArgs = pickle.load( fd )
+    except Exception, excp:
+      self.log.warn( "Cannot load dirac-pilot.py.run: %s" % str( excp ) )
+
+    if not pilotArgs:
+      pilotArgs.extend( ( "-S", gConfig.getValue( "/DIRAC/Setup", "" ) ) )
+      pilotArgs.extend( ( "-C", ",".join ( gConfig.getValue( "/DIRAC/Configuration/Servers", [] ) ) ) )
+      version = gConfig.getValue( "/LocalSite/ReleaseVersion", "" )
+      if version:
+        pilotArgs.extend( ( "-r", version ) )
+      project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
+      if project:
+        pilotArgs.extend( ( "-l", project ) )
+
+    pilotArgs.extend( ( '-x', os.path.join( writeDir, 'glwrapper' ) ) )
+
+    jid = self.__jobData[ 'jid' ]
+    runData = []
+    runData.append( "#!/bin/sh" )
+    runData.append( "mkdir dirac-job-%s" % jid )
+    runData.append( "( cd dirac-job-%s; %s '%s' )" % ( jid, os.path.join( writeDir, "dirac-pilot.py" ),
+                                                     "' '".join( pilotArgs ) ) )
+    runData.append( "rm -rf dirac-job-%s" % jid )
+
+    runFile = os.path.join( writeDir, "glrun-%s" % jid )
+    with open( runFile, "w" ) as fd:
+      fd.write( "%s\n" % "\n".join( runData ) )
+    os.chmod( runFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
+
+    self.__glCommand = runFile
+    self.log.info( "glexec command will be %s" % runFile )
+    return S_OK()
+
+  def __executeInProcess( self, executableFile ):
+    os.environ[ 'X509_USER_PROXY' ] = self.__pilotProxyLocation
+
+    result = systemCall( 0, [ executableFile ], callbackFunction = self.sendOutput )
+    if not result[ 'OK' ]:
+      return result
+    return self.__analyzeExitCode( result[ 'Value' ] )
+
+  def getDynamicInfo( self ):
+    """ Method to return information on running and pending jobs.
+    """
+    result = S_OK()
+    result['SubmittedJobs'] = 0
+    result['RunningJobs'] = 0
+    result['WaitingJobs'] = 0
+    return result
+
+  def getCEStatus( self ):
+    #CRAPCRAP
+    return self.getDynamicInfo()
+
+  def submitJob( self, executableFile, proxyObj, jobData ):
+    """ Method to submit job
+    """
+    if not self.__pilotProxyLocation:
+      return S_ERROR( "X509_USER_PROXY is not defined!" )
+    self.log.info( "Executable file is %s" % executableFile )
+    self.__proxyObj = proxyObj
+    self.__execFile = executableFile
+    self.__jobData = jobData
+
+    glok = True
+    for step in ( self.__locate_glexec, self.__locate_mkgltempdir,
+                  self.__prepare_glenv, self.__prepare_tmpdir, self.__test, self.__construct_payload ):
+      self.log.info( "Running step %s" % step.__name__ )
+      result = step()
+      if not result[ 'OK' ]:
+        self.log.error( "Step %s failed: %s" % ( step.__name__, result[ 'Message' ] ) )
+        if self.ceParameters.get( "RescheduleOnError", False ):
+          result = S_ERROR( 'glexec CE failed on step %s : %s' % ( step.__name__, result[ 'Message' ] ) )
           result['ReschedulePayload'] = True
           return result
-        self.log.info( 'glexec test failed, will submit payload regardless...' )
-        self.__gl = False
+        glok = False
 
-    if not self.__gl:
-      self.log.info( 'glexec is not available, setting X509_USER_PROXY for payload proxy' )
-      os.environ[ 'X509_USER_PROXY' ] = payloadProxy
+    self.log.verbose( 'Starting process for monitoring payload proxy' )
+    gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
+                                      taskArgs = ( pilotProxy, payloadProxy ),
+                                      executions = 0, elapsedTime = 0 )
 
-    #Prepare crap. For test purposes just run the text
-    return self.__execute( executableFile )
+    if not glok:
+      return self.__executeInProcess( executableFile )
+    return self.__execute( self.__glCommand )
 
-
-  #############################################################################
   def __analyzeExitCode( self, resultTuple ):
     """ Analyses the exit codes in case of glexec failures.  The convention for
         glexec exit codes is listed below:
@@ -155,63 +311,20 @@ class glexecComputingElement( ComputingElement ):
 
     return S_OK()
 
-  #############################################################################
-  def __test( self ):
-    fd, testFile = tempfile.mkstemp( "glexec.test", dir = os.path.basename( DIRAC.rootPath ) )
 
-    self.log.info( "Test script lives in %s" % testFile )
-
-    testdata = """#!/usr/bin/env python
-
-import os
-import urllib
-print "# glexec test"
-print "CWD=%s" % os.getgwd()
-print "UID=%s" % os.geteuid()
-print "GID=%s" % os.getegid()
-print "LOGIN=%s" % os.getlogin()
-for k in os.environ:
-  print "ENV:%s=%s" % ( k, os.environ[ k ] )
-try:
-  open( os.environ[ 'X509_USER_PROXY' ], "r" ).read()
-  print "TEST:READ_PROXY=true"
-except Exception, excp:
-  print "TEST_READ_PROXY=false,%s" % str( excp )
-try:
-  urllib.urlopen( "http://google.com" ).read()
-  print "TEST:OUTBOUND_TCP=true"
-except Exception, excp:
-  print "TEST:OUTBOUND_TCP=false,%s" % str( excp )
-"""
-    os.write( fd, testdata )
-    os.close( fd )
-    self.log.info( 'Changing permissions of test script to 0755' )
-    try:
-      os.chmod( os.path.abspath( testFile ), stat.S_IRWXU | stat.S_IREAD | stat.S_IEXEC )
-    except Exception, x:
-      self.log.error( 'Failed to change permissions of test script to 0755 with exception:\n%s' % ( x ) )
-      return S_ERROR( 'Could not change permissions of test script' )
-
-    return self.__execute( testFile )
-
-  def __execute( self, executableFile = "" ):
+  def __execute( self, executable ):
     """Run glexec with checking of the exit status code. With no executable it will renew the glexec proxy
     """
     #Just in case
-    if self.__gl:
-      if executableFile:
-        cmd = "%s %s" % ( self.__gl, executableFile )
-      else:
-        cmd = self.__gl
-    else:
-      cmd = executableFile
-
-    if executableFile:
-      os.chmod( executableFile, os.stat( executableFile )[0] | stat.S_IEXEC )
-
-    self.log.info( 'CE submission command is: %s' % cmd )
-    result = shellCall( 0, "%s %s" % ( self.__gl, executableFile ), callbackFunction = self.sendOutput )
-    return self.__analyzeExitCode()
+    glCmd = [ self.__gl ]
+    if executable:
+      os.chmod( executable, os.stat( executable )[0] | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
+      glCmd.append( executable )
+    self.log.info( 'CE submission command is: %s' % glCmd )
+    result = systemCall( 0, glCmd, callbackFunction = self.sendOutput )
+    if not result[ 'OK' ]:
+      return result
+    return self.__analyzeExitCode( result[ 'Value' ] )
 
   def getDynamicInfo( self ):
     """ Method to return information on running and pending jobs.
@@ -222,10 +335,14 @@ except Exception, excp:
     result['WaitingJobs'] = 0
     return result
 
+  def getCEStatus( self ):
+    #CRAPCRAP
+    return self.getDynamicInfo()
+
   def monitorProxy( self, pilotProxy, payloadProxy ):
     """ Monitor the payload proxy and renew as necessary.
     """
-    retVal = self._monitorProxy( pilotProxy, payloadProxy )
+    retVal = super( glexecComputingElement, self ).monitorProxy( pilotProxy, payloadProxy )
     if not retVal['OK']:
       # Failed to renew the proxy, nothing else to be done
       return retVal

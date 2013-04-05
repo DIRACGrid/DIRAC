@@ -250,7 +250,7 @@ class JobAgent( AgentModule ):
         jobReport.setJobParameter( 'GridCEQueue', self.gridCEQueue, sendFlag = False )
 
       if os.environ.has_key( 'BOINC_JOB_ID' ):
-        # Report BOINC environment 
+        # Report BOINC environment
         for p in ['BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName']:
           jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )
 
@@ -311,7 +311,7 @@ class JobAgent( AgentModule ):
         self.timeLeftError = result['Message']
       else:
         if self.cpuFactor:
-          # if the batch system is not defined used the CPUNormalizationFactor 
+          # if the batch system is not defined used the CPUNormalizationFactor
           # defined locally
           self.timeLeft = self.__getCPUTimeLeft()
     scaledCPUTime = self.timeLeftUtil.getScaledCPU()['Value']
@@ -429,7 +429,8 @@ class JobAgent( AgentModule ):
     if not result['OK']:
       return result
 
-    wrapperFile = result['Value']
+    wrapperData = result[ 'Value' ]
+    wrapperFile = wrapperData[ 'execFile' ]
     self.__report( jobID, 'Matched', 'Submitted To CE' )
 
     wrapperName = os.path.basename( wrapperFile )
@@ -444,7 +445,7 @@ class JobAgent( AgentModule ):
     payloadProxy = proxy['Value']
     # FIXME: how can we set the batchID before we submit, this makes no sense
     batchID = 'dc%s' % ( jobID )
-    submission = self.computingElement.submitJob( wrapperFile, payloadProxy )
+    submission = self.computingElement.submitJob( wrapperFile, payloadProxy, wrapperData )
 
     ret = S_OK( 'Job submitted' )
 
@@ -558,7 +559,17 @@ class JobAgent( AgentModule ):
     jobFile = open( jobExeFile, 'w' )
     jobFile.write( jobFileContents )
     jobFile.close()
-    return S_OK( jobExeFile )
+
+    data = { 'execFile' : jobExeFile,
+             'wrapperTemplate' : self.jobWrapperTemplate,
+             'signature': signature,
+             'wrapperFile' : jobWrapperFile,
+             'logLevel' : logLevel,
+             'jid' : jobID,
+             'datetime': date_time,
+             'jobArgs' : arguments,
+             'sitePython' : siteRootPython }
+    return S_OK( data )
 
   #############################################################################
   def __saveJobJDLRequest( self, jobID, jobJDL ):
