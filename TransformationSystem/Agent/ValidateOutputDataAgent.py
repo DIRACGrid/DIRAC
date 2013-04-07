@@ -140,8 +140,9 @@ class ValidateOutputDataAgent( AgentModule ):
     directories = sortList( directories )
     return S_OK( directories )
 
-  def _addDirs( self, transID, newDirs, existingDirs ):
-    for dir in newDirs:
+  @staticmethod
+  def _addDirs( transID, newDirs, existingDirs ):
+    for _dir in newDirs:
       transStr = str( transID ).zfill( 8 )
       if re.search( transStr, dir ):
         if not dir in existingDirs:

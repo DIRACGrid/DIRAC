@@ -248,7 +248,6 @@ class WorkflowTasks( TaskBase ):
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
     """
     if ( not owner ) or ( not ownerGroup ):
-      from DIRAC.Core.Security.ProxyInfo import getProxyInfo
       res = getProxyInfo( False, False )
       if not res['OK']:
         return res
@@ -296,7 +295,7 @@ class WorkflowTasks( TaskBase ):
 
       hospitalTrans = [int( x ) for x in self.opsH.getValue( "Hospital/Transformations", [] )]
       if int( transID ) in hospitalTrans:
-        self.handleHospital( oJob )
+        self._handleHospital( oJob )
 
       taskDict[taskNumber]['TaskObject'] = ''
       res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
