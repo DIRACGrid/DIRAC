@@ -1,5 +1,5 @@
-''' Runs few integrity checks
-'''
+""" Runs few integrity checks
+"""
 
 __RCSID__ = "$Id$"
 
@@ -18,8 +18,8 @@ AGENT_NAME = 'Transformation/ValidateOutputDataAgent'
 class ValidateOutputDataAgent( AgentModule ):
 
   def __init__( self, *args, **kwargs ):
-    ''' c'tor
-    '''
+    """ c'tor
+    """
     AgentModule.__init__( self, *args, **kwargs )
 
     self.integrityClient = DataIntegrityClient()
@@ -33,7 +33,8 @@ class ValidateOutputDataAgent( AgentModule ):
     else:
       self.transformationTypes = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
 
-    self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', ['TransformationDB', 'MetadataCatalog'] ) )
+    self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', ['TransformationDB',
+                                                                                  'MetadataCatalog'] ) )
     self.activeStorages = sortList( self.am_getOption( 'ActiveSEs', [] ) )
     self.transfidmeta = self.am_getOption( 'TransfIDMeta', "TransformationID" )
     self.enableFlag = True
@@ -41,8 +42,8 @@ class ValidateOutputDataAgent( AgentModule ):
   #############################################################################
 
   def initialize( self ):
-    '''Sets defaults
-    '''
+    """ Sets defaults
+    """
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -57,7 +58,8 @@ class ValidateOutputDataAgent( AgentModule ):
   #############################################################################
 
   def execute( self ):
-    ''' The VerifyOutputData execution method '''
+    """ The VerifyOutputData execution method
+    """
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
     if not self.enableFlag == 'True':
       self.log.info( "VerifyOutputData is disabled by configuration option 'EnableFlag'" )
@@ -87,6 +89,8 @@ class ValidateOutputDataAgent( AgentModule ):
     return S_OK()
 
   def updateWaitingIntegrity( self ):
+    """ Get 'WaitingIntegrity' transformations, update to 'ValidatedOutput'
+    """
     gLogger.info( "Looking for transformations in the WaitingIntegrity status to update" )
     res = self.transClient.getTransformations( {'Status':'WaitingIntegrity'} )
     if not res['OK']:
@@ -119,7 +123,8 @@ class ValidateOutputDataAgent( AgentModule ):
   #
 
   def getTransformationDirectories( self, transID ):
-    ''' Get the directories for the supplied transformation from the transformation system '''
+    """ Get the directories for the supplied transformation from the transformation system
+    """
     directories = []
     if 'TransformationDB' in self.directoryLocations:
       res = self.transClient.getTransformationParameters( transID, ['OutputDirectories'] )
@@ -142,7 +147,7 @@ class ValidateOutputDataAgent( AgentModule ):
     return S_OK( directories )
 
   @staticmethod
-  def _addDirs( self, transID, newDirs, existingDirs ):
+  def _addDirs( transID, newDirs, existingDirs ):
     for _dir in newDirs:
       transStr = str( transID ).zfill( 8 )
       if re.search( transStr, dir ):
@@ -152,7 +157,8 @@ class ValidateOutputDataAgent( AgentModule ):
 
   #############################################################################
   def checkTransformationIntegrity( self, transID ):
-    ''' This method contains the real work '''
+    """ This method contains the real work
+    """
     gLogger.info( "-" * 40 )
     gLogger.info( "Checking the integrity of transformation %s" % transID )
     gLogger.info( "-" * 40 )
@@ -200,6 +206,8 @@ class ValidateOutputDataAgent( AgentModule ):
     return S_OK()
 
   def finalizeCheck( self, transID ):
+    """ Move to 'WaitingIntegrity' or 'ValidatedOutput'
+    """
     res = self.integrityClient.getTransformationProblematics( int( transID ) )
     if not res['OK']:
       gLogger.error( "Failed to determine whether there were associated problematic files", res['Message'] )
