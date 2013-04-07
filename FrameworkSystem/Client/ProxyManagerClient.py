@@ -8,7 +8,8 @@ __RCSID__ = "$Id$"
 import os
 import datetime
 import types
-from DIRAC.Core.Utilities import Time, ThreadSafe, DictCache, DIRACSingleton
+from DIRAC.Core.Utilities import Time, ThreadSafe, DIRACSingleton
+from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security import Locations, CS, File, Properties
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request

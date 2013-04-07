@@ -57,7 +57,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup,
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations   import Operations
 
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DictCache
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.Core.Utilities.DictCache import DictCache
 
 #from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, Source, systemCall, DictCache
 
