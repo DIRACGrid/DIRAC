@@ -4,6 +4,7 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 COMPONENT_NAME = 'Transformation'
 
@@ -45,8 +46,9 @@ class Transformation( API ):
                           'Body'                  : '',
                           'MaxNumberOfTasks'       : 0,
                           'EventsPerTask'          : 0}
-
-    self.supportedPlugins = ['Broadcast', 'Standard', 'BySize', 'ByShare']
+    self.ops = Operations()
+    self.supportedPlugins = self.ops.getValue('Transformations/AllowedPlugins',
+                                              ['Broadcast', 'Standard', 'BySize', 'ByShare'])
     if not transClient:
       self.transClient = TransformationClient()
     else:
@@ -369,14 +371,14 @@ class Transformation( API ):
       self.paramValues['Plugin'] = res['Value']
 
     plugin = self.paramValues['Plugin']
-    checkPlugin = "_check%sPlugin" % plugin
-    fcn = None
-    if hasattr( self, checkPlugin ) and callable( getattr( self, checkPlugin ) ):
-      fcn = getattr( self, checkPlugin )
-    if not fcn:
-      return S_ERROR( "Unable to invoke %s, it isn't a member function" % checkPlugin )
-    res = fcn()
-    return res
+    #checkPlugin = "_check%sPlugin" % plugin
+    #fcn = None
+    #if hasattr( self, checkPlugin ) and callable( getattr( self, checkPlugin ) ):
+    #  fcn = getattr( self, checkPlugin )
+    #if not fcn:
+    #  return S_ERROR( "Unable to invoke %s, it isn't a member function" % checkPlugin )
+    #res = fcn()
+    return S_OK()
 
   def _checkBySizePlugin( self ):
     return self._checkStandardPlugin()
