@@ -9,13 +9,17 @@ NEW: Base RSS resources representation on the new CS Resources schema
 *Core
 FIX: multiple fixes to remove pylint complaints
 CHANGE: Moved log coloring to utilities so it can be used consistently across DIRAC
-FIX: Workflow package - fix wild wild card imports
+FIX: Workflow package - fix wild wild card imports resulting in circular imports
+NEW: MySQL - assign one MySQL connection per thread
+FIX: LocalConfiguration - if short option is not set, do not print "-" in help message,
+     closes #1371
 
 *Accounting
 FIX: AccountingDB - align properly days with MySQL bucketing. Closes #1219
 
 *Framework
 FIX: ProxyDB - prevent duplicate key errors on writing VOMSProxies to DB. Closes #1228
+BUGFIX: NotificationDB - missing "," in SQL, closes #1373
 
 *Configuration
 NEW: Resources helper class to work with the new /Resources structure according to RFC #5
@@ -27,6 +31,8 @@ CHANGE: Job.py - setPlatform renamed to setSubmitPools
 
 *DMS
 CHANGE: MigrationMonitoringAgent - removed obsoleted
+NEW: FileCatalogClient - getFileUserMetadata to get both file and directory metadata for a given file
+BUGFIX: ReplicaManager - pass catalog argument in putAndRegister to registerFile call, closes #1369
 
 *WMS
 CHANGE: JobScheduling - is now extensible. Added unit test
