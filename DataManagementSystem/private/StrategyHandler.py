@@ -149,7 +149,7 @@ class StrategyHandler( object ):
     self.log.info( "AcceptableFailureRate = %s" % self.acceptableFailureRate )
     self.acceptableFailedFiles = gConfig.getValue( self.configSection + "/AcceptableFailedFiles", 5 )
     self.log.info( "AcceptableFailedFiles = %s" % self.acceptableFailedFiles )
-    self.rwUpdatePeriod = gConfig.getValue( self.configSection + "/RssRWUpdatePeriod", 300 )
+    self.rwUpdatePeriod = gConfig.getValue( self.configSection + "/RssRWUpdatePeriod", 600 )
     self.log.info( "RSSUpdatePeriod = %s s" % self.rwUpdatePeriod )
     self.rwUpdatePeriod = datetime.timedelta( seconds=self.rwUpdatePeriod )
     ## bandwithds

@@ -28,6 +28,7 @@ import re
 ## from DIRAC (globals and Core)
 from DIRAC import gMonitor, S_OK, S_ERROR
 ## base class
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 ## replica manager
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
@@ -37,6 +38,8 @@ from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler, 
 from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 ## from RMS
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+## from RSS
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 ## from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
@@ -93,12 +96,16 @@ class TransferAgent( RequestAgentBase ):
     MaxProcess = 4
   * results queue size
     ProcessPoolQueueSize = 10
+  * pool timeout
+    ProcessPoolTimeout = 300
+  * task timeout
+    ProcessTaskTimeout = 300
   * request type
     RequestType = transfer
   * proxy
     shifterProxy = DataManager
   * task executing
-    Taskmode = True
+    TaskMode = True
   * FTS scheduling 
     FTSMode = True
   * time interval for throughput (FTS scheduling) in seconds
@@ -112,10 +119,11 @@ class TransferAgent( RequestAgentBase ):
       ActiveStrategies = MinimiseTotalWait 
      - acceptable failure rate
       AcceptableFailureRate = 75  
-  
   """
   ## placeholder for ReplicaManager instance
   __replicaManager = None
+  ## placeholder for rss client
+  __rssClient = None
   ## placeholder for StorageFactory instance
   __storageFactory = None
   ## placeholder for StrategyHandler instance
@@ -229,6 +237,12 @@ class TransferAgent( RequestAgentBase ):
       self.__replicaManager = ReplicaManager()
     return self.__replicaManager
 
+  def rssClient( self ):
+    """ rss client getter """
+    if not self.__rssClient:
+      self.__rssClient = ResourceStatus() 
+    return self.__rssClient
+
   def storageFactory( self ):
     """ StorageFactory instance getter
 
@@ -306,14 +320,16 @@ class TransferAgent( RequestAgentBase ):
     :param str lfn: logical file name
     :param dict catalogMetadata: catalog metadata
     """
+    seRead = self.seRSSStatus( sourceSE, "Read" )
+    if not seRead["OK"]:
+      self.log.error("checkSourceSE: %s" % seRead["Message"] )
+    if not seRead["Value"]:
+      self.log.error("checkSourceSE: StorageElement '%s' is banned for reading" % ( sourceSE ) )
+      return S_ERROR("%s in banned for reading right now" % sourceSE )  
     se = self.seCache.get( sourceSE, None )
     if not se:
       se = StorageElement( sourceSE, "SRM2" )
       self.seCache[sourceSE] = se
-    isValid = se.isValid("Read")
-    if not isValid["OK"]:
-      self.log.error("checkSourceSE: StorageElement '%s' is banned for reading" % ( sourceSE ) )
-      return S_ERROR("%s in banned for reading right now" % sourceSE )  
     pfn = se.getPfnForLfn( lfn )
     if not pfn["OK"]:
       self.log.warn("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) )
@@ -335,6 +351,19 @@ class TransferAgent( RequestAgentBase ):
     ## if we're here everything is OK
     return S_OK()
 
+  def seRSSStatus( self, se, status ):
+    """ get se :status: from RSS for SE :se: 
+
+    :param str se: SE name
+    :param str status: RSS status name
+    """
+    rssStatus = self.rssClient().getStorageElementStatus( se, status )
+    if not rssStatus["OK"]:
+      return S_ERROR( "unknown SE: %s" % se )
+    if rssStatus["Value"][se][status] == "Banned":
+      return S_OK( False )
+    return S_OK( True )
+  
   @staticmethod
   def ancestorSortKeys( aDict, aKey="Ancestor" ):
     """ sorting keys of replicationTree by its hopAncestor value 
@@ -504,6 +533,7 @@ class TransferAgent( RequestAgentBase ):
                                                                                 len(replicas), 
                                                                                 len(metadata) ) )
 
+    toRemove = []
     for waitingFile in waitingFiles:
       validSourceSEs = {}
       downTime = False
@@ -525,13 +555,16 @@ class TransferAgent( RequestAgentBase ):
                                                     "Status", "Failed" )
         requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", waitingFile, 
                                                     "Error", "valid source not found" )
-        del waitingFiles[waitingFile]
+        toRemove.append( waitingFile )
         if waitingFile in replicas:
           del replicas[waitingFile]
         if waitingFile in metadata:
           del metadata[waitingFile]
       else:
         replicas[waitingFile] = validSourceSEs
+
+    ## fileter out not valid files
+    waitingFiles = dict( [ (k, v) for k, v in waitingFiles.items() if k not in toRemove ] )
               
     return S_OK( ( waitingFiles, replicas, metadata ) )
 
@@ -730,7 +763,7 @@ class TransferAgent( RequestAgentBase ):
       execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
       if execOrder != requestDict["executionOrder"]:
         strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
-        self.log.warn("schedule: skipping (%s) subrequest, executionOrder (%s) != request's executionOrder (%s)" % strTup )  
+        self.log.warn("schedule: skipping (%s) subrequest, exeOrder (%s) != request's exeOrder (%s)" % strTup )  
         continue 
 
       if subRequestStatus != "Waiting" :
@@ -832,8 +865,6 @@ class TransferAgent( RequestAgentBase ):
     :param dict subAttrs: subrequest's attributes
     """
     self.log.debug( "scheduleFiles: FTS scheduling, processing subrequest %s" % index )
-    ## get source SE
-    sourceSE = subAttrs["SourceSE"] if subAttrs["SourceSE"] not in ( None, "None", "" ) else None
     ## get target SEs, no matter what's a type we need a list
     targetSEs = [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") if targetSE.strip() ]
     ## get replication strategy
