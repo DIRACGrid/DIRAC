@@ -107,7 +107,8 @@ class Cache( object ):
 
       cacheRow = self.__cache.get( cacheKey, validSeconds = self.__validSeconds )
       if not cacheRow:
-        return S_ERROR( 'Cannot get %s' % cacheKey )
+        self.log.error( str( cacheKey ) )
+        return S_ERROR( 'Cannot get %s' % str( cacheKey ) )
       result.update( { cacheKey : cacheRow } )
       
     return S_OK( result )
@@ -217,12 +218,15 @@ class RSSCache( Cache ):
     """
     
     self.acquireLock()
-    match = self._match( elementNames, statusTypes )
-    self.releaseLock()
-    
-    if not match[ 'OK' ]:
-      self.log.error( match[ 'Message' ] )
-    return match  
+    try:
+      match = self._match( elementNames, statusTypes )
+        
+      if not match[ 'OK' ]:
+        self.log.error( match[ 'Message' ] )
+      return match  
+    finally:
+      # Release lock, no matter what !
+      self.releaseLock()  
     
   #.............................................................................
   # Private methods: NOT THREAD SAFE !!
