@@ -1,9 +1,5 @@
-# $Id$
-"""
-    This is a comment
-"""
-__RCSID__ = "$Revision: 1.38 $"
-
+''' Workflow - made of Steps
+'''
 import os
 import xml.sax
 from DIRAC.Core.Workflow.Parameter import Parameter, AttributeCollection, ParameterCollection, indent
@@ -15,10 +11,10 @@ from DIRAC import S_OK, S_ERROR
 class Workflow( AttributeCollection ):
 
   def __init__( self, obj = None, name = None ):
-    """ Be aware that 1-st param is an obj not a name!!!!
+    ''' Be aware that 1-st param is an obj not a name!!!!
         obj can me a string with XML representation or with filename
         also obj can be a Workflow or ParameterCollections
-    """
+    '''
     AttributeCollection.__init__( self )
     if ( obj == None ) or isinstance( obj, ParameterCollection ):
       self.setName( 'notgiven' )
@@ -66,8 +62,8 @@ class Workflow( AttributeCollection ):
     self.step_definitions = DefinitionsPool( self, obj.step_definitions )
 
   def __str__( self ):
-    """Creates a string representation of itself
-    """
+    '''Creates a string representation of itself
+    '''
     ret = str( self.getName() ) + ':\n' + AttributeCollection.__str__( self ) + self.parameters.__str__()
     ret = ret + str( self.step_definitions )
     ret = ret + str( self.step_instances )
@@ -75,8 +71,8 @@ class Workflow( AttributeCollection ):
     return ret
 
   def toXML( self ):
-    """Creates an XML representation of itself
-    """
+    '''Creates an XML representation of itself
+    '''
     # THIS is very important that Definitions should be written before instances
     ret = '<Workflow>\n'
     ret = ret + AttributeCollection.toXML( self )
@@ -95,9 +91,9 @@ class Workflow( AttributeCollection ):
     xmlfile.close()
 
   def addTool( self, name, tool ):
-    """ Add an object that will be available in all the modules to perform some operations.
+    ''' Add an object that will be available in all the modules to perform some operations.
         For example, a state reporting facility.
-    """
+    '''
     self.workflow_commons[name] = tool
 
   def addStep( self, step ):
@@ -125,8 +121,8 @@ class Workflow( AttributeCollection ):
     return module
 
   def createStepInstance( self, type_, name ):
-    """ Creates step instance of type 'type' with the name 'name'
-    """
+    ''' Creates step instance of type 'type' with the name 'name'
+    '''
     if self.step_definitions.has_key( type_ ):
       stepi = StepInstance( name, self.step_definitions[type_] )
       self.step_instances.append( stepi )
@@ -145,12 +141,12 @@ class Workflow( AttributeCollection ):
 
 
   def resolveGlobalVars( self ):
-    """ This method will create global parameter list and then will resolve all instances of @{VARNAME}
+    ''' This method will create global parameter list and then will resolve all instances of @{VARNAME}
     Be aware that parameters of that type are GLOBAL!!! are string and can not be dynamically change
     The scope: the resolution of that parameters apply from lower to upper object, for example if
     parameter use in module, then it checks module, then step, then workflow
 
-    Comment: If varible linked it should not be used in a global list"""
+    Comment: If varible linked it should not be used in a global list'''
 
     # reenforced global parameters on the level of Workflow
     if not self.parameters.find( "PRODUCTION_ID" ):
@@ -326,4 +322,3 @@ def fromXMLFile( xml_file, obj = None ):
   handler = WorkflowXMLHandler( obj )
   xml.sax.parse( xml_file, handler )
   return handler.root
-
