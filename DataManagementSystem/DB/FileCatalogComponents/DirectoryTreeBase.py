@@ -5,9 +5,9 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import * 
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import checkArgumentFormat
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
-import string, time, datetime,threading, re, os, sys, md5, random
+import time, threading, os
 from types import *
 import stat
 
