@@ -255,7 +255,9 @@ class MySQL:
     self.__connectionSemaphore = threading.Semaphore( maxQueueSize )
 
     self.__initialized = True
-    self._connect()
+    result = self._connect()
+    if not result[ 'OK' ]:
+      gLogger.error( "Cannot connecto to DB: %s" % result[ 'Message' ] )
 
     if debug:
       try:
