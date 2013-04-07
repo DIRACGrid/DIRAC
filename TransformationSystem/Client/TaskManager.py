@@ -6,11 +6,13 @@ COMPONENT_NAME = 'TaskManager'
 
 import re, time, types, os, copy
 
-from DIRAC                                                      import gConfig, S_OK, S_ERROR, gLogger
+from DIRAC                                                      import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.Core.Utilities.List                                  import sortList, fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
 from DIRAC.Interfaces.API.Job                                   import Job
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
+from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
@@ -73,7 +75,6 @@ class RequestTasks( TaskBase ):
     super( RequestTasks, self ).__init__( transClient, logger )
 
     if not requestClient:
-      from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
       self.requestClient = RequestClient()
     else:
       self.requestClient = requestClient
@@ -83,7 +84,7 @@ class RequestTasks( TaskBase ):
     requestOperation = 'replicateAndRegister'
     try:
       requestType, requestOperation = transBody.split( ';' )
-    except:
+    except AttributeError:
       pass
     for taskID in sortList( taskDict.keys() ):
       paramDict = taskDict[taskID]
@@ -259,6 +260,8 @@ class WorkflowTasks( TaskBase ):
 
     for taskNumber in sortList( taskDict.keys() ):
       paramsDict = taskDict[taskNumber]
+      site = oJob.workflow.findParameter( 'Site' ).getValue()
+      paramsDict['Site'] = site
       transID = paramsDict['TransformationID']
       self.log.verbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ) )
       oJob.setOwner( owner )
@@ -278,7 +281,7 @@ class WorkflowTasks( TaskBase ):
       #These helper functions do the real job
       sites = self._handleDestination( paramsDict )
       if not sites:
-        self.log.error( 'Could not get a list a sites', ', '.join( sites ) )
+        self.log.error( 'Could not get a list a sites' )
         taskDict[taskNumber]['TaskObject'] = ''
         continue
       else:
