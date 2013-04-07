@@ -1,3 +1,29 @@
+[v6r8]
+
+CHANGE: Several fixes backported from the v7r0 integration branch
+
+*Core
+CHANGE: DictCache - uses global LockRing to avoid locks in multiprocessing
+FIX: X509Chain - proxy-info showing an error when there's no CS
+
+*DMS
+FIX: TransferAgent - inside loop filter out waiting files dictionary
+BUGFIX: dirac-admin-allow-se - there was a continue that was skipping the complete loop for 
+        ARCHIVE elements
+NEW: LcgFileCatalogClient - test return code in startsess lfc calls       
+
+*WMS:
+FIX: OptimizerExecutor, InputData, JobScheduling - check that site candidates have all the 
+     replicas
+
+*RSS: 
+BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
+
+*Transformation
+FIX: TaskManager - site in the job definition is taken into account when submitting
+NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
+FIX: ValidateOutputDataAgent - self not needed for static methods
+
 [v6r7p20]
 
 *DMS
