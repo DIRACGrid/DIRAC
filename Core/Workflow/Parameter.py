@@ -1,10 +1,7 @@
-# $Id$
-"""
-    This module defines a classs for a generic Workflow Parameter. It also defines
+''' This module defines a classs for a generic Workflow Parameter. It also defines
     a ParameterCollection class as a list of parameters as well as an AttributeCollection
     class which is the base class for the main Workflow classes.
-"""
-__RCSID__ = "$Revision: 1.33 $"
+'''
 
 from DIRAC.Core.Workflow.Utility import getSubstitute, substitute
 
@@ -100,7 +97,7 @@ class Parameter( object ):
     self.type = type_
 
   def isTypeString( self ):
-    """returns True if type is the string kind"""
+    '''returns True if type is the string kind'''
     type_ = self.type.lower() # change the register
     if type_ in ['string','jdl','option','parameter','jdlreqt']:
       return True
@@ -150,9 +147,9 @@ class Parameter( object ):
     return True
 
   def preExecute( self ):
-    """ method to request watever parameter need to be defined before calling execute method
+    ''' method to request watever parameter need to be defined before calling execute method
     returns TRUE if it needs to be done, FALSE otherwise
-    PS: parameters with the output status only going to be left out"""
+    PS: parameters with the output status only going to be left out'''
     return ( not self.isOutput() ) or self.isInput()
 
   def isInput( self ):
@@ -241,8 +238,8 @@ class Parameter( object ):
     return ret + '  # type=' + self.getType() + ' in=' + str( self.isInput() ) + ' out=' + str( self.isOutput() ) + ' ' + self.getDescription() + '\n'
 
 class ParameterCollection( list ):
-  """ Parameter collection class representing a list of Parameters
-  """
+  ''' Parameter collection class representing a list of Parameters
+  '''
 
   def __init__( self, coll = None ):
     list.__init__( self )
@@ -292,9 +289,9 @@ class ParameterCollection( list ):
       raise TypeError( 'Can not append object type ' + str( type( opt ) ) + ' to the ' + str( type( self ) ) + '. Parameter type appendable only' )
 
   def setValue( self, name, value, vtype = None ):
-    """ Method finds parameter with the name "name" and if exists its set value
+    ''' Method finds parameter with the name "name" and if exists its set value
     Returns True if sucsessfull
-    """
+    '''
     par = self.find( name )
     if par == None:
       print "ERROR ParameterCollection.setValue() can not find parameter with the name=%s to set Value=%s" % ( name, value )
@@ -304,27 +301,27 @@ class ParameterCollection( list ):
       return True
 
   def getInput( self ):
-    """ Get input linked parameters
-    """
+    ''' Get input linked parameters
+    '''
 
     return self.get( input = True )
 
   def getOutput( self ):
-    """ Get output linked parameters
-    """
+    ''' Get output linked parameters
+    '''
 
     return self.get( output = True )
 
   def getLinked( self ):
-    """ Get linked parameters
-    """
+    ''' Get linked parameters
+    '''
 
     return self.get( input = True, output = True )
 
   def get( self, input_ = False, output_ = False ):
-    """ Get a copy of parameters. If input or output is True, get corresponding
+    ''' Get a copy of parameters. If input or output is True, get corresponding
         io type parameters only. Otherwise, get all the parameters
-    """
+    '''
     all_ = not input_ and not output_
 
     params = ParameterCollection()
@@ -342,9 +339,9 @@ class ParameterCollection( list ):
     return params
 
   def setLink( self, name, module_name, parameter_name ):
-    """ Method finds parameter with the name "name" and if exists its set value
+    ''' Method finds parameter with the name "name" and if exists its set value
     Returns True if sucsessfull
-    """
+    '''
     par = self.find( name )
     if par == None:
       print "ERROR ParameterCollection.setLink() can not find parameter with the name=%s to link it with %s.%s" % ( name, module_name, parameter_name )
@@ -355,13 +352,13 @@ class ParameterCollection( list ):
 
 
   def linkUp( self, opt, prefix = "", postfix = "", objname = "self" ):
-    """ This is a GROUP method operates on the 'obj' parameters using only parameters listed in 'opt' list
+    ''' This is a GROUP method operates on the 'obj' parameters using only parameters listed in 'opt' list
     Method will link self.parameters with the outer object (self) perameters using prefix and postfix
     for example if we want to link module instance with the step or step instance with the workflow
     opt - ParameterCollection or sigle Parameter (WARNING!! used as reference to get a names!!! opt is not changing!!!)
     opt ALSO can be a list of string with the names of parameters to link
     objname - name of the object to connect with, usually 'self'
-    """
+    '''
     if isinstance( opt, ParameterCollection ):
       # if parameter in the list opt is not present in the self
       # we are going to ignore this
@@ -390,12 +387,12 @@ class ParameterCollection( list ):
       raise TypeError( 'Can not link object type ' + str( type( opt ) ) + ' to the ' + str( type( self ) ) + '.' )
 
   def unlink( self, opt ):
-    """ This is a GROUP method operates on the 'obj' parameters using only parameters listed in 'opt' list
+    ''' This is a GROUP method operates on the 'obj' parameters using only parameters listed in 'opt' list
     Method will unlink some self.parameters
     opt - ParameterCollection or sigle Parameter (WARNING!! used as reference to get a names!!! opt is not changing!!!)
     opt ALSO can be a list of string with the names of parameters to link
     objname - name of the object to connect with, usually 'self'
-    """
+    '''
     if isinstance( opt, ParameterCollection ):
       # if parameter in the list opt is not present in the self
       # we are going to ignore this
@@ -442,8 +439,8 @@ class ParameterCollection( list ):
       del self[name_or_ind]
 
   def find( self, name_or_ind ):
-    """ Method to find Parameters
-    Return: Parameter """
+    ''' Method to find Parameters
+    Return: Parameter '''
     # work for index as well as for the string
     if isinstance( name_or_ind, str ): # we given name
       for v in self:
@@ -456,10 +453,10 @@ class ParameterCollection( list ):
     return self[int( name_or_ind )]
 
   def findLinked( self, name_or_ind, linked_status = True ):
-    """ Method to find Parameters
+    ''' Method to find Parameters
     if linked_status is True it returns only linked Var from the list
     if linked_status is False it returns only NOTlinked Var from the list
-    Return: Parameter """
+    Return: Parameter '''
     v = self.find( name_or_ind )
     if ( v != None ) and ( v.isLinked() != linked_status ):
       return None
@@ -518,8 +515,8 @@ class ParameterCollection( list ):
     return str_
 
   def resolveGlobalVars( self, wf_parameters = None, step_parameters = None ):
-    """This function resolves global parameters of type @{value} within the ParameterCollection
-    """
+    '''This function resolves global parameters of type @{value} within the ParameterCollection
+    '''
 
     recurrency_max = 12
     for v in self:
@@ -568,8 +565,8 @@ class ParameterCollection( list ):
             break
 
 class AttributeCollection( dict ):
-  """ Attribute Collection class contains Parameter Collection as a data member
-  """
+  ''' Attribute Collection class contains Parameter Collection as a data member
+  '''
 
   def __init__( self ):
     dict.__init__( self )

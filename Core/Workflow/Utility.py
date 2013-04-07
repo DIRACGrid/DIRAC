@@ -1,17 +1,11 @@
-# $Id$
-
-"""
-    Workflow Utility module contains a number of functions useful for various
-    workflow operations
-"""
-
-__RCSID__ = "$Revision: 1.3 $"
+''' Workflow Utility module contains a number of functions useful for various workflow operations
+'''
 
 import types, re
 
 def getSubstitute(param,skip_list=[]):
-  """ Get the variable name to which the given parameter is referring
-  """
+  ''' Get the variable name to which the given parameter is referring
+  '''
   result = []
   resList = re.findall("@{([][\w,.:$()]+)}",str(param))
   if resList:
@@ -22,8 +16,8 @@ def getSubstitute(param,skip_list=[]):
   return result
 
 def substitute(param,variable,value):
-  """ Substitute the variable reference with the value
-  """
+  ''' Substitute the variable reference with the value
+  '''
 
   tmp_string = str(param).replace('@{'+variable+'}',value)
   if type(param) in types.StringTypes:
@@ -32,8 +26,8 @@ def substitute(param,variable,value):
     return eval(tmp_string)
 
 def resolveVariables(varDict):
-  """ Resolve variables defined in terms of others within the same dictionary
-  """
+  ''' Resolve variables defined in terms of others within the same dictionary
+  '''
   max_tries = 10
   variables = varDict.keys()
   ntry = 0
