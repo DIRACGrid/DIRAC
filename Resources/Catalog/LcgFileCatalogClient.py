@@ -1487,8 +1487,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return returnCode( lfc.lfc_mkdir( self.__fullLfn( path ), mode ) )
 
   def __openDirectory( self, path ):
-    error = lfc.lfc_opendirg( self.__fullLfn( path ), '' )
-    return returnCode( error, error )
+    value = lfc.lfc_opendirg( self.__fullLfn( path ), '' )
+    return returnCode( not value, value )
 
   def __getDirectoryContents( self, path, verbose = False ):
     """ Returns a dictionary containing all of the contents of a directory.
