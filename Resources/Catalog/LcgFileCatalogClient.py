@@ -218,7 +218,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
 
   def __checkArgumentFormat( self, path ):
     if not self.isOK():
-      return S_ERROR( "LcgFileCatalogClient: %s catalog is invalid" % self.getname() )
+      return S_ERROR( "LcgFileCatalogClient: %s catalog is invalid" % self.getName() )
     if type( path ) in types.StringTypes:
       urls = {path:False}
     elif type( path ) == types.ListType:
@@ -1627,7 +1627,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       chars = buff[:chars].replace( self.prefix, '', 1 ).replace( '\x00', '' )
     else:
       error = 1
-    return __return_code( error, chars )
+    return returnCode( error, chars )
 
   def __makeLink( self, source, target ):
     return returnCode( lfc.lfc_symlink( self.__fullLfn( target ), self.__fullLfn( source ) ) )
