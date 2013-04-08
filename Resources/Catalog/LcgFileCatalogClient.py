@@ -20,7 +20,7 @@ importedLFC = None
 # These are some functions used by all methods in the class
 #
 
-def __getClientCertInfo():
+def getClientCertInfo():
   res = getProxyInfo( False, False )
   if not res['OK']:
     gLogger.error( "ReplicaManager.__getClientCertGroup: Failed to get client proxy information.",
@@ -54,77 +54,77 @@ def __getClientCertInfo():
             }
   return S_OK( resDict )
 
-def __existsGuid( guid ):
+def existsGuid( guid ):
   """ Check if the guid exists
   """
   fstat = lfc.lfc_filestatg()
   error = lfc.lfc_statg( '', guid, fstat )
-  return __returnCode( error and lfc.cvar.serrno != 2, not error )
+  return returnCode( error and lfc.cvar.serrno != 2, not error )
 
-def __getDNFromUID( userID ):
+def getDNFromUID( userID ):
   buff = " " * ( lfc.CA_MAXNAMELEN + 1 )
   res = lfc.lfc_getusrbyuid( userID, buff )
   if res == 0:
     dn = buff[:buff.find( '\x00' )]
-    gLogger.debug( "LcgFileCatalogClient.__getDNFromUID: UID %s maps to %s." % ( userID, dn ) )
+    gLogger.debug( "LcgFileCatalogClient.getDNFromUID: UID %s maps to %s." % ( userID, dn ) )
     return S_OK( dn )
   else:
-    errStr = "LcgFileCatalogClient.__getDNFromUID: Failed to get DN from UID"
+    errStr = "LcgFileCatalogClient.getDNFromUID: Failed to get DN from UID"
     gLogger.error( errStr, "%s %s" % ( userID, lfc.sstrerror( lfc.cvar.serrno ) ) )
     return S_ERROR( errStr )
 
-def __getRoleFromGID( groupID ):
+def getRoleFromGID( groupID ):
   buff = " " * ( lfc.CA_MAXNAMELEN + 1 )
   res = lfc.lfc_getgrpbygid( groupID, buff )
   if res == 0:
     role = buff[:buff.find( '\x00' )]
     if role == 'lhcb':
       role = 'lhcb/Role=user'
-    gLogger.debug( "LcgFileCatalogClient.__getRoleFromGID: GID %s maps to %s." % ( groupID, role ) )
+    gLogger.debug( "LcgFileCatalogClient.getRoleFromGID: GID %s maps to %s." % ( groupID, role ) )
     return S_OK( role )
   else:
-    errStr = "LcgFileCatalogClient:__getRoleFromGID: Failed to get role from GID"
+    errStr = "LcgFileCatalogClient:getRoleFromGID: Failed to get role from GID"
     gLogger.error( errStr, "%s %s" % ( groupID, lfc.sstrerror( lfc.cvar.serrno ) ) )
     return S_ERROR()
 
-def __addReplica( guid, pfn, se, master ):
+def addReplica( guid, pfn, se, master ):
   fid = lfc.lfc_fileid()
   status = 'U'
   f_type = 'D'
   poolname = ''
   fs = ''
   error = lfc.lfc_addreplica( guid, fid, se, pfn, status, f_type, poolname, fs )
-  return __returnCode( error and lfc.sstrerror( lfc.cvar.serrno ) != "File exists" )
+  return returnCode( error and lfc.sstrerror( lfc.cvar.serrno ) != "File exists" )
 
-def __removeReplica( pfn ):
+def removeReplica( pfn ):
   fid = lfc.lfc_fileid()
   error = lfc.lfc_delreplica( '', fid, pfn )
-  return __returnCode( error and error != 2 )
+  return returnCode( error and error != 2 )
 
-def __setReplicaStatus( pfn, status ):
-  return __returnCode( lfc.lfc_setrstatus( pfn, status ) )
+def setReplicaStatus( pfn, status ):
+  return returnCode( lfc.lfc_setrstatus( pfn, status ) )
 
-def __modReplica( pfn, newse ):
-  return __returnCode( lfc.lfc_modreplica( pfn, '', '', newse ) )
+def modReplica( pfn, newse ):
+  return returnCode( lfc.lfc_modreplica( pfn, '', '', newse ) )
 
-def __closeDirectory( oDirectory ):
-  return __returnCode( lfc.lfc_closedir( oDirectory ) )
+def closeDirectory( oDirectory ):
+  return returnCode( lfc.lfc_closedir( oDirectory ) )
 
-def __getDNUserID( dn ):
+def getDNUserID( dn ):
   error, users = lfc.lfc_getusrmap()
   userid = None
   for userMap in users if not error else []:
     if userMap.username == dn:
       userid = userMap.userid
       break
-  return __returnCode( userid == None, userid, errMsg = "DN does not exist" if not error else '' )
+  return returnCode( userid == None, userid, errMsg = "DN does not exist" if not error else '' )
 
-def __addUserDN( userID, dn ):
+def addUserDN( userID, dn ):
   error = lfc.lfc_enterusrmap( userID, dn )
   # 17 is if dn already exists, then OK
-  return __returnCode( error and lfc.cvar.serrno != 17 )
+  return returnCode( error and lfc.cvar.serrno != 17 )
 
-def __returnCode( error, value = '', errMsg = '' ):
+def returnCode( error, value = '', errMsg = '' ):
   if not error:
     return S_OK( value )
   elif errMsg:
@@ -304,7 +304,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       elif not guid:
         successful[lfn] = False
       else:
-        res = __existsGuid( guid )
+        res = existsGuid( guid )
         if not res['OK']:
           failed[lfn] = res['Message']
         elif not res['Value']:
@@ -437,12 +437,12 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[lfn]['NumberOfLinks'] = fstat.nlink
         successful[lfn]['Mode'] = S_IMODE( fstat.filemode )
         if ownership:
-          res = __getDNFromUID( fstat.uid )
+          res = getDNFromUID( fstat.uid )
           if res['OK']:
             successful[lfn]['OwnerDN'] = res['Value']
           else:
             successful[lfn]['OwnerDN'] = None
-          res = __getRoleFromGID( fstat.gid )
+          res = getRoleFromGID( fstat.gid )
           if res['OK']:
             successful[lfn]['OwnerRole'] = res['Value']
           else:
@@ -646,12 +646,12 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[lfn]['CreationDate'] = fromEpoch( fstat.ctime )
         successful[lfn]['ModificationDate'] = fromEpoch( fstat.mtime )
         successful[lfn]['NumberOfSubPaths'] = fstat.nlink
-        res = __getDNFromUID( fstat.uid )
+        res = getDNFromUID( fstat.uid )
         if res['OK']:
           successful[lfn]['OwnerDN'] = res['Value']
         else:
           successful[lfn]['OwnerDN'] = None
-        res = __getRoleFromGID( fstat.gid )
+        res = getRoleFromGID( fstat.gid )
         if res['OK']:
           successful[lfn]['OwnerRole'] = res['Value']
         else:
@@ -935,7 +935,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[lfn] = res['Message']
       else:
         guid = res['Value']
-        res = __addReplica( guid, pfn, se, master )
+        res = addReplica( guid, pfn, se, master )
         if res['OK']:
           successful[lfn] = True
         else:
@@ -1004,7 +1004,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       else:
         pfn = info['PFN']
         se = info['SE']
-        res = __removeReplica( pfn )
+        res = removeReplica( pfn )
         if res['OK']:
           successful[lfn] = True
         else:
@@ -1014,7 +1014,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
             if res1['OK']:
               pfn1 = res1['Value']['Successful'].get( lfn, {} ).get( se )
               if pfn1 and pfn1 != pfn:
-                res = __removeReplica( pfn1 )
+                res = removeReplica( pfn1 )
           if res['OK']:
             successful[lfn] = True
           else:
@@ -1057,7 +1057,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     for lfn, info in lfns.items():
       pfn = info['PFN']
       status = info['Status']
-      res = __setReplicaStatus( pfn, status[0] )
+      res = setReplicaStatus( pfn, status[0] )
       if res['OK']:
         successful[lfn] = True
       else:
@@ -1084,7 +1084,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     for lfn, info in lfns.items():
       pfn = info['PFN']
       newse = info['NewSE']
-      res = __modReplica( pfn, newse )
+      res = modReplica( pfn, newse )
       if res['OK']:
         successful[lfn] = True
       else:
@@ -1306,13 +1306,13 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def __getLFNForPFN( self, pfn ):
     fstat = lfc.lfc_filestatg()
     error = lfc.lfc_statr( pfn, fstat )
-    return __returnCode( error, self.__getLfnForGUID( fstat.guid ) if not error else None )
+    return returnCode( error, self.__getLfnForGUID( fstat.guid ) if not error else None )
 
   def __existsLfn( self, lfn ):
     """ Check whether the supplied LFN exists
     """
     error = lfc.lfc_access( self.__fullLfn( lfn ), 0 )
-    return __returnCode( error and lfc.cvar.serrno != 2, error == 0 )
+    return returnCode( error and lfc.cvar.serrno != 2, error == 0 )
 
   def __getLfnForGUID( self, guid ):
     """ Resolve the LFN for a supplied GUID
@@ -1353,13 +1353,13 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     permissionsDict = {}
     for obj in objects:
       if obj.a_type == lfc.CNS_ACL_USER_OBJ:
-        res = __getDNFromUID( obj.a_id )
+        res = getDNFromUID( obj.a_id )
         if not res['OK']:
           return res
         permissionsDict['DN'] = res['Value']
         permissionsDict['user'] = obj.a_perm
       elif obj.a_type == lfc.CNS_ACL_GROUP_OBJ:
-        res = __getRoleFromGID( obj.a_id )
+        res = getRoleFromGID( obj.a_id )
         if not res['OK']:
           return res
         role = res['Value']
@@ -1380,11 +1380,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       path = self.__fullLfn( path )
     fstat = lfc.lfc_filestatg()
     error = lfc.lfc_statg( path, guid, fstat )
-    return __returnCode( error, fstat )
+    return returnCode( error, fstat )
 
   def __getFileReplicas( self, lfn, allStatus ):
     error, replicaObjects = lfc.lfc_getreplica( self.__fullLfn( lfn ), '', '' )
-    return __returnCode( error or not replicaObjects,
+    return returnCode( error or not replicaObjects,
                          dict( [( replica.host, replica.sfn ) for replica in replicaObjects if allStatus or replica.status != 'P'] ) if not error else None,
                          errMsg = 'File has zero replicas' if not error else '' )
 
@@ -1395,7 +1395,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       if se == replica.host:
         status = replica.status
         break
-    return __returnCode( status == None, status, errMsg = "No replica at supplied site" if not error else '' )
+    return returnCode( status == None, status, errMsg = "No replica at supplied site" if not error else '' )
 
   def __checkAddFile( self, lfn, pfn, size, se, guid, checksum ):
     res = self.__getPathStat( lfn )
@@ -1442,10 +1442,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( True )
 
   def __unlinkPath( self, lfn ):
-    return __returnCode( lfc.lfc_unlink( self.__fullLfn( lfn ) ) )
+    return returnCode( lfc.lfc_unlink( self.__fullLfn( lfn ) ) )
 
   def __removeDirectory( self, path ):
-    return __returnCode( lfc.lfc_rmdir( self.__fullLfn( path ) ) )
+    return returnCode( lfc.lfc_rmdir( self.__fullLfn( path ) ) )
 
   def __removeDirs( self, path ):
     """ Black magic contained within...
@@ -1484,11 +1484,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
 
   def __makeDirectory( self, path, mode ):
     lfc.lfc_umask( 0000 )
-    return __returnCode( lfc.lfc_mkdir( self.__fullLfn( path ), mode ) )
+    return returnCode( lfc.lfc_mkdir( self.__fullLfn( path ), mode ) )
 
   def __openDirectory( self, path ):
     error = lfc.lfc_opendirg( self.__fullLfn( path ), '' )
-    return __returnCode( error, error )
+    return returnCode( error, error )
 
   def __getDirectoryContents( self, path, verbose = False ):
     """ Returns a dictionary containing all of the contents of a directory.
@@ -1535,12 +1535,12 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           pathMetadata['ModificationDate'] = fromEpoch( oPath.mtime )
           pathMetadata['NumberOfLinks'] = oPath.nlink
           pathMetadata['LastAccess'] = oPath.atime
-          res = __getDNFromUID( oPath.uid )
+          res = getDNFromUID( oPath.uid )
           if res['OK']:
             pathMetadata['OwnerDN'] = res['Value']
           else:
             pathMetadata['OwnerDN'] = None
-          res = __getRoleFromGID( oPath.gid )
+          res = getRoleFromGID( oPath.gid )
           if res['OK']:
             pathMetadata['OwnerRole'] = res['Value']
           else:
@@ -1566,7 +1566,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           files[subPath]['Replicas'] = replicaDict
           files[subPath]['MetaData'] = pathMetadata
     pathDict = {}
-    res = __closeDirectory( oDirectory )
+    res = closeDirectory( oDirectory )
     pathDict = {'Files': files, 'SubDirs':subDirs, 'Links':links}
     return S_OK( pathDict )
 
@@ -1612,12 +1612,12 @@ class LcgFileCatalogClient( FileCatalogueBase ):
               pathDict['SiteUsage'][replica.host] = {'Files':0, 'Size':0}
             pathDict['SiteUsage'][replica.host]['Size'] += fileSize
             pathDict['SiteUsage'][replica.host]['Files'] += 1
-    res = __closeDirectory( oDirectory )
+    res = closeDirectory( oDirectory )
     return S_OK( pathDict )
 
   def __getLinkStat( self, link ):
     lstat = lfc.lfc_filestat()
-    return __returnCode( lfc.lfc_lstat( self.__fullLfn( link ), lstat ), lstat )
+    return returnCode( lfc.lfc_lstat( self.__fullLfn( link ), lstat ), lstat )
 
   def __readLink( self, link ):
     buff = " " * ( lfc.CA_MAXPATHLEN + 1 )
@@ -1630,12 +1630,12 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return __return_code( error, chars )
 
   def __makeLink( self, source, target ):
-    return __returnCode( lfc.lfc_symlink( self.__fullLfn( target ), self.__fullLfn( source ) ) )
+    return returnCode( lfc.lfc_symlink( self.__fullLfn( target ), self.__fullLfn( source ) ) )
 
   def __getLFNGuid( self, lfn ):
     """Get the GUID for the given lfn"""
     fstat = lfc.lfc_filestatg()
-    return __returnCode( lfc.lfc_statg( self.__fullLfn( lfn ), '', fstat ), fstat.guid )
+    return returnCode( lfc.lfc_statg( self.__fullLfn( lfn ), '', fstat ), fstat.guid )
 
   def __createDataset( self, datasetName, lfns ):
     res = self.__makeDirs( datasetName )
@@ -1700,7 +1700,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getUserDirectory( self, username ):
     """ Takes a list of users and determines whether their directories already exist
     """
-    result = __getClientCertInfo()
+    result = getClientCertInfo()
     if not result['OK']:
       return result
     vo = result['Value']['VO']
@@ -1727,7 +1727,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def createUserDirectory( self, username ):
     """ Creates the user directory
     """
-    result = __getClientCertInfo()
+    result = getClientCertInfo()
     if not result['OK']:
       return result
     vo = result['Value']['VO']
@@ -1796,7 +1796,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
     for dirPath, dn in directory.items():
-      res = __getDNUserID( dn )
+      res = getDNUserID( dn )
       if not res['OK']:
         failed[dirPath] = res['Message']
       else:
@@ -1826,11 +1826,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     for userDN, uid in userDNs.items():
       if not uid:
         uid = -1
-      res = __addUserDN( uid, userDN )
+      res = addUserDN( uid, userDN )
       if not res['OK']:
         failed[userDN] = res['Message']
       else:
-        res = __getDNUserID( userDN )
+        res = getDNUserID( userDN )
         if not res['OK']:
           failed[userDN] = res['Message']
         else:
@@ -1846,10 +1846,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
 
   def __changeOwner( self, lfn, userID ):
-    return __returnCode( lfc.lfc_chown( self.__fullLfn( lfn ), userID, -1 ) )
+    return returnCode( lfc.lfc_chown( self.__fullLfn( lfn ), userID, -1 ) )
 
   def __changeMod( self, lfn, mode ):
-    return __returnCode( lfc.lfc_chmod( self.__fullLfn( lfn ), mode ) )
+    return returnCode( lfc.lfc_chmod( self.__fullLfn( lfn ), mode ) )
 
   def __fullLfn( self, lfn ):
     return self.prefix + lfn
