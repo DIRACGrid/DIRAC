@@ -91,7 +91,13 @@ class glexecComputingElement( ComputingElement ):
     return S_OK()
 
   def __prepare_tmpdir( self ):
-    result = systemCall( 10, [ self.__mktmp ] )
+    self.__glBaseDir = os.path.join( os.getcwd(), "glexec", "gl-%s" % self.__jobData[ 'jid' ] )
+    if not os.path.isdir( self.__glBaseDir ):
+      try:
+        os.makedirs( self.__glBaseDir )
+      except Exception, excp:
+        return S_ERROR( "Could not create base dir for glexec: %s" % ( excp ) )
+    result = systemCall( 10, [ self.__mktmp, self.__glBaseDir ] )
     if not result[ 'OK' ] or result[ 'Value' ][0]:
       return S_ERROR( "OOOPS. Something went bad when doobedobedooo: %s" % result )
 
@@ -127,6 +133,7 @@ try:
   print "TEST:OUTBOUND_TCP=true"
 except Exception, excp:
   print "TEST:OUTBOUND_TCP=false,%s" % str( excp )
+voms-proxy-info -all
 """
     os.write( fd, testdata )
     os.close( fd )
@@ -197,15 +204,17 @@ except Exception, excp:
     jid = self.__jobData[ 'jid' ]
     runData = []
     runData.append( "#!/bin/sh" )
-    runData.append( "mkdir dirac-job-%s" % jid )
-    runData.append( "( cd dirac-job-%s; %s '%s' )" % ( jid, os.path.join( writeDir, "dirac-pilot.py" ),
+    jobDir = os.path.join( self.__glDir, "dirac-job-%s" % jid )
+    runData.append( "mkdir %s" % jobDir )
+    runData.append( "( cd %s; %s '%s' )" % ( jobDir, os.path.join( writeDir, "dirac-pilot.py" ),
                                                      "' '".join( pilotArgs ) ) )
-    runData.append( "rm -rf dirac-job-%s" % jid )
+    runData.append( "rm -rf %s" % jobDir )
 
     runFile = os.path.join( writeDir, "glrun-%s" % jid )
     with open( runFile, "w" ) as fd:
       fd.write( "%s\n" % "\n".join( runData ) )
-    os.chmod( runFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
+    #os.chmod( runFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
+    os.chmod( runFile, stat.S_IRWXU )
 
     self.__glCommand = runFile
     self.log.info( "glexec command will be %s" % runFile )
@@ -232,6 +241,28 @@ except Exception, excp:
     #CRAPCRAP
     return self.getDynamicInfo()
 
+
+  def __cleanup( self ):
+    self.log.info( "Cleaning up %s" % self.__glDir )
+    workDir = os.path.dirname( self.__glDir )
+    for entry in os.listdir( workDir ):
+      obj = os.path.join( workDir, entry )
+      try:
+        if os.path.isdir( obj ):
+          shutil.rmtree( obj )
+        else:
+          os.unlink( obj )
+      except:
+        pass
+    print [ self.__mktmp, '-f', '-r', self.__glDir ]
+    result = systemCall( 10, [ self.__mktmp, '-f', '-r', self.__glDir ] )
+    if not result[ 'OK' ] or result[ 'Value' ][0]:
+      self.log.error( "Could not mkgltempdir cleanup: %s" % result )
+    try:
+      shutil.rmtree( self.__glBaseDir )
+    except Exception, excp:
+      self.log.error( "Could not cleanup %s: %s" % ( self.__glBaseDir, excp ) )
+
   def submitJob( self, executableFile, proxyObj, jobData ):
     """ Method to submit job
     """
@@ -254,15 +285,18 @@ except Exception, excp:
           result['ReschedulePayload'] = True
           return result
         glok = False
+        break
 
     self.log.verbose( 'Starting process for monitoring payload proxy' )
     gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
-                                      taskArgs = ( pilotProxy, payloadProxy ),
+                                      taskArgs = ( self.__pilotProxyLocation, self.__payloadProxyLocation ),
                                       executions = 0, elapsedTime = 0 )
 
     if not glok:
       return self.__executeInProcess( executableFile )
-    return self.__execute( self.__glCommand )
+    result = self.__execute( self.__glCommand )
+    self.__cleanup()
+    return result
 
   def __analyzeExitCode( self, resultTuple ):
     """ Analyses the exit codes in case of glexec failures.  The convention for

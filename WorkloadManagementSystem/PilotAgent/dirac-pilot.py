@@ -707,7 +707,7 @@ if cliParams.flavour in ['LCG','gLite','OSG']:
     logERROR( "There was an error calling dirac-wms-get-normalized-queue-length" )
 
 # Instead of using the Average reported by the Site, determine a Normalization
-os.system( "dirac-wms-cpu-normalization -U" )
+#os.system( "dirac-wms-cpu-normalization -U" )
 
 #
 # further local configuration
