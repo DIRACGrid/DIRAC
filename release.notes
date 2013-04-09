@@ -1,4 +1,4 @@
-[v6r7-pre1]
+[v7r0-pre1]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -47,6 +47,14 @@ FIX: Multiple fixes to please pylint
 *Resources
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
      payload when updating it
+
+[v6r8p1]
+
+*Core
+FIX: dirac-deploy-scripts - restored regression w.r.t. support of scripts starting with "d"
+
+*DMS
+BUGFIX: LcgFileCatalogClient - two typos fixed
 
 [v6r8]
 
