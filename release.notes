@@ -1,3 +1,11 @@
+[v6r8p1]
+
+*Core
+FIX: dirac-deploy-scripts - restored regression w.r.t. support of scripts starting with "d"
+
+*DMS
+BUGFIX: LcgFileCatalogClient - two typos fixed
+
 [v6r8]
 
 CHANGE: Several fixes backported from the v7r0 integration branch
