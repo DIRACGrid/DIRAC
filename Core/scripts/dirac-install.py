@@ -1335,7 +1335,8 @@ def createCshrc():
                      'setenv DIRACPLAT `%s`' % os.path.join( '$DIRACSCRIPTS', 'dirac-platform' ),
                      'setenv DIRACBIN %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'bin' ),
                      'setenv DIRACLIB %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'lib' ),
-                     'setenv TERMINFO %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'terminfo' ) ] )
+                     'setenv TERMINFO %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'terminfo' ),
+                     'setenv RRD_DEFAULT_FONT %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
       lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
                     'setenv PYTHONPATH',
