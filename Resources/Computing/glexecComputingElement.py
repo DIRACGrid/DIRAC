@@ -5,7 +5,8 @@
 __RCSID__ = "$Id$"
 
 
-import os, stat, tempfile, pickle, shutil
+import os, stat, tempfile, pickle, shutil, random, base64
+from string import Template
 
 from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
@@ -37,6 +38,7 @@ class glexecComputingElement( ComputingElement ):
     self.__payloadProxyLocation = False
     self.__glCommand = False
     self.__jobData = {}
+    random.seed()
     if os.environ.has_key( 'X509_USER_PROXY' ):
       self.__pilotProxyLocation = os.environ['X509_USER_PROXY']
     ComputingElement.__init__( self, ceUniqueID )
@@ -90,19 +92,69 @@ class glexecComputingElement( ComputingElement ):
     self.log.info( "Payload proxy deployed to %s" % self.__payloadProxyLocation )
     return S_OK()
 
-  def __prepare_tmpdir( self ):
-    self.__glBaseDir = os.path.join( os.getcwd(), "glexec", "gl-%s" % self.__jobData[ 'jid' ] )
-    if not os.path.isdir( self.__glBaseDir ):
-      try:
-        os.makedirs( self.__glBaseDir )
-      except Exception, excp:
-        return S_ERROR( "Could not create base dir for glexec: %s" % ( excp ) )
-    result = systemCall( 10, [ self.__mktmp, self.__glBaseDir ] )
-    if not result[ 'OK' ] or result[ 'Value' ][0]:
-      return S_ERROR( "OOOPS. Something went bad when doobedobedooo: %s" % result )
 
-    self.__glDir = result[ 'Value' ][1].strip()
-    self.log.info( "mkgltmpdir is %s" % self.__glDir )
+  def __addperm( self, path, perms ):
+    currentPerms = os.stat( path )[0]
+    try:
+      os.chmod( path, currentPerms | perms )
+    except Exception, excp:
+      self.log.error( "Could not set perms for %s: %s" % ( path, excp ) )
+      return False
+    return True
+
+
+  def __allow_gl_travel( self, dirpath ):
+    if dirpath == "/" or not dirpath:
+      return
+    if self.__addperm( dirpath, stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH ):
+      self.__allow_gl_travel( os.path.dirname( dirpath ) )
+
+  def __allow_gl_see( self, dirpath, extraPerm = 0 ):
+    if not self.__addperm( dirpath, stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IWOTH | extraPerm ):
+      return False
+    for entry in os.listdir( dirpath ):
+      epath = os.path.join( dirpath, entry )
+      if os.path.isdir( epath ):
+        if not self.__allow_gl_see( epath ):
+          return False
+      elif not self.__addperm( epath, stat.S_IRGRP | stat.S_IROTH | extraPerm ):
+        return False
+    return True
+
+  def __prepare_tmpdir( self ):
+    self.log.info( "Setting world-take-a-loot-at-all-my-things permissions..." )
+    #self.__allow_gl_see( DIRAC.rootPath )
+    self.log.info( "Allowing everybody to execute my scripts..." )
+    self.__allow_gl_see( os.path.join( DIRAC.rootPath, "scripts" ), stat.S_IXOTH )
+    self.log.info( "You're welcome to execute my binaries...." )
+    self.__allow_gl_see( os.path.join( DIRAC.rootPath, DIRAC.platform, "bin" ), stat.S_IXOTH )
+    self.log.info( "Rob-all-my-house mode ON" )
+    finder = 0
+    self.__glBaseDir = os.path.join( os.getcwd(), "glexec", "gl-%s.%03d.%.4f" % ( self.__jobData[ 'jid' ], finder, random.random() * 1000 ) )
+    while os.path.isdir( self.__glBaseDir ):
+      finder += 1
+      self.__glBaseDir = os.path.join( os.getcwd(), "glexec", "gl-%s.%03d.%.4f" % ( self.__jobData[ 'jid' ], finder, random.random() * 1000 ) )
+    try:
+      os.makedirs( self.__glBaseDir )
+    except Exception, excp:
+      return S_ERROR( "Could not create base dir for glexec: %s" % ( excp ) )
+    self.__allow_gl_travel( self.__glBaseDir )
+    self.log.info( "Robbers can now get 'hasta-la-cocina'" )
+    os.chmod( self.__glBaseDir, stat.S_IRWXU | stat.S_IXGRP | stat.S_IXOTH )
+    sticky = os.path.join( self.__glBaseDir, "trans" )
+    try:
+      os.makedirs( sticky )
+      os.chmod( sticky, stat.S_ISVTX | stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO )
+    except Exception, excp :
+      return S_ERROR( "Could not create %s: %s" % ( sticky, excp ) )
+    self.log.info( "Pegajoso dir created" )
+    self.__glDir = os.path.join( sticky, "glid" )
+    result = self.__execute( [ "/bin/sh", "-c", "mkdir '%s'; chmod 700 '%s'" % ( self.__glDir, self.__glDir ) ] )
+    print result
+    if not result[ 'OK' ]:
+      return S_ERROR( "OOOPS. Something went bad when doobedobedooo: %s" % result[ 'Message' ] )
+
+    self.log.info( "gldir is %s" % self.__glDir )
     return S_OK()
 
   def __test( self ):
@@ -116,6 +168,8 @@ class glexecComputingElement( ComputingElement ):
 
 import os
 import urllib
+import sys
+
 print "# glexec test"
 print "CWD=%s" % os.getcwd()
 print "UID=%s" % os.geteuid()
@@ -133,7 +187,16 @@ try:
   print "TEST:OUTBOUND_TCP=true"
 except Exception, excp:
   print "TEST:OUTBOUND_TCP=false,%s" % str( excp )
-voms-proxy-info -all
+sys.stdout.flush()
+if os.system( "voms-proxy-info -all" ) == 0:
+  print "TEST:VOMS=true"
+else:
+  print "TEST:VOMS=false"
+sys.stdout.flush()
+if os.system( "dirac-proxy-info --steps" ) == 0:
+  print "TEST:DIRAC-PROXY-INFO=true"
+else:
+  print "TEST:DIRAC-PROXY-INFO=false"
 """
     os.write( fd, testdata )
     os.close( fd )
@@ -144,80 +207,40 @@ voms-proxy-info -all
       self.log.error( 'Failed to change permissions of test script to 0755 with exception:\n%s' % ( x ) )
       return S_ERROR( 'Could not change permissions of test script' )
 
-    return self.__execute( testFile )
+    return self.__execute( [ testFile ] )
 
   def __construct_payload( self ):
     writeDir = os.path.dirname( self.__glDir )
     glwrapper = os.path.join( writeDir, "glwrapper" )
-    with open( self.__jobData[ 'wrapperTemplate' ] ) as fd:
-      wrapperTemplate = fd.read()
-      wrapperTemplate = wrapperTemplate.replace( "@SIGNATURE@", str( self.__jobData[ 'signature' ] ) )
-      wrapperTemplate = wrapperTemplate.replace( "@JOBID@", str( self.__jobData[ 'jid' ] ) )
-      wrapperTemplate = wrapperTemplate.replace( "@DATESTRING@", str( self.__jobData[ 'datetime' ] ) )
-      wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str( self.__jobData[ 'jobArgs' ] ) )
-      wrapperTemplate = wrapperTemplate.replace( "@SITEPYTHON@", "" )
-      with open( glwrapper, "w" ) as fd:
-        fd.write( wrapperTemplate )
-      os.chmod( glwrapper, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
+    glwrapperdata = """#!/usr/bin/env python
+import pickle
+import base64
+import os
+
+codedEnv="$codedEnv"
+
+print "Unwrapping env"
+env = pickle.loads( base64.b64decode( codedEnv ) )
+for k in env:
+  if k not in ( 'X509_USER_PROXY', 'HOME', 'LOGNAME', 'USER', '_' ):
+    os.environ[ k ] = env[ k ]
+
+#GO TO WORKING DIR
+os.chdir( "$workDir" )
+os.execl( "$executable" )
+"""
+    with open( glwrapper, "w" ) as fd:
+      fd.write( Template( glwrapperdata ).substitute( { 'codedEnv' : base64.b64encode( pickle.dumps( os.environ ) ),
+                                                        'workDir' : self.__glDir,
+                                                        'executable' : self.__execFile } ) )
+
+    os.chmod( glwrapper, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
+    os.chmod( self.__execFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
 
     self.log.info( "Written %s" % glwrapper )
 
-    for scn in ( 'DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot.py',
-                 'DIRAC/Core/scripts/dirac-install.py' ):
-      fname = os.path.basename( scn )
-      local = os.path.join( os.getcwd(), fname )
-      dest = os.path.join( writeDir, fname )
-      ok = False
-      errMsg = False
-      for tf in ( local, os.path.join( DIRAC.rootPath, scn ) ):
-        if os.path.exists( tf ):
-          try:
-            shutil.copy( tf, dest )
-            self.log.info( "Copied %s to %s" % ( tf, dest ) )
-            ok = True
-          except Exception, excp:
-            errMsg = str( excp )
-        if ok:
-          continue
-      if not ok:
-        return S_ERROR( "Could not find or copy %s: %s" % ( fname, errMsg ) )
-
-    pilotArgs = []
-    try:
-      with open( os.path.join( os.getcwd(), "dirac-pilot.py.run" ) ) as fd:
-          pilotArgs = pickle.load( fd )
-    except Exception, excp:
-      self.log.warn( "Cannot load dirac-pilot.py.run: %s" % str( excp ) )
-
-    if not pilotArgs:
-      pilotArgs.extend( ( "-S", gConfig.getValue( "/DIRAC/Setup", "" ) ) )
-      pilotArgs.extend( ( "-C", ",".join ( gConfig.getValue( "/DIRAC/Configuration/Servers", [] ) ) ) )
-      version = gConfig.getValue( "/LocalSite/ReleaseVersion", "" )
-      if version:
-        pilotArgs.extend( ( "-r", version ) )
-      project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
-      if project:
-        pilotArgs.extend( ( "-l", project ) )
-
-    pilotArgs.extend( ( '-x', os.path.join( writeDir, 'glwrapper' ) ) )
-
-    jid = self.__jobData[ 'jid' ]
-    runData = []
-    runData.append( "#!/bin/sh" )
-    jobDir = os.path.join( self.__glDir, "dirac-job-%s" % jid )
-    runData.append( "mkdir %s" % jobDir )
-    runData.append( "( cd %s; %s '%s' )" % ( jobDir, os.path.join( writeDir, "dirac-pilot.py" ),
-                                                     "' '".join( pilotArgs ) ) )
-    runData.append( "rm -rf %s" % jobDir )
-
-    runFile = os.path.join( writeDir, "glrun-%s" % jid )
-    with open( runFile, "w" ) as fd:
-      fd.write( "%s\n" % "\n".join( runData ) )
-    #os.chmod( runFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
-    os.chmod( runFile, stat.S_IRWXU )
-
-    self.__glCommand = runFile
-    self.log.info( "glexec command will be %s" % runFile )
+    self.__glCommand = glwrapper
+    self.log.info( "glexec command will be %s" % self.__glCommand )
     return S_OK()
 
   def __executeInProcess( self, executableFile ):
@@ -254,10 +277,9 @@ voms-proxy-info -all
           os.unlink( obj )
       except:
         pass
-    print [ self.__mktmp, '-f', '-r', self.__glDir ]
-    result = systemCall( 10, [ self.__mktmp, '-f', '-r', self.__glDir ] )
-    if not result[ 'OK' ] or result[ 'Value' ][0]:
-      self.log.error( "Could not mkgltempdir cleanup: %s" % result )
+    result = self.__execute( [ "/bin/rm", '-rf', self.__glDir ] )
+    if not result[ 'OK' ]:
+      self.log.error( "Could not cleanup: %s" % result[ 'Message' ] )
     try:
       shutil.rmtree( self.__glBaseDir )
     except Exception, excp:
@@ -274,8 +296,7 @@ voms-proxy-info -all
     self.__jobData = jobData
 
     glok = True
-    for step in ( self.__locate_glexec, self.__locate_mkgltempdir,
-                  self.__prepare_glenv, self.__prepare_tmpdir, self.__test, self.__construct_payload ):
+    for step in ( self.__locate_glexec, self.__prepare_glenv, self.__prepare_tmpdir, self.__test, self.__construct_payload ):
       self.log.info( "Running step %s" % step.__name__ )
       result = step()
       if not result[ 'OK' ]:
@@ -294,7 +315,7 @@ voms-proxy-info -all
 
     if not glok:
       return self.__executeInProcess( executableFile )
-    result = self.__execute( self.__glCommand )
+    result = self.__execute( [ self.__glCommand ] )
     self.__cleanup()
     return result
 
@@ -346,14 +367,17 @@ voms-proxy-info -all
     return S_OK()
 
 
-  def __execute( self, executable ):
+  def __execute( self, executableList ):
     """Run glexec with checking of the exit status code. With no executable it will renew the glexec proxy
     """
     #Just in case
     glCmd = [ self.__gl ]
-    if executable:
-      os.chmod( executable, os.stat( executable )[0] | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
-      glCmd.append( executable )
+    if executableList:
+      try:
+        os.chmod( executableList[0], os.stat( executableList[0] )[0] | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
+      except:
+        pass
+      glCmd.extend( executableList )
     self.log.info( 'CE submission command is: %s' % glCmd )
     result = systemCall( 0, glCmd, callbackFunction = self.sendOutput )
     if not result[ 'OK' ]:
