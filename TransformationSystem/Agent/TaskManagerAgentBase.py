@@ -218,7 +218,7 @@ class TaskManagerAgentBase( AgentModule ):
       time_stamp_older = str( datetime.datetime.utcnow() - datetime.timedelta( hours = 1 ) )
       time_stamp_newer = str( datetime.datetime.utcnow() - datetime.timedelta( days = 7 ) )
       res = self.transClient.getTransformationTasks( condDict = condDict, older = time_stamp_older,
-                                                     newer = time_stamp_newer, timeStamp = 'LastUpdateTime' )
+                                                     newer = time_stamp_newer )
       if not res['OK']:
         gLogger.error( "checkReservedTasks: Failed to get Reserved tasks for transformation", "%s %s" % ( transID,
                                                                                                      res['Message'] ) )
@@ -252,6 +252,8 @@ class TaskManagerAgentBase( AgentModule ):
     return S_OK()
 
   def submitTasks( self ):
+    """ Submit the tasks to an external system, using the taskManager provided
+    """
     gLogger.info( "submitTasks: Submitting tasks for transformations" )
     res = getProxyInfo( False, False )
     if not res['OK']:
@@ -281,7 +283,8 @@ class TaskManagerAgentBase( AgentModule ):
       gLogger.info( "submitTasks: Obtained %d tasks for submission for transformation %s" % ( len( tasks ), transID ) )
       res = self.taskManager.prepareTransformationTasks( transBody, tasks, owner, ownerGroup )
       if not res['OK']:
-        gLogger.error( "submitTasks: Failed to prepare tasks for transformation", "%s %s" % ( transID, res['Message'] ) )
+        gLogger.error( "submitTasks: Failed to prepare tasks for transformation", "%s %s" % ( transID,
+                                                                                              res['Message'] ) )
         continue
       res = self.taskManager.submitTransformationTasks( res['Value'] )
       if not res['OK']:

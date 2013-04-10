@@ -1,14 +1,10 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ DIRAC Workload Management System Client class encapsulates all the
     methods necessary to communicate with the Workload Management System
 """
 
 from DIRAC.Core.DISET.RPCClient                import RPCClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC                                     import S_OK, S_ERROR, gConfig
+from DIRAC                                     import S_OK, S_ERROR
 from DIRAC.Core.Utilities                      import File
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 
@@ -16,14 +12,22 @@ import os, commands
 
 class WMSClient:
 
-  def __init__( self, jobManagerClient = False, sbRPCClient = False, sbTransferClient = False, useCertificates = False, timeout = 120 ):
+  def __init__( self, jobManagerClient = False, sbRPCClient = False, sbTransferClient = False,
+                useCertificates = False, timeout = 120 ):
     """ WMS Client constructor
     """
-    self.useCertificates = useCertificates
-    self.jobManagerClient = jobManagerClient
-    self.sbRPCClient = sbRPCClient
-    self.sbTransferClient = sbTransferClient
+
     self.timeout = timeout
+
+    if not jobManagerClient:
+      self.jobManagerClient = RPCClient( 'WorkloadManagement/JobManager', useCertificates = useCertificates,
+                                         timeout = self.timeout )
+    else:
+      self.jobManagerClient = jobManagerClient
+
+    self.sandboxClient = SandboxStoreClient( useCertificates = useCertificates, rpcClient = sbRPCClient,
+                                             transferClient = sbTransferClient )
+
 ###############################################################################
 
   def __getInputSandboxEntries( self, classAdJob ):
@@ -47,7 +51,6 @@ class WMSClient:
        The function returns the list of Input Sandbox files.
        The total volume of the input sandbox is evaluated
     """
-    sandboxClient = SandboxStoreClient( useCertificates = self.useCertificates, rpcClient = self.sbRPCClient, transferClient = self.sbTransferClient )
     inputSandbox = self.__getInputSandboxEntries( classAdJob )
 
     realFiles = []
@@ -82,7 +85,7 @@ class WMSClient:
       return result
 
     if okFiles:
-      result = sandboxClient.uploadFilesAsSandbox( okFiles )
+      result = self.sandboxClient.uploadFilesAsSandbox( okFiles )
       if not result[ 'OK' ]:
         return result
       inputSandbox.append( result[ 'Value' ] )
@@ -108,10 +111,6 @@ class WMSClient:
     """ Submit one job specified by its JDL to WMS
     """
 
-    if not self.jobManagerClient:
-      jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = self.useCertificates, timeout = self.timeout )
-    else:
-      jobManager = self.jobManagerClient
     if os.path.exists( jdl ):
       fic = open ( jdl, "r" )
       jdlString = fic.read()
@@ -135,7 +134,7 @@ class WMSClient:
       return result
 
     # Submit the job now and get the new job ID
-    result = jobManager.submitJob( classAdJob.asJDL() )
+    result = self.jobManagerClient.submitJob( classAdJob.asJDL() )
 
     if not result['OK']:
       return result
