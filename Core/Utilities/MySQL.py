@@ -321,7 +321,7 @@ class MySQL:
         if myString.find( sV ) == 0:
           return S_OK( myString )
       escape_string = connection.escape_string( str( myString ) )
-      self.log.debug( '__scape_string: returns', '"%s"' % escape_string )
+      self.log.debug( '__escape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
     except Exception, x:
       self.log.debug( '__escape_string: Could not escape string', '"%s"' % myString )
@@ -354,7 +354,7 @@ class MySQL:
     """
       Wrapper around the internal method __escapeString
     """
-    self.log.debug( '_scapeString:', '"%s"' % myString )
+    self.log.debug( '_escapeString:', '"%s"' % str( myString ) )
 
     retDict = self.__getConnection( conn )
     if not retDict['OK']:
