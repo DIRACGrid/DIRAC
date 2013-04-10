@@ -43,6 +43,8 @@ class TaskBase( object ):
     return S_ERROR( "Not implemented" )
 
   def updateDBAfterTaskSubmission( self, taskDict ):
+    """ Sets tasks status after the submission to "Submitted", in case of success
+    """
     updated = 0
     startTime = time.time()
     for taskID in sortList( taskDict.keys() ):
@@ -429,7 +431,7 @@ class WorkflowTasks( TaskBase ):
     self.log.info( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
                                                                                             time.time() - startTime ) )
     if failed:
-      self.log.info( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ) )
+      self.log.error( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ) )
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, job ):
