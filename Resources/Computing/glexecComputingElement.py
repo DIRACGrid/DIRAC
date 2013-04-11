@@ -123,7 +123,7 @@ class glexecComputingElement( ComputingElement ):
 
   def __prepare_tmpdir( self ):
     self.log.info( "Setting world-take-a-loot-at-all-my-things permissions..." )
-    #self.__allow_gl_see( DIRAC.rootPath )
+    self.__allow_gl_see( DIRAC.rootPath )
     self.log.info( "Allowing everybody to execute my scripts..." )
     self.__allow_gl_see( os.path.join( DIRAC.rootPath, "scripts" ), stat.S_IXOTH )
     self.log.info( "You're welcome to execute my binaries...." )
@@ -169,12 +169,28 @@ class glexecComputingElement( ComputingElement ):
 import os
 import urllib
 import sys
+import pickle
+import base64
+
+codedEnv="$codedEnv"
+
+print "# Unwrapping env"
+env = pickle.loads( base64.b64decode( codedEnv ) )
+for k in env:
+  if k not in ( 'X509_USER_PROXY', 'HOME', 'LOGNAME', 'USER', '_' ):
+    os.environ[ k ] = env[ k ]
 
 print "# glexec test"
 print "CWD=%s" % os.getcwd()
 print "UID=%s" % os.geteuid()
 print "GID=%s" % os.getegid()
-print "LOGIN=%s" % os.getlogin()
+try:
+  print "LOGIN=%s" % os.getlogin()
+except Exception, excp:
+  if 'USER' in os.environ:
+    print "LOGIN=%s(can't get via os.getlogin)" % os.environ[ 'USER' ]
+  else:
+    print "LOGIN=UNKNOWN:%s" % str( excp )
 for k in os.environ:
   print "ENV:%s=%s" % ( k, os.environ[ k ] )
 try:
@@ -198,7 +214,8 @@ if os.system( "dirac-proxy-info --steps" ) == 0:
 else:
   print "TEST:DIRAC-PROXY-INFO=false"
 """
-    os.write( fd, testdata )
+
+    os.write( fd, Template( testdata ).substitute( { 'codedEnv' : base64.b64encode( pickle.dumps( os.environ ) ) } ) )
     os.close( fd )
     self.log.info( 'Changing permissions of test script to 0755' )
     try:
@@ -245,6 +262,7 @@ os.execl( "$executable" )
 
   def __executeInProcess( self, executableFile ):
     os.environ[ 'X509_USER_PROXY' ] = self.__pilotProxyLocation
+    self.__addperm( executableFile, os.S_IRWXU )
 
     result = systemCall( 0, [ executableFile ], callbackFunction = self.sendOutput )
     if not result[ 'OK' ]:
