@@ -194,11 +194,6 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     self.prefix = '/grid'
     self.session = False
     self.transaction = False
-    # Verify if the LFC can be accessed, if not, declare it invalid
-    created = self.__openSession()
-    if created < 0:
-      self.isValid = False
-    self.__closeSession()
 
   ####################################################################
   #
