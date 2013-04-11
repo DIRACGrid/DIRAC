@@ -1,3 +1,8 @@
+[v6r7p21]
+
+*Core
+FIX: Shifter - pass filePath argument when downloading proxy
+
 [v6r7p20]
 
 *DMS
