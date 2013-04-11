@@ -1,3 +1,11 @@
+[v6r8p2]
+
+*DMS:
+FIX: LcgFileCatalogClient - remove check for opening a session in __init__ as credentials are not yet set 
+
+*Transformation
+CHANGE: reuse RPC clients in Transformation System 
+
 [v6r8p1]
 
 *Core
