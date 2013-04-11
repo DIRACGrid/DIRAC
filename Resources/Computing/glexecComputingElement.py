@@ -332,6 +332,7 @@ os.execl( "$executable" )
                                       executions = 0, elapsedTime = 0 )
 
     if not glok:
+      self.log.notice( "glexec failed miserably... Running without it." )
       return self.__executeInProcess( executableFile )
     result = self.__execute( [ self.__glCommand ] )
     self.__cleanup()
