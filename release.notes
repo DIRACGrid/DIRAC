@@ -48,6 +48,11 @@ FIX: Multiple fixes to please pylint
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
      payload when updating it
 
+[v6r8p3]
+
+*DMS
+BUGFIX: LcgFileCatalogClient
+
 [v6r8p2]
 
 *DMS:
