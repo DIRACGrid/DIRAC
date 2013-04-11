@@ -262,7 +262,7 @@ os.execl( "$executable" )
 
   def __executeInProcess( self, executableFile ):
     os.environ[ 'X509_USER_PROXY' ] = self.__pilotProxyLocation
-    self.__addperm( executableFile, os.S_IRWXU )
+    self.__addperm( executableFile, stat.S_IRWXU )
 
     result = systemCall( 0, [ executableFile ], callbackFunction = self.sendOutput )
     if not result[ 'OK' ]:
