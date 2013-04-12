@@ -1,3 +1,8 @@
+[v6r8p4]
+
+*TS
+BUGFIX: The connection to the jobManager is done only at submission time
+
 [v6r8p3]
 
 *DMS
