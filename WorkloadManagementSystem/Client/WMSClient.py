@@ -16,14 +16,9 @@ class WMSClient:
                 useCertificates = False, timeout = 120 ):
     """ WMS Client constructor
     """
-
+    self.jobManagerClient = jobManagerClient
+    self.useCertificates = useCertificates
     self.timeout = timeout
-
-    if not jobManagerClient:
-      self.jobManagerClient = RPCClient( 'WorkloadManagement/JobManager', useCertificates = useCertificates,
-                                         timeout = self.timeout )
-    else:
-      self.jobManagerClient = jobManagerClient
 
     self.sandboxClient = SandboxStoreClient( useCertificates = useCertificates, rpcClient = sbRPCClient,
                                              transferClient = sbTransferClient )
@@ -44,7 +39,7 @@ class WMSClient:
 
     return inputSandbox
 
-  #This are the NEW methods
+  # This are the NEW methods
 
   def __uploadInputSandbox( self, classAdJob ):
     """Checks the validity of the job Input Sandbox.
@@ -59,16 +54,16 @@ class WMSClient:
     realFiles = []
     for file in inputSandbox:
       valid = True
-      for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s' ):#in case of parametric input sandbox, there is %s passed, so have to ignore it also
+      for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s' ):  # in case of parametric input sandbox, there is %s passed, so have to ignore it also
         if file.find( tag ) == 0:
           valid = False
           break
       if valid:
         realFiles.append( file )
-    #If there are no files, skip!
+    # If there are no files, skip!
     if not realFiles:
       return S_OK()
-    #Check real files
+    # Check real files
     for file in realFiles:
       if not os.path.exists( file ):
         badFiles.append( file )
@@ -76,7 +71,7 @@ class WMSClient:
         continue
       okFiles.append( file )
 
-    #print "Total size of the inputSandbox: "+str(totalSize)
+    # print "Total size of the inputSandbox: "+str(totalSize)
     totalSize = File.getGlobbedTotalSize( okFiles )
     if badFiles:
       result = S_ERROR( 'Input Sandbox is not valid' )
@@ -111,6 +106,11 @@ class WMSClient:
     """ Submit one job specified by its JDL to WMS
     """
 
+    if not self.jobManagerClient:
+      jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = self.useCertificates,
+                              timeout = self.timeout )
+    else:
+      jobManager = self.jobManagerClient
     if os.path.exists( jdl ):
       fic = open ( jdl, "r" )
       jdlString = fic.read()
@@ -134,20 +134,20 @@ class WMSClient:
       return result
 
     # Submit the job now and get the new job ID
-    result = self.jobManagerClient.submitJob( classAdJob.asJDL() )
+    result = jobManager.submitJob( classAdJob.asJDL() )
 
     if not result['OK']:
       return result
     jobID = result['Value']
     if 'requireProxyUpload' in result and result[ 'requireProxyUpload' ]:
-      #TODO: We should notify the user to upload a proxy with proxy-upload
+      # TODO: We should notify the user to upload a proxy with proxy-upload
       pass
 
 
-    #print "Sandbox uploading"
+    # print "Sandbox uploading"
     return S_OK( jobID )
 
-  #This is the OLD method
+  # This is the OLD method
 
   def __checkInputSandbox( self, classAdJob ):
     """Checks the validity of the job Input Sandbox.
@@ -158,7 +158,7 @@ class WMSClient:
     inputSandbox = self.__getInputSandboxEntries( classAdJob )
     if inputSandbox:
       ok = 1
-      #print inputSandbox
+      # print inputSandbox
       # Check the Input Sandbox files
 
       totalSize = 0
@@ -183,7 +183,7 @@ class WMSClient:
             else:
               totalSize = int( os.stat( file )[6] ) + totalSize
 
-      #print "Total size of the inputSandbox: "+str(totalSize)
+      # print "Total size of the inputSandbox: "+str(totalSize)
       if not ok:
         result = S_ERROR( 'Input Sandbox is not valid' )
         result['BadFile'] = file
@@ -195,7 +195,7 @@ class WMSClient:
       result['TotalSize'] = totalSize
       return result
     else:
-      #print "No input sandbox defined for this job."
+      # print "No input sandbox defined for this job."
       result = S_OK()
       result['TotalSize'] = 0
       result['InputSandbox'] = None

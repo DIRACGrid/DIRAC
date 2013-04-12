@@ -1304,15 +1304,15 @@ class JobDB( DB ):
     classAdJob.insertAttributeString( 'Owner', owner )
     classAdJob.insertAttributeString( 'OwnerDN', ownerDN )
     classAdJob.insertAttributeString( 'OwnerGroup', ownerGroup )
-    
+
     submitPools = getGroupOption( ownerGroup, "SubmitPools" )
     if not submitPools and vo:
       submitPools = getVOOption( vo, 'SubmitPools' )
     if submitPools and not classAdJob.lookupAttribute( 'SubmitPools' ):
-      classAdJob.insertAttributeString( 'SubmitPools', submitPools )  
-      
+      classAdJob.insertAttributeString( 'SubmitPools', submitPools )
+
     if vo:
-      classAdJob.insertAttributeString( 'VirtualOrganization', vo )      
+      classAdJob.insertAttributeString( 'VirtualOrganization', vo )
 
     classAdReq.insertAttributeString( 'Setup', diracSetup )
     classAdReq.insertAttributeString( 'OwnerDN', ownerDN )
@@ -1336,7 +1336,7 @@ class JobDB( DB ):
       # Just in case check for MaxCPUTime for backward compatibility
       cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
       if cpuTime > 0:
-        classAdJob.insertAttributeInt( 'CPUtime', cpuTime )
+        classAdJob.insertAttributeInt( 'CPUTime', cpuTime )
 
     classAdReq.insertAttributeInt( 'UserPriority', priority )
     classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
@@ -1489,7 +1489,7 @@ class JobDB( DB ):
       return S_ERROR( 'Job ' + str( jobID ) + ' not found in the system' )
 
     if not resultDict['VerifiedFlag']:
-      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % (
+      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % ( 
                                                                              jobID,
                                                                              resultDict['Status'],
                                                                              resultDict['MinorStatus'] ) )
