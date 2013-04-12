@@ -39,10 +39,15 @@ class glexecComputingElement( ComputingElement ):
     self.__glCommand = False
     self.__jobData = {}
     random.seed()
-    if os.environ.has_key( 'X509_USER_PROXY' ):
-      self.__pilotProxyLocation = os.environ['X509_USER_PROXY']
     ComputingElement.__init__( self, ceUniqueID )
     self.submittedJobs = 0
+
+
+  def __check_credentials( self ):
+    if os.environ.has_key( 'X509_USER_PROXY' ):
+      self.__pilotProxyLocation = os.environ['X509_USER_PROXY']
+      return S_OK()
+    return S_ERROR( "Missing X509_USER_PROXY" )
 
   def __locate_glexec( self ):
     """ Try to find glexec
@@ -63,13 +68,6 @@ class glexecComputingElement( ComputingElement ):
 
     return S_ERROR( "Unable to locate glexec" )
 
-  def __locate_mkgltempdir( self ):
-    self.__mktmp = os.path.join( os.path.dirname( self.__gl ), "mkgltempdir" )
-    if os.path.exists( self.__mktmp ):
-      return S_OK()
-    return S_ERROR( "Can't find mkgltempdir at %s" % self.__mktmp )
-
-
   def writeProxyToFile( self, proxyObj ):
     """ Write proxy to file + set glexec enforced perms
     """
@@ -81,12 +79,6 @@ class glexecComputingElement( ComputingElement ):
     return S_OK( location )
 
   def __prepare_glenv( self ):
-    self.log.verbose( 'Setting up proxy for payload' )
-    result = self.writeProxyToFile( self.__proxyObj )
-    if not result['OK']:
-      return result
-
-    self.__payloadProxyLocation = result['Value']
     os.environ[ 'GLEXEC_CLIENT_CERT' ] = self.__payloadProxyLocation
     os.environ[ 'GLEXEC_SOURCE_PROXY' ] = self.__payloadProxyLocation
     self.log.info( "Payload proxy deployed to %s" % self.__payloadProxyLocation )
@@ -261,7 +253,7 @@ os.execl( "$executable" )
     return S_OK()
 
   def __executeInProcess( self, executableFile ):
-    os.environ[ 'X509_USER_PROXY' ] = self.__pilotProxyLocation
+    os.environ[ 'X509_USER_PROXY' ] = self.__payloadProxyLocation
     self.__addperm( executableFile, stat.S_IRWXU )
 
     result = systemCall( 0, [ executableFile ], callbackFunction = self.sendOutput )
@@ -306,35 +298,51 @@ os.execl( "$executable" )
   def submitJob( self, executableFile, proxyObj, jobData ):
     """ Method to submit job
     """
-    if not self.__pilotProxyLocation:
-      return S_ERROR( "X509_USER_PROXY is not defined!" )
     self.log.info( "Executable file is %s" % executableFile )
     self.__proxyObj = proxyObj
     self.__execFile = executableFile
     self.__jobData = jobData
 
-    glok = True
-    for step in ( self.__locate_glexec, self.__prepare_glenv, self.__prepare_tmpdir, self.__test, self.__construct_payload ):
-      self.log.info( "Running step %s" % step.__name__ )
-      result = step()
-      if not result[ 'OK' ]:
-        self.log.error( "Step %s failed: %s" % ( step.__name__, result[ 'Message' ] ) )
-        if self.ceParameters.get( "RescheduleOnError", False ):
-          result = S_ERROR( 'glexec CE failed on step %s : %s' % ( step.__name__, result[ 'Message' ] ) )
-          result['ReschedulePayload'] = True
-          return result
-        glok = False
-        break
+    self.log.verbose( 'Setting up proxy for payload' )
+    result = self.writeProxyToFile( self.__proxyObj )
+    if not result['OK']:
+      return result
+    self.__payloadProxyLocation = result['Value']
+
+    glOK = True
+    if gConfig.getValue( "/DIRAC/Security/UseServerCertificate", False ):
+      self.log.info( "Running with a certificate. Avoid using glexec" )
+      glOK = False
+    else:
+      self.log.info( "Trying glexec..." )
+      for step in ( self.__check_credentials, self.__locate_glexec,
+                    self.__prepare_glenv, self.__prepare_tmpdir,
+                    self.__test, self.__construct_payload ):
+        self.log.info( "Running step %s" % step.__name__ )
+        result = step()
+        if not result[ 'OK' ]:
+          self.log.error( "Step %s failed: %s" % ( step.__name__, result[ 'Message' ] ) )
+          if self.ceParameters.get( "RescheduleOnError", False ):
+            result = S_ERROR( 'glexec CE failed on step %s : %s' % ( step.__name__, result[ 'Message' ] ) )
+            result['ReschedulePayload'] = True
+            return result
+          glOK = False
+          break
 
     self.log.verbose( 'Starting process for monitoring payload proxy' )
-    gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
-                                      taskArgs = ( self.__pilotProxyLocation, self.__payloadProxyLocation ),
-                                      executions = 0, elapsedTime = 0 )
+    result = gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
+                                               taskArgs = ( self.__pilotProxyLocation, self.__payloadProxyLocation ),
+                                               executions = 0, elapsedTime = 0 )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Could not schedule monitor proxy task: %s" % result[ 'Message' ] )
+    pTask = result[ 'Value' ]
 
-    if not glok:
+    if not glOK:
       self.log.notice( "glexec failed miserably... Running without it." )
-      return self.__executeInProcess( executableFile )
-    result = self.__execute( [ self.__glCommand ] )
+      result = self.__executeInProcess( executableFile )
+    else:
+      result = self.__execute( [ self.__glCommand ] )
+    gThreadScheduler.removeTask( pTask )
     self.__cleanup()
     return result
 
@@ -416,10 +424,10 @@ os.execl( "$executable" )
     #CRAPCRAP
     return self.getDynamicInfo()
 
-  def monitorProxy( self, pilotProxy, payloadProxy ):
+  def monitorProxy( self, pilotProxyLocation, payloadProxyLocation ):
     """ Monitor the payload proxy and renew as necessary.
     """
-    retVal = super( glexecComputingElement, self ).monitorProxy( pilotProxy, payloadProxy )
+    retVal = super( glexecComputingElement, self ).monitorProxy( pilotProxyLocation, payloadProxyLocation )
     if not retVal['OK']:
       # Failed to renew the proxy, nothing else to be done
       return retVal
