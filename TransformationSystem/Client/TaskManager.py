@@ -221,8 +221,7 @@ class WorkflowTasks( TaskBase ):
     super( WorkflowTasks, self ).__init__( transClient, logger )
 
     if not submissionClient:
-      jobManagerClient = RPCClient( 'WorkloadManagement/JobManager' )
-      self.submissionClient = WMSClient( jobManagerClient = jobManagerClient )
+      self.submissionClient = WMSClient()
     else:
       self.submissionClient = submissionClient
 
