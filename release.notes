@@ -1,3 +1,16 @@
+[v6r8p3]
+
+*DMS
+BUGFIX: LcgFileCatalogClient
+
+[v6r8p2]
+
+*DMS:
+FIX: LcgFileCatalogClient - remove check for opening a session in __init__ as credentials are not yet set 
+
+*Transformation
+CHANGE: reuse RPC clients in Transformation System 
+
 [v6r8p1]
 
 *Core
@@ -31,6 +44,11 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p21]
+
+*Core
+FIX: Shifter - pass filePath argument when downloading proxy
 
 [v6r7p20]
 

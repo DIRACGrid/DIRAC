@@ -1,14 +1,10 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ DIRAC Workload Management System Client class encapsulates all the
     methods necessary to communicate with the Workload Management System
 """
 
 from DIRAC.Core.DISET.RPCClient                import RPCClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC                                     import S_OK, S_ERROR, gConfig
+from DIRAC                                     import S_OK, S_ERROR
 from DIRAC.Core.Utilities                      import File
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 
@@ -16,14 +12,17 @@ import os, commands
 
 class WMSClient:
 
-  def __init__( self, jobManagerClient = False, sbRPCClient = False, sbTransferClient = False, useCertificates = False, timeout = 120 ):
+  def __init__( self, jobManagerClient = False, sbRPCClient = False, sbTransferClient = False,
+                useCertificates = False, timeout = 120 ):
     """ WMS Client constructor
     """
-    self.useCertificates = useCertificates
     self.jobManagerClient = jobManagerClient
-    self.sbRPCClient = sbRPCClient
-    self.sbTransferClient = sbTransferClient
+    self.useCertificates = useCertificates
     self.timeout = timeout
+
+    self.sandboxClient = SandboxStoreClient( useCertificates = useCertificates, rpcClient = sbRPCClient,
+                                             transferClient = sbTransferClient )
+
 ###############################################################################
 
   def __getInputSandboxEntries( self, classAdJob ):
@@ -40,14 +39,13 @@ class WMSClient:
 
     return inputSandbox
 
-  #This are the NEW methods
+  # This are the NEW methods
 
   def __uploadInputSandbox( self, classAdJob ):
     """Checks the validity of the job Input Sandbox.
        The function returns the list of Input Sandbox files.
        The total volume of the input sandbox is evaluated
     """
-    sandboxClient = SandboxStoreClient( useCertificates = self.useCertificates, rpcClient = self.sbRPCClient, transferClient = self.sbTransferClient )
     inputSandbox = self.__getInputSandboxEntries( classAdJob )
 
     realFiles = []
@@ -56,16 +54,16 @@ class WMSClient:
     realFiles = []
     for file in inputSandbox:
       valid = True
-      for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s' ):#in case of parametric input sandbox, there is %s passed, so have to ignore it also 
+      for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s' ):  # in case of parametric input sandbox, there is %s passed, so have to ignore it also
         if file.find( tag ) == 0:
           valid = False
           break
       if valid:
         realFiles.append( file )
-    #If there are no files, skip!
+    # If there are no files, skip!
     if not realFiles:
       return S_OK()
-    #Check real files
+    # Check real files
     for file in realFiles:
       if not os.path.exists( file ):
         badFiles.append( file )
@@ -73,7 +71,7 @@ class WMSClient:
         continue
       okFiles.append( file )
 
-    #print "Total size of the inputSandbox: "+str(totalSize)
+    # print "Total size of the inputSandbox: "+str(totalSize)
     totalSize = File.getGlobbedTotalSize( okFiles )
     if badFiles:
       result = S_ERROR( 'Input Sandbox is not valid' )
@@ -82,7 +80,7 @@ class WMSClient:
       return result
 
     if okFiles:
-      result = sandboxClient.uploadFilesAsSandbox( okFiles )
+      result = self.sandboxClient.uploadFilesAsSandbox( okFiles )
       if not result[ 'OK' ]:
         return result
       inputSandbox.append( result[ 'Value' ] )
@@ -109,7 +107,8 @@ class WMSClient:
     """
 
     if not self.jobManagerClient:
-      jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = self.useCertificates, timeout = self.timeout )
+      jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = self.useCertificates,
+                              timeout = self.timeout )
     else:
       jobManager = self.jobManagerClient
     if os.path.exists( jdl ):
@@ -141,14 +140,14 @@ class WMSClient:
       return result
     jobID = result['Value']
     if 'requireProxyUpload' in result and result[ 'requireProxyUpload' ]:
-      #TODO: We should notify the user to upload a proxy with proxy-upload
+      # TODO: We should notify the user to upload a proxy with proxy-upload
       pass
 
 
-    #print "Sandbox uploading"
+    # print "Sandbox uploading"
     return S_OK( jobID )
 
-  #This is the OLD method
+  # This is the OLD method
 
   def __checkInputSandbox( self, classAdJob ):
     """Checks the validity of the job Input Sandbox.
@@ -159,7 +158,7 @@ class WMSClient:
     inputSandbox = self.__getInputSandboxEntries( classAdJob )
     if inputSandbox:
       ok = 1
-      #print inputSandbox
+      # print inputSandbox
       # Check the Input Sandbox files
 
       totalSize = 0
@@ -184,7 +183,7 @@ class WMSClient:
             else:
               totalSize = int( os.stat( file )[6] ) + totalSize
 
-      #print "Total size of the inputSandbox: "+str(totalSize)
+      # print "Total size of the inputSandbox: "+str(totalSize)
       if not ok:
         result = S_ERROR( 'Input Sandbox is not valid' )
         result['BadFile'] = file
@@ -196,7 +195,7 @@ class WMSClient:
       result['TotalSize'] = totalSize
       return result
     else:
-      #print "No input sandbox defined for this job."
+      # print "No input sandbox defined for this job."
       result = S_OK()
       result['TotalSize'] = 0
       result['InputSandbox'] = None

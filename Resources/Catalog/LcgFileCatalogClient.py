@@ -194,11 +194,6 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     self.prefix = '/grid'
     self.session = False
     self.transaction = False
-    # Verify if the LFC can be accessed, if not, declare it invalid
-    created = self.__openSession()
-    if created < 0:
-      self.isValid = False
-    self.__closeSession()
 
   ####################################################################
   #
@@ -1424,6 +1419,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     # We reach here only if the file doesn't exist, which is what we look for!!
     # Now we check the arguments
     try:
+      errStr = ''
       size = long( size )
     except Exception:
       errStr = "The size of the file must be an 'int','long' or 'string'"

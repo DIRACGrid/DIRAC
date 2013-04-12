@@ -11,6 +11,7 @@ from DIRAC.Core.Security.ProxyInfo                              import getProxyI
 from DIRAC.Core.Utilities.List                                  import sortList, fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
 from DIRAC.Interfaces.API.Job                                   import Job
+from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
 from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
@@ -42,6 +43,8 @@ class TaskBase( object ):
     return S_ERROR( "Not implemented" )
 
   def updateDBAfterTaskSubmission( self, taskDict ):
+    """ Sets tasks status after the submission to "Submitted", in case of success
+    """
     updated = 0
     startTime = time.time()
     for taskID in sortList( taskDict.keys() ):
@@ -277,7 +280,7 @@ class WorkflowTasks( TaskBase ):
 
       self.log.debug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskNumber, str( paramsDict ) ) )
 
-      #These helper functions do the real job
+      # These helper functions do the real job
       sites = self._handleDestination( paramsDict )
       if not sites:
         self.log.error( 'Could not get a list a sites' )
@@ -332,7 +335,7 @@ class WorkflowTasks( TaskBase ):
     if not seList or seList == ['Unknown']:
       return sites
 
-    #from now on we know there is some TargetSE requested
+    # from now on we know there is some TargetSE requested
     if not getSitesForSE:
       from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 
@@ -348,7 +351,7 @@ class WorkflowTasks( TaskBase ):
         if seSites == []:
           seSites = copy.deepcopy( thisSESites )
         else:
-          # We make an OR of the possible sites 
+          # We make an OR of the possible sites
           for nSE in list( thisSESites ):
             if nSE not in seSites:
               seSites.append( nSE )
@@ -405,6 +408,8 @@ class WorkflowTasks( TaskBase ):
     return module.execute()
 
   def submitTransformationTasks( self, taskDict ):
+    """ Submit jobs one by one
+    """
     submitted = 0
     failed = 0
     startTime = time.time()
@@ -423,13 +428,13 @@ class WorkflowTasks( TaskBase ):
         taskDict[taskID]['Success'] = False
         failed += 1
     self.log.info( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
-                                                                                              time.time() - startTime ) )
+                                                                                            time.time() - startTime ) )
     if failed:
-      self.log.info( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ) )
+      self.log.error( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ) )
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, job ):
-    """ Submits a job to the WMS.
+    """ Submits a single job to the WMS.
     """
     if type( job ) in types.StringTypes:
       try:
