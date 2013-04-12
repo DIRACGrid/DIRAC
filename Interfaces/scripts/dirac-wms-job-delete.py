@@ -23,6 +23,8 @@ Script.registerSwitch( "g:", "JobGroup=", "Get output for jobs in the given grou
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
+import os.path
+
 if __name__ == "__main__":
   
   from DIRAC.Interfaces.API.Dirac import Dirac
