@@ -1,3 +1,13 @@
+[v6r8p4]
+
+*Transformation
+FIX: The connection to the jobManager is done only at submission time
+FIX: Jenkins complaints fixes
+
+*WMS
+BUGFIX: JobDB - CPUtime -> CPUTime
+FIX: Jenkins complaints fixes
+
 [v6r8p3]
 
 *DMS
