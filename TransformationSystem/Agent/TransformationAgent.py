@@ -214,7 +214,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     unusedFiles = len( lfns )
 
     # Check the data is available with replicas
-    res = self.__getDataReplicas( transDict, lfns, clients, active = not replicateOrRemove )
+    res = self._getDataReplicas( transID, lfns, clients, active = not replicateOrRemove )
     if not res['OK']:
       self._logError( "Failed to get data replicas: %s" % res['Message'],
                        method = "processTransformation", transID = transID )
@@ -324,25 +324,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     return lfns
 
-  def __getDataReplicas( self, transDict, lfns, clients, active = True ):
+  def _getDataReplicas( self, transID, lfns, clients, active = True ):
     """ Get the replicas for the LFNs and check their statuses. It first looks within the cache.
     """
-    method = '__getDataReplicas'
-    transID = transDict['TransformationID']
-    clearCacheFile = os.path.join( self.workDirectory, 'ClearCache_%s' % str( transID ) )
-    try:
-      clearCache = os.path.exists( clearCacheFile )
-      if clearCache:
-        os.remove( clearCacheFile )
-    except:
-      pass
-    if clearCache or transDict['Status'] == 'Flush':
-      self._logInfo( "Replica cache cleared", method = method, transID = transID )
-      # We may need to get new replicas
-      self.__clearCacheForTrans( transID )
-    else:
-      # If the cache needs to be cleaned
-      self.__cleanCache()
+    method = '_getDataReplicas'
     startTime = time.time()
     dataReplicas = {}
     lfns.sort()
@@ -384,7 +369,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       newReplicas = {}
       noReplicas = []
       for chunk in breakListIntoChunks( newLFNs, 1000 ):
-        res = self.__getDataReplicasRM( transID, chunk, clients, active = active )
+        res = self._getDataReplicasRM( transID, chunk, clients, active = active )
         if res['OK']:
           for lfn, ses in res['Value'].items():
             if ses:
@@ -405,7 +390,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                       method = method, transID = transID )
     return S_OK( dataReplicas )
 
-  def __getDataReplicasRM( self, transID, lfns, clients, active = True ):
+  def _getDataReplicasRM( self, transID, lfns, clients, active = True ):
     """ Get the replicas for the LFNs and check their statuses, using the replica manager
     """
     method = '__getDataReplicasRM'
