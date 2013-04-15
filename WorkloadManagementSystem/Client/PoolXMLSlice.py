@@ -1,21 +1,13 @@
-########################################################################
-# $Id$
-# File :   PoolXMLSlice.py
-# Author : Stuart Paterson
-########################################################################
-
 """ The POOL XML Slice class provides a simple plugin module to create
     an XML file for applications to translate LFNs to TURLs. The input
     dictionary has LFNs as keys with all associated metadata as key,
     value pairs.
 """
 
-__RCSID__ = "$Id$"
-
 from DIRAC.Resources.Catalog.PoolXMLCatalog                         import PoolXMLCatalog
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC                                                          import S_OK, S_ERROR, gLogger
 
-import os,sys,re
+import os
 
 COMPONENT_NAME = 'PoolXMLSlice'
 
@@ -31,8 +23,7 @@ class PoolXMLSlice:
 
   #############################################################################
   def execute(self,dataDict):
-    """Given a dictionary of resolved input data, this will create a POOL
-       XML slice.
+    """ Given a dictionary of resolved input data, this will creates a POOL XML slice.
     """
     poolXMLCatName = self.fileName
     mdata = dataDict
@@ -41,13 +32,14 @@ class PoolXMLSlice:
       self.log.verbose('Creating POOL XML slice')
 
       for lfn,mdata in dataDict.items():
-        #lfn,pfn,size,se,guid tuple taken by POOL XML Catalogue
+        # lfn,pfn,se,guid tuple taken by POOL XML Catalogue
         if mdata.has_key('path'):
-          poolXMLCat.addFile((lfn,mdata['path'],0,mdata['se'],mdata['guid'],mdata['pfntype']))
+          poolXMLCat.addFile( ( lfn, mdata['path'], mdata['se'], mdata['guid'], mdata['pfntype'] ) )
         elif os.path.exists(os.path.basename(mdata['pfn'])):
-          poolXMLCat.addFile((lfn,os.path.abspath(os.path.basename(mdata['pfn'])),0,mdata['se'],mdata['guid'],mdata['pfntype']))
+          poolXMLCat.addFile( ( lfn, os.path.abspath( os.path.basename( mdata['pfn'] ) ), mdata['se'],
+                                mdata['guid'], mdata['pfntype'] ) )
         else:
-          poolXMLCat.addFile((lfn,mdata['turl'],0,mdata['se'],mdata['guid'],mdata['pfntype']))
+          poolXMLCat.addFile( ( lfn, mdata['turl'], mdata['se'], mdata['guid'], mdata['pfntype'] ) )
 
       xmlSlice = poolXMLCat.toXML()
       self.log.verbose('POOL XML Slice is: ')
