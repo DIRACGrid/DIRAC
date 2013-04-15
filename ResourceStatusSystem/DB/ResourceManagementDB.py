@@ -157,7 +157,9 @@ class ResourceManagementDB( object ):
                                 }
   
   _tablesLike  = {}
-  _likeToTable = {}
+  _likeToTable = {
+                   'PolicyResultLog' : 'PolicyResultHistory',
+                  }
   
   def __init__( self, maxQueueSize = 10, mySQL = None ):
     '''
@@ -291,6 +293,8 @@ class ResourceManagementDB( object ):
     selectQuery = self.select( params, meta )
     if not selectQuery[ 'OK' ]:
       return selectQuery 
+    
+    isUpdate = False
               
     if selectQuery[ 'Value' ]:      
       
@@ -324,36 +328,16 @@ class ResourceManagementDB( object ):
         params[ 'dateEffective' ] = newDateEffective              
       
       userQuery  = self.update( params, meta )
+      isUpdate = True
 
     else:      
-
       userQuery = self.insert( params, meta )
+
+    # This part only applies to PolicyResult table
+    logResult = self._logRecord( params, meta, isUpdate )
+    if not logResult[ 'OK' ]:
+      return logResult
     
-#    if self.recordLogs:
-#      
-#      if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
-#        
-#        if isUpdate:
-#          updateRes = self.select( params, meta )
-#          if not updateRes[ 'OK' ]:
-#            return updateRes
-#          
-#          # If we are updating more that one result at a time, this is most likely
-#          # going to be a mess. All queries must be one at a time, if need to do
-#          if len( updateRes[ 'Value' ] ) != 1:
-#            return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
-#          if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
-#            # Uyyy, something went seriously wrong !!
-#            return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
-#                    
-#          params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] )) 
-#                
-#        meta[ 'tableName' ] = meta[ 'tableName' ].replace( 'Status', 'Log' )
-#
-#        logRes = self.insert( params, meta )
-#        if not logRes[ 'OK' ]:
-#          return logRes
-#    
     return userQuery      
 
   def addIfNotThere( self, params, meta ):
@@ -405,6 +389,38 @@ class ResourceManagementDB( object ):
       Method used by database tools to write the schema
     '''  
     return self.__createTables()
+
+  def _logRecord( self, params, meta, isUpdate ):
+    '''
+      Method that records every change on a LogTable.
+    '''
+  
+    if not ( 'table' in meta and meta[ 'table' ] == 'PolicyResult' ):
+      return S_OK()
+        
+    if isUpdate:
+      updateRes = self.select( params, meta )
+      if not updateRes[ 'OK' ]:
+        return updateRes
+          
+      # If we are updating more that one result at a time, this is most likely
+      # going to be a mess. All queries must be one at a time, if need to do
+      if len( updateRes[ 'Value' ] ) != 1:
+        return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
+      
+      #FIXME: WTF, this never happens...
+      if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
+        # Uyyy, something went seriously wrong !!
+        return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
+                    
+      params = dict( zip( updateRes[ 'Columns' ], updateRes[ 'Value' ][ 0 ] )) 
+
+    # Writes to PolicyResult"Log"                
+    meta[ 'table' ] += 'Log'
+
+    logRes = self.insert( params, meta )
+    
+    return logRes
 
   ## Private methods ###########################################################
 
