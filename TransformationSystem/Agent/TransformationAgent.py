@@ -331,7 +331,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   def __getDataReplicas( self, transID, lfns, clients, active = True ):
     """ Get the replicas for the LFNs and check their statuses. It first looks within the cache.
     """
-    method = '_getDataReplicas'
+    method = '__getDataReplicas'
     startTime = time.time()
     dataReplicas = {}
     lfns.sort()
@@ -398,7 +398,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   def _getDataReplicasRM( self, transID, lfns, clients, active = True ):
     """ Get the replicas for the LFNs and check their statuses, using the replica manager
     """
-    method = '__getDataReplicasRM'
+    method = '_getDataReplicasRM'
 
     startTime = time.time()
     self._logVerbose( "Getting replicas for %d files from catalog" % len( lfns ),
