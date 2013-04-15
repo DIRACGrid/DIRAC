@@ -181,8 +181,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         res = self.processTransformation( transDict, clients )
         if not res['OK']:
           self._logInfo( "Failed to process transformation: %s" % res['Message'], transID = transID )
-        else:
-          self._logInfo( "Processed transformation in %.1f seconds" % ( time.time() - startTime ), transID = transID )
       except Exception, x:
         self._logException( '%s' % x, transID = transID )
       finally:
