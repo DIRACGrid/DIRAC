@@ -1282,11 +1282,12 @@ def createBashrc():
       lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      'export DIRAC=%s' % proPath,
-                     'export DIRACBIN=%s' % os.path.join( proPath, cliParams.platform, 'bin' ),
-                     'export DIRACSCRIPTS=%s' % os.path.join( proPath, 'scripts' ),
-                     'export DIRACLIB=%s' % os.path.join( proPath, cliParams.platform, 'lib' ),
-                     'export TERMINFO=%s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ),
-                     'export RRD_DEFAULT_FONT=%s' % os.path.join( proPath, cliParams.platform, 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
+                     'export DIRACSCRIPTS=%s' % os.path.join( '$DIRAC', 'scripts' ),
+                     'export DIRACPLAT=`%s`' % os.path.join( '$DIRACSCRIPTS', 'dirac-platform' ),
+                     'export DIRACBIN=%s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'bin' ),
+                     'export DIRACLIB=%s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'lib' ),
+                     'export TERMINFO=%s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'terminfo' ),
+                     'export RRD_DEFAULT_FONT=%s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
       lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
                     'PYTHONPATH=""',
@@ -1330,10 +1331,12 @@ def createCshrc():
       lines.append( 'setenv X509_VOMS_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      'setenv DIRAC %s' % proPath,
-                     'setenv DIRACBIN %s' % os.path.join( proPath, cliParams.platform, 'bin' ),
-                     'setenv DIRACSCRIPTS %s' % os.path.join( proPath, 'scripts' ),
-                     'setenv DIRACLIB %s' % os.path.join( proPath, cliParams.platform, 'lib' ),
-                     'setenv TERMINFO %s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ) ] )
+                     'setenv DIRACSCRIPTS %s' % os.path.join( '$DIRAC', 'scripts' ),
+                     'setenv DIRACPLAT `%s`' % os.path.join( '$DIRACSCRIPTS', 'dirac-platform' ),
+                     'setenv DIRACBIN %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'bin' ),
+                     'setenv DIRACLIB %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'lib' ),
+                     'setenv TERMINFO %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'terminfo' ),
+                     'setenv RRD_DEFAULT_FONT %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
       lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
                     'setenv PYTHONPATH',
