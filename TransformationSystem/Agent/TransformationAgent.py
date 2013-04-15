@@ -218,7 +218,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     unusedFiles = len( lfns )
 
     # Check the data is available with replicas
-    res = self._getDataReplicas( transID, lfns, clients, active = not replicateOrRemove )
+    res = self.__getDataReplicas( transID, lfns, clients, active = not replicateOrRemove )
     if not res['OK']:
       self._logError( "Failed to get data replicas: %s" % res['Message'],
                        method = "processTransformation", transID = transID )
@@ -328,7 +328,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     return lfns
 
-  def _getDataReplicas( self, transID, lfns, clients, active = True ):
+  def __getDataReplicas( self, transID, lfns, clients, active = True ):
     """ Get the replicas for the LFNs and check their statuses. It first looks within the cache.
     """
     method = '_getDataReplicas'
