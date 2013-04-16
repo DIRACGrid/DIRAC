@@ -1,3 +1,16 @@
+[v6r8p5]
+
+NEW: Applied patches from v6r7p22
+
+*RSS
+CHANGE: removed old tests and commented out files
+
+*WMS
+FIX: PoolXMLCatalog - proper addFile usage
+
+*Transformation
+CHANGE: TransformationAgent - clear replica cache when flushing or setting a file in the workdirectory
+
 [v6r8p4]
 
 *Transformation
