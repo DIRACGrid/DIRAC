@@ -22,47 +22,47 @@ COMMAND_TIMEOUT = 60
 ###########################################################################
 
 def getGridEnv():
-  
+
   gridEnv = ''
   setup = gConfig.getValue( '/DIRAC/Setup', '' )
   if setup:
     instance = gConfig.getValue( '/DIRAC/Setups/%s/WorkloadManagement' % setup, '' )
     if instance:
       gridEnv = gConfig.getValue( '/Systems/WorkloadManagement/%s/GridEnv' % instance, '' )
-      
-  return gridEnv    
 
-def getPilotOutput( proxy, grid, pilotRef, pilotStamp='' ):
-  
-  if grid in ['LCG','gLite']:
+  return gridEnv
+
+def getPilotOutput( proxy, grid, pilotRef, pilotStamp = '' ):
+
+  if grid in ['LCG', 'gLite']:
     return getWMSPilotOutput( proxy, grid, pilotRef )
   elif grid == "CREAM":
-    return getCREAMPilotOutput( proxy, pilotRef, pilotStamp ) 
+    return getCREAMPilotOutput( proxy, pilotRef, pilotStamp )
   else:
     return S_ERROR( 'Non-valid grid type %s' % grid )
 
-def getCREAMPilotOutput(proxy,pilotRef,pilotStamp):
+def getCREAMPilotOutput( proxy, pilotRef, pilotStamp ):
   """
   """
   gridEnv = getGridEnv()
   tmpdir = mkdtemp()
-  result = ComputingElementFactory().getCE(ceName = 'CREAMSite',ceType = 'CREAM',
+  result = ComputingElementFactory().getCE( ceName = 'CREAMSite', ceType = 'CREAM',
                                        ceParametersDict = {'GridEnv':gridEnv,
                                                            'Queue':'Qeuue',
                                                            'OutputURL':"gsiftp://localhost",
-                                                           'WorkingDirectory':tmpdir})
-                                   
+                                                           'WorkingDirectory':tmpdir} )
+
   if not result['OK']:
-    shutil.rmtree(tmpdir)  
+    shutil.rmtree( tmpdir )
     return result
   ce = result['Value']
-  ce.setProxy(proxy)
-  fullPilotRef = ":::".join([pilotRef,pilotStamp])
+  ce.setProxy( proxy )
+  fullPilotRef = ":::".join( [pilotRef, pilotStamp] )
   result = ce.getJobOutput( fullPilotRef )
-  shutil.rmtree(tmpdir)
+  shutil.rmtree( tmpdir )
   if not result['OK']:
     return S_ERROR( 'Failed to get pilot output: %s' % result['Message'] )
-  output, error = result['Value']  
+  output, error = result['Value']
   fileList = outputSandboxFiles
   result = S_OK()
   result['FileList'] = fileList
@@ -110,16 +110,7 @@ def getWMSPilotOutput( proxy, grid, pilotRef ):
     return S_ERROR( error )
 
   # Get the list of files
-
-  # LCG always creates an unique sub-directory
-  # gLite does it too now
-  result = executeGridCommand( proxy, ['glite-version'], gridEnv )
-  if not result['OK']:
-    shutil.rmtree( tmp_dir )
-    return result
-  status, output, error = result['Value']
-  if output.find( '3.2' ) != -1:
-    tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
+  tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
 
   result = S_OK()
   result['FileList'] = outputSandboxFiles
@@ -148,15 +139,15 @@ def getPilotLoggingInfo( proxy, grid, pilotRef ):
    Get LoggingInfo of a GRID job
   """
   if grid == 'LCG':
-    cmd = [ 'edg-job-get-logging-info', '-v', '2','--noint', pilotRef ]
+    cmd = [ 'edg-job-get-logging-info', '-v', '2', '--noint', pilotRef ]
   elif grid == 'gLite':
-    cmd = [ 'glite-wms-job-logging-info', '-v', '3','--noint', pilotRef ]
+    cmd = [ 'glite-wms-job-logging-info', '-v', '3', '--noint', pilotRef ]
   elif grid == 'CREAM':
-    cmd = [ 'glite-ce-job-status', '-L', '2', '%s' % pilotRef ]  
+    cmd = [ 'glite-ce-job-status', '-L', '2', '%s' % pilotRef ]
   else:
     return S_ERROR( 'Unknnown GRID %s' % grid )
 
-  gridEnv =  getGridEnv()
+  gridEnv = getGridEnv()
   ret = executeGridCommand( proxy, cmd, gridEnv )
   if not ret['OK']:
     return ret
