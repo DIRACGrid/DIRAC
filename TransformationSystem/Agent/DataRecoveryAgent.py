@@ -41,7 +41,7 @@ from ILCDIRAC.Core.Utilities.ProductionData import constructProductionLFNs
 import string
 import datetime
 
-AGENT_NAME = 'ILCTransformationSystem/DataRecoveryAgent'
+AGENT_NAME = 'ILCTransformation/DataRecoveryAgent'
 
 
 class DataRecoveryAgent(AgentModule):
