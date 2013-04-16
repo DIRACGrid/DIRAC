@@ -172,6 +172,8 @@ for k in env:
   if k not in ( 'X509_USER_PROXY', 'HOME', 'LOGNAME', 'USER', '_' ):
     os.environ[ k ] = env[ k ]
 
+os.environ[ 'DIRAC_GLEXEC' ] = '$glexecLocation'
+
 print "# glexec test"
 print "CWD=%s" % os.getcwd()
 print "UID=%s" % os.geteuid()
@@ -183,7 +185,9 @@ except Exception, excp:
     print "LOGIN=%s(can't get via os.getlogin)" % os.environ[ 'USER' ]
   else:
     print "LOGIN=UNKNOWN:%s" % str( excp )
-for k in os.environ:
+envKeys = list( os.environ.keys() )
+envKeys.sort()
+for k in envKeys:
   print "ENV:%s=%s" % ( k, os.environ[ k ] )
 try:
   open( os.environ[ 'X509_USER_PROXY' ], "r" ).read()
@@ -207,7 +211,7 @@ else:
   print "TEST:DIRAC-PROXY-INFO=false"
 """
 
-    os.write( fd, Template( testdata ).substitute( { 'codedEnv' : base64.b64encode( pickle.dumps( os.environ ) ) } ) )
+    os.write( fd, Template( testdata ).substitute( { 'codedEnv' : base64.b64encode( pickle.dumps( os.environ ) ), 'glexecLocation' : self.__gl } ) )
     os.close( fd )
     self.log.info( 'Changing permissions of test script to 0755' )
     try:
@@ -234,6 +238,8 @@ for k in env:
   if k not in ( 'X509_USER_PROXY', 'HOME', 'LOGNAME', 'USER', '_' ):
     os.environ[ k ] = env[ k ]
 
+os.environ[ 'DIRAC_GLEXEC' ] = '$glexec'
+
 #GO TO WORKING DIR
 os.chdir( "$workDir" )
 os.execl( "$executable" )
@@ -241,7 +247,8 @@ os.execl( "$executable" )
     with open( glwrapper, "w" ) as fd:
       fd.write( Template( glwrapperdata ).substitute( { 'codedEnv' : base64.b64encode( pickle.dumps( os.environ ) ),
                                                         'workDir' : self.__glDir,
-                                                        'executable' : self.__execFile } ) )
+                                                        'executable' : self.__execFile,
+                                                        'glexec' : self.__gl } ) )
 
     os.chmod( glwrapper, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     os.chmod( self.__execFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
