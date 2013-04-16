@@ -96,21 +96,6 @@ class ResourceManagementDB( object ):
                       },
                       'PrimaryKey' : [ 'Element', 'Name', 'StatusType', 'PolicyName' ] 
                                 }
-  
-  _tablesDB[ 'PolicyResultLog' ] = { 'Fields' : 
-                      {
-                       'PolicyResultLogID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
-                       'Element'           : 'VARCHAR(32) NOT NULL',
-                       'Name'              : 'VARCHAR(64) NOT NULL',
-                       'PolicyName'        : 'VARCHAR(64) NOT NULL',
-                       'StatusType'        : 'VARCHAR(16) NOT NULL DEFAULT ""',
-                       'Status'            : 'VARCHAR(8) NOT NULL',
-                       'Reason'            : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
-                       'DateEffective'     : 'DATETIME NOT NULL',                       
-                       'LastCheckTime'     : 'DATETIME NOT NULL'                                   
-                      },
-                      'PrimaryKey' : [ 'PolicyResultLogID' ]
-                                }
 
   _tablesDB[ 'SpaceTokenOccupancyCache' ] = { 'Fields' :
                       {
@@ -157,8 +142,23 @@ class ResourceManagementDB( object ):
                                 }
   
   _tablesLike  = {}
+  _tablesLike[ 'PolicyResultWithID' ] = { 'Fields' : 
+                      {
+                       'ID'            : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                       'Element'       : 'VARCHAR(32) NOT NULL',
+                       'Name'          : 'VARCHAR(64) NOT NULL',
+                       'PolicyName'    : 'VARCHAR(64) NOT NULL',
+                       'StatusType'    : 'VARCHAR(16) NOT NULL DEFAULT ""',
+                       'Status'        : 'VARCHAR(8) NOT NULL',
+                       'Reason'        : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
+                       'DateEffective' : 'DATETIME NOT NULL',                       
+                       'LastCheckTime' : 'DATETIME NOT NULL'                                   
+                      },
+                      'PrimaryKey' : [ 'ID' ]
+                                }
   _likeToTable = {
-                   'PolicyResultLog' : 'PolicyResultHistory',
+                   'PolicyResultLog'     : 'PolicyResultWithID',
+                   'PolicyResultHistory' : 'PolicyResultWithID',
                   }
   
   def __init__( self, maxQueueSize = 10, mySQL = None ):
@@ -327,9 +327,9 @@ class ResourceManagementDB( object ):
       if 'dateEffective' in params:
         params[ 'dateEffective' ] = newDateEffective              
       
-      userQuery  = self.update( params, meta )
-      isUpdate = True
-
+      userQuery = self.update( params, meta )
+      isUpdate  = True
+      
     else:      
       userQuery = self.insert( params, meta )
 
@@ -340,6 +340,7 @@ class ResourceManagementDB( object ):
     
     return userQuery      
 
+  # FIXME: this method looks unused. Maybe can be removed from the code.
   def addIfNotThere( self, params, meta ):
     '''
     Using the PrimaryKeys of the table, it looks for the record in the database.
@@ -399,19 +400,13 @@ class ResourceManagementDB( object ):
       return S_OK()
         
     if isUpdate:
+      
+      # This looks little bit like a non-sense. If we were updating, we may have
+      # not passed a complete set of parameters, so we have to get all them from the
+      # database.
       updateRes = self.select( params, meta )
       if not updateRes[ 'OK' ]:
         return updateRes
-          
-      # If we are updating more that one result at a time, this is most likely
-      # going to be a mess. All queries must be one at a time, if need to do
-      if len( updateRes[ 'Value' ] ) != 1:
-        return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
-      
-      #FIXME: WTF, this never happens...
-      if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
-        # Uyyy, something went seriously wrong !!
-        return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
                     
       params = dict( zip( updateRes[ 'Columns' ], updateRes[ 'Value' ][ 0 ] )) 
 
