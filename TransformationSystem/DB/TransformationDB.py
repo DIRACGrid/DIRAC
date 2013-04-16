@@ -205,8 +205,7 @@ class TransformationDB( DB ):
                                                    'TargetSE': "char(255) DEFAULT 'Unknown'",
                                                    'TaskID': 'INTEGER NOT NULL AUTO_INCREMENT',
                                                    'TransformationID': 'INTEGER NOT NULL'},
-                                        'Indexes': {'ExternalStatus': ['ExternalStatus'],
-                                                    'TaskID': ['TaskID']},
+                                        'Indexes': {'ExternalStatus': ['ExternalStatus']},
                                         'PrimaryKey': ['TransformationID', 'TaskID'],
                                         'Engine': 'InnoDB'
                                         },
