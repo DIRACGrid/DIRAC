@@ -1,3 +1,9 @@
+[v6r7p22]
+
+*Transformation
+CHANGE: InputDataAgent - treats only suitable transformations, e.g. not the extendable ones. 
+CHANGE: TransformationAgent - make some methods more public for easy overload
+
 [v6r7p21]
 
 *Core
