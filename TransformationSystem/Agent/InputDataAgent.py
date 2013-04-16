@@ -13,6 +13,7 @@ from DIRAC.Core.Base.AgentModule                                          import
 from DIRAC.TransformationSystem.Client.TransformationClient               import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalogClient                            import FileCatalogClient
 from DIRAC.Core.Utilities.List                                            import sortList
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations                  import Operations
 
 AGENT_NAME = 'Transformation/InputDataAgent'
 
@@ -34,12 +35,27 @@ class InputDataAgent( AgentModule ):
 
     self.transClient = TransformationClient()
     self.metadataClient = FileCatalogClient()
+    self.transformationTypes = None
 
   #############################################################################
   def initialize( self ):
     ''' Make the necessary initializations
     '''
     gMonitor.registerActivity( "Iteration", "Agent Loops", AGENT_NAME, "Loops/min", gMonitor.OP_SUM )
+    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
+    if agentTSTypes:
+      self.transformationTypes = sortList( agentTSTypes )
+    else:
+      dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
+      dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
+      self.transformationTypes = sortList( dataProc + dataManip )
+    extendables = Operations().getValue( 'Transformations/ExtendableTransfTypes', [])
+    if extendables:
+      for extendable in extendables:
+        if extendable in self.transformationTypes:
+          self.transformationTypes.remove(extendable)
+          #This is because the Extendables do not use this Agent (have no Input data query)
+          
     return S_OK()
 
   ##############################################################################
@@ -49,7 +65,8 @@ class InputDataAgent( AgentModule ):
 
     gMonitor.addMark( 'Iteration', 1 )
     # Get all the transformations
-    result = self.transClient.getTransformations( condDict = {'Status':'Active'} )
+    result = self.transClient.getTransformations( {'Status' : 'Active', 
+                                                   'Type' : self.transformationTypes } )
     if not result['OK']:
       gLogger.error( "InputDataAgent.execute: Failed to get transformations.", result['Message'] )
       return S_OK()

@@ -374,7 +374,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       newReplicas = {}
       noReplicas = []
       for chunk in breakListIntoChunks( newLFNs, 1000 ):
-        res = self.__getDataReplicasRM( transID, chunk, clients, active = active )
+        res = self._getDataReplicasRM( transID, chunk, clients, active = active )
         if res['OK']:
           for lfn, ses in res['Value'].items():
             if ses:
@@ -396,10 +396,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.__cleanCache()
     return S_OK( dataReplicas )
 
-  def __getDataReplicasRM( self, transID, lfns, clients, active = True ):
+  def _getDataReplicasRM( self, transID, lfns, clients, active = True ):
     """ Get the replicas for the LFNs and check their statuses, using the replica manager
     """
-    method = '__getDataReplicasRM'
+    method = '_getDataReplicasRM'
 
     startTime = time.time()
     self._logVerbose( "Getting replicas for %d files from catalog" % len( lfns ),
