@@ -105,6 +105,12 @@ FIX: TaskManager - site in the job definition is taken into account when submitt
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
 
+[v6r7p22]
+
+*Transformation
+CHANGE: InputDataAgent - treats only suitable transformations, e.g. not the extendable ones. 
+CHANGE: TransformationAgent - make some methods more public for easy overload
+
 [v6r7p21]
 
 *Core
