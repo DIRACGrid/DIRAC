@@ -1,3 +1,15 @@
+[v6r8p6]
+
+NEW: Applied patches from v6r7p23
+
+*Transformation
+FIX: TaskManager - allow prepareTransformationTasks to proceed if no OutputDataModule is defined
+FIX: TransformationDB - remove INDEX(TaskID) from TransformationTasks. It produces a single counter 
+     for the whole table instead of one per TransformationID
+     
+*WMS     
+FIX: WMSUtilities - to allow support for EMI UI's for pilot submission we drop support for glite 3.1
+
 [v6r8p5]
 
 NEW: Applied patches from v6r7p22
