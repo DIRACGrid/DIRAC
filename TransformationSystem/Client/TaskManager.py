@@ -301,14 +301,15 @@ class WorkflowTasks( TaskBase ):
         self._handleHospital( oJob )
 
       taskDict[taskNumber]['TaskObject'] = ''
-      res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
-                                 'TaskID':taskNumber, 'InputData':inputData},
-                                moduleLocation = self.outputDataModule )
-      if not res ['OK']:
-        self.log.error( "Failed to generate output data", res['Message'] )
-        continue
-      for name, output in res['Value'].items():
-        oJob._addJDLParameter( name, ';'.join( output ) )
+      if self.outputDataModule:
+        res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
+                                   'TaskID':taskNumber, 'InputData':inputData},
+                                  moduleLocation = self.outputDataModule )
+        if not res ['OK']:
+          self.log.error( "Failed to generate output data", res['Message'] )
+          continue
+        for name, output in res['Value'].items():
+          oJob._addJDLParameter( name, ';'.join( output ) )
       taskDict[taskNumber]['TaskObject'] = self.jobClass( oJob._toXML() )
     return S_OK( taskDict )
 
