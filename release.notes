@@ -135,14 +135,11 @@ FIX: TaskManager - site in the job definition is taken into account when submitt
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
 
-<<<<<<< HEAD
-=======
 [v6r7p23]
 
 *Transformation
 BUGFIX: TransformationDB - badly formatted error log message
 
->>>>>>> rel-v6r8
 [v6r7p22]
 
 *Transformation
