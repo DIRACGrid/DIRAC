@@ -59,7 +59,7 @@ def getDiskSpace( path = '.' ):
       try:
         value = int( fields[3] )
       except Exception, error:
-        print "Exception during disk space evaluation:", str( error )  
+        print "Exception during disk space evaluation:", str( error )
         value = -1
       return value
   else:
@@ -80,7 +80,7 @@ def getDirectorySize( path ):
     return size
 
 def sourceEnv( timeout, cmdTuple, inputEnv = None ):
-  """ Function to source configuration files in a platform dependent way and get 
+  """ Function to source configuration files in a platform dependent way and get
       back the environment
   """
 
@@ -145,7 +145,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
   return result
 
 def unifyLdLibraryPath( path, newpath ):
-  """ for Linux and MacOS link all the files in the path in a single directory 
+  """ for Linux and MacOS link all the files in the path in a single directory
       newpath. For that we go along the path in a reverse order and link all files
       from the path, the latest appearance of a file will take precedence
   """
@@ -187,13 +187,14 @@ def unifyLdLibraryPath( path, newpath ):
     # Windows does nothing for the moment
     return path
 
-def which( filetofind ):
+def which( fileToFind ):
   """ Utility that mimics the 'which' command from the shell
   """
   if not "PATH" in os.environ:
     return None
-  for path in os.environ["PATH"].split(":"):
-    if os.path.exists(path + "/" + filetofind):
-      return path + "/" + filetofind
+  for path in List.fromChar( os.environ["PATH"], ":" ):
+    fpath = os.path.join( path, fileToFind )
+    if os.path.exists( fpath ):
+      return fpath
 
   return None
