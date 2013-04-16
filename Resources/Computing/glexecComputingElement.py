@@ -12,6 +12,7 @@ from DIRAC.Resources.Computing.ComputingElement             import ComputingElem
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                        import systemCall
 from DIRAC.Core.Utilities.Os                                import which
+from DIRAC.Core.Security                                    import ProxyInfo, Properties
 from DIRAC                                                  import S_OK, S_ERROR, gConfig
 
 import DIRAC
@@ -34,6 +35,7 @@ class glexecComputingElement( ComputingElement ):
     self.__proxyObj = False
     self.__execFile = False
     self.__glDir = False
+    self.__glBaseDir = False
     self.__pilotProxyLocation = False
     self.__payloadProxyLocation = False
     self.__glCommand = False
@@ -52,13 +54,11 @@ class glexecComputingElement( ComputingElement ):
   def __locate_glexec( self ):
     """ Try to find glexec
     """
-    if 'OSG_GLEXEC_LOCATION' in os.environ:
-      if os.path.exists( os.environ[ 'OSG_GLEXEC_LOCATION' ] ):
-        self.__gl = os.environ['OSG_GLEXEC_LOCATION']
-        return S_OK()
-    if 'GLITE_LOCATION' in os.environ:
-      glpath = '%s/sbin/glexec' % ( os.environ['GLITE_LOCATION'] )
-      if os.path.exists( glpath ):
+    for glpath in ( os.environ.get( 'OSG_GLEXEC_LOCATION', '' ),
+                   '%s/sbin/glexec' % ( os.environ.get( 'GLITE_LOCATION', '/opt/glite' ) ),
+                   '%s/sbin/glexec' % ( os.environ.get( 'GLEXEC_LOCATION', '/opt/glite' ) ),
+                   '/usr/sbin/glexec' ):
+      if glpath and os.path.exists( glpath ):
         self.__gl = glpath
         return S_OK()
     glpath = which( "glexec" )
@@ -277,23 +277,25 @@ os.execl( "$executable" )
 
   def __cleanup( self ):
     self.log.info( "Cleaning up %s" % self.__glDir )
-    workDir = os.path.dirname( self.__glDir )
-    for entry in os.listdir( workDir ):
-      obj = os.path.join( workDir, entry )
+    if self.__glDir and os.path.isdir( self.__glDir ):
+      workDir = os.path.dirname( self.__glDir )
+      for entry in os.listdir( workDir ):
+        obj = os.path.join( workDir, entry )
+        try:
+          if os.path.isdir( obj ):
+            shutil.rmtree( obj )
+          else:
+            os.unlink( obj )
+        except:
+          pass
+      result = self.__execute( [ "/bin/rm", '-rf', self.__glDir ] )
+      if not result[ 'OK' ]:
+       self.log.error( "Could not cleanup: %s" % result[ 'Message' ] )
+    if self.__glBaseDir:
       try:
-        if os.path.isdir( obj ):
-          shutil.rmtree( obj )
-        else:
-          os.unlink( obj )
-      except:
-        pass
-    result = self.__execute( [ "/bin/rm", '-rf', self.__glDir ] )
-    if not result[ 'OK' ]:
-      self.log.error( "Could not cleanup: %s" % result[ 'Message' ] )
-    try:
-      shutil.rmtree( self.__glBaseDir )
-    except Exception, excp:
-      self.log.error( "Could not cleanup %s: %s" % ( self.__glBaseDir, excp ) )
+        shutil.rmtree( self.__glBaseDir )
+      except Exception, excp:
+        self.log.error( "Could not cleanup %s: %s" % ( self.__glBaseDir, excp ) )
 
   def submitJob( self, executableFile, proxyObj, jobData ):
     """ Method to submit job
@@ -309,10 +311,23 @@ os.execl( "$executable" )
       return result
     self.__payloadProxyLocation = result['Value']
 
+    glEnabled = True
     glOK = True
+
     if gConfig.getValue( "/DIRAC/Security/UseServerCertificate", False ):
       self.log.info( "Running with a certificate. Avoid using glexec" )
-      glOK = False
+      glEnabled = False
+    else:
+      result = ProxyInfo.getProxyInfo( self.__pilotProxyLocation, disableVOMS = True )
+      if result[ 'OK' ]:
+        if not Properties.GENERIC_PILOT in result[ 'Value' ].get( 'groupProperties', [] ):
+          self.log.info( "Pilot is NOT running with a generic pilot. Skipping glexec" )
+          glEnabled = False
+        else:
+          self.log.info( "Pilot is generic. Trying glexec" )
+
+    if not glEnabled:
+      self.log.notice( "glexec is not enabled ")
     else:
       self.log.info( "Trying glexec..." )
       for step in ( self.__check_credentials, self.__locate_glexec,
@@ -328,6 +343,8 @@ os.execl( "$executable" )
             return result
           glOK = False
           break
+      if not glOK:
+        self.log.notice( "glexec failed miserably... Running without it." )
 
     self.log.verbose( 'Starting process for monitoring payload proxy' )
     result = gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
@@ -337,11 +354,10 @@ os.execl( "$executable" )
       return S_ERROR( "Could not schedule monitor proxy task: %s" % result[ 'Message' ] )
     pTask = result[ 'Value' ]
 
-    if not glOK:
-      self.log.notice( "glexec failed miserably... Running without it." )
-      result = self.__executeInProcess( executableFile )
-    else:
+    if glEnabled and glOK:
       result = self.__execute( [ self.__glCommand ] )
+    else:
+      result = self.__executeInProcess( executableFile )
     gThreadScheduler.removeTask( pTask )
     self.__cleanup()
     return result
@@ -373,13 +389,13 @@ os.execl( "$executable" )
     stdError = resultTuple[2].strip()
 
     if status == 0:
-      self.log.info( 'glexec call suceeded' )
+      self.log.info( 'call suceeded' )
     else:
-      self.log.info( 'glexec call failed with status %s' % ( status ) )
+      self.log.info( 'call failed with status %s' % ( status ) )
     if stdOutput:
-      self.log.info( 'glexec stdout:\n%s' % stdOutput )
+      self.log.info( 'stdout:\n%s' % stdOutput )
     if stdError:
-      self.log.info( 'glexec stderr:\n%s' % stdError )
+      self.log.info( 'stderr:\n%s' % stdError )
 
     if status != 0:
       error = None
@@ -388,7 +404,7 @@ os.execl( "$executable" )
         self.log.error( 'Resolved glexec return code %s = %s' % ( status, error ) )
         return S_ERROR( "Error %s = %s" % ( status, error ) )
 
-      self.log.error( 'glexec exit code %s not in expected list' % status )
+      self.log.error( 'exit code %s not in expected list' % status )
       return S_ERROR( "Error code %s" % status )
 
     return S_OK()
