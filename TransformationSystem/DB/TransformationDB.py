@@ -1346,7 +1346,7 @@ class TransformationDB( DB ):
       for lfn in lfns:
         if not lfn in foundLfns:
           allAvailable = False
-          gLogger.error( "Supplied file not found for transformation" % lfn )
+          gLogger.error( "Supplied file not found for transformation", lfn )
       if not allAvailable:
         return S_ERROR( "Not all supplied files available in the transformation database" )
 
