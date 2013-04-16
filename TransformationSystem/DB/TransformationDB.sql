@@ -86,7 +86,6 @@ CREATE TABLE TransformationFiles(
 DROP TABLE IF EXISTS TransformationTasks;
 CREATE TABLE TransformationTasks (
     TaskID INTEGER NOT NULL AUTO_INCREMENT,
-    INDEX(TaskID),
     TransformationID INTEGER NOT NULL,
     ExternalStatus char(16) DEFAULT 'Created',
     INDEX(ExternalStatus),
