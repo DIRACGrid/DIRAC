@@ -85,6 +85,16 @@ FIX: ValidateOutputDataAgent - self not needed for static methods
 *Transformation
 BUGFIX: TransformationDB - badly formatted error log message
 
+*RMS
+CHANGE: RequestDBMySQL - speedup the lookup of requests
+
+*WMS
+BUGFIX: dirac-dms-job-delete - in job selection by group
+
+*DMS
+FIX: LcgFileCatalogClient - getDirectorySize made compatible with DFC
+BUGFIX: LcgFileCatalogClient - proper call of __getClientCertInfo()
+
 [v6r7p22]
 
 *Transformation
