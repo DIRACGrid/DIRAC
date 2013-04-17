@@ -207,7 +207,7 @@ class TransformationDB( DB ):
                                                    'TransformationID': 'INTEGER NOT NULL'},
                                         'Indexes': {'ExternalStatus': ['ExternalStatus']},
                                         'PrimaryKey': ['TransformationID', 'TaskID'],
-                                        'Engine': 'InnoDB'
+                                        'Engine': 'MyISAM'
                                         },
 
     if 'Transformations' not in tablesInDB:
