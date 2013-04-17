@@ -403,7 +403,7 @@ class ResourceManagementDB( object ):
       
       # This looks little bit like a non-sense. If we were updating, we may have
       # not passed a complete set of parameters, so we have to get all them from the
-      # database.
+      # database :/. It costs us one more query.
       updateRes = self.select( params, meta )
       if not updateRes[ 'OK' ]:
         return updateRes
