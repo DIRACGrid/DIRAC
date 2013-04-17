@@ -1,0 +1,14 @@
+[
+    Executable = "/bin/sh";
+    Arguments = "-c 'printenv | grep DIRAC_GLEXEC || echo no glexec'";
+    JobName = "glexec-test";
+    OutputSandbox =
+        {
+            "std.err",
+            "std.out"
+        };
+    StdError = "std.err";
+    StdOutput = "std.out";
+    MaxCPUTime = "10";
+    PilotType = "generic";
+]
