@@ -244,6 +244,11 @@ class LocalConfiguration:
       self.showHelp()
       sys.exit( 2 )
 
+    for o, v in opts:
+      if o in ( '-h', '--help' ):
+        self.showHelp()
+        sys.exit(2)
+
     self.cliAdditionalCFGFiles = [ arg for arg in args if arg[-4:] == ".cfg" ]
     self.commandArgList = [ arg for arg in args if not arg[-4:] == ".cfg" ]
     self.parsedOptionList = opts

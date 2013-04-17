@@ -340,7 +340,7 @@ class MySQL:
     if ( tableName, ) in retDict['Value']:
       if not force:
         # the requested exist and table creation is not force, return with error
-        return S_ERROR( 'The requested table already exist' )
+        return S_ERROR( 'Requested table %s already exists' % tableName )
       else:
         cmd = 'DROP TABLE %s' % table
         retDict = self._update( cmd, debug = True )

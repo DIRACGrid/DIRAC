@@ -165,7 +165,10 @@ class JobDB( DB ):
     result = self._query( "SELECT MAX(Version) FROM SchemaVersion" )
     if not result[ 'OK' ]:
       return result
-    return S_OK( result[ 'Value' ][0][0] )
+    version = result[ 'Value' ][0][0]
+    if version == None:
+      version = -1
+    return S_OK( version )
 
 
   def dumpParameters( self ):

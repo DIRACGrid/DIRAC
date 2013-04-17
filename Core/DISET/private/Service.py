@@ -70,7 +70,7 @@ class Service:
     #Initialize lock manager
     self._lockManager = LockManager( self._cfg.getMaxWaitingPetitions() )
     self._initMonitoring()
-    self._threadPool = ThreadPool( max( 1, self.__cfg.getMinThreads() ),
+    self._threadPool = ThreadPool( max( 1, self._cfg.getMinThreads() ),
                                    max( 0, self._cfg.getMaxThreads() ),
                                    self._cfg.getMaxWaitingPetitions() )
     self._threadPool.daemonize()
