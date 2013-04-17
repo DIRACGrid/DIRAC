@@ -263,7 +263,7 @@ class RequestDBMySQL( DB ):
 
     fields = ['RequestID', 'SubRequestID', 'Operation', 'Arguments',
               'ExecutionOrder', 'SourceSE', 'TargetSE', 'Catalogue',
-              'CreationTime', 'SubmissionTime', 'LastUpdate']
+              'CreationTime', 'SubmissionTime', 'LastUpdate', 'Status', 'RequestType']
     # get the pending SubRequest sorted by ExecutionOrder and LastUpdate
     req = "SELECT `RequestID`,`ExecutionOrder`,`Status`,`RequestType`,`LastUpdate` FROM `SubRequests` "\
         "WHERE `Status` IN ( 'Waiting', 'Assigned' ) ORDER BY `ExecutionOrder`,`LastUpdate`"
@@ -274,8 +274,7 @@ class RequestDBMySQL( DB ):
         "ORDER BY `LastUpdate` LIMIT 100" % ( req, myRequestType )
     # and now get all waiting SubRequest for the selected RequestID and ExecutionOrder 
     req = "SELECT A.%s FROM SubRequests AS A, ( %s ) AS B WHERE " % ( ', A.'.join( fields ), req )
-    req = "%s A.RequestID=B.RequestID AND A.ExecutionOrder=B.ExecutionOrder AND A.Status='Waiting' "\
-        "AND A.RequestType=%s;" % ( req, myRequestType )
+    req = "%s A.RequestID=B.RequestID AND A.ExecutionOrder=B.ExecutionOrder" % ( req )
 
     result = self._query( req )
     if not result['OK']:
@@ -287,8 +286,12 @@ class RequestDBMySQL( DB ):
     # We get up to 10 Request candidates, to add some randomness 
     reqDict = {}
     for row in result['Value']:
+      if ('"%s"' % row[-1]) != myRequestType:
+        continue
+      if row[-2] != 'Waiting':
+        continue
       reqDict.setdefault( row[0], [] )
-      reqDict[row[0]].append( row[1:] )
+      reqDict[row[0]].append( row[1:-2] )
 
     reqIDList = reqDict.keys()
     random.shuffle( reqIDList )
