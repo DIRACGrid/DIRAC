@@ -198,6 +198,10 @@ class TransformationDB( DB ):
                                       }
 
     if 'TransformationTasks' not in tablesInDB:
+      ## The engine of that table must stay MyISAM, because the addTaskToTransformation needs 
+      # that when inserting a row, the LAST_INSERT_ID returns the last task ID for 
+      # the given transformation. This only works because TaskID is NOT an INDEX
+      # and because the engine is MyISAM.
       tablesD['TransformationTasks'] = {'Fields': {'CreationTime': 'DATETIME NOT NULL',
                                                    'ExternalID': "char(16) DEFAULT ''",
                                                    'ExternalStatus': "char(16) DEFAULT 'Created'",
@@ -209,7 +213,7 @@ class TransformationDB( DB ):
                                         'PrimaryKey': ['TransformationID', 'TaskID'],
                                         'Engine': 'MyISAM'
                                         },
-
+    
     if 'Transformations' not in tablesInDB:
       tablesD['Transformations'] = {'Fields': {'AgentType': "CHAR(32) DEFAULT 'Manual'",
                                                'AuthorDN': 'VARCHAR(255) NOT NULL',
