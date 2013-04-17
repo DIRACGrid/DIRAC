@@ -3,7 +3,6 @@
 """
 import DIRAC
 from DIRAC                                                    import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers                 import getVO
 from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalogueBase
 from DIRAC.Core.Utilities.Time                                import fromEpoch
 from DIRAC.Core.Utilities.List                                import sortList, breakListIntoChunks
@@ -192,7 +191,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       gLogger.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     diracGroup = proxyInfo.get( 'group', 'Unknown' )
-    vo = getVoForGroup( diracGroup )
+    vo = getVOForGroup( diracGroup )
     vomsVO = getVOOption( vo, 'VOMSVO', '')
     resDict = { 'DN'       : proxyInfo['identity'],
                 'Role'     : proxyInfo['VOMS'],
@@ -583,7 +582,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getDirectorySize( self, lfn ):
+  def getDirectorySize( self, lfn, longOutput=False, rawFiles=False ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
@@ -592,7 +591,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     failed = {}
     successful = {}
     for path in lfns.keys():
-      res = self.__getDirectorySize( path )
+      res = self.__getDirectorySize( path, longOutput=longOutput )
       if res['OK']:
         successful[path] = res['Value']
       else:
@@ -1583,7 +1582,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     pathDict = {'Files': files, 'SubDirs':subDirs, 'Links':links}
     return S_OK( pathDict )
 
-  def __getDirectorySize( self, path ):
+  def __getDirectorySize( self, path, longOutput=False ):
     res = self.__executeOperation( path, 'exists' )
     if not res['OK']:
       return res
@@ -1729,7 +1728,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getUserDirectory( self, username ):
     """ Takes a list of users and determines whether their directories already exist
     """
-    result = __getClientCertInfo()
+    result = self.__getClientCertInfo()
     if not result['OK']:
       return result
     vo = result['Value']['VO']
@@ -1756,7 +1755,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def createUserDirectory( self, username ):
     """ Creates the user directory
     """
-    result = __getClientCertInfo()
+    result = self.__getClientCertInfo()
     if not result['OK']:
       return result
     vo = result['Value']['VO']

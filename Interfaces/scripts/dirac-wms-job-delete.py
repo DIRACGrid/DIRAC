@@ -25,7 +25,8 @@ args = Script.getPositionalArgs()
 
 if __name__ == "__main__":
   
-  from DIRAC.Interfaces.API.Dirac                              import Dirac
+  from DIRAC.Interfaces.API.Dirac import Dirac
+  from DIRAC.Core.Utilities.Time import toString, date, day
   dirac = Dirac()
   exitCode = 0
   errorList = []
@@ -39,7 +40,8 @@ if __name__ == "__main__":
         jFile.close()
     elif sw.lower() in ( 'g', 'jobgroup' ):    
       group = value    
-      result = dirac.selectJobs( jobGroup=value )
+      jobDate = toString( date() - 30*day )
+      result = dirac.selectJobs( jobGroup = value, date = jobDate )
       if not result['OK']:
         if not "No jobs selected" in result['Message']:
           print "Error:", result['Message']
