@@ -1728,7 +1728,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getUserDirectory( self, username ):
     """ Takes a list of users and determines whether their directories already exist
     """
-    result = __getClientCertInfo()
+    result = self.__getClientCertInfo()
     if not result['OK']:
       return result
     vo = result['Value']['VO']
@@ -1755,7 +1755,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def createUserDirectory( self, username ):
     """ Creates the user directory
     """
-    result = __getClientCertInfo()
+    result = self.__getClientCertInfo()
     if not result['OK']:
       return result
     vo = result['Value']['VO']
