@@ -138,8 +138,7 @@ from DIRAC.WorkloadManagementSystem.Client.ServerUtils           import pilotAge
 
 from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
 from DIRAC.Core.DISET.RPCClient                                  import RPCClient
-from DIRAC                                                       import S_OK, S_ERROR, List, DictCache, gConfig
-from DIRAC.Core.Utilities                                        import Time
+from DIRAC                                                       import S_OK, S_ERROR, List, Time, gConfig
 
 import random, time
 import DIRAC

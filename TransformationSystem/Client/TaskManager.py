@@ -1,16 +1,17 @@
-""" TaskManager contains WorkflowsTasks and RequestTasks modules, for managing jobs and requests tasks
-"""
+''' TaskManager contains WorkflowsTasks and RequestTasks modules, for managing jobs and requests tasks
+'''
 __RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'TaskManager'
 
 import re, time, types, os, copy
 
-from DIRAC                                                      import gConfig, S_OK, S_ERROR, gLogger
+from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.Core.Utilities.List                                  import sortList, fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
 from DIRAC.Interfaces.API.Job                                   import Job
+from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
 from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
@@ -19,6 +20,8 @@ from DIRAC.TransformationSystem.Client.TransformationClient     import Transform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 
 class TaskBase( object ):
+  ''' The other classes inside here inherits from this one.
+  '''
 
   def __init__( self, transClient = None, logger = None ):
 
@@ -42,6 +45,8 @@ class TaskBase( object ):
     return S_ERROR( "Not implemented" )
 
   def updateDBAfterTaskSubmission( self, taskDict ):
+    """ Sets tasks status after the submission to "Submitted", in case of success
+    """
     updated = 0
     startTime = time.time()
     for taskID in sortList( taskDict.keys() ):
@@ -84,7 +89,7 @@ class RequestTasks( TaskBase ):
     requestOperation = 'replicateAndRegister'
     try:
       requestType, requestOperation = transBody.split( ';' )
-    except:
+    except AttributeError:
       pass
     for taskID in sortList( taskDict.keys() ):
       paramDict = taskDict[taskID]
@@ -126,8 +131,8 @@ class RequestTasks( TaskBase ):
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, request ):
-    """ Submits a request using RequestClient
-    """
+    ''' Submits a request using RequestClient
+    '''
     if type( request ) in types.StringTypes:
       oRequest = RequestContainer( request )
       name = oRequest.getRequestName()['Value']
@@ -202,15 +207,15 @@ class RequestTasks( TaskBase ):
     return S_OK( updateDict )
 
 class WorkflowTasks( TaskBase ):
-  """ Handles jobs
-  """
+  ''' Handles jobs
+  '''
 
   def __init__( self, transClient = None, logger = None, submissionClient = None, jobMonitoringClient = None,
                 outputDataModule = None, jobClass = None, opsH = None ):
-    """ Generates some default objects.
+    ''' Generates some default objects.
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works:
         VOs can pass in their job class extension, if present
-    """
+    '''
 
     if not logger:
       logger = gLogger.getSubLogger( 'WorkflowTasks' )
@@ -244,9 +249,9 @@ class WorkflowTasks( TaskBase ):
 
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
-    """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
+    ''' Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
-    """
+    '''
     if ( not owner ) or ( not ownerGroup ):
       res = getProxyInfo( False, False )
       if not res['OK']:
@@ -277,7 +282,7 @@ class WorkflowTasks( TaskBase ):
 
       self.log.debug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskNumber, str( paramsDict ) ) )
 
-      #These helper functions do the real job
+      # These helper functions do the real job
       sites = self._handleDestination( paramsDict )
       if not sites:
         self.log.error( 'Could not get a list a sites' )
@@ -295,25 +300,26 @@ class WorkflowTasks( TaskBase ):
 
       hospitalTrans = [int( x ) for x in self.opsH.getValue( "Hospital/Transformations", [] )]
       if int( transID ) in hospitalTrans:
-        self.handleHospital( oJob )
+        self._handleHospital( oJob )
 
       taskDict[taskNumber]['TaskObject'] = ''
-      res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
-                                 'TaskID':taskNumber, 'InputData':inputData},
-                                moduleLocation = self.outputDataModule )
-      if not res ['OK']:
-        self.log.error( "Failed to generate output data", res['Message'] )
-        continue
-      for name, output in res['Value'].items():
-        oJob._addJDLParameter( name, ';'.join( output ) )
+      if self.outputDataModule:
+        res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
+                                   'TaskID':taskNumber, 'InputData':inputData},
+                                  moduleLocation = self.outputDataModule )
+        if not res ['OK']:
+          self.log.error( "Failed to generate output data", res['Message'] )
+          continue
+        for name, output in res['Value'].items():
+          oJob._addJDLParameter( name, ';'.join( output ) )
       taskDict[taskNumber]['TaskObject'] = self.jobClass( oJob._toXML() )
     return S_OK( taskDict )
 
   #############################################################################
 
   def _handleDestination( self, paramsDict, getSitesForSE = None ):
-    """ Handle Sites and TargetSE in the parameters
-    """
+    ''' Handle Sites and TargetSE in the parameters
+    '''
 
     try:
       sites = ['ANY']
@@ -332,7 +338,7 @@ class WorkflowTasks( TaskBase ):
     if not seList or seList == ['Unknown']:
       return sites
 
-    #from now on we know there is some TargetSE requested
+    # from now on we know there is some TargetSE requested
     if not getSitesForSE:
       from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 
@@ -348,7 +354,7 @@ class WorkflowTasks( TaskBase ):
         if seSites == []:
           seSites = copy.deepcopy( thisSESites )
         else:
-          # We make an OR of the possible sites 
+          # We make an OR of the possible sites
           for nSE in list( thisSESites ):
             if nSE not in seSites:
               seSites.append( nSE )
@@ -366,16 +372,16 @@ class WorkflowTasks( TaskBase ):
 
 
   def _handleInputs( self, oJob, paramsDict ):
-    """ set job inputs (+ metadata)
-    """
+    ''' set job inputs (+ metadata)
+    '''
     if paramsDict.has_key( 'InputData' ):
       if paramsDict['InputData']:
         self.log.verbose( 'Setting input data to %s' % paramsDict['InputData'] )
         oJob.setInputData( paramsDict['InputData'] )
 
   def _handleRest( self, oJob, paramsDict ):
-    """ add as JDL parameters all the other parameters that are not for inputs or destination
-    """
+    ''' add as JDL parameters all the other parameters that are not for inputs or destination
+    '''
     for paramName, paramValue in paramsDict.items():
       if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
         if paramValue:
@@ -383,8 +389,8 @@ class WorkflowTasks( TaskBase ):
           oJob._addJDLParameter( paramName, paramValue )
 
   def _handleHospital( self, oJob ):
-    """ Optional handle of hospital jobs
-    """
+    ''' Optional handle of hospital jobs
+    '''
     oJob.setType( 'Hospital' )
     oJob.setInputDataPolicy( 'download', dataScheduling = False )
     hospitalSite = self.opsH.getValue( "Hospital/HospitalSite", 'DIRAC.JobDebugger.ch' )
@@ -405,6 +411,8 @@ class WorkflowTasks( TaskBase ):
     return module.execute()
 
   def submitTransformationTasks( self, taskDict ):
+    """ Submit jobs one by one
+    """
     submitted = 0
     failed = 0
     startTime = time.time()
@@ -423,13 +431,13 @@ class WorkflowTasks( TaskBase ):
         taskDict[taskID]['Success'] = False
         failed += 1
     self.log.info( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
-                                                                                              time.time() - startTime ) )
+                                                                                            time.time() - startTime ) )
     if failed:
-      self.log.info( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ) )
+      self.log.error( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ) )
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, job ):
-    """ Submits a job to the WMS.
+    """ Submits a single job to the WMS.
     """
     if type( job ) in types.StringTypes:
       try:

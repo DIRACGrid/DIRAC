@@ -809,7 +809,7 @@ class NotificationDB( DB ):
 
   def purgeExpiredNotifications( self ):
     self.log.info( "Purging expired notifications" )
-    delConds = [ '(Seen=1 OR DeferToMail=0)' 'TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), Expiration ) < 0 )' ]
+    delConds = [ '(Seen=1 OR DeferToMail=0)', 'TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), Expiration ) < 0 )' ]
     delSQL = "DELETE FROM `ntf_Notifications` WHERE %s" % " AND ".join( delConds )
     result = self._update( delSQL )
     if not result[ 'OK' ]:

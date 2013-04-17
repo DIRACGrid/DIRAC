@@ -1,18 +1,12 @@
-# $Id$
-
-"""
-    Workflow Utility module contains a number of functions useful for the
-    client operations
-"""
-
-__RCSID__ = "$Revision: 1.1 $"
+''' Workflow Utility module contains a number of functions useful for the client operations
+'''
 
 from DIRAC.Core.Workflow.Workflow import Workflow
-from DIRAC.Core.Workflow.Step import *
+from DIRAC.Core.Workflow.Step import StepDefinition
 
 def createSingleModuleWorkflow(module,name):
-  """ Creates a workflow based on a single module definition
-  """
+  ''' Creates a workflow based on a single module definition
+  '''
 
   moduleType = module.getType()
   moduleName = name

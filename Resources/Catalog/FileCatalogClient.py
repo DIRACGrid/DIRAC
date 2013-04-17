@@ -66,8 +66,24 @@ class FileCatalogClient(Client):
       result['Value'] = fileList    
       return result
     else:
-      return S_ERROR( 'Illegal return value type %s' % type( result['Value'] ) )    
-     
+      return S_ERROR( 'Illegal return value type %s' % type( result['Value'] ) ) 
+       
+  def getFileUserMetadata(self, path, rpc='', url='', timeout=120):
+    """Get the meta data attached to a file, but also to 
+    the its corresponding directory
+    """
+    directory = "/".join(path.split("/")[:-1])
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    result = rpcClient.getFileUserMetadata(path)
+    if not result['OK']:
+      return result
+    fmeta = result['Value']
+    result = rpcClient.getDirectoryMetadata(directory)
+    if not result['OK']:
+      return result
+    fmeta.update(result['Value'])
+    
+    return S_OK(fmeta)
     
     
   

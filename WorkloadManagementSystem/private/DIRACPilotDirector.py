@@ -22,7 +22,8 @@ from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElemen
 from DIRAC.Resources.Computing.ComputingElement import getResourceDict
 from DIRAC.Core.Security import CS
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient      import gProxyManager
-from DIRAC import S_OK, S_ERROR, DictCache, gConfig, rootPath
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath
+from DIRAC.Core.Utilities.DictCache import DictCache
 
 ERROR_CE         = 'No CE available'
 ERROR_JDL        = 'Could not create Pilot script'

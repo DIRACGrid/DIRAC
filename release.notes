@@ -1,4 +1,4 @@
-[v6r8-pre6]
+[v7r0-pre3]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -9,33 +9,219 @@ NEW: Base RSS resources representation on the new CS Resources schema
 *Core
 FIX: multiple fixes to remove pylint complaints
 CHANGE: Moved log coloring to utilities so it can be used consistently across DIRAC
+FIX: Workflow package - fix wild wild card imports resulting in circular imports
+NEW: MySQL - assign one MySQL connection per thread
+FIX: LocalConfiguration - if short option is not set, do not print "-" in help message,
+     closes #1371
+FIX: dirac-install - update creation of bashrc/cshrc to allow multiplatform installations
 
 *Accounting
 FIX: AccountingDB - align properly days with MySQL bucketing. Closes #1219
 
 *Framework
 FIX: ProxyDB - prevent duplicate key errors on writing VOMSProxies to DB. Closes #1228
+BUGFIX: NotificationDB - missing "," in SQL, closes #1373
 
 *Configuration
 NEW: Resources helper class to work with the new /Resources structure according to RFC #5
 NEW: dirac-configuration-convert-resources-schema - command to convert old /Resources schema
      to the new one
 
+*Interfaces
+CHANGE: Job.py - setPlatform renamed to setSubmitPools
+
 *DMS
 CHANGE: MigrationMonitoringAgent - removed obsoleted
+NEW: FileCatalogClient - getFileUserMetadata to get both file and directory metadata for a given file
+BUGFIX: ReplicaManager - pass catalog argument in putAndRegister to registerFile call, closes #1369
 
 *WMS
 CHANGE: JobScheduling - is now extensible. Added unit test
+NEW: SiteDirector - define which extensions pilot should install in the options, do not take from globals
 
 *Transformation
 NEW: TaskManager - if a site is specified in the job definition, it is now taken into account 
      when submitting the task
 NEW: Speeding up the getTransformationSummary call, using an UpdateTransformationCounters agent     
-
+FIX: Multiple fixes to please pylint
+FIX: TransformationDB - removed bad index on TaskID
 
 *Resources
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
      payload when updating it
+NEW: StorageElement - enable Storage Element proxy configuration by protocol name
+CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added DIRAC_GLEXEC 
+        to the environment when running under glexec     
+
+[v6r8p6]
+
+NEW: Applied patches from v6r7p23
+
+*Transformation
+FIX: TaskManager - allow prepareTransformationTasks to proceed if no OutputDataModule is defined
+FIX: TransformationDB - remove INDEX(TaskID) from TransformationTasks. It produces a single counter 
+     for the whole table instead of one per TransformationID
+     
+*WMS     
+FIX: WMSUtilities - to allow support for EMI UI's for pilot submission we drop support for glite 3.1
+
+[v6r8p5]
+
+NEW: Applied patches from v6r7p22
+
+*RSS
+CHANGE: removed old tests and commented out files
+
+*WMS
+FIX: PoolXMLCatalog - proper addFile usage
+
+*Transformation
+CHANGE: TransformationAgent - clear replica cache when flushing or setting a file in the workdirectory
+
+[v6r8p4]
+
+*Transformation
+FIX: The connection to the jobManager is done only at submission time
+FIX: Jenkins complaints fixes
+
+*WMS
+BUGFIX: JobDB - CPUtime -> CPUTime
+FIX: Jenkins complaints fixes
+
+[v6r8p3]
+
+*DMS
+BUGFIX: LcgFileCatalogClient
+
+[v6r8p2]
+
+*DMS:
+FIX: LcgFileCatalogClient - remove check for opening a session in __init__ as credentials are not yet set 
+
+*Transformation
+CHANGE: reuse RPC clients in Transformation System 
+
+[v6r8p1]
+
+*Core
+FIX: dirac-deploy-scripts - restored regression w.r.t. support of scripts starting with "d"
+
+*DMS
+BUGFIX: LcgFileCatalogClient - two typos fixed
+
+[v6r8]
+
+CHANGE: Several fixes backported from the v7r0 integration branch
+
+*Core
+CHANGE: DictCache - uses global LockRing to avoid locks in multiprocessing
+FIX: X509Chain - proxy-info showing an error when there's no CS
+
+*DMS
+FIX: TransferAgent - inside loop filter out waiting files dictionary
+BUGFIX: dirac-admin-allow-se - there was a continue that was skipping the complete loop for 
+        ARCHIVE elements
+NEW: LcgFileCatalogClient - test return code in startsess lfc calls       
+
+*WMS:
+FIX: OptimizerExecutor, InputData, JobScheduling - check that site candidates have all the 
+     replicas
+
+*RSS: 
+BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
+
+*Transformation
+FIX: TaskManager - site in the job definition is taken into account when submitting
+NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
+FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p23]
+
+*Transformation
+BUGFIX: TransformationDB - badly formatted error log message
+
+[v6r7p22]
+
+*Transformation
+CHANGE: InputDataAgent - treats only suitable transformations, e.g. not the extendable ones. 
+CHANGE: TransformationAgent - make some methods more public for easy overload
+
+[v6r7p21]
+
+*Core
+FIX: Shifter - pass filePath argument when downloading proxy
+
+[v6r7p20]
+
+*DMS
+CHANGE: StrategyHandler - move out SourceSE checking to TransferAgent
+CHANGE: ReplicaManager, InputDataAgent - get active replicas
+FIX: StorageElement, SRM2Storage - support for '*Access' statuses, checking results
+     of return structures
+     
+*RSS
+NEW: set configurable email address on the CS to send the RSS emails
+NEW: RSSCache without thread in background
+FIX: Synchronizer - moved to ResourceManager handler     
+
+[v6r7p19]
+
+*DMS
+BUGFIX: ReplicaManager - in putAndRegister() SE.putFile() singleFile argument not used explicitly
+
+[v6r7p18]
+
+*WMS
+FIX: StalledJobAgent - do not exit the loop over Completed jobs if accounting sending fails
+NEW: dirac-wms-job-delete - allow to specify jobs to delete by job group and/or in a file
+FIX: JobManifest - If CPUTime is not set, set it to MaxCPUTime value
+
+[v6r7p17]
+
+*Resources
+FIX: SRM2Storage - treat properly "22 SRM_REQUEST_QUEUED" result code
+
+[v6r7p16]
+
+*DMS
+FIX: StrategyHandler - do not proceed when the source SE is not valid for read 
+BUGFIX: StorageElement - putFile can take an optional sourceSize argument
+BUGFIX: ReplicaManager - in removeFile() proper loop on failed replicas
+
+*RSS
+FIX: SpaceTokenOccupancyCommand, CacheFeederAgent - add timeout when calling lcg_util commands
+
+*WMS
+FIX: JobManifest - take all the SubmitPools defined in the TaskQueueAgent 
+NEW: StalledJobAgent - declare jobs stuck in Completed status as Failed
+
+[v6r7p15]
+
+*Core
+BUGFIX: SocketInfo - in host identity evaluation
+
+*DMS
+BUGFIX: FileCatalogHandler - missing import os
+
+*Transformation
+CHANGE: JobManifest - getting allowed job types from operations() section 
+
+[v6r7p14]
+
+*DMS
+CHANGE: StorageElementProxy - removed getParameters(), closes #1280
+FIX: StorageElementProxy - free the getFile space before the next file
+FIX: StorageElement - added getPFNBase() to comply with the interface
+
+*Interfaces
+CHANGE: Dirac API - allow lists of LFNs in removeFile() and removeReplica()
+
+*WMS
+CHANGE: JobSchedulingAgent(Executor) - allow both BannedSite and BannedSites JDL option
+
+*RSS
+FIX: ElementInspectorAgent - should only pick elements with rss token ( rs_svc ).
+FIX: TokenAgent - using 4th element instead of the 5th. Added option to set admin email on the CS.
 
 [v6r7p13]
 

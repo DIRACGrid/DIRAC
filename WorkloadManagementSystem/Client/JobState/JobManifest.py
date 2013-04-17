@@ -167,11 +167,10 @@ class JobManifest( object ):
       return result
     allowedSubmitPools = []
     for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools = gConfig.getValue( "/%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
-                                             allowedSubmitPools )
-      #allowedSubmitPools = self.__getCSValue( "/%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
-      #                                       allowedSubmitPools )
-    result = self.__checkMultiChoice( "SubmitPools", allowedSubmitPools )
+      allowedSubmitPools += gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
+                                                          option ),
+                                             [] )
+    result = self.__checkMultiChoice( "SubmitPools", list( set( allowedSubmitPools ) ) )
     if not result[ 'OK' ]:
       return result
     result = self.__checkMultiChoice( "PilotTypes", [ 'private' ] )
@@ -180,7 +179,8 @@ class JobManifest( object ):
     result = self.__checkMaxInputData( 500 )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMultiChoice( "JobType", self.__getCSValue( "AllowedJobTypes", [] ) )
+    transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
+    result = self.__checkMultiChoice( "JobType", ['User', 'SAM', 'Hospital'] + transformationTypes )
     if not result[ 'OK' ]:
       return result
     return S_OK()

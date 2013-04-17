@@ -13,7 +13,7 @@ from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClie
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command                         import CommandCaller
-from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+#from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
 __RCSID__  = '$Id:  $'
 AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
@@ -39,6 +39,8 @@ class CacheFeederAgent( AgentModule ):
     self.rmClient = None
 
   def initialize( self ):
+
+    self.am_setOption( 'shifterProxy', 'DataManager' )
 
     self.rmClient = ResourceManagementClient()
 
@@ -107,7 +109,7 @@ class CacheFeederAgent( AgentModule ):
     return S_OK( commandObject )
         
 
-  def execute( self ):        
+  def execute( self ):
       
     for commandModule, commandList in self.commands.items():
       

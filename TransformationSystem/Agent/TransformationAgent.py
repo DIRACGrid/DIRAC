@@ -25,8 +25,9 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ c'tor
     """
     AgentModule.__init__( self, *args, **kwargs )
+    TransformationAgentsUtilities.__init__( self )
 
-    #few parameters
+    # few parameters
     self.pluginLocation = self.am_getOption( 'PluginLocation',
                                              'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
@@ -40,14 +41,14 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
       self.transformationTypes = sortList( dataProc + dataManip )
 
-    #clients
+    # clients
     self.transfClient = TransformationClient()
 
-    #for the threading
+    # for the threading
     self.transQueue = Queue.Queue()
     self.transInQueue = []
 
-    #for caching using a pickle file
+    # for caching using a pickle file
     self.workDirectory = self.am_getWorkDirectory()
     self.cacheFile = os.path.join( self.workDirectory, 'ReplicaCache.pkl' )
     self.dateWriteCache = datetime.datetime.utcnow()
@@ -60,9 +61,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.noUnusedDelay = self.am_getOption( 'NoUnusedDelay', 6 )
     self.unusedFiles = {}
     self.unusedTimeStamp = {}
-
-    self.debug = False
-    self.transInThread = {}
 
   def initialize( self ):
     """ standard initialize
@@ -165,7 +163,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ thread - does the real job: processing the transformations to be processed
     """
 
-    #Each thread will have its own clients
+    # Each thread will have its own clients
     clients = self._getClients()
 
     while True:
@@ -180,8 +178,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         res = self.processTransformation( transDict, clients )
         if not res['OK']:
           self._logInfo( "Failed to process transformation: %s" % res['Message'], transID = transID )
-        else:
-          self._logInfo( "Processed transformation in %.1f seconds" % ( time.time() - startTime ), transID = transID )
       except Exception, x:
         self._logException( '%s' % x, transID = transID )
       finally:
@@ -218,7 +214,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     unusedFiles = len( lfns )
 
     # Check the data is available with replicas
-    res = self.__getDataReplicas( transID, lfns, clients, active = not replicateOrRemove )
+    res = self.__getDataReplicas( transDict, lfns, clients, active = not replicateOrRemove )
     if not res['OK']:
       self._logError( "Failed to get data replicas: %s" % res['Message'],
                        method = "processTransformation", transID = transID )
@@ -305,7 +301,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
           self._logInfo( "Updated transformation status to 'Active'.",
                           method = "_getTransformationFiles", transID = transID )
       return S_OK()
-    #Check if something new happened
+    # Check if something new happened
     now = datetime.datetime.utcnow()
     nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = self.noUnusedDelay )
     skip = now < nextStamp
@@ -328,10 +324,25 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     return lfns
 
-  def __getDataReplicas( self, transID, lfns, clients, active = True ):
+  def __getDataReplicas( self, transDict, lfns, clients, active = True ):
     """ Get the replicas for the LFNs and check their statuses. It first looks within the cache.
     """
     method = '__getDataReplicas'
+    transID = transDict['TransformationID']
+    clearCacheFile = os.path.join( self.workDirectory, 'ClearCache_%s' % str( transID ) )
+    try:
+      clearCache = os.path.exists( clearCacheFile )
+      if clearCache:
+        os.remove( clearCacheFile )
+    except:
+      pass
+    if clearCache or transDict['Status'] == 'Flush':
+      self._logInfo( "Replica cache cleared", method = method, transID = transID )
+      # We may need to get new replicas
+      self.__clearCacheForTrans( transID )
+    else:
+      # If the cache needs to be cleaned
+      self.__cleanCache()
     startTime = time.time()
     dataReplicas = {}
     lfns.sort()
@@ -373,7 +384,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       newReplicas = {}
       noReplicas = []
       for chunk in breakListIntoChunks( newLFNs, 1000 ):
-        res = self.__getDataReplicasRM( transID, chunk, clients, active = active )
+        res = self._getDataReplicasRM( transID, chunk, clients, active = active )
         if res['OK']:
           for lfn, ses in res['Value'].items():
             if ses:
@@ -392,13 +403,12 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       self._logInfo( "Obtained %d replicas from catalog in %.1f seconds" \
                       % ( len( newReplicas ), time.time() - startTime ),
                       method = method, transID = transID )
-    self.__cleanCache()
     return S_OK( dataReplicas )
 
-  def __getDataReplicasRM( self, transID, lfns, clients, active = True ):
+  def _getDataReplicasRM( self, transID, lfns, clients, active = True ):
     """ Get the replicas for the LFNs and check their statuses, using the replica manager
     """
-    method = '__getDataReplicasRM'
+    method = '_getDataReplicasRM'
 
     startTime = time.time()
     self._logVerbose( "Getting replicas for %d files from catalog" % len( lfns ),
@@ -416,7 +426,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       dataReplicas[lfn] = []
     self._logInfo( "Replica results for %d files obtained in %.2f seconds" % ( len( lfns ), time.time() - startTime ),
                     method = method, transID = transID )
-    #If files are neither Successful nor Failed, they are set problematic in the FC
+    # If files are neither Successful nor Failed, they are set problematic in the FC
     problematicLfns = [lfn for lfn in lfns if lfn not in replicas['Successful'] and lfn not in replicas['Failed']]
     if problematicLfns:
       self._logInfo( "%d files found problematic in the catalog" % len( problematicLfns ) )
@@ -427,8 +437,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # Create a dictionary containing all the file replicas
     failoverLfns = []
     for lfn, replicaDict in replicas['Successful'].items():
-      ses = replicaDict.keys()
-      for se in ses:
+      for se in replicaDict:
         #### This should definitely be included in the SE definition (i.e. not used for transformations)
         if active and re.search( 'failover', se.lower() ):
           self._logVerbose( "Ignoring failover replica for %s." % lfn, method = method, transID = transID )
@@ -455,20 +464,30 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
   @gSynchro
   def __updateCache( self, transID, newReplicas ):
+    """ Add replicas to the cache
+    """
     self.replicaCache.setdefault( transID, {} )[datetime.datetime.utcnow()] = newReplicas
+
+  @gSynchro
+  def __clearCacheForTrans( self, transID ):
+    """ Remove all replicas for a transformation
+    """
+    self.replicaCache.pop( transID , None )
 
   @gSynchro
   def __cleanCache( self ):
     """ Cleans the cache
     """
+    cacheChanged = False
     try:
       timeLimit = datetime.datetime.utcnow() - datetime.timedelta( days = self.replicaCacheValidity )
-      for transID in self.replicaCache.keys():
-        for updateTime in self.replicaCache[transID].keys():
+      for transID in self.replicaCache:
+        for updateTime in self.replicaCache[transID]:
           if updateTime < timeLimit or not self.replicaCache[transID][updateTime]:
             self._logVerbose( "Clear %d cached replicas for transformation %s" % ( len( self.replicaCache[transID][updateTime] ),
                                                                                     str( transID ) ), method = '__cleanCache' )
             self.replicaCache[transID].pop( updateTime )
+            cacheChanged = True
         # Remove empty transformations
         if not self.replicaCache[transID]:
           self.replicaCache.pop( transID )
@@ -477,7 +496,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     # Write the cache file
     try:
-      self.__writeCache()
+      if cacheChanged:
+        self.__writeCache()
     except Exception:
       self._logException( "While writing replica cache" )
 
@@ -501,7 +521,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     if ( now - self.dateWriteCache ) < datetime.timedelta( minutes = 60 ) and not force:
       return
     while force and self.writingCache:
-      #If writing is forced, wait until the previous write is over
+      # If writing is forced, wait until the previous write is over
       time.sleep( 10 )
     try:
       startTime = time.time()

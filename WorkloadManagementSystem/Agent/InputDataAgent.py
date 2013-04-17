@@ -90,12 +90,12 @@ class InputDataAgent( OptimizerModule ):
       resolvedData = result['Value']
 
     #Now check if banned SE's might prevent jobs to be scheduled
-    result = self.__checkActiveSEs( job, resolvedData['Value']['Value'] )
-    if not result['OK']:
-      # if after checking SE's input data can not be resolved any more
-      # then keep the job in the same status and update the application status
-      result = self.jobDB.setJobStatus( job, application = result['Message'] )
-      return S_OK()
+#    result = self.__checkActiveSEs( job, resolvedData['Value']['Value'] )
+#    if not result['OK']:
+#      # if after checking SE's input data can not be resolved any more
+#      # then keep the job in the same status and update the application status
+#      result = self.jobDB.setJobStatus( job, application = result['Message'] )
+#      return S_OK()
 
     return self.setNextOptimizer( job )
 
@@ -109,7 +109,7 @@ class InputDataAgent( OptimizerModule ):
     start = time.time()
     # In order to place jobs on Hold if a certain SE is banned we need first to check first if
     # if the replicas are really available
-    replicas = self.replicaManager.getReplicas( lfns )
+    replicas = self.replicaManager.getActiveReplicas( lfns )
     timing = time.time() - start
     self.log.verbose( 'Catalog Replicas Lookup Time: %.2f seconds ' % ( timing ) )
     if not replicas['OK']:

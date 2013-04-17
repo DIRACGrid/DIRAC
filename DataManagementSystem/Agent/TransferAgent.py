@@ -28,6 +28,7 @@ import re
 ## from DIRAC (globals and Core)
 from DIRAC import gMonitor, S_OK, S_ERROR
 ## base class
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 ## replica manager
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
@@ -37,7 +38,10 @@ from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler, 
 from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 ## from RMS
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+## from RSS
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 ## from Resources
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 
 ## agent name
@@ -92,12 +96,16 @@ class TransferAgent( RequestAgentBase ):
     MaxProcess = 4
   * results queue size
     ProcessPoolQueueSize = 10
+  * pool timeout
+    ProcessPoolTimeout = 300
+  * task timeout
+    ProcessTaskTimeout = 300
   * request type
     RequestType = transfer
   * proxy
     shifterProxy = DataManager
   * task executing
-    Taskmode = True
+    TaskMode = True
   * FTS scheduling 
     FTSMode = True
   * time interval for throughput (FTS scheduling) in seconds
@@ -111,10 +119,11 @@ class TransferAgent( RequestAgentBase ):
       ActiveStrategies = MinimiseTotalWait 
      - acceptable failure rate
       AcceptableFailureRate = 75  
-  
   """
   ## placeholder for ReplicaManager instance
   __replicaManager = None
+  ## placeholder for rss client
+  __rssClient = None
   ## placeholder for StorageFactory instance
   __storageFactory = None
   ## placeholder for StrategyHandler instance
@@ -196,6 +205,8 @@ class TransferAgent( RequestAgentBase ):
         ## OwnerGroups not allowed to execute FTS transfers
         self.__ftsDisabledOwnerGroups = self.am_getOption( "FTSDisabledOwnerGroups", [ "lhcb_user" ] )
         self.log.info("FTSDisabledOwnerGroups = %s" %  self.__ftsDisabledOwnerGroups )
+        ## cache for SEs
+        self.seCache = {}
 
     ## is there any mode enabled?
     if True not in self.__executionMode.values():
@@ -226,8 +237,14 @@ class TransferAgent( RequestAgentBase ):
       self.__replicaManager = ReplicaManager()
     return self.__replicaManager
 
+  def rssClient( self ):
+    """ rss client getter """
+    if not self.__rssClient:
+      self.__rssClient = ResourceStatus() 
+    return self.__rssClient
+
   def storageFactory( self ):
-    """ StorageFactory instance getter 
+    """ StorageFactory instance getter
 
     :param self: self reference
     """
@@ -296,6 +313,57 @@ class TransferAgent( RequestAgentBase ):
     self.strategyHandler().reset()
     return S_OK()
 
+  def checkSourceSE( self, sourceSE, lfn, catalogMetadata ):
+    """ filter out SourceSEs where PFN is not existing or got wrong checksum
+
+    :param self: self reference
+    :param str lfn: logical file name
+    :param dict catalogMetadata: catalog metadata
+    """
+    seRead = self.seRSSStatus( sourceSE, "Read" )
+    if not seRead["OK"]:
+      self.log.error("checkSourceSE: %s" % seRead["Message"] )
+    if not seRead["Value"]:
+      self.log.error("checkSourceSE: StorageElement '%s' is banned for reading" % ( sourceSE ) )
+      return S_ERROR("%s in banned for reading right now" % sourceSE )  
+    se = self.seCache.get( sourceSE, None )
+    if not se:
+      se = StorageElement( sourceSE, "SRM2" )
+      self.seCache[sourceSE] = se
+    pfn = se.getPfnForLfn( lfn )
+    if not pfn["OK"]:
+      self.log.warn("checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) )
+      return pfn
+    pfn = pfn["Value"]
+    seMetadata = se.getFileMetadata( pfn, singleFile=True )
+    if not seMetadata["OK"]:
+      self.log.warn("checkSourceSE: %s" % seMetadata["Message"] )
+      return S_ERROR("checkSourceSE: failed to get metadata")
+    seMetadata = seMetadata["Value"]
+    catalogChecksum = catalogMetadata["Checksum"].replace("x", "0" ).zfill(8) if "Checksum" in catalogMetadata else None
+    storageChecksum = seMetadata["Checksum"].replace("x", "0").zfill(8) if "Checksum" in seMetadata else None
+    if catalogChecksum != storageChecksum:
+      self.log.warn( "checkSourceSE: %s checksum mismatch catalogue:%s %s:%s" % ( lfn,
+                                                                                  catalogChecksum,
+                                                                                  sourceSE,
+                                                                                  storageChecksum ) )
+      return S_ERROR("checkSourceSE: checksum mismatch")
+    ## if we're here everything is OK
+    return S_OK()
+
+  def seRSSStatus( self, se, status ):
+    """ get se :status: from RSS for SE :se: 
+
+    :param str se: SE name
+    :param str status: RSS status name
+    """
+    rssStatus = self.rssClient().getStorageElementStatus( se, status )
+    if not rssStatus["OK"]:
+      return S_ERROR( "unknown SE: %s" % se )
+    if rssStatus["Value"][se][status] == "Banned":
+      return S_OK( False )
+    return S_OK( True )
+  
   @staticmethod
   def ancestorSortKeys( aDict, aKey="Ancestor" ):
     """ sorting keys of replicationTree by its hopAncestor value 
@@ -411,7 +479,6 @@ class TransferAgent( RequestAgentBase ):
       return S_ERROR( res["Value"]["Failed"][pfn] )
     return S_OK( res["Value"]["Successful"][pfn] )
 
-
   ###################################################################################
   # FTS mode helpers
   ###################################################################################
@@ -435,7 +502,6 @@ class TransferAgent( RequestAgentBase ):
     subRequestFiles = subRequestFiles["Value"]
     self.log.debug( "collectFiles: subrequest %s found with %d files." % ( iSubRequest, 
                                                                            len( subRequestFiles ) ) )
-    
     for subRequestFile in subRequestFiles:
       fileStatus = subRequestFile["Status"]
       fileLFN = subRequestFile["LFN"]
@@ -453,23 +519,53 @@ class TransferAgent( RequestAgentBase ):
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.error( "collectFiles: Failed to get replicas %s: %s" % ( lfn, failure ) )    
       replicas = replicas["Value"]["Successful"]
-
+      
       if replicas:
         metadata = self.replicaManager().getCatalogFileMetadata( replicas.keys() )
         if not metadata["OK"]:
           self.log.error( "collectFiles: failed to get file size information", metadata["Message"] )
           return metadata
         for lfn, failure in metadata["Value"]["Failed"].items():
-          self.log.error( "collectFiles: failed to get file size %s: %s" % ( lfn, failure ) )
+          self.log.error( "collectFiles: failed to get file size %s: %s" % ( lfn, failure ) )    
         metadata = metadata["Value"]["Successful"] 
    
     self.log.debug( "collectFiles: waitingFiles=%d replicas=%d metadata=%d" % ( len(waitingFiles), 
                                                                                 len(replicas), 
                                                                                 len(metadata) ) )
-    
-    if not ( len( waitingFiles ) == len( replicas ) == len( metadata ) ):
-      self.log.warn( "collectFiles: Not all requested information available!" )
-          
+
+    toRemove = []
+    for waitingFile in waitingFiles:
+      validSourceSEs = {}
+      downTime = False
+      for replicaSE, sURL in replicas.get(waitingFile, {}).items():
+        checkSourceSE = self.checkSourceSE( replicaSE, waitingFile, metadata.get(waitingFile, {} ) ) 
+        if checkSourceSE["OK"]:
+          validSourceSEs[replicaSE] = sURL
+        elif "banned for reading" in checkSourceSE["Message"]: 
+          downTime = True 
+      ## no valid replicas 
+      if not validSourceSEs:
+        ## but there is a downtime at some of sourceSEs, skip this file rigth now
+        if downTime:
+          self.log.warn("collectFiles: cannot find valid sources for %s at the moment" % waitingFile )
+          continue
+        ## no downtime on SEs, no valid sourceSEs at all, mark transfer of this file as failed
+        self.log.error("collectFiles: valid sources not found for %s, marking file as 'Failed'" % waitingFile )
+        requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", waitingFile, 
+                                                    "Status", "Failed" )
+        requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", waitingFile, 
+                                                    "Error", "valid source not found" )
+        toRemove.append( waitingFile )
+        if waitingFile in replicas:
+          del replicas[waitingFile]
+        if waitingFile in metadata:
+          del metadata[waitingFile]
+      else:
+        replicas[waitingFile] = validSourceSEs
+
+    ## fileter out not valid files
+    waitingFiles = dict( [ (k, v) for k, v in waitingFiles.items() if k not in toRemove ] )
+              
     return S_OK( ( waitingFiles, replicas, metadata ) )
 
   ###################################################################################
@@ -629,7 +725,6 @@ class TransferAgent( RequestAgentBase ):
 
     return S_OK()
 
-
   ###################################################################################
   # FTS scheduling 
   ###################################################################################
@@ -666,9 +761,9 @@ class TransferAgent( RequestAgentBase ):
       subRequestStatus = subAttrs["Status"]
 
       execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
-      if execOrder > requestDict["executionOrder"]:
+      if execOrder != requestDict["executionOrder"]:
         strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
-        self.log.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder" % strTup )  
+        self.log.warn("schedule: skipping (%s) subrequest, exeOrder (%s) != request's exeOrder (%s)" % strTup )  
         continue 
 
       if subRequestStatus != "Waiting" :
@@ -720,7 +815,7 @@ class TransferAgent( RequestAgentBase ):
         self.log.info("schedule: not-Done files found in subrequest")
       else:
         ## nope, all Done or no Waiting found
-        self.log.info("schedule: subrequest %d is empty" % iSubRequest )
+        self.log.debug("schedule: subrequest %d is empty" % iSubRequest )
         self.log.debug("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
 
@@ -770,8 +865,6 @@ class TransferAgent( RequestAgentBase ):
     :param dict subAttrs: subrequest's attributes
     """
     self.log.debug( "scheduleFiles: FTS scheduling, processing subrequest %s" % index )
-    ## get source SE
-    sourceSE = subAttrs["SourceSE"] if subAttrs["SourceSE"] not in ( None, "None", "" ) else None
     ## get target SEs, no matter what's a type we need a list
     targetSEs = [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") if targetSE.strip() ]
     ## get replication strategy
@@ -835,9 +928,7 @@ class TransferAgent( RequestAgentBase ):
                                                                                    len(waitingFileReplicas), 
                                                                                    str(waitingFileTargets) ) ) 
       ## get the replication tree at least
-      tree = self.strategyHandler().replicationTree( waitingFileLFN,
-                                                     waitingFileMetadata,
-                                                     waitingFileReplicas.keys(),  
+      tree = self.strategyHandler().replicationTree( waitingFileReplicas.keys(),  
                                                      waitingFileTargets, 
                                                      waitingFileSize, 
                                                      strategy )
@@ -859,7 +950,10 @@ class TransferAgent( RequestAgentBase ):
       ancestorSwap = {} 
       for channelID in sortedKeys:
         repDict = tree[channelID]
-        self.log.info( "scheduleFiles: processing channel %d %s" % ( channelID, str( repDict ) ) )
+        self.log.debug( "scheduleFiles: Strategy=%s Ancestor=%s SrcSE=%s DesSE=%s" % ( repDict["Strategy"],
+                                                                                       repDict["Ancestor"],
+                                                                                       repDict["SourceSE"],
+                                                                                       repDict["DestSE"] ) )
         transferURLs = self.getTransferURLs( waitingFileLFN, repDict, waitingFileReplicas )
         if not transferURLs["OK"]:
           return transferURLs
@@ -906,15 +1000,14 @@ class TransferAgent( RequestAgentBase ):
           self.log.error("schedule: error adding replication tree for file %s: %s" % ( waitingFileLFN, 
                                                                                        res["Message"]) )
           continue
-
-        ## update File status to 'Scheduled'
-        requestObj.setSubRequestFileAttributeValue( index, "transfer", 
-                                                    waitingFileLFN, "Status", "Scheduled" )
-        self.log.info( "scheduleFiles: status of %s file set to 'Scheduled'" % waitingFileLFN )
+      
+      ## update File status to 'Scheduled'
+      requestObj.setSubRequestFileAttributeValue( index, "transfer", 
+                                                  waitingFileLFN, "Status", "Scheduled" )
+      self.log.info( "scheduleFiles: %s has been scheduled for FTS" % waitingFileLFN )
   
     ## return modified requestObj 
     return S_OK( requestObj )
-
 
   def checkReadyReplicas( self, requestObj, index, subAttrs ):
     """ check if Files are already replicated, mark thiose as Done
@@ -937,7 +1030,7 @@ class TransferAgent( RequestAgentBase ):
     fileLFNs = []
     for subRequestFile in subRequestFiles:
       status = subRequestFile["Status"]
-      if status != "Done":
+      if status not in ( "Done", "Failed" ):
         fileLFNs.append( subRequestFile["LFN"] )
   
     replicas = None
@@ -948,8 +1041,10 @@ class TransferAgent( RequestAgentBase ):
         return replicas
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
-        if re.search( "no such file or directory", str(failure).lower() ):
+        if re.search( "no such file or directory", str(failure).lower() ) and status == "Scheduled":
+          self.log.info("checkReadyReplicas: %s cannot be transferred" % lfn )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )        
       replicas = replicas["Value"]["Successful"]
 
     ## are there any replicas?
@@ -959,7 +1054,7 @@ class TransferAgent( RequestAgentBase ):
         fileReplicas = [] if fileLFN not in replicas else replicas[fileLFN]
         fileTargets = [ targetSE for targetSE in targetSEs if targetSE not in fileReplicas ]
         if not fileTargets:
-          self.log.info( "checkReadyReplicas: %s is present at all targets, setting its status to 'Done'" % fileLFN )
+          self.log.info( "checkReadyReplicas: all transfers of %s are done" % fileLFN )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", fileLFN, "Status", "Done" )
           continue    
         else:

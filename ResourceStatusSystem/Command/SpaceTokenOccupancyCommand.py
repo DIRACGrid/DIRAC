@@ -8,6 +8,7 @@
 import lcg_util
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.Subprocess                            import pythonCall
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -89,7 +90,15 @@ class SpaceTokenOccupancyCommand( Command ):
         return params
       spaceTokenEndpoint, spaceToken = params[ 'Value' ] 
       
-    occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )
+    # 10 secs of timeout. If it works, the reply is immediate.  
+    occupancy = pythonCall( 10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
+    if not occupancy[ 'OK' ]:
+      return occupancy
+    occupancy = occupancy[ 'Value' ]
+    
+    #Timeout does not work here...
+    #occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )
+    
     if occupancy[ 0 ] != 0:
       return S_ERROR( occupancy )
     output = occupancy[ 1 ][ 0 ]

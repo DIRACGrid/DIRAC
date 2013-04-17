@@ -1,24 +1,20 @@
-# $Id$
-"""
-    This is a comment
-"""
-__RCSID__ = "$Revision: 1.38 $"
-
-import os, re, types
+''' Workflow - made of Steps
+'''
+import os
 import xml.sax
-from DIRAC.Core.Workflow.Parameter import *
-from DIRAC.Core.Workflow.Module import *
-from DIRAC.Core.Workflow.Step import *
-from DIRAC.Core.Workflow.Utility import *
+from DIRAC.Core.Workflow.Parameter import Parameter, AttributeCollection, ParameterCollection, indent
+from DIRAC.Core.Workflow.Module import InstancesPool, DefinitionsPool
+from DIRAC.Core.Workflow.Step import StepInstance
+from DIRAC.Core.Workflow.Utility import resolveVariables
 from DIRAC import S_OK, S_ERROR
 
 class Workflow( AttributeCollection ):
 
   def __init__( self, obj = None, name = None ):
-    """ Be aware that 1-st param is an obj not a name!!!!
+    ''' Be aware that 1-st param is an obj not a name!!!!
         obj can me a string with XML representation or with filename
         also obj can be a Workflow or ParameterCollections
-    """
+    '''
     AttributeCollection.__init__( self )
     if ( obj == None ) or isinstance( obj, ParameterCollection ):
       self.setName( 'notgiven' )
@@ -66,8 +62,8 @@ class Workflow( AttributeCollection ):
     self.step_definitions = DefinitionsPool( self, obj.step_definitions )
 
   def __str__( self ):
-    """Creates a string representation of itself
-    """
+    '''Creates a string representation of itself
+    '''
     ret = str( self.getName() ) + ':\n' + AttributeCollection.__str__( self ) + self.parameters.__str__()
     ret = ret + str( self.step_definitions )
     ret = ret + str( self.step_instances )
@@ -75,8 +71,8 @@ class Workflow( AttributeCollection ):
     return ret
 
   def toXML( self ):
-    """Creates an XML representation of itself
-    """
+    '''Creates an XML representation of itself
+    '''
     # THIS is very important that Definitions should be written before instances
     ret = '<Workflow>\n'
     ret = ret + AttributeCollection.toXML( self )
@@ -95,9 +91,9 @@ class Workflow( AttributeCollection ):
     xmlfile.close()
 
   def addTool( self, name, tool ):
-    """ Add an object that will be available in all the modules to perform some operations.
+    ''' Add an object that will be available in all the modules to perform some operations.
         For example, a state reporting facility.
-    """
+    '''
     self.workflow_commons[name] = tool
 
   def addStep( self, step ):
@@ -105,15 +101,15 @@ class Workflow( AttributeCollection ):
     # we have to join all Modules definition from all added steps in the single dictionary
     # and we have to share this dictionary between all included steps
     # we also have to check versions of the modules and instances
-    for type in step.module_definitions.keys():
+    for type_ in step.module_definitions.keys():
       #if self.module_definitions.has_key(type):
         # we have the same ModuleDefinition in 2 places
         # we need to find way to synchronise it
         #print "Workflow:addStep - we need to write ModuleDefinitions synchronisation code"
       #else:
         # new module - just append it
-      if not self.module_definitions.has_key( type ):
-        self.module_definitions.append( step.module_definitions[type] )
+      if not self.module_definitions.has_key( type_ ):
+        self.module_definitions.append( step.module_definitions[type_] )
     self.step_definitions.append( step )
     del step.module_definitions # we need to clean up all unwanted definitions
     step.module_definitions = None
@@ -124,15 +120,15 @@ class Workflow( AttributeCollection ):
     self.module_definitions.append( module )
     return module
 
-  def createStepInstance( self, type, name ):
-    """ Creates step instance of type 'type' with the name 'name'
-    """
-    if self.step_definitions.has_key( type ):
-      stepi = StepInstance( name, self.step_definitions[type] )
+  def createStepInstance( self, type_, name ):
+    ''' Creates step instance of type 'type' with the name 'name'
+    '''
+    if self.step_definitions.has_key( type_ ):
+      stepi = StepInstance( name, self.step_definitions[type_] )
       self.step_instances.append( stepi )
       return stepi
     else:
-      raise KeyError( 'Can not find StepDefinition ' + type + ' to create StepInstrance ' + name )
+      raise KeyError( 'Can not find StepDefinition ' + type_ + ' to create StepInstrance ' + name )
 
   def removeStepInstance( self, name ):
     self.instances[name].setParents( None )
@@ -145,12 +141,12 @@ class Workflow( AttributeCollection ):
 
 
   def resolveGlobalVars( self ):
-    """ This method will create global parameter list and then will resolve all instances of @{VARNAME}
+    ''' This method will create global parameter list and then will resolve all instances of @{VARNAME}
     Be aware that parameters of that type are GLOBAL!!! are string and can not be dynamically change
     The scope: the resolution of that parameters apply from lower to upper object, for example if
     parameter use in module, then it checks module, then step, then workflow
 
-    Comment: If varible linked it should not be used in a global list"""
+    Comment: If varible linked it should not be used in a global list'''
 
     # reenforced global parameters on the level of Workflow
     if not self.parameters.find( "PRODUCTION_ID" ):
@@ -182,42 +178,42 @@ class Workflow( AttributeCollection ):
 
   def createCode( self, combine_steps = False ):
     self.resolveGlobalVars()
-    str = ''
-    str = str + self.module_definitions.createCode()
-    str = str + self.step_definitions.createCode()
-    str = str + "\nclass job:\n"
-    str = str + indent( 1 ) + 'def execute(self):\n'
-    #str=str+indent(2)+'# flush self.step_instances\n'
-    str = str + self.step_instances.createCode()
+    str_ = ''
+    str_ = str_ + self.module_definitions.createCode()
+    str_ = str_ + self.step_definitions.createCode()
+    str_ = str_ + "\nclass job:\n"
+    str_ = str_ + indent( 1 ) + 'def execute(self):\n'
+    #str_=str_+indent(2)+'# flush self.step_instances\n'
+    str_ = str_ + self.step_instances.createCode()
     # it seems we do not need it on this level
-    str = str + indent( 2 ) + '# output assignment\n'
+    str_ = str_ + indent( 2 ) + '# output assignment\n'
     for v in self.parameters:
       if v.isOutput():
-        str = str + v.createParameterCode( 2, 'self' )
+        str_ = str_ + v.createParameterCode( 2, 'self' )
 
-    str = str + '\nj=job()\n'
-    str = str + self.parameters.createParametersCode( 0, 'j' )
-    str = str + 'j.execute()'
-    return str
+    str_ = str_ + '\nj=job()\n'
+    str_ = str_ + self.parameters.createParametersCode( 0, 'j' )
+    str_ = str_ + 'j.execute()'
+    return str_
 
   def showCode( self, combine_steps = False ):
-    str = ''
-    str = str + self.module_definitions.createCode()
-    str = str + self.step_definitions.createCode()
-    str = str + "\nclass job:\n"
-    str = str + indent( 1 ) + 'def execute(self):\n'
-    #str=str+indent(2)+'# flush self.step_instances\n'
-    str = str + self.step_instances.createCode()
+    str_ = ''
+    str_ = str_ + self.module_definitions.createCode()
+    str_ = str_ + self.step_definitions.createCode()
+    str_ = str_ + "\nclass job:\n"
+    str_ = str_ + indent( 1 ) + 'def execute(self):\n'
+    #str_=str_+indent(2)+'# flush self.step_instances\n'
+    str_ = str_ + self.step_instances.createCode()
     # it seems we do not need it on this level
-    str = str + indent( 2 ) + '# output assignment\n'
+    str_ = str_ + indent( 2 ) + '# output assignment\n'
     for v in self.parameters:
       if v.isOutput():
-        str = str + v.createParameterCode( 2, 'self' )
+        str_ = str_ + v.createParameterCode( 2, 'self' )
 
-    str = str + '\nj=job()\n'
-    str = str + self.parameters.createParametersCode( 0, 'j' )
-    str = str + 'j.execute()'
-    return str
+    str_ = str_ + '\nj=job()\n'
+    str_ = str_ + self.parameters.createParametersCode( 0, 'j' )
+    str_ = str_ + 'j.execute()'
+    return str_
 
   def execute( self ):
     self.resolveGlobalVars()
@@ -252,9 +248,9 @@ class Workflow( AttributeCollection ):
     step_result = ''
     for step_inst in self.step_instances:
       step_inst_name = step_inst.getName()
-      step_inst_type = step_inst.getType()
       wf_exec_steps[step_inst_name] = {}
-      #print "WorkflowInstance creating Step instance ",step_inst_name," of type", step_inst_type
+      # step_inst_type = step_inst.getType()
+      # print "WorkflowInstance creating Step instance ",step_inst_name," of type", step_inst_type
       for parameter in step_inst.parameters:
         if parameter.preExecute():
           # print '>> Input', parameter
@@ -326,4 +322,3 @@ def fromXMLFile( xml_file, obj = None ):
   handler = WorkflowXMLHandler( obj )
   xml.sax.parse( xml_file, handler )
   return handler.root
-

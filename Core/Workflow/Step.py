@@ -1,17 +1,16 @@
-# $Id$
-"""
-    This is a comment
-"""
-__RCSID__ = "$Revision: 1.30 $"
+''' Step. Steps are included in the workflows, and include modules
+'''
 
-import os, time, types, traceback, sys
-#try: # this part to inport as part of the DIRAC framework
-from DIRAC.Core.Workflow.Parameter import *
-from DIRAC.Core.Workflow.Module import *
+import os
+import time
+import types
+import traceback
+import sys
+
 from DIRAC import S_OK, S_ERROR
-#except: # this part is to import code without DIRAC
-#  from Parameter import *
-#  from Module import *
+
+from DIRAC.Core.Workflow.Parameter import Parameter, AttributeCollection, ParameterCollection, indent
+from DIRAC.Core.Workflow.Module import InstancesPool, DefinitionsPool, ModuleInstance
 
 class StepDefinition( AttributeCollection ):
 
@@ -85,8 +84,8 @@ class StepDefinition( AttributeCollection ):
     return module
 
   def createModuleInstance( self, module_type, name ):
-    """ Creates module instance of type 'type' with the name 'name'
-    """
+    ''' Creates module instance of type 'type' with the name 'name'
+    '''
 
     if self.module_definitions[module_type]:
       mi = ModuleInstance( name, self.module_definitions[module_type] )
@@ -96,39 +95,39 @@ class StepDefinition( AttributeCollection ):
       raise KeyError( 'Can not find ModuleDefinition ' + module_type + ' to create ModuleInstrance ' + name )
 
   def removeModuleInstance( self, name ):
-    """ Remove module instance specified by its name
-    """
+    ''' Remove module instance specified by its name
+    '''
     self.module_instances.delete( name )
 
   def compare( self, s ):
-    """ Custom Step comparison operation
-    """
+    ''' Custom Step comparison operation
+    '''
     ret = AttributeCollection.compare( self, s ) and self.module_instances.compare( s )
     if self.module_definitions.getOwner() == self:
       ret = ret and self.module_definitions.compare( s )
     return ret
 
-  def updateParent( self, parent ):
-    """
-    """
-    AttributeCollection.updateParents( self, parent )
-    self.module_instances.updateParent( self )
+  def updateParents( self, parent ):
+    '''
+    '''
+    #AttributeCollection.updateParents( self, parent )
+    self.module_instances.updateParents( self )
     if( self.module_definitions != None ):
-      self.module_definitions.updateParent( self )
+      self.module_definitions.updateParents( self )
 
   def createCode( self ):
-    """ Create Step code
-    """
+    ''' Create Step code
+    '''
 
-    str = 'class ' + self.getType() + ':\n'
-    str = str + indent( 1 ) + 'def execute(self):\n'
-    str = str + self.module_instances.createCode()
-    str = str + indent( 2 ) + '# output assignment\n'
+    str_ = 'class ' + self.getType() + ':\n'
+    str_ = str_ + indent( 1 ) + 'def execute(self):\n'
+    str_ = str_ + self.module_instances.createCode()
+    str_ = str_ + indent( 2 ) + '# output assignment\n'
     for v in self.parameters:
       if v.isOutput():
-        str = str + v.createParameterCode( 2, 'self' )
-    str += '\n'
-    return str
+        str_ = str_ + v.createParameterCode( 2, 'self' )
+    str_ += '\n'
+    return str_
 
 
 class StepInstance( AttributeCollection ):
@@ -160,8 +159,8 @@ class StepInstance( AttributeCollection ):
     self.stepStatus = S_OK()
 
   def resolveGlobalVars( self, step_definitions, wf_parameters ):
-    """ Resolve parameter values defined in the @{<variable>} form
-    """
+    ''' Resolve parameter values defined in the @{<variable>} form
+    '''
     self.parameters.resolveGlobalVars( wf_parameters )
     module_instance_number = 0
     for inst in step_definitions[self.getType()].module_instances:
@@ -190,21 +189,21 @@ class StepInstance( AttributeCollection ):
       inst.resolveGlobalVars( wf_parameters, self.parameters )
 
   def createCode( self, ind = 2 ):
-    """ Create the Step code
-    """
-    str = indent( ind ) + self.getName() + ' = ' + self.getType() + '()\n'
-    str = str + self.parameters.createParametersCode( ind, self.getName() )
-    str = str + indent( ind ) + self.getName() + '.execute()\n\n'
-    return str
+    ''' Create the Step code
+    '''
+    str_ = indent( ind ) + self.getName() + ' = ' + self.getType() + '()\n'
+    str_ = str_ + self.parameters.createParametersCode( ind, self.getName() )
+    str_ = str_ + indent( ind ) + self.getName() + '.execute()\n\n'
+    return str_
 
   def __str__( self ):
-    """ Step string representation
-    """
+    ''' Step string representation
+    '''
     return str( type( self ) ) + ':\n' + AttributeCollection.__str__( self ) + self.parameters.__str__()
 
   def toXML( self ):
-    """ Generate the Step XML representation
-    """
+    ''' Generate the Step XML representation
+    '''
     ret = '<StepInstance>\n'
     ret = ret + AttributeCollection.toXML( self )
     ret = ret + self.parameters.toXML()
@@ -212,15 +211,15 @@ class StepInstance( AttributeCollection ):
     return ret
 
   def setWorkflowCommons( self, wf ):
-    """ Add reference to the collection of the common tools
-    """
+    ''' Add reference to the collection of the common tools
+    '''
 
     self.workflow_commons = wf
 
   def execute( self, step_exec_attr, definitions ):
-    """ Step execution method. step_exec_attr is array to hold parameters belong to this Step,
+    ''' Step execution method. step_exec_attr is array to hold parameters belong to this Step,
         filled above in the workflow
-    """
+    '''
     print 'Executing StepInstance', self.getName(), 'of type', self.getType(), definitions.keys()
     # Report the Application state if the coresponding tool is supplied
     if self.workflow_commons.has_key( 'JobReport' ):

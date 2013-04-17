@@ -104,13 +104,6 @@ class StorageElementProxyHandler(RequestHandler):
   .. class:: StorageElementProxyHandler
   """
 
-  types_getParameters = [StringType]
-  @staticmethod
-  def export_getParameters( se ):
-    """ Get the storage element parameters
-    """
-    return StorageElement( se ).getParameters()
-
   types_callProxyMethod = [ StringType, StringType, ListType, DictType ]
   def export_callProxyMethod( self, se, name, args, kargs ):
     """ A generic method to call methods of the Storage Element.
@@ -194,6 +187,7 @@ class StorageElementProxyHandler(RequestHandler):
         gLogger.debug("Cleared existing getFile cache")
       except Exception, x:
         gLogger.exception("Failed to remove destination directory.", getFileDir, x )
+    os.mkdir(getFileDir)        
    
     # Get the file to the cache 
     try:
@@ -328,7 +322,6 @@ class StorageElementProxyHandler(RequestHandler):
 
     fileDescriptor = result['Value']
     result = fileHelper.networkToFD(fileDescriptor)
-    fileHelper.oFile.close()
     if not result['OK']:
       return S_ERROR('Failed to put file %s' % fileID )
     return result

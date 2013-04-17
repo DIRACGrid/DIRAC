@@ -477,7 +477,7 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def setPlatform( self, backend ):
+  def setSubmitPool( self, backend ):
     """Developer function.
 
        Choose submission pool on which job is executed e.g. DIRAC, LCG.

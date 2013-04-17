@@ -1463,7 +1463,7 @@ class ReplicaManager( CatalogToStorage ):
     oDataOperation.setStartTime()
     oDataOperation.setValueByKey( 'TransferSize', size )
     startTime = time.time()
-    res = storageElement.putFile( fileDict, True )
+    res = storageElement.putFile( fileDict, singleFile = True )
     putTime = time.time() - startTime
     oDataOperation.setValueByKey( 'TransferTime', putTime )
     if not res['OK']:
@@ -1485,7 +1485,7 @@ class ReplicaManager( CatalogToStorage ):
     fileTuple = ( lfn, destPfn, size, destinationSE, guid, checksum )
     registerDict = {'LFN':lfn, 'PFN':destPfn, 'Size':size, 'TargetSE':destinationSE, 'GUID':guid, 'Addler':checksum}
     startTime = time.time()
-    res = self.registerFile( fileTuple )
+    res = self.registerFile( fileTuple, catalog = catalog )
     registerTime = time.time() - startTime
     oDataOperation.setValueByKey( 'RegistrationTime', registerTime )
     if not res['OK']:
@@ -2041,7 +2041,8 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, res['Message'] )
       return res
     lfnDict = res['Value']['Successful']
-    for lfn, reason in res['Value']['Failed']:
+
+    for lfn, reason in res['Value'].get( 'Failed', {} ).items():
       # Ignore files missing in FC if force is set
       if reason == 'No such file or directory' and force:
         successful[lfn] = True

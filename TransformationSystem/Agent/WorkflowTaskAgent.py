@@ -1,10 +1,10 @@
 ''' The Workflow Task Agent takes workflow tasks created in the
     transformation database and submits to the workload management system.
 '''
-
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Client.TaskManager          import WorkflowTasks
+from DIRAC.WorkloadManagementSystem.Client.WMSClient        import WMSClient
 
 AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 
@@ -16,7 +16,8 @@ class WorkflowTaskAgent( TaskManagerAgentBase ):
     '''
     TaskManagerAgentBase.__init__( self, *args, **kwargs )
 
-    self.taskManager = WorkflowTasks( transClient = self.transClient )
+    self.submissionClient = WMSClient()
+    self.taskManager = WorkflowTasks( transClient = self.transClient, submissionClient = self.submissionClient )
     self.shifterProxy = 'ProductionManager'
     agentTSTypes = self.am_getOption( 'TransType', [] )
     if agentTSTypes:
