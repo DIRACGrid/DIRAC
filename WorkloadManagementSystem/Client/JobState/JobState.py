@@ -106,12 +106,10 @@ class JobState( object ):
     if self.localAccess:
       result = self.__getDB().getJobJDL( self.__jid )
     else:
-      print self._getStoreClient()
       result = self._getStoreClient().getManifest( self.__jid )
     if not result[ 'OK' ] or rawData:
       return result
     if not result[ 'Value' ]:
-      print self.localAccess, result
       return S_ERROR( "No manifest for job %s" % self.__jid )
     manifest = JobManifest()
     result = manifest.loadJDL( result[ 'Value' ] )
@@ -517,7 +515,6 @@ class JobState( object ):
       if not result[ 'OK' ]:
         return result
       manifest = result[ 'Value' ]
-    print manifest.dumpAsCFG()
 
     reqSection = "JobRequirements"
 

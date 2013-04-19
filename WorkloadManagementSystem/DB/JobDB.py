@@ -160,6 +160,10 @@ class JobDB( DB ):
                                           'Disk' : 'TINYINT(1) NOT NULL' },
                              'PrimaryKey' : [ 'LFNID', 'SEName', 'SURL' ],
                              'Indexes' : { 'LFNID' : [ 'LFNID' ] } }
+    tables[ 'MasterJDLs' ] = { 'Fields' : { 'MasterJobID' : 'int(11) NOT NULL',
+                                            'JDL' : 'BLOB NOT NULL' },
+                             'PrimaryKey' : [ 'MasterJobID' ] }
+
     result = self._createTables( tables )
     if not result[ 'OK' ]:
       return result
@@ -1217,8 +1221,65 @@ class JobDB( DB ):
     else:
       return result
 
+  def insertParametricManifests( self, jid, manifests ):
+    self.transactionStart()
+    ok = False
+    try:
+      result = self.getJobJDL( jid, original = True )
+      if not result[ 'OK' ]:
+        return result
+      sourceManifest = result[ 'Value' ]
+      result = self.insertFields( 'MasterJDLs', inDict = { 'MasterJobID' : jid,
+                                                           'JDL' : sourceManifest } )
+      if not result[ 'OK' ]:
+        return result
+      result = self.updateFields( 'JobJDLs',
+                                  condDict = { 'JobID' : jid },
+                                  updateDict = { 'JDL' : manifests[0],
+                                                 'OriginalJDL' : manifests[0],
+                                                 'JobRequirements' : '' } )
+      if not result[ 'OK' ]:
+        return result
+      upDict = {}
+      jobManifest = JobManifest()
+      result = jobManifest.load( manifests[0] )
+      if not result[ 'OK' ]:
+        return result
+      for name in ( 'JobName', 'JobType', 'JobGroup', 'Priority' ):
+        value = jobManifest.getOption( name )
+        if name == 'Priority':
+          name = 'UserPriority'
+        if value:
+          upDict[ name ] = value
+      result = self.updateFields( 'Jobs',
+                                  condDict = { 'JobID' : jid },
+                                  updateDict = upDict )
+      if not result[ 'OK' ]:
+        return result
+
+      result = self.getJobAttributes( jid, [ 'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ] )
+      if not result[ 'OK' ]:
+        return result
+      attrs = result[ 'Value' ]
+      jidList = [ jid ]
+      for manifest in manifests[1:]:
+        result = self.insertNewJobIntoDB( manifest, attrs[ 'Owner' ], attrs[ 'OwnerDN' ],
+                                          attrs[ 'OwnerGroup' ], attrs[ 'DIRACSetup' ], jid )
+        if not result[ 'OK' ]:
+          return result
+        jidList.append( result[ 'Value' ] )
+      result = self.transactionCommit()
+      if not result[ 'OK' ]:
+        return result
+      ok = True
+      return S_OK( jidList )
+    finally:
+      if not ok:
+        self.transactionRollback()
+
+
 #############################################################################
-  def insertNewJobIntoDB( self, jdl, owner, ownerDN, ownerGroup, diracSetup ):
+  def insertNewJobIntoDB( self, jdl, owner, ownerDN, ownerGroup, diracSetup, parentJob = None ):
     """ Insert the initial JDL into the Job database,
         Do initial JDL crosscheck,
         Set Initial job Attributes and Status
@@ -1231,6 +1292,8 @@ class JobDB( DB ):
                                       'OwnerDN' : ownerDN,
                                       'OwnerGroup' : ownerGroup,
                                       'DIRACSetup' : diracSetup } )
+    if parentJob != None:
+      jobManifest.setOption( "ParentJob", parentJob )
     result = jobManifest.check()
     if not result['OK']:
       return result
@@ -1267,6 +1330,10 @@ class JobDB( DB ):
     attrs[ 'VerifiedFlag' ] = True
     attrs[ 'Status' ] = 'Received'
     attrs[ 'MinorStatus' ] = 'Job accepted'
+
+    if parentJob == None:
+      parentJob = jid
+    attrs[ 'MasterJobID' ] = parentJob
 
     for name in ( 'JobName', 'JobType', 'JobGroup', 'Priority' ):
       value = jobManifest.getOption( name )

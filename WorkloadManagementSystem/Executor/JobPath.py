@@ -15,7 +15,9 @@ __RCSID__ = "$Id$"
 import types
 from DIRAC import S_OK, S_ERROR, List
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
+from DIRAC.WorkloadManagementSystem.Splitters.BaseSplitter import BaseSplitter
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 class JobPath( OptimizerExecutor ):
   """
@@ -28,6 +30,19 @@ class JobPath( OptimizerExecutor ):
   @classmethod
   def initializeOptimizer( cls ):
     cls.__voPlugins = {}
+    objLoader = ObjectLoader()
+    result = objLoader.getObjects( "WorkloadManagementSystem.Splitters",
+                                   reFilter = ".*Splitter",
+                                   parentClass = BaseSplitter )
+    if not result[ 'OK' ]:
+      return result
+    data = result[ 'Value' ]
+    cls.__splitters = {}
+    for k in data:
+      spClass = data[k]
+      spName = k.split(".")[-1][:-8]
+      cls.__splitters[ spName ] = spClass.AFTER_OPTIMIZER
+      cls.log.notice( "Found %s splitter that goes after %s" % ( spName, spClass.AFTER_OPTIMIZER ) )
     return S_OK()
 
   def __setOptimizerChain( self, jobState, opChain ):
@@ -107,6 +122,19 @@ class JobPath( OptimizerExecutor ):
         finalPath.append( opN )
       else:
         self.jobLog.notice( "Duplicate optimizer %s in path: %s" % ( opN, opPath ) )
+    #Parametric magic
+    splitter = jobManifest.getOption( "Splitter", "" )
+    if splitter:
+      if splitter not in self.__splitters:
+        return S_ERROR( "Unknown splitter %s" % splitter )
+      prevOpt = self.__splitters[ splitter ]
+      try:
+        opIndex = finalPath.index( prevOpt )
+      except ValueError:
+        return S_ERROR( "Cannot use %s splitter. Job won't go through required optimizer %s" % ( splitter, prevOpt ) )
+      finalPath.insert( opIndex + 1, "Splitter" )
+      self.jobLog.notice( "Added Splitter %s after %s" % ( splitter, prevOpt ) )
+
     self.jobLog.info( 'Constructed path is: %s' % "->".join( finalPath ) )
     result = self.__setOptimizerChain( jobState, finalPath )
     if not result['OK']:

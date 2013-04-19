@@ -17,6 +17,13 @@ class JobManifest( object ):
       if not result[ 'OK' ]:
         raise Exception( result[ 'Message' ] )
 
+  def clone( self ):
+    manifest = JobManifest()
+    manifest.__manifest = self.__manifest.clone()
+    manifest.__dirty = self.__dirty
+    manifest.__ops = self.__ops
+    return manifest
+
   def isDirty( self ):
     return self.__dirty
 

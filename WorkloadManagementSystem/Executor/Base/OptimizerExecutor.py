@@ -29,6 +29,13 @@ class OptimizerExecutor( ExecutorModule ):
     def msg( self ):
       return self.__msg
 
+  class SplitTask( Exception ):
+    def __init__( self, manifests ):
+      self.__manifests = manifests
+    @property
+    def manifests( self ):
+      return self.__manifests
+
 
   class JobLog:
 
@@ -112,6 +119,9 @@ class OptimizerExecutor( ExecutorModule ):
       except self.TQTask:
         taskObj.setTQReady()
         optResult = S_OK()
+      except self.SplitTask, excp:
+        taskObj.splitJobInto( excp.manifests )
+        optResult = S_OK()
       if not isReturnStructure( optResult ):
         raise RuntimeError( "Executor does not return S_OK/S_ERROR!" )
       #If the manifest is dirty, update it!
@@ -137,7 +147,10 @@ class OptimizerExecutor( ExecutorModule ):
     raise Exception( "You need to overwrite this method to optimize the job!" )
 
   def sendJobToTQ( self ):
-      raise self.TQTask( "Sending job to TaskQueue" )
+    raise self.TQTask( "Sending job to TaskQueue" )
+
+  def splitJob( self, manifests ):
+    raise self.SplitTask( manifests )
 
   def setNextOptimizer( self, jobState = None ):
     if not jobState:
@@ -201,6 +214,8 @@ class OptimizerExecutor( ExecutorModule ):
     result = jobState.getStatus()
     if not result[ 'OK' ]:
       return S_ERROR( "Could not retrieve job status for %s: %s" % ( jid, result[ 'Message' ] ) )
+    if taskObj.splitManifests:
+      self.log.info( "Job has been split. Avoid fast track" )
     status, minorStatus = result[ 'Value' ]
     if status != "Checking":
       self.log.info( "[JID %s] Not in checking state. Avoid fast track" % jid )
