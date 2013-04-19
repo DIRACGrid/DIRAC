@@ -128,7 +128,7 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
-  def getBannedSites( self, gridType = [], printOutput = False ):
+  def getBannedSites( self, printOutput = False ):
     """Retrieve current list of banned sites.
 
        Example usage:
@@ -140,30 +140,13 @@ class DiracAdmin( API ):
 
     """
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    bannedSites = []
-    totalList = []
 
-    result = wmsAdmin.getSiteMask()
+    result = wmsAdmin.getSiteMask('Banned')
     if not result['OK']:
       self.log.warn( result['Message'] )
       return result
-    sites = result['Value']
+    bannedSites = result['Value']
 
-    if not gridType:
-      result = gConfig.getSections( '/Resources/Sites' )
-      if not result['OK']:
-        return result
-      gridType = result['Value']
-
-    for grid in gridType:
-      result = gConfig.getSections( '/Resources/Sites/%s' % grid )
-      if not result['OK']:
-        return result
-      totalList += result['Value']
-
-    for site in totalList:
-      if not site in sites:
-        bannedSites.append( site )
     bannedSites.sort()
     if printOutput:
       print '\n'.join( bannedSites )
@@ -283,7 +266,7 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.banSiteFromMask()
+       >>> print diracAdmin.banSiteFromMask(LCG.CERN.ch, "Job can't access their data")
        {'OK': True, 'Value': }
 
        :returns: S_OK,S_ERROR
@@ -292,13 +275,6 @@ class DiracAdmin( API ):
     result = self.__checkSiteIsValid( site )
     if not result['OK']:
       return result
-
-    mask = self.getSiteMask()
-    if not mask['OK']:
-      return mask
-    siteMask = mask['Value']
-    if not site in siteMask:
-      return S_ERROR( 'Site %s is already banned' % site )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.banSite( site, comment )
