@@ -48,8 +48,8 @@ class Cache( object ):
     
     self.__lifeTime     = int( lifeTime * ( 1 + randomLifeTimeBias ) )
     self.__updateFunc   = updateFunc
-    # The records returned from the cache must be valid at least 10 seconds.
-    self.__validSeconds = 10
+    # The records returned from the cache must be valid at least 30 seconds.
+    self.__validSeconds = 30
     
     # Cache
     self.__cache       = DictCache()
