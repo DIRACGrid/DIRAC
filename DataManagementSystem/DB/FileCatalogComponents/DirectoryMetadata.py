@@ -106,6 +106,21 @@ class DirectoryMetadata:
 
     return S_OK( metaDict )
 
+  def listMetadataSets(self, credDict):
+    """ List all metadata sets
+    """
+    res = self.db.getFields('FC_MetaSetNames',['MetaSetName'])
+    if not res['OK']:
+      return res
+    metasets = {}
+    for row in res['Value']:
+      metasets.setdefault(row[0], {} )
+      res = self.getMetadataSet(row[0], True, credDict)
+      if not res['OK']:
+        return res
+      metasets[row[0]].update(res['Value'])
+    return S_OK(metasets)
+  
   def addMetadataSet( self, metaSetName, metaSetDict, credDict ):
     """ Add a new metadata set with the contents from metaSetDict
     """
