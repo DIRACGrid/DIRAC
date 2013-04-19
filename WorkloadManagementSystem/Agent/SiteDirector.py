@@ -10,7 +10,7 @@
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
@@ -21,6 +21,7 @@ from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus 
 import os, base64, bz2, tempfile, random, socket
 import DIRAC
 
@@ -53,6 +54,7 @@ class SiteDirector( AgentModule ):
     self.queueDict = {}
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
+    self.siteStatus = SiteStatus()
     return S_OK()
 
   def beginExecution( self ):
@@ -302,10 +304,10 @@ class SiteDirector( AgentModule ):
       return S_OK()
 
     # Check if the site is allowed in the mask
-    result = jobDB.getSiteMask()
-    if not result['OK']:
-      return S_ERROR( 'Can not get the site mask' )
-    siteMaskList = result['Value']
+    #result = self.siteStatus.getUsableSites()
+    #if not result['OK']:
+    #  return S_ERROR( 'Can not get the site mask' )
+    #siteMaskList = result['Value']
 
     queues = self.queueDict.keys()
     random.shuffle( queues )
@@ -315,7 +317,7 @@ class SiteDirector( AgentModule ):
       ceType = self.queueDict[queue]['CEType']
       queueName = self.queueDict[queue]['QueueName']
       siteName = self.queueDict[queue]['Site']
-      siteMask = siteName in siteMaskList
+      siteMask = self.siteStatus.isUsableSite( siteName )
 
       if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
         queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )

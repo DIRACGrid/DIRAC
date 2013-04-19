@@ -18,6 +18,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient          import Notificatio
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSA
+from DIRAC.ResourceStatusSystem.Client.SiteStatus             import SiteStatus
 
 import os, types
 
@@ -116,8 +117,9 @@ class DiracAdmin( API ):
        :returns: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.getSiteMask()
+    
+    siteStatus = SiteStatus()
+    result = siteStatus.getUsableSites()
     if result['OK']:
       sites = result['Value']
       if printOutput:
@@ -139,9 +141,11 @@ class DiracAdmin( API ):
        :returns: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+    siteStatus = SiteStatus()
+    bannedSites = []
+    totalList = []
 
-    result = wmsAdmin.getSiteMask('Banned')
+    result = siteStatus.getUsableSites()
     if not result['OK']:
       self.log.warn( result['Message'] )
       return result
