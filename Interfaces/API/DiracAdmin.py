@@ -266,7 +266,7 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.banSiteFromMask(LCG.CERN.ch, "Job can't access their data")
+       >>> print diracAdmin.banSiteFromMask("LCG.CERN.ch", "Job can't access their data")
        {'OK': True, 'Value': }
 
        :returns: S_OK,S_ERROR
