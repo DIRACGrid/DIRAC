@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleto
 from DIRAC.ConfigurationSystem.Client.CSAPI                 import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread  import RSSCache 
+from DIRAC.ResourceStatusSystem.Utilities.RSSCache          import RSSCache 
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
 
 __RCSID__  = '$Id: $'
