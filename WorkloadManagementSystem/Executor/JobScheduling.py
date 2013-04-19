@@ -199,8 +199,16 @@ class JobScheduling( OptimizerExecutor ):
     #TODO: FIX THIS CRAP!
     self._setJobSite( jobState, userSites )
 
+    result = jobState.setStatus( self.ex_getOption( 'WaitingStatus', 'Waiting' ),
+                                 minorStatus = self.ex_getOption( 'WaitingMinorStatus',
+                                                                  'Pilot Agent Submission' ),
+                                 appStatus = "Unknown",
+                                 source = self.ex_optimizerName() )
+    if not result[ 'OK' ]:
+      return result
+
     self.jobLog.info( "Done" )
-    return self.setNextOptimizer( jobState )
+    return self.sendJobToTQ()
 
   def _setJobSite( self, jobState, siteList ):
     """ Set the site attribute

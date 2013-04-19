@@ -12,18 +12,23 @@ class OptimizerExecutor( ExecutorModule ):
 
 
   class FreezeTask( Exception ):
-
     def __init__( self, msg, secs = 0 ):
       self.__msg = msg
       self.__secs = secs
-
     @property
     def freezeTime( self ):
       return self.__secs
-
     @property
     def msg( self ):
       return self.__msg
+
+  class TQTask( Exception ):
+    def __init__( self, msg ):
+      self.__msg = msg
+    @property
+    def msg( self ):
+      return self.__msg
+
 
   class JobLog:
 
@@ -104,6 +109,9 @@ class OptimizerExecutor( ExecutorModule ):
         self.jobLog.info( "On hold -> %s" % excp.msg )
         jobState.setAppStatus( excp.msg, source = self.ex_optimizerName() )
         optResult = S_OK()
+      except self.TQTask:
+        taskObj.setTQReady()
+        optResult = S_OK()
       if not isReturnStructure( optResult ):
         raise RuntimeError( "Executor does not return S_OK/S_ERROR!" )
       #If the manifest is dirty, update it!
@@ -128,6 +136,9 @@ class OptimizerExecutor( ExecutorModule ):
   def optimizeJob( self, jid, jobState ):
     raise Exception( "You need to overwrite this method to optimize the job!" )
 
+  def sendJobToTQ( self ):
+      raise self.TQTask( "Sending job to TaskQueue" )
+
   def setNextOptimizer( self, jobState = None ):
     if not jobState:
       jobState = self.__jobData.jobState
@@ -141,20 +152,8 @@ class OptimizerExecutor( ExecutorModule ):
     except ValueError:
       return S_ERROR( "Optimizer %s is not in the chain!" % opName )
     chainLength = len( opChain )
-    if chainLength - 1 == opIndex:
-      # This is the last optimizer in the chain!
-      result = jobState.setStatus( self.ex_getOption( 'WaitingStatus', 'Waiting' ),
-                                   minorStatus = self.ex_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ),
-                                   appStatus = "Unknown",
-                                   source = opName )
-      if not result[ 'OK' ]:
-        return result
-
-      result = jobState.insertIntoTQ()
-      if not result[ 'OK' ]:
-        return result
-
-      return S_OK()
+    if opIndex == chainLength - 1:
+      return self.sendJobToTQ()
     # Keep optimizing!
     nextOp = opChain[ opIndex + 1 ]
     self.jobLog.info( "Set to Checking/%s" % nextOp )

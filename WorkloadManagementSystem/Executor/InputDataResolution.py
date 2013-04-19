@@ -30,7 +30,7 @@ class InputDataResolution( OptimizerExecutor ):
     """Initialize specific parameters
     """
     cls.ex_setProperty( 'shifterProxy', 'DataManager' )
-    cls.__SEStatus = DictCache()
+    cls.__SEStatus = DictCache.DictCache()
 
     try:
       cls.__replicaMan = ReplicaManager()

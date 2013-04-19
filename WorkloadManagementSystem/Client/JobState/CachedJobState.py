@@ -15,6 +15,10 @@ class CachedJobState( object ):
     self.__jobState = JobState( jid )
     self.cleanState( skipInitState = skipInitState )
 
+  @property
+  def jobState( self ):
+    return self.__jobState
+
   def cleanState( self, skipInitState = False ):
     self.__cache = {}
     self.__jobLog = []

@@ -33,8 +33,8 @@ class InputDataValidation( OptimizerExecutor ):
     """ Initialization of the Agent.
     """
     random.seed()
-    cls.__SEStatus = DictCache()
-    cls.__sitesForSE = DictCache()
+    cls.__SEStatus = DictCache.DictCache()
+    cls.__sitesForSE = DictCache.DictCache()
     try:
       from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
     except ImportError, excp :
@@ -99,7 +99,7 @@ class InputDataValidation( OptimizerExecutor ):
 
     stageCandidates = result[ 'Value' ]
     self.jobLog.notice( "Requested stage at sites %s" % ",".join( stageCandidates ) )
-    result = jobState.setOptParameter( "StageRequestedForSites", list( stageCandidates ) )
+    result = jobState.setOptParameter( "StageRequestedForSites", ",".join( stageCandidates ) )
     if not result[ 'OK' ]:
       return result
 

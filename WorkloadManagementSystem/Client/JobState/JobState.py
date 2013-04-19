@@ -106,10 +106,12 @@ class JobState( object ):
     if self.localAccess:
       result = self.__getDB().getJobJDL( self.__jid )
     else:
+      print self._getStoreClient()
       result = self._getStoreClient().getManifest( self.__jid )
     if not result[ 'OK' ] or rawData:
       return result
     if not result[ 'Value' ]:
+      print self.localAccess, result
       return S_ERROR( "No manifest for job %s" % self.__jid )
     manifest = JobManifest()
     result = manifest.loadJDL( result[ 'Value' ] )
@@ -509,11 +511,13 @@ class JobState( object ):
 
   right_insertIntoTQ = RIGHT_CHANGE_STATUS
   @RemoteMethod
-  def insertIntoTQ( self ):
-    result = self.getManifest()
-    if not result[ 'OK' ]:
-      return result
-    manifest = result[ 'Value' ]
+  def insertIntoTQ( self, manifest = None ):
+    if not manifest:
+      result = self.getManifest()
+      if not result[ 'OK' ]:
+        return result
+      manifest = result[ 'Value' ]
+    print manifest.dumpAsCFG()
 
     reqSection = "JobRequirements"
 
@@ -521,8 +525,6 @@ class JobState( object ):
     if not result[ 'OK' ]:
       return S_ERROR( "No %s section in the job manifest" % reqSection )
     reqCfg = result[ 'Value' ]
-
-    print reqCfg
 
     jobReqDict = {}
     for name in JobState.__db.tq.getSingleValueTQDefFields():

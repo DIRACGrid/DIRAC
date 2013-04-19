@@ -285,7 +285,7 @@ class MySQL:
         except KeyError:
           pass
         if retriesLeft >= 0:
-          return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
+          return self.__getWithRetry( dbName, totalRetries, retriesLeft )
         return S_ERROR( "Could not connect" )
 
       if lastName != dbName:
@@ -562,7 +562,6 @@ class MySQL:
       self._connected = True
       return S_OK()
     except Exception, x:
-      print x
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
 

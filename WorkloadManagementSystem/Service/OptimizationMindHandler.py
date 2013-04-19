@@ -23,7 +23,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
         jid = int( jid )
       except ValueError:
         self.log.error( "Job ID %s has to be an integer" % jid )
-        continue
+
       #Forget and add task to ensure state is reset
       self.forgetTask( jid )
       result = self.executeTask( jid, OptimizationTask( jid ) )
@@ -103,12 +103,23 @@ class OptimizationMindHandler( ExecutorMindHandler ):
 
   @classmethod
   def exec_taskProcessed( cls, jid, taskObj, eType ):
-    jobState = taskObj.jobState
+    cjs = taskObj.jobState
     cls.log.info( "Saving changes for job %s after %s" % ( jid, eType ) )
-    result = jobState.commitChanges()
+    result = cjs.commitChanges()
     if not result[ 'OK' ]:
       cls.log.error( "Could not save changes for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
-    return result
+      return result
+    if taskObj.tqReady:
+      result = cjs.getManifest()
+      if not result[ 'OK' ]:
+        cls.log.error( "Could not get manifest before inserting into TQ", "%s: %s" % ( jid, result[ 'Message' ] ) )
+        return result
+      manifest = result[ 'Value' ]
+      result = cjs.jobState.insertIntoTQ( manifest )
+      if not result[ 'OK' ]:
+        cls.log.error( "Could not insert into TQ", "%s: %s" % ( jid, result[ 'Message' ] ) )
+      return result
+    return S_OK()
 
   @classmethod
   def exec_taskFreeze( cls, jid, taskObj, eType ):
@@ -197,7 +208,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     else:
       return S_ERROR( "%s status not known." % stageStatus )
 
-    result = cls.__jobDB.getJobAttributes( jid, ['Status'] )
+    result = self.__jobDB.getJobAttributes( jid, ['Status'] )
     if not result['OK']:
       return result
     data = result[ 'Value' ]

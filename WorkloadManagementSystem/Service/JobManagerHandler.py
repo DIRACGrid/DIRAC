@@ -76,7 +76,7 @@ class JobManagerHandler( RequestHandler ):
     self.jobPolicy.setJobDB( gJobDB )
     return S_OK()
 
-  def __sendNewJobsToMind( self, jids ):
+  def __sendJobsToOptimizationMind( self, jids ):
     if not self.msgClient.connected:
       return
     result = self.msgClient.createMessage( "OptimizeJobs" )
@@ -84,7 +84,7 @@ class JobManagerHandler( RequestHandler ):
       self.log.error( "Cannot create Optimize message: %s" % result[ 'Message' ] )
       return
     msgObj = result[ 'Value' ]
-    msgObj.jids = jids
+    msgObj.jids = list( sorted( jids ) )
     result = self.msgClient.sendMessage( msgObj )
     if not result[ 'OK' ]:
       self.log.error( "Cannot send Optimize message: %s" % result[ 'Message' ] )
@@ -128,7 +128,7 @@ class JobManagerHandler( RequestHandler ):
 
     result['JobID'] = result['Value']
     result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
-    self.__sendNewJobsToMind( [ jobID ] )
+    self.__sendJobsToOptimizationMind( [ jobID ] )
     return result
 
 ###########################################################################
@@ -204,7 +204,7 @@ class JobManagerHandler( RequestHandler ):
 
     result = S_OK( validJobList )
     result[ 'requireProxyUpload' ] = len( ownerJobList ) > 0 and self.__checkIfProxyUploadIsRequired()
-    self.__sendNewJobsToMind( validJobList )
+    self.__sendJobsToOptimizationMind( validJobList )
     return result
 
   def __deleteJob( self, jobID ):
@@ -330,7 +330,7 @@ class JobManagerHandler( RequestHandler ):
         gJobLoggingDB.addLoggingRecord( jobID, result['Status'], result['MinorStatus'],
                                         application = 'Unknown', source = 'JobManager' )
 
-    self.__sendNewJobsToMind( good_ids )
+    self.__sendJobsToOptimizationMind( good_ids )
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR( 'Some jobs failed resetting' )
       if invalidJobList:

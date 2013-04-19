@@ -120,14 +120,27 @@ class JobDB( DB ):
         self.log.info( "Found schema migration" )
       except AttributeError:
         return S_OK( version )
-      result = migration()
+      result = self.transactionStart()
       if not result[ 'OK' ]:
-        self.log.error( "Can't apply migration from schema version %d: %s" % ( version, result[ 'Message' ] ) )
-        return result
-      result = self._update( "INSERT INTO SchemaVersion VALUES ( %d )" % version )
-      if not result[ 'OK' ]:
-        self.log.error( "Error saving schema version %d: %s" % ( version, result[ 'Message' ] ) )
-        return result
+        return S_ERROR( "Could not start database migration: %s" % result[ 'Value' ] )
+      done = False
+      try:
+        result = migration()
+        if not result[ 'OK' ]:
+          self.log.error( "Can't apply migration from schema version %d: %s" % ( version, result[ 'Message' ] ) )
+          return result
+        result = self._update( "INSERT INTO SchemaVersion VALUES ( %d )" % version )
+        if not result[ 'OK' ]:
+          self.log.error( "Error saving schema version %d: %s" % ( version, result[ 'Message' ] ) )
+          return result
+        result = self.transactionRollback()
+        if not result[ 'OK' ]:
+          return S_ERROR( "Could not commit database migration: %s" % result[ 'Value' ] )
+        done = True
+      finally:
+        if not done:
+          self.transactionRollback()
+
     return S_OK( version )
 
   def __schemaMigration_0( self ):

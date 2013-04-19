@@ -10,20 +10,28 @@ class OptimizationTask( object ):
       self.__jobState = jid
     else:
       self.__jobState = CachedJobState( jid )
+    self.__tqReady = False
     self.__parametricManifests = False
 
   def setParametricManifests( self, manifests ):
     self.__parametricManifests = manifests
+
+  def setTQReady( self ):
+    self.__tqReady = True
 
   @property
   def jobState( self ):
     return self.__jobState
 
   def serialize( self ):
-    stub = { 'job': self.__jobState.serialize() }
+    stub = { 'job': self.__jobState.serialize(), 'tq' : self.__tqReady }
     if self.__parametricManifests:
       stub[ 'manifests' ] = self.__parametricManifests
     return DEncode.encode( stub )
+
+  @property
+  def tqReady( self ):
+    return self.__tqReady
 
   @classmethod
   def deserialize( cls, stub ):
@@ -34,4 +42,6 @@ class OptimizationTask( object ):
     ot = cls( result[ 'Value' ] )
     if 'manifests' in stub:
       ot.setParametricManifests( stub[ 'manifests' ] )
+    if stub.get( 'tq', False ):
+      ot.setTQReady()
     return S_OK( ot )
