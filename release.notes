@@ -34,6 +34,7 @@ CHANGE: Job.py - setPlatform renamed to setSubmitPools
 CHANGE: MigrationMonitoringAgent - removed obsoleted
 NEW: FileCatalogClient - getFileUserMetadata to get both file and directory metadata for a given file
 CHANGE: FileCatalogClient - list meta data sets
+FIX: FileCatalog - extra check while new user registration for already existing entry
 BUGFIX: ReplicaManager - pass catalog argument in putAndRegister to registerFile call, closes #1369
 
 *WMS
