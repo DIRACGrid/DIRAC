@@ -67,11 +67,11 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
   types_getSiteMask = []
-  def export_getSiteMask(self):
+  def export_getSiteMask(self, status = "Active"):
     """ Get the site mask
     """
 
-    result = jobDB.getSiteMask('Active')
+    result = jobDB.getSiteMask(status)
     return result
 
     if result['Status'] == "OK":
