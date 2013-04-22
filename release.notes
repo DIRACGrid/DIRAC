@@ -92,6 +92,12 @@ FIX: TaskManager - site in the job definition is taken into account when submitt
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
 
+[v6r7p25]
+
+*Core
+CHANGE: X509Chain - in getCredentials() failure to contact CS is not fatal, 
+        can happen when calling dirac-proxy-init -x, for example
+
 [v6r7p24]
 
 *DMS
