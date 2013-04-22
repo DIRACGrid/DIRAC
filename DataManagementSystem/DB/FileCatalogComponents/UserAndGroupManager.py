@@ -103,10 +103,16 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
       return S_OK(uid)
     res = self.db._insert('FC_Users',['UserName'],[uname])
     if not res['OK']:
-      gLogger.debug("UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
-      self.lock.release()
-      return res
-    uid = res['lastRowId']
+      if 'Duplicate entry' in res['Message']:
+        res = self.db.getFields("FC_Users",['UID'],{'UserName':uname})
+        if res['OK']:
+          uid = res['Value'][0][0]
+      else:
+        gLogger.debug("UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
+        self.lock.release()
+        return res
+    else:
+      uid = res['lastRowId']
     self.db.uids[uid] = uname
     self.db.users[uname] = uid
     gLogger.debug("UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
