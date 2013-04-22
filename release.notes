@@ -54,6 +54,11 @@ NEW: StorageElement - enable Storage Element proxy configuration by protocol nam
 CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added DIRAC_GLEXEC 
         to the environment when running under glexec     
 
+[v6r8p8]
+
+*RSS
+BUGFIX: dirac-rss-setup - added missing return of S_OK() result
+
 [v6r8p7]
 
 NEW: Applied patches from v6r7p24
@@ -147,6 +152,12 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p25]
+
+*Core
+CHANGE: X509Chain - in getCredentials() failure to contact CS is not fatal, 
+        can happen when calling dirac-proxy-init -x, for example
 
 [v6r7p24]
 
