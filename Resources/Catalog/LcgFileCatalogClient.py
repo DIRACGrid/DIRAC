@@ -712,7 +712,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getDirectorySize( self, lfn, longOutput=False, rawFiles=False ):
+  def getDirectorySize( self, lfn, longOutput = False, rawFiles = False ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
@@ -723,7 +723,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     failed = {}
     successful = {}
     for path in lfns.keys():
-      res = self.__getDirectorySize( path, longOutput=longOutput )
+      res = self.__getDirectorySize( path, longOutput = longOutput )
       if res['OK']:
         successful[path] = res['Value']
       else:
@@ -854,6 +854,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         continue
     lfc.lfc_umask( 0000 )
     for lfnList in breakListIntoChunks( sorted( lfns ), 1000 ):
+      fileChunk = []
       for lfn in list( lfnList ):
         lfnInfo = lfns[lfn]
         pfn = lfnInfo['PFN']
@@ -882,9 +883,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           oFile.csumtype = 'AD'
           oFile.status = 'U'
           oFile.csumvalue = lfnInfo['Checksum']
+          fileChunk.append( oFile )
       if not lfnList:
         continue
-      error, errCodes = lfc.lfc_registerfiles( lfnList )
+      error, errCodes = lfc.lfc_registerfiles( fileChunk )
       if error or ( len( errCodes ) != len( lfnList ) ):
         for lfn in lfnList:
           failed[lfn] = lfc.sstrerror( lfc.cvar.serrno )
@@ -1566,7 +1568,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     pathDict = {'Files': files, 'SubDirs':subDirs, 'Links':links}
     return S_OK( pathDict )
 
-  def __getDirectorySize( self, path, longOutput=False ):
+  def __getDirectorySize( self, path, longOutput = False ):
     res = self.__executeOperation( path, 'exists' )
     if not res['OK']:
       return res
