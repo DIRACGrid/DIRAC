@@ -53,6 +53,18 @@ NEW: StorageElement - enable Storage Element proxy configuration by protocol nam
 CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added DIRAC_GLEXEC 
         to the environment when running under glexec     
 
+[v6r8p7]
+
+NEW: Applied patches from v6r7p24
+
+*DMS
+BUGFIX: LcgFileCatalogClient - bug in addFile()
+
+*RSS
+BUGFIX: fixed script dirac-rss-set-token, broken in the current release.
+NEW: Statistics module - will be used in the future to provide detailed information 
+     from the History of the elements 
+
 [v6r8p6]
 
 NEW: Applied patches from v6r7p23
@@ -134,6 +146,16 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p24]
+
+*DMS
+NEW: FileCatalog - added getFilesByMetadataWeb() to allow pagination in the Web 
+     catalog browser
+     
+*WMS
+CHANGE: WMSAdministrator, DiracAdmin - get banned sites list by specifying the status
+        to the respective jobDB call     
 
 [v6r7p23]
 
