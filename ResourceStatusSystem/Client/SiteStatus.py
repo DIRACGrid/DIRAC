@@ -5,86 +5,176 @@
 
 """
 
-from DIRAC                                                  import gLogger, S_ERROR, S_OK 
+# DIRAC 
+from DIRAC                                                  import S_OK
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Utilities.ElementStatus     import ElementStatus
+from DIRAC.ResourceStatusSystem.Utilities.RSSCache          import RSSCache
+from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
 
 __RCSID__ = '$Id: $'
 
-class SiteStatus( object ):
+class SiteStatus( ElementStatus ):
   """
   RSS helper to interact with the 'Site' family on the DB. It provides the most
   demanded functions and a cache to avoid hitting the server too often.
+  
+  It provides four methods to interact with the site statuses:
+  * getSiteStatuses
+  * getSiteStatus 
+  * isUsableSite  
+  * getUsableSites
   """
   
   __metaclass__ = DIRACSingleton
   
-  #FIXME: add cache. As it is now, is querying directly the server
-  
   def __init__( self ):
     """
-    Constructor, initializes the rssClient.
-    """
-    self.rssClient = ResourceStatusClient()
-    self.log       = gLogger.getSubLogger( 'SiteStatus' )
-  
-  def getSiteStatus( self, siteName ):
-    """ 
-    Given a siteName, returns its status: Unknown, Active, Degraded, Probing, Banned
-    and Error.
+    Constructor, initializes the logger, rssClient and cache.
+    
+    examples
+      >>> siteStatus = SiteStatus()
     """
     
-    self.log.debug( siteName )
+    super( SiteStatus, self ).__init__()
     
-    if not isinstance( siteName, str ):
-      return S_ERROR( '%s is not of type str' % siteName )
+    # RSSCache initialization
+    cacheLifeTime   = int( RssConfiguration().getConfigCache() )
     
-    res = self.rssClient.selectStatusElement( 'Site', 'Status', name = siteName,
-                                              meta = { 'columns' : [ 'Status' ] } )
-    
-    if not res[ 'OK' ]:
-      self.log.verbose( res[ 'Message' ] )
-      return res
-    
-    self.log.debug( res[ 'Value' ] )
-    
-    return S_OK( res[ 'Value' ][ 0 ][ 0 ] )
+    # FIXME: we need to define the types in the CS : Site => {Computing,Storage,..}Access
+    self.siteCache  = RSSCache( 'Site', cacheLifeTime, self.__updateSiteCache )
 
-  def isUsableSite( self, siteName ):
+  def getSiteStatuses( self, siteNames, statusTypes = None ):
     """
-    Given a site name, returns a bool if the site is usable: status is Active or
-    Degraded, or not. 
+    Method that queries the RSSCache for Site-Status-related information. If any
+    of the inputs is None, it is interpreted as * ( all ).
+    
+    If match is positive, the output looks like:
+    { 
+     siteA : { statusType1 : status1, statusType2 : status2 },
+     siteB : { statusType1 : status1, statusType2 : status2 },
+    }
+    
+    There are ALWAYS the same keys inside the site dictionaries.
+    
+    examples
+      >>> siteStatus.getSiteStatuses( 'LCG.CERN.ch', None )
+          S_OK( { 'LCG.CERN.ch' : { 'ComputingAccess' : 'Active', 'StorageAccess' : 'Degraded' } }  )
+      >>> siteStatus.getSiteStatuses( 'RubbishSite', None )
+          S_ERROR( ... )            
+      >>> siteStaus.getSiteStatuses( 'LCG.CERN.ch', 'ComputingAccess' )
+          S_OK( { 'LCG.CERN.ch' : { 'ComputingAccess' : 'Active' } }  )    
+      >>> siteStatus.getSiteStatuses( [ 'LCG.CERN.ch', 'LCG.IN2P3.fr' ], 'ComputingAccess' )
+          S_OK( { 'LCG.CERN.ch'  : { 'ComputingAccess' : 'Active' },
+                  'LCG.IN2P3.fr' : { 'ComputingAccess' : 'Active' } }  )    
+      >>> siteStatus.getSiteStatuses( None, 'ComputingAccess' )
+          S_OK( { 'LCG.CERN.ch'  : { 'ComputingAccess' : 'Active' },
+                  'LCG.IN2P3.fr' : { 'ComputingAccess' : 'Active' },
+                  ... }  )            
+
+    :Parameters:
+      **siteNames** - [ None, `string`, `list` ]
+        name(s) of the sites to be matched
+      **statusTypes** - [ None, `string`, `list` ]
+        name(s) of the statusTypes to be matched
+    
+    :return: S_OK() || S_ERROR()                 
     """
     
-    self.log.debug( siteName )
+    cacheMatch = self.siteCache.match( siteNames, statusTypes )
+
+    self.log.debug( 'getSiteStatus' )
+    self.log.debug( cacheMatch )
     
-    siteStatus = self.getSiteStatus( siteName )
-    if not siteStatus[ 'OK' ]:
-      self.log.error( siteStatus[ 'Message' ] )
-      return False
-    
-    if siteStatus[ 'Value' ] in ( 'Active', 'Degraded' ):
-      self.log.debug( 'IsUsable' )
-      return True
-    
-    self.log.debug( 'Is NOT Usable' )
-    return False  
-    
-  def getUsableSites( self ):
+    return cacheMatch        
+
+  def getSiteStatus( self, siteName, statusType ):
     """
-    Returns all site names which status is either Active or Degraded, in a list.
+    Given a site and a statusType, it returns its status from the cache.
+    
+    examples
+      >>> siteStatus.getSiteStatus( 'LCG.CERN.ch', 'StorageAccess' )
+          S_OK( 'Active' )
+      >>> siteStatus.getSiteStatus( 'LCG.CERN.ch', None )
+          S_ERROR( ... )
+    
+    :Parameters:
+      **siteName** - `string`
+        name of the site to be matched
+      **statusType** - `string`
+        name of the statusType to be matched
+    
+    :return: S_OK() || S_ERROR()
+    """
+  
+    return self.getElementStatus( 'Site', siteName, statusType )
+
+  def isUsableSite( self, siteName, statusType ):
+    """
+    Similar method to getSiteStatus. The difference is the output.
+    Given a site name, returns a bool if the site is usable: 
+      status is Active or Degraded outputs True
+      anything else outputs False
+    
+    examples
+      >>> siteStatus.isUsableSite( 'LCG.CERN.ch', 'StorageAccess' )
+          True
+      >>> siteStatus.isUsableSite( 'LCG.CERN.ch', 'ComputingAccess' )
+          False # May be banned   
+      >>> siteStatus.isUsableSite( 'LCG.CERN.ch', None )
+          False    
+      >>> siteStatus.isUsableSite( 'RubbishSite', 'StorageAccess' )
+          False
+      >>> siteStatus.isUsableSite( 'LCG.CERN.ch', 'RubbishAccess' )
+          False        
+    
+    :Parameters:
+      **siteName** - `string`
+        name of the site to be matched
+      **statusType** - `string`
+        name of the statusType to be matched
+    
+    :return: S_OK() || S_ERROR()    
     """
     
-    res = self.rssClient.selectStatusElement( 'Site', 'Status', 
-                                              status = [ 'Active', 'Degraded' ],  
-                                              meta = { 'columns' : [ 'Name' ] } )
-    if not res[ 'OK' ]:
-      self.log.verbose( res[ 'Message' ] )
-      return res
+    return self.isUsableElement( 'Site', siteName, statusType )
+
+  def getUsableSites( self, statusType ):
+    """
+    For a given statusType, returns all sites that are usable: their status
+    for that particular statusType is either Active or Degraded; in a list.
     
-    self.log.debug( res[ 'Value' ] )
+    examples
+      >>> siteStatus.getUsableSites( 'ComputingAccess' )
+          S_OK( [ 'LCG.CERN.ch', 'LCG.IN2P3.fr',... ] )
+      >>> siteStatus.getUsableSites( None )
+          S_ERROR( ... )
+      >>> siteStatus.getUsableSites( 'RubbishAccess' )
+          S_ERROR( ... )    
     
-    return S_OK( [ siteTuple[0] for siteTuple in res[ 'Value' ] ] )
+    :Parameters:
+      **statusType** - `string`
+        name of the statusType to be matched
+    
+    :return: S_OK() || S_ERROR()
+    """
+    
+    return self.getUsableElements( 'Site', statusType )
+ 
+  #.............................................................................
+  # Private methods
+ 
+  def __updateSiteCache( self ):
+    """
+      Method used to update the SiteCache.
+    """   
+
+    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }   
+    rawCache  = self.rssClient.selectStatusElement( 'Site', 'Status', meta = meta )
+    
+    if not rawCache[ 'OK' ]:
+      return rawCache
+    return S_OK( self.getCacheDictFromRawData( rawCache[ 'Value' ] ) )
   
 #...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
