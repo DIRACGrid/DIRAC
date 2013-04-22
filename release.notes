@@ -1,3 +1,9 @@
+[v6r7p25]
+
+*Core
+CHANGE: X509Chain - in getCredentials() failure to contact CS is not fatal, 
+        can happen when calling dirac-proxy-init -x, for example
+
 [v6r7p24]
 
 *DMS
