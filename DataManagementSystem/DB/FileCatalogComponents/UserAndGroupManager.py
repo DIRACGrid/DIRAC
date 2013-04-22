@@ -63,6 +63,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     """ Get ID for a user specified by its name """
     if type(user) in [IntType,LongType]:
       return S_OK(user)
+    self._refreshUsers()
     if user in self.db.users.keys():
       return S_OK(self.db.users[user])
     return self.__addUser(user)
