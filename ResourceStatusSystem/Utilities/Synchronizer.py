@@ -179,7 +179,7 @@ class Synchronizer( object ):
     gLogger.verbose( '%s Computing elements found in CS' % len( cesCS ) )
     
     cesDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
-                                                   elementType = 'CE',
+                                                   elementType = 'ComputingElement',
                                                    meta = { 'columns' : [ 'name' ] } ) 
     if not cesDB[ 'OK' ]:
       return cesDB    
@@ -198,11 +198,10 @@ class Synchronizer( object ):
       if not deleteQuery[ 'OK' ]:
         return deleteQuery            
     
-    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
-    statusTypes = self.rssConfig.getConfigStatusType( 'CE' )
+    statusTypes = self.rssConfig.getConfigStatusType( 'ComputingElement' )
 
     cesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
-                                                 elementType = 'CE', 
+                                                 elementType = 'ComputingElement', 
                                                  meta = { 'columns' : [ 'name', 'statusType' ] } ) 
     if not cesTuple[ 'OK' ]:
       return cesTuple   
@@ -220,7 +219,7 @@ class Synchronizer( object ):
       _statusType      = ceTuple[ 1 ]
       _status          = 'Unknown'
       _reason          = 'Synchronized'
-      _elementType     = 'CE'
+      _elementType     = 'ComputingElement'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
                                                        statusType = _statusType,
