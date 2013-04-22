@@ -1,3 +1,8 @@
+[v6r8p8]
+
+*RSS
+BUGFIX: dirac-rss-setup - added missing return of S_OK() result
+
 [v6r8p7]
 
 NEW: Applied patches from v6r7p24
