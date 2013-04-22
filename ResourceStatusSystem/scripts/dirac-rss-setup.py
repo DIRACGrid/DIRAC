@@ -12,7 +12,7 @@
 
 """
 
-from DIRAC                                              import gLogger, exit as DIRACExit, version
+from DIRAC                                              import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                                    import Script
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
