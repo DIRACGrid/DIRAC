@@ -1,3 +1,15 @@
+[v6r8p7]
+
+NEW: Applied patches from v6r7p24
+
+*DMS
+BUGFIX: LcgFileCatalogClient - bug in addFile()
+
+*RSS
+BUGFIX: fixed script dirac-rss-set-token, broken in the current release.
+NEW: Statistics module - will be used in the future to provide detailed information 
+     from the History of the elements 
+
 [v6r8p6]
 
 NEW: Applied patches from v6r7p23
