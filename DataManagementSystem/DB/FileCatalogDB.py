@@ -201,7 +201,13 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathOwner(res['Value']['Successful'],credDict, recursive)
+    successful = res['Value']['Successful']
+    if recursive:
+      res = self._expandPath(successful)
+      if not res['OK']:
+        return res
+      successful = res['Value']['Successful']
+    res = self.fileManager.changePathOwner(successful,credDict, recursive)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
@@ -215,7 +221,13 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathGroup(res['Value']['Successful'],credDict, recursive)
+    successful = res['Value']['Successful']
+    if recursive:
+      res = self._expandPath(successful)
+      if not res['OK']:
+        return res
+      successful = res['Value']['Successful']
+    res = self.fileManager.changePathGroup(successful,credDict, recursive)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
@@ -229,7 +241,13 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathMode(res['Value']['Successful'],credDict, recursive)    
+    successful = res['Value']['Successful']
+    if recursive:
+      res = self._expandPath(successful)
+      if not res['OK']:
+        return res
+      successful = res['Value']['Successful']
+    res = self.fileManager.changePathMode(successful,credDict, recursive)    
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
@@ -703,4 +721,22 @@ class FileCatalogDB(DB):
       else:  
         successful[lfn] = lfns[lfn]
     return S_OK( {'Successful':successful,'Failed':failed} )
- 
+  
+  def _expandPath(self, paths):
+    res = self.dtree.listDirectory(paths)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    successfuls = res['Value']['Successful']
+    successful = {}
+    for path in successfuls.keys():
+      successful.setdefault(path, True)
+      for subdir in successfuls[path]['SubDirs'].keys():
+        res = self._expandPath({subdir: True})
+        if not res['OK']:
+          return res
+        successful.update(res['Value']['Successful'])
+        failed.update(res['Value']['Failed'])
+      for f in successfuls[path]['Files'].keys():
+        successful.setdefault(f, True)
+    return S_OK({'Successful':successful,'Failed':failed})
