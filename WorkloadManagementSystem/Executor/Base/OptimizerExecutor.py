@@ -216,6 +216,7 @@ class OptimizerExecutor( ExecutorModule ):
       return S_ERROR( "Could not retrieve job status for %s: %s" % ( jid, result[ 'Message' ] ) )
     if taskObj.splitManifests:
       self.log.info( "Job has been split. Avoid fast track" )
+      return S_OK()
     status, minorStatus = result[ 'Value' ]
     if status != "Checking":
       self.log.info( "[JID %s] Not in checking state. Avoid fast track" % jid )

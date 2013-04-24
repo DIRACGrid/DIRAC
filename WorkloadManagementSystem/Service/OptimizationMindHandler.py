@@ -104,7 +104,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
   @classmethod
   def __splitJob( cls, jid, manifests ):
     cls.log.notice( "Splitting job %s" % jid )
-    result = cls.__jobDB.insertParametricManifests( jid, [ man.dumpAsJDL() for man in manifests ] )
+    result = cls.__jobDB.insertParametricManifests( jid, manifests )
     if not result[ 'OK' ]:
       return result
     for jid in result[ 'Value' ]:

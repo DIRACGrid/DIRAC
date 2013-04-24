@@ -36,8 +36,6 @@ class ParametricSplitter( BaseSplitter ):
       param = params[ iP ]
       childManifest = parentManifest.clone()
       childManifest.setOption( "Parameter", param )
-      childManifest.setOption( "SplitId", str( iP ).zfill( fillLen ) )
-      childManifest.setOption( "SplitSourceJob", jobState.jid )
       childManifest.expand()
       manifestList.append( childManifest )
 

@@ -63,8 +63,8 @@ class InputDataResolution( OptimizerExecutor ):
 
     result = jobState.getInputData()
     if result[ 'OK' ] and result[ 'Value' ]:
-      #Already resolved
-      return S_OK()
+      self.jobLog.notice( "Already resolved input data, skipping" )
+      return self.setNextOptimizer()
 
     #Sanitize
     lfns = []

@@ -144,6 +144,10 @@ class JobDB( DB ):
     return S_OK( version )
 
   def __schemaMigration_0( self ):
+    self.log.info( "Updating MasterJobIDs..." )
+    result = self._update( "UPDATE `Jobs` SET MasterJobID = JobID WHERE MasterJobID = 0" )
+    if not result[ 'OK' ]:
+      return result
     tables = { 'SchemaVersion' : { 'Fields' : { 'Version' : 'INTEGER UNSIGNED' } } }
     tables[ 'LFN' ] = { 'Fields' : { 'LFNID' : 'INTEGER NOT NULL AUTO_INCREMENT',
                                      'JobID' : 'INTEGER UNSIGNED NOT NULL',
@@ -160,15 +164,16 @@ class JobDB( DB ):
                                           'Disk' : 'TINYINT(1) NOT NULL' },
                              'PrimaryKey' : [ 'LFNID', 'SEName', 'SURL' ],
                              'Indexes' : { 'LFNID' : [ 'LFNID' ] } }
-    tables[ 'MasterJDLs' ] = { 'Fields' : { 'MasterJobID' : 'int(11) NOT NULL',
+    tables[ 'MasterJDLs' ] = { 'Fields' : { 'JobID' : 'int(11) NOT NULL',
                                             'JDL' : 'BLOB NOT NULL' },
-                             'PrimaryKey' : [ 'MasterJobID' ] }
+                             'PrimaryKey' : [ 'JobID' ] }
 
     result = self._createTables( tables )
     if not result[ 'OK' ]:
       return result
-    dropTables = [ 'SubJobs', 'PrecursorJobs', 'TaskQueues', 'TaskQueue' ]
+    dropTables = [ 'SubJobs', 'PrecursorJobs', 'TaskQueues', 'TaskQueue', 'InputData' ]
     self.log.info( "Info dropping tables %s" % ", ".join( dropTables ) )
+
     return self._update( "DROP TABLE %s" % ", ".join( dropTables ) )
 
 
@@ -1229,22 +1234,30 @@ class JobDB( DB ):
       if not result[ 'OK' ]:
         return result
       sourceManifest = result[ 'Value' ]
-      result = self.insertFields( 'MasterJDLs', inDict = { 'MasterJobID' : jid,
+      result = self.insertFields( 'MasterJDLs', inDict = { 'JobID' : jid,
                                                            'JDL' : sourceManifest } )
       if not result[ 'OK' ]:
         return result
+      jobManifest = manifests[0]
+      manifestJDL = jobManifest.dumpAsJDL()
       result = self.updateFields( 'JobJDLs',
                                   condDict = { 'JobID' : jid },
-                                  updateDict = { 'JDL' : manifests[0],
-                                                 'OriginalJDL' : manifests[0],
+                                  updateDict = { 'JDL' : manifestJDL,
+                                                 'OriginalJDL' : manifestJDL,
                                                  'JobRequirements' : '' } )
       if not result[ 'OK' ]:
         return result
-      upDict = {}
-      jobManifest = JobManifest()
-      result = jobManifest.load( manifests[0] )
+
+      #Get source job input data
+      result = self.getInputData( jid )
       if not result[ 'OK' ]:
         return result
+      sourceInputData = result[ 'Value' ]
+
+      #Reset source Job Values
+      upDict = { 'Status' : 'Received',
+                 'MinorStatus' : 'Job accepted',
+                 'ApplicationStatus' : 'Unknown' }
       for name in ( 'JobName', 'JobType', 'JobGroup', 'Priority' ):
         value = jobManifest.getOption( name )
         if name == 'Priority':
@@ -1257,17 +1270,39 @@ class JobDB( DB ):
       if not result[ 'OK' ]:
         return result
 
+      #Reduce source job input data
+      inputData = {}
+      for lfn in jobManifest.getOption( "InputData", [] ):
+        if lfn not in sourceInputData:
+          return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
+        inputData[ lfn ] = dict( sourceInputData[ lfn ] )
+        result = self.setInputData( jid, inputData )
+        if not result[ 'OK' ]:
+          return result
+
+      #Get job attributes to copy them to children jobs
       result = self.getJobAttributes( jid, [ 'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ] )
       if not result[ 'OK' ]:
         return result
       attrs = result[ 'Value' ]
+
+      #Do the magic!
       jidList = [ jid ]
       for manifest in manifests[1:]:
-        result = self.insertNewJobIntoDB( manifest, attrs[ 'Owner' ], attrs[ 'OwnerDN' ],
+        result = self.insertNewJobIntoDB( manifest.dumpAsJDL(), attrs[ 'Owner' ], attrs[ 'OwnerDN' ],
                                           attrs[ 'OwnerGroup' ], attrs[ 'DIRACSetup' ], jid )
         if not result[ 'OK' ]:
           return result
         jidList.append( result[ 'Value' ] )
+        inputData = {}
+        for lfn in manifest.getOption( "InputData", [] ):
+          if lfn not in sourceInputData:
+            return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
+          inputData[ lfn ] = dict( sourceInputData[ lfn ] )
+          result = self.setInputData( jidList[-1], inputData )
+          if not result[ 'OK' ]:
+            return result
+
       result = self.transactionCommit()
       if not result[ 'OK' ]:
         return result
@@ -1292,8 +1327,6 @@ class JobDB( DB ):
                                       'OwnerDN' : ownerDN,
                                       'OwnerGroup' : ownerGroup,
                                       'DIRACSetup' : diracSetup } )
-    if parentJob != None:
-      jobManifest.setOption( "ParentJob", parentJob )
     result = jobManifest.check()
     if not result['OK']:
       return result
@@ -1330,6 +1363,14 @@ class JobDB( DB ):
     attrs[ 'VerifiedFlag' ] = True
     attrs[ 'Status' ] = 'Received'
     attrs[ 'MinorStatus' ] = 'Job accepted'
+
+    site = jobManifest.getOption( 'Site', [] )
+    if not site:
+      attrs[ 'Site' ] = 'ANY'
+    elif len( site ) > 1:
+      attrs[ 'Site' ] = 'Multiple'
+    else:
+      attrs[ 'Site' ] = site[0]
 
     if parentJob == None:
       parentJob = jid
@@ -1379,13 +1420,6 @@ class JobDB( DB ):
         if not jobManifest.isOption( k ):
           jobManifest.setOption( k, voPolicy[ k ] )
 
-    site = jobManifest.getOption( 'Site', [] )
-    if site:
-      if len( site ) > 1:
-        attrs[ 'Site' ] = 'Multiple'
-      else:
-        attrs[ 'Site' ] = Site[0]
-
     jobManifest.remove( "JobRequirements" )
 
     result = jobManifest.check()
@@ -1414,21 +1448,6 @@ class JobDB( DB ):
     else:
       jobIDList = jobIDs
 
-    # If this is a master job delete the children first
-    failedSubjobList = []
-    for jobID in jobIDList:
-      result = self.getJobAttribute( jobID, 'JobSplitType' )
-      if result['OK']:
-        if result['Value'] == "Master":
-          result = self.getSubjobs( jobID )
-          if result['OK']:
-            subjobs = result['Value']
-            if subjobs:
-              result = self.removeJobFromDB( subjobs )
-              if not result['OK']:
-                failedSubjobList += subjobs
-                self.log.error( "Failed to delete subjobs " + str( subjobs ) + " from JobDB" )
-
     failedTablesList = []
     jobIDString = ','.join( [str( int( j ) ) for j in jobIDList] )
     cmd = "DELETE LFN, Replicas FROM LFN, Replicas WHERE Replicas.LFNID = LFN.LFNID AND LFN.JobID in (%s)" % jobIDString
@@ -1441,7 +1460,8 @@ class JobDB( DB ):
                    'AtticJobParameters',
                    'HeartBeatLoggingInfo',
                    'OptimizerParameters',
-                   'Jobs'
+                   'Jobs',
+                   'MasterJDLs'
                    ):
 
       cmd = 'DELETE FROM %s WHERE JobID in (%s)' % ( table, jobIDString )
@@ -1580,7 +1600,6 @@ class JobDB( DB ):
 
     attrs = {}
     attrs[ 'RescheduleCounter' ] = rescheduleCounter
-    attrs[ 'Site' ] = jobManifest.getOption( 'Site' )
     attrs[ 'Status' ] = 'Received'
     attrs[ 'MinorStatus' ] = 'Job accepted'
     attrs[ 'ApplicationStatus' ] = 'Unknown'
@@ -1588,6 +1607,15 @@ class JobDB( DB ):
     attrs[ 'RescheduleTime' ] = Time.toString()
     attrs[ 'LastUpdateTime' ] = Time.toString()
     attrs[ 'SubmissionTime' ] = Time.toString()
+
+    site = jobManifest.getOption( 'Site', [] )
+    if not site:
+      attrs[ 'Site' ] = 'ANY'
+    elif len( site ) > 1:
+      attrs[ 'Site' ] = 'Multiple'
+    else:
+      attrs[ 'Site' ] = site[0]
+
 
     result = self.updateFields( 'Jobs', condDict = { 'JobID' : jid },
                                 updateDict = attrs )

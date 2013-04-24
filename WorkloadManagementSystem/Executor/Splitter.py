@@ -55,7 +55,7 @@ class Splitter( OptimizerExecutor ):
     if splitter not in self.__splitters:
       self.jobLog.error( "Unknown splitter %s" % splitter )
       return S_ERROR( "Unknown splitter %s" % splitter )
-    spObj = self.__splitters[ splitter ]()
+    spObj = self.__splitters[ splitter ]( self.jobLog )
     try:
       result = spObj.splitJob( jobState )
     except Exception, excp:
@@ -68,9 +68,14 @@ class Splitter( OptimizerExecutor ):
     if len( manifests ) > maxJobs:
       self.jobLog.error( "Splitter went beyond maxJobs" )
       return S_ERROR( "Can't generate more than %s jobs" % maxJobs )
-    self.jobLog.notice( "Generated %s manifests" % len( manifests ) )
-    for manifest in manifests:
+    numManifests = len( manifests )
+    self.jobLog.notice( "Generated %s manifests" % numManifests )
+    for iM in range( numManifests ):
+      manifest = manifests[ iM ]
       manifest.remove( "Splitter" )
+      manifest.setOption( "SplitId", str( iM ).zfill( len( str( numManifests ) ) ) )
+      manifest.setOption( "SplitSourceJob", jid )
+      manifest.expand()
     return self.splitJob( manifests )
 
 
