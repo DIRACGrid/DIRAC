@@ -569,6 +569,8 @@ class StorageBase( object ):
     :param list lfns: list of LFNs
     :param str stotrageElementName: DIRAC SE name
     """
+    if type( lfns ) == type( '' ):
+      lfns = [lfns]
     storageElement = StorageElement( storageElementName )
     res = storageElement.isValid( "getPfnForLfn" )
     if not res['OK']:
@@ -2041,8 +2043,8 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, res['Message'] )
       return res
     lfnDict = res['Value']['Successful']
-    
-    for lfn, reason in res['Value'].get('Failed', {}).items():
+
+    for lfn, reason in res['Value'].get( 'Failed', {} ).items():
       # Ignore files missing in FC if force is set
       if reason == 'No such file or directory' and force:
         successful[lfn] = True
