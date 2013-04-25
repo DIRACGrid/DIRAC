@@ -18,7 +18,6 @@ from types import ListType, StringType, StringTypes, DictType
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
-from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -26,17 +25,17 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 class StorageElement:
   """
   .. class:: StorageElement
-  
+
   common interface to the grid storage element
   """
 
   def __init__( self, name, protocols = None, vo = None ):
     """ c'tor
-    
+
     :param str name: SE name
     :param list protocols: requested protocols
     """
-    
+
     self.vo = vo
     if not vo:
       result = getVOfromProxyGroup()
@@ -122,14 +121,14 @@ class StorageElement:
       return
     i = 1
     outStr = "\n\n============ Options ============\n"
-    for key in sortList( self.options.keys() ):
+    for key in sorted( self.options ):
       outStr = "%s%s: %s\n" % ( outStr, key.ljust( 15 ), self.options[key] )
 
     for storage in self.storages:
       outStr = "%s============Protocol %s ============\n" % ( outStr, i )
       res = storage.getParameters()
       storageParameters = res['Value']
-      for key in sortList( storageParameters.keys() ):
+      for key in sorted( storageParameters ):
         outStr = "%s%s: %s\n" % ( outStr, key.ljust( 15 ), storageParameters[key] )
       i = i + 1
     self.log.info( outStr )
@@ -145,19 +144,19 @@ class StorageElement:
     return S_OK( self.name )
 
   def getChecksumType( self ):
-    """ get local /Resources/StorageElements/SEName/ChecksumType option if defined, otherwise 
+    """ get local /Resources/StorageElements/SEName/ChecksumType option if defined, otherwise
         global /Resources/StorageElements/ChecksumType
     """
-    return S_OK( str(gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" )).upper() 
-                 if "ChecksumType" not in self.options else str(self.options["ChecksumType"]).upper() )
-     
+    return S_OK( str( gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" ) ).upper()
+                 if "ChecksumType" not in self.options else str( self.options["ChecksumType"] ).upper() )
+
   def getStatus( self ):
     """
      Return Status of the SE, a dictionary with:
       - Read: True (is allowed), False (it is not allowed)
       - Write: True (is allowed), False (it is not allowed)
       - Remove: True (is allowed), False (it is not allowed)
-      - Check: True (is allowed), False (it is not allowed). 
+      - Check: True (is allowed), False (it is not allowed).
       NB: Check always allowed IF Read is allowed (regardless of what set in the Check option of the configuration)
       - DiskSE: True if TXDY with Y > 0 (defaults to True)
       - TapeSE: True if TXDY with X > 0 (defaults to False)
@@ -210,7 +209,7 @@ class StorageElement:
 
     :param str operation: operation name
     """
-    self.log.debug( "isValid: Determining whether the StorageElement %s is valid for %s" % ( self.name, 
+    self.log.debug( "isValid: Determining whether the StorageElement %s is valid for %s" % ( self.name,
                                                                                              operation ) )
     if not self.valid:
       self.log.error( "isValid: Failed to create StorageElement plugins.", self.errorReason )
@@ -225,7 +224,7 @@ class StorageElement:
     writing = res[ 'Value' ][ 'Write' ]
     removing = res[ 'Value' ][ 'Remove' ]
 
-    # Determine whether the requested operation can be fulfilled    
+    # Determine whether the requested operation can be fulfilled
     if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):
       self.log.error( "isValid: Read, write and check access not permitted." )
       return S_ERROR( "StorageElement.isValid: Read, write and check access not permitted." )
@@ -294,7 +293,7 @@ class StorageElement:
     """
     if not self.valid:
       return S_ERROR( self.errorReason )
-    self.log.verbose( "getStorageElementOption: Obtaining %s option for Storage Element %s." % ( option, 
+    self.log.verbose( "getStorageElementOption: Obtaining %s option for Storage Element %s." % ( option,
                                                                                                  self.name ) )
     if option in self.options:
       optionValue = self.options[option]
@@ -428,9 +427,9 @@ class StorageElement:
     errStr = "getPfnForLfn: Failed to get the full pfn for any of the protocols!!"
     self.log.error( errStr )
     return S_ERROR( errStr )
-  
+
   def getPFNBase( self ):
-    """ Get the base to construct a PFN 
+    """ Get the base to construct a PFN
     """
     if not self.storages:
       return S_ERROR( 'No storages defined' )
@@ -449,43 +448,43 @@ class StorageElement:
   def retransferOnlineFile( self, pfn, singleFile = False ):
     """ execcute 'retransferOnlineFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'retransferOnlineFile' )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'retransferOnlineFile' )
 
   def exists( self, pfn, singleFile = False ):
     """ execute 'exists' operation  """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'exists' )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'exists' )
 
 
   def isFile( self, pfn, singleFile = False ):
     """ execute 'isFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'isFile' )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'isFile' )
 
   def getFile( self, pfn, localPath = False, singleFile = False ):
     """ execute 'getFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'getFile', { 'localPath': localPath } )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'getFile', { 'localPath': localPath } )
 
-  def putFile( self, pfn, sourceSize=0, singleFile = False ):
+  def putFile( self, pfn, sourceSize = 0, singleFile = False ):
     """ execute 'putFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'putFile', { 'sourceSize': sourceSize } )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'putFile', { 'sourceSize': sourceSize } )
 
   def replicateFile( self, pfn, sourceSize = 0, singleFile = False ):
     """ execute 'putFile' as replicate """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'putFile', { 'sourceSize': sourceSize } )
-  
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'putFile', { 'sourceSize': sourceSize } )
+
   def getFileMetadata( self, pfn, singleFile = False ):
     """ execute 'getFileMetadata' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'getFileMetadata' )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'getFileMetadata' )
 
   def getFileSize( self, pfn, singleFile = False ):
     """ execute 'getFileSize' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'getFileSize' )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'getFileSize' )
 
   def getAccessUrl( self, pfn, protocol = False, singleFile = False ):
     """ execute 'getTransportURL' operation """
@@ -494,73 +493,73 @@ class StorageElement:
     else:
       protocols = [protocol]
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'getTransportURL', {'protocols': protocols} )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'getTransportURL', {'protocols': protocols} )
 
   def removeFile( self, pfn, singleFile = False ):
     """ execute 'removeFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'removeFile' )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'removeFile' )
 
   def prestageFile( self, pfn, lifetime = 86400, singleFile = False ):
     """ execute 'prestageFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'prestageFile' )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'prestageFile' )
 
   def prestageFileStatus( self, pfn, singleFile = False ):
     """ execute 'prestageFileStatus' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'prestageFileStatus' )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'prestageFileStatus' )
 
   def pinFile( self, pfn, lifetime = 60 * 60 * 24, singleFile = False ):
     """ execute 'pinFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'pinFile', { 'lifetime': lifetime } )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'pinFile', { 'lifetime': lifetime } )
 
   def releaseFile( self, pfn, singleFile = False ):
     """ execute 'releaseFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleFile)]( pfn, 'releaseFile' )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'releaseFile' )
 
   def isDirectory( self, pfn, singleDirectory = False ):
     """ execute 'isDirectory' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleDirectory)]( pfn, 'isDirectory' )
+             False : self.__executeFunction }[bool( singleDirectory )]( pfn, 'isDirectory' )
 
   def getDirectoryMetadata( self, pfn, singleDirectory = False ):
     """ execute 'getDirectoryMetadata' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleDirectory)]( pfn, 'getDirectoryMetadata' )
+             False : self.__executeFunction }[bool( singleDirectory )]( pfn, 'getDirectoryMetadata' )
 
   def getDirectorySize( self, pfn, singleDirectory = False ):
     """ execute 'getDirectorySize' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleDirectory)]( pfn, 'getDirectorySize' )
+             False : self.__executeFunction }[bool( singleDirectory )]( pfn, 'getDirectorySize' )
 
   def listDirectory( self, pfn, singleDirectory = False ):
     """ execute 'listDirectory' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleDirectory)]( pfn, 'listDirectory' )
+             False : self.__executeFunction }[bool( singleDirectory )]( pfn, 'listDirectory' )
 
   def removeDirectory( self, pfn, recursive = False, singleDirectory = False ):
     """ execute 'removeDirectory' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleDirectory)]( pfn, 'removeDirectory', {'recursive': 
+             False : self.__executeFunction }[bool( singleDirectory )]( pfn, 'removeDirectory', {'recursive':
                                                                                                recursive} )
 
   def createDirectory( self, pfn, singleDirectory = False ):
     """ execute 'createDirectory' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleDirectory)]( pfn, 'createDirectory' )
+             False : self.__executeFunction }[bool( singleDirectory )]( pfn, 'createDirectory' )
 
   def putDirectory( self, pfn, singleDirectory = False ):
     """ execute 'putDirectory' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleDirectory)]( pfn, 'putDirectory' )
+             False : self.__executeFunction }[bool( singleDirectory )]( pfn, 'putDirectory' )
 
   def getDirectory( self, pfn, localPath = False, singleDirectory = False ):
     """ execute 'getDirectory' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool(singleDirectory)]( pfn, 'getDirectory', { 'localPath': 
+             False : self.__executeFunction }[bool( singleDirectory )]( pfn, 'getDirectory', { 'localPath':
                                                                                              localPath } )
 
   def __executeSingleFile( self, pfn, operation, arguments = None ):
@@ -586,7 +585,7 @@ class StorageElement:
         'pfn' is the physical file name (as registered in the LFC)
         'method' is the functionality to be executed
     """
-    ## default args  = no args  
+    ## default args  = no args
     argsDict = argsDict if argsDict else {}
     if type( pfn ) in StringTypes:
       pfns = {pfn:False}
@@ -604,7 +603,7 @@ class StorageElement:
     if not pfns:
       self.log.verbose( "__executeFunction: No pfns supplied." )
       return S_OK( {'Failed':{}, 'Successful':{}} )
-    self.log.verbose( "__executeFunction: Attempting to perform '%s' operation with %s pfns." % ( method, 
+    self.log.verbose( "__executeFunction: Attempting to perform '%s' operation with %s pfns." % ( method,
                                                                                                   len( pfns ) ) )
 
     res = self.isValid( operation = method )
@@ -623,7 +622,7 @@ class StorageElement:
       res = storage.getParameters()
       useProtocol = True
       if not res['OK']:
-        self.log.error( "__executeFunction: Failed to get storage parameters.", "%s %s" % ( self.name, 
+        self.log.error( "__executeFunction: Failed to get storage parameters.", "%s %s" % ( self.name,
                                                                                             res['Message'] ) )
         useProtocol = False
       else:
@@ -636,15 +635,15 @@ class StorageElement:
           useProtocol = False
           self.log.verbose( "__executeFunction: Protocol not appropriate for use: %s." % protocolName )
       if useProtocol:
-        self.log.verbose( "__executeFunction: Generating %s protocol PFNs for %s." % ( len( pfns ), 
+        self.log.verbose( "__executeFunction: Generating %s protocol PFNs for %s." % ( len( pfns ),
                                                                                        protocolName ) )
-        res = self.__generatePfnDict( pfns.keys(), storage, failed )
+        res = self.__generatePfnDict( pfns, storage )
         pfnDict = res['Value']
-        failed = res['Failed']
-        if not len( pfnDict.keys() ) > 0:
+        failed.update( res['Failed'] )
+        if not len( pfnDict ) > 0:
           self.log.verbose( "__executeFunction No pfns generated for protocol %s." % protocolName )
         else:
-          self.log.verbose( "__executeFunction: Attempting to perform '%s' for %s physical files" % ( method, 
+          self.log.verbose( "__executeFunction: Attempting to perform '%s' for %s physical files" % ( method,
                                                                                                       len( pfnDict ) ) )
           fcn = None
           if hasattr( storage, method ) and callable( getattr( storage, method ) ):
@@ -653,7 +652,7 @@ class StorageElement:
             return S_ERROR( "__executeFunction: unable to invoke %s, it isn't a member function of storage" )
 
           pfnsToUse = {}
-          for pfn in pfnDict.keys():
+          for pfn in pfnDict:
             pfnsToUse[pfn] = pfns[pfnDict[pfn]]
 
           res = fcn( pfnsToUse, **argsDict )
@@ -682,9 +681,10 @@ class StorageElement:
 
     return S_OK( { 'Failed': failed, 'Successful': successful } )
 
-  def __generatePfnDict( self, pfns, storage, failed ):
+  def __generatePfnDict( self, pfns, storage ):
     """ whatever, it creates PFN dict  """
     pfnDict = {}
+    failed = {}
     for pfn in pfns:
       res = pfnparse( pfn )
       if not res['OK']:

@@ -1,17 +1,13 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__   = "$Id$"
 
-from DIRAC.Core.Base import Script 
+from DIRAC.Core.Base import Script
 
-Script.setUsageMessage("""
+Script.setUsageMessage( """
 Get status of the available Storage Elements
 
-Usage: 
-  %s [<options>] 
-""" % Script.scriptName)
+Usage:
+  %s [<options>]
+""" % Script.scriptName )
 
 Script.parseCommandLine()
 
@@ -57,4 +53,4 @@ if __name__ == "__main__":
   DIRAC.exit(0)
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

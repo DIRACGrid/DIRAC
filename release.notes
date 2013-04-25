@@ -55,6 +55,13 @@ NEW: StorageElement - enable Storage Element proxy configuration by protocol nam
 CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added DIRAC_GLEXEC 
         to the environment when running under glexec     
 
+[v6r8p9]
+
+*DMS
+FIX: TransferAgent,dirac-dms-show-se-status, ResourceStatus,TaskManager - fixes
+     needed for DMS components to use RSS status information
+NEW: ReplicaManager - allow to get metadata for an LFN+SE as well as PFN+SE     
+
 [v6r8p8]
 
 *RSS
@@ -153,6 +160,11 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p26]
+
+*DMS
+FIX: ReplicaManager - status names Read/Write -> ReadAccess/WriteAccess
 
 [v6r7p25]
 
