@@ -25,7 +25,7 @@
 
 __RCSID__ = "$Id$"
 
-import socket
+import socket , sys , os
 
 from DIRAC                                              import gLogger, exit as DIRACexit
 from DIRAC.Core.Base                                    import Script
@@ -38,38 +38,49 @@ args = Script.getPositionalArgs()
 
 arg = "".join( args )
 
+if not len( arg ) > 0:
+  gLogger.error( "Missing argument" )
+  DIRACexit( 2 )
+
 try:
   head , body = arg.split( "\\n\\n" )
 except Exception , x:
-  gLogger.error( "Failed to get e-mail header and body from: %s" % arg )
-  DIRACexit( 2 )
+  head = "To: %s" % arg
+  body = sys.stdin.read()
 
-body = "".join( body )
+try:
+  tmp , body = body.split( "\\n\\n" )
+  head = tmp + "\\n" + head
+except Exception , x:
+  pass
+
+body = "".join( body.strip() )
 
 try:
   headers = dict( ( i.strip() , j.strip()) for i , j in 
               ( item.split( ':' ) for item in head.split( '\\n' ) ) )
 except:
   gLogger.error( "Failed to convert string: %s to email headers" % head )
-  DIRACexit( 3 )
+  DIRACexit( 4 )
 
 if not "To" in headers:
   gLogger.error( "Failed to get 'To:' field from headers %s" % head )
-  DIRACexit( 4 )
+  DIRACexit( 5 )
 to = headers[ "To" ]
 
-origin = socket.gethostname()
+origin = "%s@%s" %( os.getenv( "LOGNAME" , "dirac" ) , socket.getfqdn() )
 if "From" in headers:
   origin = headers[ "From" ]
 
-subject = ""
+subject = "Sent from %s" % socket.getfqdn()
 if "Subject" in headers:
   subject = headers[ "Subject" ]
 
 ntc = NotificationClient()
+print "sendMail(%s,%s,%s,%s,%s)" % ( to , subject , body , origin , False )
 result = ntc.sendMail( to , subject , body , origin , localAttempt = False )
 if not result[ "OK" ]:
   gLogger.error( result[ "Message" ] )
-  DIRACexit( 5 )
+  DIRACexit( 6 )
 
 DIRACexit( 0 )
