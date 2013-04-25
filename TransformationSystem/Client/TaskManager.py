@@ -85,10 +85,11 @@ class RequestTasks( TaskBase ):
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
     requestType = 'transfer'
     requestOperation = 'replicateAndRegister'
-    try:
-      requestType, requestOperation = transBody.split( ';' )
-    except AttributeError:
-      pass
+    if transBody:
+      try:
+        requestType, requestOperation = transBody.split( ';' )
+      except AttributeError:
+        pass
     for taskID in sortList( taskDict.keys() ):
       paramDict = taskDict[taskID]
       transID = paramDict['TransformationID']
