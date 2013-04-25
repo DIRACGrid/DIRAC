@@ -209,18 +209,19 @@ class CachedJobState( object ):
 
   def __cacheDict( self, prefix, functor, keyList = None ):
     if not keyList or not self.__cacheExists( [ "%s.%s" % ( prefix, key ) for key in keyList ] ):
+      data = [ ( key[ len( prefix ) + 1: ], self.__cache[ key ] ) for key in self.__cache if key.find( "%s." % prefix ) == 0 ]
+      data = dict( data )
       result = functor( keyList )
       if not result[ 'OK' ]:
         return result
-      data = result [ 'Value' ]
-      for key in data:
+      rData = result [ 'Value' ]
+      for key in rData:
         cKey = "%s.%s" % ( prefix, key )
         #If the key is already in the cache. DO NOT TOUCH. User may have already modified it.
         #We update the coming data with the cached data
-        if cKey in self.__cache:
-          data[ key ] = self.__cache[ cKey ]
-        else:
-          self.__cache[ cKey ] = data[ key ]
+        if cKey not in self.__cache:
+          self.__cache[ cKey ] = rData[ key ]
+          data[ key ] = rData[ key ]
       return S_OK( data )
     return S_OK( dict( [ ( key, self.__cache[ "%s.%s" % ( prefix, key ) ] ) for key in keyList ] ) )
 
