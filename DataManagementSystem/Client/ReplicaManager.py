@@ -1,7 +1,3 @@
-####################################################################################
-# $HeadURL$
-####################################################################################
-
 """ :mod: ReplicaManager
     =======================
 
@@ -12,15 +8,13 @@
 
 """
 
-__RCSID__ = "$Id$"
-
-## imports
+# # imports
 from datetime import datetime, timedelta
 import fnmatch
 import os
 import time
 from types import StringTypes, ListType, DictType, StringType, TupleType
-## from DIRAC
+# # from DIRAC
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -59,10 +53,10 @@ class CatalogBase( object ):
     :param dict argsDict: kwargs for method
     :param list catalogs: list with catalog names
     """
-    ## default values
+    # # default values
     argsDict = argsDict if argsDict else dict()
     catalogs = catalogs if catalogs else list()
-    ## checjk type
+    # # checjk type
     if not lfn or type( lfn ) not in StringTypes + ( ListType, DictType ):
       return S_ERROR( "wrong type (%s) for argument 'lfn'" % type( lfn ) )
     singleLfn = lfn
@@ -70,7 +64,7 @@ class CatalogBase( object ):
       singleLfn = lfn[0]
     elif type( lfn ) == DictType:
       singleLfn = lfn.keys()[0]
-    ## call only for single lfn
+    # # call only for single lfn
     res = self._callFileCatalogFcn( lfn, method, argsDict, catalogs = catalogs )
     if not res["OK"]:
       return res
@@ -97,7 +91,7 @@ class CatalogBase( object ):
                           is all available catalogs; examples are 'LcgFileCatalogCombined', 'BookkeepingDB',
                           'ProductionDB' etc.
     """
-    ## default values
+    # # default values
     argsDict = argsDict if argsDict else dict()
     catalogs = catalogs if catalogs else list()
     lfns = None
@@ -112,23 +106,23 @@ class CatalogBase( object ):
     elif type( lfn ) == DictType:
       lfns = lfn.copy()
 
-    ## lfns supplied?
+    # # lfns supplied?
     if not lfns:
       errMsg = "_callFileCatalogFcn: No lfns supplied."
       self.log.error( errMsg )
       return S_ERROR( errMsg )
     self.log.debug( "_callFileCatalogFcn: Will execute '%s' method with %s lfns." % ( method, len( lfns ) ) )
-    ## create FileCatalog instance
+    # # create FileCatalog instance
     fileCatalog = FileCatalog( catalogs = catalogs )
-    ## get symbol
+    # # get symbol
     fcFcn = getattr( fileCatalog, method ) if hasattr( fileCatalog, method ) else None
-    ## check if it is callable
+    # # check if it is callable
     fcFcn = fcFcn if callable( fcFcn ) else None
     if not fcFcn:
       errMsg = "_callFileCatalogFcn: '%s' isn't a member function in FileCatalog." % method
       self.log.error( errMsg )
       return S_ERROR( errMsg )
-    ## call it at least
+    # # call it at least
     res = fcFcn( lfns, **argsDict )
     if not res["OK"]:
       self.log.error( "_callFileCatalogFcn: Failed to execute '%s'." % method, res["Message"] )
@@ -243,7 +237,7 @@ class CatalogFile( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    ## make sure lfns are sorted from the longest to the shortest
+    # # make sure lfns are sorted from the longest to the shortest
     if type( lfn ) == ListType:
       lfn = sorted( lfn, reverse = True )
     return self._fcFuncWrapper( singleFile )( lfn, "removeFile", catalogs = catalogs )
@@ -487,14 +481,14 @@ class StorageBase( object ):
     :param dict argsDict: additional keyword arguments that are required for the :method:
     """
     argsDict = argsDict if argsDict else {}
-    ## call wrapper
+    # # call wrapper
     res = self._callStorageElementFcn( storageElementName, pfn, method, argsDict )
-    ## check type
+    # # check type
     if type( pfn ) == ListType:
       pfn = pfn[0]
     elif type( pfn ) == DictType:
       pfn = pfn.keys()[0]
-    ## check results
+    # # check results
     if not res["OK"]:
       return res
     elif pfn in res["Value"]["Failed"]:
@@ -513,7 +507,7 @@ class StorageBase( object ):
     :param dict argsDict: additional keyword arguments that are required for the :method:
     """
     argsDict = argsDict if argsDict else {}
-    ## check pfn type
+    # # check pfn type
     if type( pfn ) in StringTypes:
       pfns = {pfn : False}
     elif type( pfn ) == ListType:
@@ -524,7 +518,7 @@ class StorageBase( object ):
       errStr = "_callStorageElementFcn: Supplied pfns must be a str, list of str or dict."
       self.log.error( errStr )
       return S_ERROR( errStr )
-    ## have we got some pfns?
+    # # have we got some pfns?
     if not pfns:
       errMessage = "_callStorageElementFcn: No pfns supplied."
       self.log.error( errMessage )
@@ -536,17 +530,17 @@ class StorageBase( object ):
       errStr = "_callStorageElementFcn: Failed to instantiate Storage Element"
       self.log.error( errStr, "for performing %s at %s." % ( method, storageElementName ) )
       return res
-    ## get sybmbol
+    # # get sybmbol
     fcFcn = getattr( storageElement, method ) if hasattr( storageElement, method ) else None
-    ## make sure it is callable
+    # # make sure it is callable
     fcFcn = fcFcn if callable( fcFcn ) else None
     if not fcFcn:
       errMsg = "_callStorageElementFcn: '%s' isn't a member function in StorageElement." % method
       self.log.error( errMsg )
       return S_ERROR( errMsg )
-    ## call it at least
+    # # call it at least
     res = fcFcn( pfns, **argsDict )
-    ## return the output
+    # # return the output
     if not res["OK"]:
       errStr = "_callStorageElementFcn: Completely failed to perform %s." % method
       self.log.error( errStr, '%s : %s' % ( storageElementName, res["Message"] ) )
@@ -903,17 +897,17 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param str method: StorageElement function name
     :param dict argsDict: kwargs of :method:
     """
-    ## default value
+    # # default value
     argsDict = argsDict if argsDict else {}
-    ## get single LFN
+    # # get single LFN
     singleLfn = lfn
     if type( lfn ) == ListType:
       singleLfn = lfn[0]
     elif type( lfn ) == DictType:
       singleLfn = lfn.keys()[0]
-    ## call method
+    # # call method
     res = self._callReplicaSEFcn( storageElementName, singleLfn, method, argsDict )
-    ## check results
+    # # check results
     if not res["OK"]:
       return res
     elif singleLfn in res["Value"]["Failed"]:
@@ -927,23 +921,23 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param str storageElementName: DIRAC SE name
     :param mixed lfn: a LFN str, list of LFNs or dict with LFNs as keys
     """
-    ## default value
+    # # default value
     argsDict = argsDict if argsDict else {}
-    ## get replicas for lfn
+    # # get replicas for lfn
     res = self._callFileCatalogFcn( lfn, "getReplicas" )
     if not res["OK"]:
       errStr = "_callReplicaSEFcn: Completely failed to get replicas for LFNs."
       self.log.error( errStr, res["Message"] )
       return res
-    ## returned dict, get failed replicase
+    # # returned dict, get failed replicase
     retDict = { "Failed": res["Value"]["Failed"],
                 "Successful" : {} }
-    ## print errors
+    # # print errors
     for lfn, reason in retDict["Failed"].items():
       self.log.error( "_callReplicaSEFcn: Failed to get replicas for file.", "%s %s" % ( lfn, reason ) )
-    ## good replicas
+    # # good replicas
     lfnReplicas = res["Value"]["Successful"]
-    ## store PFN to LFN mapping
+    # # store PFN to LFN mapping
     pfnDict = {}
     for lfn, replicas in lfnReplicas.items():
       if storageElementName in replicas:
@@ -952,14 +946,14 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
         errStr = "_callReplicaSEFcn: File hasn't got replica at supplied Storage Element."
         self.log.error( errStr, "%s %s" % ( lfn, storageElementName ) )
         retDict["Failed"][lfn] = errStr
-    ## call StorageElement function at least
+    # # call StorageElement function at least
     res = self._callStorageElementFcn( storageElementName, pfnDict.keys(), method, argsDict )
-    ## check result
+    # # check result
     if not res["OK"]:
       errStr = "_callReplicaSEFcn: Failed to execute %s StorageElement method." % method
       self.log.error( errStr, res["Message"] )
       return res
-    ## filter out failed nad successful
+    # # filter out failed nad successful
     for pfn, pfnRes in res["Value"]["Successful"].items():
       retDict["Successful"][pfnDict[pfn]] = pfnRes
     for pfn, errorMessage in res["Value"]["Failed"].items():
@@ -1281,8 +1275,8 @@ class ReplicaManager( CatalogToStorage ):
   def __isOlderThan( self, stringTime, days ):
     timeDelta = timedelta( days = days )
     maxCTime = datetime.utcnow() - timeDelta
-    #st = time.strptime( stringTime, "%a %b %d %H:%M:%S %Y" )
-    #cTimeStruct = datetime( st[0], st[1], st[2], st[3], st[4], st[5], st[6], None )
+    # st = time.strptime( stringTime, "%a %b %d %H:%M:%S %Y" )
+    # cTimeStruct = datetime( st[0], st[1], st[2], st[3], st[4], st[5], st[6], None )
     cTimeStruct = stringTime
     if cTimeStruct < maxCTime:
       return True
@@ -1799,8 +1793,8 @@ class ReplicaManager( CatalogToStorage ):
 
     logStr = "__resolveBestReplicas:"
 
-    #configStr = '/Resources/StorageElements/BannedSource'
-    #bannedSources = gConfig.getValue( configStr, [] )
+    # configStr = '/Resources/StorageElements/BannedSource'
+    # bannedSources = gConfig.getValue( configStr, [] )
     self.log.info( "%s Obtained current banned sources." % logStr )
     replicaPreference = []
 
@@ -1819,7 +1813,7 @@ class ReplicaManager( CatalogToStorage ):
       if not diracSEStatus in ( 'Active', 'Degraded' ):
         self.log.info( "%s %s is currently '%s' as a source." % ( logStr, diracSE, diracSEStatus ) )
 
-      #elif diracSE in bannedSources:
+      # elif diracSE in bannedSources:
       #  self.log.info( "__resolveBestReplicas: %s is currently banned as a source." % diracSE )
       else:
         self.log.info( "%s %s is available for use." % ( logStr, diracSE ) )
@@ -1920,7 +1914,7 @@ class ReplicaManager( CatalogToStorage ):
             pfn = physicalFile
           else:
             pfn = res['Value']
-          #tuple = ( lfn, pfn, fileSize, storageElementName, fileGuid, checksum )
+          # tuple = ( lfn, pfn, fileSize, storageElementName, fileGuid, checksum )
           fileDict[lfn] = {'PFN':pfn, 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
     self.log.verbose( "__registerFile: Resolved %s files for registration." % len( fileDict ) )
     if catalog:
@@ -1984,7 +1978,7 @@ class ReplicaManager( CatalogToStorage ):
             replicaTuple = ( lfn, res['Value'], storageElementName, False )
             replicaTuples.append( replicaTuple )
     self.log.verbose( "__registerReplica: Successfully resolved %s replicas for registration." % len( replicaTuples ) )
-    #HACK!
+    # HACK!
     replicaDict = {}
     for lfn, pfn, se, master in replicaTuples:
       replicaDict[lfn] = {'SE':se, 'PFN':pfn}
@@ -2041,8 +2035,8 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, res['Message'] )
       return res
     lfnDict = res['Value']['Successful']
-    
-    for lfn, reason in res['Value'].get('Failed', {}).items():
+
+    for lfn, reason in res['Value'].get( 'Failed', {} ).items():
       # Ignore files missing in FC if force is set
       if reason == 'No such file or directory' and force:
         successful[lfn] = True
@@ -2065,7 +2059,7 @@ class ReplicaManager( CatalogToStorage ):
   def __removeFile( self, lfnDict ):
     """ remove file """
     storageElementDict = {}
-    ## sorted and reversed
+    # # sorted and reversed
     for lfn, repDict in sorted( lfnDict.items(), reverse = True ):
       for se, pfn in repDict.items():
         storageElementDict.setdefault( se, [] ).append( ( lfn, pfn ) )
@@ -2243,7 +2237,7 @@ class ReplicaManager( CatalogToStorage ):
     oDataOperation = self.__initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuple ) )
     oDataOperation.setStartTime()
     start = time.time()
-    #HACK!
+    # HACK!
     replicaDict = {}
     for lfn, pfn, se in replicaTuple:
       replicaDict[lfn] = {'SE':se, 'PFN':pfn}
@@ -2426,9 +2420,9 @@ class ReplicaManager( CatalogToStorage ):
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
 
-  #def removeReplica(self,lfn,storageElementName,singleFile=False):
-  #def putReplica(self,lfn,storageElementName,singleFile=False):
-  #def replicateReplica(self,lfn,size,storageElementName,singleFile=False):
+  # def removeReplica(self,lfn,storageElementName,singleFile=False):
+  # def putReplica(self,lfn,storageElementName,singleFile=False):
+  # def replicateReplica(self,lfn,size,storageElementName,singleFile=False):
 
   def getActiveReplicas( self, lfns ):
     """ Get all the replicas for the SEs which are in Active status for reading.
@@ -2477,9 +2471,9 @@ class ReplicaManager( CatalogToStorage ):
       return S_ERROR( 'SE not known' )
 
     seStatus = { 'Read' : True, 'Write' : True }
-    if ( "Read" in res['Value'][se] ) and ( res['Value'][se]['Read'] not in ( 'Active', 'Degraded' ) ):
+    if ( "ReadAccess" in res['Value'][se] ) and ( res['Value'][se]['ReadAccess'] not in ( 'Active', 'Degraded' ) ):
       seStatus[ 'Read' ] = False
-    if ( "Write" in res['Value'][se] ) and ( res['Value'][se]['Write'] not in ( 'Active', 'Degraded' ) ):
+    if ( "WriteAccess" in res['Value'][se] ) and ( res['Value'][se]['WriteAccess'] not in ( 'Active', 'Degraded' ) ):
       seStatus[ 'Write' ] = False
 
     return S_OK( seStatus )
