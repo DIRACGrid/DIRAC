@@ -12,7 +12,7 @@
 
       getSiteOption( site, option )
       getSiteOptionsDict( site )
-      getSiteValue( site, option, default ) 
+      getSiteValue( site, option, default )
 
       getResourceOption( site, resourceType, resource, option )
       getResourceOptionsDict( site, resourceType, resource )
@@ -36,7 +36,7 @@
     dictionary, there is a one-to-one correspondence as we have a single node type per given
     Resource type, mostly for clarity/readability reasons
 
-    For example, 
+    For example,
 
       getComputingOption( site, ceName, option )
       getQueueOptionsDict( site, ceName, queueName )
@@ -54,16 +54,16 @@
       getQueues( site, ceName, { 'Platform' : ['Linux_x86_64_glibc-2.5','x86_64_ScientificSL_Boron_5.4'] } )
 
     The following methods allow to get a list of Resources and Nodes across sites
-      
+
       getEligibleResources( resourceType, selectDict )
       getEligibleNodes( nodeType, resourceSelectDict, nodeSelectDict )
 
     The following are methods specialized for particular resources:
-    
+
       getEligibleStorageElements( selectDict={} )
       getStorageElementOptionsDict( seName )
       getQueueDescription( site, ce, queue )
-      getEligibleQueues( siteList, ceList, ceTypeList, mode ):        
+      getEligibleQueues( siteList, ceList, ceTypeList, mode ):
 
 """
 
@@ -73,7 +73,7 @@ from DIRAC                                              import S_OK, S_ERROR, gC
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers           import CSGlobals, Registry
 from DIRAC.Core.Utilities.List                          import uniqueElements
-import re, os  
+import re, os
 from types import ListType
 
 ############################################################################
@@ -108,14 +108,14 @@ def getSites( siteList = [] ):
     result = getSiteName( site )
     if not result['OK']:
       continue
-    canonicalSiteList.append( result['Value'] )  
+    canonicalSiteList.append( result['Value'] )
 
   return S_OK( canonicalSiteList )
 
 def getSiteName( site_ ):
   """ Get the site name in a canonical form <Site>.<country>
   """
-  
+
   site = None
   if not '.' in site_:
     result = getSites()
@@ -124,12 +124,12 @@ def getSiteName( site_ ):
     sites = result['Value']
     for siteName in sites:
       if siteName.startswith( site_ ):
-        site = siteName  
+        site = siteName
   else:
-    site = site_    
+    site = site_
   if site is None:
     return S_ERROR( 'Unknown site %s' % site_ )
-  
+
   domain = ''
   if len( site.split( '.' ) ) == 2:
     siteName,country = site.split( '.' )
@@ -143,10 +143,10 @@ def getSiteName( site_ ):
       return S_ERROR( 'Invalid site name %s' % site )
     else:
       result = S_OK( '.'.join( [siteName, country] ) )
-      result['Domain'] = domain  
+      result['Domain'] = domain
       return result
   else:
-    return S_ERROR( 'Invalid site name %s' % site )    
+    return S_ERROR( 'Invalid site name %s' % site )
 
 def getSitePath( site ):
   """ Return path to the Site section on CS
@@ -164,7 +164,7 @@ def getSiteDomains( site ):
   if not result['OK']:
     return result
   sitePath = result['Value']
-  siteDomains = gConfig.getValue( cfgPath( sitePath, 'Domains' ), [] ) 
+  siteDomains = gConfig.getValue( cfgPath( sitePath, 'Domains' ), [] )
   if not result['OK']:
     if not "does not exist" in result['Message']:
       return result
@@ -178,7 +178,7 @@ def getSiteDomains( site ):
 def getResourceDomains():
   """ Get the list of all the configured Resources Domains
   """
-  result = gConfig.getSections( cfgPath( gBaseResourcesSection, 'Domains' ) ) 
+  result = gConfig.getSections( cfgPath( gBaseResourcesSection, 'Domains' ) )
   return result
 
 def getResourceTypes( site ):
@@ -188,7 +188,7 @@ def getResourceTypes( site ):
   if not result['OK']:
     return result
   sitePath = result['Value']
-  return gConfig.getSections( sitePath )    
+  return gConfig.getSections( sitePath )
 
 # def checkElementCommunity( elementPath, community ):
 #   """ Check recursively the given element for eligibility with respect to the given community
@@ -202,7 +202,7 @@ def getResourceTypes( site ):
 #   if parentPath == gBaseResourcesSection:
 #     return True
 #   else:
-#     return checkElementCommunity( parentPath, community )      
+#     return checkElementCommunity( parentPath, community )
 
 def checkElementProperties( elementPath, selectDict ):
   """ Check the given element for the compliance with the given selection criteria
@@ -213,28 +213,28 @@ def checkElementProperties( elementPath, selectDict ):
   if not result['OK']:
     return False
   elementDict = result['Value']
-  finalResult = True  
+  finalResult = True
   for property_ in selectDict:
     if not property_ in elementDict:
-      return False 
+      return False
     if type( selectDict[property_] ) == ListType:
       if not elementDict[property_] in selectDict[property_]:
         return False
     else:
       if elementDict[property_] != selectDict[property_]:
-        return False     
+        return False
 
   return finalResult
 
 def getSiteForResource( resourceType, resourceName ):
   """ Get the site name for the given resource specified by type and name
   """
-  
+
   result = getSites()
   if not result['OK']:
     return result
   sites = result['Value']
-  
+
   for site in sites:
     result = Resources().getResources( site, resourceType )
     if not result['OK']:
@@ -243,8 +243,8 @@ def getSiteForResource( resourceType, resourceName ):
     for resource in resources:
       if resource == resourceName:
         return S_OK( site )
-      
-  return S_ERROR( 'Resource %s of type %s is not found' % ( resourceName, resourceType ) )    
+
+  return S_ERROR( 'Resource %s of type %s is not found' % ( resourceName, resourceType ) )
 
 ####################################################################################
 #
@@ -256,8 +256,8 @@ class Resources( object ):
   """
 
   class __InnerResources( object ):
-    """ Internal class providing implementation for generic Resources data access methods 
-    """ 
+    """ Internal class providing implementation for generic Resources data access methods
+    """
 
     def getOption( self, optionPath, optionVOPath ):
       value = None
@@ -268,7 +268,7 @@ class Resources( object ):
             return result
         else:
           value = result['Value']
-      if value is None:       
+      if value is None:
         return gConfig.getOption( optionPath )
       else:
         return S_OK(value)
@@ -284,17 +284,17 @@ class Resources( object ):
         return result
       optDict = result['Value']
       optDict.update( comOptDict )
-      return S_OK( optDict )    
+      return S_OK( optDict )
 
     def getValue( self, optionPath, optionVOPath, default ):
       if optionVOPath is not None:
         value = gConfig.getValue( optionVOPath )
         if value is None:
-          return gConfig.getValue( optionPath, default )  
+          return gConfig.getValue( optionPath, default )
         else:
           return gConfig.getValue( optionVOPath, default )
       else:
-        return gConfig.getValue( optionPath, default )  
+        return gConfig.getValue( optionPath, default )
 
     def getElements( self, typePath, community, selectDict={} ):
       result = gConfig.getSections( typePath )
@@ -310,9 +310,9 @@ class Resources( object ):
         if selectDict:
           if not self.__checkElementProperties( elementPath, selectDict ):
             continue
-        elementList.append( element )                         
+        elementList.append( element )
 
-      return S_OK( elementList )      
+      return S_OK( elementList )
 
     def __checkElementCommunity( self, elementPath, community ):
       """ Check recursively the given element for eligibility with respect to the given community
@@ -326,7 +326,7 @@ class Resources( object ):
       if parentPath == gBaseResourcesSection:
         return True
       else:
-        return self.__checkElementCommunity( parentPath, community )        
+        return self.__checkElementCommunity( parentPath, community )
 
     def __checkElementProperties( self, elementPath, selectDict ):
       """ Check the given element for the compliance with the given selection criteria
@@ -337,16 +337,16 @@ class Resources( object ):
       if not result['OK']:
         return False
       elementDict = result['Value']
-      finalResult = True  
+      finalResult = True
       for property_ in selectDict:
         if not property_ in elementDict:
-          return False 
+          return False
         if type( selectDict[property_] ) == ListType:
           if not elementDict[property_] in selectDict[property_]:
             return False
         else:
           if elementDict[property_] != selectDict[property_]:
-            return False     
+            return False
 
       return finalResult
 
@@ -372,9 +372,9 @@ class Resources( object ):
     else:
       self.__vo = Registry.getVOForGroup( self.__uGroup )
       if not self.__vo:
-        self.__vo = None 
+        self.__vo = None
 
-  def __execute( self, *params, **kwargs ): 
+  def __execute( self, *params, **kwargs ):
     """ internal redirector to the appropriate CS sections
     """
 
@@ -391,13 +391,13 @@ class Resources( object ):
         opType  = op
         break
     if opType == 's':
-      opType = "Elements"    
+      opType = "Elements"
     method = getattr( self.__innerResources, 'get'+opType )
 
     if len( args ) > 0:
       site = args.pop()
     else:
-      site = 'Unknown.ch'  
+      site = 'Unknown.ch'
     result = getSitePath( site )
     if not result['OK']:
       return result
@@ -409,8 +409,8 @@ class Resources( object ):
       resourceType = args.pop()
     elif "Node" in name:
       resourceType = args.pop()
-      nodeType = RESOURCE_NODE_MAPPING[resourceType]    
-    else:  
+      nodeType = RESOURCE_NODE_MAPPING[resourceType]
+    else:
       for rType in RESOURCE_NODE_MAPPING:
         if name.startswith( 'get'+rType ):
           resourceType = rType
@@ -422,7 +422,7 @@ class Resources( object ):
               resourceType = rType
 
     optionVOPath = None
-    optionPath = None 
+    optionPath = None
     if siteType is not None:
       optionPath = sitePath
       typePath = os.path.dirname( sitePath )
@@ -430,10 +430,10 @@ class Resources( object ):
         optionVOPath = cfgPath( sitePath, self.__vo )
     elif nodeType is not None:
       resource = args.pop()
-      typePath = cfgPath( sitePath, resourceType, resource, nodeType+'s' ) 
+      typePath = cfgPath( sitePath, resourceType, resource, nodeType+'s' )
       if len( args ) > 0:
         node = args.pop()
-        optionPath = cfgPath( sitePath, resourceType, resource, nodeType+'s', node )        
+        optionPath = cfgPath( sitePath, resourceType, resource, nodeType+'s', node )
         if self.__vo is not None:
           optionVOPath = cfgPath( optionPath, self.__vo )
     elif resourceType is not None:
@@ -456,20 +456,20 @@ class Resources( object ):
         default = args[0]
       elif 'default' in kwargs:
         default = kwargs['default']
-      return method( optionPath, optionVOPath, default )   
+      return method( optionPath, optionVOPath, default )
     elif opType == 'Elements':
       selectDict = {}
       if len( args ) > 0:
         selectDict = args[0]
       elif 'selectDict' in kwargs:
         selectDict = kwargs['selectDict']
-      return method( typePath, self.__vo, selectDict )           
+      return method( typePath, self.__vo, selectDict )
     else:
       return method( optionPath, optionVOPath )
-      
+
   def __getattr__( self, name ):
-    self.call = name 
-    return self.__execute    
+    self.call = name
+    return self.__execute
 
   def getEligibleResources( self, resourceType, selectDict={} ):
     """ Get all the resources eligible according to the selection criteria
@@ -486,17 +486,17 @@ class Resources( object ):
     if not result['OK']:
       return result
     eligibleSites = result['Value']
-   
+
     resultDict = {}
 
     for site in eligibleSites:
       result = self.getResources( site, resourceType, selectDict=selectDict )
       if not result['OK']:
         continue
-      if result['Value']:  
+      if result['Value']:
         resultDict[site] = result['Value']
 
-    return S_OK( resultDict ) 
+    return S_OK( resultDict )
 
   def getEligibleNodes( self, nodeType, resourceSelectDict={}, nodeSelectDict={} ):
     """ Get all the Access Points eligible according to the selection criteria
@@ -507,46 +507,48 @@ class Resources( object ):
       sites = [sites]
     for key in ['Site','Sites']:
       if key in resourceSelectDict:
-        resourceSelectDict.pop(key) 
+        resourceSelectDict.pop(key)
 
     result = getSites( sites )
     if not result['OK']:
       return result
     eligibleSites = result['Value']
-    
+
     eligibleResources = resourceSelectDict.get( 'Resources', resourceSelectDict.get( 'Resource', [] ) )
     if type( eligibleResources ) != ListType:
       eligibleResources = [eligibleResources]
     for key in ['Resources','Resource']:
       if key in resourceSelectDict:
-        resourceSelectDict.pop(key)    
-      
+        resourceSelectDict.pop(key)
+
     resourceType = None
     for rType in RESOURCE_NODE_MAPPING:
       if RESOURCE_NODE_MAPPING[rType] == nodeType:
         resourceType = rType
     if resourceType is None:
-      return S_ERROR( 'Invalid Node type %s' % nodeType ) 
+      return S_ERROR( 'Invalid Node type %s' % nodeType )
 
     resultDict = {}
 
     for site in eligibleSites:
-      if not eligibleResources:
+      if eligibleResources:
+        siteER = eligibleResources
+      else:
         result = self.getResources( site, resourceType, selectDict=resourceSelectDict )
         if not result['OK']:
           continue
-        eligibleResources = result['Value']
-      for resource in eligibleResources:
+        siteER = result['Value']
+      for resource in siteER:
         result = self.getNodes( site, resourceType, resource, nodeType, selectDict=nodeSelectDict )
         if not result['OK']:
           continue
-        if result['Value']:  
+        if result['Value']:
           resultDict.setdefault( site, {} )
           resultDict[site][resource] = result['Value']
 
     return S_OK( resultDict )
-  
-  
+
+
 
   ####################################################################################
   #
@@ -566,7 +568,7 @@ class Resources( object ):
       for se in seDict[site]:
         seList.append( site[:-3] + '-' + se )
 
-    return S_OK( seList )    
+    return S_OK( seList )
 
   def getCatalogOptionsDict( self, catalogName ):
     """ Get the CS Catalog Options
@@ -574,7 +576,7 @@ class Resources( object ):
     result = getSiteForResource( 'Catalog', catalogName )
     if not result['OK']:
       return result
-    site = result['Value']  
+    site = result['Value']
     result = self.getResourceOptionsDict( site, 'Catalog', catalogName )
     return result
 
@@ -585,7 +587,7 @@ class Resources( object ):
     result = getSiteForResource( 'Storage', seName )
     if not result['OK']:
       return result
-    site = result['Value']  
+    site = result['Value']
 
     result = self.getStorageOptionsDict( site, seName )
     if not result['OK']:
@@ -613,18 +615,18 @@ class Resources( object ):
     return S_OK( options )
 
   def getQueueDescription( self, site, ce, queue ):
-    """ Get parameters of the specified queue 
+    """ Get parameters of the specified queue
     """
     result = self.getComputingElementOptionsDict( site, ce )
     if not result['OK']:
-      return result 
-    resultDict = result['Value']  
+      return result
+    resultDict = result['Value']
     result = self.getQueueOptionsDict( site, ce, queue )
     if not result['OK']:
-      return result  
+      return result
     resultDict.update( result['Value'] )
     resultDict['Queue'] = queue
-    
+
     return S_OK( resultDict )
 
   def getEligibleQueues( self, siteList = None, ceList = None, ceTypeList = None, mode = None ):
@@ -637,7 +639,7 @@ class Resources( object ):
     if ceTypeList is not None:
       ceSelectDict['CEType'] = ceTypeList
     if mode is not None:
-      ceSelectDict['SubmissionMode'] = mode 
+      ceSelectDict['SubmissionMode'] = mode
 
     result = self.getEligibleNodes( 'Queue', resourceSelectDict=ceSelectDict )
     if not result['OK']:
@@ -650,27 +652,27 @@ class Resources( object ):
         result = self.getComputingOptionsDict( site, ce )
         if not result['OK']:
           return result
-        ceDict = result['Value']  
+        ceDict = result['Value']
         for queue in siteDict[site][ce]:
-          result = self.getQueueOptionsDict( site, ce, queue ) 
+          result = self.getQueueOptionsDict( site, ce, queue )
           if not result['OK']:
             return result
-          queueDict = result['Value']   
+          queueDict = result['Value']
 
           resultDict.setdefault( site, {} )
           resultDict[site].setdefault( ce, ceDict )
           resultDict[site][ce].setdefault( 'Queues', {} )
           resultDict[site][ce]['Queues'][queue] = queueDict
-   
+
     return S_OK( resultDict )
 
   def getSiteFullName( self, site ):
     """ Get the site full name including the domain prefix, site name and country code
     """
-    # Check if the site name is already in a full form 
+    # Check if the site name is already in a full form
     if '.' in site and len( site.split('.') ) == 3:
       return S_OK( site )
-    
+
     result = getSiteName( site )
     if not result['OK']:
       return result
@@ -679,7 +681,7 @@ class Resources( object ):
     if not result['OK']:
       return result
     domain = result['Value']
-    
+
     siteFullName = '.'.join( [domain, siteShortName] )
     return S_OK( siteFullName )
 
@@ -698,7 +700,7 @@ class Resources( object ):
       else:
         return S_ERROR('No domains defined for site')
     else:
-      return S_OK( siteTuple[0] )  
+      return S_OK( siteTuple[0] )
 
 ############################################################################################
 #
@@ -710,21 +712,21 @@ def getSiteTier( site ):
   return Resources().getSiteOption( site, 'MoUTierLevel' )
 
 def getCompatiblePlatforms( originalPlatforms ):
-  """ Get a list of platforms compatible with the given list 
+  """ Get a list of platforms compatible with the given list
   """
   if type( originalPlatforms ) == type( ' ' ):
     platforms = [originalPlatforms]
   else:
     platforms = list( originalPlatforms )
-    
+
   platformDict = {}
   result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
   if result['OK'] and result['Value']:
-    platformDict = result['Value'] 
+    platformDict = result['Value']
     for platform in platformDict:
       platformDict[platform] = [ x.strip() for x in platformDict[platform].split( ',' ) ]
   else:
-    return S_ERROR( 'OS compatibility info not found' )        
+    return S_ERROR( 'OS compatibility info not found' )
 
   resultList = list( platforms )
   for p in platforms:
@@ -744,17 +746,16 @@ def getDIRACPlatform( platform ):
   platformDict = {}
   result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
   if result['OK'] and result['Value']:
-    platformDict = result['Value'] 
+    platformDict = result['Value']
     for p in platformDict:
       if p == platform:
-        return S_OK( platform ) 
+        return S_OK( platform )
       platformDict[p] = [ x.strip() for x in platformDict[p].split( ',' ) ]
   else:
-    return S_ERROR( 'OS compatibility info not found' )    
-      
+    return S_ERROR( 'OS compatibility info not found' )
+
   for p in platformDict:
     if platform in platformDict[p]:
       return S_OK( p )
-  
+
   return S_ERROR( 'No compatible DIRAC platform found for %s' % platform )
-  
