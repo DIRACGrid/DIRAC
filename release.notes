@@ -1,3 +1,8 @@
+[v6r7p26]
+
+*DMS
+FIX: ReplicaManager - status names Read/Write -> ReadAccess/WriteAccess
+
 [v6r7p25]
 
 *Core
