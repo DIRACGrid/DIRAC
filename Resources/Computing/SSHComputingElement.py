@@ -9,17 +9,15 @@
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript    
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC.Core.Utilities.List                           import breakListIntoChunks, uniqueElements
+from DIRAC.Core.Utilities.List                           import uniqueElements
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Pfn                            import pfnparse 
 from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
-from DIRAC                                               import gConfig, gLogger
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
+from DIRAC                                               import rootPath
+from DIRAC                                               import gLogger
 
-import os, sys, time, re, socket, stat, shutil, urllib
-import string, shutil, bz2, base64, tempfile, random
+import os, urllib
+import shutil, tempfile
 from types import StringTypes
 
 CE_NAME = 'SSH'
