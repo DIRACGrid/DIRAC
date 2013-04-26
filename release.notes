@@ -1,3 +1,166 @@
+[v7r0-pre4]
+
+FIX: removed __init__ files from test directories to avoid importing
+
+NEW: Change the schema of the Resources description in CS, use new Resources helper to 
+     interpret this information
+NEW: Base RSS resources representation on the new CS Resources schema     
+
+*Core
+FIX: multiple fixes to remove pylint complaints
+CHANGE: Moved log coloring to utilities so it can be used consistently across DIRAC
+FIX: Workflow package - fix wild wild card imports resulting in circular imports
+NEW: MySQL - assign one MySQL connection per thread
+FIX: LocalConfiguration - if short option is not set, do not print "-" in help message,
+     closes #1371
+FIX: dirac-install - update creation of bashrc/cshrc to allow multiplatform installations
+
+*Accounting
+FIX: AccountingDB - align properly days with MySQL bucketing. Closes #1219
+
+*Framework
+FIX: ProxyDB - prevent duplicate key errors on writing VOMSProxies to DB. Closes #1228
+BUGFIX: NotificationDB - missing "," in SQL, closes #1373
+
+*Configuration
+NEW: Resources helper class to work with the new /Resources structure according to RFC #5
+NEW: dirac-configuration-convert-resources-schema - command to convert old /Resources schema
+     to the new one
+
+*Interfaces
+CHANGE: Job.py - setPlatform renamed to setSubmitPools
+
+*DMS
+CHANGE: MigrationMonitoringAgent - removed obsoleted
+NEW: FileCatalogClient - getFileUserMetadata to get both file and directory metadata for a given file
+CHANGE: FileCatalogClient - list meta data sets
+FIX: FileCatalog - extra check while new user registration for already existing entry
+BUGFIX: ReplicaManager - pass catalog argument in putAndRegister to registerFile call, closes #1369
+
+*WMS
+CHANGE: JobScheduling - is now extensible. Added unit test
+NEW: SiteDirector - define which extensions pilot should install in the options, do not take from globals
+
+*Transformation
+NEW: TaskManager - if a site is specified in the job definition, it is now taken into account 
+     when submitting the task
+NEW: Speeding up the getTransformationSummary call, using an UpdateTransformationCounters agent     
+FIX: Multiple fixes to please pylint
+FIX: TransformationDB - removed bad index on TaskID
+
+*Resources
+FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
+     payload when updating it
+NEW: StorageElement - enable Storage Element proxy configuration by protocol name
+CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added DIRAC_GLEXEC 
+        to the environment when running under glexec     
+
+[v6r8p9]
+
+*DMS
+FIX: TransferAgent,dirac-dms-show-se-status, ResourceStatus,TaskManager - fixes
+     needed for DMS components to use RSS status information
+NEW: ReplicaManager - allow to get metadata for an LFN+SE as well as PFN+SE     
+
+[v6r8p8]
+
+*RSS
+BUGFIX: dirac-rss-setup - added missing return of S_OK() result
+
+[v6r8p7]
+
+NEW: Applied patches from v6r7p24
+
+*DMS
+BUGFIX: LcgFileCatalogClient - bug in addFile()
+
+*RSS
+BUGFIX: fixed script dirac-rss-set-token, broken in the current release.
+NEW: Statistics module - will be used in the future to provide detailed information 
+     from the History of the elements 
+
+[v6r8p6]
+
+NEW: Applied patches from v6r7p23
+
+*Transformation
+FIX: TaskManager - allow prepareTransformationTasks to proceed if no OutputDataModule is defined
+FIX: TransformationDB - remove INDEX(TaskID) from TransformationTasks. It produces a single counter 
+     for the whole table instead of one per TransformationID
+     
+*WMS     
+FIX: WMSUtilities - to allow support for EMI UI's for pilot submission we drop support for glite 3.1
+
+[v6r8p5]
+
+NEW: Applied patches from v6r7p22
+
+*RSS
+CHANGE: removed old tests and commented out files
+
+*WMS
+FIX: PoolXMLCatalog - proper addFile usage
+
+*Transformation
+CHANGE: TransformationAgent - clear replica cache when flushing or setting a file in the workdirectory
+
+[v6r8p4]
+
+*Transformation
+FIX: The connection to the jobManager is done only at submission time
+FIX: Jenkins complaints fixes
+
+*WMS
+BUGFIX: JobDB - CPUtime -> CPUTime
+FIX: Jenkins complaints fixes
+
+[v6r8p3]
+
+*DMS
+BUGFIX: LcgFileCatalogClient
+
+[v6r8p2]
+
+*DMS:
+FIX: LcgFileCatalogClient - remove check for opening a session in __init__ as credentials are not yet set 
+
+*Transformation
+CHANGE: reuse RPC clients in Transformation System 
+
+[v6r8p1]
+
+*Core
+FIX: dirac-deploy-scripts - restored regression w.r.t. support of scripts starting with "d"
+
+*DMS
+BUGFIX: LcgFileCatalogClient - two typos fixed
+
+[v6r8]
+
+CHANGE: Several fixes backported from the v7r0 integration branch
+
+*Core
+CHANGE: DictCache - uses global LockRing to avoid locks in multiprocessing
+FIX: X509Chain - proxy-info showing an error when there's no CS
+
+*DMS
+FIX: TransferAgent - inside loop filter out waiting files dictionary
+BUGFIX: dirac-admin-allow-se - there was a continue that was skipping the complete loop for 
+        ARCHIVE elements
+NEW: LcgFileCatalogClient - test return code in startsess lfc calls       
+
+*WMS:
+FIX: OptimizerExecutor, InputData, JobScheduling - check that site candidates have all the 
+     replicas
+
+*RSS: 
+BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
+
+*Transformation
+FIX: TaskManager - site in the job definition is taken into account when submitting
+NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
+FIX: ValidateOutputDataAgent - self not needed for static methods
+
 [v6r7p26]
 
 *DMS

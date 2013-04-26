@@ -7,7 +7,7 @@
 
 __RCSID__ = "$Id$"
 
-import time, os, types
+import os, types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 
@@ -106,6 +106,20 @@ class DirectoryMetadata:
 
     return S_OK( metaDict )
 
+  def listMetadataSets(self, credDict):
+    """ List all metadata sets
+    """
+    res = self.db.getFields('FC_MetaSetNames',['MetaSetName'])
+    if not res['OK']:
+      return res
+    metasets = {}
+    for row in res['Value']:
+      res = self.getMetadataSet(row[0], True, credDict)
+      if not res['OK']:
+        return res
+      metasets.setdefault(row[0], res['Value'])
+    return S_OK(metasets)
+  
   def addMetadataSet( self, metaSetName, metaSetDict, credDict ):
     """ Add a new metadata set with the contents from metaSetDict
     """

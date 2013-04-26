@@ -12,9 +12,10 @@
 
 """
 
-from DIRAC                                          import gLogger, exit as DIRACExit, version
-from DIRAC.Core.Base                                import Script
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
+from DIRAC                                              import gLogger, exit as DIRACExit, S_OK, version
+from DIRAC.Core.Base                                    import Script
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
 __RCSID__  = '$Id:$'
 
@@ -53,8 +54,24 @@ def installDB():
     Installs Tables.
   '''
   
-  db = ResourceStatusDB()
-  return db._checkTable()
+  db1 = ResourceStatusDB()
+  db2 = ResourceManagementDB()
+  
+  res1 = db1._checkTable()
+  if not res1[ 'OK' ]:
+    subLogger.error( res1[ 'Message' ] )
+  elif res1[ 'Value' ]:
+    subLogger.info( 'ResourceStatusDB' )
+    subLogger.info( res1[ 'Value' ] )
+  
+  res2 = db2._checkTable()
+  if not res2[ 'OK' ]:
+    subLogger.error( res2[ 'Message' ] )
+  elif res2[ 'Value' ]:
+    subLogger.info( 'ResourceManagementDB' )
+    subLogger.info( res2[ 'Value' ] )
+    
+  return S_OK() 
 
 #...............................................................................
 
@@ -64,10 +81,7 @@ def run():
   '''
   
   subLogger.info( 'Checking DB...' )
-  res = installDB()
-  if not res[ 'OK' ]:
-    subLogger.error( res[ 'Message' ] )
-  subLogger.info( res[ 'Value' ] )
+  installDB()
   
   subLogger.info( '[done]' )  
   

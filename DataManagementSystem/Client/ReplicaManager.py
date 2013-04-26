@@ -563,6 +563,8 @@ class StorageBase( object ):
     :param list lfns: list of LFNs
     :param str stotrageElementName: DIRAC SE name
     """
+    if type( lfns ) == type( '' ):
+      lfns = [lfns]
     storageElement = StorageElement( storageElementName )
     res = storageElement.isValid( "getPfnForLfn" )
     if not res['OK']:
@@ -1479,7 +1481,7 @@ class ReplicaManager( CatalogToStorage ):
     fileTuple = ( lfn, destPfn, size, destinationSE, guid, checksum )
     registerDict = {'LFN':lfn, 'PFN':destPfn, 'Size':size, 'TargetSE':destinationSE, 'GUID':guid, 'Addler':checksum}
     startTime = time.time()
-    res = self.registerFile( fileTuple )
+    res = self.registerFile( fileTuple, catalog = catalog )
     registerTime = time.time() - startTime
     oDataOperation.setValueByKey( 'RegistrationTime', registerTime )
     if not res['OK']:
@@ -2007,7 +2009,7 @@ class ReplicaManager( CatalogToStorage ):
 
         'lfn' is the file to be removed
     """
-    if force == None:
+    if force is None:
       force = self.ignoreMissingInFC
     if type( lfn ) == ListType:
       lfns = lfn

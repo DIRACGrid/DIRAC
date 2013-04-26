@@ -1,18 +1,13 @@
-########################################################################
-# $Id$
-########################################################################
 """ The POOL XML File module provides a means to extract the GUID of a file or list
     of files by searching for an appropriate POOL XML Catalog in the specified directory.
 """
 
-__RCSID__ = "$Id$"
-
-import os, glob, re, tarfile, string
+import os, glob, tarfile, string
 
 from DIRAC.Resources.Catalog.PoolXMLCatalog           import PoolXMLCatalog
 from DIRAC.Core.Utilities.List                        import uniqueElements
 from DIRAC.Core.Utilities.File                        import makeGuid
-from DIRAC                                            import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC                                            import S_OK, S_ERROR, gLogger
 
 #############################################################################
 
@@ -134,7 +129,7 @@ def _getPoolCatalogs( directory = '' ):
   finalCatList = []
   for possibleCat in poolCatalogList:
     try:
-      cat = PoolXMLCatalog( possibleCat )
+      _cat = PoolXMLCatalog( possibleCat )
       finalCatList.append( possibleCat )
     except Exception, x:
       gLogger.debug( 'Ignoring non-POOL catalogue file %s' % possibleCat )

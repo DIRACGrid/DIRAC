@@ -52,12 +52,13 @@ import sys
 import operator
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
-from DIRAC                                                   import S_OK, S_ERROR, Time
+from DIRAC                                                   import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
+from DIRAC.Core.Utilities                                    import Time
 
 DEBUG = False
 JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
@@ -1303,15 +1304,15 @@ class JobDB( DB ):
     classAdJob.insertAttributeString( 'Owner', owner )
     classAdJob.insertAttributeString( 'OwnerDN', ownerDN )
     classAdJob.insertAttributeString( 'OwnerGroup', ownerGroup )
-    
+
     submitPools = getGroupOption( ownerGroup, "SubmitPools" )
     if not submitPools and vo:
       submitPools = getVOOption( vo, 'SubmitPools' )
     if submitPools and not classAdJob.lookupAttribute( 'SubmitPools' ):
-      classAdJob.insertAttributeString( 'SubmitPools', submitPools )  
-      
+      classAdJob.insertAttributeString( 'SubmitPools', submitPools )
+
     if vo:
-      classAdJob.insertAttributeString( 'VirtualOrganization', vo )      
+      classAdJob.insertAttributeString( 'VirtualOrganization', vo )
 
     classAdReq.insertAttributeString( 'Setup', diracSetup )
     classAdReq.insertAttributeString( 'OwnerDN', ownerDN )
@@ -1335,7 +1336,7 @@ class JobDB( DB ):
       # Just in case check for MaxCPUTime for backward compatibility
       cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
       if cpuTime > 0:
-        classAdJob.insertAttributeInt( 'CPUtime', cpuTime )
+        classAdJob.insertAttributeInt( 'CPUTime', cpuTime )
 
     classAdReq.insertAttributeInt( 'UserPriority', priority )
     classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
@@ -1346,14 +1347,14 @@ class JobDB( DB ):
       platformReqs = [systemConfig]
       result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
       if result['OK'] and result['Value']:
-        platforms = result['Value'] 
+        platforms = result['Value']
         for platform in platforms:
           if systemConfig in [ x.strip() for x in platforms[platform].split( ',' ) ] and platform != systemConfig:
             platformReqs.append( platform )
-        classAdReq.insertAttributeVectorString( 'Platforms', platformReqs )    
-      else: 
+        classAdReq.insertAttributeVectorString( 'Platforms', platformReqs )
+      else:
         error = "OS compatibility info not found"
-      
+
     if error:
 
       retVal = S_ERROR( error )
@@ -1488,7 +1489,7 @@ class JobDB( DB ):
       return S_ERROR( 'Job ' + str( jobID ) + ' not found in the system' )
 
     if not resultDict['VerifiedFlag']:
-      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % (
+      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % ( 
                                                                              jobID,
                                                                              resultDict['Status'],
                                                                              resultDict['MinorStatus'] ) )

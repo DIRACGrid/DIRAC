@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-production-job-delete
-# Author :  Stuart Paterson
+# File : dirac-production-job-delete
+# Author : Stuart Paterson
 ########################################################################
 """
-  Delete DIRAC job from WMS, if running it will be killed
+Delete DIRAC job from WMS, if running it will be killed
 """
 __RCSID__ = "$Id$"
 import DIRAC
@@ -13,15 +13,17 @@ from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
-                                     '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                     ' %s [option|cfgfile] ... JobID ...' % Script.scriptName,
                                      'Arguments:',
-                                     '  JobID:    DIRAC Job ID' ] ) )
+                                     ' JobID: DIRAC Job ID' ] ) )
 
 Script.registerSwitch( "f:", "File=", "Get output for jobs with IDs from the file" )
 Script.registerSwitch( "g:", "JobGroup=", "Get output for jobs in the given group" )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
+
+import os.path
 
 if __name__ == "__main__":
   
@@ -46,8 +48,8 @@ if __name__ == "__main__":
         if not "No jobs selected" in result['Message']:
           print "Error:", result['Message']
           DIRAC.exit( -1 )
-      else:    
-        jobs += result['Value']            
+      else:
+        jobs += result['Value']
   
   for arg in args:
     jobs.append(arg)

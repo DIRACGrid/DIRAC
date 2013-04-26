@@ -35,8 +35,10 @@ from DIRAC.WorkloadManagementSystem.private.PilotDirector  import PilotDirector
 from DIRAC.FrameworkSystem.Client.NotificationClient       import NotificationClient
 from DIRAC.Core.Security.ProxyInfo                         import getProxyInfoAsString
 from DIRAC.Core.Utilities.Grid                             import executeGridCommand
+from DIRAC.Core.Utilities                                  import Time
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
-from DIRAC import S_OK, S_ERROR, DictCache, List, Time, gConfig
+from DIRAC import S_OK, S_ERROR, List, Time, gConfig
+from DIRAC.Core.Utilities.DictCache import DictCache
 
 class GridPilotDirector( PilotDirector ):
   """
@@ -451,3 +453,12 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
 
     return
 
+
+  def _listMatch( self, proxy, jdl, taskQueueID, rb ):
+    return S_ERROR( "overload me!!" )
+
+  def _submitPilot( self, proxy, pilotsToSubmit, jdl, taskQueueID, rb ):
+    return S_ERROR( "overload me!!" )
+
+  def _getChildrenReferences( self, proxy, parentReference, taskQueueID ):
+    return S_ERROR( "overload me!!" )

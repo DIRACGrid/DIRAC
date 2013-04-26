@@ -8,7 +8,6 @@ __RCSID__ = "$Id$"
 
 import time
 import types
-import threading
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
@@ -810,7 +809,7 @@ class NotificationDB( DB ):
 
   def purgeExpiredNotifications( self ):
     self.log.info( "Purging expired notifications" )
-    delConds = [ '(Seen=1 OR DeferToMail=0)' 'TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), Expiration ) < 0 )' ]
+    delConds = [ '(Seen=1 OR DeferToMail=0)', 'TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), Expiration ) < 0 )' ]
     delSQL = "DELETE FROM `ntf_Notifications` WHERE %s" % " AND ".join( delConds )
     result = self._update( delSQL )
     if not result[ 'OK' ]:

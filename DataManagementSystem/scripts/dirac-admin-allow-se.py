@@ -50,6 +50,7 @@ from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC                                               import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources  import Resources
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
 #csAPI = CSAPI()
@@ -74,11 +75,11 @@ if not userName:
   DIRAC.exit( 2 )
 
 if site:
-  res = gConfig.getOptionsDict( '/Resources/Sites/LCG/%s' % site )
+  res = Resources().getStorageElements( site )
   if not res[ 'OK' ]:
     gLogger.error( 'The provided site (%s) is not known.' % site )
     DIRAC.exit( -1 )
-  ses.extend( res[ 'Value' ][ 'SE' ].replace( ' ', '' ).split( ',' ) )
+  ses.extend( res[ 'Value' ] )
 if not ses:
   gLogger.error( 'There were no SEs provided' )
   DIRAC.exit()
@@ -100,6 +101,7 @@ for se, seOptions in res[ 'Value' ].items():
 
   resW = resC = resR = { 'OK' : False }
 
+
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if read and seOptions.has_key( 'ReadAccess' ):
 
@@ -111,14 +113,15 @@ for se, seOptions in res[ 'Value' ].items():
 
     if 'ARCHIVE' in se:
       gLogger.notice( '%s is not supposed to change Read status to Active' % se )
-      continue
+      resR[ 'OK' ] = True
+    else:  
 
-    resR = resourceStatus.setStorageElementStatus( se, 'ReadAccess', 'Active', reason, userName )
-    if not resR['OK']:
-      gLogger.error( "Failed to update %s read access to Active" % se )
-    else:
-      gLogger.notice( "Successfully updated %s read access to Active" % se )
-      readAllowed.append( se )
+      resR = resourceStatus.setStorageElementStatus( se, 'ReadAccess', 'Active', reason, userName )
+      if not resR['OK']:
+        gLogger.error( "Failed to update %s read access to Active" % se )
+      else:
+        gLogger.notice( "Successfully updated %s read access to Active" % se )
+        readAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if write and seOptions.has_key( 'WriteAccess' ):

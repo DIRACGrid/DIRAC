@@ -7,7 +7,7 @@ import time
 import threading
 
 from DIRAC import S_OK, S_ERROR, gLogger, rootPath, gConfig
-from DIRAC.Core.Utilities import DictCache
+from DIRAC.Core.Utilities.DictCache import DictCache
 
 
 class DataCache:

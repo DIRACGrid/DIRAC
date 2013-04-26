@@ -149,14 +149,14 @@ class SummarizeLogsAgent( AgentModule ):
 
     try:
 
-      name = elementDict[ 'Name' ]
-      statusType = elementDict[ 'StatusType' ]
-      status = elementDict[ 'Status' ]
-      elementType = elementDict[ 'ElementType' ]
-      reason = elementDict[ 'Reason' ]
-      dateEffective = elementDict[ 'DateEffective' ]
-      lastCheckTime = elementDict[ 'LastCheckTime' ]
-      tokenOwner = elementDict[ 'TokenOwner' ]
+      name            = elementDict[ 'Name' ]
+      statusType      = elementDict[ 'StatusType' ]
+      status          = elementDict[ 'Status' ]
+      elementType     = elementDict[ 'ElementType' ]
+      reason          = elementDict[ 'Reason' ]
+      dateEffective   = elementDict[ 'DateEffective' ]
+      lastCheckTime   = elementDict[ 'LastCheckTime' ]
+      tokenOwner      = elementDict[ 'TokenOwner' ]
       tokenExpiration = elementDict[ 'TokenExpiration' ]
 
     except KeyError, e:

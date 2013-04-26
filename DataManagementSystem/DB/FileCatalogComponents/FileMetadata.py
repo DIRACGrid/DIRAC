@@ -8,7 +8,7 @@
 
 __RCSID__ = "$Id$"
 
-import time, os, types
+import time, types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 
@@ -278,7 +278,7 @@ class FileMetadata:
     metaDict = {}
     for fileID, key, value in result['Value']:
       if metaDict.has_key( key ):
-        if type( metaDict[key] ) == ListType:
+        if type( metaDict[key] ) == types.ListType:
           metaDict[key].append( value )
         else:
           metaDict[key] = [metaDict[key]].append( value )

@@ -294,12 +294,12 @@ class InputData( OptimizerExecutor ):
           #Add the LFNs to the disk/tape lists
           diskLFNs = sitesData[ siteName ][ 'disk' ]
           tapeLFNs = sitesData[ siteName ][ 'tape' ]
-          if seStatus[ 'Read' ] and seStatus[ 'DiskSE' ]:
+          if seStatus[ 'DiskSE' ]:
             #Sets contain only unique elements, no need to check if it's there
             diskLFNs.add( lfn )
             if lfn in tapeLFNs:
               tapeLFNs.remove( lfn )
-          if seStatus[ 'Read' ] and seStatus[ 'TapeSE' ]:
+          if seStatus[ 'TapeSE' ]:
             if lfn not in diskLFNs:
               tapeLFNs.add( lfn )
 

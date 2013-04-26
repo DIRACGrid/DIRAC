@@ -5,11 +5,11 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                  import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.List              import stringListToString, intListToString, sortList
+from DIRAC.Core.Utilities.List              import intListToString, sortList
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 
 import time, os, stat
-from types import *
+from types import StringTypes
 
 class FileManagerBase:
 
@@ -105,7 +105,7 @@ class FileManagerBase:
     """
     return S_ERROR( "To be implemented on derived class" )
 
-  def _getFileReplicas( self, fileIDs, fields = ['PFN'], connection = False ):
+  def _getFileReplicas( self, fileIDs, fields_input = ['PFN'], connection = False ):
     """To be implemented on derived class
     """
     return S_ERROR( "To be implemented on derived class" )

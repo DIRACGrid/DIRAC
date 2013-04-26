@@ -67,18 +67,15 @@ selDate = date
 if not date:
   selDate = 'Today'
 
+from DIRAC.Interfaces.API.Dirac import Dirac
+
 dirac = Dirac()
 exitCode = 0
 errorList = []
 resultDict = {}
 
-result = dirac.selectJobs( Status = status,
-                           MinorStatus = minorStatus,
-                           ApplicationStatus = appStatus,
-                           Site = site,
-                           Owner = owner,
-                           JobGroup = jobGroup,
-                           Date = date )
+result = dirac.selectJobs( status = status, minorStatus = minorStatus, applicationStatus = appStatus,
+                           site = site, owner = owner, jobGroup = jobGroup, date = date )
 if result['OK']:
   jobs = result['Value']
 else:

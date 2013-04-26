@@ -112,7 +112,7 @@ class DirectoryNodeTree(DirectoryTreeBase):
       return S_ERROR('Root directory ID given')
     
     req = "SELECT Parent FROM FC_DirectoryTreeM WHERE DirID=%d" % dirID
-    result = self._query(req)
+    result = self.db._query(req)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -124,7 +124,7 @@ class DirectoryNodeTree(DirectoryTreeBase):
     """ Get directory name by directory ID
     """
     req = "SELECT DirName FROM FC_DirectoryTreeM WHERE DirID=%d" % int(dirID)
-    result = self._query(req)
+    result = self.db._query(req)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -142,7 +142,7 @@ class DirectoryNodeTree(DirectoryTreeBase):
       result = self.getDirectoryName(dID)
       if not result['OK']:
         return result
-      dirPath.prepend('/'+result['Value'])
+      dirPath = ('/'+result['Value']) + dirPath
       result = self.getParentID(dID)
       if not result['OK']:
         return result
@@ -166,11 +166,11 @@ class DirectoryNodeTree(DirectoryTreeBase):
       if not result['OK']:
         return result
       dID = result['Value']
-      parentIDs.prepend(dID)
+      parentIDs.insert(0,dID)
       if dID == 0:
         break
        
-    parentIDs.prepend(0)
+    parentIDs.insert( 0, 0 )
     return S_OK(parentIDs)
     
   def getChildren(self,path):
@@ -185,7 +185,7 @@ class DirectoryNodeTree(DirectoryTreeBase):
       dirID = path
         
     req = "SELECD DirID FROM FC_DirectoryTreeM WHERE Parent=%d" % dirID
-    result = self._query(req)
+    result = self.db._query(req)
     if not result['OK']:
       return result
     if not result['Value']:

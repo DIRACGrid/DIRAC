@@ -398,7 +398,8 @@ class TransformationCLI( cmd.Cmd, API ):
     """ Reset file status for the given transformation
         usage: resetFile <transName|ID> <lfn>
     """
-    argss = string.split( args )
+    argss = args.split() 
+    
     if not len( argss ) > 1:
       print "transformation and file(s) not supplied"
       return

@@ -382,65 +382,65 @@ class JobsWMSCommand( Command ):
 ################################################################################
 ################################################################################ 
 
-class JobsEffSimpleCachedCommand( Command ):
-  
-  def __init__( self, args = None, clients = None ):
-    
-    super( JobsEffSimpleCachedCommand, self ).__init__( args, clients )
-          
-    if 'ResourceStatusClient' in self.apis:
-      self.rsClient = self.apis[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient()  
-  
-    if 'ResourceManagementClient' in self.apis:
-      self.rmClient = self.apis[ 'ResourceManagementClient' ]
-    else:
-      self.rmClient = ResourceManagementClient()   
-  
-  def doCommand( self ):
-    """ 
-    Returns simple jobs efficiency
-
-    :attr:`args`: 
-       - args[0]: string: should be a ValidElement
-  
-       - args[1]: string should be the name of the ValidElement
-
-    returns:
-      {
-        'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-      }
-    """
-         
-    if self.args[0] == 'Service':
-      name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )
-      name        = name[ 'Value' ][ 0 ]
-      granularity = 'Site'
-    elif self.args[0] == 'Site':
-      name        = self.args[1]
-      granularity = self.args[0]
-    else:
-      return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
-     
-    clientDict = { 
-                  'name'        : name,
-                  'commandName' : 'JobsEffSimpleEveryOne',
-                  'value'       : 'JE_S',
-                  'opt_ID'      : 'NULL',
-                  'meta'        : { 'columns'     : 'Result' }
-                  }
-      
-    res = self.rmClient.getClientCache( **clientDict )
-      
-    if res[ 'OK' ]:
-      res = res[ 'Value' ]
-      if res == None or res == []:
-        res = S_OK( 'Idle' )
-      else:
-        res = S_OK( res[ 0 ] )
-        
-    return res
+#class JobsEffSimpleCachedCommand( Command ):
+#  
+#  def __init__( self, args = None, clients = None ):
+#    
+#    super( JobsEffSimpleCachedCommand, self ).__init__( args, clients )
+#          
+#    if 'ResourceStatusClient' in self.apis:
+#      self.rsClient = self.apis[ 'ResourceStatusClient' ]
+#    else:
+#      self.rsClient = ResourceStatusClient()  
+#  
+#    if 'ResourceManagementClient' in self.apis:
+#      self.rmClient = self.apis[ 'ResourceManagementClient' ]
+#    else:
+#      self.rmClient = ResourceManagementClient()   
+#  
+#  def doCommand( self ):
+#    """ 
+#    Returns simple jobs efficiency
+#
+#    :attr:`args`: 
+#       - args[0]: string: should be a ValidElement
+#  
+#       - args[1]: string should be the name of the ValidElement
+#
+#    returns:
+#      {
+#        'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+#      }
+#    """
+#         
+#    if self.args[0] == 'Service':
+#      name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )
+#      name        = name[ 'Value' ][ 0 ]
+#      granularity = 'Site'
+#    elif self.args[0] == 'Site':
+#      name        = self.args[1]
+#      granularity = self.args[0]
+#    else:
+#      return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
+#     
+#    clientDict = { 
+#                  'name'        : name,
+#                  'commandName' : 'JobsEffSimpleEveryOne',
+#                  'value'       : 'JE_S',
+#                  'opt_ID'      : 'NULL',
+#                  'meta'        : { 'columns'     : 'Result' }
+#                  }
+#      
+#    res = self.rmClient.getClientCache( **clientDict )
+#      
+#    if res[ 'OK' ]:
+#      res = res[ 'Value' ]
+#      if res == None or res == []:
+#        res = S_OK( 'Idle' )
+#      else:
+#        res = S_OK( res[ 0 ] )
+#        
+#    return res
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

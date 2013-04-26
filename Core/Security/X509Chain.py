@@ -576,8 +576,7 @@ class X509Chain:
                  'isProxy' : self.__isProxy,
                  'isLimitedProxy' : self.__isProxy and self.__isLimitedProxy,
                  'validDN' : False,
-                 'validGroup' : False,
-                 'groupProperties' : [] }
+                 'validGroup' : False }
     if self.__isProxy:
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
       retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )

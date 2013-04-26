@@ -9,9 +9,9 @@
 
 __RCSID__ = "$Id$"
 
-import time, os, types
-from types import *
-from DIRAC import S_OK, S_ERROR
+import os
+from types import ListType, StringTypes
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 
 MAX_LEVELS = 15
@@ -293,10 +293,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """ Get directory name by directory ID list
     """
     dirs = dirIDList
-    if type(dirIDList) != types.ListType:
+    if type(dirIDList) != ListType:
       dirs = [dirIDList]
       
-    dirListString = ','.join( [ str(dir) for dir in dirs ] )
+    dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
 
     req = "SELECT DirID,DirName FROM FC_DirectoryLevelTree WHERE DirID in ( %s )" % dirListString
     result = self.db._query(req)
@@ -430,16 +430,14 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """
 
     dirs = dirList
-    if type(dirList) != types.ListType:
+    if type(dirList) != ListType:
       dirs = [dirList]
-  
-    start = time.time()
- 
+   
     resultList = []
     parentList = dirs
     while parentList:
       subResult = []
-      dirListString = ','.join( [ str(dir) for dir in parentList ] )
+      dirListString = ','.join( [ str(dir_) for dir_ in parentList ] )
       req = 'SELECT DirID from FC_DirectoryLevelTree WHERE Parent in ( %s )' % dirListString
       result = self.db._query(req)
       if not result['OK']:

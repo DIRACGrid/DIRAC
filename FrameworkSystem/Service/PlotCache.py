@@ -11,7 +11,7 @@ import time
 import threading
 
 from DIRAC import S_OK, S_ERROR, gLogger, rootPath
-from DIRAC.Core.Utilities import DictCache
+from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.Graphs import graph
 
@@ -23,6 +23,7 @@ class PlotCache:
     self.__graphCache = DictCache( deleteFunction = _deleteGraph )
     self.__graphLifeTime = 600
     self.purgeThread = threading.Thread( target = self.purgeExpired )
+    self.purgeThread.setDaemon( 1 )
     self.purgeThread.start()
 
   def setPlotsLocation( self, plotsDir ):

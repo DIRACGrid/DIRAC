@@ -3,13 +3,13 @@
 # File: SRM2Storage.py
 ########################################################################
 
-""" :mod: SRM2Storage 
+""" :mod: SRM2Storage
     =================
- 
+
     .. module: python
     :synopsis: SRM v2 interface to StorageElement
 """
-## imports 
+## imports
 import os
 import re
 import time
@@ -34,9 +34,9 @@ __RCSID__ = "$Id$"
 class SRM2Storage( StorageBase ):
   """ .. class:: SRM2Storage
 
-  SRM v2 interafce to StorageElement using lcg_util and gfal 
+  SRM v2 interafce to StorageElement using lcg_util and gfal
   """
-  
+
   def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
     """ c'tor
 
@@ -44,7 +44,7 @@ class SRM2Storage( StorageBase ):
     :param str storageName: SE name
     :param str protocol: protocol to use
     :param str path: base path for vo files
-    :param str host: SE host 
+    :param str host: SE host
     :param int port: port to use to communicate with :host:
     :param str spaceToken: space token
     :param str wspath: location of SRM on :host:
@@ -54,11 +54,11 @@ class SRM2Storage( StorageBase ):
 
     self.isok = True
 
-    ## placeholder for gfal reference 
+    ## placeholder for gfal reference
     self.gfal = None
-    ## placeholder for lcg_util reference 
+    ## placeholder for lcg_util reference
     self.lcg_util = None
-    
+
     ## save c'tor params
     self.protocolName = 'SRM2'
     self.name = storageName
@@ -74,13 +74,13 @@ class SRM2Storage( StorageBase ):
 
     ## stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
-    ## 1 file timeout 
+    ## 1 file timeout
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     ## nb of surls per gfal call
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
     ## gfal timeout
-    self.gfalTimeout  = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
-    ## gfal long timeout 
+    self.gfalTimeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
+    ## gfal long timeout
     self.gfalLongTimeOut = gConfig.getValue( "/Resources/StorageElements/GFAL_LongTimeout", 1200 )
     ## gfal retry on errno.ECONN
     self.gfalRetry = gConfig.getValue( "/Resources/StorageElements/GFAL_Retry", 3 )
@@ -92,7 +92,7 @@ class SRM2Storage( StorageBase ):
     #	GFAL_CKSM_CRC32,
     #	GFAL_CKSM_ADLER32,
     #	GFAL_CKSM_MD5,
-    #	GFAL_CKSM_SHA1    
+    #	GFAL_CKSM_SHA1
     # GFAL_CKSM_NULL = 0
     self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2,
                            "MD5" : 3, "SHA1" : 4, "NONE" : 0, "NULL" : 0 }
@@ -106,8 +106,8 @@ class SRM2Storage( StorageBase ):
         self.checksumType = 0
     else:
       ## invert and get name
-      self.log.debug("SRM2Storage: will use %s checksum" %  dict(zip(self.checksumTypes.values(), 
-                                                                     self.checksumTypes.keys()))[self.checksumType])
+      self.log.debug( "SRM2Storage: will use %s checksum" % dict( zip( self.checksumTypes.values(),
+                                                                     self.checksumTypes.keys() ) )[self.checksumType] )
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
@@ -134,7 +134,7 @@ class SRM2Storage( StorageBase ):
     ## get lcg_util
     try:
       import lcg_util
-      self.log.debug( "Using lcg_util version %s from %s" % ( lcg_util.lcg_util_version(), 
+      self.log.debug( "Using lcg_util version %s from %s" % ( lcg_util.lcg_util_version(),
                                                               lcg_util.__file__ ) )
     except ImportError, error:
       errStr = "__importExternals: Failed to import lcg_util"
@@ -143,14 +143,14 @@ class SRM2Storage( StorageBase ):
     ## and gfalthr
     try:
       import gfalthr as gfal
-      self.log.debug( 'Using gfalthr version %s from %s' % ( gfal.gfal_version(), 
+      self.log.debug( 'Using gfalthr version %s from %s' % ( gfal.gfal_version(),
                                                              gfal.__file__ ) )
     except ImportError, error:
-      self.log.warn( "__importExternals: Failed to import gfalthr: %s." % error  )
+      self.log.warn( "__importExternals: Failed to import gfalthr: %s." % error )
       ## so gfal maybe?
       try:
         import gfal
-        self.log.debug( "Using gfal version %s from %s" % ( gfal.gfal_version(), 
+        self.log.debug( "Using gfal version %s from %s" % ( gfal.gfal_version(),
                                                             gfal.__file__ ) )
       except ImportError, error:
         errStr = "__importExternals: Failed to import gfal"
@@ -175,7 +175,7 @@ class SRM2Storage( StorageBase ):
 
   def changeDirectory( self, directory ):
     """ cd to :directory:
-    
+
     :param self: self reference
     :param str directory: dir path
     """
@@ -190,7 +190,7 @@ class SRM2Storage( StorageBase ):
     :param str fileName: path on storage
     """
     ## strip leading / if fileName arg is present
-    fileName = fileName.lstrip("/") if fileName else fileName
+    fileName = fileName.lstrip( "/" ) if fileName else fileName
     try:
       fullUrl = "%s://%s:%s%s%s/%s" % ( self.protocol, self.host, self.port, self.wspath, self.cwd, fileName )
       fullUrl = fullUrl.rstrip( "/" )
@@ -214,7 +214,7 @@ class SRM2Storage( StorageBase ):
     """ construct SURL using :self.host:, :self.protocol: and optionally :self.port: and :self.wspath:
 
     :param self: self reference
-    :param dict pfnDict: pfn dict 
+    :param dict pfnDict: pfn dict
     :param bool withPort: include port information
     """
     #For srm2 keep the file name and path
@@ -238,7 +238,7 @@ class SRM2Storage( StorageBase ):
     """ This will get the pfn base. This is then appended with the LFN in DIRAC convention.
 
     :param self: self reference
-    :param bool withPort: flag to include port 
+    :param bool withPort: flag to include port
     """
     return S_OK( { True : 'srm://%s:%s%s' % ( self.host, self.port, self.path ),
                    False : 'srm://%s%s' % ( self.host, self.path ) }[withPort] )
@@ -252,7 +252,7 @@ class SRM2Storage( StorageBase ):
     """
     pfnDict = pfnparse( path )
     if not pfnDict["OK"]:
-      self.log.error("getUrl: %s" % pfnDict["Message"] )
+      self.log.error( "getUrl: %s" % pfnDict["Message"] )
       return pfnDict
     pfnDict = pfnDict['Value']
     if not re.search( self.path, path ):
@@ -271,11 +271,11 @@ class SRM2Storage( StorageBase ):
 
     :param self: self reference
     """
-    return S_OK( { "StorageName" : self.name, 
+    return S_OK( { "StorageName" : self.name,
                    "ProtocolName" : self.protocolName,
                    "Protocol" : self.protocol,
                    "Host" : self.host,
-                   "Path" : self.path, 
+                   "Path" : self.path,
                    "Port" : self.port,
                    "SpaceToken" : self.spaceToken,
                    "WSUrl" : self.wspath } )
@@ -288,12 +288,12 @@ class SRM2Storage( StorageBase ):
   ######################################################################
   #
   # This has to be updated once the new gfal_makedir() becomes available
-  # TODO: isn't it there? when somebody made above comment?  
+  # TODO: isn't it there? when somebody made above comment?
   #
 
   def createDirectory( self, path ):
     """ mkdir -p path on storage
-    
+
     :param self: self reference
     :param str path:
     """
@@ -319,7 +319,7 @@ class SRM2Storage( StorageBase ):
 
   def __makeDir( self, path ):
     """ mkdir path in a weird way
-    
+
     :param self: self reference
     :param str path:
     """
@@ -335,7 +335,7 @@ class SRM2Storage( StorageBase ):
     return res
 
   def __makeDirs( self, path ):
-    """ black magic contained within... 
+    """ black magic contained within...
 
     :param self: self reference
     :param str path: dir name
@@ -366,7 +366,7 @@ class SRM2Storage( StorageBase ):
 
   def removeFile( self, path ):
     """ rm path on storage
-    
+
     :param self: self reference
     :param str path: file path
     """
@@ -377,7 +377,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "removeFile: Performing the removal of %s file(s)" % len( urls ) )
     resDict = self.__gfaldeletesurls_wrapper( urls )
     if not resDict["OK"]:
-      self.log.error("removeFile: %s" % resDict["Message"] )
+      self.log.error( "removeFile: %s" % resDict["Message"] )
       return resDict
     resDict = resDict['Value']
     failed = resDict['Failed']
@@ -387,7 +387,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error("removeFile: %s" % pathSURL["Message"] )
+          self.log.error( "removeFile: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -407,7 +407,7 @@ class SRM2Storage( StorageBase ):
 
   def getTransportURL( self, path, protocols = False ):
     """ obtain the tURLs for the supplied path and protocols
-    
+
     :param self: self reference
     :param str path: path on storage
     :param mixed protocols: protocols to use
@@ -432,7 +432,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "getTransportURL: Obtaining tURLs for %s file(s)." % len( urls ) )
     resDict = self.__gfalturlsfromsurls_wrapper( urls, listProtocols )
     if not resDict["OK"]:
-      self.log.error("getTransportURL: %s" % resDict["Message"] )
+      self.log.error( "getTransportURL: %s" % resDict["Message"] )
       return resDict
     resDict = resDict['Value']
     failed = resDict['Failed']
@@ -442,7 +442,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error("getTransportURL: %s" % pathSURL["Message"] )
+          self.log.error( "getTransportURL: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -475,7 +475,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "prestageFile: Attempting to issue stage requests for %s file(s)." % len( urls ) )
     resDict = self.__gfal_prestage_wrapper( urls, lifetime )
     if not resDict["OK"]:
-      self.log.error("prestageFile: %s" % resDict["Message"] )
+      self.log.error( "prestageFile: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -485,7 +485,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict["surl"]:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error("prestageFile: %s" % pathSURL["Message"] )
+          self.log.error( "prestageFile: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -497,7 +497,7 @@ class SRM2Storage( StorageBase ):
           successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 22:
           self.log.debug( "prestageFile: Stage request for file %s queued.", pathSURL )
-          successful[pathSURL] = urlDict['SRMReqID']  
+          successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:
           errMessage = "prestageFile: File does not exist."
           self.log.error( errMessage, pathSURL )
@@ -521,7 +521,7 @@ class SRM2Storage( StorageBase ):
                     "of stage requests for %s file(s)." % len( urls ) )
     resDict = self.__gfal_prestagestatus_wrapper( urls )
     if not resDict["OK"]:
-      self.log.error("prestageFileStatus: %s" % resDict["Message"] )
+      self.log.error( "prestageFileStatus: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -531,7 +531,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict["surl"]:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error("prestageFileStatus: %s" % pathSURL["Message"] )
+          self.log.error( "prestageFileStatus: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -558,42 +558,46 @@ class SRM2Storage( StorageBase ):
     res = self.checkArgumentFormat( path )
     if not res['OK']:
       return res
-    urls = res['Value']
+    urls = {}
+    failed = {}
+    for url in res['Value']:
+      pathSURL = self.getUrl( url )
+      if not pathSURL['OK']:
+        self.log.error( "getFileMetadata: %s" % pathSURL["Message"] )
+        failed[ url ] = pathSURL["Message"]
+      else:
+        urls[pathSURL['Value'] ] = url
 
     self.log.debug( "getFileMetadata: Obtaining metadata for %s file(s)." % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error("getFileMetadata: %s" % resDict["Message"] )
+      self.log.error( "getFileMetadata: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
-    failed = resDict['Failed']
+    failed.update( resDict['Failed'] )
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
       if "surl" in urlDict and urlDict['surl']:
-        pathSURL = self.getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.error("getFileMetadata: %s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        # Get back the input value for that surl
+        path = urls[self.getUrl( urlDict['surl'] )['Value']]
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata( urlDict )
           if statDict['File']:
-            successful[pathSURL] = statDict
+            successful[path] = statDict
           else:
             errStr = "getFileMetadata: Supplied path is not a file."
-            self.log.error( errStr, pathSURL )
-            failed[pathSURL] = errStr
+            self.log.error( errStr, path )
+            failed[path] = errStr
         elif urlDict['status'] == 2:
           errMessage = "getFileMetadata: File does not exist."
-          self.log.error( errMessage, pathSURL )
-          failed[pathSURL] = errMessage
+          self.log.error( errMessage, path )
+          failed[path] = errMessage
         else:
           errStr = "SRM2Storage.getFileMetadata: Failed to get file metadata."
           errMessage = urlDict['ErrorMessage']
-          self.log.error( errStr, "%s: %s" % ( pathSURL, errMessage ) )
-          failed[pathSURL] = "%s %s" % ( errStr, errMessage )
+          self.log.error( errStr, "%s: %s" % ( path, errMessage ) )
+          failed[path] = "%s %s" % ( errStr, errMessage )
       else:
         errStr = "getFileMetadata: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
@@ -611,7 +615,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "isFile: Checking whether %s path(s) are file(s)." % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error("isFile: %s" % resDict["Message"] )
+      self.log.error( "isFile: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -621,7 +625,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error("isFile: %s" % pathSURL["Message"] )
+          self.log.error( "isFile: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -652,7 +656,7 @@ class SRM2Storage( StorageBase ):
 
     :param self: self reference
     :param str path: PFN path
-    :param int lifetime: pin lifetime in seconds (default 24h) 
+    :param int lifetime: pin lifetime in seconds (default 24h)
     """
     res = self.checkArgumentFormat( path )
     if not res['OK']:
@@ -662,7 +666,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "pinFile: Attempting to pin %s file(s)." % len( urls ) )
     resDict = self.__gfal_pin_wrapper( urls, lifetime )
     if not resDict["OK"]:
-      self.log.error("pinFile: %s" % resDict["Message"] )
+      self.log.error( "pinFile: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -672,7 +676,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error("pinFile: %s" % pathSURL["Message"] )
+          self.log.error( "pinFile: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -692,7 +696,7 @@ class SRM2Storage( StorageBase ):
 
   def releaseFile( self, path ):
     """ Release a pinned file
-    
+
     :param self: self reference
     :param str path: PFN path
     """
@@ -704,7 +708,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "releaseFile: Attempting to release %s file(s)." % len( urls ) )
     resDict = self.__gfal_release_wrapper( urls )
     if not resDict["OK"]:
-      self.log.error("releaseFile: %s" % resDict["Message"] )
+      self.log.error( "releaseFile: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -714,7 +718,7 @@ class SRM2Storage( StorageBase ):
       if 'surl' in urlDict and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error("releaseFile: %s" % pathSURL["Message"] )
+          self.log.error( "releaseFile: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -742,7 +746,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "SRM2Storage.exists: Checking the existance of %s path(s)" % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error("exists: %s" % resDict["Message"] )
+      self.log.error( "exists: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -752,7 +756,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict["surl"]:
         pathSURL = self.getUrl( urlDict["surl"] )
         if not pathSURL["OK"]:
-          self.log.error("SRM2Storage.exists: %s" % pathSURL["Message"] )
+          self.log.error( "SRM2Storage.exists: %s" % pathSURL["Message"] )
           failed[ urlDict["surl"] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL["Value"]
@@ -781,10 +785,10 @@ class SRM2Storage( StorageBase ):
       return res
     urls = res['Value']
 
-    self.log.debug( "SRM2Storage.getFileSize: Obtaining the size of %s file(s)." % len( urls.keys() ) )
+    self.log.debug( "SRM2Storage.getFileSize: Obtaining the size of %s file(s)." % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error("getFileSize: %s" % resDict["Message"] )
+      self.log.error( "getFileSize: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -794,7 +798,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict["surl"]:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error("getFileSize: %s" % pathSURL["Message"] )
+          self.log.error( "getFileSize: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -842,7 +846,7 @@ class SRM2Storage( StorageBase ):
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def __putFile( self, src_file, dest_url, sourceSize ):
-    """ put :src_file: to :dest_url: 
+    """ put :src_file: to :dest_url:
 
     :param self: self reference
     :param str src_file: file path in local fs
@@ -941,9 +945,9 @@ class SRM2Storage( StorageBase ):
     """ lcg_util.lcg_cp wrapper
 
     :param self: self reference
-    :param str src_url: source SURL 
+    :param str src_url: source SURL
     :param str dest_url: destination SURL
-    :param srctype: source SE type 
+    :param srctype: source SE type
     :param dsttype: destination SE type
     :param int nbstreams: nb of streams used for trasnfer
     :param int timeout: timeout in seconds
@@ -986,8 +990,8 @@ class SRM2Storage( StorageBase ):
       return S_ERROR( "Exception while attempting file upload" )
 
   def getFile( self, path, localPath = False ):
-    """ make a local copy of a storage :path: 
-    
+    """ make a local copy of a storage :path:
+
     :param self: self reference
     :param str path: path on storage
     :param mixed localPath: if not specified, os.getcwd()
@@ -999,7 +1003,7 @@ class SRM2Storage( StorageBase ):
 
     failed = {}
     successful = {}
-    for src_url in urls.keys():
+    for src_url in urls:
       fileName = os.path.basename( src_url )
       if localPath:
         dest_file = "%s/%s" % ( localPath, fileName )
@@ -1014,7 +1018,7 @@ class SRM2Storage( StorageBase ):
 
   def __getFile( self, src_url, dest_file ):
     """ do a real copy of storage file :src_url: to local fs under :dest_file:
-    
+
     :param self: self reference
     :param str src_url: SE url to cp
     :param str dest_file: local fs path
@@ -1097,7 +1101,7 @@ class SRM2Storage( StorageBase ):
   #
 
   def isDirectory( self, path ):
-    """ isdir on storage path 
+    """ isdir on storage path
 
     :param self: self reference
     :param str path: SE path
@@ -1107,10 +1111,10 @@ class SRM2Storage( StorageBase ):
       return res
     urls = res['Value']
 
-    self.log.debug( "SRM2Storage.isDirectory: Checking whether %s path(s) are directory(ies)" % len( urls.keys() ) )
+    self.log.debug( "SRM2Storage.isDirectory: Checking whether %s path(s) are directory(ies)" % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error("isDirectory: %s" % resDict["Message"] )
+      self.log.error( "isDirectory: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -1120,7 +1124,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict['surl']:
         dirSURL = self.getUrl( urlDict['surl'] )
         if not dirSURL["OK"]:
-          self.log.error("isDirectory: %s" % dirSURL["Message"] )
+          self.log.error( "isDirectory: %s" % dirSURL["Message"] )
           failed[ urlDict['surl'] ] = dirSURL["Message"]
           continue
         dirSURL = dirSURL['Value']
@@ -1143,11 +1147,11 @@ class SRM2Storage( StorageBase ):
         errStr = "SRM2Storage.isDirectory: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
         return S_ERROR( errStr )
-    return S_OK( { 'Failed' : failed, 'Successful' : successful } ) 
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def getDirectoryMetadata( self, path ):
     """ get the metadata for the directory :path:
-   
+
     :param self: self reference
     :param str path: SE path
     """
@@ -1159,7 +1163,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "getDirectoryMetadata: Attempting to obtain metadata for %s directories." % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error("getDirectoryMetadata: %s" % resDict["Message"] )
+      self.log.error( "getDirectoryMetadata: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -1169,7 +1173,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict["surl"]:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error("getDirectoryMetadata: %s" % pathSURL["Message"] )
+          self.log.error( "getDirectoryMetadata: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -1247,7 +1251,7 @@ class SRM2Storage( StorageBase ):
 
     resDict = self.__gfal_lsdir_wrapper( directories )
     if not resDict["OK"]:
-      self.log.error("listDirectory: %s" % resDict["Message"] )
+      self.log.error( "listDirectory: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     #resDict = self.__gfalls_wrapper(directories,1)['Value']
@@ -1258,7 +1262,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict["surl"]:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error("listDirectory: %s" % pathSURL["Message"] )
+          self.log.error( "listDirectory: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -1295,7 +1299,7 @@ class SRM2Storage( StorageBase ):
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def putDirectory( self, path ):
-    """ cp -R local SE 
+    """ cp -R local SE
     puts a local directory to the physical storage together with all its files and subdirectories
 
     :param self: self reference
@@ -1378,7 +1382,7 @@ class SRM2Storage( StorageBase ):
     failed = {}
     successful = {}
     self.log.debug( "SRM2Storage.getDirectory: Attempting to get local copies of %s directories." % len( urls ) )
-    for src_dir in urls.keys():
+    for src_dir in urls:
       dirName = os.path.basename( src_dir )
       if localPath:
         dest_dir = "%s/%s" % ( localPath, dirName )
@@ -1467,7 +1471,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "SRM2Storage.__removeDirectory: Attempting to remove %s directories." % len( urls ) )
     resDict = self.__gfal_removedir_wrapper( urls )
     if not resDict["OK"]:
-      self.log.error("__removeDirectory: %s" % resDict["Message"] )
+      self.log.error( "__removeDirectory: %s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -1501,7 +1505,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     failed = {}
     self.log.debug( "SRM2Storage.__removeDirectory: Attempting to recursively remove %s directories." % len( urls ) )
-    for directory in urls.keys():
+    for directory in urls:
       self.log.debug( "SRM2Storage.removeDirectory: Attempting to remove %s" % directory )
       res = self.__getDirectoryContents( directory )
       resDict = {'FilesRemoved':0, 'SizeRemoved':0}
@@ -1555,9 +1559,9 @@ class SRM2Storage( StorageBase ):
 
   def __removeDirectoryFiles( self, filesToRemove ):
     """ rm files from SE
-    
+
     :param self: self reference
-    :param dict filesToRemove: dict with surls as keys 
+    :param dict filesToRemove: dict with surls as keys
     """
     resDict = { 'FilesRemoved' : 0, 'SizeRemoved' : 0, 'AllRemoved' : True }
     if len( filesToRemove ) > 0:
@@ -1596,7 +1600,7 @@ class SRM2Storage( StorageBase ):
                          "Removed %s files of size %s bytes from %s." % ( removedDict['FilesRemoved'],
                                                                           removedDict['SizeRemoved'],
                                                                           removedSubDir ) )
-        if len( res['Value']['Failed'].keys() ) != 0:
+        if len( res['Value']['Failed'] ) != 0:
           resDict['AllRemoved'] = False
     return resDict
 
@@ -1619,7 +1623,7 @@ class SRM2Storage( StorageBase ):
   @staticmethod
   def __parse_stat( stat ):
     """ get size, ftype and mode from stat struct
- 
+
     :param stat: stat struct
     """
     statDict = { 'File' : False, 'Directory' : False }
@@ -1645,7 +1649,7 @@ class SRM2Storage( StorageBase ):
       if "checksum" in urlDict and ( urlDict['checksum'] != '0x' ):
         statDict["Checksum"] = urlDict["checksum"]
 
-      if urlDict.has_key( 'locality' ):
+      if 'locality' in urlDict:
         urlLocality = urlDict['locality']
         if re.search( 'ONLINE', urlLocality ):
           statDict['Cached'] = 1
@@ -1668,7 +1672,7 @@ class SRM2Storage( StorageBase ):
     """ returns list of protocols to use at a given site
 
     :warn: priority is given to a protocols list defined in the CS
-    
+
     :param self: self reference
     """
     sections = gConfig.getSections( '/Resources/StorageElements/%s/' % ( self.name ) )
@@ -1733,7 +1737,7 @@ class SRM2Storage( StorageBase ):
           tempStep = step
           if len( results ) == 1:
             for result in results:
-              if result.has_key( 'subpaths' ):
+              if 'subpaths' in result:
                 results = result['subpaths']
                 tempStep = step - 1
               elif re.search( result['surl'], url ):
@@ -1746,7 +1750,7 @@ class SRM2Storage( StorageBase ):
     return S_OK( { "AllResults" : successful, "Failed" : failed } )
 
   def __gfal_ls_wrapper( self, urls, depth ):
-    """ gfal_ls wrapper 
+    """ gfal_ls wrapper
 
     :param self: self reference
     :param list urls: urls to check
@@ -1776,7 +1780,7 @@ class SRM2Storage( StorageBase ):
     return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_prestage_wrapper( self, urls, lifetime ):
-    """ gfal_prestage wrapper 
+    """ gfal_prestage wrapper
 
     :param self: self refefence
     :param list urls: urls to prestage
@@ -1796,8 +1800,8 @@ class SRM2Storage( StorageBase ):
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] = len( urls )
       gfalDict['timeout'] = self.stageTimeout
-      res = self.__gfal_operation_wrapper( 'gfal_prestage', 
-                                           gfalDict, 
+      res = self.__gfal_operation_wrapper( 'gfal_prestage',
+                                           gfalDict,
                                            timeout_sendreceive = self.fileTimeout * len( urls ) )
       gDataStoreClient.addRegister( res['AccountingOperation'] )
       if not res['OK']:
@@ -1834,7 +1838,7 @@ class SRM2Storage( StorageBase ):
         allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfaldeletesurls_wrapper( self, urls ):
     """ This is a function that can be reused everywhere to perform the gfal_deletesurls
@@ -1860,7 +1864,7 @@ class SRM2Storage( StorageBase ):
         allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_removedir_wrapper( self, urls ):
     """ This is a function that can be reused everywhere to perform the gfal_removedir
@@ -1886,13 +1890,13 @@ class SRM2Storage( StorageBase ):
         allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_pin_wrapper( self, urls, lifetime ):
     """ gfal_pin wrapper
 
     :param self: self reference
-    :param dict urls: dict { url : srmRequestID } 
+    :param dict urls: dict { url : srmRequestID }
     :param int lifetime: pin lifetime in seconds
     """
     gfalDict = {}
@@ -1925,7 +1929,7 @@ class SRM2Storage( StorageBase ):
           allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_prestagestatus_wrapper( self, urls ):
     """ gfal_prestagestatus wrapper
@@ -1962,7 +1966,7 @@ class SRM2Storage( StorageBase ):
           allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_release_wrapper( self, urls ):
     """ gfal_release wrapper
@@ -1998,7 +2002,7 @@ class SRM2Storage( StorageBase ):
           allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_operation_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
     """ gfal fcn call wrapper
@@ -2025,11 +2029,11 @@ class SRM2Storage( StorageBase ):
       return res
 
     ## timeout for one gfal_exec call
-    timeout = gfalDict['timeout'] if not timeout_sendreceive else timeout_sendreceive 
+    timeout = gfalDict['timeout'] if not timeout_sendreceive else timeout_sendreceive
     ## pythonCall timeout ( const + timeout * ( 2 ** retry )
-    pyTimeout = 300 + ( timeout * (2**self.gfalRetry) )
+    pyTimeout = 300 + ( timeout * ( 2 ** self.gfalRetry ) )
     res = pythonCall( pyTimeout, self.__gfal_wrapper, operation, gfalDict, srmRequestID, timeout_sendreceive )
-    
+
     end = time.time()
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey( 'TransferTime', end - start )
@@ -2072,7 +2076,7 @@ class SRM2Storage( StorageBase ):
       res = self.__gfal_set_ids( gfalObject, srmRequestID )
       if not res['OK']:
         return res
-      
+
     res = self.__gfal_exec( gfalObject, operation, timeout_sendreceive )
     if not res['OK']:
       return res
@@ -2097,14 +2101,14 @@ class SRM2Storage( StorageBase ):
     self.__destroy_gfal_object( gfalObject )
 
     return S_OK( resultList )
- 
+
   @staticmethod
   def __initialiseAccountingObject( operation, se, files ):
     """ create DataOperation accounting object
-    
-    :param str operation: operation performed 
+
+    :param str operation: operation performed
     :param str se: destination SE name
-    :param int files: nb of files 
+    :param int files: nb of files
     """
     import DIRAC
     accountingDict = {}
@@ -2150,8 +2154,8 @@ class SRM2Storage( StorageBase ):
       return S_OK( gfalObject )
 
   def __gfal_set_ids( self, gfalObject, srmRequestID ):
-    """ set :srmRequestID: 
-    
+    """ set :srmRequestID:
+
     :param self: self reference
     :param gfalObject: gfal object
     :param str srmRequestID: srm request id
@@ -2161,7 +2165,7 @@ class SRM2Storage( StorageBase ):
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_set_ids: Failed to perform gfal_set_ids."
       if not errMessage:
-        errMessage = os.strerror( errCode ) 
+        errMessage = os.strerror( errCode )
       self.log.error( errStr, errMessage )
       return S_ERROR( "%s%s" % ( errStr, errMessage ) )
     else:
@@ -2193,8 +2197,8 @@ class SRM2Storage( StorageBase ):
       fcn = getattr( self.gfal, method )
     if not fcn:
       return S_ERROR( "Unable to invoke %s for gfal, it isn't a member function" % method )
-    
-    ## retry 
+
+    ## retry
     retry = self.gfalRetry if self.gfalRetry else 1
     ## initial timeout
     timeout = timeout_sendreceive if timeout_sendreceive else self.gfalTimeout
@@ -2208,11 +2212,11 @@ class SRM2Storage( StorageBase ):
         errNo = self.gfal.gfal_get_errno()
       if errCode == -1 and errNo == errno.ECOMM:
         timeout *= 2
-        self.log.debug("SRM2Storage.__gfal_exec(%s): got ECOMM, extending timeout to %s s" % ( method, timeout ) )
+        self.log.debug( "SRM2Storage.__gfal_exec(%s): got ECOMM, extending timeout to %s s" % ( method, timeout ) )
         continue
       else:
         break
-    if errCode:  
+    if errCode:
       errStr = "SRM2Storage.__gfal_exec(%s): Execution failed." % method
       if not errMessage:
         errMessage = os.strerror( errNo ) if errNo else "UNKNOWN ERROR"
@@ -2223,7 +2227,7 @@ class SRM2Storage( StorageBase ):
 
   def __get_results( self, gfalObject ):
     """ retrive gfal results
-    
+
     :param self: self reference
     :param gfalObject: gfal object
     """
@@ -2246,7 +2250,7 @@ class SRM2Storage( StorageBase ):
 
   def __gfal_get_ids( self, gfalObject ):
     """ get srmRequestToken
-    
+
     :param self: self reference
     :param gfalObject: gfalObject
     """
@@ -2262,7 +2266,7 @@ class SRM2Storage( StorageBase ):
 
   def __destroy_gfal_object( self, gfalObject ):
     """ del gfal object by calling gfal.gfal_internal_free
-    
+
     :param self: self reference
     :param gfalObject: gfalObject
     """
