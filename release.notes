@@ -1,5 +1,8 @@
 [v6r7p27]
 
+*Core
+FIX: Mail.py - fix of the problem of colons in the mail's body
+
 *Interfaces
 NEW: Job API - added setSubmitPools(), setPlatform() sets ... "Platform"
 
@@ -12,7 +15,7 @@ BUGFIX: SSHGEComputingElement - forgotten return statement in _getJobOutputFiles
 
 *Framework
 NEW: dirac-sys-sendmail - email's body can be taken from pipe. Command's argument 
-     in this case will be interpreted as a destination address
+     in this case will be interpreted as a destination address     
 
 [v6r7p26]
 
