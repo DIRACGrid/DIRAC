@@ -477,7 +477,23 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def setPlatform( self, backend ):
+  def setPlatform( self, platform ):
+    """Developer function.
+
+       Choose the target Operating System, e.g. Linux_x86_64_glibc-2.5
+    """
+    #should add protection here for list of supported platforms
+    kwargs = {'platform':platform}
+    if not type( platform ) == type( " " ):
+      return self._reportError( 'Expected string for platform', **kwargs )
+
+    if not platform.lower() == 'any':
+      self._addParameter( self.workflow, 'Platform', 'JDL', platform, 'Platform ( Operating System )' )
+
+    return S_OK()
+
+  #############################################################################
+  def setSubmitPools( self, backend ):
     """Developer function.
 
        Choose submission pool on which job is executed e.g. DIRAC, LCG.
@@ -489,7 +505,7 @@ class Job( API ):
       return self._reportError( 'Expected string for platform', **kwargs )
 
     if not backend.lower() == 'any':
-      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Platform type' )
+      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Platform ( Operating System )' )
 
     return S_OK()
 
