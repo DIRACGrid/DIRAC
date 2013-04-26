@@ -1,3 +1,7 @@
+[v6r8p10]
+
+NEW: Applied patches from v6r7p27
+
 [v6r8p9]
 
 *DMS
@@ -103,6 +107,22 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p27]
+
+*Interfaces
+NEW: Job API - added setSubmitPools(), setPlatform() sets ... "Platform"
+
+*WMS
+FIX: TaskQueueDB - use SystemConfig as Platform for matching ( if Platform is not set explicitly
+
+*Resources
+FIX: SSHComputingElement - use ssh host ( and not CE name ) in the pilot reference
+BUGFIX: SSHGEComputingElement - forgotten return statement in _getJobOutputFiles()
+
+*Framework
+NEW: dirac-sys-sendmail - email's body can be taken from pipe. Command's argument 
+     in this case will be interpreted as a destination address
 
 [v6r7p26]
 
