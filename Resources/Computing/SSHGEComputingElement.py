@@ -10,17 +10,9 @@
 
 __RCSID__ = "092c1d9 (2011-06-02 15:20:46 +0200) atsareg <atsareg@in2p3.fr>"
 
-from DIRAC.Resources.Computing.SSHComputingElement  import SSH, SSHComputingElement 
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC.Core.Utilities.List                           import breakListIntoChunks
-from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
-from DIRAC                                               import gConfig
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-from DIRAC.Resources.Computing.SSHComputingElement       import SSH 
-
-import os, sys, time, re, socket, stat, shutil
-import string, shutil, bz2, base64, tempfile
+from DIRAC.Resources.Computing.SSHComputingElement       import SSHComputingElement 
+from DIRAC.Core.Utilities.Pfn                            import pfnparse         
+from DIRAC                                               import S_OK
 
 CE_NAME = 'SSHGE'
 MANDATORY_PARAMETERS = [ 'Queue' ]
@@ -48,5 +40,7 @@ class SSHGEComputingElement( SSHComputingElement ):
 
     output = '%s/DIRACPilot.o%s' % ( self.batchOutput, jobStamp )
     error = '%s/DIRACPilot.e%s' % ( self.batchError, jobStamp )
+    
+    return S_OK( (jobStamp,host,output,error) )
   
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
