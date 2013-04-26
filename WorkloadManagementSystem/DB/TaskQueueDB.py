@@ -187,6 +187,8 @@ class TaskQueueDB( DB ):
     # until the LHCbPlatform is no more used in the TaskQueueDB
     if 'LHCbPlatforms' in tqDefDict and not "Platforms" in tqDefDict:
       tqDefDict['Platforms'] = tqDefDict['LHCbPlatforms']
+    if 'SystemConfigs' in tqDefDict and not "Platforms" in tqDefDict:
+      tqDefDict['Platforms'] = tqDefDict['SystemConfigs']  
 
     for field in self.__singleValueDefFields:
       if field not in tqDefDict:
@@ -245,6 +247,8 @@ class TaskQueueDB( DB ):
     # until the LHCbPlatform is no more used in the TaskQueueDB
     if 'LHCbPlatform' in tqMatchDict and not "Platform" in tqMatchDict:
       tqMatchDict['Platform'] = tqMatchDict['LHCbPlatform']
+    if 'SystemConfig' in tqMatchDict and not "Platform" in tqMatchDict:
+      tqMatchDict['Platform'] = tqMatchDict['SystemConfig']  
 
     for field in self.__singleValueDefFields:
       if field not in tqMatchDict:
