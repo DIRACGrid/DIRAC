@@ -273,6 +273,7 @@ class FileManagerBase:
         for lfn, error in res['Value']['Failed'].items():
           toPurge.append( lfns[lfn]['FileID'] )
       if toPurge:
+        self._removeFileAncestors( toPurge, connection = connection )
         self._deleteFiles( toPurge, connection = connection )
 
     # Register the replicas
@@ -291,6 +292,7 @@ class FileManagerBase:
         for lfn, error in res['Value']['Failed'].items():
           toPurge.append( lfns[lfn]['FileID'] )
       if toPurge:
+        self._removeFileAncestors( toPurge, connection = connection )
         self._deleteFiles( toPurge, connection = connection )
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
