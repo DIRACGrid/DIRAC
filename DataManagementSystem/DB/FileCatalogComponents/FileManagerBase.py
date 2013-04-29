@@ -610,7 +610,7 @@ class FileManagerBase:
         directorySESizeDict[dirID][seID]['Files'] += 1
 
     #Remove files from Ancestor tables
-    res = self._removeFileAncestors(fileIDLfns.keys(), connection)
+    res = self._removeFileAncestors(fileIDLfns.keys(), connection = connection )
     if res['OK'] and res['Value']:
       for fid in res['Value']['Successful'].keys():
         successful[fileIDLfns[fid]] = True
