@@ -1285,14 +1285,15 @@ class JobDB( DB ):
         return result
 
       #Reduce source job input data
-      inputData = {}
-      for lfn in jobManifest.getOption( "InputData", [] ):
-        if sourceInputData and lfn not in sourceInputData:
-          return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
-        inputData[ lfn ] = dict( sourceInputData[ lfn ] )
-        result = self.setInputData( jid, inputData )
-        if not result[ 'OK' ]:
-          return result
+      if sourceInputData:
+        inputData = {}
+        for lfn in jobManifest.getOption( "InputData", [] ):
+          if lfn not in sourceInputData:
+            return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
+          inputData[ lfn ] = dict( sourceInputData[ lfn ] )
+          result = self.setInputData( jid, inputData )
+          if not result[ 'OK' ]:
+            return result
 
       #Get job attributes to copy them to children jobs
       result = self.getJobAttributes( jid, [ 'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ] )
