@@ -359,6 +359,7 @@ class MySQL:
         return result
       conn = result[ 'Value' ]
       try:
+      	self.__execute( conn, "SET AUTOCOMMIT=0" )
         return S_OK( self.__execute( conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT" ) )
       except MySQLdb.MySQLError, excp:
         return S_ERROR( "Could not begin transaction: %s" % excp )
@@ -370,6 +371,7 @@ class MySQL:
       conn = result[ 'Value' ]
       try:
         result = self.__execute( conn, "COMMIT" )
+      	self.__execute( conn, "SET AUTOCOMMIT=1" )
         return S_OK( result )
       except MySQLdb.MySQLError, excp:
         return S_ERROR( "Could not commit transaction: %s" % excp )
@@ -381,6 +383,7 @@ class MySQL:
       conn = result[ 'Value' ]
       try:
         result = self.__execute( conn, "ROLLBACK" )
+      	self.__execute( conn, "SET AUTOCOMMIT=1" )
         return S_OK( result )
       except MySQLdb.MySQLError, excp:
         return S_ERROR( "Could not rollback transaction: %s" % excp )

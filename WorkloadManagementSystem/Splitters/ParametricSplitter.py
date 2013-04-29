@@ -16,8 +16,6 @@ class ParametricSplitter( BaseSplitter ):
         numParams = int( params[0] )
       except ValueError:
         return S_ERROR( "Illegal value for Parameters option in the manifest" )
-      if numParams > maxJobs:
-        return S_ERROR( "Exceeded maximum number of parametric jobs allowed (%d)" % maxJobs )
       pStart = manifest.getOption( 'ParameterStart', 1.0 )
       pStep = manifest.getOption( 'ParameterStep', 0.0 )
       pFactor = manifest.getOption( 'ParameterFactor', 1.0 )

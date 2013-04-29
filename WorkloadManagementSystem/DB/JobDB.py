@@ -1290,10 +1290,10 @@ class JobDB( DB ):
         for lfn in jobManifest.getOption( "InputData", [] ):
           if lfn not in sourceInputData:
             return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
-          inputData[ lfn ] = dict( sourceInputData[ lfn ] )
-          result = self.setInputData( jid, inputData )
-          if not result[ 'OK' ]:
-            return result
+        inputData[ lfn ] = dict( sourceInputData[ lfn ] )
+        result = self.setInputData( jid, inputData )
+        if not result[ 'OK' ]:
+          return result
 
       #Get job attributes to copy them to children jobs
       result = self.getJobAttributes( jid, [ 'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ] )
@@ -1309,10 +1309,11 @@ class JobDB( DB ):
         if not result[ 'OK' ]:
           return result
         jidList.append( result[ 'Value' ] )
-        inputData = {}
-        for lfn in manifest.getOption( "InputData", [] ):
-          if lfn not in sourceInputData:
-            return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
+        if sourceInputData:
+          inputData = {}
+          for lfn in manifest.getOption( "InputData", [] ):
+            if lfn not in sourceInputData:
+              return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
           inputData[ lfn ] = dict( sourceInputData[ lfn ] )
           result = self.setInputData( jidList[-1], inputData )
           if not result[ 'OK' ]:
@@ -1325,7 +1326,7 @@ class JobDB( DB ):
       return S_OK( jidList )
     finally:
       if not ok:
-        self.transactionRollback()
+        print "ROLLBACK", self.transactionRollback()
 
 
 #############################################################################
