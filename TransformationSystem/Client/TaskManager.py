@@ -259,9 +259,9 @@ class WorkflowTasks( TaskBase ):
       owner = proxyInfo['username']
       ownerGroup = proxyInfo['group']
 
-    oJob = self.jobClass( transBody )
 
     for taskNumber in sortList( taskDict.keys() ):
+      oJob = self.jobClass( transBody )
       paramsDict = taskDict[taskNumber]
       site = oJob.workflow.findParameter( 'Site' ).getValue()
       paramsDict['Site'] = site
