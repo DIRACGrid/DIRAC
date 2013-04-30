@@ -2,16 +2,12 @@
 import sys
 import os
 import types
+import threading
+import time
+
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getInstalledExtensionPaths
-
-try:
-  from watchdog.observers import Observer
-  from watchdog.events import FileSystemEventHandler
-  watchdogEnabled = True
-except:
-  watchdogEnabled = False
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import Extensions
 
 class Devloader( object ):
   __metaclass__ = DIRACSingleton
@@ -19,55 +15,64 @@ class Devloader( object ):
   def __init__( self ):
     self.__log = gLogger.getSubLogger( "Devloader" )
     self.__observers = []
+    self.__exts = Extensions()
+    self.__reloaded = False
+    self.__enabled = True
+    self.__reloadTask = False
+    self.__watchedFiles = []
+    self.__modifyTimes = {}
 
   @property
   def enabled( self ):
-    return watchdogEnabled
+    return self.__enabled
 
-  def bootstrap( self, modules = False ):
-    if not watchdogEnabled:
+  def watchFile( self, fp ):
+    if os.path.isfile( fd ):
+      self.__watchedFiles.append( fd )
+      return True
+    return False
+
+  def __restart( self ):
+    self.__reloaded = True
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
+
+  def bootstrap( self ):
+    if not self.__enabled:
       return False
-
-    if type( modules ) in types.StringTypes:
-      modules = [ modules ]
-    elif modules:
-      modules = list( modules )
-
-    if modules:
-      for obs in self.__observers:
-        if obs in modules:
-          modules.remove( obs )
-
-    if not modules and self.__observers:
+    if self.__reloadTask:
       return True
 
-    exts = getInstalledExtensionPaths()
-    if modules:
-      exts = dict([ ( k, exts[k] ) for k in exts if k in modules ])
+    self.__reloadTask = threading.Thread( target = self.__reloadOnUpdate )
+    self.__reloadTask.setDaemon(1)
+    self.__reloadTask.start()
 
-    exts = dict([ ( k, exts[k] ) for k in exts if k not in self.__observers ])
+  def __reloadOnUpdate( self  ):
+    while True:
+      time.sleep(1)
+      if self.__reloaded:
+        return
+      for modName in sys.modules:
+        modObj = sys.modules[ modName ]
+        if not isinstance( modObj, types.ModuleType ):
+            continue
+        path = getattr( modObj, "__file__", None )
+        if not path:
+            continue
+        if path.endswith( ".pyc" ) or path.endswith( ".pyo" ):
+            path = path[:-1]
+        self.__checkFile( path )
+      for path in self.__watchedFiles:
+         self.__checkFile( path )
 
-    if not exts:
-      return True
-
-    class Restarter( FileSystemEventHandler ):
-      def __init__( self, log, observer ):
-        self.__log = log
-        self.__observer = observer
-      def on_any_event( event ):
-        self.__log.always( "File system changed (%s %s). Restarting..." % ( event.event_type, event.src_path ) )
-        self.__observer.unschedule_all()
-        python = sys.executable
-        os.execl(python, python, * sys.argv)
-
-    for extName in exts:
-      extPath = exts[ extName ]
-      self.__log.notice( "Starting reload watchdog for %s" % extPath )
-      obs = Observer()
-      restarter = Restarter( self.__log, obs )
-      obs.schedule( restarter, extPath, recursive = True )
-      self.__observers.append( obs )
-      obs.start()
-
-
-
+  def __checkFile( self, path ):
+    try:
+      modified = os.stat(path).st_mtime
+    except Exception:
+      return
+    if path not in self.__modifyTimes:
+      self.__modifyTimes[path] = modified
+      return
+    if self.__modifyTimes[path] != modified:
+      self.__log.always( "File system changed (%s). Restarting..." % ( path ) )
+      self.__restart()

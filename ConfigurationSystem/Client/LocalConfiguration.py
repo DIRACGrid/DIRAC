@@ -96,7 +96,7 @@ class LocalConfiguration:
                          self.__setDebugMode )
     devLoader = Devloader()
     if devLoader.enabled:
-      self.registerCmdOpt( "", "autoreload=", "Automatically restart if there's any change in the module",
+      self.registerCmdOpt( "", "autoreload", "Automatically restart if there's any change in the module",
                            self.__setAutoreload )
     self.registerCmdOpt( "h", "help", "Shows this help",
                          self.showHelp )
@@ -437,12 +437,12 @@ class LocalConfiguration:
     self.__debugMode += 1
     return S_OK()
 
-  def __setAutoreload( self, modName ):
+  def __setAutoreload( self, filepath = False ):
     devLoader = Devloader()
-    if devLoader.bootstrap( modName ):
-      return S_ERROR( "Could not bootstrap devloader" )
-    else:
-      gLogger.notice( "Devloader started" )
+    devLoader.bootstrap()
+    if filepath:
+      devLoader.watchFile( filepath )
+    gLogger.notice( "Devloader started" )
     return S_OK()
 
   def getDebugMode( self ):

@@ -11,8 +11,6 @@ class ParametricSplitter( BaseSplitter ):
     manifest = result[ 'Value' ]
     params = manifest.getOption( "Parameters", [] )
 
-    raise RuntimeError( "LALAL" )
-
     if len( params ) == 1:
       try:
         numParams = int( params[0] )
