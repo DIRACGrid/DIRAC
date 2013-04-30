@@ -43,6 +43,7 @@ class JobPath( OptimizerExecutor ):
       spName = k.split(".")[-1][:-8]
       cls.__splitters[ spName ] = spClass.AFTER_OPTIMIZER
       cls.log.notice( "Found %s splitter that goes after %s" % ( spName, spClass.AFTER_OPTIMIZER ) )
+    cls.ex_setOption( "FailedStatus", "Cannot generate optimization path" )
     return S_OK()
 
   def __setOptimizerChain( self, jobState, opChain ):

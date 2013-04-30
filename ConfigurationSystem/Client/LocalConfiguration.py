@@ -13,6 +13,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection, getExecutorSection
+from DIRAC.Core.Utilities.Devloader import Devloader
 
 class LocalConfiguration:
   """
@@ -93,6 +94,10 @@ class LocalConfiguration:
                          self.__setUseCertByCmd )
     self.registerCmdOpt( "d", "debug", "Set debug mode (-dd is extra debug)",
                          self.__setDebugMode )
+    devLoader = Devloader()
+    if devLoader.enabled:
+      self.registerCmdOpt( "", "autoreload", "Automatically restart if there's any change in the source",
+                           self.__setAutoreload )
     self.registerCmdOpt( "h", "help", "Shows this help",
                          self.showHelp )
 
@@ -432,6 +437,13 @@ class LocalConfiguration:
     self.__debugMode += 1
     return S_OK()
 
+  def __setAutoreload( self, dummy = False ):
+    devLoader = Devloader()
+    if devLoader.bootstrap():
+      gLogger.notice( "Could not bootstrap devloader" )
+    else:
+      gLogger.notice( "Devloader started" )
+
   def getDebugMode( self ):
     return self.__debugMode
 
@@ -451,7 +463,10 @@ class LocalConfiguration:
     iLastOpt = 0
     for iPos in range( len( self.commandOptionList ) ):
       optionTuple = self.commandOptionList[ iPos ]
-      gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 3 ), optionTuple[1].ljust( 15 ), optionTuple[2] ) )
+      if optionTuple[0]:
+        gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 3 ), optionTuple[1].ljust( 15 ), optionTuple[2] ) )
+      else:
+        gLogger.notice( "   %s --%s : %s" % ( '   ', optionTuple[1].ljust( 15 ), optionTuple[2] ) )
 
       iLastOpt = iPos
       if optionTuple[0] == 'h':

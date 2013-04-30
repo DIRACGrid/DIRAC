@@ -33,6 +33,7 @@ class JobSanity( OptimizerExecutor ):
     """Initialize specific parameters for JobSanityAgent.
     """
     cls.sandboxClient = SandboxStoreClient( useCertificates = True )
+    cls.ex_setOption( "FailedStatus", "Insane job" )
     return S_OK()
 
   #############################################################################

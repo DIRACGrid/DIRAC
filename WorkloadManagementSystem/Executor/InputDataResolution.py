@@ -39,6 +39,7 @@ class InputDataResolution( OptimizerExecutor ):
       cls.log.exception( msg )
       return S_ERROR( msg + str( e ) )
 
+    self.ex_setOption( "FailedStatus", "Input Data Not Available" )
     return S_OK()
 
   def optimizeJob( self, jid, jobState ):

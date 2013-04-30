@@ -45,6 +45,17 @@ def getInstalledExtensions():
   extensions.append( 'DIRAC' )
   return extensions
 
+def getInstalledExtensionPaths():
+  import imp
+  extensions = {}
+  for extension in getCSExtensions() + [ "" ]:
+    try:
+      extName = '%sDIRAC' % extension
+      res = imp.find_module( extName )
+      extensions[ extName ] = res[1]
+    except ImportError:
+      pass
+  return extensions
 
 def skipCACheck():
   from DIRAC import gConfig

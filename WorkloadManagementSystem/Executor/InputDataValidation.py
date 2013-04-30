@@ -44,6 +44,8 @@ class InputDataValidation( OptimizerExecutor ):
       cls.__jobDB = JobDB()
     except RuntimeError:
       return S_ERROR( "Cannot connect to JobDB" )
+
+    cls.ex_setOption( "FailedStatus", "Input Data Not Available" )
     return S_OK()
 
 

@@ -41,9 +41,11 @@ class Splitter( OptimizerExecutor ):
       spName = k.split(".")[-1][:-8]
       cls.__splitters[ spName ] = spClass
       cls.log.notice( "Found %s splitter" % spName )
+    cls.ex_setOption( "FailedStatus", "Invalid split" )
     return S_OK()
 
   def optimizeJob( self, jid, jobState ):
+    #TODO: Debug error and exception
     result = jobState.getManifest()
     if not result[ 'OK' ]:
       return result

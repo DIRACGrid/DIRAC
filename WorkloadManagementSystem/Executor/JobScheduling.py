@@ -45,6 +45,8 @@ class JobScheduling( OptimizerExecutor ):
       cls.__jobDB = JobDB()
     except RuntimeError:
       return S_ERROR( "Cannot connect to JobDB" )
+
+    cls.ex_setOption( "FailedStatus", "Cannot schedule" )
     return S_OK()
 
   def __checkReschedules( self, jobState ):

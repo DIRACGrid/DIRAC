@@ -124,6 +124,13 @@ class OptimizerExecutor( ExecutorModule ):
         optResult = S_OK()
       if not isReturnStructure( optResult ):
         raise RuntimeError( "Executor does not return S_OK/S_ERROR!" )
+      # Did it go as expected? If not Failed!
+      if not optResult[ 'OK' ]:
+        self.jobLog.info( "Set to Failed/%s" % optResult[ 'Message' ] )
+        minorStatus = self.ex_getOption( "FailedStatus", "%s" % self.ex_optimizerName() )
+        return jobState.setStatus( "Failed", minorStatus = minorStatus,
+                                   appStatus = optResult[ 'Message' ],
+                                   source = self.ex_optimizerName() )
       #If the manifest is dirty, update it!
       result = jobState.getManifest()
       if not result[ 'OK' ]:
@@ -132,12 +139,6 @@ class OptimizerExecutor( ExecutorModule ):
       if manifest.isDirty():
         manifest.expand()
         jobState.setManifest( manifest )
-      # Did it go as expected? If not Failed!
-      if not optResult[ 'OK' ]:
-        self.jobLog.info( "Set to Failed/%s" % optResult[ 'Message' ] )
-        minorStatus = "%s optimizer" % self.ex_optimizerName()
-        return jobState.setStatus( "Failed", optResult[ 'Message' ], source = self.ex_optimizerName() )
-
       return S_OK()
     finally:
       self.__jobData.jobState = None
