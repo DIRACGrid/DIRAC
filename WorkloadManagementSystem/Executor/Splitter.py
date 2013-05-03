@@ -75,7 +75,7 @@ class Splitter( OptimizerExecutor ):
     for iM in range( numManifests ):
       manifest = manifests[ iM ]
       manifest.remove( "Splitter" )
-      manifest.setOption( "SplitId", str( iM ).zfill( len( str( numManifests ) ) ) )
+      manifest.setOption( "SplitID", str( iM ).zfill( len( str( numManifests ) ) ) )
       manifest.setOption( "SplitSourceJob", jid )
       manifest.expand()
     return self.splitJob( manifests )
