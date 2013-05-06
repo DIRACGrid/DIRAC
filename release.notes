@@ -1,3 +1,8 @@
+[v6r7p28]
+
+*DMS
+BUGFIX: FileCatalog/DirectoryMetadata - wrong MySQL syntax 
+
 [v6r7p27]
 
 *Core
