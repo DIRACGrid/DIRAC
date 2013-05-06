@@ -1,3 +1,17 @@
+[v6r8p11]
+
+NEW: Applied patches from v6r7p27
+
+*RSS
+NEW: SpaceTokenOccupancyPolicy - ported from LHCbDIRAC 
+NEW: db._checkTable done on service initialization ( removed dirac-rss-setup script doing it )
+
+*Transformation
+FIX: TaskManager - reset oJob for each task in prepareTransformationTasks()
+BUGFIX: ValidateOutputDataAgent - typo fixed in getTransformationDirectories()
+FIX: TransformationManagerHandler - use CS to get files statuses not to include in 
+     processed file fraction calculation for the web monitoring pages
+
 [v6r8p10]
 
 NEW: Applied patches from v6r7p27
