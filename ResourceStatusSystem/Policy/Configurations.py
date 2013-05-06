@@ -1,5 +1,5 @@
 # $HeadURL:  $
-''' Configurations module
+""" Configurations module
 
   Configuration to use policies.
   
@@ -12,11 +12,13 @@
              'args'        : { arguments for the command } or None 
                      }
   
-'''
+"""
 
 __RCSID__ = '$Id:  $'
 
 POLICIESMETA = {
+
+  # DownTime POLICIES...........................................................
             
   'DTOngoing' :
     {
@@ -33,6 +35,18 @@ POLICIESMETA = {
       'command'     : ( 'DowntimeCommand', 'DowntimeCommand' ),
       'args'        : { 'hours' : 12, 'onlyCache' : True },
     },
+
+  # Space Token POLICIES........................................................
+
+  'SpaceTokenOccupancy' :
+    { 
+      'description' : 'Space token occupancy',
+      'module'      : 'SpaceTokenOccupancyPolicy',
+      'command'     : ( 'SpaceTokenOccupancyCommand', 'SpaceTokenOccupancyCommand' ),
+      'args'        : { 'onlyCache' : True },
+     }, 
+
+  # ALWAYS SOMETHING POLICIES...................................................
 
   'AlwaysActive' :
     {
