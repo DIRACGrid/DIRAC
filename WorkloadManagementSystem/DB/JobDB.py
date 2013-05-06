@@ -1392,6 +1392,10 @@ class JobDB( DB ):
     else:
       attrs[ 'Site' ] = site[0]
 
+    print "Splitter", jobManifest.getOption( "Splitter", "" )
+    if jobManifest.getOption( "Splitter", "" ):
+      attrs[ 'JobSplitType' ] = "WillSplit"
+
     if parentJob == None:
       parentJob = jid
     attrs[ 'MasterJobID' ] = parentJob

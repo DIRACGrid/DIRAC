@@ -135,7 +135,6 @@ class JobPath( OptimizerExecutor ):
         return S_ERROR( "Cannot use %s splitter. Job won't go through required optimizer %s" % ( splitter, prevOpt ) )
       finalPath.insert( opIndex + 1, "Splitter" )
       self.jobLog.notice( "Added Splitter %s after %s" % ( splitter, prevOpt ) )
-      jobState.setAttribute( "JobSplitType", "WillSplit" )
 
     self.jobLog.info( 'Constructed path is: %s' % "->".join( finalPath ) )
     result = self.__setOptimizerChain( jobState, finalPath )
