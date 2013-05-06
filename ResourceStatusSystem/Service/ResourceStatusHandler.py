@@ -20,6 +20,8 @@ def initializeResourceStatusHandler( _serviceInfo ):
   
   global db
   db = ResourceStatusDB()
+  # Regenerates DB tables if needed
+  db._checkTable()
   
   return S_OK()
 
