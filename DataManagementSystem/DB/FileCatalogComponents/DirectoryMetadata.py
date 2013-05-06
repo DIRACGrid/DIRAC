@@ -57,7 +57,7 @@ class DirectoryMetadata:
       valueType = 'DATETIME'
     elif ptype == "MetaSet":
       valueType = "VARCHAR(64)"
-      
+
     req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" \
                               % ( pname, valueType )
     result = self.db._query( req )
@@ -88,7 +88,7 @@ class DirectoryMetadata:
     result = self.db._update( req )
     if not result['OK']:
       if error:
-        result["Message"] = error + "; " + result["Message"] 
+        result["Message"] = error + "; " + result["Message"]
     return result
 
   def getMetadataFields( self, credDict ):
@@ -210,7 +210,7 @@ class DirectoryMetadata:
           return result
 
     return S_OK()
-  
+
   def removeMetadata( self, dpath, metadata, credDict ):
     """ Remove the specified metadata for the given directory
     """
@@ -230,24 +230,24 @@ class DirectoryMetadata:
     for meta in metadata:
       if meta in metaFields:
         # Indexed meta case
-        req = "DELETE FROM FC_Meta_%s WHERE DirID=%d" % (meta,dirID)
-        result = self.db._update(req)
+        req = "DELETE FROM FC_Meta_%s WHERE DirID=%d" % ( meta, dirID )
+        result = self.db._update( req )
         if not result['OK']:
           failedMeta[meta] = result['Value']
       else:
         # Meta parameter case
-        req = "DELETE FROM FC_DirMeta WHERE MetaKey='%s' AND DirID=%d" % (meta,dirID)
-        result = self.db._update(req)
+        req = "DELETE FROM FC_DirMeta WHERE MetaKey='%s' AND DirID=%d" % ( meta, dirID )
+        result = self.db._update( req )
         if not result['OK']:
-          failedMeta[meta] = result['Value']    
-          
+          failedMeta[meta] = result['Value']
+
     if failedMeta:
       metaExample = failedMeta.keys()[0]
-      result = S_ERROR('Failed to remove %d metadata, e.g. %s' % (len(failedMeta),failedMeta[metaExample]) )
+      result = S_ERROR( 'Failed to remove %d metadata, e.g. %s' % ( len( failedMeta ), failedMeta[metaExample] ) )
       result['FailedMetadata'] = failedMeta
     else:
-      return S_OK()        
-    
+      return S_OK()
+
   def setMetaParameter( self, dpath, metaName, metaValue, credDict ):
     """ Set an meta parameter - metadata which is not used in the the data
         search operations
@@ -433,7 +433,7 @@ class DirectoryMetadata:
         selectString = ' AND '.join( selectList )
     elif type( value ) == types.ListType:
       vString = ','.join( [ "'" + str( x ) + "'" for x in value] )
-      selectString = "%sValue in %s" % ( table, vString )
+      selectString = "%sValue in (%s)" % ( table, vString )
     else:
       if value == "Any":
         selectString = ''
