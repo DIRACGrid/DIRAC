@@ -148,11 +148,11 @@ class ValidateOutputDataAgent( AgentModule ):
 
   @staticmethod
   def _addDirs( transID, newDirs, existingDirs ):
-    for _dir in newDirs:
+    for nDir in newDirs:
       transStr = str( transID ).zfill( 8 )
-      if re.search( transStr, dir ):
-        if not dir in existingDirs:
-          existingDirs.append( dir )
+      if re.search( transStr, nDir ):
+        if not nDir in existingDirs:
+          existingDirs.append( nDir )
     return existingDirs
 
   #############################################################################
