@@ -273,6 +273,7 @@ class FileManagerBase:
         for lfn, error in res['Value']['Failed'].items():
           toPurge.append( lfns[lfn]['FileID'] )
       if toPurge:
+        self._removeFileAncestors( toPurge, connection = connection )
         self._deleteFiles( toPurge, connection = connection )
 
     # Register the replicas
@@ -291,6 +292,7 @@ class FileManagerBase:
         for lfn, error in res['Value']['Failed'].items():
           toPurge.append( lfns[lfn]['FileID'] )
       if toPurge:
+        self._removeFileAncestors( toPurge, connection = connection )
         self._deleteFiles( toPurge, connection = connection )
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
@@ -428,7 +430,7 @@ class FileManagerBase:
       return S_OK({'Successful':successful,'Failed':failed})
     
     for lfn in  result['Value']['Successful']:
-       lfns[lfn]['FileID'] = result['Value']['Successful'][lfn]['FileID']
+      lfns[lfn]['FileID'] = result['Value']['Successful'][lfn]['FileID']
     
     result = self._populateFileAncestors(lfns, connection)
     if not result['OK']:
@@ -436,6 +438,24 @@ class FileManagerBase:
     failed.update(result['Value']['Failed'])
     successful = result['Value']['Successful']
     return S_OK({'Successful':successful,'Failed':failed})                                           
+
+  def _removeFileAncestors(self, fileIDs, connection = False ):
+    """ Remove from the FC_FileAncestors the entries corresponding to the input files"""
+    connection = self._getConnection( connection )
+    successful = {}
+    failed = {}
+    for FileID in fileIDs:
+      res = self.db.deleteEntries( "FC_FileAncestors" , { 'AncestorID' : FileID } )
+      if not res[ 'OK' ]:
+        failed[FileID] = res['Message']
+        continue
+      res = self.db.deleteEntries( "FC_FileAncestors" , { 'FileID' : FileID } )
+      if not res[ 'OK' ]:
+        failed[FileID] = res['Message']
+        continue
+      successful[FileID] = 'OK'
+    #Once could/should? fix the depth of related files.  
+    return S_OK( {'Successful' : successful, 'Failed' : failed} )
     
   def _getFileRelatives( self, lfns, depths, relation, connection = False ):
     connection = self._getConnection( connection )
@@ -453,7 +473,7 @@ class FileManagerBase:
     
     inputIDDict = {}
     for lfn in result['Value']['Successful']:
-       inputIDDict[ result['Value']['Successful'][lfn]['FileID'] ] = lfn
+      inputIDDict[ result['Value']['Successful'][lfn]['FileID'] ] = lfn
   
     inputIDs = inputIDDict.keys()
     if relation == 'ancestor':
@@ -557,7 +577,6 @@ class FileManagerBase:
     successful = {}
     failed = {}
     res = self._findFiles( lfns, ['DirID', 'FileID', 'Size'], connection = connection )
-    successful = {}
     for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         successful[lfn] = True
@@ -590,6 +609,14 @@ class FileManagerBase:
         directorySESizeDict[dirID][seID]['Size'] += size
         directorySESizeDict[dirID][seID]['Files'] += 1
 
+    #Remove files from Ancestor tables
+    res = self._removeFileAncestors(fileIDLfns.keys(), connection = connection )
+    if res['OK'] and res['Value']:
+      for fid in res['Value']['Successful'].keys():
+        successful[fileIDLfns[fid]] = True
+      for fid, reason in res['Value']['Failed'].items():
+        failed[fileIDLfns[fid]] = reason
+        
     # Now do removal  
     res = self._deleteFiles( fileIDLfns.keys(), connection = connection )
     if not res['OK']:
