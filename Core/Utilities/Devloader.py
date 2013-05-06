@@ -19,8 +19,12 @@ class Devloader( object ):
     self.__reloaded = False
     self.__enabled = True
     self.__reloadTask = False
+    self.__stuffToClose = []
     self.__watchedFiles = []
     self.__modifyTimes = {}
+
+  def addStuffToClose( self, stuff ):
+    self.__stuffToClose.append( stuff )
 
   @property
   def enabled( self ):
@@ -34,6 +38,15 @@ class Devloader( object ):
 
   def __restart( self ):
     self.__reloaded = True
+
+    for stuff in self.__stuffToClose:
+      try:
+        self.__log.always( "Closing %s" % stuff )
+        sys.stdout.flush()
+        stuff.close()
+      except:
+        gLogger.exception( "Could not close %s" % stuff )
+
     python = sys.executable
     os.execl(python, python, * sys.argv)
 

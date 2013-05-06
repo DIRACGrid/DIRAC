@@ -133,7 +133,7 @@ class JobDB( DB ):
         if not result[ 'OK' ]:
           self.log.error( "Error saving schema version %d: %s" % ( version, result[ 'Message' ] ) )
           return result
-        result = self.transactionRollback()
+        result = self.transactionCommit()
         if not result[ 'OK' ]:
           return S_ERROR( "Could not commit database migration: %s" % result[ 'Value' ] )
         done = True
@@ -146,6 +146,9 @@ class JobDB( DB ):
   def __schemaMigration_0( self ):
     self.log.info( "Updating MasterJobIDs..." )
     result = self._update( "UPDATE `Jobs` SET MasterJobID = JobID WHERE MasterJobID = 0" )
+    if not result[ 'OK' ]:
+      return result
+    result = self._update( "ALTER TABLE Jobs MODIFY JobSplitType ENUM ('Single','WillSplit','Splitted') NOT NULL DEFAULT 'Single'" )
     if not result[ 'OK' ]:
       return result
     tables = { 'SchemaVersion' : { 'Fields' : { 'Version' : 'INTEGER UNSIGNED' } } }
@@ -1271,7 +1274,8 @@ class JobDB( DB ):
       #Reset source Job Values
       upDict = { 'Status' : 'Received',
                  'MinorStatus' : 'Job accepted',
-                 'ApplicationStatus' : 'Unknown' }
+                 'ApplicationStatus' : 'Unknown',
+                 'JobSplitType' : 'Splitted' }
       for name in ( 'JobName', 'JobType', 'JobGroup', 'Priority' ):
         value = jobManifest.getOption( name )
         if name == 'Priority':
