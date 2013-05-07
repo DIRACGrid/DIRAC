@@ -7,14 +7,13 @@
 __RCSID__ = "$Id$"
 
 import stat
-import sys
 import cmd
 import commands
 import os.path
-import string
 import time
-from types  import *
-from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
+import sys
+from types  import DictType, ListType
+from DIRAC  import gConfig
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import uniqueElements
@@ -1722,7 +1721,7 @@ File Catalog Client $Revision: 1.17 $Date:
           meta set <path> <metaname> <metavalue> - set metadata value for directory or file
           meta remove <path> <metaname>  - remove metadata value for directory or file
           meta get [-e] [<path>] - get metadata for the given directory or file
-          meta tags <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
+          meta tags <path> <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
                                                         the metadata selection
           meta show - show all defined metadata indice
     
@@ -1916,8 +1915,11 @@ File Catalog Client $Revision: 1.17 $Date:
   def metaTag(self,argss):
     """ Get values of a given metadata tag compatible with the given selection
     """    
-    tag =  argss[0]
+    path =  argss[0]
     del argss[0]
+    tag = argss[0]
+    del argss[0]
+    path = self.getPath(path)
     
     # Evaluate the selection dictionary
     metaDict = {}
@@ -1958,7 +1960,10 @@ File Catalog Client $Revision: 1.17 $Date:
         print "Error: WHERE keyword is not found after the metadata tag name"
         return
       
-    result = self.fc.getCompatibleMetadata(metaDict)  
+    result = self.fc.getCompatibleMetadata( metaDict, path )  
+    
+    print "AT >>> result", result
+    
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return
