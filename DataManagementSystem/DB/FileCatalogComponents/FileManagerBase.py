@@ -5,7 +5,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                  import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.List              import stringListToString, intListToString, sortList
+from DIRAC.Core.Utilities.List              import intListToString, sortList
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 
 import time, os, stat
