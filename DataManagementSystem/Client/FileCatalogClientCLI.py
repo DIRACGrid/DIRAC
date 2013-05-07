@@ -1961,9 +1961,6 @@ File Catalog Client $Revision: 1.17 $Date:
         return
       
     result = self.fc.getCompatibleMetadata( metaDict, path )  
-    
-    print "AT >>> result", result
-    
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return
