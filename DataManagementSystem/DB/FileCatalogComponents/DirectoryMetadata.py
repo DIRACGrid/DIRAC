@@ -659,7 +659,7 @@ class DirectoryMetadata:
 # metadata selectors 
 #
 ################################################################################################  
-  def __findCompatibleDirectories( self, meta, value, pathSelection, fromDirs ):
+  def __findCompatibleDirectories( self, meta, value, fromDirs ):
     """ Find directories compatible with the given meta datum.
         Optionally limit the list of compatible directories to only those in the
         fromDirs list 
@@ -671,13 +671,13 @@ class DirectoryMetadata:
     # - all the directories in the parent hierarchy of the above directory
 
     # Find directories defining the meta datum and their subdirectories
-    result = self.__findSubdirByMeta( meta, value, pathSelection = pathSelection, subdirFlag = False )
+    result = self.__findSubdirByMeta( meta, value, subdirFlag = False )
     if not result['OK']:
       return result
     selectedDirs = result['Value']
     if not selectedDirs:
       return S_OK( [] )
-    
+
     result = self.db.dtree.getAllSubdirectoriesByID( selectedDirs )
     if not result['OK']:
       return result
@@ -734,13 +734,21 @@ class DirectoryMetadata:
       result = self.db.dtree.findDir( path )
       if not result['OK']:
         return result
+      if not result['Value']:
+        return S_ERROR( 'Path not found %s' % path )
       pathDirID = int( result['Value'] )
-    pathSelection = ''
+    pathDirs = []
     if pathDirID:
-      result = self.db.dtree.getSubdirectoriesByID( pathDirID, includeParent = True, requestString = True )
+      result = self.db.dtree.getSubdirectoriesByID( pathDirID, includeParent = True )
       if not result['OK']:
         return result
-      pathSelection = result['Value']  
+      if result['Value']:
+        pathDirs = result['Value'].keys()  
+      result = self.db.dtree.getPathIDsByID( pathDirID )
+      if not result['OK']:
+        return result
+      if result['Value']:
+        pathDirs += result['Value']
 
     # Get the list of metadata fields to inspect
     result = self.getMetadataFields( credDict )
@@ -753,18 +761,18 @@ class DirectoryMetadata:
     #for m in metaDict:
     #  if m in comFields:
     #    del comFields[comFields.index( m )]
-    
+ 
     result = self.__expandMetaDictionary( queryDict, credDict )
     if not result['OK']:
       return result
     metaDict = result['Value']
 
-    fromList = []
+    fromList = pathDirs
     anyMeta = True
     if metaDict:
       anyMeta = False
       for meta, value in metaDict.items():
-        result = self.__findCompatibleDirectories( meta, value, pathSelection, fromList )
+        result = self.__findCompatibleDirectories( meta, value, fromList )
         if not result['OK']:
           return result
         cdirList = result['Value']
