@@ -120,26 +120,15 @@ class JobDB( DB ):
         self.log.info( "Found schema migration" )
       except AttributeError:
         return S_OK( version )
-      result = self.transactionStart()
-      if not result[ 'OK' ]:
-        return S_ERROR( "Could not start database migration: %s" % result[ 'Value' ] )
-      done = False
-      try:
+      with self.transaction as rollbackWard:
         result = migration()
         if not result[ 'OK' ]:
           self.log.error( "Can't apply migration from schema version %d: %s" % ( version, result[ 'Message' ] ) )
-          return result
+          return rollbackWard( result )
         result = self._update( "INSERT INTO SchemaVersion VALUES ( %d )" % version )
         if not result[ 'OK' ]:
           self.log.error( "Error saving schema version %d: %s" % ( version, result[ 'Message' ] ) )
-          return result
-        result = self.transactionCommit()
-        if not result[ 'OK' ]:
-          return S_ERROR( "Could not commit database migration: %s" % result[ 'Value' ] )
-        done = True
-      finally:
-        if not done:
-          self.transactionRollback()
+          return rollbackWard( result )
 
     return S_OK( version )
 
@@ -237,30 +226,11 @@ class JobDB( DB ):
     cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (UTC_TIMESTAMP())'
     err = 'JobDB.getJobID: Failed to retrieve a new Id.'
 
-    res = self._getConnection()
-    if not res['OK']:
-      return S_ERROR( '0 %s\n%s' % ( err, res['Message'] ) )
-
-    connection = res['Value']
     res = self._update( cmd, connection )
     if not res['OK']:
-      connection.close()
       return S_ERROR( '1 %s\n%s' % ( err, res['Message'] ) )
 
-    cmd = 'SELECT LAST_INSERT_ID()'
-    res = self._query( cmd, connection )
-    if not res['OK']:
-      connection.close()
-      return S_ERROR( '2 %s\n%s' % ( err, res['Message'] ) )
-
-    try:
-      connection.close()
-      jobID = int( res['Value'][0][0] )
-      self.log.info( 'JobDB: New JobID served "%s"' % jobID )
-    except Exception, x:
-      return S_ERROR( '3 %s\n%s' % ( err, str( x ) ) )
-
-    return S_OK( jobID )
+    return S_OK( int( result[ 'lastRowId' ] ) )
 
 #############################################################################
   def getAttributesForJobList( self, jobIDList, attrList = None ):
@@ -1242,19 +1212,15 @@ class JobDB( DB ):
 
 
   def insertSplittedManifests( self, jid, manifests ):
-    result = self.transactionStart()
-    if not result[ 'OK' ]:
-      return result
-    ok = False
-    try:
+    with self.transaction as rollbackWard:
       result = self.getJobJDL( jid, original = True )
       if not result[ 'OK' ]:
-        return result
+        return rollbackWard( result )
       sourceManifest = result[ 'Value' ]
       result = self.insertFields( 'MasterJDLs', inDict = { 'JobID' : jid,
                                                            'JDL' : sourceManifest } )
       if not result[ 'OK' ]:
-        return result
+        return rollbackWard( result )
       jobManifest = manifests[0]
       manifestJDL = jobManifest.dumpAsJDL()
       result = self.updateFields( 'JobJDLs',
@@ -1263,12 +1229,12 @@ class JobDB( DB ):
                                                  'OriginalJDL' : manifestJDL,
                                                  'JobRequirements' : '' } )
       if not result[ 'OK' ]:
-        return result
+        return rollbackWard( result )
 
       #Get source job input data
       result = self.getInputData( jid )
       if not result[ 'OK' ]:
-        return result
+        return rollbackWard( result )
       sourceInputData = result[ 'Value' ]
 
       #Reset source Job Values
@@ -1286,23 +1252,24 @@ class JobDB( DB ):
                                   condDict = { 'JobID' : jid },
                                   updateDict = upDict )
       if not result[ 'OK' ]:
-        return result
+        return rollbackWard( result )
 
       #Reduce source job input data
       if sourceInputData:
         inputData = {}
         for lfn in jobManifest.getOption( "InputData", [] ):
           if lfn not in sourceInputData:
+            rollbackWard()
             return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
         inputData[ lfn ] = dict( sourceInputData[ lfn ] )
         result = self.setInputData( jid, inputData )
         if not result[ 'OK' ]:
-          return result
+          return rollbackWard( result )
 
       #Get job attributes to copy them to children jobs
       result = self.getJobAttributes( jid, [ 'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ] )
       if not result[ 'OK' ]:
-        return result
+        return rollbackWard( result )
       attrs = result[ 'Value' ]
 
       #Do the magic!
@@ -1311,27 +1278,20 @@ class JobDB( DB ):
         result = self.insertNewJobIntoDB( manifest.dumpAsJDL(), attrs[ 'Owner' ], attrs[ 'OwnerDN' ],
                                           attrs[ 'OwnerGroup' ], attrs[ 'DIRACSetup' ], jid )
         if not result[ 'OK' ]:
-          return result
+          return rollbackWard( result )
         jidList.append( result[ 'Value' ] )
         if sourceInputData:
           inputData = {}
           for lfn in manifest.getOption( "InputData", [] ):
             if lfn not in sourceInputData:
+              rollbackWard()
               return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
           inputData[ lfn ] = dict( sourceInputData[ lfn ] )
           result = self.setInputData( jidList[-1], inputData )
           if not result[ 'OK' ]:
-            return result
+            return rollbackWard( result )
 
-      result = self.transactionCommit()
-      if not result[ 'OK' ]:
-        return result
-      ok = True
-      return S_OK( jidList )
-    finally:
-      if not ok:
-        print "ROLLBACK", self.transactionRollback()
-
+    return S_OK()
 
 #############################################################################
   def insertNewJobIntoDB( self, jdl, owner, ownerDN, ownerGroup, diracSetup, parentJob = None ):

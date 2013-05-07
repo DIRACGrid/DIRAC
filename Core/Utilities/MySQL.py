@@ -156,6 +156,7 @@ __RCSID__ = "$Id$"
 from DIRAC                                  import gLogger
 from DIRAC                                  import S_OK, S_ERROR
 from DIRAC                                  import Time
+from DIRAC.Core.Utilities.DataStructures    import MutableStruct
 
 import MySQLdb
 # This is for proper initialization of embeded server, it should only be called once
@@ -230,6 +231,7 @@ class MySQL:
     """
     Management of connections per thread
     """
+    __connData = MutableStruct( 'ConnData', [ 'conn', 'dbName', 'last', 'intrans' ] )
 
     def __init__( self, host, user, passwd, port = 3306, graceTime = 600 ):
       self.__host = host
@@ -265,21 +267,23 @@ class MySQL:
     def get( self, dbName, retries = 10 ):
       retries = max( 0, min( MAXCONNECTRETRY, retries ) )
       self.clean()
-      return self.__getWithRetry( dbName, retries, retries )
+      result = self.__getWithRetry( dbName, retries, retries )
+      if not result[ 'OK' ]:
+        return result
+      return S_OK( result[ 'Value' ].conn )
 
-
-    def __getWithRetry( self, dbName, totalRetries, retriesLeft ):
+    def __getWithRetry( self, dbName, totalRetries = 10, retriesLeft = 10 ):
       sleepTime = 5 * ( totalRetries - retriesLeft )
       if sleepTime > 0:
         time.sleep( sleepTime )
       try:
-        conn, lastName, thid = self.__innerGet()
+        connData, thid = self.__innerGet()
       except MySQLdb.MySQLError, excp:
         if retriesLeft >= 0:
           return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
         return S_ERROR( "Could not connect: %s" % excp )
 
-      if not self.__ping( conn ):
+      if not connData.intrans and not self.__ping( connData.conn ):
         try:
           self.__assigned.pop( thid )
         except KeyError:
@@ -288,21 +292,19 @@ class MySQL:
           return self.__getWithRetry( dbName, totalRetries, retriesLeft )
         return S_ERROR( "Could not connect" )
 
-      if lastName != dbName:
+      if connData.dbName != dbName:
         try:
-          conn.select_db( dbName )
+          connData.conn.select_db( dbName )
+          connData.dbName = dbName
         except MySQLdb.MySQLError, excp:
+          try:
+            self.__assigned.pop( thid ).conn.close()
+          except Exception:
+            pass
           if retriesLeft >= 0:
             return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
           return S_ERROR( "Could not select db %s: %s" % ( dbName, excp ) )
-        try:
-          self.__assigned[ thid ][1] = dbName
-        except KeyError:
-          if retriesLeft >= 0:
-            return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
-          return S_ERROR( "Could not connect" )
-      return S_OK( conn )
-
+      return S_OK( connData )
 
     def __ping( self, conn ):
       try:
@@ -314,30 +316,30 @@ class MySQL:
     def __innerGet( self ):
       thid = self.__thid
       now = time.time()
-      if thid in self.__assigned:
+      try:
         data = self.__assigned[ thid ]
-        conn = data[0]
-        data[2] = now
-        return data[0], data[1], thid
+        data.last = now
+        return data, thid
+      except KeyError:
+        pass
       #Not cached
       try:
-        conn, dbName = self.__spares.pop()
+        connData = self.__spares.pop()
       except IndexError:
-        conn = self.__newConn()
-        dbName = ""
+        connData = self.__connData( self.__newConn(), "", now, False )
 
-      self.__assigned[ thid ] = [ conn, dbName, now ]
-      return conn, dbName, thid
+      self.__assigned[ thid ] = connData
+      return self.__assigned[ thid ], thid
 
     def __pop( self, thid ):
       try:
-        data = self.__assigned.pop( thid )
-        if len( self.__spares ) < self.__maxSpares:
-          self.__spares.append( ( data[0], data[1] ) )
-        else:
-          data[ 0 ].close()
+        connData = self.__assigned.pop( thid )
       except KeyError:
-        pass
+        return
+      if not connData.intrans and len( self.__spares ) < self.__maxSpares:
+        self.__spares.append( connData )
+      else:
+        connData.conn.close()
 
     def clean( self, now = False ):
       if not now:
@@ -346,47 +348,52 @@ class MySQL:
       for thid in list( self.__assigned ):
         if not thid.isAlive():
           self.__pop( thid )
+          continue
         try:
           data = self.__assigned[ thid ]
         except KeyError:
           continue
-        if now - data[2] > self.__graceTime:
+        if now - data.last > self.__graceTime:
           self.__pop( thid )
 
     def transactionStart( self, dbName ):
-      result = self.get( dbName )
+      result = self.__getWithRetry( dbName )
       if not result[ 'OK' ]:
         return result
-      conn = result[ 'Value' ]
+      connData = result[ 'Value' ]
       try:
-      	self.__execute( conn, "SET AUTOCOMMIT=0" )
-        return S_OK( self.__execute( conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT" ) )
+        if connData.intrans:
+          raise RuntimeError( "Staring a MySQL transaction inside another one" )
+      	self.__execute( connData.conn, "SET AUTOCOMMIT=0" )
+        self.__execute( connData.conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT" )
+        connData.intrans = True
+        return S_OK()
       except MySQLdb.MySQLError, excp:
         return S_ERROR( "Could not begin transaction: %s" % excp )
 
     def transactionCommit( self, dbName ):
-      result = self.get( dbName )
-      if not result[ 'OK' ]:
-        return result
-      conn = result[ 'Value' ]
-      try:
-        result = self.__execute( conn, "COMMIT" )
-      	self.__execute( conn, "SET AUTOCOMMIT=1" )
-        return S_OK( result )
-      except MySQLdb.MySQLError, excp:
-        return S_ERROR( "Could not commit transaction: %s" % excp )
+      return self.__endTransaction( dbName, True )
 
     def transactionRollback( self, dbName ):
-      result = self.get( dbName )
+      return self.__endTransaction( dbName, False )
+
+    def __endTransaction( self, dbName, commit ):
+      result = self.__getWithRetry( dbName )
       if not result[ 'OK' ]:
         return result
-      conn = result[ 'Value' ]
+      connData = result[ 'Value' ]
       try:
-        result = self.__execute( conn, "ROLLBACK" )
-      	self.__execute( conn, "SET AUTOCOMMIT=1" )
+        if not connData.intrans:
+          gLogger.warn( "MySQL connection has reconnected. Transaction may be inconsistent" )
+        if commit:
+          result = self.__execute( connData.conn, "commit" )
+        else:
+          result = self.__execute( connData.conn, "ROLLBACK" )
+      	self.__execute( connData.conn, "SET AUTOCOMMIT=1" )
+        connData.autocommit = True
         return S_OK( result )
       except MySQLdb.MySQLError, excp:
-        return S_ERROR( "Could not rollback transaction: %s" % excp )
+        return S_ERROR( "Could not end transaction: %s" % excp )
 
   __connectionPools = {}
 
@@ -948,6 +955,28 @@ class MySQL:
 
   def transactionRollback( self ):
     return self.__connectionPool.transactionRollback( self.__dbName )
+
+  @property
+  def transaction( self ):
+    """ Transaction guard """
+    class TransactionGuard( object ):
+      def __init__( self, db ):
+        self.__db = db
+        self.__ok = True
+      def __enter__( self ):
+        self.__db.transactionStart()
+        def rollback( *args ):
+          self.__ok = False
+          return args
+        return rollback
+      def __exit__( self, exType, exValue, traceback ):
+        if exValue or not self.__ok:
+          self.__db.transactionRollback()
+        else:
+          self.__db.transactionCommit()
+    return TransactionGuard( self )
+
+
 
 
 ########################################################################################

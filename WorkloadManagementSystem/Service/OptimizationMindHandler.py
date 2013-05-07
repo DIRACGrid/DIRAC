@@ -102,14 +102,24 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return cls.__loadJobs( eTypes )
 
   @classmethod
+  def __failJob( cls, jid, minorStatus, appStatus = "" ):
+    cls.forgetTask( jid )
+    cls.__jobDB.setJobStatus( jid, "Failed", minorStatus, appStatus )
+
+  @classmethod
   def __splitJob( cls, jid, manifests ):
     cls.log.notice( "Splitting job %s" % jid )
-    result = cls.__jobDB.insertSplittedManifests( jid, manifests )
-    if not result[ 'OK' ]:
-      return result
-    for jid in result[ 'Value' ]:
-      cls.forgetTask( jid )
-      cls.executeTask( jid, OptimizationTask( jid ) )
+    try:
+      result = cls.__jobDB.insertSplittedManifests( jid, manifests )
+      if not result[ 'OK' ]:
+        cls.__failJob( jid, "Error while splitting", result[ 'Value' ] )
+        return S_OK()
+      for jid in result[ 'Value' ]:
+        cls.forgetTask( jid )
+        cls.executeTask( jid, OptimizationTask( jid ) )
+    except:
+      cls.log.exception( "While splitting" )
+      cls.__failJob( jid, "Error while splitting" )
     return S_OK()
 
   @classmethod
