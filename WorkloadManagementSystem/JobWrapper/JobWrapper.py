@@ -139,7 +139,7 @@ class JobWrapper:
     self.jobType = 'unknown'
     self.processingType = 'unknown'
     self.userGroup = 'unknown'
-    self.jobClass = 'unknown'
+    self.jobClass = 'Single'
     self.inputDataFiles = 0
     self.outputDataFiles = 0
     self.inputDataSize = 0
@@ -189,8 +189,6 @@ class JobWrapper:
       self.processingType = self.jobArgs['ProcessingType']
     if self.jobArgs.has_key( 'OwnerGroup' ):
       self.userGroup = self.jobArgs['OwnerGroup']
-    if self.jobArgs.has_key( 'JobSplitType' ):
-      self.jobClass = self.jobArgs['JobSplitType']
 
     # Prepare the working directory and cd to there
     if self.jobID:

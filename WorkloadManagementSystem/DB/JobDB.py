@@ -65,7 +65,7 @@ JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 
 JOB_DEPRECATED_ATTRIBUTES = [ 'UserPriority', 'SystemPriority' ]
 
-JOB_STATIC_ATTRIBUTES = [ 'JobID', 'JobType', 'DIRACSetup', 'JobGroup', 'JobSplitType', 'MasterJobID',
+JOB_STATIC_ATTRIBUTES = [ 'JobID', 'JobType', 'DIRACSetup', 'JobGroup', 'HerdState', 'MasterJobID',
                           'JobName', 'Owner', 'OwnerDN', 'OwnerGroup', 'SubmissionTime', 'VerifiedFlag' ]
 
 JOB_VARIABLE_ATTRIBUTES = [ 'Site', 'RescheduleTime', 'StartExecTime', 'EndExecTime', 'RescheduleCounter',
@@ -148,7 +148,7 @@ class JobDB( DB ):
     result = self._update( "UPDATE `Jobs` SET MasterJobID = JobID WHERE MasterJobID = 0" )
     if not result[ 'OK' ]:
       return result
-    result = self._update( "ALTER TABLE Jobs MODIFY JobSplitType ENUM ('Single','WillSplit','Splitted') NOT NULL DEFAULT 'Single'" )
+    result = self._update( "ALTER TABLE Jobs CHANGE JobSplitType HerdState ENUM ('Single','WillSplit','Splitted') NOT NULL DEFAULT 'Single'" )
     if not result[ 'OK' ]:
       return result
     tables = { 'SchemaVersion' : { 'Fields' : { 'Version' : 'INTEGER UNSIGNED' } } }
@@ -1275,7 +1275,7 @@ class JobDB( DB ):
       upDict = { 'Status' : 'Received',
                  'MinorStatus' : 'Job accepted',
                  'ApplicationStatus' : 'Unknown',
-                 'JobSplitType' : 'Splitted' }
+                 'HerdState' : 'Splitted' }
       for name in ( 'JobName', 'JobType', 'JobGroup', 'Priority' ):
         value = jobManifest.getOption( name )
         if name == 'Priority':
@@ -1392,9 +1392,8 @@ class JobDB( DB ):
     else:
       attrs[ 'Site' ] = site[0]
 
-    print "Splitter", jobManifest.getOption( "Splitter", "" )
     if jobManifest.getOption( "Splitter", "" ):
-      attrs[ 'JobSplitType' ] = "WillSplit"
+      attrs[ 'HerdState' ] = "WillSplit"
 
     if parentJob == None:
       parentJob = jid
@@ -2322,7 +2321,7 @@ class JobDB( DB ):
     """
     if not requestedFields:
       requestedFields = [ 'Status', 'MinorStatus',
-                  'Site', 'Owner', 'OwnerGroup', 'JobGroup', 'JobSplitType' ]
+                  'Site', 'Owner', 'OwnerGroup', 'JobGroup', 'HerdState' ]
     defFields = [ 'DIRACSetup' ] + requestedFields
     valueFields = [ 'COUNT(JobID)', 'SUM(RescheduleCounter)' ]
     defString = ", ".join( defFields )
