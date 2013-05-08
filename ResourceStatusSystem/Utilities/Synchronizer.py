@@ -416,7 +416,7 @@ class Synchronizer( object ):
                                                              elementType = elementType, 
                                                              reason      = 'Synchronized')
 
-        if not resInsert:
+        if not resInsert[ 'OK' ]:
           return resInsert
     
     return S_OK()

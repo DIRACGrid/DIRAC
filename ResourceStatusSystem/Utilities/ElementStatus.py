@@ -50,7 +50,7 @@ class ElementStatus( object ):
     
     try:
       result = getattr( self, 'get%sStatuses' % elementType )( elementNames, statusTypes )
-    except AttributeError:  
+    except AttributeError:
       return S_ERROR( "Error calling get%sStatuses" % elementType )
 
     return result    
