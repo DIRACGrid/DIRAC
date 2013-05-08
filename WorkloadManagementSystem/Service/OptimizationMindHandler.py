@@ -113,7 +113,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       result = cls.__jobDB.insertSplittedManifests( jid, manifests )
       if not result[ 'OK' ]:
         cls.__failJob( jid, "Error while splitting", result[ 'Value' ] )
-        return S_OK()
+        return S_ERROR( "Fail splitting" )
       for jid in result[ 'Value' ]:
         cls.forgetTask( jid )
         cls.executeTask( jid, OptimizationTask( jid ) )

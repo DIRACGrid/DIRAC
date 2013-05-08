@@ -120,15 +120,16 @@ class JobDB( DB ):
         self.log.info( "Found schema migration" )
       except AttributeError:
         return S_OK( version )
-      with self.transaction as rollbackWard:
+      with self.transaction as commit:
         result = migration()
         if not result[ 'OK' ]:
           self.log.error( "Can't apply migration from schema version %d: %s" % ( version, result[ 'Message' ] ) )
-          return rollbackWard( result )
+          return result
         result = self._update( "INSERT INTO SchemaVersion VALUES ( %d )" % version )
         if not result[ 'OK' ]:
           self.log.error( "Error saving schema version %d: %s" % ( version, result[ 'Message' ] ) )
-          return rollbackWard( result )
+          return result
+        commit()
 
     return S_OK( version )
 
@@ -1212,15 +1213,16 @@ class JobDB( DB ):
 
 
   def insertSplittedManifests( self, jid, manifests ):
-    with self.transaction as rollbackWard:
+    jidList = [ jid ]
+    with self.transaction as commit:
       result = self.getJobJDL( jid, original = True )
       if not result[ 'OK' ]:
-        return rollbackWard( result )
+        return result
       sourceManifest = result[ 'Value' ]
       result = self.insertFields( 'MasterJDLs', inDict = { 'JobID' : jid,
                                                            'JDL' : sourceManifest } )
       if not result[ 'OK' ]:
-        return rollbackWard( result )
+        return result
       jobManifest = manifests[0]
       manifestJDL = jobManifest.dumpAsJDL()
       result = self.updateFields( 'JobJDLs',
@@ -1229,12 +1231,12 @@ class JobDB( DB ):
                                                  'OriginalJDL' : manifestJDL,
                                                  'JobRequirements' : '' } )
       if not result[ 'OK' ]:
-        return rollbackWard( result )
+        return result
 
       #Get source job input data
       result = self.getInputData( jid )
       if not result[ 'OK' ]:
-        return rollbackWard( result )
+        return result
       sourceInputData = result[ 'Value' ]
 
       #Reset source Job Values
@@ -1252,46 +1254,44 @@ class JobDB( DB ):
                                   condDict = { 'JobID' : jid },
                                   updateDict = upDict )
       if not result[ 'OK' ]:
-        return rollbackWard( result )
+        return result
 
       #Reduce source job input data
       if sourceInputData:
         inputData = {}
         for lfn in jobManifest.getOption( "InputData", [] ):
           if lfn not in sourceInputData:
-            rollbackWard()
             return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
         inputData[ lfn ] = dict( sourceInputData[ lfn ] )
         result = self.setInputData( jid, inputData )
         if not result[ 'OK' ]:
-          return rollbackWard( result )
+          return result
 
       #Get job attributes to copy them to children jobs
       result = self.getJobAttributes( jid, [ 'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ] )
       if not result[ 'OK' ]:
-        return rollbackWard( result )
+        return result
       attrs = result[ 'Value' ]
 
       #Do the magic!
-      jidList = [ jid ]
       for manifest in manifests[1:]:
         result = self.insertNewJobIntoDB( manifest.dumpAsJDL(), attrs[ 'Owner' ], attrs[ 'OwnerDN' ],
                                           attrs[ 'OwnerGroup' ], attrs[ 'DIRACSetup' ], jid )
         if not result[ 'OK' ]:
-          return rollbackWard( result )
+          return result
         jidList.append( result[ 'Value' ] )
         if sourceInputData:
           inputData = {}
           for lfn in manifest.getOption( "InputData", [] ):
             if lfn not in sourceInputData:
-              rollbackWard()
               return S_ERROR( "LFN in splitted manifest does not exist in the original: %s" % lfn )
           inputData[ lfn ] = dict( sourceInputData[ lfn ] )
           result = self.setInputData( jidList[-1], inputData )
           if not result[ 'OK' ]:
-            return rollbackWard( result )
+            return result
+      commit()
 
-    return S_OK()
+    return S_OK( jidList )
 
 #############################################################################
   def insertNewJobIntoDB( self, jdl, owner, ownerDN, ownerGroup, diracSetup, parentJob = None ):

@@ -260,7 +260,6 @@ class MySQL:
     def __execute( self, conn, cmd ):
       cursor = conn.cursor()
       res = cursor.execute( cmd )
-      conn.commit()
       cursor.close()
       return res
 
@@ -357,6 +356,7 @@ class MySQL:
           self.__pop( thid )
 
     def transactionStart( self, dbName ):
+      print "TRANS START"
       result = self.__getWithRetry( dbName )
       if not result[ 'OK' ]:
         return result
@@ -372,9 +372,11 @@ class MySQL:
         return S_ERROR( "Could not begin transaction: %s" % excp )
 
     def transactionCommit( self, dbName ):
+      print "TRANS COMMIT"
       return self.__endTransaction( dbName, True )
 
     def transactionRollback( self, dbName ):
+      print "TRANS ROLLBACK"
       return self.__endTransaction( dbName, False )
 
     def __endTransaction( self, dbName, commit ):
@@ -386,11 +388,12 @@ class MySQL:
         if not connData.intrans:
           gLogger.warn( "MySQL connection has reconnected. Transaction may be inconsistent" )
         if commit:
-          result = self.__execute( connData.conn, "commit" )
+          result = connData.conn.commit()
         else:
-          result = self.__execute( connData.conn, "ROLLBACK" )
+          result = connData.conn.rollback()
       	self.__execute( connData.conn, "SET AUTOCOMMIT=1" )
-        connData.autocommit = True
+        connData.conn.commit()
+        connData.intrans = False
         return S_OK( result )
       except MySQLdb.MySQLError, excp:
         return S_ERROR( "Could not end transaction: %s" % excp )
@@ -962,13 +965,13 @@ class MySQL:
     class TransactionGuard( object ):
       def __init__( self, db ):
         self.__db = db
-        self.__ok = True
+        self.__ok = False
       def __enter__( self ):
         self.__db.transactionStart()
-        def rollback( *args ):
-          self.__ok = False
+        def commitWard( *args ):
+          self.__ok = True
           return args
-        return rollback
+        return commitWard
       def __exit__( self, exType, exValue, traceback ):
         if exValue or not self.__ok:
           self.__db.transactionRollback()

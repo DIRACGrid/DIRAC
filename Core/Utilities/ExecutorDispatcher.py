@@ -705,6 +705,9 @@ class ExecutorDispatcher:
       #Remove the task
       self.removeTask( taskId )
       return result
+    uo = result[ 'Value' ]
+    if isinstance( uo, taskObj.__class__ ):
+      taskObk = uo
     #Up until here it's an executor error. From now on it can be a task error
     try:
       self.__tasks[ taskId ].taskObj = taskObj
@@ -771,7 +774,7 @@ class ExecutorDispatcher:
         except ValueError:
           pass
         searchTypes.append( eType )
-    pData = self.__queues.popTask( searchTypes ) 
+    pData = self.__queues.popTask( searchTypes )
     if pData == None:
       self.__log.verbose( "No more tasks for %s" % eTypes )
       return S_OK()
