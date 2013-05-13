@@ -298,6 +298,9 @@ class CREAMComputingElement( ComputingElement ):
         output = outFile.read()
         outFile.close()
         os.unlink( outFileName )
+      else:
+        error = '\n'.join( result['Value'][1:] )
+        return S_ERROR( error )  
     else:
       return S_ERROR( 'Failed to retrieve output for %s' % jobID )
 
