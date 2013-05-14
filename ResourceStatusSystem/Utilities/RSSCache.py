@@ -180,7 +180,7 @@ class RSSCache( Cache ):
     
     :Parameters:
       **elementType** - `string`
-        RSS elementType, e.g.: StorageElement, ComputingElement, Queue... note that one RSSCache
+        RSS elementType, e.g.: Storage, Computing, Queue... note that one RSSCache
         can only hold elements of a single elementType to avoid issues while doing
         the Cartesian product.
       **lifeTime** - `int`
