@@ -1,4 +1,4 @@
-[v7r0-pre5]
+[v7r0-pre6]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -40,6 +40,8 @@ CHANGE: FileCatalogClient - list meta data sets
 FIX: FileCatalog - extra check while new user registration for already existing entry
 FIX: FileManagerBase - clean the FC_FileAncestors table when removing a file
 BUGFIX: ReplicaManager - pass catalog argument in putAndRegister to registerFile call, closes #1369
+FIX: SRM2Storage - in getCurrentStatus() use pythonCall to impose a timeout on top of
+     lcg_util.lcg_stmd call
 
 *WMS
 CHANGE: JobScheduling - is now extensible. Added unit test
