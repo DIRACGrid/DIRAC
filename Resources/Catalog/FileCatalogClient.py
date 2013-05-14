@@ -84,7 +84,7 @@ class FileCatalogClient(Client):
     fmeta.update(result['Value'])
     
     return S_OK(fmeta)
-    
+        
     
   
   

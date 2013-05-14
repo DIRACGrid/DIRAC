@@ -439,11 +439,11 @@ class FileCatalogHandler(RequestHandler):
     result = S_OK( {"TotalRecords":totalRecords, "Records":resultDetails['Value'] } )
     return result
   
-  types_getCompatibleMetadata = [ DictType ]
-  def export_getCompatibleMetadata( self, metaDict ):
+  types_getCompatibleMetadata = [ DictType, StringTypes ]
+  def export_getCompatibleMetadata( self, metaDict, path='/' ):
     """ Get metadata values compatible with the given metadata subset
     """
-    return gFileCatalogDB.dmeta.getCompatibleMetadata( metaDict, self.getRemoteCredentials() )
+    return gFileCatalogDB.dmeta.getCompatibleMetadata( metaDict, path, self.getRemoteCredentials() )
 
   types_addMetadataSet = [ StringTypes, DictType ]
   def export_addMetadataSet( self, setName, setDict ):
