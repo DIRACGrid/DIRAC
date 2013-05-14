@@ -48,3 +48,4 @@ for lfn in lfns:
 result = oFTSRequest.submit( monitor = True, printOutput = False )
 if not result['OK']:
   DIRAC.gLogger.error( 'Failed to issue FTS Request', result['Message'] )
+  DIRAC.exit( -1 )
