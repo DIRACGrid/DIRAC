@@ -50,7 +50,7 @@ class ElementStatus( object ):
     
     try:
       result = getattr( self, 'get%sStatuses' % elementType )( elementNames, statusTypes )
-    except AttributeError:  
+    except AttributeError:
       return S_ERROR( "Error calling get%sStatuses" % elementType )
 
     return result    
@@ -149,12 +149,11 @@ class ElementStatus( object ):
     
     usableElements = []
     
-    for elementDict in elementStatuses:
-      for elementName, statusDict in elementDict.items():
+    for elementName, statusDict in elementStatuses.items():
         
-        if statusDict[ statusType ] in ( 'Active', 'Degraded' ):
+      if statusDict[ statusType ] in ( 'Active', 'Degraded' ):
         
-          usableElements.append( elementName )
+        usableElements.append( elementName )
     
     return S_OK( usableElements )  
 
