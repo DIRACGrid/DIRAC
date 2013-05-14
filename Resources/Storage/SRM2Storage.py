@@ -1709,8 +1709,11 @@ class SRM2Storage( StorageBase ):
     #make the endpoint
     endpoint = 'httpg://%s:%s%s' % ( self.host, self.port, self.wspath )
     endpoint = endpoint.replace( '?SFN=', '' )
-    status, resdict, errmessage = self.lcg_util.lcg_stmd(self.spaceToken, endpoint, 1, 10)
-    if status:
+    res = pythonCall(10, self.lcg_util.lcg_stmd, self.spaceToken, endpoint, 1, 0)
+    if not res['OK']:
+      return res
+    status, resdict, errmessage = res['Value']
+    if status != 0:
       return S_ERROR("lcg_util.lcg_stmd failed: %s" % errmessage)
     
     return S_OK(resdict[0])
