@@ -76,6 +76,7 @@ class OptimizerExecutor( ExecutorModule ):
     cls.__jobData.jobState = None
     cls.__jobData.jobLog = None
     cls.ex_setProperty( 'optimizerName', cls.__optimizerName )
+    cls.ex_setOption( "FailedStatus", cls.__optimizerName )
     try:
       result = cls.initializeOptimizer()
       if not result[ 'OK' ]:
@@ -127,7 +128,7 @@ class OptimizerExecutor( ExecutorModule ):
       # Did it go as expected? If not Failed!
       if not optResult[ 'OK' ]:
         self.jobLog.info( "Set to Failed/%s" % optResult[ 'Message' ] )
-        minorStatus = self.ex_getOption( "FailedStatus", "%s" % self.ex_optimizerName() )
+        minorStatus = self.ex_getOption( "FailedStatus" )
         return jobState.setStatus( "Failed", minorStatus = minorStatus,
                                    appStatus = optResult[ 'Message' ],
                                    source = self.ex_optimizerName() )

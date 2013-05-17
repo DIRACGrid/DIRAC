@@ -121,12 +121,12 @@ class JobSanity( OptimizerExecutor ):
     for lfn in inputData:
       if not voRE.match( lfn ):
         return S_ERROR( "Input data not correctly specified" )
-      if lfn.find( "//" ) > -1:
-        return S_ERROR( "Input data contains //" )
+      #if lfn.find( "//" ) > -1:
+      #  return S_ERROR( "Input data contains //" )
 
     #only check limit for user jobs
     if jobType == 'user':
-      maxLFNs = self.ex_getOption( 'MaxInputDataPerJob', 100 )
+      maxLFNs = self.ex_getOption( 'MaxInputDataPerJob', 10000 )
       if len( inputData ) > maxLFNs:
         message = '%s datasets selected. Max limit is %s.' % ( len( data ), maxLFNs )
         jobState.setParameter( "DatasetCheck", message )

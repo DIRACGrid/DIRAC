@@ -53,7 +53,7 @@ class InputDataValidation( OptimizerExecutor ):
     result = self.doTheThing( jid, jobState )
     if not result[ 'OK' ]:
       jobState.setAppStatus( result[ 'Message' ] )
-      return S_ERROR( self.ex_getOption( "FailedJobStatus", "Input Data Not Available" ) )
+      return result
     return S_OK()
 
   def doTheThing( self, jid, jobState ):
