@@ -405,9 +405,9 @@ class FileCatalogHandler(RequestHandler):
       return result
 
     lfns = []
-    for dir in result['Value']:
-      for fname in result['Value'][dir]:
-        lfns.append( os.path.join( dir, fname) )
+    for directory in result['Value']:
+      for fname in result['Value'][directory]:
+        lfns.append( os.path.join( directory, fname) )
     return gFileCatalogDB.getFileDetails( lfns, self.getRemoteCredentials() )
   
   types_findFilesByMetadataWeb = [ DictType, StringTypes, [IntType,LongType], [IntType,LongType]]

@@ -1331,6 +1331,9 @@ class JobDB( DB ):
 
     priority = classAdJob.getAttributeInt( 'Priority' )
     systemConfig = classAdJob.getAttributeString( 'Platform' )
+    # Legacy check to suite the LHCb logic
+    if not systemConfig:
+      systemConfig = classAdJob.getAttributeString( 'SystemConfig' )
     cpuTime = classAdJob.getAttributeInt( 'CPUTime' )
     if cpuTime == 0:
       # Just in case check for MaxCPUTime for backward compatibility

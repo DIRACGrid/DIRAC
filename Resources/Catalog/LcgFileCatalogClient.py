@@ -537,7 +537,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       value, replicaList = lfc.lfc_getreplicasl( fullLfnList, '' )
       if value != 0:
         for lfn in lfnList:
-          failed[lfn] = lfc.sstrerror( lfc.cvar.serrno )
+          reason = lfc.sstrerror( lfc.cvar.serrno )
+          if 'Could not secure the connection' in reason:
+            # This is a fatal error
+            return S_ERROR( 'Could not secure the connection' )
         continue
       guid = ''
       it = iter( lfnList )
