@@ -2,6 +2,17 @@
 
 NEW: Applied patches from v6r7p29
 
+*WMS
+FIX: JobDB - check if SystemConfig is present in the job definition and convert it 
+     into Platform
+
+*DMS
+FIX: ReplicaManager - do not get metadata of files when getting files in a directory 
+     if not strictly necessary
+
+*RSS
+NEW: ported from LHCb PublisherHandler for RSS web views
+
 [v6r8p11]
 
 NEW: Applied patches from v6r7p27
