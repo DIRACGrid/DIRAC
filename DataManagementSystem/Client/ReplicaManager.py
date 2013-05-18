@@ -1250,28 +1250,28 @@ class ReplicaManager( CatalogToStorage ):
     allFiles = []
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
-      res = self.getCatalogListDirectory( currentDir, True, singleFile = True )
+      # We only need the metadata (verbose) if a limit date is given
+      res = self.getCatalogListDirectory( currentDir, verbose = ( days != 0 ), singleFile = True )
       activeDirs.remove( currentDir )
       if not res['OK']:
         self.log.error( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Message'] ) )
       else:
         dirContents = res['Value']
         subdirs = dirContents['SubDirs']
-        for subdir, metadata in subdirs.items():
-          if ( not days ) or self.__isOlderThan( metadata['CreationDate'], days ):
+        files = dirContents['Files']
+        self.log.info( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
+        for subdir in subdirs:
+          if ( not days ) or self.__isOlderThan( subdirs[subdir]['CreationDate'], days ):
             if subdir[0] != '/':
               subdir = currentDir + '/' + subdir
             activeDirs.append( subdir )
-        for fileName, fileInfo in dirContents['Files'].items():
-          if "MetaData" in fileInfo:
-            fileInfo = fileInfo['MetaData']
+        for fileName in files:
+          fileInfo = files[fileName]
+          fileInfo = fileInfo.get( 'Metadata', fileInfo )
           if ( not days ) or self.__isOlderThan( fileInfo['CreationDate'], days ):
-            if fnmatch.fnmatch( fileName, wildcard ):
-              if "LFN" in fileInfo:
-                fileName = fileInfo['LFN']
+            if wildcard == '*' or fnmatch.fnmatch( fileName, wildcard ):
+              fileName = fileInfo.get( 'LFN', fileName )
               allFiles.append( fileName )
-        files = dirContents['Files'].keys()
-        self.log.info( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
     return S_OK( allFiles )
 
   def __isOlderThan( self, stringTime, days ):
