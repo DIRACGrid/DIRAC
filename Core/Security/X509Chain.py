@@ -603,6 +603,7 @@ class X509Chain:
         credDict[ 'hostname' ] = retVal[ 'Value' ]
         credDict[ 'validDN' ] = True
         credDict[ 'validGroup' ] = True
+        credDict[ 'groupProperties' ] = Registry.getHostOption( credDict[ 'hostname' ], 'Properties' ) 
       retVal = Registry.getUsernameForDN( credDict[ 'subject' ] )
       if retVal[ 'OK' ]:
         credDict[ 'username' ] = retVal[ 'Value' ]
