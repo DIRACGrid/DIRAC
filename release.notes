@@ -62,6 +62,11 @@ CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added 
         to the environment when running under glexec     
 NEW: XXXStorage - added getCurrentStatus() method        
 
+[v6r8p13]
+
+*Transformation
+BUGFIX: TransformationDB - restored import of StringType
+
 [v6r8p12]
 
 NEW: Applied patches from v6r7p29
