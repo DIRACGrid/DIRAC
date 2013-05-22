@@ -24,6 +24,7 @@ __RCSID__ = "$Id: $"
 import unittest
 import random
 import os
+import uuid
 # # from DIRAC
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -61,6 +62,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.putFile.Checksum = self.checksum
     self.putFile.ChecksumType = "adler32"
     self.putFile.Size = self.size
+    self.putFile.GUID = str( uuid.uuid4() )
 
     self.putAndRegister = Operation()
     self.putAndRegister.Type = "PutAndRegister"
