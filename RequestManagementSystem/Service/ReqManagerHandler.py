@@ -43,6 +43,11 @@ class ReqManagerHandler( RequestHandler ):
       if not createTables["OK"]:
         gLogger.error( createTables["Message"] )
         return createTables
+      createTables = createTables["Value"]
+      if not createTables:
+        return S_OK()
+      createTables = cls._requestDB.createTables( True )
+
 
     return S_OK()
 
