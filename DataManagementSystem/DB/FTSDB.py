@@ -77,7 +77,7 @@ class FTSDB( DB ):
     showTables = self._query( "SHOW TABLES;" )
     if not showTables["OK"]:
       return showTables
-    return S_OK( [ table[0] for table in showTables["Value"] if table ] )
+    return S_OK( [ table[0] for table in showTables["Value"] if table and table != "FTSHistoryView" ] )
 
   @staticmethod
   def getTableMeta():
