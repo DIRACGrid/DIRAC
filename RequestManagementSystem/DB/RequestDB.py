@@ -61,6 +61,9 @@ class RequestDB( DB ):
     tablesMeta = self.getTableMeta()
 
     showTables = self._query( "SHOW TABLES;" )
+    if not showTables["OK"]:
+      return showTables
+    showTables = list( showTables["Value"] )
     print showTables
 
     return self._createTables( self.getTableMeta(), force = force )
