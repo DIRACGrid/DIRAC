@@ -233,6 +233,10 @@ class RequestTask( object ):
     shifter = setupProxy["Value"]["Shifter"]
     proxyFile = setupProxy["Value"]["ProxyFile"]
 
+    self.log.info( "will use %s proxy file" % proxyFile )
+    self.log.info( "request owner is shifter? %s" % shifter )
+
+
     while self.request.Status == "Waiting":
 
       # # get waiting operation
