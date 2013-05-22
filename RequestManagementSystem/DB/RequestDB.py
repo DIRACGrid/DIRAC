@@ -48,7 +48,6 @@ class RequestDB( DB ):
     """
     self.getIdLock = threading.Lock()
     DB.__init__( self, "ReqDB", "RequestManagement/ReqDB", maxQueueSize )
-    self.createTables()
 
   def createTables( self, force = False ):
     """ create tables """
