@@ -76,7 +76,7 @@ class File( Record ):
                "PFN" : "VARCHAR(255)",
                "ChecksumType" : "ENUM('ADLER32', 'MD5', 'SHA1', '') DEFAULT ''",
                "Checksum" : "VARCHAR(255)",
-               "GUID" : "VARCHAR(32)",
+               "GUID" : "VARCHAR(36)",
                "Size" : "INTEGER",
                "Attempt": "INTEGER",
                "Error" : "VARCHAR(255)" },
