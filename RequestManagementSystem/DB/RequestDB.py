@@ -57,8 +57,6 @@ class RequestDB( DB ):
     toCreate = [ tab for tab in self.getTableMeta().keys() if tab not in checkTables["Value"] ]
     if toCreate:
       if not force:
-        return S_ERROR( "missing tables: %s" % ",".join( toCreate ) )
-      else:
         return S_OK( toCreate )
     return self._createTables( self.getTableMeta(), force )
 
@@ -69,7 +67,7 @@ class RequestDB( DB ):
                    for classDef in ( Request, Operation, File ) ] )
 
   def _checkTables( self ):
-    """ create tables if not exisiting """
+    """ create tables if not existing """
     showTables = self._query( "SHOW TABLES;" )
     if not showTables["OK"]:
       return showTables
