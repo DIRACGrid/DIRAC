@@ -304,14 +304,24 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
           self._logInfo( "Updated transformation status to 'Active'.",
                           method = "_getTransformationFiles", transID = transID )
       return S_OK()
+    #Check if transformation is kicked
+    kickFile = os.path.join( self.workDirectory, 'KickTransformation_%s' % str( transID ) )
+    try:
+      kickTrans = os.path.exists( kickFile )
+      if kickTrans:
+        os.remove( kickFile )
+    except:
+      pass
+
     #Check if something new happened
-    now = datetime.datetime.utcnow()
-    nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = self.noUnusedDelay )
-    skip = now < nextStamp
-    if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
-      self._logInfo( "No new 'Unused' files found for transformation.",
-                      method = "_getTransformationFiles", transID = transID )
-      return S_OK()
+    if not kickTrans:
+      now = datetime.datetime.utcnow()
+      nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = self.noUnusedDelay )
+      skip = now < nextStamp
+      if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
+        self._logInfo( "No new 'Unused' files found for transformation.",
+                        method = "_getTransformationFiles", transID = transID )
+        return S_OK()
 
     self.unusedTimeStamp[transID] = now
     return S_OK( transFiles )
