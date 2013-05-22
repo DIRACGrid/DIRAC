@@ -58,8 +58,26 @@ class FTSDB( DB ):
     # # max attempt for reschedule
     self.maxAttempt = 100
     # # check tables
-    self._checkTables( False )
-    self._checkViews( False )
+
+  def createTables( self, toCreate = None, force = False ):
+    """ create tables """
+    toCreate = toCreate if toCreate else []
+    if not toCreate:
+      return S_OK()
+    tableMeta = self.getTableMeta()
+    metaCreate = {}
+    for tableName in toCreate:
+      metaCreate[tableName] = tableMeta[tableName]
+    if metaCreate:
+      return self._createTables( metaCreate, force )
+    return S_OK()
+
+  def getTables( self ):
+    """ get tables """
+    showTables = self._query( "SHOW TABLES;" )
+    if not showTables["OK"]:
+      return showTables
+    return S_OK( [ table[0] for table in showTables["Value"] if table ] )
 
   @staticmethod
   def getTableMeta():
@@ -74,7 +92,7 @@ class FTSDB( DB ):
     """
     return { FTSHistoryView.__name__: FTSHistoryView.viewDesc() }
 
-  def _checkViews( self, force = False ):
+  def createViews( self, force = False ):
     """ create views """
     return self._createViews( self.getViewMeta(), force )
 

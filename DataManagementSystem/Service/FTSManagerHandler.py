@@ -64,25 +64,38 @@ class FTSManagerHandler( RequestHandler ):
   def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
 
-    gLogger.always( serviceInfoDict )
+    try:
+      from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
+      cls.__ftsDB = FTSDB()
+    except RuntimeError, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
 
-    from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
-    cls.__ftsDB = FTSDB()
+    # # create tables for empty db
+    getTables = cls.__ftsDB.getTables()
+    if not getTables["OK"]:
+      gLogger.error( getTables["Message"] )
+      return getTables
+    getTables = getTables["Value"]
+    toCreate = [ tab for tab in cls.__requestDB.getTableMeta().keys() if tab not in getTables ]
+    if toCreate:
+      createTables = cls.__ftstDB.createTables( toCreate )
+      if not createTables["OK"]:
+        gLogger.error( createTables["Message"] )
+        return createTables
+    # # always re-create views
+    createViews = cls.__ftsDB.createViews( True )
+    if not createViews["OK"]:
+      return createViews
+
     # # connect
     connect = cls.__ftsDB._connect()
     if not connect["OK"]:
       gLogger.error( connect["Message"] )
       return connect
-    checkTables = cls.__ftsDB._checkTables()
-
-    if not checkTables["OK"] and not checkTables["Message"] == "The requested table already exist":
-      return checkTables
-    # # always re-create views
-    checkViews = cls.__ftsDB._checkViews( True )
-    if not checkViews["OK"]:
-      return checkViews
 
     cls.ftsMode = cls.srv_getCSOption( "FTSMode", False )
+
     gLogger.always( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
 
     if cls.ftsMode:

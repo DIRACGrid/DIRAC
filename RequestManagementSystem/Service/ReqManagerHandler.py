@@ -39,6 +39,7 @@ class ReqManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
+    # # create tables for empty db
     getTables = cls.__requestDB.getTables()
     if not getTables["OK"]:
       gLogger.error( getTables["Message"] )
