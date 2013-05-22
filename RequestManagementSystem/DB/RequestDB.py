@@ -63,10 +63,11 @@ class RequestDB( DB ):
     showTables = self._query( "SHOW TABLES;" )
     if not showTables["OK"]:
       return showTables
-    showTables = list( showTables["Value"] )
+    showTables = [ table[0] for table in showTables["Value"] if table ]
     print showTables
 
-    return self._createTables( self.getTableMeta(), force = force )
+    return S_OK()
+    # return self._createTables( self.getTableMeta(), force = force )
 
   def dictCursor( self, conn = None ):
     """ get dict cursor for connection :conn:
