@@ -106,6 +106,9 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     del self.removeFile
     del self.putFile
     del self.repFile
+    del self.size
+    del self.guid
+    del self.checksum
 
   def test( self ):
     """ test case """
