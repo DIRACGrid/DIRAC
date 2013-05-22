@@ -131,7 +131,7 @@ class FTSGraph( Graph ):
       raise Exception( sitesDict["Message"] )
     sitesDict = sitesDict["Value"]
 
-    print sitesDict
+    print "sitesDict", sitesDict
 
     # # revert to resources helper
     # sitesDict = self.resources().getEligibleResources( "Storage" )
