@@ -93,10 +93,6 @@ class PutAndRegister( BaseOperation ):
       self.operation.Error = "TargetSE %s is banned for writing"
       return S_ERROR( self.operation.Error )
 
-    catalog = [ cat for cat in self.operation.Catalog.split( "," ) if cat ]
-    self.log.info( "will use catalogs: %s" % catalog )
-
-
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
 
@@ -117,8 +113,7 @@ class PutAndRegister( BaseOperation ):
                                                              targetSE,
                                                              guid = guid,
                                                              checksum = checksum,
-                                                             catalogs = catalog )
-
+                                                             catalog = self.operation.Catalog )
       if not putAndRegister["OK"]:
         gMonitor.addMark( "PutFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
