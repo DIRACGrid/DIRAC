@@ -51,7 +51,7 @@ class RequestDB( DB ):
 
   def createTables( self, force = False ):
     """ create tables """
-    checkTables = self._checkTables()
+    checkTables = self.getTables()
     if not checkTables["OK"]:
       return checkTables
     toCreate = [ tab for tab in self.getTableMeta().keys() if tab not in checkTables["Value"] ]
