@@ -26,7 +26,8 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
 # # from RSS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
+# from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
@@ -125,10 +126,18 @@ class FTSGraph( Graph ):
     ftsSites = ftsSites if ftsSites else []
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
 
-    sitesDict = self.resources().getEligibleResources( "Storage" )
+    sitesDict = getStorageElementSiteMapping()
     if not sitesDict["OK"]:
-      return sitesDict
+      raise Exception( sitesDict["Message"] )
     sitesDict = sitesDict["Value"]
+
+    print sitesDict
+
+    # # revert to resources helper
+    # sitesDict = self.resources().getEligibleResources( "Storage" )
+    # if not sitesDict["OK"]:
+    #  return sitesDict
+    # sitesDict = sitesDict["Value"]
 
     # # create nodes
     for ftsSite in ftsSites:
@@ -200,11 +209,11 @@ class FTSGraph( Graph ):
       self.__rssClient = ResourceStatus()
     return self.__rssClient
 
-  def resources( self ):
-    """ resource helper getter """
-    if not self.__resources:
-      self.__resources = Resources()
-    return self.__resources
+  # def resources( self ):
+  #  """ resource helper getter """
+  #  if not self.__resources:
+  #    self.__resources = Resources()
+  #  return self.__resources
 
   def updateRWAccess( self ):
     """ get RSS R/W for :seList:
