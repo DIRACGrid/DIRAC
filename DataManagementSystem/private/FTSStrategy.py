@@ -26,7 +26,7 @@ import random
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
+# from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
