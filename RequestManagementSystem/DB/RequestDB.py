@@ -48,7 +48,19 @@ class RequestDB( DB ):
     """
     self.getIdLock = threading.Lock()
     DB.__init__( self, "ReqDB", "RequestManagement/ReqDB", maxQueueSize )
-    self._checkTables( False )
+    self.__createTables()
+
+  def __createTables( self, force = False ):
+    """ create tables """
+    tables = []
+    checkTables = self._checkTables()
+    if checkTables["OK"]:
+      tables = checkTables["Value"]
+    toCreate = [ tab for tab in self.getTableMeta().keys() if tab not in tables ]
+    if toCreate:
+      self.log.warn( "missing tables: %s" % ",".join( toCreate ) )
+    if force:
+      self._createTables( self.getTableMeta(), force )
 
   @staticmethod
   def getTableMeta():
@@ -56,15 +68,12 @@ class RequestDB( DB ):
     return dict( [ ( classDef.__name__, classDef.tableDesc() )
                    for classDef in ( Request, Operation, File ) ] )
 
-  def _checkTables( self, force = False ):
+  def _checkTables( self ):
     """ create tables if not exisiting """
     showTables = self._query( "SHOW TABLES;" )
     if not showTables["OK"]:
       return showTables
-    showTables = [ table[0] for table in showTables["Value"] if table ]
-    if not showTables or force:
-      return self._createTables( self.getTableMeta(), force = force )
-    return S_OK()
+    return S_OK( [ table[0] for table in showTables["Value"] if table ] )
 
   def dictCursor( self, conn = None ):
     """ get dict cursor for connection :conn:
