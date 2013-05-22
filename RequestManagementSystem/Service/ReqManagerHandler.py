@@ -53,7 +53,7 @@ class ReqManagerHandler( RequestHandler ):
       createTables = createTables["Value"]
       if not createTables:
         return S_OK()
-    return cls._requestDB.createTables( True )
+    return cls.__requestDB.createTables( True )
 
   # # helper functions
   @classmethod
