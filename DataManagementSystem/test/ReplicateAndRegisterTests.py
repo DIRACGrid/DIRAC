@@ -24,12 +24,12 @@ __RCSID__ = "$Id: $"
 import unittest
 import random
 import os
-import uuid
 # # from DIRAC
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 # # from Core
 from DIRAC.Core.Utilities.Adler import fileAdler
+from DIRAC.Core.Utilities.File import makeGuid
 # # from RMS and DMS
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -55,6 +55,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.size = os.stat( self.fname ).st_size
     self.checksum = fileAdler( self.fname )
+    self.guid = makeGuid( self.fname )
 
     self.putFile = File()
     self.putFile.PFN = self.fname
@@ -62,7 +63,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.putFile.Checksum = self.checksum
     self.putFile.ChecksumType = "adler32"
     self.putFile.Size = self.size
-    self.putFile.GUID = str( uuid.uuid4() )
+    self.putFile.GUID = self.guid
 
     self.putAndRegister = Operation()
     self.putAndRegister.Type = "PutAndRegister"
