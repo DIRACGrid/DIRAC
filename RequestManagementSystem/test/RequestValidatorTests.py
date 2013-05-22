@@ -114,7 +114,7 @@ class RequestValidatorTests(unittest.TestCase):
     self.file.Checksum = "abcdef"
     ret = validator.validate( self.request )
     self.assertEqual( ret, 
-                      { 'Message' : 'File in operation #0 is missing Checksum (abcdef) or ChecksumType (None)', 
+                      { 'Message' : 'File in operation #0 is missing Checksum (abcdef) or ChecksumType ()',
                         'OK' : False } ) 
 
 
