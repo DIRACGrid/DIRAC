@@ -142,7 +142,7 @@ class FTSGraph( Graph ):
 
     # # create nodes
     for ftsSite in ftsSites:
-      rwSEsDict = dict.fromkeys( sitesDict.get( ftsSite.Name ), {} )
+      rwSEsDict = dict.fromkeys( sitesDict.get( "LCG." + ftsSite.Name ), {} )
       for se in rwSEsDict:
         rwSEsDict[se] = { "read": False, "write": False }
 
