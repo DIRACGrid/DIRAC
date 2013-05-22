@@ -65,7 +65,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.putAndRegister = Operation()
     self.putAndRegister.Type = "PutAndRegister"
     self.putAndRegister.TargetSE = "RAL-USER"
-    self.putAndRegister.Catalog = "LcgFileCatalogCombined"
+    self.putAndRegister.Catalog = "LcgFileCatalog"
 
     self.putAndRegister.addFile( self.putFile )
 
