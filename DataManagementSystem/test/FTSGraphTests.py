@@ -20,6 +20,9 @@ __RCSID__ = "$Id: $"
 # @date 2013/05/08 09:05:33
 # @brief Definition of FTSGraphTests class.
 
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
+
 # # imports
 import unittest
 # # SUT
