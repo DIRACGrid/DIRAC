@@ -107,7 +107,7 @@ class RequestTask( object ):
         self.log.error( getProxy["Message" ] )
       chain = getProxy["chain"]
       fileName = getProxy["Value" ]
-      self.log.info( "got %s: %s %s" % ( shifter, userName, userGroup ) )
+      self.log.debug( "got %s: %s %s" % ( shifter, userName, userGroup ) )
       self.__managersDict[shifter] = { "ShifterDN" : userDN,
                                        "ShifterName" : userName,
                                        "ShifterGroup" : userGroup,
