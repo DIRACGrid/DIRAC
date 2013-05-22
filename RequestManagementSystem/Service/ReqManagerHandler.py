@@ -45,10 +45,7 @@ class ReqManagerHandler( RequestHandler ):
       return getTables
     getTables = getTables["Value"]
     toCreate = [ tab for tab in cls.__requestDB.getTableMeta().keys() if tab not in getTables ]
-    if not toCreate:
-      return cls.__requestDB.createTables( True )
-
-    return S_OK()
+    return cls.__requestDB.createTables( toCreate )
 
   # # helper functions
   @classmethod

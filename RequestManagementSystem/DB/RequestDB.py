@@ -49,16 +49,18 @@ class RequestDB( DB ):
     self.getIdLock = threading.Lock()
     DB.__init__( self, "ReqDB", "RequestManagement/ReqDB", maxQueueSize )
 
-  def createTables( self, force = False ):
+  def createTables( self, toCreate = None, force = False ):
     """ create tables """
-    checkTables = self.getTables()
-    if not checkTables["OK"]:
-      return checkTables
-    toCreate = [ tab for tab in self.getTableMeta().keys() if tab not in checkTables["Value"] ]
-    if toCreate:
-      if not force:
-        return S_OK( toCreate )
-    return self._createTables( self.getTableMeta(), force )
+    toCreate = toCreate if toCreate else []
+    if not toCreate:
+      return S_OK()
+    tableMeta = self.getTableMeta()
+    metaCreate = {}
+    for tableName in toCreate:
+      metaCreate[tableName] = tableMeta[tableName]
+    if metaCreate:
+      return self._createTables( metaCreate, force )
+    return S_OK()
 
   @staticmethod
   def getTableMeta():
