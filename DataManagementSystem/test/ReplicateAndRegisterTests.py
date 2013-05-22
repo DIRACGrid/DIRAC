@@ -59,7 +59,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.putFile = File()
     self.putFile.PFN = self.fname
-    self.putFile.LFN = "/lhcb/user/c/cibak" + self.fname
+    self.putFile.LFN = "/lhcb/user/c/cibak" + self.fname.split( "/" )[-1]
     self.putFile.Checksum = self.checksum
     self.putFile.ChecksumType = "adler32"
     self.putFile.Size = self.size
