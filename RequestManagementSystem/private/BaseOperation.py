@@ -89,13 +89,17 @@ class BaseOperation( object ):
     name = self.__class__.__name__
     # # all options are r/o properties now
     csOptionsDict = gConfig.getOptionsDict( self.csPath )
+    csOptionsDict = csOptionsDict["Value"] if "Value" in csOptionsDict else {}
+
     for option, value in csOptionsDict.iteritems():
       self.makeProperty( option, value, True )
+
     # # pre setup logger
     self.log = gLogger.getSubLogger( name, True )
     # # set log level
     logLevel = getattr( self, "LogLevel" ) if hasattr( self, "LogLevel" ) else "INFO"
     self.log.setLevel( logLevel )
+
     # # list properties
     for option in csOptionsDict:
       self.log.info( "%s = %s" % ( option, getattr( self, option ) ) )
