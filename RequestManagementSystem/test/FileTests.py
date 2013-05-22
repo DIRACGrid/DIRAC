@@ -148,7 +148,7 @@ class FileTests( unittest.TestCase ):
       theFile.PFN = "snafu"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
-      self.assertEqual( str( error ), "Wrongly formatted URI!" )
+      self.assertEqual( str( error ), "Wrongly formatted PFN!" )
 
     # Size
     try:
