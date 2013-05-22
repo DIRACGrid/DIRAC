@@ -79,7 +79,7 @@ class FTSManagerHandler( RequestHandler ):
     getTables = getTables["Value"]
     toCreate = [ tab for tab in cls.__ftsDB.getTableMeta().keys() if tab not in getTables ]
     if toCreate:
-      createTables = cls.__ftstDB.createTables( toCreate )
+      createTables = cls.__ftsDB.createTables( toCreate )
       if not createTables["OK"]:
         gLogger.error( createTables["Message"] )
         return createTables
