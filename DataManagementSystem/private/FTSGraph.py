@@ -126,7 +126,7 @@ class FTSGraph( Graph ):
     ftsSites = ftsSites if ftsSites else []
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
 
-    sitesDict = getStorageElementSiteMapping()
+    sitesDict = getStorageElementSiteMapping( [ ftsSite.Name for ftsSite in ftsSites ] )
     if not sitesDict["OK"]:
       raise Exception( sitesDict["Message"] )
     sitesDict = sitesDict["Value"]
