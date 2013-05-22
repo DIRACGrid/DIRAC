@@ -208,7 +208,7 @@ class RequestExecutingAgent( AgentModule ):
     for opHandler in self.operationHandlers:
       handlerName = opHandler.split( "/" )[-1]
       self.handlersDict[ handlerName ] = opHandler
-      self.log.info( "handler '%s' for operation '%s' registered" % ( opHandler, handlerName ) )
+      self.log.debug( "handler '%s' for operation '%s' registered" % ( opHandler, handlerName ) )
     if not self.handlersDict:
       self.log.error( "operation handlers not set, check configuration option 'Operations'!" )
       return S_ERROR( "Operation handlers not set!" )
