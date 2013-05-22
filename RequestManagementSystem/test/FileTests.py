@@ -86,8 +86,8 @@ class FileTests( unittest.TestCase ):
     self.assertEqual( theFile.Status, "Done" )
     theFile.LFN = "/some/path/somewhere"
     self.assertEqual( theFile.LFN, "/some/path/somewhere" )
-    theFile.PFN = "file:///some/path/somewhere"
-    self.assertEqual( theFile.PFN, "file:///some/path/somewhere" )
+    theFile.PFN = "/some/path/somewhere"
+    self.assertEqual( theFile.PFN, "/some/path/somewhere" )
     theFile.Attempt = 1
     self.assertEqual( theFile.Attempt, 1 )
     theFile.Size = 1

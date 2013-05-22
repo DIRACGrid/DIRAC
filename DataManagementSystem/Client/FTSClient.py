@@ -195,7 +195,7 @@ class FTSClient( Client ):
     # # de-serialize
     if getJob["Value"]:
       getJob = getJob["Value"]
-      getJob = FTSJob.fromXML( getJob )
+      getJob = FTSJob( getJob )
       if not getJob["OK"]:
         self.log.error( getJob["Message"] )
     return getJob
