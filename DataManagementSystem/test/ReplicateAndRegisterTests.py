@@ -68,7 +68,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.putAndRegister = Operation()
     self.putAndRegister.Type = "PutAndRegister"
     self.putAndRegister.TargetSE = "RAL-USER"
-    self.putAndRegister.Catalog = "LcgFileCatalog"
+    self.putAndRegister.Catalog = "LcgFileCatalogCombined"
 
     self.putAndRegister.addFile( self.putFile )
 
@@ -109,17 +109,17 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     del self.size
     del self.guid
     del self.checksum
+    del self.reqName
 
   def test( self ):
     """ test case """
-    self.reqClient.deleteRequest( self.reqName )
+    delete = self.reqClient.deleteRequest( self.reqName )
+    print delete
     put = self.reqClient.putRequest( self.req )
     self.assertEqual( put["OK"], True, "putRequest failed" )
 
 # # test execution
 if __name__ == "__main__":
-
-
   testLoader = unittest.TestLoader()
   suite = testLoader.loadTestsFromTestCase( ReplicateAndRegisterTests )
   suite = unittest.TestSuite( [ suite ] )
