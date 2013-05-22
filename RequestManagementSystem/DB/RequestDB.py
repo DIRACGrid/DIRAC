@@ -48,19 +48,20 @@ class RequestDB( DB ):
     """
     self.getIdLock = threading.Lock()
     DB.__init__( self, "ReqDB", "RequestManagement/ReqDB", maxQueueSize )
-    self.__createTables()
+    self.createTables()
 
-  def __createTables( self, force = False ):
+  def createTables( self, force = False ):
     """ create tables """
-    tables = []
     checkTables = self._checkTables()
-    if checkTables["OK"]:
-      tables = checkTables["Value"]
-    toCreate = [ tab for tab in self.getTableMeta().keys() if tab not in tables ]
+    if not checkTables["OK"]:
+      return checkTables
+    toCreate = [ tab for tab in self.getTableMeta().keys() if tab not in checkTables["Value"] ]
     if toCreate:
-      self.log.warn( "missing tables: %s" % ",".join( toCreate ) )
-    if force:
-      self._createTables( self.getTableMeta(), force )
+      if not force:
+        return S_ERROR( "missing tables: %s" % ",".join( toCreate ) )
+      else:
+        return S_OK( toCreate )
+    return self._createTables( self.getTableMeta(), force )
 
   @staticmethod
   def getTableMeta():
