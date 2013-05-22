@@ -44,7 +44,8 @@ class ReqManagerHandler( RequestHandler ):
       gLogger.error( getTables["Message"] )
       return getTables
     getTables = getTables["Value"]
-    if not getTables:
+    toCreate = [ tab for tab in cls.__requestDB.getTableMeta().keys() if tab not in getTables ]
+    if not toCreate:
       return cls.__requestDB.createTables( True )
 
     return S_OK()
