@@ -38,6 +38,9 @@ class ReqManagerHandler( RequestHandler ):
     except RuntimeError, error:
       gLogger.exception( error )
       return S_ERROR( error )
+
+      # cls._requestDB._createTables()
+
     return S_OK()
 
   # # helper functions

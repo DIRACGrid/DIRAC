@@ -58,7 +58,11 @@ class RequestDB( DB ):
 
   def _checkTables( self, force = False ):
     """ create tables if not exisiting """
-    self._query( "SHOW TABLES;" )
+    tablesMeta = self.getTableMeta()
+
+    showTables = self._query( "SHOW TABLES;" )
+    print showTables
+
     return self._createTables( self.getTableMeta(), force = force )
 
   def dictCursor( self, conn = None ):
