@@ -128,8 +128,9 @@ class FTSGraph( Graph ):
 
     sitesDict = getStorageElementSiteMapping()  # [ ftsSite.Name for ftsSite in ftsSites ] )
     if not sitesDict["OK"]:
-      raise Exception( sitesDict["Message"] )
-    sitesDict = sitesDict["Value"]
+      self.log.error( sitesDict["Message"] )
+      # raise Exception( sitesDict["Message"] )
+    sitesDict = sitesDict["Value"] if "Value" in sitesDict else {}
 
     print "sitesDict", sitesDict
 
