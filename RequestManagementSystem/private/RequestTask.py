@@ -70,7 +70,6 @@ class RequestTask( object ):
     gMonitor.registerActivity( "RequestOK", "Requests done",
                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
 
-
   def __setupManagerProxies( self ):
     """ setup grid proxy for all defined managers """
     oHelper = Operations()
@@ -108,7 +107,7 @@ class RequestTask( object ):
         self.log.error( getProxy["Message" ] )
       chain = getProxy["chain"]
       fileName = getProxy["Value" ]
-      self.log.debug( "got %s: %s %s" % ( shifter, userName, userGroup ) )
+      self.log.info( "got %s: %s %s" % ( shifter, userName, userGroup ) )
       self.__managersDict[shifter] = { "ShifterDN" : userDN,
                                        "ShifterName" : userName,
                                        "ShifterGroup" : userGroup,
@@ -130,7 +129,7 @@ class RequestTask( object ):
     if isShifter:
       proxyFile = self.__managersDict[isShifter]["ProxyFile"]
       os.environ["X509_USER_PROXY"] = proxyFile
-      return S_OK( {"Shifter": isShifter, "ProxyFile": proxyFile} )
+      return S_OK( { "Shifter": isShifter, "ProxyFile": proxyFile } )
 
     # # if we're here owner is not a shifter at all
     ownerProxy = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup )
