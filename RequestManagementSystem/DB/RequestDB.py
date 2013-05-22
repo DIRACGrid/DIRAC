@@ -66,8 +66,8 @@ class RequestDB( DB ):
     return dict( [ ( classDef.__name__, classDef.tableDesc() )
                    for classDef in ( Request, Operation, File ) ] )
 
-  def _checkTables( self ):
-    """ create tables if not existing """
+  def getTables( self ):
+    """ get tables """
     showTables = self._query( "SHOW TABLES;" )
     if not showTables["OK"]:
       return showTables
