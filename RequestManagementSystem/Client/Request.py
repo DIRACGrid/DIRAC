@@ -137,10 +137,11 @@ class Request( Record ):
           op._setWaiting( self )
           self.__waiting = op
           rStatus = "Waiting"
-          break
+        continue
       elif opStatus == "Waiting":
         if self.__waiting != None:
           op._setQueued( self )
+          rStatus = "Waiting"
         else:
           self.__waiting = op
           rStatus = "Waiting"

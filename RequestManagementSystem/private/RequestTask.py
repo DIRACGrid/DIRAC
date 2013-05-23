@@ -298,7 +298,6 @@ class RequestTask( object ):
         else:
           self.log.info( "request %s is finalized" % self.request.RequestName )
 
-
     # # update request to the RequestDB
     update = self.updateRequest()
     if not update["OK"]:
