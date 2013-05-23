@@ -110,16 +110,13 @@ class RemoveFile( BaseOperation ):
     for lfn, opFile in toRemoveDict.items():
       if lfn in bulkRemoval["Successful"]:
         opFile.Status = "Done"
-
       elif lfn in bulkRemoval["Failed"]:
-
         self.log.always( "aaaa %s" % bulkRemoval["Failed"][lfn] )
-
-        if self.reNotExists.search( str( bulkRemoval["Failed"][lfn] ) ):
-          opFile.Error = "not exisiting file"
+        opFile.Error = str( bulkRemoval["Failed"][lfn] ).lower()
+        if self.reNotExists.search( opFile.Error ):
+          self.log.always( "matched@@@" )
+          opFile.Error = "not existing file"
           opFile.Status = "Done"
-        else:
-          opFile.Error = str( bulkRemoval["Failed"][lfn] )
 
         self.log.always( opFile.Status, opFile.Error )
 
