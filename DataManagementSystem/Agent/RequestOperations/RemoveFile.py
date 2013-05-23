@@ -110,7 +110,13 @@ class RemoveFile( BaseOperation ):
         opFile.Error = bulkRemoval["Failed"][lfn]
         if "no such file or directory" in str( opFile.Error ).lower():
           removeFromCatalog = self.replicaManager().removeCatalogFile( lfn, singleFile = True )
-          if removeFromCatalog["OK"]:
+          if not removeFromCatalog["OK"]:
+            self.log.warn( removeFromCatalog["Message"] )
+            if "no such file or directory" in removeFromCatalog["Message"]:
+              opFile.Status = "Done"
+            else:
+              opFile.Error = removeFromCatalog["Message"]
+          else:
             opFile.Status = "Done"
             continue
     # # return files still waiting
