@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: OperationHandlerBaseTests
-    ========================
+    ===============================
 
     .. module: OperationHandlerBaseTests
     :synopsis: unittests for OperationHandlerBase
