@@ -25,12 +25,12 @@ __RCSID__ = "$Id $"
 
 # # imports
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 
 ########################################################################
-class PutAndRegister( BaseOperation ):
+class PutAndRegister( OperationHandlerBase ):
   """
   .. class:: PutAndRegister
 
@@ -45,7 +45,7 @@ class PutAndRegister( BaseOperation ):
     :param str csPath: CS path for this handler
     """
     # # base class ctor
-    BaseOperation.__init__( self, operation, csPath )
+    OperationHandlerBase.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "PutAtt", "File put attempts",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )

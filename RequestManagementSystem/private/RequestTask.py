@@ -30,7 +30,7 @@ import time
 from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security import CS
@@ -164,7 +164,7 @@ class RequestTask( object ):
     If above conditions aren't meet, function is throwing exceptions:
 
     - ImportError when class cannot be imported
-    - TypeError when class isn't inherited from BaseOepration
+    - TypeError when class isn't inherited from OperationHandlerBase
     """
     if "/" in pluginPath:
       pluginPath = ".".join( [ chunk for chunk in pluginPath.split( "/" ) if chunk ] )
@@ -174,8 +174,8 @@ class RequestTask( object ):
       pluginClassObj = getattr( mod, pluginName )
     else:
       pluginClassObj = globals()[pluginName]
-    if not issubclass( pluginClassObj, BaseOperation ):
-      raise TypeError( "operation handler '%s' isn't inherited from BaseOperation class" % pluginName )
+    if not issubclass( pluginClassObj, OperationHandlerBase ):
+      raise TypeError( "operation handler '%s' isn't inherited from OperationHandlerBase class" % pluginName )
     for key, status in ( ( "Att", "Attempted" ), ( "OK", "Successful" ) , ( "Fail", "Failed" ) ):
       gMonitor.registerActivity( "%s%s" % ( pluginName, key ), "%s operations %s" % ( pluginName, status ),
                                  "RequestExecutingAgent", "Operations/min", gMonitor.OP_SUM )

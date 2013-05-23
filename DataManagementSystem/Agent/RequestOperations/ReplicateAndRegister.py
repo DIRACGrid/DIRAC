@@ -24,14 +24,14 @@ __RCSID__ = "$Id $"
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ########################################################################
-class ReplicateAndRegister( BaseOperation ):
+class ReplicateAndRegister( OperationHandlerBase ):
   """
   .. class:: ReplicateAndRegister
 
@@ -46,7 +46,7 @@ class ReplicateAndRegister( BaseOperation ):
     :param Operation operation: Operation instance
     :param str csPath: CS path for this handler
     """
-    BaseOperation.__init__( self, operation, csPath )
+    OperationHandlerBase.__init__( self, operation, csPath )
     # # own gMonitor stuff for files
     gMonitor.registerActivity( "ReplicateAndRegisterAtt", "Replicate and register attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )

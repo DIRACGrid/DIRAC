@@ -28,10 +28,10 @@ import os
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 
 ########################################################################
-class RemoveFile( BaseOperation ):
+class RemoveFile( OperationHandlerBase ):
   """
   .. class:: RemoveFile
 
@@ -46,7 +46,7 @@ class RemoveFile( BaseOperation ):
     :param str csPath: CS path for this handler
     """
     # # call base class ctor
-    BaseOperation.__init__( self, operation, csPath )
+    OperationHandlerBase.__init__( self, operation, csPath )
     # # gMOnitor stuff goes here
     gMonitor.registerActivity( "RemoveFileAtt", "File removals attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
@@ -54,9 +54,8 @@ class RemoveFile( BaseOperation ):
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RemoveFileFail", "Failed file removals",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
-
+    # # re pattern for not existing files
     self.reNotExisting = re.compile( "(no|not) such file or directory", re.IGNORECASE )
-
 
   def __call__( self ):
     """ action for 'removeFile' operation  """

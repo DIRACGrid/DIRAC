@@ -12,7 +12,7 @@
     :synopsis: removeReplica operation handler
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    removeReplica operation handler
+    RemoveReplica operation handler
 """
 
 __RCSID__ = "$Id $"
@@ -27,10 +27,10 @@ __RCSID__ = "$Id $"
 import os
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 
 ########################################################################
-class RemoveReplica( BaseOperation ):
+class RemoveReplica( OperationHandlerBase ):
   """
   .. class:: RemoveReplica
 
@@ -44,7 +44,7 @@ class RemoveReplica( BaseOperation ):
     :param str csPath: CS path for this handler
     """
     # # base class ctor
-    BaseOperation.__init__( self, operation, csPath )
+    OperationHandlerBase.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "RemoveReplicaAtt", "Replica removals attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )

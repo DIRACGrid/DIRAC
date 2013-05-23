@@ -26,10 +26,10 @@ __RCSID__ = "$Id $"
 import os
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 
 ########################################################################
-class PhysicalRemoval( BaseOperation ):
+class PhysicalRemoval( OperationHandlerBase ):
   """
   .. class:: PhysicalRemoval
 
@@ -39,8 +39,10 @@ class PhysicalRemoval( BaseOperation ):
     """c'tor
 
     :param self: self reference
+    :param Operation operation: Operation instance
+    :param str csPath: cs config path
     """
-    BaseOperation.__init__( self, operation, csPath )
+    OperationHandlerBase.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "PhysicalRemovalAtt", "Physical file removals attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )

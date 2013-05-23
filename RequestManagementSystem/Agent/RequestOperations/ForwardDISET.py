@@ -24,12 +24,12 @@ __RCSID__ = "$Id $"
 
 # # imports
 from DIRAC import S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.Core.DISET.RPCClient import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
 
 ########################################################################
-class ForwardDISET( BaseOperation ):
+class ForwardDISET( OperationHandlerBase ):
   """
   .. class:: ForwardDISET
 
@@ -42,7 +42,7 @@ class ForwardDISET( BaseOperation ):
     :param str csPath: CS path for this handler
     """
     # # call base class c'tor
-    BaseOperation.__init__( self, operation, csPath )
+    OperationHandlerBase.__init__( self, operation, csPath )
 
   def __call__( self ):
     """ execute RPC stub """

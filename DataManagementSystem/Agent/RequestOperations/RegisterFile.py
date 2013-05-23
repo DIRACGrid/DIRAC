@@ -24,10 +24,10 @@ __RCSID__ = "$Id $"
 
 # # imports
 from DIRAC import gMonitor, S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 
 ########################################################################
-class RegisterFile( BaseOperation ):
+class RegisterFile( OperationHandlerBase ):
   """
   .. class:: RegisterOperation
 
@@ -41,7 +41,7 @@ class RegisterFile( BaseOperation ):
     :param Operation operation: Operation instance
     :param str csPath: CS path for this handler
     """
-    BaseOperation.__init__( self, operation, csPath )
+    OperationHandlerBase.__init__( self, operation, csPath )
     # # RegisterFile specific monitor info
     gMonitor.registerActivity( "RegisterAtt", "Attempted file registrations",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )

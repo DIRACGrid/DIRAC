@@ -1,13 +1,13 @@
 ########################################################################
 # $HeadURL $
-# File: BaseOperation.py
+# File: OperationHandlerBase.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/13 13:48:52
 ########################################################################
-""" :mod: BaseOperation
-    ===================
+""" :mod: OperationHandlerBase
+    ==========================
 
-    .. module: BaseOperation
+    .. module: OperationHandlerBase
     :synopsis: request operation handler base class
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
@@ -26,8 +26,8 @@
 
     Properties:
 
-    * self.shifter -- list of shifters matching request owner
-    * each CS option stored under "RequestExecutingAgent/OperationHandlers/Foo" is exported as read-only property too
+    * self.shifter -- list of shifters matching request owner (could be empty!!!)
+    * each CS option stored under CS path "RequestExecutingAgent/OperationHandlers/Foo" is exported as read-only property too
     * self.initialize() -- overwrite it to perform additional initialization
     * self.log -- own sub logger
     * self.request, self.operation -- reference to Operation and Request itself
@@ -43,10 +43,10 @@
 """
 __RCSID__ = "$Id $"
 # #
-# @file BaseOperation.py
+# @file OperationHandlerBase.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/13 13:49:02
-# @brief Definition of BaseOperation class.
+# @brief Definition of OperationHandlerBase class.
 
 # # imports
 import os
@@ -58,9 +58,9 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
 
 ########################################################################
-class BaseOperation( object ):
+class OperationHandlerBase( object ):
   """
-  .. class:: BaseOperation
+  .. class:: OperationHandlerBase
 
   request operation handler base class
   """
