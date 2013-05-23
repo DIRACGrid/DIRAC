@@ -67,7 +67,7 @@ class Request( Record ):
     self.__data__["CreationTime"] = now
     self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
-    self.__data__["Status"] = "Waiting"
+    self.__data__["Status"] = "Done"
     self.__data__["JobID"] = 0
     self.__data__["RequestID"] = 0
 
@@ -88,6 +88,7 @@ class Request( Record ):
         raise AttributeError( "Unknown Request attribute '%s'" % key )
       if value:
         setattr( self, key, value )
+    self._notify()
 
   @staticmethod
   def tableDesc():
