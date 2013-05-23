@@ -385,7 +385,7 @@ class Operation( Record ):
 
   def __str__( self ):
     """ str operator """
-    return ElementTree.tostring( self.toXML() )
+    return str( self.toJSON()["Value"] )
 
   def toSQL( self ):
     """ get SQL INSERT or UPDATE statement """

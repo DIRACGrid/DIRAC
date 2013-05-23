@@ -116,11 +116,11 @@ class Request( Record ):
 
     rStatus = "Waiting"
     opStatusList = [ ( op.Status, op ) for op in self ]
+
     self.__waiting = None
     while opStatusList:
 
       opStatus, op = opStatusList.pop( 0 )
-
       # # Done --> Done
       if opStatus == "Done":
         rStatus = "Done"
@@ -149,6 +149,7 @@ class Request( Record ):
       if opStatus == "Scheduled":
         rStatus = "Scheduled"
         break
+
 
     self.Status = rStatus
 
@@ -370,17 +371,7 @@ class Request( Record ):
   @property
   def Status( self ):
     """ status getter """
-    opStatuses = list( set( [ op.Status for op in self.__operations__ ] ) )
-    status = "Waiting"
-    if "Done" in opStatuses:
-      status = "Done"
-    if "Assigned" in opStatuses:
-      status = "Assigned"
-    if "Scheduled" in opStatuses:
-      status = "Scheduled"
-    if "Waiting" in opStatuses:
-      status = "Waiting"
-    self.__data__["Status"] = status
+    self._notify()
     return self.__data__["Status"]
 
   @Status.setter
