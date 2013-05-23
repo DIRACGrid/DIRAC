@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: RequestUtils 
-    =======================
+    ==================
  
     .. module: RequestUtils
     :synopsis: utilities for RMS
@@ -28,30 +28,5 @@ __RCSID__ = "$Id $"
 
 ## imports 
 
-
-########################################################################
-class RMSError(Exception):
-  """
-  .. class:: RMSError
-  
-  """
-  def __init__( self, msg ):
-    """c'tor
-
-    :param self: self reference
-    :param str msg: error message
-    """
-    self.msg = msg
-  def __str__( self ):
-    """ str() op """
-    return str(self.msg)
-
-def RMSSerialError( RMSError ):
-  """ 
-  .. class:: RMSSerialError
-
-  thrown in ctors
-  """
-  def __init__(self, msg ):
-    """ c'tor """
-    RMSError.__init__( self, msg )
+def escapeStr( aStr, len = 255 ):
+  return str( aStr ).replace( "'", "\'" )[:len]

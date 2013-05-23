@@ -5,29 +5,29 @@
 # Date: 2013/05/02 08:42:19
 ########################################################################
 
-""" :mod: Record 
+""" :mod: Record
     ============
- 
+
     .. module: Record
     :synopsis: db record
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    base class for orm-loke db record
+    base class for orm-like db record
 """
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @file Record.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/05/02 08:42:24
 # @brief Definition of Record class.
 
-## imports 
+# # imports
 from DIRAC import gLogger
 
 ########################################################################
-class Record(object):
+class Record( object ):
   """
   .. class:: Record
 
@@ -61,6 +61,9 @@ class Record(object):
       "PrimaryKey" : [ "RecID" ] },
       "Indexes" : { "RecID" : [ "RecID" ] } }
     """
-    raise NotImplementedError("Must provide table description!")
+    raise NotImplementedError( "Must provide table description!" )
 
-  
+  @staticmethod
+  def _escapeStr( aStr, len = 255 ):
+    """ ' -> \' and cut atmost at len """
+    return str( aStr ).replace( "'", "\'" )[:len] if aStr else ""

@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: OperationTests
-    =======================
+    ====================
 
     .. module: OperationTests
     :synopsis: Operation test cases
@@ -55,25 +55,30 @@ class OperationTests( unittest.TestCase ):
     del self.fromDict
     del self.subFile
 
-  def test_ctor( self ):
+  def test01ctor( self ):
     """ test constructors and (de)serialisation """
     # # empty ctor
-    self.assertEqual( isinstance( Operation(), Operation ), True )
+    self.assertEqual( isinstance( Operation(), Operation ), True, "empty ctor failed" )
 
     # # using fromDict
     operation = Operation( self.fromDict )
-    self.assertEqual( isinstance( operation, Operation ), True )
+    self.assertEqual( isinstance( operation, Operation ), True, "fromDict ctor failed" )
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr( operation, key ), value )
+
+      self.assertEqual( getattr( operation, key ), value, "wrong attr value %s (%s) %s" % ( key,
+                                                                                            getattr( operation, key ),
+                                                                                            value ) )
     # # from and to  XML
     opXML = operation.toXML()
-    self.assertEqual( opXML["OK"], True )
+    self.assertEqual( opXML["OK"], True, "xml serialization failed" )
     opXML = opXML["Value"]
     operation = Operation.fromXML( opXML )
-    self.assertEqual( operation["OK"], True )
+    self.assertEqual( operation["OK"], True, "xml de-serialization failed" )
     operation = operation["Value"]
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr( operation, key ), value )
+      self.assertEqual( getattr( operation, key ), value, "wrong attr value %s (%s) %s" % ( key,
+                                                                                            getattr( operation, key ),
+                                                                                            value ) )
 
     # # same with file
     operation = Operation( self.fromDict )
@@ -81,114 +86,115 @@ class OperationTests( unittest.TestCase ):
 
     opXML = operation.toXML()
 
-    self.assertEqual( opXML["OK"], True )
+    self.assertEqual( opXML["OK"], True, "xml serialization failed" )
 
     opXML = opXML["Value"]
 
     operation = Operation.fromXML( opXML )
-    self.assertEqual( operation["OK"], True )
+    self.assertEqual( operation["OK"], True, "xml de-serialization failed" )
 
     operation = operation["Value"]
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr( operation, key ), value )
-
-  def test_props( self ):
+      self.assertEqual( getattr( operation, key ), value, "wrong attr value %s (%s) %s" % ( key,
+                                                                                            getattr( operation, key ),
+                                                                                            value ) )
+  def test02props( self ):
     """ test properties """
+
     # # valid values
     operation = Operation()
     operation.OperationID = 1
-    self.assertEqual( operation.OperationID, 1 )
+    self.assertEqual( operation.OperationID, 1, "wrong OperationID" )
     operation.OperationID = "1"
-    self.assertEqual( operation.OperationID, 1 )
+    self.assertEqual( operation.OperationID, 1, "wrong OperationID" )
 
     operation.Arguments = "foobar"
-    self.assertEqual( operation.Arguments, "foobar" )
+    self.assertEqual( operation.Arguments, "foobar", "wrong Arguments" )
 
     operation.SourceSE = "CERN-RAW"
-    self.assertEqual( operation.SourceSE, "CERN-RAW" )
+    self.assertEqual( operation.SourceSE, "CERN-RAW", "wrong SourceSE" )
 
     operation.TargetSE = "CERN-RAW"
-    self.assertEqual( operation.TargetSE, "CERN-RAW" )
+    self.assertEqual( operation.TargetSE, "CERN-RAW", "wrong TargetSE" )
 
     operation.Catalog = ""
-    self.assertEqual( operation.Catalog, "" )
+    self.assertEqual( operation.Catalog, "", "wrong Catalog" )
 
     operation.Catalog = "BookkeepingDB"
-    self.assertEqual( operation.Catalog, "BookkeepingDB" )
+    self.assertEqual( operation.Catalog, "BookkeepingDB", "wrong Catalog" )
 
     operation.Error = "error"
-    self.assertEqual( operation.Error, "error" )
+    self.assertEqual( operation.Error, "error", "wrong Error" )
 
     # # wrong props
     try:
       operation.RequestID = "foo"
     except Exception, error:
-      self.assertEqual( type( error ), AttributeError )
-      self.assertEqual( str( error ), "can't set attribute" )
+      self.assertEqual( type( error ), AttributeError, "wrong exc raised" )
+      self.assertEqual( str( error ), "can't set attribute", "wrong exc reason" )
 
     try:
       operation.OperationID = "foo"
     except Exception, error:
-      self.assertEqual( type( error ), ValueError )
+      self.assertEqual( type( error ), ValueError, "wrong exc raised" )
 
-    operation = Operation()
-    try:
-      operation.Type = "foo"
-    except Exception, error:
-      self.assertEqual( type( error ), ValueError )
-      self.assertEqual( str( error ), "'foo' in not valid Operation!" )
+    # operation = Operation()
+    # try:
+    #  operation.Type = "foo"
+    # except Exception, error:
+    #  self.assertEqual( type( error ), ValueError )
+    #  self.assertEqual( str( error ), "'foo' in not valid Operation!" )
 
 
     # # timestamps
     try:
       operation.SubmitTime = "foo"
     except Exception, error:
-      self.assertEqual( type( error ), ValueError )
-      self.assertEqual( str( error ), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
+      self.assertEqual( type( error ), ValueError, "wrong exp raised" )
+      self.assertEqual( str( error ), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'", "wrong exc reason" )
 
     try:
       operation.LastUpdate = "foo"
     except Exception, error:
-      self.assertEqual( type( error ), ValueError )
-      self.assertEqual( str( error ), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
+      self.assertEqual( type( error ), ValueError, "wrong exc raised" )
+      self.assertEqual( str( error ), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'", "wrong exc reason" )
 
     # # Status
     operation = Operation()
     try:
       operation.Status = "foo"
     except Exception, error:
-      self.assertEqual( type( error ), ValueError )
-      self.assertEqual( str( error ), "unknown Status 'foo'" )
-
+      self.assertEqual( type( error ), ValueError, "wrong exc raised" )
+      self.assertEqual( str( error ), "unknown Status 'foo'", "wrong exc reason" )
     operation.addFile( File( { "Status" : "Waiting", "LFN": "/a" } ) )
     oldStatus = operation.Status
 
     # # won't modify - there are Waiting files
     operation.Status = "Done"
-    self.assertEqual( operation.Status, oldStatus )
+    self.assertEqual( operation.Status, oldStatus, "waiting file but status == Done" )
 
     # # won't modify - there are Scheduled files
     for subFile in operation:
       subFile.Status = "Scheduled"
     operation.Status = "Done"
-    self.assertEqual( operation.Status, oldStatus )
+    self.assertEqual( operation.Status, "Scheduled", "scheduled files but operation status %s" % operation.Status )
 
     # # will modify - all files are Done now
     for subFile in operation:
       subFile.Status = "Done"
     operation.Status = "Done"
-    self.assertEqual( operation.Status, "Done" )
+    self.assertEqual( operation.Status, "Done", "all files done but operation status %s" % operation.Status )
 
     operation = Operation()
     operation.addFile( File( { "Status" : "Done", "LFN": "/b" } ) )
-    self.assertEqual( operation.Status, "Done" )
+    self.assertEqual( operation.Status, "Done", "all files done but operation status %s" % operation.Status )
 
     operation.addFile ( File( { "Status" : "Waiting", "LFN": "/c" } ) )
-    self.assertEqual( operation.Status, oldStatus )
+    self.assertEqual( operation.Status, "Queued", "all files waiting but operation status %s" % operation.Status )
 
 
-  def test_sql( self ):
-    """ insert or update """
+  def test03sql( self ):
+    """ sql insert or update """
     operation = Operation()
     operation.Type = "ReplicateAndRegister"
 
@@ -200,14 +206,14 @@ class OperationTests( unittest.TestCase ):
     try:
       operation.toSQL()
     except Exception, error:
-      self.assertEqual( isinstance( error, AttributeError ), True )
-      self.assertEqual( str( error ), "RequestID not set" )
+      self.assertEqual( isinstance( error, AttributeError ), True, "wrong exc raised" )
+      self.assertEqual( str( error ), "RequestID not set", "wrong exc reason" )
 
     # # parent set, no OperationID, INSERT
     request.addOperation( operation )
     toSQL = operation.toSQL()
     self.assertEqual( toSQL["OK"], True, "toSQL error" )
-    self.assertEqual( toSQL["Value"].startswith( "INSERT" ), True )
+    self.assertEqual( toSQL["Value"].startswith( "INSERT" ), True, "OperationID not set, but SQL start with UPDATE" )
 
     op2 = Operation()
     op2.Type = "RemoveReplica"
@@ -218,7 +224,7 @@ class OperationTests( unittest.TestCase ):
     operation.OperationID = 1
     toSQL = operation.toSQL()
     self.assertEqual( toSQL["OK"], True, "toSQL error" )
-    self.assertEqual( toSQL["Value"].startswith( "UPDATE" ), True )
+    self.assertEqual( toSQL["Value"].startswith( "UPDATE" ), True, "OperationID set, but SQL starts with INSERT" )
 
 
 # # test execution

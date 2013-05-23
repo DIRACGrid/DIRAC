@@ -273,8 +273,9 @@ class Operation( Record ):
   @Error.setter
   def Error( self, value ):
     """ error setter """
-    self.__data__["Error"] = str( value )[:255] if value else ""
-
+    if type( value ) != str:
+      raise TypeError( "Error has to be a string!" )
+    self.__data__["Error"] = self._escapeStr( value, 255 )
   @property
   def Status( self ):
     """ Status prop """

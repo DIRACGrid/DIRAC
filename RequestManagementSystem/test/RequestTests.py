@@ -118,6 +118,8 @@ class RequestTests( unittest.TestCase ):
     req.LastUpdate = datetime.datetime( 1970, 1, 1, 0, 0, 0 )
     self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0 ) )
 
+    req.Error = ""
+
   def test04Operations( self ):
     """ operations arithmetic and state machine """
     req = Request()
