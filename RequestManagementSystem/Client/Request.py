@@ -118,9 +118,12 @@ class Request( Record ):
     opStatusList = [ ( op.Status, op ) for op in self ]
 
     self.__waiting = None
+
+    isScheduled = False
     while opStatusList:
 
       opStatus, op = opStatusList.pop( 0 )
+
       # # Done --> Done
       if opStatus == "Done":
         rStatus = "Done"
@@ -131,14 +134,24 @@ class Request( Record ):
         rStatus = "Failed"
         break
 
+      # # Scheduled -> Scheduled
+      if opStatus == "Scheduled":
+        rStatus = "Scheduled"
+        isScheduled = True
+        continue
+
       if opStatus == "Queued":
-        if not self.__waiting:
+        if isScheduled:
+          continue
+        elif not self.__waiting:
           op._setWaiting( self )
           self.__waiting = op
           rStatus = "Waiting"
-        continue
       elif opStatus == "Waiting":
-        if self.__waiting != None:
+        if isScheduled:
+          op._setQueued( self )
+          continue
+        elif self.__waiting != None:
           op._setQueued( self )
           rStatus = "Waiting"
         else:
@@ -146,10 +159,7 @@ class Request( Record ):
           rStatus = "Waiting"
           break
 
-      if opStatus == "Scheduled":
-        rStatus = "Scheduled"
-        break
-
+    # print "AFTER", self.subStatusList(), rStatus
 
     self.Status = rStatus
 
