@@ -28,10 +28,12 @@ from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 # # from RSS
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
+# #from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 __RCSID__ = "$Id$"
+
+AGENT_NAME = "DataManagement/SubmitFTSAgent"
 
 class SubmitFTSAgent( AgentModule ):
   """
@@ -92,11 +94,11 @@ class SubmitFTSAgent( AgentModule ):
       self.__rssClient = ResourceStatus()
     return self.__rssClient
 
-  def resources( self ):
-    """ resource helper getter """
-    if not self.__resources:
-      self.__resources = Resources()
-    return self.__resources
+#  def resources( self ):
+#    """ resource helper getter """
+#    if not self.__resources:
+#      self.__resources = Resources()
+#    return self.__resources
 
   def threadPool( self ):
     """ thread pool getter """

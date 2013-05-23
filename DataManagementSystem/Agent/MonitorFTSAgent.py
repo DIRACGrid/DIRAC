@@ -32,7 +32,6 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 # # RCSID
 __RCSID__ = "$Id$"
 # # agent's name
-
 AGENT_NAME = 'DataManagement/MonitorFTSAgent'
 
 class MonitorFTSAgent( AgentModule ):
