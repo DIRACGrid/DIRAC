@@ -1,40 +1,40 @@
 ########################################################################
 # $HeadURL $
-# File: BaseOperationTests.py
+# File: OperationHandlerBaseTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/25 08:09:08
 ########################################################################
 
-""" :mod: BaseOperationTests
+""" :mod: OperationHandlerBaseTests
     ========================
 
-    .. module: BaseOperationTests
-    :synopsis: unittests for BaseOperation
+    .. module: OperationHandlerBaseTests
+    :synopsis: unittests for OperationHandlerBase
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    unittests for BaseOperation
+    unittests for OperationHandlerBase
 """
 
 __RCSID__ = "$Id $"
 
 # #
-# @file BaseOperationTests.py
+# @file OperationHandlerBaseTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/25 08:09:21
-# @brief Definition of BaseOperationTests class.
+# @brief Definition of OperationHandlerBaseTests class.
 
 # # imports
 import unittest
-from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
 ########################################################################
-class BaseOperationTests( unittest.TestCase ):
+class OperationHandlerBaseTests( unittest.TestCase ):
   """
-  .. class:: BaseOperationTests
+  .. class:: OperationHandlerBaseTests
 
   """
 
@@ -44,7 +44,7 @@ class BaseOperationTests( unittest.TestCase ):
     self.req.RequestName = "testRequest"
     self.op = Operation( {"Type" : "ForwardDISET", "Arguments" : "foobar" } )
     self.req.addOperation( self.op )
-    self.baseOp = BaseOperation()
+    self.baseOp = OperationHandlerBase()
 
   def tearDown( self ):
     """ test tear down """
@@ -52,7 +52,7 @@ class BaseOperationTests( unittest.TestCase ):
     del self.op
     del self.req
 
-  def testBaseOperation( self ):
+  def testOperationHandlerBase( self ):
     """ base op test """
     self.baseOp.setOperation( self.op )
 
@@ -72,7 +72,7 @@ class BaseOperationTests( unittest.TestCase ):
 # # tests execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
-  baseOperationTests = testLoader.loadTestsFromTestCase( BaseOperationTests )
-  suite = unittest.TestSuite( [ baseOperationTests ] )
+  OperationHandlerBaseTests = testLoader.loadTestsFromTestCase( OperationHandlerBaseTests )
+  suite = unittest.TestSuite( [ OperationHandlerBaseTests ] )
   unittest.TextTestRunner( verbosity = 3 ).run( suite )
 
