@@ -270,7 +270,7 @@ class RequestTask( object ):
         gMonitor.addMark( "RequestFail", 1 )
         break
 
-      self.log.info( "operation status: %s" % self.operation.Status )
+      self.log.info( "operation status: %s" % operation.Status )
 
       # # operation status check
       if operation.Status == "Done":
