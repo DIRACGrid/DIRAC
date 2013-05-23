@@ -97,6 +97,7 @@ class RemoveFile( BaseOperation ):
     :return: S_ERROR or S_OK( { lfn: opFile, ... } ) -- dict with files still waiting to be removed
     """
     bulkRemoval = self.replicaManager().removeFile( toRemoveDict.keys(), force = True )
+    self.log.always( bulkRemoval )
     if not bulkRemoval["OK"]:
       self.log.error( "unable to remove files: %s" % bulkRemoval["Message"] )
       self.operation.Error = bulkRemoval["Message"]
