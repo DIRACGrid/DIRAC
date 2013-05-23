@@ -133,8 +133,6 @@ class ReplicateAndRegister( BaseOperation ):
 
     replicas = replicas["Successful"][opFile.LFN] if opFile.LFN in replicas["Successful"] else {}
 
-    self.log.always( "AAAAAAAAAAAAAAAAAa %s" % replicas )
-
     for repSEName in replicas:
 
       seRead = self.rssSEStatus( repSEName, "ReadAccess" )

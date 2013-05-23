@@ -102,7 +102,7 @@ class BaseOperation( object ):
 
     # # list properties
     for option in csOptionsDict:
-      self.log.info( "%s = %s" % ( option, getattr( self, option ) ) )
+      self.log.debug( "%s = %s" % ( option, getattr( self, option ) ) )
 
     # # setup operation
     if operation:
