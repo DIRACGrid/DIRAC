@@ -120,7 +120,7 @@ class ReplicateAndRegister( BaseOperation ):
 
     ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
 
-    replicas = self.replicaManager().getActiveReplicas( opFile.LFN, singleFile = True )
+    replicas = self.replicaManager().getActiveReplicas( opFile.LFN )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
     reNotExists = re.compile( "not such file or directory" )
