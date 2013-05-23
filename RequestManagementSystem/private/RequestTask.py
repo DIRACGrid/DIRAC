@@ -243,8 +243,7 @@ class RequestTask( object ):
         self.log.error( operation["Message"] )
         return operation
       operation = operation["Value"]
-      self.log.debug( "about to execute operation %s" % operation.Type )
-      # gMonitor.addMark( "%s%s" % ( operation.Type, "Att" ), 1 )
+      self.log.info( "about to execute operation %s" % operation.Type )
 
       # # and handler for it
       handler = self.getHandler( operation )

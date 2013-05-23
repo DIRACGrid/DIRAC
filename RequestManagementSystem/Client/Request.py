@@ -122,10 +122,12 @@ class Request( Record ):
       iOp += 1
       opStatus, op = opStatusList.pop( 0 )
 
+      # # Done --> Done
       if opStatus == "Done":
         rStatus = "Done"
         continue
 
+      # # Failed -> Failed
       if opStatus == "Failed":
         rStatus = "Failed"
         break
