@@ -269,27 +269,18 @@ class RequestTask( object ):
         gMonitor.addMark( "RequestFail", 1 )
         break
 
-      self.log.info( "operation status: %s" % operation.Status )
-
       # # operation status check
       if operation.Status == "Done":
         gMonitor.addMark( "%s%s" % ( operation.Type, "OK" ), 1 )
       elif operation.Status == "Failed":
         gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
       elif operation.Status in ( "Waiting", "Scheduled" ):
+        # # no update for waiting or all files scheduled
         break
 
     # # not a shifter at all? delete temp proxy file
     if not shifter:
       os.unlink( proxyFile )
-
-
-    self.log.info( "1op statuses: %s" % self.request.subStatusList() )
-    self.log.info( "1request status: %s" % self.request.Status )
-    self.request._notify()
-    self.log.info( "2op statuses: %s" % self.request.subStatusList() )
-    self.log.info( "2request status: %s" % self.request.Status )
-
 
     # # request done?
     if self.request.Status == "Done":
