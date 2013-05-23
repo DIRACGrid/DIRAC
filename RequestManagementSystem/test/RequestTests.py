@@ -246,52 +246,52 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( req.Status, "Done", "5. wrong status for request: %s" % req.Status )
 
 
-  def test06StateMachine(self):
+  def test06StateMachine( self ):
     """ state machine """
     r = Request( {"RequestName": "SMT"} )
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Waiting", "1. wrong status %s" % r.Status )
 
     r.addOperation( Operation( {"Status": "Queued"} ) )
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Waiting", "2. wrong status %s" % r.Status )
 
     r.addOperation( Operation( {"Status": "Queued"} ) )
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Waiting", "3. wrong status %s" % r.Status )
 
     r[0].Status = "Done"
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Waiting", "4. wrong status %s" % r.Status )
 
     r[1].Status = "Done"
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Done", "5. wrong status %s" % r.Status )
 
     r[0].Status = "Failed"
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Failed", "6. wrong status %s" % r.Status )
 
     r[0].Status = "Queued"
-    print r.subStatusList(), r.Status
- 
-    r.insertBefore( Operation( {"Status": "Queued"} ), r[0] )
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Waiting", "7. wrong status %s" % r.Status )
 
     r.insertBefore( Operation( {"Status": "Queued"} ), r[0] )
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Waiting", "8. wrong status %s" % r.Status )
+
+    r.insertBefore( Operation( {"Status": "Queued"} ), r[0] )
+    self.assertEqual( r.Status, "Waiting", "9. wrong status %s" % r.Status )
 
     r.insertBefore( Operation( {"Status": "Scheduled"} ), r[0] )
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Scheduled", "10. wrong status %s" % r.Status )
 
     r.insertBefore( Operation( {"Status": "Queued" } ), r[0] )
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Waiting", "11. wrong status %s" % r.Status )
 
     r[0].Status = "Failed"
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Failed", "12. wrong status %s" % r.Status )
 
     r[0].Status = "Done"
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Scheduled", "13. wrong status %s" % r.Status )
 
     r[1].Status = "Failed"
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Failed", "14. wrong status %s" % r.Status )
 
     r[1].Status = "Done"
-    print r.subStatusList(), r.Status
+    self.assertEqual( r.Status, "Waiting", "15. wrong status %s" % r.Status )
 
 
 
