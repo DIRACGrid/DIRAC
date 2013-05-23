@@ -112,28 +112,42 @@ class Request( Record ):
     """ simple state machine for sub request statuses """
     self.__waiting = None
     # # update operations statuses
-    for operation in self:
-      status = operation.Status
-      if status in ( "Done", "Failed" ):
+
+    rStatus = "Waiting"
+    opStatusList = [ ( op.Status, op ) for op in self ]
+    self.__waiting = None
+    iOp = -1
+    while opStatusList:
+
+      iOp += 1
+      opStatus, op = opStatusList.pop( 0 )
+
+      if opStatus == "Done":
+        rStatus = "Done"
         continue
-      elif status == "Queued" and not self.__waiting:
-        operation._setWaiting( self )  # Status = "Waiting" ## this is 1st queued, flip to waiting
-        self.__waiting = operation
-      elif status == "Waiting":
+
+      if opStatus == "Failed":
+        rStatus = "Failed"
+        break
+
+      if opStatus == "Queued":
+        if not self.__waiting:
+          op._setWaiting( self )
+          self.__waiting = op
+          rStatus = "Waiting"
+          break
+      elif opStatus == "Waiting":
         if self.__waiting != None:
-          operation._setQueued( self )  #  Status = "Queued" ## flip to queued, another one is waiting
+          op._setQueued( self )
         else:
-          self.__waiting = operation
+          self.__waiting = op
+          rStatus = "Waiting"
 
-    # now update self status
-    if "Scheduled" in self.subStatusList():
-      self.Status = "Scheduled"
+      if opStatus == "Scheduled":
+        rStatus = "Scheduled"
+        break
 
-    if "Queued" in self.subStatusList() or "Waiting" in self.subStatusList():
-      if self.Status != "Waiting":
-        self.Status = "Waiting"
-    else:
-      self.Status = "Done"
+    self.Status = rStatus
 
   def getWaiting( self ):
     """ get waiting operation if any """
@@ -212,6 +226,7 @@ class Request( Record ):
   def __getitem__( self, i ):
     """ [] op for sub requests """
     return self.__operations__.__getitem__( i )
+
 
   def indexOf( self, subReq ):
     """ return index of subReq (execution order) """
