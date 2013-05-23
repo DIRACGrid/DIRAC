@@ -120,44 +120,56 @@ class Request( Record ):
     self.__waiting = None
 
     isScheduled = False
+    isWaiting = False
+
     while opStatusList:
 
       opStatus, op = opStatusList.pop( 0 )
-
-      # # Done --> Done
-      if opStatus == "Done":
-        rStatus = "Done"
-        continue
 
       # # Failed -> Failed
       if opStatus == "Failed":
         rStatus = "Failed"
         break
 
-      # # Scheduled -> Scheduled
+      # Scheduled -> Scheduled
       if opStatus == "Scheduled":
-        rStatus = "Scheduled"
-        isScheduled = True
+        if not isWaiting:
+          rStatus = "Scheduled"
+          self.__waiting = op
+          isScheduled = True
         continue
 
       if opStatus == "Queued":
-        if isScheduled:
+        if isScheduled or isWaiting:
           continue
-        elif not self.__waiting:
+        else:  # not isWaiting:
           op._setWaiting( self )
           self.__waiting = op
           rStatus = "Waiting"
-      elif opStatus == "Waiting":
-        if isScheduled:
-          op._setQueued( self )
-          continue
-        elif self.__waiting != None:
+          isWaiting = True
+
+      if opStatus == "Waiting":
+        if isScheduled or isWaiting:
           op._setQueued( self )
           rStatus = "Waiting"
         else:
           self.__waiting = op
+          isWaiting = True
           rStatus = "Waiting"
-          break
+
+      # # Scheduled -> Scheduled
+      # if opStatus == "Scheduled":
+      #  rStatus = "Scheduled"
+      #  self.__waiting = op
+      #  isScheduled = True
+      #  continue
+
+      if opStatus == "Done":
+        if isScheduled or isWaiting:
+          continue
+        else:
+          rStatus = "Done"
+
 
     # print "AFTER", self.subStatusList(), rStatus
 

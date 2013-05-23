@@ -278,6 +278,23 @@ class RequestTests( unittest.TestCase ):
     r.insertBefore( Operation( {"Status": "Scheduled"} ), r[0] )
     print r.subStatusList(), r.Status
 
+    r.insertBefore( Operation( {"Status": "Queued" } ), r[0] )
+    print r.subStatusList(), r.Status
+
+    r[0].Status = "Failed"
+    print r.subStatusList(), r.Status
+
+    r[0].Status = "Done"
+    print r.subStatusList(), r.Status
+
+    r[1].Status = "Failed"
+    print r.subStatusList(), r.Status
+
+    r[1].Status = "Done"
+    print r.subStatusList(), r.Status
+
+
+
 # # test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
