@@ -95,7 +95,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.removeFileInit = Operation()
     self.removeFileInit.Type = "RemoveFile"
-    self.removeFileinit.addFile( File( {"LFN": self.putFile.LFN } ) )
+    self.removeFileInit.addFile( File( {"LFN": self.putFile.LFN } ) )
 
     self.req = Request()
     self.req.RequestName = self.reqName
