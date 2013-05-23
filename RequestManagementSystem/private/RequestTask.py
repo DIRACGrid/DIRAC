@@ -281,7 +281,8 @@ class RequestTask( object ):
     if not shifter:
       os.unlink( proxyFile )
 
-    time.sleep( 1 )
+    # # update status
+    self.request._notify()
 
     self.log.info( "request status: %s" % self.request.Status )
 
