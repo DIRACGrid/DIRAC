@@ -110,15 +110,18 @@ class RemoveFile( BaseOperation ):
     for lfn, opFile in toRemoveDict.items():
       if lfn in bulkRemoval["Successful"]:
         opFile.Status = "Done"
+
       elif lfn in bulkRemoval["Failed"]:
 
         self.log.always( "aaaa %s" % bulkRemoval["Failed"][lfn] )
 
         if self.reNotExists.search( str( bulkRemoval["Failed"][lfn] ) ):
-          opFile.Error = "file not exists"
+          opFile.Error = "not exisiting file"
           opFile.Status = "Done"
         else:
           opFile.Error = str( bulkRemoval["Failed"][lfn] )
+
+        self.log.always( opFile.Status, opFile.Error )
 
     # # return files still waiting
     toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation if opFile.Status == "Waiting" ] )
