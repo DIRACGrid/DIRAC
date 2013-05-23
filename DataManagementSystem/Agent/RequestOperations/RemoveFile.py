@@ -25,6 +25,7 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
+import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
@@ -53,6 +54,8 @@ class RemoveFile( BaseOperation ):
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RemoveFileFail", "Failed file removals",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
+    self.reNotExists = re.compile( "not such file or directory" )
+
 
   def __call__( self ):
     """ action for 'removeFile' operation  """
@@ -83,7 +86,7 @@ class RemoveFile( BaseOperation ):
       gMonitor.addMark( "RemoveFileOK", 1 )
 
     # # set
-    failedFiles = [ ( lfn, opFile ) for ( lfn, opFile ) in toRemoveDict.items() 
+    failedFiles = [ ( lfn, opFile ) for ( lfn, opFile ) in toRemoveDict.items()
                     if opFile.Status in ( "Failed", "Waiting" ) ]
     if failedFiles:
       self.operation.Error = "failed to remove %d files" % len( failedFiles )
@@ -108,21 +111,15 @@ class RemoveFile( BaseOperation ):
       if lfn in bulkRemoval["Successful"]:
         opFile.Status = "Done"
       elif lfn in bulkRemoval["Failed"]:
-        self.log.always( "aaaa %s" % bulkRemoval["Failed"][lfn] )
-        opFile.Error = bulkRemoval["Failed"][lfn]
-        if "no such file or directory" in str( opFile.Error ).lower():
-          opFile.Status = "Done"
 
-          removeFromCatalog = self.replicaManager().removeCatalogFile( lfn, singleFile = True )
-          if not removeFromCatalog["OK"]:
-            self.log.warn( removeFromCatalog["Message"] )
-            if "no such file or directory" in str( removeFromCatalog["Message"] ).lower():
-              opFile.Status = "Done"
-            else:
-              opFile.Error = removeFromCatalog["Message"]
-          else:
-            opFile.Status = "Done"
-            continue
+        self.log.always( "aaaa %s" % bulkRemoval["Failed"][lfn] )
+
+        if self.reNotExists.search( str( bulkRemoval["Failed"][lfn] ) ):
+          opFile.Error = "file not exists"
+          opFile.Status = "Done"
+        else:
+          opFile.Status = str( bulkRemoval["Message"][lfn] )
+
     # # return files still waiting
     toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation if opFile.Status == "Waiting" ] )
     return S_OK( toRemoveDict )
