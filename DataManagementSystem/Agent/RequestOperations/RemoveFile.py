@@ -120,13 +120,13 @@ class RemoveFile( BaseOperation ):
 
         opFile.Error = error
 
-        self.log.always( opFile.Status, opFile.Error )
+        self.log.always( "bbb %s %s" % ( opFile.Status, opFile.Error ) )
 
         if self.reNotExists.search( error ):
           self.log.always( "matched" )
           opFile.Status = "Done"
         else:
-          self.log.error( "nor matched" )
+          self.log.error( "not matched" )
 
         self.log.always( opFile.Status, opFile.Error )
 
