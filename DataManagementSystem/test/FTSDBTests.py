@@ -126,7 +126,7 @@ class FTSDBTests( unittest.TestCase ):
   def test01Create( self ):
     """ test create tables and views """
     db = FTSDB()
-    self.assertEqual( db.createTables( [ "FTSSite", "FTSFile", "FTSJob"] )["OK"], True, "tables creation error" )
+    self.assertEqual( db.createTables( [ "FTSSite", "FTSFile", "FTSJob"], True )["OK"], True, "tables creation error" )
     self.assertEqual( db.createViews( True )["OK"], True, "views creation error" )
 
   def test02PutGetDelete( self ):
