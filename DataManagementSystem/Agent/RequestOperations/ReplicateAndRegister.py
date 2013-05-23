@@ -131,7 +131,7 @@ class ReplicateAndRegister( BaseOperation ):
       opFile.Error = failed
       return S_ERROR( failed )
 
-    replicas = replicas["Successful"]
+    replicas = replicas["Successful"][opFile.LFN] if opFile.LFN in replicas["Successful"] else {}
 
     self.log.always( "AAAAAAAAAAAAAAAAAa %s" % replicas )
 
