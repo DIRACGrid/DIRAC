@@ -76,7 +76,7 @@ class FTSDBTests( unittest.TestCase ):
       self.ftsFiles.append( ftsFile )
 
     ses = [ "CERN-USER", "RAL-USER" ]
-    statuses = [ "Submitted", "Finished", "FisnihedDirty" ]
+    statuses = [ "Submitted", "Finished", "FinishedDirty", "Active", "Ready" ]
 
     self.submitted = 0
 
