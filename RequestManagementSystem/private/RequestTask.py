@@ -282,6 +282,8 @@ class RequestTask( object ):
     if not shifter:
       os.unlink( proxyFile )
 
+    self.log.info( "request status: %s" % self.request.Status )
+
     # # request done?
     if self.request.Status == "Done":
       self.log.info( "request %s is done" % self.request.RequestName )
@@ -295,6 +297,7 @@ class RequestTask( object ):
           return finalizeRequest
         else:
           self.log.info( "request %s is finalized" % self.request.RequestName )
+
 
     # # update request to the RequestDB
     update = self.updateRequest()

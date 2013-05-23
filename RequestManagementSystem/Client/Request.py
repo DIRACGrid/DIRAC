@@ -144,6 +144,7 @@ class Request( Record ):
         else:
           self.__waiting = op
           rStatus = "Waiting"
+          break
 
       if opStatus == "Scheduled":
         rStatus = "Scheduled"
