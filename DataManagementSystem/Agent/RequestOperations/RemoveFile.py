@@ -108,6 +108,7 @@ class RemoveFile( BaseOperation ):
       if lfn in bulkRemoval["Successful"]:
         opFile.Status = "Done"
       elif lfn in bulkRemoval["Failed"]:
+        self.log.always( "aaaa %s" % bulkRemoval["Failed"][lfn] )
         opFile.Error = bulkRemoval["Failed"][lfn]
         if "no such file or directory" in str( opFile.Error ).lower():
           opFile.Status = "Done"
