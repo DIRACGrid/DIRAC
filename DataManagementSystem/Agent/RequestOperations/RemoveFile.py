@@ -142,7 +142,10 @@ class RemoveFile( BaseOperation ):
             opFile.Error = fileProxy["Message"]
           else:
             proxyFile = saveProxy["Value"]
+
             removeFile = self.replicaManager().removeFile( opFile.LFN, force = True )
+            self.log.always( str( removeFile ) )
+
             if not removeFile["OK"]:
               if "no such file or directory" in removeFile["Message"].lower():
                 opFile.Stats = "Done"
