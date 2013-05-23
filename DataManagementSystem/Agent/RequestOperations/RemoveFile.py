@@ -55,7 +55,7 @@ class RemoveFile( BaseOperation ):
     gMonitor.registerActivity( "RemoveFileFail", "Failed file removals",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
-    self.reNotExisting = re.compile( "no such file or directory", re.IGNORECASE )
+    self.reNotExisting = re.compile( "(no|not) such file or directory", re.IGNORECASE )
 
 
   def __call__( self ):
@@ -112,25 +112,13 @@ class RemoveFile( BaseOperation ):
       if lfn in bulkRemoval["Successful"]:
         opFile.Status = "Done"
       elif lfn in bulkRemoval["Failed"]:
-        self.log.always( "aaaa %s" % bulkRemoval["Failed"][lfn] )
-
-
 
         error = bulkRemoval["Failed"][lfn]
-        self.log.always( "cccccccccc type %s" % type( error ) )
-
         if type( error ) == dict:
           error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.items() ] )
-
         opFile.Error = error
-
         if self.reNotExisting.search( opFile.Error ):
-          self.log.always( "matched" )
           opFile.Status = "Done"
-        else:
-          self.log.error( "not matched" )
-
-        self.log.always( opFile.Status, opFile.Error )
 
     # # return files still waiting
     toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation if opFile.Status == "Waiting" ] )
@@ -160,13 +148,18 @@ class RemoveFile( BaseOperation ):
             self.log.always( str( removeFile ) )
 
             if not removeFile["OK"]:
-              if "no such file or directory" in removeFile["Message"].lower():
+              opFile.Error = str( removeFile["Message"] )
+              if self.reNotExisting.search( str( removeFile["Message"] ).lower() ):
                 opFile.Stats = "Done"
-              opFile.Error = removeFile["Message"]
             else:
               removeFile = removeFile["Value"]
               if opFile.LFN in removeFile["Failed"]:
-                opFile.Error = removeFile["Failed"][opFile.LFN]
+                error = removeFile["Failed"][opFile.LFN]
+                if type( error ) == dict:
+                  error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.items() ] )
+                opFile.Error = error
+                if self.reNotExisting.search( opFile.Error ):
+                  opFile.Status = "Done"
               else:
                 opFile.Status = "Done"
         finally:
