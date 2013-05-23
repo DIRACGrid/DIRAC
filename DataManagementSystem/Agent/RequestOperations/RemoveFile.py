@@ -118,7 +118,7 @@ class RemoveFile( BaseOperation ):
           opFile.Error = "file not exists"
           opFile.Status = "Done"
         else:
-          opFile.Status = str( bulkRemoval["Message"][lfn] )
+          opFile.Error = str( bulkRemoval["Failed"][lfn] )
 
     # # return files still waiting
     toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation if opFile.Status == "Waiting" ] )
