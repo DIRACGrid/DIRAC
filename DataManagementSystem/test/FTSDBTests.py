@@ -136,54 +136,62 @@ class FTSDBTests( unittest.TestCase ):
 
     db = FTSDB()
 
+    print "put site"
     for ftsSite in self.ftsSites:
       put = db.putFTSSite( ftsSite )
       self.assertEqual( put["OK"], True, "putFTSSite failed" )
       put = db.putFTSSite( ftsSite )
       self.assertEqual( put["OK"], False, "re-putFTSSite failed" )
 
-
+    print "getFTSSite"
     for i, ftsSite in enumerate( self.ftsSites ):
       get = db.getFTSSite( i + 1 )
       self.assertEqual( get["OK"], True, "getFTSSite failed" )
       self.assertEqual( isinstance( get["Value"], FTSSite ), True, "getFTSSite wrong value returned" )
 
+    print "getFTSSiteList"
     getFTSSitesList = db.getFTSSitesList()
     self.assertEqual( getFTSSitesList["OK"], True, "getFTSSitesList failed" )
     for item in getFTSSitesList["Value"]:
       self.assertEqual( isinstance( item, FTSSite ), True, "getFTSSitesList wrong value returned" )
 
+    print "putFile"
     for ftsFile in self.ftsFiles:
       put = db.putFTSFile( ftsFile )
       self.assertEqual( put["OK"], True, "putFTSFile failed" )
 
+    print "peekFile"
     for i in range( 1, 101 ):
       peek = db.peekFTSFile( i )
       self.assertEqual( peek["OK"], True, "peekFTSFile failed" )
       self.assertEqual( isinstance( peek["Value"], FTSFile ), True, "peekFTSFile wrong value" )
 
+    print "getFile"
     for i in range( 1, 101 ):
       get = db.getFTSFile( i )
       self.assertEqual( get["OK"], True, "getFTSFile failed" )
       self.assertEqual( isinstance( get["Value"], FTSFile ), True, "getFTSFile wrong value" )
 
+    print "putJob"
     for ftsJob in self.ftsJobs:
       put = db.putFTSJob( ftsJob )
       self.assertEqual( put["OK"], True, "putFTSJob failed" )
 
+    print "peekJob"
     for i in range( 1, 101 ):
       peek = db.peekFTSJob( i )
       self.assertEqual( peek["OK"], True, "peekFTSJob failed" )
       self.assertEqual( isinstance( peek["Value"], FTSJob ), True, "peekFTSJob wrong value returned" )
       self.assertEqual( len( peek["Value"] ), 1, "peekFTSJob wrong number of files " )
 
+    print "getJob"
     for i in range( 1, 101 ):
       get = db.getFTSJob( i )
       self.assertEqual( get["OK"], True, "getFTSJob failed" )
       self.assertEqual( isinstance( get["Value"], FTSJob ), True, "getFTSJob wrong value returned" )
       self.assertEqual( len( get["Value"] ), 1, "getFTSJob wrong number of files " )
 
-
+    print "duSummary"
     summary = db.getDBSummary()
     self.assertEqual( summary["OK"], True, "getDBSummary failed" )
     self.assertEqual( "FTSJob" in summary["Value"], True, "getDBSummary FTSJob missing" )
