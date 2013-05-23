@@ -117,16 +117,14 @@ class RemoveFile( BaseOperation ):
 
 
         error = bulkRemoval["Failed"][lfn]
-        self.log.alwatys( "cccccccccc type %s" % type( error ) )
+        self.log.always( "cccccccccc type %s" % type( error ) )
 
         if type( error ) == dict:
           error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.items() ] )
 
         opFile.Error = error
 
-        self.log.always( "bbb %s %s" % ( opFile.Status, opFile.Error ) )
-
-        if self.reNotExisting.search( error ):
+        if self.reNotExisting.search( opFile.Error ):
           self.log.always( "matched" )
           opFile.Status = "Done"
         else:
