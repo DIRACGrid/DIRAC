@@ -25,6 +25,8 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
+import time
+# # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -212,7 +214,6 @@ class RequestTask( object ):
 
   def updateRequest( self ):
     """ put back request to the RequestDB """
-    self.log.always( self.request.toJSON()["Value"] )
     updateRequest = self.requestClient().putRequest( self.request )
     if not updateRequest["OK"]:
       self.log.error( updateRequest["Message"] )
@@ -233,9 +234,6 @@ class RequestTask( object ):
     shifter = setupProxy["Value"]["Shifter"]
     proxyFile = setupProxy["Value"]["ProxyFile"]
 
-    # self.log.info( "will use %s proxy file" % proxyFile )
-    # self.log.info( "request owner is shifter? %s" % shifter )
-
     while self.request.Status == "Waiting":
 
       # # get waiting operation
@@ -244,7 +242,7 @@ class RequestTask( object ):
         self.log.error( operation["Message"] )
         return operation
       operation = operation["Value"]
-      self.log.info( "about to execute operation %s" % operation.Type )
+      self.log.info( "executing operation #%s '%s'" % ( operation.Order, operation.Type ) )
 
       # # and handler for it
       handler = self.getHandler( operation )
@@ -282,6 +280,8 @@ class RequestTask( object ):
     # # not a shifter at all? delete temp proxy file
     if not shifter:
       os.unlink( proxyFile )
+
+    time.sleep( 1 )
 
     self.log.info( "request status: %s" % self.request.Status )
 
