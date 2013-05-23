@@ -76,7 +76,7 @@ class FTSDBTests( unittest.TestCase ):
       self.ftsFiles.append( ftsFile )
 
     ses = [ "CERN-USER", "RAL-USER" ]
-    statuses = [ "Finished" ]
+    statuses = [ "Submitted", "Finished", "FisnihedDirty" ]
 
     self.submitted = 0
 
@@ -189,7 +189,7 @@ class FTSDBTests( unittest.TestCase ):
       get = db.getFTSJob( i )
       self.assertEqual( get["OK"], True, "getFTSJob failed" )
       self.assertEqual( isinstance( get["Value"], FTSJob ), True, "getFTSJob wrong value returned" )
-      self.assertEqual( len( get["Value"] ), 1, "getFTSJob wrong number of files " )
+      self.assertEqual( len( get["Value"] ), 1, "getFTSJob wrong number of files" )
 
     print "duSummary"
     summary = db.getDBSummary()
