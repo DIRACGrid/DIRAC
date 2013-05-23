@@ -136,7 +136,6 @@ class FTSDB( DB ):
       for query in queries:
         cursor.execute( query )
         queryRes[query] = list( cursor.fetchall() )
-        self.log.always( "%s %s" % ( query, queryRes[query] ) )
       # # commit
       connection.commit()
       # # save last row ID
