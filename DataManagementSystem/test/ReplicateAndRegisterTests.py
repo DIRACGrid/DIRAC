@@ -83,9 +83,16 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.replicateAndRegister.TargetSE = "RAL-USER,PIC-USER"
     self.replicateAndRegister.addFile( self.repFile )
 
+
+    self.removeReplica = Operation()
+    self.removeReplica.Type = "RemoveReplica"
+    self.removeReplica.TargetSE = "RAl-USER"
+    self.removeReplica.addFile( File( {"LFN": self.putFile.LFN } ) )
+
     self.removeFile = Operation()
     self.removeFile.Type = "RemoveFile"
     self.removeFile.addFile( File( { "LFN": self.putFile.LFN } ) )
+
 
     self.req = Request()
     self.req.RequestName = self.reqName
@@ -93,6 +100,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.req.OwnerGroup = "dirac_user"
     self.req.addOperation( self.putAndRegister )
     self.req.addOperation( self.replicateAndRegister )
+    self.req.addOperation( self.removeReplica )
     self.req.addOperation( self.removeFile )
 
     self.reqClient = ReqClient()

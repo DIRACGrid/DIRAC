@@ -189,10 +189,6 @@ class MonitorFTSAgent( AgentModule ):
     """
     log = gLogger.getSubLogger( "%s/finalize" % sTJId )
 
-    # # placeholder for request and transfer operation
-    request = None
-    transferOperation = None
-
     # # perform full monitor
     monitor = ftsJob.monitorFTS2( full = True )
     if not monitor["OK"]:
