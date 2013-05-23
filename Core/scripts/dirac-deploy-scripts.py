@@ -59,9 +59,10 @@ DiracPythonPath  = '%s' % ( DiracRoot, )
 DiracLibraryPath      = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'lib'), )
 
 baseLibPath = DiracLibraryPath
-for entry in os.listdir( baseLibPath ):
-  if os.path.isdir( entry ):
-    DiracLibraryPath = '%s:%s' % ( DiracLibraryPath, os.path.join( baseLibPath, entry ) )
+if os.path.exists( baseLibPath ):
+  for entry in os.listdir( baseLibPath ):
+    if os.path.isdir( entry ):
+      DiracLibraryPath = '%s:%s' % ( DiracLibraryPath, os.path.join( baseLibPath, entry ) )
 
 
 os.environ['PATH'] = '%s:%s' % ( DiracPath, os.environ['PATH'] )
