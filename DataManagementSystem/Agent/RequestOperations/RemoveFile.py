@@ -116,7 +116,7 @@ class RemoveFile( BaseOperation ):
           removeFromCatalog = self.replicaManager().removeCatalogFile( lfn, singleFile = True )
           if not removeFromCatalog["OK"]:
             self.log.warn( removeFromCatalog["Message"] )
-            if "no such file or directory" in removeFromCatalog["Message"]:
+            if "no such file or directory" in str( removeFromCatalog["Message"] ).lower():
               opFile.Status = "Done"
             else:
               opFile.Error = removeFromCatalog["Message"]
