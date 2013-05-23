@@ -112,6 +112,7 @@ class RemoveFile( BaseOperation ):
         opFile.Status = "Done"
       elif lfn in bulkRemoval["Failed"]:
         self.log.always( "aaaa %s" % bulkRemoval["Failed"][lfn] )
+        self.log.always( "aaaa %s" % str( bulkRemoval["Failed"][lfn] ).lower() )
         opFile.Error = str( bulkRemoval["Failed"][lfn] ).lower()
         self.log.always( opFile.Status, opFile.Error )
         if self.reNotExists.search( opFile.Error ):
