@@ -263,7 +263,6 @@ class RequestTask( object ):
           self.log.error( "unable to process operation %s: %s" % ( operation.Type, exe["Message"] ) )
           gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
           gMonitor.addMark( "RequestFail", 1 )
-          break
       except Exception, error:
         self.log.exception( "hit by exception: %s" % str( error ) )
         gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
