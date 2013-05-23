@@ -113,6 +113,7 @@ class RemoveFile( BaseOperation ):
       elif lfn in bulkRemoval["Failed"]:
         self.log.always( "aaaa %s" % bulkRemoval["Failed"][lfn] )
         opFile.Error = str( bulkRemoval["Failed"][lfn] ).lower()
+        self.log.always( opFile.Status, opFile.Error )
         if self.reNotExists.search( opFile.Error ):
           self.log.always( "matched@@@" )
           opFile.Error = "not existing file"
