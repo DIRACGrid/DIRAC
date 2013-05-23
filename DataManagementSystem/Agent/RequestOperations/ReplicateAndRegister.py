@@ -137,7 +137,7 @@ class ReplicateAndRegister( BaseOperation ):
 
     for repSEName in replicas:
 
-      seRead = self.rssSEStatus( repSEName, "Read" )
+      seRead = self.rssSEStatus( repSEName, "ReadAccess" )
       if not seRead["OK"]:
         self.log.error( seRead["Message"] )
         ret["Banned"].append( repSEName )
@@ -229,11 +229,10 @@ class ReplicateAndRegister( BaseOperation ):
     """ replicate and register using ReplicaManager  """
     # # source SE
 
-
     sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
     if sourceSE:
       # # check source se for read
-      sourceRead = self.rssSEStatus( sourceSE, "Read" )
+      sourceRead = self.rssSEStatus( sourceSE, "ReadAccess" )
       if not sourceRead["OK"]:
         self.log.error( sourceRead["Message"] )
         for opFile in self.operation:
@@ -248,7 +247,6 @@ class ReplicateAndRegister( BaseOperation ):
         self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
         self.log.error( self.operation.Error )
         return S_ERROR( self.operation.Error )
-
 
 
     # # list of targetSEs
