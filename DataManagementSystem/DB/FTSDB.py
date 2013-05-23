@@ -304,6 +304,7 @@ class FTSDB( DB ):
 
     getJob = [ "SELECT * FROM `FTSJob` WHERE `FTSJobID` = %s;" % ftsJobID ]
     getJob = self._transaction( getJob )
+    print 1
     if not getJob["OK"]:
       self.log.error( getJob["Message"] )
       return getJob
@@ -312,6 +313,7 @@ class FTSDB( DB ):
       return S_OK()
     ftsJob = FTSJob( getJob.values()[0][0] )
     selectFiles = self._transaction( [ "SELECT * FROM `FTSFile` WHERE `FTSGUID` = '%s';" % ftsJob.FTSGUID ] )
+    print 2
     if not selectFiles["OK"]:
       self.log.error( selectFiles["Message"] )
       return selectFiles
@@ -319,14 +321,13 @@ class FTSDB( DB ):
     ftsFiles = [ FTSFile( item ) for item in selectFiles.values()[0] ]
     for ftsFile in ftsFiles:
       ftsJob.addFile( ftsFile )
-
     if not readOnly:
       setAssigned = "UPDATE `FTSJob` SET `Status`='Assigned' WHERE `FTSJobID` = %s;" % ftsJobID
       setAssigned = self._query( setAssigned )
       if not setAssigned["OK"]:
         self.log.error( setAssigned["Message"] )
         return setAssigned
-
+    print 3
     return S_OK( ftsJob )
 
   def peekFTSJob( self, ftsJobID = None ):
