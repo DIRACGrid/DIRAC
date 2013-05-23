@@ -120,7 +120,7 @@ class ReplicateAndRegister( BaseOperation ):
 
     ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
 
-    replicas = self.replicaManager().getActiveReplicas( opFile.LFN )
+    replicas = self.replicaManager().getActiveReplicas( opFile.LFN, singleFile = True )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
     reNotExists = re.compile( "not such file or directory" )
@@ -281,7 +281,7 @@ class ReplicateAndRegister( BaseOperation ):
         for opFile in self.operation:
           opFile.Error = targetWrite["Message"]
           opFile.Status = "Failed"
-        self.operation.Error = sourceRead["Message"]
+        self.operation.Error = targetWrite["Message"]
         return targetWrite
       if not targetWrite["Value"]:
         reason = "TargetSE %s is banned for writing" % targetSE
