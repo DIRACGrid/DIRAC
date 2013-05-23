@@ -54,7 +54,8 @@ class RemoveFile( BaseOperation ):
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RemoveFileFail", "Failed file removals",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
-    self.reNotExists = re.compile( "not such file or directory" )
+
+    self.reNotExists = re.compile( "not such file or directory", re.IGNORECASE )
 
 
   def __call__( self ):
@@ -112,13 +113,15 @@ class RemoveFile( BaseOperation ):
         opFile.Status = "Done"
       elif lfn in bulkRemoval["Failed"]:
         self.log.always( "aaaa %s" % bulkRemoval["Failed"][lfn] )
-        self.log.always( "aaaa %s" % str( bulkRemoval["Failed"][lfn] ).lower() )
-        opFile.Error = str( bulkRemoval["Failed"][lfn] ).lower()
+
+        opFile.Error = str( bulkRemoval["Failed"][lfn] )
+
         self.log.always( opFile.Status, opFile.Error )
         if self.reNotExists.search( opFile.Error ):
-          self.log.always( "matched@@@" )
-          opFile.Error = "not existing file"
+          self.log.always( "matched" )
           opFile.Status = "Done"
+        else:
+          self.log.error( "nor matched" )
 
         self.log.always( opFile.Status, opFile.Error )
 

@@ -218,7 +218,6 @@ class File( Record ):
     if type( value ) != str:
       raise TypeError( "Error has to be a string!" )
     self.__data__["Error"] = value.replace( "'", "\'" )[:255]
-    print self.__data__["Error"]
 
   @property
   def Status( self ):
