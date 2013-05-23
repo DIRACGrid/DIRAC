@@ -117,10 +117,8 @@ class Request( Record ):
     rStatus = "Waiting"
     opStatusList = [ ( op.Status, op ) for op in self ]
     self.__waiting = None
-    iOp = -1
     while opStatusList:
 
-      iOp += 1
       opStatus, op = opStatusList.pop( 0 )
 
       # # Done --> Done

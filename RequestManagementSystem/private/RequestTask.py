@@ -251,6 +251,7 @@ class RequestTask( object ):
         gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
         operation.Error = handler["Message"]
         break
+
       handler = handler["Value"]
       # # set shifters list in the handler
       handler.shifter = shifter
@@ -269,6 +270,8 @@ class RequestTask( object ):
         gMonitor.addMark( "RequestFail", 1 )
         break
 
+      self.log.info( "operation status: %s" % self.operation.Status )
+
       # # operation status check
       if operation.Status == "Done":
         gMonitor.addMark( "%s%s" % ( operation.Type, "OK" ), 1 )
@@ -280,9 +283,6 @@ class RequestTask( object ):
     # # not a shifter at all? delete temp proxy file
     if not shifter:
       os.unlink( proxyFile )
-
-    # # update status
-    self.request._notify()
 
     self.log.info( "op statuses: %s" % self.request.subStatusList() )
     self.log.info( "request status: %s" % self.request.Status )
