@@ -86,7 +86,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.removeReplica = Operation()
     self.removeReplica.Type = "RemoveReplica"
-    self.removeReplica.TargetSE = "RAl-USER"
+    self.removeReplica.TargetSE = "RAL-USER"
     self.removeReplica.addFile( File( {"LFN": self.putFile.LFN } ) )
 
     self.removeFile = Operation()
