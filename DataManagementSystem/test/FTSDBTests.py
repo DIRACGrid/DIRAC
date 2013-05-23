@@ -127,9 +127,9 @@ class FTSDBTests( unittest.TestCase ):
     """ test create tables and views """
     db = FTSDB()
     createTables = db.createTables( ["FTSSite", "FTSFile", "FTSJob"], True )
-    self.assertEqual( createTables["OK"], True, "tables creation error: %s" % createTables["Message"] )
+    self.assertEqual( createTables["OK"], True, "tables creation error: %s" % createTables.get( "Message", "" ) )
     createViews = db.createViews( True )
-    self.assertEqual( createViews["OK"], True, "views creation error: %s" % createViews["Message"] )
+    self.assertEqual( createViews["OK"], True, "views creation error: %s" % createViews.get( "Message" , "" ) )
 
   def test02PutGetDelete( self ):
     """ put, get, peek methods """
