@@ -283,8 +283,13 @@ class RequestTask( object ):
     if not shifter:
       os.unlink( proxyFile )
 
-    self.log.info( "op statuses: %s" % self.request.subStatusList() )
-    self.log.info( "request status: %s" % self.request.Status )
+
+    self.log.info( "1op statuses: %s" % self.request.subStatusList() )
+    self.log.info( "1request status: %s" % self.request.Status )
+    self.request._notify()
+    self.log.info( "2op statuses: %s" % self.request.subStatusList() )
+    self.log.info( "2request status: %s" % self.request.Status )
+
 
     # # request done?
     if self.request.Status == "Done":
