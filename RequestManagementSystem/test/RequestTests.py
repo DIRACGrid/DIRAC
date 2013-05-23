@@ -247,7 +247,7 @@ class RequestTests( unittest.TestCase ):
 
 
   def test06StateMachine( self ):
-    """ state machine """
+    """ state machine tests """
     r = Request( {"RequestName": "SMT"} )
     self.assertEqual( r.Status, "Waiting", "1. wrong status %s" % r.Status )
 

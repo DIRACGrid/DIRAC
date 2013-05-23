@@ -157,21 +157,11 @@ class Request( Record ):
           isWaiting = True
           rStatus = "Waiting"
 
-      # # Scheduled -> Scheduled
-      # if opStatus == "Scheduled":
-      #  rStatus = "Scheduled"
-      #  self.__waiting = op
-      #  isScheduled = True
-      #  continue
-
       if opStatus == "Done":
         if isScheduled or isWaiting:
           continue
         else:
           rStatus = "Done"
-
-
-    # print "AFTER", self.subStatusList(), rStatus
 
     self.Status = rStatus
 
@@ -252,7 +242,6 @@ class Request( Record ):
   def __getitem__( self, i ):
     """ [] op for sub requests """
     return self.__operations__.__getitem__( i )
-
 
   def indexOf( self, subReq ):
     """ return index of subReq (execution order) """
@@ -418,7 +407,7 @@ class Request( Record ):
   @Error.setter
   def Error( self, error ):
     """ error setter """
-    self.__data__["Error"] = str( error )[255:]
+    self.__data__["Error"] = str( error )[:255] if error else ""
 
   @classmethod
   def fromXML( cls, element ):
