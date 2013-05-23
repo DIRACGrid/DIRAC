@@ -284,6 +284,7 @@ class RequestTask( object ):
     # # update status
     self.request._notify()
 
+    self.log.info( "op statuses: %s" % self.request.subStatusList() )
     self.log.info( "request status: %s" % self.request.Status )
 
     # # request done?
