@@ -93,11 +93,15 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.removeFile.Type = "RemoveFile"
     self.removeFile.addFile( File( { "LFN": self.putFile.LFN } ) )
 
+    self.removeFileInit = Operation()
+    self.removeFileInit.Type = "RemoveFile"
+    self.removeFileinit.addFile( File( {"LFN": self.putFile.LFN } ) )
 
     self.req = Request()
     self.req.RequestName = self.reqName
     self.req.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba"
     self.req.OwnerGroup = "dirac_user"
+    self.req.addOperation( self.removeFileInit )
     self.req.addOperation( self.putAndRegister )
     self.req.addOperation( self.replicateAndRegister )
     self.req.addOperation( self.removeReplica )
