@@ -212,6 +212,7 @@ class RequestTask( object ):
 
   def updateRequest( self ):
     """ put back request to the RequestDB """
+    self.log.always( self.request.toJSON()["Value"] )
     updateRequest = self.requestClient().putRequest( self.request )
     if not updateRequest["OK"]:
       self.log.error( updateRequest["Message"] )
