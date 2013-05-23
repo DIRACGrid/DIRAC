@@ -114,7 +114,11 @@ class RemoveFile( BaseOperation ):
       elif lfn in bulkRemoval["Failed"]:
         self.log.always( "aaaa %s" % bulkRemoval["Failed"][lfn] )
 
+
+
         error = bulkRemoval["Failed"][lfn]
+        self.log.alwatys( "cccccccccc type %s" % type( error ) )
+
         if type( error ) == dict:
           error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.items() ] )
 
