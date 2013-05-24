@@ -208,13 +208,16 @@ class FTSManagerHandler( RequestHandler ):
     fileID = int( fileJSON.get( "FileID", 0 ) )
     opID = int( fileJSON.get( "OperationID", 0 ) )
 
-    gLogger.info( "ftsSchedule: LFN=%s FileID=%s OperationID=%s" % ( lfn, fileID, opID ) )
+    gLogger.info( "ftsSchedule: LFN=%s FileID=%s OperationID=%s sources=%s targets=%s" % ( lfn, fileID, opID,
+                                                                                           sourceSEs, targetSEs ) )
+
 
     replicaDict = self.replicaManager().getActiveReplicas( lfn )
     if not replicaDict["OK"]:
       gLogger.error( "ftsSchedule: %s" % replicaDict["Message"] )
       return replicaDict
     replicaDict = replicaDict["Value"]
+    gLogger.always( "replicaDict %s" % replicaDict )
     # # filter out not-valid replicas
     replicaDict = dict( [( key, value ) for key, value in replicaDict.items() if key in sourceSEs ] )
 
