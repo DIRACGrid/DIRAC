@@ -61,7 +61,8 @@ class File( Record ):
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
         raise AttributeError( "unknown File attribute %s" % str( attrName ) )
-      setattr( self, attrName, attrValue )
+      if attrValue:
+        setattr( self, attrName, attrValue )
 
   @staticmethod
   def tableDesc():

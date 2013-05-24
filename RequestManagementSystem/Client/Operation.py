@@ -82,7 +82,7 @@ class Operation( Record ):
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError( "Unknown Operation attribute '%s'" % key )
-      if key != "Order":
+      if key != "Order" and value:
         setattr( self, key, value )
 
   @staticmethod
