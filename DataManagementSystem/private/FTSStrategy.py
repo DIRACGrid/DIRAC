@@ -305,7 +305,7 @@ class FTSStrategy( object ):
           timeToStart += self.sigma
         # # local found
         if channel.fromNode == channel.toNode:
-          self.log.debug( "minimiseTotalWait: found local route '%s'" % channel.Name )
+          self.log.debug( "minimiseTotalWait: found local route '%s'" % channel.routeName )
           candidates = [ ( channel, sourceSE, targetSE ) ]
           break
         if timeToStart <= minTimeToStart:
