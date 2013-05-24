@@ -211,13 +211,11 @@ class FTSManagerHandler( RequestHandler ):
     gLogger.info( "ftsSchedule: LFN=%s FileID=%s OperationID=%s sources=%s targets=%s" % ( lfn, fileID, opID,
                                                                                            sourceSEs, targetSEs ) )
 
-
     replicaDict = self.replicaManager().getActiveReplicas( lfn )
     if not replicaDict["OK"]:
       gLogger.error( "ftsSchedule: %s" % replicaDict["Message"] )
       return replicaDict
     replicaDict = replicaDict["Value"]
-    gLogger.always( "replicaDict %s" % replicaDict )
 
     if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
       return S_ERROR( "ftsSchedule: no active replicas found" )
@@ -241,8 +239,6 @@ class FTSManagerHandler( RequestHandler ):
     for repDict in tree.values():
       gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
                                                                           repDict["SourceSE"], repDict["TargetSE"] ) )
-
-      gLogger.always( "aaaaaaaaaaaaaaaaaaaa %s" % replicaDict )
       transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, replicaDict )
       if not transferSURLs["OK"]:
         return transferSURLs
