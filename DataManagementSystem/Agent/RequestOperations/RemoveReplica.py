@@ -147,6 +147,7 @@ class RemoveReplica( OperationHandlerBase ):
     :param str targetSE: target SE name
     """
     removeReplicas = self.replicaManager().removeReplica( targetSE, toRemoveDict.keys() )
+    self.log.always( removeReplicas )
     if not removeReplicas["OK"]:
       for opFile in toRemoveDict.values():
         opFile.Error = removeReplicas["Message"]
