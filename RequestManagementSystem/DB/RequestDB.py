@@ -164,9 +164,9 @@ class RequestDB( DB ):
       if not putOperation["OK"]:
         self.log.error( "putRequest: unable to put operation %d: %s" % ( request.indexOf( operation ),
                                                                         putOperation["Message"] ) )
-        deleteRequest = self.deleteRequest( request.requestName )
+        deleteRequest = self.deleteRequest( request.RequestName )
         if not deleteRequest["OK"]:
-          self.log.error( "putRequest: unable to delete request '%s': %s" % ( request.requestName, deleteRequest["Message"] ) )
+          self.log.error( "putRequest: unable to delete request '%s': %s" % ( request.RequestName, deleteRequest["Message"] ) )
         return putOperation
       lastrowid = putOperation["lastrowid"]
       putOperation = putOperation["Value"]
