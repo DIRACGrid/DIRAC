@@ -223,7 +223,7 @@ class FTSManagerHandler( RequestHandler ):
       return S_ERROR( "ftsSchedule: no active replicas found" )
     replicaDict = replicaDict["Successful"][lfn] if lfn in replicaDict["Successful"] else {}
     # # use valid replicas only
-    replicaDict = dict( [( key, value ) for key, value in replicaDict["Successful"][lfn].items() if key in sourceSEs ] )
+    replicaDict = dict( [ ( se, pfn ) for se, pfn in replicaDict.items() if se in sourceSEs ] )
 
     if not replicaDict:
       return S_ERROR( "ftsSchedule: no active replicas found," )
