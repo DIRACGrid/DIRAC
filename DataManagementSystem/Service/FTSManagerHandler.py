@@ -231,7 +231,7 @@ class FTSManagerHandler( RequestHandler ):
     for repDict in tree.values():
       gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
                                                                           repDict["SourceSE"], repDict["TargetSE"] ) )
-      transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, {} )
+      transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, replicaDict )
       if not transferSURLs["OK"]:
         return transferSURLs
       sourceSURL, targetSURL, fileStatus = transferSURLs["Value"]
