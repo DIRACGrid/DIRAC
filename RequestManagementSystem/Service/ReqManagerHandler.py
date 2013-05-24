@@ -75,6 +75,7 @@ class ReqManagerHandler( RequestHandler ):
     :param cls: class ref
     :param str requestJSON: request serialized to JSON format
     """
+    print "aaaaaaaaaaaaaa", requestJSON
     requestName = "***UNKNOWN***"
     try:
       request = Request( requestJSON )
