@@ -13,19 +13,13 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     request processing task to be used inside ProcessTask created in RequesteExecutingAgent
-
-
-
 """
-
 __RCSID__ = "$Id $"
-
 # #
 # @file RequestTask.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/13 12:42:54
 # @brief Definition of RequestTask class.
-
 # # imports
 import os
 import time
@@ -48,7 +42,7 @@ class RequestTask( object ):
   # # request client
   __requestClient = None
 
-  def __init__( self, requestJSON, handlersDict, csPath ):
+  def __init__( self, requestJSON, handlersDict, csPath, agentName ):
     """c'tor
 
     :param self: self reference
@@ -58,6 +52,8 @@ class RequestTask( object ):
     self.request = Request( requestJSON )
     # # csPath
     self.csPath = csPath
+    # # agent name
+    self.agentName = agentName
     # # handlers dict
     self.handlersDict = handlersDict
     # # handlers class def
@@ -68,11 +64,9 @@ class RequestTask( object ):
     self.__managersDict = {}
     self.__setupManagerProxies()
 
-    self.log.always( csPath )
-
     # # initialize gMonitor
     gMonitor.setComponentType( gMonitor.COMPONENT_AGENT )
-    gMonitor.setComponentName( "RequestManagement/RequestExecutingAgent" )
+    gMonitor.setComponentName( self.agentName )
     gMonitor.initialize()
 
     # # own gMonitor activities
