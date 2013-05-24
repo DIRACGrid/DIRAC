@@ -172,6 +172,7 @@ class RequestDB( DB ):
           deleteRequest = self.deleteRequest( request.RequestName )
           if not deleteRequest["OK"]:
             self.log.error( "putRequest: unable to delete request '%s': %s" % ( request.RequestName, deleteRequest["Message"] ) )
+            return deleteRequest
         return putOperation
       lastrowid = putOperation["lastrowid"]
       putOperation = putOperation["Value"]
@@ -185,6 +186,9 @@ class RequestDB( DB ):
                                                                                     putFiles["Message"] ) )
           if isNew:
             deleteRequest = self.deleteRequest( request.requestName )
+            if not deleteRequest["OK"]:
+              self.log.error( "putRequest: unable to delete request '%s': %s" % ( request.RequestName, deleteRequest["Message"] ) )
+              return deleteRequest
           return putFiles
 
     return S_OK()
