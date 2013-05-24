@@ -12,7 +12,10 @@
     :synopsis: request processing task
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    request processing task to be used inside ProcessTask created in RequestAgent
+    request processing task to be used inside ProcessTask created in RequesteExecutingAgent
+
+
+
 """
 
 __RCSID__ = "$Id $"
@@ -64,6 +67,11 @@ class RequestTask( object ):
     # # get shifters info
     self.__managersDict = {}
     self.__setupManagerProxies()
+
+    gMonitor.setComponentType( gMonitor.COMPONENT_AGENT )
+    gMonitor.setComponentName( "RequestExecutngAgent" )
+    gMonitor.setComponentLocation( "RequestManagement/RequestExecutingAgent" )
+
     # # own gMonitor activities
     gMonitor.registerActivity( "RequestAtt", "Requests processed",
                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
@@ -234,6 +242,7 @@ class RequestTask( object ):
     shifter = setupProxy["Value"]["Shifter"]
     proxyFile = setupProxy["Value"]["ProxyFile"]
 
+    error = None
     while self.request.Status == "Waiting":
 
       # # get waiting operation
@@ -287,7 +296,7 @@ class RequestTask( object ):
 
     # # request done?
     if self.request.Status == "Done":
-      self.log.info( "request %s is done" % self.request.RequestName )
+      self.log.info( "request '%s' is done" % self.request.RequestName )
       gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
@@ -297,11 +306,13 @@ class RequestTask( object ):
                                                                   finalizeRequest["Message"] ) )
           return finalizeRequest
         else:
-          self.log.info( "request %s is finalized" % self.request.RequestName )
+          self.log.info( "request '%s' is finalized" % self.request.RequestName )
 
     # # update request to the RequestDB
     update = self.updateRequest()
     if not update["OK"]:
       self.log.error( update["Message"] )
       return update
+    if error:
+      return S_ERROR( error )
     return S_OK()

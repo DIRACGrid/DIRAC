@@ -145,6 +145,7 @@ class RemoveReplica( OperationHandlerBase ):
 
     :param dict toRemoveDict: { lfn: opFile, ... }
     :param str targetSE: target SE name
+    :return: toRemoveDict with updated errors
     """
     removeReplicas = self.replicaManager().removeReplica( targetSE, toRemoveDict.keys() )
     self.log.always( removeReplicas )
@@ -153,6 +154,7 @@ class RemoveReplica( OperationHandlerBase ):
         opFile.Error = removeReplicas["Message"]
       return S_ERROR( removeReplicas["Message"] )
     removeReplicas = removeReplicas["Value"]
+    # # filter out failed
     for lfn, opFile in toRemoveDict.items():
       if lfn in removeReplicas["Failed"]:
         opFile.Error = removeReplicas["Failed"][lfn]
