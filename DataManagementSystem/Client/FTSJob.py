@@ -446,8 +446,11 @@ class FTSJob( Record ):
 
     outputStr = outputStr.replace( "'" , "" ).replace( "<", "" ).replace( ">", "" )
 
+    print outputStr
+
     # # set FTS job status
     regExp = re.compile( "Status:\s+(\S+)" )
+
     self.Status = re.search( regExp, outputStr ).group( 1 )
 
     statusSummary = {}
