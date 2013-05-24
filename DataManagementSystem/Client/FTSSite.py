@@ -28,7 +28,7 @@ __RCSID__ = "$Id $"
 # # imports
 import urlparse
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.RequestManagementSystem.private.Record import Record
 
 ########################################################################

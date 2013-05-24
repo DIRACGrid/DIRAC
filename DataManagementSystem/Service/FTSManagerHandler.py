@@ -371,12 +371,12 @@ class FTSManagerHandler( RequestHandler ):
   @classmethod
   def export_putFTSFile( cls, ftsFileJSON ):
     """ put FTSFile into FTSDB """
-    ftsFile = FTSFile( ftsFileJSON )
-    isValid = cls.ftsValidator().validate( ftsFile )
-    if not isValid["OK"]:
-      gLogger.error( isValid["Message"] )
-      return isValid
     try:
+      ftsFile = FTSFile( ftsFileJSON )
+      isValid = cls.ftsValidator().validate( ftsFile )
+      if not isValid["OK"]:
+        gLogger.error( isValid["Message"] )
+        return isValid
       return cls.__ftsDB.putFTSFile( ftsFile )
     except Exception, error:
       gLogger.exception( error )
@@ -400,7 +400,7 @@ class FTSManagerHandler( RequestHandler ):
   def export_putFTSJob( cls, ftsJobJSON ):
     """ put FTSLfn into FTSDB """
 
-    ftsFiles = []  # ftsJobJSON.get( "FTSFiles", [] )
+    ftsFiles = []
 
     if "FTSFiles" in ftsJobJSON:
       ftsFiles = ftsJobJSON.get( "FTSFiles", [] )

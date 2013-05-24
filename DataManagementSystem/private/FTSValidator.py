@@ -45,7 +45,7 @@ class FTSValidator( object ):
   __reqAttrs = { FTSJob: { "attrs": [ "SourceSE", "TargetSE", "FTSServer", "Size"] },
                  FTSFile: { "attrs": [ "FileID", "OperationID", "LFN", "Checksum", "ChecksumType", "Size",
                                        "SourceSE", "SourceSURL", "TargetSE", "TargetSURL" ] },
-                 FTSSite: { "attrs": [] } }
+                 FTSSite: { "attrs": [ "FTSServer", "Name" ] } }
 
   def __init__( self ):
     """ c'tor """
