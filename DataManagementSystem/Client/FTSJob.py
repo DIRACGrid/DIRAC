@@ -440,8 +440,9 @@ class FTSJob( Record ):
     if not monitor["OK"]:
       return monitor
     returnCode, outputStr, errStr = monitor["Value"]
+
     # Returns a non zero status if error
-    if not returnCode:
+    if returnCode != 0:
       return S_ERROR( errStr )
 
     outputStr = outputStr.replace( "'" , "" ).replace( "<", "" ).replace( ">", "" )
