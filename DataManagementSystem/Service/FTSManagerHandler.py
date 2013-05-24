@@ -206,6 +206,8 @@ class FTSManagerHandler( RequestHandler ):
 
     lfn = fileJSON.get( "LFN", "" )
     size = fileJSON.get( "Size", 0 )
+    print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", type( size )
+
     fileID = fileJSON.get( "FileID", 0 )
     opID = fileJSON.get( "OperationID", 0 )
 
