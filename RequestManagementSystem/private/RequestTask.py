@@ -288,6 +288,8 @@ class RequestTask( object ):
     if not shifter:
       os.unlink( proxyFile )
 
+    gMonitor.flush()
+
     # # just in case allow state propagation again
     self.request._notify()
 
@@ -312,4 +314,5 @@ class RequestTask( object ):
       return update
     if error:
       return S_ERROR( error )
+
     return S_OK()
