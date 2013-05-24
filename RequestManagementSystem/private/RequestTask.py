@@ -68,6 +68,7 @@ class RequestTask( object ):
     self.__managersDict = {}
     self.__setupManagerProxies()
 
+    # # initialize gMonitor
     gMonitor.setComponentType( gMonitor.COMPONENT_AGENT )
     gMonitor.setComponentName( "RequestManagement/RequestExecutingAgent" )
     gMonitor.initialize()
