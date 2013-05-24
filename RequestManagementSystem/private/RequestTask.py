@@ -70,7 +70,6 @@ class RequestTask( object ):
 
     gMonitor.setComponentType( gMonitor.COMPONENT_AGENT )
     gMonitor.setComponentName( "RequestManagement/RequestExecutingAgent" )
-    gMonitor.setComponentLocation( "Agent" )
     gMonitor.initialize()
 
     # # own gMonitor activities
