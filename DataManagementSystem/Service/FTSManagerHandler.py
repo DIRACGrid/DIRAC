@@ -251,7 +251,7 @@ class FTSManagerHandler( RequestHandler ):
         errMsg = "sourceSURL == targetSURL for %s" % lfn
         gLogger.error( "ftsSchedule: %s" % errMsg )
         return S_ERROR( errMsg )
-      gLogger.info( sourceSURL, targetSURL, fileStatus )
+      gLogger.info( "sourceURL=%s targetURL=%s FTSFile.Status=%s" % ( sourceSURL, targetSURL, fileStatus ) )
 
       ftsFile = FTSFile()
       for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
