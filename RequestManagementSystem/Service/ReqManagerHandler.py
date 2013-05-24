@@ -75,13 +75,12 @@ class ReqManagerHandler( RequestHandler ):
     :param cls: class ref
     :param str requestJSON: request serialized to JSON format
     """
-    print "aaaaaaaaaaaaaa", requestJSON
     requestName = requestJSON.get( "RequestName", "***UNKNOWN***" )
     try:
       request = Request( requestJSON )
       valid = cls.validate( request )
       if not valid["OK"]:
-        gLogger.error( "putRequest: request not valid: %s" % valid["Message"] )
+        gLogger.error( "putRequest: request %s not valid: %s" % ( requestName, valid["Message"] ) )
         return valid
       requestName = request.RequestName
       gLogger.info( "putRequest: Attempting to set request '%s'" % requestName )
