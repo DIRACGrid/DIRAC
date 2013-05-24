@@ -154,8 +154,12 @@ class RequestDB( DB ):
     lastrowid = putRequest["lastrowid"]
     putRequest = putRequest["Value"]
 
+    # # flag for a new request
+    isNew = False
+
     # # set RequestID when necessary
     if request.RequestID == 0:
+      isNew = True
       request.RequestID = lastrowid
 
     for operation in request:
@@ -164,9 +168,10 @@ class RequestDB( DB ):
       if not putOperation["OK"]:
         self.log.error( "putRequest: unable to put operation %d: %s" % ( request.indexOf( operation ),
                                                                         putOperation["Message"] ) )
-        deleteRequest = self.deleteRequest( request.RequestName )
-        if not deleteRequest["OK"]:
-          self.log.error( "putRequest: unable to delete request '%s': %s" % ( request.RequestName, deleteRequest["Message"] ) )
+        if isNew:
+          deleteRequest = self.deleteRequest( request.RequestName )
+          if not deleteRequest["OK"]:
+            self.log.error( "putRequest: unable to delete request '%s': %s" % ( request.RequestName, deleteRequest["Message"] ) )
         return putOperation
       lastrowid = putOperation["lastrowid"]
       putOperation = putOperation["Value"]
@@ -178,7 +183,8 @@ class RequestDB( DB ):
         if not putFiles["OK"]:
           self.log.error( "putRequest: unable to put files for operation %d: %s" % ( request.indexOf( operation ),
                                                                                     putFiles["Message"] ) )
-          deleteRequest = self.deleteRequest( request.requestName )
+          if isNew:
+            deleteRequest = self.deleteRequest( request.requestName )
           return putFiles
 
     return S_OK()
