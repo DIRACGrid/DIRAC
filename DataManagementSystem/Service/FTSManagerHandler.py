@@ -597,7 +597,6 @@ class FTSManagerHandler( RequestHandler ):
       return S_ERROR( "ancestorSortKeys: cannot sort, some keys are missing!" )
     return S_OK( sortedKeys )
 
-
   def _getSurlForLFN( self, targetSE, lfn ):
     """ Get the targetSURL for the storage and LFN supplied.
 
@@ -640,7 +639,6 @@ class FTSManagerHandler( RequestHandler ):
     :param dict repDict: replication dictionary
     :param dict replicas: LFN replicas
     """
-
     hopSourceSE = repDict["SourceSE"]
     hopTargetSE = repDict["TargetSE"]
     hopAncestor = repDict["Ancestor"]

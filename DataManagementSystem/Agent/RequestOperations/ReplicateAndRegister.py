@@ -212,7 +212,13 @@ class ReplicateAndRegister( OperationHandlerBase ):
         continue
 
       if validReplicas:
-        ftsSchedule = self.ftsClient().ftsSchedule( opFile, validReplicas, self.operation.targetSEList )
+        validTargets = list( set( self.operation.targetSEList ) - set( validReplicas ) )
+        if not validTargets:
+          self.log.info( "file %s is already present at all targets" % opFile.LFN )
+          opFile.Status = "Done"
+          continue
+
+        ftsSchedule = self.ftsClient().ftsSchedule( opFile, validReplicas, validTargets )
         if not ftsSchedule["OK"]:
           self.log.error( ftsSchedule["Message"] )
           gMonitor.addMark( "FTSScheduleFail", 1 )
@@ -245,7 +251,6 @@ class ReplicateAndRegister( OperationHandlerBase ):
         self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
         self.log.error( self.operation.Error )
         return S_ERROR( self.operation.Error )
-
 
     # # list of targetSEs
     targetSEs = self.operation.targetSEList
@@ -307,7 +312,6 @@ class ReplicateAndRegister( OperationHandlerBase ):
             continue
           # # get the first one in the list
           sourceSE = replicas["Valid"][0]
-
 
         # # call ReplicaManager
         res = self.replicaManager().replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
