@@ -203,13 +203,10 @@ class FTSManagerHandler( RequestHandler ):
     :param list sourceSEs: source SEs
     :param list targetSEs: target SEs
     """
-
     lfn = fileJSON.get( "LFN", "" )
-    size = fileJSON.get( "Size", 0 )
-    print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", type( size )
-
-    fileID = fileJSON.get( "FileID", 0 )
-    opID = fileJSON.get( "OperationID", 0 )
+    size = int( fileJSON.get( "Size", 0 ) )
+    fileID = int( fileJSON.get( "FileID", 0 ) )
+    opID = int( fileJSON.get( "OperationID", 0 ) )
 
     gLogger.info( "ftsSchedule: LFN=%s FileID=%s OperationID=%s" % ( lfn, fileID, opID ) )
 
