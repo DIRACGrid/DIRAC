@@ -218,8 +218,15 @@ class FTSManagerHandler( RequestHandler ):
       return replicaDict
     replicaDict = replicaDict["Value"]
     gLogger.always( "replicaDict %s" % replicaDict )
-    # # filter out not-valid replicas
-    replicaDict = dict( [( key, value ) for key, value in replicaDict["Successful"].items() if key in sourceSEs ] )
+
+    if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
+      return S_ERROR( "ftsSchedule: no active replicas found" )
+    replicaDict = replicaDict["Successful"][lfn] if lfn in replicaDict["Successful"] else {}
+    # # use valid replicas only
+    replicaDict = dict( [( key, value ) for key, value in replicaDict["Successful"][lfn].items() if key in sourceSEs ] )
+
+    if not replicaDict:
+      return S_ERROR( "ftsSchedule: no active replicas found," )
 
     tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
     if not tree["OK"]:
