@@ -663,7 +663,7 @@ class FTSManagerHandler( RequestHandler ):
         return res
       sourceSURL = res["Value"]
     else:
-      res = self._getSurlForPFN( hopSourceSE, replicas[hopSourceSE] )
+      res = self._getSurlForPFN( hopSourceSE, replicaDict[hopSourceSE] )
       sourceSURL = res["Value"] if res["OK"] else replicaDict[hopSourceSE]
 
     return S_OK( ( sourceSURL, targetSURL, status ) )
