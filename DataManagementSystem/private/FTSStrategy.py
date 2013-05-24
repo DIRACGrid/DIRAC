@@ -402,7 +402,7 @@ class FTSStrategy( object ):
       selChannel, selSourceSE, selTargetSE = candidates[0]
       ancestor = False
       for routeName, treeItem in tree.items():
-        if selSourceSE in treeItem["DestSE"]:
+        if selSourceSE in treeItem["TargetSE"]:
           ancestor = routeName
       tree[selChannel.name] = { "Ancestor": ancestor, "SourceSE": selSourceSE,
                                 "TargetSE": selTargetSE, "Strategy": "DynamicThroughput" }
