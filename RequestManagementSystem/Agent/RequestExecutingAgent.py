@@ -14,15 +14,12 @@
 
     request processing agent
 """
-
 __RCSID__ = "$Id $"
-
 # #
 # @file RequestExecutingAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/12 15:36:56
 # @brief Definition of RequestExecutingAgent class.
-
 # # imports
 import time
 # # from DIRAC
