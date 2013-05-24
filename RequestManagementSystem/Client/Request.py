@@ -333,7 +333,7 @@ class Request( Record ):
   @JobID.setter
   def JobID( self, value = 0 ):
     """ jobID setter """
-    self.__data__["JobID"] = long( value )
+    self.__data__["JobID"] = long( value ) if value else 0
 
   @property
   def CreationTime( self ):
@@ -434,6 +434,7 @@ class Request( Record ):
     """ get digest for a web """
     digest = dict( zip( self.__data__.keys(),
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
+    digest["RequestID"] = self.RequestID
     digest["Operations"] = []
     for op in self:
       opJSON = op.toJSON()
