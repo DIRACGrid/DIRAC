@@ -372,10 +372,6 @@ class FTSManagerHandler( RequestHandler ):
   def export_putFTSFile( cls, ftsFileJSON ):
     """ put FTSFile into FTSDB """
     ftsFile = FTSFile( ftsFileJSON )
-    if not ftsFile["OK"]:
-      gLogger.error( ftsFile["Message"] )
-      return ftsFile
-    ftsFile = ftsFile["Value"]
     isValid = cls.ftsValidator().validate( ftsFile )
     if not isValid["OK"]:
       gLogger.error( isValid["Message"] )
