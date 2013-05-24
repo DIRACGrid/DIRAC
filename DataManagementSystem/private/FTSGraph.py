@@ -239,7 +239,7 @@ class FTSGraph( Graph ):
           self.log.error( wAccess["Message"] )
           continue
         rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
-        self.log.debug( "Site '%s' SE '%s' read %s write %s " % ( site.name, se,
+        self.log.always( "Site '%s' SE '%s' read %s write %s " % ( site.name, se,
                                                                   rwDict[se]["read"], rwDict[se]["write"] ) )
       site.SEs = rwDict
     return S_OK()
