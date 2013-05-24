@@ -181,7 +181,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
     targetSEs = self.operation.targetSEList
 
     for targetSE in targetSEs:
-      writeStatus = self.rssSEStatus( targetSE, "Write" )
+      writeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
       if not writeStatus["OK"]:
         self.log.error( writeStatus["Message"] )
         for opFile in self.operation:
