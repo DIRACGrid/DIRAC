@@ -75,7 +75,7 @@ class FTSValidator( object ):
         for attr in cls.__reqAttrs[objtype]["attrs"]:
           if not getattr( obj, attr ):
             return S_ERROR( "Missing property %s in %s" % ( attr, obj.__class__.__name__ ) )
-      return S_OK()
+    return S_OK()
 
   @classmethod
   def hasFTSJobFiles( cls, obj ):
