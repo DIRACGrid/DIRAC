@@ -75,6 +75,8 @@ class ReqManagerHandler( RequestHandler ):
     :param cls: class ref
     :param str requestJSON: request serialized to JSON format
     """
+    gLogger.always( requestJSON )
+
     requestName = requestJSON.get( "RequestName", "***UNKNOWN***" )
     try:
       request = Request( requestJSON )
