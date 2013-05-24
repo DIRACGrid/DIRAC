@@ -288,6 +288,17 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( r.Status, "Waiting", "15. wrong status %s" % r.Status )
 
 
+  def test07JSON( self ):
+    """ """
+    fromDict = {'Operations': [{'Files': [{'Status': 'Waiting', 'Attempt': '', 'ChecksumType': '', 'Checksum': '', 'LFN': '/lhcb/user/c/cibak/testPutAndRegister', 'PFN': '', 'Size': '', 'Error': '', 'GUID': '', 'OperationID': '0', 'FileID': 0}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Waiting', 'TargetSE': '', 'RequestID': '0', 'CreationTime': '2013-05-24 08:04:48', 'SourceSE': '', 'SubmitTime': '2013-05-24 08:04:48', 'Catalog': '', 'Arguments': '', 'Error': '', 'Type': 'RemoveFile', 'Order': '0', 'OperationID': ''}, {'Files': [{'Status': 'Waiting', 'Attempt': '', 'ChecksumType': 'ADLER32', 'Checksum': '90d520ff', 'LFN': '/lhcb/user/c/cibak/testPutAndRegister', 'PFN': '/tmp/testPutAndRegister', 'Size': '164', 'Error': '', 'GUID': 'C8E0DBDA-75AB-283F-7603-EC3ED629752E', 'OperationID': '0', 'FileID': 0}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Queued', 'TargetSE': 'RAL-USER', 'RequestID': '0', 'CreationTime': '2013-05-24 08:04:48', 'SourceSE': '', 'SubmitTime': '2013-05-24 08:04:48', 'Catalog': '', 'Arguments': '', 'Error': '', 'Type': 'PutAndRegister', 'Order': '1', 'OperationID': ''}, {'Files': [{'Status': 'Waiting', 'Attempt': '', 'ChecksumType': 'ADLER32', 'Checksum': '90d520ff', 'LFN': '/lhcb/user/c/cibak/testPutAndRegister', 'PFN': '', 'Size': '164', 'Error': '', 'GUID': '', 'OperationID': '0', 'FileID': 0}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Queued', 'TargetSE': 'RAL-USER,PIC-USER', 'RequestID': '0', 'CreationTime': '2013-05-24 08:04:48', 'SourceSE': '', 'SubmitTime': '2013-05-24 08:04:48', 'Catalog': '', 'Arguments': '', 'Error': '', 'Type': 'ReplicateAndRegister', 'Order': '2', 'OperationID': ''}, {'Files': [{'Status': 'Waiting', 'Attempt': '', 'ChecksumType': '', 'Checksum': '', 'LFN': '/lhcb/user/c/cibak/testPutAndRegister', 'PFN': '', 'Size': '', 'Error': '', 'GUID': '', 'OperationID': '0', 'FileID': 0}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Queued', 'TargetSE': 'RAL-USER', 'RequestID': '0', 'CreationTime': '2013-05-24 08:04:48', 'SourceSE': '', 'SubmitTime': '2013-05-24 08:04:48', 'Catalog': '', 'Arguments': '', 'Error': '', 'Type': 'RemoveReplica', 'Order': '3', 'OperationID': ''}, {'Files': [{'Status': 'Waiting', 'Attempt': '', 'ChecksumType': '', 'Checksum': '', 'LFN': '/lhcb/user/c/cibak/testPutAndRegister', 'PFN': '', 'Size': '', 'Error': '', 'GUID': '', 'OperationID': '0', 'FileID': 0}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Queued', 'TargetSE': '', 'RequestID': '0', 'CreationTime': '2013-05-24 08:04:48', 'SourceSE': '', 'SubmitTime': '2013-05-24 08:04:48', 'Catalog': '', 'Arguments': '', 'Error': '', 'Type': 'RemoveFile', 'Order': '4', 'OperationID': ''}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Waiting', 'OwnerGroup': 'dirac_user', 'DIRACSetup': '', 'CreationTime': '2013-05-24 08:04:48', 'JobID': '', 'OwnerDN': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba', 'SubmitTime': '2013-05-24 08:04:48', 'RequestID': 0, 'Error': '', 'SourceComponent': '', 'RequestName': 'fullChain'}
+
+    r = Request( fromDict )
+    print r.subStatusList()
+    for op in r:
+      print op
+      for f in op:
+        print f
+
 
 # # test execution
 if __name__ == "__main__":
