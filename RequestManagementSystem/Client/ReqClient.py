@@ -127,7 +127,7 @@ class ReqClient( Client ):
       return getRequest
     if not getRequest["Value"]:
       return getRequest
-    return Request( getRequest["Value"] )
+    return S_OK( Request( getRequest["Value"] ) )
 
   def deleteRequest( self, requestName ):
     """ delete request given it's name
