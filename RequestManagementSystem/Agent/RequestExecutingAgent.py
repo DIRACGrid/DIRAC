@@ -95,9 +95,8 @@ class RequestExecutingAgent( AgentModule ):
     self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
     self.log.info( "ProcessTask timeout = %d seconds" % self.__taskTimeout )
 
-    # # keep config path
+    # # keep config path and agent name
     self.agentName = self.am_getModuleParam( "fullName" )
-    self.log.always( "agent name: %s" % self.agentName )
     self.__configPath = PathFinder.getAgentSection( self.agentName )
 
     # # operation handlers over here
