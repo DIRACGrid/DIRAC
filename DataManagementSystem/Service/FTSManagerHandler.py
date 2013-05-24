@@ -219,7 +219,7 @@ class FTSManagerHandler( RequestHandler ):
     replicaDict = replicaDict["Value"]
     gLogger.always( "replicaDict %s" % replicaDict )
     # # filter out not-valid replicas
-    replicaDict = dict( [( key, value ) for key, value in replicaDict.items() if key in sourceSEs ] )
+    replicaDict = dict( [( key, value ) for key, value in replicaDict["Successful"].items() if key in sourceSEs ] )
 
     tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
     if not tree["OK"]:
