@@ -95,8 +95,7 @@ class File( Record ):
   @FileID.setter
   def FileID( self, value ):
     """ FileID setter """
-    value = long( value ) if value else None
-    self.__data__["FileID"] = value if value else 0
+    self.__data__["FileID"] = int( value ) if value else 0
 
   @property
   def OperationID( self ):
@@ -117,10 +116,7 @@ class File( Record ):
   @Attempt.setter
   def Attempt( self, value ):
     """ attempt setter """
-    value = int( value )
-    if value < 0:
-      raise ValueError( "Attempt should be a positive integer!" )
-    self.__data__["Attempt"] = int( value )
+    self.__data__["Attempt"] = int( value ) if value else 0
 
   @property
   def Size( self ):
@@ -130,10 +126,7 @@ class File( Record ):
   @Size.setter
   def Size( self, value ):
     """ file size setter """
-    value = long( value )
-    if value < 0:
-      raise ValueError( "Size should be a positive integer!" )
-    self.__data__["Size"] = value
+    self.__data__["Size"] = long( value ) if value else 0
 
   @property
   def LFN( self ):
