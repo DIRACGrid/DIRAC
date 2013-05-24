@@ -69,8 +69,9 @@ class RequestTask( object ):
     self.__setupManagerProxies()
 
     gMonitor.setComponentType( gMonitor.COMPONENT_AGENT )
-    gMonitor.setComponentName( "RequestExecutngAgent" )
-    gMonitor.setComponentLocation( "RequestManagement/RequestExecutingAgent" )
+    gMonitor.setComponentName( "RequestManagement/RequestExecutingAgent" )
+    gMonitor.setComponentLocation( "Agent" )
+    gMonitor.initialize()
 
     # # own gMonitor activities
     gMonitor.registerActivity( "RequestAtt", "Requests processed",
