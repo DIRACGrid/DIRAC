@@ -27,10 +27,8 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 import urlparse
-import xml.etree.ElementTree as ElementTree
-from xml.parsers.expat import ExpatError
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.Core.Utilities.File import checkGuid
 
@@ -232,39 +230,17 @@ class File( Record ):
     if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     self.__data__["Status"] = value
-    if self._parent: self._parent._notify()
-
-  # # (de)serialization
-  def toXML( self, dumpToStr = False ):
-    """ serialize File to XML """
-    dumpToStr = bool( dumpToStr )
-    attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
-    element = ElementTree.Element( "file", attrs )
-    return S_OK( { False: element,
-                    True: ElementTree.tostring( element ) }[dumpToStr] )
-
-  @classmethod
-  def fromXML( cls, element ):
-    """ build File form ElementTree.Element :element: """
-    if type( element ) == str:
-      try:
-        element = ElementTree.fromstring( element )
-      except ExpatError, error:
-        return S_ERROR( str( error ) )
-    if element.tag != "file":
-      return S_ERROR( "wrong tag, expected 'file', got %s" % element.tag )
-    fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
-    return S_OK( File( fromDict ) )
+    if self._parent:
+      self._parent._notify()
 
   def __str__( self ):
     """ str operator """
-    return ElementTree.tostring( self.toXML() )
+    return str( self.toJSON()["Value"] )
 
   def toSQL( self ):
     """ get SQL INSERT or UPDATE statement """
     if not self._parent:
       raise AttributeError( "File does not belong to any Operation" )
-
     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
                   if type( getattr( self, column ) ) == str else str( getattr( self, column ) ) )
                 for column in self.__data__

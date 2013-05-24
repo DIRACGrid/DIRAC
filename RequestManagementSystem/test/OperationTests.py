@@ -68,36 +68,19 @@ class OperationTests( unittest.TestCase ):
       self.assertEqual( getattr( operation, key ), value, "wrong attr value %s (%s) %s" % ( key,
                                                                                             getattr( operation, key ),
                                                                                             value ) )
-    # # from and to  XML
-    opXML = operation.toXML()
-    self.assertEqual( opXML["OK"], True, "xml serialization failed" )
-    opXML = opXML["Value"]
-    operation = Operation.fromXML( opXML )
-    self.assertEqual( operation["OK"], True, "xml de-serialization failed" )
-    operation = operation["Value"]
-    for key, value in self.fromDict.items():
-      self.assertEqual( getattr( operation, key ), value, "wrong attr value %s (%s) %s" % ( key,
-                                                                                            getattr( operation, key ),
-                                                                                            value ) )
 
     # # same with file
     operation = Operation( self.fromDict )
     operation.addFile( self.subFile )
 
-    opXML = operation.toXML()
-
-    self.assertEqual( opXML["OK"], True, "xml serialization failed" )
-
-    opXML = opXML["Value"]
-
-    operation = Operation.fromXML( opXML )
-    self.assertEqual( operation["OK"], True, "xml de-serialization failed" )
-
-    operation = operation["Value"]
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( operation, key ), value, "wrong attr value %s (%s) %s" % ( key,
                                                                                             getattr( operation, key ),
                                                                                             value ) )
+
+    toJSON = operation.toJSON()
+    self.assertEqual( toJSON["OK"], True, "JSON serialization failed" )
+
   def test02props( self ):
     """ test properties """
 

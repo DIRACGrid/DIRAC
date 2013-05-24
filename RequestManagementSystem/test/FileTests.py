@@ -25,10 +25,6 @@ __RCSID__ = "$Id$"
 
 # # imports
 import unittest
-try:
-  import xml.etree.cElementTree as ElementTree
-except ImportError:
-  import xml.etree.ElementTree
 # # from DIRAC
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 # # SUT
@@ -44,14 +40,12 @@ class FileTests( unittest.TestCase ):
   def setUp( self ):
     """ test setup """
     self.fromDict = { "Size" : 1, "LFN" : "/test/lfn", "ChecksumType" : "ADLER32", "Checksum" : "123456", "Status" : "Waiting" }
-    self.fileElement = ElementTree.Element( "file", self.fromDict )
 
   def tearDown( self ):
     """ test tear down """
-    del self.fileElement
     del self.fromDict
 
-  def test_ctors( self ):
+  def test01ctors( self ):
     """ File construction and (de)serialisation """
     # # empty default ctor
     theFile = File()
@@ -62,20 +56,16 @@ class FileTests( unittest.TestCase ):
       theFile = File( self.fromDict )
     except AttributeError, error:
       print "AttributeError: %s" % str( error )
+
     self.assertEqual( isinstance( theFile, File ), True )
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( theFile, key ), value )
 
-    # # fromXML using ElementTree
-    theFile = File.fromXML( self.fileElement )
-    self.assertEqual( theFile["OK"], True )
-    self.assertEqual( isinstance( theFile["Value"], File ), True )
-    theFile = theFile["Value"]
-    for key, value in self.fromDict.items():
-      self.assertEqual( getattr( theFile, key ), value )
+    toJSON = theFile.toJSON()
+    self.assertEqual( toJSON["OK"], True, "JSON serialization error" )
 
 
-  def test_props( self ):
+  def test02props( self ):
     """ test props and attributes  """
     theFile = File()
 

@@ -27,7 +27,6 @@ __RCSID__ = "$Id$"
 import unittest
 import datetime
 # # from DIRAC
-from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 # # SUT
@@ -62,18 +61,11 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( req.JobID, 12345 )
     self.assertEqual( req.Status, "Waiting" )
 
-    toXML = req.toXML()
-    self.assertEqual( toXML["OK"], True )
+    toJSON = req.toJSON()
+    self.assertEqual( toJSON["OK"], True, "JSON serialization failed" )
 
-    req = Request.fromXML( toXML["Value"]
-                            )
-    self.assertEqual( req["OK"], True )
-    self.assertEqual( isinstance( req["Value"], Request ), True )
-    req = req["Value"]
-
-    self.assertEqual( req.RequestName, "test" )
-    self.assertEqual( req.JobID, 12345 )
-    self.assertEqual( req.Status, "Waiting" )
+    fromJSON = toJSON["Value"]
+    req = Request( fromJSON )
 
     toSQL = req.toSQL()
     self.assertEqual( toSQL["OK"], True )

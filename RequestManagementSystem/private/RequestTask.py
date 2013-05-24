@@ -45,14 +45,14 @@ class RequestTask( object ):
   # # request client
   __requestClient = None
 
-  def __init__( self, requestXML, handlersDict, csPath ):
+  def __init__( self, requestJSON, handlersDict, csPath ):
     """c'tor
 
     :param self: self reference
-    :param str requestXML: request serilised to XML
+    :param str requestJSON: request serialized to JSON
     :param dict opHandlers: operation handlers
     """
-    self.request = Request.fromXML( requestXML )["Value"]
+    self.request = Request( requestJSON )
     # # csPath
     self.csPath = csPath
     # # handlers dict

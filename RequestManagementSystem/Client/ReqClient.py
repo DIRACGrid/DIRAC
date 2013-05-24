@@ -82,11 +82,11 @@ class ReqClient( Client ):
       self.log.error( "putRequest: request not valid: %s" % valid["Message"] )
       return valid
     # # dump to xml string
-    requestXML = request.toXML( True )
-    if not requestXML["OK"]:
-      return requestXML
-    requestXML = requestXML["Value"]
-    setRequestMgr = self.requestManager().putRequest( requestXML )
+    requestJSON = request.toJSON()
+    if not requestJSON["OK"]:
+      return requestJSON
+    requestJSON = requestJSON["Value"]
+    setRequestMgr = self.requestManager().putRequest( requestJSON )
     if setRequestMgr["OK"]:
       return setRequestMgr
     errorsDict["RequestManager"] = setRequestMgr["Message"]
@@ -94,7 +94,7 @@ class ReqClient( Client ):
     proxies = self.requestProxies()
     for proxyURL, proxyClient in proxies.items():
       self.log.debug( "putRequest: trying RequestProxy at %s" % proxyURL )
-      setRequestProxy = proxyClient.setRequest( requestXML )
+      setRequestProxy = proxyClient.setRequest( requestJSON )
       if setRequestProxy["OK"]:
         if setRequestProxy["Value"]["set"]:
           self.log.info( "putRequest: request '%s' successfully set using RequestProxy %s" % ( request.RequestName,
@@ -127,8 +127,7 @@ class ReqClient( Client ):
       return getRequest
     if not getRequest["Value"]:
       return getRequest
-    getRequest = getRequest["Value"]
-    return Request.fromXML( getRequest )
+    return Request( getRequest["Value"] )
 
   def deleteRequest( self, requestName ):
     """ delete request given it's name
@@ -275,7 +274,7 @@ class ReqClient( Client ):
 
     :param list jobIDs: list with jobIDs
 
-    :return: S_OK( { "Successful" : { jobID1 : RequestContainer, ... },
+    :return: S_OK( { "Successful" : { jobID1 : Request, ... },
                      "Failed" : { jobIDn : "Fail reason" } } )
     """
     readReqsForJobs = self.requestManager().readRequestsForJobs( jobIDs )
@@ -284,10 +283,10 @@ class ReqClient( Client ):
     ret = readReqsForJobs["Value"] if readReqsForJobs["Value"] else None
     if not ret:
       return S_ERROR( "No values returned" )
-    # # create RequestContainers out of xml strings for successful reads
+    # # create Requests out of JSONs for successful reads
     if "Successful" in ret:
-      for jobID, xmlStr in ret["Successful"].items():
-        req = Request.fromXML( xmlStr )
+      for jobID, fromJSON in ret["Successful"].items():
+        req = Request( fromJSON )
         if not req["OK"]:
           ret["Failed"][jobID] = req["Message"]
           continue

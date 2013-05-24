@@ -23,11 +23,9 @@ __RCSID__ = "$Id$"
 # @date 2012/07/24 12:12:18
 # @brief Definition of Operation class.
 # # imports
-import xml.etree.ElementTree as ElementTree
-from xml.parsers.expat import ExpatError
 import datetime
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -346,44 +344,6 @@ class Operation( Record ):
       value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["LastUpdate"] = value
 
-  def toXML( self, dumpToStr = False ):
-    """ dump operation to XML """
-    data = dict( [ ( key, str( getattr( self, key ) )
-                    if getattr( self, key ) != None else "" ) for key in self.__data__ ] )
-    for key, value in data.items():
-      if isinstance( value, datetime.datetime ):
-        data[key] = str( value )
-    element = ElementTree.Element( "operation", data )
-    for opFile in self.__files__:
-      fileElement = opFile.toXML()
-      if not fileElement["OK"]:
-        return fileElement
-      element.append( fileElement["Value"] )
-    return S_OK( { False: element,
-                    True: ElementTree.tostring( element ) }[dumpToStr] )
-
-  @classmethod
-  def fromXML( cls, element ):
-    """ generate Operation instance from :element:
-
-    :param ElementTree.Element element: operation element
-    """
-    if type( element ) == str:
-      try:
-        element = ElementTree.fromstring( element )
-      except ExpatError, error:
-        return S_ERROR( str( error ) )
-    if element.tag != "operation":
-      return S_ERROR( "wrong tag <%s>, expected <operation>!" % element.tag )
-    fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
-    operation = Operation( fromDict )
-    for fileElement in element.findall( "file" ):
-      opFile = File.fromXML( fileElement )
-      if not opFile["OK"]:
-        return opFile
-      operation.addFile( opFile["Value"] )
-    return S_OK( operation )
-
   def __str__( self ):
     """ str operator """
     return str( self.toJSON()["Value"] )
@@ -399,7 +359,6 @@ class Operation( Record ):
     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
     colVals.append( ( "`Order`", str( self.Order ) ) )
     # colVals.append( ( "`Status`", "'%s'" % str(self.Status) ) )
-
     query = []
     if self.OperationID:
       query.append( "UPDATE `Operation` SET " )

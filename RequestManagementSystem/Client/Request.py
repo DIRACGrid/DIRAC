@@ -24,8 +24,6 @@ __RCSID__ = "$Id$"
 
 # # imports
 import datetime
-import xml.etree.ElementTree as ElementTree
-from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
@@ -410,55 +408,6 @@ class Request( Record ):
     if type( value ) != str:
       raise TypeError( "Error has to be a string!" )
     self.__data__["Error"] = self._escapeStr( value, 255 )
-
-  @classmethod
-  def fromXML( cls, element ):
-    """ create Request object from xmlString or xml.ElementTree.Element """
-    if type( element ) == str:
-      try:
-        element = ElementTree.fromstring( element )
-      except ExpatError, error:
-        return S_ERROR( str( error ) )
-    if element.tag != "request":
-      return S_ERROR( "unable to de-serialize request, xml root element is not a 'request' " )
-    request = Request( element.attrib )
-    for operationElement in element.findall( "operation" ):
-      operation = Operation.fromXML( element = operationElement )
-      if not operation["OK"]:
-        return operation
-      request.addOperation( operation["Value"] )
-    return S_OK( request )
-
-  def toXML( self, dumpToStr = False ):
-    """ dump request to XML
-
-    :param self: self reference
-    :return: S_OK( xmlString )
-    """
-    dumpToStr = bool( dumpToStr )
-    root = ElementTree.Element( "request" )
-    root.attrib["RequestName"] = str( self.RequestName ) if self.RequestName else ""
-    root.attrib["RequestID"] = str( self.RequestID ) if self.RequestID else ""
-    root.attrib["OwnerDN"] = str( self.OwnerDN ) if self.OwnerDN else ""
-    root.attrib["OwnerGroup"] = str( self.OwnerGroup ) if self.OwnerGroup else ""
-    root.attrib["DIRACSetup"] = str( self.DIRACSetup ) if self.DIRACSetup else ""
-    root.attrib["JobID"] = str( self.JobID ) if self.JobID else "0"
-    root.attrib["SourceComponent"] = str( self.SourceComponent ) if self.SourceComponent else ""
-    root.attrib["Error"] = str( self.Error ) if self.Error else ""
-    # # always calculate status, never set
-    root.attrib["Status"] = str( self.Status )
-    # # datetime up to seconds
-    root.attrib["CreationTime"] = self.CreationTime.isoformat( " " ).split( "." )[0] if self.CreationTime else ""
-    root.attrib["SubmitTime"] = self.SubmitTime.isoformat( " " ).split( "." )[0] if self.SubmitTime else ""
-    root.attrib["LastUpdate"] = self.LastUpdate.isoformat( " " ).split( "." )[0] if self.LastUpdate else ""
-    # # trigger xml dump of a whole operations and their files tree
-    for operation in self.__operations__:
-      opXML = operation.toXML()
-      if not opXML["OK"]:
-        return opXML
-      root.append( opXML["Value"] )
-    return S_OK( { False: root,
-                    True: ElementTree.tostring( root ) }[dumpToStr] )
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """

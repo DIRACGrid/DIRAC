@@ -234,17 +234,25 @@ class RequestExecutingAgent( AgentModule ):
       taskID = request.RequestName
       # # save current request in cache
       self.cacheRequest( request )
+      # # serialize to JSON
+      requestJSON = request.toJSON()
+      if not requestJSON["OK"]:
+        self.log.error( "JSON serialization error: %s" % requestJSON["Message"] )
+        break
+      requestJSON = requestJSON["Value"]
 
       self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                     self.processPool().getNumWorkingProcesses() ) )
+
       while True:
         if not self.processPool().getFreeSlots():
           self.log.info( "No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
           time.sleep( self.__poolSleep )
         else:
           self.log.info( "spawning task for request '%s'" % ( request.RequestName ) )
+
           enqueue = self.processPool().createAndQueueTask( RequestTask,
-                                                           kwargs = { "requestXML" : request.toXML()["Value"],
+                                                           kwargs = { "requestJSON" : requestJSON,
                                                                       "handlersDict" : self.handlersDict,
                                                                       "csPath" : self.__configPath },
                                                            taskID = taskID,

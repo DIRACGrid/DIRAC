@@ -67,17 +67,17 @@ class ReqManagerHandler( RequestHandler ):
       requestID = result["Value"]
     return S_OK( requestID )
 
-  types_putRequest = [ StringTypes ]
+  types_putRequest = [ DictType ]
   @classmethod
-  def export_putRequest( cls, requestString ):
+  def export_putRequest( cls, requestJSON ):
     """ put a new request into RequestDB
 
     :param cls: class ref
-    :param str requestString: xml string
+    :param str requestJSON: request serialized to JSON format
     """
     requestName = "***UNKNOWN***"
     try:
-      request = Request.fromXML( requestString )
+      request = Request( requestJSON )
       if not request["OK"]:
         gLogger.error( "putRequest: %s" % request["Message"] )
         return request
@@ -115,10 +115,12 @@ class ReqManagerHandler( RequestHandler ):
         gLogger.error( "getRequest: %s" % getRequest["Message"] )
         return getRequest
       if getRequest["Value"]:
-        getRequest = getRequest["Value"].toXML( True )
-        if not getRequest["OK"]:
-          gLogger.error( getRequest["Message"] )
-      return getRequest
+        getRequest = getRequest["Value"]
+        toJSON = getRequest.toJSON()
+        if not toJSON["OK"]:
+          gLogger.error( toJSON["Message"] )
+        return toJSON
+      return S_OK()
     except Exception, error:
       errStr = "getRequest: Exception while getting request."
       gLogger.exception( errStr, lException = error )
@@ -134,7 +136,7 @@ class ReqManagerHandler( RequestHandler ):
         gLogger.error( "peekRequest: %s" % peekRequest["Message"] )
         return peekRequest
       if peekRequest["Value"]:
-        peekRequest = peekRequest["Value"].toXML( True )
+        peekRequest = peekRequest["Value"].toJSON()
         if not peekRequest["OK"]:
           gLogger.error( peekRequest["Message"] )
       return peekRequest
@@ -178,7 +180,7 @@ class ReqManagerHandler( RequestHandler ):
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
     try:
-      reqNamesList = cls.__ftsDB.getRequestNamesList( statusList, limit )
+      reqNamesList = cls.__requestDB.getRequestNamesList( statusList, limit )
       if not reqNamesList["OK"]:
         gLogger.error( "getRequestNamesList: %s" % reqNamesList["Message"] )
       return reqNamesList
@@ -202,8 +204,7 @@ class ReqManagerHandler( RequestHandler ):
   def export_readRequestsForJobs( cls, jobIDs ):
     """ read requests for jobs given list of jobIDs """
     try:
-      res = cls.__requestDB.readRequestsForJobs( jobIDs )
-      return res
+      return cls.__requestDB.readRequestsForJobs( jobIDs )
     except Exception, error:
       errStr = "readRequestsForJobs: Exception while selecting requests."
       gLogger.exception( errStr, '', lException = error )
