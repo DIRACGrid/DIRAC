@@ -446,6 +446,8 @@ class FTSJob( Record ):
 
     outputStr = outputStr.replace( "'" , "" ).replace( "<", "" ).replace( ">", "" )
 
+    print returnCode
+    print errStr
     print outputStr
 
     # # set FTS job status
