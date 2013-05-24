@@ -156,7 +156,7 @@ class RemoveReplica( OperationHandlerBase ):
     for lfn, opFile in toRemoveDict.items():
       if lfn in removeReplicas["Failed"]:
         opFile.Error = removeReplicas["Failed"][lfn]
-    return S_OK()
+    return S_OK( toRemoveDict )
 
   def singleRemoval( self, opFile, targetSE ):
     """ remove opFile replica from targetSE
