@@ -64,6 +64,6 @@ class Record( object ):
     raise NotImplementedError( "Must provide table description!" )
 
   @staticmethod
-  def _escapeStr( aStr, len = 255 ):
-    """ ' -> \' and cut atmost at len """
-    return str( aStr ).replace( "'", "\'" )[:len] if aStr else ""
+  def _escapeStr( aStr, lenght = 255 ):
+    """ remove ' and cut  """
+    return str( aStr ).replace( "'", "" )[:lenght] if aStr else ""
