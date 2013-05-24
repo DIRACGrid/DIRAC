@@ -210,7 +210,7 @@ class File( Record ):
     if type( value ) != str:
       raise TypeError( "Error has to be a string!" )
     self.__data__["Error"] = self._escapeStr( value , 255 )
-    print "CCCCCCCCCCCCCCCCCCCC", self.__date__["Error"]
+    print "CCCCCCCCCCCCCCCCCCCC", self.__data__["Error"]
 
   @property
   def Status( self ):
