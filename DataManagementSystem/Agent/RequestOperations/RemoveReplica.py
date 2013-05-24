@@ -68,7 +68,9 @@ class RemoveReplica( OperationHandlerBase ):
     # # check targetSEs for removal
     bannedTargets = []
     for targetSE in targetSEs:
-      removeStatus = self.rssSEStatus( targetSE, "RemoveAccess" )
+      # removeStatus = self.rssSEStatus( targetSE, "RemoveAccess" )
+      removeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
+
       if not removeStatus["OK"]:
         self.log.error( removeStatus["Message"] )
         for opFile in self.operation:
