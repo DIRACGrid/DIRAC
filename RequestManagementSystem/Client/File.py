@@ -96,7 +96,7 @@ class File( Record ):
   def FileID( self, value ):
     """ FileID setter """
     value = long( value ) if value else None
-    self.__data__["FileID"] = value
+    self.__data__["FileID"] = value if value else 0
 
   @property
   def OperationID( self ):
@@ -262,5 +262,6 @@ class File( Record ):
     """ get json """
     digest = dict( zip( self.__data__.keys(),
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
+    digest["FileID"] = self.FileID
     digest["OperationID"] = str( self.OperationID )
     return S_OK( digest )
