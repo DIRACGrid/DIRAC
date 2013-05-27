@@ -1,3 +1,17 @@
+[v6r8p14]
+
+*Core
+FIX: dirac-deploy-scripts - can now work with the system python
+
+*WMS
+NEW: dirac-wms-cpu-normalization - added -R option to modify a given configuration file
+FIX: Executor/InputData - Add extra check for LFns in InputData optimizer, closes #1472
+
+*Transformation
+CHANGE: TransformationAgent - add possibility to kick a transformation (not skip it if no 
+        unused files), by touching a file in workDirectory
+BUGFIX: TransformationAgent - bug in __cleanCache() dict modified in a loop        
+
 [v6r8p13]
 
 *Transformation
