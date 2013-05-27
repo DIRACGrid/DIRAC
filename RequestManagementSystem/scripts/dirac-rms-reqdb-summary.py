@@ -39,7 +39,7 @@ if __name__ == "__main__":
   for opType, opDict in sorted( ops.items() ):
     DIRAC.gLogger.always( "- %s:" % opType )
     for opState, opCount in sorted( opDict.items() ):
-      DIRAC.gLogger.always( "- '%s' %s" % ( opState, opCount ) )
+      DIRAC.gLogger.always( "  - '%s' %s" % ( opState, opCount ) )
   DIRAC.gLogger.always( "Files:" )
   for fState, fCount in sorted( fs.items() ):
     DIRAC.gLogger.always( "- '%s' %s" % ( fState, fCount ) )
