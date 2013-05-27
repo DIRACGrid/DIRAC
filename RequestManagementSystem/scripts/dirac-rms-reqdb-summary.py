@@ -32,6 +32,7 @@ if __name__ == "__main__":
   fs = dbSummary.get( "File", {} )
 
   print dbSummary
+  print reqs
   print ops
   print fs
 
