@@ -40,11 +40,21 @@ POLICIESMETA = {
 
   'SpaceTokenOccupancy' :
     { 
-      'description' : 'Space token occupancy',
+      'description' : "Space token occupancy",
       'module'      : 'SpaceTokenOccupancyPolicy',
       'command'     : ( 'SpaceTokenOccupancyCommand', 'SpaceTokenOccupancyCommand' ),
       'args'        : { 'onlyCache' : True },
      }, 
+
+  # Pilot POLICIES..............................................................
+
+  'PilotInstantEfficiency' :
+    {
+      'description' : "Pilots Instant Efficiency ( 30 min )",
+      'module'      : 'PilotEfficiencyPolicy',
+      'command'     : ( 'PilotCommand', 'PilotCommand' ),
+      'args'        : { 'onlyCache' : True, 'timespan' : 1800 }
+     },
 
   # ALWAYS SOMETHING POLICIES...................................................
 
