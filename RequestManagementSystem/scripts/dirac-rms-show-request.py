@@ -38,18 +38,18 @@ if __name__ == "__main__":
       DIRAC.gLogger.info("no such request")
       DIRAC.exit(0)
 
-    DIRAC.gLogger.info( "requestName=%s requestID=%s status=%s %s" % ( request.RequestName,
+    DIRAC.gLogger.always( "requestName=%s requestID=%s status=%s %s" % ( request.RequestName,
                                                                        request.RequestID,
                                                                        request.Status,
                                                                        "error=%s" % request.Error if request.Error else "" ) )
     for op in request:
-      DIRAC.gLogger.info( "  operation type=%s operationID=%s order=%s status=%s %s" % ( op.Type,
+      DIRAC.gLogger.always( "  operation type=%s operationID=%s order=%s status=%s %s" % ( op.Type,
                                                                                          op.OperationID,
                                                                                          op.Order,
                                                                                          op.Status,
                                                                                          "error=%s" % op.Error if op.Error else "" ) )
       for f in op:
-        DIRAC.gLogger.info( "   file fileID=%s LFN=%s status=%s %s" % ( f.FileID,
+        DIRAC.gLogger.always( "   file fileID=%s LFN=%s status=%s %s" % ( f.FileID,
                                                                         f.LFN,
                                                                         f.Status,
                                                                         "error=%s" % f.Error if f.Error else "" ) )
