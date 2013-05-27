@@ -2,7 +2,7 @@
 """ show request """
 __RCSID__ = "$Id: $"
 
-from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      ' %s [option|cfgfile] requestName' % Script.scriptName,
