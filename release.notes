@@ -1,3 +1,9 @@
+[v6r7p30]
+
+*Core
+CHANGE: X509Chain - added groupProperties field to the getCredentials() report
+BUGFIX: InstallTools - in getSetupComponents() typo fixed: agent -> executor
+
 [v6r7p29]
 
 *DMS
