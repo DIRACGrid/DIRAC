@@ -38,21 +38,21 @@ if __name__ == "__main__":
       DIRAC.gLogger.info("no such request")
       DIRAC.exit(0)
 
-    self.log.info( "requestName=%s requestID=%s status=%s %s" % ( request.RequestName,
-                                                                  request.RequestID,
-                                                                  requst.Status,
-                                                                  "error=%s" % request.Error if request.Error else "" ) )
+    DIRAC.gLogger.info( "requestName=%s requestID=%s status=%s %s" % ( request.RequestName,
+                                                                       request.RequestID,
+                                                                       requst.Status,
+                                                                       "error=%s" % request.Error if request.Error else "" ) )
     for op in request:
-      self.log.info( "  operation type=%s operationID=%s order=%s status=%s %s" % ( op.Type,
-                                                                                    op.OperationID,
-                                                                                    op.Order,
-                                                                                    op.Status,
-                                                                                    "error=%s" % op.Error if op.Error else "" ) )
+      DIRAC.gLogger.info( "  operation type=%s operationID=%s order=%s status=%s %s" % ( op.Type,
+                                                                                         op.OperationID,
+                                                                                         op.Order,
+                                                                                         op.Status,
+                                                                                         "error=%s" % op.Error if op.Error else "" ) )
       for f in op:
-        self.log.info( "   file fileID=%s LFN=%s status=%s %s" % ( f.FileID,
-                                                                   f.LFN,
-                                                                   f.Status,
-                                                                   "error=%s" % f.Error if f.Error else "" ) )
+        DIRAC.gLogger.info( "   file fileID=%s LFN=%s status=%s %s" % ( f.FileID,
+                                                                        f.LFN,
+                                                                        f.Status,
+                                                                        "error=%s" % f.Error if f.Error else "" ) )
 
 
 
