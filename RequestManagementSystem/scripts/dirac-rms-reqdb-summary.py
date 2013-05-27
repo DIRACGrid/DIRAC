@@ -31,6 +31,7 @@ if __name__ == "__main__":
   ops = dbSummary.get( "Operation", {} )
   fs = dbSummary.get( "File", {} )
 
+  print dbSummary
   print ops
   print fs
 
