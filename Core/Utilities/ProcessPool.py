@@ -1,10 +1,9 @@
 #################################################################
 # $HeadURL$
 #################################################################
-""" :mod: ProcessPool
-    =================
-    .. module: ProcessPool
-    :synopsis: ProcessPool and related classes
+"""
+.. module:: Pfn
+  :synopsis: ProcessPool and related classes
 
 ProcessPool
 -----------
@@ -17,7 +16,7 @@ To construct ProcessPool one first should call its contructor::
 
   pool = ProcessPool( minSize, maxSize, maxQueuedRequests )
 
-where parameters are::
+where parameters are:
 
 :param int minSize: at least <minSize> workers will be alive all the time
 :param int maxSize: no more than <maxSize> workers will be alive all the time
@@ -44,7 +43,7 @@ or alternatively by using ProcessTask instance::
                       exceptionCallback = exceptionCallbackDef )
   pool.queueTask( task )
 
-where parameters are::
+where parameters are:
 
   :param funcDef: callable py object definition (function, lambda, class with __call__ slot defined
   :param list args: argument list
@@ -80,13 +79,13 @@ results callback function. The the firts one is executed when unhandled excpetio
 task processing, and hence no task results are available, otherwise the execution of second callback type
 is performed.
 
-The callbacks could be attached in a two places::
+The callbacks could be attached in a two places:
 
 - directly in ProcessTask, in that case those have to be shelvable/picklable, so they should be defined as
   global functions with the signature :callback( task, taskResult ): where :task: is a :ProcessTask:
-  reference and :taskResult: is whatever task callable it returning for restuls callback and
+  reference and :taskResult: is whatever task callable it returning for results callback and
   :exceptionCallback( task, exc_info): where exc_info is a
-  :S_ERROR{ "Exception": { "Value" : exceptionName, "Exc_info" : exceptionInfo }:
+  :S_ERROR( "Exception": { "Value" : exceptionName, "Exc_info" : exceptionInfo ):
 
 - in ProcessPool, in that case there is no limitation on the function type, except the signature, which
   should follow :callback( task ): or :exceptionCallback( task ):, as those callbacks definitions
@@ -750,7 +749,7 @@ class ProcessPool( object ):
                           exceptionCallback = None,
                           blocking = True,
                           usePoolCallbacks = False,
-                          timeOut = 0):
+                          timeOut = 0 ):
     """ create new processTask and enqueue it in pending task queue
 
     :param self: self reference

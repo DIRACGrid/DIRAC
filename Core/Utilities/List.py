@@ -78,14 +78,14 @@ def pop( aList, popElement ):
 def stringListToString( aList ):
   """This method is used for making MySQL queries with a list of string elements.
 
-    :param list aList: list tobe serialised to string for making queries
+    :param list aList: list to be serialized to string for making queries
   """
   return ",".join( ["'" + str( x ) + "'" for x in aList ] )
 
 def intListToString( aList ):
   """This method is used for making MySQL queries with a list of int elements.
 
-  :param list aList: list to be serialised to string for making queries
+  :param list aList: list to be serialized to string for making queries
   """
   return ",".join( [str( x ) for x in aList ] )
 

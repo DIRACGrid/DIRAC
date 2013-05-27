@@ -5,7 +5,7 @@ import threading
 import thread
 from hashlib import md5
 
-from DIRAC import S_ERROR, S_OK
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 class LockRing( object ):

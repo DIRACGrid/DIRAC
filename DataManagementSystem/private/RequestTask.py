@@ -5,13 +5,16 @@
 # Date: 2011/10/12 12:08:51
 ########################################################################
 """ :mod: RequestTask 
-    =======================
+    =================
  
     .. module: RequestTask
     :synopsis: base class for requests execution in separate subprocesses
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     Base class for requests execution in a separate subprocesses.
+
+  OBSOLETE
+
 """
 
 __RCSID__ = "$Id $"
