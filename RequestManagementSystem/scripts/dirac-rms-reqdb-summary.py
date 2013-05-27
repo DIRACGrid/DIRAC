@@ -33,7 +33,6 @@ if __name__ == "__main__":
 
   if not reqs:
     DIRAC.gLogger.always( "no requests in DB" )
-    DIRAC.exit( 0 )
   else:
     for reqState, reqCount in sorted( reqs.items() ):
       DIRAC.gLogger.always( "%s Requests with %s status" % ( reqCount, reqState ) )
@@ -43,5 +42,6 @@ if __name__ == "__main__":
     for fState, fCount in sorted( fs.items() ):
       DIRAC.gLogger.always( "%s Files with status %s" % ( fCount, fState ) )
 
+  DIRAC.exit( 0 )
 
 
