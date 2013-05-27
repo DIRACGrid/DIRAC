@@ -129,6 +129,17 @@ class ReqClient( Client ):
       return getRequest
     return S_OK( Request( getRequest["Value"] ) )
 
+  def peekRequest( self, requestName ):
+    """ peek request """
+    self.log.debug( "peekRequest: attempting to get request." )
+    peekRequest = self.requestManager().peekRequest( requestName )
+    if not peekRequest["OK"]:
+      self.log.error( "peekRequest: unable to peek '%s' request: %s" % ( requestName, peekRequest["Message"] ) )
+      return peekRequest
+    if not peekRequest["Value"]:
+      return peekRequest
+    return S_OK( Request( peekRequest["Value"] ) )
+
   def deleteRequest( self, requestName ):
     """ delete request given it's name
 
