@@ -62,7 +62,10 @@ class RequestTask( object ):
     self.log = gLogger.getSubLogger( self.request.RequestName )
     # # get shifters info
     self.__managersDict = {}
-    self.__setupManagerProxies()
+    shifterProxies = self.__setupManagerProxies()
+    if not shifterProxies["OK"]:
+      self.log.error( shifterProxies["Message"] )
+
 
     # # initialize gMonitor
     gMonitor.setComponentType( gMonitor.COMPONENT_AGENT )
@@ -112,6 +115,7 @@ class RequestTask( object ):
                                                       cacheTime = 4 * 43200 )
       if not getProxy["OK"]:
         self.log.error( getProxy["Message" ] )
+        return S_ERROR( "unable to setup shifter proxy for %s: %s" % ( shifter, getProxy["Message"] ) )
       chain = getProxy["chain"]
       fileName = getProxy["Value" ]
       self.log.debug( "got %s: %s %s" % ( shifter, userName, userGroup ) )
