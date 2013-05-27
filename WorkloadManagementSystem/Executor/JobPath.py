@@ -13,7 +13,8 @@
 """
 __RCSID__ = "$Id$"
 import types
-from DIRAC import S_OK, S_ERROR, List
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import List
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 
