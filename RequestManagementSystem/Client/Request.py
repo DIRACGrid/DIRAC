@@ -96,7 +96,7 @@ class Request( Record ):
                "RequestName" : "VARCHAR(255) NOT NULL",
                "OwnerDN" : "VARCHAR(255)",
                "OwnerGroup" : "VARCHAR(32)",
-               "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Canceled') DEFAULT 'Waiting'",
+               "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled') DEFAULT 'Waiting'",
                "Error" : "VARCHAR(255)",
                "DIRACSetup" : "VARCHAR(32)",
                "SourceComponent" : "BLOB",
