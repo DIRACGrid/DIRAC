@@ -22,7 +22,7 @@ class AlwaysProbingPolicy( PolicyBase ):
 
     policyResult = { 
                      'Status' : 'Probing', 
-                     'Reason' : 'This is the AlwaysProbing policy' 
+                     'Reason' : 'AlwaysProbing' 
                    }
     
     return S_OK( policyResult )
