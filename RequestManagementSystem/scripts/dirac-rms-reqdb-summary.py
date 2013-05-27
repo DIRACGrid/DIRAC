@@ -31,11 +31,15 @@ if __name__ == "__main__":
   ops = dbSummary.get( "Operation", {} )
   fs = dbSummary.get( "File", {} )
 
+  DIRAC.gLogger.always( "Requests:" )
   for reqState, reqCount in sorted( reqs.items() ):
-    DIRAC.gLogger.always( "%s Requests with '%s' status" % ( reqCount, reqState ) )
+    DIRAC.gLogger.always( "- %s Requests with '%s' status" % ( reqCount, reqState ) )
+
+  DIRAC.gLogger.always( "Operations:" )
   for opType, opDict in sorted( ops.items() ):
     for opState, opCount in sorted( opDict.items() ):
       DIRAC.gLogger.always( "  %s '%s' Operations with '%s' status" % ( opCount, opType, opState ) )
+  DIRAC.gLogger.always( "Files:" )
   for fState, fCount in sorted( fs.items() ):
     DIRAC.gLogger.always( "    %s Files with '%s' status" % ( fCount, fState ) )
 
