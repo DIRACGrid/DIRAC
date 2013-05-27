@@ -132,7 +132,7 @@ class TransformationDB( DB ):
                                          'LFN': 'VARCHAR(255) UNIQUE',
                                          'Status': "VARCHAR(32) DEFAULT 'AprioriGood'"},
                               'Indexes': {'Status': ['Status']},
-                              'PrimaryKey': ['FileID', 'LFN'],
+                              'PrimaryKey': ['FileID'],
                               'Engine': 'InnoDB'
                               }
 
