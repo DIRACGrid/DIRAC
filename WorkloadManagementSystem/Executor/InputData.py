@@ -251,6 +251,9 @@ class InputData( OptimizerExecutor ):
           siteSet.update( result['Value'] )
       lfnSEs[ lfn ] = siteSet
 
+    if not lfnSEs:
+      return S_ERROR( "No candidate sites available" )
+
     #This makes an intersection of all sets in the dictionary and returns a set with it
     siteCandidates = set.intersection( *[ lfnSEs[ lfn ] for lfn in lfnSEs ] )
 
