@@ -23,9 +23,8 @@ from DIRAC.Core.Utilities.Time                                 import fromString
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement                    import StorageElement
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources        import getSiteTier
-
-
-from DIRAC                                                     import S_OK, S_ERROR, List
+from DIRAC                                                     import S_OK, S_ERROR
+from DIRAC.Core.Utilities                                      import List
 
 import random
 
