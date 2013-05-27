@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     DIRAC.gLogger.info( "requestName=%s requestID=%s status=%s %s" % ( request.RequestName,
                                                                        request.RequestID,
-                                                                       requst.Status,
+                                                                       request.Status,
                                                                        "error=%s" % request.Error if request.Error else "" ) )
     for op in request:
       DIRAC.gLogger.info( "  operation type=%s operationID=%s order=%s status=%s %s" % ( op.Type,
