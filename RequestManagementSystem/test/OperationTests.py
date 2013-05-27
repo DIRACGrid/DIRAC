@@ -121,14 +121,6 @@ class OperationTests( unittest.TestCase ):
     except Exception, error:
       self.assertEqual( type( error ), ValueError, "wrong exc raised" )
 
-    # operation = Operation()
-    # try:
-    #  operation.Type = "foo"
-    # except Exception, error:
-    #  self.assertEqual( type( error ), ValueError )
-    #  self.assertEqual( str( error ), "'foo' in not valid Operation!" )
-
-
     # # timestamps
     try:
       operation.SubmitTime = "foo"
@@ -208,6 +200,37 @@ class OperationTests( unittest.TestCase ):
     toSQL = operation.toSQL()
     self.assertEqual( toSQL["OK"], True, "toSQL error" )
     self.assertEqual( toSQL["Value"].startswith( "UPDATE" ), True, "OperationID set, but SQL starts with INSERT" )
+
+  def test04StateMachine( self ):
+    """ state machine """
+    op = Operation()
+    self.assertEqual( op.Status, "Queued", "1. wrong status" )
+
+    op.addFile( File( {"Status": "Waiting"} ) )
+    self.assertEqual( op.Status, "Queued", "2. wrong status" )
+
+    op.addFile( File( {"Status": "Scheduled" } ) )
+    self.assertEqual( op.Status, "Queued", "3. wrong status" )
+
+    op.addFile( File( {"Status": "Done" } ) )
+    self.assertEqual( op.Status, "Queued", "4. wrong status" )
+
+    op.addFile( File( { "Status": "Failed" } ) )
+    self.assertEqual( op.Status, "Failed", "5. wrong status" )
+
+    op[3].Status = "Scheduled"
+    self.assertEqual( op.Status, "Queued", "6. wrong status" )
+
+    op[0].Status = "Scheduled"
+    self.assertEqual( op.Status, "Scheduled", "7. wrong status" )
+
+    op[0].Status = "Waiting"
+    self.assertEqual( op.Status, "Queued", "8. wrong status" )
+
+    for f in op:
+      f.Status = "Done"
+    self.assertEqual( op.Status, "Done", "9. wrong status " )
+
 
 
 # # test execution

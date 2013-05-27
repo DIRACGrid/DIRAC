@@ -108,25 +108,30 @@ class Operation( Record ):
   # # protected methods for parent only
   def _notify( self ):
     """ notify self about file status change """
-    fStatus = set( self.fileStatusList() )
-    newStatus = self.Status
-    # print "1 _notify", fStatus, self.Status, newStatus
-    if "Done" in fStatus:
-      fStatus = fStatus - set( [ "Done" ] )
-      newStatus = "Done"
-    if "Failed" in fStatus:
-      fStatus = fStatus - set( [ "Failed" ] )
-      newStatus = "Failed"
-    if "Scheduled" in fStatus:
-      newStatus = "Scheduled"
-    if "Waiting" in fStatus:
-      fStatus = fStatus - set( "Waiting" )
-      newStatus = "Queued"
+    fStatus = list( set( self.fileStatusList() ) )
+    newStatus = "Done"
+    while sorted( fStatus ):
+      status = fStatus.pop( 0 )
+      # # one file Failed -> Failed
+      if status == "Failed":
+        newStatus = "Failed"
+        break
 
-    # print "2 _notify", fStatus, self.Status, newStatus
-    if newStatus != self.Status:
-      self.Status = newStatus
-    # print "3 _notify", fStatus, self.Status, newStatus
+      if status == "Scheduled":
+        if newStatus == "Done":
+          newStatus = "Scheduled"
+        continue
+
+      elif status == "Waiting":
+        newStatus = "Queued"
+        continue
+
+      elif status == "Done":
+        continue
+
+    self.__data__["Status"] = newStatus
+    if self._parent:
+      self._parent._notify()
 
   def _setQueued( self, caller ):
     """ don't touch """
@@ -274,6 +279,7 @@ class Operation( Record ):
     if type( value ) != str:
       raise TypeError( "Error has to be a string!" )
     self.__data__["Error"] = self._escapeStr( value, 255 )
+
   @property
   def Status( self ):
     """ Status prop """
@@ -284,15 +290,11 @@ class Operation( Record ):
     """ Status setter """
     if value not in Operation.ALL_STATES:
       raise ValueError( "unknown Status '%s'" % str( value ) )
-    if value in Operation.FINAL_STATES and self.__files__:
-      fStatuses = self.fileStatusList()
-      # # no update
-      if "Scheduled" in fStatuses or "Waiting" in fStatuses:
-        return
-    # # update? notify parent
-    old = self.__data__["Status"]
-    self.__data__["Status"] = value
-    if value != old and self._parent:
+    if self.__files__:
+      self._notify()
+    else:
+      self.__data__["Status"] = value
+    if self._parent:
       self._parent._notify()
 
   @property
