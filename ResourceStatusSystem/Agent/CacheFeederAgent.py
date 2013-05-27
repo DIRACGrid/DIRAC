@@ -26,7 +26,7 @@ class CacheFeederAgent( AgentModule ):
   '''
 
   # Too many public methods
-  # pylint: disable-msg=R0904  
+  # pylint: disable=R0904  
 
   def __init__( self, *args, **kwargs ):
     
@@ -46,6 +46,9 @@ class CacheFeederAgent( AgentModule ):
 
     self.commands[ 'Downtime' ]            = [ { 'Downtime'            : {} } ]
     self.commands[ 'SpaceTokenOccupancy' ] = [ { 'SpaceTokenOccupancy' : {} } ]
+    self.commands[ 'Pilot' ]               = [ { 'Pilot' : { 'timespan' : 1800 } },]
+#                                               { 'Pilot' : { 'timespan' : 86400 } },
+#                                               { 'Pilot' : { 'timespan' : 604800 } }]
  
     
     #PilotsCommand
