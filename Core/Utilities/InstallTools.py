@@ -74,6 +74,14 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, ResourcesDefaults, CSGlobals
 from DIRAC.Core.Security.Properties import *
 
+from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Base.ExecutorModule import ExecutorModule
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
+
+
 # On command line tools this can be set to True to abort after the first error.
 exitOnError = False
 
@@ -500,7 +508,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
   sectionName = "Agents"
   if componentType == 'service':
     sectionName = "Services"
-  elif componentType == 'executor':  
+  elif componentType == 'executor':
     sectionName = "Executors"
 
   # Check if the component CS options exist
@@ -525,13 +533,13 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
   resultAddToCFG = _addCfgToCS( compCfg )
   if componentType == 'executor':
     # Is it a container ?        
-    execList = compCfg.getOption('%s/Load' % componentSection,[])
+    execList = compCfg.getOption( '%s/Load' % componentSection, [] )
     for element in execList:
-      result = addDefaultOptionsToCS( gConfig, componentType, systemName, element, extensions, setup, 
-                                      {}, overwrite)
-      resultAddToCFG.setdefault('Modules',{})
+      result = addDefaultOptionsToCS( gConfig, componentType, systemName, element, extensions, setup,
+                                      {}, overwrite )
+      resultAddToCFG.setdefault( 'Modules', {} )
       resultAddToCFG['Modules'][element] = result['OK']
-  return resultAddToCFG  
+  return resultAddToCFG
 
 def addDefaultOptionsToComponentCfg( componentType, systemName, component, extensions ):
   """
@@ -581,7 +589,7 @@ def addCfgToComponentCfg( componentType, systemName, component, cfg ):
   gLogger.error( error )
   return S_ERROR( error )
 
-def getComponentCfg( componentType, system, component, compInstance, extensions, 
+def getComponentCfg( componentType, system, component, compInstance, extensions,
                      specialOptions = {}, addDefaultOptions = True ):
   """
   Get the CFG object of the component configuration
@@ -597,7 +605,7 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
     componentModule = specialOptions['Module']
 
   compCfg = CFG()
-  
+
   if addDefaultOptions:
     extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
     for ext in extensionsDIRAC + ['DIRAC']:
@@ -608,8 +616,8 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
         loadCfg = CFG()
         loadCfg.loadFromFile( cfgTemplatePath )
         compCfg = loadCfg.mergeWith( compCfg )
-  
-  
+
+
     compPath = cfgPath( sectionName, componentModule )
     if not compCfg.isSection( compPath ):
       error = 'Can not find %s in template' % compPath
@@ -738,6 +746,19 @@ def printOverallStatus( rDict ):
 
   return S_OK()
 
+def getAvailableSystems( extensions ):
+  """ Get the list of all systems (in all given extensions) locally available
+  """
+  systems = []
+
+  for extension in extensions:
+    extensionPath = os.path.join( DIRAC.rootPath, extension, '*System' )
+    for system in [ os.path.basename( k ).split( 'System' )[0] for k in glob.glob( extensionPath ) ]:
+      if system not in systems:
+        systems.append( system )
+
+  return systems
+
 def getSoftwareComponents( extensions ):
   """  Get the list of all the components ( services and agents ) for which the software
        is installed on the system
@@ -794,7 +815,7 @@ def getSoftwareComponents( extensions ):
               if not executors.has_key( system ):
                 executors[system] = []
               executors[system].append( executor.replace( '.py', '' ) )
-      except OSError:       
+      except OSError:
         pass
 
   resultDict = {}
@@ -1056,6 +1077,22 @@ def getOverallStatus( extensions ):
 
   return S_OK( resultDict )
 
+def checkComponentModule( componentType, system, module ):
+  """ Check existence of the given module
+      and if it inherits from the proper class
+  """
+  if componentType == 'agent':
+    loader = ModuleLoader( "Agent", PathFinder.getAgentSection, AgentModule )
+  elif componentType == 'service':
+    loader = ModuleLoader( "Service", PathFinder.getServiceSection,
+                                      RequestHandler, moduleSuffix = "Handler" )
+  elif componentType == 'executor':
+    loader = ModuleLoader( "Executor", PathFinder.getExecutorSection, ExecutorModule )
+  else:
+    return S_ERROR( 'Unknown component type %s' % componentType )
+
+  return loader.loadModule( "%s/%s" % ( system, module ) )
+
 def checkComponentSoftware( componentType, system, component, extensions ):
   """ Check the component software
   """
@@ -1166,6 +1203,7 @@ def setupSite( scriptCfg, cfg = None ):
   setupDatabases = localCfg.getOption( cfgInstallPath( 'Databases' ), [] )
   setupServices = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Services' ), [] ) ]
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
+  setupExecutors = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Executors' ), [] ) ]
   setupWeb = localCfg.getOption( cfgInstallPath( 'WebPortal' ), False )
   setupConfigurationMaster = localCfg.getOption( cfgInstallPath( 'ConfigurationMaster' ), False )
   setupPrivateConfiguration = localCfg.getOption( cfgInstallPath( 'PrivateConfiguration' ), False )
@@ -1190,9 +1228,22 @@ def setupSite( scriptCfg, cfg = None ):
   for agentTuple in setupAgents:
     error = ''
     if len( agentTuple ) != 2:
-      error = 'Wrong agent specification: system/service'
+      error = 'Wrong agent specification: system/agent'
     # elif agentTuple[0] not in setupSystems:
     #   error = 'System %s not available' % agentTuple[0]
+    if error:
+      if exitOnError:
+        gLogger.error( error )
+        DIRAC.exit( -1 )
+      return S_ERROR( error )
+    agentSysInstance = agentTuple[0]
+    if not agentSysInstance in setupSystems:
+      setupSystems.append( agentSysInstance )
+
+  for executorTuple in setupExecutors:
+    error = ''
+    if len( executorTuple ) != 2:
+      error = 'Wrong executor specification: system/executor'
     if error:
       if exitOnError:
         gLogger.error( error )
@@ -1246,7 +1297,7 @@ def setupSite( scriptCfg, cfg = None ):
       return S_ERROR( error )
 
   # if any server or agent needs to be install we need the startup directory and runsvdir running
-  if setupServices or setupAgents or setupWeb:
+  if setupServices or setupAgents or setupExecutors or setupWeb:
     if not os.path.exists( startDir ):
       try:
         os.makedirs( startDir )
@@ -1334,12 +1385,16 @@ def setupSite( scriptCfg, cfg = None ):
       addSystemInstance( system, instance, setup, True )
     for system, service in setupServices:
       if not addDefaultOptionsToCS( None, 'service', system, service, extensions, overwrite = True )['OK']:
-        # If we are not allowed to write to the central CS add the configuration to the local file
+        # If we are not allowed to write to the central CS, add the configuration to the local file
         addDefaultOptionsToComponentCfg( 'service', system, service, extensions )
     for system, agent in setupAgents:
       if not addDefaultOptionsToCS( None, 'agent', system, agent, extensions, overwrite = True )['OK']:
-        # If we are not allowed to write to the central CS add the configuration to the local file
+        # If we are not allowed to write to the central CS, add the configuration to the local file
         addDefaultOptionsToComponentCfg( 'agent', system, agent, extensions )
+    for system, executor in setupExecutors:
+      if not addDefaultOptionsToCS( None, 'executor', system, executor, extensions, overwrite = True )['OK']:
+        # If we are not allowed to write to the central CS, add the configuration to the local file
+        addDefaultOptionsToComponentCfg( 'executor', system, executor, extensions )
   else:
     gLogger.warn( 'Configuration parameters definition is not requested' )
 
@@ -1386,7 +1441,11 @@ def setupSite( scriptCfg, cfg = None ):
   for system, agent in setupAgents:
     setupComponent( 'agent', system, agent, extensions )
 
-  # 6.- And finally the Portal
+  # 6.- Now the executors
+  for system, executor in setupExecutors:
+    setupComponent( 'executor', system, executor, extensions )
+
+  # 7.- And finally the Portal
   if setupWeb:
     setupPortal()
 
@@ -1396,6 +1455,8 @@ def setupSite( scriptCfg, cfg = None ):
       runsvctrlComponent( system, service, 't' )
     for system, agent in setupAgents:
       runsvctrlComponent( system, agent, 't' )
+    for system, executor in setupExecutors:
+      runsvctrlComponent( system, executor, 't' )
 
   return S_OK()
 
@@ -1430,23 +1491,27 @@ exec svlogd .
 def installComponent( componentType, system, component, extensions, componentModule = '' ):
   """ Install runit directory for the specified component
   """
-  # Check that the software for the component is installed
-  cModule = componentModule
-  if not cModule:
-    cModule = component
-  if not checkComponentSoftware( componentType, system, cModule, extensions )['OK'] and componentType != 'executor':
-    error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
-    if exitOnError:
-      gLogger.error( error )
-      DIRAC.exit( -1 )
-    return S_ERROR( error )
-
   # Check if the component is already installed
   runitCompDir = os.path.join( runitDir, system, component )
   if os.path.exists( runitCompDir ):
     msg = "%s %s_%s already installed" % ( componentType, system, component )
     gLogger.notice( msg )
     return S_OK( runitCompDir )
+
+  # Check that the software for the component is installed
+  # Any "Load" or "Module" option in the configuration defining what modules the given "component"
+  # needs to load will be taken care of by checkComponentModule.
+  result = checkComponentModule( componentType, system, component )
+  if not result['OK']:
+  # cModule = componentModule
+  # if not cModule:
+  #   cModule = component
+  # if not checkComponentSoftware( componentType, system, cModule, extensions )['OK'] and componentType != 'executor':
+    error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
+    if exitOnError:
+      gLogger.error( error )
+      DIRAC.exit( -1 )
+    return S_ERROR( error )
 
   gLogger.notice( 'Installing %s %s/%s' % ( componentType, system, component ) )
 
@@ -1547,11 +1612,11 @@ def uninstallComponent( system, component ):
   """
   Remove startup and runit directories
   """
-  
+
   result = runsvctrlComponent( system, component, 'd' )
   if not result['OK']:
     pass
-  
+
   result = unsetupComponent( system, component )
 
   for runitCompDir in glob.glob( os.path.join( runitDir, system, component ) ):
@@ -2003,7 +2068,7 @@ def installDatabase( dbName ):
           if exitOnError:
             DIRAC.exit( -1 )
           return S_ERROR( error )
-        perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER"
+        perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW, SHOW VIEW"
         for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
                                                                                        mysqlPassword ),
                     "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,

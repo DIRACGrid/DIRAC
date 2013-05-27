@@ -1,13 +1,14 @@
 # $HeadURL$
-__RCSID__ = "$Id$"
+__RCSID__ = "b7db10b (2013-03-06 01:10:41 +0100) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
 
-import threading
+#import threading
 import time
 import types
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities import Time, ExitCallback, Network, ThreadScheduler
+from DIRAC.Core.Utilities import Time, Network, ThreadScheduler
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class MonitoringClientActivityNotDefined( Exception ):
@@ -48,7 +49,7 @@ class MonitoringFlusher:
 
 gMonitoringFlusher = MonitoringFlusher()
 
-class MonitoringClient:
+class MonitoringClient(object):
 
   #Different types of operations
   OP_MEAN = "mean"
@@ -76,12 +77,24 @@ class MonitoringClient:
     self.marksToSend = {}
     self.__compRegistrationExtraDict = {}
     self.__compCommitExtraDict = {}
-    self.activitiesLock = threading.Lock()
-    self.flushingLock = threading.Lock()
+    self.__activitiesLock = None #threading.Lock()
+    self.__flushingLock = None #threading.Lock()
     self.timeStep = 60
     self.__initialized = False
     self.__enabled = True
 
+  @property
+  def activitiesLock( self ):
+    if not self.__activitiesLock:
+      self.__activitiesLock = LockRing().getLock( "activityLock" )
+    return self.__activitiesLock
+
+  @property
+  def flushingLock( self ):
+    if not self.__flushingLock:
+      self.__flushingLock = LockRing().getLock( "flushingLock" )
+    return self.__flushingLock
+  
   def disable( self ):
     self.__enabled = False
 
