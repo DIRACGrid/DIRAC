@@ -11,7 +11,8 @@ except ImportError:
   gZipEnabled = False
 
 try:
-  from DIRAC.Core.Utilities import S_OK, S_ERROR
+  #FIXME: why is this inside the try / except ???
+  from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
   from DIRAC.Core.Utilities import List, ThreadSafe
 
   gCFGSynchro = ThreadSafe.Synchronizer( recursive = True )

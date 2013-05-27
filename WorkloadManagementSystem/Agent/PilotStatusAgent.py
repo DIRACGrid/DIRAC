@@ -10,7 +10,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC import S_OK, S_ERROR, gConfig, List
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
