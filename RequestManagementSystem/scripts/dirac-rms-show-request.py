@@ -43,18 +43,12 @@ if __name__ == "__main__":
                                                                        request.Status,
                                                                        "error=%s" % request.Error if request.Error else "" ) )
     for i, op in enumerate( request ):
-      DIRAC.gLogger.always( "  [%s] operation type=%s operationID=%s order=%s status=%s %s" % ( i,
-                                                                                               op.Type,
-                                                                                               op.OperationID,
-                                                                                               op.Order,
-                                                                                               op.Status,
+      DIRAC.gLogger.always( "  [%s] operation type=%s operationID=%s order=%s status=%s %s" % ( i, op.Type, op.OperationID,
+                                                                                               op.Order, op.Status,
                                                                                                "error=%s" % op.Error if op.Error else "" ) )
       for j, f in enumerate( op ):
-        DIRAC.gLogger.always( "    [%s] file fileID=%s LFN=%s status=%s %s" % ( j,
-                                                                                f.FileID,
-                                                                                f.LFN,
-                                                                                f.Status,
-                                                                                "error=%s" % f.Error if f.Error else "" ) )
+        DIRAC.gLogger.always( "    [%s] fileID=%s LFN=%s status=%s %s" % ( j, f.FileID, f.LFN, f.Status,
+                                                                           "error=%s" % f.Error if f.Error else "" ) )
 
 
 
