@@ -11,6 +11,7 @@ import DIRAC
 from DIRAC.Core.Base import Script
 
 Script.registerSwitch( "U", "Update", "Update dirac.cfg with the resulting value" )
+Script.registerSwitch( "R:", "Reconfig=", "Update given configuration file with the resulting value" )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -19,10 +20,13 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine( ignoreErrors = True )
 
 update = False
+configFile = None
 
 for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "U", "Update" ):
     update = True
+  elif unprocSw[0] in ( "R", "Reconfig" ):
+    configFile = unprocSw[1]
 
 
 if __name__ == "__main__":
@@ -41,4 +45,20 @@ if __name__ == "__main__":
   if update:
     DIRAC.gConfig.setOptionValue( '/LocalSite/CPUNormalizationFactor', norm )
     DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
+  if configFile:
+    from DIRAC.Core.Utilities.CFG import CFG
+    cfg = CFG()
+    try:
+      # Attempt to open the given file
+      cfg.loadFromFile( configFile )
+    except:
+      pass
+    # Create the section if it does not exist
+    if not cfg.existsKey( 'LocalSite' ):
+      cfg.createNewSection( 'LocalSite' )
+    cfg.setOption( '/LocalSite/CPUNormalizationFactor', norm )
+
+    cfg.writeToFile( configFile )
+
+
   DIRAC.exit()
