@@ -3,6 +3,8 @@
    DISETSubRequest Class encapsulates a request definition to accomplish a DISET
    RPC call
 
+  OBSOLETE
+  K.C.
 """
 
 __RCSID__ = "$Id$"

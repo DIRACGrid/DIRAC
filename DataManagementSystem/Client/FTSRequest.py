@@ -5,6 +5,9 @@
     =================
 
     Helper class to perform FTS job submission and monitoring.
+
+    OBSOLETE
+    K.C.
 """
 ## imports
 import os

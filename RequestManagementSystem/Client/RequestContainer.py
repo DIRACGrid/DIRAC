@@ -1,8 +1,10 @@
 # $HeadURL$
-
 """
 The Data Management Request contains all the necessary information for
 a data management operation.
+
+DEFINITELY OBSOLETE
+K.C.
 """
 import os, xml.dom.minidom, copy, datetime, time
 from types import DictType, ListType, NoneType, StringTypes

@@ -8,6 +8,9 @@
   The FTSMonitorAgent takes FTS Requests from the TransferDB and monitors their execution
   using FTSRequest helper class.
 
+
+  OBSOLETE
+  K.C.
 """
 ## imports
 import time

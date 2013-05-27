@@ -1,6 +1,10 @@
 """
   This is the client implementation for the RequestDB using the DISET framework.
   A.Smith 23/5/07
+
+  OBSOLETE
+  K.C.
+
 """
 
 from types import *

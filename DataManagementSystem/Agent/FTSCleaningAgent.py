@@ -13,6 +13,10 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     Cleaning of the procesed requests in TransferDB.
+
+
+    OBSOLETE
+    K.C.
 """
 
 __RCSID__ = "$Id $"

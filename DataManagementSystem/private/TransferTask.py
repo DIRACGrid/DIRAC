@@ -13,6 +13,9 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     transfer request processing
+
+    OBSOLETE
+    K.C.
 """
 
 __RCSID__ = "$Id $"

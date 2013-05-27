@@ -12,6 +12,9 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     removal requests processing 
+
+    OBSOLETE
+    K.C.
 """
 __RCSID__ = "$Id $"
 ##

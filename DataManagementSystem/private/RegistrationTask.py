@@ -11,7 +11,10 @@
     .. module: RegistrationTask
     :synopsis: 
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-    
+
+
+   OBSOLETE
+   K.C.
 """
 
 __RCSID__ = "$Id $"

@@ -13,6 +13,9 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     test case for RemovalTask
+
+    OBSOLETE
+    K.C.
 """
 
 __RCSID__ = "$Id $"

@@ -3,6 +3,9 @@
 ########################################################################
 
 """ RegistrationAgent takes 'register' requests from the RequestDB and registers them.
+
+OBSOLETE
+K.C.
 """
 
 __RCSID__ = "$Id$"

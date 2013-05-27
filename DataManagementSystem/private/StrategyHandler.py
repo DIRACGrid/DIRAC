@@ -12,6 +12,9 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     implementation of helper class for FTS scheduling
+
+    OBSOLETE
+    K.C.
 """
 __RCSID__ = "$Id$"
 ##

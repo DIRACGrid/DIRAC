@@ -1,3 +1,8 @@
+"""
+  wrong directory and OBSOLETE
+  K.C.
+
+"""
 import unittest, types, time, os
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 

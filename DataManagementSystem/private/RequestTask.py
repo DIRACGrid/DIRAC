@@ -14,7 +14,7 @@
     Base class for requests execution in a separate subprocesses.
 
   OBSOLETE
-
+  K.C.
 """
 
 __RCSID__ = "$Id $"

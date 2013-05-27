@@ -3,6 +3,9 @@
 ########################################################################
 
 """  Zuzia picks out the requests that she finds then tries to put them in the central server.
+
+  OBSOLETE
+  K.C.
 """
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
