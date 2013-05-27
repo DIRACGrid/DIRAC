@@ -83,8 +83,11 @@ if __name__ == "__main__":
     opFile = File()
     opFile.LFN = lfn
     opFile.Size = metaDict["Size"]
-    opFile.Checksum = metaDict["Checksum"]
-    opFile.ChecksumType = "ADLER32"
+
+    if "Checksum" in metaDict:
+      # # should check checksum type, now assuming Adler32 (metaDict["ChecksumType"] = 'AD'
+      opFile.Checksum = metaDict["Checksum"]
+      opFile.ChecksumType = "ADLER32"
     replicateAndRegister.addFile( opFile )
 
   reqClient = ReqClient()
@@ -93,8 +96,8 @@ if __name__ == "__main__":
     gLogger.error( "unable to put request '%s': %s" % ( requestName, putRequest["Message"] ) )
     DIRAC.exit( -1 )
 
-  gLogger.always( "request '%s' has been put to ReqDB" )
-  gLogger.always( "you can monitor its status using command 'dirac-rms-show-request %s'" % requestName )
+  gLogger.always( "Request '%s' has been put to ReqDB for execution." )
+  gLogger.always( "You can monitor its status using command: 'dirac-rms-show-request %s'" % requestName )
   DIRAC.exit( 0 )
 
 
