@@ -297,7 +297,7 @@ class RequestTask( object ):
     gMonitor.flush()
 
     # # just in case allow state propagation again
-    self.request._notify()
+    # self.request._notify()
 
     # # request done?
     if self.request.Status == "Done":
