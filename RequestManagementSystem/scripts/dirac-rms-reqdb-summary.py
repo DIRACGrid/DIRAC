@@ -23,7 +23,7 @@ if __name__ == "__main__":
     DIRAC.exit( -1 )
 
   dbSummary = dbSummary["Value"]
-  if not dbSumamry:
+  if not dbSummary:
     DIRAC.gLogger.info( "ReqDB is empty!" )
     DIRAC.exit( 0 )
 
