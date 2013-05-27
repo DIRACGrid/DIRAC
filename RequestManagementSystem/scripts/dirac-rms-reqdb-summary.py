@@ -37,7 +37,7 @@ if __name__ == "__main__":
   else:
     for reqState, reqCount in sorted( reqs.items() ):
       DIRAC.gLogger.always( "%s Requests with %s status" % ( reqCount, reqState ) )
-    for opType, opDict in sorted( ops ):
+    for opType, opDict in sorted( ops.items() ):
       for opState, opCount in sorted( opDict.items() ):
         DIRAC.gLogger( "%s Operations of type %s with status %s" % ( opCount, opType, opState ) )
     for fState, fCount in sorted( fs ):
