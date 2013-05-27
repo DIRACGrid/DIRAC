@@ -135,12 +135,27 @@ class JobDB( DB ):
 
   def __schemaMigration_0( self ):
     self.log.info( "Updating MasterJobIDs..." )
+    #Set MasterJobID to the JobID if not set
     result = self._update( "UPDATE `Jobs` SET MasterJobID = JobID WHERE MasterJobID = 0" )
     if not result[ 'OK' ]:
       return result
-    result = self._update( "ALTER TABLE Jobs CHANGE JobSplitType HerdState ENUM ('Single','WillSplit','Splitted') NOT NULL DEFAULT 'Single'" )
+    #Alter JobSplitType to HerdState
+    result = self._query( "DESCRIBE Jobs" )
     if not result[ 'OK' ]:
       return result
+    cols = result[ 'Value' ]
+    found = False
+    for col in cols:
+      if col[0] == 'JobSplitType':
+        result = self._update( "ALTER TABLE Jobs CHANGE JobSplitType HerdState ENUM ('Single','WillSplit','Splitted') NOT NULL DEFAULT 'Single'" )
+        if not result[ 'OK' ]:
+          return result
+    #Get current tables
+    result = self._query( "SHOW TABLES" )
+    if not result[ 'OK' ]:
+      return result
+    tablesInDB = [ t[0] for t in result[ 'Value' ] ]
+    #Create required tables
     tables = { 'SchemaVersion' : { 'Fields' : { 'Version' : 'INTEGER UNSIGNED' } } }
     tables[ 'LFN' ] = { 'Fields' : { 'LFNID' : 'INTEGER NOT NULL AUTO_INCREMENT',
                                      'JobID' : 'INTEGER UNSIGNED NOT NULL',
@@ -161,13 +176,40 @@ class JobDB( DB ):
                                             'JDL' : 'BLOB NOT NULL' },
                              'PrimaryKey' : [ 'JobID' ] }
 
+    for t in tablesInDB:
+      try:
+        tables.pop( t )
+      except KeyError:
+        pass
     result = self._createTables( tables )
     if not result[ 'OK' ]:
       return result
-    dropTables = [ 'SubJobs', 'PrecursorJobs', 'TaskQueues', 'TaskQueue', 'InputData' ]
-    self.log.info( "Info dropping tables %s" % ", ".join( dropTables ) )
+    #Drop old tables
+    dropTables = []
+    for t in [ 'SubJobs', 'PrecursorJobs', 'TaskQueues', 'TaskQueue', 'InputData' ]:
+      if t in tablesInDB:
+        dropTables.append( t )
 
-    return self._update( "DROP TABLE %s" % ", ".join( dropTables ) )
+    if dropTables:
+      self.log.info( "Info dropping tables %s" % ", ".join( dropTables ) )
+
+      result = self._update( "DROP TABLE %s" % ", ".join( dropTables ) )
+      if not result[ 'OK' ]:
+        return result
+
+    #Migrate to innodb
+    result = self._query( "SHOW TABLE STATUS" )
+    if not result[ 'OK' ]:
+      return result
+    tableStatus = dict( [ ( r[0], r[1] ) for r in result[ 'Value' ] ] )
+    for tableName in tableStatus:
+      if tableStatus[ tableName ] == "MyISAM":
+        self.log.info( "Migrating table %s to innodb" % tableName )
+        result = self._update( "ALTER TABLE `%s` ENGINE = INNODB" % tableName )
+        if not result[ 'OK' ]:
+          self.log.error( "Error migrating %s to innodb: %s" % ( tableName, result[ 'Message' ] ) )
+    return S_OK()
+
 
 
   def __checkDBVersion( self ):

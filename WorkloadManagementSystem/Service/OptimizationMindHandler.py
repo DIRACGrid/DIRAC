@@ -112,14 +112,14 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     try:
       result = cls.__jobDB.insertSplittedManifests( jid, manifests )
       if not result[ 'OK' ]:
-        cls.__failJob( jid, "Error while splitting", result[ 'Value' ] )
+        cls.__failJob( jid, "Error while splitting", result[ 'Message' ] )
         return S_ERROR( "Fail splitting" )
       for jid in result[ 'Value' ]:
         cls.forgetTask( jid )
         cls.executeTask( jid, OptimizationTask( jid ) )
-    except:
+    except Exception, excp:
       cls.log.exception( "While splitting" )
-      cls.__failJob( jid, "Error while splitting" )
+      cls.__failJob( jid, "Error while splitting", str( excp ) )
     return S_OK()
 
   @classmethod
