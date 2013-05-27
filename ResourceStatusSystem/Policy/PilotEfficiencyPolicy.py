@@ -1,8 +1,9 @@
 # $HeadURL: $
 """ PilotEfficiencyPolicy
 
-  ... blah ...
-
+  Policy that calculates the efficiency following the formula:
+    done / ( failed + aborted + done )
+  if the denominator is smaller than 10, it does not take any decision.  
 """
 
 from DIRAC                                              import S_OK
@@ -11,9 +12,17 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 __RCSID__ = '$Id: $'
 
 class PilotEfficiencyPolicy( PolicyBase ):
+  """ PilotEfficiencyPolicy class, extends PolicyBase
+  """
   
   @staticmethod
   def _evaluate( commandResult ):
+    """ _evaluate
+    
+    efficiency < 0.5 :: Banned
+    efficiency < 0.9 :: Degraded
+    
+    """
 
     result = { 
                'Status' : None,
@@ -55,9 +64,9 @@ class PilotEfficiencyPolicy( PolicyBase ):
     
     efficiency = done / total
 
-    if efficiency < 0.65:
+    if efficiency < 0.5:
       result[ 'Status' ] = 'Banned'
-    elif efficiency < 0.90:
+    elif efficiency < 0.9:
       result[ 'Status' ] = 'Degraded'  
     else:   
       result[ 'Status' ] = 'Active'    
