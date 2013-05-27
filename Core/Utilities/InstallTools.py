@@ -874,7 +874,7 @@ def getSetupComponents():
         system, executor = component.split( '_' )[0:2]
         if not executors.has_key( system ):
           executors[system] = []
-        executors[system].append( agent )
+        executors[system].append( executor )
     except IOError:
       pass
 
