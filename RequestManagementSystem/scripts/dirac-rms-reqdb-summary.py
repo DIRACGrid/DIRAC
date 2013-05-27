@@ -35,7 +35,7 @@ if __name__ == "__main__":
     DIRAC.gLogger.always( "%s Requests with '%s' status" % ( reqCount, reqState ) )
   for opType, opDict in sorted( ops.items() ):
     for opState, opCount in sorted( opDict.items() ):
-      DIRAC.gLogger.always( "%s Operations of type '%s' with status '%s'" % ( opCount, opType, opState ) )
+      DIRAC.gLogger.always( "%s '%s' Operations with '%s' status" % ( opCount, opType, opState ) )
   for fState, fCount in sorted( fs.items() ):
     DIRAC.gLogger.always( "%s Files with '%s' status" % ( fCount, fState ) )
 
