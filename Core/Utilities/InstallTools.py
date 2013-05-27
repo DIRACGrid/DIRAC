@@ -895,7 +895,7 @@ def getSetupComponents():
         system, executor = component.split( '_' )[0:2]
         if not executors.has_key( system ):
           executors[system] = []
-        executors[system].append( agent )
+        executors[system].append( executor )
     except IOError:
       pass
 
@@ -2068,7 +2068,7 @@ def installDatabase( dbName ):
           if exitOnError:
             DIRAC.exit( -1 )
           return S_ERROR( error )
-        perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER"
+        perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW, SHOW VIEW"
         for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
                                                                                        mysqlPassword ),
                     "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,

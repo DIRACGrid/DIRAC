@@ -62,6 +62,25 @@ CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added 
         to the environment when running under glexec     
 NEW: XXXStorage - added getCurrentStatus() method        
 
+[v6r9-pre1]
+
+NEW: Refactored Request Management System, related DMS agents and FTS management
+     components
+
+[v6r8p14]
+
+*Core
+FIX: dirac-deploy-scripts - can now work with the system python
+
+*WMS
+NEW: dirac-wms-cpu-normalization - added -R option to modify a given configuration file
+FIX: Executor/InputData - Add extra check for LFns in InputData optimizer, closes #1472
+
+*Transformation
+CHANGE: TransformationAgent - add possibility to kick a transformation (not skip it if no 
+        unused files), by touching a file in workDirectory
+BUGFIX: TransformationAgent - bug in __cleanCache() dict modified in a loop        
+
 [v6r8p13]
 
 *Transformation
@@ -205,6 +224,12 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p30]
+
+*Core
+CHANGE: X509Chain - added groupProperties field to the getCredentials() report
+BUGFIX: InstallTools - in getSetupComponents() typo fixed: agent -> executor
 
 [v6r7p29]
 
