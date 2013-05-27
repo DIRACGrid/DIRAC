@@ -38,17 +38,17 @@ if __name__ == "__main__":
       DIRAC.gLogger.info("no such request")
       DIRAC.exit(0)
 
-    DIRAC.gLogger.always( "requestName=%s requestID=%s status=%s %s" % ( request.RequestName,
-                                                                       request.RequestID,
-                                                                       request.Status,
-                                                                       "error=%s" % request.Error if request.Error else "" ) )
+    DIRAC.gLogger.always( "Request name='%s' ID=%s Status='%s' %s" % ( request.RequestName,
+                                                                     request.RequestID,
+                                                                     request.Status,
+                                                                     "error=%s" % request.Error if request.Error else "" ) )
     for i, op in enumerate( request ):
-      DIRAC.gLogger.always( "  [%s] operation type=%s operationID=%s order=%s status=%s %s" % ( i, op.Type, op.OperationID,
-                                                                                               op.Order, op.Status,
-                                                                                               "error=%s" % op.Error if op.Error else "" ) )
+      DIRAC.gLogger.always( "  [%s] Operation Type='%s' ID=%s Order=%s Status='%s' %s" % ( i, op.Type, op.OperationID,
+                                                                                           op.Order, op.Status,
+                                                                                           "error=%s" % op.Error if op.Error else "" ) )
       for j, f in enumerate( op ):
-        DIRAC.gLogger.always( "    [%s] fileID=%s LFN=%s status=%s %s" % ( j, f.FileID, f.LFN, f.Status,
-                                                                           "error=%s" % f.Error if f.Error else "" ) )
+        DIRAC.gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s' %s" % ( j, f.FileID, f.LFN, f.Status,
+                                                                             "error=%s" % f.Error if f.Error else "" ) )
 
 
 
