@@ -53,6 +53,8 @@ NEW: TaskManager - if a site is specified in the job definition, it is now taken
 NEW: Speeding up the getTransformationSummary call, using an UpdateTransformationCounters agent     
 FIX: Multiple fixes to please pylint
 FIX: TransformationDB - removed bad index on TaskID
+CHANGE: TransformationDB - DataFiles table - removed LFN field from the Primary Key, tt was already UNIQUE, 
+        Primary key is FileID only now.
 
 *Resources
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
