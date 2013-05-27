@@ -137,9 +137,9 @@ class PilotCommand( Command ):
       uniformPilotDict = dict.fromkeys( pilotStatuses, 0 )
       uniformPilotDict.update( pilotDict )
       uniformPilotDict[ 'Timespan' ] = timespan
-      uniformPilotDict[ 'CE' ]       = computingElement
+      uniformPilotDict[ 'CE' ]       = ceName
             
-      uniformResult.append( pilotDict )
+      uniformResult.append( uniformPilotDict )
     
     # Store results
     storeRes = self._storeCommand( uniformResult )
