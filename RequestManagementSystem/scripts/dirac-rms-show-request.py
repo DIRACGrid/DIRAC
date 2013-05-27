@@ -47,7 +47,7 @@ if __name__ == "__main__":
                                                                                            op.Order, op.Status,
                                                                                            "error=%s" % op.Error if op.Error else "" ) )
       for j, f in enumerate( op ):
-        DIRAC.gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s' %s" % ( j, f.FileID, f.LFN, f.Status,
+        DIRAC.gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s' %s" % ( j + 1, f.FileID, f.LFN, f.Status,
                                                                              "error=%s" % f.Error if f.Error else "" ) )
 
 
