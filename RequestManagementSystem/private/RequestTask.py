@@ -292,12 +292,7 @@ class RequestTask( object ):
     if not shifter:
       os.unlink( proxyFile )
 
-    self.log.always( "aaaaaaaaaaaaaa %s %s" % ( self.request.Status, self.request.subStatusList() ) )
-
     gMonitor.flush()
-
-    # # just in case allow state propagation again
-    # self.request._notify()
 
     # # request done?
     if self.request.Status == "Done":
