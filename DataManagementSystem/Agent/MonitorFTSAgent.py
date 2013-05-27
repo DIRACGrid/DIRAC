@@ -16,8 +16,12 @@ import time
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
+# # from CS
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+# # from Core
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+from DIRAC.Core.Utilities.Time import fromString
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
@@ -28,6 +32,8 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+# # from Accounting
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
 # # RCSID
 __RCSID__ = "$Id$"
@@ -171,7 +177,6 @@ class MonitorFTSAgent( AgentModule ):
       if not finalize["OK"]:
         log.error( "unable to finalize ftsJob: %s" % finalize["Message"] )
 
-
     putFTSJob = self.ftsClient().putFTSJob( ftsJob )
     if not putFTSJob["OK"]:
       log.error( putFTSJob["Message"] )
@@ -274,6 +279,10 @@ class MonitorFTSAgent( AgentModule ):
 
     # # put back request if any
     if request:
+
+      # # send accounting record
+      self.sendAccounting( ftsJob, request.OwnerDN )
+
       if request.Status == "Done":
         log.info( "request %s is done" % request.RequestName )
         if request.JobID:
@@ -380,7 +389,7 @@ class MonitorFTSAgent( AgentModule ):
         opFile.PFN = pfn["Value"]
         registerOperation.addFile( opFile )
       request.insertBefore( registerOperation, transferOp )
-      return S_OK()
+    return S_OK()
 
   @staticmethod
   def filterFiles( ftsJob ):
@@ -433,4 +442,41 @@ class MonitorFTSAgent( AgentModule ):
       log.error( putJob["Message"] )
       return putJob
     return S_OK()
+
+  def sendAccounting( self, ftsJob, ownerDN ):
+    """ prepare and send DataOperation to AccouringDB """
+
+    dataOp = DataOperation()
+    dataOp.setStartTime( fromString( ftsJob.SubmitTime ) )
+    dataOp.setEndTime( fromString( ftsJob.LastUpdate ) )
+
+    accountingDict = dict()
+
+    accountingDict["OperationType"] = "ReplicateAndRegister"
+
+    username = getUsernameForDN( ownerDN )
+    if not username["OK"]:
+      username = ownerDN
+    else:
+      username = username["Value"]
+
+    accountingDict["User"] = username
+    accountingDict["Protocol"] = "FTS"
+
+    # accountingDict['RegistrationTime'] = 0
+    # accountingDict['RegistrationOK'] = 0
+    # accountingDict['RegistrationTotal'] = 0
+
+    accountingDict["TransferOK"] = ftsJob.Size
+    accountingDict["TransferTotal"] = ftsJob.Size + ftsJob.FailedSize
+    accountingDict["TransferSize"] = ftsJob.Size
+    accountingDict["FinalStatus"] = ftsJob.Status
+    accountingDict["Source"] = self.SourceSE
+    accountingDict["Destination"] = self.TargetSE
+    dt = fromString( ftsJob.LastUpdate ) - fromString( ftsJob.SubmitTime )
+    transferTime = dt.days * 86400 + dt.seconds
+    accountingDict["TransferTime"] = transferTime
+    dataOp.setValuesFromDict( accountingDict )
+    dataOp.commit()
+
 
