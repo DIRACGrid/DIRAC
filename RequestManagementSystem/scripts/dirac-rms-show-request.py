@@ -11,7 +11,9 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 
 if __name__ == "__main__":
 
-  from DIRAC.Core.Base.Script import parseCommandLine()
+  from DIRAC.Core.Base.Script import parseCommandLine
+  parseCommandLine()
+
   import DIRAC
 
   args = Script.getPositionalArgs()
