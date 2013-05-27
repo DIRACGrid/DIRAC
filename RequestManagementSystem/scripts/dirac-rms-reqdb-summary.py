@@ -27,11 +27,11 @@ if __name__ == "__main__":
     DIRAC.gLogger.info("ReqDB is empty!")
     DIRAC.exit(0)
 
-  reqs = dbSummary.get("Request", {} )
+  reqs = dbSummary.get( "Request", {} )
   ops = dbSummary.get( "Operation", {} )
   fs = dbSummary.get( "File", {} )
 
-  print dbSummary
+  print dbSummary["Request"]
   print reqs
   print ops
   print fs
