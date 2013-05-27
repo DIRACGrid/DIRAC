@@ -160,7 +160,6 @@ class Request( Record ):
           continue
         else:
           rStatus = "Done"
-
     self.Status = rStatus
 
   def getWaiting( self ):

@@ -294,8 +294,8 @@ class Operation( Record ):
       self._notify()
     else:
       self.__data__["Status"] = value
-    if self._parent:
-      self._parent._notify()
+      if self._parent:
+        self._parent._notify()
 
   @property
   def Order( self ):
