@@ -33,7 +33,10 @@ if __name__ == "__main__":
       DIRAC.gLogger.error( request["Message"] )
       DIRAC.exit(-1)
 
+    print request
+
     request = request["Value"]
+
     if not request:
       DIRAC.gLogger.info("no such request")
       DIRAC.exit(0)
