@@ -3,7 +3,7 @@
 __RCSID__ = "$Id: $"
 
 from DIRAC.Core.Base import Script
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
                                      ' %s [option|cfgfile] requestName' % Script.scriptName,
                                      'Arguments:',
