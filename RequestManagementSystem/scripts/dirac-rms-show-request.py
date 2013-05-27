@@ -33,19 +33,26 @@ if __name__ == "__main__":
       DIRAC.gLogger.error( request["Message"] )
       DIRAC.exit(-1)
 
-    print request
-
     request = request["Value"]
-
     if not request:
       DIRAC.gLogger.info("no such request")
       DIRAC.exit(0)
 
-    print request.RequestName, request.Status, request.Error
+    self.log.info( "requestName=%s requestID=%s status=%s %s" % ( request.RequestName,
+                                                                  request.RequestID,
+                                                                  requst.Status,
+                                                                  "error=%s" % request.Error if request.Error else "" ) )
     for op in request:
-      print op.Type, op.Status, op.Error
+      self.log.info( "  operation type=%s operationID=%s order=%s status=%s %s" % ( op.Type,
+                                                                                    op.OperationID,
+                                                                                    op.Order,
+                                                                                    op.Status,
+                                                                                    "error=%s" % op.Error if op.Error else "" ) )
       for f in op:
-        print f.LFN, f.PFN, f.Status, f.Error
+        self.log.info( "   file fileID=%s LFN=%s status=%s %s" % ( f.FileID,
+                                                                   f.LFN,
+                                                                   f.Status,
+                                                                   "error=%s" % f.Error if f.Error else "" ) )
 
 
 
