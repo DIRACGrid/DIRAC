@@ -126,7 +126,7 @@ class MonitorFTSAgent( AgentModule ):
 
     ftsJobs = self.ftsClient().getFTSJobList()
     if not ftsJobs["OK"]:
-      self.log.error( "execute: failed to get FTSJobs: %s" % ftsJobs["Message"] )
+      self.log.error( "execute: failed to get list of FTSJobs: %s" % ftsJobs["Message"] )
       return ftsJobs
 
     ftsJobs = ftsJobs["Value"]
