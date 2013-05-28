@@ -1,3 +1,12 @@
+[v6r8p15]
+
+*Core
+FIX: X509Chain - fix invalid information when doing dirac-proxy-info without CS
+     ( in getCredentials() )
+
+*RSS
+NEW: PDP, PEP - added support for option "doNotCombineResult" on PDP
+
 [v6r8p14]
 
 *Core
