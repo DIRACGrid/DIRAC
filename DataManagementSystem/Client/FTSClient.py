@@ -94,6 +94,15 @@ class FTSClient( Client ):
     getFTSSite = FTSSite( getFTSSite["Value"] ) if getFTSSite["Value"] else None
     return S_OK( getFTSSite )
 
+  def putFTSSite( self, ftsSite ):
+    """ put fts site """
+    ftsSiteJSON = ftsSite.toJSON()
+    if not ftsSiteJSON["OK"]:
+      self.log.error("putFTSSite: %s" % ftsSiteJSON["Message"] )
+      return ftsSiteJSON
+    ftsSiteJSON = ftsSiteJSON["Value"]
+    return self.ftsManager().putFTSSite( ftsSiteJSON )
+
   def getFTSSitesList( self ):
     """ get list of FTSSites """
     getFTSSitesList = self.ftsManager().getFTSSitesList()

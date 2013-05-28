@@ -20,12 +20,12 @@ if __name__ == "__main__":
 
   args = Script.getPositionalArgs()
 
-  ftsSite = ftsService = ""
+  ftsSite = ftsServer = ""
   if not len( args ) == 2:
     Script.showHelp()
     DIRAC.exit( 0 )
   else:
-    ftsSite, ftsService = args
+    ftsSite, ftsServer = args
 
   import DIRAC
   from DIRAC import gLogger, gConfig
@@ -40,9 +40,9 @@ if __name__ == "__main__":
     DIRAC.exit( -1 )
   ftsSites = ftsSites["Value"]
 
-  for ftsSite in ftsSites:
-    if ftsSite.Name == site:
-      gLogger.error( "FTSSite '%s' is present in FTSDB!!!" )
+  for site in ftsSites:
+    if site.Name == ftsSite:
+      gLogger.error( "FTSSite '%s' is present in FTSDB!!!" % ftsSite )
       DIRAC.exit( -1 )
 
   getSites = getSites()
@@ -51,15 +51,15 @@ if __name__ == "__main__":
     DIRAC.exit( -1 )
   getSites = getSites["Value"]
 
-  if ftsSite not in getSites:
-    gLogger.error( "Site '%s' is not defined in CS Resources/Sites section !!!" )
+  if "LCG." + ftsSite not in getSites:
+    gLogger.error( "Site '%s' is not defined in CS Resources/Sites section !!!" % ( "LCG.%s" % ftsSite ) )
     DIRAC.exit( -1 )
 
-  SEs = gConfig.getOption( "/Resources/Sites/%s/SE" % ftsSite , [] )
-  if not SEs:
-    gLogger.error( "unable to read SEs attached to site %s: %s" % ftsSite )
+  SEs = gConfig.getOption( "/Resources/Sites/LCG/LCG.%s/SE" % ftsSite , [] )
+  if not SEs["OK"]:
+    gLogger.error( "unable to read SEs attached to site LCG.%s: %s" % ftsSite )
     DIRAC.exit( -1 )
-
+  SEs = SEs["Value"]
 
   newSite = FTSSite()
   newSite.Name = ftsSite
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     DIRAC.exit( -1 )
 
   gLogger.always( "FTSSite '%s' using FTS server %s and serving %s SEs created" % ( newSite.Name,
-                                                                                       newSite.FTSService,
-                                                                                       SEs ) )
+                                                                                    newSite.FTSServer,
+                                                                                    SEs ) )
   DIRAC.exit( 0 )
 
