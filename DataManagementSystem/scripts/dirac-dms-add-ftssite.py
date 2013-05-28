@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
   ftsClient = FTSClient()
 
-  ftsSites = ftsClient.getFTSSiteList()
+  ftsSites = ftsClient.getFTSSitesList()
   if not ftsSites["OK"]:
     gLogger.error( "unable to read FTSSites: %s" % ftsSites["Message"] )
     DIRAC.exit( -1 )
