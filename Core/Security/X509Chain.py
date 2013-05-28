@@ -581,11 +581,8 @@ class X509Chain:
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
       retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )
       if not retVal[ 'OK' ]:
-        # We could not contact the CS most likely, which is possible, e.g. when doing
-        # dirac-proxy-init -x
-        credDict[ 'username' ] = 'unknown'
-      else:  
-        credDict[ 'username' ] = retVal[ 'Value' ]
+        return S_OK( credDict )
+      credDict[ 'username' ] = retVal[ 'Value' ]
       credDict[ 'validDN' ] = True
       retVal = self.getDIRACGroup( ignoreDefault = ignoreDefault )
       if retVal[ 'OK' ]:
@@ -602,7 +599,7 @@ class X509Chain:
         credDict[ 'hostname' ] = retVal[ 'Value' ]
         credDict[ 'validDN' ] = True
         credDict[ 'validGroup' ] = True
-        credDict[ 'groupProperties' ] = Registry.getHostOption( credDict[ 'hostname' ], 'Properties' ) 
+        credDict[ 'groupProperties' ] = Registry.getHostOption( credDict[ 'hostname' ], 'Properties' )
       retVal = Registry.getUsernameForDN( credDict[ 'subject' ] )
       if retVal[ 'OK' ]:
         credDict[ 'username' ] = retVal[ 'Value' ]
