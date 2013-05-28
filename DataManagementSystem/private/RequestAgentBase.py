@@ -13,6 +13,8 @@
 
     Implementation of base class for DMS agents working with Requests and RequestTasks.
 
+
+    :deprecated:
 """
 
 __RCSID__ = "$Id $"

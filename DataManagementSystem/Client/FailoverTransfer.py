@@ -22,6 +22,10 @@
     
     getRequestObject() allows to retrieve the modified request object 
     after transfer operations.
+
+    WHAT IT IS? CONFUSING ABANDONWARE, OBSOLETE
+    K.C.
+
 """
 
 __RCSID__ = "$Id: FailoverTransfer 18161 2009-11-11 12:07:09Z acasajus $"
