@@ -467,12 +467,12 @@ class MonitorFTSAgent( AgentModule ):
     # accountingDict['RegistrationOK'] = 0
     # accountingDict['RegistrationTotal'] = 0
 
-    accountingDict["TransferOK"] = ftsJob.Size
-    accountingDict["TransferTotal"] = ftsJob.Size + ftsJob.FailedSize
-    accountingDict["TransferSize"] = ftsJob.Size
+    accountingDict["TransferOK"] = len( [ f for f in ftsJob if f.Status == "Finished" ] )
+    accountingDict["TransferTotal"] = len( ftsJob ) 
+    accountingDict["TransferSize"] = ftsJob.Size 
     accountingDict["FinalStatus"] = ftsJob.Status
-    accountingDict["Source"] = self.SourceSE
-    accountingDict["Destination"] = self.TargetSE
+    accountingDict["Source"] = ftsJob.SourceSE
+    accountingDict["Destination"] = ftsJob.TargetSE
     dt = fromString( ftsJob.LastUpdate ) - fromString( ftsJob.SubmitTime )
     transferTime = dt.days * 86400 + dt.seconds
     accountingDict["TransferTime"] = transferTime
