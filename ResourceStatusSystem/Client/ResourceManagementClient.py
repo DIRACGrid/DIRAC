@@ -802,81 +802,46 @@ class ResourceManagementClient( object ):
 #    meta = { 'onlyUniqueKeys' : True }
 #    return self._query( 'addIfNotThere', 'TransferCache', locals() )
 
-  ##############################################################################
+  #.............................................................................
   # PILOT CACHE Methods
 
-#  def insertPilotCache( self, site, cE, pilotsPerJob, pilotJobEff, status, lastCheckTime,
-#                        meta = None ):
-#    '''
-#    Inserts on PilotCache a new row with the arguments given.
-#    
-#    :Parameters:
-#      **site** - `string`
-#        name of the site 
-#      **cE** - `string`
-#        name of the CE of 'Multiple' if all site CEs are considered
-#      **pilotsPerJob** - `float`
-#        measure calculated
-#      **pilotJobEff** - `float`
-#        percentage  
-#      **status** - `string`
-#        status of the CE / Site  
-#      **lastCheckTime** - `datetime`
-#        measure calculated
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument    
-#    # pylint: disable-msg=W0613
-#    return self._query( 'insert', 'PilotCache', locals() )
-#  def updatePilotCache( self, site, cE, pilotsPerJob, pilotJobEff, status, lastCheckTime, 
-#                        meta = None ):
-#    '''
-#    Updates PilotCache with the parameters given. By default, `site` and `cE`
-#    will be the parameters used to select the row.
-#    
-#    :Parameters:
-#      **site** - `string`
-#        name of the site 
-#      **cE** - `string`
-#        name of the CE of 'Multiple' if all site CEs are considered
-#      **pilotsPerJob** - `float`
-#        measure calculated
-#      **pilotJobEff** - `float`
-#        percentage  
-#      **status** - `string`
-#        status of the CE / Site  
-#      **lastCheckTime** - `datetime`
-#        measure calculated
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument    
-#    # pylint: disable-msg=W0613
-#    return self._query( 'update', 'PilotCache', locals() )
-  def selectPilotCache( self, site = None, cE = None, pilotsPerJob = None, 
-                        pilotJobEff = None, status = None, lastCheckTime = None,
-                        meta = None ): 
+  def selectPilotCache( self, cE = None, timespan = None, scheduled = None, 
+                        waiting = None, submitted = None, running = None, 
+                        done = None, aborted = None, cancelled = None,
+                        deleted = None, failed = None, held = None, killed = None,
+                        stalled = None, lastCheckTime = None, meta = None ): 
     '''
     Gets from TransferCache all rows that match the parameters given.
     
     :Parameters:
-      **site** - `[, string, list ]`
-        name of the site 
       **cE** - `[, string, list ]`
-        name of the CE of 'Multiple' if all site CEs are considered
-      **pilotsPerJob** - `[, float, list ]`
-        measure calculated
-      **pilotJobEff** - `[, float, list ]`
-        percentage  
-      **status** - `[, float, list ]`
-        status of the CE / Site  
+        name(s) of the CE(s)
+      **timespan** - `[, int, list ]`
+        number of seconds of the considered timespan  
+      **scheduled** - `[, int, list ]`
+        number of scheduled pilots within the range
+      **waiting** - `[, int, list ]`
+        number of waiting pilots within the range
+      **submitted** - `[, int, list ]`
+        number of submitted pilots within the range
+      **running** - `[, int, list ]`
+        number of running pilots within the range
+      **done** - `[, int, list ]`
+        number of done pilots within the range
+      **aborted** - `[, int, list ]`
+        number of aborted pilots within the range
+      **cancelled** - `[, int, list ]`
+        number of cancelled pilots within the range
+      **deleted** - `[, int, list ]`
+        number of deleted pilots within the range                         
+      **failed** - `[, int, list ]`
+        number of failed pilots within the range  
+      **held** - `[, int, list ]`
+        number of held pilots within the range  
+      **killed** - `[, int, list ]`
+        number of killed pilots within the range
+      **stalled** - `[, int, list ]`
+        number of stalled pilots within the range
       **lastCheckTime** - `[, datetime, list ]`
         measure calculated
       **meta** - `[, dict]`
@@ -886,53 +851,94 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument    
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'PilotCache', locals() )
-  def deletePilotCache( self, site = None, cE = None, pilotsPerJob = None, 
-                        pilotJobEff = None, status = None, lastCheckTime = None,
-                        meta = None ):
+  def deletePilotCache( self, cE = None, timespan = None, scheduled = None, 
+                        waiting = None, submitted = None, running = None, 
+                        done = None, aborted = None, cancelled = None,
+                        deleted = None, failed = None, held = None, killed = None,
+                        stalled = None, lastCheckTime = None, meta = None ):
     '''
-    Deletes from TransferCache all rows that match the parameters given.
+    Deletes from PilotCache all rows that match the parameters given.
     
     :Parameters:
-      **site** - `[, string, list ]`
-        name of the site 
       **cE** - `[, string, list ]`
-        name of the CE of 'Multiple' if all site CEs are considered
-      **pilotsPerJob** - `[, float, list ]`
-        measure calculated
-      **pilotJobEff** - `[, float, list ]`
-        percentage  
-      **status** - `[, float, list ]`
-        status of the CE / Site  
+        name(s) of the CE(s)
+      **timespan** - `[, int, list ]`
+        number of seconds of the considered timespan  
+      **scheduled** - `[, int, list ]`
+        number of scheduled pilots within the range
+      **waiting** - `[, int, list ]`
+        number of waiting pilots within the range
+      **submitted** - `[, int, list ]`
+        number of submitted pilots within the range
+      **running** - `[, int, list ]`
+        number of running pilots within the range
+      **done** - `[, int, list ]`
+        number of done pilots within the range
+      **aborted** - `[, int, list ]`
+        number of aborted pilots within the range
+      **cancelled** - `[, int, list ]`
+        number of cancelled pilots within the range
+      **deleted** - `[, int, list ]`
+        number of deleted pilots within the range                         
+      **failed** - `[, int, list ]`
+        number of failed pilots within the range  
+      **held** - `[, int, list ]`
+        number of held pilots within the range  
+      **killed** - `[, int, list ]`
+        number of killed pilots within the range
+      **stalled** - `[, int, list ]`
+        number of stalled pilots within the range
       **lastCheckTime** - `[, datetime, list ]`
         measure calculated
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
-    :return: S_OK() || S_ERROR()    '''
+    :return: S_OK() || S_ERROR()    
+    '''
     # Unused argument    
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'PilotCache', locals() )
-  def addOrModifyPilotCache( self, site = None, cE = None, pilotsPerJob = None, 
-                             pilotJobEff = None, status = None, lastCheckTime = None,
-                             meta = None ):
+  def addOrModifyPilotCache( self, cE = None, timespan = None, scheduled = None, 
+                             waiting = None, submitted = None, running = None, 
+                             done = None, aborted = None, cancelled = None,
+                             deleted = None, failed = None, held = None, killed = None,
+                             stalled = None, lastCheckTime = None, meta = None ):
     '''
     Adds or updates-if-duplicated to PilotCache. Using `site` and `cE`
     to query the database, decides whether to insert or update the table.
     
     :Parameters:
-      **site** - `string`
-        name of the site 
       **cE** - `string`
-        name of the CE of 'Multiple' if all site CEs are considered
-      **pilotsPerJob** - `float`
-        measure calculated
-      **pilotJobEff** - `float`
-        percentage  
-      **status** - `string`
-        status of the CE / Site  
+        name(s) of the CE(s)
+      **timespan** - `int`
+        number of seconds of the considered timespan  
+      **scheduled** - `int`
+        number of scheduled pilots within the range
+      **waiting** - `int`
+        number of waiting pilots within the range
+      **submitted** - `int`
+        number of submitted pilots within the range
+      **running** - `int`
+        number of running pilots within the range
+      **done** - `int`
+        number of done pilots within the range
+      **aborted** - `int`
+        number of aborted pilots within the range
+      **cancelled** - `int`
+        number of cancelled pilots within the range
+      **deleted** - `int`
+        number of deleted pilots within the range                         
+      **failed** - `int`
+        number of failed pilots within the range  
+      **held** - `int`
+        number of held pilots within the range  
+      **killed** - `int`
+        number of killed pilots within the range
+      **stalled** - `int`
+        number of stalled pilots within the range    
       **lastCheckTime** - `datetime`
         measure calculated
       **meta** - `[, dict]`
@@ -942,39 +948,9 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'PilotCache', locals() )
-#  def addIfNotTherePilotCache( self, site = None, cE = None, pilotsPerJob = None, 
-#                               pilotJobEff = None, status = None, lastCheckTime = None,
-#                               meta = None ):
-#    '''
-#    Adds if not there to PilotCache. Using `site` and `cE` to query the 
-#    database, decides whether to insert or not.
-#    
-#    :Parameters:
-#      **site** - `string`
-#        name of the site 
-#      **cE** - `string`
-#        name of the CE of 'Multiple' if all site CEs are considered
-#      **pilotsPerJob** - `float`
-#        measure calculated
-#      **pilotJobEff** - `float`
-#        percentage  
-#      **status** - `string`
-#        status of the CE / Site  
-#      **lastCheckTime** - `datetime`
-#        measure calculated
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    meta = { 'onlyUniqueKeys' : True }
-#    return self._query( 'addIfNotThere', 'PilotCache', locals() )
     
   ##############################################################################
   # POLICY RESULT Methods
@@ -1008,7 +984,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    return self._query( 'insert', 'PolicyResult', locals() ) 
 #  def updatePolicyResult( self, element, name, policyName, statusType,
 #                          status, reason, lastCheckTime, meta = None ):
@@ -1040,7 +1016,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    return self._query( 'update', 'PolicyResult', locals() )
   def selectPolicyResult( self, element = None, name = None, policyName = None, 
                           statusType = None, status = None, reason = None, 
@@ -1072,7 +1048,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'PolicyResult', locals() )
   def deletePolicyResult( self, element = None, name = None, 
                           policyName = None, statusType = None, status = None, 
@@ -1104,7 +1080,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'PolicyResult', locals() )
   def addOrModifyPolicyResult( self, element = None, name = None, 
                                policyName = None, statusType = None,
@@ -1140,7 +1116,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'PolicyResult', locals() )      
 #  def addIfNotTherePolicyResult( self, element = None, name = None, 
@@ -1177,7 +1153,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    meta = { 'onlyUniqueKeys' : True }
 #    return self._query( 'addIfNotThere', 'PolicyResult', locals() )     
     
@@ -1213,7 +1189,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    return self._query( 'insert', 'PolicyResultLog', locals() ) 
 #  def updatePolicyResultLog( self, element, name, policyName, statusType,
 #                             status, reason, lastCheckTime, meta = None ):
@@ -1246,7 +1222,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    return self._query( 'update', 'PolicyResultLog', locals() )
   def selectPolicyResultLog( self, element = None, name = None, 
                               policyName = None, statusType = None, status = None, 
@@ -1278,7 +1254,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'PolicyResultLog', locals() )
   def deletePolicyResultLog( self, element = None, name = None, 
                              policyName = None, statusType = None, status = None, 
@@ -1310,7 +1286,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'PolicyResultLog', locals() )
   def addOrModifyPolicyResultLog( self, element = None, name = None, 
                                   policyName = None, statusType = None,
@@ -1344,7 +1320,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'PolicyResultLog', locals() )         
 #  def addIfNotTherePolicyResultLog( self, element = None, name = None, 
@@ -1379,7 +1355,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    meta = { 'onlyUniqueKeys' : True }
 #    return self._query( 'addIfNotThere', 'PolicyResultLog', locals() )         
     
@@ -1411,7 +1387,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''    
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    return self._query( 'insert', 'SpaceTokenOccupancyCache', locals() )
 #  def updateSpaceTokenOccupancyCache( self, endpoint, token, total, guaranteed, free, 
 #                                      lastCheckTime, meta = None ):
@@ -1439,7 +1415,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''    
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    return self._query( 'update', 'SpaceTokenOccupancyCache', locals() )
   def selectSpaceTokenOccupancyCache( self, endpoint = None, token = None, 
                                       total = None, guaranteed = None, free = None, 
@@ -1467,7 +1443,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'SpaceTokenOccupancyCache', locals() )
   def deleteSpaceTokenOccupancyCache( self, endpoint = None, token = None, 
                                       total = None, guaranteed = None, free = None, 
@@ -1495,7 +1471,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'SpaceTokenOccupancyCache', locals() )  
   def addOrModifySpaceTokenOccupancyCache( self, endpoint = None, token = None, 
                                            total = None, guaranteed = None, 
@@ -1525,7 +1501,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'SpaceTokenOccupancyCache', locals() )        
 #  def addIfNotThereSpaceTokenOccupancyCache( self, endpoint = None, token = None, 
@@ -1556,7 +1532,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''    
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    meta = { 'onlyUniqueKeys' : True }
 #    return self._query( 'addIfNotThere', 'SpaceTokenOccupancyCache', locals() ) 
         
@@ -1583,7 +1559,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''
 #    # Unused argument    
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    return self._query( 'insert', 'UserRegistryCache', locals() )
 #  def updateUserRegistryCache( self, login, name, email, lastCheckTime, meta = None ):
 #    '''
@@ -1606,7 +1582,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''    
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    return self._query( 'update', 'UserRegistryCache', locals() )
   def selectUserRegistryCache( self, login = None, name = None, email = None, 
                                lastCheckTime = None, meta = None ):
@@ -1629,7 +1605,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'UserRegistryCache', locals() )
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
                                lastCheckTime = None, meta = None ):                                            
@@ -1652,7 +1628,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'UserRegistryCache', locals() )
   def addOrModifyUserRegistryCache( self, login = None, name = None, 
                                     email = None, lastCheckTime = None, meta = None ):
@@ -1676,7 +1652,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'UserRegistryCache', locals() )   
 #  def addIfNotThereUserRegistryCache( self, login = None, name = None, 
@@ -1701,7 +1677,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''    
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    meta = { 'onlyUniqueKeys' : True }
 #    return self._query( 'addIfNotThere', 'UserRegistryCache', locals() )   
 
@@ -1731,7 +1707,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''    
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    return self._query( 'insert', 'VOBOXCache', locals() )
 #  def updateVOBOXCache( self, site, system, serviceUp, machineUp, lastCheckTime, 
 #                        meta = None ):
@@ -1757,7 +1733,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''    
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    return self._query( 'update', 'VOBOXCache', locals() )
   def selectVOBOXCache( self, site = None, system = None, serviceUp = None, 
                         machineUp = None, lastCheckTime = None, meta = None ):
@@ -1782,7 +1758,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'VOBOXCache', locals() )
   def deleteVOBOXCache( self, site = None, system = None, serviceUp = None, 
                         machineUp = None, lastCheckTime = None, meta = None ):
@@ -1807,7 +1783,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'VOBOXCache', locals() )  
   def addOrModifyVOBOXCache( self, site = None, system = None, serviceUp = None, 
                              machineUp = None, lastCheckTime = None, meta = None ):
@@ -1833,7 +1809,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''    
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'VOBOXCache', locals() )   
   
@@ -1861,7 +1837,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
 #    '''    
 #    # Unused argument
-#    # pylint: disable-msg=W0613
+#    # pylint: disable=W0613
 #    meta = { 'onlyUniqueKeys' : True }
 #    return self._query( 'addIfNotThere', 'VOBOXCache', locals() )   
 

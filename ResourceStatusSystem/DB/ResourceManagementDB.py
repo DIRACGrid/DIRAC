@@ -73,14 +73,23 @@ class ResourceManagementDB( object ):
 
   _tablesDB[ 'PilotCache' ] = { 'Fields' :
                       {
-                       'Site'          : 'VARCHAR(64) NOT NULL',
                        'CE'            : 'VARCHAR(64) NOT NULL',
-                       'PilotsPerJob'  : 'DOUBLE NOT NULL DEFAULT 0',
-                       'PilotJobEff'   : 'DOUBLE NOT NULL DEFAULT 0',   
-                       'Status'        : 'VARCHAR(16) NOT NULL',
+                       'Timespan'      : 'INTEGER NOT NULL',
+                       'Scheduled'     : 'INTEGER NOT NULL DEFAULT 0',
+                       'Waiting'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Submitted'     : 'INTEGER NOT NULL DEFAULT 0',
+                       'Running'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Done'          : 'INTEGER NOT NULL DEFAULT 0',
+                       'Aborted'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Cancelled'     : 'INTEGER NOT NULL DEFAULT 0',
+                       'Deleted'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Failed'        : 'INTEGER NOT NULL DEFAULT 0',
+                       'Held'          : 'INTEGER NOT NULL DEFAULT 0',
+                       'Killed'        : 'INTEGER NOT NULL DEFAULT 0',
+                       'Stalled'       : 'INTEGER NOT NULL DEFAULT 0',
                        'LastCheckTime' : 'DATETIME NOT NULL'                                    
                       },
-                      'PrimaryKey' : [ 'Site', 'CE' ]
+                      'PrimaryKey' : [ 'CE', 'Timespan' ]
                                 }
 
   _tablesDB[ 'PolicyResult' ] = { 'Fields' : 
