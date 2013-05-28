@@ -1,29 +1,48 @@
 # $HeadURL:  $
-''' PEP
+""" PEP
 
-  Module used for enforcing policies. Its class is used for:
-    1. invoke a PDP and collects results
-    2. enforcing results by:
-       a. saving result on a DB
-       b. raising alarms
-       c. other....
-'''
+  PEP ( Policy Enforcement Point ) is the front-end of the whole Policy System.
+  Any interaction with it must go through the PEP to ensure a smooth flow.
+  
+  Firstly, it loads the PDP ( Policy Decision Point ) which actually is the
+  module doing all dirty work ( finding policies, running them, merging their
+  results, etc... ). Indeed, the PEP takes the output of the PDP for a given set
+  of parameters ( decissionParams ) and enforces the actions that apply ( also
+  determined by the PDP output ).
+  
+"""
 
-from DIRAC                                                       import gLogger, S_OK
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient      import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient  import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP                 import PDP
-from DIRAC.ResourceStatusSystem.Utilities                        import Utils
+from DIRAC                                                      import gLogger, S_OK
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
+from DIRAC.ResourceStatusSystem.Utilities                       import Utils
 
-__RCSID__  = '$Id:  $'
+__RCSID__  = '$Id: $'
 
 class PEP:
+  """ PEP ( Policy Enforcement Point )
+  """
 
   def __init__( self, clients = None ):
+    """ Constructor
+    
+      examples:
+        >>> pep = PEP()
+        >>> pep1 = PEP( { 'ResourceStatusClient' : ResourceStatusClient() } )
+        >>> pep2 = PEP( { 'ResourceStatusClient' : ResourceStatusClient(), 'ClientY' : None } )
+    
+      :Parameters:
+        **clients** - [ None, `dict` ]
+          dictionary with clients to be used in the commands issued by the policies.
+          If not defined, the commands will import them. It is a measure to avoid
+          opening the same connection every time a policy is evaluated.
+    """
    
     if clients is None:
       clients = {}
-   
+    
+    # PEP uses internally two of the clients: ResourceStatusClient and ResouceManagementClient   
     if 'ResourceStatusClient' in clients:           
       self.rsClient = clients[ 'ResourceStatusClient' ]
     else:
@@ -34,30 +53,46 @@ class PEP:
       self.rmClient = ResourceManagementClient()
 
     self.clients = clients
+    # Pass to the PDP the clients that are going to be used on the Commands
     self.pdp     = PDP( clients )   
 
-  def enforce( self, decissionParams ):
+  def enforce( self, decisionParams ):
+    """ Given a dictionary with decisionParams, it is passed to the PDP, which
+    will return ( in case there is a/are positive match/es ) a dictionary containing
+    three key-pair values: the original decisionParams ( `decisionParams` ), all
+    the policies evaluated ( `singlePolicyResults` ) and the computed final result
+    ( `policyCombinedResult` ).
     
-    '''
-      Enforce policies for given set of keyworkds. To be better explained.
-    '''
-   
-    ## policy decision point setup #############################################  
+    To know more about decisionParams, please read PDP.setup where the decisionParams
+    are sanitized.
     
-    self.pdp.setup( decissionParams )
+    examples:
+       >>> pep.enforce( { 'element' : 'Site', 'name' : 'MySite' } )
+       >>> pep.enforce( { 'element' : 'Resource', 'name' : 'myce.domain.ch' } )
+    
+    :Parameters:
+      **decisionParams** - `dict`
+        dictionary with the parameters that will be used to match policies.
+    
+    """ 
+    
+    # Setup PDP with new parameters dictionary
+    self.pdp.setup( decisionParams )
 
-    ## policy decision #########################################################
-
+    # Run policies, get decision, get actions to apply
     resDecisions = self.pdp.takeDecision()
     if not resDecisions[ 'OK' ]:
-      gLogger.error( 'PEP: Something went wrong, not enforcing policies for %s' % decissionParams )
+      gLogger.error( 'PEP: Something went wrong, not enforcing policies for %s' % decisionParams )
       return resDecisions
     resDecisions = resDecisions[ 'Value' ]
     
     # We take from PDP the decision parameters used to find the policies
-    decissionParams      = resDecisions[ 'decissionParams' ]
+    decisionParams       = resDecisions[ 'decissionParams' ]
     policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
     singlePolicyResults  = resDecisions[ 'singlePolicyResults' ]
+    
+    #FIXME: check if element has changed before doing anything else !!!
+    #FIXME: If so, no single ACTION SHOULD BE TAKEN INTO ACCOUNT !
     
     for policyActionName, policyActionType in policyCombinedResult[ 'PolicyAction' ]:
       
@@ -73,7 +108,7 @@ class PEP:
         gLogger.error( 'Error importing %s action class' % policyActionType )
         continue  
               
-      actionObj = action( policyActionName, decissionParams, policyCombinedResult,
+      actionObj = action( policyActionName, decisionParams, policyCombinedResult,
                           singlePolicyResults, self.clients )
       
       gLogger.debug( ( policyActionName, policyActionType ) )
@@ -84,5 +119,5 @@ class PEP:
         
     return S_OK( resDecisions )
 
-################################################################################
+#...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
