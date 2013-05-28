@@ -118,19 +118,20 @@ class PutAndRegister( OperationHandlerBase ):
         gMonitor.addMark( "PutFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
         self.log.error( "completely failed to put and register file: %s" % putAndRegister["Message"] )
-        opFile.Error = putAndRegister["Message"]
-        self.operation.Error = putAndRegister["Message"]
+        opFile.Error = str(putAndRegister["Message"])
+        self.operation.Error = str(putAndRegister["Message"])
         continue
 
       putAndRegister = putAndRegister["Value"]
+
       if lfn in putAndRegister["Failed"]:
         gMonitor.addMark( "PutFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
 
         reason = putAndRegister["Failed"][lfn]
         self.log.error( "failed to put and register file %s at %s: %s" % ( lfn, targetSE, reason ) )
-        opFile.Error = reason
-        self.operation.Error = reason
+        opFile.Error = str( reason )
+        self.operation.Error = str( reason )
         continue
 
       putAndRegister = putAndRegister["Successful"]

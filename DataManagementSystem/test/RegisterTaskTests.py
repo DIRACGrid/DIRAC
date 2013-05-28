@@ -13,6 +13,9 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     unit tests for RegisterTask
+
+  OBSOLETE
+  K.C.
 """
 
 __RCSID__ = "$Id $"

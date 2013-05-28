@@ -13,6 +13,8 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     transfer request processing
+
+    :deprecated:
 """
 
 __RCSID__ = "$Id $"
