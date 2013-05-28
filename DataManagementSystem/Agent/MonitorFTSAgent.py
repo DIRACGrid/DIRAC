@@ -96,17 +96,19 @@ class MonitorFTSAgent( AgentModule ):
   def initialize( self ):
     """ agent's initialization """
 
+    pollingTime = self.am_getOption( "PollingTime", 60 )
+
     # # gMonitor stuff over here
     gMonitor.registerActivity( "FTSMonitorAtt", "FTSJobs monitor attempts",
-                               "MonitorFTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
+                               "MonitorFTSAgent", "FTSJobs/cycle", gMonitor.OP_SUM, pollingTime )
     gMonitor.registerActivity( "FTSMonitorOK", "Successful FTSJobs monitor attempts",
-                               "MonitorFTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
+                               "MonitorFTSAgent", "FTSJobs/cycle", gMonitor.OP_SUM, pollingTime )
     gMonitor.registerActivity( "FTSMonitorFail", "Failed FTSJobs monitor attempts",
-                               "MonitorFTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
+                               "MonitorFTSAgent", "FTSJobs/cycle", gMonitor.OP_SUM, pollingTime )
 
     for status in list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FAILEDSTATES + FTSJob.FINALSTATES ):
       gMonitor.registerActivity( "FTSJobs%s" % status, "FTSJobs %s" % status ,
-                                 "MonitorFTSAgent", "FTSJobs/min", gMonitor.OP_ACUM )
+                                 "MonitorFTSAgent", "FTSJobs/cycle", gMonitor.OP_ACUM, pollingTime )
 
     self.am_setOption( "shifterProxy", "DataManager" )
 
