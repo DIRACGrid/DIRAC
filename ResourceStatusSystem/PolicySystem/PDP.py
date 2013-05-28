@@ -195,12 +195,34 @@ class PDP:
     if not machineStatus[ 'OK' ]:
       return machineStatus
     
+    # Get policies configuration from the CS. We want to exclude the policies that
+    # have set the option `doNotCombine` from this process.
+    policiesConfiguration = RssConfiguration.getPolicies()
+    if not policiesConfiguration[ 'OK' ]:
+      return policiesConfiguration
+    policiesConfiguration = policiesConfiguration[ 'Value' ]
+    
+    # Function that let's us know if we should combine the result of a single policy
+    # or not.
+    def combinePolicy( policyResult ):  
+      # Extract policy name from the dictionary returned by PolicyCaller
+      policyName = policyResult[ 'Policy' ][ 'name' ]
+      try:
+        # If doNotCombineResult is defined, the policy is not taken into account
+        # to create the combined result. However, the single policy result remains
+        _ = policiesConfiguration[ policyName ][ 'doNotCombineResult' ]
+        return False
+      except KeyError:
+        return True
+    
+    # Make a list of policies of which we want to merge their results
+    policyResults = [ policyResult for policyResult in singlePolicyRes if combinePolicy( policyResult ) ]
+          
     # Order statuses by most restrictive ( lower level first )
-    self.rssMachine.orderPolicyResults( singlePolicyRes )
-    #policyResults = self.rssMachine.orderPolicyResults( singlePolicyRes )
+    self.rssMachine.orderPolicyResults( policyResults )
         
     # Get according to the RssMachine the next state, given a candidate    
-    candidateState = singlePolicyRes[ 0 ][ 'Status' ]
+    candidateState = policyResults[ 0 ][ 'Status' ]
     nextState      = self.rssMachine.getNextState( candidateState )
     
     if not nextState[ 'OK' ]:
@@ -215,7 +237,7 @@ class PDP:
       return S_OK( policyCombined )
     
     # If the RssMachine accepts the candidate, just concatenate the reasons
-    for policyRes in singlePolicyRes:
+    for policyRes in policyResults:
       
       if policyRes[ 'Status' ] == nextState:
         policyCombined[ 'Reason' ] += '%s ###' % policyRes[ 'Reason' ]  
@@ -223,41 +245,6 @@ class PDP:
     policyCombined[ 'Status' ] = nextState
     
     return S_OK( policyCombined )                             
-
-################################################################################
-
-#  def __useOldPolicyRes( self, name, policyName ):
-#    '''
-#     Use the RSS Service to get an old policy result.
-#     If such result is older than 2 hours, it returns {'Status':'Unknown'}
-#    '''
-#    res = self.clients[ 'ResourceManagementClient' ].getPolicyResult( name = name, policyName = policyName )
-#    
-#    if not res[ 'OK' ]:
-#      return { 'Status' : 'Unknown' }
-#    
-#    res = res[ 'Value' ]
-#
-#    if res == []:
-#      return { 'Status' : 'Unknown' }
-#
-#    res = res[ 0 ]
-#
-#    oldStatus     = res[ 5 ]
-#    oldReason     = res[ 6 ]
-#    lastCheckTime = res[ 8 ]
-#
-#    if ( lastCheckTime + datetime.timedelta(hours = 2) ) < datetime.datetime.utcnow():
-#      return { 'Status' : 'Unknown' }
-#
-#    result = {}
-#
-#    result[ 'Status' ]     = oldStatus
-#    result[ 'Reason' ]     = oldReason
-#    result[ 'OLD' ]        = True
-#    result[ 'PolicyName' ] = policyName
-#
-#    return result
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
