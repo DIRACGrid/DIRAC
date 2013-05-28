@@ -6,8 +6,7 @@
 
     Helper class to perform FTS job submission and monitoring.
 
-    OBSOLETE
-    K.C.
+    :deprecated:
 """
 ## imports
 import os

@@ -12,8 +12,7 @@
     It is mainly used by FTSSubmitAgent, FTSMonitorAgent and TransferAgent.
 
 
-    OBSOLETE
-    K.C.
+    :deprecated:
 """
 
 __RCSID__ = "$Id$"

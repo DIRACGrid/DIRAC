@@ -5,8 +5,7 @@
 """  The RequestCleaning agent removes the already executed requests from the database after
      a grace period.
 
-     OBSOLETE
-     K.C.
+    :deprecated:
 """
 
 from DIRAC  import gLogger, S_OK, S_ERROR

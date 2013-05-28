@@ -7,10 +7,7 @@
  
     .. module:  RequestClient
     :synopsis: implementation of client for RequestDB using DISET framework
-
-    OBSOLETE
-    K.C.
-
+    :deprecated:
 """
 ## RCSID
 __RCSID__ = "$Id$"

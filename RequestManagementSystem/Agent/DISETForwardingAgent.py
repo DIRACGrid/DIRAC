@@ -2,8 +2,7 @@
 
 """  DISET Forwarding sends DISET requests to their intended destination
 
-  OBSOLETE
-  K.C.
+    :deprecated:
 """
 
 __RCSID__ = "$Id$"

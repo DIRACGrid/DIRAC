@@ -13,8 +13,7 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 
-   OBSOLETE
-   K.C.
+    :deprecated:
 """
 
 __RCSID__ = "$Id $"

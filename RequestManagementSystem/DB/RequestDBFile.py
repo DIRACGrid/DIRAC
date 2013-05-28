@@ -6,9 +6,7 @@
  
     .. module: RequestDBFile
     :synopsis: RequestDBFile is the plug in for the file backend.
-
-    OBSOLETE
-    K.C.
+    :deprecated:
 """
 ## imports
 import os, os.path

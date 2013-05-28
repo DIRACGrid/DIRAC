@@ -14,8 +14,7 @@
     Implementation of base class for DMS agents working with Requests and RequestTasks.
 
 
-  OBSOLETE
-  K.C.
+    :deprecated:
 """
 
 __RCSID__ = "$Id $"

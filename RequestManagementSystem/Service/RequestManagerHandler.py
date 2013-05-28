@@ -7,10 +7,7 @@
 
     .. module: RequestManagerHandler
     :synopsis: Implementation of the RequestDB service in the DISET framework
-
-
-    OBSOLETE
-    K.C.
+    :deprecated:
 """
 
 __RCSID__ = "$Id$"

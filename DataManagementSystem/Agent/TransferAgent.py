@@ -19,9 +19,7 @@
     - there is a trouble to define correct replication tree
     - request's owner is different from DataManager
 
-
-    OBSOLETE
-    K.C.
+    :deprecated:
 """
 
 # # imports

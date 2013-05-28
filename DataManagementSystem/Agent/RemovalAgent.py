@@ -3,8 +3,7 @@
 ########################################################################
 """  RemovalAgent takes removal requests from the RequestDB and executes them
 
-OBSOLETE
-K.C.
+    :deprecated:
 """
 
 __RCSID__ = "$Id$"

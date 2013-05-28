@@ -9,8 +9,8 @@
     .. module: TransferDBMonitoringHandler
     :synopsis: Implementation of the TransferDB monitoring service in the DISET framework.
 
-    OBSOLETE
-    K.C.
+    :deprecated:
+
 """
 
 __RCSID__ = "$Id"

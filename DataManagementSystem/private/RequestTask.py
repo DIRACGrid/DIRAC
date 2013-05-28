@@ -13,8 +13,7 @@
 
     Base class for requests execution in a separate subprocesses.
 
-  OBSOLETE
-  K.C.
+    :deprecated:
 """
 
 __RCSID__ = "$Id $"

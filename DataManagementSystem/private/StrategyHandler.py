@@ -13,8 +13,7 @@
 
     implementation of helper class for FTS scheduling
 
-    OBSOLETE
-    K.C.
+    :deprecated:
 """
 __RCSID__ = "$Id$"
 ##

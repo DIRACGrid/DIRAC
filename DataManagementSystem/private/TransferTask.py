@@ -14,8 +14,7 @@
 
     transfer request processing
 
-    OBSOLETE
-    K.C.
+    :deprecated:
 """
 
 __RCSID__ = "$Id $"
