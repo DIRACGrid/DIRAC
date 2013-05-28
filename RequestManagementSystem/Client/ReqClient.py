@@ -153,6 +153,13 @@ class ReqClient( Client ):
                                                                              deleteRequest["Message"] ) )
     return deleteRequest
 
+  def getRequestNamesList( self, statusList = None, limit = None ):
+    """ get at most :limit: request names with statuses in :statusList: """
+    statusList = statusList if statusList else list( Request.FINAL_STATES )
+    limit = limit if limit else 100
+    return self.requestManager().getRequestNamesList( statusList, limit )
+
+
   def getDBSummary( self ):
     """ Get the summary of requests in the RequestDBs. """
     self.log.debug( "getDBSummary: attempting to get RequestDB summary." )

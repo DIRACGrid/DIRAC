@@ -8,6 +8,7 @@
   The FTSMonitorAgent takes FTS Requests from the TransferDB and monitors their execution
   using FTSRequest helper class.
 
+  :deprecated:
 """
 ## imports
 import time

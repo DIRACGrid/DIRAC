@@ -5,13 +5,13 @@
 # Date: 2013/05/17 08:31:26
 ########################################################################
 """ :mod: CleanReqDBAgent
-    =======================
+    =====================
 
     .. module: CleanReqDBAgent
     :synopsis: cleaning RequestDB from obsolete records and kicking assigned requests
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    cleaning RequestDB from obsolete records and kicking assigned requests
+    cleaning ReqDB from obsolete records and kicking assigned requests
 """
 __RCSID__ = "$Id: $"
 # #
@@ -37,13 +37,15 @@ class CleanReqDBAgent( AgentModule ):
 
   """
   # # DEL GRACE PERIOD in DAYS
-  DEL_GRACE_DAYS = 180
+  DEL_GRACE_DAYS = 60
   # # DEL LIMIT
   DEL_LIMIT = 100
   # # KICK PERIOD in HOURS
   KICK_GRACE_HOURS = 1
   # # KICK LIMIT
   KICK_LIMIT = 100
+  # # remove failed requests flag
+  DEL_FAILED = False
 
   # # request client
   __requestClient = None
@@ -60,15 +62,17 @@ class CleanReqDBAgent( AgentModule ):
     self.log.info( "Delete grace period = %s days" % self.DEL_GRACE_DAYS )
     self.DEL_LIMIT = self.am_getOption( "DeleleLimit", self.DEL_LIMIT )
     self.log.info( "Delete limit = %s request/cycle" % self.DEL_LIMIT )
+    self.DEL_FAILED = self.am_getOption( "DeleteFailed", self.DEL_FAILED )
+    self.log.info( "Delete failed requests: %s" % { True: "yes", False: "no"}[self.DEL_FAILED] )
 
     self.KICK_GRACE_HOURS = self.am_getOption( "KickGraceHours", self.KICK_GRACE_HOURS )
     self.log.info( "Kick assigned requests period = %s hours" % self.KICK_GRACE_HOURS )
     self.KICK_LIMIT = self.am_getOption( "KickLimit", self.KICK_LIMIT )
     self.log.info( "Kick limit = %s request/cycle" % self.KICK_LIMIT )
 
+    # # gMonitor stuff
     gMonitor.registerActivity( "DeletedRequests", "Deleted finished requests",
                                "CleanReqDBAgent", "Requests/min", gMonitor.OP_SUM )
-
     gMonitor.registerActivity( "KickedRequests", "Assigned requests kicked",
                                "CleanReqDBAgent", "Requests/min", gMonitor.OP_SUM )
     return S_OK()
@@ -80,10 +84,48 @@ class CleanReqDBAgent( AgentModule ):
     kickTime = now - datetime.timedelta( hours = self.KICK_GRACE_HOURS )
     rmTime = now - datetime.timedelta( days = self.DEL_GRACE_DAYS )
 
-    kicked = 0
-    deleted = 0
+    # # kick
+    statusList = [ "Assigned" ]
+    requestNamesList = self.requestClient().getRequestNamesList( statusList, self.DEL_LIMIT )
+    if not requestNamesList["OK"]:
+      self.log.error( "execute: %s" % requestNamesList["Message"] )
+      return requestNamesList
 
-    # # TODO: add selection here
+    requestNamesList = requestNamesList["Value"]
+    kicked = 0
+    for requestName, status, lastUpdate in requestNamesList:
+      if lastUpdate < kickTime:
+        self.log.info( "execute: kick assigned request '%s'" % requestName )
+        getRequest = self.requestClient().peekRequest( requestName )
+        if not getRequest["OK"]:
+          self.log.error( "execute: unable to read request '%s': %s" % ( requestName, getRequest["Message"] ) )
+          continue
+        getRequest = getRequest["Value"]
+        if getRequest:
+          getRequest.Status = "Waiting"
+          putRequest = self.requestClient().putRequest( getRequest )
+          if not putRequest["OK"]:
+            self.log.error( "execute: unable to put request '%s': %s" % ( requestName, putRequest["Message"] ) )
+            continue
+          kicked += 1
+
+    # # delete
+    statusList = [ "Done", "Failed" ] if self.DEL_FAILED else [ "Done" ]
+    requestNamesList = self.requestClient().getRequestNamesList( statusList, self.DEL_LIMIT )
+    if not requestNamesList["OK"]:
+      self.log.error( "execute: %s" % requestNamesList["Message"] )
+      return requestNamesList
+
+    requestNamesList = requestNamesList["Value"]
+    deleted = 0
+    for requestName, status, lastUpdate in requestNamesList:
+      if lastUpdate < rmTime:
+        self.log.info( "execute: deleting request '%s' with status %s" % ( requestName, status ) )
+        delRequest = self.requestClient().deleteRequest( requestName )
+        if not delRequest["OK"]:
+          self.log.error( "execute: unable to delete request '%s': %s" % ( requestName, delRequest["Message"] ) )
+          continue
+        deleted += 1
 
     gMonitor.addMark( "KickedRequests", kicked )
     gMonitor.addMark( "DeletedRequests", deleted )

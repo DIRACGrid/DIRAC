@@ -12,6 +12,8 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     implementation of helper class for FTS scheduling
+
+    :deprecated:
 """
 __RCSID__ = "$Id$"
 ##

@@ -1,3 +1,8 @@
+#
+# DONT KNOW WHAT IT IS, CONFISING ABANDONWARE, SHOULD BE REMOVED!!!
+# K.C.
+#
+
 # $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/DataManagementSystem/Agent/TransferAgent.py $
 __RCSID__ = "$Id: TransferAgent.py 18891 2009-12-02 17:12:46Z atsareg $"
 

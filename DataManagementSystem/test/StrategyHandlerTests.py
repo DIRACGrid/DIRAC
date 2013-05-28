@@ -13,6 +13,10 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     unittest for StrategyHandler
+
+
+    OBSOLETE
+    K.C.
 """
 
 __RCSID__ = "$Id $"
