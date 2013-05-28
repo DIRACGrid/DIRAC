@@ -1,6 +1,8 @@
 """
   This is the client implementation for the RequestDB using the DISET framework.
   A.Smith 23/5/07
+
+  :deprecated:
 """
 
 from types import *

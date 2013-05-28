@@ -9,7 +9,10 @@
     on top of RequestDB.
 
     This database holds all information used by DIRAC FTS subsystem. 
-    It is mainly used by FTSSubmitAgent, FTSMonitorAgent and TransferAgent.     
+    It is mainly used by FTSSubmitAgent, FTSMonitorAgent and TransferAgent.
+
+
+    :deprecated:
 """
 
 __RCSID__ = "$Id$"

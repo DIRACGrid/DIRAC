@@ -8,6 +8,9 @@
  .. module:: InheritedTask
  
  Helper class for testing RequestTask.
+
+ OBSOLETE
+ K.C.
 """
 ## imports
 import time

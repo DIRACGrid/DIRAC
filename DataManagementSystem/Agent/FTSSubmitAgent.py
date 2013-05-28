@@ -6,6 +6,8 @@
 
     FTS Submit Agent takes files from the TransferDB and submits them to the FTS using 
     FTSRequest helper class.
+
+    :deprecated:
 """
 
 ## imports

@@ -2,6 +2,8 @@
 # $HeadURL$
 ########################################################################
 """  RemovalAgent takes removal requests from the RequestDB and executes them
+
+    :deprecated:
 """
 
 __RCSID__ = "$Id$"

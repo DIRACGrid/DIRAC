@@ -1,3 +1,9 @@
+"""
+OBSOLETE
+K.C.
+
+"""
+
 import unittest, types, time
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB

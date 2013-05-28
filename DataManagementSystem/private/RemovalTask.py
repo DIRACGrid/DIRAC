@@ -12,6 +12,8 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     removal requests processing 
+
+    :deprecated:
 """
 __RCSID__ = "$Id $"
 ##

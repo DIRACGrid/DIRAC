@@ -1,5 +1,5 @@
 #!/bin/env python  
-""" show request """
+""" show request given its name """
 __RCSID__ = "$Id: $"
 
 from DIRAC.Core.Base import Script
@@ -8,7 +8,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__,
                                      ' %s [option|cfgfile] requestName' % Script.scriptName,
                                      'Arguments:',
                                      ' requestName: a request name' ] ) )
-
+# # execution
 if __name__ == "__main__":
 
   from DIRAC.Core.Base.Script import parseCommandLine
