@@ -152,7 +152,7 @@ class FTSClient( Client ):
       self.log.error( getFile["Message"] )
     # # de-serialize
     if getFile["Value"]:
-      getFile = FTSFile.fromXML( getFile["Value"] )
+      getFile = FTSFile( getFile["Value"] )
       if not getFile["OK"]:
         self.log.error( getFile["Message"] )
     return getFile
@@ -194,10 +194,7 @@ class FTSClient( Client ):
       return getJob
     # # de-serialize
     if getJob["Value"]:
-      getJob = getJob["Value"]
-      getJob = FTSJob( getJob )
-      if not getJob["OK"]:
-        self.log.error( getJob["Message"] )
+      getJob = FTSJob( getJob["Value"] )
     return getJob
 
   def deleteFTSJob( self, ftsJobID ):
