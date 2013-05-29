@@ -77,7 +77,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
 
   def __call__( self ):
     """ call me maybe """
-    # #
+    # # check replicas first
     checkReplicas = self.__checkReplicas()
     if not checkReplicas["OK"]:
       self.log.error( checkReplicas["Message"] )
