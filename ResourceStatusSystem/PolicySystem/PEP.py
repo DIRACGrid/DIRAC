@@ -12,7 +12,7 @@
   
 """
 
-from DIRAC                                                      import gLogger, S_OK
+from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
@@ -27,16 +27,17 @@ class PEP:
   def __init__( self, clients = None ):
     """ Constructor
     
-      examples:
-        >>> pep = PEP()
-        >>> pep1 = PEP( { 'ResourceStatusClient' : ResourceStatusClient() } )
-        >>> pep2 = PEP( { 'ResourceStatusClient' : ResourceStatusClient(), 'ClientY' : None } )
+    examples:
+      >>> pep = PEP()
+      >>> pep1 = PEP( { 'ResourceStatusClient' : ResourceStatusClient() } )
+      >>> pep2 = PEP( { 'ResourceStatusClient' : ResourceStatusClient(), 'ClientY' : None } )
     
-      :Parameters:
-        **clients** - [ None, `dict` ]
-          dictionary with clients to be used in the commands issued by the policies.
-          If not defined, the commands will import them. It is a measure to avoid
-          opening the same connection every time a policy is evaluated.
+    :Parameters:
+      **clients** - [ None, `dict` ]
+        dictionary with clients to be used in the commands issued by the policies.
+        If not defined, the commands will import them. It is a measure to avoid
+        opening the same connection every time a policy is evaluated.
+        
     """
    
     if clients is None:
@@ -90,10 +91,13 @@ class PEP:
     decisionParams       = resDecisions[ 'decissionParams' ]
     policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
     singlePolicyResults  = resDecisions[ 'singlePolicyResults' ]
-    
-    #FIXME: check if element has changed before doing anything else !!!
-    #FIXME: If so, no single ACTION SHOULD BE TAKEN INTO ACCOUNT !
-    
+
+    # We have run the policies and at this point, we are about to execute the actions.
+    # One more final check before proceeding
+    isNotUpdated = self.__isNotUpdated( decisionParams )
+    if not isNotUpdated[ 'OK' ]:
+      return isNotUpdated
+                
     for policyActionName, policyActionType in policyCombinedResult[ 'PolicyAction' ]:
       
       try:
@@ -118,6 +122,40 @@ class PEP:
         gLogger.error( actionResult[ 'Message' ] ) 
         
     return S_OK( resDecisions )
+
+  def __isNotUpdated( self, decisionParams ):
+    """ Checks for the existence of the element as it was passed to the PEP. It may
+    happen that while being the element processed by the PEP an user through the 
+    web interface or the CLI has updated the status for this particular element. As
+    a result, the PEP would overwrite whatever the user had set. This check is not
+    perfect, as still an user action can happen while executing the actions, but
+    the probability is close to 0. However, if there is an action that takes seconds
+    to be executed, this must be re-evaluated. !
+    
+    :Parameters:
+      **decisionParams** - `dict`
+        dictionary with the parameters that will be used to match policies
+        
+    :return: S_OK / S_ERROR
+    
+    """
+    
+    # Copy original dictionary and get rid of one key we cannot pass as kwarg
+    selectParams = decisionParams.copy()
+    del selectParams[ 'element' ]
+    
+    # We expect to have an exact match. If not, then something has changed and
+    # we cannot proceed with the actions.    
+    unchangedRow = self.rsClient.selectStatusElement( decisionParams[ 'element' ], 
+                                                      'Status', **selectParams )
+    if not unchangedRow[ 'OK' ]:
+      return unchangedRow
+    
+    if not unchangedRow[ 'Value' ]:
+      msg = '%(name)s  ( %(status)s / %(statusType)s ) has been updated after PEP started running'
+      return S_ERROR( msg % selectParams )
+    
+    return S_OK()
 
 #...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
