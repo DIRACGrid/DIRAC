@@ -17,6 +17,28 @@ if __name__ == "__main__":
   parseCommandLine()
 
   import DIRAC
+  from DIRAC import gLogger, gConfig
+  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
+  from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
+  from DIRAC.Interfaces.API import DiracAdmin
+  from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForUser
+  admin = DiracAdmin()
+
+  currentUser = admin._getCurrentUser()
+  if not currentUser["OK"]:
+    gLogger.error( currentUser["Message"] )
+    DIRAC.exit(-1)
+  currentUser = currentUser["Value"]
+  
+  userGroups = getGroupForUser( currentUser )
+  if not userGroups["OK"]:
+    gLogger.error( userGroups["Message"] )
+    DIRAC.exit( -1 )
+  userGroups = userGroups["Value"]
+  
+  if "diracAdmin" not in userGroups:
+    gLogger.error( "you are not allowed to change FTSSites configuration" )
+    DIRAC.exit( -1 )
 
   args = Script.getPositionalArgs()
 
@@ -26,11 +48,6 @@ if __name__ == "__main__":
     DIRAC.exit( 0 )
   else:
     ftsSite, ftsServer = args
-
-  import DIRAC
-  from DIRAC import gLogger, gConfig
-  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
-  from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 
   ftsClient = FTSClient()
 
