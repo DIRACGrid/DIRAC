@@ -58,7 +58,7 @@ class FTSJob( Record ):
   # # failed states
   FAILEDSTATES = ( "Canceled", "Failed" )
   # # finished
-  FINALSTATES = ( "Finished", "FinishedDirty" )
+  FINALSTATES = ( "Finished", "FinishedDirty", "Failed", "Canceled" )
 
   # # missing source regexp patterns
   missingSourceErrors = [
@@ -407,11 +407,12 @@ class FTSJob( Record ):
     if self.FTSGUID:
       return S_ERROR( "FTSJob already has been submitted" )
     surls = self._surlPairs()
-    if not surls:
+    if not surls["OK"]:
       return S_ERROR( "No files to submit" )
     fd, fileName = tempfile.mkstemp()
     surlFile = os.fdopen( fd, 'w' )
-    surlFile.write( surls )
+
+    surlFile.write( surls["Value"] )
     surlFile.close()
     submitCommand = [ "glite-transfer-submit", "-s", self.FTSServer, "-f", fileName, "-o", "--compare-checksums" ]
 
@@ -434,8 +435,10 @@ class FTSJob( Record ):
     if not self.FTSGUID:
       return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
     monitorCommand = [ "glite-transfer-status", "--verbose", "-s", self.FTSServer, self.FTSGUID ]
+
     if full:
       monitorCommand.append( "-l" )
+
     monitor = executeGridCommand( "", monitorCommand )
     if not monitor["OK"]:
       return monitor
@@ -459,7 +462,8 @@ class FTSJob( Record ):
     statusSummary = {}
     for state in FTSFile.ALL_STATES:
       regExp = re.compile( "\s+%s:\s+(\d+)" % state )
-      statusSummary[state] = int( re.search( regExp, outputStr ).group( 1 ) )
+      if regExp.search( outputStr ):
+        statusSummary[state] = int( re.search( regExp, outputStr ).group( 1 ) )
 
     total = sum( statusSummary.values() )
     completed = sum( [ statusSummary.get( state, 0 ) for state in FTSFile.FINAL_STATES ] )
@@ -473,7 +477,7 @@ class FTSJob( Record ):
     for sourceURL, targetURL, fileStatus, retries, reason, duration in fileInfo:
       candidateFile = None
       for ftsFile in self:
-        if candidateFile.SourceURL == sourceURL:
+        if ftsFile.SourceSURL == sourceURL:
           candidateFile = ftsFile
           break
       if not candidateFile:

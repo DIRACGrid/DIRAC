@@ -342,7 +342,7 @@ class SubmitFTSAgent( AgentModule ):
       ftsJob.addFile( ftsFile )
 
     log.debug( "submitting..." )
-    submit = S_OK()  # ftsJob.submitFTS2()
+    submit = ftsJob.submitFTS2()
     if not submit["OK"]:
       gMonitor.addMark( "FTSJobsFail", 1 )
       log.error( submit["Message"] )
@@ -354,9 +354,6 @@ class SubmitFTSAgent( AgentModule ):
       route.ActiveJobs += 1
     finally:
       self.updateLock().release()
-
-    # # TODO: replace, this is just for testing
-    ftsJob.FTSGUID = str( uuid.uuid4() )
 
     # # save newly created FTSJob
     log.info( "FTSJob %s submitted to FTS @ %s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )

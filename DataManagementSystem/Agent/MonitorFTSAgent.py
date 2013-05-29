@@ -470,8 +470,8 @@ class MonitorFTSAgent( AgentModule ):
     # accountingDict['RegistrationTotal'] = 0
 
     accountingDict["TransferOK"] = len( [ f for f in ftsJob if f.Status == "Finished" ] )
-    accountingDict["TransferTotal"] = len( ftsJob ) 
-    accountingDict["TransferSize"] = ftsJob.Size 
+    accountingDict["TransferTotal"] = len( ftsJob )
+    accountingDict["TransferSize"] = ftsJob.Size
     accountingDict["FinalStatus"] = ftsJob.Status
     accountingDict["Source"] = ftsJob.SourceSE
     accountingDict["Destination"] = ftsJob.TargetSE

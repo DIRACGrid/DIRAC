@@ -159,6 +159,16 @@ class ReqClient( Client ):
     limit = limit if limit else 100
     return self.requestManager().getRequestNamesList( statusList, limit )
 
+  def getScheduledRequest( self, operationID ):
+    """ get scheduled request given its scheduled OperationID """
+    self.log.debug( "getScheduledRequest: attempt to get scheduled request..." )
+    scheduled = self.requestManager().getScheduledRequest( operationID )
+    if not scheduled["OK"]:
+      self.log.error( "getScheduledRequest: %s" % scheduled["Message"] )
+      return scheduled
+    if scheduled["Value"]:
+      return S_OK( Request( scheduled["Value"] ) )
+    return scheduled
 
   def getDBSummary( self ):
     """ Get the summary of requests in the RequestDBs. """

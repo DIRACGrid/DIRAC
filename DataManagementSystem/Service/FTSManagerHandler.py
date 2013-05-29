@@ -224,7 +224,7 @@ class FTSManagerHandler( RequestHandler ):
     replicaDict = dict( [ ( se, pfn ) for se, pfn in replicaDict.items() if se in sourceSEs ] )
 
     if not replicaDict:
-      return S_ERROR( "ftsSchedule: no active replicas found," )
+      return S_ERROR( "ftsSchedule: no active replicas found" )
 
     tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
     if not tree["OK"]:

@@ -10,7 +10,7 @@
 """
 __RCSID__ = "$Id$"
 # # imports
-from types import DictType, IntType, ListType, StringTypes
+from types import DictType, IntType, LongType, ListType, StringTypes
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -91,6 +91,26 @@ class ReqManagerHandler( RequestHandler ):
       errStr = "putRequest: Exception while setting request."
       gLogger.exception( errStr, requestName, lException = error )
       return S_ERROR( errStr )
+
+
+  types_getScheduledRequest = [ ( IntType, LongType ) ]
+  @classmethod
+  def export_getScheduledRequest( cls , operationID ):
+    """ read scheduled request given operationID """
+    try:
+      scheduled = cls.__requestDB.getScheduledRequest( operationID )
+      if not scheduled["OK"]:
+        gLogger.error( "getScheduledRequest: %s" % scheduled["Message"] )
+        return scheduled
+      if not scheduled["Value"]:
+        return S_OK()
+      requestJSON = scheduled["Value"].toJSON()
+      if not requestJSON["OK"]:
+        gLogger.error( "getScheduledRequest: %s" % requestJSON["Message"] )
+      return requestJSON
+    except Exception, error:
+      errStr = "getScheduledRequest: %s" % str( error )
+      gLogger.exception( errStr, lException = error )
 
   types_getDBSummary = []
   @classmethod
