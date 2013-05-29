@@ -407,13 +407,13 @@ class FTSJob( Record ):
     if self.FTSGUID:
       return S_ERROR( "FTSJob already has been submitted" )
     surls = self._surlPairs()
-    if not surls["OK"]:
+    if not surls:
       return S_ERROR( "No files to submit" )
     fd, fileName = tempfile.mkstemp()
     surlFile = os.fdopen( fd, 'w' )
-
-    surlFile.write( surls["Value"] )
+    surlFile.write( surls )
     surlFile.close()
+
     submitCommand = [ "glite-transfer-submit", "-s", self.FTSServer, "-f", fileName, "-o", "--compare-checksums" ]
 
     submit = executeGridCommand( "", submitCommand )
