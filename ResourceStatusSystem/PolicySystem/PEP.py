@@ -57,6 +57,7 @@ class PEP:
     # Pass to the PDP the clients that are going to be used on the Commands
     self.pdp     = PDP( clients )   
 
+
   def enforce( self, decisionParams ):
     """ Given a dictionary with decisionParams, it is passed to the PDP, which
     will return ( in case there is a/are positive match/es ) a dictionary containing
@@ -123,6 +124,7 @@ class PEP:
         
     return S_OK( resDecisions )
 
+
   def __isNotUpdated( self, decisionParams ):
     """ Checks for the existence of the element as it was passed to the PEP. It may
     happen that while being the element processed by the PEP an user through the 
@@ -143,6 +145,7 @@ class PEP:
     # Copy original dictionary and get rid of one key we cannot pass as kwarg
     selectParams = decisionParams.copy()
     del selectParams[ 'element' ]
+    del selectParams[ 'active' ]
     
     # We expect to have an exact match. If not, then something has changed and
     # we cannot proceed with the actions.    
