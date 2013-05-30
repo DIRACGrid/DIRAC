@@ -259,6 +259,8 @@ class FTSDB( DB ):
     :param int operationID: ReqDB.Operation.OperationID
     :param str sourceSE: waiting source SE
     """
+    operationID = int( operationID )
+    opFileIDList = [ int( opFileID ) for opFileID in opFileIDList ]
     status = "Waiting#%s" % sourceSE
     query = "UPDATE `FTSFile` SET `Status` = `Waiting` WHERE `Status` = '%s' "\
       "AND `FileID` IN (%s) AND `OperationID` = %s;" % ( status, intListToString( opFileIDList ), operationID )
