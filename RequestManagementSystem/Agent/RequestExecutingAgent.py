@@ -123,7 +123,7 @@ class RequestExecutingAgent( AgentModule ):
         continue
       opTimeout = gConfig.getValue( "%s/%s/TimeOut" % ( opHandlersPath, opHandler ), self.__operationTimeout )
       fileTimeout = gConfig.getValue( "%s/%s/TimeoutPerFile" % ( opHandlersPath, opHandler ), self.__fileTimeout )
-      self.timeOuts["Handler"] = { "PerFile": fileTimeout, "PerOperation": opTimeout }
+      self.timeOuts[opHandler] = { "PerFile": fileTimeout, "PerOperation": opTimeout }
       self.operationHandlers.append( opLocation )
 
     self.log.info( "Operation handlers:" )
