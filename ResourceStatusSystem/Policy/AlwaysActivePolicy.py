@@ -22,7 +22,7 @@ class AlwaysActivePolicy( PolicyBase ):
 
     policyResult = { 
                      'Status' : 'Active', 
-                     'Reason' : 'This is the AlwaysActive policy' 
+                     'Reason' : 'AlwaysActive' 
                    }
     
     return S_OK( policyResult )

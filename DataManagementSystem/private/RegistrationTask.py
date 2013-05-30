@@ -11,7 +11,9 @@
     .. module: RegistrationTask
     :synopsis: 
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-    
+
+
+    :deprecated:
 """
 
 __RCSID__ = "$Id $"

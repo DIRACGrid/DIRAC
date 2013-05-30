@@ -8,6 +8,9 @@ __RCSID__ = "$Id$"
     The PhysicalReplica class inherits the Replica class and adds the 'size','checksum','online' and 'migrated' members.
 
     In this context Replica refers to any copy of a file. This can be the first or an additional copy.
+
+    OBSOLETE?
+    K.C.
 """
 
 import types

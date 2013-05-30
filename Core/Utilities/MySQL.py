@@ -219,7 +219,6 @@ def _quotedList( fieldList = None ):
   return ', '.join( quotedFields )
 
 
-
 class MySQL:
   """
   Basic multithreaded DIRAC MySQL Client Class
@@ -319,7 +318,7 @@ class MySQL:
         conn = data[0]
         data[2] = now
         return data[0], data[1], thid
-      #Not cached
+      # Not cached
       try:
         conn, dbName = self.__spares.pop()
       except IndexError:
@@ -660,7 +659,7 @@ class MySQL:
       if cursor.lastrowid:
         retDict[ 'lastRowId' ] = cursor.lastrowid
     except Exception, x:
-      self.log.warn( '_update: %s: %s' % ( cmd, str(x) ) )
+      self.log.warn( '_update: %s: %s' % ( cmd, str( x ) ) )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
     try:
@@ -674,7 +673,6 @@ class MySQL:
 
     return retDict
 
-
   def _transaction( self, cmdList, conn = None ):
     """ dummy transaction support
 
@@ -687,7 +685,7 @@ class MySQL:
     if type( cmdList ) != ListType:
       return S_ERROR( "_transaction: wrong type (%s) for cmdList" % type( cmdList ) )
 
-    ## get connection
+    # # get connection
     connection = conn
     if not connection:
       retDict = self.__getConnection()
@@ -695,7 +693,7 @@ class MySQL:
         return retDict
       connection = retDict[ 'Value' ]
 
-    ## list with cmds and their results
+    # # list with cmds and their results
     cmdRet = []
     try:
       cursor = connection.cursor()
@@ -704,12 +702,55 @@ class MySQL:
       connection.commit()
     except Exception, error:
       self.logger.execption( error )
-      ## rollback, put back connection to the pool
+      # # rollback, put back connection to the pool
       connection.rollback()
       return S_ERROR( error )
-    ## close cursor, put back connection to the pool
+    # # close cursor, put back connection to the pool
     cursor.close()
     return S_OK( cmdRet )
+
+  def _createViews( self, viewsDict, force = False ):
+    """ create view based on query
+
+    :param dict viewDict: { 'ViewName': "Fields" : { "`a`": `tblA.a`, "`sumB`" : "SUM(`tblB.b`)" }
+                                        "SelectFrom" : "tblA join tblB on tblA.id = tblB.id",
+                                        "Clauses" : [ "`tblA.a` > 10", "`tblB.Status` = 'foo'" ] ## WILL USE AND CLAUSE
+                                        "GroupBy": [ "`a`" ],
+                                        "OrderBy": [ "`b` DESC" ] }
+    """
+    if force:
+      gLogger.debug( viewsDict )
+
+      for viewName, viewDict in viewsDict.items():
+
+        viewQuery = [ "CREATE OR REPLACE VIEW `%s`.`%s` AS" % ( self.__dbName, viewName ) ]
+
+        columns = ",".join( [ "%s AS %s" % ( colDef, colName )
+                             for colName, colDef in  viewDict.get( "Fields", {} ).items() ] )
+        tables = viewDict.get( "SelectFrom", "" )
+        if columns and tables:
+          viewQuery.append( "SELECT %s FROM %s" % ( columns, tables ) )
+
+        where = " AND ".join( viewDict.get( "Clauses", [] ) )
+        if where:
+          viewQuery.append( "WHERE %s" % where )
+
+        groupBy = ",".join( viewDict.get( "GroupBy", [] ) )
+        if groupBy:
+          viewQuery.append( "GROUP BY %s" % groupBy )
+
+        orderBy = ",".join( viewDict.get( "OrderBy", [] ) )
+        if orderBy:
+          viewQuery.append( "ORDER BY %s" % orderBy )
+
+        viewQuery.append( ";" )
+        viewQuery = " ".join( viewQuery )
+        self.log.debug( "`%s` VIEW QUERY IS: %s" % ( viewName, viewQuery ) )
+        createView = self._query( viewQuery )
+        if not createView["OK"]:
+          gLogger.error( createView["Message"] )
+          return createView
+    return S_OK()
 
   def _createTables( self, tableDict, force = False ):
     """

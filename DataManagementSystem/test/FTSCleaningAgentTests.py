@@ -15,6 +15,10 @@
     unit tests for FTSCleaningAgent
 
     TODO: needs some smart content
+
+
+    OBSOLETE
+    K.C.
 """
 
 __RCSID__ = "$Id $"
