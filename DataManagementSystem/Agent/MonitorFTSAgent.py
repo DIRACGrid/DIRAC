@@ -122,7 +122,7 @@ class MonitorFTSAgent( AgentModule ):
     self.log.info( "ThreadPool max threads = %s" % self.MAX_THREADS )
 
     self.MAX_ATTEMPT = self.am_getOption( "MaxTransferAttempts", self.MAX_ATTEMPT )
-    self.log.info("Max transfer attempts   = %s" % self.MAX_ATTEMPT )
+    self.log.info( "Max transfer attempts   = %s" % self.MAX_ATTEMPT )
 
     return S_OK()
 
