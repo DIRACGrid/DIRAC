@@ -229,7 +229,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
         return ftsSchedule
 
       ftsSchedule = ftsSchedule["Value"]
-      for fileID, targetSEs in ftsSchedule["Successful"]:
+      for fileID in ftsSchedule["Successful"]:
         gMonitor.addMark( "FTSScheduleOK", 1 )
         for opFile in self.operation:
           if fileID == opFile.FileID:
