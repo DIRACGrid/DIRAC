@@ -112,8 +112,7 @@ class RequestExecutingAgent( AgentModule ):
     opHandlers = opHandlers["Value"]
 
 
-    self.timeOuts = dict.fromkeys()
-
+    self.timeOuts = dict()
 
     self.operationHandlers = []
     for opHandler in opHandlers:
