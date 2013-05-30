@@ -55,7 +55,7 @@ print "Checking for DNs %s" % " | ".join( userDNs )
 pmc = ProxyManagerClient()
 result = pmc.getDBContents( { 'UserDN' : userDNs } )
 if not result[ 'OK' ]:
-  print "Could not retrieve the proxy list: %s" % result[ 'Value' ]
+  print "Could not retrieve the proxy list: %s" % result[ 'Message' ]
   sys.exit( 1 )
 
 data = result[ 'Value' ]
