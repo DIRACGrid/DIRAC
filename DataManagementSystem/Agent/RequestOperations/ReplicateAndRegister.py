@@ -190,6 +190,8 @@ class ReplicateAndRegister( OperationHandlerBase ):
         self.operation.Error = "unknown targetSE: %s" % targetSE
         return S_ERROR( self.operation.Error )
 
+    toSchedule = []
+
     for opFile in self.getWaitingFilesList():
       gMonitor.addMark( "FTSScheduleAtt", 1 )
       # # check replicas
@@ -217,15 +219,27 @@ class ReplicateAndRegister( OperationHandlerBase ):
           self.log.info( "file %s is already present at all targets" % opFile.LFN )
           opFile.Status = "Done"
           continue
+        toSchedule.append( ( opFile.toJSON()["Value"], validReplicas, validTargets ) )
 
-        ftsSchedule = self.ftsClient().ftsSchedule( opFile, validReplicas, validTargets )
-        if not ftsSchedule["OK"]:
-          self.log.error( ftsSchedule["Message"] )
-          gMonitor.addMark( "FTSScheduleFail", 1 )
-          continue
-        # # if we land here file was scheduled
+    if toSchedule:
+
+      ftsSchedule = self.ftsClient().ftsSchedule( toSchedule )
+      if not ftsSchedule["OK"]:
+        self.log.error( ftsSchedule["Message"] )
+        return ftsSchedule
+
+      ftsSchedule = ftsSchedule["Value"]
+      for fileID, targetSEs in ftsSchedule["Successful"]:
         gMonitor.addMark( "FTSScheduleOK", 1 )
-        opFile.Status = "Scheduled"
+        for opFile in self.operation:
+          if fileID == opFile.FileID:
+            opFile.Status = "Scheduled"
+
+      for fileID, reason in ftsSchedule["Failed"]:
+        gMonitor.addMark( "FTSScheduleFail", 1 )
+        for opFile in self.operation:
+          if fileID == opFile.FileID:
+            opFile.Error = reason
 
     return S_OK()
 

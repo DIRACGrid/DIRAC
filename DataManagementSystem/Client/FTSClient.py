@@ -98,7 +98,7 @@ class FTSClient( Client ):
     """ put fts site """
     ftsSiteJSON = ftsSite.toJSON()
     if not ftsSiteJSON["OK"]:
-      self.log.error("putFTSSite: %s" % ftsSiteJSON["Message"] )
+      self.log.error( "putFTSSite: %s" % ftsSiteJSON["Message"] )
       return ftsSiteJSON
     ftsSiteJSON = ftsSiteJSON["Value"]
     return self.ftsManager().putFTSSite( ftsSiteJSON )
@@ -259,16 +259,10 @@ class FTSClient( Client ):
     """
     return self.ftsManager().deleteFTSFiles( operationID, opFileIDList )
 
-  def ftsSchedule( self, opFile, sourceSEs, targetSEs ):
+  def ftsSchedule( self, opFileList ):
     """ schedule lfn for FTS job
 
-    :param  File opFile: RMS File instance
-    :param list sourceSEs: list of valid sources
-    :param list targetSEs: list of target SEs
+    :param list opFileList: list of tuples ( File.toJSON()["Value"], sourcesList, targetList )
     """
-    opFileJSON = opFile.toJSON()
-    if not opFileJSON["OK"]:
-      self.log.error( opFileJSON["Message"] )
-      return opFileJSON
-    return self.ftsManager().ftsSchedule( opFileJSON["Value"], sourceSEs, targetSEs )
+    return self.ftsManager().ftsSchedule( opFileList )
 

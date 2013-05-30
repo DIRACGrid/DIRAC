@@ -382,6 +382,26 @@ class FTSDB( DB ):
         ftsJob.addFile( ftsFile )
     return S_OK( ftsJobs )
 
+  def putFTSFileList( self, ftsFileList ):
+    """ bulk put of FSTFiles
+
+    :param list ftsFileList: list with FTSFile instances
+    """
+    queries = []
+    for ftsFile in ftsFileList:
+      ftsFileSQL = ftsFile.toSQL()
+      if not ftsFileSQL["OK"]:
+        gLogger.error( "putFTSFileList: %s" % ftsFileSQL["Message"] )
+        return ftsFileSQL
+      queries.append( ftsFileSQL["Value"] )
+    if not queries:
+      return S_ERROR( "putFTSFileList: no queries to put" )
+
+    put = self._transaction( queries )
+    if not put["OK"]:
+      gLogger.error( "putFTSFileList: %s" % put["Message"] )
+    return put
+
   def getFTSFileList( self, statusList = None, limit = 1000 ):
     """ get FTSFiles with status in :statusList: """
     statusList = statusList if statusList else [ "Waiting" ]
