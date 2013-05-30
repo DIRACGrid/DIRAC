@@ -166,7 +166,7 @@ class MonitorFTSAgent( AgentModule ):
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
       if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"]:
-        log.error( "FTSJob expired at server" )
+        log.error( "FTSJob not known (expired on server?)" )
         return self.resetFiles( ftsJob, "FTSJob expired on server", sTJId )
       return monitor
     monitor = monitor["Value"]
@@ -240,10 +240,12 @@ class MonitorFTSAgent( AgentModule ):
     toUpdate = processFiles.get( "toUpdate", [] )
     toRetry = processFiles.get( "toRetry", [] )
     toRegister = processFiles.get( "toRegister", [] )
+  
 
     # # update ftsFiles to retry
     if toRetry:
       for ftsFile in toRetry:
+        if ftsFile.Attempt < 
         ftsFile.Status = "Waiting"
 
     missingReplicas = self.checkReadyReplicas( transferOperation )
@@ -454,7 +456,6 @@ class MonitorFTSAgent( AgentModule ):
     dataOp.setEndTime( fromString( ftsJob.LastUpdate ) )
 
     accountingDict = dict()
-
     accountingDict["OperationType"] = "ReplicateAndRegister"
 
     username = getUsernameForDN( ownerDN )
