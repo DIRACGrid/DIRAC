@@ -277,10 +277,17 @@ class MonitorFTSAgent( AgentModule ):
         self.registerFiles( request, transferOperation, toRegister )
 
       if toReschedule:
-        # # remove ftsFIle from job
+        # # remove ftsFile from job
         for ftsFile in toReschedule:
           ftsJob.subFile( ftsFile )
         self.rescheduleFiles( transferOperation, toReschedule )
+
+      if toFail:
+        for ftsFile in toFail:
+          for opFile in transferOperation:
+            if opFile.LFN == ftsFile.LFN:
+              opFile.Status = ftsFile.Status
+              opFile.Error = ftsFile.Error
 
       if toUpdate:
         update = self.ftsClient().setFTSFilesWaiting( transferOperation.OperationID,
