@@ -476,10 +476,12 @@ class MonitorFTSAgent( AgentModule ):
     accountingDict["FinalStatus"] = ftsJob.Status
     accountingDict["Source"] = ftsJob.SourceSE
     accountingDict["Destination"] = ftsJob.TargetSE
+
+
     self.log.always( ftsJob.LastUpdate, type( fromString( ftsJob.LastUpdate ) ) )
     self.log.always( ftsJob.SubmitTime )
 
-    dt = fromString( ftsJob.LastUpdate ) - fromString( ftsJob.SubmitTime )
+    dt = ftsJob.LastUpdate - ftsJob.SubmitTime
     transferTime = dt.days * 86400 + dt.seconds
     accountingDict["TransferTime"] = transferTime
     dataOp.setValuesFromDict( accountingDict )
