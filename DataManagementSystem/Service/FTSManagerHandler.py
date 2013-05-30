@@ -170,7 +170,7 @@ class FTSManagerHandler( RequestHandler ):
       cls.__replicaManager = ReplicaManager()
     return cls.__replicaManager
 
-  types_setFTSFilesWaiting = [ IntType, StringTypes, ListType ]
+  types_setFTSFilesWaiting = [ ( IntType, LongType ), StringTypes, ListType ]
   def export_setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
     """ update states for waiting replications """
     try:
@@ -182,7 +182,7 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
-  types_deleteFTSFiles = [ IntType, ListType ]
+  types_deleteFTSFiles = [ ( IntType, LongType ), ListType ]
   def export_deleteFTSFiles( self, operationID, opFileIDList = None ):
     """ cleanup FTSFiles for rescheduling """
     opFileIDList = opFileIDList if opFileIDList else []
