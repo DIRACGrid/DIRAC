@@ -182,10 +182,48 @@ class MonitorFTSAgent( AgentModule ):
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
 
     if ftsJob.Status in FTSJob.FINALSTATES:
-      finalize = self.finalizeFTSJob( ftsJob, sTJId )
+      getRequest = self.getRequest( ftsJob )
+      if not getRequest["OK"]:
+        log.error( getRequest["Message"] )
+        if "Request not found" in getRequest["Message"]:
+          log.warn( "request not found, will cancel FTSJob" )
+          for ftsFile in ftsJob:
+            ftsFile.Status = "Canceled"
+          ftsJob.Status = "Canceled"
+        else:
+          log.warn( "unable to read request, will revert job status to 'Submitted'" )
+          ftsJob.Status = "Submitted"
+        break
+
+      # # request read
+      getRequest = getRequest["Value"]
+      request = getRequest["request"] if "request" in getRequest else None
+      trOperation = getRequest["operation"] if "operation" in getRequest else None
+      if None in ( request, trOperation ):
+        log.error( "request or operation is missing, setting job status to Canceled" )
+        for ftsFile in ftsJob:
+          ftsFile.Status = "Canceled"
+        ftsJob.Status = "Canceled"
+        break
+
+
+      finalize = self.finalizeFTSJob( ftsJob, request, trOperation, sTJId )
       if not finalize["OK"]:
         log.error( "unable to finalize ftsJob: %s" % finalize["Message"] )
+        log.warn( "resetting job to Submitted " )
         ftsJob.Status = "Submitted"
+
+      if request.Status == "Done":
+        log.info( "request %s is done" % request.RequestName )
+        if request.JobID:
+            finalizeRequest = self.requestClient().finalizeRequest( request.RequestName, request.JobID )
+            if not finalizeRequest["OK"]:
+              log.error( "unable to finalize request %s, will reset it's status to Scheduled" % request.RequestName )
+              request.Status = "Scheduled"
+
+      putRequest = self.requestClient().putRequest( request )
+      if not putRequest["OK"]:
+        log.error( "unable to put back request: %s" % putRequest["Message"] )
 
     putFTSJob = self.ftsClient().putFTSJob( ftsJob )
     if not putFTSJob["OK"]:
@@ -196,7 +234,7 @@ class MonitorFTSAgent( AgentModule ):
     gMonitor.addMark( "FTSMonitorOK", 1 )
     return S_OK()
 
-  def finalizeFTSJob( self, ftsJob, sTJId ):
+  def finalizeFTSJob( self, ftsJob, request, trOperation, sTJId ):
     """ finalize FTSJob
 
     :param FTSJob ftsJob: FTSJob instance
@@ -209,32 +247,6 @@ class MonitorFTSAgent( AgentModule ):
     if not monitor["OK"]:
       log.error( monitor["Message"] )
       return monitor
-
-    getRequest = self.getRequest( ftsJob )
-    if not getRequest["OK"]:
-      log.error( getRequest["Message"] )
-      if "Request not found" in getRequest["Message"]:
-        log.warn( "request not found, will cancel FTSJob" )
-        for ftsFile in ftsJob:
-          ftsFile.Status = "Canceled"
-        ftsJob.Status = "Canceled"
-        return getRequest
-        # # will try again later - reset FTSJob status to 'Submitted'
-
-      ftsJob.Status = "Submitted"
-      return getRequest
-
-    getRequest = getRequest["Value"]
-
-    request = getRequest["request"] if "request" in getRequest else None
-    transferOperation = getRequest["operation"] if "operation" in getRequest else None
-
-    if None in ( request, transferOperation ):
-      log.error( "request or operation is missing" )
-      for ftsFile in ftsJob:
-        ftsFile.Status = "Canceled"
-      ftsJob.Status = "Canceled"
-      return S_ERROR( "unable to read request" )
 
     # # split FTSFiles to different categories
     processFiles = self.filterFiles( ftsJob )
@@ -260,7 +272,7 @@ class MonitorFTSAgent( AgentModule ):
           ftsFile.Error = "Max FTS transfer attempts reached"
           toFail.append( ftsFile )
 
-    missingReplicas = self.checkReadyReplicas( transferOperation )
+    missingReplicas = self.checkReadyReplicas( trOperation )
     if not missingReplicas["OK"]:
     # # bail out on error
       log.error( missingReplicas["Message"] )
@@ -268,32 +280,32 @@ class MonitorFTSAgent( AgentModule ):
 
     missingReplicas = missingReplicas["Value"]
     if not missingReplicas:
-      log.info( "all files replicated in OperationID=%s Request '%s'" % ( transferOperation.operationID,
+      log.info( "all files replicated in OperationID=%s Request '%s'" % ( trOperation.operationID,
                                                                           request.RequestName ) )
-      transferOperation.Status = "Done"
+      trOperation.Status = "Done"
       for ftsFile in ftsJob:
         ftsFile.Status = "Finished"
       ftsJob.Status = "Finished"
-      return S_OK( ( request ) )
+      return S_OK()
     else:
       if toRegister:
-        self.registerFiles( request, transferOperation, toRegister )
+        self.registerFiles( request, trOperation, toRegister )
 
       if toReschedule:
         # # remove ftsFile from job
         for ftsFile in toReschedule:
           ftsJob.subFile( ftsFile )
-        self.rescheduleFiles( transferOperation, toReschedule )
+        self.rescheduleFiles( trOperation, toReschedule )
 
       if toFail:
         for ftsFile in toFail:
-          for opFile in transferOperation:
+          for opFile in trOperation:
             if opFile.LFN == ftsFile.LFN:
               opFile.Status = ftsFile.Status
               opFile.Error = ftsFile.Error
 
       if toUpdate:
-        update = self.ftsClient().setFTSFilesWaiting( transferOperation.OperationID,
+        update = self.ftsClient().setFTSFilesWaiting( trOperation.OperationID,
                                                       ftsJob.TargetSE,
                                                       [ ftsFile.FileID for ftsFile in toUpdate ] )
         if not update["OK"]:
@@ -301,26 +313,10 @@ class MonitorFTSAgent( AgentModule ):
           ftsJob.Status = "Submitted"
           return update
 
-    # # put back request if any
-    if request:
+    # # send accounting record
+    self.sendAccounting( ftsJob, request.OwnerDN )
 
-      # # send accounting record
-      self.sendAccounting( ftsJob, request.OwnerDN )
-
-      if request.Status == "Done":
-        log.info( "request %s is done" % request.RequestName )
-        if request.JobID:
-          finalizeRequest = self.requestClient().finalizeRequest( request.RequestName, request.JobID )
-          if not finalizeRequest["OK"]:
-            log.error( "unable to finalize request %s, will reset it's status to Waiting" % request.RequestName )
-            request.Status = "Waiting"
-
-      putRequest = self.requestClient().putRequest( request )
-      if not putRequest["OK"]:
-        log.error( "unable to put back request: %s" % putRequest["Message"] )
-      return putRequest
-
-    return S_OK( request )
+    return S_OK()
 
 
   def getRequest( self, ftsJob ):
