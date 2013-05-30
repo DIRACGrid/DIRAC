@@ -47,55 +47,68 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.reqName = "fullChain"
 
-    self.fname = "/tmp/testPutAndRegister"
-    self.file = open( self.fname, "w+" )
+    files = []
     for i in range( 100 ):
-      self.file.write( str( random.randint( 0, i ) ) )
-    self.file.close()
+      fname = "/tmp/testPutAndRegister-%s" % i
+      lfn = "/lhcb/user/c/cibak/" + fname.split( "/" )[-1]
+      fh = open( fname, "w+" )
+      for i in range( 100 ):
+        fh.write( str( random.randint( 0, i ) ) )
+      fh.close()
 
-    self.size = os.stat( self.fname ).st_size
-    self.checksum = fileAdler( self.fname )
-    self.guid = makeGuid( self.fname )
+      size = os.stat( fname ).st_size
+      checksum = fileAdler( fname )
+      guid = makeGuid( fname )
 
-    self.putFile = File()
-    self.putFile.PFN = self.fname
-    self.putFile.LFN = "/lhcb/user/c/cibak/" + self.fname.split( "/" )[-1]
-    self.putFile.Checksum = self.checksum
-    self.putFile.ChecksumType = "adler32"
-    self.putFile.Size = self.size
-    self.putFile.GUID = self.guid
+      files.append( ( fname, lfn, size, checksum, guid ) )
+
 
     self.putAndRegister = Operation()
     self.putAndRegister.Type = "PutAndRegister"
     self.putAndRegister.TargetSE = "RAL-USER"
-    # self.putAndRegister.Catalog = "LcgFileCatalogCombined"
+    for fname, lfn, size, checksum, guid in files:
+      putFile = File()
+      putFile.LFN = lfn
+      putFile.PFN = fname
+      putFile.Checksum = self.checksum
+      putFile.ChecksumType = "adler32"
+      putFile.Size = self.size
+      putFile.GUID = self.guid
+      self.putAndRegister.addFile( putFile )
 
-    self.putAndRegister.addFile( self.putFile )
-
-    self.repFile = File()
-    self.repFile.LFN = self.putFile.LFN
-    self.repFile.Size = self.size
-    self.repFile.Checksum = self.checksum
-    self.repFile.ChecksumType = "adler32"
+    # self.repFile = File()
+    # self.repFile.LFN = self.putFile.LFN
+    # self.repFile.Size = self.size
+    # self.repFile.Checksum = self.checksum
+    # self.repFile.ChecksumType = "adler32"
 
     self.replicateAndRegister = Operation()
     self.replicateAndRegister.Type = "ReplicateAndRegister"
-    self.replicateAndRegister.TargetSE = "RAL-USER,PIC-USER,CNAF-USER"
-    self.replicateAndRegister.addFile( self.repFile )
+    self.replicateAndRegister.TargetSE = "RAL-USER,CNAF-USER"
+    for fname, lfn, size, checksum, guid in files:
+      repFile = File()
+      repFile.LFN = lfn
+      repFile.Size = size
+      repFile.Checksum = checksum
+      repFile.ChecksumType = "adler32"
+      self.replicateAndRegister.addFile( repFile )
 
 
     self.removeReplica = Operation()
     self.removeReplica.Type = "RemoveReplica"
     self.removeReplica.TargetSE = "RAL-USER"
-    self.removeReplica.addFile( File( {"LFN": self.putFile.LFN } ) )
+    for fname, lfn, size, checksum, guid in files:
+      self.removeReplica.addFile( File( {"LFN": lfn } ) )
 
     self.removeFile = Operation()
     self.removeFile.Type = "RemoveFile"
-    self.removeFile.addFile( File( { "LFN": self.putFile.LFN } ) )
+    for fname, lfn, size, checksum, guid in files:
+      self.removeReplica.addFile( File( {"LFN": lfn } ) )
 
     self.removeFileInit = Operation()
     self.removeFileInit.Type = "RemoveFile"
-    self.removeFileInit.addFile( File( {"LFN": self.putFile.LFN } ) )
+    for fname, lfn, size, checksum, guid in files:
+      self.removeReplica.addFile( File( {"LFN": lfn } ) )
 
     self.req = Request()
     self.req.RequestName = self.reqName
