@@ -193,37 +193,35 @@ class MonitorFTSAgent( AgentModule ):
         else:
           log.warn( "unable to read request, will revert job status to 'Submitted'" )
           ftsJob.Status = "Submitted"
-        break
 
-      # # request read
-      getRequest = getRequest["Value"]
-      request = getRequest["request"] if "request" in getRequest else None
-      trOperation = getRequest["operation"] if "operation" in getRequest else None
-      if None in ( request, trOperation ):
-        log.error( "request or operation is missing, setting job status to Canceled" )
-        for ftsFile in ftsJob:
-          ftsFile.Status = "Canceled"
-        ftsJob.Status = "Canceled"
-        break
+      else:
+        # # request read
+        getRequest = getRequest["Value"]
+        request = getRequest["request"] if "request" in getRequest else None
+        trOperation = getRequest["operation"] if "operation" in getRequest else None
+        if None in ( request, trOperation ):
+          log.error( "request or operation is missing, setting job status to Canceled" )
+          for ftsFile in ftsJob:
+            ftsFile.Status = "Canceled"
+          ftsJob.Status = "Canceled"
+        else:
+          finalize = self.finalizeFTSJob( ftsJob, request, trOperation, sTJId )
+          if not finalize["OK"]:
+            log.error( "unable to finalize ftsJob: %s" % finalize["Message"] )
+            log.warn( "resetting job to Submitted " )
+            ftsJob.Status = "Submitted"
 
+          if request.Status == "Done":
+            log.info( "request %s is done" % request.RequestName )
+            if request.JobID:
+              finalizeRequest = self.requestClient().finalizeRequest( request.RequestName, request.JobID )
+              if not finalizeRequest["OK"]:
+                log.error( "unable to finalize request %s, will reset it's status to Scheduled" % request.RequestName )
+                request.Status = "Scheduled"
 
-      finalize = self.finalizeFTSJob( ftsJob, request, trOperation, sTJId )
-      if not finalize["OK"]:
-        log.error( "unable to finalize ftsJob: %s" % finalize["Message"] )
-        log.warn( "resetting job to Submitted " )
-        ftsJob.Status = "Submitted"
-
-      if request.Status == "Done":
-        log.info( "request %s is done" % request.RequestName )
-        if request.JobID:
-            finalizeRequest = self.requestClient().finalizeRequest( request.RequestName, request.JobID )
-            if not finalizeRequest["OK"]:
-              log.error( "unable to finalize request %s, will reset it's status to Scheduled" % request.RequestName )
-              request.Status = "Scheduled"
-
-      putRequest = self.requestClient().putRequest( request )
-      if not putRequest["OK"]:
-        log.error( "unable to put back request: %s" % putRequest["Message"] )
+          putRequest = self.requestClient().putRequest( request )
+          if not putRequest["OK"]:
+            log.error( "unable to put back request: %s" % putRequest["Message"] )
 
     putFTSJob = self.ftsClient().putFTSJob( ftsJob )
     if not putFTSJob["OK"]:
