@@ -340,7 +340,7 @@ class MonitorFTSAgent( AgentModule ):
       return replicas
     replicas = replicas["Value"]
 
-    for successfulLFN, reps in replicas["Successful"]:
+    for successfulLFN, reps in replicas["Successful"].items():
       if targetSESet.issubset( set( reps ) ):
         scheduledFiles[successfulLFN].Status = "Done"
       else:
