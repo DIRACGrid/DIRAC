@@ -254,7 +254,7 @@ class MonitorFTSAgent( AgentModule ):
           ftsFile.Status = "Waiting"
         else:
           ftsFile.Status = "Failed"
-          ftsFile.Error = "Max attempts reached"
+          ftsFile.Error = "Max FTS transfer attempts reached"
           toFail.append( ftsFile )
 
     missingReplicas = self.checkReadyReplicas( transferOperation )

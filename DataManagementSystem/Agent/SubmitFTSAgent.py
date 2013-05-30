@@ -223,7 +223,7 @@ class SubmitFTSAgent( AgentModule ):
         self.__rwAccessValidStamp = now
 
     log.debug( "reading FTSFiles..." )
-    ftsFileList = self.ftsClient().getFTSFileList( [ "Waiting.*" ] )
+    ftsFileList = self.ftsClient().getFTSFileList( [ "Waiting" ] )
     if not ftsFileList["OK"]:
       log.error( "unable to read Waiting FTSFiles: %s" % ftsFileList["Message"] )
       return ftsFileList

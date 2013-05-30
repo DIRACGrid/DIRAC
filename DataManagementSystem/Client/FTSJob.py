@@ -413,9 +413,7 @@ class FTSJob( Record ):
     surlFile = os.fdopen( fd, 'w' )
     surlFile.write( surls )
     surlFile.close()
-
     submitCommand = [ "glite-transfer-submit", "-s", self.FTSServer, "-f", fileName, "-o", "--compare-checksums" ]
-
     submit = executeGridCommand( "", submitCommand )
     os.remove( fileName )
     if not submit["OK"]:
@@ -449,10 +447,6 @@ class FTSJob( Record ):
       return S_ERROR( errStr )
 
     outputStr = outputStr.replace( "'" , "" ).replace( "<", "" ).replace( ">", "" )
-
-    print returnCode
-    print errStr
-    print outputStr
 
     # # set FTS job status
     regExp = re.compile( "Status:\s+(\S+)" )
