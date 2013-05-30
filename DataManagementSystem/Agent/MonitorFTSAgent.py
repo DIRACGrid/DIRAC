@@ -60,6 +60,8 @@ class MonitorFTSAgent( AgentModule ):
   MIN_THREADS = 1
   # # max threads
   MAX_THREADS = 10
+  # # max attempts
+  MAX_ATTEMPT = 16
 
   def ftsClient( self ):
     """ FTSClient getter """
@@ -118,6 +120,9 @@ class MonitorFTSAgent( AgentModule ):
     self.MIN_THREADS, self.MAX_THREADS = min( minmax ), max( minmax )
     self.log.info( "ThreadPool min threads = %s" % self.MIN_THREADS )
     self.log.info( "ThreadPool max threads = %s" % self.MAX_THREADS )
+
+    self.MAX_ATTEMPT = self.am_getOption( "MaxTransferAttempts", self.MAX_ATTEMPT )
+    self.log.info("Max transfer attempts   = %s" % self.MAX_ATTEMPT )
 
     return S_OK()
 
@@ -240,13 +245,17 @@ class MonitorFTSAgent( AgentModule ):
     toUpdate = processFiles.get( "toUpdate", [] )
     toRetry = processFiles.get( "toRetry", [] )
     toRegister = processFiles.get( "toRegister", [] )
-  
+    toFail = []
 
     # # update ftsFiles to retry
     if toRetry:
       for ftsFile in toRetry:
-        if ftsFile.Attempt < 
-        ftsFile.Status = "Waiting"
+        if ftsFile.Attempt < self.MAX_ATTEMPT:
+          ftsFile.Status = "Waiting"
+        else:
+          ftsFile.Status = "Failed"
+          ftsFile.Error = "Max attempts reached"
+          toFail.append( ftsFile )
 
     missingReplicas = self.checkReadyReplicas( transferOperation )
     if not missingReplicas["OK"]:
