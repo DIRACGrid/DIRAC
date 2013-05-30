@@ -118,23 +118,16 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
   def tearDown( self ):
     """ tear down """
-    del self.req
-    del self.putAndRegister
-    del self.replicateAndRegister
-    del self.removeFile
-    del self.putFile
-    del self.repFile
-    del self.size
-    del self.guid
-    del self.checksum
-    del self.reqName
+    pass
+
 
   def test( self ):
     """ test case """
     delete = self.reqClient.deleteRequest( self.reqName )
     print delete
     put = self.reqClient.putRequest( self.req )
-    self.assertEqual( put["OK"], True, "putRequest failed" )
+    self.assertEqual( put["OK"], True, "putRequest failed: %s" % put.get( "Message", "" ) )
+
 
 # # test execution
 if __name__ == "__main__":
