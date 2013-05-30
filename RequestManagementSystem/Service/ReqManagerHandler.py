@@ -75,8 +75,6 @@ class ReqManagerHandler( RequestHandler ):
     :param cls: class ref
     :param str requestJSON: request serialized to JSON format
     """
-    gLogger.always( requestJSON )
-
     requestName = requestJSON.get( "RequestName", "***UNKNOWN***" )
     try:
       request = Request( requestJSON )
@@ -91,7 +89,6 @@ class ReqManagerHandler( RequestHandler ):
       errStr = "putRequest: Exception while setting request."
       gLogger.exception( errStr, requestName, lException = error )
       return S_ERROR( errStr )
-
 
   types_getScheduledRequest = [ ( IntType, LongType ) ]
   @classmethod
