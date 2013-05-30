@@ -70,17 +70,11 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
       putFile = File()
       putFile.LFN = lfn
       putFile.PFN = fname
-      putFile.Checksum = self.checksum
+      putFile.Checksum = checksum
       putFile.ChecksumType = "adler32"
-      putFile.Size = self.size
-      putFile.GUID = self.guid
+      putFile.Size = size
+      putFile.GUID = guid
       self.putAndRegister.addFile( putFile )
-
-    # self.repFile = File()
-    # self.repFile.LFN = self.putFile.LFN
-    # self.repFile.Size = self.size
-    # self.repFile.Checksum = self.checksum
-    # self.repFile.ChecksumType = "adler32"
 
     self.replicateAndRegister = Operation()
     self.replicateAndRegister.Type = "ReplicateAndRegister"
@@ -92,7 +86,6 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
       repFile.Checksum = checksum
       repFile.ChecksumType = "adler32"
       self.replicateAndRegister.addFile( repFile )
-
 
     self.removeReplica = Operation()
     self.removeReplica.Type = "RemoveReplica"
