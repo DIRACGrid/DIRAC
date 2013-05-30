@@ -262,7 +262,7 @@ class FTSDB( DB ):
     operationID = int( operationID )
     opFileIDList = [ int( opFileID ) for opFileID in opFileIDList ]
     status = "Waiting#%s" % sourceSE
-    query = "UPDATE `FTSFile` SET `Status` = `Waiting` WHERE `Status` = '%s' "\
+    query = "UPDATE `FTSFile` SET `Status` = 'Waiting' WHERE `Status` = '%s' "\
       "AND `FileID` IN (%s) AND `OperationID` = %s;" % ( status, intListToString( opFileIDList ), operationID )
     update = self._update( query )
     if not update["OK"]:
