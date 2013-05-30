@@ -121,10 +121,18 @@ class RequestExecutingAgent( AgentModule ):
       if not opLocation:
         self.log.error( "%s not set for %s operation handler" % ( opHandlerPath, opHandler ) )
         continue
-      opTimeout = gConfig.getValue( "%s/%s/TimeOut" % ( opHandlersPath, opHandler ), self.__operationTimeout )
-      fileTimeout = gConfig.getValue( "%s/%s/TimeoutPerFile" % ( opHandlersPath, opHandler ), self.__fileTimeout )
-      self.timeOuts[opHandler] = { "PerFile": fileTimeout, "PerOperation": opTimeout }
+      self.timeOuts[opHandler] = { "PerFile": self.__fileTimeout, "PerOperation": self.__operationTimeout }
+
+      opTimeout = gConfig.getValue( "%s/%s/TimeOut" % ( opHandlersPath, opHandler ), 0 )
+      if opTimeout:
+        self.timeOuts[opHandler]["PerOperation"] = opTimeout
+      fileTimeout = gConfig.getValue( "%s/%s/TimeoutPerFile" % ( opHandlersPath, opHandler ), 0 )
+      if fileTimeout:
+        self.timeOuts[opHandler]["PerFile"] = fileTimeout
+
       self.operationHandlers.append( opLocation )
+
+    self.log.always( self.timeOuts )
 
     self.log.info( "Operation handlers:" )
     for itemTuple in enumerate ( self.operationHandlers ):
