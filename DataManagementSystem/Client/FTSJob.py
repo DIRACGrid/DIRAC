@@ -507,7 +507,7 @@ class FTSJob( Record ):
       toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
 
     if toRegisterDict:
-      register = self.replicaManager().addCatalogReplica( toRegister )
+      register = self.replicaManager().addCatalogReplica( toRegisterDict )
       if not register["OK"]:
         for ftsFile in toRegister:
           ftsFile.Error = "AddCatalogReplicaFailed"
