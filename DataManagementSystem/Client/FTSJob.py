@@ -27,7 +27,6 @@ import os
 import datetime
 import re
 import tempfile
-import uuid
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Grid import executeGridCommand
