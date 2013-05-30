@@ -205,7 +205,6 @@ class MonitorFTSAgent( AgentModule ):
     getRequest = self.getRequest( ftsJob )
     if not getRequest["OK"]:
       log.error( getRequest["Message"] )
-
       if "Request not found" in getRequest["Message"]:
         log.warn( "request not found, will cancel FTSJob" )
         for ftsFile in ftsJob:
@@ -213,7 +212,9 @@ class MonitorFTSAgent( AgentModule ):
         ftsJob.Status = "Canceled"
         return getRequest
         # # will try again later - reset FTSJob status to 'Submitted'
+
       ftsJob.Status = "Submitted"
+      return getRequest
 
     getRequest = getRequest["Value"]
 
