@@ -176,6 +176,8 @@ class MonitorFTSAgent( AgentModule ):
       return monitor
     monitor = monitor["Value"]
 
+    log.info( "FTSJob Status = %s Completeness = %s" % ( ftsJob.Status, ftsJob.Completeness ) )
+
     # # monitor status change
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
 
@@ -183,6 +185,7 @@ class MonitorFTSAgent( AgentModule ):
       finalize = self.finalizeFTSJob( ftsJob, sTJId )
       if not finalize["OK"]:
         log.error( "unable to finalize ftsJob: %s" % finalize["Message"] )
+        ftsJob.Status = "Submitted"
 
     putFTSJob = self.ftsClient().putFTSJob( ftsJob )
     if not putFTSJob["OK"]:
