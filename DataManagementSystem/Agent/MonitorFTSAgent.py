@@ -278,7 +278,7 @@ class MonitorFTSAgent( AgentModule ):
 
     missingReplicas = missingReplicas["Value"]
     if not missingReplicas:
-      log.info( "all files replicated in OperationID=%s Request '%s'" % ( trOperation.operationID,
+      log.info( "all files replicated in OperationID=%s Request '%s'" % ( trOperation.OperationID,
                                                                           request.RequestName ) )
       trOperation.Status = "Done"
       for ftsFile in ftsJob:
