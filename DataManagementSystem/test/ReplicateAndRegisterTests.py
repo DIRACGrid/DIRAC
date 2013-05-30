@@ -80,7 +80,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.replicateAndRegister = Operation()
     self.replicateAndRegister.Type = "ReplicateAndRegister"
-    self.replicateAndRegister.TargetSE = "RAL-USER,PIC-USER"
+    self.replicateAndRegister.TargetSE = "RAL-USER,PIC-USER,CNAF-USER"
     self.replicateAndRegister.addFile( self.repFile )
 
 
