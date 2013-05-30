@@ -294,6 +294,8 @@ class RequestExecutingAgent( AgentModule ):
     """ get timeout for request """
     timeout = 0
     for op in request:
+      if op.Status not in ( "Waiting", "Scheduled" ):
+        continue
       timeout += self.timeOuts[op.Type]["PerOperation"] + len( op ) * self.timeOuts[op.Type]["PerFile"]
     self.log.info( "estimated timeOut for request %s is %s" % ( request.RequestName, timeout ) )
     return timeout
