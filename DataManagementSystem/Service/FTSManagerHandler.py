@@ -195,8 +195,8 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
-  types_ftsSchedule = [ ListType ]
-  def export_ftsSchedule( self, fileJSONList ):
+  types_ftsSchedule = [ ( IntType, LongType ), ListType ]
+  def export_ftsSchedule( self, requestID, fileJSONList ):
     """ call FTS scheduler
 
     :param str LFN: lfn
@@ -262,6 +262,7 @@ class FTSManagerHandler( RequestHandler ):
         ftsFile = FTSFile()
         for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
           setattr( ftsFile, key, fileJSON.get( key ) )
+        ftsFile.RequestID = requestID
         ftsFile.SourceSURL = sourceSURL
         ftsFile.TargetSURL = targetSURL
         ftsFile.SourceSE = repDict["SourceSE"]
@@ -283,7 +284,7 @@ class FTSManagerHandler( RequestHandler ):
       if lfn not in ret["Failed"]:
         ret["Successful"].append( fileID )
 
-    # # if we land here file has been properly scheduled
+    # # if we land here some files have been properly scheduled
     return S_OK( ret )
 
   types_putFTSSite = [ DictType ]

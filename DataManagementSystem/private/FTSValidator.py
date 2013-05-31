@@ -43,19 +43,19 @@ class FTSValidator( object ):
   __metaclass__ = DIRACSingleton
   # # required attributes in FTSLfn, FTSJob and FTSJobFile
   __reqAttrs = { FTSJob: { "attrs": [ "SourceSE", "TargetSE", "FTSServer", "Size"] },
-                 FTSFile: { "attrs": [ "FileID", "OperationID", "LFN", "Checksum", "ChecksumType", "Size",
+                 FTSFile: { "attrs": [ "FileID", "OperationID", "RequestID", "LFN", "Checksum", "ChecksumType", "Size",
                                        "SourceSE", "SourceSURL", "TargetSE", "TargetSURL" ] },
                  FTSSite: { "attrs": [ "FTSServer", "Name" ] } }
 
   def __init__( self ):
     """ c'tor """
     # # order of validators
-    self.validators = [ self.hasReqAttrs, self.hasFTSJobFiles ]
+    self.validators = [ self.isA, self.hasReqAttrs, self.hasFTSJobFiles ]
 
   def validate( self, obj ):
     """ validate
 
-    :param mixed obj: FTSLfn, FTSJob of FTSJobFile instance
+    :param mixed obj: FTSJob, FTSFile or FTSSite instance
     """
     for validator in self.validators:
       isValid = validator( obj )
@@ -65,6 +65,17 @@ class FTSValidator( object ):
     return S_OK()
 
   @classmethod
+  def isA( cls, obj ):
+    """ object is a proper class
+
+    :param mixed obj: FTSJob, FTSFile or FTSSite instance
+    """
+    for objtype in cls.__reqAttrs:
+      if isinstance( obj, objtype ) or issubclass( obj, objtype ):
+        return S_OK()
+    return S_ERROR( "Not supported object type %s" % type( obj ) )
+
+  @classmethod
   def hasReqAttrs( cls, obj ):
     """ has required attributes set
 
@@ -72,7 +83,7 @@ class FTSValidator( object ):
     """
     for objtype in cls.__reqAttrs:
       if isinstance( obj, objtype ):
-        for attr in cls.__reqAttrs[objtype]["attrs"]:
+        for attr in cls.__reqAttrs[objtype].get( "attrs", [] ):
           if not getattr( obj, attr ):
             return S_ERROR( "Missing property %s in %s" % ( attr, obj.__class__.__name__ ) )
     return S_OK()

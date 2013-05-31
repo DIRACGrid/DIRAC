@@ -73,6 +73,7 @@ class FTSFile( Record ):
              { "FTSFileID": "INTEGER NOT NULL AUTO_INCREMENT",
                "FileID": "INTEGER NOT NULL",
                "OperationID": "INTEGER NOT NULL",
+               "RequestID": "INTEGER NOT NULL",
                "LFN": "VARCHAR(255) NOT NULL",
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
                "Checksum": "VARCHAR(64)",
@@ -116,6 +117,17 @@ class FTSFile( Record ):
       self.__data__["FTSGUID"] = self._parent.FTSGUID
     else:
       self.__data__["FTSGUID"] = value
+
+  @property
+  def RequestID( self ):
+    """ RequestID getter """
+    return self.__data__["RequestID"]
+
+  @RequestID.setter
+  def RequestID( self, value ):
+    """ RequestID setter """
+    value = long( value ) if value else None
+    self.__data__["RequestID"] = value
 
   @property
   def OperationID( self ):

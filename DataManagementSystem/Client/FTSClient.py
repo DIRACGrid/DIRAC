@@ -259,10 +259,10 @@ class FTSClient( Client ):
     """
     return self.ftsManager().deleteFTSFiles( operationID, opFileIDList )
 
-  def ftsSchedule( self, opFileList ):
+  def ftsSchedule( self, requestID, opFileList ):
     """ schedule lfn for FTS job
 
     :param list opFileList: list of tuples ( File.toJSON()["Value"], sourcesList, targetList )
     """
-    return self.ftsManager().ftsSchedule( opFileList )
+    return self.ftsManager().ftsSchedule( requestID, opFileList )
 

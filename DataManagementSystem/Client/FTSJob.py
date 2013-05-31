@@ -59,6 +59,7 @@ class FTSJob( Record ):
   # # finished
   FINALSTATES = ( "Finished", "FinishedDirty", "Failed", "Canceled" )
 
+
   # # missing source regexp patterns
   missingSourceErrors = [
     re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed" ),
