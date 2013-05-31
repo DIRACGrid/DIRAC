@@ -134,6 +134,18 @@ class FTSClient( Client ):
     getFTSJobList = getFTSJobList["Value"]
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getFTSJobList ] )
 
+  def getFTSFilesForRequest( self, requestID, operationID = None ):
+    """ read FTSFiles for a given :requestID:
+
+    :param int requestID: ReqDB.Request.RequestID
+    :param int operationID: ReqDB.Operation.OperationID
+    """
+    ftsFiles = self.ftsManager().getFTSFilesForRequest( requestID, operationID )
+    if not ftsFiles["OK"]:
+      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles["Message"] )
+      return ftsFiles
+    return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles["Value"] ] )
+
   def getFTSJobsForRequest( self, requestID, statusList = None ):
     """ get list of FTSJobs with statues in :statusList: given requestID
 
@@ -147,15 +159,8 @@ class FTSClient( Client ):
     if not getJobs["OK"]:
       self.log.error( "getFTSJobsForRequest: %s" % getJobs["Message"] )
       return getJobs
-    jobsList = []
-    for ftsJobJSON in getJobs["Value"]:
-      ftsJob = FTSJob( ftsJobJSON )
-      if not ftsJob["OK"]:
-        self.log.error( "getFTSJobsForRequest: %s" % ftsJob["Message"] )
-        return ftsJob
-      jobsList.append( ftsJob )
-    return S_OK( jobsList )
-
+    return S_OK( [ FTSJob( ftsJobDict) for ftsJobDict in getJobs["Value"] ] )
+    
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into FTSDB
 

@@ -10,6 +10,9 @@
   .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
   The MonitorFTSAgent takes FTS jobs from the FTSDB and monitors their execution.
+
+  :obsolete:
+
 """
 # # imports
 import time

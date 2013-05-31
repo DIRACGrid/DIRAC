@@ -10,6 +10,8 @@
 
     FTS Submit Agent takes files from the FTSDB and submits them to the FTS using
     FTSJob helper class.
+
+    :obsolete:
 """
 # # imports
 import time

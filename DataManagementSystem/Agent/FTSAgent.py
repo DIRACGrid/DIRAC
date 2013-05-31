@@ -246,6 +246,10 @@ class FTSAgent( AgentModule ):
                                "FTSAgent", "Average submitted size per FTSJob", gMonitor.OP_MEAN )
     return S_OK()
 
+  def getRequest( self, requestName ):
+    """ read request from cache or reqClient """
+
+    pass
 
   def execute( self ):
     """ one cycle execution """
@@ -306,11 +310,35 @@ class FTSAgent( AgentModule ):
     :param Request request: scheduled Request obj instance
     """
     log = self.log.getSubLogger( request.RequestName )
+
+    operation = request.getWaiting()
+    if not operation:
+      log.error( "unable to find 'Scheduled' ReplicateAndRegister operation in request" )
+
+    activeJobs = self.ftsClient().getFTSJobsForRequest( request.RequestID )
+    if not activeJobs["OK"]:
+      log.error( activeJobs["Message"] )
+      return activeJobs
+    activeJobs = activeJobs["Value"]
+
+    if not activeJobs:
+      log.info( "no active FTS jobs found" )
+
+    ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID )
+
+    ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toRetry", "toFail", "toReschedule" ) ] )
+
+    for ftsJob in activeJobs:
+      monitorJob = self.monitorJob( request, ftsJob )
+
+  def submitJobs( self, request ):
     pass
 
-  def submit( self ):
+  def monitorJob( self, request, ftsJob ):
     pass
 
-  def monitor( self ):
+  def finalizeJob( self, request, ftsJob ):
     pass
+
+
 
