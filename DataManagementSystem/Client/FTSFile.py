@@ -308,7 +308,6 @@ class FTSFile( Record ):
 
   def toJSON( self ):
     """ dump FTSFile to JSON format """
-
     return S_OK( dict( zip( self.__data__.keys(),
                       [ val if val != None else "" for val in self.__data__.values() ] ) ) )
   def toSQL( self ):

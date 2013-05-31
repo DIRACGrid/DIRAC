@@ -119,7 +119,6 @@ class FTSAgent( AgentModule ):
       cls.__seCache[seName] = StorageElement( seName )
     return cls.__seCache[seName]
 
-
 #  def resources( self ):
 #    """ resource helper getter """
 #    if not self.__resources:
@@ -251,7 +250,6 @@ class FTSAgent( AgentModule ):
   def execute( self ):
     """ one cycle execution """
     log = gLogger.getSubLogger( "execute" )
-
     # # reset FTSGraph if expired
     now = datetime.datetime.now()
     if now > self.__ftsGraphValidStamp:
@@ -270,9 +268,44 @@ class FTSAgent( AgentModule ):
       finally:
         self.updateLock().release()
         self.__rwAccessValidStamp = now
+    requestNames = self.requestClient().getRequestNamesList( [ "Scheduled" ] )
 
+    if not requestNames["OK"]:
+      log.error( "unable to read scheduled request names: %s" % requestNames["Message"] )
+      return requestNames
+    requestNames = requestNames["Value"]
+    if not requestNames:
+      log.info( "no more request to process" )
+      return S_OK()
+    log.info( "found %s requests to process" % len( requestNames ) )
+
+    for requestName in requestNames:
+      request = self.requestClient().getRequest( requestName )
+      if not request["OK"]:
+        log.error( request["Message"] )
+        continue
+      request = request["Value"]
+      sTJId = request.RequestName
+      while True:
+        queue = self.threadPool().generateJobAndQueueIt( self.prcessRequest,
+                                                          args = ( request, ),
+                                                          sTJId = sTJId )
+        if queue["OK"]:
+          log.info( "'%s' enqueued for execution" % sTJId )
+          gMonitor.addMark( "FTSJobsAtt", 1 )
+          break
+        time.sleep( 1 )
+
+    # # process all results
+    self.threadPool().processAllResults()
+    return S_OK()
 
   def processRequest( self, request ):
+    """ process one request
+
+    :param Request request: scheduled Request obj instance
+    """
+    log = self.log.getSubLogger( request.RequestName )
     pass
 
   def submit( self ):

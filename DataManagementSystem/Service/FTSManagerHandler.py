@@ -205,7 +205,7 @@ class FTSManagerHandler( RequestHandler ):
     """
     # # this will be returned on success
     ret = { "Successful": [], "Failed": {} }
-    
+
     ftsFiles = []
     for fileJSON, sourceSEs, targetSEs in fileJSONList:
 
@@ -567,6 +567,34 @@ class FTSManagerHandler( RequestHandler ):
       return S_OK( ftsJobsJSON )
     except Exception, error:
       gLogger.exception( str( error ) )
+      return S_ERROR( str( error ) )
+
+
+  types_getFTSJobsForRequest = [ ( IntType, LongType ), ListType ]
+  @classmethod
+  def export_getFTSJobsForRequest( cls, requestID, statusList = None ):
+    """ get list of FTSJobs for request given its :requestID: and statues in :statusList:
+
+    :param int requestID: ReqDB.Request.RequestID
+    :param list statusList: FTSJobs status list
+    """
+    statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
+    try:
+      requestID = int( requestID )
+      ftsJobs = cls.__ftsDB.getFTSJobsForRequest( requestID, statusList )
+      if not ftsJobs["OK"]:
+        gLogger.error( "getFTSJobsForRequest: %s" % ftsJobs["Message"] )
+        return ftsJobs
+      ftsJobsList = []
+      for ftsJob in ftsJobs["Value"]:
+        ftsJobJSON = ftsJob.toJSON()
+        if not ftsJobJSON["OK"]:
+          gLogger.error( "getFTSJobsForRequest: %s" % ftsJobJSON["Message"] )
+          return ftsJobJSON
+        ftsJobsList.append( ftsJobJSON["Value"] )
+      return S_OK( ftsJobsList )
+    except Exception, error:
+      gLogger.exception( error )
       return S_ERROR( str( error ) )
 
   types_getFTSHistory = []
