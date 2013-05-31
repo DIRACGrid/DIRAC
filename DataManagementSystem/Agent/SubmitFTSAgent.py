@@ -14,7 +14,6 @@
 # # imports
 import time
 import datetime
-import uuid
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
 # # from Core
