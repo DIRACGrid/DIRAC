@@ -87,6 +87,8 @@ class FTSAgent( AgentModule ):
   __updateLock = None
   # # se cache
   __seCache = dict()
+  # # request cache
+  __reqCache = dict()
 
   def updateLock( self ):
     """ update lock """
@@ -94,30 +96,51 @@ class FTSAgent( AgentModule ):
       self.__updateLock = LockRing().getLock( "SubmitFTSAgentLock" )
     return self.__updateLock
 
-  def requestClient( self ):
+  @classmethod
+  def requestClient( cls ):
     """ request client getter """
-    if not self.__requestClient:
-      self.__requestClient = ReqClient()
-    return self.__requestClient
+    if not cls.__requestClient:
+      cls.__requestClient = ReqClient()
+    return cls.__requestClient
 
-  def ftsClient( self ):
+  @classmethod
+  def ftsClient( cls ):
     """ FTS client """
-    if not self.__ftsClient:
-      self.__ftsClient = FTSClient()
-    return self.__ftsClient
+    if not cls.__ftsClient:
+      cls.__ftsClient = FTSClient()
+    return cls.__ftsClient
 
-  def rssClient( self ):
+  @classmethod
+  def rssClient( cls ):
     """ RSS client getter """
-    if not self.__rssClient:
-      self.__rssClient = ResourceStatus()
-    return self.__rssClient
+    if not cls.__rssClient:
+      cls.__rssClient = ResourceStatus()
+    return cls.__rssClient
 
   @classmethod
   def getSE( cls, seName ):
-    """ keep se in cache"""
+    """ keep SEs in cache """
     if seName not in cls.__seCache:
       cls.__seCache[seName] = StorageElement( seName )
     return cls.__seCache[seName]
+
+  @classmethod
+  def getRequest( cls, reqName ):
+    """ keep Requests in cache """
+    if reqName not in cls.__reqCache:
+      getRequest = cls.requestClient().getRequest( reqName )
+      if not getRequest["OK"]:
+        return getRequest
+      getRequest = getRequest["Value"]
+      if not getRequest:
+        return S_ERROR( "request of name '%s' not found in ReqDB" % reqName )
+      cls.__reqCache[reqName] = getRequest
+    return S_OK( cls.__reqChache[reqName] )
+
+  @classmethod
+  def putRequest( cls, request ):
+    """ put request back to ReqDB """
+    pass
 
 #  def resources( self ):
 #    """ resource helper getter """
@@ -220,22 +243,27 @@ class FTSAgent( AgentModule ):
     log.info( "will use DataManager proxy" )
 
     # # gMonitor stuff here
-    gMonitor.registerActivity( "RequestsExecuted", "Requests executed",
+    gMonitor.registerActivity( "RequestsAtt", "Attempted requests executions",
+                               "FTSAgent", "Requests/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RequestsOK", "Successful requests executions",
+                               "FTSAgent", "Requests/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RequestsFail", "Failed requests executions",
                                "FTSAgent", "Requests/min", gMonitor.OP_SUM )
 
-    gMonitor.registerActivity( "FTSJobsSubAtt", "FTSJob created",
+
+    gMonitor.registerActivity( "FTSJobsSubAtt", "FTSJobs creation attempts",
                                "FTSAgent", "Created FTSJobs/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "FTSJobsSubOK", "FTSJobs submitted",
+    gMonitor.registerActivity( "FTSJobsSubOK", "FTSJobs submitted successfully",
                                "FTSAgent", "Successful FTSJobs submissions/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FTSJobsSubFail", "FTSJobs submissions failed",
                                "FTSAgent", "Failed FTSJobs submissions/min", gMonitor.OP_SUM )
 
-    gMonitor.registerActivity( "FTSJobsMonAtt", "FTSJob created",
-                               "FTSAgent", "Created FTSJobs/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "FTSJobsMonOK", "FTSJobs submitted",
-                               "FTSAgent", "Submitted FTSJobs/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "FTSJobsMonFail", "FTSJobs submissions failed",
-                               "FTSAgent", "Failed FTSJobs/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSJobsMonAtt", "FTSJobs monitored",
+                               "FTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSJobsMonOK", "FTSJobs monitored successfully",
+                               "FTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSJobsMonFail", "FTSJobs attempts failed",
+                               "FTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
     gMonitor.registerActivity( "FtSJobsPerRequest", "Average FTSJobs per request",
                                "FTSAgent", "FTSJobs/Request", gMonitor.OP_MEAN )
@@ -246,10 +274,15 @@ class FTSAgent( AgentModule ):
                                "FTSAgent", "Average submitted size per FTSJob", gMonitor.OP_MEAN )
     return S_OK()
 
-  def getRequest( self, requestName ):
-    """ read request from cache or reqClient """
 
-    pass
+  def finalize( self ):
+    """ finalize processing """
+    log = self.log.getSubLogger( "finalize" )
+    for request in self.__reqCache.values():
+      put = self.requestClient().putRequest( request )
+      if not put["OK"]:
+        log.error( "unable to put back request '%s': %s" % ( request.RequestName, put["Message"] ) )
+    return S_OK()
 
   def execute( self ):
     """ one cycle execution """
@@ -284,7 +317,7 @@ class FTSAgent( AgentModule ):
     log.info( "found %s requests to process" % len( requestNames ) )
 
     for requestName in requestNames:
-      request = self.requestClient().getRequest( requestName )
+      request = self.getRequest( requestName )
       if not request["OK"]:
         log.error( request["Message"] )
         continue
@@ -292,11 +325,11 @@ class FTSAgent( AgentModule ):
       sTJId = request.RequestName
       while True:
         queue = self.threadPool().generateJobAndQueueIt( self.prcessRequest,
-                                                          args = ( request, ),
-                                                          sTJId = sTJId )
+                                                         args = ( request, ),
+                                                         sTJId = sTJId )
         if queue["OK"]:
           log.info( "'%s' enqueued for execution" % sTJId )
-          gMonitor.addMark( "FTSJobsAtt", 1 )
+          gMonitor.addMark( "RequestsAtt", 1 )
           break
         time.sleep( 1 )
 
