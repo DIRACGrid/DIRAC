@@ -17,8 +17,10 @@ def getGOCSiteName( diracSiteName ):
   :params:
     :attr:`diracSiteName` - string: DIRAC site name (e.g. 'LCG.CERN.ch')
   """
-  gocDBName = gConfig.getValue( '/Resources/Sites/%s/%s/Name' % ( diracSiteName.split( '.' )[0],
-                                                          diracSiteName ) )
+#  gocDBName = gConfig.getValue( '/Resources/Sites/%s/%s/Name' % ( diracSiteName.split( '.' )[0],
+#                                                          diracSiteName ) )
+  gocDBName = gConfig.getValue( '/Resources/Sites/%s/Name' % diracSiteName )
+  
   if not gocDBName:
     return S_ERROR( "No GOC site name for %s in CS (Not a LCG site ?)" % diracSiteName )
   else:

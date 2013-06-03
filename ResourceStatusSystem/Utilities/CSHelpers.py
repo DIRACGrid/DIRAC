@@ -8,6 +8,7 @@
 from DIRAC                                       import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Utilities        import Utils
+from DIRAC.ConfigurationSystem.Client.Helpers    import Resources  
 
 __RCSID__ = '$Id:  $'
 
@@ -25,27 +26,29 @@ def getSites():
     Gets all sites from /Resources/Sites
   '''
 
-  _basePath = 'Resources/Sites'
-  
-  sites = []
-  
-  domainNames = gConfig.getSections( _basePath )
-  if not domainNames[ 'OK' ]:
-    return domainNames
-  domainNames = domainNames[ 'Value' ]
-  
-  for domainName in domainNames:
-    domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
-    if not domainSites[ 'OK' ]:
-      return domainSites
-    
-    domainSites = domainSites[ 'Value' ]
-    
-    sites.extend( domainSites )  
+  return Resources.getSites()
 
-  # Remove duplicated ( just in case )
-  sites = list( set ( sites ) )
-  return S_OK( sites )
+#  _basePath = 'Resources/Sites'
+#  
+#  sites = []
+#  
+#  domainNames = gConfig.getSections( _basePath )
+#  if not domainNames[ 'OK' ]:
+#    return domainNames
+#  domainNames = domainNames[ 'Value' ]
+#  
+#  for domainName in domainNames:
+#    domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
+#    if not domainSites[ 'OK' ]:
+#      return domainSites
+#    
+#    domainSites = domainSites[ 'Value' ]
+#    
+#    sites.extend( domainSites )  
+#
+#  # Remove duplicated ( just in case )
+#  sites = list( set ( sites ) )
+#  return S_OK( sites )
 
 def getGOCSites( diracSites = None ):
   
