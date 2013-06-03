@@ -1,103 +1,142 @@
-''' SummarizeLogsAgent module
-'''
+""" SummarizeLogsAgent module
 
-from datetime                                               import datetime, timedelta
+  This agents scans all the log tables ( SiteLog, ResouceLog and NodeLog ) on the
+  ResourceStatusDB and summarizes them. The results are stored on the History
+  tables ( SiteHistory, ResourceHistory and NodeHistory ) and the Log tables
+  cleared.
+  
+  In order to summarize the logs, all entries with no changes on the Status or
+  TokenOwner column for a given ( Name, StatusType ) tuple are discarded.
+
+  The agent also adds a little prevention to avoid messing the summaries if the
+  agent is restarted / killed abruptly. Please, please, please, DO NOT DO IT !
+
+"""
 
 from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
-__RCSID__ = '$Id:  $'
+__RCSID__  = '$Id:  $'
 AGENT_NAME = 'ResourceStatus/SummarizeLogsAgent'
 
 class SummarizeLogsAgent( AgentModule ):
-
-  # Date format in database
-  __dateFormat = '%Y-%m-%d %H:%M:%S'
+  """ SummarizeLogsAgent as extension of AgentModule.
+  
+  """
 
   def __init__( self, *args, **kwargs ):
-    ''' c'tor
-    '''
+    """ Constructor.
+    
+    """
 
     AgentModule.__init__( self, *args, **kwargs )
-
+    
     self.rsClient = None
 
+
   def initialize( self ):
-    ''' Standard initialize.
-        Uses the ProductionManager shifterProxy to modify the ResourceStatus DB
-    '''
+    """ Standard initialize.
+    
+    :return: S_OK
+    
+    """
 
     self.rsClient = ResourceStatusClient()
-
     return S_OK()
 
+
   def execute( self ):
+    """ execute ( main method )
+    
+    The execute method runs over the three families of tables ( Site, Resource and
+    Node ) performing identical operations. First, selects all logs for a given
+    family ( and keeps track of which one is the last row ID ). It summarizes the
+    logs and finally, deletes the logs from the database.
+    
+    :return: S_OK
+    
+    """
 
-    # FIXME: probably this can be obtained from RssConfiguration instead
-    elements = ( 'Site', 'Resource', 'Node' )
-
-    # We do not want neither minutes, nor seconds nor microseconds
-    thisHour = datetime.utcnow().replace( microsecond = 0 )
-    thisHour = thisHour.replace( second = 0 ).replace( minute = 0 )
-
-    for element in elements:
+    # loop over the tables
+    for element in ( 'Site', 'Resource', 'Node' ):
 
       self.log.info( 'Summarizing %s' % element )
 
-      selectLogElements = self._selectLogElements( element, thisHour )
+      # get all logs to be summarized
+      selectLogElements = self._selectLogElements( element )
       if not selectLogElements[ 'OK' ]:
         self.log.error( selectLogElements[ 'Message' ] )
         continue
-      selectLogElements = selectLogElements[ 'Value' ]
+      
+      lastID, logElements = selectLogElements[ 'Value' ]
+      
+      # logElements is a dictionary of key-value pairs as follows:
+      # ( name, statusType ) : list( logs )
+      for key, logs in logElements.iteritems():
 
-      for selectedKey, selectedItem in selectLogElements.items():
+        sumResult = self._summarizeLogs( element, key, logs, lastID )
+        if not sumResult[ 'OK' ]:
+          self.log.error( sumResult[ 'Message' ] )
+          continue
 
-        sRes = self._logSelectedLogElement( element, selectedKey, selectedItem, thisHour )
-        if not sRes[ 'OK' ]:
-          self.log.error( sRes[ 'Message' ] )
-          break
+      self.log.info( 'Deleting %sLog till ID %s' % ( element, lastID ) )
+      deleteResult = self.rsClient.deleteStatusElement( element, 'Log', 
+                                                        meta = { 'older' : ( 'ID', lastID ) } )
+      if not deleteResult[ 'OK' ]:
+        self.log.error( deleteResult[ 'Message' ] )
+        continue
 
     return S_OK()
 
-  def _selectLogElements( self, element, thisHour ):
-    '''
-      For a given element, selects all the entries on the <element>Log table
-      with LastCheckTime > <lastHour>. It groups them by tuples of
-      ( <name>, <statusType> ) and keeps only the statuses that represent
-      a change in the status.
-    '''
 
-    lastHour = thisHour - timedelta( hours = 1 )
+  #.............................................................................
 
-    selectResults = self.rsClient.selectStatusElement( element, 'Log',
-                                                       meta = { 'newer' : ( 'LastCheckTime', lastHour ) } )
+  def _selectLogElements( self, element ):
+    """ given an element, selects all logs in table <element>Log.
+    
+    :Parameters:
+      **element** - `string`
+        name of the table family ( either Site, Resource and Node )
+    
+    :return: S_OK( lastID, listOfLogs ) / S_ERROR
+    
+    """
+    
+    selectResults = self.rsClient.selectStatusElement( element, 'Log' )
+    
     if not selectResults[ 'OK' ]:
       return selectResults
-
+  
     selectedItems = {}
     selectColumns = selectResults[ 'Columns' ]
     selectResults = selectResults[ 'Value' ]
-
+    
+    latestID = None
+    if selectResults:
+      latestID = dict( zip( selectColumns, selectResults[ -1 ] ) )[ 'ID' ]
+    
     for selectResult in selectResults:
-
+      
       elementDict = dict( zip( selectColumns, selectResult ) )
-
-      if elementDict[ 'LastCheckTime' ] > thisHour:
-        continue
-
+      
       key = ( elementDict[ 'Name' ], elementDict[ 'StatusType' ] )
 
       if not key in selectedItems:
-        selectedItems[ key ] = [ elementDict ]
+        selectedItems[ key ] = [ elementDict ]     
       else:
         lastStatus = selectedItems[ key ][ -1 ][ 'Status' ]
-        if lastStatus != elementDict[ 'Status' ]:
+        lastToken  = selectedItems[ key ][ -1 ][ 'TokenOwner' ]
+        
+        # If there are no changes on the Status or the TokenOwner with respect
+        # the previous one, discards the log.
+        if lastStatus != elementDict[ 'Status' ] or lastToken != elementDict[ 'TokenOwner' ]:
           selectedItems[ key ].append( elementDict )
 
-    return S_OK( selectedItems )
-
-  def _logSelectedLogElement( self, element, selectedKey, selectedItem, thisHour ):
+    return S_OK( ( latestID, selectedItems ) )
+      
+  
+  def _summarizeLogs( self, element, key, logs, lastID ):
     '''
       Given an element, a selectedKey - which is a tuple ( <name>, <statusType> )
       and a list of dictionaries, this method inserts them. Before inserting
@@ -105,43 +144,43 @@ class SummarizeLogsAgent( AgentModule ):
       table. If it is, it is not inserted.
     '''
 
-    name, statusType = selectedKey
+    name, statusType = key
 
     selectedRes = self.rsClient.selectStatusElement( element, 'History', name,
                                                      statusType,
-                                                     meta = { 'columns' : [ 'Status', 'LastCheckTime' ] } )
+                                                     meta = { 'columns' : [ 'Status', 'LastCheckTime', 'TokenOwner' ],
+                                                              'limit'   : 1,
+                                                              'order'   : 'LastCheckTime DESC' } )
 
     if not selectedRes[ 'OK' ]:
       return selectedRes
     selectedRes = selectedRes[ 'Value' ]
 
-    selectedStatus = None
+    lastStatus, lastCheckTime, lastToken = None, None, None
     if selectedRes:
+      lastStatus, lastCheckTime, lastToken = selectedRes[ 0 ]
 
-      # Get the last selectedRes, which will be the newest one. Each selectedRes
-      # is a tuple, in this case, containing two elements - Status, LastCheckTime
-      selectedStatus, selectedLastTime = selectedRes[ -1 ]
-
-      if selectedLastTime > thisHour - timedelta( hours = 1 ):
-        return S_ERROR( 'The agent has run once on this time span, skipping' )
+    if lastCheckTime and logs[ 0 ][ 'LastCheckTime' ] < lastCheckTime:
+      return S_ERROR( 'Overlapping data. Seems the DB has not been cleared properly' )
 
     # If the first of the selected items has a different status than the latest
     # on the history, we add it.
-    if selectedItem[ 0 ][ 'Status' ] != selectedStatus:
+    if logs[ 0 ][ 'Status' ] == lastStatus and logs[ 0 ][ 'TokenOwner' ] == lastToken:
+      logs.remove( logs[ 0 ] )
 
-      res = self._logToHistoryTable( element, selectedItem[ 0 ] )
+    if logs:
+      self.log.info( '%s ( %s )' % ( name, statusType ) )
+
+    for selectedItemDict in logs:
+
+      res = self.__logToHistoryTable( element, selectedItemDict )
       if not res[ 'OK' ]:
-        return res
-
-    for selectedItemDict in selectedItem[ 1: ]:
-
-      res = self._logToHistoryTable( element, selectedItemDict )
-      if not res[ 'OK' ]:
-        return res
+        return res   
 
     return S_OK()
+    
 
-  def _logToHistoryTable( self, element, elementDict ):
+  def __logToHistoryTable( self, element, elementDict ):
     '''
       Given an element and a dictionary with all the arguments, this method
       inserts a new entry on the <element>History table
@@ -162,10 +201,12 @@ class SummarizeLogsAgent( AgentModule ):
     except KeyError, e:
       return S_ERROR( e )
 
+    self.log.info( '  %(Status)s %(DateEffective)s %(TokenOwner)s %(Reason)s' % elementDict )
+
     return self.rsClient.insertStatusElement( element, 'History', name, statusType,
                                               status, elementType, reason,
                                               dateEffective, lastCheckTime,
                                               tokenOwner, tokenExpiration )
 
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+#...............................................................................
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
