@@ -39,6 +39,8 @@ from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
 # # from RSS
 # #from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
@@ -443,9 +445,20 @@ class FTSAgent( AgentModule ):
     toRegister = ftsFilesDict.get( "toRegister", [] )
     toUpdate = ftsFilesDict.get( "toUpdate", [] )
 
+
+
     # # update statuses for waiting scheduled FTSFiles
     if toUpdate:
-      pass
+      bySource = {}
+      for ftsFile in toUpdate:
+        if ftsFile.SourceSE not in bySource:
+          bySource.setdefault( ftsFile.SourceSE, [] )
+        bySource[ftsFile.SourceSE].append( ftsFile.FileID )
+      for sourceSE, fileIDList in bySource.items():
+        update = self.ftsClient().setFTSFilesWaiting( operation.OperationID, sourceSE, fileIDList )
+        if not update["OK"]:
+          log.error( "update FTSFiles failed: %s" % update["Message"] )
+          continue
 
     if toFail:
       log.error( "found %s failed FTSFiles, request execution cannot proceed..." % len( toFail ) )
@@ -454,19 +467,25 @@ class FTSAgent( AgentModule ):
           if opFile.FileID == ftsFile.FileID:
             opFile.Error = ftsFile.Error
             opFile.Status = "Failed"
-      # # requets.Status = "Failed"
+      # # requets.Status should be Failed at this stage "Failed"
       return self.putRequest( request )
 
     # # register
     if toRegister:
       log.info( "found %s FTSFiles waiting for registration, adding 'RegisterReplica' operations" )
-      addRegister = self.addRegisterOperation( request, toRegister )
+      registerFiles = self.registerFiles( request, operation, toRegister )
+      if not registerFiles["OK"]:
+        log.error( "unable to create 'RegisterReplica' operations: %s" % registerFiles["Message"] )
 
     # # reschedule
+    if toReschedule:
+      log.info( "found %s files to reschedule" % len( toReschedule ) )
 
-    # # update
 
     # # submit
+    if operation.Status == "Scheduled" and toSubmit:
+      pass
+
 
     # # update graph
 
@@ -519,8 +538,6 @@ class FTSAgent( AgentModule ):
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, finalizeFTSJob["Value"] )
 
     return S_OK( ftsFilesDict )
-
-
 
   def finalizeFTSJob( self, request, ftsJob ):
     """ finalize FTSJob
@@ -586,6 +603,42 @@ class FTSAgent( AgentModule ):
                    "toRegister": toRegister,
                    "toReschedule": toReschedule,
                    "toFail": toFail } )
+
+  def registerFiles( self, request, operation, toRegister ):
+    """ add RegisterReplica operation
+
+    :param Request request: request instance
+    :param Operation transferOp: 'ReplicateAndRegister' operation for this FTSJob
+    :param list toRegister: [ FTSDB.FTSFile, ... ] - files that failed to register
+    """
+    log = self.log.getSubLogger( "%s/addRegisterReplica" % request.RequestName )
+
+    byTarget = {}
+    for ftsFile in toRegister:
+      if ftsFile.TargetSE not in byTarget:
+        byTarget.setdefault( ftsFile.TargetSE, [] )
+      byTarget.append( ftsFile )
+    log.info( "will create %s 'RegisterReplica' operations" % len( byTarget ) )
+
+    for target, ftsFileList in byTarget.items():
+      log.info( "creating 'RegisterReplica' operation for targetSE %s with %s files..." % ( target, len( ftsFileList ) ) )
+      registerOperation = Operation()
+      registerOperation.Type = "RegisterReplica"
+      registerOperation.Status = "Waiting"
+      registerOperation.TargetSE = target
+      targetSE = self.getSE( target )
+      for ftsFile in ftsFileList:
+        opFile = File()
+        opFile.LFN = ftsFile.LFN
+        pfn = targetSE.getPfnForProtocol( ftsFile.TargetSURL, "SRM2", withPort = False )
+        if not pfn["OK"]:
+          continue
+        opFile.PFN = pfn["Value"]
+        registerOperation.addFile( opFile )
+      request.insertBefore( registerOperation, operation )
+
+    return S_OK()
+
 
   @staticmethod
   def sendAccounting( ftsJob, ownerDN ):
