@@ -464,13 +464,24 @@ class FTSAgent( AgentModule ):
         continue
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
+    # # PHASE ONE - check ready replicas
+    missingReplicas = self.checkReadyReplicas( operation )
+    if not missingReplicas["OK"]:
+      log.error( missingReplicas["Message"] )
+    else:
+      missingReplicas = missingReplicas["Value"]
+      for opFile in operation:
+        if opFile.LFN not in missingReplicas:
+          log.info( "%s is replicated at all targets" % opFile.LFN )
+          opFile.Status = "Done"
+
     toFail = ftsFilesDict.get( "toFail", [] )
     toReschedule = ftsFilesDict.get( "toReschedule", [] )
     toSubmit = ftsFilesDict.get( "toSubmit", [] )
     toRegister = ftsFilesDict.get( "toRegister", [] )
     toUpdate = ftsFilesDict.get( "toUpdate", [] )
 
-    # # PHASE ONE = Failed files? -> make request Failed and return
+    # # PHASE TWO = Failed files? -> make request Failed and return
     if toFail:
       log.error( "found %s Failed FTSFiles, request execution cannot proceed..." % len( toFail ) )
       for opFile in operation:
@@ -483,7 +494,7 @@ class FTSAgent( AgentModule ):
         log.error( "request is failed" )
         return self.putRequest( request )
 
-    # # PHASE TWO - update Waiting#SourceSE FTSFiles
+    # # PHASE THREE - update Waiting#SourceSE FTSFiles
     if toUpdate:
       log.info( "updating scheduled waiting FTSFiles..." )
       bySource = {}
@@ -497,7 +508,7 @@ class FTSAgent( AgentModule ):
           log.error( "update FTSFiles failed: %s" % update["Message"] )
           continue
 
-    # # PHASE THREE - add 'RegisterReplica' Operations
+    # # PHASE FOUR - add 'RegisterReplica' Operations
     # # register
     if toRegister:
       log.info( "found %s FTSFiles waiting for registration, adding 'RegisterReplica' operations" )
@@ -508,7 +519,7 @@ class FTSAgent( AgentModule ):
         log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
         return self.putRequest( request )
 
-    # # PHASE FOUR - reschedule operation files
+    # # PHASE FIVE - reschedule operation files
     # # reschedule
     if toReschedule:
       log.info( "found %s files to reschedule" % len( toReschedule ) )
@@ -519,7 +530,7 @@ class FTSAgent( AgentModule ):
         log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
         return self.putRequest( request )
 
-    # # PHASE FIVE - read Waiting ftsFiles and submit new FTSJobs
+    # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs
     ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting" ] )
     if not ftsFiles["OK"]:
       log.error( ftsFiles["Message"] )
@@ -867,6 +878,36 @@ class FTSAgent( AgentModule ):
     dataOp.setValuesFromDict( accountingDict )
     dataOp.commit()
 
+  def checkReadyReplicas( self, transferOperation ):
+    """ check ready replicas for transferOperation """
+    targetSESet = set( transferOperation.targetSEList )
+
+    # # { LFN: [ targetSE, ... ] }
+    missingReplicas = {}
+
+    scheduledFiles = dict( [ ( opFile.LFN, opFile ) for opFile in transferOperation
+                              if opFile.Status in ( "Scheduled", "Waiting" ) ] )
+    # # get replicas
+    replicas = self.replicaManager().getCatalogReplicas( scheduledFiles.keys() )
+
+    if not replicas["OK"]:
+      self.log.error( replicas["Message"] )
+      return replicas
+    replicas = replicas["Value"]
+
+    for successfulLFN, reps in replicas["Successful"].items():
+      if targetSESet.issubset( set( reps ) ):
+        scheduledFiles[successfulLFN].Status = "Done"
+      else:
+        missingReplicas[successfulLFN] = list( set( reps ) - targetSESet )
+
+    reMissing = re.compile( "no such file or directory" )
+    for failedLFN, errStr in replicas["Failed"]:
+      scheduledFiles[failedLFN].Error = errStr
+      if reMissing.search( errStr.lower() ):
+        scheduledFiles[failedLFN].Status = "Failed"
+
+    return S_OK( missingReplicas )
 
   def _filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
