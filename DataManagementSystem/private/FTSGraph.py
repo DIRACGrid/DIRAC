@@ -140,7 +140,7 @@ class FTSGraph( Graph ):
 
     # # create nodes
     for ftsSite in ftsSites:
-      # # revert for a new resource hslper
+      # # revert for a new resource helper
       # rwSEsDict = dict.fromkeys( sitesDict.get( ftsSite.Name, [] ), {} )
 
       rwSEsDict = dict.fromkeys( sitesDict.get( "LCG." + ftsSite.Name, [] ), {} )

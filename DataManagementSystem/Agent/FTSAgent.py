@@ -481,23 +481,85 @@ class FTSAgent( AgentModule ):
     if toReschedule:
       log.info( "found %s files to reschedule" % len( toReschedule ) )
 
-
     # # submit
     if operation.Status == "Scheduled" and toSubmit:
-      pass
-
+      log.info( "found %s files to submit" % len( toSubmit ) )
+      submit = self.submitJobs( request, operation, toSubmit )
+      if not submit["OK"]:
+        log.error( submit["Message"] )
 
     # # update graph
 
     return S_OK()
 
-  def submitJobs( self, request, ftsFiles ):
+  def submitJobs( self, request, operation, toSubmit ):
     """ create and submit new FTSJobs using list of FTSFiles
 
     :param Request request: ReqDB.Request instance
     :param list ftsFiles: list of FTSFile instances
     """
-    pass
+    log = self.log.getSubLogger( "%s/submit" % request.RequestName )
+
+    bySourceAndTarget = {}
+    for ftsFile in toSubmit:
+      if ftsFile.SourceSE not in bySourceAndTarget:
+        bySourceAndTarget.setdefault( ftsFile.SourceSE, {} )
+      if ftsFile.TargetSE not in bySourceAndTarget[ftsFile.SourceSE]:
+        bySourceAndTarget[ftsFile.SourceSE].setdefault( ftsFile.TargetSE, [] )
+      bySourceAndTarget[ftsFile.SourceSE][ftsFile.TargetSE].append( ftsFile )
+
+    submittedJobs = 0
+
+    for source, targetDict in bySourceAndTarget.items():
+
+      for target, ftsFileList in targetDict.items():
+
+        log.info( "found %s files to submit from %s to %s" % ( len( ftsFileList ), source, target ) )
+
+        route = self.__ftsGraph.findRoute( source, target )
+        if not route["OK"]:
+          log.error( route["Message"] )
+          continue
+        route = route["Value"]
+
+        sourceRead = route.fromNode["SEs"][source]["read"]
+        if not sourceRead:
+          log.error( "SourceSE %s is banned for reading right now" % source )
+          continue
+
+        targetWrite = route.toNode["SEs"][target]["write"]
+        if not targetWrite:
+          log.error( "TargetSE %s is banned for writing right now" % target )
+          continue
+
+        if route.toNode.ActiveJobs > route.toNode.MaxActiveJobs:
+          log.warn( "unable to submit new FTS job, max active jobs reached" )
+          continue
+
+        # # create FTSJob
+        ftsJob = FTSJob()
+        ftsJob.RequestID = request.RequestID
+        ftsJob.OperationID = operation.OperationID
+        ftsJob.SourceSE = source
+        ftsJob.TargetSE = target
+        ftsJob.FTSServer = route.toNode.FTSServer
+
+        for ftsFile in ftsFileList:
+          ftsFile.Attempt += 1
+          ftsFile.Error = ""
+          ftsJob.addFile( ftsFile )
+
+        submit = ftsJob.submit()
+        if not submit["OK"]:
+          log.error( "unable to submit FTSJob: %s" % submit["Message"] )
+          continue
+        submittedJobs += 1
+
+        # # TODO: update graph
+
+    log.info( "%s new FTSJobs have been submitted" % submittedJobs )
+    return S_OK()
+
 
   def monitorJob( self, request, ftsJob ):
     """ execute FTSJob.monitorFTS2 for a given :ftsJob:
@@ -506,9 +568,8 @@ class FTSAgent( AgentModule ):
     :param Request request: ReqDB.Request instance
     :param FTSJob ftsJob: FTSDB.FTSJob instance
     """
-
     log = self.log.getSubLogger( "%s/monitor/%s" % ( request.RequestName, ftsJob.FTSJobID ) )
-    log.info( "monitoring FTSJob %s@%s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
+    log.info( "FTSJob %s@%s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
@@ -565,6 +626,9 @@ class FTSAgent( AgentModule ):
 
     # # send accounting record for this job
     self.sendAccounting( ftsJob, request.OwnerDN )
+
+    # # TODO: update graph
+
 
     return S_OK( ftsFilesDict )
 
