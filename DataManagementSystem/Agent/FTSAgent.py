@@ -49,16 +49,15 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.List import getChunk
 from DIRAC.Core.Utilities.Time import fromString
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 # # from RSS
@@ -96,7 +95,9 @@ class FTSAgent( AgentModule ):
   MAX_FILES_PER_JOB = 100
   # # MAX FTS transfer per FTSFile
   MAX_ATTEMPT = 256
-  # # placeholder fot FTS client
+  # # replica manager
+  __replicaManager = None
+  # # placeholder for FTS client
   __ftsClient = None
   # # placeholder for request client
   __requestClient = None
@@ -138,6 +139,13 @@ class FTSAgent( AgentModule ):
     if not cls.__ftsClient:
       cls.__ftsClient = FTSClient()
     return cls.__ftsClient
+
+  @classmethod
+  def replicaManager( cls ):
+    """ replica manager getter """
+    if not cls.__replicaManager:
+      cls.__replicaManager = ReplicaManager()
+    return cls.__replicaManager
 
   @classmethod
   def rssClient( cls ):
@@ -512,7 +520,7 @@ class FTSAgent( AgentModule ):
     # # register
     if toRegister:
       log.info( "found %s FTSFiles waiting for registration, adding 'RegisterReplica' operations" )
-      registerFiles = self.registerFiles( request, operation, toRegister )
+      registerFiles = self.register( request, operation, toRegister )
       if not registerFiles["OK"]:
         log.error( "unable to create 'RegisterReplica' operations: %s" % registerFiles["Message"] )
       if request.Status == "Waiting":
@@ -523,7 +531,7 @@ class FTSAgent( AgentModule ):
     # # reschedule
     if toReschedule:
       log.info( "found %s files to reschedule" % len( toReschedule ) )
-      rescheduleFiles = self.scheduleFiles( request, operation, toReschedule )
+      rescheduleFiles = self.reschedule( request, operation, toReschedule )
       if not rescheduleFiles["OK"]:
         log.error( rescheduleFiles["Message"] )
       if request.Status == "Waiting":
@@ -557,14 +565,14 @@ class FTSAgent( AgentModule ):
 
     return S_OK()
 
-  def rescheduleFiles( self, request, operation, toReschedule ):
+  def reschedule( self, request, operation, toReschedule ):
     """ reschedule list of :toReschedule: files in request for operation :operation:
 
     :param Request request:
     :param Operation operation:
     :param list toReschedule: list of FTSFiles
     """
-    log = self.log.getSubLogger( "%/reschedule" % request.RequestName )
+    log = self.log.getSubLogger( "%s/reschedule" % request.RequestName )
     log.info( "found %s files to reschedule" % len( toReschedule ) )
 
     for opFile in operation:
@@ -604,19 +612,19 @@ class FTSAgent( AgentModule ):
     # # do real schedule here
     if toSchedule:
 
-      ftsSchedule = self.ftsClient().ftsSchedule( toSchedule )
+      ftsSchedule = self.ftsClient().ftsSchedule( request.RequestID, toSchedule )
       if not ftsSchedule["OK"]:
         self.log.error( ftsSchedule["Message"] )
         return ftsSchedule
 
       ftsSchedule = ftsSchedule["Value"]
       for fileID in ftsSchedule["Successful"]:
-        for opFile in self.operation:
+        for opFile in operation:
           if fileID == opFile.FileID:
             opFile.Status = "Scheduled"
 
       for fileID, reason in ftsSchedule["Failed"]:
-        for opFile in self.operation:
+        for opFile in operation:
           if fileID == opFile.FileID:
             opFile.Error = reason
 
@@ -680,7 +688,7 @@ class FTSAgent( AgentModule ):
           ftsFile.Error = ""
           ftsJob.addFile( ftsFile )
 
-        submit = ftsJob.submit()
+        submit = ftsJob.submitFTS2()
         if not submit["OK"]:
           log.error( "unable to submit FTSJob: %s" % submit["Message"] )
           continue
@@ -805,7 +813,7 @@ class FTSAgent( AgentModule ):
                    "toReschedule": toReschedule,
                    "toFail": toFail } )
 
-  def registerFiles( self, request, operation, toRegister ):
+  def register( self, request, operation, toRegister ):
     """ add RegisterReplica operation
 
     :param Request request: request instance
@@ -818,11 +826,12 @@ class FTSAgent( AgentModule ):
     for ftsFile in toRegister:
       if ftsFile.TargetSE not in byTarget:
         byTarget.setdefault( ftsFile.TargetSE, [] )
-      byTarget.append( ftsFile )
+      byTarget[ftsFile.TargetSE].append( ftsFile )
     log.info( "will create %s 'RegisterReplica' operations" % len( byTarget ) )
 
     for target, ftsFileList in byTarget.items():
-      log.info( "creating 'RegisterReplica' operation for targetSE %s with %s files..." % ( target, len( ftsFileList ) ) )
+      log.info( "creating 'RegisterReplica' operation for targetSE %s with %s files..." % ( target,
+                                                                                            len( ftsFileList ) ) )
       registerOperation = Operation()
       registerOperation.Type = "RegisterReplica"
       registerOperation.Status = "Waiting"
