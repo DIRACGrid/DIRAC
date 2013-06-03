@@ -413,7 +413,16 @@ class FTSJob( Record ):
     surlFile = os.fdopen( fd, 'w' )
     surlFile.write( surls )
     surlFile.close()
-    submitCommand = [ "glite-transfer-submit", "-s", self.FTSServer, "-f", fileName, "-o", "--compare-checksums" ]
+    submitCommand = [ "glite-transfer-submit",
+                     "-s %s" % self.FTSServer,
+                     "-f %s" % fileName,
+                     "-o",
+                     "--compare-checksums" ]
+    if self.TargetToken:
+      submitCommand.append( "-t %s" % self.TargetToken )
+    if self.SourceToken:
+      submitCommand.append( "-S %s" % self.SourceToken )
+
     submit = executeGridCommand( "", submitCommand )
     os.remove( fileName )
     if not submit["OK"]:
@@ -432,7 +441,10 @@ class FTSJob( Record ):
     """ monitor fts job """
     if not self.FTSGUID:
       return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
-    monitorCommand = [ "glite-transfer-status", "--verbose", "-s", self.FTSServer, self.FTSGUID ]
+    monitorCommand = [ "glite-transfer-status",
+                       "--verbose",
+                       "-s %s" % self.FTSServer,
+                       self.FTSGUID ]
 
     if full:
       monitorCommand.append( "-l" )

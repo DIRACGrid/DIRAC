@@ -52,6 +52,10 @@ class FTSAgent( AgentModule ):
   """
   .. class:: FTSAgent
 
+  Agent propagating Scheduled request to Done or Failed state in the FTS system.
+
+  Requests and associated FTSJobs (and so FTSFiles) are kept in cache.
+
   """
   # # fts graph refresh in seconds
   FTSGRAPH_REFRESH = FTSHistoryView.INTERVAL / 2
@@ -134,13 +138,44 @@ class FTSAgent( AgentModule ):
       getRequest = getRequest["Value"]
       if not getRequest:
         return S_ERROR( "request of name '%s' not found in ReqDB" % reqName )
-      cls.__reqCache[reqName] = getRequest
-    return S_OK( cls.__reqChache[reqName] )
+      cls.__reqCache[reqName] = { "request": getRequest, "jobs": {} }
+      ftsJobs = cls.ftsClient().getFTSJobsForRequest( getRequest.RequestID )
+      if ftsJobs["OK"]:
+        cls.__reqCache[reqName]["jobs"] = ftsJobs["Value"]
+    return S_OK( cls.__reqCache[reqName] )
 
   @classmethod
   def putRequest( cls, request ):
     """ put request back to ReqDB """
-    pass
+    requestDict = cls.__reqCache.get( request.RequestName, None )
+    if not requestDict:
+      put = cls.requestClient().putRquest( request )
+      if not put["OK"]:
+        return put
+
+    putJobs = cls.putFTSJobs( requestDict["jobs"] )
+
+    request = requestDict["request"]
+    put = cls.requestClient().putRequest( request )
+    return S_OK()
+
+  @classmethod
+  def putFTSJobs( cls, ftsJobsList ):
+    """ put back fts jobs to the FTSDB """
+    for ftsJob in ftsJobsList:
+      put = cls.ftsClient().putFTSJob( ftsJob )
+      if not put["OK"]:
+        return put
+    return S_OK()
+
+  @staticmethod
+  def updateFTSFileDict( ftsFilesDict, toUpdateDict ):
+    """ update :ftsFilesDict: with FTSFiles in :toUpdateDict: """
+    for category, ftsFileList in ftsFilesDict.items():
+      for ftsFile in toUpdateDict.get( category, [] ):
+        if ftsFile not in ftsFileList:
+          ftsFileList.append( ftsFile )
+    return ftsFilesDict
 
 #  def resources( self ):
 #    """ resource helper getter """
@@ -265,9 +300,13 @@ class FTSAgent( AgentModule ):
     gMonitor.registerActivity( "FTSJobsMonFail", "FTSJobs attempts failed",
                                "FTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
+    pollingTime = self.am_getOption( "PollingTime", 60 )
+    for status in list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FAILEDSTATES + FTSJob.FINALSTATES ):
+      gMonitor.registerActivity( "FTSJobs%s" % status, "FTSJobs %s" % status ,
+                                 "MonitorFTSAgent", "FTSJobs/cycle", gMonitor.OP_ACUM, pollingTime )
+
     gMonitor.registerActivity( "FtSJobsPerRequest", "Average FTSJobs per request",
                                "FTSAgent", "FTSJobs/Request", gMonitor.OP_MEAN )
-
     gMonitor.registerActivity( "FTSFilesPerJob", "FTSFiles per FTSJob",
                                "FTSAgent", "Number of FTSFiles per FTSJob", gMonitor.OP_MEAN )
     gMonitor.registerActivity( "FTSSizePerJob", "Average FTSFiles size per FTSJob",
@@ -305,8 +344,8 @@ class FTSAgent( AgentModule ):
       finally:
         self.updateLock().release()
         self.__rwAccessValidStamp = now
-    requestNames = self.requestClient().getRequestNamesList( [ "Scheduled" ] )
 
+    requestNames = self.requestClient().getRequestNamesList( [ "Scheduled" ] )
     if not requestNames["OK"]:
       log.error( "unable to read scheduled request names: %s" % requestNames["Message"] )
       return requestNames
@@ -317,15 +356,15 @@ class FTSAgent( AgentModule ):
     log.info( "found %s requests to process" % len( requestNames ) )
 
     for requestName in requestNames:
-      request = self.getRequest( requestName )
-      if not request["OK"]:
-        log.error( request["Message"] )
+      requestDict = self.getRequest( requestName )
+      if not requestDict["OK"]:
+        log.error( requestDict["Message"] )
         continue
-      request = request["Value"]
-      sTJId = request.RequestName
+      requestDict = requestDict["Value"]
+      sTJId = requestDict["request"].RequestName
       while True:
-        queue = self.threadPool().generateJobAndQueueIt( self.prcessRequest,
-                                                         args = ( request, ),
+        queue = self.threadPool().generateJobAndQueueIt( self.processRequest,
+                                                         args = ( requestDict, ),
                                                          sTJId = sTJId )
         if queue["OK"]:
           log.info( "'%s' enqueued for execution" % sTJId )
@@ -337,41 +376,152 @@ class FTSAgent( AgentModule ):
     self.threadPool().processAllResults()
     return S_OK()
 
-  def processRequest( self, request ):
+  def processRequest( self, requestDict ):
     """ process one request
 
     :param Request request: scheduled Request obj instance
     """
+    request = requestDict["request"]
+    ftsJobs = requestDict["jobs"]
+
     log = self.log.getSubLogger( request.RequestName )
 
     operation = request.getWaiting()
     if not operation:
       log.error( "unable to find 'Scheduled' ReplicateAndRegister operation in request" )
 
-    activeJobs = self.ftsClient().getFTSJobsForRequest( request.RequestID )
-    if not activeJobs["OK"]:
-      log.error( activeJobs["Message"] )
-      return activeJobs
-    activeJobs = activeJobs["Value"]
+    if not ftsJobs:
+      ftsJobs = self.ftsClient().getFTSJobsForRequest( request.RequestID )
+      if not ftsJobs["OK"]:
+        log.error( ftsJobs["Message"] )
+        return ftsJobs
+    ftsJobs = ftsJobs["Value"]
 
-    if not activeJobs:
-      log.info( "no active FTS jobs found" )
+    # # dict keeping info about files to reschedule, submit, fail and register
+    ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID )
+    toSubmit = []
+    if not ftsJobs:
+      log.info( "no active FTSJobs found, will try to collect waiting FTSFiles..." )
+      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID )
+      if not ftsFiles["OK"]:
+        log.error( ftsFiles["Message"] )
+      toSubmit = ftsFiles["Value"]
+    ftsFilesDict["toSubmit"] = toSubmit
 
-    ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toRetry", "toFail", "toReschedule" ) ] )
+    # # monitor active jobs
+    for ftsJob in ftsJobs:
+      monitor = self.monitorJob( request, ftsJob )
+      if not monitor["OK"]:
+        log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
+        continue
+      ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
-    for ftsJob in activeJobs:
-      monitorJob = self.monitorJob( request, ftsJob )
+    # # submit new FTSJobs
 
-  def submitJobs( self, request ):
+    return S_OK()
+
+  def submitJobs( self, request, ftsFiles ):
+    """ create and submit new FTSJobs using list of FTSFiles
+
+    :param Request request: ReqDB.Request instance
+    :param list ftsFiles: [ FTSDB.FTSFile, ... ]
+    """
     pass
 
   def monitorJob( self, request, ftsJob ):
-    pass
+    """ execute FTSJob.monitorFTS2 for a given :ftsJob:
+        if ftsJob is in a final state, finalize it
 
-  def finalizeJob( self, request, ftsJob ):
-    pass
+    :param Request request: ReqDB.Request instance
+    :param FTSJob ftsJob: FTSDB.FTSJob instance
+    """
+    log = self.log.getSubLogger( "%s/monitor/%s" % ( request.RequestName, ftsJob.FTSJobID ) )
+    log.info( "monitoring FTSJob %s@%s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
+
+    # # this will be returned
+    ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
+
+    monitor = ftsJob.monitorFTS2()
+    if not monitor["OK"]:
+      gMonitor.addMark( "FTSMonitorFail", 1 )
+      log.error( monitor["Message"] )
+      if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"]:
+        log.error( "FTSJob not known (expired on server?)" )
+        for ftsFile in ftsJob:
+          ftsFilesDict["toSubmit"] = ftsFile
+        return S_OK( ftsFilesDict )
+      return monitor
+
+    monitor = monitor["Value"]
+    log.info( "FTSJob Status = %s Completeness = %s" % ( ftsJob.Status, ftsJob.Completeness ) )
+
+    # # monitor status change
+    gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
+
+    if ftsJob.Status in FTSJob.FINALSTATES:
+      finalizeFTSJob = self.finalizeFTSJob( request, ftsJob )
+      if not finalizeFTSJob["OK"]:
+        log.error( finalizeFTSJob["Message"] )
+        return finalizeFTSJob
+      ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, finalizeFTSJob["Value"] )
+
+    return S_OK( ftsFilesDict )
+
+  def finalizeFTSJob( self, request, ftsJob ):
+    """ finalize FTSJob
+
+    :param Request request: ReqDB.Request instance
+    :param FTSJob ftsJob: FTSDB.FTSJob instance
+    """
+    log = self.log.getSubLogger( "%s/monitor/%s/finalize" % ( request.RequestName, ftsJob.FTSJobID ) )
+    log.info( "finalizing FTSJob %s@%s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
+
+    # # this will be returned
+    ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
+
+    monitor = ftsJob.monitorFTS2( full = True )
+    if not monitor["OK"]:
+      log.error( monitor["Message"] )
+      return monitor
+
+    # # split FTSFiles to different categories
+    processFiles = self.filterFiles( ftsJob )
+    if not processFiles["OK"]:
+      log.error( processFiles["Message"] )
+      return processFiles
+    ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, processFiles["Value"] )
+
+    return S_OK( ftsFilesDict )
 
 
+  @staticmethod
+  def filterFiles( ftsJob ):
+    """ process ftsFiles from finished ftsJob
 
+    :param FTSJob ftsJob: monitored FTSJob instance
+    """
+    # # lists for different categories
+    toUpdate = []
+    toReschedule = []
+    toRegister = []
+    toSubmit = []
+
+    # #  read request
+    for ftsFile in ftsJob:
+      # # successful files
+      if ftsFile.Status == "Finished":
+        if ftsFile.Error == "AddCatalogReplicaFailed":
+          toRegister.append( ftsFile )
+        toUpdate.append( ftsFile )
+        continue
+      if ftsFile.Status == "Failed":
+        if ftsFile.Error == "MissingSource":
+          toReschedule.append( ftsFile )
+        else:
+          toSubmit.append( ftsFile )
+
+    return S_OK( { "toUpdate": toUpdate,
+                   "toSubmit": toSubmit,
+                   "toRegister": toRegister,
+                   "toReschedule": toReschedule } )
