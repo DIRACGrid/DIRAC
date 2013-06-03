@@ -12,6 +12,9 @@
     FTSJob helper class.
 
     :obsolete:
+
+    will be replaced by FTSAgent soon
+
 """
 # # imports
 import time
