@@ -405,7 +405,6 @@ class FTSAgent( AgentModule ):
     operation = request.getWaiting()
     if not operation or operation.Status != "Scheduled":
       log.error( "unable to find 'Scheduled' ReplicateAndRegister operation in request" )
-      # # TODO: remove request from cache and put it back to ReqDB
       return self.putRequest( request )
 
     if not ftsJobs:
@@ -421,7 +420,7 @@ class FTSAgent( AgentModule ):
     toSubmit = []
     if not ftsJobs:
       log.info( "no active FTSJobs found, will try to collect waiting FTSFiles..." )
-      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID )
+      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting" ] )
       if not ftsFiles["OK"]:
         log.error( ftsFiles["Message"] )
       toSubmit = ftsFiles["Value"]
@@ -438,10 +437,32 @@ class FTSAgent( AgentModule ):
     # # TODO: process ftsFileDict
 
     # # fail
+    toFail = ftsFilesDict.get( "toFail", [] )
+    toReschedule = ftsFilesDict.get( "toReschedule", [] )
+    toSubmit = ftsFilesDict.get( "toSubmit", [] )
+    toRegister = ftsFilesDict.get( "toRegister", [] )
+    toUpdate = ftsFilesDict.get( "toUpdate", [] )
 
-    # # reschedule
+    # # update statuses for waiting scheduled FTSFiles
+    if toUpdate:
+      pass
+
+    if toFail:
+      log.error( "found %s failed FTSFiles, request execution cannot proceed..." % len( toFail ) )
+      for opFile in operation:
+        for ftsFile in toFail:
+          if opFile.FileID == ftsFile.FileID:
+            opFile.Error = ftsFile.Error
+            opFile.Status = "Failed"
+      # # requets.Status = "Failed"
+      return self.putRequest( request )
 
     # # register
+    if toRegister:
+      log.info( "found %s FTSFiles waiting for registration, adding 'RegisterReplica' operations" )
+      addRegister = self.addRegisterOperation( request, toRegister )
+
+    # # reschedule
 
     # # update
 
@@ -499,6 +520,8 @@ class FTSAgent( AgentModule ):
 
     return S_OK( ftsFilesDict )
 
+
+
   def finalizeFTSJob( self, request, ftsJob ):
     """ finalize FTSJob
 
@@ -522,6 +545,9 @@ class FTSAgent( AgentModule ):
       log.error( processFiles["Message"] )
       return processFiles
     ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, processFiles["Value"] )
+
+    # # send accounting record for this job
+    self.sendAccounting( ftsJob, request.OwnerDN )
 
     return S_OK( ftsFilesDict )
 
