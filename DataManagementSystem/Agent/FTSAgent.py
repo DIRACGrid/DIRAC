@@ -11,7 +11,26 @@
     :synopsis: agent propagating scheduled RMS request in FTS
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    agent propagating scheduled RMS request in FTS
+    DIRAC agent propagating scheduled RMS request in FTS
+
+    Request processing phases:
+
+    1. MONITOR
+      ...active FTSJobs, prepare FTSFiles dictionary with files to submit, fail, register and reschedule
+    2. CHECK REPLICAS
+      ...just in case if all transfers are done
+    3. FAILED FILES:
+      ...if at least one Failed FTSFile is found, set Request.Operation.File to 'Failed', end processing
+    4. UPDATE Waiting#SourceSE FTSFiles
+      ...if any found in FTSDB
+    5. REGISTER REPLICA
+      ...insert RegisterReplica operation to request, if some FTSFiles failed to register, end processing
+    6. RESCHEDULE FILES
+      ...for FTSFiles failed with missing sources error
+    7. SUBMIT
+      ...but read 'Waiting' FTSFiles first from FTSDB and merge those with FTSFiles to retry
+
+
 """
 __RCSID__ = "$Id: $"
 # #
