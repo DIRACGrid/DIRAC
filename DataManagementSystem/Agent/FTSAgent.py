@@ -142,9 +142,12 @@ class FTSAgent( AgentModule ):
       if not getRequest:
         return S_ERROR( "request of name '%s' not found in ReqDB" % reqName )
       cls.__reqCache[reqName] = { "request": getRequest, "jobs": {} }
-      ftsJobs = cls.ftsClient().getFTSJobsForRequest( getRequest.RequestID )
-      if ftsJobs["OK"]:
-        cls.__reqCache[reqName]["jobs"] = ftsJobs["Value"]
+
+    request = cls.__reqCache[reqName]["request"]
+    ftsJobs = cls.ftsClient().getFTSJobsForRequest( request.RequestID )
+    if ftsJobs["OK"]:
+      cls.__reqCache[reqName]["jobs"] = ftsJobs["Value"]
+
     return S_OK( cls.__reqCache[reqName] )
 
   @classmethod
