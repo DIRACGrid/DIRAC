@@ -22,6 +22,7 @@ __RCSID__ = "$Id: $"
 # # imports
 import time
 import datetime
+import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
 # # from CS
@@ -210,6 +211,13 @@ class FTSAgent( AgentModule ):
       self.__threadPool.daemonize()
     return self.__threadPool
 
+  def updateGraph( self, ftsJob ):
+    """ add or remove job from FTS graph """
+
+    # # TODO: add some smart code here
+
+    pass
+
   def resetFTSGraph( self ):
     """ create fts graph """
     log = gLogger.getSubLogger( "ftsGraph" )
@@ -256,7 +264,6 @@ class FTSAgent( AgentModule ):
     self.__rwAccessValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.RW_REFRESH )
 
     return S_OK()
-
 
   def initialize( self ):
     """ agent's initialization """
@@ -420,43 +427,24 @@ class FTSAgent( AgentModule ):
     # # dict keeping info about files to reschedule, submit, fail and register
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    toSubmit = []
-    if not ftsJobs:
-      log.info( "no active FTSJobs found, will try to collect waiting FTSFiles..." )
-      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting" ] )
-      if not ftsFiles["OK"]:
-        log.error( ftsFiles["Message"] )
-      toSubmit = ftsFiles["Value"]
-    ftsFilesDict["toSubmit"] = toSubmit
-
     # # monitor active jobs
     for ftsJob in ftsJobs:
       monitor = self.monitorJob( request, ftsJob )
       if not monitor["OK"]:
         log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
+        ftsJob.Status = "Submitted"
         continue
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
-    # # fail
+
     toFail = ftsFilesDict.get( "toFail", [] )
     toReschedule = ftsFilesDict.get( "toReschedule", [] )
     toSubmit = ftsFilesDict.get( "toSubmit", [] )
     toRegister = ftsFilesDict.get( "toRegister", [] )
     toUpdate = ftsFilesDict.get( "toUpdate", [] )
 
-    # # update statuses for waiting scheduled FTSFiles
-    if toUpdate:
-      bySource = {}
-      for ftsFile in toUpdate:
-        if ftsFile.SourceSE not in bySource:
-          bySource.setdefault( ftsFile.SourceSE, [] )
-        bySource[ftsFile.SourceSE].append( ftsFile.FileID )
-      for sourceSE, fileIDList in bySource.items():
-        update = self.ftsClient().setFTSFilesWaiting( operation.OperationID, sourceSE, fileIDList )
-        if not update["OK"]:
-          log.error( "update FTSFiles failed: %s" % update["Message"] )
-          continue
 
+    # # PHASE ONE = Failed files? -> make request failed and return
     if toFail:
       log.error( "found %s failed FTSFiles, request execution cannot proceed..." % len( toFail ) )
       for opFile in operation:
@@ -469,20 +457,51 @@ class FTSAgent( AgentModule ):
         log.error( "request is failed" )
         return self.putRequest( request )
 
+    # # PHASE TWO - update Waiting#SourceSE FTSFiles
+    if toUpdate:
+      bySource = {}
+      for ftsFile in toUpdate:
+        if ftsFile.SourceSE not in bySource:
+          bySource.setdefault( ftsFile.SourceSE, [] )
+        bySource[ftsFile.SourceSE].append( ftsFile.FileID )
+      for sourceSE, fileIDList in bySource.items():
+        update = self.ftsClient().setFTSFilesWaiting( operation.OperationID, sourceSE, fileIDList )
+        if not update["OK"]:
+          log.error( "update FTSFiles failed: %s" % update["Message"] )
+          continue
+
+    # # PHASE THREE - add 'RegisterReplica' Operations
     # # register
     if toRegister:
       log.info( "found %s FTSFiles waiting for registration, adding 'RegisterReplica' operations" )
       registerFiles = self.registerFiles( request, operation, toRegister )
       if not registerFiles["OK"]:
         log.error( "unable to create 'RegisterReplica' operations: %s" % registerFiles["Message"] )
+      if request.Status == "Waiting":
+        log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
+        return self.putRequest( request )
 
+    # # PHASE FOUR - reschedule operation files
     # # reschedule
     if toReschedule:
       log.info( "found %s files to reschedule" % len( toReschedule ) )
       rescheduleFiles = self.scheduleFiles( request, operation, toReschedule )
       if not rescheduleFiles["OK"]:
         log.error( rescheduleFiles["Message"] )
-        continue
+      if request.Status == "Waiting":
+        log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
+        return self.putRequest( request )
+
+    # # PHASE FIVE - read Waiting ftsFiles and submit new FTSJobs
+    ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting" ] )
+    if not ftsFiles["OK"]:
+      log.error( ftsFiles["Message"] )
+    else:
+      retryIds = list( set ( [ ftsFile.FTSFileID for ftsFile in toSubmit ] ) )
+      for ftsFile in ftsFiles["Value"]:
+        if ftsFile.FTSFileID not in retryIds:
+          toSubmit.append( ftsFile )
+          retryIds.append( ftsFile.FTSFileID )
 
     # # submit
     if operation.Status == "Scheduled" and toSubmit:
@@ -496,7 +515,7 @@ class FTSAgent( AgentModule ):
       if request.JobID:
         finalizeRequest = self.requestClient().finalizeRequest( request.RequestName, request.JobID )
         if not finalizeRequest["OK"]:
-          log.error( "unable to finalize request %s, will reset it's status to Scheduled" % request.RequestName )
+          log.error( "unable to finalize request %s, will reset it's status to 'Scheduled" % request.RequestName )
           request.Status = "Scheduled"
 
     if request.Status != "Scheduled":
@@ -508,11 +527,67 @@ class FTSAgent( AgentModule ):
     return S_OK()
 
   def rescheduleFiles( self, request, operation, toReschedule ):
-    """ reschedule files """
+    """ reschedule list of :toReschedule: files in request for operation :operation:
+
+    :param Request request:
+    :param Operation operation:
+    :param list toReschedule: list of FTSFiles
+    """
     log = self.log.getSubLogger( "%/reschedule" % request.RequestName )
     log.info( "found %s files to reschedule" % len( toReschedule ) )
 
-    # # TODO: put some smart code here !!!
+    for opFile in operation:
+      for ftsFile in toReschedule:
+        if opFile.FileID == ftsFile.FileID:
+          opFile.Status = "Waiting"
+
+    toSchedule = []
+
+    # # filter files
+    for opFile in operation.getWaitingFilesList():
+
+      replicas = self._filterReplicas( opFile )
+      if not replicas["OK"]:
+        continue
+      replicas = replicas["Value"]
+
+      if not replicas["Valid"] and replicas["Banned"]:
+        log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+        continue
+
+      validReplicas = replicas["Valid"]
+      bannedReplicas = replicas["Banned"]
+
+      if not validReplicas and bannedReplicas:
+        log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+        continue
+
+      if validReplicas:
+        validTargets = list( set( operation.targetSEList ) - set( validReplicas ) )
+        if not validTargets:
+          log.info( "file %s is already present at all targets" % opFile.LFN )
+          opFile.Status = "Done"
+          continue
+        toSchedule.append( ( opFile.toJSON()["Value"], validReplicas, validTargets ) )
+
+    # # do real schedule here
+    if toSchedule:
+
+      ftsSchedule = self.ftsClient().ftsSchedule( toSchedule )
+      if not ftsSchedule["OK"]:
+        self.log.error( ftsSchedule["Message"] )
+        return ftsSchedule
+
+      ftsSchedule = ftsSchedule["Value"]
+      for fileID in ftsSchedule["Successful"]:
+        for opFile in self.operation:
+          if fileID == opFile.FileID:
+            opFile.Status = "Scheduled"
+
+      for fileID, reason in ftsSchedule["Failed"]:
+        for opFile in self.operation:
+          if fileID == opFile.FileID:
+            opFile.Error = reason
 
     return S_OK()
 
@@ -578,13 +653,18 @@ class FTSAgent( AgentModule ):
         if not submit["OK"]:
           log.error( "unable to submit FTSJob: %s" % submit["Message"] )
           continue
+        log.info( "FTSJob '%s'@'%s' has been submitted" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
+
         submittedJobs += 1
 
-        # # TODO: update graph
+        # # save FTSJob to FTSDB for further processing
+        put = self.ftsClient().putFTSJob( ftsJob )
+        if not put["OK"]:
+          log.error( put["Message"] )
+          continue
 
     log.info( "%s new FTSJobs have been submitted" % submittedJobs )
     return S_OK()
-
 
   def monitorJob( self, request, ftsJob ):
     """ execute FTSJob.monitorFTS2 for a given :ftsJob:
@@ -593,8 +673,8 @@ class FTSAgent( AgentModule ):
     :param Request request: ReqDB.Request instance
     :param FTSJob ftsJob: FTSDB.FTSJob instance
     """
-    log = self.log.getSubLogger( "%s/monitor/%s" % ( request.RequestName, ftsJob.FTSJobID ) )
-    log.info( "FTSJob %s@%s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
+    log = self.log.getSubLogger( "%s/monitor/%s" % ( request.RequestName, ftsJob.FTSGUID ) )
+    log.info( "FTSJob '%s'@'%s'" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
@@ -606,6 +686,7 @@ class FTSAgent( AgentModule ):
       if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"]:
         log.error( "FTSJob not known (expired on server?)" )
         for ftsFile in ftsJob:
+          ftsFile.Status = "Waiting"
           ftsFilesDict["toSubmit"] = ftsFile
         return S_OK( ftsFilesDict )
       return monitor
@@ -652,8 +733,8 @@ class FTSAgent( AgentModule ):
     # # send accounting record for this job
     self.sendAccounting( ftsJob, request.OwnerDN )
 
-    # # TODO: update graph
-
+    # # update graph - remove this job from graph
+    self.updateGraph( ftsJob )
 
     return S_OK( ftsFilesDict )
 
@@ -700,7 +781,7 @@ class FTSAgent( AgentModule ):
     :param Operation transferOp: 'ReplicateAndRegister' operation for this FTSJob
     :param list toRegister: [ FTSDB.FTSFile, ... ] - files that failed to register
     """
-    log = self.log.getSubLogger( "%s/addRegisterReplica" % request.RequestName )
+    log = self.log.getSubLogger( "%s/registerFiles" % request.RequestName )
 
     byTarget = {}
     for ftsFile in toRegister:
@@ -765,3 +846,65 @@ class FTSAgent( AgentModule ):
     accountingDict["TransferTime"] = transferTime
     dataOp.setValuesFromDict( accountingDict )
     dataOp.commit()
+
+
+  def _filterReplicas( self, opFile ):
+    """ filter out banned/invalid source SEs """
+    log = self.log.getSubLogger( "filterReplicas" )
+
+    ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
+
+    replicas = self.replicaManager().getActiveReplicas( opFile.LFN )
+    if not replicas["OK"]:
+      log.error( replicas["Message"] )
+    reNotExists = re.compile( "not such file or directory" )
+    replicas = replicas["Value"]
+    failed = replicas["Failed"].get( opFile.LFN , "" )
+    if reNotExists.match( failed.lower() ):
+      opFile.Status = "Failed"
+      opFile.Error = failed
+      return S_ERROR( failed )
+
+    replicas = replicas["Successful"][opFile.LFN] if opFile.LFN in replicas["Successful"] else {}
+
+    for repSEName in replicas:
+
+      # # check read access
+      # seRead = self.rssSEStatus( repSEName, "ReadAccess" )
+      # if not seRead["OK"]:
+      #  log.error( seRead["Message"] )
+      #  ret["Banned"].append( repSEName )
+      #  continue
+      # if not seRead["Value"]:
+      #  log.error( "StorageElement '%s' is banned for reading" % ( repSEName ) )
+
+      repSE = self.getSE( repSEName )
+
+
+
+      pfn = repSE.getPfnForLfn( opFile.LFN )
+      if not pfn["OK"]:
+        log.warn( "unable to create pfn for %s lfn: %s" % ( opFile.LFN, pfn["Message"] ) )
+        ret["Banned"].append( repSEName )
+        continue
+      pfn = pfn["Value"]
+
+      repSEMetadata = repSE.getFileMetadata( pfn, singleFile = True )
+      if not repSEMetadata["OK"]:
+        self.log.warn( repSEMetadata["Message"] )
+        ret["Banned"].append( repSEName )
+        continue
+      repSEMetadata = repSEMetadata["Value"]
+
+      seChecksum = repSEMetadata["Checksum"].replace( "x", "0" ).zfill( 8 ) if "Checksum" in repSEMetadata else None
+      if opFile.Checksum and opFile.Checksum != seChecksum:
+        self.log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
+                                                             opFile.Checksum,
+                                                             repSE,
+                                                             seChecksum ) )
+        ret["Bad"].append( repSEName )
+        continue
+      # # if we're here repSE is OK
+      ret["Valid"].append( repSEName )
+
+    return S_OK( ret )

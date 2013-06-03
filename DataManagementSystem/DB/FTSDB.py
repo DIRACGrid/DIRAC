@@ -446,6 +446,17 @@ class FTSDB( DB ):
       return S_OK()
     return S_OK( [ FTSHistoryView( fromDict ) for fromDict in query["Value"].values()[0] ] )
 
+  def cleanUpFTSFiles( self, requestID, fileIDs ):
+    """ delete FTSFiles for given :requestID: and list of :fileIDs:"""
+    query = "DELETE * FROM `FTSFile` WHERE `RequestID`= %s and `FileID` IN (%s)" % ( requestID,
+                                                                                     intListToString( fileIDs ) )
+    deleteFiles = self._transaction( [query] )
+    if not deleteFiles["OK"]:
+      self.log.error( "cleanUpFTSFiles: %s" % deleteFiles["Message"] )
+      return deleteFiles
+    return S_OK()
+
+
   def getDBSummary( self ):
     """ get DB summary """
     # # this will be returned

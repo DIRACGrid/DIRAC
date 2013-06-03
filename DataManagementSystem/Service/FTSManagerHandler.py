@@ -21,7 +21,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSManagerHandler class.
 
 # # imports
-from types import DictType, LongType, ListType, IntType, StringTypes
+from types import DictType, LongType, ListType, IntType, StringTypes, BooleanType
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -195,7 +195,7 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
-  types_ftsSchedule = [ ( IntType, LongType ), ListType ]
+  types_ftsSchedule = [ ( IntType, LongType ), ListType, BooleanType ]
   def export_ftsSchedule( self, requestID, fileJSONList ):
     """ call FTS scheduler
 
@@ -206,7 +206,17 @@ class FTSManagerHandler( RequestHandler ):
     # # this will be returned on success
     ret = { "Successful": [], "Failed": {} }
 
+    fileIDs = []
+    for fileJSON, sourceSEs, targetSEs in fileJSONList:
+      fileID = int( fileJSON.get( "FileID" ) )
+      fileIDs.append( fileID )
+    cleanUpFTSFiles = self.__ftsDB.cleanUpFTSFiles( requestID, fileIDs )
+    if not cleanUpFTSFiles["OK"]:
+      self.log.error( "ftsSchedule: %s" % cleanUpFTSFiles["Message"] )
+      return S_ERROR( cleanUpFTSFiles["Message"] )
+
     ftsFiles = []
+
     for fileJSON, sourceSEs, targetSEs in fileJSONList:
 
       lfn = fileJSON.get( "LFN", "" )
