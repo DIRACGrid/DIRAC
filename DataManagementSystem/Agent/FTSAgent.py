@@ -525,7 +525,6 @@ class FTSAgent( AgentModule ):
 
     return S_OK( ftsFilesDict )
 
-  @staticmethod
   def filterFiles( self, ftsJob ):
     """ process ftsFiles from finished ftsJob
 
