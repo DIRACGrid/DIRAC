@@ -13,12 +13,12 @@
 
     DIRAC agent propagating scheduled RMS request in FTS
 
-    Request processing phases:
+    Request processing phases (each in a separate thread):
 
     1. MONITOR
       ...active FTSJobs, prepare FTSFiles dictionary with files to submit, fail, register and reschedule
     2. CHECK REPLICAS
-      ...just in case if all transfers are done
+      ...just in case if all transfers are done, if yes, end processing
     3. FAILED FILES:
       ...if at least one Failed FTSFile is found, set Request.Operation.File to 'Failed', end processing
     4. UPDATE Waiting#SourceSE FTSFiles
@@ -29,7 +29,6 @@
       ...for FTSFiles failed with missing sources error
     7. SUBMIT
       ...but read 'Waiting' FTSFiles first from FTSDB and merge those with FTSFiles to retry
-
 
 """
 __RCSID__ = "$Id: $"
@@ -180,6 +179,7 @@ class FTSAgent( AgentModule ):
     :param str requestName: Request.RequestName value
     """
     requestDict = cls.__reqCache.get( requestName, None )
+
     if not requestDict:
       return S_ERROR( "request '%s' not cached" % requestName )
 
@@ -191,12 +191,21 @@ class FTSAgent( AgentModule ):
       putJobs = cls.putFTSJobs( jobs )
       if not putJobs["OK"]:
         return putJobs
+
+    # # request done? - finalize if ftsJob
+    if request.Status == "Done" and request.JobID:
+      finalizeRequest = cls.requestClient().finalizeRequest( request.RequestName, request.JobID )
+      if not finalizeRequest["OK"]:
+        request.Status = "Scheduled"
+
     # # put request
     put = cls.requestClient().putRequest( request )
     if not put["OK"]:
       return put
+
     # # del cache entry
     del cls.__reqCache[ requestName ]
+
     return S_OK()
 
   @classmethod
@@ -446,7 +455,7 @@ class FTSAgent( AgentModule ):
     # # dict keeping info about files to reschedule, submit, fail and register
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    # # monitor active jobs
+    # # PHASE 0 = monitor active FTSJobs
     for ftsJob in ftsJobs:
       monitor = self.monitorJob( request, ftsJob )
       if not monitor["OK"]:
@@ -455,17 +464,15 @@ class FTSAgent( AgentModule ):
         continue
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
-
     toFail = ftsFilesDict.get( "toFail", [] )
     toReschedule = ftsFilesDict.get( "toReschedule", [] )
     toSubmit = ftsFilesDict.get( "toSubmit", [] )
     toRegister = ftsFilesDict.get( "toRegister", [] )
     toUpdate = ftsFilesDict.get( "toUpdate", [] )
 
-
-    # # PHASE ONE = Failed files? -> make request failed and return
+    # # PHASE ONE = Failed files? -> make request Failed and return
     if toFail:
-      log.error( "found %s failed FTSFiles, request execution cannot proceed..." % len( toFail ) )
+      log.error( "found %s Failed FTSFiles, request execution cannot proceed..." % len( toFail ) )
       for opFile in operation:
         for ftsFile in toFail:
           if opFile.FileID == ftsFile.FileID:
@@ -478,6 +485,7 @@ class FTSAgent( AgentModule ):
 
     # # PHASE TWO - update Waiting#SourceSE FTSFiles
     if toUpdate:
+      log.info( "updating scheduled waiting FTSFiles..." )
       bySource = {}
       for ftsFile in toUpdate:
         if ftsFile.SourceSE not in bySource:
@@ -522,21 +530,14 @@ class FTSAgent( AgentModule ):
           toSubmit.append( ftsFile )
           retryIds.append( ftsFile.FTSFileID )
 
-    # # submit
+    # # submit new ftsJobs
     if operation.Status == "Scheduled" and toSubmit:
       log.info( "found %s files to submit" % len( toSubmit ) )
       submit = self.submitJobs( request, operation, toSubmit )
       if not submit["OK"]:
         log.error( submit["Message"] )
 
-    if request.Status == "Done":
-      log.info( "request %s is done" % request.RequestName )
-      if request.JobID:
-        finalizeRequest = self.requestClient().finalizeRequest( request.RequestName, request.JobID )
-        if not finalizeRequest["OK"]:
-          log.error( "unable to finalize request %s, will reset it's status to 'Scheduled" % request.RequestName )
-          request.Status = "Scheduled"
-
+    # # status change? - put back request
     if request.Status != "Scheduled":
       put = self.putRequest( request )
       if not put["OK"]:
