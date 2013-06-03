@@ -452,7 +452,7 @@ class JobMonitoringHandler( RequestHandler ):
     """
     return  jobDB.getInputData( jobID )
 
-  types_getHerdJobs = [ ( IntType, LongType ) ]
+  types_getJobsInHerd = [ ( IntType, LongType ) ]
   def export_getJobsInHerd( self, jobID ):
     """ Get jobs in the same herd as this job
     """

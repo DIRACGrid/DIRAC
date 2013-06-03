@@ -1251,7 +1251,7 @@ class JobDB( DB ):
       jid = int( jid )
     except ValueError:
       return S_ERROR( "jid has to be a number" % jid )
-    result = self._query( "SELECT JobID FROM JobDB WHERE MasterJobID=%d" % jid )
+    result = self._query( "SELECT JobID FROM Jobs WHERE MasterJobID=%d" % jid )
     if not result[ 'OK' ]:
       return result
     return S_OK( [ row[0] for row in result[ 'Value' ] ] )
