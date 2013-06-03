@@ -24,11 +24,14 @@ import time
 import datetime
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
+# # from CS
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 # # from Core
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import getChunk
+from DIRAC.Core.Utilities.Time import fromString
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
@@ -145,18 +148,29 @@ class FTSAgent( AgentModule ):
     return S_OK( cls.__reqCache[reqName] )
 
   @classmethod
-  def putRequest( cls, request ):
-    """ put request back to ReqDB """
-    requestDict = cls.__reqCache.get( request.RequestName, None )
+  def putRequest( cls, requestName ):
+    """ put request back to ReqDB
+
+    :param str requestName: Request.RequestName value
+    """
+    requestDict = cls.__reqCache.get( requestName, None )
     if not requestDict:
-      put = cls.requestClient().putRquest( request )
-      if not put["OK"]:
-        return put
+      return S_ERROR( "request '%s' not cached" % requestName )
 
-    putJobs = cls.putFTSJobs( requestDict["jobs"] )
+    request = requestDict.get( "request", None )
 
-    request = requestDict["request"]
+    # # put FTSJobs
+    jobs = requestDict.get( "jobs", [] )
+    if jobs:
+      putJobs = cls.putFTSJobs( jobs )
+      if not putJobs["OK"]:
+        return putJobs
+    # # put request
     put = cls.requestClient().putRequest( request )
+    if not put["OK"]:
+      return put
+    # # del cache entry
+    del cls.__reqCache[ requestName ]
     return S_OK()
 
   @classmethod
@@ -255,7 +269,6 @@ class FTSAgent( AgentModule ):
 
     self.MAX_ATTEMPT = self.am_getOption( "MaxTransferAttempts", self.MAX_ATTEMPT )
     self.log.info( "Max transfer attempts  = %s" % self.MAX_ATTEMPT )
-
 
     # # thread pool
     self.MIN_THREADS = self.am_getOption( "MinThreads", self.MIN_THREADS )
@@ -379,7 +392,7 @@ class FTSAgent( AgentModule ):
   def processRequest( self, requestDict ):
     """ process one request
 
-    :param Request request: scheduled Request obj instance
+    :param dict requestDict: { "request": ReqDB.Request, "jobs": [ FTSDB.FTSJob, FTSDB.FTSJob, ...] }
     """
     request = requestDict["request"]
     ftsJobs = requestDict["jobs"]
@@ -387,8 +400,10 @@ class FTSAgent( AgentModule ):
     log = self.log.getSubLogger( request.RequestName )
 
     operation = request.getWaiting()
-    if not operation:
+    if not operation or operation.Status != "Scheduled":
       log.error( "unable to find 'Scheduled' ReplicateAndRegister operation in request" )
+      # # TODO: remove request from cache and put it back to ReqDB
+      return self.putRequest( request )
 
     if not ftsJobs:
       ftsJobs = self.ftsClient().getFTSJobsForRequest( request.RequestID )
@@ -417,7 +432,19 @@ class FTSAgent( AgentModule ):
         continue
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
-    # # submit new FTSJobs
+    # # TODO: process ftsFileDict
+
+    # # fail
+
+    # # reschedule
+
+    # # register
+
+    # # update
+
+    # # submit
+
+    # # update graph
 
     return S_OK()
 
@@ -425,7 +452,7 @@ class FTSAgent( AgentModule ):
     """ create and submit new FTSJobs using list of FTSFiles
 
     :param Request request: ReqDB.Request instance
-    :param list ftsFiles: [ FTSDB.FTSFile, ... ]
+    :param list ftsFiles: list of FTSFile instances
     """
     pass
 
@@ -494,7 +521,6 @@ class FTSAgent( AgentModule ):
 
     return S_OK( ftsFilesDict )
 
-
   @staticmethod
   def filterFiles( ftsJob ):
     """ process ftsFiles from finished ftsJob
@@ -506,6 +532,7 @@ class FTSAgent( AgentModule ):
     toReschedule = []
     toRegister = []
     toSubmit = []
+    toFail = []
 
     # #  read request
     for ftsFile in ftsJob:
@@ -519,9 +546,49 @@ class FTSAgent( AgentModule ):
         if ftsFile.Error == "MissingSource":
           toReschedule.append( ftsFile )
         else:
+
+          # # if ftsFile.Attempt
           toSubmit.append( ftsFile )
 
     return S_OK( { "toUpdate": toUpdate,
                    "toSubmit": toSubmit,
                    "toRegister": toRegister,
-                   "toReschedule": toReschedule } )
+                   "toReschedule": toReschedule,
+                   "toFail": toFail } )
+
+  @staticmethod
+  def sendAccounting( self, ftsJob, ownerDN ):
+    """ prepare and send DataOperation to AccouringDB """
+
+    dataOp = DataOperation()
+    dataOp.setStartTime( fromString( ftsJob.SubmitTime ) )
+    dataOp.setEndTime( fromString( ftsJob.LastUpdate ) )
+
+    accountingDict = dict()
+    accountingDict["OperationType"] = "ReplicateAndRegister"
+
+    username = getUsernameForDN( ownerDN )
+    if not username["OK"]:
+      username = ownerDN
+    else:
+      username = username["Value"]
+
+    accountingDict["User"] = username
+    accountingDict["Protocol"] = "FTS"
+
+    # accountingDict['RegistrationTime'] = 0
+    # accountingDict['RegistrationOK'] = 0
+    # accountingDict['RegistrationTotal'] = 0
+
+    accountingDict["TransferOK"] = len( [ f for f in ftsJob if f.Status == "Finished" ] )
+    accountingDict["TransferTotal"] = len( ftsJob )
+    accountingDict["TransferSize"] = ftsJob.Size
+    accountingDict["FinalStatus"] = ftsJob.Status
+    accountingDict["Source"] = ftsJob.SourceSE
+    accountingDict["Destination"] = ftsJob.TargetSE
+
+    dt = ftsJob.LastUpdate - ftsJob.SubmitTime
+    transferTime = dt.days * 86400 + dt.seconds
+    accountingDict["TransferTime"] = transferTime
+    dataOp.setValuesFromDict( accountingDict )
+    dataOp.commit()
