@@ -562,7 +562,7 @@ class FTSAgent( AgentModule ):
                    "toFail": toFail } )
 
   @staticmethod
-  def sendAccounting( self, ftsJob, ownerDN ):
+  def sendAccounting( ftsJob, ownerDN ):
     """ prepare and send DataOperation to AccouringDB """
 
     dataOp = DataOperation()
