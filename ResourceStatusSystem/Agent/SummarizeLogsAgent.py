@@ -64,7 +64,7 @@ class SummarizeLogsAgent( AgentModule ):
       self.log.info( 'Summarizing %s' % element )
 
       # get all logs to be summarized
-      selectLogElements = self._selectLogElements( element )
+      selectLogElements = self._summarizeLogs( element )
       if not selectLogElements[ 'OK' ]:
         self.log.error( selectLogElements[ 'Message' ] )
         continue
@@ -75,7 +75,7 @@ class SummarizeLogsAgent( AgentModule ):
       # ( name, statusType ) : list( logs )
       for key, logs in logElements.iteritems():
 
-        sumResult = self._summarizeLogs( element, key, logs, lastID )
+        sumResult = self._registerLogs( element, key, logs )
         if not sumResult[ 'OK' ]:
           self.log.error( sumResult[ 'Message' ] )
           continue
@@ -92,7 +92,8 @@ class SummarizeLogsAgent( AgentModule ):
 
   #.............................................................................
 
-  def _selectLogElements( self, element ):
+
+  def _summarizeLogs( self, element ):
     """ given an element, selects all logs in table <element>Log.
     
     :Parameters:
@@ -136,14 +137,29 @@ class SummarizeLogsAgent( AgentModule ):
     return S_OK( ( latestID, selectedItems ) )
       
   
-  def _summarizeLogs( self, element, key, logs, lastID ):
-    '''
-      Given an element, a selectedKey - which is a tuple ( <name>, <statusType> )
-      and a list of dictionaries, this method inserts them. Before inserting
-      them, checks whether the first one is or is not on the <element>History
-      table. If it is, it is not inserted.
-    '''
+  def _registerLogs( self, element, key, logs ):
+    """ Given an element, a key - which is a tuple ( <name>, <statusType> )
+    and a list of dictionaries, this method inserts them on the <element>History
+    table. Before inserting them, checks whether the first one is or is not on 
+    the <element>History table. If it is, it is not inserted. It also checks 
+    whether the LastCheckTime parameter of the first log to be inserted is 
+    larger than the last history log LastCheckTime. If not, it means an agent
+    cycle has been interrupted and we can run into inconsistencies. It aborts to
+    prevent more dramatic results.
+    
+    :Parameters:
+      **element** - `string`
+        name of the table family ( either Site, Resource and Node )
+      **key** - `tuple`
+        tuple with the name of the element and the statusType  
+      **logs** - `list`
+        list of dictionaries containing the logs
+        
+     :return: S_OK / S_ERROR   
+    
+    """
 
+    # Undo key
     name, statusType = key
 
     selectedRes = self.rsClient.selectStatusElement( element, 'History', name,
@@ -156,10 +172,13 @@ class SummarizeLogsAgent( AgentModule ):
       return selectedRes
     selectedRes = selectedRes[ 'Value' ]
 
+    # We want from the <element>History table the last Status, LastCheckTime
+    # and TokenOwner
     lastStatus, lastCheckTime, lastToken = None, None, None
     if selectedRes:
       lastStatus, lastCheckTime, lastToken = selectedRes[ 0 ]
 
+    # Sanity check to avoid running if an agent cycle has been stopped
     if lastCheckTime and logs[ 0 ][ 'LastCheckTime' ] < lastCheckTime:
       return S_ERROR( 'Overlapping data. Seems the DB has not been cleared properly' )
 
@@ -181,10 +200,18 @@ class SummarizeLogsAgent( AgentModule ):
     
 
   def __logToHistoryTable( self, element, elementDict ):
-    '''
-      Given an element and a dictionary with all the arguments, this method
-      inserts a new entry on the <element>History table
-    '''
+    """ Given an element and a dictionary with all the arguments, this method
+    inserts a new entry on the <element>History table
+    
+    :Parameters:
+      **element** - `string`
+        name of the table family ( either Site, Resource and Node )
+      **elementDict** - `dict`
+        dictionary returned from the DB to be inserted on the History table
+    
+    :return: S_OK / S_ERROR 
+                
+    """
 
     try:
 
