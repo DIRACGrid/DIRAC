@@ -65,8 +65,8 @@ class Dirac( API ):
         self.jobRepo = False
 
     self.scratchDir = gConfig.getValue( self.section + 'ScratchDir', '/tmp' )
-    self.sandboxClient = SandboxStoreClient( rpcClient=sbRPCClient, 
-                                             transferClient=sbTransferClient, 
+    self.sandboxClient = SandboxStoreClient( rpcClient=sbRPCClient,
+                                             transferClient=sbTransferClient,
                                              useCertificates=useCertificates  )
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
     # Determine the default file catalog
@@ -1028,7 +1028,7 @@ class Dirac( API ):
   #   listing = rm.listCatalogDirectory( directory )
   #   if re.search( '\/$', directory ):
   #     directory = directory[:-1]
-  # 
+  #
   #   if printOutput:
   #     for fileKey, metaDict in listing['Value']['Successful'][directory]['Files'].items():
   #       print '#' * len( fileKey )
@@ -1352,7 +1352,7 @@ class Dirac( API ):
     """
     if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    elif type( lfn ) != types.ListType:   
+    elif type( lfn ) != types.ListType:
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     if not sourceSE:
@@ -1554,7 +1554,7 @@ class Dirac( API ):
     """
     if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    elif type( lfn ) != types.ListType:   
+    elif type( lfn ) != types.ListType:
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     rm = ReplicaManager()
@@ -1581,7 +1581,7 @@ class Dirac( API ):
     """
     if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
-    elif type( lfn ) != types.ListType:   
+    elif type( lfn ) != types.ListType:
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     rm = ReplicaManager()
@@ -2196,6 +2196,28 @@ class Dirac( API ):
       return S_ERROR( 'No jobs selected for conditions: %s' % conditions )
     else:
       return result
+
+  #############################################################################
+  def getJobsInHerd( self, jobID ):
+    """Get all jobs in the same herd as the given one.
+
+       Example Usage:
+
+       >>> dirac.getJobsInHerd( 2342 )
+       {'OK': True, 'Value': [ 2342, 2533, 2534, 2643, 2650 ] }
+
+       :param jobID: JobID
+       :type JobID: int
+       :returns: S_OK,S_ERROR
+       """
+
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
+    result = monitoring.getJobsInHerd( jobID )
+    try:
+      result.pop( 'rpcStub' )
+    except:
+      pass
+    return result
 
   #############################################################################
   def getJobSummary( self, jobID, outputFile = None, printOutput = False ):

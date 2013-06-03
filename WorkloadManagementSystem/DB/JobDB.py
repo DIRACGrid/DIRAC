@@ -171,7 +171,8 @@ class JobDB( DB ):
                                           'SURL' : 'VARCHAR(256) NOT NULL',
                                           'Disk' : 'TINYINT(1) NOT NULL' },
                              'PrimaryKey' : [ 'LFNID', 'SEName', 'SURL' ],
-                             'Indexes' : { 'LFNID' : [ 'LFNID' ] } }
+                             'Indexes' : { 'LFNID' : [ 'LFNID' ] },
+                             'ForeignKeys' : { 'LFNID' : 'LFN' } }
     tables[ 'MasterJDLs' ] = { 'Fields' : { 'JobID' : 'int(11) NOT NULL',
                                             'JDL' : 'BLOB NOT NULL' },
                              'PrimaryKey' : [ 'JobID' ] }
@@ -184,6 +185,8 @@ class JobDB( DB ):
     result = self._createTables( tables )
     if not result[ 'OK' ]:
       return result
+    #Create foreign keys
+
     #Drop old tables
     dropTables = []
     for t in [ 'SubJobs', 'PrecursorJobs', 'TaskQueues', 'TaskQueue', 'InputData' ]:
@@ -1243,7 +1246,7 @@ class JobDB( DB ):
       return result
 
 
-  def getSplittedJobs( self, jid ):
+  def getJobsInHerd( self, jid ):
     try:
       jid = int( jid )
     except ValueError:
@@ -1252,7 +1255,6 @@ class JobDB( DB ):
     if not result[ 'OK' ]:
       return result
     return S_OK( [ row[0] for row in result[ 'Value' ] ] )
-
 
   def insertSplittedManifests( self, jid, manifests ):
     jidList = [ jid ]

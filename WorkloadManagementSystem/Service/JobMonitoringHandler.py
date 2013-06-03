@@ -19,7 +19,7 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO 
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 import DIRAC.Core.Utilities.Time as Time
 
 # These are global instances of the DB classes
@@ -45,9 +45,9 @@ def initializeJobMonitoringHandler( serviceInfo ):
 class JobMonitoringHandler( RequestHandler ):
 
   def initialize( self ):
-    
+
     global jobDB
-    
+
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
@@ -92,7 +92,7 @@ class JobMonitoringHandler( RequestHandler ):
     """
     Return Distict Values of ProductionId job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'JobGroup', condDict, 
+    return jobDB.getDistinctJobAttributes( 'JobGroup', condDict,
                                            newer = cutDate )
 
 ##############################################################################
@@ -309,12 +309,12 @@ class JobMonitoringHandler( RequestHandler ):
         return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
       jobList = result['Value']
-      
+
       # A.T. This needs optimization
       #validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
       #                                                                                               RIGHT_GET_INFO )
       #jobList = validJobList
-      
+
       nJobs = len( jobList )
       resultDict['TotalRecords'] = nJobs
       if nJobs == 0:
@@ -451,3 +451,9 @@ class JobMonitoringHandler( RequestHandler ):
     """ Get input data for the specified jobs
     """
     return  jobDB.getInputData( jobID )
+
+  types_getHerdJobs = [ ( IntType, LongType ) ]
+  def export_getJobsInHerd( self, jobID ):
+    """ Get jobs in the same herd as this job
+    """
+    return jobDB.getJobsInHerd( jobID )
