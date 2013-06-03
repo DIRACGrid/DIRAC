@@ -39,6 +39,7 @@ from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 # # from RSS
@@ -436,16 +437,12 @@ class FTSAgent( AgentModule ):
         continue
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
-    # # TODO: process ftsFileDict
-
     # # fail
     toFail = ftsFilesDict.get( "toFail", [] )
     toReschedule = ftsFilesDict.get( "toReschedule", [] )
     toSubmit = ftsFilesDict.get( "toSubmit", [] )
     toRegister = ftsFilesDict.get( "toRegister", [] )
     toUpdate = ftsFilesDict.get( "toUpdate", [] )
-
-
 
     # # update statuses for waiting scheduled FTSFiles
     if toUpdate:
@@ -468,7 +465,9 @@ class FTSAgent( AgentModule ):
             opFile.Error = ftsFile.Error
             opFile.Status = "Failed"
       # # requets.Status should be Failed at this stage "Failed"
-      return self.putRequest( request )
+      if request.Status == "Failed":
+        log.error( "request is failed" )
+        return self.putRequest( request )
 
     # # register
     if toRegister:
@@ -480,6 +479,10 @@ class FTSAgent( AgentModule ):
     # # reschedule
     if toReschedule:
       log.info( "found %s files to reschedule" % len( toReschedule ) )
+      rescheduleFiles = self.scheduleFiles( request, operation, toReschedule )
+      if not rescheduleFiles["OK"]:
+        log.error( rescheduleFiles["Message"] )
+        continue
 
     # # submit
     if operation.Status == "Scheduled" and toSubmit:
@@ -488,9 +491,31 @@ class FTSAgent( AgentModule ):
       if not submit["OK"]:
         log.error( submit["Message"] )
 
-    # # update graph
+    if request.Status == "Done":
+      log.info( "request %s is done" % request.RequestName )
+      if request.JobID:
+        finalizeRequest = self.requestClient().finalizeRequest( request.RequestName, request.JobID )
+        if not finalizeRequest["OK"]:
+          log.error( "unable to finalize request %s, will reset it's status to Scheduled" % request.RequestName )
+          request.Status = "Scheduled"
+
+    if request.Status != "Scheduled":
+      put = self.putRequest( request )
+      if not put["OK"]:
+        log.error( "unable to put back request: %s" % put["Message"] )
+        return put
 
     return S_OK()
+
+  def rescheduleFiles( self, request, operation, toReschedule ):
+    """ reschedule files """
+    log = self.log.getSubLogger( "%/reschedule" % request.RequestName )
+    log.info( "found %s files to reschedule" % len( toReschedule ) )
+
+    # # TODO: put some smart code here !!!
+
+    return S_OK()
+
 
   def submitJobs( self, request, operation, toSubmit ):
     """ create and submit new FTSJobs using list of FTSFiles
