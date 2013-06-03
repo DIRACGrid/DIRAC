@@ -466,6 +466,7 @@ class FTSAgent( AgentModule ):
     :param Request request: ReqDB.Request instance
     :param FTSJob ftsJob: FTSDB.FTSJob instance
     """
+
     log = self.log.getSubLogger( "%s/monitor/%s" % ( request.RequestName, ftsJob.FTSJobID ) )
     log.info( "monitoring FTSJob %s@%s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
@@ -525,7 +526,7 @@ class FTSAgent( AgentModule ):
     return S_OK( ftsFilesDict )
 
   @staticmethod
-  def filterFiles( ftsJob ):
+  def filterFiles( self, ftsJob ):
     """ process ftsFiles from finished ftsJob
 
     :param FTSJob ftsJob: monitored FTSJob instance
@@ -537,7 +538,7 @@ class FTSAgent( AgentModule ):
     toSubmit = []
     toFail = []
 
-    # #  read request
+    # # loop over files in fts job
     for ftsFile in ftsJob:
       # # successful files
       if ftsFile.Status == "Finished":
@@ -549,9 +550,11 @@ class FTSAgent( AgentModule ):
         if ftsFile.Error == "MissingSource":
           toReschedule.append( ftsFile )
         else:
-
-          # # if ftsFile.Attempt
-          toSubmit.append( ftsFile )
+          if ftsFile.Attempt < self.MAX_ATTEMPT:
+            toSubmit.append( ftsFile )
+          else:
+            toFail.append( ftsFile )
+            ftsFile.Error = "Max attempts reached"
 
     return S_OK( { "toUpdate": toUpdate,
                    "toSubmit": toSubmit,
