@@ -62,8 +62,8 @@ class DatabaseCleanerAgent( AgentModule ):
 
 #    TODO: uncomment when ResourceMonitoring is ready
 #    self._cleanCaches()
-    self._cleanStatusTable( 'History', self.maxHistoryLifetime )
-    self._cleanStatusTable( 'Log', self.maxLogLifetime )
+    #self._cleanStatusTable( 'History', self.maxHistoryLifetime )
+    #self._cleanStatusTable( 'Log', self.maxLogLifetime )
 
     return S_OK()
 
