@@ -232,18 +232,21 @@ class ReplicateAndRegister( OperationHandlerBase ):
 
       self.log.always( "AAAAAAAAAAAAAAAAAAAA %s" % ftsSchedule )
 
+
       ftsSchedule = ftsSchedule["Value"]
       for fileID in ftsSchedule["Successful"]:
         gMonitor.addMark( "FTSScheduleOK", 1 )
         for opFile in self.operation:
           if fileID == opFile.FileID:
             opFile.Status = "Scheduled"
+            self.log.always( "%s has been scheduled" % opFile.LFN )
 
       for fileID, reason in ftsSchedule["Failed"]:
         gMonitor.addMark( "FTSScheduleFail", 1 )
         for opFile in self.operation:
           if fileID == opFile.FileID:
             opFile.Error = reason
+            self.log.error( "unable to schedule %s: %s" % ( opFile.LFN, opFile.Error ) )
 
     return S_OK()
 
