@@ -475,7 +475,7 @@ class FTSAgent( AgentModule ):
 
     # # PHASE 0 = monitor active FTSJobs
     for ftsJob in ftsJobs:
-      monitor = self.monitor( request, ftsJob )
+      monitor = self.monitorJob( request, ftsJob )
       if not monitor["OK"]:
         log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
         ftsJob.Status = "Submitted"
@@ -717,7 +717,7 @@ class FTSAgent( AgentModule ):
     log.info( "%s new FTSJobs have been submitted" % submittedJobs )
     return S_OK()
 
-  def monitor( self, request, ftsJob ):
+  def monitorJob( self, request, ftsJob ):
     """ execute FTSJob.monitorFTS2 for a given :ftsJob:
         if ftsJob is in a final state, finalize it
 
