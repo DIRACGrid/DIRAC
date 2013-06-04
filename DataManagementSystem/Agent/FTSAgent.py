@@ -411,11 +411,8 @@ class FTSAgent( AgentModule ):
     if not requestNames["OK"]:
       log.error( "unable to read scheduled request names: %s" % requestNames["Message"] )
       return requestNames
-    requestNames = requestNames["Value"]
 
-    log.info( type( requestNames ) )
-
-    requestNames = list( set ( requestNames + self.__reqCache.keys() ) )
+    requestNames = list( set ( requestNames["Value"] + self.__reqCache.keys() ) )
 
     if not requestNames:
       log.info( "no more 'Scheduled' requests to process" )
