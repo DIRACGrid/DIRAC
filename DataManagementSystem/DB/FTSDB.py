@@ -255,19 +255,15 @@ class FTSDB( DB ):
   def getFTSJobsForRequest( self, requestID, statusList = None ):
     """ get list of FTSJobs with status in :statusList: for request given its requestID """
     statusList = statusList if statusList  else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
-    query = [ "SELECT * FROM `FTSJob` WHERE `RequestID` = %s AND `Status` in (%s)" % ( requestID,
-                                                                                       stringListToString( statusList ) ) ]
-    ftsJobs = self._transaction( query )
+    query = "SELECT * FROM `FTSJob` WHERE `RequestID` = %s AND `Status` in (%s)" % ( requestID,
+                                                                                     stringListToString( statusList ) )
+    ftsJobs = self._transaction( [ query ] )
     if not ftsJobs["OK"]:
       self.log.error( "getFTSJobsForRequest: %s" % ftsJobs["Message"] )
       return ftsJobs
-    ftsJobs = ftsJobs["Value"]
 
-    ftsJobs = ftsJobs[query] if query in ftsJobs else []
-    
-    self.log.always( "CCCCCCCCCCCCCCCCCCCCCCCCCC %s" % ftsJobs )
+    ftsJobs = ftsJobs["Value"][query] if query in ftsJobs["Value"] else []
 
-    # [query] if query in ftsJobs["Value"] else []
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in ftsJobs  ] )
 
 
