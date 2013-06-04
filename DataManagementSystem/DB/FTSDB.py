@@ -264,7 +264,18 @@ class FTSDB( DB ):
 
     ftsJobs = ftsJobs["Value"][query] if query in ftsJobs["Value"] else []
 
-    return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in ftsJobs  ] )
+    ftsJobs = [ FTSJob( ftsJobDict ) for ftsJobDict in ftsJobs  ]
+    for ftsJob in ftsJobs:
+      query = "SELECT * FROM `FTSFile` WHERE `FTSGUID` = %s;" % ftsJob.FTSGUID
+      ftsFiles = self._transaction( [ query ] )
+      if not ftsFiles["OK"]:
+        self.log.error( "getFTSJobsForRequest: %s" % ftsFiles["Message"] )
+        return ftsFiles
+      ftsFiles = ftsFiles["Value"][query] if query in ftsFiles["Value"] else []
+      for ftsFileDict in ftsFiles:
+        ftsJob.addFile( FTSFile( ftsFileDict ) )
+
+    return S_OK( ftsJobs )
 
   def getFTSFilesForRequest( self, requestID, statusList = None ):
     """ get FTSFiles with status in :statusList: for request given its :requestID: """
