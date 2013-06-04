@@ -233,25 +233,25 @@ class FTSManagerHandler( RequestHandler ):
       replicaDict = self.replicaManager().getActiveReplicas( lfn )
       if not replicaDict["OK"]:
         gLogger.error( "ftsSchedule: %s" % replicaDict["Message"] )
-        ret["Failed"][lfn] = replicaDict["Message"]
+        ret["Failed"][fileID] = replicaDict["Message"]
         continue
       replicaDict = replicaDict["Value"]
 
       if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
-        ret["Failed"][lfn] = "no active replicas found"
+        ret["Failed"][fileID] = "no active replicas found"
         continue
       replicaDict = replicaDict["Successful"][lfn] if lfn in replicaDict["Successful"] else {}
       # # use valid replicas only
       replicaDict = dict( [ ( se, pfn ) for se, pfn in replicaDict.items() if se in sourceSEs ] )
 
       if not replicaDict:
-        ret["Failed"][lfn] = "no active replicas found in sources"
+        ret["Failed"][fileID] = "no active replicas found in sources"
         continue
 
       tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
       if not tree["OK"]:
         gLogger.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree["Message"] ) )
-        ret["Failed"][lfn] = tree["Message"]
+        ret["Failed"][fileID] = tree["Message"]
         continue
       tree = tree["Value"]
 
@@ -262,12 +262,12 @@ class FTSManagerHandler( RequestHandler ):
                                                                             repDict["SourceSE"], repDict["TargetSE"] ) )
         transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, replicaDict )
         if not transferSURLs["OK"]:
-          ret["Failed"][lfn] = transferSURLs["Message"]
+          ret["Failed"][fileID] = transferSURLs["Message"]
           continue
 
         sourceSURL, targetSURL, fileStatus = transferSURLs["Value"]
         if sourceSURL == targetSURL:
-          ret["Failed"][lfn] = "sourceSURL equals to targetSURL for %s" % lfn
+          ret["Failed"][fileID] = "sourceSURL equals to targetSURL for %s" % lfn
           continue
 
         gLogger.info( "sourceURL=%s targetURL=%s FTSFile.Status=%s" % ( sourceSURL, targetSURL, fileStatus ) )
@@ -295,7 +295,7 @@ class FTSManagerHandler( RequestHandler ):
     for fileJSON, sources, targets in fileJSONList:
       lfn = fileJSON.get( "LFN", "" )
       fileID = fileJSON.get( "FileID", 0 )
-      if lfn not in ret["Failed"]:
+      if fileID not in ret["Failed"]:
         ret["Successful"].append( int( fileID ) )
 
     # # if we land here some files have been properly scheduled
