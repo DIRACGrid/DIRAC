@@ -288,6 +288,7 @@ class RequestDB( DB ):
       return reqNamesList
     reqNamesList = reqNamesList["Value"]
     self.log.always( reqNamesList )
+
     return S_OK()
 
   def deleteRequest( self, requestName ):
