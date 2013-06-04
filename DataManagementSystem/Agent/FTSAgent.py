@@ -453,7 +453,6 @@ class FTSAgent( AgentModule ):
     log = self.log.getSubLogger( request.RequestName )
 
     operation = request.getWaiting()
-
     if not operation["OK"]:
       log.error( "unable to find 'Scheduled' ReplicateAndRegister operation in request" )
       return self.putRequest( request )
@@ -482,6 +481,8 @@ class FTSAgent( AgentModule ):
         continue
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
+    log.info( "entering phase 1..." )
+
     # # PHASE ONE - check ready replicas
     missingReplicas = self.checkReadyReplicas( operation )
     if not missingReplicas["OK"]:
@@ -493,11 +494,15 @@ class FTSAgent( AgentModule ):
           log.info( "%s is replicated at all targets" % opFile.LFN )
           opFile.Status = "Done"
 
+
     toFail = ftsFilesDict.get( "toFail", [] )
     toReschedule = ftsFilesDict.get( "toReschedule", [] )
     toSubmit = ftsFilesDict.get( "toSubmit", [] )
     toRegister = ftsFilesDict.get( "toRegister", [] )
     toUpdate = ftsFilesDict.get( "toUpdate", [] )
+
+    log.info( "entering phase 2..." )
+
 
     # # PHASE TWO = Failed files? -> make request Failed and return
     if toFail:
@@ -511,6 +516,9 @@ class FTSAgent( AgentModule ):
       if request.Status == "Failed":
         log.error( "request is failed" )
         return self.putRequest( request )
+
+    log.info( "entering phase 3..." )
+
 
     # # PHASE THREE - update Waiting#SourceSE FTSFiles
     if toUpdate:
@@ -526,6 +534,9 @@ class FTSAgent( AgentModule ):
           log.error( "update FTSFiles failed: %s" % update["Message"] )
           continue
 
+    log.info( "entering phase 4..." )
+
+
     # # PHASE FOUR - add 'RegisterReplica' Operations
     # # register
     if toRegister:
@@ -537,6 +548,9 @@ class FTSAgent( AgentModule ):
         log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
         return self.putRequest( request )
 
+    log.info( "entering phase 5..." )
+
+
     # # PHASE FIVE - reschedule operation files
     # # reschedule
     if toReschedule:
@@ -547,6 +561,9 @@ class FTSAgent( AgentModule ):
       if request.Status == "Waiting":
         log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
         return self.putRequest( request )
+
+    log.info( "entering phase 6..." )
+
 
     # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs
     ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting" ] )
@@ -565,6 +582,10 @@ class FTSAgent( AgentModule ):
       submit = self.submit( request, operation, toSubmit )
       if not submit["OK"]:
         log.error( submit["Message"] )
+
+
+    log.info( "entering phase 7... %s" % request.Status )
+
 
     # # status change? - put back request
     if request.Status != "Scheduled":
