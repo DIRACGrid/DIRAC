@@ -685,7 +685,7 @@ class FTSAgent( AgentModule ):
           log.error( "TargetSE %s is banned for writing right now" % target )
           continue
 
-        if route.toNode.ActiveJobs > route.toNode.MaxActiveJobs:
+        if route.ActiveJobs > route.toNode.MaxActiveJobs:
           log.warn( "unable to submit new FTS job, max active jobs reached" )
           continue
 
@@ -862,7 +862,6 @@ class FTSAgent( AgentModule ):
       request.insertBefore( registerOperation, operation )
 
     return S_OK()
-
 
   @staticmethod
   def sendAccounting( ftsJob, ownerDN ):
