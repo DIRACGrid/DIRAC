@@ -266,7 +266,7 @@ class FTSDB( DB ):
 
     ftsJobs = [ FTSJob( ftsJobDict ) for ftsJobDict in ftsJobs  ]
     for ftsJob in ftsJobs:
-      query = "SELECT * FROM `FTSFile` WHERE `FTSGUID` = %s;" % ftsJob.FTSGUID
+      query = "SELECT * FROM `FTSFile` WHERE `FTSGUID` = '%s;'" % ftsJob.FTSGUID
       ftsFiles = self._transaction( [ query ] )
       if not ftsFiles["OK"]:
         self.log.error( "getFTSJobsForRequest: %s" % ftsFiles["Message"] )
