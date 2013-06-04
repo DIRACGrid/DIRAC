@@ -483,7 +483,7 @@ class FTSAgent( AgentModule ):
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
     for key, ftsFiles in ftsFilesDict.items():
-      log.info( "got %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lowercase() ) )
+      log.info( "got %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
 
     log.info( "entering phase 1..." )
 
