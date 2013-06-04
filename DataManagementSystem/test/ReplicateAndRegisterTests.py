@@ -48,7 +48,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.reqName = "fullChain"
 
     files = []
-    for i in range( 100 ):
+    for i in range( 5 ):
       fname = "/tmp/testPutAndRegister-%s" % i
       lfn = "/lhcb/user/c/cibak/" + fname.split( "/" )[-1]
       fh = open( fname, "w+" )
@@ -115,11 +115,9 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.reqClient = ReqClient()
 
-
   def tearDown( self ):
     """ tear down """
     pass
-
 
   def test( self ):
     """ test case """
