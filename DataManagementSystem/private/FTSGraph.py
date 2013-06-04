@@ -153,7 +153,7 @@ class FTSGraph( Graph ):
                   "MaxActiveJobs": ftsSite.MaxActiveJobs }
       site = Site( ftsSite.Name, rwAttrs, roAttrs )
 
-      self.log.always( "adding site %s using FTSServer %s" % ( ftsSite.Name, ftsSite.FTSServer ) )
+      self.log.debug( "adding site %s using FTSServer %s" % ( ftsSite.Name, ftsSite.FTSServer ) )
       self.addNode( site )
 
     for sourceSite in self.nodes():
