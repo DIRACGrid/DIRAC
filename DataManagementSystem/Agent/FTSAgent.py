@@ -476,6 +476,9 @@ class FTSAgent( AgentModule ):
     # # PHASE 0 = monitor active FTSJobs
     for ftsJob in ftsJobs:
       monitor = self.monitorJob( request, ftsJob )
+
+      log.alwasy( monitor )
+
       for ftsFile in ftsJob:
         log.info( "%s %s %s" % ( ftsFile.LFN, ftsFile.Status, ftsFile.Error ) )
 
@@ -483,6 +486,8 @@ class FTSAgent( AgentModule ):
         log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
         ftsJob.Status = "Submitted"
         continue
+
+
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
     for key, ftsFiles in ftsFilesDict.items():
