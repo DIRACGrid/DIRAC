@@ -449,7 +449,6 @@ class FTSAgent( AgentModule ):
     :param dict requestDict: { "request": ReqDB.Request, "jobs": [ FTSDB.FTSJob, FTSDB.FTSJob, ...] }
     """
     request = requestDict["request"]
-    ftsJobs = requestDict["jobs"]
 
     log = self.log.getSubLogger( request.RequestName )
 
@@ -465,11 +464,10 @@ class FTSAgent( AgentModule ):
     if operation.Status != "Scheduled":
       log.error( "operation in a wrong state, expecting 'Scheduled', got %s" % operation.Status )
 
-    if not ftsJobs:
-      ftsJobs = self.ftsClient().getFTSJobsForRequest( request.RequestID )
-      if not ftsJobs["OK"]:
-        log.error( ftsJobs["Message"] )
-        return ftsJobs
+    ftsJobs = self.ftsClient().getFTSJobsForRequest( request.RequestID )
+    if not ftsJobs["OK"]:
+      log.error( ftsJobs["Message"] )
+      return ftsJobs
     ftsJobs = ftsJobs["Value"]
 
     # # dict keeping info about files to reschedule, submit, fail and register
