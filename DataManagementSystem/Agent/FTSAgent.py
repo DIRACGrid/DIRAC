@@ -311,7 +311,7 @@ class FTSAgent( AgentModule ):
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
     log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
 
-    self.MAX_ACTIVE_JOBS = self.am_getOption( "MaxActiveJobsPerChannel", self.MAX_ACTIVE_JOBS )
+    self.MAX_ACTIVE_JOBS = self.am_getOption( "MaxActiveJobsPerRoute", self.MAX_ACTIVE_JOBS )
     log.info( "Max active FTSJobs/route       = %s" % self.MAX_ACTIVE_JOBS )
     self.MAX_FILES_PER_JOB = self.am_getOption( "MaxFilesPerJob", self.MAX_FILES_PER_JOB )
     log.info( "Max FTSFiles/FTSJob            = %d" % self.MAX_FILES_PER_JOB )
