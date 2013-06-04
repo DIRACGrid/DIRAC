@@ -230,6 +230,8 @@ class ReplicateAndRegister( OperationHandlerBase ):
         self.log.error( ftsSchedule["Message"] )
         return ftsSchedule
 
+      self.log.always( "AAAAAAAAAAAAAAAAAAAA %s" % ftsSchedule )
+
       ftsSchedule = ftsSchedule["Value"]
       for fileID in ftsSchedule["Successful"]:
         gMonitor.addMark( "FTSScheduleOK", 1 )

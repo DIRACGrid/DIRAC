@@ -456,7 +456,6 @@ class FTSDB( DB ):
       return deleteFiles
     return S_OK()
 
-
   def getDBSummary( self ):
     """ get DB summary """
     # # this will be returned
