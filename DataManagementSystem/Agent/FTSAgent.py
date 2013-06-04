@@ -171,49 +171,30 @@ class FTSAgent( AgentModule ):
       getRequest = getRequest["Value"]
       if not getRequest:
         return S_ERROR( "request of name '%s' not found in ReqDB" % reqName )
-      cls.__reqCache[reqName] = { "request": getRequest, "jobs": {} }
-
-    request = cls.__reqCache[reqName]["request"]
-    ftsJobs = cls.ftsClient().getFTSJobsForRequest( request.RequestID )
-    if ftsJobs["OK"]:
-      cls.__reqCache[reqName]["jobs"] = ftsJobs["Value"]
+      cls.__reqCache[reqName] = getRequest
 
     return S_OK( cls.__reqCache[reqName] )
 
   @classmethod
-  def putRequest( cls, requestName ):
+  def putRequest( cls, request ):
     """ put request back to ReqDB
 
-    :param str requestName: Request.RequestName value
+    :param Request request: Request instance
+
+    also finalize request if status == Done
     """
-    requestDict = cls.__reqCache.get( requestName, None )
-
-    if not requestDict:
-      return S_ERROR( "request '%s' not cached" % requestName )
-
-    request = requestDict.get( "request", None )
-
-    # # put FTSJobs
-    jobs = requestDict.get( "jobs", [] )
-    if jobs:
-      putJobs = cls.putFTSJobs( jobs )
-      if not putJobs["OK"]:
-        return putJobs
-
-    # # request done? - finalize if ftsJob
+    # # finalize first is possible
     if request.Status == "Done" and request.JobID:
       finalizeRequest = cls.requestClient().finalizeRequest( request.RequestName, request.JobID )
       if not finalizeRequest["OK"]:
         request.Status = "Scheduled"
-
-    # # put request
+    # # put back request
     put = cls.requestClient().putRequest( request )
     if not put["OK"]:
       return put
-
-    # # del cache entry
-    del cls.__reqCache[ requestName ]
-
+    # # del request from cache
+    if request.RequestName in cls.__reqCache:
+      del cls.__reqCache[ request.RequestName ]
     return S_OK()
 
   @classmethod
@@ -246,13 +227,6 @@ class FTSAgent( AgentModule ):
       self.__threadPool = ThreadPool( self.MIN_THREADS, self.MAX_THREADS )
       self.__threadPool.daemonize()
     return self.__threadPool
-
-  def updateGraph( self, ftsJob ):
-    """ add or remove job from FTS graph """
-
-    # # TODO: add some smart code here
-
-    pass
 
   def resetFTSGraph( self ):
     """ create fts graph """
@@ -383,6 +357,7 @@ class FTSAgent( AgentModule ):
       put = self.requestClient().putRequest( request )
       if not put["OK"]:
         log.error( "unable to put back request '%s': %s" % ( request.RequestName, put["Message"] ) )
+
     return S_OK()
 
   def execute( self ):
@@ -420,18 +395,21 @@ class FTSAgent( AgentModule ):
     if not requestNames:
       log.info( "no more 'Scheduled' requests to process" )
       return S_OK()
-    log.info( "found %s requests to process" % len( requestNames ) )
+
+    log.info( "found %s requests to process:" % len( requestNames ) )
+    log.info( " - %s from internal cache" % ( len( self.__reqCache ) ) )
+    log.info( " - %s new" % ( len( requestNames ) - len( self.__reqCache ) ) )
 
     for requestName in requestNames:
-      requestDict = self.getRequest( requestName )
-      if not requestDict["OK"]:
-        log.error( requestDict["Message"] )
+      request = self.getRequest( requestName )
+      if not request["OK"]:
+        log.error( request["Message"] )
         continue
-      requestDict = requestDict["Value"]
-      sTJId = requestDict["request"].RequestName
+      request = request["Value"]
+      sTJId = request.RequestName
       while True:
         queue = self.threadPool().generateJobAndQueueIt( self.processRequest,
-                                                         args = ( requestDict, ),
+                                                         args = ( request, ),
                                                          sTJId = sTJId )
         if queue["OK"]:
           log.info( "'%s' enqueued for execution" % sTJId )
@@ -443,12 +421,13 @@ class FTSAgent( AgentModule ):
     self.threadPool().processAllResults()
     return S_OK()
 
-  def processRequest( self, requestDict ):
+  def processRequest( self, request ):
     """ process one request
 
     :param dict requestDict: { "request": ReqDB.Request, "jobs": [ FTSDB.FTSJob, FTSDB.FTSJob, ...] }
     """
-    request = requestDict["request"]
+    # # empty job list
+    ftsJobs = []
 
     log = self.log.getSubLogger( request.RequestName )
 
@@ -462,7 +441,9 @@ class FTSAgent( AgentModule ):
       return self.putRequest( request )
     if operation.Status != "Scheduled":
       log.error( "operation in a wrong state, expecting 'Scheduled', got %s" % operation.Status )
+      return self.putRequest( request )
 
+    # # select  FTSJobs, by default all in TRANS_STATES and INIT_STATES
     ftsJobs = self.ftsClient().getFTSJobsForRequest( request.RequestID )
     if not ftsJobs["OK"]:
       log.error( ftsJobs["Message"] )
@@ -472,33 +453,21 @@ class FTSAgent( AgentModule ):
     # # dict keeping info about files to reschedule, submit, fail and register
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    log.info( "found %s FTSJobs to monitor" % len( ftsJobs ) )
-    # # PHASE 0 = monitor active FTSJobs
-    for ftsJob in ftsJobs:
+    if ftsJobs:
+      log.info( "found %s FTSJobs to monitor" % len( ftsJobs ) )
+      # # PHASE 0 = monitor active FTSJobs
+      for ftsJob in ftsJobs:
+        monitor = self.monitorJob( request, ftsJob )
+        if not monitor["OK"]:
+          log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
+          ftsJob.Status = "Submitted"
+          continue
+        ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
-      log.always( "files in job %s" % len( ftsJob ) )
-      for ftsFile in ftsJob:
-        log.info( "%s %s %s" % ( ftsFile.LFN, ftsFile.Status, ftsFile.Error ) )
-
-      monitor = self.monitorJob( request, ftsJob )
-
-      log.always( monitor )
-
-      for ftsFile in ftsJob:
-        log.info( "%s %s %s" % ( ftsFile.LFN, ftsFile.Status, ftsFile.Error ) )
-
-      if not monitor["OK"]:
-        log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
-        ftsJob.Status = "Submitted"
-        continue
-
-      ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
-
-    for key, ftsFiles in ftsFilesDict.items():
-      if ftsFiles:
-        log.info( "got %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
-
-    log.info( "entering phase 1..." )
+      log.info( "monitoring completed, found: " )
+      for key, ftsFiles in ftsFilesDict.items():
+        if ftsFiles:
+          log.debug( " - %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
 
     # # PHASE ONE - check ready replicas
     missingReplicas = self.checkReadyReplicas( request, operation )
@@ -517,9 +486,6 @@ class FTSAgent( AgentModule ):
     toRegister = ftsFilesDict.get( "toRegister", [] )
     toUpdate = ftsFilesDict.get( "toUpdate", [] )
 
-    log.info( "entering phase 2..." )
-
-
     # # PHASE TWO = Failed files? -> make request Failed and return
     if toFail:
       log.error( "found %s Failed FTSFiles, request execution cannot proceed..." % len( toFail ) )
@@ -528,13 +494,12 @@ class FTSAgent( AgentModule ):
           if opFile.FileID == ftsFile.FileID:
             opFile.Error = ftsFile.Error
             opFile.Status = "Failed"
+      operation.Error = "%s files are missing any replicas" % len( toFail )
       # # requets.Status should be Failed at this stage "Failed"
       if request.Status == "Failed":
-        log.error( "request is failed" )
+        request.Error = "ReplicateAndRegister %s failed" % operation.Order
+        log.error( "request is Failed" )
         return self.putRequest( request )
-
-    log.info( "entering phase 3..." )
-
 
     # # PHASE THREE - update Waiting#SourceSE FTSFiles
     if toUpdate:
@@ -550,36 +515,26 @@ class FTSAgent( AgentModule ):
           log.error( "update FTSFiles failed: %s" % update["Message"] )
           continue
 
-    log.info( "entering phase 4..." )
-
-
     # # PHASE FOUR - add 'RegisterReplica' Operations
-    # # register
     if toRegister:
-      log.info( "found %s FTSFiles waiting for registration, adding 'RegisterReplica' operations" )
+      log.info( "found %s Files waiting for registration, adding 'RegisterReplica' operations" )
       registerFiles = self.register( request, operation, toRegister )
       if not registerFiles["OK"]:
         log.error( "unable to create 'RegisterReplica' operations: %s" % registerFiles["Message"] )
+
       if request.Status == "Waiting":
         log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
         return self.putRequest( request )
 
-    log.info( "entering phase 5..." )
-
-
     # # PHASE FIVE - reschedule operation files
-    # # reschedule
     if toReschedule:
-      log.info( "found %s files to reschedule" % len( toReschedule ) )
+      log.info( "found %s Files to reschedule" % len( toReschedule ) )
       rescheduleFiles = self.reschedule( request, operation, toReschedule )
       if not rescheduleFiles["OK"]:
         log.error( rescheduleFiles["Message"] )
       if request.Status == "Waiting":
         log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
         return self.putRequest( request )
-
-    log.info( "entering phase 6..." )
-
 
     # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs
     ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting" ] )
@@ -594,14 +549,12 @@ class FTSAgent( AgentModule ):
 
     # # submit new ftsJobs
     if operation.Status == "Scheduled" and toSubmit:
-      log.info( "found %s files to submit" % len( toSubmit ) )
+      log.info( "found %s FTSFiles to submit" % len( toSubmit ) )
       submit = self.submit( request, operation, toSubmit )
       if not submit["OK"]:
         log.error( submit["Message"] )
-
-
-    log.info( "entering phase 7... %s" % request.Status )
-
+      else:
+        ftsJobs.append( submit["Value"] )
 
     # # status change? - put back request
     if request.Status != "Scheduled":
@@ -609,6 +562,13 @@ class FTSAgent( AgentModule ):
       if not put["OK"]:
         log.error( "unable to put back request: %s" % put["Message"] )
         return put
+
+    # #  put back jobs
+    if ftsJobs:
+      putJobs = self.putFTSJobs( ftsJobs )
+      if not putJobs["OK"]:
+        log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
+        return putJobs
 
     return S_OK()
 
@@ -685,6 +645,8 @@ class FTSAgent( AgentModule ):
 
     :param Request request: ReqDB.Request instance
     :param list ftsFiles: list of FTSFile instances
+
+    :return: [ FTSJob, FTSJob, ...]
     """
     log = self.log.getSubLogger( "%s/submit" % request.RequestName )
 
@@ -696,7 +658,7 @@ class FTSAgent( AgentModule ):
         bySourceAndTarget[ftsFile.SourceSE].setdefault( ftsFile.TargetSE, [] )
       bySourceAndTarget[ftsFile.SourceSE][ftsFile.TargetSE].append( ftsFile )
 
-    submittedJobs = 0
+    ftsJobs = []
 
     for source, targetDict in bySourceAndTarget.items():
 
@@ -741,30 +703,26 @@ class FTSAgent( AgentModule ):
         if not submit["OK"]:
           log.error( "unable to submit FTSJob: %s" % submit["Message"] )
           continue
+
         log.info( "FTSJob '%s'@'%s' has been submitted" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
-        # # update statuses for files
+        # # update statuses for job files
         for ftsFile in ftsJob:
           ftsFile.FTSGUID = ftsJob.FTSGUID
           ftsFile.Status = "Submitted"
           ftsFile.Attempt += 1
 
+        # # update graph route
         try:
           self.updateLock().acquire()
           route.ActiveJobs += 1
         finally:
           self.updateLock().release()
 
-        submittedJobs += 1
+        ftsJobs.append( ftsJob )
 
-        # # save FTSJob to FTSDB for further processing
-        put = self.ftsClient().putFTSJob( ftsJob )
-        if not put["OK"]:
-          log.error( put["Message"] )
-          continue
-
-    log.info( "%s new FTSJobs have been submitted" % submittedJobs )
-    return S_OK()
+    log.info( "%s new FTSJobs have been submitted" % len( ftsJobs ) )
+    return S_OK( ftsJobs )
 
   def monitorJob( self, request, ftsJob ):
     """ execute FTSJob.monitorFTS2 for a given :ftsJob:
