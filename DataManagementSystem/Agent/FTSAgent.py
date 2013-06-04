@@ -941,6 +941,10 @@ class FTSAgent( AgentModule ):
     replicas = replicas["Value"]
 
     for successfulLFN, reps in replicas["Successful"].items():
+      log.always( "targetSESet %s" % targetSESet )
+      log.always( "reps  %s" % reps )
+      log.always( "is subset %s" % targetSESet.issubset( reps ) )
+
       if targetSESet.issubset( set( reps ) ):
         log.info( "%s has been replicated to all targets" % successfulLFN )
         scheduledFiles[successfulLFN].Status = "Done"
