@@ -111,6 +111,8 @@ class FTSJob( Record ):
     return { "Fields" :
              { "FTSJobID" : "INTEGER NOT NULL AUTO_INCREMENT",
                "FTSGUID" :  "VARCHAR(64) NOT NULL",
+               "OperationID": "INTEGER NOT NULL",
+               "RequestID": "INTEGER NOT NULL",
                "SourceSE" : "VARCHAR(128) NOT NULL",
                "TargetSE" : "VARCHAR(128) NOT NULL",
                "FTSServer" : "VARCHAR(255) NOT NULL",
@@ -139,6 +141,29 @@ class FTSJob( Record ):
   def FTSJobID( self, value ):
     """ FTSJobID setter """
     self.__data__["FTSJobID"] = long( value ) if value else 0
+
+  @property
+  def RequestID( self ):
+    """ RequestID getter """
+    return self.__data__["RequestID"]
+
+  @RequestID.setter
+  def RequestID( self, value ):
+    """ RequestID setter """
+    value = long( value ) if value else 0
+    self.__data__["RequestID"] = value
+
+  @property
+  def OperationID( self ):
+    """ OperationID getter """
+    return self.__data__["OperationID"]
+
+  @OperationID.setter
+  def OperationID( self, value ):
+    """ OperationID setter """
+    value = long( value ) if value else 0
+    self.__data__["OperationID"] = value
+
 
   @property
   def FTSGUID( self ):

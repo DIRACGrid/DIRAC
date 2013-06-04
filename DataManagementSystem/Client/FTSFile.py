@@ -126,7 +126,7 @@ class FTSFile( Record ):
   @RequestID.setter
   def RequestID( self, value ):
     """ RequestID setter """
-    value = long( value ) if value else None
+    value = long( value ) if value else 0
     self.__data__["RequestID"] = value
 
   @property
@@ -137,7 +137,7 @@ class FTSFile( Record ):
   @OperationID.setter
   def OperationID( self, value ):
     """ OperationID setter """
-    value = long( value ) if value else None
+    value = long( value ) if value else 0
     self.__data__["OperationID"] = value
 
   @property
