@@ -472,6 +472,7 @@ class FTSAgent( AgentModule ):
     # # dict keeping info about files to reschedule, submit, fail and register
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
+    log.info( "found %s FTSJobs to monitor" % len( ftsJobs ) )
     # # PHASE 0 = monitor active FTSJobs
     for ftsJob in ftsJobs:
       monitor = self.monitorJob( request, ftsJob )
@@ -480,6 +481,9 @@ class FTSAgent( AgentModule ):
         ftsJob.Status = "Submitted"
         continue
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
+
+    for key, ftsFiles in ftsFilesDict.items():
+      log.info( "got %s FTSFiles to %s" % ( len( ftsFiles ), key[2:] ) )
 
     log.info( "entering phase 1..." )
 
