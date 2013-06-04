@@ -565,6 +565,7 @@ class FTSAgent( AgentModule ):
 
     # #  put back jobs
     if ftsJobs:
+      log.always( "AAAAAAAAAAAAAAAAA %s" % ftsJobs )
       putJobs = self.putFTSJobs( ftsJobs )
       if not putJobs["OK"]:
         log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
