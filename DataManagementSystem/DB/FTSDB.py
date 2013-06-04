@@ -266,6 +266,18 @@ class FTSDB( DB ):
 
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in ftsJobs  ] )
 
+  def getFTSFilesForRequest( self, requestID, statusList = None ):
+    """ get FTSFiles with status in :statusList: for request given its :requestID: """
+    requestID = int( requestID )
+    statusList = statusList if statusList else [ "Waiting" ]
+    query = "SELECT * FROM `FTSFile` WHERE `RequestID` = %s AND `Status` IN (%s);" % ( requestID,
+                                                                                       stringListToString( statusList ) )
+    ftsFiles = self._transaction( [ query ] )
+    if not ftsFiles["OK"]:
+      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles["Message"] )
+      return ftsFiles
+    ftsFiles = ftsFiles["Value"][query] if query in ftsFiles["Value"] else []
+    return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles ] )
 
   def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
     """ propagate states for descendants in replication tree

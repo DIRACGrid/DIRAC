@@ -611,6 +611,29 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
+
+  types_getFTSFilesForRequest = [ ( IntType, LongType ), ListType ]
+  @classmethod
+  def export_getFTSFilesForRequest( cls, requestID, statusList = None ):
+    """ get list of FTSFiles with statuses in :statusList: given :requestID: """
+    statusList = statusList if statusList else [ "Waiting" ]
+    try:
+      requestID = int( requestID )
+      ftsFiles = cls.__ftsDB.getFTSFilesForRequest( requestID, statusList )
+      if not ftsFiles["OK"]:
+        gLogger.error( "getFTSFilesForRequest: %s" % ftsFiles["Message"] )
+        return ftsFiles
+      ftsFilesList = []
+      for ftsFile in ftsFiles["Value"]:
+        ftsFileJSON = ftsFile.toJSON()
+        if not ftsFileJSON["OK"]:
+          gLogger.error( "getFTSFilesForRequest: %s" % ftsFileJSON["Message"] )
+          return ftsFileJSON
+        ftsFilesList.append( ftsFileJSON["Value"] )
+      return S_OK( ftsFilesList )
+    except Exception, error:
+      gLogger.exception( str( error ) )
+      return S_ERROR( str( error ) )
   types_getFTSHistory = []
   @classmethod
   def export_getFTSHistory( cls ):
