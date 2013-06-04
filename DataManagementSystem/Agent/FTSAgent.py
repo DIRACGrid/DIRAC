@@ -457,7 +457,7 @@ class FTSAgent( AgentModule ):
       log.info( "found %s FTSJobs to monitor" % len( ftsJobs ) )
       # # PHASE 0 = monitor active FTSJobs
       for ftsJob in ftsJobs:
-        monitor = self.monitorJob( request, ftsJob )
+        monitor = self.__monitorJob( request, ftsJob )
         if not monitor["OK"]:
           log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
           ftsJob.Status = "Submitted"
@@ -470,7 +470,7 @@ class FTSAgent( AgentModule ):
           log.debug( " - %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
 
     # # PHASE ONE - check ready replicas
-    missingReplicas = self.checkReadyReplicas( request, operation )
+    missingReplicas = self.__checkReadyReplicas( request, operation )
     if not missingReplicas["OK"]:
       log.error( missingReplicas["Message"] )
     else:
@@ -518,7 +518,7 @@ class FTSAgent( AgentModule ):
     # # PHASE FOUR - add 'RegisterReplica' Operations
     if toRegister:
       log.info( "found %s Files waiting for registration, adding 'RegisterReplica' operations" )
-      registerFiles = self.register( request, operation, toRegister )
+      registerFiles = self.__register( request, operation, toRegister )
       if not registerFiles["OK"]:
         log.error( "unable to create 'RegisterReplica' operations: %s" % registerFiles["Message"] )
 
@@ -529,7 +529,7 @@ class FTSAgent( AgentModule ):
     # # PHASE FIVE - reschedule operation files
     if toReschedule:
       log.info( "found %s Files to reschedule" % len( toReschedule ) )
-      rescheduleFiles = self.reschedule( request, operation, toReschedule )
+      rescheduleFiles = self.__reschedule( request, operation, toReschedule )
       if not rescheduleFiles["OK"]:
         log.error( rescheduleFiles["Message"] )
       if request.Status == "Waiting":
@@ -550,7 +550,7 @@ class FTSAgent( AgentModule ):
     # # submit new ftsJobs
     if operation.Status == "Scheduled" and toSubmit:
       log.info( "found %s FTSFiles to submit" % len( toSubmit ) )
-      submit = self.submit( request, operation, toSubmit )
+      submit = self.__submit( request, operation, toSubmit )
       if not submit["OK"]:
         log.error( submit["Message"] )
       else:
@@ -572,7 +572,7 @@ class FTSAgent( AgentModule ):
 
     return S_OK()
 
-  def reschedule( self, request, operation, toReschedule ):
+  def __reschedule( self, request, operation, toReschedule ):
     """ reschedule list of :toReschedule: files in request for operation :operation:
 
     :param Request request:
@@ -592,7 +592,7 @@ class FTSAgent( AgentModule ):
     # # filter files
     for opFile in operation.getWaitingFilesList():
 
-      replicas = self._filterReplicas( opFile )
+      replicas = self.__filterReplicas( opFile )
       if not replicas["OK"]:
         continue
       replicas = replicas["Value"]
@@ -640,7 +640,7 @@ class FTSAgent( AgentModule ):
     return S_OK()
 
 
-  def submit( self, request, operation, toSubmit ):
+  def __submit( self, request, operation, toSubmit ):
     """ create and submit new FTSJobs using list of FTSFiles
 
     :param Request request: ReqDB.Request instance
@@ -724,7 +724,7 @@ class FTSAgent( AgentModule ):
     log.info( "%s new FTSJobs have been submitted" % len( ftsJobs ) )
     return S_OK( ftsJobs )
 
-  def monitorJob( self, request, ftsJob ):
+  def __monitorJob( self, request, ftsJob ):
     """ execute FTSJob.monitorFTS2 for a given :ftsJob:
         if ftsJob is in a final state, finalize it
 
@@ -756,7 +756,7 @@ class FTSAgent( AgentModule ):
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
 
     if ftsJob.Status in FTSJob.FINALSTATES:
-      finalizeFTSJob = self.finalizeFTSJob( request, ftsJob )
+      finalizeFTSJob = self.__finalizeFTSJob( request, ftsJob )
       if not finalizeFTSJob["OK"]:
         log.error( finalizeFTSJob["Message"] )
         return finalizeFTSJob
@@ -764,7 +764,7 @@ class FTSAgent( AgentModule ):
 
     return S_OK( ftsFilesDict )
 
-  def finalizeFTSJob( self, request, ftsJob ):
+  def __finalizeFTSJob( self, request, ftsJob ):
     """ finalize FTSJob
 
     :param Request request: ReqDB.Request instance
@@ -782,31 +782,29 @@ class FTSAgent( AgentModule ):
       return monitor
 
     # # split FTSFiles to different categories
-    processFiles = self.filterFiles( ftsJob )
+    processFiles = self.__filterFiles( ftsJob )
     if not processFiles["OK"]:
       log.error( processFiles["Message"] )
       return processFiles
     ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, processFiles["Value"] )
 
     # # send accounting record for this job
-    self.sendAccounting( ftsJob, request.OwnerDN )
+    self.__sendAccounting( ftsJob, request.OwnerDN )
 
     # # update graph - remove this job from graph
     route = self.__ftsGraph.findRoute( ftsJob.SourceSE, ftsJob.TargetSE )
     if route["OK"]:
-      route = route["Value"]
-
       try:
         self.updateLock().acquire()
-        route.ActiveJobs -= 1
+        route["Value"].ActiveJobs -= 1
       finally:
         self.updateLock().release()
 
-    log.info( "...finalized" )
+    log.info( "FTSJob is finalized" )
 
     return S_OK( ftsFilesDict )
 
-  def filterFiles( self, ftsJob ):
+  def __filterFiles( self, ftsJob ):
     """ process ftsFiles from finished ftsJob
 
     :param FTSJob ftsJob: monitored FTSJob instance
@@ -842,7 +840,7 @@ class FTSAgent( AgentModule ):
                    "toReschedule": toReschedule,
                    "toFail": toFail } )
 
-  def register( self, request, operation, toRegister ):
+  def __register( self, request, operation, toRegister ):
     """ add RegisterReplica operation
 
     :param Request request: request instance
@@ -879,7 +877,7 @@ class FTSAgent( AgentModule ):
     return S_OK()
 
   @staticmethod
-  def sendAccounting( ftsJob, ownerDN ):
+  def __sendAccounting( ftsJob, ownerDN ):
     """ prepare and send DataOperation to AccouringDB """
 
     dataOp = DataOperation()
@@ -915,7 +913,7 @@ class FTSAgent( AgentModule ):
     dataOp.setValuesFromDict( accountingDict )
     dataOp.commit()
 
-  def checkReadyReplicas( self, request, operation ):
+  def __checkReadyReplicas( self, request, operation ):
     """ check ready replicas for transferOperation """
     log = self.log.getSubLogger( "%s/checkReadyReplicas" % request.RequestName )
 
@@ -957,7 +955,7 @@ class FTSAgent( AgentModule ):
 
     return S_OK( missingReplicas )
 
-  def _filterReplicas( self, opFile ):
+  def __filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
     log = self.log.getSubLogger( "filterReplicas" )
 
@@ -978,18 +976,7 @@ class FTSAgent( AgentModule ):
 
     for repSEName in replicas:
 
-      # # check read access
-      # seRead = self.rssSEStatus( repSEName, "ReadAccess" )
-      # if not seRead["OK"]:
-      #  log.error( seRead["Message"] )
-      #  ret["Banned"].append( repSEName )
-      #  continue
-      # if not seRead["Value"]:
-      #  log.error( "StorageElement '%s' is banned for reading" % ( repSEName ) )
-
       repSE = self.getSE( repSEName )
-
-
 
       pfn = repSE.getPfnForLfn( opFile.LFN )
       if not pfn["OK"]:
