@@ -274,6 +274,7 @@ class FTSDB( DB ):
       if not ftsFiles["OK"]:
         self.log.error( "getFTSJobsForRequest: %s" % ftsFiles["Message"] )
         return ftsFiles
+      self.log.always( ftsFiles )
       ftsFiles = ftsFiles["Value"][query] if query in ftsFiles["Value"] else []
       for ftsFileDict in ftsFiles:
         ftsJob.addFile( FTSFile( ftsFileDict ) )
