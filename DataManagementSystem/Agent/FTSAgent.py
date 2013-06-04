@@ -614,7 +614,9 @@ class FTSAgent( AgentModule ):
     # # do real schedule here
     if toSchedule:
 
-      ftsSchedule = self.ftsClient().ftsSchedule( request.RequestID, toSchedule )
+      ftsSchedule = self.ftsClient().ftsSchedule( request.RequestID,
+                                                  operation.OperationID,
+                                                  toSchedule )
       if not ftsSchedule["OK"]:
         self.log.error( ftsSchedule["Message"] )
         return ftsSchedule

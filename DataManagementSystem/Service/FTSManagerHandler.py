@@ -195,13 +195,13 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
-  types_ftsSchedule = [ ( IntType, LongType ), ListType, BooleanType ]
-  def export_ftsSchedule( self, requestID, fileJSONList ):
+  types_ftsSchedule = [ ( IntType, LongType ), ( IntType, LongType ), ListType ]
+  def export_ftsSchedule( self, requestID, operationID, fileJSONList ):
     """ call FTS scheduler
 
-    :param str LFN: lfn
-    :param list sourceSEs: source SEs
-    :param list targetSEs: target SEs
+    :param int requestID: ReqDB.Request.RequestID
+    :param int operationID: ReqDB.Operation.OperationID
+    :param list fileJSONList: [ (fileJSON, [sourceSE, ...], [ targetSE, ...] ) ]
     """
     # # this will be returned on success
     ret = { "Successful": [], "Failed": {} }
@@ -273,6 +273,7 @@ class FTSManagerHandler( RequestHandler ):
         for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
           setattr( ftsFile, key, fileJSON.get( key ) )
         ftsFile.RequestID = requestID
+        ftsFile.OperationID = operationID
         ftsFile.SourceSURL = sourceSURL
         ftsFile.TargetSURL = targetSURL
         ftsFile.SourceSE = repDict["SourceSE"]

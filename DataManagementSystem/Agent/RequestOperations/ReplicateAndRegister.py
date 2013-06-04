@@ -223,7 +223,9 @@ class ReplicateAndRegister( OperationHandlerBase ):
 
     if toSchedule:
 
-      ftsSchedule = self.ftsClient().ftsSchedule( toSchedule )
+      ftsSchedule = self.ftsClient().ftsSchedule( self.request.RequestID,
+                                                  self.operation.OperationID,
+                                                  toSchedule )
       if not ftsSchedule["OK"]:
         self.log.error( ftsSchedule["Message"] )
         return ftsSchedule
