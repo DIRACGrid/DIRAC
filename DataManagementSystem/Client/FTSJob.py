@@ -164,7 +164,6 @@ class FTSJob( Record ):
     value = long( value ) if value else 0
     self.__data__["OperationID"] = value
 
-
   @property
   def FTSGUID( self ):
     """ FTSGUID prop """
@@ -439,8 +438,10 @@ class FTSJob( Record ):
     surlFile.write( surls )
     surlFile.close()
     submitCommand = [ "glite-transfer-submit",
-                     "-s %s" % self.FTSServer,
-                     "-f %s" % fileName,
+                     "-s",
+                     self.FTSServer,
+                     "-f",
+                     fileName,
                      "-o",
                      "--compare-checksums" ]
     if self.TargetToken:
@@ -466,9 +467,11 @@ class FTSJob( Record ):
     """ monitor fts job """
     if not self.FTSGUID:
       return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
+
     monitorCommand = [ "glite-transfer-status",
                        "--verbose",
-                       "-s %s" % self.FTSServer,
+                       "-s",
+                       self.FTSServer,
                        self.FTSGUID ]
 
     if full:
