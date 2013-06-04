@@ -254,6 +254,7 @@ class FTSDB( DB ):
 
   def getFTSJobsForRequest( self, requestID, statusList = None ):
     """ get list of FTSJobs with status in :statusList: for request given its requestID """
+
     statusList = statusList if statusList  else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
     query = "SELECT * FROM `FTSJob` WHERE `RequestID` = %s AND `Status` in (%s)" % ( requestID,
                                                                                      stringListToString( statusList ) )
@@ -265,6 +266,7 @@ class FTSDB( DB ):
     ftsJobs = ftsJobs["Value"][query] if query in ftsJobs["Value"] else []
 
     ftsJobs = [ FTSJob( ftsJobDict ) for ftsJobDict in ftsJobs  ]
+
     for ftsJob in ftsJobs:
       query = "SELECT * FROM `FTSFile` WHERE `FTSGUID` = '%s;' AND `RequestID`=%s" % ( ftsJob.FTSGUID,
                                                                                        requestID )
@@ -275,7 +277,7 @@ class FTSDB( DB ):
       ftsFiles = ftsFiles["Value"][query] if query in ftsFiles["Value"] else []
       for ftsFileDict in ftsFiles:
         ftsJob.addFile( FTSFile( ftsFileDict ) )
-
+      self.log.always( "FTSJob %s with %s files" % ( ftsJob.FTSJobID, len( ftsFiles ) ) )
     return S_OK( ftsJobs )
 
   def getFTSFilesForRequest( self, requestID, statusList = None ):
