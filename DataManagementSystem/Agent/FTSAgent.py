@@ -123,7 +123,7 @@ class FTSAgent( AgentModule ):
   def updateLock( self ):
     """ update lock """
     if not self.__updateLock:
-      self.__updateLock = LockRing().getLock( "SubmitFTSAgentLock" )
+      self.__updateLock = LockRing().getLock( "FTSAgentLock" )
     return self.__updateLock
 
   @classmethod
@@ -743,6 +743,18 @@ class FTSAgent( AgentModule ):
           continue
         log.info( "FTSJob '%s'@'%s' has been submitted" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
+        # # update statuses for files
+        for ftsFile in ftsJob:
+          ftsFile.FTSGUID = ftsJob.FTSGUID
+          ftsFile.Status = "Submitted"
+          ftsFile.Attempt += 1
+
+        try:
+          self.updateLock().acquire()
+          route.ActiveJobs += 1
+        finally:
+          self.updateLock().release()
+
         submittedJobs += 1
 
         # # save FTSJob to FTSDB for further processing
@@ -822,7 +834,15 @@ class FTSAgent( AgentModule ):
     self.sendAccounting( ftsJob, request.OwnerDN )
 
     # # update graph - remove this job from graph
-    self.updateGraph( ftsJob )
+    route = self.__ftsGraph.findRoute( ftsJob.SourceSE, ftsJob.TargetSE )
+    if route["OK"]:
+      route = route["Value"]
+
+      try:
+        self.updateLock().acquire()
+        route.ActiveJobs -= 1
+      finally:
+        self.updateLock().release()
 
     log.info( "...finalized" )
 
