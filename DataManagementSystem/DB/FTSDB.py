@@ -261,7 +261,13 @@ class FTSDB( DB ):
     if not ftsJobs["OK"]:
       self.log.error( "getFTSJobsForRequest: %s" % ftsJobs["Message"] )
       return ftsJobs
-    ftsJobs = ftsJobs["Value"][query] if query in ftsJobs["Value"] else []
+    ftsJobs = ftsJobs["Value"]
+
+    self.log.always( "CCCCCCCCCCCCCCCCCCCCCCCCCC %s" % ftsJobs )
+
+    ftsJobs = []
+
+    # [query] if query in ftsJobs["Value"] else []
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in ftsJobs  ] )
 
 
