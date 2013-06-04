@@ -477,7 +477,7 @@ class FTSAgent( AgentModule ):
     for ftsJob in ftsJobs:
       monitor = self.monitorJob( request, ftsJob )
 
-      log.alwasy( monitor )
+      log.always( monitor )
 
       for ftsFile in ftsJob:
         log.info( "%s %s %s" % ( ftsFile.LFN, ftsFile.Status, ftsFile.Error ) )
