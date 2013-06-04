@@ -483,7 +483,8 @@ class FTSAgent( AgentModule ):
       ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
     for key, ftsFiles in ftsFilesDict.items():
-      log.info( "got %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
+      if ftsFiles:
+        log.info( "got %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
 
     log.info( "entering phase 1..." )
 
@@ -497,7 +498,6 @@ class FTSAgent( AgentModule ):
         if opFile.LFN not in missingReplicas:
           log.info( "%s is replicated at all targets" % opFile.LFN )
           opFile.Status = "Done"
-
 
     toFail = ftsFilesDict.get( "toFail", [] )
     toReschedule = ftsFilesDict.get( "toReschedule", [] )
