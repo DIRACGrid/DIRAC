@@ -484,7 +484,7 @@ class FTSAgent( AgentModule ):
     log.info( "entering phase 1..." )
 
     # # PHASE ONE - check ready replicas
-    missingReplicas = self.checkReadyReplicas( operation )
+    missingReplicas = self.checkReadyReplicas( request, operation )
     if not missingReplicas["OK"]:
       log.error( missingReplicas["Message"] )
     else:
