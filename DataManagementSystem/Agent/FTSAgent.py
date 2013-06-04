@@ -413,7 +413,9 @@ class FTSAgent( AgentModule ):
       return requestNames
     requestNames = requestNames["Value"]
 
-    requestNames = list( set ( requestNames + self.__reqCache.keys() ) )
+    log.info( type( requestNames ) )
+
+    requestNames = self.__reqCache.keys()  # list( set ( requestNames + self.__reqCache.keys() ) )
 
     if not requestNames:
       log.info( "no more 'Scheduled' requests to process" )
