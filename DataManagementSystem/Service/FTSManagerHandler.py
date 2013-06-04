@@ -96,7 +96,7 @@ class FTSManagerHandler( RequestHandler ):
 
     cls.ftsMode = cls.srv_getCSOption( "FTSMode", False )
 
-    gLogger.always( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
+    gLogger.info( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
 
     if cls.ftsMode:
       # # get FTSStrategy

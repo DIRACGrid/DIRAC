@@ -933,15 +933,12 @@ class FTSAgent( AgentModule ):
     replicas = replicas["Value"]
 
     for successfulLFN, reps in replicas["Successful"].items():
-      # log.always( "targetSESet %s" % targetSESet )
-      # log.always( "reps  %s" % reps.keys() )
-      # log.always( "is subset %s" % targetSESet.issubset( reps ) )
 
       if targetSESet.issubset( set( reps.keys() ) ):
         log.info( "%s has been replicated to all targets" % successfulLFN )
         scheduledFiles[successfulLFN].Status = "Done"
       else:
-        missingReplicas[successfulLFN] = list( set( reps ) - targetSESet )
+        missingReplicas[successfulLFN] = [ rep for rep in targetSESet if rep not in reps ]
         log.info( "%s is still missing at %s" % ( successfulLFN,
                                                   ",".join( missingReplicas[ successfulLFN ] ) ) )
 

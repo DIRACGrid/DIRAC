@@ -69,7 +69,7 @@ class FTSClient( Client ):
     return cls.__ftsValidator
 
   @classmethod
-  def ftsManager( cls, timeout = 240 ):
+  def ftsManager( cls, timeout = 300 ):
     """ get FTSManager instance """
     if not cls.__ftsManager:
       url = PathFinder.getServiceURL( "DataManagement/FTSManager" )
