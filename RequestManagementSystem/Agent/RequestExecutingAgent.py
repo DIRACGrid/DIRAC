@@ -126,13 +126,11 @@ class RequestExecutingAgent( AgentModule ):
       opTimeout = gConfig.getValue( "%s/%s/TimeOut" % ( opHandlersPath, opHandler ), 0 )
       if opTimeout:
         self.timeOuts[opHandler]["PerOperation"] = opTimeout
-      fileTimeout = gConfig.getValue( "%s/%s/TimeoutPerFile" % ( opHandlersPath, opHandler ), 0 )
+      fileTimeout = gConfig.getValue( "%s/%s/TimeOutPerFile" % ( opHandlersPath, opHandler ), 0 )
       if fileTimeout:
         self.timeOuts[opHandler]["PerFile"] = fileTimeout
 
       self.operationHandlers.append( opLocation )
-
-    self.log.always( self.timeOuts )
 
     self.log.info( "Operation handlers:" )
     for itemTuple in enumerate ( self.operationHandlers ):
@@ -300,7 +298,7 @@ class RequestExecutingAgent( AgentModule ):
         timeout += self.__operationTimeout
       else:
         perOp = self.timeOuts[op.Type].get( "PerOperation", self.__operationTimeout )
-        perFiles = self.timeOuts[op.Type].get( "PerFile", self.__fileTimeout ) * len(op)
+        perFiles = self.timeOuts[op.Type].get( "PerFile", self.__fileTimeout ) * len( op )
         timeout += perOp + perFiles
     self.log.info( "estimated timeOut for request %s is %s" % ( request.RequestName, timeout ) )
     return timeout
