@@ -476,6 +476,9 @@ class FTSAgent( AgentModule ):
     # # PHASE 0 = monitor active FTSJobs
     for ftsJob in ftsJobs:
       monitor = self.monitorJob( request, ftsJob )
+      for ftsFile in ftsJob:
+        log.info( "%s %s %s" % ( ftsFile.LFN, ftsFile.Status, ftsFile.Error ) )
+
       if not monitor["OK"]:
         log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
         ftsJob.Status = "Submitted"
