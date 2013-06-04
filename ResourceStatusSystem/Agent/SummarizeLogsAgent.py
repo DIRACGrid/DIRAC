@@ -80,12 +80,13 @@ class SummarizeLogsAgent( AgentModule ):
           self.log.error( sumResult[ 'Message' ] )
           continue
 
-      self.log.info( 'Deleting %sLog till ID %s' % ( element, lastID ) )
-      deleteResult = self.rsClient.deleteStatusElement( element, 'Log', 
+      if lastID is not None:
+        self.log.info( 'Deleting %sLog till ID %s' % ( element, lastID ) )
+        deleteResult = self.rsClient.deleteStatusElement( element, 'Log', 
                                                         meta = { 'older' : ( 'ID', lastID ) } )
-      if not deleteResult[ 'OK' ]:
-        self.log.error( deleteResult[ 'Message' ] )
-        continue
+        if not deleteResult[ 'OK' ]:
+          self.log.error( deleteResult[ 'Message' ] )
+          continue
 
     return S_OK()
 
