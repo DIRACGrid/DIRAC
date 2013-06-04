@@ -397,8 +397,8 @@ class FTSAgent( AgentModule ):
       return S_OK()
 
     log.info( "found %s requests to process:" % len( requestNames ) )
-    log.info( " - %s from internal cache" % ( len( self.__reqCache ) ) )
-    log.info( " - %s new" % ( len( requestNames ) - len( self.__reqCache ) ) )
+    log.info( " => from internal cache: %s" % ( len( self.__reqCache ) ) )
+    log.info( " =>   new read from RMS: %s" % ( len( requestNames ) - len( self.__reqCache ) ) )
 
     for requestName in requestNames:
       request = self.getRequest( requestName )
