@@ -454,12 +454,16 @@ class FTSAgent( AgentModule ):
     log = self.log.getSubLogger( request.RequestName )
 
     operation = request.getWaiting()
-    log.always( operation )
-    return S_OK()
 
-    if not operation or operation.Status != "Scheduled":
+    if not operation["OK"]:
       log.error( "unable to find 'Scheduled' ReplicateAndRegister operation in request" )
       return self.putRequest( request )
+    operation = operation["Value"]
+    if operation.Type != "ReplicateAndRegister":
+      log.error( "operation to be executed is not a ReplicateAndRegister but %s" % operation.Type )
+      return self.putRequest( request )
+    if operation.Status != "Scheduled":
+      log.error( "operation in a wrong state, expecting 'Scheduled', got %s" % operation.Status )
 
     if not ftsJobs:
       ftsJobs = self.ftsClient().getFTSJobsForRequest( request.RequestID )
