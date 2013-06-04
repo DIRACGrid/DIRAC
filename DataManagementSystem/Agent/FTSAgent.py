@@ -467,7 +467,7 @@ class FTSAgent( AgentModule ):
 
     # # PHASE 0 = monitor active FTSJobs
     for ftsJob in ftsJobs:
-      monitor = self.monitorJob( request, ftsJob )
+      monitor = self.monitor( request, ftsJob )
       if not monitor["OK"]:
         log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
         ftsJob.Status = "Submitted"
@@ -554,7 +554,7 @@ class FTSAgent( AgentModule ):
     # # submit new ftsJobs
     if operation.Status == "Scheduled" and toSubmit:
       log.info( "found %s files to submit" % len( toSubmit ) )
-      submit = self.submitJobs( request, operation, toSubmit )
+      submit = self.submit( request, operation, toSubmit )
       if not submit["OK"]:
         log.error( submit["Message"] )
 
@@ -633,7 +633,7 @@ class FTSAgent( AgentModule ):
     return S_OK()
 
 
-  def submitJobs( self, request, operation, toSubmit ):
+  def submit( self, request, operation, toSubmit ):
     """ create and submit new FTSJobs using list of FTSFiles
 
     :param Request request: ReqDB.Request instance
@@ -707,7 +707,7 @@ class FTSAgent( AgentModule ):
     log.info( "%s new FTSJobs have been submitted" % submittedJobs )
     return S_OK()
 
-  def monitorJob( self, request, ftsJob ):
+  def monitor( self, request, ftsJob ):
     """ execute FTSJob.monitorFTS2 for a given :ftsJob:
         if ftsJob is in a final state, finalize it
 
