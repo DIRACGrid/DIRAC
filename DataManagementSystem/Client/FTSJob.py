@@ -551,12 +551,15 @@ class FTSJob( Record ):
       if not register["OK"]:
         for ftsFile in toRegister:
           ftsFile.Error = "AddCatalogReplicaFailed"
+          print ftsFile.Error
         return register
       register = register["Value"]
       failedFiles = register["Failed"] if "Failed" in register else {}
       for ftsFile in toRegister:
         if ftsFile.LFN in failedFiles:
           ftsFile.Error = "AddCatalogReplicaFailed"
+          print ftsFile.Error
+
     return S_OK()
 
   def toSQL( self ):
