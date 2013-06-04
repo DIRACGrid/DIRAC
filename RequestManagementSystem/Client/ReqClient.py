@@ -56,9 +56,9 @@ class ReqClient( Client ):
     """ get request proxies dict """
     if not self.__requestProxiesDict:
       self.__requestProxiesDict = {}
-      proxiesURLs = fromChar( PathFinder.getServiceURL( "RequestManagement/RequestProxyURLs" ) )
+      proxiesURLs = fromChar( PathFinder.getServiceURL( "RequestManagement/ReqProxyURLs" ) )
       if not proxiesURLs:
-        self.log.warn( "CS option RequestManagement/RequestProxyURLs is not set!" )
+        self.log.warn( "CS option RequestManagement/ReqProxyURLs is not set!" )
       for proxyURL in randomize( proxiesURLs ):
         self.log.debug( "creating RequestProxy for url = %s" % proxyURL )
         self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout = timeout )
@@ -94,7 +94,7 @@ class ReqClient( Client ):
     proxies = self.requestProxies()
     for proxyURL, proxyClient in proxies.items():
       self.log.debug( "putRequest: trying RequestProxy at %s" % proxyURL )
-      setRequestProxy = proxyClient.setRequest( requestJSON )
+      setRequestProxy = proxyClient.putRequest( requestJSON )
       if setRequestProxy["OK"]:
         if setRequestProxy["Value"]["set"]:
           self.log.info( "putRequest: request '%s' successfully set using RequestProxy %s" % ( request.RequestName,

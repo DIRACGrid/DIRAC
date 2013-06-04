@@ -26,7 +26,7 @@ __RCSID__ = "$Id$"
 
 # # imports
 import os
-from types import StringTypes
+from types import DictType
 try:
   from hashlib import md5
 except ImportError:
@@ -148,7 +148,7 @@ class ReqProxyHandler( RequestHandler ):
       return S_ERROR( err )
     return S_OK( cachedRequests )
 
-  types_putRequest = [ StringTypes ]
+  types_putRequest = [ DictType ]
   def export_putRequest( self, requestJSON ):
     """ forward request from local RequestDB to central RequestManager
 
