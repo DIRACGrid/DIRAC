@@ -279,12 +279,12 @@ class FTSAgent( AgentModule ):
     finally:
       self.updateLock().release()
 
-    log.info( "FTSSites:" )
+    log.info( "FTSSites: %s" % len( self.__ftsGraph.nodes() ) )
     for i, site in enumerate( self.__ftsGraph.nodes() ):
-      log.info( " [%02d] FTSSite: %-25s FTSServer: %s" % ( i, site.name, site.FTSServer ) )
-    log.info( "FTSRoutes:" )
+      log.debug( " [%02d] FTSSite: %-25s FTSServer: %s" % ( i, site.name, site.FTSServer ) )
+    log.info( "FTSRoutes: %s" % len( self.__ftsGraph.edges() ) )
     for i, route in enumerate( self.__ftsGraph.edges() ):
-      log.info( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
+      log.debug( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
                                                                              route.routeName,
                                                                              route.ActiveJobs,
                                                                              route.toNode.MaxActiveJobs ) )
