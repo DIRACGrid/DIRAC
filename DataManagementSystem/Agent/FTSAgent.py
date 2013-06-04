@@ -808,6 +808,8 @@ class FTSAgent( AgentModule ):
     # # update graph - remove this job from graph
     self.updateGraph( ftsJob )
 
+    log.info( "...finalized" )
+
     return S_OK( ftsFilesDict )
 
   def filterFiles( self, ftsJob ):
@@ -919,14 +921,16 @@ class FTSAgent( AgentModule ):
     dataOp.setValuesFromDict( accountingDict )
     dataOp.commit()
 
-  def checkReadyReplicas( self, transferOperation ):
+  def checkReadyReplicas( self, request, operation ):
     """ check ready replicas for transferOperation """
-    targetSESet = set( transferOperation.targetSEList )
+    log = self.log.getSubLogger( "%s/checkReadyReplicas" % request.RequestName )
+
+    targetSESet = set( operation.targetSEList )
 
     # # { LFN: [ targetSE, ... ] }
     missingReplicas = {}
 
-    scheduledFiles = dict( [ ( opFile.LFN, opFile ) for opFile in transferOperation
+    scheduledFiles = dict( [ ( opFile.LFN, opFile ) for opFile in operation
                               if opFile.Status in ( "Scheduled", "Waiting" ) ] )
     # # get replicas
     replicas = self.replicaManager().getCatalogReplicas( scheduledFiles.keys() )
@@ -938,14 +942,18 @@ class FTSAgent( AgentModule ):
 
     for successfulLFN, reps in replicas["Successful"].items():
       if targetSESet.issubset( set( reps ) ):
+        log.info( "%s has been replicated to all targets" % successfulLFN )
         scheduledFiles[successfulLFN].Status = "Done"
       else:
         missingReplicas[successfulLFN] = list( set( reps ) - targetSESet )
+        log.info( "%s is still missing at %s" % ",".join( missingReplicas[ successfulLFN ] ) )
 
     reMissing = re.compile( "no such file or directory" )
     for failedLFN, errStr in replicas["Failed"]:
+      log.warn( "unable to read replicas for %s: %s" % ( failedLFN, errStr ) )
       scheduledFiles[failedLFN].Error = errStr
       if reMissing.search( errStr.lower() ):
+        log.error( "%s is missing, setting its status to 'Failed'" % failedLFN )
         scheduledFiles[failedLFN].Status = "Failed"
 
     return S_OK( missingReplicas )
