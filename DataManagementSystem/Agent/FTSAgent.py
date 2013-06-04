@@ -317,7 +317,7 @@ class FTSAgent( AgentModule ):
     log.info( "Max FTSFiles/FTSJob            = %d" % self.MAX_FILES_PER_JOB )
 
     self.MAX_ATTEMPT = self.am_getOption( "MaxTransferAttempts", self.MAX_ATTEMPT )
-    self.log.info( "Max transfer attempts  = %s" % self.MAX_ATTEMPT )
+    log.info( "Max transfer attempts          = %s" % self.MAX_ATTEMPT )
 
     # # thread pool
     self.MIN_THREADS = self.am_getOption( "MinThreads", self.MIN_THREADS )
