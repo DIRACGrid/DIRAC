@@ -675,12 +675,12 @@ class FTSAgent( AgentModule ):
           continue
         route = route["Value"]
 
-        sourceRead = route.fromNode["SEs"][source]["read"]
+        sourceRead = route.fromNode.SEs[source]["read"]
         if not sourceRead:
           log.error( "SourceSE %s is banned for reading right now" % source )
           continue
 
-        targetWrite = route.toNode["SEs"][target]["write"]
+        targetWrite = route.toNode.SEs[target]["write"]
         if not targetWrite:
           log.error( "TargetSE %s is banned for writing right now" % target )
           continue
