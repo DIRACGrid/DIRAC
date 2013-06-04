@@ -448,8 +448,8 @@ class FTSDB( DB ):
 
   def cleanUpFTSFiles( self, requestID, fileIDs ):
     """ delete FTSFiles for given :requestID: and list of :fileIDs:"""
-    query = "DELETE * FROM `FTSFile` WHERE `RequestID`= %s and `FileID` IN (%s)" % ( requestID,
-                                                                                     intListToString( fileIDs ) )
+    query = "DELETE FROM `FTSFile` WHERE `RequestID`= %s and `FileID` IN (%s)" % ( requestID,
+                                                                                   intListToString( fileIDs ) )
     deleteFiles = self._transaction( [query] )
     if not deleteFiles["OK"]:
       self.log.error( "cleanUpFTSFiles: %s" % deleteFiles["Message"] )
