@@ -171,7 +171,7 @@ class FTSGraph( Graph ):
                     "SchedulingType": self.schedulingType }
 
         route = Route( sourceSite, destSite, rwAttrs, roAttrs )
-        self.log.always( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
+        self.log.debug( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
         self.addEdge( route )
 
     for ftsHistory in ftsHistoryViews:
