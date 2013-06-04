@@ -1,15 +1,15 @@
 ########################################################################
 # $HeadURL$
-# File: RequestProxyHandler.py
+# File: ReqProxyHandler.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2012/07/20 13:18:41
+# Date: 2013/06/04 13:18:41
 ########################################################################
 
 """ :mod: RequestProxyHandler
     =========================
 
-    .. module: RequestProxyHandler
-    :synopsis: RequestProxy service
+    .. module: ReqtProxyHandler
+    :synopsis: ReqProxy service
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     Careful with that axe, Eugene! Some 'transfer' requests are using local fs
@@ -38,19 +38,19 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
-def initializeRequestProxyHandler( serviceInfo ):
+def initializeReqProxyHandler( serviceInfo ):
   """ init RequestProxy handler
 
   :param serviceInfo: whatever
   """
-  gLogger.info( "Initalizing RequestProxyHandler" )
-  gThreadScheduler.addPeriodicTask( 120, RequestProxyHandler.sweeper )
+  gLogger.info( "Initalizing ReqProxyHandler" )
+  gThreadScheduler.addPeriodicTask( 120, ReqProxyHandler.sweeper )
   return S_OK()
 
 ########################################################################
-class RequestProxyHandler( RequestHandler ):
+class ReqProxyHandler( RequestHandler ):
   """
-  .. class:: RequestProxyHandler
+  .. class:: ReqProxyHandler
 
   :param RPCCLient requestManager: a RPCClient to RequestManager
   :param str cacheDir: os.path.join( workDir, "requestCache" )
@@ -59,7 +59,7 @@ class RequestProxyHandler( RequestHandler ):
   __cacheDir = None
 
   def initialize( self ):
-    """ service initialisation
+    """ service initialization
 
     :param self: self reference
     """
@@ -70,7 +70,7 @@ class RequestProxyHandler( RequestHandler ):
   def requestManager( cls ):
     """ get request manager """
     if not cls.__requestManager:
-      cls.__requestManager = RPCClient( "RequestManagement/RequestManager" )
+      cls.__requestManager = RPCClient( "RequestManagement/ReqManager" )
     return cls.__requestManager
 
   @classmethod
@@ -105,34 +105,31 @@ class RequestProxyHandler( RequestHandler ):
         # # break if something went wrong last time
         try:
           requestString = "".join( open( cachedFile, "r" ).readlines() )
-          cachedRequest = Request.fromXML( requestString )
-          if not cachedRequest["OK"]:
-            gLogger.error( "sweeper: unable to deserialise request: %s" % cachedRequest["Message"] )
-            continue
-          cachedName = cachedRequest["Value"].RequestName if cachedRequest["Value"] else ""
-          setRequest = cls.requestManager().setRequest( requestString )
+          cachedRequest = eval( requestString )
+          cachedName = cachedRequest.get( "RequestName", "***UNKNOWN***" )
+          setRequest = cls.requestManager().putRequest( cachedRequest )
           if not setRequest["OK"]:
-            gLogger.error( "sweeper: unable to set request %s @ RequestManager: %s" % ( cachedName,
-                                                                                       setRequest["Message"] ) )
+            gLogger.error( "sweeper: unable to set request %s @ ReqManager: %s" % ( cachedName,
+                                                                                    setRequest["Message"] ) )
             continue
-          gLogger.info( "sweeper: successfully set request '%s' @ RequestManager" % cachedName )
+          gLogger.info( "sweeper: successfully set request '%s' @ ReqManager" % cachedName )
           os.unlink( cachedFile )
         except Exception, error:
           gLogger.exception( "sweeper: hit by exception %s" % str( error ) )
           return S_ERROR( "sweeper: hit by exception: %s" % str( error ) )
       return S_OK()
 
-  def __saveRequest( self, requestName, requestString ):
+  def __saveRequest( self, requestName, requestJSON ):
     """ save request string to the working dir cache
 
     :param self: self reference
     :param str requestName: request name
-    :param str requestString: xml-serialised request
+    :param str requestJSON:  request serialized to JSON format
     """
     try:
-      requestFile = os.path.join( self.cacheDir(), md5( requestString ).hexdigest() )
+      requestFile = os.path.join( self.cacheDir(), md5( str( requestJSON ) ).hexdigest() )
       request = open( requestFile, "w+" )
-      request.write( requestString )
+      request.write( str( requestJSON ) )
       request.close()
       return S_OK( requestFile )
     except OSError, error:
@@ -151,52 +148,47 @@ class RequestProxyHandler( RequestHandler ):
       return S_ERROR( err )
     return S_OK( cachedRequests )
 
-  types_setRequest = [ StringTypes ]
-  def export_setRequest( self, requestString ):
+  types_putRequest = [ StringTypes ]
+  def export_putRequest( self, requestJSON ):
     """ forward request from local RequestDB to central RequestManager
 
     :param self: self reference
     :param str requestType: request type
     """
+    requestName = requestJSON.get( "RequestName", "***UNKNOWN***" )
+    gLogger.info( "setRequest: got request '%s'" % requestName )
 
-    request = Request.fromXML( requestString )
-    if not request["OK"]:
-      gLogger.error( "setRequest: error de-serializing request: %s" % request["Message"] )
-      return request
-    request = request["Value"]
-    requestName = request.RequestName
-    gLogger.info( "setRequest: got request '%s'" % request.RequestName )
-
-    forwardable = self.__forwardable( request )
+    forwardable = self.__forwardable( requestJSON )
     if not forwardable["OK"]:
-      gLogger.error( "setRequest: unable to forward: %s" % ( forwardable["Message"] ) )
-      return forwardable
+      gLogger.warn( "setRequest: %s" % forwardable["Message"] )
 
-    setRequest = self.requestManager().setRequest( requestString )
+
+    setRequest = self.requestManager().putRequest( requestJSON )
     if not setRequest["OK"]:
       gLogger.error( "setReqeuest: unable to set request '%s' @ RequestManager: %s" % ( requestName,
-                                                                                       setRequest["Message"] ) )
+                                                                                        setRequest["Message"] ) )
       # # put request to the request file cache
-      save = self.__saveRequest( requestName, requestString )
+      save = self.__saveRequest( requestName, requestJSON )
       if not save["OK"]:
         gLogger.error( "setRequest: unable to save request to the cache: %s" % save["Message"] )
         return save
       gLogger.info( "setRequest: %s is saved to %s file" % ( requestName, save["Value"] ) )
       return S_OK( { "set" : False, "saved" : True } )
 
-    gLogger.info( "setRequest: request '%s' has been set to the RequestManager" % ( requestName ) )
+    gLogger.info( "setRequest: request '%s' has been set to the ReqManager" % ( requestName ) )
     return S_OK( { "set" : True, "saved" : False } )
 
   @staticmethod
-  def __forwardable( request ):
+  def __forwardable( requestJSON ):
     """ check if request if forwardable
 
     The sub-request of type transfer:putAndRegister, removal:physicalRemoval and removal:reTransfer are
     definitely not, they should be executed locally, as they are using local fs.
 
-    :param str requestString: XML-serialised request
+    :param str requestJSON: serialized request
     """
-    for operation in request:
-      if operation.Type in ( "PutAndRegister", "PhysicalRemoval", "ReTransfer" ):
-        return S_ERROR( "found operation '%s' that cannot be forwarded" % operation.Type )
+    operations = requestJSON.get( "Operations", [] )
+    for operationDict in operations:
+      if operationDict.get( "Type", "" ) in ( "PutAndRegister", "PhysicalRemoval", "ReTransfer" ):
+        return S_ERROR( "found operation '%s' that cannot be forwarded" % operationDict.get( "Type", "" ) )
     return S_OK()
