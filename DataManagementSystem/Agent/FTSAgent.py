@@ -946,7 +946,8 @@ class FTSAgent( AgentModule ):
         scheduledFiles[successfulLFN].Status = "Done"
       else:
         missingReplicas[successfulLFN] = list( set( reps ) - targetSESet )
-        log.info( "%s is still missing at %s" % ",".join( missingReplicas[ successfulLFN ] ) )
+        log.info( "%s is still missing at %s" % ( successfulLFN,
+                                                  ",".join( missingReplicas[ successfulLFN ] ) ) )
 
     reMissing = re.compile( "no such file or directory" )
     for failedLFN, errStr in replicas["Failed"]:
