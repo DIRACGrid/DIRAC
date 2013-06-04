@@ -206,6 +206,9 @@ class FTSManagerHandler( RequestHandler ):
     # # this will be returned on success
     ret = { "Successful": [], "Failed": {} }
 
+    requestID = int( requestID )
+    operationID = int( operationID )
+
     fileIDs = []
     for fileJSON, sourceSEs, targetSEs in fileJSONList:
       fileID = int( fileJSON.get( "FileID" ) )
