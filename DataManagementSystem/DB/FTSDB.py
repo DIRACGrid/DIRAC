@@ -263,9 +263,9 @@ class FTSDB( DB ):
       return ftsJobs
     ftsJobs = ftsJobs["Value"]
 
+    ftsJobs = ftsJobs[query] if query in ftsJobs else []
+    
     self.log.always( "CCCCCCCCCCCCCCCCCCCCCCCCCC %s" % ftsJobs )
-
-    ftsJobs = []
 
     # [query] if query in ftsJobs["Value"] else []
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in ftsJobs  ] )
