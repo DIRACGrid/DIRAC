@@ -71,7 +71,7 @@ class FTSValidator( object ):
     :param mixed obj: FTSJob, FTSFile or FTSSite instance
     """
     for objtype in cls.__reqAttrs:
-      if isinstance( obj, objtype ) or issubclass( objtype, obj ):
+      if isinstance( obj, objtype ):
         return S_OK()
     return S_ERROR( "Not supported object type %s" % type( obj ) )
 
