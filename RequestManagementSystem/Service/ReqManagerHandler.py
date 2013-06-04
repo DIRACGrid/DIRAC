@@ -188,7 +188,7 @@ class ReqManagerHandler( RequestHandler ):
       gLogger.exception( errStr, lException = error )
       return S_ERROR( errStr )
 
-  types_getRequestNameList = [ ListType, IntType ]
+  types_getRequestNamesList = [ ListType, IntType ]
   @classmethod
   def export_getRequestNamesList( cls, statusList = None, limit = None ):
     """ get requests' names with status in :statusList: """
