@@ -296,7 +296,7 @@ class FTSManagerHandler( RequestHandler ):
       lfn = fileJSON.get( "LFN", "" )
       fileID = fileJSON.get( "FileID", 0 )
       if lfn not in ret["Failed"]:
-        ret["Successful"].append( fileID )
+        ret["Successful"].append( int( fileID ) )
 
     # # if we land here some files have been properly scheduled
     return S_OK( ret )
