@@ -287,9 +287,8 @@ class RequestDB( DB ):
       self.log.error( "getRequestNamesList: %s" % reqNamesList["Message"] )
       return reqNamesList
     reqNamesList = reqNamesList["Value"]
-    self.log.always( reqNamesList )
 
-    return S_OK()
+    return S_OK( [ reqName for reqName in reqNamesList] )
 
   def deleteRequest( self, requestName ):
     """ delete request given its name
