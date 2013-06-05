@@ -412,7 +412,7 @@ class FTSAgent( AgentModule ):
                                                          args = ( request, ),
                                                          sTJId = sTJId )
         if queue["OK"]:
-          log.info( "'%s' enqueued for execution" % sTJId )
+          log.info( "request '%s' enqueued for execution" % sTJId )
           gMonitor.addMark( "RequestsAtt", 1 )
           break
         time.sleep( 1 )
