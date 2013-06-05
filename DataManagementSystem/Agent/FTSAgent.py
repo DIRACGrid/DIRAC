@@ -504,13 +504,13 @@ class FTSAgent( AgentModule ):
     # # PHASE THREE - update Waiting#SourceSE FTSFiles
     if toUpdate:
       log.info( "updating scheduled waiting FTSFiles..." )
-      bySource = {}
+      byTarget = {}
       for ftsFile in toUpdate:
-        if ftsFile.SourceSE not in bySource:
-          bySource.setdefault( ftsFile.SourceSE, [] )
-        bySource[ftsFile.SourceSE].append( ftsFile.FileID )
-      for sourceSE, fileIDList in bySource.items():
-        update = self.ftsClient().setFTSFilesWaiting( operation.OperationID, sourceSE, fileIDList )
+        if ftsFile.TargetSE not in byTarget:
+          byTarget.setdefault( ftsFile.TargetSE, [] )
+        byTarget[ftsFile.TargetSE].append( ftsFile.FileID )
+      for targetSE, fileIDList in byTarget.items():
+        update = self.ftsClient().setFTSFilesWaiting( operation.OperationID, targetSE, fileIDList )
         if not update["OK"]:
           log.error( "update FTSFiles failed: %s" % update["Message"] )
           continue
