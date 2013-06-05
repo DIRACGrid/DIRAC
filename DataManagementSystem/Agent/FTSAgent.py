@@ -95,6 +95,8 @@ class FTSAgent( AgentModule ):
   MAX_FILES_PER_JOB = 100
   # # MAX FTS transfer per FTSFile
   MAX_ATTEMPT = 256
+  # # stage flag
+  STAGE_FILES = False
   # # replica manager
   __replicaManager = None
   # # placeholder for FTS client
@@ -284,6 +286,9 @@ class FTSAgent( AgentModule ):
     log.info( "FTSGraph validity period       = %s s" % self.FTSGRAPH_REFRESH )
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
     log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
+
+    self.STAGE_FILES = self.am_getOption( "StageFiles", self._STAGE_FILES )
+    log.info( "Stage files before submission  = %s" % {True: "yes", False: "no"}[bool( self.STAGE_FILES )] )
 
     self.MAX_ACTIVE_JOBS = self.am_getOption( "MaxActiveJobsPerRoute", self.MAX_ACTIVE_JOBS )
     log.info( "Max active FTSJobs/route       = %s" % self.MAX_ACTIVE_JOBS )
@@ -699,7 +704,7 @@ class FTSAgent( AgentModule ):
           ftsFile.Error = ""
           ftsJob.addFile( ftsFile )
 
-        submit = ftsJob.submitFTS2()
+        submit = ftsJob.submitFTS2( self.STAGE_FILES )
         if not submit["OK"]:
           log.error( "unable to submit FTSJob: %s" % submit["Message"] )
           continue

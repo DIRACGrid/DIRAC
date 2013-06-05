@@ -426,7 +426,7 @@ class FTSJob( Record ):
       surls.append( "%s %s %s" % ( ftsFile.SourceSURL, ftsFile.TargetSURL, checksum ) )
     return "\n".join( surls )
 
-  def submitFTS2( self ):
+  def submitFTS2( self, stageFiles = False ):
     """ submit fts job using FTS2 client """
     if self.FTSGUID:
       return S_ERROR( "FTSJob already has been submitted" )
@@ -448,6 +448,8 @@ class FTSJob( Record ):
       submitCommand.append( "-t %s" % self.TargetToken )
     if self.SourceToken:
       submitCommand.append( "-S %s" % self.SourceToken )
+    if stageFiles:
+      submitCommand.append( "--copy-pin-lifetime 86400" )
 
     submit = executeGridCommand( "", submitCommand )
     os.remove( fileName )
