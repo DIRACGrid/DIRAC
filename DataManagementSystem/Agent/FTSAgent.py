@@ -255,10 +255,10 @@ class FTSAgent( AgentModule ):
     finally:
       self.updateLock().release()
 
-    log.info( "FTSSites: %s" % len( self.__ftsGraph.nodes() ) )
+    log.debug( "FTSSites: %s" % len( self.__ftsGraph.nodes() ) )
     for i, site in enumerate( self.__ftsGraph.nodes() ):
       log.debug( " [%02d] FTSSite: %-25s FTSServer: %s" % ( i, site.name, site.FTSServer ) )
-    log.info( "FTSRoutes: %s" % len( self.__ftsGraph.edges() ) )
+    log.debug( "FTSRoutes: %s" % len( self.__ftsGraph.edges() ) )
     for i, route in enumerate( self.__ftsGraph.edges() ):
       log.debug( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
                                                                              route.routeName,
@@ -273,6 +273,7 @@ class FTSAgent( AgentModule ):
       self.__ftsGraph.updateRWAccess()
     finally:
       self.updateLock().release()
+    # # save rw access stamp
     self.__rwAccessValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.RW_REFRESH )
 
     return S_OK()
@@ -371,7 +372,7 @@ class FTSAgent( AgentModule ):
     # # reset FTSGraph if expired
     now = datetime.datetime.now()
     if now > self.__ftsGraphValidStamp:
-      log.info( "resetting expired FTS graph " )
+      log.info( "resetting expired FTS graph..." )
       resetFTSGraph = self.resetFTSGraph()
       if not resetFTSGraph["OK"]:
         log.error( "FTSGraph recreation error: %s" % resetFTSGraph["Message"] )
@@ -379,7 +380,7 @@ class FTSAgent( AgentModule ):
       self.__ftsGraphValidStamp = now
     # # update R/W access in FTSGraph if expired
     if now > self.__rwAccessValidStamp:
-      log.info( "updating expired R/W access for SEs" )
+      log.info( "updating expired R/W access for SEs..." )
       try:
         self.updateLock().acquire()
         self.__ftsGraph.updateRWAccess()
@@ -398,7 +399,7 @@ class FTSAgent( AgentModule ):
       requestNames = list( set ( requestNames + self.__reqCache.keys() ) )
 
     if not requestNames:
-      log.info( "no more 'Scheduled' requests to process" )
+      log.info( "no 'Scheduled' requests to process" )
       return S_OK()
 
     log.info( "found %s requests to process:" % len( requestNames ) )
@@ -472,7 +473,7 @@ class FTSAgent( AgentModule ):
       log.info( "monitoring completed, found: " )
       for key, ftsFiles in ftsFilesDict.items():
         if ftsFiles:
-          log.debug( " - %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
+          log.debug( " => %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
 
     # # PHASE ONE - check ready replicas
     missingReplicas = self.__checkReadyReplicas( request, operation )
@@ -493,7 +494,7 @@ class FTSAgent( AgentModule ):
 
     # # PHASE TWO = Failed files? -> make request Failed and return
     if toFail:
-      log.error( "found %s Failed FTSFiles, request execution cannot proceed..." % len( toFail ) )
+      log.error( "==> found %s 'Failed' FTSFiles, request execution cannot proceed..." % len( toFail ) )
       for opFile in operation:
         for ftsFile in toFail:
           if opFile.FileID == ftsFile.FileID:
@@ -508,7 +509,7 @@ class FTSAgent( AgentModule ):
 
     # # PHASE THREE - update Waiting#SourceSE FTSFiles
     if toUpdate:
-      log.info( "updating scheduled waiting FTSFiles..." )
+      log.info( "==> found %s possible FTSFiles to update..." % ( len( toUpdate ) ) )
       byTarget = {}
       for ftsFile in toUpdate:
         if ftsFile.TargetSE not in byTarget:
@@ -522,7 +523,7 @@ class FTSAgent( AgentModule ):
 
     # # PHASE FOUR - add 'RegisterReplica' Operations
     if toRegister:
-      log.info( "found %s Files waiting for registration, adding 'RegisterReplica' operations" )
+      log.info( "==> found %s Files waiting for registration, adding 'RegisterReplica' operations" )
       registerFiles = self.__register( request, operation, toRegister )
       if not registerFiles["OK"]:
         log.error( "unable to create 'RegisterReplica' operations: %s" % registerFiles["Message"] )
@@ -533,7 +534,7 @@ class FTSAgent( AgentModule ):
 
     # # PHASE FIVE - reschedule operation files
     if toReschedule:
-      log.info( "found %s Files to reschedule" % len( toReschedule ) )
+      log.info( "==> found %s Files to reschedule" % len( toReschedule ) )
       rescheduleFiles = self.__reschedule( request, operation, toReschedule )
       if not rescheduleFiles["OK"]:
         log.error( rescheduleFiles["Message"] )
@@ -554,7 +555,7 @@ class FTSAgent( AgentModule ):
 
     # # submit new ftsJobs
     if operation.Status == "Scheduled" and toSubmit:
-      log.info( "found %s FTSFiles to submit" % len( toSubmit ) )
+      log.info( "==> found %s FTSFiles to submit" % len( toSubmit ) )
       submit = self.__submit( request, operation, toSubmit )
       if not submit["OK"]:
         log.error( submit["Message"] )
