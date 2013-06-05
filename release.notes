@@ -1,4 +1,4 @@
-[v7r0-pre8]
+[v7r0-pre9]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -25,6 +25,7 @@ FIX: AccountingDB - align properly days with MySQL bucketing. Closes #1219
 *Framework
 FIX: ProxyDB - prevent duplicate key errors on writing VOMSProxies to DB. Closes #1228
 BUGFIX: NotificationDB - missing "," in SQL, closes #1373
+FIX: dirac-proxy-get-uploaded-info.py - typo Value -> Message 
 
 *Configuration
 NEW: Resources helper class to work with the new /Resources structure according to RFC #5
@@ -47,6 +48,8 @@ FIX: SRM2Storage - in getCurrentStatus() use pythonCall to impose a timeout on t
 *WMS
 CHANGE: JobScheduling - is now extensible. Added unit test
 NEW: SiteDirector - define which extensions pilot should install in the options, do not take from globals
+FIX: SandboxStoreClient - change default from False to None ( to suite pylint ) 
+NEW: JobAgent - send Accounting record for Jobs Rescheduled 
 
 *Transformation
 NEW: TaskManager - if a site is specified in the job definition, it is now taken into account 
@@ -54,8 +57,14 @@ NEW: TaskManager - if a site is specified in the job definition, it is now taken
 NEW: Speeding up the getTransformationSummary call, using an UpdateTransformationCounters agent     
 FIX: Multiple fixes to please pylint
 FIX: TransformationDB - removed bad index on TaskID
-CHANGE: TransformationDB - DataFiles table - removed LFN field from the Primary Key, tt was already UNIQUE, 
-        Primary key is FileID only now.
+NEW: TransformationDB - added methods to DELETE rows from TransformationFIleTasks table,
+     minor changes in operation order to be ready for FK.
+CHANGE: field definition for TaskID in TransformationFiles table (from
+        VARCHAR to INT, in order to be ready for FK definition: TaskID in
+        TransformationTasks and TransformationFileTasks is INT),
+        !!!!! needs update of the MySQL schema on already installed databases
+CHANGE: TransformationDB - in DataFiles table removed LFN field from the Primary Key, 
+        tt was already UNIQUE, Primary key is FileID only now.
 
 *Resources
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
