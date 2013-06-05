@@ -6,10 +6,11 @@ __RCSID__ = "$Id: $"
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
-                                     ' %s [option|cfgfile] siteName ftsServiceURL' % Script.scriptName,
+                                     ' %s [option|cfgfile] siteName ftsServiceURL maxActiveJobs' % Script.scriptName,
                                      'Arguments:',
                                      ' siteName: LCG site name',
-                                     ' ftsService: FTS service URL' ] ) )
+                                     ' ftsService: FTS service URL',
+                                     ' maxActiveJobs: max allowed active FTS jobs' ] ) )
 
 if __name__ == "__main__":
 
@@ -42,12 +43,18 @@ if __name__ == "__main__":
 
   args = Script.getPositionalArgs()
 
+  maxActiveJobs = 50
   ftsSite = ftsServer = ""
-  if not len( args ) == 2:
+  if not len( args ) == 3:
     Script.showHelp()
     DIRAC.exit( 0 )
   else:
-    ftsSite, ftsServer = args
+    ftsSite, ftsServer, maxActiveJobs = args
+    try:
+      maxActiveJobs = int( maxActiveJobs )
+    except ValueError, error:
+      gLogger.error( error )
+      DIRAC.exit( -1 )
 
   ftsClient = FTSClient()
 
@@ -81,6 +88,7 @@ if __name__ == "__main__":
   newSite = FTSSite()
   newSite.Name = ftsSite
   newSite.FTSServer = ftsServer
+  newSite.MaxActiveJobs = maxActiveJobs
 
   putSite = ftsClient.putFTSSite( newSite )
   if not putSite["OK"]:
