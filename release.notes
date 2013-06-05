@@ -1,3 +1,18 @@
+[v6r8p16]
+
+FIX: included fixes from v6r7p31 patch release
+
+*WMS
+BUGFIX: TaskQueueDB - fixed a bug in the negative matching conditions SQL construction
+
+*RSS
+NEW: improved doc strings of PEP, PDP modules ( part of PolicySystem )
+FIX: Minor changes to ensure consistency if ElementInspectorAgent and 
+     users interact simultaneously with the same element
+CHANGE: removed DatabaseCleanerAgent ( to be uninstalled if already installed )
+FIX: SummarizeLogsAgent - the logic of the agent was wrong, the agent has been re-written.
+     
+
 [v6r8p15]
 
 *Core
