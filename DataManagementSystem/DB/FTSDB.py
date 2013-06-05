@@ -446,7 +446,11 @@ class FTSDB( DB ):
     return put
 
   def getFTSFileList( self, statusList = None, limit = 1000 ):
-    """ get FTSFiles with status in :statusList: """
+    """ get at most :limit: FTSFiles with status in :statusList:
+
+    :param list statusList: list with FTSFiles statuses
+    :param int limit: select query limit
+    """
     statusList = statusList if statusList else [ "Waiting" ]
     reStatus = []
     inStatus = []
@@ -477,7 +481,11 @@ class FTSDB( DB ):
     return S_OK( [ FTSHistoryView( fromDict ) for fromDict in query["Value"].values()[0] ] )
 
   def cleanUpFTSFiles( self, requestID, fileIDs ):
-    """ delete FTSFiles for given :requestID: and list of :fileIDs:"""
+    """ delete FTSFiles for given :requestID: and list of :fileIDs:
+
+    :param int requestID: ReqDB.Request.RequestID
+    :param list fileIDs: [ ReqDB.File.FileID, ... ]
+    """
     query = "DELETE FROM `FTSFile` WHERE `RequestID`= %s and `FileID` IN (%s)" % ( requestID,
                                                                                    intListToString( fileIDs ) )
     deleteFiles = self._transaction( [query] )
