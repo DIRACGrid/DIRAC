@@ -377,6 +377,7 @@ class FTSAgent( AgentModule ):
       if not resetFTSGraph["OK"]:
         log.error( "FTSGraph recreation error: %s" % resetFTSGraph["Message"] )
         return resetFTSGraph
+      self.__ftsGraphValidStamp = now + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
     # # update R/W access in FTSGraph if expired
     if now > self.__rwAccessValidStamp:
       log.info( "updating expired R/W access for SEs..." )
