@@ -10,7 +10,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Arguments:',
                                      ' siteName: LCG site name',
                                      ' ftsService: FTS service URL',
-                                     ' maxActiveJobs: max allowed active FTS jobs' ] ) )
+                                     ' maxActiveJobs: max allowed active FTS jobs uploading to this site' ] ) )
 
 if __name__ == "__main__":
 
