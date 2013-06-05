@@ -1,3 +1,9 @@
+[v6r7p31]
+
+*WMS
+FIX: SiteDirector - make possible more than one SiteDirector (with different pilot identity) attached 
+     to a CE, ie sgm and pilot roles. Otherwise one is declaring Aborted the pilots from the other.
+
 [v6r7p30]
 
 *Core
