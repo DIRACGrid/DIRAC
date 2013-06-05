@@ -327,7 +327,6 @@ class FTSAgent( AgentModule ):
     gMonitor.registerActivity( "RequestsFail", "Failed requests executions",
                                "FTSAgent", "Requests/min", gMonitor.OP_SUM )
 
-
     gMonitor.registerActivity( "FTSJobsSubAtt", "FTSJobs creation attempts",
                                "FTSAgent", "Created FTSJobs/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FTSJobsSubOK", "FTSJobs submitted successfully",
@@ -345,7 +344,7 @@ class FTSAgent( AgentModule ):
     pollingTime = self.am_getOption( "PollingTime", 60 )
     for status in list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FAILEDSTATES + FTSJob.FINALSTATES ):
       gMonitor.registerActivity( "FTSJobs%s" % status, "FTSJobs %s" % status ,
-                                 "MonitorFTSAgent", "FTSJobs/cycle", gMonitor.OP_ACUM, pollingTime )
+                                 "FTSAgent", "FTSJobs/cycle", gMonitor.OP_ACUM, pollingTime )
 
     gMonitor.registerActivity( "FtSJobsPerRequest", "Average FTSJobs per request",
                                "FTSAgent", "FTSJobs/Request", gMonitor.OP_MEAN )
@@ -355,7 +354,6 @@ class FTSAgent( AgentModule ):
                                "FTSAgent", "Average submitted size per FTSJob", gMonitor.OP_MEAN )
     return S_OK()
 
-
   def finalize( self ):
     """ finalize processing """
     log = self.log.getSubLogger( "finalize" )
@@ -363,7 +361,6 @@ class FTSAgent( AgentModule ):
       put = self.requestClient().putRequest( request )
       if not put["OK"]:
         log.error( "unable to put back request '%s': %s" % ( request.RequestName, put["Message"] ) )
-
     return S_OK()
 
   def execute( self ):
@@ -431,7 +428,7 @@ class FTSAgent( AgentModule ):
   def processRequest( self, request ):
     """ process one request
 
-    :param dict requestDict: { "request": ReqDB.Request, "jobs": [ FTSDB.FTSJob, FTSDB.FTSJob, ...] }
+    :param Request request: ReqDB.Request
     """
     # # empty job list
     ftsJobs = []
