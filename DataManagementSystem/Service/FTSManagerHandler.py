@@ -21,7 +21,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSManagerHandler class.
 
 # # imports
-from types import DictType, LongType, ListType, IntType, StringTypes
+from types import DictType, LongType, ListType, IntType, StringTypes, BooleanType
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -96,7 +96,7 @@ class FTSManagerHandler( RequestHandler ):
 
     cls.ftsMode = cls.srv_getCSOption( "FTSMode", False )
 
-    gLogger.always( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
+    gLogger.info( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
 
     if cls.ftsMode:
       # # get FTSStrategy
@@ -170,7 +170,7 @@ class FTSManagerHandler( RequestHandler ):
       cls.__replicaManager = ReplicaManager()
     return cls.__replicaManager
 
-  types_setFTSFilesWaiting = [ IntType, StringTypes, ListType ]
+  types_setFTSFilesWaiting = [ ( IntType, LongType ), StringTypes, ListType ]
   def export_setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
     """ update states for waiting replications """
     try:
@@ -182,7 +182,7 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
-  types_deleteFTSFiles = [ IntType, ListType ]
+  types_deleteFTSFiles = [ ( IntType, LongType ), ListType ]
   def export_deleteFTSFiles( self, operationID, opFileIDList = None ):
     """ cleanup FTSFiles for rescheduling """
     opFileIDList = opFileIDList if opFileIDList else []
@@ -195,81 +195,111 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
-  types_ftsSchedule = [ DictType, ListType, ListType ]
-  def export_ftsSchedule( self, fileJSON, sourceSEs, targetSEs ):
+  types_ftsSchedule = [ ( IntType, LongType ), ( IntType, LongType ), ListType ]
+  def export_ftsSchedule( self, requestID, operationID, fileJSONList ):
     """ call FTS scheduler
 
-    :param str LFN: lfn
-    :param list sourceSEs: source SEs
-    :param list targetSEs: target SEs
+    :param int requestID: ReqDB.Request.RequestID
+    :param int operationID: ReqDB.Operation.OperationID
+    :param list fileJSONList: [ (fileJSON, [sourceSE, ...], [ targetSE, ...] ) ]
     """
-    lfn = fileJSON.get( "LFN", "" )
-    size = int( fileJSON.get( "Size", 0 ) )
-    fileID = int( fileJSON.get( "FileID", 0 ) )
-    opID = int( fileJSON.get( "OperationID", 0 ) )
+    # # this will be returned on success
+    ret = { "Successful": [], "Failed": {} }
 
-    gLogger.info( "ftsSchedule: LFN=%s FileID=%s OperationID=%s sources=%s targets=%s" % ( lfn, fileID, opID,
-                                                                                           sourceSEs, targetSEs ) )
+    requestID = int( requestID )
+    operationID = int( operationID )
 
-    replicaDict = self.replicaManager().getActiveReplicas( lfn )
-    if not replicaDict["OK"]:
-      gLogger.error( "ftsSchedule: %s" % replicaDict["Message"] )
-      return replicaDict
-    replicaDict = replicaDict["Value"]
-
-    if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
-      return S_ERROR( "ftsSchedule: no active replicas found" )
-    replicaDict = replicaDict["Successful"][lfn] if lfn in replicaDict["Successful"] else {}
-    # # use valid replicas only
-    replicaDict = dict( [ ( se, pfn ) for se, pfn in replicaDict.items() if se in sourceSEs ] )
-
-    if not replicaDict:
-      return S_ERROR( "ftsSchedule: no active replicas found," )
-
-    tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
-    if not tree["OK"]:
-      gLogger.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree["Message"] ) )
-      return tree
-    tree = tree["Value"]
-
-    gLogger.info( "LFN=%s tree=%s" % ( lfn, tree ) )
+    fileIDs = []
+    for fileJSON, sourceSEs, targetSEs in fileJSONList:
+      fileID = int( fileJSON.get( "FileID" ) )
+      fileIDs.append( fileID )
+    cleanUpFTSFiles = self.__ftsDB.cleanUpFTSFiles( requestID, fileIDs )
+    if not cleanUpFTSFiles["OK"]:
+      self.log.error( "ftsSchedule: %s" % cleanUpFTSFiles["Message"] )
+      return S_ERROR( cleanUpFTSFiles["Message"] )
 
     ftsFiles = []
 
-    for repDict in tree.values():
-      gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
-                                                                          repDict["SourceSE"], repDict["TargetSE"] ) )
-      transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, replicaDict )
-      if not transferSURLs["OK"]:
-        return transferSURLs
-      sourceSURL, targetSURL, fileStatus = transferSURLs["Value"]
-      if sourceSURL == targetSURL:
-        errMsg = "sourceSURL == targetSURL for %s" % lfn
-        gLogger.error( "ftsSchedule: %s" % errMsg )
-        return S_ERROR( errMsg )
-      gLogger.info( "sourceURL=%s targetURL=%s FTSFile.Status=%s" % ( sourceSURL, targetSURL, fileStatus ) )
+    for fileJSON, sourceSEs, targetSEs in fileJSONList:
 
-      ftsFile = FTSFile()
-      for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
-        setattr( ftsFile, key, fileJSON.get( key ) )
-      ftsFile.SourceSURL = sourceSURL
-      ftsFile.TargetSURL = targetSURL
-      ftsFile.SourceSE = repDict["SourceSE"]
-      ftsFile.TargetSE = repDict["TargetSE"]
-      ftsFile.Status = fileStatus
-      ftsFiles.append( ftsFile )
+      lfn = fileJSON.get( "LFN", "" )
+      size = int( fileJSON.get( "Size", 0 ) )
+      fileID = int( fileJSON.get( "FileID", 0 ) )
+      opID = int( fileJSON.get( "OperationID", 0 ) )
 
-    for ftsFile in ftsFiles:
-      try:
-        put = self.__ftsDB.putFTSFile( ftsFile )
-        if not put["OK"]:
-          gLogger.error( put["Message"] )
-          return put
-      except Exception, error:
-        gLogger.exception( error )
-        return S_ERROR( str( error ) )
-    # # if we land here file has been properly scheduled
-    return S_OK()
+      gLogger.info( "ftsSchedule: LFN=%s FileID=%s OperationID=%s sources=%s targets=%s" % ( lfn, fileID, opID,
+                                                                                             sourceSEs, targetSEs ) )
+
+      replicaDict = self.replicaManager().getActiveReplicas( lfn )
+      if not replicaDict["OK"]:
+        gLogger.error( "ftsSchedule: %s" % replicaDict["Message"] )
+        ret["Failed"][fileID] = replicaDict["Message"]
+        continue
+      replicaDict = replicaDict["Value"]
+
+      if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
+        ret["Failed"][fileID] = "no active replicas found"
+        continue
+      replicaDict = replicaDict["Successful"][lfn] if lfn in replicaDict["Successful"] else {}
+      # # use valid replicas only
+      replicaDict = dict( [ ( se, pfn ) for se, pfn in replicaDict.items() if se in sourceSEs ] )
+
+      if not replicaDict:
+        ret["Failed"][fileID] = "no active replicas found in sources"
+        continue
+
+      tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
+      if not tree["OK"]:
+        gLogger.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree["Message"] ) )
+        ret["Failed"][fileID] = tree["Message"]
+        continue
+      tree = tree["Value"]
+
+      gLogger.info( "LFN=%s tree=%s" % ( lfn, tree ) )
+
+      for repDict in tree.values():
+        gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
+                                                                            repDict["SourceSE"], repDict["TargetSE"] ) )
+        transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, replicaDict )
+        if not transferSURLs["OK"]:
+          ret["Failed"][fileID] = transferSURLs["Message"]
+          continue
+
+        sourceSURL, targetSURL, fileStatus = transferSURLs["Value"]
+        if sourceSURL == targetSURL:
+          ret["Failed"][fileID] = "sourceSURL equals to targetSURL for %s" % lfn
+          continue
+
+        gLogger.info( "sourceURL=%s targetURL=%s FTSFile.Status=%s" % ( sourceSURL, targetSURL, fileStatus ) )
+
+        ftsFile = FTSFile()
+        for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
+          setattr( ftsFile, key, fileJSON.get( key ) )
+        ftsFile.RequestID = requestID
+        ftsFile.OperationID = operationID
+        ftsFile.SourceSURL = sourceSURL
+        ftsFile.TargetSURL = targetSURL
+        ftsFile.SourceSE = repDict["SourceSE"]
+        ftsFile.TargetSE = repDict["TargetSE"]
+        ftsFile.Status = fileStatus
+        ftsFiles.append( ftsFile )
+
+    if not ftsFiles:
+      return S_ERROR( "ftsSchedule: no FTSFiles to put" )
+
+    put = self.__ftsDB.putFTSFileList( ftsFiles )
+    if not put["OK"]:
+      gLogger.error( "ftsSchedule: %s" % put["Message"] )
+      return put
+
+    for fileJSON, sources, targets in fileJSONList:
+      lfn = fileJSON.get( "LFN", "" )
+      fileID = fileJSON.get( "FileID", 0 )
+      if fileID not in ret["Failed"]:
+        ret["Successful"].append( int( fileID ) )
+
+    # # if we land here some files have been properly scheduled
+    return S_OK( ret )
 
   types_putFTSSite = [ DictType ]
   @classmethod
@@ -553,6 +583,57 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( str( error ) )
       return S_ERROR( str( error ) )
 
+
+  types_getFTSJobsForRequest = [ ( IntType, LongType ), ListType ]
+  @classmethod
+  def export_getFTSJobsForRequest( cls, requestID, statusList = None ):
+    """ get list of FTSJobs for request given its :requestID: and statues in :statusList:
+
+    :param int requestID: ReqDB.Request.RequestID
+    :param list statusList: FTSJobs status list
+    """
+    statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
+    try:
+      requestID = int( requestID )
+      ftsJobs = cls.__ftsDB.getFTSJobsForRequest( requestID, statusList )
+      if not ftsJobs["OK"]:
+        gLogger.error( "getFTSJobsForRequest: %s" % ftsJobs["Message"] )
+        return ftsJobs
+      ftsJobsList = []
+      for ftsJob in ftsJobs["Value"]:
+        ftsJobJSON = ftsJob.toJSON()
+        if not ftsJobJSON["OK"]:
+          gLogger.error( "getFTSJobsForRequest: %s" % ftsJobJSON["Message"] )
+          return ftsJobJSON
+        ftsJobsList.append( ftsJobJSON["Value"] )
+      return S_OK( ftsJobsList )
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( str( error ) )
+
+
+  types_getFTSFilesForRequest = [ ( IntType, LongType ), ListType ]
+  @classmethod
+  def export_getFTSFilesForRequest( cls, requestID, statusList = None ):
+    """ get list of FTSFiles with statuses in :statusList: given :requestID: """
+    statusList = statusList if statusList else [ "Waiting" ]
+    try:
+      requestID = int( requestID )
+      ftsFiles = cls.__ftsDB.getFTSFilesForRequest( requestID, statusList )
+      if not ftsFiles["OK"]:
+        gLogger.error( "getFTSFilesForRequest: %s" % ftsFiles["Message"] )
+        return ftsFiles
+      ftsFilesList = []
+      for ftsFile in ftsFiles["Value"]:
+        ftsFileJSON = ftsFile.toJSON()
+        if not ftsFileJSON["OK"]:
+          gLogger.error( "getFTSFilesForRequest: %s" % ftsFileJSON["Message"] )
+          return ftsFileJSON
+        ftsFilesList.append( ftsFileJSON["Value"] )
+      return S_OK( ftsFilesList )
+    except Exception, error:
+      gLogger.exception( str( error ) )
+      return S_ERROR( str( error ) )
   types_getFTSHistory = []
   @classmethod
   def export_getFTSHistory( cls ):

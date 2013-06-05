@@ -322,7 +322,7 @@ class FTSStrategy( object ):
       ancestor = False
       for routeName, treeItem in tree.items():
         if selSourceSE in treeItem["TargetSE"]:
-          ancestor = routeName
+          ancestor = treeItem["TargetSE"]
       tree[selChannel.routeName] = { "Ancestor" : ancestor, "SourceSE" : selSourceSE,
                                      "TargetSE" : selTargetSE, "Strategy" : "MinimiseTotalWait" }
       sourceSEs.append( selTargetSE )
@@ -403,7 +403,7 @@ class FTSStrategy( object ):
       ancestor = False
       for routeName, treeItem in tree.items():
         if selSourceSE in treeItem["TargetSE"]:
-          ancestor = routeName
+          ancestor = treeItem["TargetSE"]
       tree[selChannel.name] = { "Ancestor": ancestor, "SourceSE": selSourceSE,
                                 "TargetSE": selTargetSE, "Strategy": "DynamicThroughput" }
 
