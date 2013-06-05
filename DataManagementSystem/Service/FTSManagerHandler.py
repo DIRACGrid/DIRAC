@@ -634,6 +634,7 @@ class FTSManagerHandler( RequestHandler ):
     except Exception, error:
       gLogger.exception( str( error ) )
       return S_ERROR( str( error ) )
+
   types_getFTSHistory = []
   @classmethod
   def export_getFTSHistory( cls ):
@@ -654,6 +655,19 @@ class FTSManagerHandler( RequestHandler ):
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
+
+  types_getDBSummary = []
+  @classmethod
+  def export_getDBSummary( cls ):
+    """ get FTSDB summary """
+    try:
+      dbSummary = cls.__ftsDB.getDBSummary()
+      if not dbSummary["OK"]:
+        gLogger.error( "getDBSummary: %s" % dbSummary["Message"] )
+      return dbSummary
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( str( error ) )
 
   @staticmethod
   def _ancestorSortKeys( tree, aKey = "Ancestor" ):

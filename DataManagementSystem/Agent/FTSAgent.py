@@ -412,7 +412,7 @@ class FTSAgent( AgentModule ):
                                                          args = ( request, ),
                                                          sTJId = sTJId )
         if queue["OK"]:
-          log.info( "'%s' enqueued for execution" % sTJId )
+          log.info( "request '%s' enqueued for execution" % sTJId )
           gMonitor.addMark( "RequestsAtt", 1 )
           break
         time.sleep( 1 )
@@ -504,13 +504,13 @@ class FTSAgent( AgentModule ):
     # # PHASE THREE - update Waiting#SourceSE FTSFiles
     if toUpdate:
       log.info( "updating scheduled waiting FTSFiles..." )
-      bySource = {}
+      byTarget = {}
       for ftsFile in toUpdate:
-        if ftsFile.SourceSE not in bySource:
-          bySource.setdefault( ftsFile.SourceSE, [] )
-        bySource[ftsFile.SourceSE].append( ftsFile.FileID )
-      for sourceSE, fileIDList in bySource.items():
-        update = self.ftsClient().setFTSFilesWaiting( operation.OperationID, sourceSE, fileIDList )
+        if ftsFile.TargetSE not in byTarget:
+          byTarget.setdefault( ftsFile.TargetSE, [] )
+        byTarget[ftsFile.TargetSE].append( ftsFile.FileID )
+      for targetSE, fileIDList in byTarget.items():
+        update = self.ftsClient().setFTSFilesWaiting( operation.OperationID, targetSE, fileIDList )
         if not update["OK"]:
           log.error( "update FTSFiles failed: %s" % update["Message"] )
           continue
@@ -943,7 +943,7 @@ class FTSAgent( AgentModule ):
                                                   ",".join( missingReplicas[ successfulLFN ] ) ) )
 
     reMissing = re.compile( "no such file or directory" )
-    for failedLFN, errStr in replicas["Failed"]:
+    for failedLFN, errStr in replicas["Failed"].items():
       log.warn( "unable to read replicas for %s: %s" % ( failedLFN, errStr ) )
       scheduledFiles[failedLFN].Error = errStr
       if reMissing.search( errStr.lower() ):

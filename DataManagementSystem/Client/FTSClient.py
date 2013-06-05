@@ -268,6 +268,12 @@ class FTSClient( Client ):
     getFTSHistory = getFTSHistory["Value"]
     return S_OK( [ FTSHistoryView( ftsHistory ) for ftsHistory in getFTSHistory ] )
 
+  def getDBSummary( self ):
+    """ get FTDB summary """
+    dbSummary = self.ftsManager().getDBSummary()
+    if not dbSummary["OK"]:
+      self.log.error( "getDBSummary: %s" % dbSummary["Message"] )
+    return dbSummary
 
   def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
     """ update status for waiting FTSFiles from 'Waiting#SourceSE' to 'Waiting'

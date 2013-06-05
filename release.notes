@@ -74,7 +74,7 @@ CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added 
         to the environment when running under glexec     
 NEW: XXXStorage - added getCurrentStatus() method        
 
-[v6r9-pre3]
+[v6r9]
 
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
