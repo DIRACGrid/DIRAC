@@ -74,11 +74,25 @@ CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added 
         to the environment when running under glexec     
 NEW: XXXStorage - added getCurrentStatus() method        
 
-[v6r9-pre2]
+[v6r9-pre3]
 
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
 
+[v6r8p16]
+
+FIX: included fixes from v6r7p31 patch release
+
+*WMS
+BUGFIX: TaskQueueDB - fixed a bug in the negative matching conditions SQL construction
+
+*RSS
+NEW: improved doc strings of PEP, PDP modules ( part of PolicySystem )
+FIX: Minor changes to ensure consistency if ElementInspectorAgent and 
+     users interact simultaneously with the same element
+CHANGE: removed DatabaseCleanerAgent ( to be uninstalled if already installed )
+FIX: SummarizeLogsAgent - the logic of the agent was wrong, the agent has been re-written.
+     
 [v6r8p15]
 
 *Core
@@ -245,6 +259,12 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p31]
+
+*WMS
+FIX: SiteDirector - make possible more than one SiteDirector (with different pilot identity) attached 
+     to a CE, ie sgm and pilot roles. Otherwise one is declaring Aborted the pilots from the other.
 
 [v6r7p30]
 

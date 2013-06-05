@@ -188,7 +188,7 @@ class TaskQueueDB( DB ):
     if 'LHCbPlatforms' in tqDefDict and not "Platforms" in tqDefDict:
       tqDefDict['Platforms'] = tqDefDict['LHCbPlatforms']
     if 'SystemConfigs' in tqDefDict and not "Platforms" in tqDefDict:
-      tqDefDict['Platforms'] = tqDefDict['SystemConfigs']  
+      tqDefDict['Platforms'] = tqDefDict['SystemConfigs']
 
     for field in self.__singleValueDefFields:
       if field not in tqDefDict:
@@ -248,7 +248,7 @@ class TaskQueueDB( DB ):
     if 'LHCbPlatform' in tqMatchDict and not "Platform" in tqMatchDict:
       tqMatchDict['Platform'] = tqMatchDict['LHCbPlatform']
     if 'SystemConfig' in tqMatchDict and not "Platform" in tqMatchDict:
-      tqMatchDict['Platform'] = tqMatchDict['SystemConfig']  
+      tqMatchDict['Platform'] = tqMatchDict['SystemConfig']
 
     for field in self.__singleValueDefFields:
       if field not in tqMatchDict:
@@ -612,6 +612,12 @@ class TaskQueueDB( DB ):
 
   def __generateNotDictSQL( self, tableDict, negativeCond ):
     """ Generate the negative sql condition from a standard condition dict
+        not ( cond1 and cond2 ) = ( not cond1 or not cond 2 )
+        For instance: { 'Site': 'S1', 'JobType': [ 'T1', 'T2' ] }
+          ( not 'S1' in Sites or ( not 'T1' in JobType and not 'T2' in JobType ) )
+          S2 T1 -> not False or ( not True and not False ) -> True or ... -> True -> Eligible
+          S1 T3 -> not True or ( not False and not False ) -> False or (True and True ) -> True -> Eligible
+          S1 T1 -> not True or ( not True and not False ) -> False or ( False and True ) -> False -> Nop
     """
     condList = []
     for field in negativeCond:
@@ -620,17 +626,19 @@ class TaskQueueDB( DB ):
         valList = negativeCond[ field ]
         if type( valList ) not in ( types.TupleType, types.ListType ):
           valList = ( valList, )
+        subList = []
         for value in valList:
           value = self._escapeString( value )[ 'Value' ]
           sql = "%s NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( value,
                                                                     fullTableN, fullTableN, fullTableN )
-          condList.append( sql )
+          subList.append( sql )
+        condList.append( "( %s )" % " AND ".join( subList ) )
       elif field in self.__singleValueDefFields:
         for value in negativeCond[field]:
           value = self._escapeString( value )[ 'Value' ]
           sql = "%s != tq.%s " % ( value, field )
           condList.append( sql )
-    return "( %s )" % " AND ".join( condList )
+    return "( %s )" % " OR ".join( condList )
 
 
   def __generateTablesName( self, sqlTables, field ):

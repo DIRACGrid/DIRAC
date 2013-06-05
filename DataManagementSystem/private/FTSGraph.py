@@ -140,7 +140,7 @@ class FTSGraph( Graph ):
 
     # # create nodes
     for ftsSite in ftsSites:
-      # # revert for a new resource hslper
+      # # revert for a new resource helper
       # rwSEsDict = dict.fromkeys( sitesDict.get( ftsSite.Name, [] ), {} )
 
       rwSEsDict = dict.fromkeys( sitesDict.get( "LCG." + ftsSite.Name, [] ), {} )
@@ -153,7 +153,7 @@ class FTSGraph( Graph ):
                   "MaxActiveJobs": ftsSite.MaxActiveJobs }
       site = Site( ftsSite.Name, rwAttrs, roAttrs )
 
-      self.log.always( "adding site %s using FTSServer %s" % ( ftsSite.Name, ftsSite.FTSServer ) )
+      self.log.debug( "adding site %s using FTSServer %s" % ( ftsSite.Name, ftsSite.FTSServer ) )
       self.addNode( site )
 
     for sourceSite in self.nodes():
@@ -171,7 +171,7 @@ class FTSGraph( Graph ):
                     "SchedulingType": self.schedulingType }
 
         route = Route( sourceSite, destSite, rwAttrs, roAttrs )
-        self.log.always( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
+        self.log.debug( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
         self.addEdge( route )
 
     for ftsHistory in ftsHistoryViews:

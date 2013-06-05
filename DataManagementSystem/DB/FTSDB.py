@@ -252,6 +252,49 @@ class FTSDB( DB ):
       self.log.error( "deleteFTSFiles: %s" % delete["Message"] )
     return delete
 
+  def getFTSJobsForRequest( self, requestID, statusList = None ):
+    """ get list of FTSJobs with status in :statusList: for request given its requestID
+
+    TODO: should be more smart, i.e. one query to select all ftsfiles
+    """
+
+    statusList = statusList if statusList  else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
+    query = "SELECT * FROM `FTSJob` WHERE `RequestID` = %s AND `Status` in (%s)" % ( requestID,
+                                                                                     stringListToString( statusList ) )
+    ftsJobs = self._transaction( [ query ] )
+    if not ftsJobs["OK"]:
+      self.log.error( "getFTSJobsForRequest: %s" % ftsJobs["Message"] )
+      return ftsJobs
+
+    ftsJobs = ftsJobs["Value"][query] if query in ftsJobs["Value"] else []
+
+    ftsJobs = [ FTSJob( ftsJobDict ) for ftsJobDict in ftsJobs  ]
+
+    for ftsJob in ftsJobs:
+      query = "SELECT * FROM `FTSFile` WHERE `FTSGUID` = '%s' AND `RequestID`=%s" % ( ftsJob.FTSGUID,
+                                                                                      requestID )
+      ftsFiles = self._transaction( [ query ] )
+      if not ftsFiles["OK"]:
+        self.log.error( "getFTSJobsForRequest: %s" % ftsFiles["Message"] )
+        return ftsFiles
+      ftsFiles = ftsFiles["Value"][query] if query in ftsFiles["Value"] else []
+      for ftsFileDict in ftsFiles:
+        ftsJob.addFile( FTSFile( ftsFileDict ) )
+    return S_OK( ftsJobs )
+
+  def getFTSFilesForRequest( self, requestID, statusList = None ):
+    """ get FTSFiles with status in :statusList: for request given its :requestID: """
+    requestID = int( requestID )
+    statusList = statusList if statusList else [ "Waiting" ]
+    query = "SELECT * FROM `FTSFile` WHERE `RequestID` = %s AND `Status` IN (%s);" % ( requestID,
+                                                                                       stringListToString( statusList ) )
+    ftsFiles = self._transaction( [ query ] )
+    if not ftsFiles["OK"]:
+      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles["Message"] )
+      return ftsFiles
+    ftsFiles = ftsFiles["Value"][query] if query in ftsFiles["Value"] else []
+    return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles ] )
+
   def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
     """ propagate states for descendants in replication tree
 
@@ -259,8 +302,10 @@ class FTSDB( DB ):
     :param int operationID: ReqDB.Operation.OperationID
     :param str sourceSE: waiting source SE
     """
+    operationID = int( operationID )
+    opFileIDList = [ int( opFileID ) for opFileID in opFileIDList ]
     status = "Waiting#%s" % sourceSE
-    query = "UPDATE `FTSFile` SET `Status` = `Waiting` WHERE `Status` = '%s' "\
+    query = "UPDATE `FTSFile` SET `Status` = 'Waiting' WHERE `Status` = '%s' "\
       "AND `FileID` IN (%s) AND `OperationID` = %s;" % ( status, intListToString( opFileIDList ), operationID )
     update = self._update( query )
     if not update["OK"]:
@@ -380,6 +425,26 @@ class FTSDB( DB ):
         ftsJob.addFile( ftsFile )
     return S_OK( ftsJobs )
 
+  def putFTSFileList( self, ftsFileList ):
+    """ bulk put of FSTFiles
+
+    :param list ftsFileList: list with FTSFile instances
+    """
+    queries = []
+    for ftsFile in ftsFileList:
+      ftsFileSQL = ftsFile.toSQL()
+      if not ftsFileSQL["OK"]:
+        gLogger.error( "putFTSFileList: %s" % ftsFileSQL["Message"] )
+        return ftsFileSQL
+      queries.append( ftsFileSQL["Value"] )
+    if not queries:
+      return S_ERROR( "putFTSFileList: no queries to put" )
+
+    put = self._transaction( queries )
+    if not put["OK"]:
+      gLogger.error( "putFTSFileList: %s" % put["Message"] )
+    return put
+
   def getFTSFileList( self, statusList = None, limit = 1000 ):
     """ get FTSFiles with status in :statusList: """
     statusList = statusList if statusList else [ "Waiting" ]
@@ -410,6 +475,16 @@ class FTSDB( DB ):
     if not query["Value"]:
       return S_OK()
     return S_OK( [ FTSHistoryView( fromDict ) for fromDict in query["Value"].values()[0] ] )
+
+  def cleanUpFTSFiles( self, requestID, fileIDs ):
+    """ delete FTSFiles for given :requestID: and list of :fileIDs:"""
+    query = "DELETE FROM `FTSFile` WHERE `RequestID`= %s and `FileID` IN (%s)" % ( requestID,
+                                                                                   intListToString( fileIDs ) )
+    deleteFiles = self._transaction( [query] )
+    if not deleteFiles["OK"]:
+      self.log.error( "cleanUpFTSFiles: %s" % deleteFiles["Message"] )
+      return deleteFiles
+    return S_OK()
 
   def getDBSummary( self ):
     """ get DB summary """

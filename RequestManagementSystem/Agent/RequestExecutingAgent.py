@@ -64,6 +64,10 @@ class RequestExecutingAgent( AgentModule ):
   __maxProcess = 4
   # # ProcessPool queue size
   __queueSize = 20
+  # # file timeout
+  __fileTimeout = 300
+  # # operation timeout
+  __operationTimeout = 300
   # # ProcessTask default timeout in seconds
   __taskTimeout = 900
   # # ProcessPool finalization timeout
@@ -107,6 +111,9 @@ class RequestExecutingAgent( AgentModule ):
       raise AgentConfigError( "OperationHandlers section not found in CS under %s" % self.__configPath )
     opHandlers = opHandlers["Value"]
 
+
+    self.timeOuts = dict()
+
     self.operationHandlers = []
     for opHandler in opHandlers:
       opHandlerPath = "%s/%s/Location" % ( opHandlersPath, opHandler )
@@ -114,6 +121,15 @@ class RequestExecutingAgent( AgentModule ):
       if not opLocation:
         self.log.error( "%s not set for %s operation handler" % ( opHandlerPath, opHandler ) )
         continue
+      self.timeOuts[opHandler] = { "PerFile": self.__fileTimeout, "PerOperation": self.__operationTimeout }
+
+      opTimeout = gConfig.getValue( "%s/%s/TimeOut" % ( opHandlersPath, opHandler ), 0 )
+      if opTimeout:
+        self.timeOuts[opHandler]["PerOperation"] = opTimeout
+      fileTimeout = gConfig.getValue( "%s/%s/TimeOutPerFile" % ( opHandlersPath, opHandler ), 0 )
+      if fileTimeout:
+        self.timeOuts[opHandler]["PerFile"] = fileTimeout
+
       self.operationHandlers.append( opLocation )
 
     self.log.info( "Operation handlers:" )
@@ -223,7 +239,7 @@ class RequestExecutingAgent( AgentModule ):
         self.log.error( "execute: %s" % getRequest["Message"] )
         break
       if not getRequest["Value"]:
-        self.log.info( "execute: not more waiting requests to process" )
+        self.log.info( "execute: not more 'Waiting' requests to process" )
         break
       # # OK, we've got you
       request = getRequest["Value"]
@@ -247,7 +263,7 @@ class RequestExecutingAgent( AgentModule ):
           time.sleep( self.__poolSleep )
         else:
           self.log.info( "spawning task for request '%s'" % ( request.RequestName ) )
-
+          timeOut = self.getTimeout( request )
           enqueue = self.processPool().createAndQueueTask( RequestTask,
                                                            kwargs = { "requestJSON" : requestJSON,
                                                                       "handlersDict" : self.handlersDict,
@@ -256,7 +272,7 @@ class RequestExecutingAgent( AgentModule ):
                                                            taskID = taskID,
                                                            blocking = True,
                                                            usePoolCallbacks = True,
-                                                           timeOut = self.__taskTimeout )
+                                                           timeOut = timeOut )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:
@@ -271,6 +287,21 @@ class RequestExecutingAgent( AgentModule ):
 
     # # clean return
     return S_OK()
+
+  def getTimeout( self, request ):
+    """ get timeout for request """
+    timeout = 0
+    for op in request:
+      if op.Status not in ( "Waiting", "Scheduled" ):
+        continue
+      if op.Type not in self.timeOuts:
+        timeout += self.__operationTimeout
+      else:
+        perOp = self.timeOuts[op.Type].get( "PerOperation", self.__operationTimeout )
+        perFiles = self.timeOuts[op.Type].get( "PerFile", self.__fileTimeout ) * len( op )
+        timeout += perOp + perFiles
+    self.log.info( "estimated timeOut for request %s is %s" % ( request.RequestName, timeout ) )
+    return timeout
 
   def finalize( self ):
     """ agent finalization """
