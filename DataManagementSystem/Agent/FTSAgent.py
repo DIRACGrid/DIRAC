@@ -430,9 +430,6 @@ class FTSAgent( AgentModule ):
 
     :param Request request: ReqDB.Request
     """
-    # # empty job list
-    ftsJobs = []
-
     log = self.log.getSubLogger( request.RequestName )
 
     operation = request.getWaiting()
@@ -452,13 +449,13 @@ class FTSAgent( AgentModule ):
     if not ftsJobs["OK"]:
       log.error( ftsJobs["Message"] )
       return ftsJobs
-    ftsJobs = ftsJobs["Value"]
+    ftsJobs = ftsJobs["Value"] if ftsJobs["Value"] else []
 
     # # dict keeping info about files to reschedule, submit, fail and register
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
     if ftsJobs:
-      log.info( "found %s FTSJobs to monitor" % len( ftsJobs ) )
+      log.info( "==> found %s FTSJobs to monitor" % len( ftsJobs ) )
       # # PHASE 0 = monitor active FTSJobs
       for ftsJob in ftsJobs:
         monitor = self.__monitorJob( request, ftsJob )
@@ -468,7 +465,7 @@ class FTSAgent( AgentModule ):
           continue
         ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
-      log.info( "monitoring completed, found: " )
+      log.info( "monitoring of FTSJobs completed" )
       for key, ftsFiles in ftsFilesDict.items():
         if ftsFiles:
           log.debug( " => %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
@@ -502,7 +499,7 @@ class FTSAgent( AgentModule ):
       # # requets.Status should be Failed at this stage "Failed"
       if request.Status == "Failed":
         request.Error = "ReplicateAndRegister %s failed" % operation.Order
-        log.error( "request is Failed" )
+        log.error( "request is set to 'Failed'" )
         return self.putRequest( request )
 
     # # PHASE THREE - update Waiting#SourceSE FTSFiles
@@ -525,9 +522,8 @@ class FTSAgent( AgentModule ):
       registerFiles = self.__register( request, operation, toRegister )
       if not registerFiles["OK"]:
         log.error( "unable to create 'RegisterReplica' operations: %s" % registerFiles["Message"] )
-
       if request.Status == "Waiting":
-        log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
+        log.info( "request is in 'Waiting' state, will put it back to RMS" )
         return self.putRequest( request )
 
     # # PHASE FIVE - reschedule operation files
