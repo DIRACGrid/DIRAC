@@ -69,7 +69,7 @@ class FTSClient( Client ):
     return cls.__ftsValidator
 
   @classmethod
-  def ftsManager( cls, timeout = 240 ):
+  def ftsManager( cls, timeout = 300 ):
     """ get FTSManager instance """
     if not cls.__ftsManager:
       url = PathFinder.getServiceURL( "DataManagement/FTSManager" )
@@ -98,7 +98,7 @@ class FTSClient( Client ):
     """ put fts site """
     ftsSiteJSON = ftsSite.toJSON()
     if not ftsSiteJSON["OK"]:
-      self.log.error("putFTSSite: %s" % ftsSiteJSON["Message"] )
+      self.log.error( "putFTSSite: %s" % ftsSiteJSON["Message"] )
       return ftsSiteJSON
     ftsSiteJSON = ftsSiteJSON["Value"]
     return self.ftsManager().putFTSSite( ftsSiteJSON )
@@ -134,6 +134,33 @@ class FTSClient( Client ):
     getFTSJobList = getFTSJobList["Value"]
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getFTSJobList ] )
 
+  def getFTSFilesForRequest( self, requestID, operationID = None ):
+    """ read FTSFiles for a given :requestID:
+
+    :param int requestID: ReqDB.Request.RequestID
+    :param int operationID: ReqDB.Operation.OperationID
+    """
+    ftsFiles = self.ftsManager().getFTSFilesForRequest( requestID, operationID )
+    if not ftsFiles["OK"]:
+      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles["Message"] )
+      return ftsFiles
+    return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles["Value"] ] )
+
+  def getFTSJobsForRequest( self, requestID, statusList = None ):
+    """ get list of FTSJobs with statues in :statusList: given requestID
+
+    :param int requestID: ReqDB.Request.RequestID
+    :param list statusList: list with FTSJob statuses
+
+    :return: [ FTSJob, FTSJob, ... ]
+    """
+    statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
+    getJobs = self.ftsManager().getFTSJobsForRequest( requestID, statusList )
+    if not getJobs["OK"]:
+      self.log.error( "getFTSJobsForRequest: %s" % getJobs["Message"] )
+      return getJobs
+    return S_OK( [ FTSJob( ftsJobDict) for ftsJobDict in getJobs["Value"] ] )
+    
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into FTSDB
 
@@ -259,16 +286,12 @@ class FTSClient( Client ):
     """
     return self.ftsManager().deleteFTSFiles( operationID, opFileIDList )
 
-  def ftsSchedule( self, opFile, sourceSEs, targetSEs ):
+  def ftsSchedule( self, requestID, operationID, opFileList ):
     """ schedule lfn for FTS job
 
-    :param  File opFile: RMS File instance
-    :param list sourceSEs: list of valid sources
-    :param list targetSEs: list of target SEs
+    :param int requestID: RequestDB.Request.RequestID
+    :param int operationID: RequestDB.Operation.OperationID
+    :param list opFileList: list of tuples ( File.toJSON()["Value"], sourcesList, targetList )
     """
-    opFileJSON = opFile.toJSON()
-    if not opFileJSON["OK"]:
-      self.log.error( opFileJSON["Message"] )
-      return opFileJSON
-    return self.ftsManager().ftsSchedule( opFileJSON["Value"], sourceSEs, targetSEs )
+    return self.ftsManager().ftsSchedule( requestID, operationID, opFileList )
 

@@ -47,55 +47,61 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.reqName = "fullChain"
 
-    self.fname = "/tmp/testPutAndRegister"
-    self.file = open( self.fname, "w+" )
-    for i in range( 100 ):
-      self.file.write( str( random.randint( 0, i ) ) )
-    self.file.close()
+    files = []
+    for i in range( 5 ):
+      fname = "/tmp/testPutAndRegister-%s" % i
+      lfn = "/lhcb/user/c/cibak/" + fname.split( "/" )[-1]
+      fh = open( fname, "w+" )
+      for i in range( 100 ):
+        fh.write( str( random.randint( 0, i ) ) )
+      fh.close()
 
-    self.size = os.stat( self.fname ).st_size
-    self.checksum = fileAdler( self.fname )
-    self.guid = makeGuid( self.fname )
+      size = os.stat( fname ).st_size
+      checksum = fileAdler( fname )
+      guid = makeGuid( fname )
 
-    self.putFile = File()
-    self.putFile.PFN = self.fname
-    self.putFile.LFN = "/lhcb/user/c/cibak/" + self.fname.split( "/" )[-1]
-    self.putFile.Checksum = self.checksum
-    self.putFile.ChecksumType = "adler32"
-    self.putFile.Size = self.size
-    self.putFile.GUID = self.guid
+      files.append( ( fname, lfn, size, checksum, guid ) )
+
 
     self.putAndRegister = Operation()
     self.putAndRegister.Type = "PutAndRegister"
     self.putAndRegister.TargetSE = "RAL-USER"
-    # self.putAndRegister.Catalog = "LcgFileCatalogCombined"
-
-    self.putAndRegister.addFile( self.putFile )
-
-    self.repFile = File()
-    self.repFile.LFN = self.putFile.LFN
-    self.repFile.Size = self.size
-    self.repFile.Checksum = self.checksum
-    self.repFile.ChecksumType = "adler32"
+    for fname, lfn, size, checksum, guid in files:
+      putFile = File()
+      putFile.LFN = lfn
+      putFile.PFN = fname
+      putFile.Checksum = checksum
+      putFile.ChecksumType = "adler32"
+      putFile.Size = size
+      putFile.GUID = guid
+      self.putAndRegister.addFile( putFile )
 
     self.replicateAndRegister = Operation()
     self.replicateAndRegister.Type = "ReplicateAndRegister"
-    self.replicateAndRegister.TargetSE = "RAL-USER,PIC-USER"
-    self.replicateAndRegister.addFile( self.repFile )
-
+    self.replicateAndRegister.TargetSE = "RAL-USER,CNAF-USER"
+    for fname, lfn, size, checksum, guid in files:
+      repFile = File()
+      repFile.LFN = lfn
+      repFile.Size = size
+      repFile.Checksum = checksum
+      repFile.ChecksumType = "adler32"
+      self.replicateAndRegister.addFile( repFile )
 
     self.removeReplica = Operation()
     self.removeReplica.Type = "RemoveReplica"
     self.removeReplica.TargetSE = "RAL-USER"
-    self.removeReplica.addFile( File( {"LFN": self.putFile.LFN } ) )
+    for fname, lfn, size, checksum, guid in files:
+      self.removeReplica.addFile( File( {"LFN": lfn } ) )
 
     self.removeFile = Operation()
     self.removeFile.Type = "RemoveFile"
-    self.removeFile.addFile( File( { "LFN": self.putFile.LFN } ) )
+    for fname, lfn, size, checksum, guid in files:
+      self.removeFile.addFile( File( {"LFN": lfn } ) )
 
     self.removeFileInit = Operation()
     self.removeFileInit.Type = "RemoveFile"
-    self.removeFileInit.addFile( File( {"LFN": self.putFile.LFN } ) )
+    for fname, lfn, size, checksum, guid in files:
+      self.removeFileInit.addFile( File( {"LFN": lfn } ) )
 
     self.req = Request()
     self.req.RequestName = self.reqName
@@ -109,26 +115,17 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.reqClient = ReqClient()
 
-
   def tearDown( self ):
     """ tear down """
-    del self.req
-    del self.putAndRegister
-    del self.replicateAndRegister
-    del self.removeFile
-    del self.putFile
-    del self.repFile
-    del self.size
-    del self.guid
-    del self.checksum
-    del self.reqName
+    pass
 
   def test( self ):
     """ test case """
     delete = self.reqClient.deleteRequest( self.reqName )
     print delete
     put = self.reqClient.putRequest( self.req )
-    self.assertEqual( put["OK"], True, "putRequest failed" )
+    self.assertEqual( put["OK"], True, "putRequest failed: %s" % put.get( "Message", "" ) )
+
 
 # # test execution
 if __name__ == "__main__":
