@@ -967,8 +967,8 @@ class JobWrapper:
       if not vo:
         vo = 'dirac'
 
-      ops = Operations( vo = vo)
-      user_prefix = ops.getValue("LFNUserPrefix",'user')
+      ops = Operations( vo = vo )
+      user_prefix = ops.getValue( "LFNUserPrefix", 'user' )
       basePath = '/' + vo + '/' + user_prefix + '/' + initial + '/' + self.owner
       if outputPath:
         # If output path is given, append it to the user path and put output files in this directory
@@ -1371,12 +1371,12 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
     jobReport.sendStoredStatusInfo()
     jobReport.sendStoredJobParameters()
 
-    gLogger.info( 'Job will be rescheduled after exception during execution of the JobWrapper' )
+    gLogger.info( 'Job will be rescheduled' )
 
     jobManager = RPCClient( 'WorkloadManagement/JobManager' )
     result = jobManager.rescheduleJob( int( jobID ) )
     if not result['OK']:
-      gLogger.warn( result['Message'] )
+      gLogger.error( result['Message'] )
       if 'Maximum number of reschedulings is reached' in result['Message']:
         rescheduleResult = 'Failed'
 
