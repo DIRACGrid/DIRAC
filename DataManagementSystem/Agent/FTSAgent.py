@@ -943,7 +943,7 @@ class FTSAgent( AgentModule ):
                                                   ",".join( missingReplicas[ successfulLFN ] ) ) )
 
     reMissing = re.compile( "no such file or directory" )
-    for failedLFN, errStr in replicas["Failed"]:
+    for failedLFN, errStr in replicas["Failed"].items():
       log.warn( "unable to read replicas for %s: %s" % ( failedLFN, errStr ) )
       scheduledFiles[failedLFN].Error = errStr
       if reMissing.search( errStr.lower() ):
