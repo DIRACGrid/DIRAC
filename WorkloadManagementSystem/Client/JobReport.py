@@ -192,7 +192,6 @@ class JobReport( object ):
   def generateForwardDISET( self ):
     """ Generate and return failover requests for the operations in the internal cache
     """
-
     fowardDISETOp = None
 
     result = self.sendStoredStatusInfo()

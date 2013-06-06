@@ -13,7 +13,7 @@ __RCSID__ = "$Id: $"
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.FailoverTransfer             import FailoverTransfer
 from DIRAC.Resources.Catalog.PoolXMLFile                            import getGUID
-from DIRAC.RequestManagementSystem.Client.Reequest                  import Request
+from DIRAC.RequestManagementSystem.Client.Request                   import Request
 from DIRAC.RequestManagementSystem.Client.Operation                 import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient                 import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestValidator         import gRequestValidator
@@ -1178,7 +1178,7 @@ class JobWrapper:
     if '"' in requestName:
       requestName = requestName.replace( '"', '' )
 
-    request.RequestName( requestName )
+    request.RequestName = requestName
     request.JobID = self.jobID
     request.SourceComponent = "Job_%s" % self.jobID
 
