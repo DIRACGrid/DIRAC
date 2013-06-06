@@ -288,7 +288,7 @@ class FTSAgent( AgentModule ):
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
     log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
 
-    self.STAGE_FILES = self.am_getOption( "StageFiles", self._STAGE_FILES )
+    self.STAGE_FILES = self.am_getOption( "StageFiles", self.STAGE_FILES )
     log.info( "Stage files before submission  = %s" % {True: "yes", False: "no"}[bool( self.STAGE_FILES )] )
 
     self.MAX_ACTIVE_JOBS = self.am_getOption( "MaxActiveJobsPerRoute", self.MAX_ACTIVE_JOBS )
