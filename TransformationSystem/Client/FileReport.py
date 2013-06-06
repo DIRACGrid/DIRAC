@@ -71,7 +71,7 @@ class FileReport:
     result['FailedResults'] = failedResults
     return result
 
-  def generateRequest( self ):
+  def generateForwardDISET( self ):
     ''' Commit the accumulated records and generate request eventually '''
     result = self.commit()
     request = None

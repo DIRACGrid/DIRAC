@@ -1183,7 +1183,7 @@ class JobWrapper:
     request.SourceComponent = "Job_%s" % self.jobID
 
     # JobReport part first
-    result = self.jobReport.generateFowardDISET()
+    result = self.jobReport.generateForwardDISET()
     if result['OK']:
       if result["Value"]:
         request.addOperation( result["Value"] )
