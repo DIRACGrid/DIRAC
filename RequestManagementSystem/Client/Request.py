@@ -430,7 +430,7 @@ class Request( Record ):
 
   # # digest
   def toJSON( self ):
-    """ get digest for a web """
+    """ serialize to JSON format """
     digest = dict( zip( self.__data__.keys(),
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
     digest["RequestID"] = self.RequestID
@@ -441,3 +441,21 @@ class Request( Record ):
         return opJSON
       digest["Operations"].append( opJSON["Value"] )
     return S_OK( digest )
+
+  def getDigest( self ):
+    """ return digest for request """
+    digest = []
+    for op in self:
+      opDigest = [ op.Type, op.Type, op.Status, op.Order ]
+      if op.TargetSE:
+        opDigest.append( op.TargetSE )
+      if op.Catalog:
+        opDigest.append( op.Catalog )
+      if len(op):
+        opFile = op[0]
+        opDigest.append( opFile.LFN, ",...<%d files>" % len( op ) )
+      digest.append( ":".join( opDigest ) )
+    return S_OK( "\n".join( digest ) )
+
+    pass
+

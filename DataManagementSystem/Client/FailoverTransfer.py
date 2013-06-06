@@ -1,7 +1,6 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/DataManagementSystem/Client/FailoverTransfer $
+# $HeadURL: $
 ########################################################################
-
 """ Failover Transfer
 
     The failover transfer client exposes the following methods:
@@ -22,26 +21,25 @@
 
     getRequestObject() allows to retrieve the modified request object
     after transfer operations.
-
 """
-
 __RCSID__ = "$Id: $"
+
+from types import ListType
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 
-
-
 from DIRAC import S_OK, S_ERROR, gLogger
 
-import types
-
 class FailoverTransfer( object ):
+  """
+    .. class:: FailoverTransfer
+  """
 
   #############################################################################
-  def __init__( self, requestObject = False ):
+  def __init__( self, requestObject = None ):
     """ Constructor function, can specify request object to instantiate
         FailoverTransfer or a new request object is created.
     """
@@ -55,7 +53,8 @@ class FailoverTransfer( object ):
       self.request.SourceComponent = 'FailoverTransfer'
 
   #############################################################################
-  def transferAndRegisterFile( self, fileName, localPath, lfn, destinationSEList, fileGUID = None, fileCatalog = None ):
+  def transferAndRegisterFile( self, fileName, localPath, lfn,
+                               destinationSEList, fileGUID = None, fileCatalog = None ):
     """Performs the transfer and register operation with failover.
     """
     errorList = []
@@ -102,7 +101,9 @@ class FailoverTransfer( object ):
     return S_ERROR( 'Failed to upload output data file' )
 
   #############################################################################
-  def transferAndRegisterFileFailover( self, fileName, localPath, lfn, targetSE, failoverSEList, fileGUID = None, fileCatalog = None ):
+  def transferAndRegisterFileFailover( self, fileName, localPath, lfn,
+                                       targetSE, failoverSEList,
+                                       fileGUID = None, fileCatalog = None ):
     """Performs the transfer and register operation to failover storage and sets the
        necessary replication and removal requests to recover.
     """
@@ -155,15 +156,22 @@ class FailoverTransfer( object ):
 
   #############################################################################
   def __setRegistrationRequest( self, lfn, se, catalog, fileDict ):
-    """ Sets a registration request.
+    """ Sets a registration request
+
+    :param str lfn: LFN
+    :param list se: list of SE
+    :param list catalog: list of catalogs to use
+    :param dict fileDict: file metadata
     """
 
     self.log.info( 'Setting registration request for %s at %s.' % ( lfn, se ) )
-    if not type( catalog ) == types.ListType:
-      catalog = [catalog]
-
+    if type( catalog ) != ListType:
+      catalog = [ catalog ]
+    if type( se ) == ListType:
+      se = ",".join( se )
 
     for cat in catalog:
+
       register = Operation()
       register.Type = "RegisterFile"
       register.Catalog = cat
@@ -171,30 +179,29 @@ class FailoverTransfer( object ):
 
       regFile = File()
       regFile.LFN = lfn
+      regFile.Checksum = fileDict.get( "Addler", "" )
+      regFile.ChecksumType = "ADLER32" if "Addler" in fileDict else ""
+      regFile.Size = fileDict.get( "Size", 0 )
+      regFile.GUID = fileDict.get( "GUID", "" )
+      regFile.PFN = fileDict.get( "PFN", "" )
 
       register.addFile( regFile )
 
-
-
-    for cat in catalog:
-      result = self.request.addSubRequest( {'Attributes':{'Operation':'registerFile', 'ExecutionOrder':i_catalog,
-                                                         'TargetSE':se, 'Catalogue':cat}}, 'register' )
-      if not result['OK']:
-        return result
-
-      i_catalog += 1
-
-      index = result['Value']
-      if not fileDict.has_key( 'Status' ):
-        fileDict['Status'] = 'Waiting'
-      self.request.setSubRequestFiles( index, 'register', [fileDict] )
+      self.request.addOperation( register )
 
     return S_OK()
 
   #############################################################################
   def __setReplicaRemovalRequest( self, lfn, se ):
     """ Sets a removal request for a replica.
+
+
+    :param str lfn: LFN
+    :param se:
     """
+    if type( se ) == str:
+      se = ",".join( [ se.strip() for se in se.split( "," ) if se.strip() ] )
+
     removeReplica = Operation()
 
     removeReplica.Type = "RemoveReplica"
