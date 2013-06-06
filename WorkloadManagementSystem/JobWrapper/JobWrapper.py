@@ -1204,6 +1204,16 @@ class JobWrapper:
         else:
           self.log.warn( 'No rpcStub found to construct failover request for WMS accounting report' )
 
+    # Any other requests in the current directory
+    rfiles = self.__getRequestFiles()
+    for rfname in rfiles:
+      rfile = open( rfname, 'r' )
+      reqString = rfile.read()
+      rfile.close()
+      requestStored = Request( eval( reqString ) )
+      for storedOperation in requestStored:
+        request.addOperation( storedOperation )
+
     # The request is ready, send it now
     isValid = gRequestValidator.validate( request )
     if not isValid["OK"]:
@@ -1225,10 +1235,8 @@ class JobWrapper:
   #############################################################################
   def __getRequestFiles( self ):
     """Simple wrapper to return the list of request files.
-
-    K.C. not used?
     """
-    return glob.glob( '*_request.xml' )
+    return glob.glob( '*_request.json' )
 
   #############################################################################
   def __cleanUp( self ):
