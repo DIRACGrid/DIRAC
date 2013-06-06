@@ -13,6 +13,7 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+
 # Register workflow parameter switch
 Script.registerSwitch( 'p:', 'parameter=', 'Parameters that are passed directly to the workflow' )
 Script.parseCommandLine()
@@ -27,12 +28,9 @@ from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 
-# from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-
 import DIRAC
 
 import os, os.path, sys, string
-
 
 # Forcing the current directory to be the first in the PYTHONPATH
 sys.path.insert( 0, os.path.realpath( '.' ) )
