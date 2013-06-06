@@ -25,7 +25,9 @@ from DIRAC.Core.Workflow.WorkflowReader import *
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+from DIRAC.RequestManagementSystem.Client.Request import Request
+
+# from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
 import DIRAC
 
@@ -52,7 +54,7 @@ def jobexec( jobxml, wfParameters = {} ):
 
   workflow.addTool( 'JobReport', JobReport( jobID ) )
   workflow.addTool( 'AccountingReport', DataStoreClient() )
-  workflow.addTool( 'Request', RequestContainer() )
+  workflow.addTool( 'Request', Request() )
 
   # Propagate the command line parameters to the workflow if any
   for name, value in wfParameters.items():
@@ -76,14 +78,14 @@ for switch, parameter in parList:
   if switch == "p":
     name, value = parameter.split( '=' )
     value = value.strip()
-    
-    # The comma separated list in curly brackets is interpreted as a list
-    if value.startswith("{"):
-      value = value[1:-1].replace('"','').replace(" ",'').split(',')
-      value = ';'.join(value)
 
-    parDict[name] = value 
-    
+    # The comma separated list in curly brackets is interpreted as a list
+    if value.startswith( "{" ):
+      value = value[1:-1].replace( '"', '' ).replace( " ", '' ).split( ',' )
+      value = ';'.join( value )
+
+    parDict[name] = value
+
 gLogger.debug( 'PYTHONPATH:\n%s' % ( string.join( sys.path, '\n' ) ) )
 result = jobexec( jobXMLfile, parDict )
 if not result['OK']:

@@ -868,9 +868,9 @@ class JobWrapper:
 
       self.outputDataSize += getGlobbedTotalSize( localfile )
       outputFilePath = os.path.join( os.getcwd(), localfile )
-      fileGUID = None
-      if pfnGUID.has_key( localfile ):
-        fileGUID = pfnGUID[localfile]
+
+      fileGUID = pfnGUID[localfile] if localfile in pfnGUID else None
+      if fileGUID:
         self.log.verbose( 'Found GUID for file from POOL XML catalogue %s' % localfile )
 
       outputSEList = self.__getSortedSEList( outputSE )
