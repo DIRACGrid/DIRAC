@@ -866,7 +866,10 @@ class JobWrapper:
         self.log.error( 'Missing specified output data file:', outputFile )
         continue
 
+      localfileSize = getGlobbedTotalSize( localfile )
+
       self.outputDataSize += getGlobbedTotalSize( localfile )
+
       outputFilePath = os.path.join( os.getcwd(), localfile )
 
       fileGUID = pfnGUID[localfile] if localfile in pfnGUID else None
@@ -875,7 +878,7 @@ class JobWrapper:
 
       outputSEList = self.__getSortedSEList( outputSE )
       upload = failoverTransfer.transferAndRegisterFile( localfile, outputFilePath, lfn,
-                                                         outputSEList, fileGUID, self.defaultCatalog )
+                                                         outputSEList, fileGUID, self.defaultCatalog, localfileSize )
       if upload['OK']:
         self.log.info( '"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile,
                                                                             upload['Value']['uploadedSE'],
@@ -1192,26 +1195,14 @@ class JobWrapper:
       result = self.sendWMSAccounting( status, minorStatus )
       if not result['OK']:
         self.log.warn( 'Could not send WMS accounting with result: \n%s' % result )
-        if result.has_key( 'rpcStub' ):
+        if 'rpcStub' in result:
           self.log.verbose( 'Adding accounting report to failover request object' )
-
           forwardDISETOp = Operation()
           forwardDISETOp.Type = "ForwardDISET"
           forwardDISETOp.Arguments = DEncode.encode( result['rpcStub'] )
           request.addOperation( forwardDISETOp )
-
         else:
           self.log.warn( 'No rpcStub found to construct failover request for WMS accounting report' )
-
-    # Any other requests in the current directory
-    # # # K.C. ???
-    # rfiles = self.__getRequestFiles()
-    # for rfname in rfiles:
-    #  rfile = open( rfname, 'r' )
-    #  reqString = rfile.read()
-    #  rfile.close()
-    #  requestStored = RequestContainer( reqString )
-    #  request.update( requestStored )
 
     # The request is ready, send it now
     isValid = gRequestValidator.validate( request )
@@ -1234,6 +1225,8 @@ class JobWrapper:
   #############################################################################
   def __getRequestFiles( self ):
     """Simple wrapper to return the list of request files.
+
+    K.C. not used?
     """
     return glob.glob( '*_request.xml' )
 

@@ -78,8 +78,7 @@ class RequestValidator( object ):
                "RemoveFile" : { "Operation" : [], "Files" : [ "LFN" ] },
                "RemoveReplica" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN" ] },
                "ReTransfer" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] },
-               "RegisterFile" : { "Operation" : [ ], "Files" : [ "LFN", "PFN", "Size",
-                                                                "ChecksumType", "Checksum", "GUID" ] },
+               "RegisterFile" : { "Operation" : [ ], "Files" : [ "LFN", "PFN", "ChecksumType", "Checksum", "GUID" ] },
                "RegisterReplica" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] } }
 
   def __init__( self ):

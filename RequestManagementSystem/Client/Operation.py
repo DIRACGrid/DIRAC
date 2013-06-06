@@ -236,6 +236,8 @@ class Operation( Record ):
   @SourceSE.setter
   def SourceSE( self, value ):
     """ source SE setter """
+    if type( value ) == list:
+      value = ",".join( value )
     value = ",".join( [ se.strip() for se in value.split( "," ) ] )
     if len( value ) > 256:
       raise ValueError( "SourceSE list too long" )
@@ -254,6 +256,8 @@ class Operation( Record ):
   @TargetSE.setter
   def TargetSE( self, value ):
     """ target SE setter """
+    if type( value ) == list:
+      value = ",".join( value )
     value = ",".join( [ se.strip() for se in value.split( "," ) ] )
     if len( value ) > 256:
       raise ValueError( "TargetSE list too long" )

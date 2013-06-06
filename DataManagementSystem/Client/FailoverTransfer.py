@@ -34,8 +34,8 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC import S_OK, S_ERROR, gLogger
 
 class FailoverTransfer( object ):
-  """
-    .. class:: FailoverTransfer
+  """ .. class:: FailoverTransfer
+
   """
 
   #############################################################################
@@ -54,7 +54,7 @@ class FailoverTransfer( object ):
 
   #############################################################################
   def transferAndRegisterFile( self, fileName, localPath, lfn,
-                               destinationSEList, fileGUID = None, fileCatalog = None ):
+                               destinationSEList, fileGUID = None, fileCatalog = None, fileSize = None ):
     """Performs the transfer and register operation with failover.
     """
     errorList = []
@@ -83,7 +83,7 @@ class FailoverTransfer( object ):
       if not fileCatalog:
         fileCatalog = ''
 
-      result = self.__setRegistrationRequest( fileDict['LFN'], se, fileCatalog, fileDict )
+      result = self.__setRegistrationRequest( fileDict['LFN'], se, fileCatalog, fileDict, fileSize )
       if not result['OK']:
         self.log.error( 'Failed to set registration request for: SE %s and metadata: \n%s' % ( se, fileDict ) )
         errorList.append( 'Failed to set registration request for: SE %s and metadata: \n%s' % ( se, fileDict ) )
@@ -155,7 +155,7 @@ class FailoverTransfer( object ):
     return S_OK()
 
   #############################################################################
-  def __setRegistrationRequest( self, lfn, se, catalog, fileDict ):
+  def __setRegistrationRequest( self, lfn, se, catalog, fileDict, fileSize = None ):
     """ Sets a registration request
 
     :param str lfn: LFN
@@ -171,22 +171,18 @@ class FailoverTransfer( object ):
       se = ",".join( se )
 
     for cat in catalog:
-
       register = Operation()
       register.Type = "RegisterFile"
       register.Catalog = cat
       register.TargetSE = se
-
       regFile = File()
       regFile.LFN = lfn
       regFile.Checksum = fileDict.get( "Addler", "" )
       regFile.ChecksumType = "ADLER32" if "Addler" in fileDict else ""
-      regFile.Size = fileDict.get( "Size", 0 )
+      regFile.Size = fileSize if fileSize else 0
       regFile.GUID = fileDict.get( "GUID", "" )
       regFile.PFN = fileDict.get( "PFN", "" )
-
       register.addFile( regFile )
-
       self.request.addOperation( register )
 
     return S_OK()
@@ -222,13 +218,10 @@ class FailoverTransfer( object ):
     remove = Operation()
     remove.Type = "RemoveFile"
     remove.TargetSE = se
-
     rmFile = File()
     rmFile.LFN = lfn
     if pfn:
       rmFile.PFN = pfn
     remove.addFile( rmFile )
-
     self.request.addOperation( remove )
-
     return S_OK()
