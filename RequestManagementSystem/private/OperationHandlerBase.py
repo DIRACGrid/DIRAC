@@ -92,6 +92,11 @@ class OperationHandlerBase( object ):
     csOptionsDict = csOptionsDict["Value"] if "Value" in csOptionsDict else {}
 
     for option, value in csOptionsDict.iteritems():
+      # # hack to set proper types
+      try:
+        value = eval( value )
+      except NameError:
+        pass
       self.makeProperty( option, value, True )
 
     # # pre setup logger

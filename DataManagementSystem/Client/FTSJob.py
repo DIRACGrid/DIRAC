@@ -27,7 +27,6 @@ import os
 import datetime
 import re
 import tempfile
-import uuid
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Grid import executeGridCommand
@@ -58,7 +57,8 @@ class FTSJob( Record ):
   # # failed states
   FAILEDSTATES = ( "Canceled", "Failed" )
   # # finished
-  FINALSTATES = ( "Finished", "FinishedDirty" )
+  FINALSTATES = ( "Finished", "FinishedDirty", "Failed", "Canceled" )
+
 
   # # missing source regexp patterns
   missingSourceErrors = [
@@ -111,6 +111,8 @@ class FTSJob( Record ):
     return { "Fields" :
              { "FTSJobID" : "INTEGER NOT NULL AUTO_INCREMENT",
                "FTSGUID" :  "VARCHAR(64) NOT NULL",
+               "OperationID": "INTEGER NOT NULL",
+               "RequestID": "INTEGER NOT NULL",
                "SourceSE" : "VARCHAR(128) NOT NULL",
                "TargetSE" : "VARCHAR(128) NOT NULL",
                "FTSServer" : "VARCHAR(255) NOT NULL",
@@ -139,6 +141,28 @@ class FTSJob( Record ):
   def FTSJobID( self, value ):
     """ FTSJobID setter """
     self.__data__["FTSJobID"] = long( value ) if value else 0
+
+  @property
+  def RequestID( self ):
+    """ RequestID getter """
+    return self.__data__["RequestID"]
+
+  @RequestID.setter
+  def RequestID( self, value ):
+    """ RequestID setter """
+    value = long( value ) if value else 0
+    self.__data__["RequestID"] = value
+
+  @property
+  def OperationID( self ):
+    """ OperationID getter """
+    return self.__data__["OperationID"]
+
+  @OperationID.setter
+  def OperationID( self, value ):
+    """ OperationID setter """
+    value = long( value ) if value else 0
+    self.__data__["OperationID"] = value
 
   @property
   def FTSGUID( self ):
@@ -413,7 +437,17 @@ class FTSJob( Record ):
     surlFile = os.fdopen( fd, 'w' )
     surlFile.write( surls )
     surlFile.close()
-    submitCommand = [ "glite-transfer-submit", "-s", self.FTSServer, "-f", fileName, "-o", "--compare-checksums" ]
+    submitCommand = [ "glite-transfer-submit",
+                     "-s",
+                     self.FTSServer,
+                     "-f",
+                     fileName,
+                     "-o",
+                     "--compare-checksums" ]
+    if self.TargetToken:
+      submitCommand.append( "-t %s" % self.TargetToken )
+    if self.SourceToken:
+      submitCommand.append( "-S %s" % self.SourceToken )
 
     submit = executeGridCommand( "", submitCommand )
     os.remove( fileName )
@@ -433,9 +467,16 @@ class FTSJob( Record ):
     """ monitor fts job """
     if not self.FTSGUID:
       return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
-    monitorCommand = [ "glite-transfer-status", "--verbose", "-s", self.FTSServer, self.FTSGUID ]
+
+    monitorCommand = [ "glite-transfer-status",
+                       "--verbose",
+                       "-s",
+                       self.FTSServer,
+                       self.FTSGUID ]
+
     if full:
       monitorCommand.append( "-l" )
+
     monitor = executeGridCommand( "", monitorCommand )
     if not monitor["OK"]:
       return monitor
@@ -447,10 +488,6 @@ class FTSJob( Record ):
 
     outputStr = outputStr.replace( "'" , "" ).replace( "<", "" ).replace( ">", "" )
 
-    print returnCode
-    print errStr
-    print outputStr
-
     # # set FTS job status
     regExp = re.compile( "Status:\s+(\S+)" )
 
@@ -459,7 +496,8 @@ class FTSJob( Record ):
     statusSummary = {}
     for state in FTSFile.ALL_STATES:
       regExp = re.compile( "\s+%s:\s+(\d+)" % state )
-      statusSummary[state] = int( re.search( regExp, outputStr ).group( 1 ) )
+      if regExp.search( outputStr ):
+        statusSummary[state] = int( re.search( regExp, outputStr ).group( 1 ) )
 
     total = sum( statusSummary.values() )
     completed = sum( [ statusSummary.get( state, 0 ) for state in FTSFile.FINAL_STATES ] )
@@ -473,7 +511,7 @@ class FTSJob( Record ):
     for sourceURL, targetURL, fileStatus, retries, reason, duration in fileInfo:
       candidateFile = None
       for ftsFile in self:
-        if candidateFile.SourceURL == sourceURL:
+        if ftsFile.SourceSURL == sourceURL:
           candidateFile = ftsFile
           break
       if not candidateFile:
@@ -509,16 +547,19 @@ class FTSJob( Record ):
       toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
 
     if toRegisterDict:
-      register = self.replicaManager().addCatalogReplica( toRegister )
+      register = self.replicaManager().addCatalogReplica( toRegisterDict )
       if not register["OK"]:
         for ftsFile in toRegister:
           ftsFile.Error = "AddCatalogReplicaFailed"
+          print ftsFile.Error
         return register
       register = register["Value"]
       failedFiles = register["Failed"] if "Failed" in register else {}
       for ftsFile in toRegister:
         if ftsFile.LFN in failedFiles:
           ftsFile.Error = "AddCatalogReplicaFailed"
+          print ftsFile.Error
+
     return S_OK()
 
   def toSQL( self ):

@@ -163,14 +163,14 @@ class TransformationDB( DB ):
                                             }
 
     if 'TransformationFiles' not in tablesInDB:
-      tablesD['TransformationFiles'] = {'Fields': {'ErrorCount': 'INT(4) NOT NULL DEFAULT 0',
+      tablesD['TransformationFiles'] = {'Fields': { 'TransformationID': 'INTEGER NOT NULL',
                                                     'FileID': 'INTEGER NOT NULL',
+                                                    'TaskID': 'INTEGER',
+                                                    'ErrorCount': 'INT(4) NOT NULL DEFAULT 0',
                                                     'InsertedTime': 'DATETIME',
                                                     'LastUpdate': 'DATETIME',
                                                     'Status': 'VARCHAR(32) DEFAULT "Unused"',
                                                     'TargetSE': 'VARCHAR(255) DEFAULT "Unknown"',
-                                                    'TaskID': 'VARCHAR(32)',
-                                                    'TransformationID': 'INTEGER NOT NULL',
                                                     'UsedSE': 'VARCHAR(255) DEFAULT "Unknown"'},
                                          'Indexes': {'Status': ['Status'],
                                                      'TransformationID': ['TransformationID']},
@@ -961,6 +961,26 @@ class TransformationDB( DB ):
 
   ###########################################################################
   #
+  # These methods manipulate the TransformationFileTasks table
+  #
+
+  def __deleteTransformationFileTask( self, transID, taskID, connection = False ):
+    ''' Delete the file associated to a given task of a given transformation
+        from the TransformationFileTasks table for transformation with TransformationID and TaskID
+    '''
+    req = "DELETE FROM TransformationFileTasks WHERE TransformationID=%d AND TaskID=%d" % ( transID, taskID )
+    return self._update( req, connection )
+
+  def __deleteTransformationFileTasks( self, transID, connection = False ):
+    ''' Remove all associations between files, tasks and a transformation '''
+    req = "DELETE FROM TransformationFileTasks WHERE TransformationID = %d;" % transID
+    res = self._update( req, connection )
+    if not res['OK']:
+      gLogger.error( "Failed to delete transformation files/task history", res['Message'] )
+    return res
+
+  ###########################################################################
+  #
   # These methods manipulate the TransformationTasks table
   #
 
@@ -1619,13 +1639,16 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
+    res = self.__deleteTransformationFileTasks( transID, connection = connection )
+    if not res['OK']:
+      return res
     res = self.__deleteTransformationFiles( transID, connection = connection )
     if not res['OK']:
       return res
-    res = self.__deleteTransformationTasks( transID, connection = connection )
+    res = self.__deleteTransformationTaskInputs( transID, connection = connection )
     if not res['OK']:
       return res
-    res = self.__deleteTransformationTaskInputs( transID, connection = connection )
+    res = self.__deleteTransformationTasks( transID, connection = connection )
     if not res['OK']:
       return res
     res = self.setTransformationParameter( transID, 'Status', 'Cleaned', author = author, connection = connection )
@@ -1663,10 +1686,13 @@ class TransformationDB( DB ):
     res = self.__deleteTransformationTaskInputs( transID, taskID, connection = connection )
     if not res['OK']:
       return res
-    res = self.__deleteTransformationTask( transID, taskID, connection = connection )
+    res = self.__deleteTransformationFileTask( transID, taskID, connection = connection )
     if not res['OK']:
       return res
-    return self.__resetTransformationFile( transID, taskID, connection = connection )
+    res = self.__resetTransformationFile( transID, taskID, connection = connection )
+    if not res['OK']:
+      return res
+    return self.__deleteTransformationTask( transID, taskID, connection = connection )
 
   def __checkUpdate( self, table, param, paramValue, selectDict = {}, connection = False ):
     ''' Check whether the update will perform an update '''

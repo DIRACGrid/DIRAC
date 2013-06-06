@@ -77,7 +77,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
 
   def __call__( self ):
     """ call me maybe """
-    # #
+    # # check replicas first
     checkReplicas = self.__checkReplicas()
     if not checkReplicas["OK"]:
       self.log.error( checkReplicas["Message"] )
@@ -178,6 +178,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
   def ftsTransfer( self ):
     """ replicate and register using FTS """
 
+    self.log.info( "scheduling files..." )
     targetSEs = self.operation.targetSEList
 
     for targetSE in targetSEs:
@@ -189,6 +190,8 @@ class ReplicateAndRegister( OperationHandlerBase ):
           opFile.Status = "Failed"
         self.operation.Error = "unknown targetSE: %s" % targetSE
         return S_ERROR( self.operation.Error )
+
+    toSchedule = []
 
     for opFile in self.getWaitingFilesList():
       gMonitor.addMark( "FTSScheduleAtt", 1 )
@@ -217,22 +220,41 @@ class ReplicateAndRegister( OperationHandlerBase ):
           self.log.info( "file %s is already present at all targets" % opFile.LFN )
           opFile.Status = "Done"
           continue
+        toSchedule.append( ( opFile.toJSON()["Value"], validReplicas, validTargets ) )
 
-        ftsSchedule = self.ftsClient().ftsSchedule( opFile, validReplicas, validTargets )
-        if not ftsSchedule["OK"]:
-          self.log.error( ftsSchedule["Message"] )
-          gMonitor.addMark( "FTSScheduleFail", 1 )
-          continue
-        # # if we land here file was scheduled
+    if toSchedule:
+      self.log.info( "found %s files to schedule" % len( toSchedule ) )
+
+
+      ftsSchedule = self.ftsClient().ftsSchedule( self.request.RequestID,
+                                                  self.operation.OperationID,
+                                                  toSchedule )
+      if not ftsSchedule["OK"]:
+        self.log.error( ftsSchedule["Message"] )
+        return ftsSchedule
+
+      ftsSchedule = ftsSchedule["Value"]
+
+      for fileID in ftsSchedule["Successful"]:
         gMonitor.addMark( "FTSScheduleOK", 1 )
-        opFile.Status = "Scheduled"
+        for opFile in self.operation:
+          if fileID == opFile.FileID:
+            opFile.Status = "Scheduled"
+            self.log.always( "%s has been scheduled for FTS" % opFile.LFN )
+
+      for fileID, reason in ftsSchedule["Failed"]:
+        gMonitor.addMark( "FTSScheduleFail", 1 )
+        for opFile in self.operation:
+          if fileID == opFile.FileID:
+            opFile.Error = reason
+            self.log.error( "unable to schedule %s for FTS: %s" % ( opFile.LFN, opFile.Error ) )
 
     return S_OK()
 
   def rmTransfer( self ):
     """ replicate and register using ReplicaManager  """
+    self.log.info( "transferring files using replica manager..." )
     # # source SE
-
     sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
     if sourceSE:
       # # check source se for read

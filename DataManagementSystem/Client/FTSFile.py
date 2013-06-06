@@ -73,6 +73,7 @@ class FTSFile( Record ):
              { "FTSFileID": "INTEGER NOT NULL AUTO_INCREMENT",
                "FileID": "INTEGER NOT NULL",
                "OperationID": "INTEGER NOT NULL",
+               "RequestID": "INTEGER NOT NULL",
                "LFN": "VARCHAR(255) NOT NULL",
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
                "Checksum": "VARCHAR(64)",
@@ -118,6 +119,17 @@ class FTSFile( Record ):
       self.__data__["FTSGUID"] = value
 
   @property
+  def RequestID( self ):
+    """ RequestID getter """
+    return self.__data__["RequestID"]
+
+  @RequestID.setter
+  def RequestID( self, value ):
+    """ RequestID setter """
+    value = long( value ) if value else 0
+    self.__data__["RequestID"] = value
+
+  @property
   def OperationID( self ):
     """ OperationID getter """
     return self.__data__["OperationID"]
@@ -125,7 +137,7 @@ class FTSFile( Record ):
   @OperationID.setter
   def OperationID( self, value ):
     """ OperationID setter """
-    value = long( value ) if value else None
+    value = long( value ) if value else 0
     self.__data__["OperationID"] = value
 
   @property
@@ -296,7 +308,6 @@ class FTSFile( Record ):
 
   def toJSON( self ):
     """ dump FTSFile to JSON format """
-
     return S_OK( dict( zip( self.__data__.keys(),
                       [ val if val != None else "" for val in self.__data__.values() ] ) ) )
   def toSQL( self ):
