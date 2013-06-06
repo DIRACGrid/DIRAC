@@ -153,6 +153,9 @@ class PhysicalRemoval( OperationHandlerBase ):
       # # not a DataManger? set status to failed and return
       if "DataManager" not in self.shifter:
         opFile.Status = "Failed"
+      elif not opFile.LFN:
+        opFile.Error = "LFN not set"
+        opFile.Status = "Failed"
       else:
         # #  you're a data manager - save current proxy and get a new one for LFN and retry
         saveProxy = os.environ["X509_USER_PROXY"]
