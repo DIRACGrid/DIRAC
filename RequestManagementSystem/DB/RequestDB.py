@@ -154,20 +154,34 @@ class RequestDB( DB ):
     lastrowid = putRequest["lastrowid"]
     putRequest = putRequest["Value"]
 
+    cleanUp = request.cleanUpSQL()
+    if cleanUp:
+      dirty = self._transaction( cleanUp )
+      if not dirty["OK"]:
+        self.log.error( "putRequest: unable to delete dirty Operation records: %s" % dirty["Message"] )
+        return dirty
+
     # # flag for a new request
     isNew = False
-
     # # set RequestID when necessary
     if request.RequestID == 0:
       isNew = True
       request.RequestID = lastrowid
 
     for operation in request:
+
+      cleanUp = operation.cleanUpSQL()
+      if cleanUp:
+        dirty = self._transaction( cleanUp )
+        if not dirty["OK"]:
+          self.log.error( "putRequest: unable to delete dirty File records: %s" % dirty["Message"] )
+          return dirty
+
       opSQL = operation.toSQL()["Value"]
       putOperation = self._transaction( opSQL )
       if not putOperation["OK"]:
         self.log.error( "putRequest: unable to put operation %d: %s" % ( request.indexOf( operation ),
-                                                                        putOperation["Message"] ) )
+                                                                         putOperation["Message"] ) )
         if isNew:
           deleteRequest = self.deleteRequest( request.RequestName )
           if not deleteRequest["OK"]:

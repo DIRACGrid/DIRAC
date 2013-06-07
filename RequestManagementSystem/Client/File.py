@@ -82,10 +82,6 @@ class File( Record ):
              "PrimaryKey" : "FileID",
              "Indexes" : { "LFN" : [ "LFN" ] } }
 
-  def __eq__( self, other ):
-    """ == operator, comparing only LFN or PFN """
-    return ( self.LFN == other.LFN ) or ( self.PFN == other.PFN )
-
   # # properties
 
   @property
@@ -256,6 +252,5 @@ class File( Record ):
     """ get json """
     digest = dict( zip( self.__data__.keys(),
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
-    # digest["FileID"] = self.FileID
     digest["OperationID"] = str( self.OperationID )
     return S_OK( digest )

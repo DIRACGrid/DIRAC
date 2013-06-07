@@ -206,6 +206,51 @@ class RequestDBTests( unittest.TestCase ):
     self.assertEqual( getFTS["Value"].RequestName, "FTSTest", "wrong request selected" )
 
 
+  def test06Dirty( self ):
+    """ dirty records """
+    db = RequestDB()
+
+    r = Request()
+    r.RequestName = "dirty"
+
+    op1 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op1 += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    op2 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op2 += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    op3 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op3 += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    r += op1
+    r += op2
+    r += op3
+
+    put = db.putRequest( r )
+    self.assertEqual( put["OK"], True, "putRequest failed" )
+
+    r = db.getRequest( "dirty" )
+    del r[0]
+    self.assertEqual( len( r ), 2, "len wrong" )
+
+    put = db.putRequest( r )
+    self.assertEqual( put["OK"], True, "putRequest failed" )
+
+    r = db.getRequest( "dirty" )
+    self.assertEqual( len( r ), 2, "len wrong" )
+
+    op4 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op4 += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    r[0] = op4
+    put = db.putRequest( r )
+    self.assertEqual( put["OK"], True, "putRequest failed" )
+
+    r = db.getRequest( "dirty" )
+    self.assertEqual( len( r ), 2, "len wrong" )
+
+
+
 # # test suite execution
 if __name__ == "__main__":
   gTestLoader = unittest.TestLoader()

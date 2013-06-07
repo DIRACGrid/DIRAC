@@ -142,30 +142,6 @@ class OperationTests( unittest.TestCase ):
       self.assertEqual( type( error ), ValueError, "wrong exc raised" )
       self.assertEqual( str( error ), "unknown Status 'foo'", "wrong exc reason" )
     operation.addFile( File( { "Status" : "Waiting", "LFN": "/a" } ) )
-    oldStatus = operation.Status
-
-    # # won't modify - there are Waiting files
-    operation.Status = "Done"
-    self.assertEqual( operation.Status, oldStatus, "waiting file but status == Done" )
-
-    # # won't modify - there are Scheduled files
-    for subFile in operation:
-      subFile.Status = "Scheduled"
-    operation.Status = "Done"
-    self.assertEqual( operation.Status, "Scheduled", "scheduled files but operation status %s" % operation.Status )
-
-    # # will modify - all files are Done now
-    for subFile in operation:
-      subFile.Status = "Done"
-    operation.Status = "Done"
-    self.assertEqual( operation.Status, "Done", "all files done but operation status %s" % operation.Status )
-
-    operation = Operation()
-    operation.addFile( File( { "Status" : "Done", "LFN": "/b" } ) )
-    self.assertEqual( operation.Status, "Done", "all files done but operation status %s" % operation.Status )
-
-    operation.addFile ( File( { "Status" : "Waiting", "LFN": "/c" } ) )
-    self.assertEqual( operation.Status, "Queued", "all files waiting but operation status %s" % operation.Status )
 
 
   def test03sql( self ):
@@ -204,32 +180,83 @@ class OperationTests( unittest.TestCase ):
   def test04StateMachine( self ):
     """ state machine """
     op = Operation()
-    self.assertEqual( op.Status, "Queued", "1. wrong status" )
+    self.assertEqual( op.Status, "Queued", "1. wrong status %s" % op.Status )
 
     op.addFile( File( {"Status": "Waiting"} ) )
-    self.assertEqual( op.Status, "Queued", "2. wrong status" )
+    self.assertEqual( op.Status, "Queued", "2. wrong status %s" % op.Status )
 
     op.addFile( File( {"Status": "Scheduled" } ) )
-    self.assertEqual( op.Status, "Queued", "3. wrong status" )
+    self.assertEqual( op.Status, "Queued", "3. wrong status %s" % op.Status )
 
     op.addFile( File( {"Status": "Done" } ) )
-    self.assertEqual( op.Status, "Queued", "4. wrong status" )
+    self.assertEqual( op.Status, "Queued", "4. wrong status %s" % op.Status )
 
     op.addFile( File( { "Status": "Failed" } ) )
-    self.assertEqual( op.Status, "Failed", "5. wrong status" )
+    self.assertEqual( op.Status, "Failed", "5. wrong status %s" % op.Status )
 
     op[3].Status = "Scheduled"
-    self.assertEqual( op.Status, "Queued", "6. wrong status" )
+    self.assertEqual( op.Status, "Queued", "6. wrong status %s" % op.Status )
 
     op[0].Status = "Scheduled"
-    self.assertEqual( op.Status, "Scheduled", "7. wrong status" )
+    self.assertEqual( op.Status, "Scheduled", "7. wrong status %s" % op.Status )
 
     op[0].Status = "Waiting"
-    self.assertEqual( op.Status, "Queued", "8. wrong status" )
+    self.assertEqual( op.Status, "Queued", "8. wrong status %s" % op.Status )
 
     for f in op:
       f.Status = "Done"
-    self.assertEqual( op.Status, "Done", "9. wrong status " )
+    self.assertEqual( op.Status, "Done", "9. wrong status %s" % op.Status )
+
+
+  def test05List( self ):
+    """ getitem, setitem, delitem and dirty """
+    op = Operation()
+
+    files = []
+    for i in range( 5 ):
+      f = File()
+      files.append( f )
+      op += f
+
+    for i in range( len( op ) ):
+      self.assertEqual( op[i], files[i], "__getitem__ failed" )
+
+    for i in range( len( op ) ):
+      op[i] = File( {"LFN": "/%s" % i } )
+      self.assertEqual( op[i].LFN, "/%s" % i, "__setitem__ failed" )
+
+    del op[0]
+    self.assertEqual( len( op ), 4, "__delitem__ failed" )
+
+    # # opID set
+    op.OperationID = 1
+    del op[0]
+    self.assertEqual( op.cleanUpSQL(), None, "cleanUp failed after __delitem__" )
+
+    op[0].FileID = 1
+    del op[0]
+    self.assertEqual( op.cleanUpSQL(),
+                      "DELETE FROM `File` WHERE `OperationID` = 1 AND `FileID` IN (1);\n",
+                      "cleanUp failed after __delitem__" )
+
+    op[0].FileID = 2
+    op[0] = File( {"FileID": 2 } )
+    self.assertEqual( op.cleanUpSQL(),
+                      "DELETE FROM `File` WHERE `OperationID` = 1 AND `FileID` IN (1,2);\n",
+                      "cleanUp failed after __setitem__" )
+
+    json = op.toJSON()
+    self.assertEqual( "__dirty" in json["Value"], True, "missing __dirty" )
+
+    op2 = Operation( json["Value"] )
+    self.assertEqual( op2.cleanUpSQL(),
+                      "DELETE FROM `File` WHERE `OperationID` = 1 AND `FileID` IN (1,2);\n",
+                      "cleanUp failed after JSON" )
+
+
+
+
+
 
 
 

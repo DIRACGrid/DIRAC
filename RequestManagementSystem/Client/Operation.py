@@ -71,14 +71,24 @@ class Operation( Record ):
     self.__data__["OperationID"] = 0
     self.__data__["RequestID"] = 0
     self.__data__["Status"] = "Queued"
+
     # # operation files
     self.__files__ = TypedList( allowedTypes = File )
+    # # dirty fileIDs
+    self.__dirty = []
+
     # # init from dict
     fromDict = fromDict if fromDict else {}
+
+    self.__dirty = fromDict.get( "__dirty", [] )
+    if "__dirty" in fromDict:
+      del fromDict["__dirty"]
+
     for fileDict in fromDict.get( "Files", [] ):
       self.addFile( File( fileDict ) )
     if "Files" in fromDict:
       del fromDict["Files"]
+
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError( "Unknown Operation attribute '%s'" % key )
@@ -109,15 +119,18 @@ class Operation( Record ):
   def _notify( self ):
     """ notify self about file status change """
     fStatus = list( set( self.fileStatusList() ) )
+
     newStatus = "Done"
     while sorted( fStatus ):
+
       status = fStatus.pop( 0 )
+
       # # one file Failed -> Failed
       if status == "Failed":
         newStatus = "Failed"
         break
 
-      if status == "Scheduled":
+      elif status == "Scheduled":
         if newStatus == "Done":
           newStatus = "Scheduled"
         continue
@@ -144,21 +157,24 @@ class Operation( Record ):
       self.__data__["Status"] = "Waiting"
 
   # # Files arithmetics
-  def __contains__( self, subFile ):
+  def __contains__( self, opFile ):
     """ in operator """
-    return subFile in self.__files__
+    return opFile in self.__files__
 
-  def __iadd__( self, subFile ):
+  def __iadd__( self, opFile ):
     """ += operator """
     if len( self ) >= Operation.MAX_FILES:
       raise RuntimeError( "too many Files in a single Operation" )
-    self.addFile( subFile )
+    self.addFile( opFile )
     return self
 
-  def addFile( self, subFile ):
-    """ add :subFile: to operation """
-    self.__files__.append( subFile )
-    subFile._parent = self
+  def addFile( self, opFile ):
+    """ add :opFile: to operation """
+    if len( self ) > Operation.MAX_FILES:
+      raise RuntimeError( "too many Files in a single Operation" )
+    if opFile not in self:
+      self.__files__.append( opFile )
+      opFile._parent = self
     self._notify()
 
   # # helpers for looping
@@ -167,17 +183,27 @@ class Operation( Record ):
     return self.__files__.__iter__()
 
   def __getitem__( self, i ):
-    """ [] op for files """
+    """ [] op for opFiles """
     return self.__files__.__getitem__( i )
 
   def __delitem__( self, i ):
     """ remove file from op, only if OperationID is NOT set """
     if not self.OperationID:
-      return self.__files__.__delitem__( i )
+      self.__files__.__delitem__( i )
+    else:
+      if self[i].FileID:
+        self.__dirty.append( self[i].FileID )
+      self.__files__.__delitem__( i )
+    self._notify()
 
   def __setitem__( self, i, opFile ):
-    """ overwrite file """
-    return self.__files__.__setitem__( i, opFile )
+    """ overwrite opFile """
+    toDelete = self[i]
+    if toDelete.FileID:
+      self.__dirty.append( toDelete.FileID )
+    self.__files__.__setitem__( i, opFile )
+    opFile._parent = self
+    self._notify()
 
   def fileStatusList( self ):
     """ get list of files statuses """
@@ -236,9 +262,7 @@ class Operation( Record ):
   @SourceSE.setter
   def SourceSE( self, value ):
     """ source SE setter """
-    if type( value ) == list:
-      value = ",".join( value )
-    value = ",".join( [ se.strip() for se in value.split( "," ) ] )
+    value = ",".join( self._uniqueList( value ) )
     if len( value ) > 256:
       raise ValueError( "SourceSE list too long" )
     self.__data__["SourceSE"] = str( value )[:255] if value else ""
@@ -246,7 +270,7 @@ class Operation( Record ):
   @property
   def sourceSEList( self ):
     """ helper property returning source SEs as a list"""
-    return list( set ( [ sourceSE for sourceSE in self.SourceSE.split( "," ) if sourceSE.strip() ] ) )
+    return self.SourceSE.split( "," )
 
   @property
   def TargetSE( self ):
@@ -256,9 +280,7 @@ class Operation( Record ):
   @TargetSE.setter
   def TargetSE( self, value ):
     """ target SE setter """
-    if type( value ) == list:
-      value = ",".join( value )
-    value = ",".join( [ se.strip() for se in value.split( "," ) ] )
+    value = ",".join( self._uniqueList( value ) )
     if len( value ) > 256:
       raise ValueError( "TargetSE list too long" )
     self.__data__["TargetSE"] = value[:255] if value else ""
@@ -266,7 +288,7 @@ class Operation( Record ):
   @property
   def targetSEList( self ):
     """ helper property returning target SEs as a list"""
-    return list( set ( [ targetSE for targetSE in self.TargetSE.split( "," ) if targetSE.strip() ] ) )
+    return self.TargetSE.split( "," )
 
   @property
   def Catalog( self ):
@@ -276,7 +298,15 @@ class Operation( Record ):
   @Catalog.setter
   def Catalog( self, value ):
     """ catalog setter """
+    value = ",".join( self._uniqueList( value ) )
+    if len( value ) > 255:
+      raise ValueError( "Catalog list too long" )
     self.__data__["Catalog"] = value if value else ""
+
+  @property
+  def catalogList( self ):
+    """ helper property returning catalogs as list """
+    return self.__data__["Catalog"].split( "," )
 
   @property
   def Error( self ):
@@ -382,7 +412,14 @@ class Operation( Record ):
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append( " VALUES %s;\n" % values )
+
     return S_OK( "".join( query ) )
+
+  def cleanUpSQL( self ):
+    """ query deleting dirty records from File table """
+    if self.OperationID and self.__dirty:
+      fIDs = ",".join( [ str( fid ) for fid in self.__dirty ] )
+      return "DELETE FROM `File` WHERE `OperationID` = %s AND `FileID` IN (%s);\n" % ( self.OperationID, fIDs )
 
   def toJSON( self ):
     """ get json digest """
@@ -390,10 +427,13 @@ class Operation( Record ):
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
     digest["RequestID"] = str( self.RequestID )
     digest["Order"] = str( self.Order )
+    if self.__dirty:
+      digest["__dirty"] = self.__dirty
     digest["Files"] = []
     for opFile in self:
       opJSON = opFile.toJSON()
       if not opJSON["OK"]:
         return opJSON
       digest["Files"].append( opJSON["Value"] )
+
     return S_OK( digest )
