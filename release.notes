@@ -1,3 +1,20 @@
+[v6r9p1]
+
+*RMS
+NEW: FTSAgent - update rwAccessValidStamp,
+     update ftsGraphValidStamp,
+     new option for staging files before submission,
+     better log handling here and there
+CHANGE: FTSJob - add staging flag in in submitFTS2
+CHANGE: Changes in WMS (FailoverTransfer, JobReport, JobWrapper, SandboxStoreHandler) 
+        and TS (FileReport) to follow the new RMS.
+NEW: Full CRUD support in RMS.
+
+*RSS
+NEW: ResourceManagementDB - new table ErrorReportBuffer
+NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectErrorReportBuffer,
+     deleteErrorReportBuffer
+
 [v6r9]
 
 NEW: Refactored Request Management System, related DMS agents and FTS management
