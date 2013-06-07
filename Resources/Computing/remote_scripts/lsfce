@@ -21,7 +21,7 @@ def submitJob( executable,outputDir,errorDir,nJobs,jobDir,queue,submitOptions ):
   if outputs:
     print 0
     for output in outputs:
-      match = re.match('Job <(\d*)>',output)
+      match = re.search('Job <(\d*)>',output)
       if match:
         print match.groups()[0]
   else:

@@ -468,15 +468,11 @@ class StorageManagementDB( DB ):
   def _getTaskReplicaIDs( self, taskIDs, connection = False ):
     if not taskIDs:
       return S_OK( [] )
-    req = "SELECT ReplicaID FROM TaskReplicas WHERE TaskID IN (%s);" % intListToString( taskIDs )
+    req = "SELECT DISTINCT(ReplicaID) FROM TaskReplicas WHERE TaskID IN (%s);" % intListToString( taskIDs )
     res = self._query( req, connection )
     if not res['OK']:
       return res
-    replicaIDs = []
-    for tuple in res['Value']:
-      replicaID = tuple[0]
-      if not replicaID in replicaIDs:
-        replicaIDs.append( replicaID )
+    replicaIDs = [row[0] for row in res['Value']]
     return S_OK( replicaIDs )
 
   def _getReplicaIDTasks( self, replicaIDs, connection = False ):
@@ -1001,12 +997,12 @@ class StorageManagementDB( DB ):
     # Look for Failed CacheReplicas which are not associated to any Task. These have no PinExpiryTime in StageRequests
     # as they were not staged successfully (for various reasons), even though a staging request had been submitted
     req = "SELECT ReplicaID FROM CacheReplicas WHERE Links = 0 AND Status = 'Failed';"
-    res = self._query( req, connection )    
+    res = self._query( req, connection )
     if not res['OK']:
       gLogger.error( "StorageManagementDB.removeUnlinkedReplicas. Problem selecting entries from CacheReplicas where Links = 0 AND Status=Failed." )
     else:
       replicaIDs.extend( [ row[0] for row in res['Value'] ] )
-        
+
     if replicaIDs:
       # Removed the entries from the StageRequests table that are expired
       reqSelect = "SELECT * FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
