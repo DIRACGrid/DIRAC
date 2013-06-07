@@ -214,13 +214,13 @@ class RequestDBTests( unittest.TestCase ):
     r.RequestName = "dirty"
 
     op1 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
-    op1 += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+    op1 += File( {"LFN": "/a/b/c/1", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
 
     op2 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
-    op2 += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+    op2 += File( {"LFN": "/a/b/c/2", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
 
     op3 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
-    op3 += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+    op3 += File( {"LFN": "/a/b/c/3", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
 
     r += op1
     r += op2
@@ -247,7 +247,7 @@ class RequestDBTests( unittest.TestCase ):
     self.assertEqual( len( r ), 2, "2. len wrong" )
 
     op4 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
-    op4 += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+    op4 += File( {"LFN": "/a/b/c/4", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
 
     r[0] = op4
     put = db.putRequest( r )
