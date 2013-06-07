@@ -267,9 +267,9 @@ class RSSMachine( StateMachine ):
     goes wrong. It is mostly used while sorting policies with method `orderPolicyResults`.
     
     examples:
-      >>> rsm0.levelOfPolicyState( { 'State' : 'Active', 'A' : 'A' } )
+      >>> rsm0.levelOfPolicyState( { 'Status' : 'Active', 'A' : 'A' } )
           5
-      >>> rsm0.levelOfPolicyState( { 'State' : 'Rubbish', 'R' : 'R' } )
+      >>> rsm0.levelOfPolicyState( { 'Status' : 'Rubbish', 'R' : 'R' } )
           -1    
     
     :Parameters:
