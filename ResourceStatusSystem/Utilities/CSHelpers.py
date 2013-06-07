@@ -98,15 +98,15 @@ def getStorageElementsHosts( seNames = None ):
       
   return S_OK( list( set( seHosts ) ) )    
   
-def getSEToken( se ):
-  ''' 
-    Get StorageElement token 
-  '''
-  
-  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken'
-  
-  #FIXME: return S_OK, S_ERROR
-  return gConfig.getValue( _basePath % se, '' )
+#def getSEToken( se ):
+#  ''' 
+#    Get StorageElement token 
+#  '''
+#  
+#  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken'
+#  
+#  #FIXME: return S_OK, S_ERROR
+#  return gConfig.getValue( _basePath % se, '' )
 
 def getSEHost( se ):
   ''' 
@@ -181,15 +181,15 @@ def getSpaceTokenEndpoints():
 #    return endpoints[ 'Value' ]
 #  return [] 
 
-def getFileCatalogs():
-  '''
-    Gets all storage elements from /Resources/FileCatalogs
-  '''
-  
-  _basePath = 'Resources/FileCatalogs'
-    
-  fileCatalogs = gConfig.getSections( _basePath )
-  return fileCatalogs 
+#def getFileCatalogs():
+#  '''
+#    Gets all storage elements from /Resources/FileCatalogs
+#  '''
+#  
+#  _basePath = 'Resources/FileCatalogs'
+#    
+#  fileCatalogs = gConfig.getSections( _basePath )
+#  return fileCatalogs 
 
 def getComputingElements():
   '''
