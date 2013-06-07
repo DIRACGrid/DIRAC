@@ -303,3 +303,11 @@ class StorageManagerHandler( RequestHandler ):
     if not res['OK']:
       gLogger.error( 'getAssociatedReplicas: Failed to get Associated Replicas. ', res['Message'] )
     return res
+
+  types_killTasksBySourceTaskID = [ListType]
+  def export_killTasksBySourceTaskID(self, sourceTaskIDs ):
+    """ Given SourceTaskIDs (jobIDs), this will cancel further staging of files for the corresponding tasks"""
+    res = storageDB.killTasksBySourceTaskID( sourceTaskIDs )
+    if not res['OK']:
+      gLogger.error( 'removeTasks: Failed to kill staging', res['Message'] )
+    return res
