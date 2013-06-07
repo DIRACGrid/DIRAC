@@ -227,27 +227,37 @@ class RequestDBTests( unittest.TestCase ):
     r += op3
 
     put = db.putRequest( r )
-    self.assertEqual( put["OK"], True, "putRequest failed" )
+    self.assertEqual( put["OK"], True, "1. putRequest failed: %s" % put.get( "Message", "" ) )
+
 
     r = db.getRequest( "dirty" )
+    self.assertEqual( r["OK"], True, "1. getRequest failed: %s" % r.get( "Message", "" ) )
+    r = r["Value"]
+
     del r[0]
-    self.assertEqual( len( r ), 2, "len wrong" )
+    self.assertEqual( len( r ), 2, "1. len wrong" )
 
     put = db.putRequest( r )
-    self.assertEqual( put["OK"], True, "putRequest failed" )
+    self.assertEqual( put["OK"], True, "2. putRequest failed: %s" % put.get( "Message", "" ) )
 
     r = db.getRequest( "dirty" )
-    self.assertEqual( len( r ), 2, "len wrong" )
+    self.assertEqual( r["OK"], True, "2. getRequest failed: %s" % r.get( "Message", "" ) )
+
+    r = r["Value"]
+    self.assertEqual( len( r ), 2, "2. len wrong" )
 
     op4 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
     op4 += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
 
     r[0] = op4
     put = db.putRequest( r )
-    self.assertEqual( put["OK"], True, "putRequest failed" )
+    self.assertEqual( put["OK"], True, "3. putRequest failed: %s" % put.get( "Message", "" ) )
 
     r = db.getRequest( "dirty" )
-    self.assertEqual( len( r ), 2, "len wrong" )
+    self.assertEqual( r["OK"], True, "3. getRequest failed: %s" % r.get( "Message", "" ) )
+    r = r["Value"]
+
+    self.assertEqual( len( r ), 2, "3. len wrong" )
 
 
 
