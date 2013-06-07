@@ -1,10 +1,12 @@
 ''' FileReport class encapsulates methods to report file status to the transformation DB '''
 
-__RCSID__ = "$Id: FileReport.py 18161 2009-11-11 12:07:09Z acasajus $"
+__RCSID__ = "$Id: $"
 
-from DIRAC                                                      import S_OK, S_ERROR, gLogger
-from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
-from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.Core.Utilities import DEncode
 
 import copy
 
@@ -69,15 +71,17 @@ class FileReport:
     result['FailedResults'] = failedResults
     return result
 
-  def generateRequest( self ):
+  def generateForwardDISET( self ):
     ''' Commit the accumulated records and generate request eventually '''
     result = self.commit()
-    request = None
+    forwardDISETOp = None
     if not result['OK']:
       # Generate Request
-      request = RequestContainer()
-      if result.has_key( 'FailedResults' ):
+      if "FailedResults" in result:
         for res in result['FailedResults']:
-          if res.has_key( 'rpcStub' ):
-            request.setDISETRequest( res['rpcStub'] )
-    return S_OK( request )
+          if 'rpcStub' in res:
+            forwardDISETOp = Operation()
+            forwardDISETOp.Type = "ForwardDISET"
+            forwardDISETOp.Arguments = DEncode.encode( res['rpcStub'] )
+
+    return S_OK( forwardDISETOp )

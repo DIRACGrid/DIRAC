@@ -38,7 +38,6 @@ class RequestTests( unittest.TestCase ):
   .. class:: RequestTests
 
   """
-
   def setUp( self ):
     """ set up """
     self.fromDict = { "RequestName" : "test", "JobID" : 12345 }
@@ -289,52 +288,71 @@ class RequestTests( unittest.TestCase ):
 
 
     r[2].Status = "Scheduled"
-    print r.Status, r.subStatusList()
+    self.assertEqual( r.Status, "Scheduled", "16. wrong status %s" % r.Status )
 
     r[2].Status = "Queued"
-    print r.Status, r.subStatusList()
+    self.assertEqual( r.Status, "Waiting", "17. wrong status %s" % r.Status )
 
     r[2].Status = "Scheduled"
-    print r.Status, r.subStatusList()
-
+    self.assertEqual( r.Status, "Scheduled", "18. wrong status %s" % r.Status )
 
     r = Request()
     for i in range( 5 ):
       r.addOperation( Operation( {"Status": "Queued" } ) )
 
     r[0].Status = "Done"
-
-    print r.Status, r.subStatusList()
+    self.assertEqual( r.Status, "Waiting", "19. wrong status %s" % r.Status )
 
     r[1].Status = "Done"
-    
-    
-    print r.Status, r.subStatusList()
-
+    self.assertEqual( r.Status, "Waiting", "20. wrong status %s" % r.Status )
 
     r[2].Status = "Scheduled"
-    
-
-    print r.Status, r.subStatusList()
-
+    self.assertEqual( r.Status, "Scheduled", "21. wrong status %s" % r.Status )
 
     r[2].Status = "Done"
+    self.assertEqual( r.Status, "Waiting", "22. wrong status %s" % r.Status )
 
+  def test07List( self ):
+    """ setitem, delitem, getitem and dirty """
 
-    print r.Status, r.subStatusList()
+    r = Request()
 
+    ops = [ Operation() for i in range( 5 ) ]
 
-  # def test07JSON( self ):
-  #  """ """
-  #  fromDict = {'Operations': [{'Files': [{'Status': 'Waiting', 'Attempt': '', 'ChecksumType': '', 'Checksum': '', 'LFN': '/lhcb/user/c/cibak/testPutAndRegister', 'PFN': '', 'Size': '', 'Error': '', 'GUID': '', 'OperationID': '0', 'FileID': 0}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Waiting', 'TargetSE': '', 'RequestID': '0', 'CreationTime': '2013-05-24 08:04:48', 'SourceSE': '', 'SubmitTime': '2013-05-24 08:04:48', 'Catalog': '', 'Arguments': '', 'Error': '', 'Type': 'RemoveFile', 'Order': '0', 'OperationID': ''}, {'Files': [{'Status': 'Waiting', 'Attempt': '', 'ChecksumType': 'ADLER32', 'Checksum': '90d520ff', 'LFN': '/lhcb/user/c/cibak/testPutAndRegister', 'PFN': '/tmp/testPutAndRegister', 'Size': '164', 'Error': '', 'GUID': 'C8E0DBDA-75AB-283F-7603-EC3ED629752E', 'OperationID': '0', 'FileID': 0}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Queued', 'TargetSE': 'RAL-USER', 'RequestID': '0', 'CreationTime': '2013-05-24 08:04:48', 'SourceSE': '', 'SubmitTime': '2013-05-24 08:04:48', 'Catalog': '', 'Arguments': '', 'Error': '', 'Type': 'PutAndRegister', 'Order': '1', 'OperationID': ''}, {'Files': [{'Status': 'Waiting', 'Attempt': '', 'ChecksumType': 'ADLER32', 'Checksum': '90d520ff', 'LFN': '/lhcb/user/c/cibak/testPutAndRegister', 'PFN': '', 'Size': '164', 'Error': '', 'GUID': '', 'OperationID': '0', 'FileID': 0}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Queued', 'TargetSE': 'RAL-USER,PIC-USER', 'RequestID': '0', 'CreationTime': '2013-05-24 08:04:48', 'SourceSE': '', 'SubmitTime': '2013-05-24 08:04:48', 'Catalog': '', 'Arguments': '', 'Error': '', 'Type': 'ReplicateAndRegister', 'Order': '2', 'OperationID': ''}, {'Files': [{'Status': 'Waiting', 'Attempt': '', 'ChecksumType': '', 'Checksum': '', 'LFN': '/lhcb/user/c/cibak/testPutAndRegister', 'PFN': '', 'Size': '', 'Error': '', 'GUID': '', 'OperationID': '0', 'FileID': 0}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Queued', 'TargetSE': 'RAL-USER', 'RequestID': '0', 'CreationTime': '2013-05-24 08:04:48', 'SourceSE': '', 'SubmitTime': '2013-05-24 08:04:48', 'Catalog': '', 'Arguments': '', 'Error': '', 'Type': 'RemoveReplica', 'Order': '3', 'OperationID': ''}, {'Files': [{'Status': 'Waiting', 'Attempt': '', 'ChecksumType': '', 'Checksum': '', 'LFN': '/lhcb/user/c/cibak/testPutAndRegister', 'PFN': '', 'Size': '', 'Error': '', 'GUID': '', 'OperationID': '0', 'FileID': 0}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Queued', 'TargetSE': '', 'RequestID': '0', 'CreationTime': '2013-05-24 08:04:48', 'SourceSE': '', 'SubmitTime': '2013-05-24 08:04:48', 'Catalog': '', 'Arguments': '', 'Error': '', 'Type': 'RemoveFile', 'Order': '4', 'OperationID': ''}], 'LastUpdate': '2013-05-24 08:04:48', 'Status': 'Waiting', 'OwnerGroup': 'dirac_user', 'DIRACSetup': '', 'CreationTime': '2013-05-24 08:04:48', 'JobID': '', 'OwnerDN': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba', 'SubmitTime': '2013-05-24 08:04:48', 'RequestID': 0, 'Error': '', 'SourceComponent': '', 'RequestName': 'fullChain'}
-  #
-  #  r = Request( fromDict )
-  #  print r.subStatusList()
-  #  for op in r:
-  #    print op
-  #    for f in op:
-  #      print f
+    for op in ops:
+      r.addOperation( op )
 
+    for i, op in enumerate( ops ):
+      self.assertEqual( op, r[i], "__getitem__ failed" )
+
+    op = Operation()
+    r[0] = op
+    self.assertEqual( op, r[0], "__setitem__ failed" )
+
+    del r[0]
+    self.assertEqual( len( r ), 4, "__delitem__ failed" )
+
+    r.RequestID = 1
+    del r[0]
+    self.assertEqual( r.cleanUpSQL(), None, "cleanUpSQL failed after __delitem__ (no opId)" )
+
+    r[0].OperationID = 1
+    del r[0]
+    self.assertEqual( r.cleanUpSQL(),
+                      "DELETE FROM `Operation` WHERE `RequestID` = 1 AND `OperationID` IN (1);",
+                      "cleanUpSQL failed after __delitem__ (opId set)" )
+
+    r[0].OperationID = 2
+    r[0] = Operation()
+    self.assertEqual( r.cleanUpSQL(),
+                      "DELETE FROM `Operation` WHERE `RequestID` = 1 AND `OperationID` IN (1,2);",
+                      "cleanUpSQL failed after __setitem_ (opId set)" )
+
+    json = r.toJSON()
+    self.assertEqual( "__dirty" in json["Value"], True, "__dirty missing in json" )
+
+    r2 = Request( json["Value"] )
+    self.assertEqual( r.cleanUpSQL(), r2.cleanUpSQL(), "wrong cleanUpSQL after json" )
 
 # # test execution
 if __name__ == "__main__":
