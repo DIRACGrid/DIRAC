@@ -172,7 +172,7 @@ class RequestDB( DB ):
 
       cleanUp = operation.cleanUpSQL()
       if cleanUp:
-        dirty = self._transaction( cleanUp )
+        dirty = self._transaction( [ cleanUp ] )
         if not dirty["OK"]:
           self.log.error( "putRequest: unable to delete dirty File records: %s" % dirty["Message"] )
           return dirty
