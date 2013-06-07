@@ -65,8 +65,9 @@ class State_test( diracmock.DIRAC_TestCase ):
     self.assertEquals( res, 'defStateName' )
     
     obj = self.moduleTested.State( 0, [ 'StateName1', 'StateName2' ] )
-    res = obj.transitionRule( 'nextState' )
-    self.assertEquals( res, 'nextState' )
+    for unknownState in [ 'nextState', '', 0, None ]:
+      res = obj.transitionRule( unknownState )
+      self.assertEquals( res, unknownState )
     res = obj.transitionRule( 'StateName1' )
     self.assertEquals( res, 'StateName1' )
     res = obj.transitionRule( 'StateName2' )
