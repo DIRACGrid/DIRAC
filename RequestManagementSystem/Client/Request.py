@@ -14,7 +14,7 @@
     request implementation
 """
 # for properties
-# pylint: disable=E0211,W0612,W0142
+# pylint: disable=E0211,W0612,W0142,C0103
 __RCSID__ = "$Id$"
 # #
 # @file Request.py
@@ -461,9 +461,10 @@ class Request( Record ):
     query = []
     if self.RequestID and self.__dirty:
       opIDs = ",".join( [ str( opID ) for opID in self.__dirty ] )
-      query.append( "DELETE FROM `Operation` WHERE `RequestID` = %s AND `OperationID` IN (%s);\n" % ( self.RequestID, opIDs ) )
+      query.append( "DELETE FROM `Operation` WHERE `RequestID`=%s AND `OperationID` IN (%s);\n" % ( self.RequestID,
+                                                                                                    opIDs ) )
       for opID in self.__dirty:
-        query.append( "DELETE FROM `File` WHERE `OperationID` = %s;\n" % opID )
+        query.append( "DELETE FROM `File` WHERE `OperationID`=%s;\n" % opID )
       return query
   # # digest
   def toJSON( self ):

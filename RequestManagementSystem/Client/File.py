@@ -11,10 +11,10 @@
     :synopsis: RMS operation file
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    sub-request file
+    operation file
 """
 # for properties
-# pylint: disable=E0211,W0612,W0142,E1101,E0102
+# pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103
 
 __RCSID__ = "$Id $"
 
