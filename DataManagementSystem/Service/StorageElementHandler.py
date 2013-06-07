@@ -91,8 +91,8 @@ class StorageElementHandler( RequestHandler ):
 
   def __resolveFileID( self, fileID ):
     """ get path to file for a given :fileID: """
-    
-    port = self.getCSOption('Port','')
+
+    port = self.getCSOption( 'Port', '' )
     if not port:
       return ''
 
@@ -100,16 +100,16 @@ class StorageElementHandler( RequestHandler ):
       loc = fileID.find( ":%s" % port )
       if loc >= 0:
         fileID = fileID[loc + len( ":%s" % port ):]
-      
+
     serviceName = self.serviceInfoDict['serviceName']
     loc = fileID.find( serviceName )
     if loc >= 0:
       fileID = fileID[loc + len( serviceName ):]
-      
+
     loc = fileID.find( '?=' )
     if loc >= 0:
       fileID = fileID[loc + 2:]
-      
+
     if fileID.find( BASE_PATH ) == 0:
       return fileID
     while fileID and fileID[0] == '/':
@@ -241,8 +241,8 @@ class StorageElementHandler( RequestHandler ):
     try:
       fd = open( file_path, "wb" )
     except Exception, error:
-      return S_ERROR( "Cannot open to write destination file %s: %s" % ( file_path, str(error) ) )
-    result = fileHelper.networkToDataSink( fd, maxFileSize=( MAX_STORAGE_SIZE * 1024 * 1024 ) )
+      return S_ERROR( "Cannot open to write destination file %s: %s" % ( file_path, str( error ) ) )
+    result = fileHelper.networkToDataSink( fd, maxFileSize = ( MAX_STORAGE_SIZE * 1024 * 1024 ) )
     if not result[ 'OK' ]:
       return result
     fd.close()
@@ -307,7 +307,7 @@ class StorageElementHandler( RequestHandler ):
         compress = True
       fileID = fileID.replace( '.tar', '' )
       strippedFiles.append( self.__resolveFileID( fileID ) )
-    res = fileHelper.bulkToNetwork( strippedFiles, compress=compress )
+    res = fileHelper.bulkToNetwork( strippedFiles, compress = compress )
     if not res['OK']:
       gLogger.error( 'Failed to send bulk to network', res['Message'] )
     return res
@@ -409,7 +409,7 @@ class StorageElementHandler( RequestHandler ):
     storageDict['AvailableSpace'] = actual_space
     storageDict['UsedSpace'] = used_space
     return S_OK( storageDict )
-  
+
   @staticmethod
   def __getDirectorySize( path ):
     """ Get the total size of the given directory in bytes
