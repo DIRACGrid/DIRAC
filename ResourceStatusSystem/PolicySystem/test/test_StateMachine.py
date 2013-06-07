@@ -6,6 +6,7 @@ import diracmock
 
 SUT_PATH = 'DIRAC.ResourceStatusSystem.PolicySystem.StateMachine'
 
+
 # Tests ........................................................................
 
 class State_test( diracmock.DIRAC_TestCase ):
@@ -14,6 +15,7 @@ class State_test( diracmock.DIRAC_TestCase ):
   """
   
   sutPath = SUT_PATH
+
   
   def test_instantiate( self ):
     """ test_instantiate
@@ -23,6 +25,7 @@ class State_test( diracmock.DIRAC_TestCase ):
     
     obj = self.moduleTested.State( 1 )
     self.assertEqual( 'State', obj.__class__.__name__ )
+
     
   def test_constructor( self ):
     """ test_constructor
@@ -44,6 +47,7 @@ class State_test( diracmock.DIRAC_TestCase ):
     self.assertEqual( obj.level, 0 )
     self.assertEqual( obj.stateMap, [ 'StateName1', 'StateName2' ] )
     self.assertEqual( obj.default, 'defStateName' )
+
 
   def test_transitionRule( self ):
     """ test_transitionRule
