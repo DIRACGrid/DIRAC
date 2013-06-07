@@ -37,7 +37,7 @@ from types import StringType, StringTypes, ListType
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.Os import getDiskSpace, getDirectorySize
+from DIRAC.Core.Utilities.Os import getDirectorySize
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
 BASE_PATH = ""
@@ -83,9 +83,10 @@ class StorageElementHandler( RequestHandler ):
 
   @staticmethod
   def __checkForDiskSpace( dpath, size ):
-    """ Check if the directory dpath can accomodate 'size' volume of data
+    """ Check if the directory dpath can accommodate 'size' volume of data
     """
-    dsize = ( getDiskSpace( dpath ) - 1 ) * 1024 * 1024
+    stats = os.statvfs( dpath )
+    dsize = stats.f_bsize * stats.f_bavail
     maxStorageSizeBytes = MAX_STORAGE_SIZE * 1024 * 1024
     return ( min( dsize, maxStorageSizeBytes ) > size )
 
@@ -403,7 +404,8 @@ class StorageElementHandler( RequestHandler ):
     storageDict['BasePath'] = BASE_PATH
     storageDict['MaxCapacity'] = MAX_STORAGE_SIZE
     used_space = getDirectorySize( BASE_PATH )
-    available_space = getDiskSpace( BASE_PATH )
+    stats = os.statvfs( BASE_PATH )
+    available_space = ( stats.f_bsize * stats.f_bavail ) / 1024 / 1024
     allowed_space = MAX_STORAGE_SIZE - used_space
     actual_space = min( available_space, allowed_space )
     storageDict['AvailableSpace'] = actual_space
