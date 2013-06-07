@@ -11,10 +11,10 @@
     :synopsis: RMS operation file
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    sub-request file
+    operation file
 """
 # for properties
-# pylint: disable=E0211,W0612,W0142,E1101,E0102
+# pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103
 
 __RCSID__ = "$Id $"
 
@@ -81,10 +81,6 @@ class File( Record ):
                "Error" : "VARCHAR(255)" },
              "PrimaryKey" : "FileID",
              "Indexes" : { "LFN" : [ "LFN" ] } }
-
-  def __eq__( self, other ):
-    """ == operator, comparing only LFN or PFN """
-    return ( self.LFN == other.LFN ) or ( self.PFN == other.PFN )
 
   # # properties
 
@@ -256,6 +252,5 @@ class File( Record ):
     """ get json """
     digest = dict( zip( self.__data__.keys(),
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
-    # digest["FileID"] = self.FileID
     digest["OperationID"] = str( self.OperationID )
     return S_OK( digest )

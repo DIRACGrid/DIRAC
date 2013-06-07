@@ -17,7 +17,7 @@
 
 """
 # for properties
-# pylint: disable=E0211,W0612,W0142,E1101,E0102
+# pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103
 __RCSID__ = "$Id $"
 # #
 # @file FTSSite.py
