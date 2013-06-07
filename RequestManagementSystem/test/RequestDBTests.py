@@ -206,6 +206,61 @@ class RequestDBTests( unittest.TestCase ):
     self.assertEqual( getFTS["Value"].RequestName, "FTSTest", "wrong request selected" )
 
 
+  def test06Dirty( self ):
+    """ dirty records """
+    db = RequestDB()
+
+    r = Request()
+    r.RequestName = "dirty"
+
+    op1 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op1 += File( {"LFN": "/a/b/c/1", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    op2 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op2 += File( {"LFN": "/a/b/c/2", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    op3 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op3 += File( {"LFN": "/a/b/c/3", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    r += op1
+    r += op2
+    r += op3
+
+    put = db.putRequest( r )
+    self.assertEqual( put["OK"], True, "1. putRequest failed: %s" % put.get( "Message", "" ) )
+
+
+    r = db.getRequest( "dirty" )
+    self.assertEqual( r["OK"], True, "1. getRequest failed: %s" % r.get( "Message", "" ) )
+    r = r["Value"]
+
+    del r[0]
+    self.assertEqual( len( r ), 2, "1. len wrong" )
+
+    put = db.putRequest( r )
+    self.assertEqual( put["OK"], True, "2. putRequest failed: %s" % put.get( "Message", "" ) )
+
+    r = db.getRequest( "dirty" )
+    self.assertEqual( r["OK"], True, "2. getRequest failed: %s" % r.get( "Message", "" ) )
+
+    r = r["Value"]
+    self.assertEqual( len( r ), 2, "2. len wrong" )
+
+    op4 = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op4 += File( {"LFN": "/a/b/c/4", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+
+    r[0] = op4
+    put = db.putRequest( r )
+    self.assertEqual( put["OK"], True, "3. putRequest failed: %s" % put.get( "Message", "" ) )
+
+    r = db.getRequest( "dirty" )
+    self.assertEqual( r["OK"], True, "3. getRequest failed: %s" % r.get( "Message", "" ) )
+    r = r["Value"]
+
+    self.assertEqual( len( r ), 2, "3. len wrong" )
+
+
+
 # # test suite execution
 if __name__ == "__main__":
   gTestLoader = unittest.TestLoader()

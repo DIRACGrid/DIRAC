@@ -41,6 +41,7 @@ class Record( object ):
 
     :param self: self reference
     """
+    self.__dirty = []
     self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
 
   def __setattr__( self, name, value ):
@@ -64,6 +65,16 @@ class Record( object ):
     raise NotImplementedError( "Must provide table description!" )
 
   @staticmethod
+  def _uniqueList( value, sep = "," ):
+    """ make unique list from :value: """
+    if type( value ) not in ( str, unicode, list ):
+      raise TypeError( "wrong type for value" )
+    if type( value ) in ( str, unicode ):
+      value = value.split( sep )
+    return list ( set ( [ str( item ).strip() for item in value if str( item ).strip() ] ) )
+
+  @staticmethod
   def _escapeStr( aStr, lenght = 255 ):
     """ remove ' and cut  """
     return str( aStr ).replace( "'", "" )[:lenght] if aStr else ""
+
