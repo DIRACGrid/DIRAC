@@ -1,3 +1,14 @@
+[v6r7p32]
+
+*DMS
+FIX: StorageElementHandler - do not use getDiskSpace utility, use os.statvfs instead
+CHANGE: StorageManagementDB - in getStageRequests() make MySQL do an UNIQUE selection 
+        and use implicit loop to speed up queries for large results
+
+*Resources
+FIX: lsfce remote script - use re.search instead of re.match in submitJob() to cope with
+     multipline output
+
 [v6r7p31]
 
 *WMS
