@@ -14,7 +14,7 @@
     request implementation
 """
 # for properties
-# pylint: disable=E0211,W0612,W0142
+# pylint: disable=E0211,W0612,W0142,C0103
 __RCSID__ = "$Id$"
 # #
 # @file Request.py
@@ -61,6 +61,7 @@ class Request( Record ):
     """
     Record.__init__( self )
     self.__waiting = None
+
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now
     self.__data__["SubmitTime"] = now
@@ -76,11 +77,20 @@ class Request( Record ):
         self.OwnerDN = proxyInfo["identity"]
         self.OwnerGroup = proxyInfo["group"]
 
+    self.__dirty = []
     self.__operations__ = TypedList( allowedTypes = Operation )
+
     fromDict = fromDict if fromDict else {}
+
+    self.__dirty = fromDict.get( "__dirty", [] )
+    if "__dirty" in fromDict:
+      del fromDict["__dirty"]
+
     for opDict in fromDict.get( "Operations", [] ):
       self +=Operation( opDict )
-    if "Operations" in fromDict: del fromDict["Operations"]
+    if "Operations" in fromDict:
+      del fromDict["Operations"]
+
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError( "Unknown Request attribute '%s'" % key )
@@ -240,6 +250,25 @@ class Request( Record ):
     """ [] op for sub requests """
     return self.__operations__.__getitem__( i )
 
+  def __setitem__( self, i, value ):
+    """ self[i] = val """
+    if self[i].OperationID:
+      self.__dirty.append( self[i].OperationID )
+    self.__operations__.__setitem__( i, value )
+    value._parent = self
+    self._notify()
+
+  def __delitem__( self, i ):
+    """ del self[i]"""
+    if not self.RequestID:
+      self.__operations__.__delitem__( i )
+    else:
+      opId = self[i].OperationID
+      if opId:
+        self.__dirty.append( opId )
+      self.__operations__.__delitem__( i )
+    self._notify()
+
   def indexOf( self, subReq ):
     """ return index of subReq (execution order) """
     return self.__operations__.index( subReq ) if subReq in self else -1
@@ -249,7 +278,7 @@ class Request( Record ):
     return len( self.__operations__ )
 
   def subStatusList( self ):
-    """ list of statuses for all subRequest """
+    """ list of statuses for all operations """
     return [ subReq.Status for subReq in self ]
 
   # # properties
@@ -425,19 +454,45 @@ class Request( Record ):
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append( " VALUES %s;" % values )
-      # query.append( "WHERE NOT EXISTS (SELECT `RequestName` FROM `Request` WHERE `RequestName` = '%s');\n" % self.RequestName )
     return S_OK( "".join( query ) )
 
+  def cleanUpSQL( self ):
+    """ delete query for dirty operations """
+    query = []
+    if self.RequestID and self.__dirty:
+      opIDs = ",".join( [ str( opID ) for opID in self.__dirty ] )
+      query.append( "DELETE FROM `Operation` WHERE `RequestID`=%s AND `OperationID` IN (%s);\n" % ( self.RequestID,
+                                                                                                    opIDs ) )
+      for opID in self.__dirty:
+        query.append( "DELETE FROM `File` WHERE `OperationID`=%s;\n" % opID )
+      return query
   # # digest
   def toJSON( self ):
-    """ get digest for a web """
+    """ serialize to JSON format """
     digest = dict( zip( self.__data__.keys(),
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
     digest["RequestID"] = self.RequestID
     digest["Operations"] = []
+    digest["__dirty"] = self.__dirty
     for op in self:
       opJSON = op.toJSON()
       if not opJSON["OK"]:
         return opJSON
       digest["Operations"].append( opJSON["Value"] )
     return S_OK( digest )
+
+  def getDigest( self ):
+    """ return digest for request """
+    digest = []
+    for op in self:
+      opDigest = [ op.Type, op.Type, op.Status, op.Order ]
+      if op.TargetSE:
+        opDigest.append( op.TargetSE )
+      if op.Catalog:
+        opDigest.append( op.Catalog )
+      if len( op ):
+        opFile = op[0]
+        opDigest.append( opFile.LFN, ",...<%d files>" % len( op ) )
+      digest.append( ":".join( opDigest ) )
+    return S_OK( "\n".join( digest ) )
+

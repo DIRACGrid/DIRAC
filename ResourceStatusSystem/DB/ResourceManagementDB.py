@@ -150,6 +150,20 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Site', 'System' ]        
                                 }
   
+  _tablesDB[ 'ErrorReportBuffer' ] = { 'Fields' : 
+                      {
+                       'ID'            : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                       'Name'          : 'VARCHAR(64) NOT NULL',
+                       'ElementType'   : 'VARCHAR(32) NOT NULL',
+                       'Reporter'      : 'VARCHAR(64) NOT NULL',
+                       'ErrorMessage'  : 'VARCHAR(512) NOT NULL',
+                       'Operation'     : 'VARCHAR(64) NOT NULL',
+                       'Arguments'     : 'VARCHAR(512) NOT NULL DEFAULT ""',
+                       'DateEffective' : 'DATETIME NOT NULL'
+                      },
+                      'PrimaryKey' : [ 'ID' ]
+                                }  
+  
   _tablesLike  = {}
   _tablesLike[ 'PolicyResultWithID' ] = { 'Fields' : 
                       {
