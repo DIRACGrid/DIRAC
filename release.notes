@@ -3,6 +3,14 @@
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
 
+[v6r8p17]
+
+FIX: included fixes from v6r7p32 patch release
+
+*WMS
+FIX: StalledJobAgent - for accidentally stopped jobs ExecTime can be not set, 
+     set it to CPUTime for the accounting purposes in this case
+
 [v6r8p16]
 
 FIX: included fixes from v6r7p31 patch release
@@ -183,6 +191,17 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p32]
+
+*DMS
+FIX: StorageElementHandler - do not use getDiskSpace utility, use os.statvfs instead
+CHANGE: StorageManagementDB - in getStageRequests() make MySQL do an UNIQUE selection 
+        and use implicit loop to speed up queries for large results
+
+*Resources
+FIX: lsfce remote script - use re.search instead of re.match in submitJob() to cope with
+     multipline output
 
 [v6r7p31]
 

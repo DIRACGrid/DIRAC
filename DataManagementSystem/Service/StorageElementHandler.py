@@ -37,7 +37,7 @@ from types import StringType, StringTypes, ListType
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.Os import getDiskSpace, getDirectorySize
+from DIRAC.Core.Utilities.Os import getDirectorySize
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
 BASE_PATH = ""
@@ -83,16 +83,17 @@ class StorageElementHandler( RequestHandler ):
 
   @staticmethod
   def __checkForDiskSpace( dpath, size ):
-    """ Check if the directory dpath can accomodate 'size' volume of data
+    """ Check if the directory dpath can accommodate 'size' volume of data
     """
-    dsize = ( getDiskSpace( dpath ) - 1 ) * 1024 * 1024
+    stats = os.statvfs( dpath )
+    dsize = stats.f_bsize * stats.f_bavail
     maxStorageSizeBytes = MAX_STORAGE_SIZE * 1024 * 1024
     return ( min( dsize, maxStorageSizeBytes ) > size )
 
   def __resolveFileID( self, fileID ):
     """ get path to file for a given :fileID: """
-    
-    port = self.getCSOption('Port','')
+
+    port = self.getCSOption( 'Port', '' )
     if not port:
       return ''
 
@@ -100,16 +101,16 @@ class StorageElementHandler( RequestHandler ):
       loc = fileID.find( ":%s" % port )
       if loc >= 0:
         fileID = fileID[loc + len( ":%s" % port ):]
-      
+
     serviceName = self.serviceInfoDict['serviceName']
     loc = fileID.find( serviceName )
     if loc >= 0:
       fileID = fileID[loc + len( serviceName ):]
-      
+
     loc = fileID.find( '?=' )
     if loc >= 0:
       fileID = fileID[loc + 2:]
-      
+
     if fileID.find( BASE_PATH ) == 0:
       return fileID
     while fileID and fileID[0] == '/':
@@ -241,8 +242,8 @@ class StorageElementHandler( RequestHandler ):
     try:
       fd = open( file_path, "wb" )
     except Exception, error:
-      return S_ERROR( "Cannot open to write destination file %s: %s" % ( file_path, str(error) ) )
-    result = fileHelper.networkToDataSink( fd, maxFileSize=( MAX_STORAGE_SIZE * 1024 * 1024 ) )
+      return S_ERROR( "Cannot open to write destination file %s: %s" % ( file_path, str( error ) ) )
+    result = fileHelper.networkToDataSink( fd, maxFileSize = ( MAX_STORAGE_SIZE * 1024 * 1024 ) )
     if not result[ 'OK' ]:
       return result
     fd.close()
@@ -307,7 +308,7 @@ class StorageElementHandler( RequestHandler ):
         compress = True
       fileID = fileID.replace( '.tar', '' )
       strippedFiles.append( self.__resolveFileID( fileID ) )
-    res = fileHelper.bulkToNetwork( strippedFiles, compress=compress )
+    res = fileHelper.bulkToNetwork( strippedFiles, compress = compress )
     if not res['OK']:
       gLogger.error( 'Failed to send bulk to network', res['Message'] )
     return res
@@ -403,13 +404,14 @@ class StorageElementHandler( RequestHandler ):
     storageDict['BasePath'] = BASE_PATH
     storageDict['MaxCapacity'] = MAX_STORAGE_SIZE
     used_space = getDirectorySize( BASE_PATH )
-    available_space = getDiskSpace( BASE_PATH )
+    stats = os.statvfs( BASE_PATH )
+    available_space = ( stats.f_bsize * stats.f_bavail ) / 1024 / 1024
     allowed_space = MAX_STORAGE_SIZE - used_space
     actual_space = min( available_space, allowed_space )
     storageDict['AvailableSpace'] = actual_space
     storageDict['UsedSpace'] = used_space
     return S_OK( storageDict )
-  
+
   @staticmethod
   def __getDirectorySize( path ):
     """ Get the total size of the given directory in bytes
