@@ -1,3 +1,11 @@
+[v6r8p17]
+
+FIX: included fixes from v6r7p32 patch release
+
+*WMS
+FIX: StalledJobAgent - for accidentally stopped jobs ExecTime can be not set, 
+     set it to CPUTime for the accounting purposes in this case
+
 [v6r8p16]
 
 FIX: included fixes from v6r7p31 patch release
