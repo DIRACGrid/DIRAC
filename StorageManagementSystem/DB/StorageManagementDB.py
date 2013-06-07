@@ -951,7 +951,7 @@ class StorageManagementDB( DB ):
       connection = self.__getConnection( connection )
       
       # get the TaskIDs
-      req = "SELECT TaskID from Tasks WHERE SourceTaskID IN (%s);"  % intListToString( taskIDs )
+      req = "SELECT TaskID from Tasks WHERE SourceTaskID IN (%s);"  % intListToString( sourceTaskIDs )
       res = self._query( req )
       if not res['OK']:
         gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
@@ -962,8 +962,15 @@ class StorageManagementDB( DB ):
       res = self._query( req )
       if not res['OK']:
         gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+      
          
-      replicaIDs = [ row[0] for row in res['Value'] ]      
+      replicaIDs = [ row[0] for row in res['Value'] ]
+      
+      req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString ( replicaIDs )      
+      res = self._update( req, connection )
+      if not res['OK']:
+        gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+     
       req = "DELETE FROM CacheReplicas WHERE ReplicaID in (%s) AND Links=1;" % intListToString ( replicaIDs )
       res = self._update( req, connection )
       if not res['OK']:

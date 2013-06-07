@@ -358,6 +358,7 @@ class JobManagerHandler( RequestHandler ):
 
     if stagingJobList:
       stagerClient = StorageManagerClient()
+      gLogger.info('Going to send killing signal to stager as well!')
       result = stagerClient.killTasksBySourceTaskID(stagingJobList)
       if not result['OK']:
         gLogger.warn( 'Failed to kill some Stager tasks: %s' % result['Message'] )
