@@ -74,15 +74,14 @@ class FileReport:
   def generateForwardDISET( self ):
     ''' Commit the accumulated records and generate request eventually '''
     result = self.commit()
-    request = None
+    forwardDISETOp = None
     if not result['OK']:
       # Generate Request
-      request = Request()
       if "FailedResults" in result:
         for res in result['FailedResults']:
           if 'rpcStub' in res:
-            forwardDISET = Operation()
-            forwardDISET.Type = "ForwardDISET"
-            forwardDISET.Arguments = DEncode.encode( res['rpcStub'] )
-            request.addOperation( forwardDISET )
-    return S_OK( request )
+            forwardDISETOp = Operation()
+            forwardDISETOp.Type = "ForwardDISET"
+            forwardDISETOp.Arguments = DEncode.encode( res['rpcStub'] )
+
+    return S_OK( forwardDISETOp )
