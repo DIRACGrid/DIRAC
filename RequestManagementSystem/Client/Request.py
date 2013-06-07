@@ -458,10 +458,13 @@ class Request( Record ):
 
   def cleanUpSQL( self ):
     """ delete query for dirty operations """
+    query = ""
     if self.RequestID and self.__dirty:
       opIDs = ",".join( [ str( opID ) for opID in self.__dirty ] )
-      return "DELETE FROM `Operation` WHERE `RequestID` = %s AND `OperationID` IN (%s);" % ( self.RequestID, opIDs )
-
+      query += "DELETE FROM `Operation` WHERE `RequestID` = %s AND `OperationID` IN (%s);\n" % ( self.RequestID, opIDs )
+      for opID in opIDs:
+        query += "DELETE FROM `File` WHERE `OperationID` = %s;\n" % opID
+      return query
   # # digest
   def toJSON( self ):
     """ serialize to JSON format """
