@@ -462,7 +462,7 @@ class Request( Record ):
     if self.RequestID and self.__dirty:
       opIDs = ",".join( [ str( opID ) for opID in self.__dirty ] )
       query.append( "DELETE FROM `Operation` WHERE `RequestID` = %s AND `OperationID` IN (%s);\n" % ( self.RequestID, opIDs ) )
-      for opID in opIDs:
+      for opID in self.__dirty:
         query.append( "DELETE FROM `File` WHERE `OperationID` = %s;\n" % opID )
       return query
   # # digest
