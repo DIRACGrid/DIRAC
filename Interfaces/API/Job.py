@@ -151,6 +151,8 @@ class Job( API ):
     step = self.__getScriptStep( stepDefn )
     stepName = 'RunScriptStep%s' % ( stepNumber )
     logPrefix = 'Script%s_' % ( stepNumber )
+    if logFile:
+      logPrefix = '' # Given that the user specified the log, no need to change it
     logName = '%s%s' % ( logPrefix, logName )
     self.addToOutputSandbox.append( logName )
     self.workflow.addStep( step )
