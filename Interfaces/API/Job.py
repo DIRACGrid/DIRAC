@@ -141,7 +141,7 @@ class Job( API ):
 
     if logFile:
       if type( logFile ) == type( ' ' ):
-        logName = logFile
+        logName = str(logFile)
 
     self.stepCount += 1
 
