@@ -1,3 +1,8 @@
+[v6r8p18]
+
+*TS
+BUGFIX: TransformationAgent - regression in __cleanCache()
+
 [v6r8p17]
 
 FIX: included fixes from v6r7p32 patch release
