@@ -1,3 +1,13 @@
+[v6r9p2]
+
+*RSS
+NEW: Added Component family tables and statuses
+FIX: removed old & unused code 
+NEW: allow RSS policies match wild cards on CS
+
+*WMS
+BUGFIX: FailoverTransfer,JobWrapper - proper propagation of file metadata
+
 [v6r9p1]
 
 *RMS
