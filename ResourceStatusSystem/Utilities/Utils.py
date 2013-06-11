@@ -5,6 +5,8 @@
 
 '''
 
+import fnmatch
+
 from DIRAC                                               import gConfig, S_OK
 from DIRAC.Core.Utilities                                import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -92,8 +94,15 @@ def configMatch( candidateParams, configParams ):
     cParameter = candidateParams[ key ]
     if not isinstance( cParameter, list ):
       cParameter = [ cParameter ]
-    
-    if not set( cParameter ).intersection( set( configParams[ key ] ) ):
+        
+    # We allow using UNIX-like regular expression ( wild-cards ) on the CS
+    _matches = False    
+    for configItem in configParams[ key ]:
+      if fnmatch.filter( set( cParameter ), configItem ):
+        _matches = True
+        break
+        
+    if not _matches:
       return False
     
   return True  
