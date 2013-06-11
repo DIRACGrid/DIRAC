@@ -1,7 +1,6 @@
 # $HeadURL$
-
-"""Collection of DIRAC useful adler32 related tools.
-   By default on Error they return None. 
+""" Collection of DIRAC useful adler32 related tools.
+    By default on Error they return None. 
 
    .. warning::
 
@@ -113,4 +112,4 @@ def stringAdler( string ):
 if __name__ == "__main__":
   import sys
   for p in sys.argv[1:]:
-    print "%s : %s " % ( p, fileAdler( p ) )
+    print "%s : %s %s" % ( p, fileAdler( p ) )
