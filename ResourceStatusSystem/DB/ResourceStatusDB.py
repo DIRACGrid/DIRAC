@@ -25,7 +25,7 @@ class ResourceStatusDB( object ):
   _tablesLike[ 'ElementStatus' ]    = { 'Fields' : 
                     {
                      'Name'            : 'VARCHAR(64) NOT NULL',
-                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT "all"',
+                     'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
                      'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
                      'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
@@ -42,7 +42,7 @@ class ResourceStatusDB( object ):
                     {
                      'ID'              : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                      'Name'            : 'VARCHAR(64) NOT NULL',
-                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT "all"',
+                     'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
                      'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
                      'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
@@ -63,12 +63,12 @@ class ResourceStatusDB( object ):
                     'ResourceHistory'   : 'ElementWithID',
                     'NodeStatus'        : 'ElementStatus',
                     'NodeLog'           : 'ElementWithID',
-                    'NodeHistory'       : 'ElementWithID'            
+                    'NodeHistory'       : 'ElementWithID',
+                    'ComponentStatus'   : 'ElementStatus',
+                    'ComponentLog'      : 'ElementWithID',
+                    'ComponentHistory'  : 'ElementWithID',           
                    }
-
-# No idea whether they make sense or not
-#  __tables[ 'ElementPresent' ]   = {} #????  
-#  __tables[ 'Element' ]          = {} #????
+  
   
   def __init__( self, maxQueueSize = 10, mySQL = None ):
     '''

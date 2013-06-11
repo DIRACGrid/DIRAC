@@ -130,7 +130,7 @@ def getValidElements():
   '''
   Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/ValidElements
   '''
-  _DEFAULTS = ( 'Site', 'Resource', 'Node' )
+  _DEFAULTS = ( 'Site', 'Resource', 'Node', 'Component' )
   
 #  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % _rssConfigPath )
 #  if result is not None:

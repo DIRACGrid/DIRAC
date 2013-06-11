@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
-import urlparse
+# import urlparse
 # # from DIRAC
 from DIRAC import S_OK
 from DIRAC.RequestManagementSystem.private.Record import Record
@@ -149,10 +149,10 @@ class File( Record ):
     """ PFN setter """
     if type( value ) != str:
       raise TypeError( "PFN has to be a string!" )
-    isURL = urlparse.urlparse( value ).scheme
-    isABS = os.path.isabs( value )
-    if not isURL and not isABS:
-      raise ValueError( "Wrongly formatted PFN!" )
+    # isURL = urlparse.urlparse( value ).scheme
+    # isABS = os.path.isabs( value )
+    # if not isURL and not isABS:
+    #  raise ValueError( "Wrongly formatted PFN!" )
     self.__data__["PFN"] = value
 
   @property
