@@ -74,6 +74,16 @@ CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added 
         to the environment when running under glexec     
 NEW: XXXStorage - added getCurrentStatus() method        
 
+[v6r9p2]
+
+*RSS
+NEW: Added Component family tables and statuses
+FIX: removed old & unused code 
+NEW: allow RSS policies match wild cards on CS
+
+*WMS
+BUGFIX: FailoverTransfer,JobWrapper - proper propagation of file metadata
+
 [v6r9p1]
 
 *RMS
@@ -95,6 +105,11 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
+
+[v6r8p18]
+
+*TS
+BUGFIX: TransformationAgent - regression in __cleanCache()
 
 [v6r8p17]
 
@@ -284,6 +299,16 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p33]
+
+*Interfaces
+FIX: Job.py - in setExecutable() - prevent changing the log file name string type
+
+*StorageManagement
+NEW: StorageManagementDB(Handler) - kill staging requests at the same time as 
+     killing related jobs, closes #1510
+FIX: StorageManagementDB - demote the level of several log messages       
 
 [v6r7p32]
 

@@ -80,7 +80,7 @@ def update( rssDB, params, meta ):
     return tablesList
   
   if not tableName in tablesList[ 'Value' ]:
-    return S_ERROR( '"%s" is not on the schema tables' )
+    return S_ERROR( '"%s" is not on the schema tables' % tableName )
    
   if 'uniqueKeys' in meta:
     uniqueKeys = meta[ 'uniqueKeys' ]

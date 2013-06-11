@@ -7,7 +7,6 @@
     a particular job. The JobWrapper starts a thread for execution of the job
     and a Watchdog Agent that can monitor progress.
 """
-
 __RCSID__ = "$Id: $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -31,6 +30,7 @@ from DIRAC.Core.Utilities.Subprocess                                import syste
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
+from DIRAC.Core.Utilities.Adler                                     import fileAdler
 from DIRAC.Core.Utilities                                           import List
 from DIRAC.Core.Utilities                                           import DEncode
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List, Time
@@ -710,12 +710,9 @@ class JobWrapper:
       self.log.verbose( 'OutputSandbox files are: %s' % ', '.join( outputSandbox ) )
     outputData = []
     if self.jobArgs.has_key( 'OutputData' ):
-      #HACK: This absurdity is to please pylint and shut it up
-      outputDataJar = self.jobArgs['OutputData']
-      if not type( outputDataJar ) == type( [] ):
-        outputData = outputDataJar.split( ';' )
-      else:
-        outputData = outputDataJar
+      outputData = self.jobArgs['OutputData']
+      if type( outputData ) != list:
+        outputData = outputData.split( ';' )
       self.log.verbose( 'OutputData files are: %s' % ', '.join( outputData ) )
 
     # First resolve any wildcards for output files and work out if any files are missing
@@ -869,19 +866,34 @@ class JobWrapper:
         self.log.error( 'Missing specified output data file:', outputFile )
         continue
 
+      # # file size
       localfileSize = getGlobbedTotalSize( localfile )
 
       self.outputDataSize += getGlobbedTotalSize( localfile )
 
       outputFilePath = os.path.join( os.getcwd(), localfile )
 
+      # # file GUID
       fileGUID = pfnGUID[localfile] if localfile in pfnGUID else None
       if fileGUID:
         self.log.verbose( 'Found GUID for file from POOL XML catalogue %s' % localfile )
 
+      # #  file checksum
+      cksm = fileAdler( outputFilePath )
+
+      fileMetaDict = { "Size": localfileSize,
+                       "LFN" : lfn,
+                       "ChecksumType" : "Adler32",
+                       "Checksum": cksm,
+                       "GUID" : fileGUID }
+
       outputSEList = self.__getSortedSEList( outputSE )
-      upload = failoverTransfer.transferAndRegisterFile( localfile, outputFilePath, lfn,
-                                                         outputSEList, fileGUID, self.defaultCatalog, localfileSize )
+      upload = failoverTransfer.transferAndRegisterFile( localfile,
+                                                         outputFilePath,
+                                                         lfn,
+                                                         outputSEList,
+                                                         fileMetaDict,
+                                                         self.defaultCatalog )
       if upload['OK']:
         self.log.info( '"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile,
                                                                             upload['Value']['uploadedSE'],
@@ -901,9 +913,13 @@ class JobWrapper:
 
       failoverSEs = self.__getSortedSEList( self.defaultFailoverSE )
       targetSE = outputSEList[0]
-      result = failoverTransfer.transferAndRegisterFileFailover( localfile, outputFilePath,
-                                                                 lfn, targetSE, failoverSEs,
-                                                                 fileGUID, self.defaultCatalog )
+      result = failoverTransfer.transferAndRegisterFileFailover( localfile,
+                                                                 outputFilePath,
+                                                                 lfn,
+                                                                 targetSE,
+                                                                 failoverSEs,
+                                                                 fileMetaDict,
+                                                                 self.defaultCatalog )
       if not result['OK']:
         self.log.error( 'Completely failed to upload file to failover SEs with result:\n%s' % result )
         missing.append( outputFile )

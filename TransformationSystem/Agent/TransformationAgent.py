@@ -492,7 +492,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     try:
       timeLimit = datetime.datetime.utcnow() - datetime.timedelta( days = self.replicaCacheValidity )
       for transID in sorted( self.replicaCache ):
-        for updateTime in self.replicaCache[transID]:
+        for updateTime in self.replicaCache[transID].keys():
           if updateTime < timeLimit or not self.replicaCache[transID][updateTime]:
             self._logVerbose( "Clear %d cached replicas for transformation %s" % ( len( self.replicaCache[transID][updateTime] ),
                                                                                     str( transID ) ), method = '__cleanCache' )
