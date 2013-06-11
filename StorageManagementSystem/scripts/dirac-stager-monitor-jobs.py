@@ -61,6 +61,8 @@ for jobID in jobIDs:
 DIRAC.exit( 0 )
 
 ''' Example:
+dirac-stager-monitor-jobs.py 5688643 5688644
+
 JobID               : 5688643
 Status              : Offline
 SubmitTime          : 2013-06-10 15:21:03
@@ -90,5 +92,42 @@ Staging files for this job:
     PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00003701_1.sdst
     Status  : Offline                                                                                             
     Reason  : None                                                                                                
+----------------------
+JobID               : 5688644
+Status              : Offline
+SubmitTime          : 2013-06-10 15:21:07
+CompleteTime        : None
+Staging files for this job:
     --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00005873_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00005873_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00004468_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00004468_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00000309_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00000309_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00005911_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00005911_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00003296_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00003296_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+
 '''

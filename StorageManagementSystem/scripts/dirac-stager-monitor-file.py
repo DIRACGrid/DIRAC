@@ -87,6 +87,7 @@ print outStr
 DIRAC.exit( 0 )
 
 ''' Example:
+dirac-stager-monitor-file.py /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00056603_1.full.dst GRIDKA-RDST
 --------------------
 LFN     : /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00056603_1.full.dst                          
 SE      : GRIDKA-RDST                                                                                         
