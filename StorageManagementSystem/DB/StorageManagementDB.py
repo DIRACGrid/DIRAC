@@ -362,9 +362,21 @@ class StorageManagementDB( DB ):
       return S_ERROR( 'The supplied task did not exist' )
     return S_OK( resDict )
 
-  def getTaskSummary( self, taskID, connection = False ):
+  def _getTaskIDForJob (self, jobID, connection = False ):
+    # Stager taskID is retrieved from the source DIRAC jobID
+    connection = self.__getConnection( connection )
+    req = "SELECT TaskID from Tasks WHERE SourceTaskID=%s;"  % int( jobID )
+    res = self._query( req )
+    if not res['OK']:
+      gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'getTaskSummary', req, res['Message'] ) )
+      return S_ERROR('The supplied JobID does not exist!')
+    taskID = [ row[0] for row in res['Value'] ]
+    return S_OK(taskID)    
+
+  def getTaskSummary( self, jobID, connection = False ):
     """ Obtain the task summary from the database. """
     connection = self.__getConnection( connection )
+    taskID = self._getTaskIDForJob( jobID, connection = connection )
     res = self.getTaskInfo( taskID, connection = connection )
     if not res['OK']:
       return res
