@@ -1,3 +1,13 @@
+[v6r7p33]
+
+*Interfaces
+FIX: Job.py - in setExecutable() - prevent changing the log file name string type
+
+*StorageManagement
+NEW: StorageManagementDB(Handler) - kill staging requests at the same time as 
+     killing related jobs, closes #1510
+FIX: StorageManagementDB - demote the level of several log messages       
+
 [v6r7p32]
 
 *DMS
