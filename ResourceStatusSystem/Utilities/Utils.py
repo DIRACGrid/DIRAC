@@ -96,10 +96,12 @@ def configMatch( candidateParams, configParams ):
       cParameter = [ cParameter ]
         
     # We allow using UNIX-like regular expression ( wild-cards ) on the CS
-    _matches = []    
+    _matches = False    
     for configItem in configParams[ key ]:
-      _matches.extend( fnmatch.filter( set( cParameter ), configItem ) )
-      
+      if fnmatch.filter( set( cParameter ), configItem ):
+        _matches = True
+        break
+        
     if not _matches:
       return False
     
