@@ -21,11 +21,11 @@ Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
 
-if not len( args ) < 2:
+if len( args ) < 1:
   Script.showHelp()
 
 try:
-  jobIDs = [int( arg ) for arg in sys.argv[1:]]
+  jobIDs = [int( arg ) for arg in args]
 except:
   print 'DIRAC Job IDs must be integers'
   DIRAC.exit( 2 )
@@ -53,6 +53,8 @@ for jobID in jobIDs:
     outStr = "%s\n\t%s: %s" % ( outStr, 'PFN'.ljust( 8 ), str( metadata['PFN'] ).ljust( 100 ) )
     outStr = "%s\n\t%s: %s" % ( outStr, 'Status'.ljust( 8 ), metadata['Status'].ljust( 100 ) )
     outStr = "%s\n\t%s: %s" % ( outStr, 'Reason'.ljust( 8 ), str( metadata['Reason'] ).ljust( 100 ) )
+   # outStr = "%s\n%s: %s" % ( outStr, 'LastUpdate'.ljust( 8 ), str(metadata['LastUpdate']).ljust( 100 ) )
+
   outStr = "%s\n----------------------" % outStr
   print outStr
 DIRAC.exit( 0 )

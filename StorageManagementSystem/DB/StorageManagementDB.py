@@ -381,7 +381,7 @@ class StorageManagementDB( DB ):
     if not res['OK']:
       return res
     taskInfo = res['Value']
-    req = "SELECT R.LFN,R.SE,R.PFN,R.Size,R.Status,R.Reason FROM CacheReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
+    req = "SELECT R.LFN,R.SE,R.PFN,R.Size,R.Status,R.LastUpdate,R.Reason FROM CacheReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
     res = self._query( req, connection )
     if not res['OK']:
       gLogger.error( 'StorageManagementDB.getTaskSummary: Failed to get Replica summary for task.', res['Message'] )
@@ -435,7 +435,7 @@ class StorageManagementDB( DB ):
           condDict['ReplicaID'] = res['Value']
         else:
           condDict['ReplicaID'] = [-1]
-      req = "%s %s" % ( req, self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit ) )
+      req = "%s %s" % ( req, self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit ) )   
     res = self._query( req, connection )
     if not res['OK']:
       return res

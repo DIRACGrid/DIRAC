@@ -1,18 +1,11 @@
 #! /usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-stager-monitor-file
+# File :    dirac-stager-monitor-jobs
 # Author :  Daniela Remenska
-
 ########################################################################
 """
-gives monitoring information regarding a staging file uniquely identified with (LFN,SE):
-   - status
-   - last update
-   - jobs requesting this file to be staged
-   - SRM requestID
-   - pin expiry time
-   - pin length
+  Report the summary of the staging progress of jobs
 """
 __RCSID__ = "$Id$"
 import DIRAC
@@ -38,70 +31,50 @@ else:
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 client = StorageManagerClient()
 res = client.getCacheReplicas( {'LFN':lfn,'SE':se} )
+# res = client.getCacheReplicas( {'LFN':'/lhcb/LHCb/Collision12/FULL.DST/00020846/0004/00020846_00044909_1.full.dst','SE':'GRIDKA-RDST'} )
 if not res['OK']:
   print res['Message']
-
-  
 cacheReplicaInfo = res['Value']
+replicaID = cacheReplicaInfo.keys()[0]
+outStr = "\n--------------------"
+outStr = "%s\n%s: %s" % ( outStr, 'LFN'.ljust( 8 ), cacheReplicaInfo[replicaID]['LFN'].ljust( 100 ) )
+outStr = "%s\n%s: %s" % ( outStr, 'SE'.ljust( 8 ), cacheReplicaInfo[replicaID]['SE'].ljust( 100 ) )
+outStr = "%s\n%s: %s" % ( outStr, 'PFN'.ljust( 8 ), cacheReplicaInfo[replicaID]['PFN'].ljust( 100 ) )
+outStr = "%s\n%s: %s" % ( outStr, 'Status'.ljust( 8 ), cacheReplicaInfo[replicaID]['Status'].ljust( 100 ) )
+outStr = "%s\n%s: %s" % ( outStr, 'LastUpdate'.ljust( 8 ), str(cacheReplicaInfo[replicaID]['LastUpdate']).ljust( 100 ) )
+outStr = "%s\n%s: %s" % ( outStr, 'Reason'.ljust( 8 ), str( cacheReplicaInfo[replicaID]['Reason']).ljust( 100 ) )
+outStr = '%s\nJobs requesting this file to be staged:'.ljust( 8) % outStr
 
-if cacheReplicaInfo:
-  replicaID = cacheReplicaInfo.keys()[0]
-  outStr = "\n--------------------"
-  outStr = "%s\n%s: %s" % ( outStr, 'LFN'.ljust( 8 ), cacheReplicaInfo[replicaID]['LFN'].ljust( 100 ) )
-  outStr = "%s\n%s: %s" % ( outStr, 'SE'.ljust( 8 ), cacheReplicaInfo[replicaID]['SE'].ljust( 100 ) )
-  outStr = "%s\n%s: %s" % ( outStr, 'PFN'.ljust( 8 ), cacheReplicaInfo[replicaID]['PFN'].ljust( 100 ) )
-  outStr = "%s\n%s: %s" % ( outStr, 'Status'.ljust( 8 ), cacheReplicaInfo[replicaID]['Status'].ljust( 100 ) )
-  outStr = "%s\n%s: %s" % ( outStr, 'Reason'.ljust( 8 ), str( cacheReplicaInfo[replicaID]['Reason']).ljust( 100 ) )
-  outStr = "%s\n%s: %s" % ( outStr, 'LastUpdate'.ljust( 8 ), str(cacheReplicaInfo[replicaID]['LastUpdate']).ljust( 100 ) )
-  outStr = '%s\nJobs requesting this file to be staged:'.ljust( 8) % outStr
+resTasks = client.getTasks({'ReplicaID':replicaID})
 
-  resTasks = client.getTasks({'ReplicaID':replicaID})
+if not resTasks['OK']:
+  print resTasks['Message']
 
-  if not resTasks['OK']:
-    print resTasks['Message']
 
-  tasks = resTasks['Value']
-  for tid in tasks.keys():
-    outStr = '%s %s ' % (outStr, tasks[tid]['SourceTaskID'])
+tasks = resTasks['Value']
+for tid in tasks.keys():
+  outStr = '%s %s ' % (outStr, tasks[tid]['SourceTaskID'])
 
-  resStageRequests = client.getStageRequests({'ReplicaID':replicaID})
-  if not resStageRequests['OK']:
-    print resStageRequests['Message']
+
+resStageRequests = client.getStageRequests({'ReplicaID':replicaID})
+
+if not resStageRequests['OK']:
+  print resStageRequests['Message']
+
   
-  if resStageRequests['Records']:
-    stageRequests = resStageRequests['Value']
-    outStr = "%s\n------SRM staging request info--------------" % outStr
-    for srid in stageRequests.keys():
-      outStr = "%s\n%s: %s" % ( outStr, 'SRM RequestID'.ljust( 8 ), stageRequests[srid]['RequestID'].ljust( 100 ) )
-      outStr = "%s\n%s: %s" % ( outStr, 'SRM StageStatus'.ljust( 8 ), stageRequests[srid]['StageStatus'].ljust( 100 ) )
-      outStr = "%s\n%s: %s" % ( outStr, 'SRM StageRequestSubmitTime'.ljust( 8 ), str(stageRequests[srid]['StageRequestSubmitTime']).ljust( 100 ) )
-      outStr = "%s\n%s: %s" % ( outStr, 'SRM StageRequestCompletedTime'.ljust( 8 ), str(stageRequests[srid]['StageRequestCompletedTime']).ljust( 100 ) )
-      outStr = "%s\n%s: %s" % ( outStr, 'SRM PinExpiryTime'.ljust( 8 ), str(stageRequests[srid]['PinExpiryTime']).ljust( 100 ) )
-      outStr = "%s\n%s: %s sec" % ( outStr, 'SRM PinLength'.ljust( 8 ), str(stageRequests[srid]['PinLength']).ljust( 100 ) )
-  else:
-    outStr = '%s\nThere is no staging request submitted to the site yet.'.ljust( 8) % outStr
-
-  print outStr
+if resStageRequests['Records']:
+  stageRequests = resStageRequests['Value']
+  outStr = "%s\n------SRM staging request info--------------" % outStr
+  for srid in stageRequests.keys():
+    outStr = "%s\n%s: %s" % ( outStr, 'SRM RequestID'.ljust( 8 ), stageRequests[srid]['RequestID'].ljust( 100 ) )
+    outStr = "%s\n%s: %s" % ( outStr, 'SRM StageStatus'.ljust( 8 ), stageRequests[srid]['StageStatus'].ljust( 100 ) )
+    outStr = "%s\n%s: %s" % ( outStr, 'SRM StageRequestSubmitTime'.ljust( 8 ), str(stageRequests[srid]['StageRequestSubmitTime']).ljust( 100 ) )
+    outStr = "%s\n%s: %s" % ( outStr, 'SRM StageRequestCompletedTime'.ljust( 8 ), str(stageRequests[srid]['StageRequestCompletedTime']).ljust( 100 ) )
+    outStr = "%s\n%s: %s" % ( outStr, 'SRM PinExpiryTime'.ljust( 8 ), str(stageRequests[srid]['PinExpiryTime']).ljust( 100 ) )
+    outStr = "%s\n%s: %s sec" % ( outStr, 'SRM PinLength'.ljust( 8 ), str(stageRequests[srid]['PinLength']).ljust( 100 ) )
 else:
-  print 'No information exists in the stager! Check for typos. Could be that the file staging request is not made yet.'  
+  outStr = '%s\nThere are no staging requests submitted to the site yet.'.ljust( 8) % outStr
+
+print outStr
 
 DIRAC.exit( 0 )
-
-'''
-Example
---------------------
-LFN     : /lhcb/LHCb/Collision12/FULL.DST/00020846/0004/00020846_00044909_1.full.dst                          
-SE      : GRIDKA-RDST                                                                                         
-PFN     : srm://gridka-dCache.fzk.de/pnfs/gridka.de/lhcb/LHCb/Collision12/FULL.DST/00020846/0004/00020846_00044909_1.full.dst
-Status  : Staged                                                                                              
-Reason  : None                                                                                                
-LastUpdate: 2013-06-01 05:11:37                                                                                 
-Jobs requesting this file to be staged: 48443766 
-------SRM staging request info--------------
-SRM RequestID: -1791307466                                                                                         
-SRM StageStatus: Staged                                                                                              
-SRM StageRequestSubmitTime: 2013-06-01 04:55:11                                                                                 
-SRM StageRequestCompletedTime: 2013-06-01 05:11:37                                                                                 
-SRM PinExpiryTime: 2013-06-01 07:11:37                                                                                 
-SRM PinLength: 86400 
-'''
