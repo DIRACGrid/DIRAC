@@ -81,7 +81,26 @@ if cacheReplicaInfo:
   else:
     outStr = '%s\nThere are no staging requests submitted to the site yet.'.ljust( 8) % outStr
 else:
-  outStr = "\n There is no such file requested for staging!"    
+  outStr = "\nThere is no such file requested for staging. Check for typo's!"    
 print outStr
 
 DIRAC.exit( 0 )
+
+''' Example:
+dirac-stager-monitor-file.py /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00056603_1.full.dst GRIDKA-RDST
+--------------------
+LFN     : /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00056603_1.full.dst                          
+SE      : GRIDKA-RDST                                                                                         
+PFN     : srm://gridka-dCache.fzk.de/pnfs/gridka.de/lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00056603_1.full.dst
+Status  : StageSubmitted                                                                                      
+LastUpdate: 2013-06-11 18:13:40                                                                                 
+Reason  : None                                                                                                
+Jobs requesting this file to be staged: 48518896 
+------SRM staging request info--------------
+SRM RequestID: -1768636375                                                                                         
+SRM StageStatus: StageSubmitted                                                                                      
+SRM StageRequestSubmitTime: 2013-06-11 18:13:38                                                                                 
+SRM StageRequestCompletedTime: None                                                                                                
+SRM PinExpiryTime: None                                                                                                
+SRM PinLength: 43200         
+'''

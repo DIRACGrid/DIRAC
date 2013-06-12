@@ -53,6 +53,7 @@ for jobID in jobIDs:
     outStr = "%s\n\t%s: %s" % ( outStr, 'PFN'.ljust( 8 ), str( metadata['PFN'] ).ljust( 100 ) )
     outStr = "%s\n\t%s: %s" % ( outStr, 'Status'.ljust( 8 ), metadata['Status'].ljust( 100 ) )
     outStr = "%s\n\t%s: %s" % ( outStr, 'Reason'.ljust( 8 ), str( metadata['Reason'] ).ljust( 100 ) )
+   # TODO: uncomment below
    # outStr = "%s\n%s: %s" % ( outStr, 'LastUpdate'.ljust( 8 ), str(metadata['LastUpdate']).ljust( 100 ) )
 
   outStr = "%s\n----------------------" % outStr
@@ -60,22 +61,73 @@ for jobID in jobIDs:
 DIRAC.exit( 0 )
 
 ''' Example:
-JobID               : 5384634
-Status              : StageSubmitted
-SubmitTime          : 2013-05-14 14:25:19
+dirac-stager-monitor-jobs.py 5688643 5688644
+
+JobID               : 5688643
+Status              : Offline
+SubmitTime          : 2013-06-10 15:21:03
 CompleteTime        : None
 Staging files for this job:
     --------------------
-    LFN     : /lhcb/LHCb/Collision12/FULL.DST/00020846/0006/00020846_00060073_1.full.dst                          
-    SE      : GRIDKA-RDST                                                                                         
-    PFN     : srm://gridka-dCache.fzk.de/pnfs/gridka.de/lhcb/LHCb/Collision12/FULL.DST/00020846/0006/00020846_00060073_1.full.dst
-    Status  : StageSubmitted                                                                                      
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00003705_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00003705_1.sdst
+    Status  : Offline                                                                                             
     Reason  : None                                                                                                
     --------------------
-    LFN     : /lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00024661_1.full.dst                          
-    SE      : GRIDKA-RDST                                                                                         
-    PFN     : srm://gridka-dCache.fzk.de/pnfs/gridka.de/lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00024661_1.full.dst
-    Status  : Staged                                                                                              
-    Reason  : None                                                                                                                                                                                          
-----------------------                                                                                                  
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00001918_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00001918_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00002347_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00002347_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00003701_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00003701_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+----------------------
+JobID               : 5688644
+Status              : Offline
+SubmitTime          : 2013-06-10 15:21:07
+CompleteTime        : None
+Staging files for this job:
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00005873_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00005873_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00004468_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00004468_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00000309_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00000309_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00005911_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00005911_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+    LFN     : /lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00003296_1.sdst                                  
+    SE      : IN2P3-RDST                                                                                          
+    PFN     : srm://ccsrm.in2p3.fr/pnfs/in2p3.fr/data/lhcb/LHCb/Collision10/SDST/00010270/0000/00010270_00003296_1.sdst
+    Status  : Offline                                                                                             
+    Reason  : None                                                                                                
+    --------------------
+
 '''
