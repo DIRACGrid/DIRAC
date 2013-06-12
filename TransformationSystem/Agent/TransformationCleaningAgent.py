@@ -388,7 +388,8 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK()
 
   def cleanTransformation( self, transID ):
-    ''' This removes any mention of the supplied transformation
+    ''' This removes what was produced by the supplied transformation,
+        leaving only some info and log in the transformation DB.
     '''
     self.log.info( "Cleaning transformation %s" % transID )
     res = self.getTransformationDirectories( transID )
