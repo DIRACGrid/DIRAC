@@ -1026,6 +1026,24 @@ class StorageManagementDB( DB ):
       return res
     return res
 
+  def getCacheReplicasSummary( self,connection = False ):
+    """
+    Reports breakdown of file number/size in different staging states across storage elements 
+    """
+    connection = self.__getConnection( connection )
+    req = "SELECT DISTINCT(Status),SE,COUNT(*),sum(size)/(1024*1024*1024) FROM CacheReplicas GROUP BY Status,SE;"
+    res = self._query( req, connection )
+    if not res['OK']:
+      gLogger.error( "StorageManagementDB.getCacheReplicasSummary failed." )
+      return res
+    
+    resSummary = {}
+    i = 1
+    for status, se, numFiles, sumFiles in res['Value']:
+      resSummary[i] = {'Status':status,'SE':se,'NumFiles':long(numFiles),'SumFiles':float(sumFiles)}
+      i+=1   
+    return S_OK(resSummary)
+
   def removeUnlinkedReplicas( self, connection = False ):
     """ This will remove Replicas from the CacheReplicas that are not associated to any Task.
         If the Replica has been Staged,

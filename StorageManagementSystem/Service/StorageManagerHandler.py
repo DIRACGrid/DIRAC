@@ -311,3 +311,12 @@ class StorageManagerHandler( RequestHandler ):
     if not res['OK']:
       gLogger.error( 'removeTasks: Failed to kill staging', res['Message'] )
     return res
+
+  types_getCacheReplicasSummary = []
+  def export_getCacheReplicasSummary(self):
+    """ Reports breakdown of file number/size in different staging states across storage elements """
+    res = storageDB.getCacheReplicasSummary()
+    if not res['OK']:
+      gLogger.error(' getCacheReplicasSummary: Failed to retrieve summary from server',res['Message'])
+    return res
+

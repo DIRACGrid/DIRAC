@@ -50,18 +50,16 @@ if cacheReplicaInfo:
   outStr = "%s\n%s: %s" % ( outStr, 'Status'.ljust( 8 ), cacheReplicaInfo[replicaID]['Status'].ljust( 100 ) )
   outStr = "%s\n%s: %s" % ( outStr, 'LastUpdate'.ljust( 8 ), str(cacheReplicaInfo[replicaID]['LastUpdate']).ljust( 100 ) )
   outStr = "%s\n%s: %s" % ( outStr, 'Reason'.ljust( 8 ), str( cacheReplicaInfo[replicaID]['Reason']).ljust( 100 ) )
-  outStr = '%s\nJobs requesting this file to be staged:'.ljust( 8) % outStr
-
+  
   resTasks = client.getTasks({'ReplicaID':replicaID})
 
-  if not resTasks['OK']:
-    print resTasks['Message']
-
-
-  tasks = resTasks['Value']
-  for tid in tasks.keys():
-    outStr = '%s %s ' % (outStr, tasks[tid]['SourceTaskID'])
-
+  if resTasks['OK']:
+    #print resTasks['Message']
+    outStr = '%s\nJobs requesting this file to be staged:'.ljust( 8) % outStr
+    tasks = resTasks['Value']
+    for tid in tasks.keys():
+      outStr = '%s %s ' % (outStr, tasks[tid]['SourceTaskID'])
+    
 
   resStageRequests = client.getStageRequests({'ReplicaID':replicaID})
 
@@ -81,7 +79,8 @@ if cacheReplicaInfo:
   else:
     outStr = '%s\nThere are no staging requests submitted to the site yet.'.ljust( 8) % outStr
 else:
-  outStr = "\nThere is no such file requested for staging. Check for typo's!"    
+  outStr = "\nThere is no such file requested for staging. Check for typo's!"   
+  Script.showHelp() 
 print outStr
 
 DIRAC.exit( 0 )

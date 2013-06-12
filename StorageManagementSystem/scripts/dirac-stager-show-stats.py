@@ -1,0 +1,40 @@
+#! /usr/bin/env python
+########################################################################
+# $HeadURL$
+# File :    dirac-stager-show-stats
+# Author :  Daniela Remenska
+########################################################################
+"""
+Reports breakdown of file(s) number/size in different staging states across storage elements 
+"""
+
+__RCSID__ = "$Id$"
+import DIRAC
+from DIRAC.Core.Base import Script
+from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
+
+Script.parseCommandLine( ignoreErrors = False )
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
+client = StorageManagerClient()
+
+res = client.getCacheReplicasSummary()
+if not res['OK']:
+  print res['Message']
+
+stagerInfo = res['Value']
+outStr ="\n"
+outStr = "%s %s" %(outStr, "Status".ljust(20)) 
+outStr = "%s %s" %(outStr, "SE".ljust(20))
+outStr = "%s %s" %(outStr, "NumberOfFiles".ljust(20))  
+outStr = "%s %s" %(outStr, "Size(GB)".ljust(20))   
+outStr = "%s\n--------------------------------------------------------------------------\n" % outStr    
+if stagerInfo:
+  for sid in stagerInfo:
+    outStr = "%s %s" %(outStr, stagerInfo[sid]['Status'].ljust( 20 ))
+    outStr = "%s %s" %(outStr, stagerInfo[sid]['SE'].ljust( 20 ))
+    outStr = "%s %s" %(outStr, str(stagerInfo[sid]['NumFiles']).ljust( 20 ))
+    outStr = "%s %s\n" %(outStr, str(stagerInfo[sid]['SumFiles']).ljust( 20 ))
+else:
+  outStr ="%s %s" % (outStr, "Nothing to see here...Bye")
+print outStr
+DIRACExit( 0 )      

@@ -60,12 +60,12 @@ def parseSwitches():
     if not key in switches:
       print "You're not using switch --%s, query may take long!" % key
       
-    
-  if not switches[ 'status' ] in ( 'New', 'Offline', 'Waiting','Failed','StageSubmitted','Staged' ):
-    subLogger.error( "Found \"%s\" as Status value. Incorrect value used!" % switches[ 'status' ] )
-    subLogger.error( "Please, check documentation below" )
-    Script.showHelp()
-    DIRACExit( 1 )
+  if 'status' in  switches.keys():  
+    if not switches[ 'status' ] in ( 'New', 'Offline', 'Waiting','Failed','StageSubmitted','Staged' ):
+      subLogger.error( "Found \"%s\" as Status value. Incorrect value used!" % switches[ 'status' ] )
+      subLogger.error( "Please, check documentation below" )
+      Script.showHelp()
+      DIRACExit( 1 )
   
   subLogger.debug( "The switches used are:" )
   map( subLogger.debug, switches.iteritems() )
@@ -95,39 +95,24 @@ def run():
   else:
     res = client.getCacheReplicas(queryDict)
   
-  
-  #print res
   if not res['OK']:
     print res['Message']
   outStr ="\n"
   if res['Records']:
     replicas = res['Value']
-    #tableColumns = []
-    #tableColumns.append("Status")
-    outStr = "%s %s" %(outStr, "Status".ljust(15)) 
-    #tableColumns.append("LastUpdate")
+    outStr = "%s %s" %(outStr, "Status".ljust(7)) 
     outStr = "%s %s" %(outStr, "LastUpdate".ljust(30))  
-    #tableColumns.append("LFN")
     outStr = "%s %s" %(outStr, "LFN".ljust(65))   
-    #tableColumns.append("SE")
     outStr = "%s %s" %(outStr, "SE".ljust(8))  
-    #tableColumns.append("Reason")
-    outStr = "%s %s" %(outStr, "Reason".ljust(10))  
-    
-    outStr = "%s %s" %(outStr, "Jobs".ljust(10))  
-
-    #tableColumns.append("PinExpiryTime")
+    outStr = "%s %s" %(outStr, "Reason".ljust(10))
+    if 'showJobs' in dictKeys:  
+      outStr = "%s %s" %(outStr, "Jobs".ljust(10))  
     outStr = "%s %s" %(outStr, "PinExpiryTime".ljust(15))  
-    #tableColumns.append("PinLength")
     outStr = "%s %s" %(outStr, "PinLength".ljust(15))  
-    #tableColumns.append("Jobs")
-    
-    #for column in tableColumns:
-    #  outStr = "%s %s" %(outStr, column.ljust(10)) 
     outStr = "%s\n" % outStr  
     
     for crid in replicas.keys():
-      outStr = "%s %s" %(outStr, replicas[crid]['Status'].ljust( 13 ))
+      outStr = "%s %s" %(outStr, replicas[crid]['Status'].ljust( 7 ))
       outStr = "%s %s" %(outStr, str(replicas[crid]['LastUpdate']).ljust( 10 ))
       outStr = "%s %s" %(outStr, replicas[crid]['LFN'].ljust( 10 ))
       outStr = "%s %s" %(outStr, replicas[crid]['SE'].ljust( 10 ))              
@@ -136,16 +121,17 @@ def run():
       # Task info
       if 'showJobs' in dictKeys:
         resTasks = client.getTasks({'ReplicaID':crid})
-        if not resTasks['OK']:
-          print resTasks['Message']
- 
-        tasks = resTasks['Value']
-        jobs = []
-        for tid in tasks.keys():
-          jobs.append(tasks[tid]['SourceTaskID'])      
-        outStr = '%s %s ' % (outStr, str(jobs).ljust(10))
-             
+        if resTasks['OK']:
+          if resTasks['Value']:
+            tasks = resTasks['Value']
+            jobs = []
+            for tid in tasks.keys():
+              jobs.append(tasks[tid]['SourceTaskID'])      
+            outStr = '%s %s ' % (outStr, str(jobs).ljust(10))
+        else:
+          outStr = '%s %s ' % (outStr, " --- ".ljust(10))     
       # Stage request info
+      # what if there's no request to the site yet?
       resStageRequests = client.getStageRequests({'ReplicaID':crid})
       if not resStageRequests['OK']:
         print resStageRequests['Message']

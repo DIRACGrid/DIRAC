@@ -1,7 +1,9 @@
-#!/usr/bin/env python
-"""
-  Submit Stage Request for Files at given SE
-"""
+#! /usr/bin/env python
+########################################################################
+# $HeadURL$
+# File :    dirac-stager-stage-files
+# Author :  Daniela Remenska
+########################################################################
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
