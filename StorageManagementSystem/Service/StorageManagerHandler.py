@@ -75,6 +75,13 @@ class StorageManagerHandler( RequestHandler ):
       gLogger.error( 'getTasks: Failed to get Cache replicas', res['Message'] )
     return res
 
+  types_removeStageRequests = [ListType]
+  def export_removeStageRequests( self, replicaIDs):
+    res = storageDB.removeStageRequests( replicaIDs )
+    if not res['OK']:
+      gLogger.error( 'removeStageRequests: Failed to remove StageRequests', res['Message'] )
+    return res
+      
   types_getCacheReplicas = [DictType]
   def export_getCacheReplicas( self, condDict, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None ):
     """ Get the replcias known to the DB. """

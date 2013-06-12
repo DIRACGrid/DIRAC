@@ -35,11 +35,16 @@ except:
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 client = StorageManagerClient()
 
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+jobClient = JobMonitoringClient()
+
 taskIDs = []
 for jobID in jobIDs:
-  taskID = self._getTaskIDForJob( jobID, connection = connection ) # cannot call this!
-  taskIDs.append(taskID)
-# taskIDs = [5678094,5678099,5680538]
+  params = jobClient.getJobParameters(jobID)
+  if params['Value']['StageRequest']:
+    taskID = params['Value']['StageRequest']
+    taskIDs.append(taskID)
+
 cond = {}
 cond['TaskID'] = taskIDs
 res = client.getCacheReplicas( cond )
@@ -54,14 +59,15 @@ if cacheReplicaIDs:
   res = client.updateReplicaStatus( cacheReplicaIDs, 'New' )
   if not res['OK']:
     print res['Message']
-  else:
-    outStr = "%s\n%s: %s" % ( outStr, "Resetting done!")
+  outStr = "%s\n%s: %s" % ( outStr, "Resetting done!")
   
   outStr = "%s\n%s: %s" % ( outStr, "Removing actual stage request (to site) information from the stager....")
-  
-  #TODO DELETE FROM StageRequests WHERE ReplicaID in (%s);
+  res = client.removeStageRequests( cacheReplicaIDs )
+  if not res['OK']:
+    print res['Message']
+  outStr = "%s\n%s: %s" % ( outStr, "Removed stage requests!") 
 else:
   outStr = "\nNo files found in the stager, to reset for these jobs...\n"
-  #print "No files found in the stager, to reset for these jobs..."
+ 
 print outStr
 DIRAC.exit( 0 )

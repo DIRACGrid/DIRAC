@@ -989,6 +989,15 @@ class StorageManagementDB( DB ):
       res = self.removeTasks(taskIDs, connection)
       return res
   
+  def removeStageRequests( self, replicaIDs, connection = False):
+    connection = self.__getConnection( connection )
+    req = "DELETE FROM StageRequests WHERE ReplicaID in (%s);" % intListToString( replicaIDs )
+    res = self._update( req, connection )
+    if not res['OK']:
+      gLogger.error( "StorageManagementDB.removeStageRequests. Problem removing entries from StageRequests." )
+      return res
+    return res
+  
   def removeTasks( self, taskIDs, connection = False ):
     """ This will delete the entries from the TaskReplicas for the provided taskIDs. """
     connection = self.__getConnection( connection )
