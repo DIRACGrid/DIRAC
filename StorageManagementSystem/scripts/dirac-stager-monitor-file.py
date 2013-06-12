@@ -28,7 +28,7 @@ Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
 
-if not len( args ) != 2:
+if len( args ) < 2:
   Script.showHelp()
 else:
   lfn = args[0]
@@ -55,11 +55,10 @@ if cacheReplicaInfo:
 
   if resTasks['OK']:
     #print resTasks['Message']
-    outStr = '%s\nJobs requesting this file to be staged:'.ljust( 8) % outStr
+    outStr = '%s\nJob IDs requesting this file to be staged:'.ljust( 8) % outStr
     tasks = resTasks['Value']
     for tid in tasks.keys():
-      outStr = '%s %s ' % (outStr, tasks[tid]['SourceTaskID'])
-    
+      outStr = '%s %s ' % (outStr, tasks[tid]['SourceTaskID'])  
 
   resStageRequests = client.getStageRequests({'ReplicaID':replicaID})
 
