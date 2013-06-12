@@ -1,11 +1,13 @@
 #! /usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-stager-monitor-file
+# File :    dirac-stager-stage-files
 # Author :  Daniela Remenska
 ########################################################################
 """
-- submit staging requests for a particular Storage Element!
+- submit staging requests for a particular Storage Element! Default DIRAC JobID will be =0. 
+  (not visible in the Job monitoring list though)
+
 """
 __RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
