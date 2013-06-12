@@ -368,7 +368,7 @@ class StorageManagementDB( DB ):
     req = "SELECT TaskID from Tasks WHERE SourceTaskID=%s;"  % int( jobID )
     res = self._query( req )
     if not res['OK']:
-      gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'getTaskSummary', req, res['Message'] ) )
+      gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), '_getTaskIDForJob', req, res['Message'] ) )
       return S_ERROR('The supplied JobID does not exist!')
     taskID = [ row[0] for row in res['Value'] ]
     return S_OK(taskID)    
