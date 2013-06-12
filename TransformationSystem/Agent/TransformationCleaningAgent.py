@@ -422,12 +422,6 @@ class TransformationCleaningAgent( AgentModule ):
     if not res['OK']:
       return res
     self.log.info( "Successfully cleaned transformation %d" % transID )
-    # Change the status of the transformation to deleted
-    res = self.transClient.setTransformationParameter( transID, 'Status', 'Cleaned' )
-    if not res['OK']:
-      self.log.error( "Failed to update status of transformation %s to Cleaned" % ( transID ), res['Message'] )
-      return res
-    self.log.info( "Updated status of transformation %s to Cleaned" % ( transID ) )
     return S_OK()
 
   def cleanMetadataCatalogFiles( self, transID ):
