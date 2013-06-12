@@ -11,10 +11,10 @@
     self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
 """
 __RCSID__ = "$Id$"
-## custom duty
+# # custom duty
 import re
 from types import ListType, StringType, StringTypes, DictType
-## from DIRAC
+# # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
@@ -90,19 +90,21 @@ class StorageElement:
                           'getDirectorySize',
                           'getFileSize',
                           'getFileMetadata',
-                          'getLocalProtocols',
-                          'getPfnForProtocol',
-                          'getPfnForLfn',
-                          'getPfnPath',
-                          'getProtocols',
-                          'getRemoteProtocols',
-                          'getStorageElementName',
-                          'getStorageElementOption',
-                          'getStorageParameters',
                           'listDirectory',
                           'isDirectory',
                           'isFile',
-                          'isLocalSE' ]
+                           ]
+
+    self.okMethods = [ 'getLocalProtocols',
+                       'getPfnForProtocol',
+                       'getPfnForLfn',
+                       'getPfnPath',
+                       'getProtocols',
+                       'getRemoteProtocols',
+                       'getStorageElementName',
+                       'getStorageElementOption',
+                       'getStorageParameters',
+                       'isLocalSE' ]
 
   def dump( self ):
     """ Dump to the logger a summary of the StorageElement items. """
@@ -202,6 +204,10 @@ class StorageElement:
     """
     self.log.debug( "isValid: Determining whether the StorageElement %s is valid for %s" % ( self.name,
                                                                                              operation ) )
+
+    if ( not operation ) or ( operation in self.okMethods ):
+      return S_OK()
+
     if not self.valid:
       self.log.error( "isValid: Failed to create StorageElement plugins.", self.errorReason )
       return S_ERROR( self.errorReason )
@@ -219,8 +225,7 @@ class StorageElement:
     if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):
       self.log.error( "isValid: Read, write and check access not permitted." )
       return S_ERROR( "StorageElement.isValid: Read, write and check access not permitted." )
-    if not operation:
-      return S_OK()
+
     # The supplied operation can be 'Read','Write' or any of the possible StorageElement methods.
     if ( operation in self.readMethods ) or ( operation.lower() in ( 'read', 'readaccess' ) ):
       operation = 'ReadAccess'
@@ -576,7 +581,7 @@ class StorageElement:
         'pfn' is the physical file name (as registered in the LFC)
         'method' is the functionality to be executed
     """
-    ## default args  = no args
+    # # default args  = no args
     argsDict = argsDict if argsDict else {}
     if type( pfn ) in StringTypes:
       pfns = {pfn:False}
