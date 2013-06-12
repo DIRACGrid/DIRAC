@@ -163,7 +163,7 @@ class TransformationDB( DB ):
         self.deleteTransformation( transID, connection = connection )
         return res
       originalID = res['Value']
-      # FIXME: this is not the right place to change status information
+      # FIXME: this is not the right place to change status information, and in general the whole should not be here
       res = self.setTransformationParameter( originalID, 'Status', 'Completing',
                                              author = authorDN, connection = connection )
       if not res['OK']:
@@ -1417,9 +1417,6 @@ class TransformationDB( DB ):
     if not res['OK']:
       return res
     res = self.__deleteTransformationTaskInputs( transID, connection = connection )
-    if not res['OK']:
-      return res
-    res = self.setTransformationParameter( transID, 'Status', 'Cleaned', author = author, connection = connection )
     if not res['OK']:
       return res
     return S_OK( transID )
