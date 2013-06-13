@@ -38,4 +38,12 @@ else:
   outStr ="%s %s" % (outStr, "Nothing to see here...Bye")
 outStr ="%s %s" % (outStr, "\nWARNING: the Size for files with Status=New is not yet determined at the point of selection!\n")
 print outStr
-DIRACExit( 0 )      
+DIRACExit( 0 )
+'''Example:
+ dirac-stager-show-stats.py 
+
+ Status               SE                   NumberOfFiles        Size(GB)            
+--------------------------------------------------------------------------
+ Staged               GRIDKA-RDST          1                    4.5535              
+ StageSubmitted       GRIDKA-RDST          5                    22.586  
+ '''      

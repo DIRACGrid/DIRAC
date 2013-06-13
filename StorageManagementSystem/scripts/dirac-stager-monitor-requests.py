@@ -89,9 +89,13 @@ def run():
   if 'se' in dictKeys:
     queryDict['SE'] = str(switchDict['se']);
   
+  # weird: if there are no switches (dictionary is empty), then the --limit is ignored!!
+  # must FIX that in StorageManagementDB.py!
+  # ugly fix:
+  newer = '1903-08-02 06:24:38' # select newer than 
   if 'limit' in dictKeys:
     print "Query limited to %s entries" %switchDict['limit']   
-    res = client.getCacheReplicas(queryDict, None, None, None, None, int(switchDict['limit']))
+    res = client.getCacheReplicas(queryDict, None, newer, None, None, int(switchDict['limit']))
   else:
     res = client.getCacheReplicas(queryDict)
   
@@ -108,7 +112,7 @@ def run():
     if 'showJobs' in dictKeys:  
       outStr = "%s %s" %(outStr, "Jobs".ljust(10))  
     outStr = "%s %s" %(outStr, "PinExpiryTime".ljust(15))  
-    outStr = "%s %s" %(outStr, "PinLength".ljust(15))  
+    outStr = "%s %s" %(outStr, "PinLength(sec)".ljust(15))  
     outStr = "%s\n" % outStr  
     
     for crid in replicas.keys():

@@ -435,6 +435,7 @@ class StorageManagementDB( DB ):
           condDict['ReplicaID'] = res['Value']
         else:
           condDict['ReplicaID'] = [-1]
+      # BUG: limit is ignored unless there is a nonempty condition dictionary OR older OR newer is nonemtpy    
       req = "%s %s" % ( req, self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit ) )   
     res = self._query( req, connection )
     if not res['OK']:
