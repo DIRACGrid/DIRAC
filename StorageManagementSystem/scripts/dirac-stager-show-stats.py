@@ -5,7 +5,7 @@
 # Author :  Daniela Remenska
 ########################################################################
 """
-Reports breakdown of file(s) number/size in different staging states across storage elements 
+Reports breakdown of file(s) number/size in different staging states across Storage Elements.
 Currently used Cache per SE is also reported. (active pins)
 """
 
@@ -48,7 +48,7 @@ if storageElementUsage:
   for storageElement in storageElementUsage.keys():
     seDict = storageElementUsage[storageElement]
     seDict['TotalSize'] = seDict['TotalSize'] / ( 1000 * 1000 * 1000.0 )
-    outStr ="%s\n %s: %s replicas with a size of %.3f GB.\n" % (outStr, storageElement.ljust( 15 ), str( seDict['Replicas'] ).rjust( 6 ), seDict['TotalSize'] ) 
+    outStr ="%s\n %s: %s replicas with a size of %.3f GB." % (outStr, storageElement.ljust( 15 ), str( seDict['Replicas'] ).rjust( 6 ), seDict['TotalSize'] ) 
 else:
   outStr ="%s %s" % (outStr, "StageRequest.getStorageUsage: No active stage/pin requests found." )    
 print outStr

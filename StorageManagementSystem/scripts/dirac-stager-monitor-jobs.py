@@ -53,8 +53,7 @@ for jobID in jobIDs:
     outStr = "%s\n\t%s: %s" % ( outStr, 'PFN'.ljust( 8 ), str( metadata['PFN'] ).ljust( 100 ) )
     outStr = "%s\n\t%s: %s" % ( outStr, 'Status'.ljust( 8 ), metadata['Status'].ljust( 100 ) )
     outStr = "%s\n\t%s: %s" % ( outStr, 'Reason'.ljust( 8 ), str( metadata['Reason'] ).ljust( 100 ) )
-   #TODO: uncomment below
-   # outStr = "%s\n%s: %s" % ( outStr, 'LastUpdate'.ljust( 8 ), str(metadata['LastUpdate']).ljust( 100 ) )
+    outStr = "%s\n%s: %s" % ( outStr, 'LastUpdate'.ljust( 8 ), str(metadata['LastUpdate']).ljust( 100 ) )
 
   outStr = "%s\n----------------------" % outStr
   print outStr
