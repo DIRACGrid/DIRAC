@@ -24,20 +24,17 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  LFN: LFN of the staging file \n',
                                      '  SE: Storage Element for the staging file \n'
                                        ] ) )
-Script.parseCommandLine( ignoreErrors = False )
-
+Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
-
 if len( args ) < 2:
   Script.showHelp()
-else:
-  lfn = args[0]
-  se = args[1]
+
+lfn = args[0]
+se = args[1]
 
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 client = StorageManagerClient()
 res = client.getCacheReplicas( {'LFN':lfn,'SE':se} )
-# res = client.getCacheReplicas( {'LFN':'/lhcb/LHCb/Collision12/FULL.DST/00020846/0004/00020846_00044909_1.full.dst','SE':'GRIDKA-RDST'} )
 if not res['OK']:
   print res['Message']
 cacheReplicaInfo = res['Value']
@@ -79,7 +76,7 @@ if cacheReplicaInfo:
     outStr = '%s\nThere are no staging requests submitted to the site yet.'.ljust( 8) % outStr
 else:
   outStr = "\nThere is no such file requested for staging. Check for typo's!"   
-  Script.showHelp() 
+  #Script.showHelp() 
 print outStr
 
 DIRAC.exit( 0 )

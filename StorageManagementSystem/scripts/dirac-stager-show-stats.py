@@ -20,7 +20,7 @@ client = StorageManagerClient()
 res = client.getCacheReplicasSummary()
 if not res['OK']:
   print res['Message']
-
+  DIRACExit( 2 )      
 stagerInfo = res['Value']
 outStr ="\n"
 outStr = "%s %s" %(outStr, "Status".ljust(20)) 
@@ -36,5 +36,6 @@ if stagerInfo:
     outStr = "%s %s\n" %(outStr, str(stagerInfo[sid]['SumFiles']).ljust( 20 ))
 else:
   outStr ="%s %s" % (outStr, "Nothing to see here...Bye")
+outStr ="%s %s" % (outStr, "\nWARNING: the Size for files with Status=New is not yet determined at the point of selection!\n")
 print outStr
 DIRACExit( 0 )      

@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-stager-show-requests
+# File :    dirac-stager-monitor-requests
 # Author :  Daniela Remenska
 ########################################################################
 """
-  Report the summary of the staging progress of jobs
+  Report the details of file staging requests, based on selection filters
 """
 _RCSID__ = "$Id$"
 import DIRAC
@@ -100,10 +100,10 @@ def run():
   outStr ="\n"
   if res['Records']:
     replicas = res['Value']
-    outStr = "%s %s" %(outStr, "Status".ljust(7)) 
-    outStr = "%s %s" %(outStr, "LastUpdate".ljust(30))  
-    outStr = "%s %s" %(outStr, "LFN".ljust(65))   
-    outStr = "%s %s" %(outStr, "SE".ljust(8))  
+    outStr = "%s %s" %(outStr, "Status".ljust(15)) 
+    outStr = "%s %s" %(outStr, "LastUpdate".ljust(20))  
+    outStr = "%s %s" %(outStr, "LFN".ljust(80))   
+    outStr = "%s %s" %(outStr, "SE".ljust(10))  
     outStr = "%s %s" %(outStr, "Reason".ljust(10))
     if 'showJobs' in dictKeys:  
       outStr = "%s %s" %(outStr, "Jobs".ljust(10))  
@@ -112,11 +112,11 @@ def run():
     outStr = "%s\n" % outStr  
     
     for crid in replicas.keys():
-      outStr = "%s %s" %(outStr, replicas[crid]['Status'].ljust( 7 ))
-      outStr = "%s %s" %(outStr, str(replicas[crid]['LastUpdate']).ljust( 10 ))
-      outStr = "%s %s" %(outStr, replicas[crid]['LFN'].ljust( 10 ))
-      outStr = "%s %s" %(outStr, replicas[crid]['SE'].ljust( 10 ))              
-      outStr = "%s %s" %(outStr, str(replicas[crid]['Reason']).ljust( 7 ))
+      outStr = "%s %s" %(outStr, replicas[crid]['Status'].ljust( 15 ))
+      outStr = "%s %s" %(outStr, str(replicas[crid]['LastUpdate']).ljust( 20 ))
+      outStr = "%s %s" %(outStr, replicas[crid]['LFN'].ljust( 30 ))
+      outStr = "%s %s" %(outStr, replicas[crid]['SE'].ljust( 15 ))              
+      outStr = "%s %s" %(outStr, str(replicas[crid]['Reason']).ljust( 10 ))
  
       # Task info
       if 'showJobs' in dictKeys:

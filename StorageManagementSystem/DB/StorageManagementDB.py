@@ -358,8 +358,8 @@ class StorageManagementDB( DB ):
     for taskID, status, source, submitTime, completeTime, callBackMethod, sourceTaskID in res['Value']:
       resDict[taskID] = {'Status':status, 'Source':source, 'SubmitTime':submitTime, 'CompleteTime':completeTime, 'CallBackMethod':callBackMethod, 'SourceTaskID':sourceTaskID}
     if not resDict:
-      gLogger.error( 'StorageManagementDB.getTaskInfo: The supplied task did not exist' )
-      return S_ERROR( 'The supplied task did not exist' )
+      gLogger.error( 'StorageManagementDB.getTaskInfo: The supplied task %s did not exist' % taskID)
+      return S_ERROR( 'The supplied task %s did not exist' % taskID)
     return S_OK( resDict )
 
   def _getTaskIDForJob (self, jobID, connection = False ):
