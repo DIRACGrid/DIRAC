@@ -403,6 +403,12 @@ class RequestDB( DB ):
 
     TODO: to be defined
     """
+    query = "SELECT R.RequestID, R.RequestName, R.JobID, R.OwnerDN, "\
+      "R.OwnerGroup, O.Type, O.Type, O.Status, O.Error, R.CreationTime , R.LastUpdate "\
+      "FROM Request R JOIN Operation O ON R.RequestID = O.RequestID WHERE "
+
+
+
     pass
 
   def getRequestNamesForJobs( self, jobIDs ):
@@ -416,7 +422,7 @@ class RequestDB( DB ):
     if type( jobIDs ) in ( long, int ):
       jobIDs = [ jobIDs ]
     jobIDs = list( set( [ int( jobID ) for jobID in jobIDs ] ) )
-    reqDict = dict.fromkeys( jobIDs )
+    reqDict = { "Successful": {}, "Failed": {} }
     # # filter out 0
     jobIDsStr = ",".join( [ str( jobID ) for jobID in jobIDs if jobID ] )
     # # request names
@@ -427,14 +433,17 @@ class RequestDB( DB ):
       return requestNames
     requestNames = requestNames["Value"]
     for requestName, jobID in requestNames:
-      reqDict[jobID] = requestName
+      reqDict["Successful"][jobID] = requestName
+    reqDict["Failed"] = dict.fromkeys( [ jobID for jobID in jobIDs if jobID not in reqDict["Successful"] ],
+                                       "Request not found" )
     return S_OK( reqDict )
 
   def readRequestsForJobs( self, jobIDs = None ):
     """ read request for jobs
 
-    :param list jobIDs: list of IDs
-    :return: S_OK( { jobID1 : S_OK( request.toXML() ), jobID2 : S_ERROR('Request not found'), ... } ) or S_ERROR
+    :param list jobIDs: list of JobIDs
+    :return: S_OK( "Successful" : { jobID1 : Request, jobID2: Request, ... }
+                   "Failed" : { jobID3: "error message", ... } )
     """
     self.log.debug( "readRequestForJobs: got %s jobIDs to check" % str( jobIDs ) )
     requestNames = self.getRequestNamesForJobs( jobIDs )
@@ -442,17 +451,17 @@ class RequestDB( DB ):
       self.log.error( "readRequestForJobs: %s" % requestNames["Message"] )
       return requestNames
     requestNames = requestNames["Value"]
-    self.log.debug( "readRequestForJobs: got %d request names" % len( requestNames ) )
-    reqDict = dict.fromkeys( requestNames.keys() )
-    for jobID in reqDict:
-      reqDict[jobID] = S_ERROR( "Request not found" )
+    # # this will be returned
+    retDict = { "Failed": requestNames["Failed"], "Successful": {} }
+
+    self.log.debug( "readRequestForJobs: got %d request names" % len( requestNames["Successful"] ) )
     for jobID in requestNames:
-      request = self.getRequest( requestNames[jobID], False )
+      request = self.peekRequest( requestNames[jobID] )
       if not request["OK"]:
-        reqDict[jobID] = request
+        retDict["Failed"][jobID] = request["Message"]
         continue
-      reqDict[jobID] = request["Value"].toXML()
-    return S_OK( reqDict )
+      retDict["Successful"][jobID] = request["Value"]
+    return S_OK( retDict )
 
   def getDigest( self, requestName ):
     """ get digest for request given its name

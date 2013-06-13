@@ -219,7 +219,13 @@ class ReqManagerHandler( RequestHandler ):
   def export_readRequestsForJobs( cls, jobIDs ):
     """ read requests for jobs given list of jobIDs """
     try:
-      return cls.__requestDB.readRequestsForJobs( jobIDs )
+      requests = cls.__requestDB.readRequestsForJobs( jobIDs )
+      if not requests["OK"]:
+        gLogger.error( "readRequestsForJobs: %s" % requests["Message"] )
+        return requests
+      for jobID, request in requests["Value"]["Successful"].items():
+        requests["Value"]["Successful"][jobID] = request.toJSON()["Value"]
+      return requests
     except Exception, error:
       errStr = "readRequestsForJobs: Exception while selecting requests."
       gLogger.exception( errStr, '', lException = error )

@@ -308,16 +308,9 @@ class ReqClient( Client ):
     readReqsForJobs = self.requestManager().readRequestsForJobs( jobIDs )
     if not readReqsForJobs["OK"]:
       return readReqsForJobs
-    ret = readReqsForJobs["Value"] if readReqsForJobs["Value"] else None
-    if not ret:
-      return S_ERROR( "No values returned" )
+    ret = readReqsForJobs["Value"]
     # # create Requests out of JSONs for successful reads
     if "Successful" in ret:
       for jobID, fromJSON in ret["Successful"].items():
-        req = Request( fromJSON )
-        if not req["OK"]:
-          ret["Failed"][jobID] = req["Message"]
-          continue
-        req = req["Value"]
-        ret["Successful"][jobID] = req
+        ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )

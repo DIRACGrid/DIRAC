@@ -105,8 +105,8 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.req = Request()
     self.req.RequestName = self.reqName
-    self.req.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba"
-    self.req.OwnerGroup = "dirac_user"
+    # self.req.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba"
+    # self.req.OwnerGroup = "dirac_user"
     self.req.addOperation( self.removeFileInit )
     self.req.addOperation( self.putAndRegister )
     self.req.addOperation( self.replicateAndRegister )
@@ -115,11 +115,45 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.reqClient = ReqClient()
 
-  def tearDown( self ):
-    """ tear down """
-    pass
+  def userFiles( self ):
 
-  def test( self ):
+    """ get list of files in user domain """
+    files = {}
+    for i in range( 5 ):
+      fname = "/tmp/testUserFile-%s" % i
+      lfn = "/lhcb/user/c/cibak/" + fname.split( "/" )[-1]
+      fh = open( fname, "w+" )
+      for i in range( 100 ):
+        fh.write( str( random.randint( 0, i ) ) )
+      fh.close()
+
+      size = os.stat( fname ).st_size
+      checksum = fileAdler( fname )
+      guid = makeGuid( fname )
+
+      files[lfn] = ( fname, size, checksum, guid )
+
+    return files
+
+  def certFiles( self ):
+    """ get list of files in cert domain """
+    files = {}
+    for i in range( 5 ):
+      fname = "/tmp/testCertFile-%s" % i
+      lfn = "/lhcb/certification/rmsdms/" + fname.split( "/" )[-1]
+      fh = open( fname, "w+" )
+      for i in range( 100 ):
+        fh.write( str( random.randint( 0, i ) ) )
+      fh.close()
+      size = os.stat( fname ).st_size
+      checksum = fileAdler( fname )
+      guid = makeGuid( fname )
+      files[lfn] = ( fname, size, checksum, guid )
+    return files
+
+
+
+  def testUser( self ):
     """ test case """
     delete = self.reqClient.deleteRequest( self.reqName )
     print delete
