@@ -166,7 +166,7 @@ class ReqManagerHandler( RequestHandler ):
     """ Get summary of the request/operations info in the standard form for the web
 
     :param dict selectDict: selection dict
-    :param list sortList: ???
+    :param list sortList: whatever
     :param int startItem: start item
     :param int maxItems: max items
     """

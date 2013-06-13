@@ -141,8 +141,8 @@ class RequestDB( DB ):
     exists = exists["Value"]
 
     if exists[query] and exists[query][0]["RequestID"] != request.RequestID:
-      return S_ERROR( "putRequest: request '%s' already exists in the db (RequestID=%s)" % ( request.RequestName,
-                                                                                             exists[query][0]["RequestID"] ) )
+      return S_ERROR( "putRequest: request '%s' already exists in the db (RequestID=%s)"\
+                       % ( request.RequestName, exists[query][0]["RequestID"] ) )
     reqSQL = request.toSQL()
     if not reqSQL["OK"]:
       return reqSQL
@@ -185,7 +185,8 @@ class RequestDB( DB ):
         if isNew:
           deleteRequest = self.deleteRequest( request.RequestName )
           if not deleteRequest["OK"]:
-            self.log.error( "putRequest: unable to delete request '%s': %s" % ( request.RequestName, deleteRequest["Message"] ) )
+            self.log.error( "putRequest: unable to delete request '%s': %s"\
+                             % ( request.RequestName, deleteRequest["Message"] ) )
             return deleteRequest
         return putOperation
       lastrowid = putOperation["lastrowid"]
@@ -201,7 +202,8 @@ class RequestDB( DB ):
           if isNew:
             deleteRequest = self.deleteRequest( request.requestName )
             if not deleteRequest["OK"]:
-              self.log.error( "putRequest: unable to delete request '%s': %s" % ( request.RequestName, deleteRequest["Message"] ) )
+              self.log.error( "putRequest: unable to delete request '%s': %s"\
+                              % ( request.RequestName, deleteRequest["Message"] ) )
               return deleteRequest
           return putFiles
 
@@ -209,7 +211,8 @@ class RequestDB( DB ):
 
   def getScheduledRequest( self, operationID ):
     """ read scheduled request given its FTS operationID """
-    query = "SELECT `Request`.`RequestName` FROM `Request` JOIN `Operation` ON `Request`.`RequestID` = `Operation`.`RequestID` WHERE `OperationID` = %s;" % operationID
+    query = "SELECT `Request`.`RequestName` FROM `Request` JOIN `Operation` ON "\
+      "`Request`.`RequestID`=`Operation`.`RequestID` WHERE `OperationID` = %s;" % operationID
     requestName = self._query( query )
     if not requestName["OK"]:
       self.log.error( "getScheduledRequest: %s" % requestName["Message"] )
@@ -325,7 +328,8 @@ class RequestDB( DB ):
         operationID = record["OperationID"] if record["OperationID"] else None
         if operationID and requestID:
           trans.append( "DELETE FROM `File` WHERE `OperationID` = %s;" % operationID )
-          trans.append( "DELETE FROM `Operation` WHERE `RequestID` = %s AND `OperationID` = %s;" % ( requestID, operationID ) )
+          trans.append( "DELETE FROM `Operation` WHERE `RequestID` = %s AND `OperationID` = %s;" % ( requestID,
+                                                                                                    operationID ) )
     # # last bit: request itself
     if requestID:
       trans.append( "DELETE FROM `Request` WHERE `RequestID` = %s;" % requestID )
@@ -364,7 +368,7 @@ class RequestDB( DB ):
     # # this will be returned
     retDict = { "Request" : {}, "Operation" : {}, "File" : {} }
     transQueries = { "SELECT `Status`, COUNT(`Status`) FROM `Request` GROUP BY `Status`;" : "Request",
-                     "SELECT `Type`, `Status`, COUNT(`Status`) FROM `Operation` GROUP BY `Type`, `Status`;" : "Operation",
+                     "SELECT `Type`,`Status`,COUNT(`Status`) FROM `Operation` GROUP BY `Type`,`Status`;" : "Operation",
                      "SELECT `Status`, COUNT(`Status`) FROM `File` GROUP BY `Status`;" : "File" }
     ret = self._transaction( transQueries.keys() )
     if not ret["OK"]:
@@ -401,15 +405,85 @@ class RequestDB( DB ):
   def getRequestSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ get db summary for web
 
-    TODO: to be defined
+    :param dict selectDict: whatever
+    :param list sortList: whatever
+    :param int startItem: limit
+    :param int maxItems: limit
+
+
     """
-    query = "SELECT R.RequestID, R.RequestName, R.JobID, R.OwnerDN, "\
-      "R.OwnerGroup, O.Type, O.Type, O.Status, O.Error, R.CreationTime , R.LastUpdate "\
-      "FROM Request R JOIN Operation O ON R.RequestID = O.RequestID WHERE "
+    resultDict = {}
+    rparameterList = [ 'RequestID', 'RequestName', 'JobID', 'OwnerDN', 'OwnerGroup']
+    sparameterList = [ 'Type', 'Status', 'Operation']
+    parameterList = rparameterList + sparameterList + [ "Error", "CreationTime", "LastUpdate"]
+    # parameterList.append( 'Error' )
+    # parameterList.append( 'CreationTime' )
+    # parameterList.append( 'LastUpdateTime' )
 
+    req = "SELECT R.RequestID, R.RequestName, R.JobID, R.OwnerDN, R.OwnerGroup,"
+    req += "O.Type, O.Status, O.Type, O.Error, O.CreationTime, O.LastUpdate FROM Requests as R, Operation as O "
 
+    new_selectDict = {}
+    older = None
+    newer = None
+    for key, value in selectDict.items():
+      if key in rparameterList:
+        new_selectDict['R.' + key] = value
+      elif key in sparameterList:
+        new_selectDict['O.' + key] = value
+      elif key == 'ToDate':
+        older = value
+      elif key == 'FromDate':
+        newer = value
 
-    pass
+    condition = ''
+    if new_selectDict or older or newer:
+      condition = self.__buildCondition( new_selectDict, older = older, newer = newer )
+      req += condition
+
+    if condition:
+      req += " AND R.RequestID=O.RequestID"
+    else:
+      req += " WHERE R.RequestID=O.RequestID"
+
+    if sortList:
+      req += " ORDER BY %s %s" % ( sortList[0][0], sortList[0][1] )
+    result = self._query( req )
+    if not result['OK']:
+      return result
+
+    if not result['Value']:
+      resultDict['ParameterNames'] = parameterList
+      resultDict['Records'] = []
+      return S_OK( resultDict )
+
+    nRequests = len( result['Value'] )
+
+    if startItem <= len( result['Value'] ):
+      firstIndex = startItem
+    else:
+      return S_ERROR( 'Requested index out of range' )
+
+    if ( startItem + maxItems ) <= len( result['Value'] ):
+      secondIndex = startItem + maxItems
+    else:
+      secondIndex = len( result['Value'] )
+
+    records = []
+    columnWidth = [ 0 for x in range( len( parameterList ) ) ]
+    for i in range( firstIndex, secondIndex ):
+      row = result['Value'][i]
+      records.append( [ str( x ) for x in row] )
+      for ind in range( len( row ) ):
+        if len( str( row[ind] ) ) > columnWidth[ind]:
+          columnWidth[ind] = len( str( row[ind] ) )
+
+    resultDict['ParameterNames'] = parameterList
+    resultDict['ColumnWidths'] = columnWidth
+    resultDict['Records'] = records
+    resultDict['TotalRecords'] = nRequests
+
+    return S_OK( resultDict )
 
   def getRequestNamesForJobs( self, jobIDs ):
     """ read request names for jobs given jobIDs
@@ -478,5 +552,41 @@ class RequestDB( DB ):
       return S_OK()
     return request.toJSON()
 
+  @staticmethod
+  def __buildCondition( condDict, older = None, newer = None ):
+    """ build SQL condition statement from provided condDict
+       and other extra conditions
+
+       blindly copied from old code, hope it works
+    """
+    condition = ''
+    conjunction = "WHERE"
+    if condDict != None:
+      for attrName, attrValue in condDict.items():
+        if type( attrValue ) == list:
+          multiValue = ','.join( ['"' + x.strip() + '"' for x in attrValue] )
+          condition = ' %s %s %s in (%s)' % ( condition,
+                                              conjunction,
+                                              str( attrName ),
+                                              multiValue )
+        else:
+          condition = ' %s %s %s=\'%s\'' % ( condition,
+                                             conjunction,
+                                             str( attrName ),
+                                             str( attrValue ) )
+        conjunction = "AND"
+
+    if older:
+      condition = ' %s %s O.LastUpdate < \'%s\'' % ( condition,
+                                                 conjunction,
+                                                 str( older ) )
+      conjunction = "AND"
+
+    if newer:
+      condition = ' %s %s O.LastUpdate >= \'%s\'' % ( condition,
+                                                 conjunction,
+                                                 str( newer ) )
+
+    return condition
 
 

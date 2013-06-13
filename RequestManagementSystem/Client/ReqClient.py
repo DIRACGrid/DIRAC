@@ -289,6 +289,8 @@ class ReqClient( Client ):
 
     :param self: self reference
     :param list jobID: list of job IDs (integers)
+    :return: S_ERROR or S_OK( "Successful": { jobID1: requestName1, jobID2: requestName2, ... },
+                              "Failed" : { jobIDn: errMsg, jobIDm: errMsg, ...}  )
     """
     self.log.info( "getRequestNamesForJobs: attempt to get request(s) for job %s" % jobIDs )
     requests = self.requestManager().getRequestNamesForJobs( jobIDs )
@@ -301,7 +303,6 @@ class ReqClient( Client ):
     """ read requests for jobs
 
     :param list jobIDs: list with jobIDs
-
     :return: S_OK( { "Successful" : { jobID1 : Request, ... },
                      "Failed" : { jobIDn : "Fail reason" } } )
     """
