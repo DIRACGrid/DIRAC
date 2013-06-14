@@ -53,13 +53,13 @@ class FullChainTest( object ):
 
   """
 
-  def buildRequest( self, owner, group ):
+  def buildRequest( self, owner, group, sourceSE, targetSE1, targetSE2 ):
 
     files = self.files( owner, group )
 
     putAndRegister = Operation()
     putAndRegister.Type = "PutAndRegister"
-    putAndRegister.TargetSE = "RAL-USER"
+    putAndRegister.TargetSE = sourceSE
     for fname, lfn, size, checksum, guid in files:
       putFile = File()
       putFile.LFN = lfn
@@ -72,7 +72,7 @@ class FullChainTest( object ):
 
     replicateAndRegister = Operation()
     replicateAndRegister.Type = "ReplicateAndRegister"
-    replicateAndRegister.TargetSE = "RAL-USER,CNAF-USER"
+    replicateAndRegister.TargetSE = "%s,%s" % ( targetSE1, targetSE2 )
     for fname, lfn, size, checksum, guid in files:
       repFile = File()
       repFile.LFN = lfn
@@ -83,7 +83,7 @@ class FullChainTest( object ):
 
     removeReplica = Operation()
     removeReplica.Type = "RemoveReplica"
-    removeReplica.TargetSE = "RAL-USER"
+    removeReplica.TargetSE = sourceSE
     for fname, lfn, size, checksum, guid in files:
       removeReplica.addFile( File( {"LFN": lfn } ) )
 
@@ -124,10 +124,10 @@ class FullChainTest( object ):
       files.append( ( fname, lfn, size, checksum, guid ) )
     return files
 
-  def putRequest( self, userName, userDN, userGroup ):
+  def putRequest( self, userName, userDN, userGroup, sourceSE, targetSE1, targetSE2 ):
     """ test case for user """
 
-    req = self.buildRequest( userName, userGroup )
+    req = self.buildRequest( userName, userGroup, sourceSE, targetSE1, targetSE2 )
 
     req.RequestName = "test%s-%s" % ( userName, userGroup )
     req.OwnerDN = userDN
@@ -135,7 +135,7 @@ class FullChainTest( object ):
 
     gLogger.always( "putRequest: request '%s'" % req.RequestName )
     for op in req:
-      gLogger.always( "putRequest: => %s %s" % ( op.Order, op.Type ) )
+      gLogger.always( "putRequest: => %s %s %s" % ( op.Order, op.Type, op.TargetSE ) )
       for f in op:
         gLogger.always( "putRequest: ===> file %s" % f.LFN )
 
@@ -153,10 +153,14 @@ class FullChainTest( object ):
 # # test execution
 if __name__ == "__main__":
 
-  if len( sys.argv ) != 2:
-    gLogger.error( "please specify one DIRAC group to use" )
+  if len( sys.argv ) != 5:
+    gLogger.error( "Usage:\n python %s userGroup SourceSE TargetSE1 TargetSE2\n" )
     sys.exit( -1 )
   userGroup = sys.argv[1]
+  sourceSE = sys.argv[2]
+  targetSE1 = sys.argv[3]
+  targetSE2 = sys.argv[4]
+
   gLogger.always( "will use '%s' group" % userGroup )
 
   admin = DiracAdmin()
@@ -186,6 +190,6 @@ if __name__ == "__main__":
   gLogger.always( "userDN is %s" % userDN )
 
   fct = FullChainTest()
-  put = fct.putRequest( userName, userDN, userGroup )
+  put = fct.putRequest( userName, userDN, userGroup, sourceSE, targetSE1, targetSE2 )
 
 
