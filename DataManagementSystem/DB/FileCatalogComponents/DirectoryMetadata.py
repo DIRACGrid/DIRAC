@@ -548,6 +548,8 @@ class DirectoryMetadata:
       result = self.db.dtree.findDir( path )
       if not result['OK']:
         return result
+      if not result['Value']:
+        return S_ERROR( 'Path not found %s' % path )
       pathDirID = int( result['Value'] )
 
     result = self.__expandMetaDictionary( queryDict, credDict )
