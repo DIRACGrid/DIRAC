@@ -24,7 +24,7 @@ class DirectoryNodeTree( DirectoryTreeBase ):
     """ Find the identifier of a directory specified by its path
     """
     dpath = path
-    if path[1] == "/":
+    if path[0] == "/":
       dpath = path[1:]
     elements = dpath.split( '/' )
 
@@ -56,7 +56,7 @@ class DirectoryNodeTree( DirectoryTreeBase ):
       return S_OK( dirID )
 
     dpath = path
-    if path[1] == "/":
+    if path[0] == "/":
       dpath = path[1:]
     elements = dpath.split( '/' )
     level = len( elements )
@@ -89,7 +89,7 @@ class DirectoryNodeTree( DirectoryTreeBase ):
     """ Get the parent ID of the given directory
     """
     dpath = path
-    if path[1] == "/":
+    if path[0] == "/":
       dpath = path[1:]
     elements = dpath.split( '/' )
     if len( elements ) > 1:
