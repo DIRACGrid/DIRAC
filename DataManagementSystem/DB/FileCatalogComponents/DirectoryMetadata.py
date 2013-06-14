@@ -743,7 +743,7 @@ class DirectoryMetadata:
       if not result['OK']:
         return result
       if result['Value']:
-        pathDirs = result['Value'].keys()  
+        pathDirs = result['Value'].keys()
       result = self.db.dtree.getPathIDsByID( pathDirID )
       if not result['OK']:
         return result
@@ -756,12 +756,12 @@ class DirectoryMetadata:
       return result
     metaFields = result['Value']
     comFields = metaFields.keys()
-    
+
     # Commented out to return compatible data also for selection metadata
     #for m in metaDict:
     #  if m in comFields:
     #    del comFields[comFields.index( m )]
- 
+
     result = self.__expandMetaDictionary( queryDict, credDict )
     if not result['OK']:
       return result
@@ -782,9 +782,7 @@ class DirectoryMetadata:
           fromList = []
           break
 
-    if anyMeta:
-      result = self.__findDistinctMetadata( comFields, [] )
-    elif fromList:
+    if anyMeta or fromList:
       result = self.__findDistinctMetadata( comFields, fromList )
     else:
       result = S_OK( {} )
