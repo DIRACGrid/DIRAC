@@ -31,7 +31,7 @@ from DIRAC import gLogger
 # # from Core
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Utilities.File import makeGuid
-from DIRAC.Interfaces.API import DiracAdmin
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForUser, getDNForUsername
 # # from RMS and DMS
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -107,13 +107,13 @@ class FullChainTest( object ):
 
   def files( self, userName, userGroup ):
     """ get list of files in user domain """
-    files = {}
+    files = []
     for i in range( 10 ):
       fname = "/tmp/testUserFile-%s" % i
       if userGroup == "lhcb_user":
         lfn = "/lhcb/user/%s/%s/%s" % ( userName[0], userName, fname.split( "/" )[-1] )
       else:
-        lfn = "/lhcb/certification/rmsdms/%s" % fname.split( "/" )[-1]
+        lfn = "/lhcb/certification/test/rmsdms/%s" % fname.split( "/" )[-1]
       fh = open( fname, "w+" )
       for i in range( 100 ):
         fh.write( str( random.randint( 0, i ) ) )
@@ -121,49 +121,71 @@ class FullChainTest( object ):
       size = os.stat( fname ).st_size
       checksum = fileAdler( fname )
       guid = makeGuid( fname )
-      files[lfn] = ( fname, size, checksum, guid )
+      files.append( ( fname, lfn, size, checksum, guid ) )
     return files
 
   def putRequest( self, userName, userDN, userGroup ):
     """ test case for user """
 
-    req = self.buildRequset( userName, userGroup )
+    req = self.buildRequest( userName, userGroup )
 
     req.RequestName = "test%s-%s" % ( userName, userGroup )
     req.OwnerDN = userDN
     req.OwnerGroup = userGroup
 
-    # reqClient = ReqClient()
+    gLogger.always( "putRequest: request '%s'" % req.RequestName )
+    for op in req:
+      gLogger.always( "putRequest: => %s %s" % ( op.Order, op.Type ) )
+      for f in op:
+        gLogger.always( "putRequest: ===> file %s" % f.LFN )
 
-    # delete = reqClient.deleteRequest( req.RequestName )
-    # put = reqClient.putRequest( req )
+    reqClient = ReqClient()
+
+    delete = reqClient.deleteRequest( req.RequestName )
+    if not delete["OK"]:
+      gLogger.error( "putRequest: %s" % delete["Message"] )
+      return delete
+    put = reqClient.putRequest( req )
+    if not put["OK"]:
+      gLogger.error( "putRequest: %s" % put["Message"] )
+    return put
 
 # # test execution
 if __name__ == "__main__":
+
+  if len( sys.argv ) != 2:
+    gLogger.error( "please specify one DIRAC group to use" )
+    sys.exit( -1 )
+  userGroup = sys.argv[1]
+  gLogger.always( "will use '%s' group" % userGroup )
+
   admin = DiracAdmin()
 
-  currentUser = admin._getCurrentUser()
-  if not currentUser["OK"]:
-    gLogger.error( currentUser["Message"] )
+  userName = admin._getCurrentUser()
+  if not userName["OK"]:
+    gLogger.error( userName["Message"] )
     sys.exit( -1 )
-  currentUser = currentUser["Value"]
+  userName = userName["Value"]
+  gLogger.always( "current user is '%s'" % userName )
 
-  userGroups = getGroupsForUser( currentUser )
+  userGroups = getGroupsForUser( userName )
   if not userGroups["OK"]:
     gLogger.error( userGroups["Message"] )
     sys.exit( -1 )
   userGroups = userGroups["Value"]
 
-  userDN = getDNForUsername( currentUser )
+  if userGroup not in userGroups:
+    gLogger.error( "'%s' is not a member of the '%s' group" % ( userName, userGroup ) )
+    sys.exit( -1 )
+
+  userDN = getDNForUsername( userName )
   if not userDN["OK"]:
     gLogger.error( userDN["Message"] )
     sys.exit( -1 )
-  userDN = userDN["Value"]
+  userDN = userDN["Value"][0]
+  gLogger.always( "userDN is %s" % userDN )
 
   fct = FullChainTest()
-
-  if "lhcb_user" in userGroups:
-    fct.putRequest( currentUser, userDN, "lhcb_user" )
-    
+  put = fct.putRequest( userName, userDN, userGroup )
 
 
