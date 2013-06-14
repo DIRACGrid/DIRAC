@@ -37,15 +37,21 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 ########################################################################
-class ReplicateAndRegisterTests( unittest.TestCase ):
+class FullChainTests( object ):
   """
-  .. class:: ReplicateAndRegisterTests
+  .. class:: FullChainTests
+
+  creates and puts to the ReqDB full chain tests for RMS and DMS operations
+  * RemoveFile
+  * PutAndRegister
+  * ReplicateAndRegister
+  * RemoveReplica
+  * RemoveFile
 
   """
+
   def setUp( self ):
     """ test setup """
-
-    self.reqName = "fullChain"
 
     files = []
     for i in range( 5 ):
@@ -105,8 +111,6 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.req = Request()
     self.req.RequestName = self.reqName
-    # self.req.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba"
-    # self.req.OwnerGroup = "dirac_user"
     self.req.addOperation( self.removeFileInit )
     self.req.addOperation( self.putAndRegister )
     self.req.addOperation( self.replicateAndRegister )
@@ -115,32 +119,28 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.reqClient = ReqClient()
 
-  def userFiles( self ):
-
+  def userFiles( self, userName ):
     """ get list of files in user domain """
     files = {}
-    for i in range( 5 ):
+    for i in range( 10 ):
       fname = "/tmp/testUserFile-%s" % i
-      lfn = "/lhcb/user/c/cibak/" + fname.split( "/" )[-1]
+      lfn = "/lhcb/user/%s/%s/%s" % ( userName[0], userName, fname.split( "/" )[-1] )
       fh = open( fname, "w+" )
       for i in range( 100 ):
         fh.write( str( random.randint( 0, i ) ) )
       fh.close()
-
       size = os.stat( fname ).st_size
       checksum = fileAdler( fname )
       guid = makeGuid( fname )
-
       files[lfn] = ( fname, size, checksum, guid )
-
     return files
 
   def certFiles( self ):
     """ get list of files in cert domain """
     files = {}
-    for i in range( 5 ):
+    for i in range( 10 ):
       fname = "/tmp/testCertFile-%s" % i
-      lfn = "/lhcb/certification/rmsdms/" + fname.split( "/" )[-1]
+      lfn = "/lhcb/certification/RMSDMS/" + fname.split( "/" )[-1]
       fh = open( fname, "w+" )
       for i in range( 100 ):
         fh.write( str( random.randint( 0, i ) ) )
@@ -151,12 +151,27 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
       files[lfn] = ( fname, size, checksum, guid )
     return files
 
-
+  def buildRequest( self, ownerGroup = "lhcb_user" ):
+    """ create request for :owneGroup: """
+    pass
 
   def testUser( self ):
-    """ test case """
-    delete = self.reqClient.deleteRequest( self.reqName )
-    print delete
+    """ test case for user """
+
+
+    self.req.RequestName = "testUser"
+    delete = self.reqClient.deleteRequest( self.req.RequestName )
+    self.assertEqual( delete["OK"], True, "deleteRequest failed: %s" % delete.get( "Message", "" ) )
+    put = self.reqClient.putRequest( self.req )
+    self.assertEqual( put["OK"], True, "putRequest failed: %s" % put.get( "Message", "" ) )
+
+  def testProd( self ):
+    """ test case for prod """
+
+
+    self.req.RequestName = "testCert"
+    delete = self.reqClient.deleteRequest( self.req.RequestName )
+    self.assertEqual( delete["OK"], True, "deleteRequest failed: %s" % delete.get( "Message", "" ) )
     put = self.reqClient.putRequest( self.req )
     self.assertEqual( put["OK"], True, "putRequest failed: %s" % put.get( "Message", "" ) )
 
@@ -164,7 +179,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 # # test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
-  suite = testLoader.loadTestsFromTestCase( ReplicateAndRegisterTests )
+  suite = testLoader.loadTestsFromTestCase( FullChainTests )
   suite = unittest.TestSuite( [ suite ] )
   unittest.TextTestRunner( verbosity = 3 ).run( suite )
 

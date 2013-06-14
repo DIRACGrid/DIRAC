@@ -11,7 +11,7 @@
 # # RCSID
 __RCSID__ = "$Id$"
 # # from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
