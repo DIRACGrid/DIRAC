@@ -182,9 +182,9 @@ class DirectoryMetadata:
     result = self.db.dtree.findDir( dpath )
     if not result['OK']:
       return result
+    if not result['Value']:
+      return S_ERROR( 'Path not found: %s' % path )
     dirID = result['Value']
-    if not dirID:
-      return S_ERROR( '%s: directory not found' % dpath )
 
     dirmeta = self.getDirectoryMetadata( dpath, credDict, owndata = False )
     if not dirmeta['OK']:
@@ -222,9 +222,9 @@ class DirectoryMetadata:
     result = self.db.dtree.findDir( dpath )
     if not result['OK']:
       return result
+    if not result['Value']:
+      return S_ERROR( 'Path not found: %s' % path )
     dirID = result['Value']
-    if not dirID:
-      return S_ERROR( '%s: directory not found' % dpath )
 
     failedMeta = {}
     for meta in metadata:
@@ -255,9 +255,9 @@ class DirectoryMetadata:
     result = self.db.dtree.findDir( dpath )
     if not result['OK']:
       return result
+    if not result['Value']:
+      return S_ERROR( 'Path not found: %s' % path )
     dirID = result['Value']
-    if not dirID:
-      return S_ERROR( '%s: directory not found' % dpath )
 
     result = self.db._insert( 'FC_DirMeta',
                           ['DirID', 'MetaKey', 'MetaValue'],
@@ -277,9 +277,9 @@ class DirectoryMetadata:
       result = self.db.dtree.findDir( dpath )
       if not result['OK']:
         return result
+      if not result['Value']:
+        return S_ERROR( 'Path not found: %s' % path )
       dirID = result['Value']
-      if not dirID:
-        return S_ERROR( '%s: directory not found' % dpath )
       pathIDs = [dirID]
 
     if len( pathIDs ) > 1:
@@ -549,7 +549,7 @@ class DirectoryMetadata:
       if not result['OK']:
         return result
       if not result['Value']:
-        return S_ERROR( 'Path not found %s' % path )
+        return S_ERROR( 'Path not found: %s' % path )
       pathDirID = int( result['Value'] )
 
     result = self.__expandMetaDictionary( queryDict, credDict )
@@ -737,7 +737,7 @@ class DirectoryMetadata:
       if not result['OK']:
         return result
       if not result['Value']:
-        return S_ERROR( 'Path not found %s' % path )
+        return S_ERROR( 'Path not found: %s' % path )
       pathDirID = int( result['Value'] )
     pathDirs = []
     if pathDirID:
