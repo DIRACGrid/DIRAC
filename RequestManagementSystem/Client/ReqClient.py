@@ -81,7 +81,7 @@ class ReqClient( Client ):
     if not valid["OK"]:
       self.log.error( "putRequest: request not valid: %s" % valid["Message"] )
       return valid
-    # # dump to xml string
+    # # dump to json
     requestJSON = request.toJSON()
     if not requestJSON["OK"]:
       return requestJSON

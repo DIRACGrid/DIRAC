@@ -4,11 +4,11 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/13 18:38:55
 ########################################################################
-""" :mod: ReplicateAndRegisterTests
-    ===============================
+""" :mod: FullChainTest
+    ===================
 
-    .. module: ReplicateAndRegisterTests
-    :synopsis: unittest for replicateAndRegister operation handler
+    .. module: FullChainTests
+    :synopsis: full chain integration test for DMS operation handlers
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     unittest for replicateAndRegister operation handler
@@ -21,15 +21,18 @@ __RCSID__ = "$Id: $"
 # @brief Definition of ReplicateAndRegisterTests class.
 
 # # imports
-import unittest
 import random
 import os
+import sys
 # # from DIRAC
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
+from DIRAC import gLogger
 # # from Core
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Utilities.File import makeGuid
+from DIRAC.Interfaces.API import DiracAdmin
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForUser, getDNForUsername
 # # from RMS and DMS
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -37,9 +40,9 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 ########################################################################
-class FullChainTests( object ):
+class FullChainTest( object ):
   """
-  .. class:: FullChainTests
+  .. class:: FullChainTest
 
   creates and puts to the ReqDB full chain tests for RMS and DMS operations
   * RemoveFile
@@ -50,28 +53,13 @@ class FullChainTests( object ):
 
   """
 
-  def setUp( self ):
-    """ test setup """
+  def buildRequest( self, owner, group ):
 
-    files = []
-    for i in range( 5 ):
-      fname = "/tmp/testPutAndRegister-%s" % i
-      lfn = "/lhcb/user/c/cibak/" + fname.split( "/" )[-1]
-      fh = open( fname, "w+" )
-      for i in range( 100 ):
-        fh.write( str( random.randint( 0, i ) ) )
-      fh.close()
+    files = self.files( owner, group )
 
-      size = os.stat( fname ).st_size
-      checksum = fileAdler( fname )
-      guid = makeGuid( fname )
-
-      files.append( ( fname, lfn, size, checksum, guid ) )
-
-
-    self.putAndRegister = Operation()
-    self.putAndRegister.Type = "PutAndRegister"
-    self.putAndRegister.TargetSE = "RAL-USER"
+    putAndRegister = Operation()
+    putAndRegister.Type = "PutAndRegister"
+    putAndRegister.TargetSE = "RAL-USER"
     for fname, lfn, size, checksum, guid in files:
       putFile = File()
       putFile.LFN = lfn
@@ -80,51 +68,52 @@ class FullChainTests( object ):
       putFile.ChecksumType = "adler32"
       putFile.Size = size
       putFile.GUID = guid
-      self.putAndRegister.addFile( putFile )
+      putAndRegister.addFile( putFile )
 
-    self.replicateAndRegister = Operation()
-    self.replicateAndRegister.Type = "ReplicateAndRegister"
-    self.replicateAndRegister.TargetSE = "RAL-USER,CNAF-USER"
+    replicateAndRegister = Operation()
+    replicateAndRegister.Type = "ReplicateAndRegister"
+    replicateAndRegister.TargetSE = "RAL-USER,CNAF-USER"
     for fname, lfn, size, checksum, guid in files:
       repFile = File()
       repFile.LFN = lfn
       repFile.Size = size
       repFile.Checksum = checksum
       repFile.ChecksumType = "adler32"
-      self.replicateAndRegister.addFile( repFile )
+      replicateAndRegister.addFile( repFile )
 
-    self.removeReplica = Operation()
-    self.removeReplica.Type = "RemoveReplica"
-    self.removeReplica.TargetSE = "RAL-USER"
+    removeReplica = Operation()
+    removeReplica.Type = "RemoveReplica"
+    removeReplica.TargetSE = "RAL-USER"
     for fname, lfn, size, checksum, guid in files:
-      self.removeReplica.addFile( File( {"LFN": lfn } ) )
+      removeReplica.addFile( File( {"LFN": lfn } ) )
 
-    self.removeFile = Operation()
-    self.removeFile.Type = "RemoveFile"
+    removeFile = Operation()
+    removeFile.Type = "RemoveFile"
     for fname, lfn, size, checksum, guid in files:
-      self.removeFile.addFile( File( {"LFN": lfn } ) )
+      removeFile.addFile( File( {"LFN": lfn } ) )
 
-    self.removeFileInit = Operation()
-    self.removeFileInit.Type = "RemoveFile"
+    removeFileInit = Operation()
+    removeFileInit.Type = "RemoveFile"
     for fname, lfn, size, checksum, guid in files:
-      self.removeFileInit.addFile( File( {"LFN": lfn } ) )
+      removeFileInit.addFile( File( {"LFN": lfn } ) )
 
-    self.req = Request()
-    self.req.RequestName = self.reqName
-    self.req.addOperation( self.removeFileInit )
-    self.req.addOperation( self.putAndRegister )
-    self.req.addOperation( self.replicateAndRegister )
-    self.req.addOperation( self.removeReplica )
-    self.req.addOperation( self.removeFile )
+    req = Request()
+    req.addOperation( removeFileInit )
+    req.addOperation( putAndRegister )
+    req.addOperation( replicateAndRegister )
+    req.addOperation( removeReplica )
+    req.addOperation( removeFile )
+    return req
 
-    self.reqClient = ReqClient()
-
-  def userFiles( self, userName ):
+  def files( self, userName, userGroup ):
     """ get list of files in user domain """
     files = {}
     for i in range( 10 ):
       fname = "/tmp/testUserFile-%s" % i
-      lfn = "/lhcb/user/%s/%s/%s" % ( userName[0], userName, fname.split( "/" )[-1] )
+      if userGroup == "lhcb_user":
+        lfn = "/lhcb/user/%s/%s/%s" % ( userName[0], userName, fname.split( "/" )[-1] )
+      else:
+        lfn = "/lhcb/certification/rmsdms/%s" % fname.split( "/" )[-1]
       fh = open( fname, "w+" )
       for i in range( 100 ):
         fh.write( str( random.randint( 0, i ) ) )
@@ -135,51 +124,46 @@ class FullChainTests( object ):
       files[lfn] = ( fname, size, checksum, guid )
     return files
 
-  def certFiles( self ):
-    """ get list of files in cert domain """
-    files = {}
-    for i in range( 10 ):
-      fname = "/tmp/testCertFile-%s" % i
-      lfn = "/lhcb/certification/RMSDMS/" + fname.split( "/" )[-1]
-      fh = open( fname, "w+" )
-      for i in range( 100 ):
-        fh.write( str( random.randint( 0, i ) ) )
-      fh.close()
-      size = os.stat( fname ).st_size
-      checksum = fileAdler( fname )
-      guid = makeGuid( fname )
-      files[lfn] = ( fname, size, checksum, guid )
-    return files
-
-  def buildRequest( self, ownerGroup = "lhcb_user" ):
-    """ create request for :owneGroup: """
-    pass
-
-  def testUser( self ):
+  def putRequest( self, userName, userDN, userGroup ):
     """ test case for user """
 
+    req = self.buildRequset( userName, userGroup )
 
-    self.req.RequestName = "testUser"
-    delete = self.reqClient.deleteRequest( self.req.RequestName )
-    self.assertEqual( delete["OK"], True, "deleteRequest failed: %s" % delete.get( "Message", "" ) )
-    put = self.reqClient.putRequest( self.req )
-    self.assertEqual( put["OK"], True, "putRequest failed: %s" % put.get( "Message", "" ) )
+    req.RequestName = "test%s-%s" % ( userName, userGroup )
+    req.OwnerDN = userDN
+    req.OwnerGroup = userGroup
 
-  def testProd( self ):
-    """ test case for prod """
+    # reqClient = ReqClient()
 
-
-    self.req.RequestName = "testCert"
-    delete = self.reqClient.deleteRequest( self.req.RequestName )
-    self.assertEqual( delete["OK"], True, "deleteRequest failed: %s" % delete.get( "Message", "" ) )
-    put = self.reqClient.putRequest( self.req )
-    self.assertEqual( put["OK"], True, "putRequest failed: %s" % put.get( "Message", "" ) )
-
+    # delete = reqClient.deleteRequest( req.RequestName )
+    # put = reqClient.putRequest( req )
 
 # # test execution
 if __name__ == "__main__":
-  testLoader = unittest.TestLoader()
-  suite = testLoader.loadTestsFromTestCase( FullChainTests )
-  suite = unittest.TestSuite( [ suite ] )
-  unittest.TextTestRunner( verbosity = 3 ).run( suite )
+  admin = DiracAdmin()
+
+  currentUser = admin._getCurrentUser()
+  if not currentUser["OK"]:
+    gLogger.error( currentUser["Message"] )
+    sys.exit( -1 )
+  currentUser = currentUser["Value"]
+
+  userGroups = getGroupsForUser( currentUser )
+  if not userGroups["OK"]:
+    gLogger.error( userGroups["Message"] )
+    sys.exit( -1 )
+  userGroups = userGroups["Value"]
+
+  userDN = getDNForUsername( currentUser )
+  if not userDN["OK"]:
+    gLogger.error( userDN["Message"] )
+    sys.exit( -1 )
+  userDN = userDN["Value"]
+
+  fct = FullChainTest()
+
+  if "lhcb_user" in userGroups:
+    fct.putRequest( currentUser, userDN, "lhcb_user" )
+    
+
 
