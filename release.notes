@@ -1,4 +1,11 @@
+[v6r9p4]
+
+*Stager
+NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs, 
+     dirac-stager-monitor-requests, dirac-stager-show-stats
+
 [v6r9p3]
+
 *Transformation
 FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
 
