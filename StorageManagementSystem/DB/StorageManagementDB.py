@@ -358,18 +358,30 @@ class StorageManagementDB( DB ):
     for taskID, status, source, submitTime, completeTime, callBackMethod, sourceTaskID in res['Value']:
       resDict[taskID] = {'Status':status, 'Source':source, 'SubmitTime':submitTime, 'CompleteTime':completeTime, 'CallBackMethod':callBackMethod, 'SourceTaskID':sourceTaskID}
     if not resDict:
-      gLogger.error( 'StorageManagementDB.getTaskInfo: The supplied task did not exist' )
-      return S_ERROR( 'The supplied task did not exist' )
+      gLogger.error( 'StorageManagementDB.getTaskInfo: The supplied task %s did not exist' % taskID)
+      return S_ERROR( 'The supplied task %s did not exist' % taskID)
     return S_OK( resDict )
 
-  def getTaskSummary( self, taskID, connection = False ):
+  def _getTaskIDForJob (self, jobID, connection = False ):
+    # Stager taskID is retrieved from the source DIRAC jobID
+    connection = self.__getConnection( connection )
+    req = "SELECT TaskID from Tasks WHERE SourceTaskID=%s;"  % int( jobID )
+    res = self._query( req )
+    if not res['OK']:
+      gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), '_getTaskIDForJob', req, res['Message'] ) )
+      return S_ERROR('The supplied JobID does not exist!')
+    taskID = [ row[0] for row in res['Value'] ]
+    return S_OK(taskID)    
+
+  def getTaskSummary( self, jobID, connection = False ):
     """ Obtain the task summary from the database. """
     connection = self.__getConnection( connection )
+    taskID = self._getTaskIDForJob( jobID, connection = connection )
     res = self.getTaskInfo( taskID, connection = connection )
     if not res['OK']:
       return res
     taskInfo = res['Value']
-    req = "SELECT R.LFN,R.SE,R.PFN,R.Size,R.Status,R.Reason FROM CacheReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
+    req = "SELECT R.LFN,R.SE,R.PFN,R.Size,R.Status,R.LastUpdate,R.Reason FROM CacheReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
     res = self._query( req, connection )
     if not res['OK']:
       gLogger.error( 'StorageManagementDB.getTaskSummary: Failed to get Replica summary for task.', res['Message'] )
@@ -423,7 +435,8 @@ class StorageManagementDB( DB ):
           condDict['ReplicaID'] = res['Value']
         else:
           condDict['ReplicaID'] = [-1]
-      req = "%s %s" % ( req, self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit ) )
+      # BUG: limit is ignored unless there is a nonempty condition dictionary OR older OR newer is nonemtpy    
+      req = "%s %s" % ( req, self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit ) )   
     res = self._query( req, connection )
     if not res['OK']:
       return res
@@ -977,6 +990,15 @@ class StorageManagementDB( DB ):
       res = self.removeTasks(taskIDs, connection)
       return res
   
+  def removeStageRequests( self, replicaIDs, connection = False):
+    connection = self.__getConnection( connection )
+    req = "DELETE FROM StageRequests WHERE ReplicaID in (%s);" % intListToString( replicaIDs )
+    res = self._update( req, connection )
+    if not res['OK']:
+      gLogger.error( "StorageManagementDB.removeStageRequests. Problem removing entries from StageRequests." )
+      return res
+    return res
+  
   def removeTasks( self, taskIDs, connection = False ):
     """ This will delete the entries from the TaskReplicas for the provided taskIDs. """
     connection = self.__getConnection( connection )
@@ -1013,6 +1035,24 @@ class StorageManagementDB( DB ):
       gLogger.error( "StorageManagementDB.setOldTasksAsFailed. Problem setting old Tasks to Failed." )
       return res
     return res
+
+  def getCacheReplicasSummary( self,connection = False ):
+    """
+    Reports breakdown of file number/size in different staging states across storage elements 
+    """
+    connection = self.__getConnection( connection )
+    req = "SELECT DISTINCT(Status),SE,COUNT(*),sum(size)/(1024*1024*1024) FROM CacheReplicas GROUP BY Status,SE;"
+    res = self._query( req, connection )
+    if not res['OK']:
+      gLogger.error( "StorageManagementDB.getCacheReplicasSummary failed." )
+      return res
+    
+    resSummary = {}
+    i = 1
+    for status, se, numFiles, sumFiles in res['Value']:
+      resSummary[i] = {'Status':status,'SE':se,'NumFiles':long(numFiles),'SumFiles':float(sumFiles)}
+      i+=1   
+    return S_OK(resSummary)
 
   def removeUnlinkedReplicas( self, connection = False ):
     """ This will remove Replicas from the CacheReplicas that are not associated to any Task.
