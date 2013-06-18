@@ -388,7 +388,8 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK()
 
   def cleanTransformation( self, transID ):
-    ''' This removes any mention of the supplied transformation
+    ''' This removes what was produced by the supplied transformation,
+        leaving only some info and log in the transformation DB.
     '''
     self.log.info( "Cleaning transformation %s" % transID )
     res = self.getTransformationDirectories( transID )
@@ -421,12 +422,6 @@ class TransformationCleaningAgent( AgentModule ):
     if not res['OK']:
       return res
     self.log.info( "Successfully cleaned transformation %d" % transID )
-    # Change the status of the transformation to deleted
-    res = self.transClient.setTransformationParameter( transID, 'Status', 'Deleted' )
-    if not res['OK']:
-      self.log.error( "Failed to update status of transformation %s to Deleted" % ( transID ), res['Message'] )
-      return res
-    self.log.info( "Updated status of transformation %s to Deleted" % ( transID ) )
     return S_OK()
 
   def cleanMetadataCatalogFiles( self, transID ):

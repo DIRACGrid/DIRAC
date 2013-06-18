@@ -67,7 +67,7 @@ class TransformationDB( DB ):
                           'AgentType',
                           'Status',
                           'MaxNumberOfTasks',
-                          'TransformationFamily'] # for the moment include TransformationFamily
+                          'TransformationFamily']  # for the moment include TransformationFamily
 
     self.TRANSFILEPARAMS = ['TransformationID',
                             'FileID',
@@ -326,6 +326,7 @@ class TransformationDB( DB ):
         self.deleteTransformation( transID, connection = connection )
         return res
       originalID = res['Value']
+      # FIXME: this is not the right place to change status information, and in general the whole should not be here
       res = self.setTransformationParameter( originalID, 'Status', 'Completing',
                                              author = authorDN, connection = connection )
       if not res['OK']:
@@ -708,7 +709,7 @@ class TransformationDB( DB ):
         webList.append( rList )
         resultList.append( fDict )
     result = S_OK( resultList )
-    #result['LFNs'] = originalFileIDs.values()
+    # result['LFNs'] = originalFileIDs.values()
     result['Records'] = webList
     result['ParameterNames'] = ['LFN'] + self.TRANSFILEPARAMS
     return result
@@ -1174,7 +1175,7 @@ class TransformationDB( DB ):
 
   ####################################################################
   #
-  # These methods manipulate the TransformationInputDataQuery table 
+  # These methods manipulate the TransformationInputDataQuery table
   #
 
   def createTransformationInputDataQuery( self, transName, queryDict, author = '', connection = False ):
@@ -1648,14 +1649,6 @@ class TransformationDB( DB ):
     res = self.__deleteTransformationTaskInputs( transID, connection = connection )
     if not res['OK']:
       return res
-    res = self.__deleteTransformationTasks( transID, connection = connection )
-    if not res['OK']:
-      return res
-    res = self.setTransformationParameter( transID, 'Status', 'Cleaned', author = author, connection = connection )
-    if not res['OK']:
-      return res
-    message = "Transformation Cleaned"
-    self.__updateTransformationLogging( transID, message, author, connection = connection )
     return S_OK( transID )
 
   def deleteTransformation( self, transName, author = '', connection = False ):
@@ -1760,7 +1753,7 @@ class TransformationDB( DB ):
     gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileTuples ) )
     successful = {}
     failed = {}
-    # Determine which files pass the filters and are to be added to transformations 
+    # Determine which files pass the filters and are to be added to transformations
     transFiles = {}
     filesToAdd = []
     for lfn, pfn, _size, se, _guid, _checksum in fileTuples:
@@ -1786,7 +1779,7 @@ class TransformationDB( DB ):
         else:
           failed[lfn] = True
       # Add the files to the transformations
-      #TODO: THIS SHOULD BE TESTED WITH A TRANSFORMATION WITH A FILTER
+      # TODO: THIS SHOULD BE TESTED WITH A TRANSFORMATION WITH A FILTER
       for transID, lfns in transFiles.items():
         fileIDs = []
         for lfn in lfns:
@@ -1918,7 +1911,7 @@ class TransformationDB( DB ):
     fileIDs, lfnFilesIDs = res['Value']
     for lfn in lfns:
       if not lfnFilesIDs.has_key( lfn ):
-        successful[lfn] = True # In the case that the file does not exist then return ok
+        successful[lfn] = True  # In the case that the file does not exist then return ok
     seFiles = {}
     if fileIDs:
       for lfn, _pfn, se, status in replicaTuples:
