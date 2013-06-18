@@ -1,3 +1,7 @@
+[v6r9p3]
+*Transformation
+FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
+
 [v6r9p2]
 
 *RSS
