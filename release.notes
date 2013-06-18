@@ -1,9 +1,11 @@
 [v6r8p20]
+
 *Stager
 NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs, 
      dirac-stager-monitor-requests, dirac-stager-show-stats
 
 [v6r8p19]
+
 *Transformation
 FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
 
@@ -201,6 +203,17 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p35]
+
+*Stager
+NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs, 
+     dirac-stager-monitor-requests, dirac-stager-show-stats
+
+[v6r7p34]
+
+*Transformation
+FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
 
 [v6r7p33]
 
