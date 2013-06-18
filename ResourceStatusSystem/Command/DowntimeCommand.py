@@ -172,7 +172,7 @@ class DowntimeCommand( Command ):
       return storeRes
     
     # We return only one downtime, if its ongoind at dtDate
-    startDate = datetime.now()
+    startDate = datetime.utcnow()
     endDate   = startDate     
     if hours:
       startDate = startDate + timedelta( hours = hours )
@@ -204,7 +204,7 @@ class DowntimeCommand( Command ):
     uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
 
     # We return only one downtime, if its ongoind at dtDate
-    dtDate = datetime.now()
+    dtDate = datetime.utcnow()
     result = None
        
     if not hours:
