@@ -164,6 +164,18 @@ class TransformationClient( Client, FileCatalogueBase ):
           break
     return S_OK( transformationTasks )
 
+
+  def cleanTransformation( self, transID, pc = '', url = '', timeout = 120 ):
+    """ Clean the transformation, and set the status parameter (doing it here, for easier extensibility)
+    """
+    # Cleaning
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    res = rpcClient.cleanTransformation( transID )
+    if not res['OK']:
+      return res
+    # Setting the status
+    return self.setTransformationParameter( transID, 'Status', 'Cleaned' )
+
   def moveFilesToDerivedTransformation( self, transDict, resetUnused = True ):
     ''' move files input to a transformation, to the derived one
     '''
