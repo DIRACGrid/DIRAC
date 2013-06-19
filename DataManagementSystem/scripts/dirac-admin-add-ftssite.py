@@ -31,7 +31,7 @@ if __name__ == "__main__":
     DIRAC.exit(-1)
   currentUser = currentUser["Value"]
   
-  userGroups = getGroupForUser( currentUser )
+  userGroups = getGroupsForUser( currentUser )
   if not userGroups["OK"]:
     gLogger.error( userGroups["Message"] )
     DIRAC.exit( -1 )

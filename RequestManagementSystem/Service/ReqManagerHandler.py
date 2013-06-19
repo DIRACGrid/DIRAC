@@ -166,7 +166,7 @@ class ReqManagerHandler( RequestHandler ):
     """ Get summary of the request/operations info in the standard form for the web
 
     :param dict selectDict: selection dict
-    :param list sortList: ???
+    :param list sortList: whatever
     :param int startItem: start item
     :param int maxItems: max items
     """
@@ -219,7 +219,13 @@ class ReqManagerHandler( RequestHandler ):
   def export_readRequestsForJobs( cls, jobIDs ):
     """ read requests for jobs given list of jobIDs """
     try:
-      return cls.__requestDB.readRequestsForJobs( jobIDs )
+      requests = cls.__requestDB.readRequestsForJobs( jobIDs )
+      if not requests["OK"]:
+        gLogger.error( "readRequestsForJobs: %s" % requests["Message"] )
+        return requests
+      for jobID, request in requests["Value"]["Successful"].items():
+        requests["Value"]["Successful"][jobID] = request.toJSON()["Value"]
+      return requests
     except Exception, error:
       errStr = "readRequestsForJobs: Exception while selecting requests."
       gLogger.exception( errStr, '', lException = error )

@@ -1,4 +1,4 @@
-[v6r9p3]
+[v6r9p5]
 
 *DMS
 BUGFIX: missing proxy in service env in the FTSManager service. By default service 
@@ -15,6 +15,17 @@ FIX: SpaceTokenOccupancyPolicy - Policy that now takes into account absolute val
      
 *TS
 FIX: TransformationCleaningAgent - will look for both old and new RMS     
+
+[v6r9p4]
+
+*Stager
+NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs, 
+     dirac-stager-monitor-requests, dirac-stager-show-stats
+
+[v6r9p3]
+
+*Transformation
+FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
 
 [v6r9p2]
 
@@ -267,6 +278,7 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+<<<<<<< HEAD
 
 [v6r7p35]
 
@@ -278,6 +290,8 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 
 *Transformation
 FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
+=======
+>>>>>>> upstream/rel-v6r9
 
 [v6r7p33]
 
