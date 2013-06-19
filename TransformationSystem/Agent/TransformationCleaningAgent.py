@@ -16,10 +16,14 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+
+# FIXME: double client: only ReqClient will survive in the end
+from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+
 
 # # agent's name
 AGENT_NAME = 'Transformation/TransformationCleaningAgent'
@@ -46,7 +50,9 @@ class TransformationCleaningAgent( AgentModule ):
     # # wms client
     self.wmsClient = WMSClient()
     # # request client
+    # FIXME: double client: only ReqClient will survive in the end
     self.requestClient = RequestClient()
+    self.reqClient = ReqClient()
     # # file catalog clinet
     self.metadataClient = FileCatalogClient()
 
@@ -533,6 +539,9 @@ class TransformationCleaningAgent( AgentModule ):
       self.log.info( "JobIDs not present, unable to remove asociated requests." )
       return S_OK()
 
+    failed = 0
+    # FIXME: double request client: old/new -> only the new will survive sooner or later
+    # this is the old
     res = self.requestClient.getRequestForJobs( jobIDs )
     if not res['OK']:
       self.log.error( "Failed to get requestID for jobs.", res['Message'] )
@@ -541,7 +550,6 @@ class TransformationCleaningAgent( AgentModule ):
     self.log.info( "Found %d jobs with associated failover requests" % len( failoverRequests ) )
     if not failoverRequests:
       return S_OK()
-    failed = 0
     for jobID, requestName in failoverRequests.items():
       # Put this check just in case, tasks must have associated jobs
       if jobID == 0 or jobID == '0':
@@ -552,6 +560,27 @@ class TransformationCleaningAgent( AgentModule ):
         failed += 1
       else:
         self.log.verbose( "Removed request %s associated to job %d." % ( requestName, jobID ) )
+
+    # and this is the new
+    res = self.reqClient.getRequestNamesForJobs( jobIDs )
+    if not res['OK']:
+      self.log.error( "Failed to get requestID for jobs.", res['Message'] )
+      return res
+    failoverRequests.update( res['Value'] )
+    if not failoverRequests:
+      return S_OK()
+    for jobID, requestName in failoverRequests.items():
+      # Put this check just in case, tasks must have associated jobs
+      if jobID == 0 or jobID == '0':
+        continue
+      res = self.reqClient.deleteRequest( requestName )
+      if not res['OK']:
+        self.log.error( "Failed to remove request from RequestDB", res['Message'] )
+        failed += 1
+      else:
+        self.log.verbose( "Removed request %s associated to job %d." % ( requestName, jobID ) )
+
+
     if failed:
       self.log.info( "Successfully removed %s requests" % ( len( failoverRequests ) - failed ) )
       self.log.info( "Failed to remove %s requests" % failed )
