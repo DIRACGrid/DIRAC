@@ -1,11 +1,4 @@
-*Stager
-NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
-     dirac-stager-monitor-requests, dirac-stager-show-stats
-
-*Transformation
-FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
-
-[v7r0-pre9]
+[v7r0-pre10]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -72,6 +65,8 @@ CHANGE: field definition for TaskID in TransformationFiles table (from
         !!!!! needs update of the MySQL schema on already installed databases
 CHANGE: TransformationDB - in DataFiles table removed LFN field from the Primary Key, 
         tt was already UNIQUE, Primary key is FileID only now.
+*Transformation
+FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
 
 *Resources
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
@@ -80,6 +75,40 @@ NEW: StorageElement - enable Storage Element proxy configuration by protocol nam
 CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added DIRAC_GLEXEC 
         to the environment when running under glexec     
 NEW: XXXStorage - added getCurrentStatus() method        
+
+*Stager
+NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
+     dirac-stager-monitor-requests, dirac-stager-show-stats
+
+
+[v6r9p5]
+
+*DMS
+BUGFIX: missing proxy in service env in the FTSManager service. By default service 
+        will use DataManager proxy refreshed every 6 hours.
+
+*Resources
+NEW: StorageElement - new checkAccess policy: split the self.checkMethods in 
+     self.okMethods. okMethods are the methods that do not use the physical SE. 
+     The isValid returns S_OK for all those immediately
+
+*RSS
+FIX: SpaceTokenOccupancyPolicy - Policy that now takes into account absolute values 
+     for the space left
+     
+*TS
+FIX: TransformationCleaningAgent - will look for both old and new RMS     
+
+[v6r9p4]
+
+*Stager
+NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs, 
+     dirac-stager-monitor-requests, dirac-stager-show-stats
+
+[v6r9p3]
+
+*Transformation
+FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
 
 [v6r9p2]
 
@@ -112,6 +141,32 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
+
+[v6r8p21]
+
+*DMS
+FIX: FileCatalog/DirectoryMetadata - even if there is no meta Selection 
+     the path should be considered when getting Compatible Metadata
+FIX: FileCatalog/DirectoryNodeTree - findDir will return S_OK( '' ) if dir not 
+     found, always return the same error from DirectoryMetadata in this case.     
+
+*RSS
+FIX: DowntimeCommand - use UTC time stamps
+
+*TS
+FIX: TransformationAgent - in _getTransformationFiles() get also ProbInFC files in 
+     addition to Used 
+
+[v6r8p20]
+
+*Stager
+NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs, 
+     dirac-stager-monitor-requests, dirac-stager-show-stats
+
+[v6r8p19]
+
+*Transformation
+FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
 
 [v6r8p18]
 
@@ -306,6 +361,23 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+
+[v6r7p35]
+
+*Stager
+NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs, 
+     dirac-stager-monitor-requests, dirac-stager-show-stats
+
+[v6r7p34]
+
+*Transformation
+FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
+=======
+>>>>>>> upstream/rel-v6r9
+>>>>>>> rel-v6r9
 
 [v6r7p33]
 

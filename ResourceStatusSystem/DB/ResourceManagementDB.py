@@ -110,9 +110,9 @@ class ResourceManagementDB( object ):
                       {
                        'Endpoint'       : 'VARCHAR( 64 ) NOT NULL',
                        'Token'          : 'VARCHAR( 64 ) NOT NULL',
-                       'Total'          : 'INTEGER NOT NULL DEFAULT 0',                      
-                       'Guaranteed'     : 'INTEGER NOT NULL DEFAULT 0',
-                       'Free'           : 'INTEGER NOT NULL DEFAULT 0',                     
+                       'Total'          : 'DOUBLE NOT NULL DEFAULT 0',                      
+                       'Guaranteed'     : 'DOUBLE NOT NULL DEFAULT 0',
+                       'Free'           : 'DOUBLE NOT NULL DEFAULT 0',                     
                        'LastCheckTime'  : 'DATETIME NOT NULL' 
                       },
                       'PrimaryKey' : [ 'Endpoint', 'Token' ]                                             

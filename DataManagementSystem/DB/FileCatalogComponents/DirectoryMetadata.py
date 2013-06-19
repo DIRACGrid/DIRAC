@@ -196,9 +196,9 @@ class DirectoryMetadata:
     result = self.db.dtree.findDir( dpath )
     if not result['OK']:
       return result
+    if not result['Value']:
+      return S_ERROR( 'Path not found: %s' % dpath )
     dirID = result['Value']
-    if not dirID:
-      return S_ERROR( '%s: directory not found' % dpath )
 
     dirmeta = self.getDirectoryMetadata( dpath, credDict, owndata = False )
     if not dirmeta['OK']:
@@ -236,9 +236,9 @@ class DirectoryMetadata:
     result = self.db.dtree.findDir( dpath )
     if not result['OK']:
       return result
+    if not result['Value']:
+      return S_ERROR( 'Path not found: %s' % dpath )
     dirID = result['Value']
-    if not dirID:
-      return S_ERROR( '%s: directory not found' % dpath )
 
     failedMeta = {}
     for meta in metadata:
@@ -269,9 +269,9 @@ class DirectoryMetadata:
     result = self.db.dtree.findDir( dpath )
     if not result['OK']:
       return result
+    if not result['Value']:
+      return S_ERROR( 'Path not found: %s' % dpath )
     dirID = result['Value']
-    if not dirID:
-      return S_ERROR( '%s: directory not found' % dpath )
 
     result = self.db._insert( 'FC_DirMeta',
                           ['DirID', 'MetaKey', 'MetaValue'],
@@ -291,9 +291,9 @@ class DirectoryMetadata:
       result = self.db.dtree.findDir( dpath )
       if not result['OK']:
         return result
+      if not result['Value']:
+        return S_ERROR( 'Path not found: %s' % dpath )
       dirID = result['Value']
-      if not dirID:
-        return S_ERROR( '%s: directory not found' % dpath )
       pathIDs = [dirID]
 
     if len( pathIDs ) > 1:
@@ -562,6 +562,8 @@ class DirectoryMetadata:
       result = self.db.dtree.findDir( path )
       if not result['OK']:
         return result
+      if not result['Value']:
+        return S_ERROR( 'Path not found: %s' % path )
       pathDirID = int( result['Value'] )
 
     result = self.__expandMetaDictionary( queryDict, credDict )
@@ -749,7 +751,7 @@ class DirectoryMetadata:
       if not result['OK']:
         return result
       if not result['Value']:
-        return S_ERROR( 'Path not found %s' % path )
+        return S_ERROR( 'Path not found: %s' % path )
       pathDirID = int( result['Value'] )
     pathDirs = []
     if pathDirID:
@@ -757,7 +759,7 @@ class DirectoryMetadata:
       if not result['OK']:
         return result
       if result['Value']:
-        pathDirs = result['Value'].keys()  
+        pathDirs = result['Value'].keys()
       result = self.db.dtree.getPathIDsByID( pathDirID )
       if not result['OK']:
         return result
@@ -770,12 +772,12 @@ class DirectoryMetadata:
       return result
     metaFields = result['Value']
     comFields = metaFields.keys()
-    
+
     # Commented out to return compatible data also for selection metadata
     #for m in metaDict:
     #  if m in comFields:
     #    del comFields[comFields.index( m )]
- 
+
     result = self.__expandMetaDictionary( queryDict, credDict )
     if not result['OK']:
       return result
@@ -796,9 +798,7 @@ class DirectoryMetadata:
           fromList = []
           break
 
-    if anyMeta:
-      result = self.__findDistinctMetadata( comFields, [] )
-    elif fromList:
+    if anyMeta or fromList:
       result = self.__findDistinctMetadata( comFields, fromList )
     else:
       result = S_OK( {} )

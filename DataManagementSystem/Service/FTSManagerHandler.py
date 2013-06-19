@@ -21,7 +21,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSManagerHandler class.
 
 # # imports
-from types import DictType, LongType, ListType, IntType, StringTypes, BooleanType
+from types import DictType, LongType, ListType, IntType, StringTypes
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -39,7 +39,8 @@ from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
 # # for FTS objects validation
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
-
+# # for proxy
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 
 ########################################################################
 class FTSManagerHandler( RequestHandler ):
@@ -94,19 +95,30 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.error( connect["Message"] )
       return connect
 
-    cls.ftsMode = cls.srv_getCSOption( "FTSMode", False )
+    # # get FTSStrategy
+    cls.ftsStrategy()
+    # # put DataManager proxy to env
+    dmProxy = cls.refreshProxy()
+    if not dmProxy["OK"]:
+      return dmProxy
 
-    gLogger.info( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
-
-    if cls.ftsMode:
-      # # get FTSStrategy
-      cls.ftsStrategy()
-      # # every 10 minutes update RW access in FTSGraph
-      gThreadScheduler.addPeriodicTask( 600, cls.updateRWAccess )
-      # # every hour replace FTSGraph
-      gThreadScheduler.addPeriodicTask( FTSHistoryView.INTERVAL , cls.updateFTSStrategy )
+    # # every 10 minutes update RW access in FTSGraph
+    gThreadScheduler.addPeriodicTask( 600, cls.updateRWAccess )
+    # # every hour replace FTSGraph
+    gThreadScheduler.addPeriodicTask( FTSHistoryView.INTERVAL , cls.updateFTSStrategy )
+    # # every 6 hours refresh DataManager proxy
+    gThreadScheduler.addPeriodicTask( 21600, cls.refreshProxy )
 
     return S_OK()
+
+  @classmethod
+  def refreshProxy(cls):
+    """ setup DataManager shifter proxy in env """
+    gLogger.info( "refreshProxy: getting proxy for DataManager..." )
+    proxy = setupShifterProxyInEnv( "DataManager" )
+    if not proxy["OK"]:
+      gLogger.error( "refreshProxy: %s" % proxy["Message"] )
+    return proxy
 
   @classmethod
   def updateFTSStrategy( cls ):
