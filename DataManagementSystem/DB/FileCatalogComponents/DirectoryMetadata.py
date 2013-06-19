@@ -183,7 +183,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_ERROR( 'Path not found: %s' % path )
+      return S_ERROR( 'Path not found: %s' % dpath )
     dirID = result['Value']
 
     dirmeta = self.getDirectoryMetadata( dpath, credDict, owndata = False )
