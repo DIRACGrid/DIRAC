@@ -22,7 +22,7 @@ class SpaceTokenOccupancyPolicy( PolicyBase ):
   @staticmethod
   def _evaluate( commandResult ):
     """
-    Evaluate policy on SE occupancy: Use SLS_Command
+    Evaluate policy on SE occupancy: Use SpaceTokenOccupancyCommand
 
     :Parameters:
       **commandResult** - S_OK / S_ERROR
@@ -59,16 +59,18 @@ class SpaceTokenOccupancyPolicy( PolicyBase ):
         result[ 'Reason' ] = 'Key %s missing' % key.lower()
         return S_OK( result )
     
-    percentage = ( float( commandResult[ 'Free' ]) / commandResult[ 'Total' ] ) * 100
+    free       = float( commandResult[ 'Free' ] )
+    percentage = ( free / commandResult[ 'Total' ] ) * 100
     
-    if percentage == 0: 
+    # Units are TB ! ( 0.01 == 10 GB )
+    if free < 0.1: 
       result[ 'Status' ] = 'Banned'     
-    elif percentage < 10: 
+    elif percentage < 5: 
       result[ 'Status' ] = 'Degraded'
     else: 
       result[ 'Status' ] = 'Active'
       
-    result[ 'Reason' ] = 'Space availability: %d %%' % percentage
+    result[ 'Reason' ] = 'Free space %.2f TB (%.2f %%)' % ( free, percentage )
     return S_OK( result )
   
 ################################################################################
