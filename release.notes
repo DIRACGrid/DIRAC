@@ -290,8 +290,6 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 
 *Transformation
 FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
-=======
->>>>>>> upstream/rel-v6r9
 
 [v6r7p33]
 
