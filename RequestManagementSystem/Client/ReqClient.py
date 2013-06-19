@@ -11,7 +11,7 @@
 # # RCSID
 __RCSID__ = "$Id$"
 # # from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -81,7 +81,7 @@ class ReqClient( Client ):
     if not valid["OK"]:
       self.log.error( "putRequest: request not valid: %s" % valid["Message"] )
       return valid
-    # # dump to xml string
+    # # dump to json
     requestJSON = request.toJSON()
     if not requestJSON["OK"]:
       return requestJSON
@@ -289,6 +289,8 @@ class ReqClient( Client ):
 
     :param self: self reference
     :param list jobID: list of job IDs (integers)
+    :return: S_ERROR or S_OK( "Successful": { jobID1: requestName1, jobID2: requestName2, ... },
+                              "Failed" : { jobIDn: errMsg, jobIDm: errMsg, ...}  )
     """
     self.log.info( "getRequestNamesForJobs: attempt to get request(s) for job %s" % jobIDs )
     requests = self.requestManager().getRequestNamesForJobs( jobIDs )
@@ -301,23 +303,15 @@ class ReqClient( Client ):
     """ read requests for jobs
 
     :param list jobIDs: list with jobIDs
-
     :return: S_OK( { "Successful" : { jobID1 : Request, ... },
                      "Failed" : { jobIDn : "Fail reason" } } )
     """
     readReqsForJobs = self.requestManager().readRequestsForJobs( jobIDs )
     if not readReqsForJobs["OK"]:
       return readReqsForJobs
-    ret = readReqsForJobs["Value"] if readReqsForJobs["Value"] else None
-    if not ret:
-      return S_ERROR( "No values returned" )
+    ret = readReqsForJobs["Value"]
     # # create Requests out of JSONs for successful reads
     if "Successful" in ret:
       for jobID, fromJSON in ret["Successful"].items():
-        req = Request( fromJSON )
-        if not req["OK"]:
-          ret["Failed"][jobID] = req["Message"]
-          continue
-        req = req["Value"]
-        ret["Successful"][jobID] = req
+        ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )
