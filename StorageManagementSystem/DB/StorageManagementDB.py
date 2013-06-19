@@ -888,7 +888,7 @@ class StorageManagementDB( DB ):
       old_replicaIDs = [ row[0] for row in res['Value'] ]
 
       if len( old_replicaIDs ) > 0:
-        req = "UPDATE CacheReplicas SET Status='New' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
+        req = "UPDATE CacheReplicas SET Status='New',LastUpdate = UTC_TIMESTAMP(), Reason = 'wakeupOldRequests' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
         res = self._update( req, connection )
         if not res['OK']:
           gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to roll CacheReplicas back to Status=New.", res['Message'] )
