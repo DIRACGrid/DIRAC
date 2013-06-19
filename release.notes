@@ -1,3 +1,18 @@
+[v6r8p21]
+
+*DMS
+FIX: FileCatalog/DirectoryMetadata - even if there is no meta Selection 
+     the path should be considered when getting Compatible Metadata
+FIX: FileCatalog/DirectoryNodeTree - findDir will return S_OK( '' ) if dir not 
+     found, always return the same error from DirectoryMetadata in this case.     
+
+*RSS
+FIX: DowntimeCommand - use UTC time stamps
+
+*TS
+FIX: TransformationAgent - in _getTransformationFiles() get also ProbInFC files in 
+     addition to Used 
+
 [v6r8p20]
 
 *Stager
