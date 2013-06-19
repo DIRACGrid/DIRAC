@@ -223,7 +223,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_ERROR( 'Path not found: %s' % path )
+      return S_ERROR( 'Path not found: %s' % dpath )
     dirID = result['Value']
 
     failedMeta = {}
@@ -256,7 +256,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_ERROR( 'Path not found: %s' % path )
+      return S_ERROR( 'Path not found: %s' % dpath )
     dirID = result['Value']
 
     result = self.db._insert( 'FC_DirMeta',
@@ -278,7 +278,7 @@ class DirectoryMetadata:
       if not result['OK']:
         return result
       if not result['Value']:
-        return S_ERROR( 'Path not found: %s' % path )
+        return S_ERROR( 'Path not found: %s' % dpath )
       dirID = result['Value']
       pathIDs = [dirID]
 
