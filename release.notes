@@ -1,3 +1,21 @@
+[v6r9p3]
+
+*DMS
+BUGFIX: missing proxy in service env in the FTSManager service. By default service 
+        will use DataManager proxy refreshed every 6 hours.
+
+*Resources
+NEW: StorageElement - new checkAccess policy: split the self.checkMethods in 
+     self.okMethods. okMethods are the methods that do not use the physical SE. 
+     The isValid returns S_OK for all those immediately
+
+*RSS
+FIX: SpaceTokenOccupancyPolicy - Policy that now takes into account absolute values 
+     for the space left
+     
+*TS
+FIX: TransformationCleaningAgent - will look for both old and new RMS     
+
 [v6r9p2]
 
 *RSS
