@@ -30,6 +30,32 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
 
+[v6r8p21]
+
+*DMS
+FIX: FileCatalog/DirectoryMetadata - even if there is no meta Selection 
+     the path should be considered when getting Compatible Metadata
+FIX: FileCatalog/DirectoryNodeTree - findDir will return S_OK( '' ) if dir not 
+     found, always return the same error from DirectoryMetadata in this case.     
+
+*RSS
+FIX: DowntimeCommand - use UTC time stamps
+
+*TS
+FIX: TransformationAgent - in _getTransformationFiles() get also ProbInFC files in 
+     addition to Used 
+
+[v6r8p20]
+
+*Stager
+NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs, 
+     dirac-stager-monitor-requests, dirac-stager-show-stats
+
+[v6r8p19]
+
+*Transformation
+FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
+
 [v6r8p18]
 
 *TS
@@ -223,6 +249,17 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p35]
+
+*Stager
+NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs, 
+     dirac-stager-monitor-requests, dirac-stager-show-stats
+
+[v6r7p34]
+
+*Transformation
+FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
 
 [v6r7p33]
 
