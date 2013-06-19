@@ -284,8 +284,9 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     transID = transDict['TransformationID']
 
+    # Files that were problematic (either explicit or because SE was banned) may be recovered
     res = clients['TransformationClient'].getTransformationFiles( condDict = {'TransformationID':transID,
-                                                                              'Status':'Unused'} )
+                                                                              'Status':['Unused', 'ProbInFC']} )
     if not res['OK']:
       self._logError( "Failed to obtain input data: %s." % res['Message'],
                        method = "_getTransformationFiles", transID = transID )
