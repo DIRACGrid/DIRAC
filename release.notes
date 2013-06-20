@@ -378,9 +378,6 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
 
 [v6r7p36]
 
@@ -403,12 +400,6 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 
 *Transformation
 FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
-<<<<<<< HEAD
-=======
->>>>>>> upstream/rel-v6r9
->>>>>>> rel-v6r9
-=======
->>>>>>> rel-v6r9
 
 [v6r7p33]
 
