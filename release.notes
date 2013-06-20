@@ -1,3 +1,14 @@
+[v6r7p36]
+
+*WMS
+FIX: CREAMCE, SiteDirector - make sure that the tmp executable is removed
+CHANGE: JobWrapper - remove sending mails via Notification Service in case
+        of job rescheduling
+        
+*SMS
+FIX: StorageManagementDB - fix a race condition when old tasks are set failed 
+     between stage submission and update.        
+
 [v6r7p35]
 *Stager
 NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs, 
