@@ -537,6 +537,17 @@ class RequestDB( DB ):
       retDict["Successful"][jobID] = request["Value"]
     return S_OK( retDict )
 
+  def getRequestStatus( self, requestName ):
+    """ get request status for a given request name """
+    self.log.debug( "getRequestStatus: checking status for '%s' request" % requestName )
+    query = "SELECT `Status` FROM `Request` WHERE `RequestName` = '%s'" % requestName
+    query = self._query( query )
+    if not query["OK"]:
+      self.log.error( "getRequestStatus: %s" % query["Message"] )
+      return query
+    requestStatus = query['Value'][0][0]
+    return S_OK( requestStatus )
+
   def getDigest( self, requestName ):
     """ get digest for request given its name
 
