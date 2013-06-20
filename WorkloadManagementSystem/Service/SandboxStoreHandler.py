@@ -129,7 +129,7 @@ class SandboxStoreHandler( RequestHandler ):
     hdPath = result[ 'Value' ]
     gLogger.info( "Wrote sandbox to file %s" % hdPath )
     # Check hash!
-    if fileHelper.getHash() != hash:
+    if fileHelper.getHash() != aHash:
       self.__secureUnlinkFile( hdPath )
       gLogger.error( "Hashes don't match! Client defined hash is different with received data hash!" )
       return S_ERROR( "Hashes don't match!" )
