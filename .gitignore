@@ -29,3 +29,6 @@ pip-log.txt
 .*.sw[a-z]
 *.un~
 Session.vim
+
+# Python
+.pyo

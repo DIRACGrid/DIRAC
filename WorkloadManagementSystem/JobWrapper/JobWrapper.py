@@ -31,8 +31,8 @@ from DIRAC.Core.Utilities.Subprocess                                import Subpr
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
 from DIRAC.Core.Utilities                                           import List
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List, Time
-from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, Time
+#from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
 
 import DIRAC
 
@@ -1378,15 +1378,15 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
         rescheduleResult = 'Failed'
 
     # Send mail to debug errors
-    mailAddress = DIRAC.alarmMail
-    site = DIRAC.siteName()
-    subject = 'Job rescheduled at %s' % site
-    ret = systemCall( 5, 'hostname' )
-    wn = ret['Value'][1]
-    msg = 'Job %s rescheduled at %s, wn=%s\n' % ( jobID, site, wn )
-    msg += message
+    #mailAddress = DIRAC.alarmMail
+    #site = DIRAC.siteName()
+    #subject = 'Job rescheduled at %s' % site
+    #ret = systemCall( 5, 'hostname' )
+    #wn = ret['Value'][1]
+    #msg = 'Job %s rescheduled at %s, wn=%s\n' % ( jobID, site, wn )
+    #msg += message
 
-    NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
+    #NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
 
     return rescheduleResult
   except Exception:
