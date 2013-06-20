@@ -888,7 +888,7 @@ class StorageManagementDB( DB ):
       old_replicaIDs = [ row[0] for row in res['Value'] ]
 
       if len( old_replicaIDs ) > 0:
-        req = "UPDATE CacheReplicas SET Status='New' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
+        req = "UPDATE CacheReplicas SET Status='New',LastUpdate = UTC_TIMESTAMP(), Reason = 'wakeupOldRequests' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
         res = self._update( req, connection )
         if not res['OK']:
           gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to roll CacheReplicas back to Status=New.", res['Message'] )
@@ -1058,8 +1058,6 @@ class StorageManagementDB( DB ):
     """ This will remove Replicas from the CacheReplicas that are not associated to any Task.
         If the Replica has been Staged,
           wait until StageRequest.PinExpiryTime and remove the StageRequest and CacheReplicas entries
-        else
-          remove the CacheReplicas entry
     """
     connection = self.__getConnection( connection )
     # First, check if there is a StageRequest and PinExpiryTime has arrived
@@ -1097,14 +1095,6 @@ class StorageManagementDB( DB ):
       gLogger.verbose( "%s.%s_DB: deleted StageRequests" % ( self._caller(), 'removeUnlinkedReplicas' ) )
 
       gLogger.debug( "StorageManagementDB.removeUnlinkedReplicas: Successfully removed %s StageRequests entries for ReplicaIDs: %s." % ( res['Value'], replicaIDs ) )
-
-    # Second look for CacheReplicas for which there is no entry in StageRequests
-    req = 'SELECT ReplicaID FROM CacheReplicas WHERE Links = 0 AND ReplicaID NOT IN ( SELECT DISTINCT( ReplicaID ) FROM StageRequests )'
-    res = self._query( req, connection )
-    if not res['OK']:
-      gLogger.error( "StorageManagementDB.removeUnlinkedReplicas. Problem selecting entries from CacheReplicas where Links = 0." )
-    else:
-      replicaIDs.extend( [ row[0] for row in res['Value'] ] )
 
     if not replicaIDs:
       return S_OK()
