@@ -547,7 +547,7 @@ class TransformationCleaningAgent( AgentModule ):
       self.log.error( "Failed to get requestID for jobs.", res['Message'] )
       return res
     failoverRequests = res['Value']
-    self.log.info( "Found %d jobs with associated failover requests" % len( failoverRequests ) )
+    self.log.info( "Found %d jobs with associated failover requests (in the old RMS)" % len( failoverRequests ) )
     if not failoverRequests:
       return S_OK()
     for jobID, requestName in failoverRequests.items():
@@ -561,15 +561,15 @@ class TransformationCleaningAgent( AgentModule ):
       else:
         self.log.verbose( "Removed request %s associated to job %d." % ( requestName, jobID ) )
 
-    # and this is the new
+    # FIXME: and this is the new
     res = self.reqClient.getRequestNamesForJobs( jobIDs )
     if not res['OK']:
       self.log.error( "Failed to get requestID for jobs.", res['Message'] )
       return res
-    failoverRequests.update( res['Value'] )
+    failoverRequests.update( res['Value']['Successful'] )
     if not failoverRequests:
       return S_OK()
-    for jobID, requestName in failoverRequests.items():
+    for jobID, requestName in res['Value']['Successful'].items():
       # Put this check just in case, tasks must have associated jobs
       if jobID == 0 or jobID == '0':
         continue
