@@ -1,3 +1,7 @@
+[v6r8p22]
+
+FIX: included fixes from v6r7p36 patch release
+
 [v6r8p21]
 
 *DMS
@@ -218,6 +222,17 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p36]
+
+*WMS
+FIX: CREAMCE, SiteDirector - make sure that the tmp executable is removed
+CHANGE: JobWrapper - remove sending mails via Notification Service in case
+        of job rescheduling
+        
+*SMS
+FIX: StorageManagementDB - fix a race condition when old tasks are set failed 
+     between stage submission and update.        
 
 [v6r7p35]
 
