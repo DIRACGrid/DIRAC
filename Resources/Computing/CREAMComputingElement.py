@@ -95,7 +95,7 @@ class CREAMComputingElement( ComputingElement ):
              '%s/%s' % ( self.ceName, self.queue ),
              '%s' % jdlName ]
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
-
+      os.unlink( jdlName )
       if result['OK']:
         if result['Value'][0]:
           # We have got a non-zero status code
@@ -105,7 +105,6 @@ class CREAMComputingElement( ComputingElement ):
           return S_ERROR('No pilot reference returned from the glite job submission command')
         batchIDList.append( pilotJobReference )
         stampDict[pilotJobReference] = diracStamp
-      os.unlink( jdlName )
     else:
       delegationID = makeGuid()
       cmd = [ 'glite-ce-delegate-proxy', '-e', '%s' % self.ceName, '%s' % delegationID ]
@@ -130,8 +129,6 @@ class CREAMComputingElement( ComputingElement ):
           stampDict[pilotJobReference] = diracStamp
         else:
           break    
-
-    os.unlink( executableFile )
     if batchIDList:
       result = S_OK( batchIDList )
       result['PilotStampDict'] = stampDict

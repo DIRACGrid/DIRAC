@@ -51,7 +51,7 @@ class DISETForwardingAgent( AgentModule ):
   def execute( self ):
     """ The main execute method
     """
-    self.requestsPerCycle = self.am_getOption( '/RequestsPerCycle', 10 )
+    self.requestsPerCycle = self.am_getOption( 'RequestsPerCycle', 10 )
     count = 0
     while count < self.requestsPerCycle:
       gLogger.verbose( 'Executing request #%d in this cycle' % count )
