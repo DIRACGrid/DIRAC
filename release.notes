@@ -1,3 +1,17 @@
+[v6r9p6]
+
+*DMS
+BUGFIX: dirac-admin-add-ftssite - missing import
+
+*RMS
+NEW: RequestDB, ReqManagerHandler - added getRequestStatus() method
+
+*TS
+FIX: fixes when using new RequestClient with the TransformationCleaningAgent
+
+*WMS
+BUGFIX: typo in SandboxStoreHandler transfer_fromClient() method
+
 [v6r9p5]
 
 *DMS
