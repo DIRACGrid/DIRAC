@@ -245,3 +245,19 @@ class ReqManagerHandler( RequestHandler ):
       errStr = "getDigest: exception when getting digest for '%s'" % requestName
       gLogger.exception( errStr, '', lException = error )
       return S_ERROR( errStr )
+
+
+  types_getRequestStatus = [ StringTypes ]
+  @classmethod
+  def export_getRequestStatus( cls, requestName ):
+    """ get request status given its name """
+    try:
+      status = cls.__requestDB.getRequestStatus( requestName )
+      if not status["OK"]:
+        gLogger.error( "getRequestStatus: %s" % status["Message"] )
+      return status
+    except Exception , error:
+      errStr = "getDigest: exception when getting digest for '%s'" % requestName
+      gLogger.exception( errStr, '', lException = error )
+      return S_ERROR( errStr )
+
