@@ -46,7 +46,7 @@ if os.path.exists( fileName ):
 else:
   lfns = args[1:]
 
-stageLfns[seName] = lfns;
+stageLfns[seName] = lfns
 stagerClient = StorageManagerClient()
 
 res = stagerClient.setRequest( stageLfns, 'WorkloadManagement',

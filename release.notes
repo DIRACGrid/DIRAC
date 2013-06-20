@@ -80,6 +80,19 @@ NEW: XXXStorage - added getCurrentStatus() method
 NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
      dirac-stager-monitor-requests, dirac-stager-show-stats
 
+[v6r9p6]
+
+*DMS
+BUGFIX: dirac-admin-add-ftssite - missing import
+
+*RMS
+NEW: RequestDB, ReqManagerHandler - added getRequestStatus() method
+
+*TS
+FIX: fixes when using new RequestClient with the TransformationCleaningAgent
+
+*WMS
+BUGFIX: typo in SandboxStoreHandler transfer_fromClient() method
 
 [v6r9p5]
 
@@ -141,6 +154,10 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
+
+[v6r8p22]
+
+FIX: included fixes from v6r7p36 patch release
 
 [v6r8p21]
 
@@ -365,6 +382,17 @@ FIX: ValidateOutputDataAgent - self not needed for static methods
 =======
 <<<<<<< HEAD
 
+[v6r7p36]
+
+*WMS
+FIX: CREAMCE, SiteDirector - make sure that the tmp executable is removed
+CHANGE: JobWrapper - remove sending mails via Notification Service in case
+        of job rescheduling
+        
+*SMS
+FIX: StorageManagementDB - fix a race condition when old tasks are set failed 
+     between stage submission and update.        
+
 [v6r7p35]
 
 *Stager
@@ -375,8 +403,11 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 
 *Transformation
 FIX: TransformationCleaning Agent status was set to 'Deleted' instead of 'Cleaned'
+<<<<<<< HEAD
 =======
 >>>>>>> upstream/rel-v6r9
+>>>>>>> rel-v6r9
+=======
 >>>>>>> rel-v6r9
 
 [v6r7p33]

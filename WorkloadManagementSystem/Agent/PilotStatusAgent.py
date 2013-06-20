@@ -10,7 +10,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC import S_OK, S_ERROR, gConfig, List
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
@@ -178,12 +178,11 @@ class PilotStatusAgent( AgentModule ):
     """
 
     last_update = Time.dateTime() - MAX_WAITING_STATE_LENGTH * Time.hour
-    clearDict = {}
     clearDict = {'Status':'Waiting',
-                  'OwnerDN':condDict['OwnerDN'],
-                  'OwnerGroup':condDict['OwnerGroup'],
-                  'GridType':condDict['GridType'],
-                  'Broker':condDict['Broker']}
+                 'OwnerDN':condDict['OwnerDN'],
+                 'OwnerGroup':condDict['OwnerGroup'],
+                 'GridType':condDict['GridType'],
+                 'Broker':condDict['Broker']}
     result = self.pilotDB.selectPilots( clearDict, older = last_update )
     if not result['OK']:
       self.log.warn( 'Failed to get the Pilot Agents fpr Waiting state' )

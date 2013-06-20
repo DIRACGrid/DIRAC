@@ -13,7 +13,7 @@
     SubmitOption = -l ct=6000
 """
 
-import re, sys, tempfile, commands, os, urllib
+import re, sys, commands, urllib
 
 def submitJob( executable,outputDir,errorDir,nJobs,jobDir,queue,submitOptions ):
   """ Submit nJobs to the condor batch system

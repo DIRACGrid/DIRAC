@@ -21,7 +21,8 @@ if __name__ == "__main__":
   from DIRAC import gLogger, gConfig
   from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
   from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
-  from DIRAC.Interfaces.API import DiracAdmin
+  from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForUser
   admin = DiracAdmin()
 
