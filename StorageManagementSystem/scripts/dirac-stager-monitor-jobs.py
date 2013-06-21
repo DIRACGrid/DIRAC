@@ -45,9 +45,9 @@ for jobID in jobIDs:
   taskInfo = res['Value']['TaskInfo']
   replicaInfo = res['Value']['ReplicaInfo']
   outStr = "%s: %s" % ( 'JobID'.ljust( 20 ), jobID )
-  outStr = "%s\n%s: %s" % ( outStr, 'Status'.ljust( 20 ), taskInfo[jobID]['Status'] )
-  outStr = "%s\n%s: %s" % ( outStr, 'SubmitTime'.ljust( 20 ), taskInfo[jobID]['SubmitTime'] )
-  outStr = "%s\n%s: %s" % ( outStr, 'CompleteTime'.ljust( 20 ), taskInfo[jobID]['CompleteTime'] )
+  outStr = "%s\n%s: %s" % ( outStr, 'Status'.ljust( 20 ), taskInfo[str(jobID)]['Status'] )
+  outStr = "%s\n%s: %s" % ( outStr, 'SubmitTime'.ljust( 20 ), taskInfo[str(jobID)]['SubmitTime'] )
+  outStr = "%s\n%s: %s" % ( outStr, 'CompleteTime'.ljust( 20 ), taskInfo[str(jobID)]['CompleteTime'] )
   outStr = "%s\nStaging files for this job:" % outStr
   for lfn, metadata in replicaInfo.items():
     outStr = "%s\n\t--------------------" % outStr
