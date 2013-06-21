@@ -13,7 +13,7 @@ Script.parseCommandLine( ignoreErrors = True )
 import DIRAC
 
 if __name__ == "__main__":
-  
+
   args = Script.getPositionalArgs()
   if len( args ) != 1:
     Script.showHelp()
@@ -32,16 +32,15 @@ if __name__ == "__main__":
   ftsJobs = ftsClient.getFTSJobsForRequest( requestID, list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FINALSTATES ) )
   if not ftsJobs["OK"]:
     DIRAC.gLogger.error( ftsJobs["Message"] )
-    DIRAC.exit(-1)
+    DIRAC.exit( -1 )
   ftsJobs = ftsJobs["Value"]
-  
-  DIRAC.always( "Found %s FTSJobs" % len( ftsJobs ) )
 
+  DIRAC.gLogger.always( "Found %s FTSJobs" % len( ftsJobs ) )
 
   jobKeys = ( "SourceSE", "TargetSE", "Status", "Files", "Size", "Completness", "CreationTime", "SubmitTime", "LastUpdate", "Error" )
 
   fileKeys = ( "SourceSURL", "TargetSURL", "Attempt", "Status", "Error" )
-  
+
   for i, ftsJob in enumerate( ftsJobs ) :
     DIRAC.gLogger.always( "[%d] FTSGUID %s" % ftsJob.FTSGUID )
     for key in jobKeys:
@@ -53,5 +52,5 @@ if __name__ == "__main__":
         DIRAC.gLogger.info( "\t%-20s: %s" % ( key, str( getattr( ftsJob, key ) ) ) )
 
 
-      
+
 
