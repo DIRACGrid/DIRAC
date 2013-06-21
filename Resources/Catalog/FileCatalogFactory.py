@@ -1,7 +1,6 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-from types import ListType
 __RCSID__ = "$Id$"
 """ FileCatalogFactory class to create file catalog client objects according to the 
     configuration description 
