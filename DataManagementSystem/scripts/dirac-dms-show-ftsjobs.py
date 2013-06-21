@@ -6,9 +6,9 @@ __RCSID__ = "$Id: $"
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
-                                     ' %s [option|cfgfile] requestID' % Script.scriptName ],
+                                     ' %s [option|cfgfile] requestID' % Script.scriptName ,
                                      'Argument:',
-                                     '  requestID: RequestDB.Request.RequestID' ) )
+                                     '  requestID: RequestDB.Request.RequestID' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 import DIRAC
 
