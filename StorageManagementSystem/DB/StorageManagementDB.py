@@ -376,7 +376,10 @@ class StorageManagementDB( DB ):
   def getTaskSummary( self, jobID, connection = False ):
     """ Obtain the task summary from the database. """
     connection = self.__getConnection( connection )
-    taskID = self._getTaskIDForJob( jobID, connection = connection )
+    res = self._getTaskIDForJob( jobID, connection = connection )
+    if not res['OK']:
+      return res
+    taskID = res['Value']
     res = self.getTaskInfo( taskID, connection = connection )
     if not res['OK']:
       return res
