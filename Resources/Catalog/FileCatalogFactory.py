@@ -10,9 +10,7 @@ from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getInstalledExtensions
 from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 
-import random, types
 
 class FileCatalogFactory:
   
@@ -29,10 +27,7 @@ class FileCatalogFactory:
     # get the CS description first
     catalogPath = getCatalogPath( catalogName )
     catalogType = gConfig.getValue(catalogPath+'/CatalogType',catalogName)
-    catalogURL = getServiceURL("DataManagement/"+catalogName).split(", ")#because it comes with , space.
-    if type(catalogURL) in types.ListType:
-      catalogURL = random.choice(catalogURL)
-    catalogURL = gConfig.getValue(catalogPath+'/CatalogURL', catalogURL)
+    catalogURL = gConfig.getValue(catalogPath+'/CatalogURL', "DataManagement/"+catalogName)
     
     self.log.verbose('Creating %s client' % catalogName)
     moduleRootPaths = getInstalledExtensions()
