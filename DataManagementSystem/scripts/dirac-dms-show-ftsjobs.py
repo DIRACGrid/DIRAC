@@ -45,7 +45,7 @@ if __name__ == "__main__":
   fileKeys = ( "SourceSURL", "TargetSURL", "Attempt", "Status", "Error" )
 
   for i, ftsJob in enumerate( ftsJobs ) :
-    DIRAC.gLogger.always( "[%d] FTSGUID %s" % ftsJob.FTSGUID )
+    DIRAC.gLogger.always( "[%d] FTSGUID %s" % ( i, ftsJob.FTSGUID ) )
     for key in jobKeys:
       DIRAC.gLogger.always( "\t%-20s: %s" % ( key, str( getattr( ftsJob, key ) ) ) )
     DIRAC.gLogger.info( "\tFiles:" )
