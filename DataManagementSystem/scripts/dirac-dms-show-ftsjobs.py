@@ -52,7 +52,7 @@ if __name__ == "__main__":
     for j, ftsFile in enumerate( ftsJob ):
       DIRAC.gLogger.info( "[%02d] %s" % ( j, ftsFile.LFN ) )
       for key in fileKeys:
-        DIRAC.gLogger.info( "\t%-20s: %s" % ( key, str( getattr( ftsJob, key ) ) ) )
+        DIRAC.gLogger.info( "\t%-20s: %s" % ( key, str( getattr( ftsFile, key ) ) ) )
 
 
 
