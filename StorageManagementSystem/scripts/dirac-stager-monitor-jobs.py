@@ -39,6 +39,9 @@ for jobID in jobIDs:
   if not res['OK']:
     print res['Message']
     continue
+  if not res['Value']:
+    print 'No info for job %s, probably gone from the stager...'
+
   taskInfo = res['Value']['TaskInfo']
   replicaInfo = res['Value']['ReplicaInfo']
   outStr = "%s: %s" % ( 'JobID'.ljust( 20 ), jobID )
