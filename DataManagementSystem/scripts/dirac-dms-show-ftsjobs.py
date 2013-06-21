@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
   DIRAC.gLogger.always( "Found %s FTSJobs for requestID %s" % ( len( ftsJobs ), requestID ) )
 
-  jobKeys = ( "SourceSE", "TargetSE", "Status", "Files", "Size", "Completness", "CreationTime", "SubmitTime", "LastUpdate", "Error" )
+  jobKeys = ( "SourceSE", "TargetSE", "Status", "Files", "Size", "Completeness", "CreationTime", "SubmitTime", "LastUpdate", "Error" )
   fileKeys = ( "SourceSURL", "TargetSURL", "Attempt", "Status", "Error" )
 
   for i, ftsJob in enumerate( ftsJobs ) :
