@@ -47,12 +47,12 @@ if __name__ == "__main__":
   for i, ftsJob in enumerate( ftsJobs ) :
     DIRAC.gLogger.always( "[%d] FTSGUID %s" % ( i, ftsJob.FTSGUID ) )
     for key in jobKeys:
-      DIRAC.gLogger.always( "\t%-20s: %s" % ( key, str( getattr( ftsJob, key ) ) ) )
-    DIRAC.gLogger.info( "\tFiles:" )
+      DIRAC.gLogger.always( "  %-20s: %s" % ( key, str( getattr( ftsJob, key ) ) ) )
+    DIRAC.gLogger.info( "  Files:" )
     for j, ftsFile in enumerate( ftsJob ):
-      DIRAC.gLogger.info( "[%02d] %s" % ( j, ftsFile.LFN ) )
+      DIRAC.gLogger.info( "    [%02d] %s" % ( j, ftsFile.LFN ) )
       for key in fileKeys:
-        DIRAC.gLogger.info( "\t%-20s: %s" % ( key, str( getattr( ftsFile, key ) ) ) )
+        DIRAC.gLogger.info( "      %-20s: %s" % ( key, str( getattr( ftsFile, key ) ) ) )
 
 
 
