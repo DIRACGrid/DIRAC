@@ -1,5 +1,5 @@
 #!/bin/env python
-""" monitor FTSDB content """
+""" display information about FTSJobs for a given requestID """
 
 __RCSID__ = "$Id: $"
 
