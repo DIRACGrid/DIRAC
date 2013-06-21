@@ -11,6 +11,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getInstalledExtensions
 from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
 
+
 class FileCatalogFactory:
   
   def __init__(self):
@@ -26,7 +27,7 @@ class FileCatalogFactory:
     # get the CS description first
     catalogPath = getCatalogPath( catalogName )
     catalogType = gConfig.getValue(catalogPath+'/CatalogType',catalogName)
-    catalogURL = gConfig.getValue(catalogPath+'/CatalogURL','')
+    catalogURL = gConfig.getValue(catalogPath+'/CatalogURL', "DataManagement/"+catalogName)
     
     self.log.verbose('Creating %s client' % catalogName)
     moduleRootPaths = getInstalledExtensions()
