@@ -35,10 +35,13 @@ if __name__ == "__main__":
     DIRAC.exit( -1 )
   ftsJobs = ftsJobs["Value"]
 
-  DIRAC.gLogger.always( "Found %s FTSJobs" % len( ftsJobs ) )
+  if not ftsJobs:
+    DIRAC.gLogger.always( "No FTSJobs found for requestID %s" % requestID )
+    DIRAC.exit( 0 )
+
+  DIRAC.gLogger.always( "Found %s FTSJobs for requestID %s" % ( len( ftsJobs ), requestID ) )
 
   jobKeys = ( "SourceSE", "TargetSE", "Status", "Files", "Size", "Completness", "CreationTime", "SubmitTime", "LastUpdate", "Error" )
-
   fileKeys = ( "SourceSURL", "TargetSURL", "Attempt", "Status", "Error" )
 
   for i, ftsJob in enumerate( ftsJobs ) :
