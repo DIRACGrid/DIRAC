@@ -32,8 +32,8 @@ if __name__ == "__main__":
   if ftsSites:
     gLogger.always( "[%d] FTSSites:" % ic )
     ic += 1
-    for i, ftsSite in enumerate( ftsSites ):
-      gLogger.always( "- %s using FTS server at %s" % ( i, ftsSite["Name"], ftsSite["FTSServer"] ) )
+    for ftsSite in ftsSites:
+      gLogger.always( "- %s using FTS server at %s" % ( ftsSite["Name"], ftsSite["FTSServer"] ) )
 
   ftsJobs = ret.get( "FTSJob", None )
   if ftsJobs:
