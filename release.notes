@@ -1,3 +1,14 @@
+[v6r9p7]
+
+FIX: included fixes from v6r8p23 patch release
+
+*RSS
+FIX: SpaceTokenOccupancyPolicy - SpaceToken Policy decision was based on 
+     percentage by mistake
+     
+*RMS
+NEW: new scripts dirac-dms-ftsdb-summary, dirac-dms-show-ftsjobs     
+
 [v6r9p6]
 
 *DMS
