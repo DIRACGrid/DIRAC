@@ -65,7 +65,7 @@ class SpaceTokenOccupancyPolicy( PolicyBase ):
     # Units are TB ! ( 0.01 == 10 GB )
     if free < 0.1: 
       result[ 'Status' ] = 'Banned'     
-    elif percentage < 5: 
+    elif free < 5: 
       result[ 'Status' ] = 'Degraded'
     else: 
       result[ 'Status' ] = 'Active'

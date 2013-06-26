@@ -104,7 +104,6 @@ class SiteDirector( AgentModule ):
     self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', self.maxPilotsToSubmit )
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
     self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 7200 )
-    self.extensions = self.am_getOption( 'PilotExtensions', [] )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -549,10 +548,18 @@ class SiteDirector( AgentModule ):
     # CS Servers
     csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
-    # DIRAC Extensions
-    # extensionsList = CSGlobals.getCSExtensions()
-    if self.extensions:
-      pilotOptions.append( '-e %s' % ",".join( self.extensions ) )
+    
+    # DIRAC Extensions to be used in pilots
+    pilotExtensionsList = opsHelper.getValue( "Pilot/Extensions", [] )
+    extensionsList = []
+    if pilotExtensionsList: 
+      if pilotExtensionsList[0] != 'None':
+        extensionsList = pilotExtensionsList
+    else:
+      extensionsList = CSGlobals.getCSExtensions()
+    if extensionsList:
+      pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
+      
     # Requested CPU time
     pilotOptions.append( '-T %s' % queueDict['CPUTime'] )
     # CEName

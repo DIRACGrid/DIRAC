@@ -40,6 +40,9 @@ class TransformationDB( DB ):
     if not res['OK']:
       gLogger.fatal( "Failed to create filters" )
 
+    self.allowedStatusForTasks = ( 'Unused', 'ProbInFC' )
+
+
     self.TRANSPARAMS = [  'TransformationID',
                           'TransformationName',
                           'Description',
@@ -1565,20 +1568,17 @@ class TransformationDB( DB ):
       res = self.getTransformationFiles( condDict = {'TransformationID':transID, 'LFN':lfns}, connection = connection )
       if not res['OK']:
         return res
-      foundLfns = []
-      allAvailable = True
+      foundLfns = set()
       for fileDict in res['Value']:
         fileIDs.append( fileDict['FileID'] )
         lfn = fileDict['LFN']
-        foundLfns.append( lfn )
-        if fileDict['Status'] != 'Unused':
-          allAvailable = False
-          gLogger.error( "Supplied file not in Unused status but %s" % fileDict['Status'], lfn )
-      for lfn in lfns:
-        if not lfn in foundLfns:
-          allAvailable = False
-          gLogger.error( "Supplied file not found for transformation", lfn )
-      if not allAvailable:
+        if fileDict['Status'] in self.allowedStatusForTasks:
+          foundLfns.add( lfn )
+        else:
+          gLogger.error( "Supplied file not in %s status but %s" % ( self.allowedStatusForTasks, fileDict['Status'] ), lfn )
+      unavailableLfns = set( lfns ) - foundLfns
+      if unavailableLfns:
+        gLogger.error( "Supplied files not found for transformation", sorted( unavailableLfns ) )
         return S_ERROR( "Not all supplied files available in the transformation database" )
 
     # Insert the task into the jobs table and retrieve the taskID

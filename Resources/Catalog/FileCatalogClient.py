@@ -5,9 +5,9 @@
 
 __RCSID__ = "$Id$"
 
-import re, time, random, os, types
+import types
 
-from DIRAC                              import S_OK, S_ERROR, gLogger,gConfig
+from DIRAC                              import S_OK, S_ERROR
 from DIRAC.Core.Base.Client             import Client
 
 class FileCatalogClient(Client):
