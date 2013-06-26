@@ -543,10 +543,18 @@ class SiteDirector( AgentModule ):
     # CS Servers
     csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
-    # DIRAC Extensions
-    extensionsList = CSGlobals.getCSExtensions()
+    
+    # DIRAC Extensions to be used in pilots
+    pilotExtensionsList = opsHelper.getValue( "Pilot/Extensions", [] )
+    extensionsList = []
+    if pilotExtensionsList: 
+      if pilotExtensionsList[0] != 'None':
+        extensionsList = pilotExtensionsList
+    else:
+      extensionsList = CSGlobals.getCSExtensions()
     if extensionsList:
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
+      
     # Requested CPU time
     pilotOptions.append( '-T %s' % queueDict['CPUTime'] )
     # CEName

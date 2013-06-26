@@ -381,7 +381,7 @@ class JobWrapper:
         if 'Value' in threadResult:
           outputs = threadResult['Value']
         if outputs:
-          self.__setJobParam( 'ApplicationError', outputs[-200:], sendFlag = True )
+          self.__setJobParam( 'ApplicationError', outputs[0], sendFlag = True )
         else:
           self.__setJobParam( 'ApplicationError', 'None reported', sendFlag = True )
       else:
