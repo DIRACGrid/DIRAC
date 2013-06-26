@@ -174,7 +174,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     if not res['OK']:
       return res
     # Setting the status
-    return self.setTransformationParameter( transID, 'Status', 'Cleaned' )
+    return self.setTransformationParameter( transID, 'Status', 'TransformationCleaned' )
 
   def moveFilesToDerivedTransformation( self, transDict, resetUnused = True ):
     ''' move files input to a transformation, to the derived one
