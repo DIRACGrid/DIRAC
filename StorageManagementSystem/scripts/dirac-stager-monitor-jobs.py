@@ -39,23 +39,29 @@ for jobID in jobIDs:
   if not res['OK']:
     print res['Message']
     continue
+  if not res['Value']:
+    print 'No info for job %s, probably gone from the stager...' % jobID
+    continue
   taskInfo = res['Value']['TaskInfo']
   replicaInfo = res['Value']['ReplicaInfo']
   outStr = "%s: %s" % ( 'JobID'.ljust( 20 ), jobID )
-  outStr = "%s\n%s: %s" % ( outStr, 'Status'.ljust( 20 ), taskInfo[jobID]['Status'] )
-  outStr = "%s\n%s: %s" % ( outStr, 'SubmitTime'.ljust( 20 ), taskInfo[jobID]['SubmitTime'] )
-  outStr = "%s\n%s: %s" % ( outStr, 'CompleteTime'.ljust( 20 ), taskInfo[jobID]['CompleteTime'] )
+  outStr = "%s\n%s: %s" % ( outStr, 'Status'.ljust( 20 ), taskInfo[str(jobID)]['Status'] )
+  outStr = "%s\n%s: %s" % ( outStr, 'SubmitTime'.ljust( 20 ), taskInfo[str(jobID)]['SubmitTime'] )
+  outStr = "%s\n%s: %s" % ( outStr, 'CompleteTime'.ljust( 20 ), taskInfo[str(jobID)]['CompleteTime'] )
   outStr = "%s\nStaging files for this job:" % outStr
-  for lfn, metadata in replicaInfo.items():
-    outStr = "%s\n\t--------------------" % outStr
-    outStr = "%s\n\t%s: %s" % ( outStr, 'LFN'.ljust( 8 ), lfn.ljust( 100 ) )
-    outStr = "%s\n\t%s: %s" % ( outStr, 'SE'.ljust( 8 ), metadata['StorageElement'].ljust( 100 ) )
-    outStr = "%s\n\t%s: %s" % ( outStr, 'PFN'.ljust( 8 ), str( metadata['PFN'] ).ljust( 100 ) )
-    outStr = "%s\n\t%s: %s" % ( outStr, 'Status'.ljust( 8 ), metadata['Status'].ljust( 100 ) )
-    outStr = "%s\n\t%s: %s" % ( outStr, 'Reason'.ljust( 8 ), str( metadata['Reason'] ).ljust( 100 ) )
-    outStr = "%s\n%s: %s" % ( outStr, 'LastUpdate'.ljust( 8 ), str(metadata['LastUpdate']).ljust( 100 ) )
-
-  outStr = "%s\n----------------------" % outStr
+  if not res['Value']['ReplicaInfo']:
+    print 'No info on files for the job = %s, that is odd' %jobID
+    continue
+  else:  
+    for lfn, metadata in replicaInfo.items():
+      outStr = "%s\n\t--------------------" % outStr
+      outStr = "%s\n\t%s: %s" % ( outStr, 'LFN'.ljust( 8 ), lfn.ljust( 100 ) )
+      outStr = "%s\n\t%s: %s" % ( outStr, 'SE'.ljust( 8 ), metadata['StorageElement'].ljust( 100 ) )
+      outStr = "%s\n\t%s: %s" % ( outStr, 'PFN'.ljust( 8 ), str( metadata['PFN'] ).ljust( 100 ) )
+      outStr = "%s\n\t%s: %s" % ( outStr, 'Status'.ljust( 8 ), metadata['Status'].ljust( 100 ) )
+      outStr = "%s\n\t%s: %s" % ( outStr, 'Reason'.ljust( 8 ), str( metadata['Reason'] ).ljust( 100 ) )
+      outStr = "%s\n%s: %s" % ( outStr, 'LastUpdate'.ljust( 8 ), str(metadata['LastUpdate']).ljust( 100 ) )
+    outStr = "%s\n----------------------" % outStr
   print outStr
 DIRAC.exit( 0 )
 
