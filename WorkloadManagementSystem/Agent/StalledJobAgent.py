@@ -211,6 +211,9 @@ for the agent restart
     wmsAdminClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdminClient.getPilotInfo( pilotReference )
     if not result['OK']:
+      if "No pilots found" in result['Message']:
+        self.log.warn( result['Message'] )
+        return S_OK( 'NoPilot' )
       self.log.error( result['Message'] )
       return S_ERROR( 'Failed to get the pilot status' )
     pilotStatus = result['Value'][pilotReference]['Status']

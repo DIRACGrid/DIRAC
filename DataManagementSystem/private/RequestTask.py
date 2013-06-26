@@ -16,7 +16,7 @@
     :deprecated:
 """
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 ##
 # @file RequestTask.py
@@ -36,7 +36,7 @@ class RequestTask( object ):
   imports a set of common modules: os, sys, re, time and everything from types module.
   
   All other DIRAC tools and clients (i.e. RequestManager) are private in RequestTask class and will 
-  be imported and instantiated on demand during first usage. They are accesible using proxied public methods, i.e.
+  be imported and instantiated on demand during first usage. They are accessible using proxied public methods, i.e.
   if you are going to use ReplicaManager just call::
 
     self.replicaManager().someMethod() 
@@ -53,7 +53,7 @@ class RequestTask( object ):
     self.info("An info message")
     self.debug("This will be shown only in debug")
   
-  For hadling sub-request one has to register their actions handlers using :self.addOperationAction:
+  For handling sub-request one has to register their actions handlers using :self.addOperationAction:
   method. This method checks if handler is defined as a method of inherited class and then puts its 
   definition into internal operation dispatcher dictionary with a key of sub-request's operation name. 
 
@@ -63,16 +63,16 @@ class RequestTask( object ):
   
   where index is a sub-request counter, requestObj is a RequestContainer instance, 
   subRequestAttrs is a dict with sub-request attributes and subRequestFiles is a dict with
-  files attached to teh sub-request.
+  files attached to the sub-request.
 
   Handlers shoudl always return S_OK with value of (modified or not) requestObj, S_ERROR with some 
   error message otherwise.
   
-  Processing of request os done automatically in self.__call__, one doesn't have to worry about changing 
+  Processing of request is done automatically in self.__call__, one doesn't have to worry about changing 
   credentials, looping over subrequests or request finalizing -- only sub-request processing matters in 
   the all inherited classes.
 
-  Concering :MonitringClient: (or better known its global instance :gMonitor:), if someone wants to send 
+  Concerning :MonitringClient: (or better known its global instance :gMonitor:), if someone wants to send 
   some metric over there, she has to put in agent's code registration of activity and then in a particular 
   task use :RequestTask.addMark: to save monitoring data. All monitored activities are held in 
   :RequestTask.__monitor: dict which at the end of processing is returned from :RequestTask.__call__:. 
@@ -146,6 +146,7 @@ class RequestTask( object ):
     from DIRAC.ConfigurationSystem.Client.Config import gConfig
     from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
     from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
+    from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
     ## export DIRAC global tools and functions
     self.makeGlobal( "S_OK", S_OK )
@@ -154,6 +155,7 @@ class RequestTask( object ):
     self.makeGlobal( "gConfig", gConfig )
     self.makeGlobal( "gProxyManager", gProxyManager ) 
     self.makeGlobal( "getGroupsWithVOMSAttribute", getGroupsWithVOMSAttribute )
+    self.makeGlobal( "gConfigurationData", gConfigurationData )
 
     ## save request string
     self.requestString = requestString
@@ -386,9 +388,15 @@ class RequestTask( object ):
     #################################################################
     ## execute handlers
     ret = { "OK" : False, "Message" : "" }
+    useServerCert = gConfig.useServerCertificate()
     try:
+      # Execute task with the owner proxy even for contacting DIRAC services
+      if useServerCert:
+        gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate','false')
       ret = self.handleRequest()
-    finally: 
+    finally:
+      if useServerCert:
+        gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate','true') 
       ## delete owner proxy
       if self.__dataManagerProxy:
         os.environ["X509_USER_PROXY"] = self.__dataManagerProxy

@@ -84,6 +84,15 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
 
+[v6r8p23]
+
+FIX: included fixes from v6r7p37 patch release
+
+*TS
+FIX: TransformationDB - allow tasks made with ProbInFC files
+FIX: TransformationCleaingAgent,Client - correct setting of transformation 
+     status while cleaning
+
 [v6r8p22]
 
 FIX: included fixes from v6r7p36 patch release
@@ -308,6 +317,40 @@ FIX: TaskManager - site in the job definition is taken into account when submitt
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
 <<<<<<< HEAD
+
+[v6r7p37]
+
+*Framework
+BUGFIX: NotificationDB - typos in SQL statement in purgeExpiredNotifications() 
+
+*WMS
+NEW: JobCleaningAgent - added scheduling sandbox LFN removal request 
+     when deleting jobs
+CHANGE: JobWrapper - report only error code as ApplicationError parameter 
+        when payload finishes with errors    
+NEW: SiteDirector - possibility to specify extensions to be installed in 
+     pilots in /Operations/Pilots/Extensions option in order not to install
+     all the server side extensions        
+
+*DMS
+CHANGE: FileCatalogFactory - use service path as default URL
+CHANGE: FileCatalogFactory - use ObjectLoader to import catalog clients
+
+*SMS
+BUGFIX: StorageManagementDB, dirac-stager-monitor-jobs - small bug fixes ( sic, Daniela )
+
+*Resources
+CHANGE: DIPStorage - added possibility to specify a list of ports for multiple
+        service end-points
+CHANGE: InProcessComputingElement - demote log message when payload failure 
+        to warning, the job will fail anyway
+FIX: StalledJobAgent - if pilot reference is not registered, this is not an 
+     error of the StalledJobAgent, no log.error() in  this case                
+        
+*RMS
+CHANGE: RequestTask - ensure that tasks are executed with user credentials 
+        even with respect to queries to DIRAC services ( useServerCertificate 
+        flag set to false )        
 
 [v6r7p36]
 
