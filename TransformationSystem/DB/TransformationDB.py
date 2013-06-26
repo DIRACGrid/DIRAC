@@ -1343,10 +1343,10 @@ class TransformationDB( DB ):
         fileIDs.append( fileDict['FileID'] )
         lfn = fileDict['LFN']
         if fileDict['Status'] in self.allowedStatusForTasks:
-          foundLfns.update( lfn )
+          foundLfns.add( lfn )
         else:
           gLogger.error( "Supplied file not in %s status but %s" % ( self.allowedStatusForTasks, fileDict['Status'] ), lfn )
-      unvailableLfns = set( lfns ) - foundLfns
+      unavailableLfns = set( lfns ) - foundLfns
       if unavailableLfns:
         gLogger.error( "Supplied files not found for transformation", sorted( unavailableLfns ) )
         return S_ERROR( "Not all supplied files available in the transformation database" )
