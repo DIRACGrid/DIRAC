@@ -349,14 +349,14 @@ class StorageManagementDB( DB ):
   def getTaskInfo( self, taskID, connection = False ):
     """ Obtain all the information from the Tasks table for a supplied task. """
     connection = self.__getConnection( connection )
-    req = "SELECT TaskID,Status,Source,SubmitTime,CompleteTime,CallBackMethod,SourceTaskID from Tasks WHERE TaskID = %s;" % taskID
+    req = "SELECT TaskID,Status,Source,SubmitTime,CompleteTime,CallBackMethod,SourceTaskID from Tasks WHERE TaskID IN (%s);" % intListToString(taskID)
     res = self._query( req, connection )
     if not res['OK']:
       gLogger.error( 'StorageManagementDB.getTaskInfo: Failed to get task information.', res['Message'] )
       return res
     resDict = {}
     for taskID, status, source, submitTime, completeTime, callBackMethod, sourceTaskID in res['Value']:
-      resDict[taskID] = {'Status':status, 'Source':source, 'SubmitTime':submitTime, 'CompleteTime':completeTime, 'CallBackMethod':callBackMethod, 'SourceTaskID':sourceTaskID}
+      resDict[sourceTaskID] = {'Status':status, 'Source':source, 'SubmitTime':submitTime, 'CompleteTime':completeTime, 'CallBackMethod':callBackMethod, 'SourceTaskID':sourceTaskID}
     if not resDict:
       gLogger.error( 'StorageManagementDB.getTaskInfo: The supplied task %s did not exist' % taskID)
       return S_ERROR( 'The supplied task %s did not exist' % taskID)
@@ -376,19 +376,25 @@ class StorageManagementDB( DB ):
   def getTaskSummary( self, jobID, connection = False ):
     """ Obtain the task summary from the database. """
     connection = self.__getConnection( connection )
-    taskID = self._getTaskIDForJob( jobID, connection = connection )
+    res = self._getTaskIDForJob( jobID, connection = connection )
+    if not res['OK']:
+      return res
+    if res['Value']:
+      taskID = res['Value'] 
+    else:
+      return S_OK()
     res = self.getTaskInfo( taskID, connection = connection )
     if not res['OK']:
       return res
     taskInfo = res['Value']
-    req = "SELECT R.LFN,R.SE,R.PFN,R.Size,R.Status,R.LastUpdate,R.Reason FROM CacheReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
+    req = "SELECT R.LFN,R.SE,R.PFN,R.Size,R.Status,R.LastUpdate,R.Reason FROM CacheReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID in (%s) AND TR.ReplicaID=R.ReplicaID;" % intListToString(taskID)
     res = self._query( req, connection )
     if not res['OK']:
       gLogger.error( 'StorageManagementDB.getTaskSummary: Failed to get Replica summary for task.', res['Message'] )
       return res
     replicaInfo = {}
-    for lfn, storageElement, pfn, fileSize, status, reason in res['Value']:
-      replicaInfo[lfn] = {'StorageElement':storageElement, 'PFN':pfn, 'FileSize':fileSize, 'Status':status, 'Reason':reason}
+    for lfn, storageElement, pfn, fileSize, status, lastupdate, reason in res['Value']:
+      replicaInfo[lfn] = {'StorageElement':storageElement, 'PFN':pfn, 'FileSize':fileSize, 'Status':status,'LastUpdate':lastupdate, 'Reason':reason}
     resDict = {'TaskInfo':taskInfo, 'ReplicaInfo':replicaInfo}
     return S_OK( resDict )
 
