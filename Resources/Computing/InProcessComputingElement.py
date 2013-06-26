@@ -86,7 +86,7 @@ class InProcessComputingElement( ComputingElement ):
       self.log.error( 'Fail to run InProcess', result['Message'] )
     elif result['Value'][0] > 128:
       # negative exit values are returned as 256 - exit
-      self.log.error( 'InProcess Job Execution Failed' )
+      self.log.warn( 'InProcess Job Execution Failed' )
       self.log.info( 'Exit status:', result['Value'][0] - 256 )
       if result['Value'][0] - 256 == -2:
         error = 'Error in the initialization of the DIRAC JobWrapper'
@@ -98,7 +98,7 @@ class InProcessComputingElement( ComputingElement ):
       res['Value'] = result['Value'][0] - 256
       return res
     elif result['Value'][0] > 0:
-      self.log.error( 'Fail in payload execution' )
+      self.log.warn( 'Fail in payload execution' )
       self.log.info( 'Exit status:', result['Value'][0] )
       ret['PayloadFailed'] = result['Value'][0]
     else:
