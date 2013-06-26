@@ -77,13 +77,13 @@ class TransformationCleaningAgent( AgentModule ):
     # # shifter proxy
     self.am_setOption( 'shifterProxy', 'DataManager' )
     # # transformations types
+    self.dataProcTTypes = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
+    self.dataManipTTypes = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
     agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
     if agentTSTypes:
       self.transformationTypes = sortList( agentTSTypes )
     else:
-      dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
-      dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
-      self.transformationTypes = sortList( dataProc + dataManip )
+      self.transformationTypes = sortList( self.dataProcTTypes + self.dataManipTTypes )
     self.log.info( "Will consider the following transformation types: %s" % str( self.transformationTypes ) )
     # # directory locations
     self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', [ 'TransformationDB',
@@ -124,7 +124,7 @@ class TransformationCleaningAgent( AgentModule ):
       for transDict in res['Value']:
         # # if transformation is of type `Replication` or `Removal`, there is nothing to clean.
         # # We just archive
-        if transDict[ 'Type' ] in [ 'Replication', 'Removal' ]:
+        if transDict[ 'Type' ] in self.dataProcTTypes:
           res = self.archiveTransformation( transDict['TransformationID'] )
           if not res['OK']:
             self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'],
@@ -422,6 +422,11 @@ class TransformationCleaningAgent( AgentModule ):
     if not res['OK']:
       return res
     self.log.info( "Successfully cleaned transformation %d" % transID )
+    res = self.transClient.setTransformationParameter( transID, 'Status', 'Cleaned' )
+    if not res['OK']:
+      self.log.error( "Failed to update status of transformation %s to Cleaned" % ( transID ), res['Message'] )
+      return res
+    self.log.info( "Updated status of transformation %s to Cleaned" % ( transID ) )
     return S_OK()
 
   def cleanMetadataCatalogFiles( self, transID ):
@@ -449,7 +454,7 @@ class TransformationCleaningAgent( AgentModule ):
   #
 
   def cleanTransformationTasks( self, transID ):
-    ''' clean tasks from WMS
+    ''' clean tasks from WMS, or from the RMS if it is a DataManipulation transformation
     '''
     res = self.__getTransformationExternalIDs( transID )
     if not res['OK']:
@@ -461,7 +466,7 @@ class TransformationCleaningAgent( AgentModule ):
         self.log.error( "Failed to determine transformation type" )
         return res
       transType = res['Value']
-      if transType in [ 'Replication', 'Removal' ]:
+      if transType in self.dataProcTType:
         res = self.__removeRequests( externalIDs )
       else:
         res = self.__removeWMSTasks( externalIDs )
