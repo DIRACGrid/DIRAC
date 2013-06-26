@@ -23,7 +23,7 @@ from DIRAC.Core.Utilities.Pfn                       import pfnparse, pfnunparse
 from DIRAC.Core.DISET.TransferClient                import TransferClient
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.Utilities.File                      import getSize
-import os, types
+import os, types, random
 
 class DIPStorage( StorageBase ):
 
@@ -39,12 +39,17 @@ class DIPStorage( StorageBase ):
     self.protocol = protocol
     self.path = path
     self.host = host
-    self.port = port
+    
+    # Several ports can be specified as comma separated list, choose
+    # randomly one of those ports
+    ports = port.split( ',' )
+    random.shuffle( ports )
+    self.port = ports[0]
+    
     self.wspath = wspath
     self.spaceToken = spaceToken
 
-    self.url = protocol + "://" + host + ":" + port + wspath
-
+    self.url = protocol + "://" + host + ":" + self.port + wspath
     self.cwd = ''
     self.isok = True
 

@@ -8,16 +8,21 @@ The Job Cleaning Agent controls removing jobs from the WMS in the end of their l
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.AgentModule                          import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
-from DIRAC.WorkloadManagementSystem.DB.JobDB              import JobDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB        import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB       import JobLoggingDB
-from DIRAC                                                import S_OK, gLogger
+from DIRAC.Core.Base.AgentModule                               import AgentModule
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
+from DIRAC.WorkloadManagementSystem.DB.JobDB                   import JobDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB             import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB            import JobLoggingDB
+from DIRAC                                                     import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
+from DIRAC.RequestManagementSystem.Client.RequestContainer     import RequestContainer
+from DIRAC.RequestManagementSystem.Client.RequestClient        import RequestClient
+
 import DIRAC.Core.Utilities.Time as Time
+
 import string
 import time
+import os
 
 REMOVE_STATUS_DELAY = { 'Done':7,
                         'Killed':1,
@@ -50,7 +55,7 @@ class JobCleaningAgent( AgentModule ):
     else:
       self.prod_types = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
     gLogger.info('Will exclude the following Production types from cleaning %s'%(string.join(self.prod_types,', ')))
-    self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce',200)
+    self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce',100)
     self.jobByJob = self.am_getOption('JobByJob',True)
     self.throttlingPeriod = self.am_getOption('ThrottlingPeriod',0.)
     return S_OK()
@@ -118,6 +123,16 @@ class JobCleaningAgent( AgentModule ):
     if not result[ 'OK' ]:
       gLogger.warn( "Cannot unassign jobs to sandboxes", result[ 'Message' ] )
 
+      
+    result = self.deleteJobOversizedSandbox( jobList ) 
+    if not result[ 'OK' ]:
+      gLogger.warn( "Cannot schedle removal of oversized sandboxes", result[ 'Message' ] )
+      return result 
+    
+    failedJobs = result['Value']['Failed']
+    for job in failedJobs:
+      jobList.pop( jobList.index( job ) ) 
+
     if self.jobByJob:
       for jobID in jobList:
         resultJobDB = self.jobDB.removeJobFromDB( jobID )
@@ -163,3 +178,76 @@ class JobCleaningAgent( AgentModule ):
     if count > 0 or error_count > 0 :
       gLogger.info( 'Deleted %d jobs from JobDB, %d errors' % ( count, error_count ) )
     return S_OK()
+
+  def deleteJobOversizedSandbox( self, jobIDList ):
+    """ Delete the job oversized sandbox files from storage elements
+    """ 
+
+    failed = {}
+    successful = {}
+
+    lfnDict = {}
+    for jobID in jobIDList:
+      result = self.jobDB.getJobParameter( jobID, 'OutputSandboxLFN' )
+      if result['OK']:
+        lfn = result['Value']
+        if lfn:
+          lfnDict[lfn] = jobID
+        else:
+          successful[jobID] = 'No oversized sandbox found'
+      else:
+        gLogger.warn( 'Error interrogting JobDB: %s' % result['Message'] )
+    if not lfnDict:
+      return S_OK( {'Successful':successful, 'Failed':failed} )   
+
+    # Schedule removal of the LFNs now
+
+    for lfn,jobID in lfnDict.items():
+      result = self.jobDB.getJobAttributes( jobID, ['OwnerDN', 'OwnerGroup'] )
+      if not result['OK']:
+        failed[jobID] = lfn
+        continue
+      if not result['Value']:
+        failed[jobID] = lfn
+        continue
+
+      ownerDN = result['Value']['OwnerDN']
+      ownerGroup = result['Value']['OwnerGroup']
+      result = self.__setRemovalRequest( lfn, ownerDN, ownerGroup )
+      if not result['OK']:
+        failed[jobID] = lfn
+      else:
+        successful[jobID] = lfn
+           
+    result = {'Successful':successful, 'Failed':failed}
+    return S_OK( result )   
+    
+  def __setRemovalRequest( self, lfn, ownerDN, ownerGroup ):
+    """ Set removal request with the given credentials
+    """
+    request = RequestContainer()
+    request.setRequestAttributes( { 'OwnerDN':ownerDN, 'OwnerGroup':ownerGroup } )
+    requestName = os.path.basename( lfn ).strip()+'_removal_request.xml'
+    request.setRequestName( requestName )
+    request.setSourceComponent( 'JobCleaningAgent' )
+
+    removalDict = {'Attributes':{ 'Operation':'removeFile',
+                                  'TargetSE':'',
+                                  'ExecutionOrder':0
+                                }
+                   }
+    result = request.addSubRequest( removalDict, 'removal' )
+    if not result['OK']:
+      return result
+
+    index = result['Value']
+    fileDict = { 'LFN':lfn, 'PFN':'', 'Status':'Waiting' }
+    request.setSubRequestFiles( index, 'removal', [fileDict] )
+
+    client = RequestClient()
+    result = request.toXML()
+    if not result['OK']:
+      return result
+    xmlRequest = result['Value']
+    result = client.setRequest( requestName, xmlRequest )
+    return result
