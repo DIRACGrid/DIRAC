@@ -11,11 +11,11 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.SSHComputingElement       import SSH, SSHComputingElement 
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
+from DIRAC.Core.Utilities.Subprocess                     import shellCall, systemCall
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 from DIRAC.Core.Utilities.Pfn                            import pfnparse
 from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
+from DIRAC                                               import rootPath
 from DIRAC                                               import gConfig
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 from DIRAC.Resources.Computing.SSHComputingElement       import SSH 

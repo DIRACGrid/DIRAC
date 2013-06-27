@@ -155,7 +155,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                  import gLogger
 from DIRAC                                  import S_OK, S_ERROR
-from DIRAC                                  import Time
+from DIRAC.Core.Utilities                   import Time
 
 import MySQLdb
 # This is for proper initialization of embeded server, it should only be called once

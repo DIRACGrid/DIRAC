@@ -31,9 +31,9 @@ from DIRAC.Core.Utilities.Subprocess                                import Subpr
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
 from DIRAC.Core.Utilities.Adler                                     import fileAdler
-from DIRAC.Core.Utilities                                           import List
+from DIRAC.Core.Utilities                                           import List, Time
 from DIRAC.Core.Utilities                                           import DEncode
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, Time
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
 #from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
 

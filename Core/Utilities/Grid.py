@@ -8,7 +8,8 @@ from DIRAC.Core.Utilities.Os import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers         import Local
-from DIRAC import systemCall, shellCall, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall,
 
 def executeGridCommand( proxy, cmd, gridEnvScript = None ):
   """ Execute cmd tuple after sourcing GridEnv
