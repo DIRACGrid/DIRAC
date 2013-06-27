@@ -114,7 +114,6 @@ rootPath = os.path.dirname( pythonPath )
 # Import DIRAC.Core.Utils modules
 
 from DIRAC.Core.Utilities import *
-
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 #Logger
@@ -126,15 +125,6 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 #Monitoring client
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
-# Some Defaults if not present in the configuration
-FQDN = getFQDN()
-if len( FQDN.split( '.' ) ) > 2 :
-  # Use the last component of the FQDN as country code if there are more than 2 components
-  _siteName = 'DIRAC.Client.%s' % FQDN.split( '.' )[-1]
-else:
-  # else use local as country code
-  _siteName = 'DIRAC.Client.local'
-
 __siteName = False
 
 def siteName():
@@ -142,8 +132,22 @@ def siteName():
   Determine and return DIRAC name for current site
   """
   global __siteName
+
   if not __siteName:
+  
+    #FIXME: does this ever happen that we have to use the defaultValue if getValue ???
+    from DIRAC.Core.Utilities import Network
+    # Some Defaults if not present in the configuration
+    fqdn = Network.getFQDN()
+    if len( fqdn.split( '.' ) ) > 2 :
+    # Use the last component of the FQDN as country code if there are more than 2 components
+      _siteName = 'DIRAC.Client.%s' % fqdn.split( '.' )[-1]
+    else:
+      # else use local as country code
+      _siteName = 'DIRAC.Client.local'
+    
     __siteName = gConfig.getValue( '/LocalSite/Site', _siteName )
+
   return __siteName
 
 #Callbacks

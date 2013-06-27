@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC  import S_OK
 from DIRAC.FrameworkSystem.DB.SystemLoggingDB import SystemLoggingDB
-from DIRAC.Core.Utilities import dateTime, toString, day
+from DIRAC.Core.Utilities.Time import dateTime, toString, day
 
 
 class SystemLoggingDBCleaner(AgentModule):
