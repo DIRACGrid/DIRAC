@@ -8,7 +8,7 @@
   Check the defined protocols for all SEs of a given site
 """
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -22,6 +22,7 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "site":
     site = switch[1]
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 if not site:
@@ -34,4 +35,4 @@ if not result['OK']:
   print 'ERROR: %s' % result['Message']
   exitCode = 2
 
-DIRAC.exit( exitCode )
+DIRACExit( exitCode )

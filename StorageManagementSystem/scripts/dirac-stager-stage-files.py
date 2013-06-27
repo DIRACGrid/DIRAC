@@ -29,7 +29,7 @@ seName = args[0]
 fileName = args[1]
 
 import os
-from DIRAC import exit as DIRACEXit, gLogger
+from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 
