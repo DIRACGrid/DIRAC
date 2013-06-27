@@ -110,7 +110,6 @@ rootPath = os.path.dirname( pythonPath )
 
 # Import DIRAC.Core.Utils modules
 
-from DIRAC.Core.Utilities import *
 from DIRAC.Core.Utilities import ExitCallback
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
