@@ -49,9 +49,6 @@
     - platform:      DIRAC platform string for current host
     - platformTuple: DIRAC platform tuple for current host
 
-    It loads Modules from :
-    - DIRAC.Core.Utililies
-
     It loads:
     - S_OK:           OK return structure
     - S_ERROR:        ERROR return structure

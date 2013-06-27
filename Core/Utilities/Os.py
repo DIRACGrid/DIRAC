@@ -144,6 +144,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
 
   return result
 
+#FIXME: this is not used !
 def unifyLdLibraryPath( path, newpath ):
   """ for Linux and MacOS link all the files in the path in a single directory
       newpath. For that we go along the path in a reverse order and link all files
