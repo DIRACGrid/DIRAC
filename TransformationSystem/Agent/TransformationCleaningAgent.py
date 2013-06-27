@@ -470,7 +470,7 @@ class TransformationCleaningAgent( AgentModule ):
         self.log.error( "Failed to determine transformation type" )
         return res
       transType = res['Value']
-      if transType in self.dataProcTType:
+      if transType in self.dataProcTTypes:
         res = self.__removeRequests( externalIDs )
       else:
         res = self.__removeWMSTasks( externalIDs )
