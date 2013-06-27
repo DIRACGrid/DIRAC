@@ -38,7 +38,7 @@ class RequestDB( DB ):
   """
   .. class:: RequestDB
 
-  persistency storage for requests
+  db holding requests
   """
 
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
