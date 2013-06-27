@@ -692,6 +692,21 @@ class FTSAgent( AgentModule ):
         ftsJob.OperationID = operation.OperationID
         ftsJob.SourceSE = source
         ftsJob.TargetSE = target
+
+        sourceSE = self.getSE( source )
+        sourceToken = sourceSE.getStorageParameters( "SRM2" )
+        if not sourceToken["OK"]:
+          log.error( "unable to get sourceSE '%s' parameters: %s" % ( source, sourceToken["Message"] ) )
+          continue
+        ftsJob.SourceToken = sourceToken["Value"].get( "SpaceToken", "" )
+
+        targetSE = self.getSE( target )
+        targetToken = targetSE.getStorageParameters( "SRM2" )
+        if not targetToken["OK"]:
+          log.error( "unable to get targetSE '%s' parameters: %s" % ( target, targetToken["Message"] ) )
+          continue
+        ftsJob.TargetToken = targetToken["Value"].get( "SpaceToken", "" )
+
         ftsJob.FTSServer = route.toNode.FTSServer
 
         for ftsFile in ftsFileList:
