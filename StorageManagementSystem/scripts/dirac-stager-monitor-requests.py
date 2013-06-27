@@ -8,7 +8,6 @@
   Report the details of file staging requests, based on selection filters
 """
 _RCSID__ = "$Id$"
-import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
