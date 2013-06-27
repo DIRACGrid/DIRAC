@@ -4,7 +4,6 @@
 """
 __RCSID__ = "$Id$"
 #from DIRAC.Core.Utilities.File               import makeGuid, checkGuid, getSize, getGlobbedTotalSize, getGlobbedFiles, getCommonPath, getMD5ForFiles
-from DIRAC.Core.Utilities.List               import uniqueElements, appendUnique, fromChar, randomize, sortList, pop, stringListToString, intListToString, getChunk, breakListIntoChunks, removeEmptyElements
 #from DIRAC.Core.Utilities.Network            import discoverInterfaces, getAllInterfaces, getAddressFromInterface, getMACFromInterface, getFQDN, splitURL, getIPsForHostName, checkHostsMatch
 from DIRAC.Core.Utilities.Os                 import uniquePath, getDiskSpace, getDirectorySize, sourceEnv, unifyLdLibraryPath, which, DEBUG
 from DIRAC.Core.Utilities.Subprocess         import shellCall, systemCall, pythonCall
