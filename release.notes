@@ -7,7 +7,8 @@ FIX: SpaceTokenOccupancyPolicy - SpaceToken Policy decision was based on
      percentage by mistake
      
 *RMS
-NEW: new scripts dirac-dms-ftsdb-summary, dirac-dms-show-ftsjobs     
+NEW: new scripts dirac-dms-ftsdb-summary, dirac-dms-show-ftsjobs    
+FIX: FTSAgent - setting space tokens for newly created FTSJobs 
 
 [v6r9p6]
 
