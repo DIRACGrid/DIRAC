@@ -561,7 +561,7 @@ class RequestDB( DB ):
     if not isinstance( request, Request ):
       self.log.info( "getDigest: request '%s' not found" )
       return S_OK()
-    return request.toJSON()
+    return request.getDigest()
 
   @staticmethod
   def __buildCondition( condDict, older = None, newer = None ):

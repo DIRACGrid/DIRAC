@@ -485,14 +485,15 @@ class Request( Record ):
     """ return digest for request """
     digest = []
     for op in self:
-      opDigest = [ op.Type, op.Type, op.Status, op.Order ]
+      opDigest = [ str( item ) for item in ( op.Type, op.Type, op.Status, op.Order ) ]
       if op.TargetSE:
         opDigest.append( op.TargetSE )
       if op.Catalog:
         opDigest.append( op.Catalog )
       if len( op ):
         opFile = op[0]
-        opDigest.append( opFile.LFN, ",...<%d files>" % len( op ) )
+        opDigest.append( opFile.LFN )
+        opDigest.append( ",...<%d files>" % len( op ) )
       digest.append( ":".join( opDigest ) )
     return S_OK( "\n".join( digest ) )
 
