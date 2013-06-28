@@ -418,7 +418,7 @@ class MySQL:
     self.__initialized = True
     result = self._connect()
     if not result[ 'OK' ]:
-      gLogger.error( "Cannot connecto to DB: %s" % result[ 'Message' ] )
+      gLogger.error( "Cannot connect to to DB: %s" % result[ 'Message' ] )
 
     if debug:
       try:

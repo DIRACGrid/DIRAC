@@ -80,6 +80,11 @@ NEW: XXXStorage - added getCurrentStatus() method
 NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
      dirac-stager-monitor-requests, dirac-stager-show-stats
 
+[v6r9p8]
+
+*DMS
+FIX: RequestDB - get correct digest ( short request description ) of a request
+
 [v6r9p7]
 
 FIX: included fixes from v6r8p23 patch release
@@ -89,7 +94,8 @@ FIX: SpaceTokenOccupancyPolicy - SpaceToken Policy decision was based on
      percentage by mistake
      
 *RMS
-NEW: new scripts dirac-dms-ftsdb-summary, dirac-dms-show-ftsjobs     
+NEW: new scripts dirac-dms-ftsdb-summary, dirac-dms-show-ftsjobs    
+FIX: FTSAgent - setting space tokens for newly created FTSJobs 
 
 [v6r9p6]
 
