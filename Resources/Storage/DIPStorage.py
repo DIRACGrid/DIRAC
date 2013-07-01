@@ -210,7 +210,7 @@ class DIPStorage( StorageBase ):
       gLogger.error( errStr, src_file )
       return S_ERROR( errStr )
     transferClient = TransferClient( self.url )
-    res = transferClient.sendFile( src_file, dest_url )
+    res = transferClient.sendFile( src_file, dest_url, "NoCheckSum" )
     if localCache:
       os.unlink( src_file )
     if res['OK']:
@@ -244,7 +244,7 @@ class DIPStorage( StorageBase ):
 
   def __getFile( self, src_url, dest_file ):
     transferClient = TransferClient( self.url )
-    res = transferClient.receiveFile( dest_file, src_url )
+    res = transferClient.receiveFile( dest_file, src_url, "NoCheckSum" )
     if not res['OK']:
       return res
     if not os.path.exists( dest_file ):
