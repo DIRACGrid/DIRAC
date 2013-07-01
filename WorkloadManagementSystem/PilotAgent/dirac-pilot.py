@@ -359,7 +359,12 @@ if os.environ.has_key( 'OSG_WN_TMP' ):
 # Direct SSH tunnel submission    
 if os.environ.has_key( 'SSHCE_JOBID' ):
   cliParams.flavour = 'SSH'
-  pilotRef = 'ssh://'+cliParams.ceName+'/'+os.environ['SSHCE_JOBID']    
+  pilotRef = 'ssh://'+cliParams.ceName+'/'+os.environ['SSHCE_JOBID']  
+  
+# ARC case  
+if os.environ.has_key( 'GRID_GLOBAL_JOBID' ):
+  cliParams.flavour = 'ARC'
+  pilotRef = os.environ['GRID_GLOBAL_JOBID']     
 
 # This is for BOINC case
 if os.environ.has_key( 'BOINC_JOB_ID' ):
