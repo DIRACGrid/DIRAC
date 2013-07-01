@@ -289,3 +289,16 @@ class ReqManagerHandler( RequestHandler ):
       gLogger.exception( errStr, "", lException = error )
       return S_ERROR( errStr )
 
+  types_getRequestInfo = [ ( IntType, LongType ) ]
+  @classmethod
+  def export_getRequestInfo( cls, requestID ):
+    """ get request info for a given requestID """
+    try:
+      requestInfo = cls.__requestDB.getRequestInfo( requestID )
+      if not requestInfo["OK"]:
+        gLogger.error( "getRequestInfo: %s" % requestInfo["Message"] )
+      return requestInfo
+    except Exception, error:
+      errStr = "getRequestInfo: %s" % str( error )
+      gLogger.exception( errStr, "", lException = error )
+      return S_ERROR( errStr )

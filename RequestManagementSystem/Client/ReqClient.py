@@ -203,31 +203,35 @@ class ReqClient( Client ):
                                                                                         requestStatus["Message"] ) )
     return requestStatus
 
-  def getRequestInfo( self, requestName ):
-    """ The the request info given a request name.
+  def getRequestName( self, requestID ):
+    """ get request name for a given requestID """
+    return self.requestManager().getRequestName( requestID )
+
+  def getRequestInfo( self, requestID ):
+    """ The the request info given a request id.
 
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestName )
-    requestInfo = self.requestManager().getRequestInfo( requestName )
+    self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestID )
+    requestInfo = self.requestManager().getRequestInfo( requestID )
     if not requestInfo["OK"]:
-      self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestName,
+      self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestID,
                                                                                       requestInfo["Message"] ) )
     return requestInfo
 
-  def getRequestFileStatus( self, requestName, lfns ):
-    """ Get file status for request given a request name.
+  def getRequestFileStatus( self, requestID, lfns ):
+    """ Get file status for request given a request id.
 
     :param self: self reference
-    :param str requestName: request name
+    :param int requestID: request name
     :param list lfns: list of LFNs
     """
-    self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
-    fileStatus = self.requestManager().getRequestFileStatus( requestName, lfns )
+    self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestID )
+    fileStatus = self.requestManager().getRequestFileStatus( requestID, lfns )
     if not fileStatus["OK"]:
       self.log.error( "getRequestFileStatus: unable to get file status for '%s' request: %s" % \
-                        ( requestName, fileStatus["Message"] ) )
+                        ( requestID, fileStatus["Message"] ) )
     return fileStatus
 
   def finalizeRequest( self, requestName, jobID ):

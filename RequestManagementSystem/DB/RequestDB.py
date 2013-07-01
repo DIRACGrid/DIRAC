@@ -230,7 +230,7 @@ class RequestDB( DB ):
       self.log.error( "getRequestName: %s" % query["Message"] )
     query = query["Value"]
     if not query:
-      return S_ERROR( "getRequestName: no request found for RequestID = %s" % requestID )
+      return S_ERROR( "getRequestName: no request found for RequestID=%s" % requestID )
     return S_OK( query[0][0] )
 
 
@@ -584,6 +584,23 @@ class RequestDB( DB ):
         if opFile.LFN in lfnList:
           res[opFile.LFN] = opFile.Status
     return S_OK( res )
+
+
+  def getRequestInfo( self, requestID ):
+    """ get request info given Request.RequestID """
+    requestName = self.getRequestName( requestID )
+    if not requestName["OK"]:
+      self.log.error( "getRequestInfo: %s" % requestName["Message"] )
+      return requestName
+    requestName = requestName["Value"]
+    requestInfo = self.getRequestProperties( requestName, [ "RequestID", "Status", "RequestName", "JobID",
+                                                            "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent",
+                                                            "CreationTime", "SubmitTime", "lastUpdate" ] )
+    if not requestInfo["OK"]:
+      self.log.error( "getRequestInfo: %s" % requestInfo["Message"] )
+      return requestInfo
+    requestInfo = requestInfo["Value"][0]
+    return S_OK( requestInfo )
 
   def getDigest( self, requestName ):
     """ get digest for request given its name
