@@ -222,6 +222,18 @@ class RequestDB( DB ):
       return S_OK()
     return self.getRequest( requestName[0][0] )
 
+  def getRequestName( self, requestID ):
+    """ get Request.RequestName for a given Request.RequestID """
+    query = "SELECT `RequestName` FROM `Request` WHERE `RequestID` = %s" % requestID
+    query = self._query( query )
+    if not query["OK"]:
+      self.log.error( "getRequestName: %s" % query["Message"] )
+    query = query["Value"]
+    if not query:
+      return S_ERROR( "getRequestName: no request found for RequestID=%s" % requestID )
+    return S_OK( query[0][0] )
+
+
   def getRequest( self, requestName = '', assigned = True ):
     """ read request for execution
 
@@ -547,6 +559,47 @@ class RequestDB( DB ):
       return query
     requestStatus = query['Value'][0][0]
     return S_OK( requestStatus )
+
+  def getRequestFileStatus( self, requestID, lfnList ):
+    """ get status for files in request given its name
+
+    :param str requestName: Request.RequestName
+    :param list lfnList: list of LFNs
+    """
+    requestName = self.getRequestName( requestID )
+    if not requestName["OK"]:
+      self.log.error( "getRequestFileStatus: %s" % requestName["Message"] )
+      return requestName
+    requestName = requestName["Value"]
+
+    req = self.peekRequest( requestName )
+    if not req["OK"]:
+      self.log.error( "getRequestFileStatus: %s" % req["Message"] )
+      return req
+
+    req = req["Value"]
+    res = dict.fromkeys( lfnList, "UNKNOWN" )
+    for op in req:
+      for opFile in op:
+        if opFile.LFN in lfnList:
+          res[opFile.LFN] = opFile.Status
+    return S_OK( res )
+
+  def getRequestInfo( self, requestID ):
+    """ get request info given Request.RequestID """
+    requestName = self.getRequestName( requestID )
+    if not requestName["OK"]:
+      self.log.error( "getRequestInfo: %s" % requestName["Message"] )
+      return requestName
+    requestName = requestName["Value"]
+    requestInfo = self.getRequestProperties( requestName, [ "RequestID", "Status", "RequestName", "JobID",
+                                                            "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent",
+                                                            "CreationTime", "SubmitTime", "lastUpdate" ] )
+    if not requestInfo["OK"]:
+      self.log.error( "getRequestInfo: %s" % requestInfo["Message"] )
+      return requestInfo
+    requestInfo = requestInfo["Value"][0]
+    return S_OK( requestInfo )
 
   def getDigest( self, requestName ):
     """ get digest for request given its name

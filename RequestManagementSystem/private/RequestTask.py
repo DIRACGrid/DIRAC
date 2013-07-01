@@ -66,7 +66,6 @@ class RequestTask( object ):
     if not shifterProxies["OK"]:
       self.log.error( shifterProxies["Message"] )
 
-
     # # initialize gMonitor
     gMonitor.setComponentType( gMonitor.COMPONENT_AGENT )
     gMonitor.setComponentName( self.agentName )
@@ -131,6 +130,11 @@ class RequestTask( object ):
 
     :return: S_OK with name of newly created owner proxy file and shifter name if any
     """
+    self.__managersDict = {}
+    shifterProxies = self.__setupManagerProxies()
+    if not shifterProxies["OK"]:
+      self.log.error( shifterProxies["Message"] )
+
     ownerDN = self.request.OwnerDN
     ownerGroup = self.request.OwnerGroup
     isShifter = []
@@ -138,7 +142,7 @@ class RequestTask( object ):
       if creds["ShifterDN"] == ownerDN and creds["ShifterGroup"] == ownerGroup:
         isShifter.append( shifter )
     if isShifter:
-      proxyFile = self.__managersDict[isShifter]["ProxyFile"]
+      proxyFile = self.__managersDict[isShifter[0]]["ProxyFile"]
       os.environ["X509_USER_PROXY"] = proxyFile
       return S_OK( { "Shifter": isShifter, "ProxyFile": proxyFile } )
 
@@ -294,20 +298,6 @@ class RequestTask( object ):
 
     gMonitor.flush()
 
-    # # request done?
-    if self.request.Status == "Done":
-      self.log.info( "request '%s' is done" % self.request.RequestName )
-      gMonitor.addMark( "RequestOK", 1 )
-      # # and there is a job waiting for it? finalize!
-      if self.request.JobID:
-        finalizeRequest = self.requestClient.finalize( self.request, self.request.JobID )
-        if not finalizeRequest["OK"]:
-          self.log.error( "unable to finalize request %s: %s" % ( self.request.RequestName,
-                                                                  finalizeRequest["Message"] ) )
-          return finalizeRequest
-        else:
-          self.log.info( "request '%s' is finalized" % self.request.RequestName )
-
     # # update request to the RequestDB
     update = self.updateRequest()
     if not update["OK"]:
@@ -315,5 +305,19 @@ class RequestTask( object ):
       return update
     if error:
       return S_ERROR( error )
+
+    # # request done?
+    if self.request.Status == "Done":
+      self.log.info( "request '%s' is done" % self.request.RequestName )
+      gMonitor.addMark( "RequestOK", 1 )
+      # # and there is a job waiting for it? finalize!
+      if self.request.JobID:
+        finalizeRequest = self.requestClient().finalizeRequest( self.request.RequestName, self.request.JobID )
+        if not finalizeRequest["OK"]:
+          self.log.error( "unable to finalize request %s: %s" % ( self.request.RequestName,
+                                                                  finalizeRequest["Message"] ) )
+          return finalizeRequest
+        else:
+          self.log.info( "request '%s' is finalized" % self.request.RequestName )
 
     return S_OK()

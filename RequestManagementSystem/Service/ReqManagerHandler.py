@@ -246,7 +246,6 @@ class ReqManagerHandler( RequestHandler ):
       gLogger.exception( errStr, '', lException = error )
       return S_ERROR( errStr )
 
-
   types_getRequestStatus = [ StringTypes ]
   @classmethod
   def export_getRequestStatus( cls, requestName ):
@@ -261,3 +260,45 @@ class ReqManagerHandler( RequestHandler ):
       gLogger.exception( errStr, '', lException = error )
       return S_ERROR( errStr )
 
+
+  types_getRequestFileStatus = [ (IntType, LongType), ListType ]
+  @classmethod
+  def export_getRequestFileStatus( cls, requestID, lfnList ):
+    """ get request file status for a given LFNs list and requestID """
+    try:
+      res = cls.__requestDB.getRequestFileStatus( requestID, lfnList )
+      if not res["OK"]:
+        gLogger.error( "getRequestFileStatus: %s" % res["Message"] )
+      return res
+    except Exception, error:
+      errStr = "getRequestFileStatus: %s" % str( error )
+      gLogger.exception( errStr, "", lException = error )
+      return S_ERROR( errStr )
+    
+  types_getRequestName = [ ( IntType, LongType ) ]
+  @classmethod
+  def export_getRequestName( cls, requestID ):
+    """ get request name for a given requestID """
+    try:
+      requestName = cls.__requestDB.getRequestName( requestID )
+      if not requestName["OK"]:
+        gLogger.error( "getRequestName: %s" % requestName["Message"] )
+      return requestName
+    except Exception, error:
+      errStr = "getRequestName: %s" % str( error )
+      gLogger.exception( errStr, "", lException = error )
+      return S_ERROR( errStr )
+
+  types_getRequestInfo = [ ( IntType, LongType ) ]
+  @classmethod
+  def export_getRequestInfo( cls, requestID ):
+    """ get request info for a given requestID """
+    try:
+      requestInfo = cls.__requestDB.getRequestInfo( requestID )
+      if not requestInfo["OK"]:
+        gLogger.error( "getRequestInfo: %s" % requestInfo["Message"] )
+      return requestInfo
+    except Exception, error:
+      errStr = "getRequestInfo: %s" % str( error )
+      gLogger.exception( errStr, "", lException = error )
+      return S_ERROR( errStr )
