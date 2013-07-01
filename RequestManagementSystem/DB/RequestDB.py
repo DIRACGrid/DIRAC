@@ -585,7 +585,6 @@ class RequestDB( DB ):
           res[opFile.LFN] = opFile.Status
     return S_OK( res )
 
-
   def getRequestInfo( self, requestID ):
     """ get request info given Request.RequestID """
     requestName = self.getRequestName( requestID )
