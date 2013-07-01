@@ -245,12 +245,7 @@ class ReqClient( Client ):
     # update the request status and the corresponding job parameter
     res = self.getRequestStatus( requestName )
     if res["OK"]:
-      subRequestStatus = res["Value"]["SubRequestStatus"]
-      if subRequestStatus == "Done":
-        res = self.setRequestStatus( requestName, "Done" )
-        if not res["OK"]:
-          self.log.error( "finalizeRequest: Failed to set request status" )
-        # the request is completed, update the corresponding job status
+      if res["Value"] == "Done":
         if jobID:
           monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
           res = monitorServer.getJobPrimarySummary( int( jobID ) )
