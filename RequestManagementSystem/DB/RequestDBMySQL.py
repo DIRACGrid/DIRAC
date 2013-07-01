@@ -221,7 +221,7 @@ class RequestDBMySQL( DB ):
     """ collect and return all file statuses given :requestID:
 
     :param int requestID: Requests.RequestID
-    :param list files: [ Files.FileID ]
+    :param list files: [ Files.LFN ]
     """
     req = "SELECT DISTINCT `SubRequestID` FROM `SubRequests` WHERE `RequestID`=%d;" % requestID
     res = self._query( req )
