@@ -1,3 +1,17 @@
+[v6r7p38]
+
+*Core
+NEW: DISET FileHelper, TransferClient - possibility to switch off check sum
+
+*Resources
+NEW: ARCComputingElement - first version
+NEW: StorageFactory - possibility to pass extra protocol parameters to storage object
+NEW: DIPStorage - added CheckSum configuration option
+BUGFIX: SSHComputingElement - use CE name in the pilot reference construction
+
+*WMS
+FIX: StalledJobAgent - if ExecTime < CPUTime make it equal to CPUTime
+
 [v6r7p37]
 
 *Framework
