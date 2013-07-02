@@ -89,7 +89,7 @@ class StorageFactory:
     else:
       wsPath = ''
 
-    return self.__generateStorageObject( storageName, protocolName, protocol, path, host, port, spaceToken, wsPath )
+    return self.__generateStorageObject( storageName, protocolName, protocol, path, host, port, spaceToken, wsPath, parameterDict )
 
 
   def getStorages( self, storageName, protocolList = [] ):
@@ -148,7 +148,8 @@ class StorageFactory:
         wsUrl = protocolDict['WSUrl']
         res = self.__generateStorageObject( storageName, protocolName, protocol,
                                             path = path, host = host, port = port,
-                                            spaceToken = spaceToken, wsUrl = wsUrl )
+                                            spaceToken = spaceToken, wsUrl = wsUrl,
+                                            parameters = protocolDict )
         if res['OK']:
           self.storages.append( res['Value'] )
           if protocolName in self.localProtocols:
@@ -299,7 +300,7 @@ class StorageFactory:
   #
 
   def __generateStorageObject( self, storageName, protocolName, protocol, path = None,
-                              host = None, port = None, spaceToken = None, wsUrl = None ):
+                              host = None, port = None, spaceToken = None, wsUrl = None, parameters={} ):
     
     storageType = protocolName
     if self.proxy:
@@ -339,6 +340,12 @@ class StorageFactory:
         errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s(): %s" % ( moduleName, x )
         gLogger.exception( errStr )
         return S_ERROR( errStr )
+      
+      # Set extra parameters if any
+      if parameters:
+        result = storage.setParameters( parameters )
+        if not result['OK']:
+          return result
       
       # If use proxy, keep the original protocol name
       if self.proxy:
