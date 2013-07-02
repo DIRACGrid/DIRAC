@@ -1,3 +1,8 @@
+[v6r9p9]
+
+*RMS
+FIX: RequestDB - added getRequestFileStatus(), getRequestName() methods
+
 [v6r9p8]
 
 *DMS
