@@ -243,6 +243,8 @@ class StorageElementHandler( RequestHandler ):
       fd = open( file_path, "wb" )
     except Exception, error:
       return S_ERROR( "Cannot open to write destination file %s: %s" % ( file_path, str( error ) ) )
+    if "NoCheckSum" in token:
+      fileHelper.disableCheckSum()
     result = fileHelper.networkToDataSink( fd, maxFileSize = ( MAX_STORAGE_SIZE * 1024 * 1024 ) )
     if not result[ 'OK' ]:
       return result
@@ -255,6 +257,8 @@ class StorageElementHandler( RequestHandler ):
         token is used for access rights confirmation.
     """
     file_path = self.__resolveFileID( fileID )
+    if "NoCheckSum" in token:
+      fileHelper.disableCheckSum()
     result = fileHelper.getFileDescriptor( file_path, 'r' )
     if not result['OK']:
       result = fileHelper.sendEOF()
