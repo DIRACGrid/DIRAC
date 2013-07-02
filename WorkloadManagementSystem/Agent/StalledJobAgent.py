@@ -368,6 +368,13 @@ used to fail jobs due to the optimizer chain.
                'OutputSandBoxSize' : 0.0,
                'ProcessedEvents' : 0
              }
+    
+    # For accidentally stopped jobs ExecTime can be not set
+    if not acData['ExecTime']:
+      acData['ExecTime'] = acData['CPUTime']
+    elif acData['ExecTime'] < acData['CPUTime']:
+      acData['ExecTime'] = acData['CPUTime']
+    
     self.log.verbose( 'Accounting Report is:' )
     self.log.verbose( acData )
     accountingReport.setValuesFromDict( acData )

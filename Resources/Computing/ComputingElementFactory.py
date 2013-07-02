@@ -7,12 +7,10 @@
 """  The Computing Element Factory has one method that instantiates a given Computing Element
      from the CEUnique ID specified in the JobAgent configuration section.
 """
-from DIRAC.Resources.Computing.ComputingElement          import ComputingElement, getCEConfigDict
-from DIRAC                                               import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.Resources.Computing.ComputingElement          import getCEConfigDict
+from DIRAC                                               import S_OK, S_ERROR, gLogger
 
 __RCSID__ = "$Id$"
-
-import sys,types
 
 class ComputingElementFactory:
 
