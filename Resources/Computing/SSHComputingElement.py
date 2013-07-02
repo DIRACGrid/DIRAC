@@ -595,7 +595,7 @@ class SSHComputingElement( ComputingElement ):
     else:
       tempDir = localDir
 
-    ssh = SSH( host = host, parameters = self.ceParameters )
+    ssh = SSH( parameters = self.ceParameters )
     result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobStamp ), '%s' % outputFile, upload = False )
     if not result['OK']:
       return result
