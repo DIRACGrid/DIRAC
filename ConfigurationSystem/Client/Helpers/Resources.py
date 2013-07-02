@@ -89,13 +89,15 @@ RESOURCE_NODE_MAPPING = {
   'CommunityManagement':'',
   'DBServer':'Database'
 }
+RESOURCE_NAME_SEPARATOR = "::"
 
 ############################################################################
 #
 #  General utilities
 
 def getSites( siteList = [] ):
-  """ Get the list of site names in a canonical form <Site>.<Country>
+  """ Get the list of site names possibly limited by a given list of sites names
+      in arbitrary form
   """
   if not siteList:
     return gConfig.getSections( cfgPath( gBaseResourcesSection, 'Sites' ) )
@@ -122,9 +124,8 @@ def getSiteName( site_ ):
     if not result['OK']:
       return result
     sites = result['Value']
-    for siteName in sites:
-      if siteName.startswith( site_ ):
-        site = siteName
+    if site_ in sites:
+      site = site_
   else:
     site = site_
   if site is None:
@@ -136,14 +137,17 @@ def getSiteName( site_ ):
     if len( country ) != 2:
       return S_ERROR( 'Invalid site name %s' % site )
     else:
-      return S_OK( site )
+      result = S_OK( siteName )
+      result['Country'] = country
+      return result
   elif len( site.split( '.' ) ) == 3:
     domain,siteName,country = site.split( '.' )
     if len( country ) != 2:
       return S_ERROR( 'Invalid site name %s' % site )
     else:
-      result = S_OK( '.'.join( [siteName, country] ) )
+      result = S_OK( siteName )
       result['Domain'] = domain
+      result['Country'] = country
       return result
   else:
     return S_ERROR( 'Invalid site name %s' % site )
@@ -235,16 +239,26 @@ def getSiteForResource( resourceType, resourceName ):
     return result
   sites = result['Value']
 
-  for site in sites:
-    result = Resources().getResources( site, resourceType )
-    if not result['OK']:
-      continue
-    resources = result['Value']
-    for resource in resources:
-      if resource == resourceName:
-        return S_OK( site )
-
-  return S_ERROR( 'Resource %s of type %s is not found' % ( resourceName, resourceType ) )
+  names = resourceName.split( RESOURCE_NAME_SEPARATOR )
+  if len( names ) == 2:
+    site = names[0]
+    if site in sites:
+      return S_OK( names[0])
+    else:
+      return S_ERROR( 'Unknown site %s' % site ) 
+  else:
+    return S_ERROR( 'Illegal Resource name %s' % resourceName )
+  
+#  for site in sites:
+#    result = Resources().getResources( site, resourceType )
+#    if not result['OK']:
+#      continue
+#    resources = result['Value']
+#    for resource in resources:
+#      if resource == resourceName:
+#        return S_OK( site )
+#
+#  return S_ERROR( 'Resource %s of type %s is not found' % ( resourceName, resourceType ) )
 
 ####################################################################################
 #
@@ -494,7 +508,7 @@ class Resources( object ):
       if not result['OK']:
         continue
       if result['Value']:
-        resultDict[site] = result['Value']
+        resultDict[site] = RESOURCE_NAME_SEPARATOR.join( site, result['Value'] )
 
     return S_OK( resultDict )
 
@@ -544,7 +558,7 @@ class Resources( object ):
           continue
         if result['Value']:
           resultDict.setdefault( site, {} )
-          resultDict[site][resource] = result['Value']
+          resultDict[site][resource] = RESOURCE_NAME_SEPARATOR.join( resource, result['Value'] )
 
     return S_OK( resultDict )
 
@@ -554,21 +568,21 @@ class Resources( object ):
   #
   #  Specialized tools for particular resources
 
-  def getEligibleStorageElements( self, selectDict={} ):
-    """ Get all the eligible Storage Elements according to the selection criteria with
-        the names following the SE convention.
-    """
-    result = self.getEligibleResources( 'Storage', selectDict )
-    if not result['OK']:
-      return result
-    seDict = result['Value']
-
-    seList = []
-    for site in seDict:
-      for se in seDict[site]:
-        seList.append( site[:-3] + '-' + se )
-
-    return S_OK( seList )
+#  def getEligibleStorageElements( self, selectDict={} ):
+#    """ Get all the eligible Storage Elements according to the selection criteria with
+#        the names following the SE convention.
+#    """
+#    result = self.getEligibleResources( 'Storage', selectDict )
+#    if not result['OK']:
+#      return result
+#    seDict = result['Value']
+#
+#    seList = []
+#    for site in seDict:
+#      for se in seDict[site]:
+#        seList.append( site[:-3] + '-' + se )
+#
+#    return S_OK( seList )
 
   def getCatalogOptionsDict( self, catalogName ):
     """ Get the CS Catalog Options
@@ -677,12 +691,16 @@ class Resources( object ):
     if not result['OK']:
       return result
     siteShortName = result['Value']
+    result = self.getSiteOption( siteShortName, 'Country' )
+    if not result['OK']:
+      return result
+    country = result['Value']
     result = self.getSiteDomain( site )
     if not result['OK']:
       return result
     domain = result['Value']
 
-    siteFullName = '.'.join( [domain, siteShortName] )
+    siteFullName = '.'.join( [domain, siteShortName, country] )
     return S_OK( siteFullName )
 
   def getSiteDomain( self, site ):

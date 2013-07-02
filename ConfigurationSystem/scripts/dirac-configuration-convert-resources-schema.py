@@ -100,11 +100,16 @@ def convertSites():
         gLogger.error( 'Invalid site name %s' % site )
         continue
       siteName = result['Value']
+      country = result['Country']
+      
+      print "AT >>> siteName, country", siteName, country
+      
       gLogger.notice( 'Analyzing site %s' % siteName )
       result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s' % (domain,site) )
       if not result['OK']:
         return result 
       siteDict = result['Value']
+      siteDict['Country'] = country
       if "CE" in siteDict:
         del siteDict['CE']
       if 'SE' in siteDict:
@@ -114,7 +119,7 @@ def convertSites():
       infoDict[siteName]['Domains'].append( domain )
       if 'VO' in siteDict:
         communities = List.fromChar( siteDict['VO'] )
-        infoDict[siteName]['Communities'] = communities
+        infoDict[siteName]['VO'] = communities
       result = gConfig.getSections('/Resources/Sites/%s/%s/CEs' % (domain,site))
       if not result['OK']:
         if 'does not exist' in result['Message']:
@@ -131,7 +136,7 @@ def convertSites():
         infoDict[siteName]['Computing'][ce] = ceDict
         if 'VO' in ceDict:
           communities = List.fromChar( ceDict['VO'] )
-          infoDict[siteName]['Computing'][ce]['Communities'] = communities
+          infoDict[siteName]['Computing'][ce]['VO'] = communities
           del ceDict['VO']
         result = gConfig.getSections('/Resources/Sites/%s/%s/CEs/%s/Queues' % (domain,site,ce))
         if not result['OK']:
@@ -148,17 +153,20 @@ def convertSites():
           infoDict[siteName]['Computing'][ce]['Queues'][queue] = queueDict
           if 'VO' in queueDict:
             communities = List.fromChar( queueDict['VO'] )
-            infoDict[siteName]['Computing'][ce]['Queues'][queue]['Communities'] = communities
+            infoDict[siteName]['Computing'][ce]['Queues'][queue]['VO'] = communities
             del queueDict['VO']
         
       cfg = CFG()
       cfg.loadFromDict( infoDict[siteName] )
-      csapi.mergeCFGUnderSection( '/Resources_new/Sites/%s' % siteName, cfg)
-      csapi.sortSection( '/Resources_new/Sites/%s/Computing' % siteName )
-       
+      
+      print "AT >>> siteName, cfg", siteName, cfg.serialize()
+      
+      csapi.mergeCFGUnderSection( '/Resources_new_new/Sites/%s' % siteName, cfg)
+      csapi.sortSection( '/Resources_new_new/Sites/%s/Computing' % siteName )
+             
     for domain in domains:
-      csapi.createSection( '/Resources_new/Domains/%s' % domain )
-    csapi.sortSection( '/Resources_new/Sites' )  
+      csapi.createSection( '/Resources_new_new/Domains/%s' % domain )
+    csapi.sortSection( '/Resources_new_new/Sites' )  
  
   return S_OK()
       
@@ -191,25 +199,33 @@ def convertSEs():
     
     # Try to guess the site
     seSite = 'Unknown'
+    seName = 'Unknown'
     for site in sites:
-      if se.startswith(site[:-3]):
+      if se.startswith(site):
         seSite = site
+        seName = se.replace( site, '' )[1:]
+    if seName == 'Unknown':
+      seName = se    
     
+    defaultFlag = False
     if defaultSite:
       if seSite == "Unknown":
-        site = defaultSite
+        seSite = defaultSite
+        defaultFlag = True
+  
+    inputSite = raw_input("Processing SE %s, new name %s located at site [%s]: " % ( se,seName,seSite ) )    
+    if not inputSite:
+      if seSite == 'Unknown':
+        inputSite = raw_input("Please, provide the site name for SE %s: " % se )
       else:
         site = seSite
     else:
-      inputSite = raw_input("Processing SE %s, located at site [%s]: " % ( se,seSite ) )    
-      if not inputSite:
-        if seSite == 'Unknown':
-          inputSite = raw_input("Please, provide the site name for SE %s: " % se )
-        else:
-          site = seSite
-      else:
-        site = inputSite
-      
+      site = inputSite
+    if defaultFlag:
+      inputSE = raw_input("New SE name [%s]: " % seName )
+      if inputSE:
+        seName = inputSE                      
+    
     sePath = '/Resources/StorageElements/%s' % se  
     result = gConfig.getOptionsDict(sePath)
     if not result['OK']:
@@ -234,8 +250,8 @@ def convertSEs():
       
     cfg = CFG()  
     cfg.loadFromDict( seDict )
-    csapi.createSection('/Resources_new/Sites/%s/Storage/%s' % (site,se))
-    csapi.mergeCFGUnderSection( '/Resources_new/Sites/%s/Storage/%s' % (site,se), cfg)    
+    csapi.createSection('/Resources_new_new/Sites/%s/Storage/%s' % (site,seName))
+    csapi.mergeCFGUnderSection( '/Resources_new_new/Sites/%s/Storage/%s' % (site,seName), cfg)    
           
   return S_OK()       
           
@@ -329,7 +345,8 @@ if __name__ == '__main__':
   if dbFlag:
     result = convertDBServers()     
   
-  csapi.commitChanges()   
+  #csapi.commitChanges()
+  print csapi.getCurrentCFG()['Value'].serialize()   
               
       
            
