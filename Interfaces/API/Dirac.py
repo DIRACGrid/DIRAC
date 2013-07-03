@@ -1173,9 +1173,12 @@ class Dirac( API ):
       return self._errorReport( replicaDict['Value']['Failed'].items()[0], 'Failed to get replica information' )
     siteLfns = {}
     for lfn, reps in replicaDict['Value']['Successful'].items():
-      possibleSites = set( [site for se in reps for site in sitesForSE.setdefault( se, getSitesForSE( se ).get( 'Value', [None] ) )] )
-      siteLfns.setdefault( ''.join( sorted( possibleSites ) ), [] ).append( lfn )
+      possibleSites = set( [site for se in reps for site in sitesForSE.setdefault( se, getSitesForSE( se ).get( 'Value', [] ) )] )
+      siteLfns.setdefault( ','.join( sorted( possibleSites ) ), [] ).append( lfn )
 
+    if '' in siteLfns:
+      # Some files don't have active replicas
+      return self._errorReport( 'No active replica found for', str( siteLfns[''] ) )
     lfnGroups = []
     for files in siteLfns.values():
       lists = breakListIntoChunks( files, maxFilesPerJob )
