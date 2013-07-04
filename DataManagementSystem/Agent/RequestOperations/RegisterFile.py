@@ -96,7 +96,7 @@ class RegisterFile( OperationHandlerBase ):
 
         reason = registerFile["Message"] if not registerFile["OK"] else registerFile["Value"]["Failed"][lfn]
         errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
-        opFile.Error = reason
+        opFile.Error = errorStr
         self.log.warn( errorStr )
         failedFiles += 1
 
