@@ -74,7 +74,7 @@ class RegisterFile( OperationHandlerBase ):
     # # counter for failed files
     failedFiles = 0
     # # catalog to use
-    catalog = self.operation.Catalogue
+    catalog = self.operation.Catalog
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
     # # loop over files

@@ -25,13 +25,12 @@ __RCSID__ = "$Id: $"
 #from DIRACSingleton import DIRACSingleton
 
 ########################################################################
-class State(object):
+class State( object ):
   """
   .. class:: State
   
   single state
   """
-
   def __str__( self ):
     """ str() op """
     return self.__class__.__name__
@@ -42,18 +41,19 @@ class StateMachine( object ):
 
   simple state machine
   
-  
-
   """
-  def __init__( self, state, transTable ):
+  def __init__( self, state = None, transTable=None ):
     """ c'tor
 
     :param self: self reference
     :param mixed state: initial state
     :param dict transTable: transition table
     """
+    
+    if not issubclass( state.__class__, State ):
+      raise TypeError("state should be inherited from State")
     self.__state = state
-    self.transTable = transTable if transTable else {}
+    self.transTable = transTable if type(transTable) == dict else {}
 
   def setState( self, state ):
     """ set state """
@@ -97,49 +97,49 @@ class StateMachine( object ):
 
 
 
-class Waiting( State ):
-  pass
+#class Waiting( State ):
+#  pass
   
-class Done( State ):
-  pass
+#class Done( State ):
+#  pass
 
-class Failed( State ):
-  pass
+#class Failed( State ):
+#  pass
 
-class Scheduled( State ):
-  pass
+#class Scheduled( State ):
+#  pass
 
-waiting = Waiting()
-done = Done()
-failed = Failed()
-scheduled = Scheduled()
+#waiting = Waiting()
+#done = Done()
+#failed = Failed()
+#scheduled = Scheduled()
 
-def toDone( slist ):
-  return set(slist) == { "Done" }
+#def toDone( slist ):
+#  return list(set(slist)) == [ "Done" ]
 
-def toFailed( slist ):
-  return "Failed" in slist
+#def toFailed( slist ):
+#  return "Failed" in slist
 
-def toWaiting( slist ):
-  for st in slist:
-    if st == "Done":
-      continue
-    if st in ( "Failed", "Scheduled", "Queued" ):
-      return False
-    if st == "Waiting":
-      return True
-  return False
+#def toWaiting( slist ):
+#  for st in slist:
+#    if st == "Done":
+#      continue
+#    if st in ( "Failed", "Scheduled", "Queued" ):
+#      return False
+#    if st == "Waiting":
+#      return True
+#  return False
 
-def toScheduled( slist ):
-  for st in slist:
-    if st == "Done":
-      continue
-    if st in ( "Failed", "Waiting", "Queued" ):
-      return False
-    if st == "Scheduled":
-      return True
-  return False
-
+#def toScheduled( slist ):
+#  for st in slist:
+#    if st == "Done":
+#      continue
+#    if st in ( "Failed", "Waiting", "Queued" ):
+#      return False
+#    if st == "Scheduled":
+#      return True
+#  return False
+"""
 tr = { waiting: { done: toDone, 
                   failed: toFailed, 
                   scheduled: toScheduled, 
@@ -176,3 +176,4 @@ sm.next( slist = [ "Done", "Done", "Done", "Failed" ] )
 print sm.state
 
   
+"""
