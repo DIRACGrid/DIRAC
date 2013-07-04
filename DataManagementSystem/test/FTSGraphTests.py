@@ -70,7 +70,8 @@ class FTSGraphTests( unittest.TestCase ):
       FTSHistoryView( { "TargetSE": "RAL-USER",
                         "SourceSE": "CERN-USER",
                         "FTSJobs": 10,
-                        "FTSServer": "https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer",
+                        "FTSServer": 
+                        "https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer",
                         "Status": "Active",
                         "Files" : 1000,
                         "Size": 10000000 } ) ]
@@ -105,6 +106,6 @@ class FTSGraphTests( unittest.TestCase ):
 # # test execution
 if __name__ == "__main__":
   gTestLoader = unittest.TestLoader()
-  gSuite = testLoader.loadTestsFromTestCase( FTSGraphTests )
-  gSuite = unittest.TestSuite( [ suite ] )
-  unittest.TextTestRunner( verbosity = 3 ).run( suite )
+  gSuite = gTestLoader.loadTestsFromTestCase( FTSGraphTests )
+  gSuite = unittest.TestSuite( [ gSuite ] )
+  unittest.TextTestRunner( verbosity = 3 ).run( gSuite )
