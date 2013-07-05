@@ -31,7 +31,6 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 # # from DMS
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
@@ -64,7 +63,6 @@ class FTSManagerHandler( RequestHandler ):
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
-
     try:
       from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
       cls.__ftsDB = FTSDB()
@@ -123,14 +121,10 @@ class FTSManagerHandler( RequestHandler ):
   @classmethod
   def updateFTSStrategy( cls ):
     """ update FTS graph in the FTSStrategy """
-    ftsSites = cls.__ftsDB.getFTSSitesList()
-    if not ftsSites["OK"]:
-      gLogger.warn( "unable to read FTSSites: %s" % ftsSites["Message"] )
-      return ftsSites
     ftsHistory = cls.__ftsDB.getFTSHistory()
     if not ftsHistory["OK"]:
       return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
-    cls.ftsStrategy().resetGraph( ftsSites["Value"], ftsHistory["Value"] )
+    cls.ftsStrategy().resetGraph( ftsHistory["Value"] )
     return S_OK()
 
   @classmethod
@@ -145,11 +139,11 @@ class FTSManagerHandler( RequestHandler ):
       csPath = getServiceSection( "DataManagement/FTSManager" )
       csPath = "%s/%s" % ( csPath, "FTSStrategy" )
 
-      ftsSites = cls.__ftsDB.getFTSSitesList()
-      if not ftsSites["OK"]:
-        gLogger.warn( "unable to read FTSSites: %s" % ftsSites["Message"] )
-        ftsSites["Value"] = []
-      ftsSites = ftsSites["Value"]
+      #ftsSites = cls.__ftsDB.getFTSSitesList()
+      #if not ftsSites["OK"]:
+      #  gLogger.warn( "unable to read FTSSites: %s" % ftsSites["Message"] )
+      #  ftsSites["Value"] = []
+      #ftsSites = ftsSites["Value"]
 
       ftsHistory = cls.__ftsDB.getFTSHistory()
       if not ftsHistory["OK"]:
@@ -157,7 +151,7 @@ class FTSManagerHandler( RequestHandler ):
         ftsHistory["Value"] = []
       ftsHistory = ftsHistory["Value"]
 
-      cls.__ftsStrategy = FTSStrategy( csPath, ftsSites, ftsHistory )
+      cls.__ftsStrategy = FTSStrategy( csPath, ftsHistory )
 
     return cls.__ftsStrategy
 
@@ -313,61 +307,6 @@ class FTSManagerHandler( RequestHandler ):
     # # if we land here some files have been properly scheduled
     return S_OK( ret )
 
-  types_putFTSSite = [ DictType ]
-  @classmethod
-  def export_putFTSSite( cls, ftsSiteJSON ):
-    """ put FTSSite """
-    try:
-      ftsSite = FTSSite( ftsSiteJSON )
-      put = cls.__ftsDB.putFTSSite( ftsSite )
-      if not put["OK"]:
-        gLogger.error( "putFTSSite: %s" % put["Message"] )
-      return put
-    except Exception, error:
-      gLogger.exception( error )
-      return S_ERROR( error )
-
-  types_getFTSSite = [ LongType ]
-  @classmethod
-  def export_getFTSSite( cls, ftsSiteID ):
-    """ get FTSSite given its id """
-    try:
-      getSite = cls.__ftsDB.getFTSSite( ftsSiteID )
-      if not getSite["OK"]:
-        gLogger.error( "getFTSSite: %s" % getSite["Message"] )
-        return getSite
-      getSite = getSite["Value"] if getSite["Value"] else None
-      if not getSite:
-        return S_OK()
-      getSite = getSite.toJSON()
-      if not getSite["OK"]:
-        gLogger.error( "getFTSSite: %s" % getSite["Message"] )
-      return getSite
-    except Exception, error:
-      gLogger.exception( error )
-      return S_ERROR( error )
-
-  types_getFTSSitesList = []
-  @classmethod
-  def export_getFTSSitesList( cls ):
-    """ get list of FTS sites """
-    try:
-      sitesList = cls.__ftsDB.getFTSSitesList()
-      if not sitesList["OK"]:
-        gLogger.error( "getFTSSitesList: %s" % sitesList["Message"] )
-        return sitesList
-      sitesList = sitesList["Value"]
-      sitesJSON = []
-      for site in sitesList:
-        siteJSON = site.toJSON()
-        if not siteJSON["OK"]:
-          gLogger.error( "getFTSSitesList: %s" % siteJSON["Message"] )
-          return siteJSON
-        sitesJSON.append( siteJSON["Value"] )
-      return S_OK( sitesJSON )
-    except Exception, error:
-      gLogger.exception( error )
-      return S_ERROR( error )
 
   types_getFTSFile = [ LongType ]
   @classmethod
@@ -622,7 +561,6 @@ class FTSManagerHandler( RequestHandler ):
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( str( error ) )
-
 
   types_getFTSFilesForRequest = [ ( IntType, LongType ), ListType ]
   @classmethod
