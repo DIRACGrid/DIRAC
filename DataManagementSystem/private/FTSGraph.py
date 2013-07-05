@@ -27,10 +27,10 @@ from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
 # # from RSS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 # from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping, getSites, getFTSServerForSites
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping, getSites, getFTSServersForSites
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.private.FTSSite improt FTSSite
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 
 class Site( Node ):
@@ -267,7 +267,7 @@ class FTSGraph( Graph ):
     if not sites["OK"]:
       return sites
     sites = sites["Value"]
-    ftsServers = getFTSServerForSites( sites )
+    ftsServers = getFTSServersForSites( sites )
     if not ftsServers["OK"]:
       return ftsServers
     ftsServers = ftsServers["Value"]
