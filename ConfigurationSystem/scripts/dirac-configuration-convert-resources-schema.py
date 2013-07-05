@@ -73,6 +73,8 @@ from DIRAC.Core.Utilities import List
 
 csapi = CSAPI()
 
+RESOURCES_NEW_SECTION = '/Resources_new_new'
+
 def convertSites():
   
   global csapi
@@ -161,12 +163,12 @@ def convertSites():
       
       print "AT >>> siteName, cfg", siteName, cfg.serialize()
       
-      csapi.mergeCFGUnderSection( '/Resources_new_new/Sites/%s' % siteName, cfg)
-      csapi.sortSection( '/Resources_new_new/Sites/%s/Computing' % siteName )
+      csapi.mergeCFGUnderSection( '%s/Sites/%s' % (RESOURCES_NEW_SECTION,siteName), cfg)
+      csapi.sortSection( '%s/Sites/%s/Computing' % (RESOURCES_NEW_SECTION,siteName) )
              
     for domain in domains:
-      csapi.createSection( '/Resources_new_new/Domains/%s' % domain )
-    csapi.sortSection( '/Resources_new_new/Sites' )  
+      csapi.createSection( '%s/Domains/%s' % (RESOURCES_NEW_SECTION,domain) )
+    csapi.sortSection( '%s/Sites' % RESOURCES_NEW_SECTION )  
  
   return S_OK()
       
@@ -250,8 +252,8 @@ def convertSEs():
       
     cfg = CFG()  
     cfg.loadFromDict( seDict )
-    csapi.createSection('/Resources_new_new/Sites/%s/Storage/%s' % (site,seName))
-    csapi.mergeCFGUnderSection( '/Resources_new_new/Sites/%s/Storage/%s' % (site,seName), cfg)    
+    csapi.createSection('%s/Sites/%s/Storage/%s' % (RESOURCES_NEW_SECTION,site,seName))
+    csapi.mergeCFGUnderSection( '%s/Sites/%s/Storage/%s' % (RESOURCES_NEW_SECTION,site,seName), cfg)    
           
   return S_OK()       
           
@@ -282,11 +284,11 @@ def convertCatalogs():
         return
       site = inputSite
       
-    result = csapi.copySection( '/Resources/FileCatalogs/%s' % catalog, '/Resources_new/Sites/%s/Catalog/%s' % (site,catalog) )
+    result = csapi.copySection( '/Resources/FileCatalogs/%s' % catalog, '%s/Sites/%s/Catalog/%s' % (RESOURCES_NEW_SECTION,site,catalog) )
     if not result['OK']:
       gLogger.error(result['Message'])
       return result    
-    csapi.setOptionComment( '/Resources_new/Sites/%s/Catalog' % site, 'Catalog resources' )
+    csapi.setOptionComment( '%s/Sites/%s/Catalog' % (RESOURCES_NEW_SECTION,site), 'Catalog resources' )
     
   return S_OK()
         
@@ -306,11 +308,13 @@ def convertTransfers():
     result = getSiteName(site)
     siteName = result['Value']
     gLogger.notice( 'Processing FTS endpoint at site %s' % siteName )
-    csapi.createSection( '/Resources_new/Sites/%s/Transfer/FTS' % siteName )
-    csapi.setOptionComment( '/Resources_new/Sites/%s/Transfer/FTS' % siteName, 'File Transfer Service' )
-    csapi.setOption( '/Resources_new/Sites/%s/Transfer/FTS/URL' % siteName, ftsDict[site] )
+    csapi.createSection( '%s/Sites/%s/Transfer/FTS' % (RESOURCES_NEW_SECTION,siteName) )
+    csapi.setOptionComment( '%s/Sites/%s/Transfer/FTS' % (RESOURCES_NEW_SECTION,siteName),
+                            'File Transfer Service' )
+    csapi.setOption( '%s/Sites/%s/Transfer/FTS/URL' % (RESOURCES_NEW_SECTION,siteName), ftsDict[site] )
     
-  csapi.setOptionComment( '/Resources_new/Sites/%s/Transfer' % siteName, 'Data Transfer Service resources' )  
+  csapi.setOptionComment( '%s/Sites/%s/Transfer' % (RESOURCES_NEW_SECTION,siteName), 
+                          'Data Transfer Service resources' )  
 
 def convertDBServers():
   
@@ -328,9 +332,12 @@ def convertDBServers():
     result = getSiteName(site)
     siteName = result['Value']
     gLogger.notice( 'Processing CondDB endpoint at site %s' % siteName )
-    csapi.copySection( '/Resources/CondDB/%s' % site, '/Resources_new/Sites/%s/DBServer/CondDB' % siteName )
-    csapi.setOptionComment( '/Resources_new/Sites/%s/DBServer' % siteName, 'Database server resource' )
-    csapi.setOptionComment( '/Resources_new/Sites/%s/DBServer/CondDB' % siteName, 'Conditions database' )
+    csapi.copySection( '/Resources/CondDB/%s' % site, 
+                       '%s/Sites/%s/DBServer/CondDB' % (RESOURCES_NEW_SECTION,siteName) )
+    csapi.setOptionComment( '%s/Sites/%s/DBServer' % (RESOURCES_NEW_SECTION,siteName),
+                            'Database server resource' )
+    csapi.setOptionComment( '%s/Sites/%s/DBServer/CondDB' % (RESOURCES_NEW_SECTION,siteName), 
+                            'Conditions database' )
           
 if __name__ == '__main__':
   
@@ -345,7 +352,7 @@ if __name__ == '__main__':
   if dbFlag:
     result = convertDBServers()     
   
-  #csapi.commitChanges()
+  csapi.commitChanges()
   print csapi.getCurrentCFG()['Value'].serialize()   
               
       

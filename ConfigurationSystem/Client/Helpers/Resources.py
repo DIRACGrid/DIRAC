@@ -80,7 +80,7 @@ from types import ListType
 #
 #  Global constants
 
-gBaseResourcesSection = "/Resources_new"
+gBaseResourcesSection = "/Resources_new_new"
 RESOURCE_NODE_MAPPING = {
   'Computing':'Queue',
   'Storage':'AccessProtocol',
@@ -95,37 +95,79 @@ RESOURCE_NAME_SEPARATOR = "::"
 #
 #  General utilities
 
-def getSites( siteList = [] ):
+def getSites( siteList = [], fullName = False ):
   """ Get the list of site names possibly limited by a given list of sites names
       in arbitrary form
   """
   if not siteList:
-    return gConfig.getSections( cfgPath( gBaseResourcesSection, 'Sites' ) )
-
-  if not type( siteList ) == ListType:
-    siteList = [ siteList ]
-
-  canonicalSiteList = []
-  for site in siteList:
-    result = getSiteName( site )
+    result = gConfig.getSections( cfgPath( gBaseResourcesSection, 'Sites' ) )
     if not result['OK']:
-      continue
-    canonicalSiteList.append( result['Value'] )
+      return result
+    sList = result['Value']
+  else:
+    if not type( siteList ) == ListType:
+      siteList = [ siteList ]
+  
+    sList = [ getSiteName( s ) for s in siteList ]
+    
+  resultList = []  
+  if fullName:    
+    for site in sList:
+      result = getSiteFullNames( site )
+      if not result['OK']:
+        continue
+      resultList += result['Value']
+  else:  
+    for site in sList:
+      result = getSiteName( site )
+      if not result['OK']:
+        continue
+      resultList.append( result['Value'] )
+    
+  return S_OK( resultList )
 
-  return S_OK( canonicalSiteList )
+def getSiteFullNames( site_ ):
+  """ Get site full names in all the eligible domains
+  """
+  result = getSiteName( site_ )
+  if not result['OK']:
+    return result
+  site = result['Value']
+  
+  result = getSiteDomains( site )
+  if not result['OK']:
+    return result
+  domains = result['Value']
+  
+  result = getSitePath( site )
+  if not result['OK']:
+    return result
+  sitePath = result['Value']
+  country = gConfig.getValue( cfgPath( sitePath, 'Country' ), 'xx' )
+  
+  resultList = [ '.'.join( [domain,site,country] ) for domain in domains ]
+  return S_OK( resultList )
+  
 
-def getSiteName( site_ ):
-  """ Get the site name in a canonical form <Site>.<country>
+def getSiteName( site_, verify=False ):
+  """ Get the site name in its basic form
   """
 
   site = None
   if not '.' in site_:
-    result = getSites()
-    if not result['OK']:
-      return result
-    sites = result['Value']
-    if site_ in sites:
-      site = site_
+    if verify:
+      result = getSites()
+      if not result['OK']:
+        return result
+      sites = result['Value']
+      if site_ in sites:
+        site = site_
+      if site is not None:
+        return S_OK( site )  
+      else:
+        return S_ERROR( 'Unknown site: %s' % site )
+    else:
+      return S_OK( site_ )  
   else:
     site = site_
   if site is None:
@@ -134,23 +176,23 @@ def getSiteName( site_ ):
   domain = ''
   if len( site.split( '.' ) ) == 2:
     siteName,country = site.split( '.' )
-    if len( country ) != 2:
-      return S_ERROR( 'Invalid site name %s' % site )
+    if verify and len( country ) != 2:
+      return S_ERROR( 'Invalid site name: %s' % site )
     else:
       result = S_OK( siteName )
       result['Country'] = country
       return result
   elif len( site.split( '.' ) ) == 3:
     domain,siteName,country = site.split( '.' )
-    if len( country ) != 2:
-      return S_ERROR( 'Invalid site name %s' % site )
+    if verify and len( country ) != 2:
+      return S_ERROR( 'Invalid site name: %s' % site )
     else:
       result = S_OK( siteName )
       result['Domain'] = domain
       result['Country'] = country
       return result
   else:
-    return S_ERROR( 'Invalid site name %s' % site )
+    return S_ERROR( 'Invalid site name: %s' % site )
 
 def getSitePath( site ):
   """ Return path to the Site section on CS
@@ -400,10 +442,13 @@ class Resources( object ):
     args = list( params )
     args.reverse()
 
+    opType = None
     for op in ['OptionsDict','Option','Value','Elements','s']:
       if name.endswith( op ):
         opType  = op
         break
+    if opType is None:
+      return S_ERROR('Illegal method name: %s' % name)  
     if opType == 's':
       opType = "Elements"
     method = getattr( self.__innerResources, 'get'+opType )
@@ -437,6 +482,7 @@ class Resources( object ):
 
     optionVOPath = None
     optionPath = None
+    typePath = None
     if siteType is not None:
       optionPath = sitePath
       typePath = os.path.dirname( sitePath )
@@ -457,6 +503,8 @@ class Resources( object ):
         optionPath = cfgPath( sitePath, resourceType, resource )
         if self.__vo is not None:
           optionVOPath = cfgPath( optionPath, self.__vo )
+    else:      
+      return S_ERROR( 'Illegal method name: %s' % name )
 
     if opType == 'Option':
       option = args.pop()
@@ -477,6 +525,8 @@ class Resources( object ):
         selectDict = args[0]
       elif 'selectDict' in kwargs:
         selectDict = kwargs['selectDict']
+      if typePath is None:
+        return S_ERROR( 'Illegal method arguments' )  
       return method( typePath, self.__vo, selectDict )
     else:
       return method( optionPath, optionVOPath )
@@ -508,7 +558,7 @@ class Resources( object ):
       if not result['OK']:
         continue
       if result['Value']:
-        resultDict[site] = RESOURCE_NAME_SEPARATOR.join( site, result['Value'] )
+        resultDict[site] = [ RESOURCE_NAME_SEPARATOR.join( [site, resource] ) for resource in result['Value'] ]
 
     return S_OK( resultDict )
 
@@ -558,7 +608,7 @@ class Resources( object ):
           continue
         if result['Value']:
           resultDict.setdefault( site, {} )
-          resultDict[site][resource] = RESOURCE_NAME_SEPARATOR.join( resource, result['Value'] )
+          resultDict[site][resource] = [ RESOURCE_NAME_SEPARATOR.join( [resource, node] ) for node in result['Value'] ]
 
     return S_OK( resultDict )
 
@@ -568,21 +618,20 @@ class Resources( object ):
   #
   #  Specialized tools for particular resources
 
-#  def getEligibleStorageElements( self, selectDict={} ):
-#    """ Get all the eligible Storage Elements according to the selection criteria with
-#        the names following the SE convention.
-#    """
-#    result = self.getEligibleResources( 'Storage', selectDict )
-#    if not result['OK']:
-#      return result
-#    seDict = result['Value']
-#
-#    seList = []
-#    for site in seDict:
-#      for se in seDict[site]:
-#        seList.append( site[:-3] + '-' + se )
-#
-#    return S_OK( seList )
+  def getEligibleStorageElements( self, selectDict={} ):
+    """ Get all the eligible Storage Elements according to the selection criteria with
+        the names following the SE convention.
+    """
+    result = self.getEligibleResources( 'Storage', selectDict )
+    if not result['OK']:
+      return result
+    seDict = result['Value']
+
+    seList = []
+    for site in seDict:
+      seList += seDict[site]
+
+    return S_OK( seList )
 
   def getCatalogOptionsDict( self, catalogName ):
     """ Get the CS Catalog Options
