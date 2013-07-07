@@ -217,7 +217,7 @@ class ReleaseConfig:
       return "\n".join( lines )
 
     def getOptions( self, path = "" ):
-      parentPath = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ][:-1]
+      parentPath = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ]
       if parentPath:
         parent = self.getChild( parentPath )
       else:
@@ -265,6 +265,7 @@ class ReleaseConfig:
       self.__globalDefaultsURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
     self.__globalDefaults = ReleaseConfig.CFG()
     self.__loadedCfgs = []
+    self.__mirrors = {}
     self.__prjDepends = {}
     self.__prjRelCFG = {}
     self.__projectsLoadedBy = {}
@@ -434,6 +435,10 @@ class ReleaseConfig:
     return project in self.__prjRelCFG
 
   def getTarsLocation( self, project ):
+    if project in self.__mirrors:
+      mirror = self.__mirrors[ project ]
+      self.__dbgMsg( "Downloading from mirror: %s" % mirror )
+      return S_OK( mirror )
     defLoc = self.__globalDefaults.get( "Projects/%s/BaseURL" % project, "" )
     if defLoc:
       return S_OK( defLoc )
@@ -512,6 +517,21 @@ class ReleaseConfig:
     return S_OK()
 
 
+  def __checkForMirrors( self, project ):
+    mb = "Projects/%s/Mirrors" % project
+    if not self.__globalDefaults.isSection( mb ):
+      self.__dbgMsg( "No mirrors defined for %s" % project )
+      return
+    mirrors = self.__globalDefaults.getOptions( mb )
+    for mproj in mirrors:
+      if mproj not in self.__mirrors:
+        mirror = self.__globalDefaults.get( "%s/%s" % ( mb, mproj ) )
+        self.__dbgMsg( "Mirror defined for project %s by %s at %s" % ( mproj, project, mirror ) )
+        self.__mirrors[ mproj ] = mirror
+      else:
+        self.__dbgMsg( "Mirror for %s previously defined" % mproj )
+
+
   def loadProjectRelease( self, releases, project = False, sourceURL = False, releaseMode = False, relLocation = False ):
     if not project:
       project = self.__projectName
@@ -524,6 +544,7 @@ class ReleaseConfig:
     if not result[ 'OK' ]:
       self.__dbgMsg( "Could not load defaults for project %s" % project )
       return result
+    self.__checkForMirrors( project )
 
     if project not in self.__prjDepends:
       self.__prjDepends[ project ] = {}

@@ -8,7 +8,6 @@
   Report the summary of the staging progress of jobs
 """
 __RCSID__ = "$Id$"
-import DIRAC
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -24,11 +23,13 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
+from DIRAC import exit as DIRACExit
+
 try:
   jobIDs = [int( arg ) for arg in args]
 except:
   print 'DIRAC Job IDs must be integers'
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 client = StorageManagerClient()
@@ -63,7 +64,7 @@ for jobID in jobIDs:
       outStr = "%s\n%s: %s" % ( outStr, 'LastUpdate'.ljust( 8 ), str(metadata['LastUpdate']).ljust( 100 ) )
     outStr = "%s\n----------------------" % outStr
   print outStr
-DIRAC.exit( 0 )
+DIRACExit( 0 )
 
 ''' Example:
 dirac-stager-monitor-jobs.py 5688643 5688644

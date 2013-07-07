@@ -7,7 +7,7 @@
 __RCSID__ = "$Id$"
 
 import sys
-import DIRAC
+
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 

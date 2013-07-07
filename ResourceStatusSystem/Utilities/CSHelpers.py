@@ -8,6 +8,7 @@
 from DIRAC                                       import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Utilities        import Utils
+from DIRAC.ConfigurationSystem.Client.Helpers    import Resources  
 
 __RCSID__ = '$Id:  $'
 
@@ -25,27 +26,29 @@ def getSites():
     Gets all sites from /Resources/Sites
   '''
 
-  _basePath = 'Resources/Sites'
-  
-  sites = []
-  
-  domainNames = gConfig.getSections( _basePath )
-  if not domainNames[ 'OK' ]:
-    return domainNames
-  domainNames = domainNames[ 'Value' ]
-  
-  for domainName in domainNames:
-    domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
-    if not domainSites[ 'OK' ]:
-      return domainSites
-    
-    domainSites = domainSites[ 'Value' ]
-    
-    sites.extend( domainSites )  
+  return Resources.getSites()
 
-  # Remove duplicated ( just in case )
-  sites = list( set ( sites ) )
-  return S_OK( sites )
+#  _basePath = 'Resources/Sites'
+#  
+#  sites = []
+#  
+#  domainNames = gConfig.getSections( _basePath )
+#  if not domainNames[ 'OK' ]:
+#    return domainNames
+#  domainNames = domainNames[ 'Value' ]
+#  
+#  for domainName in domainNames:
+#    domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
+#    if not domainSites[ 'OK' ]:
+#      return domainSites
+#    
+#    domainSites = domainSites[ 'Value' ]
+#    
+#    sites.extend( domainSites )  
+#
+#  # Remove duplicated ( just in case )
+#  sites = list( set ( sites ) )
+#  return S_OK( sites )
 
 def getGOCSites( diracSites = None ):
   
@@ -63,72 +66,7 @@ def getGOCSites( diracSites = None ):
       continue
     gocSites.append( gocSite[ 'Value' ] ) 
   
-  return S_OK( list( set( gocSites ) ) )  
-    
-    
-
-def getDomainSites():
-  '''
-    Gets all sites from /Resources/Sites
-  '''
-
-  _basePath = 'Resources/Sites'
-  
-  sites = {}
-  
-  domainNames = gConfig.getSections( _basePath )
-  if not domainNames[ 'OK' ]:
-    return domainNames
-  domainNames = domainNames[ 'Value' ]
-  
-  for domainName in domainNames:
-    domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
-    if not domainSites[ 'OK' ]:
-      return domainSites
-    
-    domainSites = domainSites[ 'Value' ]
-    
-    sites[ domainName ] = domainSites  
-
-  return S_OK( sites )
-
-def getResources():
-  '''
-    Gets all resources
-  '''
-  
-  resources = []
-  
-  ses = getStorageElements()
-  if ses[ 'OK' ]:
-    resources = resources + ses[ 'Value' ]
-  
-  fts = getFTS()
-  if fts[ 'OK' ]:
-    resources = resources + fts[ 'Value' ]
-  
-  fc = getFileCatalogs()
-  if fc[ 'OK' ]:
-    resources = resources + fc[ 'Value' ]
-  
-  ce = getComputingElements() 
-  if ce[ 'OK' ]:
-    resources = resources + ce[ 'Value' ]
-
-  return S_OK( resources )
-
-def getNodes():
-  '''
-    Gets all nodes
-  '''
-  
-  nodes = []
-  
-  queues = getQueues()
-  if queues[ 'OK' ]:
-    nodes = nodes + queues[ 'Value' ] 
-  
-  return S_OK( nodes )
+  return S_OK( list( set( gocSites ) ) )
 
 ################################################################################
 
@@ -160,15 +98,15 @@ def getStorageElementsHosts( seNames = None ):
       
   return S_OK( list( set( seHosts ) ) )    
   
-def getSEToken( se ):
-  ''' 
-    Get StorageElement token 
-  '''
-  
-  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken'
-  
-  #FIXME: return S_OK, S_ERROR
-  return gConfig.getValue( _basePath % se, '' )
+#def getSEToken( se ):
+#  ''' 
+#    Get StorageElement token 
+#  '''
+#  
+#  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken'
+#  
+#  #FIXME: return S_OK, S_ERROR
+#  return gConfig.getValue( _basePath % se, '' )
 
 def getSEHost( se ):
   ''' 
@@ -224,17 +162,7 @@ def getStorageElementEndpoints( storageElements = None ):
       continue
     storageElementEndpoints.append( seEndpoint[ 'Value' ] )
   
-  return S_OK( list( set( storageElementEndpoints ) ) )     
-  
-def getFTS():
-  '''
-    Gets all storage elements from /Resources/FTSEndpoints
-  '''
-  
-  _basePath = 'Resources/FTSEndpoints'
-    
-  ftsEndpoints = gConfig.getOptions( _basePath )
-  return ftsEndpoints 
+  return S_OK( list( set( storageElementEndpoints ) ) )
 
 def getSpaceTokens():
   ''' Get Space Tokens '''
@@ -253,15 +181,15 @@ def getSpaceTokenEndpoints():
 #    return endpoints[ 'Value' ]
 #  return [] 
 
-def getFileCatalogs():
-  '''
-    Gets all storage elements from /Resources/FileCatalogs
-  '''
-  
-  _basePath = 'Resources/FileCatalogs'
-    
-  fileCatalogs = gConfig.getSections( _basePath )
-  return fileCatalogs 
+#def getFileCatalogs():
+#  '''
+#    Gets all storage elements from /Resources/FileCatalogs
+#  '''
+#  
+#  _basePath = 'Resources/FileCatalogs'
+#    
+#  fileCatalogs = gConfig.getSections( _basePath )
+#  return fileCatalogs 
 
 def getComputingElements():
   '''
@@ -336,75 +264,6 @@ def getSiteStorageElements( siteName ):
       return ses.split( ', ' )
       
   return []
-
-def getQueues():
-  '''
-    Gets all computing elements from /Resources/Sites/<>/<>/CE/Queues
-  '''
-  _basePath = 'Resources/Sites'
-  
-  queues = []
-  
-  domainNames = gConfig.getSections( _basePath )
-  if not domainNames[ 'OK' ]:
-    return domainNames
-  domainNames = domainNames[ 'Value' ]
-  
-  for domainName in domainNames:
-    domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
-    if not domainSites[ 'OK' ]:
-      return domainSites
-    domainSites = domainSites[ 'Value' ]
-    
-    for site in domainSites:
-      siteCEs = gConfig.getSections( '%s/%s/%s/CEs' % ( _basePath, domainName, site ) )
-      if not siteCEs[ 'OK' ]:
-        #return siteCEs
-        gLogger.error( siteCEs[ 'Message' ] )
-        continue
-      siteCEs = siteCEs[ 'Value' ]
-      
-      for siteCE in siteCEs:
-        siteQueue = gConfig.getSections( '%s/%s/%s/CEs/%s/Queues' % ( _basePath, domainName, site, siteCE ) )
-        if not siteQueue[ 'OK' ]:
-          #return siteQueue
-          gLogger.error( siteQueue[ 'Message' ] )
-          continue
-        siteQueue = siteQueue[ 'Value' ]
-        
-        queues.extend( siteQueue )  
-
-  # Remove duplicated ( just in case )
-  queues = list( set ( queues ) )
-    
-  return S_OK( queues ) 
-
-## /Registry ###################################################################
-
-def getRegistryUsers():
-  '''
-    Gets all users from /Registry/Users
-  '''
-
-  _basePath = 'Registry/Users' 
-
-  registryUsers = {}
-
-  userNames = gConfig.getSections( _basePath )  
-  if not userNames[ 'OK' ]:
-    return userNames
-  userNames = userNames[ 'Value' ]
-  
-  for userName in userNames:
-    
-    # returns { 'Email' : x, 'DN': y, 'CA' : z }
-    userDetails = gConfig.getOptionsDict( '%s/%s' % ( _basePath, userName ) )
-    if not userDetails[ 'OK' ]:   
-      return userDetails
-    
-    registryUsers[ userName ] = userDetails[ 'Value' ]
-    
-  return S_OK( registryUsers )   
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

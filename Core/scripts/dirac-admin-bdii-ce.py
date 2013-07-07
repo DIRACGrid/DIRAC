@@ -8,7 +8,7 @@
   Check info on BDII for CE
 """
 __RCSID__ = "$Id$"
-import DIRAC
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
@@ -39,7 +39,7 @@ diracAdmin = DiracAdmin()
 result = diracAdmin.getBDIICE( ce, host = host )
 if not result['OK']:
   print result['Message']
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 
 ces = result['Value']
 for ce in ces:

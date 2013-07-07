@@ -35,6 +35,7 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus 
 from types import *
 
 
@@ -949,18 +950,12 @@ class PilotAgentsDB(DB):
       records = new_records
 
     # Get the Site Mask data
-    client = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = client.getSiteMask()
-    if result['OK']:
-      siteMask = result['Value']
-      for r in records:
-        if r[0] in siteMask:
-          r.append('Yes')
-        else:
-          r.append('No')
-    else:
-      for r in records:
-        r.append('Unknown')
+    siteStatus = SiteStatus()
+    for r in records:
+      if siteStatus.isUsableSite( r[0] ):
+        r.append('Yes')
+      else:
+        r.append('No')
 
     finalDict = {}
     finalDict['TotalRecords'] = len(records)
