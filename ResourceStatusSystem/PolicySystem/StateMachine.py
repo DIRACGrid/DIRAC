@@ -142,6 +142,7 @@ class StateMachine( object ):
     :return: S_OK || S_ERROR     
     """
     
+    #FIXME: do we really have to accept None as state ??
     if state is None:
       self.state = state
     elif state in self.states.keys():
@@ -188,6 +189,7 @@ class StateMachine( object ):
     if not candidateState in self.states:
       return S_ERROR( '%s is not a valid state' % candidateState )
 
+    # FIXME: do we need this anymore ?
     if self.state is None:
       return S_OK( candidateState )
     
@@ -265,9 +267,9 @@ class RSSMachine( StateMachine ):
     goes wrong. It is mostly used while sorting policies with method `orderPolicyResults`.
     
     examples:
-      >>> rsm0.levelOfPolicyState( { 'State' : 'Active', 'A' : 'A' } )
+      >>> rsm0.levelOfPolicyState( { 'Status' : 'Active', 'A' : 'A' } )
           5
-      >>> rsm0.levelOfPolicyState( { 'State' : 'Rubbish', 'R' : 'R' } )
+      >>> rsm0.levelOfPolicyState( { 'Status' : 'Rubbish', 'R' : 'R' } )
           -1    
     
     :Parameters:
