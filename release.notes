@@ -1,3 +1,18 @@
+[v6r9p10]
+
+FIX: included fixes from v6r8p24 patch release
+
+*Core
+NEW: StateMachine utility
+
+*DMS
+BUGFIX: in RegisterFile operation handler
+
+*Interfaces
+FIX: Dirac.py - in splitInputData() consider only Active replicas
+
+
+
 [v6r9p9]
 
 *RMS
