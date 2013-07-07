@@ -5,7 +5,7 @@
 
 __RCSID__ = "$Id$"
 
-import types
+from types import ListType, DictType
 
 from DIRAC                              import S_OK, S_ERROR
 from DIRAC.Core.Base.Client             import Client
@@ -24,7 +24,7 @@ class FileCatalogClient(Client):
 #    if res['OK']:
 #      self.available = res['Value']
 
-  def isOK(self,rpc='',url='',timeout=120):
+  def isOK(self,rpc=None,url='',timeout=120):
     if not self.available:
       rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
       res = rpcClient.isOK()
@@ -55,14 +55,14 @@ class FileCatalogClient(Client):
     result = rpcClient.findFilesByMetadata(metaDict,path)
     if not result['OK']:
       return result
-    if type(result['Value']) == types.ListType:
+    if type(result['Value']) == ListType:
       return result
-    elif type(result['Value']) == types.DictType:
+    elif type(result['Value']) == DictType:
       # Process into the lfn list
       fileList = []
-      for dir,fList in result['Value'].items():
+      for dir_,fList in result['Value'].items():
         for f in fList:
-          fileList.append(dir+'/'+f)
+          fileList.append( dir_+'/'+f )
       result['Value'] = fileList    
       return result
     else:
