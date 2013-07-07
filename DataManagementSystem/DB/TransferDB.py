@@ -24,9 +24,10 @@ import time
 import datetime
 import random
 ## from DIRAC
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR, Time
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import intListToString
+from DIRAC.Core.Utilities import Time
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ## it's a magic! 

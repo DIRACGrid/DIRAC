@@ -8,7 +8,7 @@
   Add Site to Active mask for current Setup
 """
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base import Script
 
 Script.registerSwitch( "E:", "email=", "Boolean True/False (True by default)" )
@@ -22,7 +22,7 @@ Script.parseCommandLine( ignoreErrors = True )
 
 from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC                                               import gConfig, gLogger
+from DIRAC                                               import exit as DIRACExit, gConfig, gLogger
 
 import time
 
@@ -51,7 +51,7 @@ setup = gConfig.getValue( '/DIRAC/Setup', '' )
 if not setup:
   print 'ERROR: Could not contact Configuration Service'
   exitCode = 2
-  DIRAC.exit( exitCode )
+  DIRACExit( exitCode )
 
 site = args[0]
 comment = args[1]
@@ -65,7 +65,7 @@ else:
     if not userName['OK']:
       print 'ERROR: Could not obtain current username from proxy'
       exitCode = 2
-      DIRAC.exit( exitCode )
+      DIRACExit( exitCode )
     userName = userName['Value']
     subject = '%s is added in site mask for %s setup' % ( site, setup )
     body = 'Site %s is added to the site mask for %s setup by %s on %s.\n\n' % ( site, setup, userName, time.asctime() )
@@ -82,4 +82,4 @@ else:
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit( exitCode )
+DIRACExit( exitCode )

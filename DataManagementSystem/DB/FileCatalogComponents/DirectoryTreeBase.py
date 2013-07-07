@@ -813,7 +813,7 @@ class DirectoryTreeBase:
             req = 'DELETE FROM FC_DirectoryUsage WHERE SEID=%d AND DirID=%d' % ( seID, dirID )
             result = self.db._update( req )
             if not result['OK']:
-              gLogger( 'Failed to delete entry from FC_DirectoryUsage', result['Message'] )
+              gLogger.error( 'Failed to delete entry from FC_DirectoryUsage', result['Message'] )
         seDict['TotalSize'] = int(totalSize)
         seDict['TotalFiles'] = int(totalFiles)
         successful[path] = seDict
