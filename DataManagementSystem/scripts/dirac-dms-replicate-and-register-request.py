@@ -1,9 +1,7 @@
 #!/bin/env python
 """ create and put 'ReplicateAndRegister' request """
 __RCSID__ = "$Id: $"
-
 import os
-
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
@@ -14,6 +12,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__,
                                      '    targetSE: target SE' ] ) )
 
 def getLFNList( LFNs ):
+  """ get list of LFNs """
   lfnList = []
   if os.path.exists( LFNs ):
      for line in open( LFNs ).readlines():
