@@ -34,6 +34,11 @@ class ARCComputingElement( ComputingElement ):
     self.queue = ''
     self.outputURL = 'gsiftp://localhost'
     self.gridEnv = ''
+    self.ceHost = self.ceName
+    if 'Host' in self.ceParameters:
+      self.ceHost = self.ceParameters['Host']
+    if 'GridEnv' in self.ceParameters:
+      self.gridEnv = self.ceParameters['GridEnv']
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -52,10 +57,10 @@ class ARCComputingElement( ComputingElement ):
     xrslFile = os.fdopen( fd, 'w' )
 
     xrsl = """
-&(executable=%(executable)s)
+&(executable="%(executable)s")
+(inputFiles=(%(executable)s "%(executableFile)s"))
 (stdout="%(diracStamp)s.out")
-(stderr)="%(diracStamp)s.err")
-(inputFiles=(%(executableFile)s "%(executable)s"))
+(stderr="%(diracStamp)s.err")
 (outputFiles=("%(diracStamp)s.out" "") ("%(diracStamp)s.err" ""))
     """ % {
             'executableFile':executableFile,
@@ -69,7 +74,7 @@ class ARCComputingElement( ComputingElement ):
 
   def _reset( self ):
     self.queue = self.ceParameters['Queue']
-    self.gridEnv = self.ceParameters['ARCEnv']
+    self.gridEnv = self.ceParameters['GridEnv']
 
   #############################################################################
   def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
@@ -86,8 +91,8 @@ class ARCComputingElement( ComputingElement ):
     i = 0
     while i < numberOfJobs:
       i += 1
-      xrslName, diracStamp = self.__writeJDL( executableFile )
-      cmd = ['arcsub', '--direct', '-j', self.ceParameters['JobListFile'],
+      xrslName, diracStamp = self.__writeXRSL( executableFile )
+      cmd = ['arcsub', '-j', self.ceParameters['JobListFile'],
              '-c', '%s' % self.ceHost, '%s' % xrslName ]
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
       os.unlink( xrslName )
@@ -96,7 +101,8 @@ class ARCComputingElement( ComputingElement ):
       if result['Value'][0] != 0:
         break
       pilotJobReference = result['Value'][1].strip()
-      if pilotJobReference:
+      if pilotJobReference and pilotJobReference.startswith('Job submitted with jobid:'):
+        pilotJobReference = pilotJobReference.replace('Job submitted with jobid:','').strip()
         batchIDList.append( pilotJobReference )
         stampDict[pilotJobReference] = diracStamp
       else:
@@ -138,7 +144,7 @@ class ARCComputingElement( ComputingElement ):
   def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
-    cmd = ['arcstat', '-c', self.ceHost ]
+    cmd = ['arcstat', '-c', self.ceHost, '-j', self.ceParameters['JobListFile'] ]
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     resultDict = {}
     if not result['OK']:
@@ -182,11 +188,10 @@ class ARCComputingElement( ComputingElement ):
           result = re.match( 'State: \w+ \(([\w|:]+)\)', line )
           if result:
             stateARC = result.groups()[0]
-          ln += 1
-          line = lines[ln].strip()
+          line = lines[ln+1].strip()
           exitCode = None 
           if line.startswith( 'Exit Code' ):
-            line = line.replace( 'Exit Code','' ).strip()
+            line = line.replace( 'Exit Code:','' ).strip()
             exitCode = int( line )
           
           # Evaluate state now
@@ -207,25 +212,36 @@ class ARCComputingElement( ComputingElement ):
               resultDict[jobRef] = "Failed"
           elif stateARC in ['FAILED']:
             resultDict[jobRef] = "Failed"
-          ln += 1
+      elif lines[ln].startswith( "WARNING: Job information not found:" ):
+        jobRef = lines[ln].replace( 'WARNING: Job information not found:', '' ).strip()
+        resultDict[jobRef] = "Scheduled"
+      ln += 1
           
-        return S_OK( resultDict )                      
+    return resultDict                       
 
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
 
     workingDirectory = self.ceParameters['WorkingDirectory']
-    fd, name = tempfile.mkstemp( suffix = '.list', prefix = 'KillJobs_', dir = workingDirectory )
+    fd, name = tempfile.mkstemp( suffix = '.list', prefix = 'StatJobs_', dir = workingDirectory )
     jobListFile = os.fdopen( fd, 'w' )
     
-    jobList = list( jobIDList )
+    jobTmpList = list( jobIDList )
     if type( jobIDList ) in StringTypes:
-      jobList = [ jobIDList ]
-    for job in jobList:
+      jobTmpList = [ jobIDList ]
+
+
+    jobList = []
+    for j in jobTmpList:
+      if ":::" in j:
+        job = j.split(":::")[0] 
+      else:
+        job = j
+      jobList.append( job )
       jobListFile.write( job+'\n' )  
       
-    cmd = ['arcstat','-c',self.ceHost,'-i',name]
+    cmd = ['arcstat','-c',self.ceHost,'-i',name,'-j',self.ceParameters['JobListFile']]
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     os.unlink( name )
     
@@ -245,10 +261,9 @@ class ARCComputingElement( ComputingElement ):
       return  S_ERROR('No job statuses returned')
 
     # If CE does not know about a job, set the status to Unknown
-    for job in jobIDList:
+    for job in jobList:
       if not resultDict.has_key( job ):
         resultDict[job] = 'Unknown'
-
     return S_OK( resultDict )
 
   def getJobOutput( self, jobID, localDir = None ):
@@ -264,11 +279,15 @@ class ARCComputingElement( ComputingElement ):
     if not stamp:
       return S_ERROR( 'Pilot stamp not defined for %s' % pilotRef )
 
-    workingDirectory = self.ceParameters['WorkingDirectory']
+    arcID = os.path.basename(pilotRef)
+    if "WorkingDirectory" in self.ceParameters:    
+      workingDirectory = os.path.join( self.ceParameters['WorkingDirectory'], arcID )
+    else:
+      workingDirectory = arcID  
     outFileName = os.path.join( workingDirectory, '%s.out' % stamp )
     errFileName = os.path.join( workingDirectory, '%s.err' % stamp )
 
-    cmd = ['arcget', '-c', self.ceHost, '-D', outFileName ]
+    cmd = ['arcget', '-j', self.ceParameters['JobListFile'], pilotRef ]
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     output = ''
     if result['OK']:
@@ -290,4 +309,3 @@ class ARCComputingElement( ComputingElement ):
     return S_OK( ( output, error ) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
-
