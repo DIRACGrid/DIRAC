@@ -18,8 +18,9 @@ from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModul
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.ModuleFactory                    import ModuleFactory
+from DIRAC.Core.Utilities                                  import List 
 from DIRAC.WorkloadManagementSystem.Client.JobDescription  import JobDescription
-from DIRAC                                                 import S_OK, S_ERROR, List
+from DIRAC                                                 import S_OK, S_ERROR
 
 OPTIMIZER_NAME = 'JobPath'
 

@@ -10,9 +10,9 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
+from DIRAC.Core.Utilities.Subprocess                     import shellCall, systemCall
 from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
+from DIRAC                                               import rootPath
 from DIRAC                                               import gConfig
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 

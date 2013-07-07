@@ -20,8 +20,7 @@
 """
 __RCSID__ = "$Id$"
 
-import DIRAC
-from DIRAC                                                   import gLogger
+from DIRAC                                                   import gLogger, exit as DIRACExit
 from DIRAC.Core.Base                                         import Script
 from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getPropertiesForGroup
@@ -66,31 +65,31 @@ args = Script.getPositionalArgs()
 result = getProxyInfo()
 if not result[ "OK" ]:
   gLogger.error( "Failed to get proxy information", result[ "Message" ] )
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 proxy = result[ "Value" ]
 if proxy[ "secondsLeft" ] < 1:
   gLogger.error( "Your proxy has expired, please create new one" )
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 group = proxy[ "group" ]
 if not "CSAdministrator" in getPropertiesForGroup( group ):
    gLogger.error( "You must be CSAdministrator user to execute this script" )
    gLogger.notice( "Please issue 'dirac-proxy-init -g [group with CSAdministrator Property]'" )
-   DIRAC.exit( 2 )
+   DIRACExit( 2 )
 
 cs = CSAPI()
 result = cs.getCurrentCFG()
 if not result[ "OK" ]:
   gLogger.error( "Failed to get copy of CS", result[ "Message" ] )
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 cfg = result[ "Value" ]
 
 if not cfg.isSection( "Resources" ):
   gLogger.error( "Section '/Resources' is absent in CS" )
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 
 if not cfg.isSection( "Resources/Sites" ):
   gLogger.error( "Subsection '/Resources/Sites' is absent in CS" )
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 
 
 if args and len( args ) > 0:
@@ -114,11 +113,11 @@ for i in resultList:
 
 if not hasRun:
   gLogger.notice( "Failed to find suitable subsections with site names to sort" )
-  DIRAC.exit( 0 )
+  DIRACExit( 0 )
 
 if not isDirty:
   gLogger.notice( "Nothing to do, site names are already sorted" )
-  DIRAC.exit( 0 )
+  DIRACExit( 0 )
 
 timestamp = toString( dateTime() )
 stamp = "Site names are sorted by %s script at %s" % ( Script.scriptName , timestamp )
@@ -127,6 +126,6 @@ cs.setOptionComment( "/Resources/Sites" , stamp )
 result = cs.commit()
 if not result[ "OK" ]:
   gLogger.error( "Failed to commit changes to CS", result[ "Message" ] )
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 gLogger.notice( "Site names are sorted and committed to CS" )
-DIRAC.exit( 0 )
+DIRACExit( 0 )

@@ -8,7 +8,7 @@
   Check info on BDII for VO view of CE
 """
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
@@ -22,6 +22,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
 
@@ -52,7 +53,7 @@ diracAdmin = DiracAdmin()
 result = diracAdmin.getBDIICEVOView( ceName, useVO = vo, host = host )
 if not result['OK']:
   print result['Message']
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 
 
 ces = result['Value']

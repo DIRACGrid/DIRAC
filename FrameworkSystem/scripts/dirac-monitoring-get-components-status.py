@@ -4,7 +4,8 @@
 ########################################################################
 __RCSID__ = "$Id$"
 import sys
-import DIRAC
+
+from DIRAC import gMonitor
 from DIRAC.Core.Base import Script
 
 Script.parseCommandLine( ignoreErrors = True )
@@ -12,7 +13,7 @@ args = Script.getPositionalArgs()
 
 fieldsToShow = ( 'ComponentName', 'Type', 'Host', 'Port', 'Status', 'Message' )
 
-result = DIRAC.gMonitor.getComponentsStatusWebFormatted( sortingList = [ [ 'ComponentName', 'ASC' ] ] )
+result = gMonitor.getComponentsStatusWebFormatted( sortingList = [ [ 'ComponentName', 'ASC' ] ] )
 if not result[ 'OK' ]:
   print "ERROR: %s" % result[ 'Message' ]
   sys.exit( 1 )

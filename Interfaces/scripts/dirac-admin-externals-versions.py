@@ -5,13 +5,14 @@
 # Author :  Stuart Paterson
 ########################################################################
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base import Script
 
 Script.parseCommandLine( ignoreErrors = True )
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 diracAdmin.getExternalPackageVersions()
-DIRAC.exit( 0 )
+DIRACExit( 0 )
 
