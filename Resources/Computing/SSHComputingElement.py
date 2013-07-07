@@ -372,7 +372,7 @@ class SSHComputingElement( ComputingElement ):
         return S_ERROR( 'Failed job submission, reason: %s' % message )   
       else:
         batchIDs = outputLines[1:]
-        jobIDs = [ self.ceType.lower()+'://'+submitHost+'/'+id for id in batchIDs ]    
+        jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+id for id in batchIDs ]    
     else:
       return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
 
@@ -595,7 +595,7 @@ class SSHComputingElement( ComputingElement ):
     else:
       tempDir = localDir
 
-    ssh = SSH( host = host, parameters = self.ceParameters )
+    ssh = SSH( parameters = self.ceParameters )
     result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobStamp ), '%s' % outputFile, upload = False )
     if not result['OK']:
       return result

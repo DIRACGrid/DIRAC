@@ -58,8 +58,9 @@ def getSiteSEMapping( gridName = '' ):
       ses = opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] )
       if not ses:
         continue
-      if gridName and site not in sites:
-        continue
+      if gridName:
+        if gridName != site.split( '.' )[0]:
+          continue
       if site not in siteSEMapping:
         siteSEMapping[site] = []
       for se in ses:
@@ -92,7 +93,7 @@ def getSESiteMapping( gridName = '' ):
   gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
-    if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
+    if not sites['OK']:  # gConfig returns S_ERROR for empty sections until version
       gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
       return sites
     if sites:
@@ -226,7 +227,7 @@ def getSEsForCountry( country ):
   return S_OK( res['Value'].values() )
 
 #############################################################################
-def getSitesGroupedByTierLevel(siteName=''):
+def getSitesGroupedByTierLevel( siteName = '' ):
   """
     It builds a dictionary which key is the tier level obtained from the CS using the MoUTierLevel attribute.
     By default the Tier level is 3. The Tier level retrieved from the CS can be Tier0, Tier1, Tier2, Tier3
@@ -234,43 +235,43 @@ def getSitesGroupedByTierLevel(siteName=''):
 
   tierSiteMapping = {}
 
-  gridTypes = gConfig.getSections('/Resources/Sites/')
+  gridTypes = gConfig.getSections( '/Resources/Sites/' )
   if not gridTypes['OK']:
-    gLogger.warn('Problem retrieving sections in /Resources/Sites')
+    gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
     return gridTypes
 
   gridTypes = gridTypes['Value']
 
-  gLogger.debug('Grid Types are: %s' % (', '.join(gridTypes)))
+  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
-    sites = gConfig.getSections('/Resources/Sites/%s' % grid)
-    if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
-      gLogger.warn('Problem retrieving /Resources/Sites/%s section' % grid)
+    sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
+    if not sites['OK']:  # gConfig returns S_ERROR for empty sections until version
+      gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
       return sites
     if sites:
       if siteName:
         if siteName in sites['Value']:
-          tierLevel = gConfig.getValue('/Resources/Sites/%s/%s/MoUTierLevel' % (grid, siteName), 3)
+          tierLevel = gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, siteName ), 3 )
           tierkey = 'Tier%d' % tierLevel
           if tierkey not in tierSiteMapping:
             tierSiteMapping[tierkey] = []
           tierSiteMapping[tierkey] += [siteName]
       else:
         for candidate in sites['Value']:
-          tierLevel = gConfig.getValue('/Resources/Sites/%s/%s/MoUTierLevel' % (grid, candidate), 3)
+          tierLevel = gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, candidate ), 3 )
           tierkey = 'Tier%d' % tierLevel
           if tierkey not in tierSiteMapping:
             tierSiteMapping[tierkey] = []
           tierSiteMapping[tierkey] += [candidate]
-  return S_OK(tierSiteMapping)
+  return S_OK( tierSiteMapping )
 
 #############################################################################
-def getTier1WithAttachedTier2(siteName=''):
+def getTier1WithAttachedTier2( siteName = '' ):
   """ this method iterates on the T2 sites and check the SE of the T2.
       In case a SE is found then the T2 is attached to the corresponding T1
   """
   tier1andTier2Maps = {}
-  tiers = getSitesGroupedByTierLevel(siteName)
+  tiers = getSitesGroupedByTierLevel( siteName )
   if not tiers['OK']:
     return tiers
 
@@ -288,41 +289,41 @@ def getTier1WithAttachedTier2(siteName=''):
 
   tier2s = tier2s['Value']['Tier2']
   for site in tier1:
-    t1SE = getSEsForSite(site)
+    t1SE = getSEsForSite( site )
     if not t1SE['OK']:
       return t1SE
 
     t1SE = t1SE['Value']
     for tier2 in tier2s:
-      t2SE = getSEsForSite(tier2)
+      t2SE = getSEsForSite( tier2 )
       if not t2SE['OK']:
         return t2SE
 
       t2SE = t2SE['Value']
-      if len(t2SE) > 0:
-        if __isOneSEFound(t1SE, t2SE):
+      if len( t2SE ) > 0:
+        if __isOneSEFound( t1SE, t2SE ):
           if site not in tier1andTier2Maps:
             tier1andTier2Maps[site] = []
           tier1andTier2Maps[site] += [tier2]
 
-  return S_OK(tier1andTier2Maps)
+  return S_OK( tier1andTier2Maps )
 
 #############################################################################
-def getTier1WithTier2(siteName=''):
+def getTier1WithTier2( siteName = '' ):
   """
   It returns the T1 sites with the attached T2 using the SiteLocalSEMapping
   """
   tier1andTier2Maps = {}
-  retVal = Operations().getOptionsDict('SiteLocalSEMapping')
+  retVal = Operations().getOptionsDict( 'SiteLocalSEMapping' )
   if not retVal['OK']:
     return retVal
   else:
     storages = retVal['Value']
 
-  tiers = getSitesGroupedByTierLevel(siteName)
+  tiers = getSitesGroupedByTierLevel( siteName )
   if not tiers['OK']:
     return tiers
-  tier1andTier2Maps = {} # initialize the dictionary with T1 sites.
+  tier1andTier2Maps = {}  # initialize the dictionary with T1 sites.
   # no T2 associated to a T2 by default.
   if 'Tier0' in tiers['Value']:
     for site in tiers['Value']['Tier0']:
@@ -333,7 +334,7 @@ def getTier1WithTier2(siteName=''):
       tier1andTier2Maps[site] = []
 
   for site in storages:
-    sites = getSitesForSE(storages[site])
+    sites = getSitesForSE( storages[site] )
     if not sites['OK']:
       return sites
 
@@ -343,21 +344,21 @@ def getTier1WithTier2(siteName=''):
         # it associates the tier2 site the corresponding Tier 1 site.
         tier1andTier2Maps[i] += [site]
 
-  return S_OK(tier1andTier2Maps)
+  return S_OK( tier1andTier2Maps )
 
 #############################################################################
-def __isOneSEFound(se1, se2):
+def __isOneSEFound( se1, se2 ):
   """
   It compares two list which contains different SEs. The two list not have to be identical,
   because we never attach a Tier2 all the SEs which provided by a Tier1.
   """
-  if len(se1) >= len(se2):
+  if len( se1 ) >= len( se2 ):
     for i in se2:
       for j in se1:
         if i == j:
           return True
     return False
-  elif len(se1) < len(se2):
+  elif len( se1 ) < len( se2 ):
     for i in se1:
       for j in se2:
         if i == j :
