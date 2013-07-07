@@ -1,3 +1,17 @@
+[v6r8p24]
+
+FIX: included fixes from v6r7p39 patch release
+
+*Core
+FIX: SiteSEMapping was returning wrong info
+
+*DMS
+FIX: FTSRequest - choose explicitly target FTS point for RAL and CERN
+BUGFIX: StrategyHandler - wrong return value in __getRWAccessForSE()
+
+*Resources
+CHANGE: SRM2Storage - do not account gfal_ls operations any more
+
 [v6r8p23]
 
 FIX: included fixes from v6r7p37 patch release
