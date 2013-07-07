@@ -267,7 +267,6 @@ class RequestTask( object ):
     :param cls: class reference
     """
     if not cls.__requestClient:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
       from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
       cls.__requestClient = RequestClient()
     return cls.__requestClient
