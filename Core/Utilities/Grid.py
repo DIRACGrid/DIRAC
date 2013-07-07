@@ -20,7 +20,8 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
     gridEnvScript = Local.gridEnv()
 
   if gridEnvScript:
-    ret = sourceEnv( 10, [gridEnvScript] )
+    command = gridEnvScript.split()
+    ret = sourceEnv( 10, command )
     if not ret['OK']:
       return S_ERROR( 'Failed sourcing GridEnv: %s' % ret['Message'] )
     gridEnv = ret['outputEnv']

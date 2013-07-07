@@ -58,8 +58,9 @@ def getSiteSEMapping( gridName = '' ):
       ses = opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] )
       if not ses:
         continue
-      if gridName and site not in sites:
-        continue
+      if gridName:
+        if gridName != site.split( '.' )[0]:
+          continue
       if site not in siteSEMapping:
         siteSEMapping[site] = []
       for se in ses:
@@ -92,7 +93,7 @@ def getSESiteMapping( gridName = '' ):
   gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
-    if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
+    if not sites['OK']:  # gConfig returns S_ERROR for empty sections until version
       gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
       return sites
     if sites:
@@ -179,3 +180,4 @@ def getSEsForCountry( country ):
   if not res['OK']:
     return S_ERROR( 'Failed to obtain AssociatedSEs for %s' % country )
   return S_OK( res['Value'].values() )
+

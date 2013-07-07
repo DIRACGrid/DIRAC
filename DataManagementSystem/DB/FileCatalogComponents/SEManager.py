@@ -171,6 +171,14 @@ class SEManagerDB(SEManagerBase):
     seDict = result['Value']
     self.db.seDefinitions[seID]['SEDict'] = seDict
     if seDict:
+      # A.T. Ports can be multiple, this can be better done using the Storage plugin
+      # to provide the replica prefix to keep implementations in one place
+      if 'Port' in seDict:
+        ports = seDict['Port']
+        if ',' in ports:
+          portList = [ x.strip() for x in ports.split(',') ]
+          random.shuffle( portList )
+          seDict['Port'] = portList[0]  
       tmpDict = dict(seDict)
       tmpDict['FileName'] = ''
       result = pfnunparse(tmpDict)

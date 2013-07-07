@@ -80,6 +80,24 @@ NEW: XXXStorage - added getCurrentStatus() method
 NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
      dirac-stager-monitor-requests, dirac-stager-show-stats
 
+[v6r9p10]
+
+FIX: included fixes from v6r8p24 patch release
+
+*Core
+NEW: StateMachine utility
+
+*DMS
+BUGFIX: in RegisterFile operation handler
+
+*Interfaces
+FIX: Dirac.py - in splitInputData() consider only Active replicas
+
+[v6r9p9]
+
+*RMS
+FIX: RequestDB - added getRequestFileStatus(), getRequestName() methods
+
 [v6r9p8]
 
 *DMS
@@ -171,6 +189,20 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
+
+[v6r8p24]
+
+FIX: included fixes from v6r7p39 patch release
+
+*Core
+FIX: SiteSEMapping was returning wrong info
+
+*DMS
+FIX: FTSRequest - choose explicitly target FTS point for RAL and CERN
+BUGFIX: StrategyHandler - wrong return value in __getRWAccessForSE()
+
+*Resources
+CHANGE: SRM2Storage - do not account gfal_ls operations any more
 
 [v6r8p23]
 
@@ -404,6 +436,31 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p39]
+
+*Core
+CHANGE: Grid - in executeGridCommand() allow environment script with arguments needed for ARC client
+
+*DMS
+FIX: DFC SEManager - DIP Storage can have a list of ports now
+
+*Resources
+FIX: ARCComputingElement - few fixes after debugging
+
+[v6r7p38]
+
+*Core
+NEW: DISET FileHelper, TransferClient - possibility to switch off check sum
+
+*Resources
+NEW: ARCComputingElement - first version
+NEW: StorageFactory - possibility to pass extra protocol parameters to storage object
+NEW: DIPStorage - added CheckSum configuration option
+BUGFIX: SSHComputingElement - use CE name in the pilot reference construction
+
+*WMS
+FIX: StalledJobAgent - if ExecTime < CPUTime make it equal to CPUTime
 
 [v6r7p37]
 

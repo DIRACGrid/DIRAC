@@ -51,7 +51,15 @@ class DIPStorage( StorageBase ):
 
     self.url = protocol + "://" + host + ":" + self.port + wspath
     self.cwd = ''
+    self.checkSum = "CheckSum"
     self.isok = True
+
+  def setParameters( self, parameters ):
+    """ Applying extra storage parameters
+    """
+    if "CheckSum" in parameters and parameters['CheckSum'].lower() in ['no','false','off']:
+      self.checkSum = "NoCheckSum"      
+    return S_OK()  
 
   ################################################################################
   #
@@ -210,7 +218,7 @@ class DIPStorage( StorageBase ):
       gLogger.error( errStr, src_file )
       return S_ERROR( errStr )
     transferClient = TransferClient( self.url )
-    res = transferClient.sendFile( src_file, dest_url )
+    res = transferClient.sendFile( src_file, dest_url, token=self.checkSum )
     if localCache:
       os.unlink( src_file )
     if res['OK']:
@@ -244,7 +252,7 @@ class DIPStorage( StorageBase ):
 
   def __getFile( self, src_url, dest_file ):
     transferClient = TransferClient( self.url )
-    res = transferClient.receiveFile( dest_file, src_url )
+    res = transferClient.receiveFile( dest_file, src_url, token=self.checkSum )
     if not res['OK']:
       return res
     if not os.path.exists( dest_file ):
