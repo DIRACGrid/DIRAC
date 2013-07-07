@@ -1726,7 +1726,7 @@ class SRM2Storage( StorageBase ):
         gfalDict['srmv2_lsoffset'] = iteration * step
         iteration += 1
         res = self.__gfal_operation_wrapper( 'gfal_ls', gfalDict )
-        gDataStoreClient.addRegister( res['AccountingOperation'] )
+        # gDataStoreClient.addRegister( res['AccountingOperation'] )
         if not res['OK']:
           if re.search( '\[SE\]\[Ls\]\[SRM_FAILURE\]', res['Message'] ):
             allObtained = True
