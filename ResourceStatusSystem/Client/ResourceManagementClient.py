@@ -268,22 +268,43 @@ class ResourceManagementClient( object ):
 
   # JobCache Methods ...........................................................
 
-  def selectJobCache( self, site = None, maskStatus = None, efficiency = None, 
-                      status = None, lastCheckTime = None, meta = None ):
+  def selectJobCache( self, site = None, timespan = None, checking = None, 
+                      completed = None, done = None, failed = None, 
+                      killed = None, matched = None, received = None,
+                      running = None, staging = None, stalled = None, waiting = None, 
+                      lastCheckTime = None, meta = None ):
     '''
     Gets from JobCache all rows that match the parameters given.
     
     :Parameters:
       **site** - `[, string, list ]`
-        name of the site element 
-      **maskStatus** - `[, string, list ]`
-        maskStatus for the site
-      **efficiency** - `[, float, list ]`
-        job efficiency ( successful / total )
-      **status** - `[, string, list ]`
-        status for the site computed  
+        name(s) of the site(s)
+      **timespan** - `[, int, list ]`
+        number of seconds of the considered timespan  
+      **checking** - `[, int, list ]`
+        number of checking jobs within the range
+      **completed** - `[, int, list ]`
+        number of completed jobs within the range
+      **done** - `[, int, list ]`
+        number of done jobs within the range
+      **failed** - `[, int, list ]`
+        number of failed jobs within the range
+      **killed** - `[, int, list ]`
+        number of killed jobs within the range
+      **matched** - `[, int, list ]`
+        number of matched jobs within the range
+      **received** - `[, int, list ]`
+        number of received jobs within the range
+      **running** - `[, int, list ]`
+        number of running jobs within the range                         
+      **staging** - `[, int, list ]`
+        number of staging jobs within the range  
+      **stalled** - `[, int, list ]`
+        number of stalled jobs within the range  
+      **waiting** - `[, int, list ]`
+        number of waiting jobs within the range
       **lastCheckTime** - `[, datetime, list ]`
-        time-stamp setting last time the result was checked
+        measure calculated
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
@@ -295,22 +316,43 @@ class ResourceManagementClient( object ):
     return self._query( 'select', 'JobCache', locals() )
   
   
-  def deleteJobCache( self, site = None, maskStatus = None, efficiency = None, 
-                      status = None, lastCheckTime = None, meta = None ):
+  def deleteJobCache( self, site = None, timespan = None, checking = None, 
+                      completed = None, done = None, failed = None, 
+                      killed = None, matched = None, received = None,
+                      running = None, staging = None, stalled = None, waiting = None, 
+                      lastCheckTime = None, meta = None ):
     '''
-    Deletes from JobCache all rows that match the parameters given.
+    Deletes from PilotCache all rows that match the parameters given.
     
     :Parameters:
       **site** - `[, string, list ]`
-        name of the site element 
-      **maskStatus** - `[, string, list ]`
-        maskStatus for the site
-      **efficiency** - `[, float, list ]`
-        job efficiency ( successful / total )
-      **status** - `[, string, list ]`
-        status for the site computed  
+        name(s) of the site(s)
+      **timespan** - `[, int, list ]`
+        number of seconds of the considered timespan  
+      **checking** - `[, int, list ]`
+        number of checking jobs within the range
+      **completed** - `[, int, list ]`
+        number of completed jobs within the range
+      **done** - `[, int, list ]`
+        number of done jobs within the range
+      **failed** - `[, int, list ]`
+        number of failed jobs within the range
+      **killed** - `[, int, list ]`
+        number of killed jobs within the range
+      **matched** - `[, int, list ]`
+        number of matched jobs within the range
+      **received** - `[, int, list ]`
+        number of received jobs within the range
+      **running** - `[, int, list ]`
+        number of running jobs within the range                         
+      **staging** - `[, int, list ]`
+        number of staging jobs within the range  
+      **stalled** - `[, int, list ]`
+        number of stalled jobs within the range  
+      **waiting** - `[, int, list ]`
+        number of waiting jobs within the range
       **lastCheckTime** - `[, datetime, list ]`
-        time-stamp setting last time the result was checked
+        measure calculated
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
@@ -322,29 +364,50 @@ class ResourceManagementClient( object ):
     return self._query( 'delete', 'JobCache', locals() )
   
   
-  def addOrModifyJobCache( self, site = None, maskStatus = None, efficiency = None, 
-                           status = None, lastCheckTime = None, meta = None ):
+  def addOrModifyJobCache( self, site = None, timespan = None, checking = None, 
+                           completed = None, done = None, failed = None, 
+                           killed = None, matched = None, received = None,
+                           running = None, staging = None, stalled = None, 
+                           waiting = None, lastCheckTime = None, meta = None ):
     '''
-    Adds or updates-if-duplicated to JobCache. Using `site` to query 
-    the database, decides whether to insert or update the table.
+    Adds or updates-if-duplicated to JobCache. Using `site` and `timespan`
+    to query the database, decides whether to insert or update the table.
     
     :Parameters:
       **site** - `[, string, list ]`
-        name of the site element 
-      **maskStatus** - `[, string, list ]`
-        maskStatus for the site
-      **efficiency** - `[, float, list ]`
-        job efficiency ( successful / total )
-      **status** - `[, string, list ]`
-        status for the site computed  
+        name(s) of the site(s)
+      **timespan** - `[, int, list ]`
+        number of seconds of the considered timespan  
+      **checking** - `[, int, list ]`
+        number of checking jobs within the range
+      **completed** - `[, int, list ]`
+        number of completed jobs within the range
+      **done** - `[, int, list ]`
+        number of done jobs within the range
+      **failed** - `[, int, list ]`
+        number of failed jobs within the range
+      **killed** - `[, int, list ]`
+        number of killed jobs within the range
+      **matched** - `[, int, list ]`
+        number of matched jobs within the range
+      **received** - `[, int, list ]`
+        number of received jobs within the range
+      **running** - `[, int, list ]`
+        number of running jobs within the range                         
+      **staging** - `[, int, list ]`
+        number of staging jobs within the range  
+      **stalled** - `[, int, list ]`
+        number of stalled jobs within the range  
+      **waiting** - `[, int, list ]`
+        number of waiting jobs within the range
       **lastCheckTime** - `[, datetime, list ]`
-        time-stamp setting last time the result was checked
+        measure calculated
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''
     # Unused argument
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
@@ -436,13 +499,16 @@ class ResourceManagementClient( object ):
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'TransferCache', locals() )
 
+
   # PilotCache Methods .........................................................
 
-  def selectPilotCache( self, site = None, cE = None, pilotsPerJob = None, 
-                        pilotJobEff = None, status = None, lastCheckTime = None,
-                        meta = None ): 
+  def selectPilotCache( self, cE = None, timespan = None, scheduled = None, 
+                        waiting = None, submitted = None, running = None, 
+                        done = None, aborted = None, cancelled = None,
+                        deleted = None, failed = None, held = None, killed = None,
+                        stalled = None, lastCheckTime = None, meta = None ):
     '''
-    Gets from TransferCache all rows that match the parameters given.
+    Gets from PilotCache all rows that match the parameters given.
     
     :Parameters:
       **cE** - `[, string, list ]`
@@ -485,9 +551,12 @@ class ResourceManagementClient( object ):
     # pylint: disable=W0613
     return self._query( 'select', 'PilotCache', locals() )
   
-  def deletePilotCache( self, site = None, cE = None, pilotsPerJob = None, 
-                        pilotJobEff = None, status = None, lastCheckTime = None,
-                        meta = None ):
+  
+  def deletePilotCache( self, cE = None, timespan = None, scheduled = None, 
+                        waiting = None, submitted = None, running = None, 
+                        done = None, aborted = None, cancelled = None,
+                        deleted = None, failed = None, held = None, killed = None,
+                        stalled = None, lastCheckTime = None, meta = None ):
     '''
     Deletes from PilotCache all rows that match the parameters given.
     
@@ -533,11 +602,13 @@ class ResourceManagementClient( object ):
     return self._query( 'delete', 'PilotCache', locals() )
   
   
-  def addOrModifyPilotCache( self, site = None, cE = None, pilotsPerJob = None, 
-                             pilotJobEff = None, status = None, lastCheckTime = None,
-                             meta = None ):
+  def addOrModifyPilotCache( self, cE = None, timespan = None, scheduled = None, 
+                             waiting = None, submitted = None, running = None, 
+                             done = None, aborted = None, cancelled = None,
+                             deleted = None, failed = None, held = None, killed = None,
+                             stalled = None, lastCheckTime = None, meta = None ):
     '''
-    Adds or updates-if-duplicated to PilotCache. Using `site` and `cE`
+    Adds or updates-if-duplicated to PilotCache. Using `cE` and `timespan`
     to query the database, decides whether to insert or update the table.
     
     :Parameters:

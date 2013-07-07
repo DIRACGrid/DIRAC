@@ -60,15 +60,25 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'GocSite' ]
                                 }
 
+
   _tablesDB[ 'JobCache' ] = { 'Fields' :
                       {
                        'Site'          : 'VARCHAR(64) NOT NULL',
-                       'MaskStatus'    : 'VARCHAR(32) NOT NULL',    
-                       'Efficiency'    : 'DOUBLE NOT NULL DEFAULT 0',
-                       'Status'        : 'VARCHAR(16) NOT NULL',
-                       'LastCheckTime' : 'DATETIME NOT NULL'                       
+                       'Timespan'      : 'INTEGER NOT NULL',
+                       'Checking'      : 'INTEGER NOT NULL DEFAULT 0',
+                       'Completed'     : 'INTEGER NOT NULL DEFAULT 0',
+                       'Done'          : 'INTEGER NOT NULL DEFAULT 0',
+                       'Failed'        : 'INTEGER NOT NULL DEFAULT 0',
+                       'Killed'        : 'INTEGER NOT NULL DEFAULT 0',
+                       'Matched'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Received'      : 'INTEGER NOT NULL DEFAULT 0',
+                       'Running'       : 'INTEGER NOT NULL DEFAULT 0',                       
+                       'Staging'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Stalled'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Waiting'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'LastCheckTime' : 'DATETIME NOT NULL'
                       },
-                      'PrimaryKey' : [ 'Site' ]
+                      'PrimaryKey' : [ 'Site', 'Timespan' ]
                                 }
 
   _tablesDB[ 'PilotCache' ] = { 'Fields' :
