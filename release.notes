@@ -18,9 +18,15 @@ FIX: dirac-install - update creation of bashrc/cshrc to allow multiplatform inst
 NEW: InstallTools - check inheritance of modules to be loaded to determine their types;
      executors can now be handled by dirac-setup-site
 FIX: LocalConfiguration - allow '-' character in long script options, e.g. "--long-script-option"     
+CHANGE: Removed "import *" from DIRAC.__init__
+NEW: dirac-install allows projects to define mirrors from where to download other projects 
+     (DIRAC mirrors for instance)
 
 *Accounting
 FIX: AccountingDB - align properly days with MySQL bucketing. Closes #1219
+FIX: DataStoreClient - make a deep copy of the records' values
+NEW: Accounting selectors will allow registered users to choose from all possible values 
+     except from users and groups
 
 *Framework
 FIX: ProxyDB - prevent duplicate key errors on writing VOMSProxies to DB. Closes #1228
