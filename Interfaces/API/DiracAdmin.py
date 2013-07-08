@@ -11,7 +11,7 @@ from DIRAC.Core.Base.API                                      import API
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources       import getSites
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources       import getSites, getSiteFullNames
 from DIRAC.Core.DISET.RPCClient                               import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
@@ -204,6 +204,13 @@ class DiracAdmin( API ):
 
     """
     
+    mask = self.getSiteMask()
+    if not mask['OK']:
+      return mask
+    siteMask = mask['Value']
+    if site in siteMask:
+      return S_ERROR( 'Site %s already in mask of allowed sites' % site )
+    
     result = self.__changeSiteStatus( site, comment, 'ComputingAccess', 
                                       'Active', printOutput=printOutput)
     if printOutput:
@@ -222,13 +229,6 @@ class DiracAdmin( API ):
     result = self.__checkSiteIsValid( site )
     if not result['OK']:
       return result
-
-    mask = self.getSiteMask()
-    if not mask['OK']:
-      return mask
-    siteMask = mask['Value']
-    if site in siteMask:
-      return S_ERROR( 'Site %s already in mask of allowed sites' % site )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.allowSite( site, comment )
@@ -271,12 +271,20 @@ class DiracAdmin( API ):
     rssClient = ResourceStatusClient()
     result = rssClient.selectStatusElement( 'Site', 'History', name = site, 
                                             statusType = 'ComputingAccess' )
+    
     if not result['OK']:
       return result
 
-    if site:
-      if not result['Value'].has_key( site ):
-        return S_ERROR( 'Site mask information not available for %s' % ( site ) )
+    siteDict = {}
+    for logTuple in result['Value']:
+      status,reason,siteName,dateEffective,dateTokenExpiration,eType,sType,eID,lastCheckTime,author = logTuple
+      result = getSiteFullNames( siteName )
+      if not result['OK']:
+        continue
+      for sName in result['Value']:
+        if site is None or (site and site == sName):
+          siteDict.setdefault( sName, [] )
+          siteDict[sName].append( (status,reason,dateEffective,author,dateTokenExpiration) )
 
     if printOutput:
       if site:
@@ -284,7 +292,6 @@ class DiracAdmin( API ):
       else:
         print '\nAll Site Mask Logging Info\n'
 
-      siteDict = result['Value']
       for site, tupleList in siteDict.items():
         if not site:
           print '\n===> %s\n' % site
@@ -292,7 +299,8 @@ class DiracAdmin( API ):
           print str( tup[0] ).ljust( 8 ) + str( tup[1] ).ljust( 20 ) + \
                '( ' + str( tup[2] ).ljust( len( str( tup[2] ) ) ) + ' )  "' + str( tup[3] ) + '"'
         print ' '
-    return result
+        
+    return S_OK( siteDict )
 
   #############################################################################
   def banSiteFromMask( self, site, comment, printOutput = False ):
