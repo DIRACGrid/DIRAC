@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleto
 from DIRAC.ResourceStatusSystem.Utilities.ElementStatus     import ElementStatus
 from DIRAC.ResourceStatusSystem.Utilities.RSSCache          import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getSiteNamesDict, getSiteFullNames
 
 __RCSID__ = '$Id: $'
 
@@ -80,13 +81,29 @@ class SiteStatus( ElementStatus ):
     
     :return: S_OK() || S_ERROR()                 
     """
+    siteDict = {}
+    siteNamesResolved = siteNames
+    if siteNamesResolved is not None:
+      result = getSiteNamesDict( siteNames )
+      if not result['OK']:
+        return result
+      siteDict = result['Value']
+      siteNamesResolved = list( set( siteDict.values() ) )  
     
-    cacheMatch = self.siteCache.match( siteNames, statusTypes )
+    result = self.siteCache.match( siteNames, statusTypes )
 
     self.log.debug( 'getSiteStatus' )
-    self.log.debug( cacheMatch )
+    self.log.debug( result )
     
-    return cacheMatch        
+    if not result['OK']:
+      return result
+    if not siteDict:
+      return result
+    
+    resultDict = {}
+    for key in siteDict:
+      resultDict[key] = result['Value'][siteDict[key]]
+    return S_OK( resultDict )
 
   def getSiteStatus( self, siteName, statusType ):
     """
@@ -159,7 +176,49 @@ class SiteStatus( ElementStatus ):
     :return: S_OK() || S_ERROR()
     """
     
-    return self.getUsableElements( 'Site', statusType )
+    result = self.getUsableElements( 'Site', statusType )
+    if not result['OK']:
+      return result
+    
+    resultList = []
+    for site in result['Value']:
+      resultNames = getSiteFullNames( site )
+      if result['OK']:
+        resultList += resultNames['Value']
+        
+    return S_OK( resultList )    
+  
+  def getUnusableSites( self, statusType ):
+    """
+    For a given statusType, returns all sites that are usable: their status
+    for that particular statusType is either Banned or Probing; in a list.
+    
+    examples
+      >>> siteStatus.getUnusableSites( 'ComputingAccess' )
+          S_OK( [ 'LCG.CERN.ch', 'LCG.IN2P3.fr',... ] )
+      >>> siteStatus.getUnsusableSites( None )
+          S_ERROR( ... )
+      >>> siteStatus.getUnusableSites( 'RubbishAccess' )
+          S_ERROR( ... )    
+    
+    :Parameters:
+      **statusType** - `string`
+        name of the statusType to be matched
+    
+    :return: S_OK() || S_ERROR()
+    """
+    
+    result = self.getUnusableElements( 'Site', statusType )
+    if not result['OK']:
+      return result
+
+    resultList = []
+    for site in result['Value']:
+      resultNames = getSiteFullNames( site )
+      if result['OK']:
+        resultList += resultNames['Value']
+        
+    return S_OK( resultList )    
  
   #.............................................................................
   # Private methods
