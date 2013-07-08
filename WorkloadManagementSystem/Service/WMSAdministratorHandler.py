@@ -27,7 +27,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getPilotOutput
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 # This is a global instance of the database classes
@@ -51,90 +51,6 @@ def initializeWMSAdministratorHandler( serviceInfo ):
   return S_OK()
 
 class WMSAdministratorHandler(RequestHandler):
-
-###########################################################################
-  types_setMask = [StringTypes]
-  def export_setSiteMask(self, siteList, comment='No comment'):
-    """ Set the site mask for matching. The mask is given in a form of Classad
-        string.
-    """
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-
-    maskList = [ (site,'Active') for site in siteList ]
-    result = jobDB.setSiteMask(maskList,dn,comment)
-    return result
-
-##############################################################################
-  types_getSiteMask = []
-  def export_getSiteMask(self, status = "Active"):
-    """ Get the site mask
-    """
-
-    result = jobDB.getSiteMask(status)
-    return result
-
-    if result['Status'] == "OK":
-      active_list = result['Value']
-      mask = []
-      for i in range(1,len(active_list),2):
-        mask.append(active_list[i])
-
-      return S_OK(mask)
-    else:
-      return S_ERROR('Failed to get the mask from the Job DB')
-
-##############################################################################
-  types_banSite = [StringTypes]
-  def export_banSite(self, site,comment='No comment'):
-    """ Ban the given site in the site mask
-    """
-
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-    result = getUsernameForDN(dn)
-    if result['OK']:
-      author = result['Value']
-    else:
-      author = dn
-    result = jobDB.banSiteInMask(site,author,comment)
-    return result
-
-##############################################################################
-  types_allowSite = [StringTypes]
-  def export_allowSite(self,site,comment='No comment'):
-    """ Allow the given site in the site mask
-    """
-
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-    result = getUsernameForDN(dn)
-    if result['OK']:
-      author = result['Value']
-    else:
-      author = dn
-    result = jobDB.allowSiteInMask(site,author,comment)
-    return result
-
-##############################################################################
-  types_clearMask = []
-  def export_clearMask(self):
-    """ Clear up the entire site mask
-    """
-
-    return jobDB.removeSiteFromMask("All")
-
-##############################################################################
-  types_getSiteMaskLogging = [ list(StringTypes)+[ListType] ]
-  def export_getSiteMaskLogging(self,sites):
-    """ Get the site mask logging history
-    """
-
-    if type(sites) in StringTypes:
-      msites = [sites]
-    else:
-      msites = sites
-    return jobDB.getSiteMaskLogging(msites)
 
 ##############################################################################
   types_getSiteMaskSummary = [ ]
