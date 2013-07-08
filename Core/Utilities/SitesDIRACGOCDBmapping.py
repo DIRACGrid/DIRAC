@@ -7,6 +7,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources, getSites
 
 #############################################################################
 
@@ -17,9 +18,8 @@ def getGOCSiteName( diracSiteName ):
   :params:
     :attr:`diracSiteName` - string: DIRAC site name (e.g. 'LCG.CERN.ch')
   """
-#  gocDBName = gConfig.getValue( '/Resources/Sites/%s/%s/Name' % ( diracSiteName.split( '.' )[0],
-#                                                          diracSiteName ) )
-  gocDBName = gConfig.getValue( '/Resources/Sites/%s/Name' % diracSiteName )
+  resources = Resources()
+  gocDBName = resources.getSiteValue( diracSiteName, "Name" )
   
   if not gocDBName:
     return S_ERROR( "No GOC site name for %s in CS (Not a LCG site ?)" % diracSiteName )
@@ -35,13 +35,14 @@ def getDIRACSiteName( gocSiteName ):
   :params:
     :attr:`gocSiteName` - string: GOC DB site name (e.g. 'CERN-PROD')
   """
-  sitesList = gConfig.getSections( "/Resources/Sites/LCG/" )
-  if not sitesList['OK']:
-    gLogger.warn( 'Problem retrieving sections in /Resources/Sites/LCG' )
-    return sitesList
+  resources = Resources()
+  result = getSites()
+  if not result['OK']:
+    gLogger.warn( 'Problem retrieving site names' )
+    return result
 
-  sitesList = sitesList['Value']
-  diracSites = [(site, gConfig.getValue( "/Resources/Sites/LCG/%s/Name" % site )) for site in sitesList]
+  sitesList = result['Value']
+  diracSites = [(site, resources.getSiteValue( site, 'Name' )) for site in sitesList]
   diracSites = [dirac for (dirac, goc) in diracSites if goc == gocSiteName]
 
   if diracSites:
