@@ -317,7 +317,10 @@ class SiteDirector( AgentModule ):
       ceType = self.queueDict[queue]['CEType']
       queueName = self.queueDict[queue]['QueueName']
       siteName = self.queueDict[queue]['Site']
-      siteMask = self.siteStatus.isUsableSite( siteName )
+      #
+      #FIXME: using only ComputingAccess
+      #
+      siteMask = self.siteStatus.isUsableSite( siteName, 'ComputingAccess' )
 
       if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
         queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )

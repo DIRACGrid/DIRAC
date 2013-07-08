@@ -35,7 +35,7 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
-from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus 
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from types import *
 
 
@@ -952,7 +952,10 @@ class PilotAgentsDB(DB):
     # Get the Site Mask data
     siteStatus = SiteStatus()
     for r in records:
-      if siteStatus.isUsableSite( r[0] ):
+      #
+      #FIXME: using only ComputingAccess
+      #
+      if siteStatus.isUsableSite( r[0], 'ComputingAccess' ):
         r.append('Yes')
       else:
         r.append('No')
