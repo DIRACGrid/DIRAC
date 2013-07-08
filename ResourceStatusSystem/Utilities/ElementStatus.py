@@ -173,8 +173,8 @@ class ElementStatus( object ):
     """
     
     if not isinstance( statusType, str ):
-      self.log.error( "getUsableElements expects str for statusType" )
-      return S_ERROR( "getUsableElements expects str for statusType" )
+      self.log.error( "getUnusableElements expects str for statusType" )
+      return S_ERROR( "getUnusableElements expects str for statusType" )
     
     elementStatuses = self.getElementStatuses( elementType, None, statusType )
     if not elementStatuses[ 'OK' ]:
