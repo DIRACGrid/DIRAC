@@ -16,9 +16,9 @@ class SEManagerBase:
   def __init__(self,database=None):
     self.db = database
     self.lock = threading.Lock()
-    self._refreshSEs()
     self.seUpdatePeriod = 600
     self.resourcesHelper = Resources()
+    self._refreshSEs()
     
   def _refreshSEs( self ):
     return S_ERROR( 'Should be implemented in a derived class' )  
