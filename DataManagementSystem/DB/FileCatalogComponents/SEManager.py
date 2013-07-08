@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Pfn import pfnunparse
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
-import threading,time
+import threading, time, random
 from types import StringTypes, IntType, LongType
 
 class SEManagerBase:
@@ -16,9 +16,9 @@ class SEManagerBase:
   def __init__(self,database=None):
     self.db = database
     self.lock = threading.Lock()
-    self._refreshSEs()
     self.seUpdatePeriod = 600
     self.resourcesHelper = Resources()
+    self._refreshSEs()
     
   def _refreshSEs( self ):
     return S_ERROR( 'Should be implemented in a derived class' )  
