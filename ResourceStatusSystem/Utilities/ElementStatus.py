@@ -157,6 +157,43 @@ class ElementStatus( object ):
     
     return S_OK( usableElements )  
 
+  def getUnusableElements( self, elementType, statusType ):
+    """
+    For a given statusType, returns all elements that are unusable: their status
+    for that particular statusType is either Banned or Probing; in a list.   
+    
+    :Parameters:
+      **elementType** - `string`
+        name of the elementType of the cache ( Site, ComputingElement,... ) used 
+        to query get<elementType>Statuses    
+      **statusType** - `string`
+        name of the statusType to be matched
+    
+    :return: S_OK() || S_ERROR()
+    """
+    
+    if not isinstance( statusType, str ):
+      self.log.error( "getUsableElements expects str for statusType" )
+      return S_ERROR( "getUsableElements expects str for statusType" )
+    
+    elementStatuses = self.getElementStatuses( elementType, None, statusType )
+    if not elementStatuses[ 'OK' ]:
+      self.log.error( elementStatuses )
+      return elementStatuses
+    elementStatuses = elementStatuses[ 'Value' ]
+    
+    self.log.debug( elementStatuses )
+    
+    unusableElements = []
+    
+    for elementName, statusDict in elementStatuses.items():
+        
+      if statusDict[ statusType ] in ( 'Banned', 'Probing' ):
+        
+        unusableElements.append( elementName )
+    
+    return S_OK( unusableElements )  
+
   #...............................................................................
 
   @staticmethod
