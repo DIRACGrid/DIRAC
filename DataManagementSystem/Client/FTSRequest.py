@@ -893,7 +893,7 @@ class FTSRequest(object):
       return S_ERROR( "Could not determine target site" )
     targetSite = res['Value'][0]
 
-    if ( sourceSite == "LCG.RAL-HEP.uk" ) or ( targetSite = "LCG.RAL-HEP.uk" ):
+    if ( sourceSite == "LCG.RAL-HEP.uk" ) or ( targetSite == "LCG.RAL-HEP.uk" ):
       ep = "LCG.RAL-HEP.uk"
     elif ( sourceSite == 'LCG.CERN.ch' ) or ( targetSite == 'LCG.CERN.ch' ):
       ep = 'LCG.CERN.ch'
