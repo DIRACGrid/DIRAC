@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Pfn import pfnunparse
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
-import threading,time
+import threading, time, random
 from types import StringTypes, IntType, LongType
 
 class SEManagerBase:
