@@ -6,7 +6,7 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources, getSites
 
 #############################################################################
