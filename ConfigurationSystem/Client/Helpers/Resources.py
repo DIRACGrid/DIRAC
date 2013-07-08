@@ -194,6 +194,35 @@ def getSiteName( site_, verify=False ):
   else:
     return S_ERROR( 'Invalid site name: %s' % site )
 
+def getSiteNames( siteList ):
+  """ Get site names in their basic form for a given list of sites.
+      Returns a list of basic site names  
+  """
+  result = getSiteNamesDict( siteList )  
+  if not result['OK']:
+    return result
+    
+  resultList = list( set( result['Value'].values() ) ) 
+  return S_OK( resultList )  
+
+def getSiteNamesDict( siteList_ ):
+  """ Get site names in their basic form for a given list of sites.
+      Returns a list of basic site names  
+  """
+  resultDict = {}
+  siteList = siteList_
+  if type( siteList_ ) != ListType:
+    siteList = [siteList_] 
+  
+  for site in siteList:
+    result = getSiteName( site )
+    if not result['OK']:
+      return S_ERROR( 'Illegal site name: %s' % site )
+    resultDict[site] = result['Value']
+    
+  return S_OK( resultDict )  
+
+
 def getSitePath( site ):
   """ Return path to the Site section on CS
   """
