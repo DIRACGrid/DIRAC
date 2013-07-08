@@ -86,6 +86,11 @@ NEW: XXXStorage - added getCurrentStatus() method
 NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
      dirac-stager-monitor-requests, dirac-stager-show-stats
 
+[v6r9p11]
+
+*DMS
+BUGFIX: FTSRequest - in __resolveFTSServer() type "=" -> "=="
+
 [v6r9p10]
 
 FIX: included fixes from v6r8p24 patch release
