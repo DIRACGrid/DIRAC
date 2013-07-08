@@ -73,7 +73,7 @@ from DIRAC.Core.Utilities import List
 
 csapi = CSAPI()
 
-RESOURCES_NEW_SECTION = '/Resources_new_new'
+RESOURCES_NEW_SECTION = '/Resources_new'
 
 def convertSites():
   

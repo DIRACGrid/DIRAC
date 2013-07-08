@@ -80,7 +80,7 @@ from types import ListType
 #
 #  Global constants
 
-gBaseResourcesSection = "/Resources_new_new"
+gBaseResourcesSection = "/Resources_new"
 RESOURCE_NODE_MAPPING = {
   'Computing':'Queue',
   'Storage':'AccessProtocol',

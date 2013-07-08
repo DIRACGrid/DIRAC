@@ -19,6 +19,7 @@ from DIRAC                                                    import gConfig, gL
 from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSA
 from DIRAC.ResourceStatusSystem.Client.SiteStatus             import SiteStatus
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient   import ResourceStatusClient
 
 import os, types
 
@@ -119,7 +120,7 @@ class DiracAdmin( API ):
     """
     
     siteStatus = SiteStatus()
-    result = siteStatus.getUsableSites()
+    result = siteStatus.getUsableSites( 'ComputingAccess' )
     if result['OK']:
       sites = result['Value']
       if printOutput:
@@ -241,6 +242,10 @@ class DiracAdmin( API ):
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getSiteMaskLogging( site )
+    
+    rssClient = ResourceStatusClient()
+    result = rssClient.selectStatusElement( 'Site', 'History', name = site, 
+                                            elementType = 'ComputingAccess' )
     if not result['OK']:
       return result
 
