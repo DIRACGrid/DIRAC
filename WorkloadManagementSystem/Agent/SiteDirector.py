@@ -124,10 +124,10 @@ class SiteDirector( AgentModule ):
       ces = self.am_getOption( 'CEs', [] )
       
     self._resources = Resources.Resources( vo = self.vo )  
-    result = self._resources.getEligibleQueues( siteList = siteNames,
-                                                ceList = ces,
-                                                ceTypeList = ceTypes,
-                                                mode = 'Direct' )
+    result = self._resources.getEligibleQueuesInfo( siteList = siteNames,
+                                                    ceList = ces,
+                                                    ceTypeList = ceTypes,
+                                                    mode = 'Direct' )
     if not result['OK']:
       return result
     resourceDict = result['Value']
@@ -302,12 +302,6 @@ class SiteDirector( AgentModule ):
     if not result['Value']:
       self.log.verbose( 'No Waiting jobs suitable for the director' )
       return S_OK()
-
-    # Check if the site is allowed in the mask
-    #result = self.siteStatus.getUsableSites()
-    #if not result['OK']:
-    #  return S_ERROR( 'Can not get the site mask' )
-    #siteMaskList = result['Value']
 
     queues = self.queueDict.keys()
     random.shuffle( queues )

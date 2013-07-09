@@ -53,27 +53,6 @@ def initializeWMSAdministratorHandler( serviceInfo ):
 class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
-  types_getSiteMaskSummary = [ ]
-  def export_getSiteMaskSummary(self):
-    """ Get the mask status for all the configured sites
-    """
-
-    # Get all the configured site names
-    result = Resources().getSites()
-    if not result['OK']:
-      return result
-    sites = result['Value']
-
-    # Get the current mask status
-    result = jobDB.getSiteMaskStatus()
-    siteDict = result['Value']
-    for site in sites:
-      if site not in siteDict:
-        siteDict[site] = 'Unknown'
-
-    return S_OK(siteDict)
-
-##############################################################################
   types_getCurrentPilotCounters = [ ]
   def export_getCurrentPilotCounters( self, attrDict={}):
     """ Get pilot counters per Status with attrDict selection. Final statuses are given for

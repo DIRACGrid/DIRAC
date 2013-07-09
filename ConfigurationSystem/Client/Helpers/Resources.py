@@ -24,13 +24,13 @@
 
     For particular Resource and Node types the following methods can be used
 
-      get<ResourceType>Option( site, option )
-      get<ResourceType>OptionsDict( site )
-      get<ResourceType>Value( site, option, default )
+      get<ResourceType>Option( site, resource, option )
+      get<ResourceType>OptionsDict( site, resource )
+      get<ResourceType>Value( site, resource, option, default )
 
-      get<NodeType>Option( site, node, option )
-      get<NodeType>OptionsDict( site, node )
-      get<NodeType>Value( site, node, option, default )
+      get<NodeType>Option( site, resource, node, option )
+      get<NodeType>OptionsDict( site, resource, node )
+      get<NodeType>Value( site, node, resource, option, default )
 
     The eligible Resource types and Node types are defined in the RESOURCE_NODE_MAPPING global
     dictionary, there is a one-to-one correspondence as we have a single node type per given
@@ -107,8 +107,12 @@ def getSites( siteList = [], fullName = False ):
   else:
     if not type( siteList ) == ListType:
       siteList = [ siteList ]
-  
-    sList = [ getSiteName( s ) for s in siteList ]
+    sList = []
+    for s in siteList:
+      result = getSiteName( s ) 
+      if not result['OK']:
+        continue
+      sList.append( result['Value'] )
     
   resultList = []  
   if fullName:    
@@ -381,7 +385,7 @@ class Resources( object ):
       else:
         return gConfig.getValue( optionPath, default )
 
-    def getElements( self, typePath, community, selectDict={} ):
+    def getElements( self, typePath, community, prefix, selectDict={} ):
       result = gConfig.getSections( typePath )
       if not result['OK']:
         return result
@@ -395,7 +399,10 @@ class Resources( object ):
         if selectDict:
           if not self.__checkElementProperties( elementPath, selectDict ):
             continue
-        elementList.append( element )
+        if prefix:  
+          elementList.append( RESOURCE_NAME_SEPARATOR.join( [prefix, element] ) )
+        else:
+          elementList.append( element )
 
       return S_OK( elementList )
 
@@ -485,7 +492,7 @@ class Resources( object ):
     if len( args ) > 0:
       site = args.pop()
     else:
-      site = 'Unknown.ch'
+      site = 'Unknown'
     result = getSitePath( site )
     if not result['OK']:
       return result
@@ -515,27 +522,33 @@ class Resources( object ):
     if siteType is not None:
       optionPath = sitePath
       typePath = os.path.dirname( sitePath )
+      prefix = ''
       if self.__vo is not None:
         optionVOPath = cfgPath( sitePath, self.__vo )
     elif nodeType is not None:
       resource = args.pop()
+      resource = resource.split( RESOURCE_NAME_SEPARATOR )[-1]
       typePath = cfgPath( sitePath, resourceType, resource, nodeType+'s' )
+      prefix = RESOURCE_NAME_SEPARATOR.join( [ os.path.basename( sitePath), resource ] )
       if len( args ) > 0:
         node = args.pop()
+        node = node.split( RESOURCE_NAME_SEPARATOR )[-1]
         optionPath = cfgPath( sitePath, resourceType, resource, nodeType+'s', node )
         if self.__vo is not None:
           optionVOPath = cfgPath( optionPath, self.__vo )
     elif resourceType is not None:
       typePath = cfgPath( sitePath, resourceType )
+      prefix = os.path.basename( sitePath)
       if len( args ) > 0:
         resource = args.pop()
+        resource = resource.split( RESOURCE_NAME_SEPARATOR )[-1]
         optionPath = cfgPath( sitePath, resourceType, resource )
         if self.__vo is not None:
           optionVOPath = cfgPath( optionPath, self.__vo )
     else:      
       return S_ERROR( 'Illegal method name: %s' % name )
 
-    if opType == 'Option':
+    if opType in ['Option','Value']:
       option = args.pop()
       optionPath = cfgPath( optionPath, option )
       if optionVOPath:
@@ -556,7 +569,7 @@ class Resources( object ):
         selectDict = kwargs['selectDict']
       if typePath is None:
         return S_ERROR( 'Illegal method arguments' )  
-      return method( typePath, self.__vo, selectDict )
+      return method( typePath, self.__vo, prefix, selectDict )
     else:
       return method( optionPath, optionVOPath )
 
@@ -580,16 +593,15 @@ class Resources( object ):
       return result
     eligibleSites = result['Value']
 
-    resultDict = {}
-
+    resultList = []
     for site in eligibleSites:
       result = self.getResources( site, resourceType, selectDict=selectDict )
       if not result['OK']:
         continue
       if result['Value']:
-        resultDict[site] = [ RESOURCE_NAME_SEPARATOR.join( [site, resource] ) for resource in result['Value'] ]
+        resultList += result['Value']
 
-    return S_OK( resultDict )
+    return S_OK( resultList )
 
   def getEligibleNodes( self, nodeType, resourceSelectDict={}, nodeSelectDict={} ):
     """ Get all the Access Points eligible according to the selection criteria
@@ -621,7 +633,7 @@ class Resources( object ):
     if resourceType is None:
       return S_ERROR( 'Invalid Node type %s' % nodeType )
 
-    resultDict = {}
+    resultList = []
 
     for site in eligibleSites:
       if eligibleResources:
@@ -636,10 +648,9 @@ class Resources( object ):
         if not result['OK']:
           continue
         if result['Value']:
-          resultDict.setdefault( site, {} )
-          resultDict[site][resource] = [ RESOURCE_NAME_SEPARATOR.join( [resource, node] ) for node in result['Value'] ]
-
-    return S_OK( resultDict )
+          resultList += result['Value']
+          
+    return S_OK( resultList )
 
 
 
@@ -651,16 +662,7 @@ class Resources( object ):
     """ Get all the eligible Storage Elements according to the selection criteria with
         the names following the SE convention.
     """
-    result = self.getEligibleResources( 'Storage', selectDict )
-    if not result['OK']:
-      return result
-    seDict = result['Value']
-
-    seList = []
-    for site in seDict:
-      seList += seDict[site]
-
-    return S_OK( seList )
+    return self.getEligibleResources( 'Storage', selectDict )
 
   def getCatalogOptionsDict( self, catalogName ):
     """ Get the CS Catalog Options
@@ -721,7 +723,7 @@ class Resources( object ):
 
     return S_OK( resultDict )
 
-  def getEligibleQueues( self, siteList = None, ceList = None, ceTypeList = None, mode = None ):
+  def getEligibleQueuesInfo( self, siteList = None, ceList = None, ceTypeList = None, mode = None ):
     """ Get CE/queue options according to the specified selection
     """
 
@@ -737,24 +739,23 @@ class Resources( object ):
     if not result['OK']:
       return result
 
-    siteDict = result['Value']
+    queueList = result['Value']
     resultDict = {}
-    for site in siteDict:
-      for ce in siteDict[site]:
-        result = self.getComputingOptionsDict( site, ce )
-        if not result['OK']:
-          return result
-        ceDict = result['Value']
-        for queue in siteDict[site][ce]:
-          result = self.getQueueOptionsDict( site, ce, queue )
-          if not result['OK']:
-            return result
-          queueDict = result['Value']
+    for queueName in queueList:
+      site,ce,queue = queueName.split( RESOURCE_NAME_SEPARATOR )
+      result = self.getComputingOptionsDict( site, ce )
+      if not result['OK']:
+        return result
+      ceDict = result['Value']
+      result = self.getQueueOptionsDict( site, ce, queue )
+      if not result['OK']:
+        return result
+      queueDict = result['Value']
 
-          resultDict.setdefault( site, {} )
-          resultDict[site].setdefault( ce, ceDict )
-          resultDict[site][ce].setdefault( 'Queues', {} )
-          resultDict[site][ce]['Queues'][queue] = queueDict
+      resultDict.setdefault( site, {} )
+      resultDict[site].setdefault( ce, ceDict )
+      resultDict[site][ce].setdefault( 'Queues', {} )
+      resultDict[site][ce]['Queues'][queueName] = queueDict
 
     return S_OK( resultDict )
 

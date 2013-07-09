@@ -104,9 +104,7 @@ class CE2CSAgent( AgentModule ):
     if not result['OK']:
       return result
     
-    siteDict = result['Value']
-    for site in siteDict:
-      knownces += siteDict[site]
+    knownces = [ resources.getComputingElementValue( x, 'Host' ) for x in result['Value'] ]
 
 #    result = gConfig.getSections( '/Resources/Sites' )
 #    if not result['OK']:

@@ -17,6 +17,7 @@ from DIRAC.Core.Utilities.SiteSEMapping                              import getS
 from DIRAC.Core.Utilities                                            import DictCache
 from DIRAC.Core.Security                                             import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers                        import Registry
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                    import SiteStatus
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient       import StorageManagerClient
 from DIRAC                                                           import S_OK, S_ERROR
 
@@ -44,6 +45,8 @@ class InputDataValidation( OptimizerExecutor ):
       cls.__jobDB = JobDB()
     except RuntimeError:
       return S_ERROR( "Cannot connect to JobDB" )
+
+    cls.__siteStatus = SiteStatus()
 
     cls.ex_setOption( "FailedStatus", "Input Data Not Available" )
     return S_OK()
@@ -210,7 +213,7 @@ class InputDataValidation( OptimizerExecutor ):
 
     self.jobLog.info( "Sites %s need to stage %d files" % ( ",".join( tapeCandidates ), minStage ) )
 
-    result = self.__jobDB.getSiteMask( 'Banned' )
+    result = self.__siteStatus.getUnusableSites( 'ComputingAccess' )
     if result[ 'OK' ]:
       for site in result[ 'Value' ]:
         tapeCandidates.discard( site )

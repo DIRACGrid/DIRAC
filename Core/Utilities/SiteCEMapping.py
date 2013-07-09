@@ -6,82 +6,58 @@
 """  The SiteCEMapping module performs the necessary CS gymnastics to
      resolve site and CE combinations.  These manipulations are necessary
      in several components.
-
-     Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
 
 __RCSID__ = "$Id$"
 
-import re
-
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources, getSiteFullNames, \
+                                                               getSiteForResource, getSiteName
 
 #############################################################################
-def getSiteCEMapping( gridName = '' ):
+def getSiteCEMapping():
   """ Returns a dictionary of all sites and their CEs as a list, e.g.
       {'LCG.CERN.ch':['ce101.cern.ch',...]}
       If gridName is specified, result is restricted to that Grid type.
   """
   siteCEMapping = {}
-  gridTypes = gConfig.getSections( 'Resources/Sites/', [] )
-  if not gridTypes['OK']:
-    gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
-    return gridTypes
-
-  gridTypes = gridTypes['Value']
-  if gridName:
-    if not gridName in gridTypes:
-      return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
-    gridTypes = [gridName]
-
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
-  for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
-    if not sites['OK']:
-      gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
-      return sites
-    for candidate in sites['Value']:
-      candidateCEs = gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( grid, candidate ), [] )
-      if candidateCEs:
-        siteCEMapping[candidate] = candidateCEs
-      else:
-        gLogger.debug( 'No CEs defined for site %s' % candidate )
+  resourceHelper = Resources()
+  result = resourceHelper.getEligibleSites()
+  if not result['OK']:
+    return result
+  sites = result['Value']
+  
+  for site in sites:
+    result = resourceHelper.getEligibleResources( 'Computing', {'Site':site} )
+    if not result['OK']:
+      continue
+    ceList = result['Value']
+    
+    result = getSiteFullNames( result['Value'] )
+    if not result['OK']:
+      continue
+    for sName in result['Value']:
+      siteCEMapping[sName] = ceList   
 
   return S_OK( siteCEMapping )
 
 #############################################################################
-def getCESiteMapping( gridName = '' ):
+def getCESiteMapping():
   """ Returns a dictionary of all CEs and their associated site, e.g.
       {'ce101.cern.ch':'LCG.CERN.ch', ...]}
-      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
   """
   ceSiteMapping = {}
-  gridTypes = gConfig.getSections( '/Resources/Sites/', [] )
-  if not gridTypes['OK']:
-    gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
-    return gridTypes
-
-  gridTypes = gridTypes['Value']
-  if gridName:
-    if not gridName in gridTypes:
-      return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
-    gridTypes = [gridName]
-
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
-  for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
-    if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
-      gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
-      return sites
-    if sites:
-      for candidate in sites['Value']:
-        siteCEs = gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( grid, candidate ), [] )
-        for ce in siteCEs:
-          if ceSiteMapping.has_key( ce ):
-            current = ceSiteMapping[ce]
-            gLogger.warn( 'CE %s already has a defined site %s but it is also defined for %s' % ( ce, current, candidate ) )
-          else:
-            ceSiteMapping[ce] = candidate
+  resourceHelper = Resources()
+  result = resourceHelper.getEligibleResources( 'Computing' )
+  if not result['OK']:
+    return result
+  ceList = result['Value']
+  for ce in ceList:
+    result = getSiteForCE( ce )
+    if not result['OK']:
+      continue
+    site = result['Value']
+    ceSiteMapping[ce] = site
 
   return S_OK( ceSiteMapping )
 
@@ -89,38 +65,28 @@ def getCESiteMapping( gridName = '' ):
 def getSiteForCE( computingElement ):
   """ Given a Grid CE name this method returns the DIRAC site name.
   """
-  finalSite = ''
-  gridTypes = gConfig.getSections( '/Resources/Sites/', [] )
-  if not gridTypes['OK']:
-    gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
-    return gridTypes
+  result = getSiteForResource( computingElement )
+  if not result['OK']:
+    return result
+  site = result['Value']
+  result = getSiteFullNames( site )
+  if not result['OK']:
+    return result
+  siteFullName = result['Value'][0]
 
-  gridTypes = gridTypes['Value']
-  for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
-    if not sites['OK']:
-      gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
-      return sites
-    if sites:
-      siteList = sites['Value']
-      for candidate in siteList:
-        siteCEs = gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( grid, candidate ), [] )
-        if computingElement in siteCEs:
-          finalSite = candidate
-          break
-
-  return S_OK( finalSite )
+  return S_OK( siteFullName )
 
 #############################################################################
 def getCEsForSite( siteName ):
   """ Given a DIRAC site name this method returns a list of corresponding CEs.
   """
-  if not re.search( '.', siteName ):
-    return S_ERROR( '%s is not a valid site name' % siteName )
-  gridName = siteName.split( '.' )[0]
-  siteSection = '/Resources/Sites/%s/%s/CE' % ( gridName, siteName )
-  ces = gConfig.getValue( siteSection, [] )
-  return S_OK( ces )
+  resourceHelper = Resources()
+  result = resourceHelper.getEligibleResources( 'Computing', {'Site':siteName} )
+  if not result['OK']:
+    return result
+  ceList = result['Value']
+  
+  return S_OK( ceList )  
 
 #############################################################################
 def getQueueInfo( ceUniqueID ):
@@ -140,17 +106,36 @@ def getQueueInfo( ceUniqueID ):
 
   if not diracSiteName:
     return S_ERROR( 'Can not find corresponding Site in CS' )
-
-  gridType = diracSiteName.split( '.' )[0]
-
-  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' % ( gridType, diracSiteName, subClusterUniqueID )
-  queueCSSection = '%s/Queues/%s' % ( siteCSSEction, queueID )
+  
+  resourceHelper = Resources()
+  result = getSiteName( diracSiteName )
+  site = result['Value']
+  domain = result.get( 'Domain', 'Unknonw' )
+  country = result.get( 'Country', 'xx' )
+  
+  result = resourceHelper.getQueueOptionsDict( site, subClusterUniqueID, queueID )
+  if not result['OK']:
+    return result
+  queueDict = result['Value']
+  maxCPUTime = queueDict.get( 'maxCPUTime', 0 )
+  SI00 = queueDict.get( 'SI00', 0 ) 
+  
+  if not maxCPUTime or not SI00:
+    result = resourceHelper.getComputingOptionsDict( site, subClusterUniqueID )
+    if not result['OK']:
+      return result
+    ceDict = result['Value']
+    if not maxCPUTime:
+      maxCPUTime = ceDict.get( 'maxCPUTime', 0 )
+    if not SI00:
+      SI00 = ceDict.get( 'SI00', 0 )   
 
   resultDict = { 'SubClusterUniqueID': subClusterUniqueID,
                  'QueueID': queueID,
                  'SiteName': diracSiteName,
-                 'Grid': gridType,
-                 'SiteCSSEction': siteCSSEction,
-                 'QueueCSSection': queueCSSection }
+                 'Domain': domain,
+                 'Country': country,
+                 'maxCPUTime': maxCPUTime,
+                 'SI00': SI00 }
 
   return S_OK( resultDict )
