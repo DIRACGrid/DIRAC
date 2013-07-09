@@ -1769,7 +1769,7 @@ class SRM2Storage( StorageBase ):
       gfalDict['nbfiles'] = len( urls )
       gfalDict['timeout'] = self.fileTimeout * len( urls )
       res = self.__gfal_operation_wrapper( 'gfal_ls', gfalDict )
-      gDataStoreClient.addRegister( res['AccountingOperation'] )
+      # gDataStoreClient.addRegister( res['AccountingOperation'] )
       if not res['OK']:
         for url in urls:
           failed[url] = res['Message']
