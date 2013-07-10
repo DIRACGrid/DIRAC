@@ -20,6 +20,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers                       import Regis
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                   import SiteStatus  
 
 
 class JobScheduling( OptimizerExecutor ):
@@ -70,11 +71,12 @@ class JobScheduling( OptimizerExecutor ):
     userSites, userBannedSites = result[ 'Value' ]
 
     # Get active and banned sites from DIRAC
-    result = self.__jobDB.getSiteMask( 'Active' )
+    siteStatus = SiteStatus()
+    result = siteStatus.getUsableSites( 'ComputingAccess' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve active sites from JobDB" )
     wmsActiveSites = result[ 'Value' ]
-    result = self.__jobDB.getSiteMask( 'Banned' )
+    result = siteStatus.getUnusableSites( 'ComputingAccess' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve banned sites from JobDB" )
     wmsBannedSites = result[ 'Value' ]

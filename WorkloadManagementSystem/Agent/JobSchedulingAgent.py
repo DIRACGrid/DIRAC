@@ -23,7 +23,8 @@ from DIRAC.Core.Utilities.Time                                 import fromString
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement                    import StorageElement
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources        import getSiteTier
-from DIRAC.Core.Utilities                                      import List                 
+from DIRAC.Core.Utilities                                      import List  
+from DIRAC.ResourceStatusSystem.Client.SiteStatus              import SiteStatus               
 
 from DIRAC                                                     import S_OK, S_ERROR
 
@@ -90,8 +91,9 @@ class JobSchedulingAgent( OptimizerModule ):
 
     # Second, get the Active and Banned sites from the WMS
 
-    wmsSites = self.jobDB.getSiteMask( 'Active' )
-    wmsBannedSites = self.jobDB.getSiteMask( 'Banned' )
+    siteStatus = SiteStatus()
+    wmsSites = siteStatus.getUsableSites( 'ComputingAccess' )
+    wmsBannedSites = siteStatus.getUnusableSites( 'ComputingAccess' )
     if not ( wmsSites['OK'] and wmsBannedSites['OK'] ):
       if not wmsSites['OK']:
         self.log.error( wmsSites['Message'] )
@@ -526,7 +528,8 @@ class JobSchedulingAgent( OptimizerModule ):
     """Returns list of site candidates that are in current mask.
     """
 
-    result = self.jobDB.getSiteMask()
+    siteStatus = SiteStatus
+    result = siteStatus.getUsableSites( 'ComputingAccess' )  
     if not result['OK']:
       return S_ERROR( 'Could not get site mask' )
 
