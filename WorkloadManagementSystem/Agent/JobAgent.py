@@ -264,15 +264,6 @@ class JobAgent( AgentModule ):
       if 'Value' in result and result[ 'Value' ]:
         proxyChain = result[ 'Value' ]
 
-      # Is this necessary at all?
-      saveJDL = self.__saveJobJDLRequest( jobID, jobJDL )
-      #self.__report(jobID,'Matched','Job Prepared to Submit')
-
-      #resourceParameters = self.__getJDLParameters( resourceJDL )
-      #if not resourceParameters['OK']:
-      #  return resourceParameters
-      #resourceParams = resourceParameters['Value']
-
       software = self.__checkInstallSoftware( jobID, params, ceDict )
       if not software['OK']:
         self.log.error( 'Failed to install software for job %s' % ( jobID ) )
@@ -571,19 +562,6 @@ class JobAgent( AgentModule ):
              'jobArgs' : arguments,
              'sitePython' : siteRootPython }
     return S_OK( data )
-
-  #############################################################################
-  def __saveJobJDLRequest( self, jobID, jobJDL ):
-    """Save job JDL local to JobAgent.
-    """
-    classAdJob = ClassAd( jobJDL )
-    classAdJob.insertAttributeString( 'LocalCE', self.ceName )
-    jdlFileName = jobID + '.jdl'
-    jdlFile = open( jdlFileName, 'w' )
-    jdl = classAdJob.asJDL()
-    jdlFile.write( jdl )
-    jdlFile.close()
-    return S_OK( jdlFileName )
 
   #############################################################################
   def __requestJob( self, ceDict ):

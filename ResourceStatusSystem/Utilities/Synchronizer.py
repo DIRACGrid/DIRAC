@@ -250,7 +250,7 @@ class Synchronizer( object ):
         continue
       
       # Translate CS result into a list
-      foundResources = [ item for subList in foundResources[ 'Value' ].values() for item in subList ]
+      foundResources = foundResources[ 'Value' ]
       
       # Synchronize with the DB
       resSync = self.__dbSync( 'Resource', elementType, foundResources )
