@@ -499,7 +499,7 @@ class StorageElement:
   def prestageFile( self, pfn, lifetime = 86400, singleFile = False ):
     """ execute 'prestageFile' operation """
     return { True : self.__executeSingleFile,
-             False : self.__executeFunction }[bool( singleFile )]( pfn, 'prestageFile' )
+             False : self.__executeFunction }[bool( singleFile )]( pfn, 'prestageFile', { 'lifetime': lifetime } )
 
   def prestageFileStatus( self, pfn, singleFile = False ):
     """ execute 'prestageFileStatus' operation """

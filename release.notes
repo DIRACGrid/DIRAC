@@ -113,6 +113,13 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
 
+[v6r8p25]
+
+FIX: included fixes from v6r7p40 patch release
+
+*Resources
+FIX: SRM2Storage - do not account gfal_ls operations
+
 [v6r8p24]
 
 FIX: included fixes from v6r7p39 patch release
@@ -359,6 +366,11 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p40]
+
+*Resources
+FIX: StorageElement class was not properly passing the lifetime argument for prestageFile method
 
 [v6r7p39]
 
