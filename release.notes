@@ -1,3 +1,8 @@
+[v6r7p40]
+
+*Resources
+FIX: StorageElement class was not properly passing the lifetime argument for prestageFile method
+
 [v6r7p39]
 
 *Core
