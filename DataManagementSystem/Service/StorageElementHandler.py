@@ -35,8 +35,8 @@ import re
 from stat import ST_MODE, ST_SIZE, ST_ATIME, ST_CTIME, ST_MTIME, S_ISDIR, S_IMODE
 from types import StringType, StringTypes, ListType
 ## from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.Os import getDirectorySize
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
@@ -51,17 +51,16 @@ def initializeStorageElementHandler( serviceInfo ):
   global BASE_PATH
   global USE_TOKENS
   global MAX_STORAGE_SIZE
-  cfgPath = serviceInfo['serviceSectionPath']
 
-  BASE_PATH = gConfig.getValue( "%s/BasePath" % cfgPath, BASE_PATH )
+  BASE_PATH = getServiceOption( serviceInfo, "BasePath", BASE_PATH )
   if not BASE_PATH:
     gLogger.error( 'Failed to get the base path' )
     return S_ERROR( 'Failed to get the base path' )
   if not os.path.exists( BASE_PATH ):
     os.makedirs( BASE_PATH )
 
-  USE_TOKENS = gConfig.getValue( "%s/UseTokens" % cfgPath, USE_TOKENS )
-  MAX_STORAGE_SIZE = gConfig.getValue( "%s/MaxStorageSize" % cfgPath, MAX_STORAGE_SIZE )
+  USE_TOKENS = getServiceOption( serviceInfo, "%UseTokens", USE_TOKENS )
+  MAX_STORAGE_SIZE = getServiceOption( serviceInfo, "MaxStorageSize", MAX_STORAGE_SIZE )
 
   gLogger.info( 'Starting DIRAC Storage Element' )
   gLogger.info( 'Base Path: %s' % BASE_PATH )
