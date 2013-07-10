@@ -188,7 +188,7 @@ class ElementStatus( object ):
     
     for elementName, statusDict in elementStatuses.items():
         
-      if statusDict[ statusType ] in ( 'Banned', 'Probing' ):
+      if statusDict[ statusType ] in ( 'Banned', 'Probing', 'Error', 'Unknown' ):
         
         unusableElements.append( elementName )
     
