@@ -118,7 +118,10 @@ class SiteMapData( threading.Thread ):
     siteStatus = SiteStatus()
     siteMaskStatus = dict( sitesData )
     for site in siteMaskStatus:
-      if siteStatus.isUsableSite( site ):
+      #
+      #FIXME: we are only taking into account ComputingAccess
+      #
+      if siteStatus.isUsableSite( site, 'ComputingAccess' ):
         siteMaskStatus[ site ][ 'siteMaskStatus' ] = 'Allowed'
       else:
         siteMaskStatus[ site ][ 'siteMaskStatus' ] = 'Banned'
