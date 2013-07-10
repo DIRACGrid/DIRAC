@@ -1,3 +1,10 @@
+[v6r8p25]
+
+FIX: included fixes from v6r7p40 patch release
+
+*Resources
+FIX: SRM2Storage - do not account gfal_ls operations
+
 [v6r8p24]
 
 FIX: included fixes from v6r7p39 patch release
