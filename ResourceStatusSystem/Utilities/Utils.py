@@ -18,6 +18,8 @@ def voimport( base_mod ):
     Function to import from extensions, if not found, tries from DIRAC.
   '''
   
+  # FIXME: A.T.: Use Core.Utilities.ObjectLoader 
+  
   for ext in gConfig.getValue( 'DIRAC/Extensions', [] ):
   
     try:

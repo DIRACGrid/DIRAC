@@ -126,7 +126,7 @@ class FTSDB( DB ):
     cursor = getCursorAndConnection["Value"]["cursor"]
     connection = getCursorAndConnection["Value"]["connection"]
 
-    # # this iwll be returned as query result
+    # # this will be returned as query result
     ret = { "OK" : True }
     queryRes = { }
     # # switch off autocommit
@@ -189,7 +189,7 @@ class FTSDB( DB ):
     if getFTSSiteQuery in getFTSSite and getFTSSite[getFTSSiteQuery]:
       getFTSSite = FTSSite( getFTSSite[getFTSSiteQuery][0] )
       return S_OK( getFTSSite )
-    # # if we land here FTSSite does nor exist
+    # # if we land here FTSSite does not exist
     return S_OK()
 
   def deleteFTSSite( self, ftsSiteID ):

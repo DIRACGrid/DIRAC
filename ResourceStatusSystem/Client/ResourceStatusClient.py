@@ -9,7 +9,7 @@ from DIRAC                                              import gLogger, S_OK, S_
 from DIRAC.Core.DISET.RPCClient                         import RPCClient                   
 #from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
 from DIRAC.ResourceStatusSystem.Utilities               import RssConfiguration  
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteNames
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 
 from types import StringTypes, ListType
 
@@ -428,7 +428,7 @@ class ResourceStatusClient( object ):
       if type( parameters['name'] ) in StringTypes:
         parameters['name'] = [parameters['name']]
       if type( parameters['name'] ) == ListType:
-        result = getSiteNames( parameters['name'] )
+        result = getSites( parameters['name'] )
         if not result['OK']:
           gLogger.debug( result['Message'] )            
           return result

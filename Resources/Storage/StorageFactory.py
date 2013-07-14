@@ -224,7 +224,7 @@ class StorageFactory:
   def _getConfigStorageProtocols( self, storageName ):
     """ Protocol specific information is present as sections in the Storage configuration
     """
-    result = getSiteForResource( 'Storage', storageName )
+    result = getSiteForResource( storageName )
     if not result['OK']:
       return result
     site = result['Value']
@@ -251,7 +251,7 @@ class StorageFactory:
       Parse the contents of the protocol block
     """
     # First obtain the options that are available
-    result = getSiteForResource( 'Storage', storageName )
+    result = getSiteForResource( storageName )
     if not result['OK']:
       return result
     site = result['Value']
