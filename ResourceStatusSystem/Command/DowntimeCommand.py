@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -95,10 +95,10 @@ class DowntimeCommand( Command ):
     # The DIRAC se names mean nothing on the grid, but their hosts do mean.
     elif elementType == 'StorageElement':
       
-      seHost = CSHelpers.getSEHost( elementName )
-      if not seHost:
+      result = CSHelpers.getSEHost( elementName )
+      if not result['OK']:
         return S_ERROR( 'No seHost for %s' % elementName )
-      elementName = seHost
+      elementName = result['Value']
              
     return S_OK( ( element, elementName, hours ) )
 

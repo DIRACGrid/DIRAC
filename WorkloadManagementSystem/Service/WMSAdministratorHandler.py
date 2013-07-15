@@ -241,7 +241,7 @@ class WMSAdministratorHandler(RequestHandler):
     else:
       # Instantiate the appropriate CE
       ceFactory = ComputingElementFactory()
-      result = Resources( group=group ).getQueueDescription( pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'] )
+      result = Resources( group=group ).getQueueDescription( pilotDict['Queue'] )
       if not result['OK']:
         return result
       queueDict = result['Value']
@@ -424,7 +424,7 @@ class WMSAdministratorHandler(RequestHandler):
     for key, pilotDict in pilotRefDict.items():
       
       owner,group,site,ce,queue = key.split( '@@@' )
-      result = Resources( group=group ).getQueueDescription( site, ce, queue )
+      result = Resources( group=group ).getQueueDescription( queue )
       if not result['OK']:
         return result
       queueDict = result['Value']

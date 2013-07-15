@@ -54,6 +54,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtension
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup, getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations   import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import Resources
 from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
@@ -242,27 +243,19 @@ class PilotDirector:
     # Get CE's associates to the given site Names
     ceMask = []
 
-    for grid in self.targetGrids:
+    resources = Resources( vo = self.virtualOrganization )
+    result = resources.getEligibleResources( 'Computing', {'Site':siteMask,
+                                                           'SubmissionMode':'gLite',
+                                                           'CEType':['LCG','CREAM']} )
+    if not result['OK']:
+      self.log.error( "Failed to get eligible ce's:", result['Message'] )
+      return []
+    ces = result['Value']
 
-      section = '/Resources/Sites/%s' % grid
-      ret = gConfig.getSections( section )
-      if not ret['OK']:
-        # this is hack, maintained until LCG is added as TargetGrid for the gLite SubmitPool
-        section = '/Resources/Sites/LCG'
-        ret = gConfig.getSections( section )
-
-      if not ret['OK']:
-        self.log.error( 'Could not obtain CEs from CS', ret['Message'] )
-        continue
-
-      gridSites = ret['Value']
-      for siteName in gridSites:
-        if siteName in siteMask:
-          ret = gConfig.getValue( '%s/%s/CE' % ( section, siteName ), [] )
-          for ce in ret:
-            submissionMode = gConfig.getValue( '%s/%s/CEs/%s/SubmissionMode' % ( section, siteName, ce ), 'gLite' )
-            if submissionMode == self.gridMiddleware and ce not in ceMask:
-              ceMask.append( ce )
+    for ce in ces:
+      ceHost = resources.getComputingElementValue( ce, 'Host', 'unknown' )
+      if ceHost != 'unknown':
+        ceMask.append( ceHost )
 
     if not ceMask:
       self.log.info( 'No CE Candidate found for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join( siteMask ) )

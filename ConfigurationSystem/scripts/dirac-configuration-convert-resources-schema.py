@@ -112,13 +112,16 @@ def convertSites():
         return result 
       siteDict = result['Value']
       siteDict['Country'] = country
+      if 'Name' in siteDict:
+        siteDict['GOCName'] = siteDict['Name']
+        del siteDict['Name']
       if "CE" in siteDict:
         del siteDict['CE']
       if 'SE' in siteDict:
         del siteDict['SE']  
       infoDict.setdefault( siteName, siteDict )
-      infoDict[siteName].setdefault( 'Domains', [] )
-      infoDict[siteName]['Domains'].append( domain )
+      infoDict[siteName].setdefault( 'Domain', [] )
+      infoDict[siteName]['Domain'].append( domain )
       if 'VO' in siteDict:
         communities = List.fromChar( siteDict['VO'] )
         infoDict[siteName]['VO'] = communities
@@ -134,11 +137,17 @@ def convertSites():
           return result 
         ceDict = result['Value']
         
+        ceName = ce.split('.')[0]
+        if not 'Host' in ceDict:
+          ceDict['Host'] = ce
+        if not "SubmissionMode" in ceDict or ceDict['SubmissionMode'].lower() != "direct":
+          ceDict['SubmissionMode'] = 'gLite'   
+        
         infoDict[siteName].setdefault( 'Computing', {} )
-        infoDict[siteName]['Computing'][ce] = ceDict
+        infoDict[siteName]['Computing'][ceName] = ceDict
         if 'VO' in ceDict:
           communities = List.fromChar( ceDict['VO'] )
-          infoDict[siteName]['Computing'][ce]['VO'] = communities
+          infoDict[siteName]['Computing'][ceName]['VO'] = communities
           del ceDict['VO']
         result = gConfig.getSections('/Resources/Sites/%s/%s/CEs/%s/Queues' % (domain,site,ce))
         if not result['OK']:
@@ -151,11 +160,11 @@ def convertSites():
           if not result['OK']:
             return result 
           queueDict = result['Value']
-          infoDict[siteName]['Computing'][ce].setdefault( 'Queues', {} )
-          infoDict[siteName]['Computing'][ce]['Queues'][queue] = queueDict
+          infoDict[siteName]['Computing'][ceName].setdefault( 'Queues', {} )
+          infoDict[siteName]['Computing'][ceName]['Queues'][queue] = queueDict
           if 'VO' in queueDict:
             communities = List.fromChar( queueDict['VO'] )
-            infoDict[siteName]['Computing'][ce]['Queues'][queue]['VO'] = communities
+            infoDict[siteName]['Computing'][ceName]['Queues'][queue]['VO'] = communities
             del queueDict['VO']
         
       cfg = CFG()

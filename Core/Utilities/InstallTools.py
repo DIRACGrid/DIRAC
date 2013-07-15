@@ -330,9 +330,8 @@ def _getCentralCfg( installCfg ):
     centralCfg['DIRAC'].addKey( 'VirtualOrganization', vo, '' )
 
   for section in [ 'Systems', 'Resources',
-                   'Resources/Sites', 'Resources/Sites/DIRAC',
-                   'Resources/Sites/LCG', 'Operations',
-                   'Website', 'Registry' ]:
+                   'Resources/Sites', 'Resources/Domains',
+                   'Operations', 'Website', 'Registry' ]:
     if installCfg.isSection( section ):
       centralCfg.createNewSection( section, contents = installCfg[section] )
 
