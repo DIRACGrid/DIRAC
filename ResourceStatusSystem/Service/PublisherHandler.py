@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from types    import NoneType
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers                   import Resources
 from DIRAC.Core.DISET.RequestHandler                            import RequestHandler
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
@@ -50,13 +51,15 @@ class PublisherHandler( RequestHandler ):
       Returns list of all sites considered by RSS
     '''
     gLogger.info( 'getSites' )
-    return CSHelpers.getSites()
+    return Resources.getSites()
 
   types_getSitesResources = [ ( str, list, NoneType ) ]
   def export_getSitesResources( self, siteNames ):
     
+    resources = Resources.Resources()
+    
     if siteNames is None:
-      siteNames = CSHelpers.getSites()
+      siteNames = Resources.getSites()
       if not siteNames[ 'OK' ]:
         return siteNames
       siteNames = siteNames[ 'Value' ]
@@ -68,9 +71,9 @@ class PublisherHandler( RequestHandler ):
     
     for siteName in siteNames:
       
-      res = {}      
-      res[ 'ces' ] = CSHelpers.getSiteComputingElements( siteName )
-      ses = CSHelpers.getSiteStorageElements( siteName )
+      res = {}         
+      res[ 'ces' ] = resources.getEligibleComputingElements( { 'Site': siteName } )
+      ses          = resources.getEligibleStorageElements( { 'Site': siteName } )
       sesHosts = CSHelpers.getStorageElementsHosts( ses )
       if not sesHosts[ 'OK' ]:
         return sesHosts
@@ -111,10 +114,12 @@ class PublisherHandler( RequestHandler ):
 
     tree = {}
 
+    resources = Resources.Resources()
+
     #site = self.getSite( element, elementType, elementName )
     result = getSiteForResource( elementName )
     if not result['OK']:
-      return S_ERROR( 'Can not get site name: %s', result['Message'] ) 
+      return S_ERROR( 'Can not get site name: %s' % result[ 'Message' ] ) 
     site = result['Value']       
     if not site:
       return S_ERROR( 'No site' )
@@ -125,8 +130,8 @@ class PublisherHandler( RequestHandler ):
       return siteStatus      
 
     tree[ site ] = { 'statusTypes' : dict( siteStatus[ 'Value' ] ) }
-    
-    ces = CSHelpers.getSiteComputingElements( site )    
+      
+    ces = resources.getEligibleComputingElements( { 'Site': site } )
     cesStatus = rsClient.selectStatusElement( 'Resource', 'Status', name = ces,
                                               meta = { 'columns' : [ 'Name', 'StatusType', 'Status'] } )
     if not cesStatus[ 'OK' ]:
@@ -139,7 +144,7 @@ class PublisherHandler( RequestHandler ):
         tree[ site ][ 'ces' ][ name ] = {}
       tree[ site ][ 'ces' ][ name ][ statusType ] = status   
     
-    ses = CSHelpers.getSiteStorageElements( site )
+    ses = resources.getEligibleStorageElements( { 'Site': site } )
     sesStatus = rsClient.selectStatusElement( 'Resource', 'Status', name = ses,
                                               meta = { 'columns' : [ 'Name', 'StatusType', 'Status'] } )
     if not sesStatus[ 'OK' ]:
@@ -261,7 +266,7 @@ class PublisherHandler( RequestHandler ):
   def export_getDowntimes( self, element, elementType, elementName ):
     
     if elementType == 'StorageElement':
-      result = CSHelpers.getSEHost( elementName )
+      result = CSHelpers.getSEProtocolOption( elementName, 'Host' )
       if not result['OK']:
         return S_ERROR( 'StorageElement %s host not found' % elementName )
       name = result['Value']
@@ -276,7 +281,7 @@ class PublisherHandler( RequestHandler ):
   def export_getCachedDowntimes( self, element, elementType, elementName, severity, startDate, endDate ):
     
     if elementType == 'StorageElement':
-      result = CSHelpers.getSEHost( elementName )
+      result = CSHelpers.getSEProtocolOption( elementName, 'Host' )
       if not result['OK']:
         return S_ERROR( 'StorageElement %s host not found' % elementName )
       name = result['Value']
