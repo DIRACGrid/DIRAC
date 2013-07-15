@@ -702,7 +702,7 @@ class Resources( object ):
       return result
     site = result['Value']
 
-    result = self.getStorageOptionsDict( site, seName )
+    result = self.getStorageOptionsDict( seName )
     if not result['OK']:
       return result
     options = result['Value']
@@ -718,10 +718,10 @@ class Resources( object ):
     options['DiskSE'] = diskSE
     options['TapeSE'] = tapeSE
 
-    result = self.getAccessProtocols( site, seName )
+    result = self.getAccessProtocols( seName )
     if result['OK']:
       protocol = result['Value'][0]
-      result = self.getAccessProtocolOptionsDict( site, seName, protocol )
+      result = self.getAccessProtocolOptionsDict( protocol )
       if result['OK']:
         options.update( result['Value'] )
 

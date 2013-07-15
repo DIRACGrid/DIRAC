@@ -33,7 +33,7 @@ def getSiteCEMapping():
       continue
     ceList = result['Value']
     
-    result = getSiteFullNames( result['Value'] )
+    result = getSiteFullNames( site )
     if not result['OK']:
       continue
     for sName in result['Value']:

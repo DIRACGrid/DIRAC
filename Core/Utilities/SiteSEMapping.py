@@ -28,12 +28,12 @@ def getSiteSEMapping():
   sites = result['Value']
   
   for site in sites:
-    result = resourceHelper.getEligibleResources( 'Computing', {'Site':site} )
+    result = resourceHelper.getEligibleResources( 'Storage', {'Site':site} )
     if not result['OK']:
       continue
     seList = result['Value']
     
-    result = getSiteFullNames( result['Value'] )
+    result = getSiteFullNames( site )
     if not result['OK']:
       continue
     for sName in result['Value']:
