@@ -1,3 +1,10 @@
+[v6r8p26]
+
+*Core
+NEW: RequestHandler - added getServiceOption() to properly resolve inherited options 
+     in the global service handler initialize method
+NEW: FileCatalogHandler, StorageElementHandler - use getServiceOption()
+
 [v6r8p25]
 
 FIX: included fixes from v6r7p40 patch release
