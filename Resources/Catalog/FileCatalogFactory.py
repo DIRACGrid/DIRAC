@@ -7,10 +7,10 @@ __RCSID__ = "$Id$"
 """
 
 from DIRAC  import gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getInstalledExtensions
 from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 class FileCatalogFactory:
   
@@ -19,7 +19,7 @@ class FileCatalogFactory:
   
   def createCatalog( self, catalogName, useProxy = False, vo = None, catalogConfig = {} ):
     """ Create a file catalog object from its name and CS description
-    """
+    """    
     if useProxy:
       catalog = FileCatalogProxyClient( catalogName )
       return S_OK( catalog )
@@ -43,7 +43,7 @@ class FileCatalogFactory:
     
     self.log.verbose( 'Creating %s client' % catalogName )
     
-    objectLoader = ObjectLoader.ObjectLoader()
+    objectLoader = ObjectLoader()
     result = objectLoader.loadObject( 'Resources.Catalog.%sClient' % catalogType, catalogType+'Client' )
     if not result['OK']:
       gLogger.error( 'Failed to load catalog object: %s' % result['Message'] )
