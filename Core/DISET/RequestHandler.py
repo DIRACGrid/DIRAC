@@ -12,6 +12,17 @@ from DIRAC.Core.DISET.private.MessageBroker import getGlobalMessageBroker
 from DIRAC.Core.Utilities import Time
 import DIRAC
 
+def getServiceOption( serviceInfo, optionName, defaultValue ):
+  """ Get service option resolving default values from the master service
+  """
+  if optionName[0] == "/":
+    return gConfig.getValue( optionName, defaultValue )
+  for csPath in serviceInfo[ 'csPaths' ]:
+    result = gConfig.getOption( "%s/%s" % ( csPath, optionName, ), defaultValue )
+    if result[ 'OK' ]:
+      return result[ 'Value' ]
+  return defaultValue
+
 class RequestHandler( object ):
 
   class ConnectionError( Exception ):

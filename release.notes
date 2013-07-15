@@ -1,3 +1,7 @@
+[v6r9p13]
+
+FIX: included fixes from v6r8p26 patch release
+
 [v6r9p12]
 
 FIX: included fixes from v6r8p25 patch release
@@ -116,6 +120,13 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
+
+[v6r8p26]
+
+*Core
+NEW: RequestHandler - added getServiceOption() to properly resolve inherited options 
+     in the global service handler initialize method
+NEW: FileCatalogHandler, StorageElementHandler - use getServiceOption()
 
 [v6r8p25]
 
