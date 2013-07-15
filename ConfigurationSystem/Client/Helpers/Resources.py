@@ -690,7 +690,7 @@ class Resources( object ):
     if not result['OK']:
       return result
     site = result['Value']
-    result = self.getResourceOptionsDict( site, 'Catalog', catalogName )
+    result = self.getResourceOptionsDict( catalogName, 'Catalog' )
     return result
 
   def getStorageElementOptionsDict( self, seName ):
