@@ -138,11 +138,14 @@ def initSEs():
   subLogger.debug( statuses )
   subLogger.debug( statusTypes )
   
+  resources = Resources()
+  
   for se in ses:
 
     subLogger.debug( se )
 
-    opts = gConfig.getOptionsDict( '/Resources/StorageElements/%s' % se )
+    #opts = gConfig.getOptionsDict( '/Resources/StorageElements/%s' % se )
+    opts = resources.getStorageElementOptionsDict( se )
     if not opts[ 'OK' ]:
       subLogger.warn( opts[ 'Message' ] )
       continue
@@ -221,10 +224,11 @@ if __name__ == "__main__":
   registerUsageMessage()
   switchDict = parseSwitches()
   
-  from DIRAC                                   import gConfig
-  from DIRAC.ResourceStatusSystem.Client       import ResourceStatusClient
-  from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
-  from DIRAC.ResourceStatusSystem.Utilities    import CSHelpers, RssConfiguration, Synchronizer
+  from DIRAC                                              import gConfig
+  from DIRAC.ResourceStatusSystem.Client                  import ResourceStatusClient
+  from DIRAC.ResourceStatusSystem.PolicySystem            import StateMachine
+  from DIRAC.ResourceStatusSystem.Utilities               import CSHelpers, RssConfiguration, Synchronizer
+  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
   
   #Run script
   run()

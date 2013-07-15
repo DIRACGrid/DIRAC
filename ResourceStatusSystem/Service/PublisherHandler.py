@@ -9,11 +9,12 @@
 from datetime import datetime, timedelta
 from types    import NoneType
 
-from DIRAC                                                      import gLogger, S_OK, gConfig, S_ERROR
+from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                            import RequestHandler
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getSiteForResource
 
 
 
@@ -110,7 +111,11 @@ class PublisherHandler( RequestHandler ):
 
     tree = {}
 
-    site = self.getSite( element, elementType, elementName )        
+    #site = self.getSite( element, elementType, elementName )
+    result = getSiteForResource( elementName )
+    if not result['OK']:
+      return S_ERROR( 'Can not get site name: %s', result['Message'] ) 
+    site = result['Value']       
     if not site:
       return S_ERROR( 'No site' )
     
@@ -226,37 +231,40 @@ class PublisherHandler( RequestHandler ):
     
   #-----------------------------------------------------------------------------  
     
-  def getSite( self, element, elementType, elementName ):
-    
-    if elementType == 'StorageElement':
-      elementType = 'SE'
-
-    domainNames = gConfig.getSections( 'Resources/Sites' )
-    if not domainNames[ 'OK' ]:
-      return domainNames
-    domainNames = domainNames[ 'Value' ]
-  
-    for domainName in domainNames:
-      
-      sites = gConfig.getSections( 'Resources/Sites/%s' % domainName )
-      if not sites[ 'OK' ]:
-        continue
-      
-      for site in sites[ 'Value' ]:
-      
-        elements = gConfig.getValue( 'Resources/Sites/%s/%s/%s' % ( domainName, site, elementType ), '' )
-        if elementName in elements:
-          return site          
-
-    return ''
+#  def getSite( self, element, elementType, elementName ):
+#    
+#    if elementType == 'StorageElement':
+#      elementType = 'SE'
+#
+#    domainNames = gConfig.getSections( 'Resources/Sites' )
+#    if not domainNames[ 'OK' ]:
+#      return domainNames
+#    domainNames = domainNames[ 'Value' ]
+#  
+#    for domainName in domainNames:
+#      
+#      sites = gConfig.getSections( 'Resources/Sites/%s' % domainName )
+#      if not sites[ 'OK' ]:
+#        continue
+#      
+#      for site in sites[ 'Value' ]:
+#      
+#        elements = gConfig.getValue( 'Resources/Sites/%s/%s/%s' % ( domainName, site, elementType ), '' )
+#        if elementName in elements:
+#          return site          
+#
+#    return ''
 
   # ResourceManagementClient ...................................................
   
   types_getDowntimes = [ str, str, str ]
-  def export_getDowntimes( self, element, elementType, name ):
+  def export_getDowntimes( self, element, elementType, elementName ):
     
     if elementType == 'StorageElement':
-      name = CSHelpers.getSEHost( name )
+      result = CSHelpers.getSEHost( elementName )
+      if not result['OK']:
+        return S_ERROR( 'StorageElement %s host not found' % elementName )
+      name = result['Value']
     
     return rmClient.selectDowntimeCache( element = element, name = name, 
                                          meta = { 'columns' : [ 'StartDate', 'EndDate', 
@@ -265,10 +273,13 @@ class PublisherHandler( RequestHandler ):
 
   types_getCachedDowntimes = [ ( str, NoneType, list ), ( str, NoneType, list ), ( str, NoneType, list ),
                                ( str, NoneType, list ), datetime, datetime ]
-  def export_getCachedDowntimes( self, element, elementType, name, severity, startDate, endDate ):
+  def export_getCachedDowntimes( self, element, elementType, elementName, severity, startDate, endDate ):
     
     if elementType == 'StorageElement':
-      name = CSHelpers.getSEHost( name )
+      result = CSHelpers.getSEHost( elementName )
+      if not result['OK']:
+        return S_ERROR( 'StorageElement %s host not found' % elementName )
+      name = result['Value']
    
     if startDate > endDate:
       return S_ERROR( 'startDate > endDate' )

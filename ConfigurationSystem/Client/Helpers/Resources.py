@@ -2,35 +2,55 @@
 
 """ Resources helper class gives access to various computing resources descriptions
 
+    The following naming conventions are used:
+    
+    Site names as input arguments can be specified in a full form, e.g. LCG.CERN.ch, or 
+    a short form, e.g. CERN. Site names in the output are given in the short form. To convert
+    short site names into long site names use the following utilities:
+      
+      getSites( sites, fullName=True ) 
+      getSiteFullNamesDict( sites )
+
+    All the resources and nodes use the following naming convention for arguments and in
+    the outputs: <SiteShortName>::<ResourceName>::<NodeName> where names are the same
+    as the names of corresponding sections in the CS. For example
+    
+      CE: CPPM::marce01
+      Queue: CPPM::marce01::jobmanager-pbs-lhcb
+      SE: CERN::disk
+      AccessProtocol: CERN::disk::SRM
+      
+    Object names are guaranteed to be unique for the given object type.  
+
     Objects of the Resources class are constructed with a possible specification
     of the target user community. In this case, the values will be automatically
-    resolved for community specification. Community can be specified either by
+    resolved specifically for the corresponding VO. Community can be specified either by
     vo or group parameter.
 
     The following methods to access generic CS resources data are provided following the pattern
-    of the configuration client
+    of the configuration client:
 
       getSiteOption( site, option )
       getSiteOptionsDict( site )
       getSiteValue( site, option, default )
 
-      getResourceOption( site, resourceType, resource, option )
-      getResourceOptionsDict( site, resourceType, resource )
-      getResourceValue( site, resourceType, resource, option, default )
+      getResourceOption( resourceName, resourceType, option )
+      getResourceOptionsDict( resourceName, resourceType )
+      getResourceValue( resourceName, resourceType, option, default )
 
-      getNodeOption( site, resourceType, resource, node, option )
-      getNodeOptionsDict( site, resourceType, resource, node )
-      getNodeValue( site, resourceType, resource, node, option, default )
+      getNodeOption( nodeName, nodeType, option )
+      getNodeOptionsDict( nodeName, nodeType )
+      getNodeValue( nodeName, nodeType, option, default )
 
     For particular Resource and Node types the following methods can be used
 
-      get<ResourceType>Option( site, resource, option )
-      get<ResourceType>OptionsDict( site, resource )
-      get<ResourceType>Value( site, resource, option, default )
+      get<ResourceType>Option( resourceName, option )
+      get<ResourceType>OptionsDict( resourceName )
+      get<ResourceType>Value( resourceName, option, default )
 
-      get<NodeType>Option( site, resource, node, option )
-      get<NodeType>OptionsDict( site, resource, node )
-      get<NodeType>Value( site, node, resource, option, default )
+      get<NodeType>Option( nodeName, option )
+      get<NodeType>OptionsDict( nodeName )
+      get<NodeType>Value( nodeName, option, default )
 
     The eligible Resource types and Node types are defined in the RESOURCE_NODE_MAPPING global
     dictionary, there is a one-to-one correspondence as we have a single node type per given
@@ -38,32 +58,43 @@
 
     For example,
 
-      getComputingOption( site, ceName, option )
-      getQueueOptionsDict( site, ceName, queueName )
+      getComputingOption( ceName, option ) or getComputingElementOption( ceName, option )
+      getQueueOptionsDict( queueName )
+      getAccessProtocolValue( accessProtocol, option, default )
 
-    The following series of methods allow to get a list of elements ( sites, resources, access points )
+    The following series of methods allow to get a list of elements ( sites, resources, nodes )
     which are allowed for usage by the community specified for the Resources() object:
 
       getSites( selectDict )
+      getResources( site, resourceType, selectDict )
+      getNodes( resourceName, nodeType, selectDict )
+      
       get<ResourceType>Elements( site, selectDict )
-      get<NodeType>s( site, ceName, selectDict )
+      get<NodeType>s( resourceName, selectDict )
 
     selectDict is an optional dictionary of resource selection criteria. For example:
 
-      getStorageElements( site, {'ReadAccess':'Active'} )
-      getQueues( site, ceName, { 'Platform' : ['Linux_x86_64_glibc-2.5','x86_64_ScientificSL_Boron_5.4'] } )
+      getSites( {"Name":['CERN','CPPM','RAL']} )
+      getStorageElements( 'LCG.CERN.ch', {'ReadAccess':'Active'} )
+      getQueues( 'CERN::ce130', { 'Platform' : ['Linux_x86_64_glibc-2.5','x86_64_ScientificSL_Boron_5.4'] } )
 
     The following methods allow to get a list of Resources and Nodes across sites
 
       getEligibleResources( resourceType, selectDict )
       getEligibleNodes( nodeType, resourceSelectDict, nodeSelectDict )
+      
+    A subset of sites or resources can be specified in the selection dictionaries to limit
+    the choice. For example
+    
+      getEligibleResources( 'Storage', { 'Site':['CERN','CPPM','RAL'] } ) 
+      getEligibleNodes( 'Queue', { 'Resource': 'CPPM::marce01', 'Platform':'Linux_x86_64_glibc-2.5' } 
 
     The following are methods specialized for particular resources:
 
       getEligibleStorageElements( selectDict={} )
       getStorageElementOptionsDict( seName )
-      getQueueDescription( site, ce, queue )
-      getEligibleQueues( siteList, ceList, ceTypeList, mode ):
+      getQueueDescription( queue )
+      getEligibleQueuesInfo( siteList, ceList, ceTypeList, mode ):
 
 """
 
@@ -138,7 +169,7 @@ def getSiteFullNames( site_ ):
     return result
   site = result['Value']
   
-  result = getSiteDomains( site )
+  result = getSiteDomain( site )
   if not result['OK']:
     return result
   domains = result['Value']
@@ -198,17 +229,6 @@ def getSiteName( site_, verify=False ):
   else:
     return S_ERROR( 'Invalid site name: %s' % site )
 
-def getSiteNames( siteList ):
-  """ Get site names in their basic form for a given list of sites.
-      Returns a list of basic site names  
-  """
-  result = getSiteNamesDict( siteList )  
-  if not result['OK']:
-    return result
-    
-  resultList = list( set( result['Value'].values() ) ) 
-  return S_OK( resultList )  
-
 def getSiteNamesDict( siteList_ ):
   """ Get site names in their basic form for a given list of sites.
       Returns a list of basic site names  
@@ -226,7 +246,6 @@ def getSiteNamesDict( siteList_ ):
     
   return S_OK( resultDict )  
 
-
 def getSitePath( site ):
   """ Return path to the Site section on CS
   """
@@ -236,25 +255,25 @@ def getSitePath( site ):
   siteName = result['Value']
   return S_OK( cfgPath( gBaseResourcesSection, 'Sites', siteName ) )
 
-def getSiteDomains( site ):
+def getSiteDomain( site ):
   """ Get the domains to which the site participates
   """
   result = getSitePath( site )
   if not result['OK']:
     return result
   sitePath = result['Value']
-  siteDomains = gConfig.getValue( cfgPath( sitePath, 'Domains' ), [] )
+  siteDomains = gConfig.getValue( cfgPath( sitePath, 'Domain' ), [] )
   if not result['OK']:
     if not "does not exist" in result['Message']:
       return result
   if not siteDomains:
-    result = getResourceDomains()
+    result = getDomains()
     if not result['OK']:
       return result
     siteDomains = result['Value']
   return S_OK( siteDomains )
 
-def getResourceDomains():
+def getDomains():
   """ Get the list of all the configured Resources Domains
   """
   result = gConfig.getSections( cfgPath( gBaseResourcesSection, 'Domains' ) )
@@ -269,44 +288,8 @@ def getResourceTypes( site ):
   sitePath = result['Value']
   return gConfig.getSections( sitePath )
 
-# def checkElementCommunity( elementPath, community ):
-#   """ Check recursively the given element for eligibility with respect to the given community
-#   """
-#   communities = gConfig.getValue( cfgPath( elementPath, 'Communities'), [] )
-#   if community in communities:
-#     return True
-#   if communities:
-#     return False
-#   parentPath = os.path.dirname( os.path.dirname( elementPath ) )
-#   if parentPath == gBaseResourcesSection:
-#     return True
-#   else:
-#     return checkElementCommunity( parentPath, community )
-
-def checkElementProperties( elementPath, selectDict ):
-  """ Check the given element for the compliance with the given selection criteria
-  """
-  if not selectDict:
-    return True
-  result = gConfig.getOptionsDict( elementPath )
-  if not result['OK']:
-    return False
-  elementDict = result['Value']
-  finalResult = True
-  for property_ in selectDict:
-    if not property_ in elementDict:
-      return False
-    if type( selectDict[property_] ) == ListType:
-      if not elementDict[property_] in selectDict[property_]:
-        return False
-    else:
-      if elementDict[property_] != selectDict[property_]:
-        return False
-
-  return finalResult
-
-def getSiteForResource( resourceType, resourceName ):
-  """ Get the site name for the given resource specified by type and name
+def getSiteForResource( resourceName ):
+  """ Get the site name for the given resource or node specified by name
   """
 
   result = getSites()
@@ -315,7 +298,7 @@ def getSiteForResource( resourceType, resourceName ):
   sites = result['Value']
 
   names = resourceName.split( RESOURCE_NAME_SEPARATOR )
-  if len( names ) == 2:
+  if len( names ) in [2,3]:
     site = names[0]
     if site in sites:
       return S_OK( names[0])
@@ -376,6 +359,7 @@ class Resources( object ):
       return S_OK( optDict )
 
     def getValue( self, optionPath, optionVOPath, default ):
+      
       if optionVOPath is not None:
         value = gConfig.getValue( optionVOPath )
         if value is None:
@@ -386,6 +370,7 @@ class Resources( object ):
         return gConfig.getValue( optionPath, default )
 
     def getElements( self, typePath, community, prefix, selectDict={} ):
+      
       result = gConfig.getSections( typePath )
       if not result['OK']:
         return result
@@ -397,7 +382,7 @@ class Resources( object ):
           if not self.__checkElementCommunity( elementPath, community ):
             continue
         if selectDict:
-          if not self.__checkElementProperties( elementPath, selectDict ):
+          if not self.__checkElementProperties( element, elementPath, selectDict ):
             continue
         if prefix:  
           elementList.append( RESOURCE_NAME_SEPARATOR.join( [prefix, element] ) )
@@ -420,7 +405,7 @@ class Resources( object ):
       else:
         return self.__checkElementCommunity( parentPath, community )
 
-    def __checkElementProperties( self, elementPath, selectDict ):
+    def __checkElementProperties( self, element, elementPath, selectDict ):
       """ Check the given element for the compliance with the given selection criteria
       """
       if not selectDict:
@@ -429,6 +414,7 @@ class Resources( object ):
       if not result['OK']:
         return False
       elementDict = result['Value']
+      elementDict['Name'] = element      
       finalResult = True
       for property_ in selectDict:
         if not property_ in elementDict:
@@ -466,6 +452,25 @@ class Resources( object ):
       if not self.__vo:
         self.__vo = None
 
+  def __getResourcePath( self, resourceName, resourceType ):
+    """ Get path to the resource CS section
+    """
+    items = resourceName.split( RESOURCE_NAME_SEPARATOR )
+    return cfgPath( gBaseResourcesSection, 'Sites', items[0], resourceType, items[1] )
+  
+  def __getResourcePrefix( self, resourceName ):
+    """ Get resource name prefix
+    """
+    items = resourceName.split( RESOURCE_NAME_SEPARATOR )
+    return RESOURCE_NAME_SEPARATOR.join( items[:2] )
+
+  def __getNodePath( self, nodeName, resourceType ):
+    """ Get path to the resource CS section
+    """
+    site,resource,node = nodeName.split( RESOURCE_NAME_SEPARATOR )
+    return cfgPath( gBaseResourcesSection, 'Sites', site, resourceType, resource, 
+                    RESOURCE_NODE_MAPPING[resourceType]+'s', node )
+
   def __execute( self, *params, **kwargs ):
     """ internal redirector to the appropriate CS sections
     """
@@ -489,22 +494,28 @@ class Resources( object ):
       opType = "Elements"
     method = getattr( self.__innerResources, 'get'+opType )
 
-    if len( args ) > 0:
-      site = args.pop()
-    else:
-      site = 'Unknown'
-    result = getSitePath( site )
-    if not result['OK']:
-      return result
-    sitePath = result['Value']
+    resourceName = ''
+    sitePath = ''
+    if name != "getSites":
+      # This is the only generic method not needing the site name as the first argument
+      resourceName = args.pop()
+      if RESOURCE_NAME_SEPARATOR in resourceName:
+        sitePath = resourceName.split( RESOURCE_NAME_SEPARATOR )[0]
+      else:
+        result = getSitePath( resourceName )      
+        if not result['OK']:
+          return result
+        sitePath = result['Value']
 
-    if "Site" in name:
+    if name.startswith( 'getSite' ):
       siteType = True
-    elif "Resource" in name:
+    elif name.startswith( 'getResource' ):
       resourceType = args.pop()
-    elif "Node" in name:
-      resourceType = args.pop()
-      nodeType = RESOURCE_NODE_MAPPING[resourceType]
+    elif name.startswith( 'getNode' ):
+      nodeType = args.pop()
+      for rType in RESOURCE_NODE_MAPPING:
+        if nodeType == RESOURCE_NODE_MAPPING[rType]:
+          resourceType = rType
     else:
       for rType in RESOURCE_NODE_MAPPING:
         if name.startswith( 'get'+rType ):
@@ -520,29 +531,27 @@ class Resources( object ):
     optionPath = None
     typePath = None
     if siteType is not None:
-      optionPath = sitePath
-      typePath = os.path.dirname( sitePath )
+      typePath = cfgPath( gBaseResourcesSection, 'Sites' )
       prefix = ''
-      if self.__vo is not None:
-        optionVOPath = cfgPath( sitePath, self.__vo )
+      if resourceName:
+        optionPath = sitePath
+        if self.__vo is not None:
+          optionVOPath = cfgPath( optionPath, self.__vo )
     elif nodeType is not None:
-      resource = args.pop()
-      resource = resource.split( RESOURCE_NAME_SEPARATOR )[-1]
-      typePath = cfgPath( sitePath, resourceType, resource, nodeType+'s' )
-      prefix = RESOURCE_NAME_SEPARATOR.join( [ os.path.basename( sitePath), resource ] )
-      if len( args ) > 0:
-        node = args.pop()
-        node = node.split( RESOURCE_NAME_SEPARATOR )[-1]
-        optionPath = cfgPath( sitePath, resourceType, resource, nodeType+'s', node )
+      resourcePath = self.__getResourcePath( resourceName, resourceType )
+      typePath = cfgPath( resourcePath, nodeType+'s' )
+      prefix = self.__getResourcePrefix( resourceName )
+      if opType != "Elements":
+        nodePath = self.__getNodePath( resourceName, resourceType )
+        optionPath = nodePath
         if self.__vo is not None:
           optionVOPath = cfgPath( optionPath, self.__vo )
     elif resourceType is not None:
       typePath = cfgPath( sitePath, resourceType )
       prefix = os.path.basename( sitePath)
-      if len( args ) > 0:
-        resource = args.pop()
-        resource = resource.split( RESOURCE_NAME_SEPARATOR )[-1]
-        optionPath = cfgPath( sitePath, resourceType, resource )
+      if opType != "Elements":
+        resourcePath = self.__getResourcePath( resourceName, resourceType )
+        optionPath = resourcePath
         if self.__vo is not None:
           optionVOPath = cfgPath( optionPath, self.__vo )
     else:      
@@ -577,6 +586,11 @@ class Resources( object ):
     self.call = name
     return self.__execute
 
+  def getEligibleSites( self, selectDict={} ):
+    """ Get all the sites eligible according to the selection criteria
+    """
+    return self.getSites( selectDict=selectDict )
+
   def getEligibleResources( self, resourceType, selectDict={} ):
     """ Get all the resources eligible according to the selection criteria
     """
@@ -589,6 +603,11 @@ class Resources( object ):
         selectDict.pop(key)
 
     result = getSites( sites )
+    if not result['OK']:
+      return result
+    sites = result['Value']
+
+    result = self.getSites( selectDict = {'Name':sites} )
     if not result['OK']:
       return result
     eligibleSites = result['Value']
@@ -644,7 +663,7 @@ class Resources( object ):
           continue
         siteER = result['Value']
       for resource in siteER:
-        result = self.getNodes( site, resourceType, resource, nodeType, selectDict=nodeSelectDict )
+        result = self.getNodes( resource, nodeType, selectDict=nodeSelectDict )
         if not result['OK']:
           continue
         if result['Value']:
@@ -667,23 +686,23 @@ class Resources( object ):
   def getCatalogOptionsDict( self, catalogName ):
     """ Get the CS Catalog Options
     """
-    result = getSiteForResource( 'Catalog', catalogName )
+    result = getSiteForResource( catalogName )
     if not result['OK']:
       return result
     site = result['Value']
-    result = self.getResourceOptionsDict( site, 'Catalog', catalogName )
+    result = self.getResourceOptionsDict( catalogName, 'Catalog' )
     return result
 
   def getStorageElementOptionsDict( self, seName ):
     """ Get the CS StorageElementOptions
     """
     # Construct the SE path first
-    result = getSiteForResource( 'Storage', seName )
+    result = getSiteForResource( seName )
     if not result['OK']:
       return result
     site = result['Value']
 
-    result = self.getStorageOptionsDict( site, seName )
+    result = self.getStorageOptionsDict( seName )
     if not result['OK']:
       return result
     options = result['Value']
@@ -699,23 +718,23 @@ class Resources( object ):
     options['DiskSE'] = diskSE
     options['TapeSE'] = tapeSE
 
-    result = self.getAccessProtocols( site, seName )
+    result = self.getAccessProtocols( seName )
     if result['OK']:
       protocol = result['Value'][0]
-      result = self.getAccessProtocolOptionsDict( site, seName, protocol )
+      result = self.getAccessProtocolOptionsDict( protocol )
       if result['OK']:
         options.update( result['Value'] )
 
     return S_OK( options )
 
-  def getQueueDescription( self, site, ce, queue ):
+  def getQueueDescription( self, queue ):
     """ Get parameters of the specified queue
     """
-    result = self.getComputingElementOptionsDict( site, ce )
+    result = self.getComputingElementOptionsDict( queue )
     if not result['OK']:
       return result
     resultDict = result['Value']
-    result = self.getQueueOptionsDict( site, ce, queue )
+    result = self.getQueueOptionsDict( queue )
     if not result['OK']:
       return result
     resultDict.update( result['Value'] )
@@ -785,19 +804,21 @@ class Resources( object ):
   def getSiteDomain( self, site ):
     """ Return Domain component from Site Name
     """
-    siteTuple = site.split( "." )
-    if len( siteTuple ) != 3:
-      # Site does not contain the Domain, check what we can do still
-      result = getSiteDomains( site )
-      if not result['OK']:
-        return S_ERROR('No domains defined for site')
-      domains = result['Value']
-      if domains:
-        return S_OK( domains[0] )
-      else:
-        return S_ERROR('No domains defined for site')
-    else:
-      return S_OK( siteTuple[0] )
+    #siteTuple = site.split( "." )
+    #if len( siteTuple ) != 3:
+    #  # Site does not contain the Domain, check what we can do still
+    #  result = getSiteDomain( site )
+    #  if not result['OK']:
+    #    return S_ERROR('No domains defined for site')
+    #  domains = result['Value']
+    #  if domains:
+    #    return S_OK( domains[0] )
+    #  else:
+    #    return S_ERROR('No domains defined for site')
+    #else:
+    #  return S_OK( siteTuple[0] )
+
+    return self.getSiteOption( site, 'Domain' )
 
 ############################################################################################
 #
@@ -856,3 +877,40 @@ def getDIRACPlatform( platform ):
       return S_OK( p )
 
   return S_ERROR( 'No compatible DIRAC platform found for %s' % platform )
+
+#############################################################################
+
+def getGOCSiteName( diracSiteName ):
+  """
+  Get GOC DB site name, given the DIRAC site name, as it stored in the CS
+
+  :params:
+    :attr:`diracSiteName` - string: DIRAC site name (e.g. 'LCG.CERN.ch')
+  """
+  resources = Resources()
+  gocDBName = resources.getSiteValue( diracSiteName, "GOCName" )
+  
+  if not gocDBName:
+    return S_ERROR( "No GOC site name for %s in CS (Not a LCG site ?)" % diracSiteName )
+  else:
+    return S_OK( gocDBName )
+
+#############################################################################
+
+def getDIRACSiteName( gocSiteName ):
+  """
+  Get DIRAC site name, given the GOC DB site name, as it stored in the CS
+
+  :params:
+    :attr:`gocSiteName` - string: GOC DB site name (e.g. 'CERN-PROD')
+  """
+  resources = Resources()
+  result = resources.getEligibleSites( { "GOCName":gocSiteName } )
+  if not result['OK']:
+    return result
+  
+  diracSites = result['Value']
+  if diracSites:
+    return S_OK( diracSites )
+
+  return S_ERROR( "There's no site with GOCDB name = %s in DIRAC CS" % gocSiteName )

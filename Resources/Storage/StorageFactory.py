@@ -15,7 +15,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                              import gLogger, S_OK, S_ERROR, rootPath
-from DIRAC.Core.Utilities.List                          import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers           import getInstalledExtensions
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus   import ResourceStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources, getSiteForResource
@@ -212,50 +211,44 @@ class StorageFactory:
       return S_ERROR( errStr )    
     optionsDict = result['Value']
     
-    result = self.resourceStatus.getStorageElementStatus( storageName )
+    result = self.resourceStatus.getStorageElementStatus( storageName, 'ReadAccess' )    
     if not result[ 'OK' ]:
       errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
       gLogger.error( errStr, "%s: %s" % ( storageName, result['Message'] ) )
       return S_ERROR( errStr )
-    optionsDict.update( result[ 'Value' ][ storageName ] )
+    #optionsDict.update( result[ 'Value' ][ storageName ] )
 
     return S_OK( optionsDict )
 
   def _getConfigStorageProtocols( self, storageName ):
     """ Protocol specific information is present as sections in the Storage configuration
     """
-    result = getSiteForResource( 'Storage', storageName )
+    result = getSiteForResource( storageName )
     if not result['OK']:
       return result
     site = result['Value']
     result = self.resourcesHelper.getEligibleNodes( 'AccessProtocol', {'Site': site, 'Resource': storageName } )
     if not result['OK']:
       return result
-    nodesDict = result['Value']
+    nodesList = result['Value']
     protocols = []
-    for site in nodesDict:
-      for se in nodesDict[site]:
-        protocols.extend( nodesDict[site][se] )
-    sortedProtocols = sortList( protocols )
+    for node in nodesList:
+      protocols.append( node )
     protocolDetails = []
-    for protocol in sortedProtocols:
-      result = self._getConfigStorageProtocolDetails( storageName, protocol )
+    for protocol in protocols:
+      result = self._getConfigStorageProtocolDetails( protocol )
       if not result['OK']:
         return result
       protocolDetails.append( result['Value'] )
     self.protocols = self.localProtocols + self.remoteProtocols
     return S_OK( protocolDetails )
 
-  def _getConfigStorageProtocolDetails( self, storageName, protocol ):
+  def _getConfigStorageProtocolDetails( self, protocol ):
     """
       Parse the contents of the protocol block
     """
-    # First obtain the options that are available
-    result = getSiteForResource( 'Storage', storageName )
-    if not result['OK']:
-      return result
-    site = result['Value']
-    result = self.resourcesHelper.getNodeOptionsDict( site, 'Storage', storageName, protocol )
+    
+    result = self.resourcesHelper.getAccessProtocolOptionsDict( protocol )
     if not result['OK']:
       return result
     optionsDict = result['Value']
@@ -272,13 +265,13 @@ class StorageFactory:
     elif protocolDict['Access'] == 'local':
       self.localProtocols.append( protocolDict['ProtocolName'] )
     else:
-      errStr = "StorageFactory.__getProtocolDetails: The 'Access' option for %s:%s is neither 'local' or 'remote'." % ( storageName, protocol )
+      errStr = "StorageFactory.__getProtocolDetails: The 'Access' option for %s is neither 'local' or 'remote'." % protocol
       gLogger.warn( errStr )
 
     # The ProtocolName option must be defined
     if not protocolDict['ProtocolName']:
       errStr = "StorageFactory.__getProtocolDetails: 'ProtocolName' option is not defined."
-      gLogger.error( errStr, "%s: %s" % ( storageName, protocol ) )
+      gLogger.error( errStr, "%s" % protocol )
       return S_ERROR( errStr )
     return S_OK( protocolDict )
 

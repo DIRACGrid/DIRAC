@@ -90,7 +90,7 @@ class ResourceStatus( ElementStatus ):
     
     for ceName, ceDict in cacheMatch.items():
       
-      if not self.__getSiteAccess( 'Computing', ceName, 'ComputingAccess' )[ 'OK' ]:
+      if not self.__getSiteAccess( ceName, 'ComputingAccess' )[ 'OK' ]:
         
         cacheMatch[ ceName ] = dict( zip( ceDict.keys(), [ 'Banned' ] * len( ceDict ) ) )
           
@@ -215,7 +215,7 @@ class ResourceStatus( ElementStatus ):
     
     for seName, seDict in cacheMatch.items():
       
-      if not self.__getSiteAccess( 'Storage', seName, 'StorageAccess' )[ 'OK' ]:
+      if not self.__getSiteAccess( seName, 'StorageAccess' )[ 'OK' ]:
         
         cacheMatch[ seName ] = dict( zip( seDict.keys(), [ 'Banned' ] * len( seDict ) ) )
           
@@ -298,7 +298,7 @@ class ResourceStatus( ElementStatus ):
   #.............................................................................
   # Private methods
   
-  def __getSiteAccess( self, resourceType, elementName, siteAccess ):
+  def __getSiteAccess( self, elementName, siteAccess ):
     """
     Method that given a resourceType and an elementName, finds the site name
     that owes it. Once that is done, the site access <siteAccess> is checked
@@ -315,7 +315,7 @@ class ResourceStatus( ElementStatus ):
     :return: S_OK() || S_ERROR()
     """
     
-    siteName = Resources.getSiteForResource( resourceType, elementName )
+    siteName = Resources.getSiteForResource( elementName )
     if not siteName[ 'OK' ]:
       return siteName
     siteName = siteName[ 'Value' ]

@@ -1,18 +1,18 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
+from DIRAC import gLogger, S_OK
 
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
+#from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
 from DIRAC.Core.Utilities.List                                    import sortList
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager             import ReplicaManager
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import THROTTLING_STEPS, THROTTLING_TIME
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import StorageManagementDB
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources           import Resources
 
-import time, os, sys, re
-from types import *
+import re
 
 AGENT_NAME = 'StorageManagement/StageRequestAgent'
 
@@ -25,6 +25,8 @@ class StageRequestAgent( AgentModule ):
     self.storageDB = StorageManagementDB()
     # pin lifetime = 1 day
     self.pinLifetime = self.am_getOption( 'PinLifetime', THROTTLING_TIME )
+    # Resources helper
+    self.resources = Resources()
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
@@ -237,7 +239,8 @@ class StageRequestAgent( AgentModule ):
     """ Retrieve cache size for SE
     """
     if not storageElement in self.storageElementCache:
-      self.storageElementCache[storageElement] = gConfig.getValue( "/Resources/StorageElements/%s/DiskCacheTB" % storageElement, 1. ) * 1000. / THROTTLING_STEPS
+      diskCache = self.resources.getStorageElementValue( storageElement, 'DiskCacheTB', 1. )
+      self.storageElementCache[storageElement] = diskCache * 1000. / THROTTLING_STEPS
     return self.storageElementCache[storageElement]
 
   def __add( self, storageElement, size ):
