@@ -15,8 +15,8 @@ __RCSID__ = "$Id$"
 import os
 from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType 
 ## from DIRAC
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 from DIRAC.Core.Utilities.List import sortList
 
@@ -27,13 +27,10 @@ def initializeFileCatalogHandler(serviceInfo):
   """ handler initialisation """
 
   global gFileCatalogDB
-  
-  serviceCS = serviceInfo['serviceSectionPath']
-  
-  # Instantiate the requested database
-  dbLocation = gConfig.getValue( '%s/Database' % serviceCS, 'DataManagement/FileCatalogDB' )
+
+  dbLocation = getServiceOption( serviceInfo, 'Database', 'DataManagement/FileCatalogDB' )
   gFileCatalogDB = FileCatalogDB(dbLocation)
-  
+
   databaseConfig = {}
   # Obtain the plugins to be used for DB interaction
   gLogger.info("Initializing with FileCatalog with following managers:")
@@ -46,7 +43,7 @@ def initializeFileCatalogHandler(serviceInfo):
                        'FileMetadata'      : 'FileMetadata'}
   for configKey in sortList(defaultManagers.keys()):
     defaultValue = defaultManagers[configKey]
-    configValue = gConfig.getValue( '%s/%s' % ( serviceCS, configKey), defaultValue )
+    configValue = getServiceOption( serviceInfo, configKey, defaultValue )
     gLogger.info("%-20s : %-20s" % ( str(configKey), str(configValue) ) )
     databaseConfig[configKey] = configValue
 
@@ -60,7 +57,7 @@ def initializeFileCatalogHandler(serviceInfo):
                     'VisibleStatus'     : ['AprioriGood']}
   for configKey in sortList( defaultConfig.keys() ):
     defaultValue = defaultConfig[configKey]
-    configValue = gConfig.getValue( '%s/%s' % ( serviceCS, configKey), defaultValue )
+    configValue = getServiceOption( serviceInfo, configKey, defaultValue )
     gLogger.info("%-20s : %-20s" % ( str(configKey), str(configValue) ) )
     databaseConfig[configKey] = configValue
   res = gFileCatalogDB.setConfig(databaseConfig)
