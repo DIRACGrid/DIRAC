@@ -72,7 +72,7 @@ class PublisherHandler( RequestHandler ):
     for siteName in siteNames:
       
       res = {}         
-      res[ 'ces' ] = resources.getEligibleComputingElements( { 'Site': siteName } )
+      res[ 'ces' ] = resources.getEligibleResources( 'Computing', { 'Site': siteName } )
       ses          = resources.getEligibleStorageElements( { 'Site': siteName } )
       sesHosts = CSHelpers.getStorageElementsHosts( ses )
       if not sesHosts[ 'OK' ]:
@@ -131,7 +131,7 @@ class PublisherHandler( RequestHandler ):
 
     tree[ site ] = { 'statusTypes' : dict( siteStatus[ 'Value' ] ) }
       
-    ces = resources.getEligibleComputingElements( { 'Site': site } )
+    ces = resources.getEligibleResources( 'Computing', { 'Site': site } )
     cesStatus = rsClient.selectStatusElement( 'Resource', 'Status', name = ces,
                                               meta = { 'columns' : [ 'Name', 'StatusType', 'Status'] } )
     if not cesStatus[ 'OK' ]:

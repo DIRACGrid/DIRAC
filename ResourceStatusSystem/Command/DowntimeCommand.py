@@ -260,7 +260,7 @@ class DowntimeCommand( Command ):
     #if fc[ 'OK' ]:
     #  resources = resources + fc[ 'Value' ]
     
-    ce = self.resources.getEligibleComputingElements()
+    ce = self.resources.getEligibleResources( 'Computing' )
     if ce[ 'OK' ]:
       resources = resources + ce[ 'Value' ]
     

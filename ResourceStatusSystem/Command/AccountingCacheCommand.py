@@ -849,7 +849,7 @@ class SuccessfullPilotsByCESplittedCommand( Command ):
 #        return CEs 
 #      CEs = [ ce[0] for ce in CEs['Value'] ]
      
-      ces = self.resources.getEligibleComputingElements()
+      ces = self.resources.getEligibleResources( 'Computing' )
       if not ces[ 'OK' ]:
         return ces
       ces = ces[ 'Value' ]
