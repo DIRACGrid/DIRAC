@@ -40,7 +40,7 @@ class ResourceStatusDB( object ):
     
   _tablesLike[ 'ElementWithID' ]       = { 'Fields' : 
                     {
-                     'ID'              : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                     'ID'              : 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
                      'Name'            : 'VARCHAR(64) NOT NULL',
                      'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
                      'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
