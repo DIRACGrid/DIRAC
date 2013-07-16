@@ -228,19 +228,12 @@ class FTSGraph( Graph ):
       rwDict = dict.fromkeys( seList )
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False  }
+      
       for se in seList:
-        rAccess = self.rssClient().getStorageStatus( se, "ReadAccess" )
-        self.log.debug( "se read %s %s" % ( se, rAccess ) )
-        if not rAccess["OK"]:
-          self.log.error( rAccess["Message"] )
-          continue
-        rwDict[se]["read"] = True if rAccess["Value"][se]["ReadAccess"] in ( "Active", "Degraded" ) else False
-        wAccess = self.rssClient().getStorageStatus( se, "WriteAccess" )
-        self.log.debug( "se write %s %s" % ( se, wAccess ) )
-        if not wAccess["OK"]:
-          self.log.error( wAccess["Message"] )
-          continue
-        rwDict[se]["write"] = True if wAccess["Value"][se]["WriteAccess"] in ( "Active", "Degraded" ) else False
+               
+        rwDict[se]["read"]  = self.rssClient().isUsableStorage( se, 'ReadAccess' )
+        rwDict[se]["write"] = self.rssClient().isUsableStorage( se, 'WriteAccess' )
+        
         self.log.debug( "Site '%s' SE '%s' read %s write %s " % ( site.name, se,
                                                                   rwDict[se]["read"], rwDict[se]["write"] ) )
       site.SEs = rwDict

@@ -211,13 +211,8 @@ class OperationHandlerBase( object ):
     :param str se: SE name
     :param str status: RSS status
     """
-    rssStatus = self.rssClient().getStorageStatus( se, status )
-    # gLogger.always( rssStatus )
-    if not rssStatus["OK"]:
-      return S_ERROR( "unknown SE: %s" % se )
-    if rssStatus["Value"] == "Banned":
-      return S_OK( False )
-    return S_OK( True )
+    
+    return S_OK( self.rssClient().isUsableStorage( se, status ) )
 
   @property
   def shifter( self ):

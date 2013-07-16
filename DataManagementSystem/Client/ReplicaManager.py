@@ -1727,52 +1727,29 @@ class ReplicaManager( CatalogToStorage ):
 
     self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
 
-    destSEStatus = self.resourceStatus.getStorageStatus( destSE, 'WriteAccess' )
-    if not destSEStatus[ 'OK' ]:
-      self.log.error( destSEStatus[ 'Message' ] )
-      return destSEStatus
-    destSEStatus = destSEStatus[ 'Value' ][ destSE ][ 'WriteAccess' ]
-
-    # For RSS, the Active and Degraded statuses are OK. Probing and Banned are NOK statuses
-    if not destSEStatus in ( 'Active', 'Degraded' ):
-      infoStr = "%s Destination Storage Element is currently '%s' for Write" % ( logStr, destSEStatus )
+    usableDestSE = self.resourceStatus.isUsableStorage( destSE, 'WriteAccess' )
+    if not usableDestSE:
+      infoStr = "%s Destination Storage Element is currently unusable for Write" % logStr
       self.log.info( infoStr, destSE )
       return S_ERROR( infoStr )
 
     self.log.info( "%s Destination site not banned for Write." % logStr )
-
-#    configStr = '/Resources/StorageElements/BannedTarget'
-#    bannedTargets = gConfig.getValue( configStr, [] )
-#    if destSE in bannedTargets:
-#      infoStr = "__initializeReplication: Destination Storage Element is currently banned."
-#      self.log.info( infoStr, destSE )
-#      return S_ERROR( infoStr )
-#
-#    self.log.info( "__initializeReplication: Destination site not banned." )
 
     ###########################################################
     # Check whether the supplied source SE is sane
 
     self.log.verbose( "%s: Determining whether source Storage Element is sane." % logStr )
 
-#    configStr = '/Resources/StorageElements/BannedSource'
-#    bannedSources = gConfig.getValue( configStr, [] )
-
     if sourceSE:
 
-      sourceSEStatus = self.resourceStatus.getStorageStatus( sourceSE, 'ReadAccess' )
-      if not sourceSEStatus[ 'OK' ]:
-        self.log.error( sourceSEStatus[ 'Message' ] )
-        return sourceSEStatus
-      sourceSEStatus = sourceSEStatus[ 'Value' ][ sourceSE ][ 'ReadAccess' ]
+      usableSourceSE = self.resourceStatus.isUsableStorage( sourceSE, 'ReadAccess' )
 
       if sourceSE not in lfnReplicas:
         errStr = "%s LFN does not exist at supplied source SE." % logStr
         self.log.error( errStr, "%s %s" % ( lfn, sourceSE ) )
         return S_ERROR( errStr )
-      elif not sourceSEStatus in ( 'Active', 'Degraded' ):
-#      elif sourceSE in bannedSources:
-        infoStr = "%s Supplied source Storage Element is currently '%s' for Read." % ( logStr, sourceSEStatus )
+      elif not usableSourceSE:
+        infoStr = "%s Supplied source Storage Element is currently unusable for Read." % logStr
         self.log.info( infoStr, sourceSE )
         return S_ERROR( infoStr )
 
@@ -1806,14 +1783,10 @@ class ReplicaManager( CatalogToStorage ):
         self.log.info( "%s %s replica not requested." % ( logStr, diracSE ) )
         continue
 
-      diracSEStatus = self.resourceStatus.getStorageStatus( diracSE, 'ReadAccess' )
-      if not diracSEStatus[ 'OK' ]:
-        self.log.error( diracSEStatus[ 'Message' ] )
-        continue
-      diracSEStatus = diracSEStatus[ 'Value' ][ diracSE ][ 'ReadAccess' ]
+      usableDiracSE = self.resourceStatus.isUsableStorage( diracSE, 'ReadAccess' )
 
-      if not diracSEStatus in ( 'Active', 'Degraded' ):
-        self.log.info( "%s %s is currently '%s' as a source." % ( logStr, diracSE, diracSEStatus ) )
+      if not usableDiracSE:
+        self.log.info( "%s %s is currently unusable as a source." % ( logStr, diracSE ) )
 
       # elif diracSE in bannedSources:
       #  self.log.info( "__resolveBestReplicas: %s is currently banned as a source." % diracSE )
