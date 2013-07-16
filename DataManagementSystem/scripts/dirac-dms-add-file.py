@@ -57,7 +57,7 @@ if len( args ) == 1:
     for line in inputFile:
       line = line.rstrip()
       items = line.split()
-      items[0] = item[0].replace( 'LFN:', '' ).replace( 'lfn:', '' )
+      items[0] = items[0].replace( 'LFN:', '' ).replace( 'lfn:', '' )
       lfns.append( getDict( items ) )
     inputFile.close()
 else:
