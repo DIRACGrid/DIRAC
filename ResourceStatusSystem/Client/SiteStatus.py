@@ -41,8 +41,6 @@ class SiteStatus( ElementStatus ):
     
     # RSSCache initialization
     cacheLifeTime   = int( RssConfiguration().getConfigCache() )
-    
-    # FIXME: we need to define the types in the CS : Site => {Computing,Storage,..}Access
     self.siteCache  = RSSCache( 'Site', cacheLifeTime, self.__updateSiteCache )
 
 
