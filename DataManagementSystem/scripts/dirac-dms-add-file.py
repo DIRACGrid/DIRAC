@@ -35,12 +35,12 @@ args = Script.getPositionalArgs()
 if len( args ) < 1 or len( args ) > 4:
   Script.showHelp()
 
-def getDict(item_list):
+def getDict( item_list ):
   """
     From the input list, populate the dictionary
   """
   lfn_dict = {}
-  lfn_dict['lfn'] = item_list[0].replace('LFN:','').replace('lfn:','')
+  lfn_dict['lfn'] = item_list[0].replace( 'LFN:', '' ).replace( 'lfn:', '' )
   lfn_dict['localfile'] = item_list[1]
   lfn_dict['SE'] = item_list[2]
   guid = None
@@ -48,21 +48,21 @@ def getDict(item_list):
     guid = item_list[3]
   lfn_dict['guid'] = guid
   return lfn_dict
-  
+
 lfns = []
-if len(args)==1:
+if len( args ) == 1:
   inputFileName = args[0]
   if os.path.exists( inputFileName ):
     inputFile = open( inputFileName, 'r' )
     for line in inputFile:
       line = line.rstrip()
       items = line.split()
-      items[0] = item[0].replace('LFN:','').replace('lfn:','')
-      lfns.append(getDict(items))
+      items[0] = item[0].replace( 'LFN:', '' ).replace( 'lfn:', '' )
+      lfns.append( getDict( items ) )
     inputFile.close()
 else:
-  lfns.append(getDict(args))
-  
+  lfns.append( getDict( args ) )
+
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC import gLogger
 import DIRAC
@@ -71,16 +71,16 @@ exitCode = 0
 rm = ReplicaManager()
 for lfn in lfns:
   if not os.path.exists( lfn['localfile'] ):
-    gLogger.error("File %s must exist locally"%lfn['localfile'])
+    gLogger.error( "File %s must exist locally" % lfn['localfile'] )
     exitCode = 1
     continue
   if not os.path.isfile( lfn['localfile'] ):
-    gLogger.error("%s is not a file"%lfn['localfile'])
+    gLogger.error( "%s is not a file" % lfn['localfile'] )
     exitCode = 2
     continue
 
-  gLogger.notice("\nUploading %s"%lfn['lfn'])
-  res = rm.putAndRegister(lfn['lfn'],lfn['localfile'],lfn['SE'],lfn['guid'])
+  gLogger.notice( "\nUploading %s" % lfn['lfn'] )
+  res = rm.putAndRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'] )
   if not res['OK']:
     exitCode = 3
     gLogger.error( 'Error: failed to upload %s to %s' % ( lfn['lfn'], lfn['SE'] ) )
