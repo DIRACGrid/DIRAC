@@ -10,9 +10,9 @@ import datetime
 
 # DIRAC
 from DIRAC                                                      import S_ERROR, S_OK
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient 
-#from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration      import getValidElements, getValidStatus
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine       import RSSMachine 
+from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration      import getValidElements
 
 __RCSID__ = '$Id: $'
 
@@ -175,8 +175,10 @@ class Statistics( object ):
       return result
     result = result[ 'Value' ]
     
+    statuses = RSSMachine( None ).getStates()
+    
     # Dictionary to be returned
-    statusCounter = dict.fromkeys( getValidStatus()[ 'Value' ], 0 )
+    statusCounter = dict.fromkeys( statuses, 0 )
     
     # If history is empty, return empty dictionary
     if not result:
