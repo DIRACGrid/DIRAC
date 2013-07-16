@@ -1727,7 +1727,7 @@ class ReplicaManager( CatalogToStorage ):
 
     self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
 
-    destSEStatus = self.resourceStatus.getStorageElementStatus( destSE, 'WriteAccess' )
+    destSEStatus = self.resourceStatus.getStorageStatus( destSE, 'WriteAccess' )
     if not destSEStatus[ 'OK' ]:
       self.log.error( destSEStatus[ 'Message' ] )
       return destSEStatus
@@ -1760,7 +1760,7 @@ class ReplicaManager( CatalogToStorage ):
 
     if sourceSE:
 
-      sourceSEStatus = self.resourceStatus.getStorageElementStatus( sourceSE, 'ReadAccess' )
+      sourceSEStatus = self.resourceStatus.getStorageStatus( sourceSE, 'ReadAccess' )
       if not sourceSEStatus[ 'OK' ]:
         self.log.error( sourceSEStatus[ 'Message' ] )
         return sourceSEStatus
@@ -1806,7 +1806,7 @@ class ReplicaManager( CatalogToStorage ):
         self.log.info( "%s %s replica not requested." % ( logStr, diracSE ) )
         continue
 
-      diracSEStatus = self.resourceStatus.getStorageElementStatus( diracSE, 'ReadAccess' )
+      diracSEStatus = self.resourceStatus.getStorageStatus( diracSE, 'ReadAccess' )
       if not diracSEStatus[ 'OK' ]:
         self.log.error( diracSEStatus[ 'Message' ] )
         continue
@@ -2468,7 +2468,7 @@ class ReplicaManager( CatalogToStorage ):
 
   def __SEActive( self, se ):
     """ check is SE is active """
-    res = self.resourceStatus.getStorageElementStatus( se, default = None )
+    res = self.resourceStatus.getStorageStatus( se, default = None )
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )
 

@@ -229,13 +229,13 @@ class FTSGraph( Graph ):
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False  }
       for se in seList:
-        rAccess = self.rssClient().getStorageElementStatus( se, "ReadAccess" )
+        rAccess = self.rssClient().getStorageStatus( se, "ReadAccess" )
         self.log.debug( "se read %s %s" % ( se, rAccess ) )
         if not rAccess["OK"]:
           self.log.error( rAccess["Message"] )
           continue
         rwDict[se]["read"] = True if rAccess["Value"][se]["ReadAccess"] in ( "Active", "Degraded" ) else False
-        wAccess = self.rssClient().getStorageElementStatus( se, "WriteAccess" )
+        wAccess = self.rssClient().getStorageStatus( se, "WriteAccess" )
         self.log.debug( "se write %s %s" % ( se, wAccess ) )
         if not wAccess["OK"]:
           self.log.error( wAccess["Message"] )

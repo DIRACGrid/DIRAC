@@ -211,7 +211,7 @@ class OperationHandlerBase( object ):
     :param str se: SE name
     :param str status: RSS status
     """
-    rssStatus = self.rssClient().getStorageElementStatus( se, status )
+    rssStatus = self.rssClient().getStorageStatus( se, status )
     # gLogger.always( rssStatus )
     if not rssStatus["OK"]:
       return S_ERROR( "unknown SE: %s" % se )

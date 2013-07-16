@@ -358,7 +358,7 @@ class TransferAgent( RequestAgentBase ):
     :param str se: SE name
     :param str status: RSS status name
     """
-    rssStatus = self.rssClient().getStorageElementStatus( se, status )
+    rssStatus = self.rssClient().getStorageStatus( se, status )
     if not rssStatus["OK"]:
       return S_ERROR( "unknown SE: %s" % se )
     if rssStatus["Value"][se][status] == "Banned":

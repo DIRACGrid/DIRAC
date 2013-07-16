@@ -211,7 +211,7 @@ class StorageFactory:
       return S_ERROR( errStr )    
     optionsDict = result['Value']
     
-    result = self.resourceStatus.getStorageElementStatus( storageName, 'ReadAccess' )    
+    result = self.resourceStatus.getStorageStatus( storageName, 'ReadAccess' )    
     if not result[ 'OK' ]:
       errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
       gLogger.error( errStr, "%s: %s" % ( storageName, result['Message'] ) )
