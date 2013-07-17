@@ -61,7 +61,12 @@ def getSEProtocolOption( se, optionName ):
   result = resources.getAccessProtocols( se )
   if not result['OK']:
     return S_ERROR( "Acces Protocol for SE %s not found: %s" % ( se, result['Message'] ) )
-  ap = result['Value'][0]
+  
+  try:
+    ap = result['Value'][0]
+  except IndexError:
+    return S_ERROR( 'No AccessProtocol associated to %s' % se  )
+  
   return resources.getAccessProtocolOption( ap, optionName )
 
 def getStorageElementEndpoint( storageElement ):
@@ -71,10 +76,13 @@ def getStorageElementEndpoint( storageElement ):
   if not result['OK']:
     return result
   # FIXME: There can be several access protocols for the same SE !
-  ap = result['Value'][0]
+  try:
+    ap = result['Value'][0]
+  except IndexError:
+    return S_ERROR( 'No AccessProtocol associated to %s' % storageElement  )
   
   result = resources.getAccessProtocolOptionsDict( ap )
-  result = resources.getAccessProtocols( storageElement )
+  #result = resources.getAccessProtocols( storageElement )
   if not result['OK']:
     return result
   host = result['Value'].get( 'Host', '' )
