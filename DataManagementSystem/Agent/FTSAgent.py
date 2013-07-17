@@ -185,15 +185,15 @@ class FTSAgent( AgentModule ):
 
     also finalize request if status == Done
     """
+    # # put back request
+    put = cls.requestClient().putRequest( request )
+    if not put["OK"]:
+      return put
     # # finalize first is possible
     if request.Status == "Done" and request.JobID:
       finalizeRequest = cls.requestClient().finalizeRequest( request.RequestName, request.JobID )
       if not finalizeRequest["OK"]:
         request.Status = "Scheduled"
-    # # put back request
-    put = cls.requestClient().putRequest( request )
-    if not put["OK"]:
-      return put
     # # del request from cache
     if request.RequestName in cls.__reqCache:
       del cls.__reqCache[ request.RequestName ]
@@ -234,15 +234,6 @@ class FTSAgent( AgentModule ):
     """ create fts graph """
     log = gLogger.getSubLogger( "ftsGraph" )
 
-    ftsSites = self.ftsClient().getFTSSitesList()
-    if not ftsSites["OK"]:
-      log.error( "unable to get FTS sites list: %s" % ftsSites["Message"] )
-      return ftsSites
-    ftsSites = ftsSites["Value"]
-    if not ftsSites:
-      log.error( "FTSSites list is empty, no records in FTSDB.FTSSite table?" )
-      return S_ERROR( "no FTSSites found" )
-
     ftsHistory = self.ftsClient().getFTSHistory()
     if not ftsHistory["OK"]:
       log.error( "unable to get FTS history: %s" % ftsHistory["Message"] )
@@ -251,7 +242,7 @@ class FTSAgent( AgentModule ):
 
     try:
       self.updateLock().acquire()
-      self.__ftsGraph = FTSGraph( "FTSGraph", ftsSites, ftsHistory )
+      self.__ftsGraph = FTSGraph( "FTSGraph", ftsHistory )
     finally:
       self.updateLock().release()
 
@@ -384,7 +375,6 @@ class FTSAgent( AgentModule ):
       finally:
         self.updateLock().release()
         self.__rwAccessValidStamp = now + datetime.timedelta( seconds = self.RW_REFRESH )
-
 
     requestNames = self.requestClient().getRequestNamesList( [ "Scheduled" ] )
     if not requestNames["OK"]:

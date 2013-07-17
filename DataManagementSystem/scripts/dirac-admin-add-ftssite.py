@@ -1,5 +1,8 @@
 #!/bin/env python
-""" add fts site to FTSDB """
+""" add fts site to FTSDB 
+
+ :depreciated:
+"""
 
 __RCSID__ = "$Id: $"
 

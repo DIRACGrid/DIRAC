@@ -41,6 +41,25 @@ def getStorageElementSiteMapping( siteList=[] ):
     
   return S_OK( siteDict )  
 
+def getFTSServersForSites( self, siteList=None ):
+  """ get FTSServers for sites 
+  
+  :param list siteList: list of sites
+  """
+  siteList = siteList if siteList else None
+  if not siteList:
+    siteList = getSites()
+    if not siteList["OK"]:
+      return siteList
+    siteList = siteList["Value"]
+  ftsServers = dict()
+  for site in siteList:
+    grid = site.split(".")[0]
+    serv = gConfig.getValue( cfgPath( gBaseResourcesSection, "Sites", grid, site, "FTSServer" ), "" )
+    if serv:
+      ftsServers[site] = serv 
+  return S_OK( ftsServers )
+
 def getSiteTier( site ):
   """
     Return Tier level of the given Site
