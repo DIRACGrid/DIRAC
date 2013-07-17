@@ -139,19 +139,13 @@ class FTSManagerHandler( RequestHandler ):
       csPath = getServiceSection( "DataManagement/FTSManager" )
       csPath = "%s/%s" % ( csPath, "FTSStrategy" )
 
-      #ftsSites = cls.__ftsDB.getFTSSitesList()
-      #if not ftsSites["OK"]:
-      #  gLogger.warn( "unable to read FTSSites: %s" % ftsSites["Message"] )
-      #  ftsSites["Value"] = []
-      #ftsSites = ftsSites["Value"]
-
       ftsHistory = cls.__ftsDB.getFTSHistory()
       if not ftsHistory["OK"]:
         gLogger.warn( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
         ftsHistory["Value"] = []
       ftsHistory = ftsHistory["Value"]
 
-      cls.__ftsStrategy = FTSStrategy( csPath, ftsHistory )
+      cls.__ftsStrategy = FTSStrategy( csPath, None, ftsHistory )
 
     return cls.__ftsStrategy
 

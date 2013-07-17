@@ -103,7 +103,6 @@ class FTSStrategy( object ):
                                 "Swarm" : self.swarm }
 
     self.ftsGraph = FTSGraph( "FTSGraph",
-                              ftsSites,
                               ftsHistoryViews,
                               self.acceptableFailureRate,
                               self.acceptableFailedFiles,

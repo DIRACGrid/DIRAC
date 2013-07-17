@@ -124,9 +124,10 @@ class FTSGraph( Graph ):
     self.log.debug( "initializing FTS graph..." )
 
     ftsSites = self.ftsSites()
-    if not ftsSites["OK"]:
+    if ftsSites["OK"]:
+      ftsSites = ftsSites["Value"]
+    else:
       ftsSites = []
-    ftsSites = ftsSites["Value"]
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
 
     sitesDict = getStorageElementSiteMapping()  # [ ftsSite.Name for ftsSite in ftsSites ] )
@@ -150,7 +151,6 @@ class FTSGraph( Graph ):
 
       rwAttrs = { "SEs": rwSEsDict }
       roAttrs = { "FTSServer": ftsSite.FTSServer,
-                  "FTSSiteID": ftsSite.FTSSiteID,
                   "MaxActiveJobs": ftsSite.MaxActiveJobs }
       site = Site( ftsSite.Name, rwAttrs, roAttrs )
 
@@ -275,5 +275,8 @@ class FTSGraph( Graph ):
     for site, ftsServerURL in ftsServers.items():
       ftsSite = FTSSite()
       ftsSite.Name, ftsSite.FTSServer = site, ftsServerURL
+      ## should be read from CS as well
+      ftsSite.MaxActiveJobs = 50
+      ftsSites.appedn( ftsSite )
     return S_OK( ftsSites )
     
