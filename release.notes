@@ -1,3 +1,8 @@
+[v6r8p27]
+
+*DMS
+BUGFIX: dirac-dms-add-file - fixed typo item -> items
+
 [v6r8p26]
 
 *Core
