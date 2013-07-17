@@ -1,3 +1,9 @@
+[v6r9p14]
+
+*DMS
+CHANGE: FTSDB - changed schema: removing FTSSite table. From now on FTS sites 
+        would be read from CS Resources
+
 [v6r9p13]
 
 FIX: included fixes from v6r8p26 patch release
