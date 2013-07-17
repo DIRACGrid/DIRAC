@@ -103,7 +103,6 @@ class FTSStrategy( object ):
                                 "Swarm" : self.swarm }
 
     self.ftsGraph = FTSGraph( "FTSGraph",
-                              ftsSites,
                               ftsHistoryViews,
                               self.acceptableFailureRate,
                               self.acceptableFailedFiles,
@@ -126,17 +125,15 @@ class FTSStrategy( object ):
     return cls.__graphLock
 
   @classmethod
-  def resetGraph( cls, ftsSites, ftsHistoryViews ):
+  def resetGraph( cls, ftsHistoryViews ):
     """ reset graph
 
-    :param list ftsSites: list of FTSSites
     :param list ftsHistoryViews: list of FTSHistoryViews
     """
     ftsGraph = None
     try:
       cls.graphLock().acquire()
       ftsGraph = FTSGraph( "FTSGraph",
-                           ftsSites,
                            ftsHistoryViews,
                            cls.acceptableFailureRate,
                            cls.acceptableFailedFiles,

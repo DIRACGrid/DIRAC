@@ -27,9 +27,10 @@ from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
 # # from RSS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 # from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping, getSites, getFTSServersForSites
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 
 class Site( Node ):
@@ -47,6 +48,7 @@ class Site( Node ):
     return se in self.SEs
 
   def __str__( self ):
+    """ str() op """
     return "<site name='%s' SEs='%s' />" % ( self.name, ",".join( self.SEs.keys() ) )
 
 class Route( Edge ):
@@ -94,7 +96,6 @@ class FTSGraph( Graph ):
 
   def __init__( self,
                 name,
-                ftsSites = None,
                 ftsHistoryViews = None,
                 accFailureRate = 0.75,
                 accFailedFiles = 5,
@@ -102,8 +103,7 @@ class FTSGraph( Graph ):
     """ c'tor
 
     :param str name: graph name
-    :param list ftsSites: list with FTSSites
-    :param list ftshsitoryViews: list with FTSHistoryViews
+    :param list ftsHistoryViews: list with FTSHistoryViews
     :param float accFailureRate: acceptable failure rate
     :param int accFailedFiles: acceptable failed files
     :param str schedulingType: scheduling type
@@ -113,9 +113,9 @@ class FTSGraph( Graph ):
     self.accFailureRate = accFailureRate
     self.accFailedFiles = accFailedFiles
     self.schedulingType = schedulingType
-    self.initialize( ftsSites, ftsHistoryViews )
+    self.initialize( ftsHistoryViews )
 
-  def initialize( self, ftsSites = None, ftsHistoryViews = None ):
+  def initialize( self, ftsHistoryViews = None ):
     """ initialize FTSGraph  given FTSSites and FTSHistoryViews
 
     :param list ftsSites: list with FTSSites instances
@@ -123,7 +123,11 @@ class FTSGraph( Graph ):
     """
     self.log.debug( "initializing FTS graph..." )
 
-    ftsSites = ftsSites if ftsSites else []
+    ftsSites = self.ftsSites()
+    if ftsSites["OK"]:
+      ftsSites = ftsSites["Value"]
+    else:
+      ftsSites = []
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
 
     sitesDict = getStorageElementSiteMapping()  # [ ftsSite.Name for ftsSite in ftsSites ] )
@@ -140,16 +144,13 @@ class FTSGraph( Graph ):
 
     # # create nodes
     for ftsSite in ftsSites:
-      # # revert for a new resource helper
-      # rwSEsDict = dict.fromkeys( sitesDict.get( ftsSite.Name, [] ), {} )
 
-      rwSEsDict = dict.fromkeys( sitesDict.get( "LCG." + ftsSite.Name, [] ), {} )
+      rwSEsDict = dict.fromkeys( sitesDict.get( ftsSite.Name, [] ), {} )
       for se in rwSEsDict:
         rwSEsDict[se] = { "read": False, "write": False }
 
       rwAttrs = { "SEs": rwSEsDict }
       roAttrs = { "FTSServer": ftsSite.FTSServer,
-                  "FTSSiteID": ftsSite.FTSSiteID,
                   "MaxActiveJobs": ftsSite.MaxActiveJobs }
       site = Site( ftsSite.Name, rwAttrs, roAttrs )
 
@@ -165,7 +166,7 @@ class FTSGraph( Graph ):
                     "FilePut": 0.0, "ThroughPut": 0.0,
                     "ActiveJobs": 0, "FinishedJobs": 0 }
 
-        roAttrs = { "routeName": "%s => %s" % ( sourceSite.name, destSite.name ),
+        roAttrs = { "routeName": "%s#%s" % ( sourceSite.name, destSite.name ),
                     "AcceptableFailureRate": self.accFailureRate,
                     "AcceptableFailedFiles": self.accFailedFiles,
                     "SchedulingType": self.schedulingType }
@@ -260,3 +261,22 @@ class FTSGraph( Graph ):
         return S_OK( edge )
     return S_ERROR( "FTSGraph: unable to find route between '%s' and '%s'" % ( fromSE, toSE ) )
 
+  def ftsSites( self ):
+    """ get fts site list """
+    sites = getSites()
+    if not sites["OK"]:
+      return sites
+    sites = sites["Value"]
+    ftsServers = getFTSServersForSites( sites )
+    if not ftsServers["OK"]:
+      return ftsServers
+    ftsServers = ftsServers["Value"]
+    ftsSites = []
+    for site, ftsServerURL in ftsServers.items():
+      ftsSite = FTSSite()
+      ftsSite.Name, ftsSite.FTSServer = site, ftsServerURL
+      ## should be read from CS as well
+      ftsSite.MaxActiveJobs = 50
+      ftsSites.append( ftsSite )
+    return S_OK( ftsSites )
+    

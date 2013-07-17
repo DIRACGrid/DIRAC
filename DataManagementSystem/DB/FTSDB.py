@@ -33,7 +33,6 @@ from DIRAC.Core.Utilities.List import stringListToString, intListToString
 # # ORMs
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
-from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 
 ########################################################################
@@ -83,7 +82,7 @@ class FTSDB( DB ):
   def getTableMeta():
     """ get db schema in a dict format """
     return dict( [ ( classDef.__name__, classDef.tableDesc() )
-                   for classDef in ( FTSSite, FTSJob, FTSFile ) ] )
+                   for classDef in ( FTSJob, FTSFile ) ] )
   @staticmethod
   def getViewMeta():
     """ return db views in dict format
@@ -155,60 +154,6 @@ class FTSDB( DB ):
       # # close cursor
       cursor.close()
       return S_ERROR( str( error ) )
-
-  def putFTSSite( self, ftsSite ):
-    """ put FTS site into DB """
-    if not ftsSite.FTSSiteID:
-      existing = self._query( "SELECT `FTSSiteID` FROM `FTSSite` WHERE `Name` = '%s'" % ftsSite.Name )
-      if not existing["OK"]:
-        self.log.error( "putFTSSite: %s" % existing["Message"] )
-        return existing
-      existing = existing["Value"]
-      if existing:
-        return S_ERROR( "putFTSSite: site of '%s' name is already defined at FTSSiteID = %s" % ( ftsSite.Name,
-                                                                                                 existing[0][0] ) )
-    ftsSiteSQL = ftsSite.toSQL()
-    if not ftsSiteSQL["OK"]:
-      self.log.error( "putFTSSite: %s" % ftsSiteSQL["Message"] )
-      return ftsSiteSQL
-    ftsSiteSQL = ftsSiteSQL["Value"]
-
-    putFTSSite = self._transaction( ftsSiteSQL )
-    if not putFTSSite["OK"]:
-      self.log.error( putFTSSite["Message"] )
-    return putFTSSite
-
-  def getFTSSite( self, ftsSiteID ):
-    """ read FTSSite given FTSSiteID """
-    getFTSSiteQuery = "SELECT * FROM `FTSSite` WHERE `FTSSiteID`=%s" % int( ftsSiteID )
-    getFTSSite = self._transaction( [ getFTSSiteQuery ] )
-    if not getFTSSite["OK"]:
-      self.log.error( "getFTSSite: %s" % getFTSSite["Message"] )
-      return getFTSSite
-    getFTSSite = getFTSSite["Value"]
-    if getFTSSiteQuery in getFTSSite and getFTSSite[getFTSSiteQuery]:
-      getFTSSite = FTSSite( getFTSSite[getFTSSiteQuery][0] )
-      return S_OK( getFTSSite )
-    # # if we land here FTSSite does nor exist
-    return S_OK()
-
-  def deleteFTSSite( self, ftsSiteID ):
-    """ delete FTSSite given its FTSSiteID """
-    delete = "DELETE FROM `FTSSite` WHERE `FTSSiteID` = %s;" % int( ftsSiteID )
-    delete = self._transaction( [ delete ] )
-    if not delete["OK"]:
-      self.log.error( delete["Message"] )
-    return delete
-
-  def getFTSSitesList( self ):
-    """ bulk read of FTS sites """
-    ftsSitesQuery = "SELECT * FROM `FTSSite`;"
-    ftsSites = self._transaction( [ ftsSitesQuery ] )
-    if not ftsSites["OK"]:
-      self.log.error( "getFTSSites: %s" % ftsSites["Message"] )
-      return ftsSites
-    ftsSites = ftsSites["Value"][ftsSitesQuery] if ftsSitesQuery in ftsSites["Value"] else []
-    return S_OK( [ FTSSite( ftsSiteDict ) for ftsSiteDict  in ftsSites ] )
 
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into fts db """
@@ -497,9 +442,8 @@ class FTSDB( DB ):
   def getDBSummary( self ):
     """ get DB summary """
     # # this will be returned
-    retDict = { "FTSSite": {}, "FTSJob": {}, "FTSFile": {}, "FTSHistory": {} }
-    transQueries = { "SELECT * FROM `FTSSite`;": "FTSSite",
-                     "SELECT `Status`, COUNT(`Status`) FROM `FTSJob` GROUP BY `Status`;" : "FTSJob",
+    retDict = { "FTSJob": {}, "FTSFile": {}, "FTSHistory": {} }
+    transQueries = { "SELECT `Status`, COUNT(`Status`) FROM `FTSJob` GROUP BY `Status`;" : "FTSJob",
                      "SELECT `Status`, COUNT(`Status`) FROM `FTSFile` GROUP BY `Status`;" : "FTSFile",
                      "SELECT * FROM `FTSHistoryView`;": "FTSHistory" }
     ret = self._transaction( transQueries.keys() )
@@ -522,17 +466,9 @@ class FTSDB( DB ):
           if status not in retDict["FTSFile"]:
             retDict["FTSFile"][status] = 0
           retDict["FTSFile"][status] += count
-      elif transQueries[k] == "FTSSite":
-        retDict["FTSSite"] = v
       else:  # # FTSHistory
         retDict["FTSHistory"] = v
     return S_OK( retDict )
-
-  def _getFTSSiteProperties( self, ftsSiteID, columnNames = None ):
-    """ select :columNames: from FTSSite given FTSSiteID """
-    columnNames = columnNames if columnNames else FTSSite.tableDesc()["Fields"].keys()
-    columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
-    return "SELECT %s FROM `FTSSite` WHERE `FTSSiteID` = %s" % ( columnNames, ftsSiteID )
 
   def _getFTSJobProperties( self, ftsJobID, columnNames = None ):
     """ select :columnNames: from FTSJob table  """

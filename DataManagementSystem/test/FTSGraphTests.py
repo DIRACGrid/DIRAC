@@ -29,7 +29,6 @@ import unittest
 from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
 # # from DIRAC
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
-from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 
 
 ########################################################################
@@ -41,31 +40,6 @@ class FTSGraphTests( unittest.TestCase ):
 
   def setUp( self ):
     """ test set up """
-    self.ftsSites = [ 
-      FTSSite( { "FTSServer": "https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer",
-                 "Name": "CERN.ch",
-                 "FTSSiteID": 1 } ),
-      FTSSite( { "FTSServer": "https://fts.pic.es:8443/glite-data-transfer-fts/services/FileTransfer",
-                 "Name": "PIC.es",
-                 "FTSSiteID": 2 } ),
-      FTSSite( { "FTSServer": "https://lcgfts.gridpp.rl.ac.uk:8443/glite-data-transfer-fts/services/FileTransfer",
-                 "Name": "RAL.uk",
-                 "FTSSiteID": 3 } ),
-      FTSSite( { "FTSServer": "https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer",
-                 "Name": "SARA.nl",
-                 "FTSSiteID": 4 } ),
-      FTSSite( { "FTSServer": "https://fts.cr.cnaf.infn.it:8443/glite-data-transfer-fts/services/FileTransfer",
-                 "Name": "CNAF.it",
-                 "FTSSiteID": 5 } ),
-      FTSSite( { "FTSServer": "https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer",
-                 "Name": "NIKHEF.nl",
-                 "FTSSiteID": 6 } ),
-      FTSSite( { "FTSServer": "https://fts-fzk.gridka.de:8443/glite-data-transfer-fts/services/FileTransfer",
-                 "Name": "GRIDKA.de",
-                 "FTSSiteID": 7 } ),
-      FTSSite( { "FTSServer": "https://cclcgftsprod.in2p3.fr:8443/glite-data-transfer-fts/services/FileTransfer",
-                 "Name": "IN2P3.fr",
-                 "FTSSiteID": 8 } ) ]
     self.ftsHistoryViews = [ 
       FTSHistoryView( { "TargetSE": "RAL-USER",
                         "SourceSE": "CERN-USER",
@@ -78,12 +52,11 @@ class FTSGraphTests( unittest.TestCase ):
     
   def tearDown( self ):
     """ test case tear down """
-    del self.ftsSites
     del self.ftsHistoryViews
 
   def test( self ):
     """ test case """
-    graph = FTSGraph( "ftsGraph", self.ftsSites, self.ftsHistoryViews )
+    graph = FTSGraph( "ftsGraph",  self.ftsHistoryViews )
 
     self.assertEqual( type( graph ), FTSGraph, "c'tor failed" )
 
