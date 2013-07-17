@@ -127,6 +127,11 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
 
+[v6r8p27]
+
+*DMS
+BUGFIX: dirac-dms-add-file - fixed typo item -> items
+
 [v6r8p26]
 
 *Core
