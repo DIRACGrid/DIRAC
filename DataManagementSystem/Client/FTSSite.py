@@ -14,7 +14,6 @@
     class representing FTS site
 
     we need this one to know which site is a part of FTS infrastructure
-
 """
 # for properties
 # pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103
@@ -27,67 +26,53 @@ __RCSID__ = "$Id $"
 
 # # imports
 import urlparse
-# # from DIRAC
-from DIRAC import S_OK
-from DIRAC.RequestManagementSystem.private.Record import Record
 
 ########################################################################
-class FTSSite( Record ):
+class FTSSite( object ):
   """
   .. class:: FTSSite
 
-  site with FTS infrastructure
+  FTS infrastructure
+  
+  props:
+    Name = LCG.FOO.bar
+    FTSServer = FQDN for server
+    MaxActiveJobs = 50
   """
   MAX_ACTIVE_JOBS = 50
 
-  def __init__( self, fromDict = None ):
+  def __init__( self, name = None, ftsServer = None, maxActiveJobs = None ):
     """c'tor
 
     :param self: self reference
-    :param dict fromDict: data dict
+    :param str name: site name
+    :param str ftsServer: FTS server URL
+    :param int maxActiveJobs: max active jobs transferring to this site
     """
-    Record.__init__( self )
-    self.__data__["MaxActiveJobs"] = self.MAX_ACTIVE_JOBS
-    fromDict = fromDict if fromDict else {}
-    for attrName, attrValue in fromDict.items():
-      if attrName not in self.__data__:
-        raise AttributeError( "unknown FTSSite attribute %s" % str( attrName ) )
-      setattr( self, attrName, attrValue )
-
-  @staticmethod
-  def tableDesc():
-    """ get table desc """
-    return { "Fields" :
-             { "FTSSiteID": "INTEGER NOT NULL AUTO_INCREMENT",
-               "Name": "VARCHAR(255) NOT NULL",
-               "FTSServer":  "VARCHAR(255)",
-               "MaxActiveJobs": "INTEGER NOT NULL DEFAULT 50" },
-             "PrimaryKey": [ "FTSSiteID" ] }
-
-  @property
-  def FTSSiteID( self ):
-    """ FTSSiteID getter """
-    return self.__data__["FTSSiteID"]
-
-  @FTSSiteID.setter
-  def FTSSiteID( self, value ):
-    """ FTSSiteID setter """
-    self.__data__["FTSSiteID"] = value
+    self.__name = ""
+    self.__ftsServer = ""
+    self.__maxActiveJobs = self.MAX_ACTIVE_JOBS
+    if name:
+      self.Name = name
+    if ftsServer:
+      self.FTSServer = ftsServer
+    if maxActiveJobs:
+      self.MaxActiveJobs = maxActiveJobs
 
   @property
   def Name( self ):
     """ Name getter """
-    return self.__data__["Name"]
+    return self.__name
 
   @Name.setter
   def Name( self, value ):
     """ Name setter """
-    self.__data__["Name"] = value
+    self.__name = value
 
   @property
   def FTSServer( self ):
     """ FTS server uri getter """
-    return self.__data__["FTSServer"]
+    return self.__ftsServer
 
   @FTSServer.setter
   def FTSServer( self, value ):
@@ -96,38 +81,15 @@ class FTSSite( Record ):
       raise TypeError( "FTSServer has to be a string!" )
     if not urlparse.urlparse( value ).scheme:
       raise ValueError( "Wrongly formatted URI!" )
-
-    self.__data__["FTSServer"] = value
+    self.__ftsServer = value
 
   @property
   def MaxActiveJobs( self ):
     """ max active jobs """
-    return self.__data__["MaxActiveJobs"]
+    return self.__maxActiveJobs
 
   @MaxActiveJobs.setter
   def MaxActiveJobs( self, value ):
     """ max active jobs setter """
-    self.__data__["MaxActiveJobs"] = int( value ) if value else 50
+    self.__maxActiveJobs = int( value ) if value else 50
 
-  def toSQL( self ):
-    """ prepare SQL INSERT or UPDATE statement """
-    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) == str else str( value ) )
-                for column, value in self.__data__.items()
-                if value and column != "FTSSiteID" ]
-    query = []
-    if self.FTSSiteID:
-      query.append( "UPDATE `FTSSite` SET " )
-      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE `FTSSiteID`=%d;\n" % self.FTSSiteID )
-    else:
-      query.append( "INSERT INTO `FTSSite` " )
-      columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
-      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
-      query.append( columns )
-      query.append( " VALUES %s;" % values )
-    return S_OK( "".join( query ) )
-
-  def toJSON( self ):
-    """ dump FTSFile to JSON format """
-    return S_OK( dict( zip( self.__data__.keys(),
-                      [ str( val ) if val else "" for val in self.__data__.values() ] ) ) )

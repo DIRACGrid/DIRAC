@@ -86,6 +86,12 @@ NEW: XXXStorage - added getCurrentStatus() method
 NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
      dirac-stager-monitor-requests, dirac-stager-show-stats
 
+[v6r9p14]
+
+*DMS
+CHANGE: FTSDB - changed schema: removing FTSSite table. From now on FTS sites 
+        would be read from CS Resources
+
 [v6r9p13]
 
 FIX: included fixes from v6r8p26 patch release
@@ -208,6 +214,11 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
+
+[v6r8p27]
+
+*DMS
+BUGFIX: dirac-dms-add-file - fixed typo item -> items
 
 [v6r8p26]
 
