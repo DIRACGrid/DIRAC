@@ -277,6 +277,6 @@ class FTSGraph( Graph ):
       ftsSite.Name, ftsSite.FTSServer = site, ftsServerURL
       ## should be read from CS as well
       ftsSite.MaxActiveJobs = 50
-      ftsSites.appedn( ftsSite )
+      ftsSites.append( ftsSite )
     return S_OK( ftsSites )
     
