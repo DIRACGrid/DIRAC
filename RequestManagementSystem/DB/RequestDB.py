@@ -23,7 +23,12 @@ __RCSID__ = "$Id $"
 # # imports
 import random
 import threading
-import MySQLdb.cursors
+# Get rid of the annoying Deprecation warning of the current MySQLdb
+# FIXME: compile a newer MySQLdb version
+import warnings
+with warnings.catch_warnings():
+  warnings.simplefilter( 'ignore', DeprecationWarning )
+  import MySQLdb.cursors
 from MySQLdb import Error as MySQLdbError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
