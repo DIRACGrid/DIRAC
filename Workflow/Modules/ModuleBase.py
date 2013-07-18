@@ -410,22 +410,17 @@ class ModuleBase( object ):
 
   #############################################################################
 
-  def setJobParameter( self, name, value, sendFlag = True, jr = None ):
-    """ Wraps around setJobParameter of state update client
+  def setJobParameter( self, name, value, sendFlag = True ):
+    """Wraps around setJobParameter of state update client
     """
     if not self._WMSJob():
-      return S_OK( 'JobID not defined' )  # e.g. running locally prior to submission
+      return 0  # e.g. running locally prior to submission
 
     self.log.verbose( 'setJobParameter(%d,%s,%s)' % ( self.jobID, name, value ) )
 
-    if not jr:
-      jr = self._getJobReporter()
-
-    jobParam = jr.setJobParameter( str( name ), str( value ), sendFlag )
+    jobParam = self.jobReport.setJobParameter( str( name ), str( value ), sendFlag )
     if not jobParam['OK']:
       self.log.warn( jobParam['Message'] )
-
-    return jobParam
 
   #############################################################################
 
@@ -473,21 +468,15 @@ class ModuleBase( object ):
         self.log.verbose( 'Found LFN %s for file %s' % ( lfn, os.path.basename( lfn ) ) )
 
     # check local existance
-    try:
-      self._checkLocalExistance( fileInfo.keys() )
-    except OSError:
-      return S_ERROR( 'Output Data Not Found' )
+    self._checkLocalExistance( fileInfo.keys() )
 
     # Select which files have to be uploaded: in principle all
     candidateFiles = self._applyMask( fileInfo, fileMask, stepMask )
 
     # Sanity check all final candidate metadata keys are present (return S_ERROR if not)
-    try:
-      self._checkSanity( candidateFiles )
-    except ValueError:
-      return S_ERROR( 'Missing requested fileName keys' )
+    self._checkSanity( candidateFiles )
 
-    return S_OK( candidateFiles )
+    return candidateFiles
 
   #############################################################################
 
@@ -496,8 +485,12 @@ class ModuleBase( object ):
     """
     candidateFiles = copy.deepcopy( candidateFilesIn )
 
-    if type( fileMask ) != type( [] ):
+    if fileMask and type( fileMask ) != type( [] ):
       fileMask = [fileMask]
+    if type( stepMask ) == type( 1 ):
+      stepMask = str( stepMask )
+    if stepMask and type( stepMask ) != type( [] ):
+      stepMask = [stepMask]
 
     if fileMask and fileMask != ['']:
       for fileName, metadata in candidateFiles.items():
@@ -508,13 +501,13 @@ class ModuleBase( object ):
     else:
       self.log.info( 'No outputDataFileMask provided, the files with all the extensions will be considered' )
 
-    if stepMask:
-      # FIXME: this supposes that the LFN contains the step id
+    if stepMask and stepMask != ['']:
+      # FIXME: This supposes that the LFN contains the step ID
       for fileName, metadata in candidateFiles.items():
         if fileName.split( '_' )[-1].split( '.' )[0] not in stepMask:
           del( candidateFiles[fileName] )
           self.log.info( 'Output file %s was produced but will not be treated (stepMask is %s)' % ( fileName,
-                                                                                              ', '.join( stepMask ) ) )
+                                                                                               ', '.join( stepMask ) ) )
     else:
       self.log.info( 'No outputDataStep provided, the files output of all the steps will be considered' )
 
