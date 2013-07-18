@@ -16,7 +16,8 @@ from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.TransformationSystem.Client.FileReport           import FileReport
-from DIRAC.RequestManagementSystem.Client.RequestContainer  import RequestContainer
+from DIRAC.RequestManagementSystem.Client.Request           import Request
+from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
 from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
 
 
@@ -215,7 +216,7 @@ class ModuleBase( object ):
 
         By default, the module finalizes correctly
     """
-    
+
     if not status:
       status = '%s correctly finalized' % str( self.__class__ )
 
@@ -265,7 +266,7 @@ class ModuleBase( object ):
     if self.workflow_commons.has_key( 'Request' ):
       return self.workflow_commons['Request']
     else:
-      request = RequestContainer()
+      request = Request()
       self.workflow_commons['Request'] = request
       return request
 
@@ -549,6 +550,55 @@ class ModuleBase( object ):
       raise os.error
 
   #############################################################################
+
+  def generateFailoverFile( self ):
+    """ Retrieve the accumulated reporting request, and produce a JSON file that is consumed by the JobWrapper
+    """
+    reportRequest = None
+    result = self.jobReport.generateForwardDISET()
+    if not result['OK']:
+      self.log.warn( "Could not generate Operation for job report with result:\n%s" % ( result ) )
+    else:
+      reportRequest = result['Value']
+    if reportRequest:
+      self.log.info( "Populating request with job report information" )
+      self.request.addOperation( reportRequest )
+
+    accountingReport = None
+    if self.workflow_commons.has_key( 'AccountingReport' ):
+      accountingReport = self.workflow_commons['AccountingReport']
+    if accountingReport:
+      result = accountingReport.commit()
+      if not result['OK']:
+        self.log.error( "!!! Both accounting and RequestDB are down? !!!" )
+        return result
+
+    if len( self.request ):
+      isValid = gRequestValidator.validate( self.request )
+      if not isValid['OK']:
+        raise RuntimeError, "Failover request is not valid: %s" % isValid['Message']
+      else:
+        requestJSON = self.request.toJSON()
+        if requestJSON['OK']:
+          self.log.info( "Creating failover request for deferred operations for job %d" % self.jobID )
+          request_string = str( requestJSON['Value'] )
+          self.log.debug( request_string )
+          # Write out the request string
+          fname = '%s_%s_request.json' % ( self.production_id, self.prod_job_id )
+          jsonFile = open( fname, 'w' )
+          jsonFile.write( request_string )
+          jsonFile.close()
+          self.log.info( "Created file containing failover request %s" % fname )
+          result = self.request.getDigest()
+          if result['OK']:
+            self.log.info( "Digest of the request: %s" % result['Value'] )
+          else:
+            self.log.error( "No digest? That's not sooo important, anyway: %s" % result['Message'] )
+        else:
+          raise RuntimeError, requestJSON['Message']
+
+  #############################################################################
+
 
 #############################################################################
 
