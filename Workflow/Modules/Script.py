@@ -1,20 +1,20 @@
-''' The Script class provides a simple way for users to specify an executable
+""" The Script class provides a simple way for users to specify an executable
     or file to run (and is also a simple example of a workflow module).
-'''
+"""
 
 import os, sys, re
 
 from DIRAC.Core.Utilities.Subprocess    import shellCall
 from DIRAC                              import gLogger
 
-from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase, GracefulTermination
+from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase
 
 class Script( ModuleBase ):
 
   #############################################################################
   def __init__( self, rm = None ):
-    ''' c'tor
-    '''
+    """ c'tor
+    """
     self.log = gLogger.getSubLogger( 'Script' )
     super( Script, self ).__init__( self.log, rm = rm )
 
@@ -33,8 +33,8 @@ class Script( ModuleBase ):
   #############################################################################
 
   def _resolveInputVariables( self ):
-    ''' By convention the workflow parameters are resolved here.
-    '''
+    """ By convention the workflow parameters are resolved here.
+    """
     super( Script, self )._resolveInputVariables()
     super( Script, self )._resolveInputStep()
 
@@ -44,14 +44,14 @@ class Script( ModuleBase ):
   #############################################################################
 
   def _initialize( self ):
-    ''' simple checks
-    '''
+    """ simple checks
+    """
     if not self.executable:
       raise RuntimeError, 'No executable defined'
 
   def _setCommand( self ):
-    ''' set the command that will be executed
-    '''
+    """ set the command that will be executed
+    """
     self.command = self.executable
     if os.path.exists( os.path.basename( self.executable ) ):
       self.executable = os.path.basename( self.executable )
@@ -66,8 +66,8 @@ class Script( ModuleBase ):
     self.log.info( 'Command is: %s' % self.command )
 
   def _executeCommand( self ):
-    ''' execute the self.command (uses shellCall)
-    '''
+    """ execute the self.command (uses shellCall)
+    """
     failed = False
 
     outputDict = shellCall( 0, self.command,
@@ -84,9 +84,9 @@ class Script( ModuleBase ):
     stderr = resTuple[2]
     if status:
       failed = True
-      self.log.error( 'Non-zero status %s while executing %s' % ( status, self.command ) )
+      self.log.error( "Non-zero status %s while executing %s" % ( status, self.command ) )
     else:
-      self.log.info( '%s execution completed with status %s' % ( self.executable, status ) )
+      self.log.info( "%s execution completed with status %s" % ( self.executable, status ) )
 
     self.log.verbose( stdout )
     self.log.verbose( stderr )
@@ -94,23 +94,21 @@ class Script( ModuleBase ):
       self.log.verbose( 'Removing existing %s' % self.applicationLog )
       os.remove( self.applicationLog )
     fopen = open( '%s/%s' % ( os.getcwd(), self.applicationLog ), 'w' )
-    fopen.write( '<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s ' % ( self.executable, stdout ) )
+    fopen.write( "<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % ( self.executable, stdout ) )
     if stderr:
-      fopen.write( '<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s ' % ( self.executable, stderr ) )
+      fopen.write( "<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % ( self.executable, stderr ) )
     fopen.close()
-    self.log.info( 'Output written to %s, execution complete.' % ( self.applicationLog ) )
+    self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:
-      raise RuntimeError, '%s Exited With Status %s' % ( os.path.basename( self.executable ), status )
+      raise RuntimeError, "%s Exited With Status %s" % ( os.path.basename( self.executable ), status )
 
 
   def _finalize( self ):
-    ''' simply finalize
-    '''
-    status = '%s (%s %s) Successful' % ( os.path.basename( self.executable ),
+    """ simply finalize
+    """
+    status = "%s (%s %s) Successful" % ( os.path.basename( self.executable ),
                                          self.applicationName,
                                          self.applicationVersion )
 
-    self.setApplicationStatus( status )
-
-    raise GracefulTermination, status
+    super( Script, self )._finalize( status )
