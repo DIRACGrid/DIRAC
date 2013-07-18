@@ -69,8 +69,8 @@ class ModulesTestCase( unittest.TestCase ):
     self.nc_mock.sendMail.return_value = {'OK': True, 'Value': ''}
 
     self.prod_id = 123
-    self.prod_job_id = 00000456
-    self.wms_job_id = 00012345
+    self.prod_job_id = 456
+    self.wms_job_id = 0
     self.workflowStatus = {'OK':True}
     self.stepStatus = {'OK':True}
 
@@ -184,15 +184,22 @@ class ModulesTestCase( unittest.TestCase ):
     self.mb.fileReport = self.fr_mock
 
     from DIRAC.Workflow.Modules.FailoverRequest import FailoverRequest
-    self.fr = FailoverRequest( rm = self.rm_mock )
+    self.fr = FailoverRequest()
 
     self.fr.request = self.rc_mock
     self.fr.jobReport = self.jr_mock
     self.fr.fileReport = self.fr_mock
 
+    from DIRAC.Workflow.Modules.Script import Script
+    self.script = Script()
+
+    self.script.request = self.rc_mock
+    self.script.jobReport = self.jr_mock
+    self.script.fileReport = self.fr_mock
+
 
   def tearDown( self ):
-    for fileProd in ['appLog', 'foo.txt', 'aaa.Bhadron.dst', 'bbb.Calibration.dst',
+    for fileProd in ['appLog', 'foo.txt', 'aaa.Bhadron.dst', 'bbb.Calibration.dst', 'bar_2.py', 'foo_1.txt',
                      'ccc.charm.mdst', 'prova.txt', 'foo.txt', 'BAR.txt', 'FooBAR.ext.txt',
                      'ErrorLogging_Step1_coredump.log', '123_00000456_request.xml', 'lfn1', 'lfn2',
                      'aaa.bhadron.dst', 'bbb.calibration.dst', 'ProductionOutputData', 'data.py',
@@ -381,10 +388,12 @@ class ModuleBaseSuccess( ModulesTestCase ):
     self.mb.step_commons = self.step_commons[0]
     self.mb.step_number = self.step_number
     self.mb.step_id = self.step_id
+    self.mb.execute()
+    self.assertFalse( self.mb._enableModule() )
 
+    self.mb.jobID = 1
     self.mb.execute()
     self.assertTrue( self.mb._enableModule() )
-
 
   def test__determineStepInputData( self ):
 
@@ -467,7 +476,69 @@ class FailoverRequestSuccess( ModulesTestCase ):
       for step_commons in self.step_commons:
         self.fr.workflow_commons = wf_commons
         self.fr.step_commons = step_commons
-        self.fr.execute()
+        res = self.fr.execute()
+        self.assert_( res['OK'] )
+
+#############################################################################
+# Scripy.py
+#############################################################################
+
+class ScriptSuccess( ModulesTestCase ):
+
+  #################################################
+
+  def test_execute( self ):
+
+    self.script.jobType = 'merge'
+    self.script.stepInputData = ['foo', 'bar']
+
+    self.script.production_id = self.prod_id
+    self.script.prod_job_id = self.prod_job_id
+    self.script.jobID = self.wms_job_id
+    self.script.workflowStatus = self.workflowStatus
+    self.script.stepStatus = self.stepStatus
+    self.script.workflow_commons = self.wf_commons
+    self.script.step_commons = self.step_commons[0]
+    self.script.step_number = self.step_number
+    self.script.step_id = self.step_id
+    self.script.executable = 'ls'
+    self.script.applicationLog = 'applicationLog.txt'
+
+    # no errors, no input data
+    for wf_commons in copy.deepcopy( self.wf_commons ):
+      for step_commons in self.step_commons:
+        self.script.workflow_commons = wf_commons
+        self.script.step_commons = step_commons
+        self.script._setCommand()
+        res = self.script._executeCommand()
+        self.assertIsNone( res )
+
+class ScriptFailure( ModulesTestCase ):
+
+  #################################################
+
+  def test_execute( self ):
+
+    self.script.jobType = 'merge'
+    self.script.stepInputData = ['foo', 'bar']
+
+    self.script.production_id = self.prod_id
+    self.script.prod_job_id = self.prod_job_id
+    self.script.jobID = self.wms_job_id
+    self.script.workflowStatus = self.workflowStatus
+    self.script.stepStatus = self.stepStatus
+    self.script.workflow_commons = self.wf_commons
+    self.script.step_commons = self.step_commons[0]
+    self.script.step_number = self.step_number
+    self.script.step_id = self.step_id
+
+    # no errors, no input data
+    for wf_commons in copy.deepcopy( self.wf_commons ):
+      for step_commons in self.step_commons:
+        self.script.workflow_commons = wf_commons
+        self.script.step_commons = step_commons
+        res = self.script.execute()
+        self.assertFalse( res['OK'] )
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ModulesTestCase )

@@ -14,11 +14,11 @@ class UploadOutputs( ModuleBase ):
 
   #############################################################################
 
-  def __init__( self, rm = None ):
+  def __init__( self ):
     """ c'tor
     """
     self.log = gLogger.getSubLogger( "UploadOutputs" )
-    super( UploadOutputs, self ).__init__( self.log, rm = rm )
+    super( UploadOutputs, self ).__init__( self.log )
 
     self.outputDataStep = ''
     self.outputData = []

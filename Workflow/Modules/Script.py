@@ -12,11 +12,11 @@ from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase
 class Script( ModuleBase ):
 
   #############################################################################
-  def __init__( self, rm = None ):
+  def __init__( self ):
     """ c'tor
     """
     self.log = gLogger.getSubLogger( 'Script' )
-    super( Script, self ).__init__( self.log, rm = rm )
+    super( Script, self ).__init__( self.log )
 
     # Set defaults for all workflow parameters here
     self.executable = ''
@@ -58,8 +58,11 @@ class Script( ModuleBase ):
       if not os.access( '%s/%s' % ( os.getcwd(), self.executable ), 5 ):
         os.chmod( '%s/%s' % ( os.getcwd(), self.executable ), 0755 )
       self.command = '%s/%s' % ( os.getcwd(), self.executable )
-    if re.search( '.py$', self.executable ):
+    elif re.search( '.py$', self.executable ):
       self.command = '%s %s' % ( sys.executable, self.executable )
+    elif which( self.executable ):
+      self.command = self.executable
+
     if self.arguments:
       self.command = '%s %s' % ( self.command, self.arguments )
 
@@ -78,10 +81,7 @@ class Script( ModuleBase ):
       failed = True
       self.log.error( 'Shell call execution failed:' )
       self.log.error( outputDict['Message'] )
-    resTuple = outputDict['Value']
-    status = resTuple[0]
-    stdout = resTuple[1]
-    stderr = resTuple[2]
+    status, stdout, stderr = outputDict['Value'][0:3]
     if status:
       failed = True
       self.log.error( "Non-zero status %s while executing %s" % ( status, self.command ) )
@@ -101,7 +101,7 @@ class Script( ModuleBase ):
     self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:
-      raise RuntimeError, "%s Exited With Status %s" % ( os.path.basename( self.executable ), status )
+      raise RuntimeError, "'%s' Exited With Status %s" % ( os.path.basename( self.executable ), status )
 
 
   def _finalize( self ):
@@ -112,3 +112,22 @@ class Script( ModuleBase ):
                                          self.applicationVersion )
 
     super( Script, self )._finalize( status )
+
+
+
+def which( program ):
+  def is_exe( fpath ):
+    return os.path.isfile( fpath ) and os.access( fpath, os.X_OK )
+
+  fpath, _fname = os.path.split( program )
+  if fpath:
+    if is_exe( program ):
+      return program
+  else:
+    for path in os.environ["PATH"].split( os.pathsep ):
+      path = path.strip( '"' )
+      exe_file = os.path.join( path, program )
+      if is_exe( exe_file ):
+        return exe_file
+
+  return None
