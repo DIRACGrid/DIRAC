@@ -36,9 +36,9 @@ class FailoverRequest( ModuleBase ):
     if not self._enableModule():
       raise GracefulTermination
 
-    self.request.setRequestName( 'job_%s_request.xml' % self.jobID )
+    self.request.setRequestName( 'job_%d_request.xml' % self.jobID )
     self.request.setJobID( self.jobID )
-    self.request.setSourceComponent( "Job_%s" % self.jobID )
+    self.request.setSourceComponent( "Job_%d" % self.jobID )
 
   def _execute( self ):
 
@@ -114,7 +114,7 @@ class FailoverRequest( ModuleBase ):
       xmlfile = open( fname, 'w' )
       xmlfile.write( request_string )
       xmlfile.close()
-      self.log.info( 'Creating failover request for deferred operations for job %s:' % self.jobID )
+      self.log.info( 'Creating failover request for deferred operations for job %d:' % self.jobID )
       result = self.request.getDigest()
       if result['OK']:
         digest = result['Value']

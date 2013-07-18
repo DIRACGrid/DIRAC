@@ -46,7 +46,7 @@ class ModuleBase( object ):
     # Some job parameters
     self.production_id = ''
     self.prod_job_id = ''
-    self.jobID = ''
+    self.jobID = 0
     self.step_number = ''
     self.step_id = ''
     self.jobType = ''
@@ -137,14 +137,24 @@ class ModuleBase( object ):
       self._setCommand()
       self._executeCommand()
       self._execute()
-      return self._finalize()
+      self._finalize()
 
-    except GracefulTermination, e:
-      self.log.info( e )
-      return S_OK( e )
+    # If everything is OK
+    except GracefulTermination, status:
+      self.setApplicationStatus( status )
+      self.log.info( status )
+      return S_OK( status )
 
-    except Exception, e:
+    # This catches everything that is voluntarily thrown within the modules, so an error
+    except RuntimeError, e:
       self.log.error( e )
+      self.setApplicationStatus( e )
+      return S_ERROR( e )
+
+    # This catches everything that is not voluntarily thrown (here, really writing an exception)
+    except Exception, e:
+      self.log.exception( e )
+      self.setApplicationStatus( e )
       return S_ERROR( e )
 
     finally:
@@ -200,12 +210,16 @@ class ModuleBase( object ):
     """
     pass
 
-  def _finalize( self ):
+  def _finalize( self, status = '' ):
     """ TBE
 
         By default, the module finalizes correctly
     """
-    raise GracefulTermination, '%s correctly finalized' % str( self.__class__ )
+    
+    if not status:
+      status = '%s correctly finalized' % str( self.__class__ )
+
+    raise GracefulTermination, status
 
   #############################################################################
 
@@ -337,7 +351,7 @@ class ModuleBase( object ):
           if outputF['stepName'] == previousStep and outputF['outputDataType'].lower() == self.inputDataType.lower():
             stepInputData.append( outputF['outputDataName'] )
         except KeyError:
-          return S_ERROR( 'Can\'t find output of step %s' % previousStep )
+          raise RuntimeError, 'Can\'t find output of step %s' % previousStep
 
       return stepInputData
 
@@ -346,32 +360,27 @@ class ModuleBase( object ):
 
   #############################################################################
 
-  def setApplicationStatus( self, status, sendFlag = True, jr = None ):
-    """ Wraps around setJobApplicationStatus of state update client
+  def setApplicationStatus( self, status, sendFlag = True ):
+    """Wraps around setJobApplicationStatus of state update client
     """
     if not self._WMSJob():
-      return S_OK( 'JobID not defined' )  # e.g. running locally prior to submission
+      return 0  # e.g. running locally prior to submission
 
-    self.log.verbose( 'setJobApplicationStatus(%s, %s)' % ( self.jobID, status ) )
-
-    if not jr:
-      jr = self._getJobReporter()
-
-    jobStatus = jr.setApplicationStatus( status, sendFlag )
-    if not jobStatus['OK']:
-      self.log.warn( jobStatus['Message'] )
-
-    return jobStatus
+    if self._checkWFAndStepStatus( noPrint = True ):
+      # The application status won't be updated in case the workflow or the step is failed already
+      if not type( status ) == type( '' ):
+        status = str( status )
+      self.log.verbose( 'setJobApplicationStatus(%d, %s)' % ( self.jobID, status ) )
+      jobStatus = self.jobReport.setApplicationStatus( status, sendFlag )
+      if not jobStatus['OK']:
+        self.log.warn( jobStatus['Message'] )
 
   #############################################################################
 
   def _WMSJob( self ):
     """ Check if this job is running via WMS
     """
-    if not self.jobID:
-      return False
-    else:
-      return True
+    return True if self.jobID else False
 
   #############################################################################
 
@@ -382,7 +391,7 @@ class ModuleBase( object ):
       self.log.info( 'No WMS JobID found, disabling module via control flag' )
       return False
     else:
-      self.log.verbose( 'Found WMS JobID = %s' % self.jobID )
+      self.log.verbose( 'Found WMS JobID = %d' % self.jobID )
       return True
 
   #############################################################################
@@ -407,7 +416,7 @@ class ModuleBase( object ):
     if not self._WMSJob():
       return S_OK( 'JobID not defined' )  # e.g. running locally prior to submission
 
-    self.log.verbose( 'setJobParameter(%s,%s,%s)' % ( self.jobID, name, value ) )
+    self.log.verbose( 'setJobParameter(%d,%s,%s)' % ( self.jobID, name, value ) )
 
     if not jr:
       jr = self._getJobReporter()
