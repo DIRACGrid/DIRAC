@@ -1,4 +1,4 @@
-''' ModuleBase - contains the base class for workflow modules. Defines several common utility methods.
+""" ModuleBase - contains the base class for workflow modules. Defines several common utility methods.
 
     The modules defined within this package are developed in a way to be executed by a DIRAC.Core.Worfklow.Worfklow.
     In particular, a DIRAC.Core.Workflow.Worfklow object will only call the "execute" function, that is defined here.
@@ -8,7 +8,7 @@
     defining the LFN output at runtime (within the "UploadOutputs" module is a VO specific operation.
 
     The DIRAC APIs are used to create Jobs that make use of these modules.
-'''
+"""
 
 import os, copy
 
@@ -21,36 +21,29 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManage
 
 
 class ModuleBase( object ):
-  ''' Base class for Modules - works only within DIRAC workflows
+  """ Base class for Modules - works only within DIRAC workflows
 
       This module, inheriting by "object", can use cooperative methods, very useful here.
-  '''
+  """
 
   #############################################################################
 
-  def __init__( self, loggerIn = None, operationsHelperIn = None, rm = None ):
-    ''' Initialization of module base.
+  def __init__( self, loggerIn = None ):
+    """ Initialization of module base.
 
         loggerIn is a logger object that can be passed so that the logging will be more clear.
-        operationsHelperIn has to be a DIRAC.ConfigurationSystem.Client.Helpers.Operations.Operations object
-        rm has to be a DIRAC.DataManagementSystem.Client.ReplicaManager.ReplicaManager object
-    '''
+    """
 
     if not loggerIn:
       self.log = gLogger.getSubLogger( 'ModuleBase' )
     else:
       self.log = loggerIn
 
-    if not operationsHelperIn:
-      self.opsH = Operations()
-    else:
-      self.opsH = operationsHelperIn
+    # These 2 are used in many places, so it's good to have them available here.
+    self.opsH = Operations()
+    self.rm = ReplicaManager()
 
-    if not rm:
-      self.rm = ReplicaManager()
-    else:
-      self.rm = rm
-
+    # Some job parameters
     self.production_id = ''
     self.prod_job_id = ''
     self.jobID = ''
@@ -65,6 +58,7 @@ class ModuleBase( object ):
     self.workflow_commons = None
     self.step_commons = None
 
+    # These are useful objects (see the getFileReporter(), getJobReporter() and getRequestContainer() functions)
     self.fileReport = None
     self.jobReport = None
     self.request = None
@@ -75,10 +69,10 @@ class ModuleBase( object ):
                workflowStatus = None, stepStatus = None,
                wf_commons = None, step_commons = None,
                step_number = None, step_id = None ):
-    ''' Function called by all super classes. This is the only function that Workflow will call automatically.
+    """ Function called by all super classes. This is the only function that Workflow will call automatically.
 
         The design adopted here is that all the modules are inheriting from this class,
-        and will NOT override this module. Instead, the inherited modules will override the following methods:
+        and will NOT override this function. Instead, the inherited modules will override the following functions:
         _resolveInputVariables()
         _initialize()
         _setCommand()
@@ -89,11 +83,11 @@ class ModuleBase( object ):
         This choice has been made for convenience of coding, and for the high level of inheritance implemented here.
         Instead, they should return:
         - None when no issues arise
-        - a RuntimeError when there are issues
+        - a RuntimeError exception when there are issues
         - a GracefulTermination exception (defined also here) when the module should be terminated gracefully
 
         The various parameters in input to this method are used almost only for testing purposes.
-    '''
+    """
 
     if production_id:
       self.production_id = int( production_id )
@@ -157,14 +151,14 @@ class ModuleBase( object ):
       self.finalize()
 
   def _resolveInputVariables( self ):
-    ''' By convention the module input parameters are resolved here.
+    """ By convention the module input parameters are resolved here.
         fileReport, jobReport, and request objects are instantiated/recorded here.
 
         This will also call the resolution of the input workflow.
         The resolution of the input step should instead be done on a step basis.
 
         NB: Never forget to call this base method when extending it.
-    '''
+    """
 
     self.log.verbose( "workflow_commons = ", self.workflow_commons )
     self.log.verbose( "step_commons = ", self.step_commons )
@@ -179,45 +173,45 @@ class ModuleBase( object ):
     self._resolveInputWorkflow()
 
   def _initialize( self ):
-    ''' TBE
+    """ TBE
 
         For initializing the module, whatever operation this can be
-    '''
+    """
     pass
 
   def _setCommand( self ):
-    ''' TBE
+    """ TBE
 
         For "executors" modules, set the command to be used in the self.command variable.
-    '''
+    """
     pass
 
   def _executeCommand( self ):
-    ''' TBE
+    """ TBE
 
         For "executors" modules, executes self.command as set in the _setCommand() method
-    '''
+    """
     pass
 
   def _execute( self ):
-    ''' TBE
+    """ TBE
 
         Executes, whatever this means for the module implementing it
-    '''
+    """
     pass
 
   def _finalize( self ):
-    ''' TBE
+    """ TBE
 
         By default, the module finalizes correctly
-    '''
+    """
     raise GracefulTermination, '%s correctly finalized' % str( self.__class__ )
 
   #############################################################################
 
   def finalize( self ):
-    ''' Just finalizing the module execution by flushing the logs. This will be done always.
-    '''
+    """ Just finalizing the module execution by flushing the logs. This will be done always.
+    """
 
     self.log.flushAllMessages( 0 )
     self.log.info( '===== Terminating ' + str( self.__class__ ) + ' ===== ' )
@@ -225,8 +219,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _getJobReporter( self ):
-    ''' just return the job reporter (object, always defined by dirac-jobexec)
-    '''
+    """ just return the job reporter (object, always defined by dirac-jobexec)
+    """
 
     if self.workflow_commons.has_key( 'JobReport' ):
       return self.workflow_commons['JobReport']
@@ -238,8 +232,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _getFileReporter( self ):
-    ''' just return the file reporter (object)
-    '''
+    """ just return the file reporter (object)
+    """
 
     if self.workflow_commons.has_key( 'FileReport' ):
       return self.workflow_commons['FileReport']
@@ -251,8 +245,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _getRequestContainer( self ):
-    ''' just return the RequestContainer reporter (object)
-    '''
+    """ just return the RequestContainer reporter (object)
+    """
 
     if self.workflow_commons.has_key( 'Request' ):
       return self.workflow_commons['Request']
@@ -264,8 +258,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _resolveInputWorkflow( self ):
-    ''' Resolve the input variables that are in the workflow_commons
-    '''
+    """ Resolve the input variables that are in the workflow_commons
+    """
 
     if self.workflow_commons.has_key( 'JobType' ):
       self.jobType = self.workflow_commons['JobType']
@@ -295,8 +289,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _resolveInputStep( self ):
-    ''' Resolve the input variables for an application step
-    '''
+    """ Resolve the input variables for an application step
+    """
 
     self.stepName = self.step_commons['STEP_INSTANCE_NAME']
 
@@ -331,8 +325,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _determineStepInputData( self, inputData ):
-    ''' determine the input data for the step
-    '''
+    """ determine the input data for the step
+    """
     if inputData == 'previousStep':
       stepIndex = self.gaudiSteps.index( self.stepName )
       previousStep = self.gaudiSteps[stepIndex - 1]
@@ -353,8 +347,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def setApplicationStatus( self, status, sendFlag = True, jr = None ):
-    ''' Wraps around setJobApplicationStatus of state update client
-    '''
+    """ Wraps around setJobApplicationStatus of state update client
+    """
     if not self._WMSJob():
       return S_OK( 'JobID not defined' )  # e.g. running locally prior to submission
 
@@ -372,8 +366,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _WMSJob( self ):
-    ''' Check if this job is running via WMS
-    '''
+    """ Check if this job is running via WMS
+    """
     if not self.jobID:
       return False
     else:
@@ -382,8 +376,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _enableModule( self ):
-    ''' Enable module if it's running via WMS
-    '''
+    """ Enable module if it's running via WMS
+    """
     if not self._WMSJob():
       self.log.info( 'No WMS JobID found, disabling module via control flag' )
       return False
@@ -394,8 +388,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _checkWFAndStepStatus( self, noPrint = False ):
-    ''' Check the WF and Step status
-    '''
+    """ Check the WF and Step status
+    """
     if not self.workflowStatus['OK'] or not self.stepStatus['OK']:
       if not noPrint:
         self.log.info( 'Skip this module, failure detected in a previous step :' )
@@ -408,8 +402,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def setJobParameter( self, name, value, sendFlag = True, jr = None ):
-    ''' Wraps around setJobParameter of state update client
-    '''
+    """ Wraps around setJobParameter of state update client
+    """
     if not self._WMSJob():
       return S_OK( 'JobID not defined' )  # e.g. running locally prior to submission
 
@@ -427,8 +421,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def setFileStatus( self, production, lfn, status, fileReport = None ):
-    ''' set the file status for the given production in the Transformation Database
-    '''
+    """ set the file status for the given production in the Transformation Database
+    """
     self.log.verbose( 'setFileStatus(%s,%s,%s)' % ( production, lfn, status ) )
 
     if not fileReport:
@@ -440,7 +434,7 @@ class ModuleBase( object ):
 
 
   def getCandidateFiles( self, outputList, outputLFNs, fileMask, stepMask = '' ):
-    ''' Returns list of candidate files to upload, check if some outputs are missing.
+    """ Returns list of candidate files to upload, check if some outputs are missing.
 
         outputList has the following structure:
           [ {'outputDataType':'','outputDataSE':'','outputDataName':''} , {...} ]
@@ -450,7 +444,7 @@ class ModuleBase( object ):
         fileMask is the output file extensions to restrict the outputs to
 
         returns dictionary containing type, SE and LFN for files restricted by mask
-    '''
+    """
     fileInfo = {}
 
     for outputFile in outputList:
@@ -489,8 +483,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _applyMask( self, candidateFilesIn, fileMask, stepMask ):
-    ''' Select which files have to be uploaded: in principle all
-    '''
+    """ Select which files have to be uploaded: in principle all
+    """
     candidateFiles = copy.deepcopy( candidateFilesIn )
 
     if type( fileMask ) != type( [] ):
@@ -520,8 +514,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _checkSanity( self, candidateFiles ):
-    ''' Sanity check all final candidate metadata keys are present
-    '''
+    """ Sanity check all final candidate metadata keys are present
+    """
 
     notPresentKeys = []
 
@@ -539,8 +533,8 @@ class ModuleBase( object ):
   #############################################################################
 
   def _checkLocalExistance( self, fileList ):
-    ''' Check that the list of output files are present locally
-    '''
+    """ Check that the list of output files are present locally
+    """
 
     notPresentFiles = []
 
