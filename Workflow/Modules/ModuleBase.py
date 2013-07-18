@@ -45,11 +45,11 @@ class ModuleBase( object ):
     self.rm = ReplicaManager()
 
     # Some job parameters
-    self.production_id = ''
-    self.prod_job_id = ''
+    self.production_id = 0
+    self.prod_job_id = 0
     self.jobID = 0
-    self.step_number = ''
-    self.step_id = ''
+    self.step_number = 0
+    self.step_id = 0
     self.jobType = ''
     self.executable = ''
     self.command = None
@@ -66,10 +66,7 @@ class ModuleBase( object ):
 
   #############################################################################
 
-  def execute( self, production_id = None, prod_job_id = None, wms_job_id = None,
-               workflowStatus = None, stepStatus = None,
-               wf_commons = None, step_commons = None,
-               step_number = None, step_id = None ):
+  def execute( self ):
     """ Function called by all super classes. This is the only function that Workflow will call automatically.
 
         The design adopted here is that all the modules are inheriting from this class,
@@ -90,46 +87,25 @@ class ModuleBase( object ):
         The various parameters in input to this method are used almost only for testing purposes.
     """
 
-    if production_id:
-      self.production_id = int( production_id )
-    else:
+    if not self.production_id:
       # self.PRODUCTION_ID is always set by the workflow
       self.production_id = int( self.PRODUCTION_ID )
 
-    if prod_job_id:
-      self.prod_job_id = int( prod_job_id )
-    else:
+    if not self.prod_job_id:
       # self.JOB_ID is set by the workflow, but this is not the WMS job id, but the transformation (production) task id
       self.prod_job_id = int( self.JOB_ID )
 
-    if os.environ.has_key( 'JOBID' ):
+    if not self.jobID:
       # this is the real wms job ID
-      self.jobID = int( os.environ['JOBID'] )
-    if wms_job_id:
-      self.jobID = int( wms_job_id )
+      if os.environ.has_key( 'JOBID' ):
+        self.jobID = int( os.environ['JOBID'] )
 
-    if workflowStatus:
-      self.workflowStatus = workflowStatus
-
-    if stepStatus:
-      self.stepStatus = stepStatus
-
-    if wf_commons:
-      self.workflow_commons = wf_commons
-
-    if step_commons:
-      self.step_commons = step_commons
-
-    if step_number:
-      self.step_number = int( step_number )
-    else:
+    if not self.step_number:
       # self.STEP_NUMBER is always set by the workflow
       self.step_number = int( self.STEP_NUMBER )
 
-    if step_id:
-      self.step_id = step_id
-    else:
-      self.step_id = '%s_%s_%s' % ( str( self.production_id ), str( self.prod_job_id ), str( self.step_number ) )
+    if not self.step_id:
+      self.step_id = '%d_%d_%d' % ( self.production_id, self.prod_job_id, self.step_number )
 
     try:
       # This is what has to be extended in the modules
@@ -584,7 +560,7 @@ class ModuleBase( object ):
           request_string = str( requestJSON['Value'] )
           self.log.debug( request_string )
           # Write out the request string
-          fname = '%s_%s_request.json' % ( self.production_id, self.prod_job_id )
+          fname = '%d_%d_request.json' % ( self.production_id, self.prod_job_id )
           jsonFile = open( fname, 'w' )
           jsonFile.write( request_string )
           jsonFile.close()

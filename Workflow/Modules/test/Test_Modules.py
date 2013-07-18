@@ -68,79 +68,79 @@ class ModulesTestCase( unittest.TestCase ):
     self.nc_mock = Mock()
     self.nc_mock.sendMail.return_value = {'OK': True, 'Value': ''}
 
-    self.prod_id = '123'
-    self.prod_job_id = '00000456'
-    self.wms_job_id = '00012345'
+    self.prod_id = 123
+    self.prod_job_id = 00000456
+    self.wms_job_id = 00012345
     self.workflowStatus = {'OK':True}
     self.stepStatus = {'OK':True}
 
     self.wf_commons = [
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id, 'eventType': '123456789', 'jobType': 'merge',
+                       {'PRODUCTION_ID': str(self.prod_id), 'JOB_ID': str(self.prod_job_id), 'eventType': '123456789', 'jobType': 'merge',
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData', 'numberOfEvents':'100',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'runNumber':'Unknown', 'gaudiSteps': ['someApp_1']},
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'merge',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData', 'numberOfEvents':'100',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'LogFilePath':'someDir', 'runNumber':'Unknown',
                         'gaudiSteps': ['someApp_1']},
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'merge',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData', 'numberOfEvents':'100',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'LogFilePath':'someDir', 'LogTargetPath':'someOtherDir',
                         'runNumber':'Unknown', 'gaudiSteps': ['someApp_1']},
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'merge',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData', 'numberOfEvents':'100',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'LogFilePath':'someDir', 'LogTargetPath':'someOtherDir',
                         'runNumber':'Unknown', 'gaudiSteps': ['someApp_1'] },
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'reco',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'runNumber':'Unknown', 'gaudiSteps': ['someApp_1']},
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'reco',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'LogFilePath':'someDir', 'runNumber':'Unknown',
                         'gaudiSteps': ['someApp_1']},
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'reco',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'LogFilePath':'someDir', 'LogTargetPath':'someOtherDir',
                         'runNumber':'Unknown', 'gaudiSteps': ['someApp_1']},
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'reco',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'LogFilePath':'someDir', 'LogTargetPath':'someOtherDir',
                         'runNumber':'Unknown', 'gaudiSteps': ['someApp_1']},
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'reco',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'LogFilePath':'someDir', 'LogTargetPath':'someOtherDir',
                         'runNumber':'Unknown', 'InputData': '', 'gaudiSteps': ['someApp_1'] },
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'reco',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'LogFilePath':'someDir', 'LogTargetPath':'someOtherDir',
                         'runNumber':'Unknown', 'InputData': 'foo;bar', 'gaudiSteps': ['someApp_1'] },
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'reco',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
                         'SystemConfig':'sys_config', 'LogFilePath':'someDir', 'LogTargetPath':'someOtherDir',
                         'runNumber':'Unknown', 'InputData': 'foo;bar', 'ParametricInputData':'' ,
                         'gaudiSteps': ['someApp_1']},
-                       {'PRODUCTION_ID': self.prod_id, 'JOB_ID': self.prod_job_id,
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ),
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'', 'jobType': 'reco',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
@@ -153,21 +153,21 @@ class ModulesTestCase( unittest.TestCase ):
                          'applicationLog':'appLog', 'extraPackages':'', 'XMLSummary':'XMLSummaryFile',
                          'numberOfEvents':'100', 'BKStepID':'123', 'StepProcPass':'Sim123', 'outputFilePrefix':'pref_',
                          'STEP_INSTANCE_NAME':'someApp_1',
-                         'listoutput':[{'outputDataName':self.prod_id + '_' + self.prod_job_id + '_', 'outputDataSE':'aaa',
+                         'listoutput':[{'outputDataName':str( self.prod_id ) + '_' + str( self.prod_job_id ) + '_', 'outputDataSE':'aaa',
                                        'outputDataType':'bbb'}]},
                          {'applicationName':'someApp', 'applicationVersion':'v1r0', 'eventType': '123456789',
                          'applicationLog':'appLog', 'extraPackages':'', 'XMLSummary':'XMLSummaryFile',
                          'numberOfEvents':'100', 'BKStepID':'123', 'StepProcPass':'Sim123', 'outputFilePrefix':'pref_',
                          'optionsLine': '',
                          'STEP_INSTANCE_NAME':'someApp_1',
-                         'listoutput':[{'outputDataName':self.prod_id + '_' + self.prod_job_id + '_', 'outputDataSE':'aaa',
+                         'listoutput':[{'outputDataName':str( self.prod_id ) + '_' + str( self.prod_job_id ) + '_', 'outputDataSE':'aaa',
                                        'outputDataType':'bbb'}]},
                          {'applicationName':'someApp', 'applicationVersion':'v1r0', 'eventType': '123456789',
                          'applicationLog':'appLog', 'extraPackages':'', 'XMLSummary':'XMLSummaryFile',
                          'numberOfEvents':'100', 'BKStepID':'123', 'StepProcPass':'Sim123', 'outputFilePrefix':'pref_',
                          'extraOptionsLine': 'blaBla',
                          'STEP_INSTANCE_NAME':'someApp_1',
-                         'listoutput':[{'outputDataName':self.prod_id + '_' + self.prod_job_id + '_', 'outputDataSE':'aaa',
+                         'listoutput':[{'outputDataName':str( self.prod_id ) + '_' + str( self.prod_job_id ) + '_', 'outputDataSE':'aaa',
                                        'outputDataType':'bbb'}]}
                          ]
     self.step_number = '321'
@@ -176,8 +176,9 @@ class ModulesTestCase( unittest.TestCase ):
 
 
     from DIRAC.Workflow.Modules.ModuleBase import ModuleBase
-    self.mb = ModuleBase( rm = self.rm_mock )
+    self.mb = ModuleBase()
 
+    self.mb.rm = self.rm_mock
     self.mb.request = self.rc_mock
     self.mb.jobReport = self.jr_mock
     self.mb.fileReport = self.fr_mock
@@ -309,15 +310,22 @@ class ModuleBaseSuccess( ModulesTestCase ):
 
     res = self.mb.getCandidateFiles( outputList, outputLFNs, fileMask, stepMask )
 
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], result )
+    self.assertEqual( res, result )
 
   def test__enableModule( self ):
 
-    self.mb.execute( self.prod_id, self.prod_job_id, self.wms_job_id,
-                     self.workflowStatus, self.stepStatus,
-                     self.wf_commons, self.step_commons[0],
-                     self.step_number, self.step_id )
+    self.mb.production_id = self.prod_id
+    self.mb.prod_job_id = self.prod_job_id
+    self.mb.jobID = self.wms_job_id
+    self.mb.workflowStatus = self.workflowStatus
+    self.mb.stepStatus = self.stepStatus
+    self.mb.workflow_commons = self.wf_commons
+    self.mb.step_commons = self.step_commons[0]
+    self.mb.step_number = self.step_number
+    self.mb.step_id = self.step_id
+
+    print self.mb.stepStatus
+    self.mb.execute()
     self.assertTrue( self.mb._enableModule() )
 
 
@@ -387,13 +395,22 @@ class FailoverRequestSuccess( ModulesTestCase ):
     self.fr.jobType = 'merge'
     self.fr.stepInputData = ['foo', 'bar']
 
+    self.fr.production_id = self.prod_id
+    self.fr.prod_job_id = self.prod_job_id
+    self.fr.jobID = self.wms_job_id
+    self.fr.workflowStatus = self.workflowStatus
+    self.fr.stepStatus = self.stepStatus
+    self.fr.workflow_commons = self.wf_commons
+    self.fr.step_commons = self.step_commons[0]
+    self.fr.step_number = self.step_number
+    self.fr.step_id = self.step_id
+
     # no errors, no input data
     for wf_commons in copy.deepcopy( self.wf_commons ):
       for step_commons in self.step_commons:
-        self.assertTrue( self.fr.execute( self.prod_id, self.prod_job_id, self.wms_job_id,
-                                          self.workflowStatus, self.stepStatus,
-                                          wf_commons, step_commons,
-                                          self.step_number, self.step_id )['OK'] )
+        self.fr.workflow_commons = wf_commons
+        self.fr.step_commons = step_commons
+        self.fr.execute()
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ModulesTestCase )
