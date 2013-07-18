@@ -16,10 +16,12 @@ def getStepDefinition( stepName, modulesNameList = [], importLine = """""", para
       Remember that Step definition = Parameters + Module Instances
   """
 
+  # In case the importLine is not set, this is looking for a DIRAC extension, if any.
+  # The extension is supposed to be called ExtDIRAC.
   if not importLine:
     for ext in getCSExtensions():
       if ext.lower() == getVO():
-        importLine = ext + ".DIRAC.Workflow.Modules"
+        importLine = ext + "DIRAC.Workflow.Modules"
         break
 
   stepDef = StepDefinition( stepName )
@@ -29,6 +31,7 @@ def getStepDefinition( stepName, modulesNameList = [], importLine = """""", para
     # create the module definition
     moduleDef = ModuleDefinition( moduleName )
     try:
+      # Look in the importLine given, or the DIRAC if the given location can't be imported
       moduleDef.setDescription( getattr( __import__( "%s.%s" % ( importLine, moduleName ),
                                                      globals(), locals(), ['__doc__'] ),
                                         "__doc__" ) )
