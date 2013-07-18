@@ -75,7 +75,7 @@ class ModulesTestCase( unittest.TestCase ):
     self.stepStatus = {'OK':True}
 
     self.wf_commons = [
-                       {'PRODUCTION_ID': str(self.prod_id), 'JOB_ID': str(self.prod_job_id), 'eventType': '123456789', 'jobType': 'merge',
+                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ), 'eventType': '123456789', 'jobType': 'merge',
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData', 'numberOfEvents':'100',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
@@ -298,15 +298,73 @@ class ModuleBaseSuccess( ModulesTestCase ):
   def test_getCandidateFiles( self ):
     # this needs to avoid the "checkLocalExistance"
 
-    open( 'foo.txt', 'w' ).close()
+    open( 'foo_1.txt', 'w' ).close()
+    open( 'bar_2.py', 'w' ).close()
 
-    outputList = [{'outputDataType': 'txt', 'outputDataSE': 'Tier1-RDST', 'outputDataName': 'foo.txt'}]
-    outputLFNs = ['/lhcb/MC/2010/DST/00012345/0001/foo.txt']
+    outputList = [{'outputDataType': 'txt', 'outputDataSE': 'Tier1-RDST', 'outputDataName': 'foo_1.txt'},
+                  {'outputDataType': 'py', 'outputDataSE': 'Tier1-RDST', 'outputDataName': 'bar_2.py'}]
+    outputLFNs = ['/lhcb/MC/2010/DST/00012345/0001/foo_1.txt', '/lhcb/MC/2010/DST/00012345/0001/bar_2.py']
     fileMask = 'txt'
     stepMask = ''
-    result = {'foo.txt': {'lfn': '/lhcb/MC/2010/DST/00012345/0001/foo.txt',
-                          'type': outputList[0]['outputDataType'],
-                          'workflowSE': outputList[0]['outputDataSE']}}
+    result = {'foo_1.txt': {'lfn': '/lhcb/MC/2010/DST/00012345/0001/foo_1.txt',
+                            'type': outputList[0]['outputDataType'],
+                            'workflowSE': outputList[0]['outputDataSE']}}
+
+    res = self.mb.getCandidateFiles( outputList, outputLFNs, fileMask, stepMask )
+    self.assertEqual( res, result )
+
+    fileMask = ['txt', 'py']
+    stepMask = None
+    result = {'foo_1.txt': {'lfn': '/lhcb/MC/2010/DST/00012345/0001/foo_1.txt',
+                            'type': outputList[0]['outputDataType'],
+                            'workflowSE': outputList[0]['outputDataSE']},
+              'bar_2.py': {'lfn': '/lhcb/MC/2010/DST/00012345/0001/bar_2.py',
+                           'type': outputList[1]['outputDataType'],
+                           'workflowSE': outputList[1]['outputDataSE']},
+              }
+    res = self.mb.getCandidateFiles( outputList, outputLFNs, fileMask, stepMask )
+    self.assertEqual( res, result )
+
+    fileMask = ['aa']
+    stepMask = None
+    res = self.mb.getCandidateFiles( outputList, outputLFNs, fileMask, stepMask )
+    result = {}
+    self.assertEqual( res, result )
+
+    fileMask = ''
+    stepMask = '2'
+    result = {'bar_2.py': {'lfn': '/lhcb/MC/2010/DST/00012345/0001/bar_2.py',
+                           'type': outputList[1]['outputDataType'],
+                           'workflowSE': outputList[1]['outputDataSE']}}
+
+    res = self.mb.getCandidateFiles( outputList, outputLFNs, fileMask, stepMask )
+
+    self.assertEqual( res, result )
+
+    fileMask = ''
+    stepMask = 2
+    result = {'bar_2.py': {'lfn': '/lhcb/MC/2010/DST/00012345/0001/bar_2.py',
+                           'type': outputList[1]['outputDataType'],
+                           'workflowSE': outputList[1]['outputDataSE']}}
+
+    res = self.mb.getCandidateFiles( outputList, outputLFNs, fileMask, stepMask )
+
+    self.assertEqual( res, result )
+
+
+    fileMask = ''
+    stepMask = ['2', '3']
+    result = {'bar_2.py': {'lfn': '/lhcb/MC/2010/DST/00012345/0001/bar_2.py',
+                           'type': outputList[1]['outputDataType'],
+                           'workflowSE': outputList[1]['outputDataSE']}}
+
+    res = self.mb.getCandidateFiles( outputList, outputLFNs, fileMask, stepMask )
+
+    self.assertEqual( res, result )
+
+    fileMask = ''
+    stepMask = ['3']
+    result = {}
 
     res = self.mb.getCandidateFiles( outputList, outputLFNs, fileMask, stepMask )
 
@@ -324,7 +382,6 @@ class ModuleBaseSuccess( ModulesTestCase ):
     self.mb.step_number = self.step_number
     self.mb.step_id = self.step_id
 
-    print self.mb.stepStatus
     self.mb.execute()
     self.assertTrue( self.mb._enableModule() )
 
