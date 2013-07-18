@@ -302,6 +302,8 @@ class ModuleBase( object ):
 
     if self.step_commons.has_key( 'applicationLog' ):
       self.applicationLog = self.step_commons['applicationLog']
+    else:
+      self.applicationLog = 'applicationLog.txt'
 
     stepInputData = []
     if self.step_commons.has_key( 'inputData' ):

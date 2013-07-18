@@ -13,7 +13,7 @@ class FailoverRequest( ModuleBase ):
 
   #############################################################################
 
-  def __init__( self, rm = None ):
+  def __init__( self ):
     """Module initialization.
     """
 
