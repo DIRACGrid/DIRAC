@@ -1,6 +1,10 @@
-''' Module to upload specified job output files according to the parameters
+# ##WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING #
+#                                           Under development                                                   #
+# ##WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING #
+
+""" Module to upload specified job output files according to the parameters
     defined in the production workflow.
-'''
+"""
 
 from DIRAC                              import gLogger
 
@@ -11,8 +15,8 @@ class UploadOutputs( ModuleBase ):
   #############################################################################
 
   def __init__( self, rm = None ):
-    ''' c'tor
-    '''
+    """ c'tor
+    """
     self.log = gLogger.getSubLogger( "UploadOutputs" )
     super( UploadOutputs, self ).__init__( self.log, rm = rm )
 
@@ -23,8 +27,8 @@ class UploadOutputs( ModuleBase ):
   #############################################################################
 
   def _resolveInputVariables( self ):
-    ''' The module parameters are resolved here.
-    '''
+    """ The module parameters are resolved here.
+    """
     super( UploadOutputs, self )._resolveInputVariables()
 
     # this comes from Job().setOutputData(). Typical for user jobs
@@ -59,17 +63,17 @@ class UploadOutputs( ModuleBase ):
 
 
   def _initialize( self ):
-    ''' gets the files to upload, check if to upload
-    '''
+    """ gets the files to upload, check if to upload
+    """
     # lfnsList = self.__getOutputLFNs( self.outputData ) or outputList?
 
     if not self._checkWFAndStepStatus():
       raise GracefulTermination, 'No output data upload attempted'
 
   def __getOuputLFNs( self, outputList, *args ):
-    ''' This is really VO-specific.
+    """ This is really VO-specific.
         It should be replaced by each VO. Setting an LFN here just as an idea, and for testing purposes.
-    '''
+    """
     lfnList = []
     for outputFile in outputList:
       lfnList.append( '/'.join( [str( x ) for x in args] ) + outputFile )
@@ -77,6 +81,6 @@ class UploadOutputs( ModuleBase ):
     return lfnList
 
   def _execute( self ):
-    ''' uploads the files
-    '''
+    """ uploads the files
+    """
     pass
