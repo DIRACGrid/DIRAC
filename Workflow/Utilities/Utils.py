@@ -19,6 +19,7 @@ def getStepDefinition( stepName, modulesNameList = [], importLine = """""", para
   # In case the importLine is not set, this is looking for a DIRAC extension, if any.
   # The extension is supposed to be called ExtDIRAC.
   if not importLine:
+    importLine = "DIRAC.Workflow.Modules"
     for ext in getCSExtensions():
       if ext.lower() == getVO():
         importLine = ext + "DIRAC.Workflow.Modules"
