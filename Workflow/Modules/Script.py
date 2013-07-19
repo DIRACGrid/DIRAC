@@ -6,6 +6,7 @@ import os, sys, re
 
 from DIRAC.Core.Utilities.Subprocess    import shellCall
 from DIRAC                              import gLogger
+from DIRAC.Core.Utilities.Os            import which
 
 from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase
 
@@ -112,22 +113,3 @@ class Script( ModuleBase ):
                                          self.applicationVersion )
 
     super( Script, self )._finalize( status )
-
-
-
-def which( program ):
-  def is_exe( fpath ):
-    return os.path.isfile( fpath ) and os.access( fpath, os.X_OK )
-
-  fpath, _fname = os.path.split( program )
-  if fpath:
-    if is_exe( program ):
-      return program
-  else:
-    for path in os.environ["PATH"].split( os.pathsep ):
-      path = path.strip( '"' )
-      exe_file = os.path.join( path, program )
-      if is_exe( exe_file ):
-        return exe_file
-
-  return None
