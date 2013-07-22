@@ -286,7 +286,7 @@ class InputDataAgent( OptimizerModule ):
             continue
           try:
             #storageElement = StorageElement( se )
-            result = self.resourceStatus.getStorageElementStatus( se, statusType = 'ReadAccess' )
+            result = self.resourceStatus.getStorageStatus( se, statusType = 'ReadAccess' )
             if not result['OK']:
               continue
             seDict[se] = { 'Sites': sites['Value'], 'SEParams': result['Value'][se] }

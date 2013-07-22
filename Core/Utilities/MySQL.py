@@ -157,7 +157,13 @@ from DIRAC                                  import gLogger
 from DIRAC                                  import S_OK, S_ERROR
 from DIRAC.Core.Utilities                   import Time
 
-import MySQLdb
+# Get rid of the annoying Deprecation warning of the current MySQLdb
+# FIXME: compile a newer MySQLdb version
+import warnings
+with warnings.catch_warnings():
+  warnings.simplefilter( 'ignore', DeprecationWarning )
+  import MySQLdb
+
 # This is for proper initialization of embeded server, it should only be called once
 MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
 gInstancesCount = 0

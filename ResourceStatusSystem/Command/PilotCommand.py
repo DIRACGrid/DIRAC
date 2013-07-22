@@ -10,10 +10,10 @@
 from datetime import datetime, timedelta
 
 from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers                   import Resources
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient 
-from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB            import PilotAgentsDB
 
 __RCSID__ = '$Id:  $'
@@ -264,7 +264,7 @@ class PilotsWMSCommand( Command ):
     
     # If siteName is None, we take all sites
     if siteName is None:
-      siteName = CSHelpers.getSites()      
+      siteName = Resources.getSites()      
       if not siteName[ 'OK' ]:
         return self.returnERROR( siteName )
       siteName = siteName[ 'Value' ]

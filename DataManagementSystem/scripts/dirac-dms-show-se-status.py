@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
   resourceStatus = ResourceStatus()
  
-  result = resourceStatus.getStorageElementStatus( seList )
+  result = resourceStatus.getStorageStatus( seList )
   if not result['OK']:
     gLogger.notice( 'Error:', result['Message'] )
     DIRAC.exit( 3 )

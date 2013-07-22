@@ -40,7 +40,7 @@ class ResourceStatusDB( object ):
     
   _tablesLike[ 'ElementWithID' ]       = { 'Fields' : 
                     {
-                     'ID'              : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                     'ID'              : 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
                      'Name'            : 'VARCHAR(64) NOT NULL',
                      'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
                      'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
@@ -361,7 +361,7 @@ class ResourceStatusDB( object ):
 
   def _logRecord( self, params, meta, isUpdate ):
     '''
-      Method that records every change on a LogTable, if activated on the CS.
+      Method that records every change on a LogTable.
     '''
       
     if not ( 'table' in meta and meta[ 'table' ].endswith( 'Status' ) ):

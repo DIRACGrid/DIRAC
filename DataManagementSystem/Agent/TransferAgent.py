@@ -358,12 +358,14 @@ class TransferAgent( RequestAgentBase ):
     :param str se: SE name
     :param str status: RSS status name
     """
-    rssStatus = self.rssClient().getStorageElementStatus( se, status )
-    if not rssStatus["OK"]:
-      return S_ERROR( "unknown SE: %s" % se )
-    if rssStatus["Value"][se][status] == "Banned":
-      return S_OK( False )
-    return S_OK( True )
+    #rssStatus = self.rssClient().getStorageStatus( se, status )
+    rssStatus = self.rssClient().isUsableStorage( se, status )
+    return S_OK( rssStatus )
+#    if not rssStatus["OK"]:
+#      return S_ERROR( "unknown SE: %s" % se )
+#    if rssStatus["Value"][se][status] == "Banned":
+#      return S_OK( False )
+#    return S_OK( True )
 
   @staticmethod
   def ancestorSortKeys( aDict, aKey = "Ancestor" ):

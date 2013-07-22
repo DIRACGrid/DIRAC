@@ -119,14 +119,11 @@ def initSEs():
     Initializes SEs statuses taking their values from the CS.
   '''
 
-  #WarmUp local copy
-  CSHelpers.warmUp()
-
   subLogger.info( 'Initializing SEs' )
   
-  rssClient = ResourceStatusClient.ResourceStatusClient()
+  resources = Resources()
   
-  ses = CSHelpers.getStorageElements()
+  ses = resources.getEligibleStorageElements()
   if not ses[ 'OK' ]:
     return ses
   ses = ses[ 'Value' ]  
@@ -138,7 +135,7 @@ def initSEs():
   subLogger.debug( statuses )
   subLogger.debug( statusTypes )
   
-  resources = Resources()
+  rssClient = ResourceStatusClient.ResourceStatusClient()
   
   for se in ses:
 
@@ -227,7 +224,7 @@ if __name__ == "__main__":
   from DIRAC                                              import gConfig
   from DIRAC.ResourceStatusSystem.Client                  import ResourceStatusClient
   from DIRAC.ResourceStatusSystem.PolicySystem            import StateMachine
-  from DIRAC.ResourceStatusSystem.Utilities               import CSHelpers, RssConfiguration, Synchronizer
+  from DIRAC.ResourceStatusSystem.Utilities               import RssConfiguration, Synchronizer
   from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
   
   #Run script

@@ -39,14 +39,7 @@ class RssConfiguration:
   
   '''
   def __init__( self ):
-    self.opsHelper = Operations() 
-
-  def getConfigState( self, default = 'InActive' ):
-    '''
-      Gets from <pathToRSSConfiguration>/Config the value of State
-    '''
-    
-    return self.opsHelper.getValue( '%s/Config/State' % _rssConfigPath, default )
+    self.opsHelper = Operations()
 
   def getConfigCache( self, default = 300 ):
     '''
@@ -115,20 +108,9 @@ def getValidElements():
   '''
   Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/ValidElements
   '''
-  _DEFAULTS = ( 'Site', 'Resource', 'Node', 'Component' )
-  
-#  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % _rssConfigPath )
-#  if result is not None:
-#    return List.fromChar( result )
-  return _DEFAULTS  
+    
+  return ( 'Site', 'Resource', 'Node', 'Component' )  
 
-def getValidStatus():
-  '''
-  Returns a list of statuses as were defined on the RSS(State)Machine  
-  '''
-
-  validStatus = RSSMachine( None ).getStates()
-  return S_OK( validStatus )
 
 #...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

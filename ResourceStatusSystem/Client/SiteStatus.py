@@ -5,7 +5,7 @@
 
 """
 
-# DIRAC 
+# DIRAC
 from DIRAC                                                  import S_OK
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
 from DIRAC.ResourceStatusSystem.Utilities.ElementStatus     import ElementStatus
@@ -41,9 +41,8 @@ class SiteStatus( ElementStatus ):
     
     # RSSCache initialization
     cacheLifeTime   = int( RssConfiguration().getConfigCache() )
-    
-    # FIXME: we need to define the types in the CS : Site => {Computing,Storage,..}Access
     self.siteCache  = RSSCache( 'Site', cacheLifeTime, self.__updateSiteCache )
+
 
   def getSiteStatuses( self, siteNames, statusTypes = None ):
     """
@@ -81,29 +80,33 @@ class SiteStatus( ElementStatus ):
     
     :return: S_OK() || S_ERROR()                 
     """
+    
     siteDict = {}
-    siteNamesResolved = siteNames
-    if siteNamesResolved is not None:
-      result = getSiteNamesDict( siteNames )
-      if not result['OK']:
-        return result
-      siteDict = result['Value']
-      siteNamesResolved = list( set( siteDict.values() ) )  
+    
+    self.log.debug( 'getSiteStatus' )
+    
+    if siteNames is not None:
+      translatedNames = getSiteNamesDict( siteNames )
+      if not translatedNames[ 'OK' ]:
+        return translatedNames
+      siteDict  = translatedNames[ 'Value' ]
+      siteNames = list( set( siteDict.values() ) )  
     
     result = self.siteCache.match( siteNames, statusTypes )
-
-    self.log.debug( 'getSiteStatus' )
-    self.log.debug( result )
-    
     if not result['OK']:
       return result
+    
+    self.log.debug( result )
     if not siteDict:
+      # We do not have to translate back the site names
       return result
     
     resultDict = {}
-    for key in siteDict:
-      resultDict[key] = result['Value'][siteDict[key]]
+    for key in siteDict.iterkeys():
+      resultDict[ key ] = result[ 'Value' ][ siteDict[ key ] ]
+      
     return S_OK( resultDict )
+  
 
   def getSiteStatus( self, siteName, statusType ):
     """
