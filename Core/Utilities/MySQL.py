@@ -284,7 +284,7 @@ class MySQL:
         except KeyError:
           pass
         if retriesLeft >= 0:
-          return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
+          return self.__getWithRetry( dbName, totalRetries, retriesLeft )
         return S_ERROR( "Could not connect" )
 
       if lastName != dbName:
