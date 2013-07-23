@@ -49,11 +49,7 @@ class PilotAgentsDB( DB ):
                         gridType = 'DIRAC', requirements = 'Unknown', pilotStampDict = {} ):
     """ Add a new pilot job reference """
 
-    result = self._getConnection()
-    if result['OK']:
-      connection = result['Value']
-    else:
-      return S_ERROR( 'Failed to get connection to MySQL: ' + result['Message'] )
+    err = 'PilotAgentsDB.addPilotTQReference: Failed to retrieve a new Id.'
 
     result = self._escapeString( requirements )
     if not result['OK']:
@@ -71,25 +67,19 @@ class PilotAgentsDB( DB ):
             "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')" % \
             ( ref, int( taskQueueID ), ownerDN, ownerGroup, broker, gridType, stamp )
 
-      result = self._update( req, connection )
+      result = self._update( req )
       if not result['OK']:
-        connection.close()
         return result
 
-      req = "SELECT LAST_INSERT_ID();"
-      res = self._query( req, connection )
-      if not res['OK']:
-        connection.close()
-        return res
-      pilotID = int( res['Value'][0][0] )
+      if not 'lastRowId' in res['Value']:
+        return S_ERROR( '%s' % err )
+
+      pilotID = int( res['Value']['lastRowId'] )
 
       req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % ( pilotID, e_requirements )
-      res = self._update( req, connection )
+      res = self._update( req )
       if not res['OK']:
-        connection.close()
         return res
-
-    connection.close()
 
     return S_OK()
 
