@@ -54,7 +54,12 @@ def initializeMatcherHandler( serviceInfo ):
     return res
   
   gTaskQueueDB   = TaskQueueDB()
+  
+  # Create PilotAgentsDB object and initialize its tables.
   gPilotAgentsDB = PilotAgentsDB()
+  res = gPilotAgentsDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
 
   gMonitor.registerActivity( 'matchTime', "Job matching time",
                              'Matching', "secs" , gMonitor.OP_MEAN, 300 )
