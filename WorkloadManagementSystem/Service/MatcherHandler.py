@@ -45,7 +45,11 @@ def initializeMatcherHandler( serviceInfo ):
   global gTaskQueueDB
   global gPilotAgentsDB
 
-  gJobDB         = JobDB()
+  # Create JobDB object and initialize its tables.
+  gJobDB = JobDB()
+  res = gJobDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
   
   # Create JobLoggingDB object and initialize its tables.
   gJobLoggingDB = JobLoggingDB()

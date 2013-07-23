@@ -83,6 +83,201 @@ JOB_DYNAMIC_ATTRIBUTES = [ 'LastUpdateTime', 'HeartBeatTime',
 #############################################################################
 class JobDB( DB ):
 
+  _tablesDict = {}
+  # Jobs table
+  _tablesDict[ 'Jobs' ] = { 
+                           'Fields' : 
+                                     {
+                                      'JobID'                : 'INTEGER NOT NULL AUTO_INCREMENT',
+                                      'JobType'              : 'VARCHAR(32) NOT NULL DEFAULT "normal"',
+                                      'DIRACSetup'           : 'VARCHAR(32) NOT NULL',
+                                      'JobGroup'             : 'VARCHAR(32) NOT NULL DEFAULT "NoGroup"',
+                                      'JobSplitType'         : 'ENUM ("Single","Master","Subjob","DAGNode") NOT NULL DEFAULT "Single"',
+                                      'MasterJobID'          : 'INTEGER NOT NULL DEFAULT 0',
+                                      'Site'                 : 'VARCHAR(100) NOT NULL DEFAULT "ANY"',
+                                      'JobName'              : 'VARCHAR(128) NOT NULL DEFAULT "Unknown"',
+                                      'Owner'                : 'VARCHAR(32) NOT NULL DEFAULT "Unknown"',
+                                      'OwnerDN'              : 'VARCHAR(255) NOT NULL DEFAULT "Unknown"',
+                                      'OwnerGroup'           : 'VARCHAR(128) NOT NULL DEFAULT "lhcb_user"',
+                                      'SubmissionTime'       : 'DATETIME',
+                                      'RescheduleTime'       : 'DATETIME',
+                                      'LastUpdateTime'       : 'DATETIME',
+                                      'StartExecTime'        : 'DATETIME',
+                                      'HeartBeatTime'        : 'DATETIME',
+                                      'EndExecTime'          : 'DATETIME',
+                                      'Status'               : 'VARCHAR(32) NOT NULL DEFAULT "Received"',
+                                      'MinorStatus'          : 'VARCHAR(128) NOT NULL DEFAULT "Initial insertion"',
+                                      'ApplicationStatus'    : 'VARCHAR(256) NOT NULL DEFAULT "Unknown"',
+                                      'ApplicationNumStatus' : 'INTEGER NOT NULL DEFAULT 0',
+                                      'CPUTime'              : 'FLOAT NOT NULL DEFAULT 0.0',
+                                      'UserPriority'         : 'INTEGER NOT NULL DEFAULT 0',
+                                      'SystemPriority'       : 'INTEGER NOT NULL DEFAULT 0',
+                                      'RescheduleCounter'    : 'INTEGER NOT NULL DEFAULT 0',
+                                      'VerifiedFlag'         : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
+                                      'DeletedFlag'          : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
+                                      'KilledFlag'           : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
+                                      'FailedFlag'           : 'ENUM ("True","False") NOT NULL DEFAULT "False"',                                  
+                                      'ISandboxReadyFlag'    : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
+                                      'OSandboxReadyFlag'    : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
+                                      'RetrievedFlag'        : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
+                                      'AccountedFlag'        : 'ENUM ("True","False","Failed") NOT NULL DEFAULT "False"'
+                                     },
+                           'Indexes' : 
+                                      {
+                                       'JobType'           : [ 'JobType' ],
+                                       'DIRACSetup'        : [ 'DIRACSetup' ],
+                                       'JobGroup'          : [ 'JobGroup' ],
+                                       'JobSplitType'      : [ 'JobSplitType' ],
+                                       'Site'              : [ 'Site' ],
+                                       'Owner'             : [ 'Owner' ],
+                                       'OwnerDN'           : [ 'OwnerDN' ],
+                                       'OwnerGroup'        : [ 'OwnerGroup' ],
+                                       'Status'            : [ 'Status' ],
+                                       'StatusSite'        : [ 'Status', 'Site' ],
+                                       'MinorStatus'       : [ 'MinorStatus' ],
+                                       'ApplicationStatus' : [ 'ApplicationStatus' ]
+                                      },
+                           'PrimaryKey' : [ 'JobID' ]
+                          }
+  # JobJDLs table
+  _tablesDict[ 'JobJDLs' ] = {
+                              'Fields' : 
+                                        {
+                                         'JobID'           : 'INTEGER NOT NULL AUTO_INCREMENT',
+                                         'JDL'             : 'BLOB NOT NULL DEFAULT ""',
+                                         'JobRequirements' : 'BLOB NOT NULL DEFAULT ""',
+                                         'OriginalJDL'     : 'BLOB NOT NULL DEFAULT ""',
+                                         
+                                        },
+                              'PrimaryKey' : [ 'JobID' ]
+                             }
+  # SubJobs table
+  _tablesDict[ 'SubJobs' ] = {
+                              'Fields' : 
+                                        {
+                                         'JobID'    : 'INTEGER NOT NULL',
+                                         'SubJobID' : 'INTEGER NOT NULL',
+                                        }
+                             }
+  # PrecursorJobs table
+  _tablesDict[ 'PrecursorJobs' ] = {
+                                    'Fields' :
+                                              {
+                                               'JobID'    : 'INTEGER NOT NULL',
+                                               'PreJobID' : 'INTEGER NOT NULL',
+                                              }
+                                   }
+  # InputData table
+  _tablesDict[ 'InputData' ] = {
+                                'Fields' :
+                                          {
+                                           'JobID'  : 'INTEGER NOT NULL',
+                                           'Status' : 'VARCHAR(32) NOT NULL DEFAULT "AprioriGood"',
+                                           'LFN'    : 'VARCHAR(255)'
+                                          },
+                                'PrimaryKey' : [ 'JobID', 'LFN' ]
+                               }
+  # JobParameters table
+  _tablesDict[ 'JobParameters' ] = {
+                                    'Fields' : 
+                                              {
+                                               'JobID' : 'INTEGER NOT NULL',
+                                               'Name'  : 'VARCHAR(100) NOT NULL',
+                                               'Value' : 'BLOB NOT NULL'
+                                              },
+                                    'PrimaryKey' : [ 'JobID', 'Name' ]
+                                   }
+  # OptimizerParameters table
+  _tablesDict[ 'OptimizerParameters' ] = {
+                                          'Fields' : 
+                                                    {
+                                                     'JobID' : 'INTEGER NOT NULL',
+                                                     'Name'  : 'VARCHAR(100) NOT NULL',
+                                                     'Value' : 'MEDIUMBLOB NOT NULL'
+                                                    },
+                                          'PrimaryKey' : [ 'JobID', 'Name' ]
+                                         }
+  # AtticJobParameters table
+  _tablesDict[ 'AtticJobParameters' ] = {
+                                         'Fields' : 
+                                                   {
+                                                    'JobID'           : 'INTEGER NOT NULL',
+                                                    'RescheduleCycle' : 'INTEGER NOT NULL',
+                                                    'Name'            : 'VARCHAR(100) NOT NULL',
+                                                    'Value'           : 'BLOB NOT NULL'
+                                                   },
+                                         'PrimaryKey' : [ 'JobID', 'Name', 'RescheduleCycle' ]
+                                        }
+  # TaskQueues table
+  _tablesDict[ 'TaskQueues' ] = {
+                                 'Fields' :
+                                           {
+                                            'TaskQueueID'  : 'INTEGER NOT NULL AUTO_INCREMENT',
+                                            'Priority'     : 'INTEGER NOT NULL DEFAULT 0',
+                                            'Requirements' : 'BLOB NOT NULL',
+                                            'NumberOfJobs' : 'INTEGER NOT NULL DEFAULT 0'
+                                           },
+                                 'PrimaryKey' : [ 'TaskQueueID' ]
+                                }
+  # TaskQueue table
+  _tablesDict[ 'TaskQueue' ] = {
+                                'Fields' :
+                                          {
+                                           'TaskQueueID' : 'INTEGER NOT NULL',
+                                           'JobID'       : 'INTEGER NOT NULL',
+                                           'Rank'        : 'INTEGER NOT NULL DEFAULT 0'
+                                          },
+                                'PrimaryKey' : [ 'JobID', 'TaskQueueID' ]
+                               }
+  # SiteMask table
+  _tablesDict[ 'SiteMask' ] = {
+                               'Fields' :
+                                         {
+                                          'Site'           : 'VARCHAR(64) NOT NULL',
+                                          'Status'         : 'VARCHAR(64) NOT NULL',
+                                          'LastUpdateTime' : 'DATETIME NOT NULL',
+                                          'Author'         : 'VARCHAR(255) NOT NULL',
+                                          'Comment'        : 'BLOB NOT NULL'                
+                                         },
+                               'PrimaryKey' : [ 'Site' ]
+                              }
+  # SiteMaskLogging table
+  _tablesDict[ 'SiteMaskLogging' ] = {
+                                      'Fields' :
+                                                {
+                                                 'Site'       : 'VARCHAR(64) NOT NULL',
+                                                 'Status'     : 'VARCHAR(64) NOT NULL',
+                                                 'UpdateTime' : 'DATETIME NOT NULL',
+                                                 'Author'     : 'VARCHAR(255) NOT NULL',
+                                                 'Comment'    : 'BLOB NOT NULL'                                                
+                                                } 
+                                     }
+  # HeartBeatLoggingInfo table
+  _tablesDict[ 'HeartBeatLoggingInfo' ] = {
+                                           'Fields' : 
+                                                     {
+                                                      'JobID'         : 'INTEGER NOT NULL',
+                                                      'Name'          : 'VARCHAR(100) NOT NULL',
+                                                      'Value'         : 'BLOB NOT NULL',
+                                                      'HeartBeatTime' : 'DATETIME NOT NULL'                  
+                                                     },
+                                           'Indexes' : { 'JobID' : [ 'JobID' ] }
+                                          }
+  # JobCommands table
+  _tablesDict[ 'JobCommands' ] = {
+                                  'Fields' :
+                                            {
+                                             'JobID'         : 'INTEGER NOT NULL',
+                                             'Command'       : 'VARCHAR(100) NOT NULL',
+                                             'Arguments'     : 'VARCHAR(100) NOT NULL',
+                                             'Status'        : 'VARCHAR(64) NOT NULL DEFAULT "Received"',
+                                             'ReceptionTime' : 'DATETIME NOT NULL',
+                                             'ExecutionTime' : 'DATETIME',                                             
+                                            },
+                                  'Indexes' : { 'JobID' : [ 'JobID' ] }
+                                 }
+  
+
   def __init__( self, maxQueueSize = 10 ):
     """ Standard Constructor
     """
@@ -107,6 +302,50 @@ class JobDB( DB ):
 
     if DEBUG:
       result = self.dumpParameters()
+
+
+  def _checkTable( self ):
+    """ _checkTable.
+     
+    Method called on the MatcherHandler instead of on the JobLoggingDB constructor
+    to avoid an awful number of unnecessary queries with "show tables".
+    """
+    
+    return self.__createTables()
+
+
+  def __createTables( self ):
+    """ __createTables
+    
+    Writes the schema in the database. If a table is already in the schema, it is
+    skipped to avoid problems trying to create a table that already exists.
+    """
+
+    # Horrible SQL here !!
+    existingTables = self._query( "show tables" )
+    if not existingTables[ 'OK' ]:
+      return existingTables
+    existingTables = [ existingTable[0] for existingTable in existingTables[ 'Value' ] ]
+
+    # Makes a copy of the dictionary _tablesDict
+    tables = {}
+    tables.update( self._tablesDict )
+        
+    for existingTable in existingTables:
+      if existingTable in tables:
+        del tables[ existingTable ]  
+              
+    res = self._createTables( tables )
+    if not res[ 'OK' ]:
+      return res
+    
+    # Human readable S_OK message
+    if res[ 'Value' ] == 0:
+      res[ 'Value' ] = 'No tables created'
+    else:
+      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
+    return res  
+  
 
   def dumpParameters( self ):
     """  Dump the JobDB connection parameters to the stdout
@@ -918,7 +1157,7 @@ class JobDB( DB ):
       return ret
     rescheduleCounter = ret['Value']
 
-    cmd = 'INSERT INTO AtticJobParameters VALUES(%s,%s,%s,%s)' % \
+    cmd = 'INSERT INTO AtticJobParameters (JobID,RescheduleCycle,Name,Value) VALUES(%s,%s,%s,%s)' % \
          ( jobID, rescheduleCounter, key, value )
     result = self._update( cmd )
     if not result['OK']:
