@@ -511,7 +511,7 @@ class PilotAgentsDB( DB ):
     if not result['OK']:
       return S_ERROR('Failed to escape error string')
     e_error = result['Value']
-    req = "INSERT INTO PilotOutput VALUES (%d,%s,%s)" % (pilotID,e_output,e_error)
+    req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%d,%s,%s)" % (pilotID,e_output,e_error)
     result = self._update(req)
     req = "UPDATE PilotAgents SET OutputReady='True' where PilotID=%d" % pilotID
     result = self._update(req)
@@ -578,7 +578,7 @@ class PilotAgentsDB( DB ):
                                      gridSite=site )
         if not result['OK']:
           return result
-      req = "INSERT INTO JobToPilotMapping VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID,jobID)
+      req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID,jobID)
       result = self._update(req)
       return result
     else:
