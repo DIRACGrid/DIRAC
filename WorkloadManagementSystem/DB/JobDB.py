@@ -144,9 +144,9 @@ class JobDB( DB ):
                               'Fields' : 
                                         {
                                          'JobID'           : 'INTEGER NOT NULL AUTO_INCREMENT',
-                                         'JDL'             : 'BLOB NOT NULL DEFAULT ""',
-                                         'JobRequirements' : 'BLOB NOT NULL DEFAULT ""',
-                                         'OriginalJDL'     : 'BLOB NOT NULL DEFAULT ""',
+                                         'JDL'             : 'BLOB NOT NULL',
+                                         'JobRequirements' : 'BLOB NOT NULL',
+                                         'OriginalJDL'     : 'BLOB NOT NULL',
                                          
                                         },
                               'PrimaryKey' : [ 'JobID' ]
