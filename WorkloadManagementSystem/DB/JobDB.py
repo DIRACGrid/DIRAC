@@ -307,7 +307,7 @@ class JobDB( DB ):
   def _checkTable( self ):
     """ _checkTable.
      
-    Method called on the MatcherHandler instead of on the JobLoggingDB constructor
+    Method called on the MatcherHandler instead of on the JobDB constructor
     to avoid an awful number of unnecessary queries with "show tables".
     """
     
