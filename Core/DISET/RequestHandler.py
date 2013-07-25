@@ -160,7 +160,7 @@ class RequestHandler( object ):
       return retVal
     self.__logRemoteQuery( "FileTransfer/%s" % sDirection, fileInfo )
 
-    self.__lockManager.lock( sDirection )
+    self.__lockManager.lock( "FileTransfer/%s" % sDirection )
     try:
       try:
         fileHelper = FileHelper( self.__trPool.get( self.__trid ) )
@@ -186,7 +186,7 @@ class RequestHandler( object ):
           return S_ERROR( "Incomplete transfer" )
         return uRetVal
       finally:
-        self.__lockManager.unlock( sDirection )
+        self.__lockManager.unlock( "FileTransfer/%s" % sDirection )
 
     except Exception, v:
       gLogger.exception( "Uncaught exception when serving Transfer", "%s" % sDirection )
@@ -239,7 +239,7 @@ class RequestHandler( object ):
     dRetVal = self.__checkExpectedArgumentTypes( method, args )
     if not dRetVal[ 'OK' ]:
       return dRetVal
-    self.__lockManager.lock( method )
+    self.__lockManager.lock( "RPC/%s" % method )
     self.__msgBroker.addTransportId( self.__trid,
                                      self.serviceInfoDict[ 'serviceName' ],
                                      idleRead = True )
@@ -248,7 +248,7 @@ class RequestHandler( object ):
         uReturnValue = oMethod( *args )
         return uReturnValue
       finally:
-        self.__lockManager.unlock( method )
+        self.__lockManager.unlock( "RPC/%s" % method )
         self.__msgBroker.removeTransport( self.__trid, closeTransport = False )
     except Exception, v:
       gLogger.exception( "Uncaught exception when serving RPC", "Function %s" % method )
