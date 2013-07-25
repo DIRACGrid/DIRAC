@@ -1,24 +1,28 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-""" ProxyRepository class is a front-end to the proxy repository Database
+""" UserProfileDB class is a front-end to the User Profile Database
 """
 
 __RCSID__ = "$Id$"
 
-import time, types
+import types
 try:
   import hashlib as md5
-except:
+except ImportError:
   import md5
-from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC  import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB
 
 class UserProfileDB( DB ):
+  """ UserProfileDB class is a front-end to the User Profile Database
+  """
 
   def __init__( self ):
+    self.__permValues = [ 'USER', 'GROUP', 'VO', 'ALL' ]
+    self.__permAttrs = [ 'ReadAccess' ]
     DB.__init__( self, 'UserProfileDB', 'Framework/UserProfileDB', 10 )
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
@@ -28,8 +32,6 @@ class UserProfileDB( DB ):
     """
     Create the tables
     """
-    self.__permValues = [ 'USER', 'GROUP', 'VO', 'ALL' ]
-    self.__permAttrs = [ 'ReadAccess' ]
     retVal = self._query( "show tables" )
     if not retVal[ 'OK' ]:
       return retVal
@@ -91,50 +93,44 @@ class UserProfileDB( DB ):
                                   }
     return self._createTables( tablesD )
 
-  def __getUserId( self, userName, insertIfMissing = True, connObj = False ):
-    return self.__getObjId( userName, 'UserName', 'up_Users', insertIfMissing, connObj )
+  def __getUserId( self, userName, insertIfMissing = True ):
+    return self.__getObjId( userName, 'UserName', 'up_Users', insertIfMissing )
 
-  def __getGroupId( self, groupName, insertIfMissing = True, connObj = False ):
-    return self.__getObjId( groupName, 'UserGroup', 'up_Groups', insertIfMissing, connObj )
+  def __getGroupId( self, groupName, insertIfMissing = True ):
+    return self.__getObjId( groupName, 'UserGroup', 'up_Groups', insertIfMissing )
 
-  def __getVOId( self, voName, insertIfMissing = True, connObj = False ):
-    return self.__getObjId( voName, 'VO', 'up_VOs', insertIfMissing, connObj )
+  def __getVOId( self, voName, insertIfMissing = True ):
+    return self.__getObjId( voName, 'VO', 'up_VOs', insertIfMissing )
 
-  def __getObjId( self, objValue, varName, tableName, insertIfMissing = True, connObj = False ):
-    result = self._escapeString( objValue )
-    if not result[ 'OK' ]:
-      return result
-    sqlObjValue = result[ 'Value' ]
-    selectSQL = "SELECT Id FROM `%s` WHERE %s = %s" % ( tableName, varName, sqlObjValue )
-    result = self._query( selectSQL, connObj )
+  def __getObjId( self, objValue, varName, tableName, insertIfMissing = True ):
+    result = self.getFields( tableName, ['Id'], { varName: objValue } )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
     if len( data ) > 0:
-      id = data[0][0]
-      self._update ( "UPDATE `%s` SET LastAccess = UTC_TIMESTAMP() WHERE Id = %s" % ( tableName, id ) )
-      return S_OK( id )
+      objId = data[0][0]
+      self.updateFields( tableName, ['LastAccess'], ['UTC_TIMESTAMP()'], { 'Id': objId } )
+      return S_OK( objId )
     if not insertIfMissing:
       return S_ERROR( "No entry %s for %s defined in the DB" % ( objValue, varName ) )
-    insertSQL = "INSERT INTO `%s` ( Id, %s, LastAccess ) VALUES ( 0, %s, UTC_TIMESTAMP() )" % ( tableName, varName, sqlObjValue )
-    result = self._update( insertSQL, connObj )
+    result = self.insertFields( tableName, [ varName, 'LastAccess' ], [ objValue, 'UTC_TIMESTAMP()' ] )
     if not result[ 'OK' ]:
       return result
     return S_OK( result[ 'lastRowId' ] )
 
-  def getUserGroupIds( self, userName, userGroup, insertIfMissing = True, connObj = False ):
-    result = self.__getUserId( userName, insertIfMissing, connObj = connObj )
+  def getUserGroupIds( self, userName, userGroup, insertIfMissing = True ):
+    result = self.__getUserId( userName, insertIfMissing )
     if not result[ 'OK' ]:
       return result
     userId = result[ 'Value' ]
-    result = self.__getGroupId( userGroup, insertIfMissing, connObj = connObj )
+    result = self.__getGroupId( userGroup, insertIfMissing )
     if not result[ 'OK' ]:
       return result
     groupId = result[ 'Value' ]
     userVO = Registry.getVOForGroup( userGroup )
     if not userVO:
       userVO = "undefined"
-    result = self.__getVOId( userVO, insertIfMissing, connObj = connObj )
+    result = self.__getVOId( userVO, insertIfMissing )
     if not result[ 'OK' ]:
       return result
     voId = result[ 'Value' ]
@@ -148,19 +144,17 @@ class UserProfileDB( DB ):
     if not result[ 'OK' ]:
       return result
     userId = result[ 'Value' ]
-    sqlCond = [ 'UserId=%s' % userId ]
+    condDict = { 'UserId': userId }
     if userGroup:
       result = self.__getGroupId( userGroup )
       if not result[ 'OK' ]:
         return result
       groupId = result[ 'Value' ]
-      sqlCond.append( "GroupId=%s" % userGroup )
-    delSQL = "DELETE FROM `up_ProfilesData` WHERE %s" % " AND ".join( sqlCond )
-    result = self._update( delSQL )
+      condDict['GroupId'] = groupId
+    result = self.deleteEntries( 'up_ProfilesData', condDict )
     if not result[ 'OK' ] or not userGroup:
       return result
-    delSQL = "DELETE FROM `up_Users` WHERE Id = %s" % userId
-    return self._update( delSQL )
+    return self.deleteEntries( 'up_Users', { 'Id': userId } )
 
   def __webProfileUserDataCond( self, userIds, sqlProfileName = False, sqlVarName = False ):
     condSQL = [ '`up_ProfilesData`.UserId=%s' % userIds[0],
@@ -189,7 +183,7 @@ class UserProfileDB( DB ):
   def __parsePerms( self, perms, addMissing = True ):
     normPerms = {}
     for pName in self.__permAttrs:
-      if pName not in perms:
+      if not perms or pName not in perms:
         if addMissing:
           normPerms[ pName ] = self.__permValues[0]
         continue
@@ -204,7 +198,7 @@ class UserProfileDB( DB ):
 
     return normPerms
 
-  def retrieveVarById( self, userIds, ownerIds, profileName, varName, connObj = False ):
+  def retrieveVarById( self, userIds, ownerIds, profileName, varName ):
     """
     Get a data entry for a profile
     """
@@ -218,9 +212,9 @@ class UserProfileDB( DB ):
       return result
     sqlVarName = result[ 'Value' ]
 
-    selectSQL = "SELECT data FROM `up_ProfilesData` WHERE %s" % self.__webProfileReadAccessDataCond( userIds, ownerIds,
-                                                                                                     sqlProfileName, sqlVarName )
-    result = self._query( selectSQL, conn = connObj )
+    sqlCond = self.__webProfileReadAccessDataCond( userIds, ownerIds, sqlProfileName, sqlVarName )
+    selectSQL = "SELECT data FROM `up_ProfilesData` WHERE %s" % sqlCond
+    result = self._query( selectSQL )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
@@ -228,7 +222,7 @@ class UserProfileDB( DB ):
       return S_OK( data[0][0] )
     return S_ERROR( "No data for userIds %s profileName %s varName %s" % ( userIds, profileName, varName ) )
 
-  def retrieveAllUserVarsById( self, userIds, profileName, connObj = False ):
+  def retrieveAllUserVarsById( self, userIds, profileName ):
     """
     Get a data entry for a profile
     """
@@ -237,19 +231,21 @@ class UserProfileDB( DB ):
       return result
     sqlProfileName = result[ 'Value' ]
 
-    selectSQL = "SELECT varName, data FROM `up_ProfilesData` WHERE %s" % self.__webProfileUserDataCond( userIds, sqlProfileName )
-    result = self._query( selectSQL, conn = connObj )
+    sqlCond = self.__webProfileUserDataCond( userIds, sqlProfileName )
+    selectSQL = "SELECT varName, data FROM `up_ProfilesData` WHERE %s" % sqlCond
+    result = self._query( selectSQL )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
     return S_OK( dict( data ) )
 
-  def retrieveUserProfilesById( self, userIds, connObj = False ):
+  def retrieveUserProfilesById( self, userIds ):
     """
     Get all profiles and data for a user
     """
-    selectSQL = "SELECT Profile, varName, data FROM `up_ProfilesData` WHERE %s" % self.__webProfileUserDataCond( userIds )
-    result = self._query( selectSQL, conn = connObj )
+    sqlCond = self.__webProfileUserDataCond( userIds )
+    selectSQL = "SELECT Profile, varName, data FROM `up_ProfilesData` WHERE %s" % sqlCond
+    result = self._query( selectSQL )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
@@ -260,7 +256,7 @@ class UserProfileDB( DB ):
       dataDict[ row[0] ][ row[1] ] = row[2 ]
     return S_OK( dataDict )
 
-  def retrieveVarPermsById( self, userIds, ownerIds, profileName, varName, connObj = False ):
+  def retrieveVarPermsById( self, userIds, ownerIds, profileName, varName ):
     """
     Get a data entry for a profile
     """
@@ -274,11 +270,9 @@ class UserProfileDB( DB ):
       return result
     sqlVarName = result[ 'Value' ]
 
-    selectSQL = "SELECT %s FROM `up_ProfilesData` WHERE %s" % ( ", ".join( self.__permAttrs ),
-                                                                self.__webProfileReadAccessDataCond( userIds, ownerIds,
-                                                                                                     sqlProfileName, sqlVarName )
-                                                              )
-    result = self._query( selectSQL, conn = connObj )
+    sqlCond = self.__webProfileReadAccessDataCond( userIds, ownerIds, sqlProfileName, sqlVarName )
+    selectSQL = "SELECT %s FROM `up_ProfilesData` WHERE %s" % ( ", ".join( self.__permAttrs ), sqlCond )
+    result = self._query( selectSQL )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
@@ -289,7 +283,7 @@ class UserProfileDB( DB ):
       return S_OK( permDict )
     return S_ERROR( "No data for userIds %s profileName %s varName %s" % ( userIds, profileName, varName ) )
 
-  def deleteVarByUserId( self, userIds, profileName, varName, connObj = False ):
+  def deleteVarByUserId( self, userIds, profileName, varName ):
     """
     Remove a data entry for a profile
     """
@@ -303,10 +297,11 @@ class UserProfileDB( DB ):
       return result
     sqlVarName = result[ 'Value' ]
 
-    selectSQL = "DELETE FROM `up_ProfilesData` WHERE %s" % self.__webProfileUserDataCond( userIds, sqlProfileName, sqlVarName )
-    return self._update( selectSQL, conn = connObj )
+    sqlCond = self.__webProfileUserDataCond( userIds, sqlProfileName, sqlVarName )
+    selectSQL = "DELETE FROM `up_ProfilesData` WHERE %s" % sqlCond
+    return self._update( selectSQL )
 
-  def storeVarByUserId( self, userIds, profileName, varName, data, perms, connObj = False ):
+  def storeVarByUserId( self, userIds, profileName, varName, data, perms ):
     """
     Set a data entry for a profile
     """
@@ -341,7 +336,7 @@ class UserProfileDB( DB ):
     sqlInsert = sqlInsertKeys + sqlInsertValues
     insertSQL = "INSERT INTO `up_ProfilesData` ( %s ) VALUES ( %s )" % ( ", ".join( [ f[0] for f in sqlInsert ] ),
                                                                          ", ".join( [ str( f[1] ) for f in sqlInsert ] ) )
-    result = self._update( insertSQL, conn = connObj )
+    result = self._update( insertSQL )
     if result[ 'OK' ]:
       return result
     #If error and not duplicate -> real error
@@ -351,7 +346,7 @@ class UserProfileDB( DB ):
                                                                self.__webProfileUserDataCond( userIds,
                                                                                               sqlProfileName,
                                                                                               sqlVarName ) )
-    return self._update( updateSQL, conn = connObj )
+    return self._update( updateSQL )
 
   def setUserVarPermsById( self, userIds, profileName, varName, perms ):
 
@@ -376,7 +371,7 @@ class UserProfileDB( DB ):
                                                                                               sqlVarName ) )
     return self._update( updateSql )
 
-  def retrieveVar( self, userName, userGroup, ownerName, ownerGroup, profileName, varName, connObj = False ):
+  def retrieveVar( self, userName, userGroup, ownerName, ownerGroup, profileName, varName ):
     """
     Get a data entry for a profile
     """
@@ -390,9 +385,9 @@ class UserProfileDB( DB ):
       return result
     ownerIds = result[ 'Value' ]
 
-    return self.retrieveVarById( userIds, ownerIds, profileName, varName, connObj )
+    return self.retrieveVarById( userIds, ownerIds, profileName, varName )
 
-  def retrieveUserProfiles( self, userName, userGroup, connObj = False ):
+  def retrieveUserProfiles( self, userName, userGroup ):
     """
     Helper for getting data
     """
@@ -400,9 +395,9 @@ class UserProfileDB( DB ):
     if not result[ 'OK' ]:
       return result
     userIds = result[ 'Value' ]
-    return self.retrieveUserProfilesById( userIds, connObj )
+    return self.retrieveUserProfilesById( userIds )
 
-  def retrieveAllUserVars( self, userName, userGroup, profileName, connObj = False ):
+  def retrieveAllUserVars( self, userName, userGroup, profileName ):
     """
     Helper for getting data
     """
@@ -410,9 +405,9 @@ class UserProfileDB( DB ):
     if not result[ 'OK' ]:
       return result
     userIds = result[ 'Value' ]
-    return self.retrieveAllUserVarsById( userIds, profileName, connObj )
+    return self.retrieveAllUserVarsById( userIds, profileName )
 
-  def retrieveVarPerms( self, userName, userGroup, ownerName, ownerGroup, profileName, varName, connObj = False ):
+  def retrieveVarPerms( self, userName, userGroup, ownerName, ownerGroup, profileName, varName ):
     result = self.getUserGroupIds( userName, userGroup )
     if not result[ 'OK' ]:
       return result
@@ -423,7 +418,7 @@ class UserProfileDB( DB ):
       return result
     ownerIds = result[ 'Value' ]
 
-    return self.retrieveVarPermsById( userIds, ownerIds, profileName, varName, connObj )
+    return self.retrieveVarPermsById( userIds, ownerIds, profileName, varName )
 
   def setUserVarPerms( self, userName, userGroup, profileName, varName, perms ):
     result = self.getUserGroupIds( userName, userGroup )
@@ -432,39 +427,31 @@ class UserProfileDB( DB ):
     userIds = result[ 'Value' ]
     return self.setUserVarPermsById( userIds, profileName, varName, perms )
 
-  def storeVar( self, userName, userGroup, profileName, varName, data, perms = {} ):
+  def storeVar( self, userName, userGroup, profileName, varName, data, perms = None ):
     """
     Helper for setting data
     """
-    result = self._getConnection()
-    if not result[ 'OK' ]:
-      return result
-    connObj = result[ 'Value' ]
     try:
       result = self.getUserGroupIds( userName, userGroup )
       if not result[ 'OK' ]:
         return result
       userIds = result[ 'Value' ]
-      return self.storeVarByUserId( userIds, profileName, varName, data, perms = perms, connObj = connObj )
+      return self.storeVarByUserId( userIds, profileName, varName, data, perms = perms )
     finally:
-      connObj.close()
+      pass
 
   def deleteVar( self, userName, userGroup, profileName, varName ):
     """
-    Helper for deleteting data
+    Helper for deleting data
     """
-    result = self._getConnection()
-    if not result[ 'OK' ]:
-      return result
-    connObj = result[ 'Value' ]
     try:
-      result = self.getUserGroupIds( userName, userGroup, connObj = connObj )
+      result = self.getUserGroupIds( userName, userGroup )
       if not result[ 'OK' ]:
         return result
       userIds = result[ 'Value' ]
-      return self.deleteVarByUserId( userIds, profileName, varName, connObj = connObj )
+      return self.deleteVarByUserId( userIds, profileName, varName )
     finally:
-      connObj.close()
+      pass
 
   def __profilesCondGenerator( self, value, varType, initialValue = False ):
     if type( value ) in types.StringTypes:
@@ -480,7 +467,7 @@ class UserProfileDB( DB ):
       else:
         result = self.__getVOId( val, insertIfMissing = False )
       if not result[ 'OK' ]:
-          continue
+        continue
       ids.append( result[ 'Value' ] )
     if varType == 'user':
       fieldName = 'UserId'
@@ -488,10 +475,10 @@ class UserProfileDB( DB ):
       fieldName = 'GroupId'
     else:
       fieldName = 'VOId'
-    return "`up_ProfilesData`.%s in ( %s )" % ( fieldName, ", ".join( [ str( id ) for id in ids ] ) )
+    return "`up_ProfilesData`.%s in ( %s )" % ( fieldName, ", ".join( [ str( iD ) for iD in ids ] ) )
 
 
-  def listVarsById( self, userIds, profileName, filterDict = {} ):
+  def listVarsById( self, userIds, profileName, filterDict = None ):
     result = self._escapeString( profileName )
     if not result[ 'OK' ]:
       return result
@@ -515,14 +502,14 @@ class UserProfileDB( DB ):
 
     return self._query( sqlQuery )
 
-  def listVars( self, userName, userGroup, profileName, filterDict = {} ):
+  def listVars( self, userName, userGroup, profileName, filterDict = None ):
     result = self.getUserGroupIds( userName, userGroup )
     if not result[ 'OK' ]:
       return result
     userIds = result[ 'Value' ]
     return self.listVarsById( userIds, profileName, filterDict )
 
-  def storeHashTagById( self, userIds, tagName, hashTag = False, connObj = False ):
+  def storeHashTagById( self, userIds, tagName, hashTag = False ):
     """
     Set a data entry for a profile
     """
@@ -530,38 +517,30 @@ class UserProfileDB( DB ):
       hashTag = md5.md5()
       hashTag.update( "%s;%s;%s" % ( Time.dateTime(), userIds, tagName ) )
       hashTag = hashTag.hexdigest()
-    hashTagUnescaped = hashTag
-    result = self._escapeString( hashTag )
-    if not result[ 'OK' ]:
-      return result
-    hashTag = result[ 'Value' ]
-    result = self._escapeString( tagName )
-    if not result[ 'OK' ]:
-      return result
-    tagName = result[ 'Value' ]
-    insertSQL = "INSERT INTO `up_HashTags` ( UserId, GroupId, VOId, TagName, HashTag ) VALUES ( %s, %s, %s, %s, %s )" % ( userIds[0], userIds[1], userIds[2], tagName, hashTag )
-    result = self._update( insertSQL, conn = connObj )
+
+    result = self.insertFields( 'up_HashTags', [ 'UserId', 'GroupId', 'VOId', 'TagName', 'HashTag' ],
+                                               [ userIds[0], userIds[1], userIds[2], tagName, hashTag ] )
     if result[ 'OK' ]:
-      return S_OK( hashTagUnescaped )
+      return S_OK( hashTag )
     #If error and not duplicate -> real error
     if result[ 'Message' ].find( "Duplicate entry" ) == -1:
       return result
-    updateSQL = "UPDATE `up_HashTags` set HashTag=%s WHERE UserId = %s AND GroupId = %s AND VOId = %s AND TagName = %s" % ( hashTag, userIds[0], userIds[1], userIds[2], tagName )
-    result = self._update( updateSQL, conn = connObj )
+    result = self.updateFields( 'up_HashTags', ['HashTag'], [hashTag], { 'UserId': userIds[0],
+                                                                         'GroupId': userIds[1],
+                                                                         'VOId': userIds[2],
+                                                                         'TagName': tagName } )
     if not result[ 'OK' ]:
       return result
-    return S_OK( hashTagUnescaped )
+    return S_OK( hashTag )
 
-  def retrieveHashTagById( self, userIds, hashTag, connObj = False ):
+  def retrieveHashTagById( self, userIds, hashTag ):
     """
     Get a data entry for a profile
     """
-    result = self._escapeString( hashTag )
-    if not result[ 'OK' ]:
-      return result
-    hashTag = result[ 'Value' ]
-    selectSQL = "SELECT TagName FROM `up_HashTags` WHERE UserId = %s AND GroupId = %s AND VOId = %s AND HashTag = %s" % ( userIds[0], userIds[1], userIds[2], hashTag )
-    result = self._query( selectSQL, conn = connObj )
+    result = self.getFields( 'up_HashTags', ['TagName'], { 'UserId': userIds[0],
+                                                           'GroupId': userIds[1],
+                                                           'VOId': userIds[2],
+                                                           'HashTag': hashTag } )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
@@ -569,12 +548,13 @@ class UserProfileDB( DB ):
       return S_OK( data[0][0] )
     return S_ERROR( "No data for combo userId %s hashTag %s" % ( userIds, hashTag ) )
 
-  def retrieveAllHashTagsById( self, userIds, connObj = False ):
+  def retrieveAllHashTagsById( self, userIds ):
     """
     Get a data entry for a profile
     """
-    selectSQL = "SELECT HashTag, TagName FROM `up_HashTags` WHERE UserId = %s AND GroupId = %s AND VOId = %s" % userIds
-    result = self._query( selectSQL, conn = connObj )
+    result = self.getFields( 'up_HashTags', ['HashTag', 'TagName'], { 'UserId': userIds[0],
+                                                                      'GroupId': userIds[1],
+                                                                      'VOId': userIds[2] } )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
@@ -582,51 +562,39 @@ class UserProfileDB( DB ):
 
   def storeHashTag( self, userName, userGroup, tagName, hashTag = False ):
     """
-    Helper for deleteting data
+    Helper for storing HASH
     """
-    result = self._getConnection()
-    if not result[ 'OK' ]:
-      return result
-    connObj = result[ 'Value' ]
     try:
-      result = self.getUserGroupIds( userName, userGroup, connObj = connObj )
+      result = self.getUserGroupIds( userName, userGroup )
       if not result[ 'OK' ]:
         return result
       userIds = result[ 'Value' ]
-      return self.storeHashTagById( userIds, tagName, hashTag, connObj = connObj )
+      return self.storeHashTagById( userIds, tagName, hashTag )
     finally:
-      connObj.close()
+      pass
 
   def retrieveHashTag( self, userName, userGroup, hashTag ):
     """
-    Helper for deleteting data
+    Helper for retrieving HASH
     """
-    result = self._getConnection()
-    if not result[ 'OK' ]:
-      return result
-    connObj = result[ 'Value' ]
     try:
-      result = self.getUserGroupIds( userName, userGroup, connObj = connObj )
+      result = self.getUserGroupIds( userName, userGroup )
       if not result[ 'OK' ]:
         return result
       userIds = result[ 'Value' ]
-      return self.retrieveHashTagById( userIds, hashTag, connObj = connObj )
+      return self.retrieveHashTagById( userIds, hashTag )
     finally:
-      connObj.close()
+      pass
 
   def retrieveAllHashTags( self, userName, userGroup ):
     """
-    Helper for deleteting data
+    Helper for retrieving HASH
     """
-    result = self._getConnection()
-    if not result[ 'OK' ]:
-      return result
-    connObj = result[ 'Value' ]
     try:
-      result = self.getUserGroupIds( userName, userGroup, connObj = connObj )
+      result = self.getUserGroupIds( userName, userGroup )
       if not result[ 'OK' ]:
         return result
       userIds = result[ 'Value' ]
-      return self.retrieveAllHashTagsById( userIds, connObj = connObj )
+      return self.retrieveAllHashTagsById( userIds )
     finally:
-      connObj.close()
+      pass
