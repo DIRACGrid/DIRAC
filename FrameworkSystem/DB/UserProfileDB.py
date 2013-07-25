@@ -646,6 +646,8 @@ def testUserProfileDB():
   userGroup = 'testGroup'
   profileName = 'testProfile'
   varName = 'testVar'
+  tagName = 'testTag'
+  hashTag = '237cadc4af90277e9524e6386e264630'
   data = 'testData'
   perms = 'USER'
 
@@ -665,7 +667,36 @@ def testUserProfileDB():
 
     gLogger.info( '\n Adding some data\n' )
     result = db.storeVar( userName, userGroup, profileName, varName, data, perms )
-    assert result == 1
+    assert result['OK']
+    assert result['Value'] == 1
+
+    gLogger.info( '\n Some queries\n' )
+    result = db.getUserGroupIds( userName, userGroup )
+    assert result['OK']
+    assert result['Value'] == ( 1, 1, 1 )
+
+    result = db.listVars( userName, userGroup, profileName )
+    assert result['OK']
+    assert result['Value'][0][3] == varName
+
+    result = db.retrieveUserProfiles( userName, userGroup )
+    assert result['OK']
+    assert result['Value'] == { profileName: { varName: data } }
+
+    result = db.storeHashTag( userName, userGroup, tagName, hashTag )
+    assert result['OK']
+    assert result['Value'] == hashTag
+
+    result = db.retrieveAllHashTags( userName, userGroup )
+    assert result['OK']
+    assert result['Value'] == { hashTag: tagName }
+
+    result = db.retrieveHashTag( userName, userGroup, hashTag )
+    assert result['OK']
+    assert result['Value'] == tagName
+
+    gLogger.info( '\n OK\n' )
+
 
   except AssertionError:
     print 'ERROR ',
