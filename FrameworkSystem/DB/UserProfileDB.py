@@ -6,12 +6,12 @@
 
 __RCSID__ = "$Id$"
 
-import types
+import types, os, sys
 try:
   import hashlib as md5
 except ImportError:
   import md5
-from DIRAC  import S_OK, S_ERROR
+from DIRAC  import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities import Time
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB
@@ -20,13 +20,72 @@ class UserProfileDB( DB ):
   """ UserProfileDB class is a front-end to the User Profile Database
   """
 
+  tableDict = { 'up_Users' : { 'Fields' : { 'Id' : 'INTEGER AUTO_INCREMENT NOT NULL',
+                                            'UserName' : 'VARCHAR(32) NOT NULL',
+                                            'LastAccess' : 'DATETIME',
+                                            },
+                               'PrimaryKey' : 'Id',
+                               'UniqueIndexes' : { 'U' : [ 'UserName' ] },
+                               'Engine': 'InnoDB',
+                               },
+                'up_Groups': { 'Fields' : { 'Id' : 'INTEGER AUTO_INCREMENT NOT NULL',
+                                            'UserGroup' : 'VARCHAR(32) NOT NULL',
+                                            'LastAccess' : 'DATETIME',
+                                            },
+                               'PrimaryKey' : 'Id',
+                               'UniqueIndexes' : { 'G' : [ 'UserGroup' ] },
+                               'Engine': 'InnoDB',
+                               },
+                'up_VOs': { 'Fields' : { 'Id' : 'INTEGER AUTO_INCREMENT NOT NULL',
+                                         'VO' : 'VARCHAR(32) NOT NULL',
+                                         'LastAccess' : 'DATETIME',
+                                         },
+                            'PrimaryKey' : 'Id',
+                            'UniqueIndexes' : { 'VO' : [ 'VO' ] },
+                            'Engine': 'InnoDB',
+                            },
+                'up_ProfilesData': { 'Fields' : { 'UserId' : 'INTEGER',
+                                                  'GroupId' : 'INTEGER',
+                                                  'VOId' : 'INTEGER',
+                                                  'Profile' : 'VARCHAR(255) NOT NULL',
+                                                  'VarName' : 'VARCHAR(255) NOT NULL',
+                                                  'Data' : 'BLOB',
+                                                  'ReadAccess' : 'VARCHAR(10) DEFAULT "USER"',
+                                                  },
+                                     'PrimaryKey' : [ 'UserId', 'GroupId', 'Profile', 'VarName' ],
+                                     'Indexes' : { 'ProfileKey' : [ 'UserId', 'GroupId', 'Profile' ],
+                                                   'UserKey' : [ 'UserId' ] ,
+                                                   },
+                                     'Engine': 'InnoDB',
+                                     },
+                'up_HashTags': { 'Fields' : { 'UserId' : 'INTEGER',
+                                              'GroupId' : 'INTEGER',
+                                              'VOId' : 'INTEGER',
+                                              'HashTag' : 'VARCHAR(32) NOT NULL',
+                                              'TagName' : 'VARCHAR(255) NOT NULL',
+                                              'LastAccess' : 'DATETIME',
+                                              },
+                                 'PrimaryKey' : [ 'UserId', 'GroupId', 'TagName' ],
+                                 'Indexes' : { 'HashKey' : [ 'UserId', 'HashTag' ] },
+                                 'Engine': 'InnoDB',
+                                 },
+               }
+
+
   def __init__( self ):
+    """ Constructor
+    """
     self.__permValues = [ 'USER', 'GROUP', 'VO', 'ALL' ]
     self.__permAttrs = [ 'ReadAccess' ]
     DB.__init__( self, 'UserProfileDB', 'Framework/UserProfileDB', 10 )
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ] )
+
+  def _checkTable( self ):
+    """ Make sure the tables are created
+    """
+    return self.__initializeDB()
 
   def __initializeDB( self ):
     """
@@ -40,57 +99,20 @@ class UserProfileDB( DB ):
     tablesD = {}
 
     if 'up_Users' not in tablesInDB:
-      tablesD[ 'up_Users' ] = { 'Fields' : { 'Id' : 'INTEGER AUTO_INCREMENT NOT NULL',
-                                             'UserName' : 'VARCHAR(32) NOT NULL',
-                                             'LastAccess' : 'DATETIME'
-                                            },
-                                        'PrimaryKey' : 'Id',
-                                        'UniqueIndexes' : { 'U' : [ 'UserName' ] }
-                                      }
+      tablesD[ 'up_Users' ] = self.tableDict['up_Users']
 
     if 'up_Groups' not in tablesInDB:
-      tablesD[ 'up_Groups' ] = { 'Fields' : { 'Id' : 'INTEGER AUTO_INCREMENT NOT NULL',
-                                              'UserGroup' : 'VARCHAR(32) NOT NULL',
-                                              'LastAccess' : 'DATETIME'
-                                            },
-                                        'PrimaryKey' : 'Id',
-                                        'UniqueIndexes' : { 'G' : [ 'UserGroup' ] }
-                                      }
+      tablesD[ 'up_Groups' ] = self.tableDict[ 'up_Groups']
 
     if 'up_VOs' not in tablesInDB:
-      tablesD[ 'up_VOs' ] = { 'Fields' : { 'Id' : 'INTEGER AUTO_INCREMENT NOT NULL',
-                                           'VO' : 'VARCHAR(32) NOT NULL',
-                                           'LastAccess' : 'DATETIME'
-                                         },
-                                        'PrimaryKey' : 'Id',
-                                        'UniqueIndexes' : { 'VO' : [ 'VO' ] }
-                                      }
+      tablesD[ 'up_VOs' ] = self.tableDict['up_VOs']
 
     if 'up_ProfilesData' not in tablesInDB:
-      tablesD[ 'up_ProfilesData' ] = { 'Fields' : { 'UserId' : 'INTEGER',
-                                                    'GroupId' : 'INTEGER',
-                                                    'VOId' : 'INTEGER',
-                                                    'Profile' : 'VARCHAR(255) NOT NULL',
-                                                    'VarName' : 'VARCHAR(255) NOT NULL',
-                                                    'Data' : 'BLOB',
-                                                    'ReadAccess' : 'VARCHAR(10) DEFAULT "USER"'
-                                                  },
-                                      'PrimaryKey' : [ 'UserId', 'GroupId', 'Profile', 'VarName' ],
-                                      'Indexes' : { 'ProfileKey' : [ 'UserId', 'GroupId', 'Profile' ],
-                                                    'UserKey' : [ 'UserId' ] }
-                                     }
+      tablesD[ 'up_ProfilesData' ] = self.tableDict['up_ProfilesData']
 
     if 'up_HashTags' not in tablesInDB:
-      tablesD[ 'up_HashTags' ] = { 'Fields' : { 'UserId' : 'INTEGER',
-                                                'GroupId' : 'INTEGER',
-                                                'VOId' : 'INTEGER',
-                                                'HashTag' : 'VARCHAR(32) NOT NULL',
-                                                'TagName' : 'VARCHAR(255) NOT NULL',
-                                                'LastAccess' : 'DATETIME'
-                                              },
-                                    'PrimaryKey' : [ 'UserId', 'GroupId', 'TagName' ],
-                                    'Indexes' : { 'HashKey' : [ 'UserId', 'HashTag' ] }
-                                  }
+      tablesD[ 'up_HashTags' ] = self.tableDict['up_HashTags']
+
     return self._createTables( tablesD )
 
   def __getUserId( self, userName, insertIfMissing = True ):
@@ -598,3 +620,71 @@ class UserProfileDB( DB ):
       return self.retrieveAllHashTagsById( userIds )
     finally:
       pass
+
+def testUserProfileDB():
+  """ Some test cases
+  """
+
+  # building up some fake CS values
+  gConfig.setOptionValue( 'DIRAC/Setup', 'Test' )
+  gConfig.setOptionValue( '/DIRAC/Setups/Test/Framework', 'Test' )
+
+  host = '127.0.0.1'
+  user = 'Dirac'
+  pwd = 'Dirac'
+  db = 'AccountingDB'
+
+  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/UserProfileDB/Host', host )
+  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/UserProfileDB/DBName', db )
+  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/UserProfileDB/User', user )
+  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/UserProfileDB/Password', pwd )
+
+  db = UserProfileDB()
+  assert db._connect()['OK']
+
+  userName = 'testUser'
+  userGroup = 'testGroup'
+  profileName = 'testProfile'
+  varName = 'testVar'
+  data = 'testData'
+  perms = 'USER'
+
+  try:
+    if True:
+      for tableName in db.tableDict.keys():
+        result = db._update( 'DROP TABLE `%s`' % tableName )
+        assert result['OK']
+
+    gLogger.info( '\n Creating Table\n' )
+    # Make sure it is there and it has been created for this test
+    result = db._checkTable()
+    assert result == {'OK': True, 'Value': None }
+
+    result = db._checkTable()
+    assert result == {'OK': True, 'Value': 0}
+
+    gLogger.info( '\n Adding some data\n' )
+    result = db.storeVar( userName, userGroup, profileName, varName, data, perms )
+    assert result == 1
+
+  except AssertionError:
+    print 'ERROR ',
+    if not result['OK']:
+      print result['Message']
+    else:
+      print result
+
+
+    sys.exit( 1 )
+
+
+if __name__ == '__main__':
+  from DIRAC.Core.Base import Script
+  Script.parseCommandLine()
+  gLogger.setLevel( 'VERBOSE' )
+
+  if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
+    gLogger.info( 'Unset pyhthon optimization "PYTHONOPTIMIZE"' )
+    sys.exit( 0 )
+
+  testUserProfileDB()
