@@ -243,6 +243,7 @@ class FileManagerBase:
         res = self.db.dtree.makeDirectories( directory, credDict )
         for fileName in fileNames:
           lfn = "%s/%s" % ( directory, fileName )
+          lfn = lfn.replace( '//', '/' )
           if not res['OK']:
             failed[lfn] = "Failed to create directory for file"
             lfns.pop( lfn )
