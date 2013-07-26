@@ -652,7 +652,7 @@ def testUserProfileDB():
   perms = 'USER'
 
   try:
-    if True:
+    if False:
       for tableName in db.tableDict.keys():
         result = db._update( 'DROP TABLE `%s`' % tableName )
         assert result['OK']

@@ -246,7 +246,7 @@ class JobDB( DB ):
         return S_ERROR( 'JobDB.getJobParameters: failed to retrieve parameters' )
 
     else:
-      result = self._getFields( 'JobParameters', ['Name', 'Value'], ['JobID'], [jobID] )
+      result = self.getFields( 'JobParameters', ['Name', 'Value'], {'JobID': jobID} )
       if not result['OK']:
         return result
       else:
@@ -440,7 +440,7 @@ class JobDB( DB ):
     """ Get optimizer parameters for the given job.
     """
 
-    result = self._getFields( 'OptimizerParameters', ['Value'], ['JobID', 'Name'], [jobID, parameter] )
+    result = self.getFields( 'OptimizerParameters', ['Value'], {'JobID': jobID, 'Name': parameter} )
     if result['OK']:
       if result['Value']:
         return S_OK( result['Value'][0][0] )
