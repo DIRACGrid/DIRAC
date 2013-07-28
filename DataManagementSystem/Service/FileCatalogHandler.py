@@ -409,6 +409,29 @@ class FileCatalogHandler( RequestHandler ):
 
   types_findFilesByMetadataWeb = [ DictType, StringTypes, [IntType, LongType], [IntType, LongType]]
   def export_findFilesByMetadataWeb( self, metaDict, path, startItem, maxItems ):
+    """ Find files satisfying the given metadata set
+    """
+    result = gFileCatalogDB.dmeta.findFileIDsByMetadata( metaDict, path, self.getRemoteCredentials(), startItem, maxItems )
+    if not result['OK'] or not result['Value']:
+      return result
+
+    fileIDs = result['Value']
+    totalRecords = result['TotalRecords']
+
+    result = gFileCatalogDB.fileManager._getFileLFNs( fileIDs )
+    if not result['OK']:
+      return result
+
+    lfnsResultList = result['Value']['Successful'].values()
+    resultDetails = gFileCatalogDB.getFileDetails( lfnsResultList, self.getRemoteCredentials() )
+    if not resultDetails['OK']:
+      return resultDetails
+
+    result = S_OK( {"TotalRecords":totalRecords, "Records":resultDetails['Value'] } )
+    return result
+
+
+  def findFilesByMetadataWeb( self, metaDict, path, startItem, maxItems ):
     """ Find all the files satisfying the given metadata set
     """
     result = gFileCatalogDB.fmeta.findFilesByMetadata( metaDict, path, self.getRemoteCredentials() )

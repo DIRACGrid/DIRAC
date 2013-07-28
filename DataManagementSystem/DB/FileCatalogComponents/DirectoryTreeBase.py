@@ -518,6 +518,36 @@ class DirectoryTreeBase:
     resultDict['Execute'] = ( owner and mode & stat.S_IXUSR > 0 ) or ( group and mode & stat.S_IXGRP > 0 ) or mode & stat.S_IXOTH > 0
     return S_OK( resultDict )
 
+  def getFileIDsInDirectory( self, dirID, credDict, startItem = 1, maxItems = 25 ):
+    """ Get file IDs for the given directory
+    """
+    dirs = dirID
+    if type( dirID ) != ListType:
+      dirs = [dirID]
+
+    dirListString = ','.join( [ str( dir ) for dir in dirs ] )
+
+    req = "SELECT COUNT( DirID ) FROM FC_Files USE INDEX (DirID) WHERE DirID IN ( %s )" % dirListString
+    result = self.db._query( req )
+    if not result['OK']:
+      return result
+
+    totalRecords = result['Value'][0][0]
+
+    if not totalRecords:
+      result = S_OK( [] )
+      result['TotalRecords'] = totalRecords
+      return result
+
+    req = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s ) LIMIT %s, %s " % ( dirListString, startItem, maxItems )
+    result = self.db._query( req )
+    if not result['OK']:
+      return result
+    result = S_OK( [ fileId[0] for fileId in result['Value'] ] )
+    result['TotalRecords'] = totalRecords
+    return result
+
+
   def getFilesInDirectory( self, dirID, credDict ):
     """ Get file IDs for the given directory
     """
