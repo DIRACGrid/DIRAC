@@ -7,38 +7,48 @@
 -- -
 -- ------------------------------------------------------------------------------
 
-DROP DATABASE IF EXISTS JobLoggingDB;
+-- DROP DATABASE IF EXISTS JobLoggingDB;
 
-CREATE DATABASE JobLoggingDB;
+-- CREATE DATABASE JobLoggingDB;
 
 -- ------------------------------------------------------------------------------
 -- Database owner definition
 
-USE mysql;
-DELETE FROM user WHERE user='Dirac';
+-- USE mysql;
+-- DELETE FROM user WHERE user='Dirac';
 
 --
 -- Must set passwords for database user by replacing "must_be_set".
 --
 
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobLoggingDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobLoggingDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 
-FLUSH PRIVILEGES;
+-- FLUSH PRIVILEGES;
 
 -- ----------------------------------------------------------------------------- 
 USE JobLoggingDB;
 
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS LoggingInfo;
-CREATE TABLE LoggingInfo (
-    JobID INTEGER NOT NULL,
-    Status VARCHAR(32) NOT NULL DEFAULT '',
-    MinorStatus VARCHAR(128) NOT NULL DEFAULT '',
-    ApplicationStatus varchar(256) NOT NULL DEFAULT '', 
-    StatusTime DATETIME NOT NULL ,
-    StatusTimeOrder DOUBLE(11,3) NOT NULL,  
-    StatusSource VARCHAR(32) NOT NULL DEFAULT 'Unknown',
-    INDEX (JobID)
-) ENGINE = InnoDB;
+-- -----------------------------------------------------------------------------
+-- DROP TABLE IF EXISTS LoggingInfo;
+-- CREATE TABLE LoggingInfo (
+--    JobID INTEGER NOT NULL,
+--	  SeqNum INTEGER NOT NULL DEFAULT 0,
+--    Status VARCHAR(32) NOT NULL DEFAULT '',
+--    MinorStatus VARCHAR(128) NOT NULL DEFAULT '',
+--    ApplicationStatus varchar(256) NOT NULL DEFAULT '', 
+--    StatusTime DATETIME NOT NULL ,
+--    StatusTimeOrder DOUBLE(12,3) NOT NULL,  
+--    StatusSource VARCHAR(32) NOT NULL DEFAULT 'Unknown',
+--    PRIMARY KEY (JobID, SeqNum)
+--) ENGINE = InnoDB;
+-- -----------------------------------------------------------------------------
+
+--
+-- Trigger to manage the new LoggingInfo structure: SeqNum is a sequential number within the same JobID
+--		the trigger generates a proper sequence for each JobID
+--
+
+CREATE TRIGGER SeqNumGenerator BEFORE INSERT ON LoggingInfo
+FOR EACH ROW SET NEW.SeqNum= (SELECT IFNULL(MAX(SeqNum) + 1,1) FROM LoggingInfo WHERE JobID=NEW.JobID);
 
