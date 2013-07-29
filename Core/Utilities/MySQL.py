@@ -1287,9 +1287,15 @@ class MySQL:
       condDict = {}
 
     try:
+      try:
+        mylimit = limit[0]
+        myoffset = limit[1]
+      except:
+        mylimit = limit
+        myoffset = None
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
-                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
-                        greater = None, smaller = None )
+                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = mylimit,
+                        greater = None, smaller = None, offset = myoffset )
     except Exception, x:
       return S_ERROR( x )
 
