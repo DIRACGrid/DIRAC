@@ -388,8 +388,7 @@ class FileManager(FileManagerBase):
       return res
     replicaDict = {}
     for repID,fileID,seID in res['Value']:
-      if not fileID in replicaDict.keys():
-        replicaDict[fileID] = {}
+      replicaDict.setdefault( fileID, {} )
       replicaDict[fileID][seID] = repID
     return S_OK(replicaDict)  
 
