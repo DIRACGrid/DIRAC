@@ -525,6 +525,9 @@ class DirectoryTreeBase:
     if type( dirID ) != ListType:
       dirs = [dirID]
 
+    if not dirs:
+      dirs = [ -1 ]
+
     dirListString = ','.join( [ str( dir ) for dir in dirs ] )
 
     req = "SELECT COUNT( DirID ) FROM FC_Files USE INDEX (DirID) WHERE DirID IN ( %s )" % dirListString
