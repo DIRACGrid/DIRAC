@@ -550,7 +550,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
     res = self.db._getConnection()
     if res['OK']:
       return res['Value']
-    gLogger.warn( "Failed to get MySQL connection", res['Message'] )
     return connection
 
   def __rebuildLevelIndexes( self, parentID, connection=False ):
