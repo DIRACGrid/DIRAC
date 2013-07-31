@@ -958,8 +958,7 @@ class FileManagerBase:
     for lfn in lfns:
       lfnDir = os.path.dirname( lfn )
       lfnFile = os.path.basename( lfn )
-      if not lfnDir in dirDict:
-        dirDict[lfnDir] = []
+      dirDict.setdefault( lfnDir, [] )
       dirDict[lfnDir].append( lfnFile )
     return dirDict
 
