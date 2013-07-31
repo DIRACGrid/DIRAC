@@ -87,8 +87,7 @@ CREATE TABLE FC_ReplicaInfo (
     CreationDate DATETIME,
     ModificationDate DATETIME,
     PFN VARCHAR(1024),
-    PRIMARY KEY (RepID),
-    INDEX (RepID)
+    PRIMARY KEY (RepID)
 );
 
 -- Make additions to the FC_Replicas table to include the FC_ReplicaInfo information
