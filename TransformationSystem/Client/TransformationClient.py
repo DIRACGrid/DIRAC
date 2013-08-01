@@ -218,10 +218,10 @@ class TransformationClient( Client, FileCatalogueBase ):
           break
       if derivedStatus:
         if derivedStatus.endswith( suffix ):
-          res = self.setFileStatusForTransformation( parentProd, 'MovedTo-%d' % prod, [lfn] )
+          res = self.setFileStatusForTransformation( parentProd, 'Moved' % prod, [lfn] )
           if not res['OK']:
             gLogger.error( "Error setting status for %s in transformation %d to %s" % ( lfn, parentProd,
-                                                                                        'MovedTo-%d' % prod ),
+                                                                                        'Moved' % prod ),
                            res['Message'] )
             continue
           res = self.setFileStatusForTransformation( prod, status, [lfn], force = force )
