@@ -10,8 +10,8 @@ from DIRAC.Core.Utilities.List                                            import
 
 DEBUG = 0
 
-import time,os
-from types import *
+import os
+from types import ListType, TupleType, StringTypes
 
 class FileManager(FileManagerBase):
 
@@ -131,16 +131,16 @@ class FileManager(FileManagerBase):
     res = self.db._query(req,connection)
     if not res['OK']:
       return res
-    for tuple in res['Value']:
-      fileID = tuple[0]
-      rowDict = dict(zip(metadata,tuple))
+    for tuple_ in res['Value']:
+      fileID = tuple_[0]
+      rowDict = dict(zip(metadata,tuple_))
       files[filesDict[fileID]].update(rowDict)
     return S_OK(files)
 
   def _getFileMetadataByID( self, fileIDs, connection=False ):
     """ Get standard file metadata for a list of files specified by FileID
     """
-    stringIDs = ','.join( [ '%s' % id for id in fileIDs ] )
+    stringIDs = ','.join( [ '%s' % id_ for id_ in fileIDs ] )
     req = "SELECT FileID,Size,UID,GID,Status FROM FC_Files WHERE FileID in ( %s )" % stringIDs
     result = self.db._query(req,connection)
     if not result['OK']:
@@ -165,6 +165,7 @@ class FileManager(FileManagerBase):
   #
 
   def _insertFiles(self,lfns,uid,gid,connection=False):
+
     connection = self._getConnection(connection)
     # Add the files
     failed = {}
@@ -191,7 +192,7 @@ class FileManager(FileManagerBase):
       directorySESizeDict[dirID].setdefault( 0, {'Files':0,'Size':0} )
       directorySESizeDict[dirID][0]['Size'] += lfns[lfn]['Size']
       directorySESizeDict[dirID][0]['Files'] += 1
-      
+
     req = "INSERT INTO FC_Files (DirID,Size,UID,GID,Status,FileName) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
@@ -217,7 +218,6 @@ class FileManager(FileManagerBase):
       checksum = fileInfo['Checksum']
       checksumtype = fileInfo.get('ChecksumType','Adler32')
       guid = fileInfo.get('GUID','')
-      dirName = os.path.dirname(lfn)
       mode = fileInfo.get('Mode',self.db.umask)
       toDelete.append(fileID)
       insertTuples.append("(%d,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" % (fileID,guid,checksum,checksumtype,mode))
@@ -323,6 +323,7 @@ class FileManager(FileManagerBase):
         res = self.db.seManager.findSE(seName)
         if not res['OK']:
           failed[lfn] = res['Message']
+          lfns.pop( lfn )
           continue
         seID = res['Value']
         insertTuples.append((fileID,seID))
@@ -334,7 +335,12 @@ class FileManager(FileManagerBase):
         for seID,repID in repDict.items():
           successful[fileIDLFNs[fileID]] = True
           insertTuples.remove((fileID,seID))
-    req = "INSERT INTO FC_Replicas (FileID,SEID,Status) VALUES %s" % (','.join(["(%d,%d,%d)" % (tuple[0],tuple[1],statusID) for tuple in insertTuples]))
+
+    if not insertTuples:
+      return S_OK({'Successful':successful,'Failed':failed})
+
+    req = "INSERT INTO FC_Replicas (FileID,SEID,Status) VALUES %s" % \
+          (','.join(["(%d,%d,%d)" % (tuple_[0],tuple_[1],statusID) for tuple_ in insertTuples]))
     res = self.db._update(req,connection)
     if not res['OK']:
       return res
@@ -359,13 +365,14 @@ class FileManager(FileManagerBase):
     toDelete = []
     for lfn in lfns.keys():
       fileDict = lfns[lfn]
-      repID = fileDict['RepID']
-      pfn = fileDict['PFN']
-      toDelete.append(repID)
-      insertReplicas.append("(%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (repID,replicaType,pfn))    
+      repID = fileDict.get( 'RepID', 0 )
+      if repID:
+        pfn = fileDict['PFN']
+        toDelete.append(repID)
+        insertReplicas.append("(%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (repID,replicaType,pfn))    
     if insertReplicas:
       req = "INSERT INTO FC_ReplicaInfo (RepID,RepType,CreationDate,ModificationDate,PFN) VALUES %s" % (','.join(insertReplicas))
-      res = self.db._update(req,connection)    
+      res = self.db._update(req,connection)
       if not res['OK']:
         for lfn in lfns.keys():
           failed[lfn] = res['Message']
@@ -562,9 +569,9 @@ class FileManager(FileManagerBase):
         res = self.db._query(req,connection)
         if not res['OK']:
           return res
-        for tuple in res['Value']:
-          repID = tuple[0]
-          repIDDict[repID] = dict(zip(fields,tuple[1:])) 
+        for tuple_ in res['Value']:
+          repID = tuple_[0]
+          repIDDict[repID] = dict(zip(fields,tuple_[1:])) 
           statusID = fileIDDict[repID]['Status']
           res = self._getIntStatus(statusID,connection=connection)
           if not res['OK']:
