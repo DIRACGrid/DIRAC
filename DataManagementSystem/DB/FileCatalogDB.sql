@@ -75,7 +75,7 @@ CREATE TABLE FC_Replicas (
     Status SMALLINT UNSIGNED NOT NULL,
     INDEX (FileID),
     INDEX (SEID),
-    INDEX (FileID,SEID),
+    UNIQUE INDEX (FileID,SEID),
     INDEX (Status)
 );
 
