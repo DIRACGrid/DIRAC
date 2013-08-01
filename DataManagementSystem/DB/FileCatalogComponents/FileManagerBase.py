@@ -298,6 +298,33 @@ class FileManagerBase:
 
   def _updateDirectoryUsage( self, directorySEDict, change, connection = False ):
     connection = self._getConnection( connection )
+    for directoryID in directorySEDict.keys():
+      result = self.db.dtree.getPathIDsByID( directoryID )
+      if not result['OK']:
+        return result
+      parentIDs = result['Value']
+      dirDict = directorySEDict[directoryID]
+      for seID in dirDict.keys() :
+        seDict = dirDict[seID]
+        files = seDict['Files']
+        size = seDict['Size']
+
+        insertTuples = []
+        for dirID in parentIDs:
+          insertTuples.append( '(%d,%d,%d,%d,UTC_TIMESTAMP())' % ( dirID, seID, size, files ) )
+
+        req = "INSERT INTO FC_DirectoryUsage (DirID,SEID,SESize,SEFiles,LastUpdate) "
+        req += "VALUES %s" % ','.join( insertTuples )
+        req += " ON DUPLICATE KEY UPDATE SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
+                                                           % ( change, size, change, files )
+        res = self.db._update( req )
+        if not res['OK']:
+          gLogger.warn( "Failed to update FC_DirectoryUsage", res['Message'] )
+
+    return S_OK()
+
+  def _updateDirectoryUsage_old( self, directorySEDict, change, connection = False ):
+    connection = self._getConnection( connection )
     for directoryID in sortList( directorySEDict.keys() ):
       result = self.db.dtree.getPathIDsByID( directoryID )
       if not result['OK']:
@@ -505,11 +532,11 @@ class FileManagerBase:
         failed.pop( lfn )
     return successful, failed
 
-  def _checkExistingMetadata( self, existingMetadata, lfns ):
+  def _checkExistingMetadata( self, existingLfns, lfns ):
     failed = {}
     successful = {}
     fileIDLFNs = {}
-    for lfn, fileDict in existingMetadata.items():
+    for lfn, fileDict in existingLfns.items():
       fileIDLFNs[fileDict['FileID']] = lfn
     # For those that exist get the replicas to determine whether they are already registered
     res = self._getFileReplicas( fileIDLFNs.keys() )
@@ -517,23 +544,26 @@ class FileManagerBase:
       for lfn in fileIDLFNs.values():
         failed[lfn] = 'Failed checking pre-existing replicas'
     else:
+      replicaDict = res['Value']
       for fileID, lfn in fileIDLFNs.items():
-        fileMetadata = existingMetadata[lfn]
+        fileMetadata = existingLfns[lfn]
         existingGuid = fileMetadata['GUID']
         existingSize = fileMetadata['Size']
         existingChecksum = fileMetadata['Checksum']
         newGuid = lfns[lfn]['GUID']
         newSize = lfns[lfn]['Size']
         newChecksum = lfns[lfn]['Checksum']
-        # If the DB does not have replicas for this file return an error
-        if not res['Value'].has_key( fileID ):
-          failed[lfn] = "File already registered with alternative replicas"
-        # If the supplied SE is not in the existing replicas return an error
-        elif not lfns[lfn]['SE'] in res['Value'][fileID].keys():
-          failed[lfn] = "File already registered with alternative replicas"
         # Ensure that the key file metadata is the same
-        elif ( existingGuid != newGuid ) or ( existingSize != newSize ) or ( existingChecksum != newChecksum ):
+        if ( existingGuid != newGuid ) or \
+           ( existingSize != newSize ) or \
+           ( existingChecksum != newChecksum ):
           failed[lfn] = "File already registered with alternative metadata"
+        # If the DB does not have replicas for this file return an error
+        elif not fileID in replicaDict or not replicaDict[fileID]:
+          failed[lfn] = "File already registered with no replicas"
+        # If the supplied SE is not in the existing replicas return an error
+        elif not lfns[lfn]['SE'] in replicaDict[fileID].keys():
+          failed[lfn] = "File already registered with alternative replicas"
         # If we get here the file being registered already exists exactly in the DB
         else:
           successful[lfn] = True
