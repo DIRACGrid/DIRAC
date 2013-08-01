@@ -347,8 +347,9 @@ class FileManager(FileManagerBase):
     res = self._getRepIDsForReplica(insertTuples, connection=connection)
     if not res['OK']:
       return res
+    replicaDict = res['Value']
     directorySESizeDict = {}
-    for fileID,repDict in res['Value'].items():
+    for fileID,repDict in replicaDict.items():
       lfn = fileIDLFNs[fileID]
       dirID = lfns[lfn]['DirID']
       directorySESizeDict.setdefault( dirID, {} )
