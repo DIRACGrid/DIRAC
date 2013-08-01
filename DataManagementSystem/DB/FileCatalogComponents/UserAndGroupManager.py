@@ -99,6 +99,13 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     if not res['OK']:
       gLogger.debug("UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
       self.lock.release()
+      if "Duplicate entry" in res['Message']:
+        result = self._refreshUsers()
+        if not result['OK']:
+          return result
+        if uname in self.db.users.keys():
+          uid = self.db.users[uname]
+          return S_OK(uid)
       return res
     uid = res['lastRowId']
     self.db.uids[uid] = uname
@@ -198,6 +205,13 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     if not res['OK']:
       gLogger.debug("UserGroupManager AddGroup lock released. Used %.3f seconds. %s" % (time.time()-waitTime,group))
       self.lock.release()
+      if "Duplicate entry" in res['Message']:
+        result = self._refreshGroups()
+        if not result['OK']:
+          return result
+        if group in self.db.groups.keys():
+          gid = self.db.groups[group]
+          return S_OK(gid)
       return res
     gid = res['lastRowId']
     self.db.gids[gid] = group
