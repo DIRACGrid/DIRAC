@@ -9,8 +9,8 @@
 
 __RCSID__ = "$Id$"
 
-import time, os, types
-from types import *
+import os
+from types import ListType, StringTypes
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 
@@ -104,7 +104,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
        
     dpath = path 
     if path == '/':
-      dirName = '/'
       level = 0
       elements = []
       parentDirID = 0
@@ -113,7 +112,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
         dpath = path[1:]  
       elements = dpath.split('/')
       level = len(elements)
-      dirName = elements[-1]
       result = self.getParent(path)
       if not result['OK']:
         return result
@@ -168,7 +166,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
        
     dpath = path 
     if path == '/':
-      dirName = '/'
       level = 0
       elements = []
       parentDirID = 0
@@ -179,7 +176,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
       level = len(elements)
       if level > MAX_LEVELS:
         return S_ERROR('Too many directory levels: %d' % level)
-      dirName = elements[-1]
       result = self.getParent(path)
       if not result['OK']:
         return result
@@ -293,10 +289,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """ Get directory name by directory ID list
     """
     dirs = dirIDList
-    if type(dirIDList) != types.ListType:
+    if type(dirIDList) != ListType:
       dirs = [dirIDList]
       
-    dirListString = ','.join( [ str(dir) for dir in dirs ] )
+    dirListString = ','.join( [ str( d ) for d in dirs ] )
 
     req = "SELECT DirID,DirName FROM FC_DirectoryLevelTree WHERE DirID in ( %s )" % dirListString
     result = self.db._query(req)
@@ -344,7 +340,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
        
     return S_OK([ x[0] for x in result['Value'] ])
   
-  def getPathIDsByID(self,dirID):
+  def getPathIDsByID_old(self,dirID):
     """ Get IDs of all the directories in the parent hierarchy for a directory
         specified by its ID
     """
@@ -356,6 +352,37 @@ class DirectoryLevelTree(DirectoryTreeBase):
       return result
     dPath = result['Value']
     return self.getPathIDs(dPath)
+  
+  def getPathIDsByID(self,dirID):
+    """ Get IDs of all the directories in the parent hierarchy for a directory
+        specified by its ID
+    """    
+    lpathString = ','.join( [ 'LPATH%d' % (i+1) for i in range( MAX_LEVELS ) ] )
+
+    req = "SELECT Level,%s FROM FC_DirectoryLevelTree WHERE DirID=%d" % ( lpathString, dirID )
+    result = self.db._query( req )
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR( 'Directory with ID %d not found' % dirID )
+    row = result['Value'][0]
+    level = row[0]
+    if level == 0:
+      return S_OK( [dirID] )
+
+    lpathSelects = []
+    for l in range( level ):
+      sel = ' AND '.join( ["Level=%d" % l] + [ 'LPATH%d=%d' % (ll+1,row[ll+1]) for ll in range( l ) ] )
+      lpathSelects.append( sel )
+    selection = '(' + ') OR ('.join( lpathSelects ) + ')'
+    req = "SELECT Level,DirID from FC_DirectoryLevelTree WHERE %s ORDER BY Level" % selection
+    result = self.db._query( req )
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR( 'No result for the path of Directory with ID %d' % dirID )
+
+    return S_OK([ x[1] for x in result['Value'] ] + [dirID] )
     
   def getChildren(self,path,connection=False):
     """ Get child directory IDs for the given directory 
@@ -430,16 +457,13 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """
 
     dirs = dirList
-    if type(dirList) != types.ListType:
-      dirs = [dirList]
-  
-    start = time.time()
- 
+    if type(dirList) != ListType:
+      dirs = [dirList] 
     resultList = []
     parentList = dirs
     while parentList:
       subResult = []
-      dirListString = ','.join( [ str(dir) for dir in parentList ] )
+      dirListString = ','.join( [ str( d ) for d in parentList ] )
       req = 'SELECT DirID from FC_DirectoryLevelTree WHERE Parent in ( %s )' % dirListString
       result = self.db._query(req)
       if not result['OK']:
@@ -463,9 +487,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     if not result['Value']:
       return S_OK({})
     
-    dirID = result['Value']
-    level = result['Level']
-    
+    dirID = result['Value']    
     result = self.getSubdirectoriesByID(dirID)
     return result
     
