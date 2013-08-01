@@ -5,11 +5,11 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                  import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.List              import intListToString, sortList
+from DIRAC.Core.Utilities.List              import intListToString
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 
 import time, os, stat
-from types import *
+from types import ListType, StringTypes
 
 class FileManagerBase:
 
@@ -143,9 +143,6 @@ class FileManagerBase:
   def _getFileLFNs(self,fileIDs):
     """ Get the file LFNs for a given list of file IDs
     """
-
-    start = time.time()
-
     stringIDs = intListToString(fileIDs)
     treeTable = self.db.dtree.getTreeTable()
 
@@ -161,18 +158,15 @@ class FileManagerBase:
     failed = {}
     successful = fileNameDict
     if len(fileNameDict) != len(fileIDs):
-      for id in fileIDs:
-        if not id in fileNameDict:
-          failed[id] = "File ID not found"
+      for id_ in fileIDs:
+        if not id_ in fileNameDict:
+          failed[id_] = "File ID not found"
 
     return S_OK({'Successful':successful,'Failed':failed})
     
   def _getFileLFNs_old(self,fileIDs):
     """ Get the file LFNs for a given list of file IDs
-    """        
-
-    start = time.time()
-    
+    """            
     stringIDs = intListToString(fileIDs)
     req = "SELECT DirID, FileID, FileName from FC_Files WHERE FileID IN ( %s )" % stringIDs
     result = self.db._query(req)
@@ -188,9 +182,9 @@ class FileManagerBase:
 
     failed = {}
     successful = fileNameDict
-    for id in fileIDs:
-      if not id in fileNameDict:
-        failed[id] = "File ID not found"
+    for id_ in fileIDs:
+      if not id_ in fileNameDict:
+        failed[id_] = "File ID not found"
 
     return S_OK({'Successful':successful,'Failed':failed})          
                                     
@@ -215,30 +209,46 @@ class FileManagerBase:
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def _addFiles( self, lfns, credDict, connection = False ):
+    """ Main file adding method
+    """
     connection = self._getConnection( connection )
     successful = {}
     result = self.db.ugManager.getUserAndGroupID( credDict )
     if not result['OK']:
       return result
     uid, gid = result['Value']
+
+    # prepare lfns with master replicas - the first in the list or a unique replica
+    masterLfns = {}
+    extraLfns = {}
+    for lfn in lfns:
+      masterLfns[lfn] = dict( lfns[lfn] )
+      if 'SE' in lfns[lfn] and type( lfns[lfn]['SE'] ) == ListType:
+        masterLfns[lfn]['SE'] = lfns[lfn]['SE'][0]  
+        if len( lfns[lfn]['SE'] ) > 1:
+          extraLfns[lfn] = dict( lfns[lfn] )
+          extraLfns[lfn]['SE'] = lfns[lfn]['SE'][1:]
+
     # Check whether the supplied files have been registered already
-    existingMetadata, failed = self._getExistingMetadata( lfns.keys(), connection = connection )
+    existingMetadata, failed = self._getExistingMetadata( masterLfns.keys(), connection = connection )
     if existingMetadata:
-      success, fail = self._checkExistingMetadata( existingMetadata, lfns )
+      success, fail = self._checkExistingMetadata( existingMetadata, masterLfns )
       successful.update( success )
       failed.update( fail )
       for lfn in ( success.keys() + fail.keys() ):
-        lfns.pop( lfn )
+        masterLfns.pop( lfn )
+
     # If GUIDs are supposed to be unique check their pre-existance 
     if self.db.uniqueGUID:
-      fail = self._checkUniqueGUID( lfns, connection = connection )
+      fail = self._checkUniqueGUID( masterLfns, connection = connection )
       failed.update( fail )
       for lfn in fail:
-        lfns.pop( lfn )
+        masterLfns.pop( lfn )
+
     # If we have files left to register
-    if lfns:
+    if masterLfns:
       # Create the directories for the supplied files and store their IDs
-      directories = self._getFileDirectories( lfns.keys() )
+      directories = self._getFileDirectories( masterLfns.keys() )
       for directory, fileNames in directories.items():
         res = self.db.dtree.makeDirectories( directory, credDict )
         for fileName in fileNames:
@@ -246,53 +256,87 @@ class FileManagerBase:
           lfn = lfn.replace( '//', '/' )
           if not res['OK']:
             failed[lfn] = "Failed to create directory for file"
-            lfns.pop( lfn )
+            masterLfns.pop( lfn )
           else:
-            lfns[lfn]['DirID'] = res['Value']
+            masterLfns[lfn]['DirID'] = res['Value']
+
     # If we still have files left to register
-    if lfns:
-      res = self._insertFiles( lfns, uid, gid, connection = connection )
+    if masterLfns:
+      res = self._insertFiles( masterLfns, uid, gid, connection = connection )
       if not res['OK']:
-        for lfn in lfns.keys():
+        for lfn in masterLfns.keys():
           failed[lfn] = res['Message']
-          lfns.pop( lfn )
+          masterLfns.pop( lfn )
       else:
         for lfn, error in res['Value']['Failed'].items():
           failed[lfn] = error
-          lfns.pop( lfn )
-        lfns = res['Value']['Successful']
+          masterLfns.pop( lfn )
+        masterLfns = res['Value']['Successful']
+
     # Add the ancestors
-    if lfns:
-      res = self._populateFileAncestors( lfns, connection = connection )
+    if masterLfns:
+      res = self._populateFileAncestors( masterLfns, connection = connection )
       toPurge = []
       if not res['OK']:
-        for lfn in lfns.keys():
+        for lfn in masterLfns.keys():
           failed[lfn] = "Failed while registering ancestors"
-          toPurge.append( lfns[lfn]['FileID'] )
+          toPurge.append( masterLfns[lfn]['FileID'] )
       else:
         failed.update( res['Value']['Failed'] )
         for lfn, error in res['Value']['Failed'].items():
-          toPurge.append( lfns[lfn]['FileID'] )
+          toPurge.append( masterLfns[lfn]['FileID'] )
       if toPurge:
         self._deleteFiles( toPurge, connection = connection )
 
     # Register the replicas
     newlyRegistered = {}
-    if lfns:
-      res = self._insertReplicas( lfns, master = True, connection = connection )
+    if masterLfns:
+      res = self._insertReplicas( masterLfns, master = True, connection = connection )
       toPurge = []
       if not res['OK']:
-        for lfn in lfns.keys():
+        for lfn in masterLfns.keys():
           failed[lfn] = "Failed while registering replica"
-          toPurge.append( lfns[lfn]['FileID'] )
+          toPurge.append( masterLfns[lfn]['FileID'] )
       else:
         newlyRegistered = res['Value']['Successful']
         successful.update( newlyRegistered )
         failed.update( res['Value']['Failed'] )
         for lfn, error in res['Value']['Failed'].items():
-          toPurge.append( lfns[lfn]['FileID'] )
+          toPurge.append( masterLfns[lfn]['FileID'] )
       if toPurge:
         self._deleteFiles( toPurge, connection = connection )
+   
+    # Add extra replicas for successfully registered LFNs
+    for lfn in extraLfns.keys():
+      if not lfn in successful:
+        extraLfns.pop( lfn )
+
+    if extraLfns:
+      res = self._findFiles( extraLfns.keys(), ['FileID','DirID'], connection=connection )
+      if not res['OK']:
+        for lfn in lfns.keys():
+          failed[lfn] = 'Failed while registering extra replicas'
+          successful.pop( lfn )
+          extraLfns.pop( lfn )
+      else:
+        failed.update(res['Value']['Failed'])
+        for lfn in res['Value']['Failed'].keys():
+          successful.pop(lfn)
+          extraLfns.pop( lfn )
+        for lfn,fileDict in res['Value']['Successful'].items():
+          extraLfns[lfn]['FileID'] = fileDict['FileID']
+          extraLfns[lfn]['DirID'] = fileDict['DirID']
+ 
+      if extraLfns:
+        res = self._insertReplicas( extraLfns, master = False, connection = connection )
+        if not res['OK']:
+          for lfn in extraLfns.keys():
+            failed[lfn] = "Failed while registering extra replicas"
+            successful.pop( lfn )
+        else:
+          newlyRegistered = res['Value']['Successful']
+          successful.update( newlyRegistered )
+          failed.update( res['Value']['Failed'] )
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
@@ -308,11 +352,10 @@ class FileManagerBase:
         seDict = dirDict[seID]
         files = seDict['Files']
         size = seDict['Size']
-
         insertTuples = []
         for dirID in parentIDs:
           insertTuples.append( '(%d,%d,%d,%d,UTC_TIMESTAMP())' % ( dirID, seID, size, files ) )
-
+    
         req = "INSERT INTO FC_DirectoryUsage (DirID,SEID,SESize,SEFiles,LastUpdate) "
         req += "VALUES %s" % ','.join( insertTuples )
         req += " ON DUPLICATE KEY UPDATE SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
@@ -320,38 +363,6 @@ class FileManagerBase:
         res = self.db._update( req )
         if not res['OK']:
           gLogger.warn( "Failed to update FC_DirectoryUsage", res['Message'] )
-
-    return S_OK()
-
-  def _updateDirectoryUsage_old( self, directorySEDict, change, connection = False ):
-    connection = self._getConnection( connection )
-    for directoryID in sortList( directorySEDict.keys() ):
-      result = self.db.dtree.getPathIDsByID( directoryID )
-      if not result['OK']:
-        return result
-      parentIDs = result['Value']
-      dirDict = directorySEDict[directoryID]
-      for seID in sortList( dirDict.keys() ):
-        seDict = dirDict[seID]
-        files = seDict['Files']
-        size = seDict['Size']
-        for dirID in parentIDs:
-          req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
-                                                           % ( change, size, change, files )
-          req += "WHERE DirID=%d AND SEID=%d;" % ( dirID, seID )
-          res = self.db._update( req )
-          if not res['OK']:
-            gLogger.warn( "Failed to update FC_DirectoryUsage", res['Message'] )
-          if res['Value']:
-            continue
-          if  change != '+':
-            gLogger.warn( "Decrement of usage for DirID,SEID that didnt exist", "%d %d" % ( dirID, seID ) )
-            continue
-          req = "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles, LastUpdate)"
-          req += " VALUES (%d, %d, %d, %d, UTC_TIMESTAMP());" % ( dirID, seID, size, files )
-          res = self.db._update( req )
-          if not res['OK']:
-            gLogger.warn( "Failed to insert FC_DirectoryUsage", res['Message'] )
     return S_OK()
     
   def _populateFileAncestors( self, lfns, connection = False ):
@@ -456,7 +467,7 @@ class FileManagerBase:
       return S_OK({'Successful':successful,'Failed':failed})
     
     for lfn in  result['Value']['Successful']:
-       lfns[lfn]['FileID'] = result['Value']['Successful'][lfn]['FileID']
+      lfns[lfn]['FileID'] = result['Value']['Successful'][lfn]['FileID']
     
     result = self._populateFileAncestors(lfns, connection)
     if not result['OK']:
@@ -481,7 +492,7 @@ class FileManagerBase:
     
     inputIDDict = {}
     for lfn in result['Value']['Successful']:
-       inputIDDict[ result['Value']['Successful'][lfn]['FileID'] ] = lfn
+      inputIDDict[ result['Value']['Successful'][lfn]['FileID'] ] = lfn
   
     inputIDs = inputIDDict.keys()
     if relation == 'ancestor':
@@ -495,9 +506,9 @@ class FileManagerBase:
     failed = {}
     successful = {}
     relDict = result['Value']
-    for id in inputIDs:
-      if id in relDict:
-        aList = relDict[id].keys()
+    for id_ in inputIDs:
+      if id_ in relDict:
+        aList = relDict[id_].keys()
         result = self._getFileLFNs(aList)       
         if not result['OK']:
           failed[inputIDDict[id]] = "Failed to find %s" % relation    
@@ -505,12 +516,12 @@ class FileManagerBase:
           if result['Value']['Successful']:
             resDict = {}
             for aID in result['Value']['Successful']:        
-              resDict[ result['Value']['Successful'][aID] ] = relDict[id][aID]         
-            successful[inputIDDict[id]] = resDict
+              resDict[ result['Value']['Successful'][aID] ] = relDict[id_][aID]         
+            successful[inputIDDict[id_]] = resDict
           for aID in result['Value']['Failed']:
-            failed[inputIDDict[id]] = "Failed to get the ancestor LFN"             
+            failed[inputIDDict[id_]] = "Failed to get the ancestor LFN"             
       else:
-        successful[inputIDDict[id]] = {}                                     
+        successful[inputIDDict[id_]] = {}                                     
       
     return S_OK({'Successful':successful,'Failed':failed})
     
@@ -588,7 +599,6 @@ class FileManagerBase:
     successful = {}
     failed = {}
     res = self._findFiles( lfns, ['DirID', 'FileID', 'Size'], connection = connection )
-    successful = {}
     for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         successful[lfn] = True
@@ -683,9 +693,16 @@ class FileManagerBase:
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def _addReplicas( self, lfns, connection = False ):
+
+    start = time.time()
+
     connection = self._getConnection( connection )
     successful = {}
     res = self._findFiles( lfns.keys(), ['DirID', 'FileID', 'Size'], connection = connection )
+
+    print "AT >>> findFiles time %.2f" % (time.time() - start)
+    start = time.time()
+
     failed = res['Value']['Failed']
     for lfn in failed.keys():
       lfns.pop( lfn )
@@ -693,6 +710,10 @@ class FileManagerBase:
     for lfn, fileDict in lfnFileIDDict.items():
       lfns[lfn].update( fileDict )
     res = self._insertReplicas( lfns, connection = connection )
+
+    print "AT >>> insertReplicas time %.2f" % (time.time() - start)
+    start = time.time()
+
     if not res['OK']:
       for lfn in lfns.keys():
         failed[lfn] = res['Message']
@@ -853,7 +874,6 @@ class FileManagerBase:
   def getReplicas( self, lfns, allStatus, connection = False ):
     """ Get file replicas from the catalog """
     connection = self._getConnection( connection )
-    startTime = time.time()
     res = self._findFiles( lfns, connection = connection )
     #print 'findFiles',time.time()-startTime
     failed = res['Value']['Failed']
@@ -863,7 +883,6 @@ class FileManagerBase:
       fileIDLFNs[fileID] = lfn
     replicas = {}
     if fileIDLFNs:
-      startTime = time.time()
       fields = []
       if not self.db.lfnPfnConvention:
         fields = ['PFN']
@@ -1039,7 +1058,6 @@ class FileManagerBase:
     if ind == -1:
       return S_ERROR( 'The given PFN %s does not correspond to the %s SE definition' % ( pfn, se ) )
     # Check the full LFN-PFN-SE convention
-    lfn_pfn_se = True
     if lfn_pfn:
       seAccessDict = dict( seDict )
       seAccessDict['Path'] = sePath + '/' + lfn
@@ -1193,3 +1211,4 @@ class FileManagerBase:
       successful.update( result['Value']['Successful'] )
       failed.update( result['Value']['Failed'] )
     return S_OK( {'Successful':successful, 'Failed':failed} )
+  
