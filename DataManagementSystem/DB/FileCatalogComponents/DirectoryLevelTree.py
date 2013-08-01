@@ -67,12 +67,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
   def __getNumericPath(self,dirID,connection=False):
     """ Get the enumerated path of the given directory
     """
-    
-    epaths = []
-    for i in range(1,MAX_LEVELS+1,1):
-      epaths.append("LPATH%d" % i)
-    epathString = ','.join(epaths)  
-    
+    epathString = ','.join( [ 'LPATH%d' % (i+1) for i in range( MAX_LEVELS ) ] )
     req = 'SELECT LEVEL,%s FROM FC_DirectoryLevelTree WHERE DirID=%d' % (epathString,dirID)
     result = self.db._query(req,connection)
     if not result['OK']:
@@ -357,22 +352,17 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """ Get IDs of all the directories in the parent hierarchy for a directory
         specified by its ID
     """    
-    lpathString = ','.join( [ 'LPATH%d' % (i+1) for i in range( MAX_LEVELS ) ] )
-
-    req = "SELECT Level,%s FROM FC_DirectoryLevelTree WHERE DirID=%d" % ( lpathString, dirID )
-    result = self.db._query( req )
+    result = self.__getNumericPath( dirID )
     if not result['OK']:
       return result
-    if not result['Value']:
-      return S_ERROR( 'Directory with ID %d not found' % dirID )
-    row = result['Value'][0]
-    level = row[0]
+    level = result['Level']
     if level == 0:
       return S_OK( [dirID] )
+    lpaths = result['Value'] 
 
     lpathSelects = []
     for l in range( level ):
-      sel = ' AND '.join( ["Level=%d" % l] + [ 'LPATH%d=%d' % (ll+1,row[ll+1]) for ll in range( l ) ] )
+      sel = ' AND '.join( ["Level=%d" % l] + [ 'LPATH%d=%d' % (ll+1,lpaths[ll]) for ll in range( l ) ] )
       lpathSelects.append( sel )
     selection = '(' + ') OR ('.join( lpathSelects ) + ')'
     req = "SELECT Level,DirID from FC_DirectoryLevelTree WHERE %s ORDER BY Level" % selection
