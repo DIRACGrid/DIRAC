@@ -576,30 +576,6 @@ class TransformationDB( DB ):
         failedDict[lfn] = 'Did not exist in the Transformation database'
     return S_OK( {'Successful':resDict, 'Failed':failedDict} )
 
-  def setFileUsedSEForTransformation( self, transName, usedSE, lfns, connection = False ):
-    """ Set the UsedSE for supplied files and the Status = 'Processed' """
-    res = self._getConnectionTransID( connection, transName )
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
-    res = self.setFileStatusForTransformation( transID, dict( [( lfn, 'Processed' ) for lfn in lfns ] ),
-                                               connection = connection )
-    if not res['OK']:
-      return res
-    resDict = res['Value']
-    res = self.__getFileIDsForLfns( resDict['Successful'].keys(), connection = connection )
-    if not res['OK']:
-      return res
-    _fileIDs, lfnFilesIDs = res['Value']
-    updateUsedSE = []
-    for lfn, message in resDict['Successful'].items():
-      if message == 'Status updated to Processed':
-        updateUsedSE.append( lfnFilesIDs[lfn] )
-    if updateUsedSE:
-      print self.__setTransformationFileUsedSE( updateUsedSE, usedSE, connection = connection )
-    return S_OK( resDict )
-
   def setFileStatusForTransformation( self, transName, lfnStatusDict = {}, connection = False ):
     """ Set file status for the given transformation, based on the lfnStatusDict
     """
@@ -620,7 +596,7 @@ class TransformationDB( DB ):
 
     keysUpdated = ['Status', 'ErrorCount', 'LastUpdate']
     # Building the request with "ON DUPLICATE KEY UPDATE"
-    req = "INSERT INTO TransformationFiles (TransformationID, FileID, %s) VALUES " % (','.join( keysUpdated))
+    req = "INSERT INTO TransformationFiles (TransformationID, FileID, %s) VALUES " % ( ','.join( keysUpdated ) )
 
     updatesList = []
     for fileDict in transFiles:
