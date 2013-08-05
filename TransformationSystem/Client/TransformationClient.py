@@ -32,7 +32,6 @@ class TransformationClient( Client, FileCatalogueBase ):
           addFilesToTransformation(transName,lfns)
           addTaskForTransformation(transName,lfns=[],se='Unknown')
           setFileStatusForTransformation(transName,status,lfns)
-          setFileUsedSEForTransformation(transName,usedSE,lfns)
           getTransformationStats(transName)
 
       TransformationTasks table manipulation
@@ -97,7 +96,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
 
     transformations = []
-    #getting transformations - incrementally
+    # getting transformations - incrementally
     offsetToApply = 0
     while True:
       res = rpcClient.getTransformations( condDict, older, newer, timeStamp, orderAttribute, limit,
@@ -124,7 +123,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     '''
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     transformationFiles = []
-    #getting transformationFiles - incrementally
+    # getting transformationFiles - incrementally
     offsetToApply = 0
     while True:
       res = rpcClient.getTransformationFiles( condDict, older, newer, timeStamp, orderAttribute, limit, offsetToApply )
@@ -148,7 +147,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     '''
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     transformationTasks = []
-    #getting transformationFiles - incrementally
+    # getting transformationFiles - incrementally
     offsetToApply = 0
     while True:
       res = rpcClient.getTransformationTasks( condDict, older, newer, timeStamp, orderAttribute, limit,
