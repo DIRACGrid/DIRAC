@@ -267,27 +267,29 @@ class TransformationClient( Client, FileCatalogueBase ):
     if not tsFiles['OK']:
       return tsFiles
     tsFiles = tsFiles['Value']
+    # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
+    tsFilesAsDict = {}
+    for tsFile in tsFiles:
+      tsFilesAsDict[tsFile['LFN']] = [tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']]
+
     # applying the state machine to the proposed status
-    newStatuses = self._applyProductionFilesStateMachine( tsFiles, newLFNsStatus, force )
+    newStatuses = self._applyProductionFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
 
-    return rpcClient.setFileStatusForTransformation( transName, newStatuses )
+    # must do it for the file IDs...
+    newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
+    return rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
 
-  def _applyProductionFilesStateMachine( self, tsFiles, dictOfProposedLFNsStatus, force ):
+  def _applyProductionFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
     """ For easier extension, here we apply the state machine of the production files.
         VOs might want to replace the standard here with something they prefer.
 
-        tsFiles is a list of dictionaries with the current status, same as returned by self.getTransformationFiles
+        tsFiles is a dictionary with the lfn as key and as value a list of [Status, ErrorCount, FileID]
         dictOfNewLFNsStatus is a dictionary with the proposed status
         force is a boolean
 
         It returns a dictionary with the status updates
     """
     newStatuses = {}
-
-    # for convenience, makes a dictionary out of the tsFiles
-    tsFilesAsDict = {}
-    for tsFile in tsFiles:
-      tsFilesAsDict[tsFile['LFN']] = [tsFile['Status'], tsFile['ErrorCount']]
 
     for lfn in dictOfProposedLFNsStatus.keys():
       if lfn not in tsFilesAsDict.keys():

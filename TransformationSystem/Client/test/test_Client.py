@@ -112,72 +112,72 @@ class WorkflowTasksSuccess( ClientsTestCase ):
 class TransformationClientSuccess( ClientsTestCase ):
 
   def test__applyProductionFilesStateMachine( self ):
-    tsFiles = []
+    tsFiles = {}
     dictOfNewLFNsStatus = {}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {} )
 
-    tsFiles = []
-    dictOfNewLFNsStatus = {'foo':'status'}
+    tsFiles = {}
+    dictOfNewLFNsStatus = {'foo':['status', 2L, 1234]}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'Removed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'status', 'ErrorCount':2L}]
+    tsFiles = {'foo':['status', 2L, 1234]}
     dictOfNewLFNsStatus = {'foo':'status'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'status'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'status', 'ErrorCount':2L}, {'LFN':'bar', 'Status':'status', 'ErrorCount':2L}]
+    tsFiles = {'foo':['status', 2L, 1234], 'bar':['status', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'status'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'status'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'status', 'ErrorCount':2L}, {'LFN':'bar', 'Status':'status', 'ErrorCount':2L}]
+    tsFiles = {'foo':['status', 2L, 1234], 'bar': ['status', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'A', 'bar':'B'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'status', 'ErrorCount':2L}]
+    tsFiles = {'foo':['status', 2L, 1234]}
     dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'A', 'bar':'Removed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'Assigned', 'ErrorCount':2L}]
+    tsFiles = {'foo': ['Assigned', 2L, 1234]}
     dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'A', 'bar':'Removed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'Assigned', 'ErrorCount':2L}, {'LFN':'bar', 'Status':'Assigned', 'ErrorCount':2L}]
+    tsFiles = {'foo':['Assigned', 2L, 1234], 'bar':['Assigned', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'Assigned', 'bar':'Processed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'Processed', 'ErrorCount':2L}, {'LFN':'bar', 'Status':'Unused', 'ErrorCount':2L}]
+    tsFiles = {'foo':['Processed', 2L, 1234], 'bar':['Unused', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'Processed', 'bar':'Processed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'Processed', 'ErrorCount':2L}, {'LFN':'bar', 'Status':'Unused', 'ErrorCount':2L}]
+    tsFiles = {'foo':['Processed', 2L, 1234], 'bar':['Unused', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
     self.assertEqual( res, {'foo':'Assigned', 'bar':'Processed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'MaxReset', 'ErrorCount':12L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':22L}]
+    tsFiles = {'foo':['MaxReset', 12L, 1234], 'bar':['Processed', 22L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'MaxReset', 'ErrorCount':12L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':22L}]
+    tsFiles = {'foo':['MaxReset', 12L, 1234], 'bar':['Processed', 22L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
     self.assertEqual( res, {'foo':'Unused', 'bar':'Unused'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'Assigned', 'ErrorCount':20L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':2L}]
+    tsFiles = {'foo':['Assigned', 20L, 1234], 'bar':['Processed', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'Assigned', 'ErrorCount':20L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':2L}]
+    tsFiles = {'foo':['Assigned', 20L, 1234], 'bar':['Processed', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
     self.assertEqual( res, {'foo':'Unused', 'bar':'Unused'} )
