@@ -2,11 +2,13 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                          import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Base.Client                         import Client
-from DIRAC.Core.Utilities.List                      import breakListIntoChunks
-from DIRAC.Resources.Catalog.FileCatalogueBase      import FileCatalogueBase
 import types
+
+from DIRAC                                                  import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Base.Client                                 import Client
+from DIRAC.Core.Utilities.List                              import breakListIntoChunks
+from DIRAC.Resources.Catalog.FileCatalogueBase              import FileCatalogueBase
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 
 rpc = None
 url = None
@@ -63,6 +65,9 @@ class TransformationClient( Client, FileCatalogueBase ):
   def __init__( self, **kwargs ):
 
     Client.__init__( self, **kwargs )
+    opsH = Operations()
+    self.maxResetCounter = opsH.getValue( 'Productions/ProductionFilesMaxResetCounter', 10 )
+
     self.setServer( 'Transformation/TransformationManager' )
 
   def setServer( self, url ):
@@ -164,7 +169,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return S_OK( transformationTasks )
 
 
-  def cleanTransformation( self, transID, pc = '', url = '', timeout = 120 ):
+  def cleanTransformation( self, transID, rpc = '', url = '', timeout = 120 ):
     """ Clean the transformation, and set the status parameter (doing it here, for easier extensibility)
     """
     # Cleaning
@@ -241,9 +246,61 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     return S_OK( ( parentProd, movedFiles ) )
 
-  def setFileStatusForTransformation( self, transName, status, lfns, force = False, timeout = 120 ):
+  def setFileStatusForTransformation( self, transName, dictOfNewLFNsStatus, force = False,
+                                      rpc = '', url = '', timeout = 120 ):
+    """ sets ths file status for LFNs of a transformation
+
+        The dictOfNewLFNsStatus is a dictionary with the form:
+        {'/this/is/an/lfn1.txt': 'StatusA', '/this/is/an/lfn2.txt': 'StatusB',  ... }
+    """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
-    return rpcClient.setFileStatusForTransformation( transName, status, lfns, force )
+
+    # gets status as of today
+    tsFiles = self.getTransformationFiles( {'TransformationID':transName, 'LFN': dictOfNewLFNsStatus.keys()} )
+    if not tsFiles['OK']:
+      return tsFiles
+    tsFiles = tsFiles['Value']
+    newStatuses = self._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, force )
+
+    return rpcClient.setFileStatusForTransformation( transName, newStatuses )
+
+  def _applyProductionFilesStateMachine( self, tsFiles, dictOfProposedLFNsStatus, force ):
+    """ For easier extension, here we apply the state machine of the production files.
+        VOs might want to replace the standard here with something they prefer.
+
+        tsFiles is a list of dictionaries with the current status, same as returned by self.getTransformationFiles
+        dictOfNewLFNsStatus is a dictionary with the proposed status
+        force is a boolean
+
+        It returns a dictionary with the status updates
+    """
+    newStatuses = {}
+
+    # for convenience, makes a dictionary out of the tsFiles
+    tsFilesAsDict = {}
+    for tsFile in tsFiles:
+      tsFilesAsDict[tsFile['LFN']] = [tsFile['Status'], tsFile['ErrorCount']]
+
+    for lfn in dictOfProposedLFNsStatus.keys():
+      if lfn not in tsFilesAsDict.keys():
+        newStatuses[lfn] = 'Removed'
+      else:
+        newStatus = dictOfProposedLFNsStatus[lfn]
+        if tsFilesAsDict[lfn][0].lower() == 'processed' and dictOfProposedLFNsStatus[lfn].lower() != 'processed':
+          if not force:
+            newStatus = 'Processed'
+        elif tsFilesAsDict[lfn][0].lower() == 'maxreset':
+          if not force:
+            newStatus = tsFilesAsDict[lfn][0]
+        elif dictOfProposedLFNsStatus[lfn].lower() == 'unused':
+          errorCount = tsFilesAsDict[lfn][1]
+          if errorCount >= self.maxResetCounter:
+            if not force:
+              newStatus = 'MaxReset'
+
+        newStatuses[lfn] = newStatus
+
+    return newStatuses
 
   #####################################################################
   #

@@ -576,37 +576,26 @@ class TransformationDB( DB ):
         failedDict[lfn] = 'Did not exist in the Transformation database'
     return S_OK( {'Successful':resDict, 'Failed':failedDict} )
 
-  def setFileStatusForTransformation( self, transName, lfnStatusDict = {}, connection = False ):
+  def setFileStatusForTransformation( self, transID, lfnStatusDict = {}, connection = False ):
     """ Set file status for the given transformation, based on the lfnStatusDict
+
+        The ErrorCount is incremented automatically here
     """
     if not lfnStatusDict:
       return S_OK()
 
-    res = self._getConnectionTransID( connection, transName )
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
-
-    res = self.getTransformationFiles( condDict = {'TransformationID':transID, 'LFN':lfnStatusDict.keys()},
-                                       connection = connection )
-    if not res['OK']:
-      return res
-    transFiles = res['Value']
-
-    keysUpdated = ['Status', 'ErrorCount', 'LastUpdate']
     # Building the request with "ON DUPLICATE KEY UPDATE"
-    req = "INSERT INTO TransformationFiles (TransformationID, FileID, %s) VALUES " % ( ','.join( keysUpdated ) )
+    req = "INSERT INTO TransformationFiles (TransformationID, FileID, Status, ErrorCount, LastUpdate) VALUES "
 
     updatesList = []
-    for fileDict in transFiles:
-      errorCount = fileDict['ErrorCount']
-      print errorCount
+    for fileDict in lfnStatusDict.keys():
 
-      updatesList.append( "(%d, %d, '%s', %d, UTC_TIMESTAMP())" % ( transID, fileDict['FileID'],
-                                                                    lfnStatusDict[fileDict['LFN']], errorCount + 1 ) )
+      updatesList.append( "(%d, %d, '%s', VALUES(ErrorCount), UTC_TIMESTAMP())" % ( transID,
+                                                                    fileDict['FileID'],
+                                                                    lfnStatusDict[fileDict['LFN']] ) )
 
-    req += ','.join( updatesList ) + " ON DUPLICATE KEY UPDATE " + ','.join( ["%s=VALUES(%s)" % ( sk, sk ) for sk in keysUpdated] )
+    req += ','.join( updatesList )
+    req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),ErrorCount=ErrorCount+1,LastUpdate=VALUES(LastUpdate)"
 
     return self._update( req, connection )
 

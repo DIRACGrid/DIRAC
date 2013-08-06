@@ -138,9 +138,21 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [transTypes, StringTypes, ListType]
-  def export_setFileStatusForTransformation( self, transName, status, lfns, force = False ):
-    res = database.setFileStatusForTransformation( transName, status, lfns, force )
+  types_setFileStatusForTransformation = [transTypes, DictType]
+  def export_setFileStatusForTransformation( self, transName, dictOfNewLFNsStatus ):
+    """ Sets the file status for the transformation.
+
+        The dictOfNewLFNsStatus is a dictionary with the form:
+        {'/this/is/an/lfn1.txt': 'StatusA', '/this/is/an/lfn2.txt': 'StatusB',  ... }
+    """
+
+    res = database._getConnectionTransID( False, transName )
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+
+    res = database.setFileStatusForTransformation( transID, dictOfNewLFNsStatus, connection = connection )
     return self._parseRes( res )
 
   types_getTransformationStats = [transTypes]
