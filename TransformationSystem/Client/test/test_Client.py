@@ -120,7 +120,7 @@ class TransformationClientSuccess( ClientsTestCase ):
     tsFiles = {}
     dictOfNewLFNsStatus = {'foo':['status', 2L, 1234]}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'Removed'} )
+    self.assertEqual( res, {} )
 
     tsFiles = {'foo':['status', 2L, 1234]}
     dictOfNewLFNsStatus = {'foo':'status'}
@@ -140,12 +140,12 @@ class TransformationClientSuccess( ClientsTestCase ):
     tsFiles = {'foo':['status', 2L, 1234]}
     dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'A', 'bar':'Removed'} )
+    self.assertEqual( res, {'foo':'A'} )
 
     tsFiles = {'foo': ['Assigned', 2L, 1234]}
     dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'A', 'bar':'Removed'} )
+    self.assertEqual( res, {'foo':'A'} )
 
     tsFiles = {'foo':['Assigned', 2L, 1234], 'bar':['Assigned', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}

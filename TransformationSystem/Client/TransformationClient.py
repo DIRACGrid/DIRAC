@@ -267,17 +267,20 @@ class TransformationClient( Client, FileCatalogueBase ):
     if not tsFiles['OK']:
       return tsFiles
     tsFiles = tsFiles['Value']
-    # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
-    tsFilesAsDict = {}
-    for tsFile in tsFiles:
-      tsFilesAsDict[tsFile['LFN']] = [tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']]
+    if tsFiles:
+      # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
+      tsFilesAsDict = {}
+      for tsFile in tsFiles:
+        tsFilesAsDict[tsFile['LFN']] = [tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']]
 
-    # applying the state machine to the proposed status
-    newStatuses = self._applyProductionFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
+      # applying the state machine to the proposed status
+      newStatuses = self._applyProductionFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
 
-    # must do it for the file IDs...
-    newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
-    return rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
+      # must do it for the file IDs...
+      newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
+      return rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
+    else:
+      return S_OK( 'Nothing updated' )
 
   def _applyProductionFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
     """ For easier extension, here we apply the state machine of the production files.
@@ -293,7 +296,7 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     for lfn in dictOfProposedLFNsStatus.keys():
       if lfn not in tsFilesAsDict.keys():
-        newStatuses[lfn] = 'Removed'
+        continue
       else:
         newStatus = dictOfProposedLFNsStatus[lfn]
         # Apply optional corrections
