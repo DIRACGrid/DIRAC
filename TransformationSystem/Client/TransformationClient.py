@@ -1,4 +1,4 @@
-''' Class that contains client access to the transformation DB handler. '''
+""" Class that contains client access to the transformation DB handler. """
 
 __RCSID__ = "$Id$"
 
@@ -15,7 +15,7 @@ url = None
 
 class TransformationClient( Client, FileCatalogueBase ):
 
-  ''' Exposes the functionality available in the DIRAC/TransformationHandler
+  """ Exposes the functionality available in the DIRAC/TransformationHandler
 
       This inherits the DIRAC base Client for direct execution of server functionality.
       The following methods are available (although not visible here).
@@ -60,7 +60,7 @@ class TransformationClient( Client, FileCatalogueBase ):
           getTransformationStatusCounters()
           getTransformationSummary()
           getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems)
-  '''
+  """
 
   def __init__( self, **kwargs ):
 
@@ -87,8 +87,8 @@ class TransformationClient( Client, FileCatalogueBase ):
                          eventsPerTask = 0,
                          addFiles = True,
                          rpc = '', url = '', timeout = 120 ):
-    ''' add a new transformation
-    '''
+    """ add a new transformation
+    """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addTransformation( transName, description, longDescription, transType, plugin,
                                         agentType, fileMask, transformationGroup, groupSize, inheritedFrom,
@@ -96,8 +96,8 @@ class TransformationClient( Client, FileCatalogueBase ):
 
   def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate',
                           orderAttribute = None, limit = 100, extraParams = False, rpc = '', url = '', timeout = 120 ):
-    ''' gets all the transformations in the system, incrementally. "limit" here is just used to determine the offset.
-    '''
+    """ gets all the transformations in the system, incrementally. "limit" here is just used to determine the offset.
+    """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
 
     transformations = []
@@ -123,9 +123,9 @@ class TransformationClient( Client, FileCatalogueBase ):
 
   def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
                               orderAttribute = None, limit = 10000, rpc = '', url = '', timeout = 120 ):
-    ''' gets all the transformation files for a transformation, incrementally.
+    """ gets all the transformation files for a transformation, incrementally.
         "limit" here is just used to determine the offset.
-    '''
+    """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     transformationFiles = []
     # getting transformationFiles - incrementally
@@ -147,9 +147,9 @@ class TransformationClient( Client, FileCatalogueBase ):
   def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
                               orderAttribute = None, limit = 10000, inputVector = False, rpc = '',
                               url = '', timeout = 120 ):
-    ''' gets all the transformation tasks for a transformation, incrementally.
+    """ gets all the transformation tasks for a transformation, incrementally.
         "limit" here is just used to determine the offset.
-    '''
+    """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     transformationTasks = []
     # getting transformationFiles - incrementally
@@ -181,8 +181,8 @@ class TransformationClient( Client, FileCatalogueBase ):
     return self.setTransformationParameter( transID, 'Status', 'TransformationCleaned' )
 
   def moveFilesToDerivedTransformation( self, transDict, resetUnused = True ):
-    ''' move files input to a transformation, to the derived one
-    '''
+    """ move files input to a transformation, to the derived one
+    """
     prod = transDict['TransformationID']
     parentProd = int( transDict.get( 'InheritedFrom', 0 ) )
     movedFiles = {}
@@ -232,7 +232,7 @@ class TransformationClient( Client, FileCatalogueBase ):
           if not res['OK']:
             gLogger.error( "Error setting status for %s in transformation %d to %s" % ( lfn, prod, status ),
                            res['Message'] )
-            self.setFileStatusForTransformation( parentProd, status , [lfn] )
+            self.setFileStatusForTransformation( parentProd, status, [lfn] )
             continue
           if force:
             status = 'Unused from MaxReset'
@@ -246,21 +246,29 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     return S_OK( ( parentProd, movedFiles ) )
 
-  def setFileStatusForTransformation( self, transName, dictOfNewLFNsStatus, force = False,
+  def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False,
                                       rpc = '', url = '', timeout = 120 ):
     """ sets ths file status for LFNs of a transformation
 
-        The dictOfNewLFNsStatus is a dictionary with the form:
-        {'/this/is/an/lfn1.txt': 'StatusA', '/this/is/an/lfn2.txt': 'StatusB',  ... }
+        For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
+        - newLFNsStatus is a dictionary with the form:
+          {'/this/is/an/lfn1.txt': 'StatusA', '/this/is/an/lfn2.txt': 'StatusB',  ... }
+          and at this point lfns is not considered
+        - newLFNStatus is a string, that applies to all the LFNs in lfns
     """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
 
+    # create dictionary in case newLFNsStatus is a string
+    if type( newLFNsStatus ) == type( '' ):
+      newLFNsStatus = dict( [( lfn, newLFNsStatus ) for lfn in lfns ] )
+
     # gets status as of today
-    tsFiles = self.getTransformationFiles( {'TransformationID':transName, 'LFN': dictOfNewLFNsStatus.keys()} )
+    tsFiles = self.getTransformationFiles( {'TransformationID':transName, 'LFN': newLFNsStatus.keys()} )
     if not tsFiles['OK']:
       return tsFiles
     tsFiles = tsFiles['Value']
-    newStatuses = self._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, force )
+    # applying the state machine to the proposed status
+    newStatuses = self._applyProductionFilesStateMachine( tsFiles, newLFNsStatus, force )
 
     return rpcClient.setFileStatusForTransformation( transName, newStatuses )
 
@@ -286,15 +294,17 @@ class TransformationClient( Client, FileCatalogueBase ):
         newStatuses[lfn] = 'Removed'
       else:
         newStatus = dictOfProposedLFNsStatus[lfn]
+        # Apply optional corrections
         if tsFilesAsDict[lfn][0].lower() == 'processed' and dictOfProposedLFNsStatus[lfn].lower() != 'processed':
           if not force:
             newStatus = 'Processed'
         elif tsFilesAsDict[lfn][0].lower() == 'maxreset':
           if not force:
-            newStatus = tsFilesAsDict[lfn][0]
+            newStatus = 'MaxReset'
         elif dictOfProposedLFNsStatus[lfn].lower() == 'unused':
           errorCount = tsFilesAsDict[lfn][1]
-          if errorCount >= self.maxResetCounter:
+          # every 10 retries
+          if ( errorCount % self.maxResetCounter ) == 0:
             if not force:
               newStatus = 'MaxReset'
 
@@ -311,8 +321,8 @@ class TransformationClient( Client, FileCatalogueBase ):
     return self.valid
 
   def getName( self, DN = '' ):
-    ''' Get the file catalog type name
-    '''
+    """ Get the file catalog type name
+    """
     return self.name
 
   def addDirectory( self, path, force = False, rpc = '', url = '', timeout = 120 ):

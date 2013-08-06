@@ -162,22 +162,22 @@ class TransformationClientSuccess( ClientsTestCase ):
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
     self.assertEqual( res, {'foo':'Assigned', 'bar':'Processed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'MaxReset', 'ErrorCount':2L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':2L}]
+    tsFiles = [{'LFN':'foo', 'Status':'MaxReset', 'ErrorCount':12L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':22L}]
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'MaxReset', 'ErrorCount':2L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':2L}]
+    tsFiles = [{'LFN':'foo', 'Status':'MaxReset', 'ErrorCount':12L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':22L}]
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
     self.assertEqual( res, {'foo':'Unused', 'bar':'Unused'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'Assigned', 'ErrorCount':10L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':2L}]
+    tsFiles = [{'LFN':'foo', 'Status':'Assigned', 'ErrorCount':20L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':2L}]
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
 
-    tsFiles = [{'LFN':'foo', 'Status':'Assigned', 'ErrorCount':10L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':2L}]
+    tsFiles = [{'LFN':'foo', 'Status':'Assigned', 'ErrorCount':20L}, {'LFN':'bar', 'Status':'Processed', 'ErrorCount':2L}]
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
     self.assertEqual( res, {'foo':'Unused', 'bar':'Unused'} )

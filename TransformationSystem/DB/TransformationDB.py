@@ -591,8 +591,8 @@ class TransformationDB( DB ):
     for fileDict in lfnStatusDict.keys():
 
       updatesList.append( "(%d, %d, '%s', VALUES(ErrorCount), UTC_TIMESTAMP())" % ( transID,
-                                                                    fileDict['FileID'],
-                                                                    lfnStatusDict[fileDict['LFN']] ) )
+                                                                                    fileDict['FileID'],
+                                                                                    lfnStatusDict[fileDict['LFN']] ) )
 
     req += ','.join( updatesList )
     req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),ErrorCount=ErrorCount+1,LastUpdate=VALUES(LastUpdate)"
