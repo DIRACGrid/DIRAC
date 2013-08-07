@@ -86,70 +86,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
     return result
     
   def makeDir(self,path):
-    return self.makeDir_andrei(path)
-
-  def makeDir_andrew(self,path):
-        
-    result = self.findDir(path)
-    if not result['OK']:
-      return result
-    dirID = result['Value']
-    if dirID:
-      return S_OK(dirID)  
-       
-    dpath = path 
-    if path == '/':
-      level = 0
-      elements = []
-      parentDirID = 0
-    else:  
-      if path[0] == "/":
-        dpath = path[1:]  
-      elements = dpath.split('/')
-      level = len(elements)
-      result = self.getParent(path)
-      if not result['OK']:
-        return result
-      parentDirID = result['Value']
-    
-    epathList = []
-    if parentDirID:
-      result = self.__getNumericPath(parentDirID)
-      if not result['OK']:
-        return result
-      epathList = result['Value']
-    
-    names = ['DirName','Level','Parent']
-    values = [path,level,parentDirID]
-    if path != '/':
-      for i in range(1,level,1):                
-        names.append('LPATH%d' % i) 
-        values.append(epathList[i-1])
-      
-    result = self.db._insert('FC_DirectoryLevelTree',names,values)    
-    if not result['OK']:
-      return result
-    dirID = result['lastRowId']
-    
-    # Update the path number
-    if parentDirID:
-      lPath = "LPATH%d" % (level)
-      result = self.db._getConnection()
-      conn = result['Value']
-      req = "LOCK TABLES FC_DirectoryLevelTree WRITE; "
-      result = self.db._query(req,conn)
-      req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d; " % (lPath,parentDirID) 
-      result = self.db._query(req,conn)
-      req = "UPDATE FC_DirectoryLevelTree SET %s=@tmpvar WHERE DirID=%d; " % (lPath,dirID)   
-      result = self.db._update(req,conn)
-      req = "UNLOCK TABLES;"
-      result = self.db._query(req,conn)      
-      if not result['OK']:
-        return result
-    return S_OK(dirID)
-
-  def makeDir_andrei(self,path):
-      
+    """ Create a new directory entry
+    """      
     result = self.findDir(path)
     if not result['OK']:
       return result
@@ -192,10 +130,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
       
     result = self.db._getConnection()
     conn = result['Value']  
-    result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
+    #result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
     result = self.db._insert('FC_DirectoryLevelTree',names,values,conn)    
     if not result['OK']:
-      resUnlock = self.db._query("UNLOCK TABLES;",conn)      
+      #resUnlock = self.db._query("UNLOCK TABLES;",conn)      
       if result['Message'].find('Duplicate') != -1:
         #The directory is already added
         resFind = self.findDir(path)
@@ -213,6 +151,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     if parentDirID:
       lPath = "LPATH%d" % (level)
       req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d; " % (lPath,parentDirID) 
+      resultLock = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
       result = self.db._query(req,conn)
       req = "UPDATE FC_DirectoryLevelTree SET %s=@tmpvar WHERE DirID=%d; " % (lPath,dirID)   
       result = self.db._update(req,conn)
