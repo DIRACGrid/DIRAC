@@ -13,9 +13,9 @@
 
 __RCSID__ = "$Id$"
 
-from types import *
+from types import IntType, ListType, DictType, StringTypes, LongType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -54,6 +54,7 @@ class JobMonitoringHandler( RequestHandler ):
     self.userProperties = credDict[ 'properties' ]
     self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
     self.jobPolicy.setJobDB( jobDB )
+    self.globalJobsInfo = self.getCSOption( 'GlobalJobsInfo', True )
     return S_OK()
 
 ##############################################################################
@@ -125,7 +126,7 @@ class JobMonitoringHandler( RequestHandler ):
     """
     Return list of JobIds matching the condition given in attrDict
     """
-    queryDict = {}
+    #queryDict = {}
 
     #if attrDict:
     #  if type ( attrDict ) != DictType:
@@ -165,9 +166,7 @@ class JobMonitoringHandler( RequestHandler ):
     #  except:
     #    return S_ERROR( 'Condition Attribute not Allowed: %s.' % attr )
 
-
-    cutdate = str( cutDate )
-
+    cutDate = str( cutDate )
     return jobDB.getCounters( 'Jobs', attrList, attrDict, newer = cutDate, timeStamp = 'LastUpdateTime' )
 
 ##############################################################################
@@ -309,11 +308,10 @@ class JobMonitoringHandler( RequestHandler ):
         return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
       jobList = result['Value']
-      
-      # A.T. This needs optimization
-      #validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
-      #                                                                                               RIGHT_GET_INFO )
-      #jobList = validJobList
+      if not self.globalJobsInfo:      
+        validJobs, invalidJobs, nonauthJobs, ownerJobs = self.jobPolicy.evaluateJobRights( jobList,
+                                                                                           RIGHT_GET_INFO )
+        jobList = validJobs
       
       nJobs = len( jobList )
       resultDict['TotalRecords'] = nJobs
@@ -406,7 +404,7 @@ class JobMonitoringHandler( RequestHandler ):
     resultDict = {}
     if result['OK']:
       for cDict, count in result['Value']:
-         resultDict[cDict[attribute]] = count
+        resultDict[cDict[attribute]] = count
 
     return S_OK( resultDict )
 
@@ -416,7 +414,7 @@ class JobMonitoringHandler( RequestHandler ):
     return jobDB.getAttributesForJobList( jobIDs, PRIMARY_SUMMARY )
 
 ##############################################################################
-  types_getJobParameter = [ [IntType, LongType] , StringType ]
+  types_getJobParameter = [ [IntType, LongType] , StringTypes ]
   def export_getJobParameter( self, jobID, parName ):
     return jobDB.getJobParameters( jobID, [parName] )
 
