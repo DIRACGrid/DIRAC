@@ -51,6 +51,7 @@ class JobMonitoringHandler( RequestHandler ):
     self.userProperties = credDict[ 'properties' ]
     self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
     self.jobPolicy.setJobDB( gJobDB )
+    self.globalJobsInfo = self.getCSOption( 'GlobalJobsInfo', True )
     return S_OK()
 
 ##############################################################################
@@ -131,8 +132,8 @@ class JobMonitoringHandler( RequestHandler ):
     """
     Return list of JobIds matching the condition given in attrDict
     """
-    # queryDict = {}
-    #
+    #queryDict = {}
+
     #if attrDict:
     #  if type ( attrDict ) != DictType:
     #    return S_ERROR( 'Argument must be of Dict Type' )
@@ -172,12 +173,11 @@ class JobMonitoringHandler( RequestHandler ):
     #  except:
     #    return S_ERROR( 'Condition Attribute not Allowed: %s.' % attr )
 
-
-    cutdate = str( cutDate )
+    cutDate = str( cutDate )
     if not attrDict:
       attrDict = {}
 
-    return gJobDB.getCounters( 'Jobs', attrList, attrDict, newer = cutdate, timeStamp = 'LastUpdateTime' )
+    return gJobDB.getCounters( 'Jobs', attrList, attrDict, newer = cutDate, timeStamp = 'LastUpdateTime' )
 
 ##############################################################################
   types_getCurrentJobCounters = [ ]
@@ -427,11 +427,11 @@ class JobMonitoringHandler( RequestHandler ):
 
       jobList = result['Value']
 
-      # A.T. This needs optimization
-      #validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
-      #                                                                                               RIGHT_GET_INFO )
-      #jobList = validJobList
-
+      if not self.globalJobsInfo:      
+        validJobs, invalidJobs, nonauthJobs, ownerJobs = self.jobPolicy.evaluateJobRights( jobList,
+                                                                                           RIGHT_GET_INFO )
+        jobList = validJobs
+      
       nJobs = len( jobList )
       resultDict['TotalRecords'] = nJobs
       if nJobs == 0:
@@ -535,7 +535,7 @@ class JobMonitoringHandler( RequestHandler ):
     return gJobDB.getAttributesForJobList( jobIDs, PRIMARY_SUMMARY )
 
 ##############################################################################
-  types_getJobParameter = [ [IntType, LongType] , StringType ]
+  types_getJobParameter = [ [StringType, IntType, LongType] , StringTypes ]
   @staticmethod
   def export_getJobParameter( jobID, parName ):
     return gJobDB.getJobParameters( jobID, [parName] )
