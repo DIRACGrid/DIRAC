@@ -200,35 +200,35 @@ class JobMonitoringHandler( RequestHandler ):
     return S_OK( resultDict )
 
 ##############################################################################
-  types_getJobStatus = [ IntType ]
+  types_getJobStatus = [ [StringType, IntType, LongType] ]
   def export_getJobStatus ( self, jobID ):
 
-    return jobDB.getJobAttribute( jobID, 'Status' )
+    return jobDB.getJobAttribute( int( jobID ), 'Status' )
 
 ##############################################################################
-  types_getJobOwner = [ IntType ]
+  types_getJobOwner = [ [StringType, IntType, LongType] ]
   def export_getJobOwner ( self, jobID ):
 
-    return jobDB.getJobAttribute( jobID, 'Owner' )
+    return jobDB.getJobAttribute( int( jobID ), 'Owner' )
 
 ##############################################################################
-  types_getJobSite = [ IntType ]
+  types_getJobSite = [ [StringType, IntType, LongType] ]
   def export_getJobSite ( self, jobID ):
 
-    return jobDB.getJobAttribute( jobID, 'Site' )
+    return jobDB.getJobAttribute( int( jobID ), 'Site' )
 
 ##############################################################################
-  types_getJobJDL = [ IntType ]
+  types_getJobJDL = [ [StringType, IntType, LongType] ]
   def export_getJobJDL ( self, jobID ):
 
-    result = jobDB.getJobJDL( jobID )
+    result = jobDB.getJobJDL( int( jobID ) )
     return result
 
 ##############################################################################
-  types_getJobLoggingInfo = [ IntType ]
+  types_getJobLoggingInfo = [ [StringType, IntType, LongType] ]
   def export_getJobLoggingInfo( self, jobID ):
 
-    return jobLoggingDB.getJobLoggingInfo( jobID )
+    return jobLoggingDB.getJobLoggingInfo( int( jobID ) )
 
 ##############################################################################
   types_getJobsStatus = [ ListType ]
@@ -256,14 +256,14 @@ class JobMonitoringHandler( RequestHandler ):
     return jobDB.getAttributesForJobList( jobIDs, ['Site'] )
 
 ##############################################################################
-  types_getJobSummary = [ IntType ]
+  types_getJobSummary = [ [StringType, IntType, LongType] ]
   def export_getJobSummary( self, jobID ):
-    return jobDB.getJobAttributes( jobID, SUMMARY )
+    return jobDB.getJobAttributes( int( jobID ), SUMMARY )
 
 ##############################################################################
-  types_getJobPrimarySummary = [ IntType ]
+  types_getJobPrimarySummary = [ [StringType, IntType, LongType] ]
   def export_getJobPrimarySummary( self, jobID ):
-    return jobDB.getJobAttributes( jobID, PRIMARY_SUMMARY )
+    return jobDB.getJobAttributes( int( jobID ), PRIMARY_SUMMARY )
 
 ##############################################################################
   types_getJobsSummary = [ ListType ]
@@ -416,24 +416,24 @@ class JobMonitoringHandler( RequestHandler ):
     return jobDB.getAttributesForJobList( jobIDs, PRIMARY_SUMMARY )
 
 ##############################################################################
-  types_getJobParameter = [ [IntType, LongType] , StringType ]
+  types_getJobParameter = [ [StringType, IntType, LongType] , StringType ]
   def export_getJobParameter( self, jobID, parName ):
-    return jobDB.getJobParameters( jobID, [parName] )
+    return jobDB.getJobParameters( int( jobID ), [parName] )
 
 ##############################################################################
-  types_getJobParameters = [ [IntType, LongType] ]
+  types_getJobParameters = [ [StringType, IntType, LongType] ]
   def export_getJobParameters( self, jobID ):
-    return jobDB.getJobParameters( jobID )
+    return jobDB.getJobParameters( int( jobID ) )
 
 ##############################################################################
-  types_getAtticJobParameters = [ [IntType, LongType] ]
+  types_getAtticJobParameters = [ [StringType, IntType, LongType] ]
   def export_getAtticJobParameters( self, jobID, parameters = [], rescheduleCycle = -1 ):
-    return jobDB.getAtticJobParameters( jobID, parameters, rescheduleCycle )
+    return jobDB.getAtticJobParameters( int( jobID ), parameters, rescheduleCycle )
 
 ##############################################################################
-  types_getJobAttributes = [ IntType ]
+  types_getJobAttributes = [ [StringType, IntType, LongType] ]
   def export_getJobAttributes( self, jobID ):
-    return jobDB.getJobAttributes( jobID )
+    return jobDB.getJobAttributes( int( jobID ) )
 
 ##############################################################################
   types_getSiteSummary = [ ]
@@ -441,13 +441,13 @@ class JobMonitoringHandler( RequestHandler ):
     return jobDB.getSiteSummary()
 
 ##############################################################################
-  types_getJobHeartBeatData = [ IntType ]
+  types_getJobHeartBeatData = [ [StringType, IntType, LongType] ]
   def export_getJobHeartBeatData( self, jobID ):
-    return jobDB.getHeartBeatData( jobID )
+    return jobDB.getHeartBeatData( int( jobID ) )
 
 ##############################################################################
-  types_getInputData = [ [IntType, LongType] ]
+  types_getInputData = [ [StringType, IntType, LongType] ]
   def export_getInputData( self, jobID ):
     """ Get input data for the specified jobs
     """
-    return  jobDB.getInputData( jobID )
+    return  jobDB.getInputData( int( jobID ) )
