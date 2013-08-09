@@ -8,7 +8,7 @@ from DIRAC                                  import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List              import intListToString
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 
-import time, os, stat
+import os, stat
 from types import ListType, StringTypes
 
 class FileManagerBase:
@@ -694,15 +694,9 @@ class FileManagerBase:
 
   def _addReplicas( self, lfns, connection = False ):
 
-    start = time.time()
-
     connection = self._getConnection( connection )
     successful = {}
     res = self._findFiles( lfns.keys(), ['DirID', 'FileID', 'Size'], connection = connection )
-
-    print "AT >>> findFiles time %.2f" % (time.time() - start)
-    start = time.time()
-
     failed = res['Value']['Failed']
     for lfn in failed.keys():
       lfns.pop( lfn )
@@ -710,10 +704,6 @@ class FileManagerBase:
     for lfn, fileDict in lfnFileIDDict.items():
       lfns[lfn].update( fileDict )
     res = self._insertReplicas( lfns, connection = connection )
-
-    print "AT >>> insertReplicas time %.2f" % (time.time() - start)
-    start = time.time()
-
     if not res['OK']:
       for lfn in lfns.keys():
         failed[lfn] = res['Message']
