@@ -143,6 +143,14 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
 
+[v6r8p28]
+
+*Core
+BUGFIX: RequestHandler - the lock Name includes ActionType/Action
+
+*DMS
+FIX: dirac-dms-filecatalog-cli - prevent exception in case of missing proxy
+
 [v6r8p27]
 
 *DMS

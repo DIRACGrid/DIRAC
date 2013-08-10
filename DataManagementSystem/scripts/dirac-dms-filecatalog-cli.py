@@ -18,14 +18,16 @@ fcType = 'FileCatalog'
 Script.registerSwitch( "f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType )
 
 Script.parseCommandLine( ignoreErrors = False )
-
+  
 import sys, os
 import DIRAC
-from DIRAC import gLogger, gConfig
+from DIRAC import gLogger, gConfig, exit as dexit
 
 fcType = gConfig.getValue("/LocalSite/FileCatalog","")
 
 res = gConfig.getSections("/Resources/FileCatalogs",listOrdered = True)
+if not res['OK']:
+  dexit(1)
 fcList = res['Value']
 if not fcType:
   if res['OK']:

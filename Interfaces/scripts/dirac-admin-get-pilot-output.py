@@ -11,14 +11,14 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.parseCommandLine( ignoreErrors = True )
-args = Script.getPositionalArgs()
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... PilotID ...' % Script.scriptName,
                                      'Arguments:',
                                      '  PilotID:  Grid ID of the pilot' ] ) )
+Script.parseCommandLine( ignoreErrors = True )
+args = Script.getPositionalArgs()
 
 if len( args ) < 1:
   Script.showHelp()
