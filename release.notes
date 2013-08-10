@@ -1,3 +1,19 @@
+[v6r9p15]
+
+*Core
+FIX: MySQL - do not decrease the retry counter after ping failure
+
+*DMS
+CHANGE: FC/DirectoryMetadata - Speed up findFilesByMetadataWeb when many files match
+
+*WMS
+FIX: JobReport - minor fix ( removed unused imports )
+FIX: JobMonitoring(JobStateUpdate)Handler - jobID argument can be either string, int or long
+
+*TS
+CHANGE: TransformationClient - change status of Moved files to a deterministic value
+FIX: FileReport - minor fix ( inherits object ) 
+
 [v6r9p14]
 
 *DMS
