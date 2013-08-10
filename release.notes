@@ -1,3 +1,11 @@
+[v6r8p28]
+
+*Core
+BUGFIX: RequestHandler - the lock Name includes ActionType/Action
+
+*DMS
+FIX: dirac-dms-filecatalog-cli - prevent exception in case of missing proxy
+
 [v6r8p27]
 
 *DMS
