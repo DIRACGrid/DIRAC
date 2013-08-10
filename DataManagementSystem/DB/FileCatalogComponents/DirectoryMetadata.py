@@ -655,6 +655,16 @@ class DirectoryMetadata:
 
     return S_OK( fileList )
 
+  def findFileIDsByMetadata( self, metaDict, path, credDict, startItem = 0, maxItems = 25 ):
+    """ Find Files satisfying the given metadata
+    """
+    result = self.findDirIDsByMetadata( metaDict, path, credDict )
+    if not result['OK']:
+      return result
+
+    dirList = result['Value']
+    return self.db.dtree.getFileIDsInDirectory( dirList, credDict, startItem, maxItems )
+
 ################################################################################################
 #
 # Find metadata compatible with other metadata in order to organize dynamically updated
