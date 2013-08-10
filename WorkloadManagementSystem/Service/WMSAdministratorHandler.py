@@ -263,7 +263,7 @@ class WMSAdministratorHandler(RequestHandler):
 
 
   ##############################################################################
-  types_getJobPilotOutput = [IntType]
+  types_getJobPilotOutput = [[StringType, IntType, LongType]]
   def export_getJobPilotOutput(self,jobID):
     """ Get the pilot job standard output and standard error files for the DIRAC
         job reference
@@ -271,13 +271,13 @@ class WMSAdministratorHandler(RequestHandler):
 
     pilotReference = ''
     # Get the pilot grid reference first from the job parameters
-    result = jobDB.getJobParameter(jobID,'Pilot_Reference')
+    result = jobDB.getJobParameter( int( jobID ), 'Pilot_Reference' )
     if result['OK']:
       pilotReference = result['Value']
 
     if not pilotReference:
       # Failed to get the pilot reference, try to look in the attic parameters
-      result = jobDB.getAtticJobParameters(jobID,['Pilot_Reference'])
+      result = jobDB.getAtticJobParameters( int( jobID ), ['Pilot_Reference'] )
       if result['OK']:
         c = -1
         # Get the pilot reference for the last rescheduling cycle
@@ -479,7 +479,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##############################################################################
-  types_getPilots = [IntType]
+  types_getPilots = [[StringType, IntType, LongType]]
   def export_getPilots(self,jobID):
     """ Get pilot references and their states for :
       - those pilots submitted for the TQ where job is sitting
@@ -487,7 +487,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     pilots = []
-    result = pilotDB.getPilotsForJobID(jobID)
+    result = pilotDB.getPilotsForJobID( int( jobID ) )
     if not result['OK']:
       if result['Message'].find('not found') == -1:
         return S_ERROR('Failed to get pilot: '+result['Message'])
@@ -496,7 +496,7 @@ class WMSAdministratorHandler(RequestHandler):
     if not pilots:
       # Pilots were not found try to look in the Task Queue
       taskQueueID = 0
-      result = taskQueueDB.getTaskQueueForJob( jobID )
+      result = taskQueueDB.getTaskQueueForJob( int( jobID ) )
       if result['OK'] and result['Value']:
         taskQueueID = result['Value']
       if taskQueueID:
@@ -506,7 +506,7 @@ class WMSAdministratorHandler(RequestHandler):
         pilots += result['Value']
 
     if not pilots:
-      return S_ERROR( 'Failed to get pilot for Job %s' % jobID )
+      return S_ERROR( 'Failed to get pilot for Job %d' % int( jobID ) )
 
     return pilotDB.getPilotInfo(pilotID=pilots)
   
@@ -574,15 +574,15 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK()  
 
   ##############################################################################
-  types_setJobForPilot = [ [IntType,LongType], StringTypes]
+  types_setJobForPilot = [ [StringType, IntType, LongType], StringTypes]
   def export_setJobForPilot(self,jobID,pilotRef,destination=None):
     """ Report the DIRAC job ID which is executed by the given pilot job
     """
 
-    result = pilotDB.setJobForPilot(jobID,pilotRef)
+    result = pilotDB.setJobForPilot( int( jobID ), pilotRef )
     if not result['OK']:
       return result
-    result = pilotDB.setCurrentJobID(pilotRef,jobID)
+    result = pilotDB.setCurrentJobID( pilotRef, int( jobID ) )
     if not result['OK']:
       return result
     if destination:

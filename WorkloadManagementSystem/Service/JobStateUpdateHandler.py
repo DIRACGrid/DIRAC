@@ -65,13 +65,13 @@ class JobStateUpdateHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_setJobStatus = [IntType, StringType, StringType, StringType]
+  types_setJobStatus = [[StringType, IntType, LongType], StringType, StringType, StringType]
   def export_setJobStatus( self, jobID, status, minorStatus, source = 'Unknown', datetime = None ):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
         status information.
     """
-    return self.__setJobStatus( jobID, status, minorStatus, source, datetime )
+    return self.__setJobStatus( int( jobID ), status, minorStatus, source, datetime )
 
   ###########################################################################
   types_setJobsStatus = [ListType, StringType, StringType, StringType]
@@ -81,7 +81,7 @@ class JobStateUpdateHandler( RequestHandler ):
         status information.
     """
     for jobID in jobIDs:
-      self.__setJobStatus( jobID, status, minorStatus, source, datetime )
+      self.__setJobStatus( int( jobID ), status, minorStatus, source, datetime )
     return S_OK()
 
   def __setJobStatus( self, jobID, status, minorStatus, source, datetime ):
@@ -111,7 +111,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_setJobStatusBulk = [IntType, DictType]
+  types_setJobStatusBulk = [[StringType, IntType, LongType], DictType]
   def export_setJobStatusBulk( self, jobID, statusDict ):
     """ Set various status fields for job specified by its JobId.
         Set only the last status in the JobDB, updating all the status
@@ -129,7 +129,7 @@ class JobStateUpdateHandler( RequestHandler ):
     startDate = ''
     startFlag = ''
 
-    result = jobDB.getJobAttributes( jobID, ['Status'] )
+    result = jobDB.getJobAttributes( int( jobID ), ['Status'] )
     if not result['OK']:
       return result
 
@@ -171,14 +171,14 @@ class JobStateUpdateHandler( RequestHandler ):
     if appCounter:
       attrNames.append( 'ApplicationCounter' )
       attrValues.append( appCounter )
-    result = jobDB.setJobAttributes( jobID, attrNames, attrValues, update = True )
+    result = jobDB.setJobAttributes( int( jobID ), attrNames, attrValues, update = True )
     if not result['OK']:
       return result
 
     if endDate:
-      result = jobDB.setEndExecTime( jobID, endDate )
+      result = jobDB.setEndExecTime( int( jobID ), endDate )
     if startDate:
-      result = jobDB.setStartExecTime( jobID, startDate )
+      result = jobDB.setStartExecTime( int( jobID ), startDate )
 
     # Update the JobLoggingDB records
     for date, sDict in statusDict.items():
@@ -196,43 +196,43 @@ class JobStateUpdateHandler( RequestHandler ):
         status = "Running"
         minor = "Application"
       source = sDict['Source']
-      result = logDB.addLoggingRecord( jobID, status, minor, application, date, source )
+      result = logDB.addLoggingRecord( int( jobID ), status, minor, application, date, source )
       if not result['OK']:
         return result
 
     return S_OK()
 
   ###########################################################################
-  types_setJobSite = [IntType, StringType]
+  types_setJobSite = [[StringType, IntType, LongType], StringType]
   def export_setJobSite( self, jobID, site ):
     """Allows the site attribute to be set for a job specified by its jobID.
     """
-    result = jobDB.setJobAttribute( jobID, 'Site', site )
+    result = jobDB.setJobAttribute( int( jobID ), 'Site', site )
     return result
 
   ###########################################################################
-  types_setJobFlag = [IntType, StringType]
+  types_setJobFlag = [[StringType, IntType, LongType], StringType]
   def export_setJobFlag( self, jobID, flag ):
     """ Set job flag for job with jobID
     """
-    result = jobDB.setJobAttribute( jobID, flag, 'True' )
+    result = jobDB.setJobAttribute( int( jobID ), flag, 'True' )
     return result
 
   ###########################################################################
-  types_unsetJobFlag = [IntType, StringType]
+  types_unsetJobFlag = [[StringType, IntType, LongType], StringType]
   def export_unsetJobFlag( self, jobID, flag ):
     """ Unset job flag for job with jobID
     """
-    result = jobDB.setJobAttribute( jobID, flag, 'False' )
+    result = jobDB.setJobAttribute( int( jobID ), flag, 'False' )
     return result
 
   ###########################################################################
-  types_setJobApplicationStatus = [IntType, StringType, StringType]
+  types_setJobApplicationStatus = [[StringType, IntType, LongType], StringType, StringType]
   def export_setJobApplicationStatus( self, jobID, appStatus, source = 'Unknown' ):
     """ Set the application status for job specified by its JobId.
     """
 
-    result = jobDB.getJobAttributes( jobID, ['Status', 'MinorStatus'] )
+    result = jobDB.getJobAttributes( int( jobID ), ['Status', 'MinorStatus'] )
     if not result['OK']:
       return result
 
@@ -247,21 +247,21 @@ class JobStateUpdateHandler( RequestHandler ):
       new_status = status
     minorStatus = result['Value']['MinorStatus']
 
-    result = jobDB.setJobStatus( jobID, new_status, application = appStatus )
+    result = jobDB.setJobStatus( int( jobID ), new_status, application = appStatus )
     if not result['OK']:
       return result
 
-    result = logDB.addLoggingRecord( jobID, new_status, minorStatus, appStatus, source = source )
+    result = logDB.addLoggingRecord( int( jobID ), new_status, minorStatus, appStatus, source = source )
     return result
 
   ###########################################################################
-  types_setJobParameter = [IntType, StringType, StringType]
+  types_setJobParameter = [[StringType, IntType, LongType], StringType, StringType]
   def export_setJobParameter( self, jobID, name, value ):
     """ Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
     """
 
-    result = jobDB.setJobParameter( jobID, name, value )
+    result = jobDB.setJobParameter( int( jobID ), name, value )
     return result
 
   ###########################################################################
@@ -275,27 +275,27 @@ class JobStateUpdateHandler( RequestHandler ):
     return S_OK()
 
   ###########################################################################
-  types_setJobParameters = [IntType, ListType]
+  types_setJobParameters = [[StringType, IntType, LongType], ListType]
   def export_setJobParameters( self, jobID, parameters ):
     """ Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
     """
 
-    result = jobDB.setJobParameters( jobID, parameters )
+    result = jobDB.setJobParameters( int( jobID ), parameters )
     if not result['OK']:
       return S_ERROR( 'Failed to store some of the parameters' )
 
     return S_OK( 'All parameters stored for job' )
 
   ###########################################################################
-  types_sendHeartBeat = [IntType, DictType, DictType]
+  types_sendHeartBeat = [[StringType, IntType, LongType], DictType, DictType]
   def export_sendHeartBeat( self, jobID, dynamicData, staticData ):
     """ Send a heart beat sign of life for a job jobID
     """
 
-    result = jobDB.setHeartBeatData( jobID, staticData, dynamicData )
+    result = jobDB.setHeartBeatData( int( jobID ), staticData, dynamicData )
     if not result['OK']:
-      gLogger.warn( 'Failed to set the heart beat data for job %d ' % jobID )
+      gLogger.warn( 'Failed to set the heart beat data for job %d ' % int( jobID ) )
 
     # Restore the Running status if necessary
     #result = jobDB.getJobAttributes(jobID,['Status'])
@@ -312,13 +312,13 @@ class JobStateUpdateHandler( RequestHandler ):
     #    gLogger.warn('Failed to restore the job status to Running')
 
     jobMessageDict = {}
-    result = jobDB.getJobCommand( jobID )
+    result = jobDB.getJobCommand( int( jobID ) )
     if result['OK']:
       jobMessageDict = result['Value']
 
     if jobMessageDict:
-      for key, value in jobMessageDict.items():
-        result = jobDB.setJobCommandStatus( jobID, key, 'Sent' )
+      for key, _value in jobMessageDict.items():
+        result = jobDB.setJobCommandStatus( int( jobID ), key, 'Sent' )
 
     return S_OK( jobMessageDict )
 
