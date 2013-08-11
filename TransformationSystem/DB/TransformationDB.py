@@ -971,9 +971,9 @@ class TransformationDB( DB ):
         if type( parameterValue ) == DictType:
           parameterType = 'Dict'
           parameterValue = str( parameterValue )
-      res = self._insert( 'TransformationInputDataQuery', ['TransformationID', 'ParameterName',
-                                                           'ParameterValue', 'ParameterType'],
-                         [transID, parameterName, parameterValue, parameterType], conn = connection )
+      res = self.insertFields( 'TransformationInputDataQuery', ['TransformationID', 'ParameterName',
+                                                                'ParameterValue', 'ParameterType'],
+                               [transID, parameterName, parameterValue, parameterType], conn = connection )
       if not res['OK']:
         message = 'Failed to add input data query'
         self.deleteTransformationInputDataQuery( transID, connection = connection )
@@ -1055,7 +1055,7 @@ class TransformationDB( DB ):
     vector = str.join( ';', lfns )
     fields = ['TransformationID', 'TaskID', 'InputVector']
     values = [transID, taskID, vector]
-    res = self._insert( 'TaskInputs', fields, values, connection )
+    res = self.insertFields( 'TaskInputs', fields, values, connection )
     if not res['OK']:
       gLogger.error( "Failed to add input vector to task %d" % taskID )
     return res
