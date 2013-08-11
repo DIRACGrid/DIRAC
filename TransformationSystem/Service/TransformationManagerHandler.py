@@ -67,7 +67,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   def export_deleteTransformation( self, transName ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
-    #authorDN = self._clientTransport.peerCredentials['DN']
+    # authorDN = self._clientTransport.peerCredentials['DN']
     res = database.deleteTransformation( transName, author = authorDN )
     return self._parseRes( res )
 
@@ -75,7 +75,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   def export_cleanTransformation( self, transName ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
-    #authorDN = self._clientTransport.peerCredentials['DN']
+    # authorDN = self._clientTransport.peerCredentials['DN']
     res = database.cleanTransformation( transName, author = authorDN )
     return self._parseRes( res )
 
@@ -83,15 +83,15 @@ class TransformationManagerHandlerBase( RequestHandler ):
   def export_setTransformationParameter( self, transName, paramName, paramValue ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
-    #authorDN = self._clientTransport.peerCredentials['DN']
+    # authorDN = self._clientTransport.peerCredentials['DN']
     res = database.setTransformationParameter( transName, paramName, paramValue, author = authorDN )
     return self._parseRes( res )
 
   types_deleteTransformationParameter = [transTypes, StringTypes]
   def export_deleteTransformationParameter( self, transName, paramName ):
-    #credDict = self.getRemoteCredentials()
-    #authorDN = credDict[ 'DN' ]
-    #authorDN = self._clientTransport.peerCredentials['DN']
+    # credDict = self.getRemoteCredentials()
+    # authorDN = credDict[ 'DN' ]
+    # authorDN = self._clientTransport.peerCredentials['DN']
     res = database.deleteTransformationParameter( transName, paramName )
     return self._parseRes( res )
 
@@ -138,14 +138,21 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [transTypes, StringTypes, ListType]
-  def export_setFileStatusForTransformation( self, transName, status, lfns, force = False ):
-    res = database.setFileStatusForTransformation( transName, status, lfns, force )
-    return self._parseRes( res )
+  types_setFileStatusForTransformation = [transTypes, DictType]
+  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus ):
+    """ Sets the file status for the transformation.
 
-  types_setFileUsedSEForTransformation = [transTypes, StringTypes, ListType]
-  def export_setFileUsedSEForTransformation( self, transName, usedSE, lfns ):
-    res = database.setFileUsedSEForTransformation( transName, usedSE, lfns )
+        The dictOfNewFilesStatus is a dictionary with the form:
+        {12345: 'StatusA', 6789: 'StatusB',  ... }
+    """
+
+    res = database._getConnectionTransID( False, transName )
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+
+    res = database.setFileStatusForTransformation( transID, dictOfNewFilesStatus, connection = connection )
     return self._parseRes( res )
 
   types_getTransformationStats = [transTypes]
@@ -198,7 +205,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   def export_deleteTasks( self, transName, taskMin, taskMax ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
-    #authorDN = self._clientTransport.peerCredentials['DN']
+    # authorDN = self._clientTransport.peerCredentials['DN']
     res = database.deleteTasks( transName, taskMin, taskMax, author = authorDN )
     return self._parseRes( res )
 
@@ -206,7 +213,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   def export_extendTransformation( self, transName, nTasks ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
-    #authorDN = self._clientTransport.peerCredentials['DN']
+    # authorDN = self._clientTransport.peerCredentials['DN']
     res = database.extendTransformation( transName, nTasks, author = authorDN )
     return self._parseRes( res )
 
@@ -242,7 +249,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   def export_createTransformationInputDataQuery( self, transName, queryDict ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
-    #authorDN = self._clientTransport.peerCredentials['DN']
+    # authorDN = self._clientTransport.peerCredentials['DN']
     res = database.createTransformationInputDataQuery( transName, queryDict, author = authorDN )
     return self._parseRes( res )
 
@@ -250,7 +257,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   def export_deleteTransformationInputDataQuery( self, transName ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
-    #authorDN = self._clientTransport.peerCredentials['DN']
+    # authorDN = self._clientTransport.peerCredentials['DN']
     res = database.deleteTransformationInputDataQuery( transName, author = authorDN )
     return self._parseRes( res )
 
@@ -349,7 +356,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods used for web monitoring
   #
 
-  #TODO Get rid of this (talk to Matvey)
+  # TODO Get rid of this (talk to Matvey)
   types_getDistinctAttributeValues = [StringTypes, DictType]
   def export_getDistinctAttributeValues( self, attribute, selectDict ):
     res = database.getTableDistinctAttributeValues( 'Transformations', [attribute], selectDict )
@@ -470,7 +477,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     fromDate = selectDict.get( 'FromDate', None )
     if fromDate:
       del selectDict['FromDate']
-    #if not fromDate:
+    # if not fromDate:
     #  fromDate = last_update
     toDate = selectDict.get( 'ToDate', None )
     if toDate:
