@@ -146,28 +146,16 @@ class JobDB( DB ):
     cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (UTC_TIMESTAMP())'
     err = 'JobDB.getJobID: Failed to retrieve a new Id.'
 
-    res = self._getConnection()
+    res = self._update( cmd )
     if not res['OK']:
-      return S_ERROR( '0 %s\n%s' % ( err, res['Message'] ) )
-
-    connection = res['Value']
-    res = self._update( cmd, connection )
-    if not res['OK']:
-      connection.close()
       return S_ERROR( '1 %s\n%s' % ( err, res['Message'] ) )
 
-    cmd = 'SELECT LAST_INSERT_ID()'
-    res = self._query( cmd, connection )
-    if not res['OK']:
-      connection.close()
-      return S_ERROR( '2 %s\n%s' % ( err, res['Message'] ) )
+    if not 'lastRowId' in res['Value']:
+      return S_ERROR( '2 %s' % err )
 
-    try:
-      connection.close()
-      jobID = int( res['Value'][0][0] )
-      self.log.info( 'JobDB: New JobID served "%s"' % jobID )
-    except Exception, x:
-      return S_ERROR( '3 %s\n%s' % ( err, str( x ) ) )
+    jobID = int( res['Value']['lastRowId'] )
+
+    self.log.info( 'JobDB: New JobID served "%s"' % jobID )
 
     return S_OK( jobID )
 
@@ -258,7 +246,7 @@ class JobDB( DB ):
         return S_ERROR( 'JobDB.getJobParameters: failed to retrieve parameters' )
 
     else:
-      result = self._getFields( 'JobParameters', ['Name', 'Value'], ['JobID'], [jobID] )
+      result = self.getFields( 'JobParameters', ['Name', 'Value'], {'JobID': jobID} )
       if not result['OK']:
         return result
       else:
@@ -452,7 +440,7 @@ class JobDB( DB ):
     """ Get optimizer parameters for the given job.
     """
 
-    result = self._getFields( 'OptimizerParameters', ['Value'], ['JobID', 'Name'], [jobID, parameter] )
+    result = self.getFields( 'OptimizerParameters', ['Value'], {'JobID': jobID, 'Name': parameter} )
     if result['OK']:
       if result['Value']:
         return S_OK( result['Value'][0][0] )
@@ -1051,26 +1039,20 @@ class JobDB( DB ):
   def __insertNewJDL( self, jdl ):
     """Insert a new JDL in the system, this produces a new JobID
     """
-    res = self._getConnection()
-    if not res['OK']:
-      return res
-    connection = res['Value']
-    res = self.insertFields( 'JobJDLs' , ['OriginalJDL'], [jdl], connection )
 
-    cmd = 'SELECT LAST_INSERT_ID()'
-    res = self._query( cmd, connection )
+    err = 'JobDB.__insertNewJDL: Failed to retrieve a new Id.'
+
+    res = self.insertFields( 'JobJDLs' , ['OriginalJDL'], [jdl] )
     if not res['OK']:
-      connection.close()
-      self.log.error( 'Can not retrieve LAST_INSERT_ID', res['Message'] )
+      self.log.error( 'Can not insert New JDL', res['Message'] )
       return res
 
-    try:
-      connection.close()
-      jobID = int( res['Value'][0][0] )
-      self.log.info( 'JobDB: New JobID served "%s"' % jobID )
-    except Exception, x:
-      self.log.exception( 'Exception retrieving LAST_INSERT_ID' )
-      return S_ERROR( "Can not retrieve LAST_INSERT_ID: %s" % str( x ) )
+    if not 'lastRowId' in res['Value']:
+      return S_ERROR( '%s' % err )
+
+    jobID = int( res['Value']['lastRowId'] )
+
+    self.log.info( 'JobDB: New JobID served "%s"' % jobID )
 
     return S_OK( jobID )
 
