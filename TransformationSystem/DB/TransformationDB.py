@@ -576,85 +576,28 @@ class TransformationDB( DB ):
         failedDict[lfn] = 'Did not exist in the Transformation database'
     return S_OK( {'Successful':resDict, 'Failed':failedDict} )
 
-  def setFileUsedSEForTransformation( self, transName, usedSE, lfns, connection = False ):
-    """ Set the UsedSE for supplied files and the Status = 'Processed' """
-    res = self._getConnectionTransID( connection, transName )
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
-    res = self.setFileStatusForTransformation( transID, 'Processed', lfns, connection = connection )
-    if not res['OK']:
-      return res
-    resDict = res['Value']
-    res = self.__getFileIDsForLfns( resDict['Successful'].keys(), connection = connection )
-    if not res['OK']:
-      return res
-    _fileIDs, lfnFilesIDs = res['Value']
-    updateUsedSE = []
-    for lfn, message in resDict['Successful'].items():
-      if message == 'Status updated to Processed':
-        updateUsedSE.append( lfnFilesIDs[lfn] )
-    if updateUsedSE:
-      print self.__setTransformationFileUsedSE( updateUsedSE, usedSE, connection = connection )
-    return S_OK( resDict )
+  def setFileStatusForTransformation( self, transID, fileStatusDict = {}, connection = False ):
+    """ Set file status for the given transformation, based on
+        fileStatusDict {fileID_A: 'statusA', fileID_B: 'statusB', ...}
 
-  def setFileStatusForTransformation( self, transName, status, lfns, force = False, connection = False ):
-    """ Set file status for the given transformation """
-    res = self._getConnectionTransID( connection, transName )
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
+        The ErrorCount is incremented automatically here
+    """
+    if not fileStatusDict:
+      return S_OK()
 
-    res = self.__getFileIDsForLfns( lfns, connection = connection )
-    if not res['OK']:
-      return res
-    successful = {}
-    failed = {}
-    res = self.getTransformationFiles( condDict = {'TransformationID':transID, 'LFN':lfns}, connection = connection )
-    if not res['OK']:
-      return res
-    transFiles = res['Value']
-    for fileDict in transFiles:
-      currentStatus = fileDict['Status']
-      errorCount = fileDict['ErrorCount']
-      lfn = fileDict['LFN']
-      fileID = fileDict['FileID']
-      if ( not force ) and ( currentStatus.lower() == "processed" ) and ( status.lower() != "processed" ):
-        failed[lfn] = 'Can not change Processed status'
-        req = ''
-      elif ( currentStatus == status ):
-        successful[lfn] = 'Status not changed'
-        req = ''
-      elif ( status.lower() == 'unused' ):
-        if errorCount >= MAX_ERROR_COUNT:
-          if force:
-            req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=0"
-            req = ( req + " WHERE TransformationID=%d AND FileID=%d;" ) % ( status, transID, fileID )
-          else:
-            failed[lfn] = 'Max number of resets reached'
-            req = "UPDATE TransformationFiles SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP()"
-            req = ( req + " WHERE TransformationID=%d AND FileID=%d;" ) % ( transID, fileID )
-        else:
-          req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=ErrorCount+1"
-          req = ( req + " WHERE TransformationID=%d AND FileID=%d;" ) % ( status, transID, fileID )
-      else:
-        req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP()"
-        req = ( req + " WHERE TransformationID=%d AND FileID=%d;" ) % ( status, transID, fileID )
-      if not req:
-        continue
-      res = self._update( req, connection )
-      if failed.has_key( lfn ) or successful.has_key( lfn ):
-        continue
-      if not res['OK']:
-        failed[lfn] = res['Message']
-      else:
-        successful[lfn] = 'Status updated to %s' % status
-    for lfn in lfns:
-      if ( not failed.has_key( lfn ) ) and ( not successful.has_key( lfn ) ):
-        failed[lfn] = 'File not found in the Transformation Database'
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    # Building the request with "ON DUPLICATE KEY UPDATE"
+    req = "INSERT INTO TransformationFiles (TransformationID, FileID, Status, ErrorCount, LastUpdate) VALUES "
+
+    updatesList = []
+    for fileID, status in fileStatusDict.items():
+
+      updatesList.append( "(%d, %d, '%s', VALUES(ErrorCount), UTC_TIMESTAMP())" % ( transID, fileID, status ) )
+
+    req += ','.join( updatesList )
+    req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),ErrorCount=ErrorCount+1,LastUpdate=VALUES(LastUpdate)"
+
+    return self._update( req, connection )
+
 
   def getTransformationStats( self, transName, connection = False ):
     """ Get number of files in Transformation Table for each status """
@@ -1195,6 +1138,7 @@ class TransformationDB( DB ):
 
   def __getFileIDsForLfns( self, lfns, connection = False ):
     """ Get file IDs for the given list of lfns
+        warning: if the file is not present, we'll see no errors
     """
     req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % ( stringListToString( lfns ) )
     res = self._query( req, connection )
