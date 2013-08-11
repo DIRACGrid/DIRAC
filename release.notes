@@ -1,3 +1,16 @@
+[v6r10-pre1]
+
+*Core
+FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
+     JobDB, PilotAgentsDB) after the new movement to the new MySQL implementation with a persistent 
+     connection per running thread
+
+*DMS
+CHANGE: DFC - optimization and bug fixes of the bulk file addition
+
+*WMS
+CHANGE: JobPolicy - optimization for bulk job verification
+
 [v6r9p15]
 
 *Core
