@@ -1,7 +1,8 @@
 import unittest
 
 from mock import Mock
-from DIRAC.TransformationSystem.Client.TaskManager import TaskBase, WorkflowTasks, RequestTasks
+from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
+from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 
 def getSitesForSE( ses ):
   if ses == 'pippo':
@@ -45,7 +46,10 @@ class ClientsTestCase( unittest.TestCase ):
                                       requestClient = self.mockRequestClient
                                       )
 
+    self.tc = TransformationClient()
+
     self.maxDiff = None
+
 
   def tearDown( self ):
     pass
@@ -88,13 +92,13 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     self.assertEqual( res, ['ANY'] )
     res = self.wfTasks._handleDestination( {'TargetSE':'Unknown'} )
     self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1, Site2', 'TargetSE':''} )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':''} )
     self.assertEqual( res, ['Site1', 'Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1, Site2', 'TargetSE':'pippo'}, getSitesForSE )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'}, getSitesForSE )
     self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1, Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
     self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1, Site2, Site3', 'TargetSE':'pippo, pluto'}, getSitesForSE )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo, pluto'}, getSitesForSE )
     self.assertEqual( res, ['Site2', 'Site3'] )
     res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
     self.assertEqual( res, ['Site2'] )
@@ -103,7 +107,80 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'}, getSitesForSE )
     self.assertEqual( res, [] )
 
+#############################################################################
 
+class TransformationClientSuccess( ClientsTestCase ):
+
+  def test__applyProductionFilesStateMachine( self ):
+    tsFiles = {}
+    dictOfNewLFNsStatus = {}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {} )
+
+    tsFiles = {}
+    dictOfNewLFNsStatus = {'foo':['status', 2L, 1234]}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {} )
+
+    tsFiles = {'foo':['status', 2L, 1234]}
+    dictOfNewLFNsStatus = {'foo':'status'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'status'} )
+
+    tsFiles = {'foo':['status', 2L, 1234], 'bar':['status', 2L, 5678]}
+    dictOfNewLFNsStatus = {'foo':'status'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'status'} )
+
+    tsFiles = {'foo':['status', 2L, 1234], 'bar': ['status', 2L, 5678]}
+    dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'A', 'bar':'B'} )
+
+    tsFiles = {'foo':['status', 2L, 1234]}
+    dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'A'} )
+
+    tsFiles = {'foo': ['Assigned', 2L, 1234]}
+    dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'A'} )
+
+    tsFiles = {'foo':['Assigned', 2L, 1234], 'bar':['Assigned', 2L, 5678]}
+    dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'Assigned', 'bar':'Processed'} )
+
+    tsFiles = {'foo':['Processed', 2L, 1234], 'bar':['Unused', 2L, 5678]}
+    dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'Processed', 'bar':'Processed'} )
+
+    tsFiles = {'foo':['Processed', 2L, 1234], 'bar':['Unused', 2L, 5678]}
+    dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
+    self.assertEqual( res, {'foo':'Assigned', 'bar':'Processed'} )
+
+    tsFiles = {'foo':['MaxReset', 12L, 1234], 'bar':['Processed', 22L, 5678]}
+    dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
+
+    tsFiles = {'foo':['MaxReset', 12L, 1234], 'bar':['Processed', 22L, 5678]}
+    dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
+    self.assertEqual( res, {'foo':'Unused', 'bar':'Unused'} )
+
+    tsFiles = {'foo':['Assigned', 20L, 1234], 'bar':['Processed', 2L, 5678]}
+    dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
+
+    tsFiles = {'foo':['Assigned', 20L, 1234], 'bar':['Processed', 2L, 5678]}
+    dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
+    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
+    self.assertEqual( res, {'foo':'Unused', 'bar':'Unused'} )
 
 #############################################################################
 
@@ -111,4 +188,5 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ClientsTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TaskBaseSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WorkflowTasksSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationClientSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
