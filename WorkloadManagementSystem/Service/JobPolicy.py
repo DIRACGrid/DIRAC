@@ -11,7 +11,8 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getGroupsForUser, \
+                                                              getPropertiesForGroup, getUsersInGroup 
 
 RIGHT_GET_JOB = 'GetJob'
 RIGHT_GET_INFO = 'GetInfo'
@@ -173,3 +174,44 @@ class JobPolicy:
         ownerJobList.append( jobID )
   
     return validJobList, invalidJobList, nonauthJobList, ownerJobList
+  
+  def getControlledUsers( self, right ):
+    """ Get users and groups which jobs are subject to the given access right
+    """
+    
+    userGroupList = 'ALL'
+    # If allInfo flag is defined we can see info for any job
+    if right == RIGHT_GET_INFO and self.allInfo:
+      return S_OK( userGroupList ) 
+    
+    # Administrators can do everything
+    if Properties.JOB_ADMINISTRATOR in self.userProperties:
+      return S_OK( userGroupList )
+    
+    # Inspectors can see info for all the jobs
+    if Properties.JOB_MONITOR in self.userProperties and right == RIGHT_GET_INFO:
+      return S_OK( userGroupList )  
+    
+    userGroupList = []
+    # User can do many things with his jobs
+    if Properties.NORMAL_USER in self.userProperties and right in OWNER_RIGHTS:
+      result = getGroupsForUser( self.userName )
+      if not result['OK']:
+        return result
+      groups = result['Value']
+      for group in groups:
+        if 'NormalUser' in getPropertiesForGroup( group, [] ):
+          userGroupList.append( ( self.userName, group ) )
+          
+    # User can do many things with the jobs in the shared group
+    if Properties.JOB_SHARING in self.userProperties and right in SHARED_GROUP_RIGHTS:
+      sharedUsers = getUsersInGroup( self.userGroup )
+      for user in sharedUsers:
+        userGroupList.append( ( user, self.userGroup ) )
+        
+    userGroupList = list( set( userGroupList ) )    
+    return S_OK( userGroupList )  
+            
+      
+
+      
