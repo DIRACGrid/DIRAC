@@ -21,6 +21,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 # These are global instances of the DB classes
 gJobDB = False
@@ -48,10 +49,11 @@ class JobMonitoringHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
-    self.userProperties = credDict[ 'properties' ]
-    self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
+    operations = Operations( group = self.ownerGroup )
+    self.globalJobsInfo = operations.getValue( '/Services/JobMonitoring/GlobalJobsInfo', True )
+    self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.globalJobsInfo )
     self.jobPolicy.setJobDB( gJobDB )
-    self.globalJobsInfo = self.getCSOption( 'GlobalJobsInfo', True )
+    
     return S_OK()
 
 ##############################################################################
@@ -302,8 +304,7 @@ class JobMonitoringHandler( RequestHandler ):
 
 ##############################################################################
   types_getJobPageSummaryWeb = [DictType, ListType, IntType, IntType]
-  @staticmethod
-  def export_getJobPageSummaryWeb( selectDict, sortList, startItem, maxItems, selectJobs = True ):
+  def export_getJobPageSummaryWeb( self, selectDict, sortList, startItem, maxItems, selectJobs = True ):
     """ Get the summary of the job information for a given page in the
         job monitor in a generic format
     """
@@ -319,6 +320,12 @@ class JobMonitoringHandler( RequestHandler ):
     endDate = selectDict.get( 'ToDate', None )
     if endDate:
       del selectDict['ToDate']
+
+    result = self.jobPolicy.getControlledUsers( RIGHT_GET_INFO )
+    if not result['OK']:
+      return S_ERROR( 'Failed to evaluate user rights' )
+    if result['Value'] != 'ALL':
+      selectDict[ ( 'Owner','OwnerGroup' ) ] = result['Value']
 
     # Sorting instructions. Only one for the moment.
     if sortList:
