@@ -100,11 +100,11 @@ class Job( API ):
   #############################################################################
 
   def setExecutable( self, executable, arguments = '', logFile = '',
-                     modulesList = ['Script'],
-                     parameters = [( 'executable', 'string', '', "Executable Script" ),
-                                   ( 'arguments', 'string', '', 'Arguments for executable Script' ),
-                                   ( 'applicationLog', 'string', '', "Log file name" )]
-                    ):
+                       modulesList = ['Script'],
+                       parameters = [( 'executable', 'string', '', "Executable Script" ),
+                                     ( 'arguments', 'string', '', 'Arguments for executable Script' ),
+                                     ( 'applicationLog', 'string', '', "Log file name" )],
+                       paramValues = [] ):
     """Helper function.
 
        Specify executable script to run with optional arguments and log file
@@ -127,10 +127,12 @@ class Job( API ):
        @type arguments: string
        @param logFile: Optional log file name
        @type logFile: string
-       @param modulesList: Optional list of modules (to be used mostly when extending this method
+       @param modulesList: Optional list of modules (to be used mostly when extending this method)
        @type modulesList: list
-       @param parameters: Optional list of parameters (to be used mostly when extending this method
-       @type parameters: list
+       @param parameters: Optional list of parameters (to be used mostly when extending this method)
+       @type parameters: list of tuples
+       @param paramValues: Optional list of parameters values (to be used mostly when extending this method)
+       @type parameters: list of tuples
     """
     kwargs = {'executable':executable, 'arguments':arguments, 'logFile':logFile}
     if not type( executable ) == type( ' ' ) or not type( arguments ) == type( ' ' ) or \
@@ -161,6 +163,9 @@ class Job( API ):
     stepInstance.setValue( 'executable', executable )
     if arguments:
       stepInstance.setValue( 'arguments', arguments )
+    if paramValues:
+      for param, value in paramValues:
+        stepInstance.setValue( param, value )
 
     return S_OK( stepInstance )
 
