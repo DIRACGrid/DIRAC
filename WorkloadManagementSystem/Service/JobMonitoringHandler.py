@@ -362,6 +362,11 @@ class JobMonitoringHandler( RequestHandler ):
         return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
       summaryJobList = result['Value']
+      if not self.globalJobsInfo:      
+        validJobs, invalidJobs, nonauthJobs, ownJobs = self.jobPolicy.evaluateJobRights( summaryJobList,
+                                                                                         RIGHT_GET_INFO )
+        summaryJobList = validJobs
+      
       result = gJobDB.getAttributesForJobList( summaryJobList, SUMMARY )
       if not result['OK']:
         return S_ERROR( 'Failed to get job summary: ' + result['Message'] )
@@ -399,110 +404,6 @@ class JobMonitoringHandler( RequestHandler ):
 
       resultDict['ParameterNames'] = paramNames + ['TaskQueueID']
       resultDict['Records'] = records
-
-    return S_OK( resultDict )
-
-
-  def getJobPageSummaryWeb( self, selectDict, sortList, startItem, maxItems, selectJobs = True ):
-    """ Get the summary of the job information for a given page in the
-        job monitor in a generic format
-    """
-    resultDict = {}
-    startDate = selectDict.get( 'FromDate', None )
-    if startDate:
-      del selectDict['FromDate']
-    # For backward compatibility
-    if startDate is None:
-      startDate = selectDict.get( 'LastUpdate', None )
-      if startDate:
-        del selectDict['LastUpdate']
-    endDate = selectDict.get( 'ToDate', None )
-    if endDate:
-      del selectDict['ToDate']
-
-    # Sorting instructions. Only one for the moment.
-    if sortList:
-      orderAttribute = sortList[0][0] + ":" + sortList[0][1]
-    else:
-      orderAttribute = None
-
-    if selectJobs:
-      result = gJobDB.selectJobs( selectDict, orderAttribute = orderAttribute,
-                                newer = startDate, older = endDate )
-      if not result['OK']:
-        return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
-
-      jobList = result['Value']
-
-      if not self.globalJobsInfo:      
-        validJobs, invalidJobs, nonauthJobs, ownerJobs = self.jobPolicy.evaluateJobRights( jobList,
-                                                                                           RIGHT_GET_INFO )
-        jobList = validJobs
-      
-      nJobs = len( jobList )
-      resultDict['TotalRecords'] = nJobs
-      if nJobs == 0:
-        return S_OK( resultDict )
-
-      iniJob = startItem
-      lastJob = iniJob + maxItems
-      if iniJob >= nJobs:
-        return S_ERROR( 'Item number out of range' )
-
-      if lastJob > nJobs:
-        lastJob = nJobs
-
-      summaryJobList = jobList[iniJob:lastJob]
-      result = gJobDB.getAttributesForJobList( summaryJobList, SUMMARY )
-      if not result['OK']:
-        return S_ERROR( 'Failed to get job summary: ' + result['Message'] )
-
-      summaryDict = result['Value']
-
-      # Evaluate last sign of life time
-      for jobID, jobDict in summaryDict.items():
-        if jobDict['HeartBeatTime'] == 'None':
-          jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
-        else:
-          lastTime = Time.fromString( jobDict['LastUpdateTime'] )
-          hbTime = Time.fromString( jobDict['HeartBeatTime'] )
-          if ( hbTime - lastTime ) > ( lastTime - lastTime ) or jobDict['Status'] == "Stalled":
-            jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
-          else:
-            jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
-
-      tqDict = {}
-      result = gTaskQueueDB.getTaskQueueForJobs( summaryJobList )
-      if result['OK']:
-        tqDict = result['Value']
-
-      # prepare the standard structure now
-      key = summaryDict.keys()[0]
-      paramNames = summaryDict[key].keys()
-
-      records = []
-      for jobID, jobDict in summaryDict.items():
-        jParList = []
-        for pname in paramNames:
-          jParList.append( jobDict[pname] )
-        if tqDict and tqDict.has_key( jobID ):
-          jParList.append( tqDict[jobID] )
-        else:
-          jParList.append( 0 )
-        records.append( jParList )
-
-      resultDict['ParameterNames'] = paramNames + ['TaskQueueID']
-      resultDict['Records'] = records
-
-    statusDict = {}
-    result = gJobDB.getCounters( 'Jobs', ['Status'], selectDict,
-                               newer = startDate,
-                               older = endDate,
-                               timeStamp = 'LastUpdateTime' )
-    if result['OK']:
-      for stDict, count in result['Value']:
-        statusDict[stDict['Status']] = count
-    resultDict['Extras'] = statusDict
 
     return S_OK( resultDict )
 
