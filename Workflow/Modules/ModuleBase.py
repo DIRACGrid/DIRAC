@@ -272,6 +272,9 @@ class ModuleBase( object ):
     if self.InputData == ';':
       self.InputData = ''
 
+    if self.workflow_commons.has_key( 'appSteps' ):
+      self.appSteps = self.workflow_commons['appSteps']
+
     if self.workflow_commons.has_key( 'outputDataFileMask' ):
       self.outputDataFileMask = self.workflow_commons['outputDataFileMask']
       if not type( self.outputDataFileMask ) == type( [] ):
@@ -321,8 +324,8 @@ class ModuleBase( object ):
     """ determine the input data for the step
     """
     if inputData == 'previousStep':
-      stepIndex = self.gaudiSteps.index( self.stepName )
-      previousStep = self.gaudiSteps[stepIndex - 1]
+      stepIndex = self.appSteps.index( self.stepName )
+      previousStep = self.appSteps[stepIndex - 1]
 
       stepInputData = []
       for outputF in self.workflow_commons['outputList']:
