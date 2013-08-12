@@ -1042,15 +1042,15 @@ class JobDB( DB ):
 
     err = 'JobDB.__insertNewJDL: Failed to retrieve a new Id.'
 
-    res = self.insertFields( 'JobJDLs' , ['OriginalJDL'], [jdl] )
-    if not res['OK']:
-      self.log.error( 'Can not insert New JDL', res['Message'] )
-      return res
+    result = self.insertFields( 'JobJDLs' , ['OriginalJDL'], [jdl] )
+    if not result['OK']:
+      self.log.error( 'Can not insert New JDL', result['Message'] )
+      return result
 
-    if not 'lastRowId' in res['Value']:
+    if not 'lastRowId' in result:
       return S_ERROR( '%s' % err )
 
-    jobID = int( res['Value']['lastRowId'] )
+    jobID = int( result['Value']['lastRowId'] )
 
     self.log.info( 'JobDB: New JobID served "%s"' % jobID )
 
