@@ -23,7 +23,14 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSDB class.
 
 # # imports
-import MySQLdb.cursors
+# Get rid of the annoying Deprecation warning of the current MySQLdb
+# FIXME: compile a newer MySQLdb version
+import warnings
+with warnings.catch_warnings():
+  warnings.simplefilter( 'ignore', DeprecationWarning )
+  import MySQLdb.cursors
+
+#import MySQLdb.cursors
 from MySQLdb import Error as MySQLdbError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -125,7 +132,7 @@ class FTSDB( DB ):
     cursor = getCursorAndConnection["Value"]["cursor"]
     connection = getCursorAndConnection["Value"]["connection"]
 
-    # # this iwll be returned as query result
+    # # this will be returned as query result
     ret = { "OK" : True }
     queryRes = { }
     # # switch off autocommit
@@ -155,6 +162,63 @@ class FTSDB( DB ):
       cursor.close()
       return S_ERROR( str( error ) )
 
+<<<<<<< HEAD
+  def putFTSSite( self, ftsSite ):
+    """ put FTS site into DB """
+    if not ftsSite.FTSSiteID:
+      existing = self._query( "SELECT `FTSSiteID` FROM `FTSSite` WHERE `Name` = '%s'" % ftsSite.Name )
+      if not existing["OK"]:
+        self.log.error( "putFTSSite: %s" % existing["Message"] )
+        return existing
+      existing = existing["Value"]
+      if existing:
+        return S_ERROR( "putFTSSite: site of '%s' name is already defined at FTSSiteID = %s" % ( ftsSite.Name,
+                                                                                                 existing[0][0] ) )
+    ftsSiteSQL = ftsSite.toSQL()
+    if not ftsSiteSQL["OK"]:
+      self.log.error( "putFTSSite: %s" % ftsSiteSQL["Message"] )
+      return ftsSiteSQL
+    ftsSiteSQL = ftsSiteSQL["Value"]
+
+    putFTSSite = self._transaction( ftsSiteSQL )
+    if not putFTSSite["OK"]:
+      self.log.error( putFTSSite["Message"] )
+    return putFTSSite
+
+  def getFTSSite( self, ftsSiteID ):
+    """ read FTSSite given FTSSiteID """
+    getFTSSiteQuery = "SELECT * FROM `FTSSite` WHERE `FTSSiteID`=%s" % int( ftsSiteID )
+    getFTSSite = self._transaction( [ getFTSSiteQuery ] )
+    if not getFTSSite["OK"]:
+      self.log.error( "getFTSSite: %s" % getFTSSite["Message"] )
+      return getFTSSite
+    getFTSSite = getFTSSite["Value"]
+    if getFTSSiteQuery in getFTSSite and getFTSSite[getFTSSiteQuery]:
+      getFTSSite = FTSSite( getFTSSite[getFTSSiteQuery][0] )
+      return S_OK( getFTSSite )
+    # # if we land here FTSSite does not exist
+    return S_OK()
+
+  def deleteFTSSite( self, ftsSiteID ):
+    """ delete FTSSite given its FTSSiteID """
+    delete = "DELETE FROM `FTSSite` WHERE `FTSSiteID` = %s;" % int( ftsSiteID )
+    delete = self._transaction( [ delete ] )
+    if not delete["OK"]:
+      self.log.error( delete["Message"] )
+    return delete
+
+  def getFTSSitesList( self ):
+    """ bulk read of FTS sites """
+    ftsSitesQuery = "SELECT * FROM `FTSSite`;"
+    ftsSites = self._transaction( [ ftsSitesQuery ] )
+    if not ftsSites["OK"]:
+      self.log.error( "getFTSSites: %s" % ftsSites["Message"] )
+      return ftsSites
+    ftsSites = ftsSites["Value"][ftsSitesQuery] if ftsSitesQuery in ftsSites["Value"] else []
+    return S_OK( [ FTSSite( ftsSiteDict ) for ftsSiteDict  in ftsSites ] )
+
+=======
+>>>>>>> rel-v6r9
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into fts db """
     ftsFileSQL = ftsFile.toSQL()

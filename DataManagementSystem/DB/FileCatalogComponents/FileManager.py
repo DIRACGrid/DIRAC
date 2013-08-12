@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.List                                            import
 DEBUG = 0
 
 import os
-from types import ListType, TupleType, StringTypes
+from types import StringTypes, ListType, TupleType
 
 class FileManager(FileManagerBase):
 

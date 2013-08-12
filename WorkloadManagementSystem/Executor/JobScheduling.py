@@ -1,8 +1,3 @@
-########################################################################
-# $HeadURL: $
-# File :   JobSchedulingAgent.py
-########################################################################
-
 """   The Job Scheduling Agent takes the information gained from all previous
       optimizers and makes a scheduling decision for the jobs.  Subsequent to this
       jobs are added into a Task Queue by the next optimizer and pilot agents can
@@ -13,20 +8,20 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: $"
-
-from DIRAC import S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
-from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
-from DIRAC.Core.Utilities.Time import fromString, toEpoch
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-from DIRAC.Resources.Storage.StorageElement                    import StorageElement
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources        import getSiteTier
-from DIRAC.ConfigurationSystem.Client.Helpers                  import Registry
-from DIRAC.Core.Security                                       import Properties
-
 
 import random
+
+from DIRAC                                                          import S_OK, S_ERROR
+from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
+from DIRAC.Core.Utilities.Time                                      import fromString, toEpoch
+from DIRAC.Core.Security                                            import Properties
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources             import getSiteTier
+from DIRAC.ConfigurationSystem.Client.Helpers                       import Registry
+from DIRAC.Resources.Storage.StorageElement                         import StorageElement
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import StorageManagerClient
+from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                   import SiteStatus  
+
 
 class JobScheduling( OptimizerExecutor ):
   """
@@ -53,7 +48,7 @@ class JobScheduling( OptimizerExecutor ):
 
 
   def optimizeJob( self, jid, jobState ):
-    #Reschedule delay
+    # Reschedule delay
     result = jobState.getAttributes( [ 'RescheduleCounter', 'RescheduleTime', 'ApplicationStatus' ] )
     if not result[ 'OK' ]:
       return result
@@ -69,34 +64,35 @@ class JobScheduling( OptimizerExecutor ):
       if waited < delay:
         return self.__holdJob( jobState, 'On Hold: after rescheduling %s' % reschedules, delay )
 
-    #Get site requirements
-    result = self.__getSitesRequired( jobState )
+    # Get site requirements
+    result = self._getSitesRequired( jobState )
     if not result[ 'OK' ]:
       return result
     userSites, userBannedSites = result[ 'Value' ]
 
-    #Get active and banned sites from DIRAC
-    result = self.__jobDB.getSiteMask( 'Active' )
+    # Get active and banned sites from DIRAC
+    siteStatus = SiteStatus()
+    result = siteStatus.getUsableSites( 'ComputingAccess' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve active sites from JobDB" )
-    wmsActiveSites = result[ 'Value' ]
-    result = self.__jobDB.getSiteMask( 'Banned' )
+    usableSites = result[ 'Value' ]
+    result = siteStatus.getUnusableSites( 'ComputingAccess' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve banned sites from JobDB" )
-    wmsBannedSites = result[ 'Value' ]
+    unusableSites = result[ 'Value' ]
 
-    #If the user has selected any site, filter them and hold the job if not able to run
+    # If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
       result = jobState.getAttribute( "JobType" )
       if not result[ 'OK' ]:
         return S_ERROR( "Could not retrieve job type" )
       jobType = result[ 'Value' ]
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
-        sites = self.__applySiteFilter( userSites, wmsActiveSites, wmsBannedSites )
+        sites = self._applySiteFilter( userSites, usableSites, unusableSites )
         if not sites:
           return self.__holdJob( jobState, "Sites %s are inactive or banned" % ", ".join( userSites ) )
 
-    #Get the Input data
+    # Get the Input data
     # Third, check if there is input data
     result = jobState.getInputData()
     if not result['OK']:
@@ -104,7 +100,7 @@ class JobScheduling( OptimizerExecutor ):
       return S_ERROR( 'Failed to get input data from JobDB' )
 
     if not result['Value']:
-      #No input data? Generate requirements and next
+      # No input data? Generate requirements and next
       return self.__sendToTQ( jobState, userSites, userBannedSites )
 
     inputData = result[ 'Value' ]
@@ -119,11 +115,11 @@ class JobScheduling( OptimizerExecutor ):
     if 'SiteCandidates' not in opData:
       return S_ERROR( "No possible site candidates" )
 
-    #Filter input data sites with user requirement
+    # Filter input data sites with user requirement
     siteCandidates = list( opData[ 'SiteCandidates' ] )
     self.jobLog.info( "Site candidates are %s" % siteCandidates )
 
-    siteCandidates = self.__applySiteFilter( siteCandidates, userSites, userBannedSites )
+    siteCandidates = self._applySiteFilter( siteCandidates, userSites, userBannedSites )
     if not siteCandidates:
       return S_ERROR( "Impossible InputData * Site requirements" )
 
@@ -148,46 +144,46 @@ class JobScheduling( OptimizerExecutor ):
     if not siteCandidates:
       return S_ERROR( "No destination sites available" )
 
-    #Is any site active?
-    stageSites = self.__applySiteFilter( siteCandidates, wmsActiveSites, wmsBannedSites )
+    # Is any site active?
+    stageSites = self._applySiteFilter( siteCandidates, usableSites, unusableSites )
     if not stageSites:
       return self.__holdJob( jobState, "Sites %s are inactive or banned" % ", ".join( siteCandidates ) )
 
-    #If no staging is required send to TQ
+    # If no staging is required send to TQ
     if not stageRequired:
-      #Use siteCandidates and not stageSites because active and banned sites
-      #will be taken into account on matching time
+      # Use siteCandidates and not stageSites because active and banned sites
+      # will be taken into account on matching time
       return self.__sendToTQ( jobState, siteCandidates, userBannedSites )
 
-    #Check if the user is allowed to stage
+    # Check if the user is allowed to stage
     if self.ex_getOption( "RestrictDataStage", False ):
       if not self.__checkStageAllowed( jobState ):
         return S_ERROR( "Stage not allowed" )
 
-    #Get stageSites[0] because it has already been randomized and it's as good as any in stageSites
+    # Get stageSites[0] because it has already been randomized and it's as good as any in stageSites
     stageSite = stageSites[0]
     self.jobLog.verbose( " Staging site will be %s" % ( stageSite ) )
     stageData = idSites[ stageSite ]
-    #Set as if everything has already been staged
+    # Set as if everything has already been staged
     stageData[ 'disk' ] += stageData[ 'tape' ]
     stageData[ 'tape' ] = 0
-    #Set the site info back to the original dict to save afterwards
+    # Set the site info back to the original dict to save afterwards
     opData[ 'SiteCandidates' ][ stageSite ] = stageData
 
     result = self.__requestStaging( jobState, stageSite, opData )
     if not result[ 'OK' ]:
       return result
     stageLFNs = result[ 'Value' ]
-    self.__updateSharedSESites( jobState, stageSite, stageLFNs, opData )
-    #Save the optimizer data again
+    self._updateSharedSESites( stageSite, stageLFNs, opData )
+    # Save the optimizer data again
     self.jobLog.verbose( 'Updating %s Optimizer Info:' % ( idAgent ), opData )
     result = self.storeOptimizerParam( idAgent, opData )
     if not result[ 'OK' ]:
       return result
 
-    return self.__setJobSite( jobState, stageSites )
+    return self._setJobSite( jobState, stageSites )
 
-  def __applySiteFilter( self, sites, active = False, banned = False ):
+  def _applySiteFilter( self, sites, active = False, banned = False ):
     filtered = list( sites )
     if active:
       for site in sites:
@@ -204,11 +200,11 @@ class JobScheduling( OptimizerExecutor ):
       self.freezeTask( delay )
     else:
       self.freezeTask( self.ex_getOption( "HoldTime", 300 ) )
-    jid = jobState.jid
+    _jid = jobState.jid
     self.jobLog.info( "On hold -> %s" % holdMsg )
     return jobState.setAppStatus( holdMsg, source = self.ex_optimizerName() )
 
-  def __getSitesRequired( self, jobState ):
+  def _getSitesRequired( self, jobState ):
     """Returns any candidate sites specified by the job or sites that have been
        banned and could affect the scheduling decision.
     """
@@ -225,14 +221,14 @@ class JobScheduling( OptimizerExecutor ):
       self.jobLog.info( "Banned %s sites" % ", ".join( bannedSites ) )
 
     sites = manifest.getOption( "Site", [] )
-    #TODO: Only accept known sites after removing crap like ANY set in the original manifest
+    # TODO: Only accept known sites after removing crap like ANY set in the original manifest
     sites = [ site for site in sites if site.strip().lower() not in ( "any", "" ) ]
 
     if len( sites ) == 1:
       self.jobLog.info( 'Single chosen site %s specified' % ( sites[0] ) )
 
     if sites:
-      sites = self.__applySiteFilter( sites, banned = bannedSites )
+      sites = self._applySiteFilter( sites, banned = bannedSites )
       if not sites:
         return S_ERROR( "Impossible site requirement" )
 
@@ -273,14 +269,14 @@ class JobScheduling( OptimizerExecutor ):
       if key in manifest:
         reqCfg.setOption( reqKey, ", ".join( manifest.getOption( key, [] ) ) )
 
-    result = self.__setJobSite( jobState, sites )
+    result = self._setJobSite( jobState, sites )
     if not result[ 'OK' ]:
       return result
 
     self.jobLog.info( "Done" )
     return self.setNextOptimizer( jobState )
 
-  def __resolveStaging( self, jobState, inputData, idSites ):
+  def _resolveStaging( self, inputData, idSites ):
     diskSites = []
     maxOnDisk = 0
     bestSites = []
@@ -298,9 +294,9 @@ class JobScheduling( OptimizerExecutor ):
         maxOnDisk = nDisk
         bestSites = [ site ]
       elif nDisk == maxOnDisk:
-       bestSites.append( site )
+        bestSites.append( site )
 
-    #If there are selected sites, those are disk only sites
+    # If there are selected sites, those are disk only sites
     if diskSites:
       self.jobLog.info( "No staging required" )
       return ( False, diskSites )
@@ -335,23 +331,23 @@ class JobScheduling( OptimizerExecutor ):
 
     self.jobLog.verbose( "Tape SEs are %s" % ( ", ".join( tapeSEs ) ) )
 
-    #I swear this is horrible DM code it's not mine.
-    #Eternity of hell to the inventor of the Value of Value of Success of...
+    # I swear this is horrible DM code it's not mine.
+    # Eternity of hell to the inventor of the Value of Value of Success of...
     inputData = opData['Value']['Value']['Successful']
     stageLFNs = {}
     lfnToStage = []
     for lfn in inputData:
       replicas = inputData[ lfn ]
-      #Check SEs
+      # Check SEs
       seStage = []
       for seName in replicas:
-        surl = replicas[ seName ]
+        _surl = replicas[ seName ]
         if seName in diskSEs:
-          #This lfn is in disk. Skip it
+          # This lfn is in disk. Skip it
           seStage = []
           break
         if seName not in tapeSEs:
-          #This lfn is not in this tape SE. Check next SE
+          # This lfn is not in this tape SE. Check next SE
           continue
         seStage.append( seName )
       for seName in seStage:
@@ -364,21 +360,21 @@ class JobScheduling( OptimizerExecutor ):
     if not stageLFNs:
       return S_ERROR( "Cannot find tape replicas" )
 
-    #Check if any LFN is in more than one SE
-    #If that's the case, try to stage from the SE that has more LFNs to stage to group the request
-    #1.- Get the SEs ordered by ascending replicas
+    # Check if any LFN is in more than one SE
+    # If that's the case, try to stage from the SE that has more LFNs to stage to group the request
+    # 1.- Get the SEs ordered by ascending replicas
     sortedSEs = reversed( sorted( [ ( len( stageLFNs[ seName ] ), seName ) for seName in stageLFNs.keys() ] ) )
     for lfn in lfnToStage:
       found = False
-      #2.- Traverse the SEs
-      for stageCount, seName in sortedSEs:
+      # 2.- Traverse the SEs
+      for _stageCount, seName in sortedSEs:
         if lfn in stageLFNs[ seName ]:
-          #3.- If first time found, just mark as found. Next time delete the replica from the request
+          # 3.- If first time found, just mark as found. Next time delete the replica from the request
           if found:
             stageLFNs[ seName ].remove( lfn )
           else:
             found = True
-        #4.-If empty SE, remove
+        # 4.-If empty SE, remove
         if len( stageLFNs[ seName ] ) == 0:
           stageLFNs.pop( seName )
 
@@ -389,7 +385,7 @@ class JobScheduling( OptimizerExecutor ):
                                       'updateJobFromStager@WorkloadManagement/JobStateUpdate',
                                       int( jobState.jid ) )
     if not result[ 'OK' ]:
-      self.jobLog.error( "Could not send stage request: %s" %  result[ 'Message' ] )
+      self.jobLog.error( "Could not send stage request: %s" % result[ 'Message' ] )
       return S_ERROR( "Problem sending staging request" )
 
     rid = str( result[ 'Value' ] )
@@ -404,7 +400,7 @@ class JobScheduling( OptimizerExecutor ):
     return S_OK( stageLFNs )
 
 
-  def __updateSharedSESites( self, jobState, stageSite, stagedLFNs, opData ):
+  def _updateSharedSESites( self, stageSite, stagedLFNs, opData ):
     siteCandidates = opData[ 'SiteCandidates' ]
 
     seStatus = {}
@@ -419,7 +415,7 @@ class JobScheduling( OptimizerExecutor ):
       closeSEs = result[ 'Value' ]
       diskSEs = []
       for seName in closeSEs:
-        #If we don't have the SE status get it and store it
+        # If we don't have the SE status get it and store it
         if seName not in seStatus:
           seObj = StorageElement( seName )
           result = seObj.getStatus()
@@ -427,30 +423,30 @@ class JobScheduling( OptimizerExecutor ):
             self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
             continue
           seStatus[ seName ] = result[ 'Value' ]
-        #get the SE status from mem and add it if its disk
+        # get the SE status from mem and add it if its disk
         status = seStatus[ seName ]
         if status['Read'] and status['DiskSE']:
           diskSEs.append( seName )
       self.jobLog.verbose( "Disk SEs for %s are %s" % ( siteName, ", ".join( diskSEs ) ) )
 
-      #Hell again to the dev of this crappy value of value of successful of ...
+      # Hell again to the dev of this crappy value of value of successful of ...
       lfnData = opData['Value']['Value']['Successful']
       for seName in stagedLFNs:
-        #If the SE is not close then skip it
+        # If the SE is not close then skip it
         if seName not in closeSEs:
           continue
         for lfn in stagedLFNs[ seName ]:
           self.jobLog.verbose( "Checking %s for %s" % ( seName, lfn ) )
-          #I'm pretty sure that this cannot happen :P
+          # I'm pretty sure that this cannot happen :P
           if lfn not in lfnData:
             continue
-          #Check if it's already on disk at the site
+          # Check if it's already on disk at the site
           onDisk = False
           for siteSE in lfnData[ lfn ]:
             if siteSE in diskSEs:
               self.jobLog.verbose( "%s on disk for %s" % ( lfn, siteSE ) )
               onDisk = True
-          #If not on disk, then update!
+          # If not on disk, then update!
           if not onDisk:
             self.jobLog.verbose( "Setting LFN to disk for %s" % ( seName ) )
             siteData[ 'disk' ] += 1
@@ -459,46 +455,55 @@ class JobScheduling( OptimizerExecutor ):
     return S_OK()
 
 
-  def __setJobSite( self, jobState, siteList ):
+  def _setJobSite( self, jobState, siteList ):
     """ Set the site attribute
     """
+    site = self._getJobSite( siteList )
+    return jobState.setAttribute( "Site", site )
+
+  def _getJobSite( self, siteList ):
+    """ get the Job site
+    """
     numSites = len( siteList )
-    if numSites == 0:
+    if numSites == 0 or numSites == 1 and not siteList[0]:
       self.jobLog.info( "Any site is candidate" )
-      return jobState.setAttribute( "Site", "ANY" )
+      return "ANY"
     elif numSites == 1:
       self.jobLog.info( "Only site %s is candidate" % siteList[0] )
-      return jobState.setAttribute( "Site", siteList[0] )
+      return siteList[0]
+    else:
+      tierSite = []
+      siteTierDict = self._getSiteTiers( siteList )
+      for site, tier in siteTierDict.iteritems():
+        if tier == min( siteTierDict.values() ):
+          tierSite.append( site )
 
-    tierSite = []
-    tierLevel = -1
+      if len( tierSite ) == 1:
+        siteName = "Group.%s" % ".".join( tierSite[0].split( "." )[1:] )
+        self.jobLog.info( "Group %s is candidate" % siteName )
+      else:
+        siteName = "Multiple"
+        self.jobLog.info( "Multiple sites are candidate" )
+
+      return siteName
+
+  def _getSiteTiers( self, siteList ):
+    """ retun dict {'Site':Tier}
+    """
+    siteTierDict = {}
     for siteName in siteList:
       result = getSiteTier( siteName )
       if not result[ 'OK' ]:
         self.jobLog.error( "Cannot get tier for site %s" % ( siteName ) )
-        continue
-      siteTier = result[ 'Value' ]
+        siteTier = 2
+      else:
+        siteTier = int( result[ 'Value' ] )
+      siteTierDict.setdefault( siteName, siteTier )
 
-      # FIXME: hack for cases where you get a T0 together with T1(s) in the list of sites and you want to see "multiple"
-      if siteTier == 0:
-        siteTier = 1
+    return siteTierDict
 
-      if tierLevel == -1 or tierLevel > siteTier:
-        tierLevel = siteTier
-        tierSite = []
-      if tierLevel == siteTier:
-        tierSite.append( siteName )
 
-    if len( tierSite ) == 1:
-      siteName = "Group.%s" % ".".join( tierSite[0].split( "." )[1:] )
-      self.jobLog.info( "Group %s is candidate" % siteName )
-    else:
-      siteName = "Multiple"
-      self.jobLog.info( "Multiple sites are candidate" )
-
-    return jobState.setAttribute( "Site", siteName )
-
-  def __checkStageAllowed( self, jobState):
+  def __checkStageAllowed( self, jobState ):
     """Check if the job credentials allow to stage date """
     result = jobState.getAttribute( "OwnerGroup" )
     if not result[ 'OK' ]:

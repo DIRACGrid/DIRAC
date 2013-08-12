@@ -20,6 +20,12 @@ class UserAndGroupManagerBase:
     self._refreshUsers()
     self._refreshGroups()
     
+  def _refreshUsers( self ):
+    return S_ERROR( 'Should be implemented in a derived class' )  
+  
+  def _refreshGroups( self ):
+    return S_ERROR( 'Should be implemented in a derived class' )    
+    
   def setDatabase(self,database):
     self.db = database
 

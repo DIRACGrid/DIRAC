@@ -12,40 +12,45 @@ Usage:
 Script.parseCommandLine()
 
 import DIRAC
-from DIRAC                                            import gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.Core.Utilities.List                        import sortList
+from DIRAC                                              import gConfig,gLogger
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus   import ResourceStatus
+from DIRAC.Core.Utilities.List                          import sortList
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
+from DIRAC.Core.Security.ProxyInfo                      import getVOfromProxyGroup
 
-storageCFGBase = "/Resources/StorageElements"
+if __name__ == "__main__":
+  
+  result = getVOfromProxyGroup()
+  if not result['OK']:
+    gLogger.notice( 'Error:', result['Message'] )
+    DIRAC.exit( 1 )
+  vo = result['Value']  
+  resources = Resources( vo = vo )
+  result = resources.getEligibleStorageElements()
+  if not result['OK']:
+    gLogger.notice( 'Error:', result['Message'] )
+    DIRAC.exit( 2 )
+  seList = sortList( result[ 'Value' ] )
 
-res = gConfig.getSections( storageCFGBase, True )
-if not res[ 'OK' ]:
-  gLogger.error( 'Failed to get storage element info' )
-  gLogger.error( res[ 'Message' ] )
-  DIRAC.exit( -1 )
+  resourceStatus = ResourceStatus()
+ 
+  result = resourceStatus.getStorageStatus( seList )
+  if not result['OK']:
+    gLogger.notice( 'Error:', result['Message'] )
+    DIRAC.exit( 3 )
 
-gLogger.info( "%s %s %s" % ( 'Storage Element'.ljust( 25 ), 'Read Status'.rjust( 15 ), 'Write Status'.rjust( 15 ) ) )
+  for k,v in result[ 'Value' ].items():
+    
+    readState, writeState = 'Active', 'Active'
+    
+    if v.has_key( 'ReadAccess' ):
+      readState = v[ 'ReadAccess' ]  
+    
+    if v.has_key( 'WriteAccess' ):
+      writeState = v[ 'WriteAccess']
+    gLogger.notice("%s %s %s" % ( k.ljust(25),readState.rjust(15),writeState.rjust(15)) )
 
-seList = sortList( res[ 'Value' ] )
-
-resourceStatus = ResourceStatus()
-
-res = resourceStatus.getStorageElementStatus( seList )
-if not res[ 'OK' ]:
-  gLogger.error( "Failed to get StorageElement status for %s" % str( seList ) )
-
-for k, v in res[ 'Value' ].items():
-
-  readState, writeState = 'Active', 'Active'
-
-  if v.has_key( 'ReadAccess' ):
-    readState = v[ 'ReadAccess' ]
-
-  if v.has_key( 'WriteAccess' ):
-    writeState = v[ 'WriteAccess']
-  gLogger.notice( "%s %s %s" % ( k.ljust( 25 ), readState.rjust( 15 ), writeState.rjust( 15 ) ) )
-
-DIRAC.exit( 0 )
+  DIRAC.exit(0)
 
 ################################################################################
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -8,7 +8,7 @@
   Check info on BDII for CE state
 """
 __RCSID__ = "$Id$"
-import DIRAC
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base                                         import Script
 from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
@@ -51,7 +51,7 @@ diracAdmin = DiracAdmin()
 result = diracAdmin.getBDIICEState( ceName, useVO = voName, host = host )
 if not result['OK']:
   print result['Message']
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 
 
 ces = result['Value']

@@ -226,7 +226,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     if type(dirIDList) != ListType:
       dirs = [dirIDList]
       
-    dirListString = ','.join( [ str( d ) for d in dirs ] )
+    dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
 
     req = "SELECT DirID,DirName FROM FC_DirectoryLevelTree WHERE DirID in ( %s )" % dirListString
     result = self.db._query(req)
@@ -392,7 +392,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     parentList = dirs
     while parentList:
       subResult = []
-      dirListString = ','.join( [ str( d ) for d in parentList ] )
+      dirListString = ','.join( [ str(dir_) for dir_ in parentList ] )
       req = 'SELECT DirID from FC_DirectoryLevelTree WHERE Parent in ( %s )' % dirListString
       result = self.db._query(req)
       if not result['OK']:

@@ -21,6 +21,22 @@ MAGIC_EPOC_NUMBER = 1270000000
 #############################################################################
 class JobLoggingDB( DB ):
 
+  _tablesDict = {}
+  # LoggingInfo table
+  _tablesDict[ 'LoggingInfo' ] = { 
+                                  'Fields' : 
+                                            {
+                                             'JobID'             : 'INTEGER NOT NULL',
+                                             'Status'            : 'VARCHAR(32) NOT NULL DEFAULT ""',
+                                             'MinorStatus'       : 'VARCHAR(128) NOT NULL DEFAULT ""',
+                                             'ApplicationStatus' : 'VARCHAR(256) NOT NULL DEFAULT ""',
+                                             'StatusTime'        : 'DATETIME NOT NULL',
+                                             'StatusTimeOrder'   : 'DOUBLE(11,3) NOT NULL',
+                                             'StatusSource'      : 'VARCHAR(32) NOT NULL DEFAULT "Unknown"',                                                                                                                                                                                                                                                                     
+                                            },
+                                  'Indexes' : { 'JobID' : [ 'JobID' ] }
+                                 } 
+
 
   def __init__( self, maxQueueSize = 10 ):
     """ Standard Constructor
@@ -28,6 +44,50 @@ class JobLoggingDB( DB ):
 
     DB.__init__( self, 'JobLoggingDB', 'WorkloadManagement/JobLoggingDB', maxQueueSize )
     self.gLogger = gLogger
+
+
+  def _checkTable( self ):
+    """ _checkTable.
+     
+    Method called on the MatcherHandler instead of on the JobLoggingDB constructor
+    to avoid an awful number of unnecessary queries with "show tables".
+    """
+    
+    return self.__createTables()
+
+
+  def __createTables( self ):
+    """ __createTables
+    
+    Writes the schema in the database. If a table is already in the schema, it is
+    skipped to avoid problems trying to create a table that already exists.
+    """
+
+    # Horrible SQL here !!
+    existingTables = self._query( "show tables" )
+    if not existingTables[ 'OK' ]:
+      return existingTables
+    existingTables = [ existingTable[0] for existingTable in existingTables[ 'Value' ] ]
+
+    # Makes a copy of the dictionary _tablesDict
+    tables = {}
+    tables.update( self._tablesDict )
+        
+    for existingTable in existingTables:
+      if existingTable in tables:
+        del tables[ existingTable ]  
+              
+    res = self._createTables( tables )
+    if not res[ 'OK' ]:
+      return res
+    
+    # Human readable S_OK message
+    if res[ 'Value' ] == 0:
+      res[ 'Value' ] = 'No tables created'
+    else:
+      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
+    return res  
+
 
 #############################################################################
   def addLoggingRecord( self,

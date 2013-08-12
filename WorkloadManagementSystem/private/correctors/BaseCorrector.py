@@ -4,7 +4,10 @@
 """ Base corrector for the group and ingroup shares
 """
 
+from DIRAC import S_OK, S_ERROR
 __RCSID__ = "$Id$"
+
+from DIRAC import S_ERROR, S_OK
 
 class BaseCorrector( object ):
 

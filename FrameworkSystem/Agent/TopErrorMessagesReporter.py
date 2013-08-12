@@ -11,8 +11,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getUserOption
 from DIRAC.FrameworkSystem.DB.SystemLoggingDB            import SystemLoggingDB
 from DIRAC.FrameworkSystem.Client.NotificationClient     import NotificationClient
-from DIRAC.Core.Utilities                                import List
-from DIRAC.Core.Utilities                                import date, toString, fromString, day
+from DIRAC.Core.Utilities.Time                           import date, toString, fromString, day
 
 class TopErrorMessagesReporter( AgentModule ):
 

@@ -16,21 +16,19 @@ Access to the pilot data:
 
 __RCSID__ = "$Id$"
 
-import os, sys, string, uu, shutil
-from types import *
+from types import DictType, ListType, IntType, LongType, StringTypes, FloatType
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getPilotOutput
+from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-
-import threading
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 # This is a global instance of the database classes
 jobDB = False
@@ -53,117 +51,6 @@ def initializeWMSAdministratorHandler( serviceInfo ):
   return S_OK()
 
 class WMSAdministratorHandler(RequestHandler):
-
-###########################################################################
-  types_setMask = [StringTypes]
-  def export_setSiteMask(self, siteList, comment='No comment'):
-    """ Set the site mask for matching. The mask is given in a form of Classad
-        string.
-    """
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-
-    maskList = [ (site,'Active') for site in siteList ]
-    result = jobDB.setSiteMask(maskList,dn,comment)
-    return result
-
-##############################################################################
-  types_getSiteMask = []
-  def export_getSiteMask(self):
-    """ Get the site mask
-    """
-
-    result = jobDB.getSiteMask('Active')
-    return result
-
-    if result['Status'] == "OK":
-      active_list = result['Value']
-      mask = []
-      for i in range(1,len(active_list),2):
-        mask.append(active_list[i])
-
-      return S_OK(mask)
-    else:
-      return S_ERROR('Failed to get the mask from the Job DB')
-
-##############################################################################
-  types_banSite = [StringTypes]
-  def export_banSite(self, site,comment='No comment'):
-    """ Ban the given site in the site mask
-    """
-
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-    result = getUsernameForDN(dn)
-    if result['OK']:
-      author = result['Value']
-    else:
-      author = dn
-    result = jobDB.banSiteInMask(site,author,comment)
-    return result
-
-##############################################################################
-  types_allowSite = [StringTypes]
-  def export_allowSite(self,site,comment='No comment'):
-    """ Allow the given site in the site mask
-    """
-
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-    result = getUsernameForDN(dn)
-    if result['OK']:
-      author = result['Value']
-    else:
-      author = dn
-    result = jobDB.allowSiteInMask(site,author,comment)
-    return result
-
-##############################################################################
-  types_clearMask = []
-  def export_clearMask(self):
-    """ Clear up the entire site mask
-    """
-
-    return jobDB.removeSiteFromMask("All")
-
-##############################################################################
-  types_getSiteMaskLogging = [ list(StringTypes)+[ListType] ]
-  def export_getSiteMaskLogging(self,sites):
-    """ Get the site mask logging history
-    """
-
-    if type(sites) in StringTypes:
-      msites = [sites]
-    else:
-      msites = sites
-    return jobDB.getSiteMaskLogging(msites)
-
-##############################################################################
-  types_getSiteMaskSummary = [ ]
-  def export_getSiteMaskSummary(self):
-    """ Get the mask status for all the configured sites
-    """
-
-    # Get all the configured site names
-    result = gConfig.getSections('/Resources/Sites')
-    if not result['OK']:
-      return result
-    grids = result['Value']
-    sites = []
-    for grid in grids:
-      result = gConfig.getSections('/Resources/Sites/%s' % grid)
-      if not result['OK']:
-        return result
-      sites += result['Value']
-
-    # Get the current mask status
-    result = jobDB.getSiteMaskStatus()
-    siteDict = result['Value']
-    for site in sites:
-      if site not in siteDict:
-        siteDict[site] = 'Unknown'
-
-    return S_OK(siteDict)
 
 ##############################################################################
   types_getCurrentPilotCounters = [ ]
@@ -354,7 +241,7 @@ class WMSAdministratorHandler(RequestHandler):
     else:
       # Instantiate the appropriate CE
       ceFactory = ComputingElementFactory()
-      result = getQueue( pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'] )
+      result = Resources( group=group ).getQueueDescription( pilotDict['Queue'] )
       if not result['OK']:
         return result
       queueDict = result['Value']
@@ -452,22 +339,16 @@ class WMSAdministratorHandler(RequestHandler):
     maskStatus = ['Active','Banned','NoMask','Reduced']
     resultDict['MaskStatus'] = maskStatus
 
-    gridTypes = []
-    result = gConfig.getSections('Resources/Sites/',[])
-    if result['OK']:
-      gridTypes = result['Value']
-
-    resultDict['GridType'] = gridTypes
-    siteList = []
-    for grid in gridTypes:
-      result = gConfig.getSections('Resources/Sites/%s' % grid,[])
-      if result['OK']:
-        siteList += result['Value']
+    resources = Resources()
+    result = resources.getSites()
+    if not result['OK']:
+      return result
+    siteList = result['Value']
 
     countryList = []
     for site in siteList:
       if site.find('.') != -1:
-        grid,sname,country = site.split('.')
+        country = site.split('.')[1]
         country = country.lower()
         if country not in countryList:
           countryList.append(country)
@@ -543,7 +424,7 @@ class WMSAdministratorHandler(RequestHandler):
     for key, pilotDict in pilotRefDict.items():
       
       owner,group,site,ce,queue = key.split( '@@@' )
-      result = getQueue( site, ce, queue )
+      result = Resources( group=group ).getQueueDescription( queue )
       if not result['OK']:
         return result
       queueDict = result['Value']

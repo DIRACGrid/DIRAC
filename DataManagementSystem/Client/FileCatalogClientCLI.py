@@ -1981,11 +1981,34 @@ File Catalog Client $Revision: 1.17 $Date:
       print ("Error: %s" % result['Message'])            
     else:
       if not result['Value']:
-        print "No entries found"
-      else:  
-        for meta,type in result['Value'].items():
-          print meta.rjust(20),':',type
+        print "Metadata for file or directory found"
+      else:
+        if len(result['Value']['FileMetaFields']):
+          print "\n","File metadata".rjust(20,":")
+          for meta, metatype in result['Value']['FileMetaFields'].items():
+            metatype = metatype.replace("int","integer").replace("INT","integer").replace("VARCHAR(128)","string")
+            print meta.rjust(20),':',metatype
+        if len(result['Value']['DirectoryMetaFields']):
+          print "\n","Directory metadata".rjust(20),":"
+          for meta,metatype in result['Value']['DirectoryMetaFields'].items():
+            metatype = metatype.replace("int","integer").replace("INT","integer").replace("VARCHAR(128)","string")
+            print meta.rjust(20),':',metatype
 
+    result = self.fc.listMetadataSets()
+    if not result['OK']:
+      print 'Error: %s' % result['Message']
+    else:
+      if not result['Value']:
+        print "No Metadata sets defined"
+      else:  
+        print "\n","Metadata sets".rjust(20),":"
+        for metasetname, values in result['Value'].items():
+          metastr = ''
+          for key,val in values.items():
+            metastr += "%s : %s, " % (key, val)
+          metastr.rstrip(",")  
+          print "%s -> %s" % (metasetname.rjust(20), metastr)
+          
   def registerMeta(self,argss):
     """ Add metadata field. 
     """

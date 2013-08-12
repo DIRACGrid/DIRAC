@@ -8,7 +8,6 @@ __RCSID__ = "$Id$"
 
 import time
 import types
-import threading
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection

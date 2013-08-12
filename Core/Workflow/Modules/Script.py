@@ -26,6 +26,7 @@ class Script( object ):
     self.executable = ''
     self.logFile = ''
     self.arguments = ''
+    self.step_commons = {}
 
   #############################################################################
   def resolveInputVariables( self ):

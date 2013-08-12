@@ -136,9 +136,10 @@ from DIRAC.Resources.Computing.ComputingElement                  import getResou
 
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils           import pilotAgentsDB
 
+from DIRAC.Core.Utilities                                        import List, Time
 from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
 from DIRAC.Core.DISET.RPCClient                                  import RPCClient
-from DIRAC                                                       import S_OK, S_ERROR, List, Time, gConfig
+from DIRAC                                                       import S_OK, S_ERROR, gConfig
 
 import random, time
 import DIRAC
@@ -198,7 +199,7 @@ class TaskQueueDirector( AgentModule ):
 
     self.directorDict = getResourceDict()
     #Add all submit pools
-    self.directorDict[ 'SubmitPool' ] = self.am_getOption( "SubmitPools" ) 
+    self.directorDict[ 'SubmitPool' ] = self.am_getOption( "SubmitPools" )
     #Add all DIRAC platforms if not specified otherwise
     if not 'Platform' in self.directorDict:
       result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )

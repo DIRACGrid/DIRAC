@@ -64,7 +64,7 @@ class SpaceTokenOccupancyCommand( Command ):
       return endpoint
     endpoint = endpoint[ 'Value' ]
     
-    spaceToken = CSHelpers.getStorageElementSpaceToken( elementName )
+    spaceToken = CSHelpers.getSEProtocolOption( elementName, 'SpaceToken' )
     if not spaceToken[ 'OK' ]:
       return spaceToken
     spaceToken = spaceToken[ 'Value']

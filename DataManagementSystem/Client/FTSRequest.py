@@ -26,6 +26,7 @@ from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface, ReplicaManager
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 ## RCSID
 __RCSID__ = "$Id$"
@@ -128,6 +129,9 @@ class FTSRequest(object):
  
     ## replica manager handler
     self.replicaManager = ReplicaManager()
+    
+    ## Resources helper
+    self.resources = Resources()
 
   ####################################################################
   #
@@ -902,8 +906,7 @@ class FTSRequest(object):
       ep = targetSite
 
     try:
-      configPath = '/Resources/FTSEndpoints/%s' % ep
-      endpointURL = gConfig.getValue( configPath )
+      endpointURL = self.resources.getTransferValue( ep, 'FTS', 'URL' )
       if not endpointURL:
         errStr = "FTSRequest.__resolveFTSServer: Failed to find FTS endpoint, check CS entry for '%s'." % ep
         return S_ERROR( errStr )

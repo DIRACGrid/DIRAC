@@ -1,41 +1,30 @@
-# $Id$
-"""
-    This is a comment
-"""
-__RCSID__ = "$Revision: 1.19 $"
-
-# $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
+''' Module - modules are included in the steps. Modules can have parameters.
+'''
 
 import copy
-import new, sys, os
+import os
 
-#try: # this part to import as part of the DIRAC framework
-from DIRAC.Core.Workflow.Parameter import *
-
-#RICARDO PLEASE DO NOT CHANGE THIS BACK. IT BREAKS THE EXECUTION OF WORKFLOWS!
-#from DIRAC.Core.Workflow.Step import *
-#except: # this part is to import code without DIRAC
-#  from Parameter import *
+from DIRAC.Core.Workflow.Parameter import AttributeCollection, ParameterCollection, indent
 
 class ModuleDefinition( AttributeCollection ):
 
-  def __init__( self, type = None, obj = None, parent = None ):
+  def __init__( self, type_ = None, obj = None, parent = None ):
     # we can create an object from another module
     # or from the ParameterCollection
     AttributeCollection.__init__( self )
-    self.main_class_obj = None # used for the interpretation only
-    #self.module_obj = None     # used for the interpretation only
+    self.main_class_obj = None  # used for the interpretation only
+    # self.module_obj = None     # used for the interpretation only
     self.parent = parent
 
     if ( obj == None ) or isinstance( obj, ParameterCollection ):
-      self.setType( 'nitgiven' )
+      self.setType( 'notgiven' )
       self.setDescrShort( '' )
       self.setDescription( '' )
       self.setRequired( '' )
       self.setBody( '' )
       self.setOrigin( '' )
       self.setVersion( 0.0 )
-      self.parameters = ParameterCollection( obj ) # creating copy
+      self.parameters = ParameterCollection( obj )  # creating copy
 
     elif isinstance( obj, ModuleDefinition ):
       self.setType( obj.getType() )
@@ -48,8 +37,8 @@ class ModuleDefinition( AttributeCollection ):
       self.parameters = ParameterCollection( obj.parameters )
     else:
       raise TypeError( 'Can not create object type ' + str( type( self ) ) + ' from the ' + str( type( obj ) ) )
-    if type :
-      self.setType( type )
+    if type_ :
+      self.setType( type_ )
 
 
   def createCode( self ):
@@ -75,19 +64,19 @@ class ModuleDefinition( AttributeCollection ):
     xmlfile.close()
 
   def loadCode( self ):
-    #print 'Loading code of the Module =', self.getType()
+    # print 'Loading code of the Module =', self.getType()
     # version 1 - OLD sample
-    #ret = compile(self.getBody(),'<string>','exec')
-    #eval(ret)
-    #return ret #returning ref just in case we might need it
+    # ret = compile(self.getBody(),'<string>','exec')
+    # eval(ret)
+    # return ret #returning ref just in case we might need it
     #
-    if len( self.getBody() ): # checking the size of the string
+    if len( self.getBody() ):  # checking the size of the string
       # version 2 - we assume that each self.body is a module oblect
-      #module = new.module(self.getType())    # create empty module object
-      #sys.modules[self.getType()] = module   # add reference for the import operator
-      #exec self.getBody() in module.__dict__ # execute code itself
-      #self.module_obj = module               # save pointer to this module
-      #if module.__dict__.has_key(self.getType()):
+      # module = new.module(self.getType())    # create empty module object
+      # sys.modules[self.getType()] = module   # add reference for the import operator
+      # exec self.getBody() in module.__dict__ # execute code itself
+      # self.module_obj = module               # save pointer to this module
+      # if module.__dict__.has_key(self.getType()):
       #    self.main_class_obj = module.__dict__[self.getType()] # save class object
 
       # version 3
@@ -96,7 +85,7 @@ class ModuleDefinition( AttributeCollection ):
       #       a class with name "self.getType()" defined in the local scope.
       exec self.getBody()
       if vars().has_key( self.getType() ):
-        self.main_class_obj = vars()[self.getType()] # save class object
+        self.main_class_obj = vars()[self.getType()]  # save class object
       else:
         # it is possible to have this class in another module, we have to check for this
         # but it is advisible to use 'from module import class' operator
@@ -112,7 +101,7 @@ class ModuleInstance( AttributeCollection ):
 
   def __init__( self, name, obj = None, parent = None ):
     AttributeCollection.__init__( self )
-    self.instance_obj = None # used for the interpretation only
+    self.instance_obj = None  # used for the interpretation only
     self.parent = parent
 
     if obj == None:
@@ -136,10 +125,10 @@ class ModuleInstance( AttributeCollection ):
 
 
   def createCode( self, ind = 2 ):
-    str = indent( ind ) + self.getName() + ' = ' + self.getType() + '()\n'
-    str = str + self.parameters.createParametersCode( ind, self.getName() )
-    str = str + indent( ind ) + self.getName() + '.execute()\n\n'
-    return str
+    str_ = indent( ind ) + self.getName() + ' = ' + self.getType() + '()\n'
+    str_ = str_ + self.parameters.createParametersCode( ind, self.getName() )
+    str_ = str_ + indent( ind ) + self.getName() + '.execute()\n\n'
+    return str_
 
   def __str__( self ):
     return str( type( self ) ) + ':\n' + AttributeCollection.__str__( self ) + self.parameters.__str__()
@@ -152,8 +141,8 @@ class ModuleInstance( AttributeCollection ):
     return ret
 
   def execute( self, step_parameters, definitions ):
-    #print 'Executing ModuleInstance ',self.getName(),'of type',self.getType()
-    self.instance_obj = definitions[self.getType()].main_class_obj() # creating instance
+    # print 'Executing ModuleInstance ',self.getName(),'of type',self.getType()
+    self.instance_obj = definitions[self.getType()].main_class_obj()  # creating instance
     self.parameters.execute( self.getName() )
     self.instance_obj.execute2()
 
@@ -161,14 +150,17 @@ class DefinitionsPool( dict ):
 
   def __init__( self, parent, pool = None ):
     dict.__init__( self )
-    self.parent = parent # this is a cache value, we propagate it into next level
+
+    import DIRAC.Core.Workflow.Step
+
+    self.parent = parent  # this is a cache value, we propagate it into next level
     if isinstance( pool, DefinitionsPool ):
       for k in pool.keys():
         v = pool[k]
         if isinstance( v, ModuleDefinition ):
           obj = ModuleDefinition( None, v, self.parent )
-        elif  isinstance( v, StepDefinition ):
-          obj = StepDefinition( None, v, self.parent )
+        elif isinstance( v, DIRAC.Core.Workflow.Step.StepDefinition ):
+          obj = DIRAC.Core.Workflow.Step.StepDefinition( None, v, self.parent )
         else:
           raise TypeError( 'Error: __init__ Wrong type of object stored in the DefinitionPool ' + str( type( pool[v] ) ) )
         self.append( obj )
@@ -183,8 +175,8 @@ class DefinitionsPool( dict ):
 #       print 'For now we ignore it for the', obj.getType()
 
   def append( self, obj ):
-    """ We add new Definition (Module, Step)
-    """
+    ''' We add new Definition (Module, Step)
+    '''
     self[obj.getType()] = obj
     obj.setParent( self.parent )
     return obj
@@ -195,9 +187,9 @@ class DefinitionsPool( dict ):
 
   def compare( self, s ):
     if not isinstance( s, DefinitionsPool ):
-      return False # chacking types of objects
+      return False  # chacking types of objects
     if len( s ) != len( self ):
-      return False # checkin size
+      return False  # checkin size
     # we need to compare the keys of dictionaries
     if self.keys() != s.keys():
       return False
@@ -237,11 +229,11 @@ class DefinitionsPool( dict ):
     return ret
 
   def createCode( self ):
-    str = ''
+    str_ = ''
     for k in self.keys():
-      #str=str+indent(2)+'# flush code for instance\n'
-      str = str + self[k].createCode()
-    return str
+      # str=str+indent(2)+'# flush code for instance\n'
+      str_ = str_ + self[k].createCode()
+    return str_
 
   def loadCode( self ):
     for k in self.keys():
@@ -252,7 +244,10 @@ class InstancesPool( list ):
 
   def __init__( self, parent, pool = None ):
     list.__init__( self )
-    self.parent = None # this is a cache value, we propagate it into next level
+
+    import DIRAC.Core.Workflow.Step
+
+    self.parent = None  # this is a cache value, we propagate it into next level
     if isinstance( pool, InstancesPool ):
       for v in pool:
         # I need to check this fubction
@@ -260,8 +255,8 @@ class InstancesPool( list ):
         self.append( copy.deepcopy( v ) )
         if isinstance( v, ModuleInstance ):
           obj = ModuleInstance( None, v, self.parent )
-        elif  isinstance( v, StepInstance ):
-          obj = StepInstance( None, v, self.parent )
+        elif  isinstance( v, DIRAC.Core.Workflow.Step.StepInstance ):
+          obj = DIRAC.Core.Workflow.Step.StepInstance( None, v, self.parent )
         else:
           raise TypeError( 'Error: __init__ Wrong type of object stored in the DefinitionPool ' + str( type( pool[v] ) ) )
         self.append( obj )
@@ -306,7 +301,7 @@ class InstancesPool( list ):
       if v.getName() == name:
         return i
       i = i + 1
-    return - 1
+    return -1
 
   def find( self, name ):
     for v in self:
@@ -331,18 +326,18 @@ class InstancesPool( list ):
           else:
             break
       else:
-        #if we reached this place naturally we can not find matching name
+        # if we reached this place naturally we can not find matching name
         return False
     return True
 
   def createCode( self ):
-    str = ''
+    str_ = ''
     for inst in self:
-      str = str + inst.createCode()
-      str = str + indent( 2 ) + '# output assignment\n'
+      str_ = str_ + inst.createCode()
+      str_ = str_ + indent( 2 ) + '# output assignment\n'
       for v in inst.parameters:
         if v.isOutput():
-          str = str + v.createParameterCode( 2, 'self' )
-      str = str + '\n'
-    return str
+          str_ = str_ + v.createParameterCode( 2, 'self' )
+      str_ = str_ + '\n'
+    return str_
 

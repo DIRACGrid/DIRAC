@@ -18,6 +18,7 @@ __RCSID__ = '$Id:  $'
 
 POLICIESMETA = {
 
+
   # DownTime POLICIES...........................................................
             
   'DTOngoing' :
@@ -36,15 +37,63 @@ POLICIESMETA = {
       'args'        : { 'hours' : 12, 'onlyCache' : True },
     },
 
+
   # Space Token POLICIES........................................................
 
   'SpaceTokenOccupancy' :
     { 
-      'description' : 'Space token occupancy',
+      'description' : "Space token occupancy",
       'module'      : 'SpaceTokenOccupancyPolicy',
       'command'     : ( 'SpaceTokenOccupancyCommand', 'SpaceTokenOccupancyCommand' ),
       'args'        : { 'onlyCache' : True },
      }, 
+
+
+  # Job POLICIES..............................................................
+
+  'JobDoneRatio' :
+    {
+      'description' : "done / ( completed + done ) jobs ( 30 min )",
+      'module'      : 'JobDoneRatioPolicy',
+      'command'     : ( 'JobCommand', 'JobCommand' ),
+      'args'        : { 'onlyCache' : True, 'timespan' : 1800 },    
+     },
+
+  'JobEfficiency' :
+    {
+      'description' : "( completed + done ) / ( completed + done + failed ) jobs ( 30 min )",
+      'module'      : 'JobEfficiencyPolicy',
+      'command'     : ( 'JobCommand', 'JobCommand' ),
+      'args'        : { 'onlyCache' : True, 'timespan' : 1800 },    
+     },
+
+  'JobRunningMatchedRatio' :
+    {
+      'description' : "running / ( running + matched + received + checking ) jobs ( 30 min )",
+      'module'      : 'JobRunningMatchedRatioPolicy',
+      'command'     : ( 'JobCommand', 'JobCommand' ),
+      'args'        : { 'onlyCache' : True, 'timespan' : 1800 },    
+     },
+
+  'JobRunningWaitingRatio' :
+    {
+      'description' : "running / ( running + waiting + staging ) jobs ( 30 min )",
+      'module'      : 'JobRunningWaitingRatioPolicy',
+      'command'     : ( 'JobCommand', 'JobCommand' ),
+      'args'        : { 'onlyCache' : True, 'timespan' : 1800 },    
+     },
+
+
+  # Pilot POLICIES..............................................................
+
+  'PilotInstantEfficiency' :
+    {
+      'description' : "Pilots Instant Efficiency ( 30 min )",
+      'module'      : 'PilotEfficiencyPolicy',
+      'command'     : ( 'PilotCommand', 'PilotCommand' ),
+      'args'        : { 'onlyCache' : True, 'timespan' : 1800 }
+     },
+
 
   # ALWAYS SOMETHING POLICIES...................................................
 
@@ -82,5 +131,6 @@ POLICIESMETA = {
                       
   }
 
-################################################################################
+
+#...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

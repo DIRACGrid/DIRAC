@@ -16,7 +16,7 @@ import threading
 from DIRAC.ConfigurationSystem.Client.Helpers          import Registry, Operations
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight         import ClassAd
-from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC                                             import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
@@ -25,6 +25,7 @@ from DIRAC                                             import gMonitor
 from DIRAC.Core.Utilities.ThreadScheduler              import gThreadScheduler
 from DIRAC.Core.Security                               import Properties
 from DIRAC.Core.Utilities.DictCache                    import DictCache
+from DIRAC.ResourceStatusSystem.Client.SiteStatus      import SiteStatus
 
 DEBUG = 0
 
@@ -44,10 +45,25 @@ def initializeMatcherHandler( serviceInfo ):
   global gTaskQueueDB
   global gPilotAgentsDB
 
+  # Create JobDB object and initialize its tables.
   gJobDB = JobDB()
+  res = gJobDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
+  
+  # Create JobLoggingDB object and initialize its tables.
   gJobLoggingDB = JobLoggingDB()
-  gTaskQueueDB = TaskQueueDB()
+  res = gJobLoggingDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
+  
+  gTaskQueueDB   = TaskQueueDB()
+  
+  # Create PilotAgentsDB object and initialize its tables.
   gPilotAgentsDB = PilotAgentsDB()
+  res = gPilotAgentsDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
 
   gMonitor.registerActivity( 'matchTime', "Job matching time",
                              'Matching', "secs" , gMonitor.OP_MEAN, 300 )
@@ -151,7 +167,7 @@ class Limiter:
       if result['OK']:
         delayCond = result['Value']
         gLogger.verbose( 'Negative conditions for site %s after delay checking are: %s' % ( siteName, str( delayCond ) ) )
-        negCond = self.__mergeCond( negativeCond, delayCond )
+        negativeCond = self.__mergeCond( negativeCond, delayCond )
 
     if negativeCond:
       gLogger.info( 'Negative conditions for site %s are: %s' % ( siteName, str( negativeCond ) ) )
@@ -299,6 +315,7 @@ class MatcherHandler( RequestHandler ):
   def initialize( self ):
     self.__opsHelper = self.__getOpsHelper()
     self.__limiter = Limiter( self.__opsHelper )
+    self.__siteStatus = SiteStatus()
 
   def __getOpsHelper( self, setup = False, vo = False ):
     if not setup:
@@ -427,7 +444,7 @@ class MatcherHandler( RequestHandler ):
     if pilotReference:
       if "PilotInfoReportedFlag" in resourceDict and not resourceDict['PilotInfoReportedFlag']:
         gridCE = resourceDict.get( 'GridCE', 'Unknown' )
-        site = destination = resourceDict.get( 'Site', 'Unknown' )
+        site = resourceDict.get( 'Site', 'Unknown' )
         benchmark = benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
         gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
         result = gPilotAgentsDB.setPilotStatus( pilotReference, status = 'Running',
@@ -442,13 +459,13 @@ class MatcherHandler( RequestHandler ):
       return S_ERROR( 'Missing Site Name in Resource JDL' )
 
     # Get common site mask and check the agent site
-    result = gJobDB.getSiteMask( siteState = 'Active' )
+    result = self.__siteStatus.getUsableSites( 'ComputingAccess' )
     if not result['OK']:
       return S_ERROR( 'Internal error: can not get site mask' )
-    maskList = result['Value']
+    usableSites = result['Value']
 
     siteName = resourceDict['Site']
-    if siteName not in maskList:
+    if siteName not in usableSites:
       if 'GridCE' not in resourceDict:
         return S_ERROR( 'Site not in mask and GridCE not specified' )
       #Even if the site is banned, if it defines a CE, it must be able to check it
@@ -458,7 +475,7 @@ class MatcherHandler( RequestHandler ):
 
     gLogger.verbose( "Resource description:" )
     for key in resourceDict:
-     gLogger.verbose( "%s : %s" % ( key.rjust( 20 ), resourceDict[ key ] ) )
+      gLogger.verbose( "%s : %s" % ( key.rjust( 20 ), resourceDict[ key ] ) )
 
     negativeCond = self.__limiter.getNegativeCondForSite( siteName )
     result = gTaskQueueDB.matchAndGetJob( resourceDict, negativeCond = negativeCond )

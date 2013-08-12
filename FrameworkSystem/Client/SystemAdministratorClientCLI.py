@@ -8,7 +8,6 @@ __RCSID__ = "$Id$"
 import cmd
 import sys
 import pprint
-import getpass
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 import DIRAC.Core.Utilities.InstallTools as InstallTools

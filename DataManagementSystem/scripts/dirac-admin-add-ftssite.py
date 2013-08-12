@@ -27,6 +27,7 @@ if __name__ == "__main__":
   from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForUser
+  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
   admin = DiracAdmin()
 
   currentUser = admin._getCurrentUser()
@@ -83,11 +84,13 @@ if __name__ == "__main__":
     gLogger.error( "Site '%s' is not defined in CS Resources/Sites section !!!" % ( "LCG.%s" % ftsSite ) )
     DIRAC.exit( -1 )
 
-  SEs = gConfig.getOption( "/Resources/Sites/LCG/LCG.%s/SE" % ftsSite , [] )
-  if not SEs["OK"]:
+  #SEs = gConfig.getOption( "/Resources/Sites/LCG/LCG.%s/SE" % ftsSite , [] )
+  resourcesHelper = Resources()
+  result = resourcesHelper.getEligibleStorageElements( { "Site":ftsSite } )
+  if not result["OK"]:
     gLogger.error( "unable to read SEs attached to site LCG.%s: %s" % ftsSite )
     DIRAC.exit( -1 )
-  SEs = SEs["Value"]
+  SEs = result["Value"]
 
   newSite = FTSSite()
   newSite.Name = ftsSite

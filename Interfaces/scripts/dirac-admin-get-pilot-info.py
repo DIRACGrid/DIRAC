@@ -9,7 +9,6 @@
 """
 __RCSID__ = "$Id: dirac-admin-get-pilot-output.py 18161 2009-11-11 12:07:09Z acasajus $"
 
-import DIRAC
 from DIRAC.Core.Base import Script
 
 extendedPrint = False
@@ -30,6 +29,7 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 from DIRAC.Interfaces.API.Dirac                              import Dirac
 diracAdmin = DiracAdmin()
@@ -74,4 +74,4 @@ for gridID in args:
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit( exitCode )
+DIRACExit( exitCode )

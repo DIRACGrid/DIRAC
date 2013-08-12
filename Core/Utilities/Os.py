@@ -10,7 +10,7 @@ from types                          import StringTypes
 import os
 
 import DIRAC
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
 
 DEBUG = 0
@@ -59,7 +59,7 @@ def getDiskSpace( path = '.' ):
       try:
         value = int( fields[3] )
       except Exception, error:
-        print "Exception during disk space evaluation:", str( error )  
+        print "Exception during disk space evaluation:", str( error )
         value = -1
       return value
   else:
@@ -80,7 +80,7 @@ def getDirectorySize( path ):
     return size
 
 def sourceEnv( timeout, cmdTuple, inputEnv = None ):
-  """ Function to source configuration files in a platform dependent way and get 
+  """ Function to source configuration files in a platform dependent way and get
       back the environment
   """
 
@@ -106,11 +106,11 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
   if DIRAC.platformTuple[0] == 'Windows':
     # this needs to be tested
     cmd = ' '.join( cmdTuple ) + envAsDict
-    ret = DIRAC.shellCall( timeout, [ cmd ], env = inputEnv )
+    ret = shellCall( timeout, [ cmd ], env = inputEnv )
   else:
     cmdTuple.insert( 0, 'source' )
     cmd = ' '.join( cmdTuple ) + envAsDict
-    ret = DIRAC.systemCall( timeout, [ '/bin/bash', '-c', cmd ], env = inputEnv )
+    ret = systemCall( timeout, [ '/bin/bash', '-c', cmd ], env = inputEnv )
 
   # 3.- Now get back the result
   stdout = ''
@@ -144,8 +144,9 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
 
   return result
 
+#FIXME: this is not used !
 def unifyLdLibraryPath( path, newpath ):
-  """ for Linux and MacOS link all the files in the path in a single directory 
+  """ for Linux and MacOS link all the files in the path in a single directory
       newpath. For that we go along the path in a reverse order and link all files
       from the path, the latest appearance of a file will take precedence
   """
@@ -187,13 +188,14 @@ def unifyLdLibraryPath( path, newpath ):
     # Windows does nothing for the moment
     return path
 
-def which( filetofind ):
+def which( fileToFind ):
   """ Utility that mimics the 'which' command from the shell
   """
   if not "PATH" in os.environ:
     return None
-  for path in os.environ["PATH"].split(":"):
-    if os.path.exists(path + "/" + filetofind):
-      return path + "/" + filetofind
+  for path in List.fromChar( os.environ["PATH"], ":" ):
+    fpath = os.path.join( path, fileToFind )
+    if os.path.exists( fpath ):
+      return fpath
 
   return None

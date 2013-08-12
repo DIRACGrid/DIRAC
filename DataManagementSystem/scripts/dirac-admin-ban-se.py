@@ -48,6 +48,7 @@ for switch in Script.getUnprocessedSwitches():
 from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
 from DIRAC                                               import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources  import Resources
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 #csAPI = CSAPI()
@@ -72,7 +73,7 @@ if not userName:
   DIRAC.exit( 2 )
 
 if site:
-  res = gConfig.getOptionsDict( '/Resources/Sites/LCG/%s' % site )
+  res = Resources().getStorageElements( site )
   if not res[ 'OK' ]:
     gLogger.error( 'The provided site (%s) is not known.' % site )
     DIRAC.exit( -1 )
@@ -88,7 +89,7 @@ checkBanned = []
 
 resourceStatus = ResourceStatus()
 
-res = resourceStatus.getStorageElementStatus( ses )
+res = resourceStatus.getStorageStatus( ses )
 if not res['OK']:
   gLogger.error( "Storage Element %s does not exist" % ses )
   DIRAC.exit( -1 )

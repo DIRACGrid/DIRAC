@@ -10,11 +10,8 @@
 
 from datetime import datetime, timedelta
 
-from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
+from DIRAC                                     import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
-from DIRAC.Core.Security.ProxyInfo             import getProxyInfo
-from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.PolicySystem   import StateMachine
 
 __RCSID__  = '$Id:$'
 
@@ -184,6 +181,11 @@ if __name__ == "__main__":
   registerSwitches()
   registerUsageMessage()
   switchDict = parseSwitches()
+  
+  from DIRAC                                   import gConfig
+  from DIRAC.Core.Security.ProxyInfo           import getProxyInfo
+  from DIRAC.ResourceStatusSystem.Client       import ResourceStatusClient
+  from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
   
   #Run script
   run()

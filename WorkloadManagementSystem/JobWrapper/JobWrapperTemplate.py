@@ -1,5 +1,8 @@
+#!/usr/bin/env python
 import sys
-sys.path.insert( 0, "@SITEPYTHON@" )
+sitePython = "@SITEPYTHON@"
+if sitePython:
+  sys.path.insert( 0, "@SITEPYTHON@" )
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 #######################################################################################################################

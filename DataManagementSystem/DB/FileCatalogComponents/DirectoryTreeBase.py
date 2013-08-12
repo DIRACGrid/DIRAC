@@ -38,6 +38,24 @@ class DirectoryTreeBase:
   def setDatabase(self,database):
     self.db = database  
 
+  def makeDir( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )
+  
+  def removeDir( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )
+  
+  def findDir( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )
+  
+  def getChildren( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )
+    
+  def getDirectoryPath( self, path ):    
+    return S_ERROR( 'Should be implemented in a derived class' )  
+
+  def getSubdirectoriesByID( self, path, requestString, includeParent ):    
+    return S_ERROR( 'Should be implemented in a derived class' )  
+
   def makeDirectory(self,path,credDict,status=0):
     """Create a new directory. The return value is the dictionary
        containing all the parameters of the newly created directory
@@ -147,31 +165,31 @@ class DirectoryTreeBase:
     dirs = paths.keys()
     successful = {}
     failed = {}
-    for dir in dirs:
-      result = self.existsDir( dir )
+    for dir_ in dirs:
+      result = self.existsDir( dir_ )
       if not result['OK']:
-        failed[dir] = result['Message']
+        failed[dir_] = result['Message']
       elif result['Value']['Exists']:
-        successful[dir] = True
-      else:
-        successful[dir] = False
-
-    return S_OK( {'Successful':successful, 'Failed':failed} )
-
+        successful[dir_] = True
+      else: 
+        successful[dir_] = False  
+          
+    return S_OK({'Successful':successful,'Failed':failed})
+  
   #####################################################################
   def createDirectory( self, dirs, credDict ):
     """ Checking for existence of directories
     """
     successful = {}
     failed = {}
-    for dir in dirs:
-      result = self.makeDirectories( dir, credDict )
+    for dir_ in dirs:
+      result = self.makeDirectories( dir_, credDict )
       if not result['OK']:
-        failed[dir] = result['Message']
-      else:
-        successful[dir] = True
-
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+        failed[dir_] = result['Message']
+      else: 
+        successful[dir_] = True  
+          
+    return S_OK({'Successful':successful,'Failed':failed}) 
 
   #####################################################################
   def isEmpty( self, path ):
@@ -204,19 +222,19 @@ class DirectoryTreeBase:
     """Remove an empty directory from the catalog """
     successful = {}
     failed = {}
-    for dir in dirs:
-      result = self.isEmpty( dir )
+    for dir_ in dirs:
+      result = self.isEmpty( dir_ )
       if not result['OK']:
         return result
       if not result['Value']:
-        failed[dir] = 'Failed to remove non-empty directory'
+        failed[dir_] = 'Failed to remove non-empty directory'
         continue
-      result = self.removeDir( dir )
+      result = self.removeDir(dir_)
       if not result['OK']:
-        failed[dir] = result['Message']
-      else:
-        successful[dir] = result
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+        failed[dir_] = result['Message']
+      else: 
+        successful[dir_] = result
+    return S_OK({'Successful':successful,'Failed':failed}) 
 
 #####################################################################
   def __getDirID( self, path ):
@@ -333,9 +351,9 @@ class DirectoryTreeBase:
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path, dict in arguments.items():
-      owner = dict['Owner']
-      result = self.setDirectoryOwner( path, owner )
+    for path,dict_ in arguments.items():
+      owner = dict_['Owner']
+      result = self.setDirectoryOwner(path,owner)
       if not result['OK']:
         failed[path] = result['Message']
       else:
@@ -515,9 +533,8 @@ class DirectoryTreeBase:
     dirs = dirID
     if type( dirID ) != ListType:
       dirs = [dirID]
-
-    dirListString = ','.join( [ str( dir ) for dir in dirs ] )
-
+      
+    dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
     req = "SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID IN ( %s )" % dirListString
     result = self.db._query( req )
     return result
@@ -528,8 +545,8 @@ class DirectoryTreeBase:
     dirs = dirID
     if type( dirID ) != ListType:
       dirs = [dirID]
-
-    dirListString = ','.join( [ str( dir ) for dir in dirs ] )
+      
+    dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
     treeTable = self.getTreeTable()
     req = "SELECT CONCAT(D.DirName,'/',F.FileName) FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
     req = req % ( treeTable, dirListString )
@@ -546,7 +563,7 @@ class DirectoryTreeBase:
     if type( dirID ) != ListType:
       dirs = [dirID]
 
-    dirListString = ','.join( [ str( dir ) for dir in dirs ] )
+    dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
     treeTable = self.getTreeTable()
     req = "SELECT D.DirName,F.FileName FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
     req = req % ( treeTable, dirListString )
@@ -555,9 +572,9 @@ class DirectoryTreeBase:
       return result
 
     lfnDict = {}
-    for dir, fname in result['Value']:
-      lfnDict.setdefault( dir, [] )
-      lfnDict[dir].append( fname )
+    for dir_,fname in result['Value']:
+      lfnDict.setdefault(dir_,[])
+      lfnDict[dir_].append(fname)
 
     return S_OK( lfnDict )
 
@@ -569,7 +586,6 @@ class DirectoryTreeBase:
       return result
     directoryID = result['Value']
     directories = {}
-    files = {}
     links = {}
     result = self.getChildren( path )
     if not result['OK']:
@@ -786,7 +802,7 @@ class DirectoryTreeBase:
             req = 'DELETE FROM FC_DirectoryUsage WHERE SEID=%d AND DirID=%d' % ( seID, dirID )
             result = self.db._update( req )
             if not result['OK']:
-              gLogger( 'Failed to delete entry from FC_DirectoryUsage', result['Message'] )
+              gLogger.error( 'Failed to delete entry from FC_DirectoryUsage', result['Message'] )
         seDict['TotalSize'] = int( totalSize )
         seDict['TotalFiles'] = int( totalFiles )
         successful[path] = seDict

@@ -21,6 +21,8 @@ from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus 
 
 class StorageElement:
   """
@@ -43,7 +45,20 @@ class StorageElement:
         return result
       self.vo = result['Value']
     self.opHelper = Operations( vo = self.vo )
-    useProxy = gConfig.getValue( '/LocalSite/StorageElements/%s/UseProxy' % name, False )
+    self.resources = Resources( vo = self.vo )
+
+    proxiedProtocols = gConfig.getValue( '/LocalSite/StorageElements/ProxyProtocols', "" ).split( ',' )
+    result = self.resources.getAccessProtocols( name )
+    if result['OK']:
+      ap = result['Value'][0]
+      useProxy = ( self.resources.getAccessProtocolValue( ap, "Protocol", "UnknownProtocol" )
+                   in proxiedProtocols )
+
+    #print "Proxy", name, proxiedProtocols, \
+    #gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "xxx" )
+
+    if not useProxy:
+      useProxy = gConfig.getValue( '/LocalSite/StorageElements/%s/UseProxy' % name, False )
     if not useProxy:
       useProxy = self.opHelper.getValue( '/Services/StorageElements/%s/UseProxy' % name, False )
 
@@ -106,6 +121,8 @@ class StorageElement:
                        'getStorageParameters',
                        'isLocalSE' ]
 
+    self.__resourceStatus = ResourceStatus()
+    
   def dump( self ):
     """ Dump to the logger a summary of the StorageElement items. """
     self.log.info( "dump: Preparing dump for StorageElement %s." % self.name )
@@ -170,13 +187,13 @@ class StorageElement:
 
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
-    retDict['Read'] = not ( 'ReadAccess' in self.options and self.options['ReadAccess'] not in ( 'Active', 'Degraded' ) )
-    retDict['Write'] = not ( 'WriteAccess' in self.options and self.options['WriteAccess'] not in ( 'Active', 'Degraded' ) )
-    retDict['Remove'] = not ( 'RemoveAccess' in self.options and self.options['RemoveAccess'] not in ( 'Active', 'Degraded' ) )
+    retDict['Read'] = self.__resourceStatus.isUsableStorage( self.name, 'ReadAccess' )
+    retDict['Write'] = self.__resourceStatus.isUsableStorage( self.name, 'WriteAccess' )
+    retDict['Remove'] = self.__resourceStatus.isUsableStorage( self.name, 'RemoveAccess' )
     if retDict['Read']:
       retDict['Check'] = True
     else:
-      retDict['Check'] = not ( 'CheckAccess' in self.options and self.options['CheckAccess'] not in ( 'Active', 'Degraded' ) )
+      retDict['Check'] = self.__resourceStatus.isUsableStorage( self.name, 'CheckAccess' )
     diskSE = True
     tapeSE = False
     if 'SEType' in self.options:

@@ -47,7 +47,7 @@ class SSH:
       import pexpect
       expectFlag = True
     except:
-      from DIRAC import shellCall
+      from DIRAC.Core.Utilities.Subprocess import shellCall
       expectFlag = False
 
     if not timeout:

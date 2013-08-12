@@ -10,7 +10,8 @@ import time
 import random
 import types
 try:
-  import hashlib as md5
+  import hashlib
+  md5 = hashlib
 except:
   import md5
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -790,7 +791,7 @@ class ProxyDB( DB ):
     """
     Purge expired requests from the db
     """
-    cmd = "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 15552000"
+    cmd = "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, Timestamp, UTC_TIMESTAMP() ) > 15552000"
     return self._update( cmd )
 
   def getLogsContent( self, selDict, sortList, start = 0, limit = 0 ):

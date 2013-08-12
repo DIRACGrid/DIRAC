@@ -1,5 +1,5 @@
-""" TaskManager contains WorkflowsTasks and RequestTasks modules, for managing jobs and requests tasks
-"""
+''' TaskManager contains WorkflowsTasks and RequestTasks modules, for managing jobs and requests tasks
+'''
 __RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'TaskManager'
@@ -11,7 +11,6 @@ from DIRAC.Core.Security.ProxyInfo                              import getProxyI
 from DIRAC.Core.Utilities.List                                  import fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
 from DIRAC.Interfaces.API.Job                                   import Job
-from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
 from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
@@ -20,6 +19,8 @@ from DIRAC.TransformationSystem.Client.TransformationClient     import Transform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 
 class TaskBase( object ):
+  ''' The other classes inside here inherits from this one.
+  '''
 
   def __init__( self, transClient = None, logger = None ):
 
@@ -130,8 +131,8 @@ class RequestTasks( TaskBase ):
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, request ):
-    """ Submits a request using RequestClient
-    """
+    ''' Submits a request using RequestClient
+    '''
     if type( request ) in types.StringTypes:
       oRequest = RequestContainer( request )
       name = oRequest.getRequestName()['Value']
@@ -206,15 +207,15 @@ class RequestTasks( TaskBase ):
     return S_OK( updateDict )
 
 class WorkflowTasks( TaskBase ):
-  """ Handles jobs
-  """
+  ''' Handles jobs
+  '''
 
   def __init__( self, transClient = None, logger = None, submissionClient = None, jobMonitoringClient = None,
                 outputDataModule = None, jobClass = None, opsH = None ):
-    """ Generates some default objects.
+    ''' Generates some default objects.
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works:
         VOs can pass in their job class extension, if present
-    """
+    '''
 
     if not logger:
       logger = gLogger.getSubLogger( 'WorkflowTasks' )
@@ -248,9 +249,9 @@ class WorkflowTasks( TaskBase ):
 
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
-    """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
+    ''' Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
-    """
+    '''
     if ( not owner ) or ( not ownerGroup ):
       res = getProxyInfo( False, False )
       if not res['OK']:
@@ -317,8 +318,8 @@ class WorkflowTasks( TaskBase ):
   #############################################################################
 
   def _handleDestination( self, paramsDict, getSitesForSE = None ):
-    """ Handle Sites and TargetSE in the parameters
-    """
+    ''' Handle Sites and TargetSE in the parameters
+    '''
 
     try:
       sites = ['ANY']
@@ -380,8 +381,8 @@ class WorkflowTasks( TaskBase ):
       oJob.setInputData( inputData )
 
   def _handleRest( self, oJob, paramsDict ):
-    """ add as JDL parameters all the other parameters that are not for inputs or destination
-    """
+    ''' add as JDL parameters all the other parameters that are not for inputs or destination
+    '''
     for paramName, paramValue in paramsDict.items():
       if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
         if paramValue:
@@ -389,8 +390,8 @@ class WorkflowTasks( TaskBase ):
           oJob._addJDLParameter( paramName, paramValue )
 
   def _handleHospital( self, oJob ):
-    """ Optional handle of hospital jobs
-    """
+    ''' Optional handle of hospital jobs
+    '''
     oJob.setType( 'Hospital' )
     oJob.setInputDataPolicy( 'download', dataScheduling = False )
     hospitalSite = self.opsH.getValue( "Hospital/HospitalSite", 'DIRAC.JobDebugger.ch' )

@@ -4,9 +4,9 @@
 # Author : Adria Casajus
 ########################################################################
 
-"""  
+"""
   SuperOptimizer
-  One optimizer to rule them all, one optimizer to find them, 
+  One optimizer to rule them all, one optimizer to find them,
   one optimizer to bring them all, and in the darkness bind them.
 """
 __RCSID__ = "$Id$"
@@ -70,7 +70,7 @@ class MightyOptimizer( AgentModule ):
       while not jobOptimized:
         result = self.optimizeJob( jobId, jobAttrs, jobDef )
         if not result[ 'OK' ]:
-          self.log.error( "Optimizer %s error" % jobAttrs[ 'MinorStatus' ], "Job %s: %s" % ( str(jobID), result[ 'Message' ] ) )
+          self.log.error( "Optimizer %s error" % jobAttrs[ 'MinorStatus' ], "Job %s: %s" % ( str(jobId), result[ 'Message' ] ) )
           jobOK = False
           break
         optResult = result[ 'Value' ]

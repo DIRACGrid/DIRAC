@@ -65,11 +65,11 @@ gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat
 import DIRAC
 from DIRAC import rootPath
 from DIRAC import gLogger
-from DIRAC import systemCall
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, ResourcesDefaults, CSGlobals
 from DIRAC.Core.Security.Properties import *
@@ -330,9 +330,8 @@ def _getCentralCfg( installCfg ):
     centralCfg['DIRAC'].addKey( 'VirtualOrganization', vo, '' )
 
   for section in [ 'Systems', 'Resources',
-                   'Resources/Sites', 'Resources/Sites/DIRAC',
-                   'Resources/Sites/LCG', 'Operations',
-                   'Website', 'Registry' ]:
+                   'Resources/Sites', 'Resources/Domains',
+                   'Operations', 'Website', 'Registry' ]:
     if installCfg.isSection( section ):
       centralCfg.createNewSection( section, contents = installCfg[section] )
 

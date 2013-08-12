@@ -48,14 +48,14 @@ ERROR_TOKEN = 'Invalid proxy token request'
 ERROR_GENERIC_CREDENTIALS = "Cannot find generic pilot credentials"
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup, getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations   import Operations
-
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import Resources
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities.DictCache import DictCache
@@ -210,27 +210,28 @@ class PilotDirector:
       return taskQueueDict['GridCEs']
 
     # Get the mask
-    ret = jobDB.getSiteMask()
+    siteStatus = SiteStatus()
+    ret = siteStatus.getUsableSites( 'ComputingAccess' )
     if not ret['OK']:
       self.log.error( 'Can not retrieve site Mask from DB:', ret['Message'] )
       return []
 
-    siteMask = ret['Value']
-    if not siteMask:
+    usableSites = ret['Value']
+    if not usableSites:
       self.log.error( 'Site mask is empty' )
       return []
 
-    self.log.verbose( 'Site Mask: %s' % ', '.join( siteMask ) )
+    self.log.verbose( 'Site Mask: %s' % ', '.join( usableSites ) )
 
     # remove banned sites from siteMask
     if 'BannedSites' in taskQueueDict:
       for site in taskQueueDict['BannedSites']:
-        if site in siteMask:
-          siteMask.remove( site )
+        if site in usableSites:
+          usableSites.remove( site )
           self.log.verbose( 'Removing banned site %s from site Mask' % site )
 
     # remove from the mask if a Site is given
-    siteMask = [ site for site in siteMask if 'Sites' not in taskQueueDict or site in taskQueueDict['Sites'] ]
+    siteMask = [ site for site in usableSites if 'Sites' not in taskQueueDict or site in taskQueueDict['Sites'] ]
 
     if not siteMask:
       # pilot can not be submitted
@@ -242,27 +243,19 @@ class PilotDirector:
     # Get CE's associates to the given site Names
     ceMask = []
 
-    for grid in self.targetGrids:
+    resources = Resources( vo = self.virtualOrganization )
+    result = resources.getEligibleResources( 'Computing', {'Site':siteMask,
+                                                           'SubmissionMode':'gLite',
+                                                           'CEType':['LCG','CREAM']} )
+    if not result['OK']:
+      self.log.error( "Failed to get eligible ce's:", result['Message'] )
+      return []
+    ces = result['Value']
 
-      section = '/Resources/Sites/%s' % grid
-      ret = gConfig.getSections( section )
-      if not ret['OK']:
-        # this is hack, maintained until LCG is added as TargetGrid for the gLite SubmitPool
-        section = '/Resources/Sites/LCG'
-        ret = gConfig.getSections( section )
-
-      if not ret['OK']:
-        self.log.error( 'Could not obtain CEs from CS', ret['Message'] )
-        continue
-
-      gridSites = ret['Value']
-      for siteName in gridSites:
-        if siteName in siteMask:
-          ret = gConfig.getValue( '%s/%s/CE' % ( section, siteName ), [] )
-          for ce in ret:
-            submissionMode = gConfig.getValue( '%s/%s/CEs/%s/SubmissionMode' % ( section, siteName, ce ), 'gLite' )
-            if submissionMode == self.gridMiddleware and ce not in ceMask:
-              ceMask.append( ce )
+    for ce in ces:
+      ceHost = resources.getComputingElementValue( ce, 'Host', 'unknown' )
+      if ceHost != 'unknown':
+        ceMask.append( ceHost )
 
     if not ceMask:
       self.log.info( 'No CE Candidate found for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join( siteMask ) )
