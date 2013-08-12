@@ -48,7 +48,7 @@ PROPERTY_RIGHTS[ Properties.GENERIC_PILOT ] = [ RIGHT_RESCHEDULE ]
 
 class JobPolicy:
 
-  def __init__( self, userDN, userGroup, userProperties, allInfo=True ):
+  def __init__( self, userDN, userGroup, allInfo=True ):
 
     self.userDN = userDN
     self.userName = ''
@@ -56,7 +56,7 @@ class JobPolicy:
     if result['OK']:
       self.userName = result['Value']
     self.userGroup = userGroup
-    self.userProperties = userProperties
+    self.userProperties = getPropertiesForGroup( userGroup, [] )
     self.jobDB = None
     self.allInfo = allInfo
     self.__permissions = {}
