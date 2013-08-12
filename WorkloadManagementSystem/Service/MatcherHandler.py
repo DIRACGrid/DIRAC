@@ -447,10 +447,10 @@ class MatcherHandler( RequestHandler ):
     result = self.__siteStatus.getUsableSites( 'ComputingAccess' )
     if not result['OK']:
       return S_ERROR( 'Internal error: can not get site mask' )
-    maskList = result['Value']
+    usableSites = result['Value']
 
     siteName = resourceDict['Site']
-    if siteName not in maskList:
+    if siteName not in usableSites:
       if 'GridCE' not in resourceDict:
         return S_ERROR( 'Site not in mask and GridCE not specified' )
       #Even if the site is banned, if it defines a CE, it must be able to check it

@@ -216,22 +216,22 @@ class PilotDirector:
       self.log.error( 'Can not retrieve site Mask from DB:', ret['Message'] )
       return []
 
-    siteMask = ret['Value']
-    if not siteMask:
+    usableSites = ret['Value']
+    if not usableSites:
       self.log.error( 'Site mask is empty' )
       return []
 
-    self.log.verbose( 'Site Mask: %s' % ', '.join( siteMask ) )
+    self.log.verbose( 'Site Mask: %s' % ', '.join( usableSites ) )
 
     # remove banned sites from siteMask
     if 'BannedSites' in taskQueueDict:
       for site in taskQueueDict['BannedSites']:
-        if site in siteMask:
-          siteMask.remove( site )
+        if site in usableSites:
+          usableSites.remove( site )
           self.log.verbose( 'Removing banned site %s from site Mask' % site )
 
     # remove from the mask if a Site is given
-    siteMask = [ site for site in siteMask if 'Sites' not in taskQueueDict or site in taskQueueDict['Sites'] ]
+    siteMask = [ site for site in usableSites if 'Sites' not in taskQueueDict or site in taskQueueDict['Sites'] ]
 
     if not siteMask:
       # pilot can not be submitted

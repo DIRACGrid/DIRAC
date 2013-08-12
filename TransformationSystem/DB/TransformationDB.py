@@ -110,10 +110,13 @@ class TransformationDB( DB ):
     if not result[ 'OK' ]:
       self.log.fatal( "Cannot initialize TransformationDB!", result[ 'Message' ] )
 
-  def __initializeDB( self ):
-    ''' Initialize: create tables if needed
-    '''
-
+  def _generateTables( self ):
+    """ _generateTables
+    
+    Method that returns a dictionary with all the tables to be created. It also
+    makes easier its extension by DIRAC plugins.
+    """
+    
     retVal = self._query( "SHOW tables" )
     if not retVal[ 'OK' ]:
       return retVal
@@ -251,10 +254,21 @@ class TransformationDB( DB ):
       ##Get from the CS the list of columns names
       for status in self.tasksStatuses + self.fileStatuses:
         tablesD['TransformationCounters']['Fields'][status] = 'INTEGER DEFAULT 0'
+        
+    return S_OK( tablesD )        
 
-    if tablesD:
-      gLogger.verbose( "Creating tables %s" % ( ', '.join( tablesD.keys() ) ) )
-      res = self._createTables( tablesD )
+  def __initializeDB( self ):
+    ''' Initialize: create tables if needed
+    '''
+
+    tablesToBeCreated = self._generateTables()
+    if not tablesToBeCreated[ 'OK' ]:
+      return tablesToBeCreated
+    tablesToBeCreated = tablesToBeCreated[ 'Value' ]
+
+    if tablesToBeCreated:
+      gLogger.verbose( "Creating tables %s" % ( ', '.join( tablesToBeCreated.keys() ) ) )
+      res = self._createTables( tablesToBeCreated )
       if not res['OK']:
         return res
 

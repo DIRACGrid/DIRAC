@@ -75,11 +75,11 @@ class JobScheduling( OptimizerExecutor ):
     result = siteStatus.getUsableSites( 'ComputingAccess' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve active sites from JobDB" )
-    wmsActiveSites = result[ 'Value' ]
+    usableSites = result[ 'Value' ]
     result = siteStatus.getUnusableSites( 'ComputingAccess' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve banned sites from JobDB" )
-    wmsBannedSites = result[ 'Value' ]
+    unusableSites = result[ 'Value' ]
 
     # If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
@@ -88,7 +88,7 @@ class JobScheduling( OptimizerExecutor ):
         return S_ERROR( "Could not retrieve job type" )
       jobType = result[ 'Value' ]
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
-        sites = self._applySiteFilter( userSites, wmsActiveSites, wmsBannedSites )
+        sites = self._applySiteFilter( userSites, usableSites, unusableSites )
         if not sites:
           return self.__holdJob( jobState, "Sites %s are inactive or banned" % ", ".join( userSites ) )
 
@@ -145,7 +145,7 @@ class JobScheduling( OptimizerExecutor ):
       return S_ERROR( "No destination sites available" )
 
     # Is any site active?
-    stageSites = self._applySiteFilter( siteCandidates, wmsActiveSites, wmsBannedSites )
+    stageSites = self._applySiteFilter( siteCandidates, usableSites, unusableSites )
     if not stageSites:
       return self.__holdJob( jobState, "Sites %s are inactive or banned" % ", ".join( siteCandidates ) )
 
