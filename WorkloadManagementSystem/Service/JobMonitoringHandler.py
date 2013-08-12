@@ -21,6 +21,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 # These are global instances of the DB classes
 gJobDB = False
@@ -48,9 +49,11 @@ class JobMonitoringHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
-    self.userProperties = credDict[ 'properties' ]
-    self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
+    operations = Operations( group = self.ownerGroup )
+    self.globalJobsInfo = operations.getValue( '/Services/JobMonitoring/GlobalJobsInfo', True )
+    self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.globalJobsInfo )
     self.jobPolicy.setJobDB( gJobDB )
+    
     return S_OK()
 
 ##############################################################################
@@ -131,8 +134,8 @@ class JobMonitoringHandler( RequestHandler ):
     """
     Return list of JobIds matching the condition given in attrDict
     """
-    # queryDict = {}
-    #
+    #queryDict = {}
+
     #if attrDict:
     #  if type ( attrDict ) != DictType:
     #    return S_ERROR( 'Argument must be of Dict Type' )
@@ -172,12 +175,11 @@ class JobMonitoringHandler( RequestHandler ):
     #  except:
     #    return S_ERROR( 'Condition Attribute not Allowed: %s.' % attr )
 
-
-    cutdate = str( cutDate )
+    cutDate = str( cutDate )
     if not attrDict:
       attrDict = {}
 
-    return gJobDB.getCounters( 'Jobs', attrList, attrDict, newer = cutdate, timeStamp = 'LastUpdateTime' )
+    return gJobDB.getCounters( 'Jobs', attrList, attrDict, newer = cutDate, timeStamp = 'LastUpdateTime' )
 
 ##############################################################################
   types_getCurrentJobCounters = [ ]
@@ -302,8 +304,7 @@ class JobMonitoringHandler( RequestHandler ):
 
 ##############################################################################
   types_getJobPageSummaryWeb = [DictType, ListType, IntType, IntType]
-  @staticmethod
-  def export_getJobPageSummaryWeb( selectDict, sortList, startItem, maxItems, selectJobs = True ):
+  def export_getJobPageSummaryWeb( self, selectDict, sortList, startItem, maxItems, selectJobs = True ):
     """ Get the summary of the job information for a given page in the
         job monitor in a generic format
     """
@@ -319,6 +320,12 @@ class JobMonitoringHandler( RequestHandler ):
     endDate = selectDict.get( 'ToDate', None )
     if endDate:
       del selectDict['ToDate']
+
+    result = self.jobPolicy.getControlledUsers( RIGHT_GET_INFO )
+    if not result['OK']:
+      return S_ERROR( 'Failed to evaluate user rights' )
+    if result['Value'] != 'ALL':
+      selectDict[ ( 'Owner','OwnerGroup' ) ] = result['Value']
 
     # Sorting instructions. Only one for the moment.
     if sortList:
@@ -355,6 +362,11 @@ class JobMonitoringHandler( RequestHandler ):
         return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
       summaryJobList = result['Value']
+      if not self.globalJobsInfo:      
+        validJobs, invalidJobs, nonauthJobs, ownJobs = self.jobPolicy.evaluateJobRights( summaryJobList,
+                                                                                         RIGHT_GET_INFO )
+        summaryJobList = validJobs
+      
       result = gJobDB.getAttributesForJobList( summaryJobList, SUMMARY )
       if not result['OK']:
         return S_ERROR( 'Failed to get job summary: ' + result['Message'] )
@@ -395,110 +407,6 @@ class JobMonitoringHandler( RequestHandler ):
 
     return S_OK( resultDict )
 
-
-  def getJobPageSummaryWeb( self, selectDict, sortList, startItem, maxItems, selectJobs = True ):
-    """ Get the summary of the job information for a given page in the
-        job monitor in a generic format
-    """
-    resultDict = {}
-    startDate = selectDict.get( 'FromDate', None )
-    if startDate:
-      del selectDict['FromDate']
-    # For backward compatibility
-    if startDate is None:
-      startDate = selectDict.get( 'LastUpdate', None )
-      if startDate:
-        del selectDict['LastUpdate']
-    endDate = selectDict.get( 'ToDate', None )
-    if endDate:
-      del selectDict['ToDate']
-
-    # Sorting instructions. Only one for the moment.
-    if sortList:
-      orderAttribute = sortList[0][0] + ":" + sortList[0][1]
-    else:
-      orderAttribute = None
-
-    if selectJobs:
-      result = gJobDB.selectJobs( selectDict, orderAttribute = orderAttribute,
-                                newer = startDate, older = endDate )
-      if not result['OK']:
-        return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
-
-      jobList = result['Value']
-
-      # A.T. This needs optimization
-      #validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
-      #                                                                                               RIGHT_GET_INFO )
-      #jobList = validJobList
-
-      nJobs = len( jobList )
-      resultDict['TotalRecords'] = nJobs
-      if nJobs == 0:
-        return S_OK( resultDict )
-
-      iniJob = startItem
-      lastJob = iniJob + maxItems
-      if iniJob >= nJobs:
-        return S_ERROR( 'Item number out of range' )
-
-      if lastJob > nJobs:
-        lastJob = nJobs
-
-      summaryJobList = jobList[iniJob:lastJob]
-      result = gJobDB.getAttributesForJobList( summaryJobList, SUMMARY )
-      if not result['OK']:
-        return S_ERROR( 'Failed to get job summary: ' + result['Message'] )
-
-      summaryDict = result['Value']
-
-      # Evaluate last sign of life time
-      for jobID, jobDict in summaryDict.items():
-        if jobDict['HeartBeatTime'] == 'None':
-          jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
-        else:
-          lastTime = Time.fromString( jobDict['LastUpdateTime'] )
-          hbTime = Time.fromString( jobDict['HeartBeatTime'] )
-          if ( hbTime - lastTime ) > ( lastTime - lastTime ) or jobDict['Status'] == "Stalled":
-            jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
-          else:
-            jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
-
-      tqDict = {}
-      result = gTaskQueueDB.getTaskQueueForJobs( summaryJobList )
-      if result['OK']:
-        tqDict = result['Value']
-
-      # prepare the standard structure now
-      key = summaryDict.keys()[0]
-      paramNames = summaryDict[key].keys()
-
-      records = []
-      for jobID, jobDict in summaryDict.items():
-        jParList = []
-        for pname in paramNames:
-          jParList.append( jobDict[pname] )
-        if tqDict and tqDict.has_key( jobID ):
-          jParList.append( tqDict[jobID] )
-        else:
-          jParList.append( 0 )
-        records.append( jParList )
-
-      resultDict['ParameterNames'] = paramNames + ['TaskQueueID']
-      resultDict['Records'] = records
-
-    statusDict = {}
-    result = gJobDB.getCounters( 'Jobs', ['Status'], selectDict,
-                               newer = startDate,
-                               older = endDate,
-                               timeStamp = 'LastUpdateTime' )
-    if result['OK']:
-      for stDict, count in result['Value']:
-        statusDict[stDict['Status']] = count
-    resultDict['Extras'] = statusDict
-
-    return S_OK( resultDict )
-
 ##############################################################################
   types_getJobStats = [ StringTypes, DictType ]
   @staticmethod
@@ -535,7 +443,7 @@ class JobMonitoringHandler( RequestHandler ):
     return gJobDB.getAttributesForJobList( jobIDs, PRIMARY_SUMMARY )
 
 ##############################################################################
-  types_getJobParameter = [ [IntType, LongType] , StringType ]
+  types_getJobParameter = [ [StringType, IntType, LongType] , StringTypes ]
   @staticmethod
   def export_getJobParameter( jobID, parName ):
     return gJobDB.getJobParameters( jobID, [parName] )
