@@ -28,6 +28,8 @@ FIX: MySQL - do not decrease the retry counter after ping failure
 
 *DMS
 CHANGE: FC/DirectoryMetadata - Speed up findFilesByMetadataWeb when many files match
+FIX: RemovalTask - fix error string when removing a non existing file (was incompatible 
+     with the LHCb BK client). 
 
 *WMS
 FIX: JobReport - minor fix ( removed unused imports )
