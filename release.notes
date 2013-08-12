@@ -95,6 +95,47 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
+[v6r10-pre1]
+
+*Core
+FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
+     JobDB, PilotAgentsDB) after the new movement to the new MySQL implementation with a persistent 
+     connection per running thread
+
+*DMS
+CHANGE: DFC - optimization and bug fixes of the bulk file addition
+
+*WMS
+CHANGE: JobPolicy - optimization for bulk job verification
+NEW: JobPolicy - added getControlledUsers() to get users which jobs can be accessed for 
+     a given operation
+CHANGE: JobMonitoringHandler - Avoid doing a selection of all Jobs, first count matching jobs 
+        and then use "limit" to select only the required JobIDs.
+NEW: JobMonitoringHandler - use JobPolicy to filter jobs in getJobSummaryWeb()
+NEW: new Operations option /Services/JobMonitoring/GlobalJobsInfo ( True by default ) to 
+     allow or not job info lookup by anybody, used in JobMonitoringHandler       
+        
+*TS
+CHANGE: TransformationClient(DB,Manager) - set file status for transformation as bulk operation        
+
+[v6r9p15]
+
+*Core
+FIX: MySQL - do not decrease the retry counter after ping failure
+
+*DMS
+CHANGE: FC/DirectoryMetadata - Speed up findFilesByMetadataWeb when many files match
+FIX: RemovalTask - fix error string when removing a non existing file (was incompatible 
+     with the LHCb BK client). 
+
+*WMS
+FIX: JobReport - minor fix ( removed unused imports )
+FIX: JobMonitoring(JobStateUpdate)Handler - jobID argument can be either string, int or long
+
+*TS
+CHANGE: TransformationClient - change status of Moved files to a deterministic value
+FIX: FileReport - minor fix ( inherits object ) 
+
 [v6r9p14]
 
 *DMS
@@ -223,6 +264,14 @@ NEW: new ResourceManagementClient methods - insertErrorReportBuffer, selectError
 
 NEW: Refactored Request Management System, related DMS agents and FTS management
      components
+
+[v6r8p28]
+
+*Core
+BUGFIX: RequestHandler - the lock Name includes ActionType/Action
+
+*DMS
+FIX: dirac-dms-filecatalog-cli - prevent exception in case of missing proxy
 
 [v6r8p27]
 

@@ -144,14 +144,21 @@ class TransformationManagerHandler( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [TransTypes, StringTypes, ListType]
-  def export_setFileStatusForTransformation( self, transName, status, lfns, force = False ):
-    res = database.setFileStatusForTransformation( transName, status, lfns, force )
-    return self._parseRes( res )
+  types_setFileStatusForTransformation = [transTypes, DictType]
+  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus ):
+    """ Sets the file status for the transformation.
 
-  types_setFileUsedSEForTransformation = [TransTypes, StringTypes, ListType]
-  def export_setFileUsedSEForTransformation( self, transName, usedSE, lfns ):
-    res = database.setFileUsedSEForTransformation( transName, usedSE, lfns )
+        The dictOfNewFilesStatus is a dictionary with the form:
+        {12345: 'StatusA', 6789: 'StatusB',  ... }
+    """
+
+    res = database._getConnectionTransID( False, transName )
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+
+    res = database.setFileStatusForTransformation( transID, dictOfNewFilesStatus, connection = connection )
     return self._parseRes( res )
 
   types_getTransformationStats = [TransTypes]

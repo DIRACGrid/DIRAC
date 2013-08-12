@@ -169,12 +169,10 @@ MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/m
 gInstancesCount = 0
 gDebugFile = None
 
-import Queue
 import collections
-import types
 import time
 import threading
-from types import StringTypes, DictType, ListType
+from types import StringTypes, DictType, ListType, TupleType
 
 MAXCONNECTRETRY = 10
 
@@ -290,7 +288,7 @@ class MySQL:
         except KeyError:
           pass
         if retriesLeft >= 0:
-          return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
+          return self.__getWithRetry( dbName, totalRetries, retriesLeft )
         return S_ERROR( "Could not connect" )
 
       if lastName != dbName:
@@ -536,6 +534,14 @@ class MySQL:
         if not retDict['OK']:
           return retDict
         inEscapeValues.append( retDict['Value'] )
+      elif type( value ) == TupleType or type( value ) == ListType:
+        tupleValues = []  
+        for v in list( value ):
+          retDict = self.__escapeString( v )
+          if not retDict['OK']:
+            return retDict
+          tupleValues.append( retDict['Value'] )
+        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' ) 
       else:
         retDict = self.__escapeString( str( value ) )
         if not retDict['OK']:
@@ -866,7 +872,7 @@ class MySQL:
           cmdList.append( '`%s` %s' % ( field, thisTable['Fields'][field] ) )
 
         if thisTable.has_key( 'PrimaryKey' ):
-          if type( thisTable['PrimaryKey'] ) == types.StringType:
+          if type( thisTable['PrimaryKey'] ) in StringTypes:
             cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'] )
           else:
             cmdList.append( 'PRIMARY KEY ( %s )' % ", ".join( [ "`%s`" % str( f ) for f in thisTable['PrimaryKey'] ] ) )
@@ -1113,13 +1119,16 @@ class MySQL:
     conjunction = "WHERE"
 
     if condDict != None:
-      for attrName, attrValue in condDict.items():
-        attrName = _quotedList( [attrName] )
+      for aName, attrValue in condDict.items():
+        if type( aName ) in StringTypes:
+          attrName = _quotedList( [aName] )
+        elif type( aName ) == TupleType:
+          attrName = '('+_quotedList( list( aName ) )+')'   
         if not attrName:
           error = 'Invalid condDict argument'
           self.log.warn( 'buildCondition:', error )
           raise Exception( error )
-        if type( attrValue ) == types.ListType:
+        if type( attrValue ) == ListType:
           retDict = self._escapeValues( attrValue )
           if not retDict['OK']:
             self.log.warn( 'buildCondition:', retDict['Message'] )
@@ -1176,7 +1185,7 @@ class MySQL:
                                              timeStamp,
                                              escapeInValue )
 
-    if type( greater ) == types.DictType:
+    if type( greater ) == DictType:
       for attrName, attrValue in greater.items():
         attrName = _quotedList( [attrName] )
         if not attrName:
@@ -1196,7 +1205,7 @@ class MySQL:
                                              escapeInValue )
           conjunction = "AND"
 
-    if type( smaller ) == types.DictType:
+    if type( smaller ) == DictType:
       for attrName, attrValue in smaller.items():
         attrName = _quotedList( [attrName] )
         if not attrName:
@@ -1219,12 +1228,12 @@ class MySQL:
 
     orderList = []
     orderAttrList = orderAttribute
-    if type( orderAttrList ) != types.ListType:
+    if type( orderAttrList ) != ListType:
       orderAttrList = [ orderAttribute ]
     for orderAttr in orderAttrList:
       if orderAttr == None:
         continue
-      if type( orderAttr ) not in types.StringTypes:
+      if type( orderAttr ) not in StringTypes:
         error = 'Invalid orderAttribute argument'
         self.log.warn( 'buildCondition:', error )
         raise Exception( error )
@@ -1293,9 +1302,15 @@ class MySQL:
       condDict = {}
 
     try:
+      try:
+        mylimit = limit[0]
+        myoffset = limit[1]
+      except:
+        mylimit = limit
+        myoffset = None
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
-                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
-                        greater = None, smaller = None )
+                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = mylimit,
+                        greater = None, smaller = None, offset = myoffset )
     except Exception, x:
       return S_ERROR( x )
 
@@ -1369,7 +1384,7 @@ class MySQL:
       updateValues = []
 
     if updateDict:
-      if type( updateDict ) != types.DictType:
+      if type( updateDict ) != DictType:
         error = 'updateDict must be a of Type DictType'
         self.log.warn( 'updateFields:', error )
         return S_ERROR( error )
@@ -1426,7 +1441,7 @@ class MySQL:
       inValues = []
 
     if inDict:
-      if type( inDict ) != types.DictType:
+      if type( inDict ) != DictType:
         error = 'inDict must be a of Type DictType'
         self.log.warn( 'insertFields:', error )
         return S_ERROR( error )

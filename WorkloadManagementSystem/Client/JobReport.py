@@ -1,13 +1,12 @@
-# $HeadURL$
 """
   JobReport class encapsulates various methods of the job status reporting blah, blah, blah...
 
 """
 
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import DEncode, Time
+from DIRAC import S_OK, S_ERROR, Time
+from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
@@ -136,7 +135,7 @@ class JobReport( object ):
 
     parameters = []
     for pname, value in self.jobParameters.items():
-      pvalue, timeStamp = value
+      pvalue, _timeStamp = value
       parameters.append( ( pname, pvalue ) )
 
     if parameters:
