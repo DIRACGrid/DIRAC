@@ -45,10 +45,25 @@ def initializeMatcherHandler( serviceInfo ):
   global gTaskQueueDB
   global gPilotAgentsDB
 
+  # Create JobDB object and initialize its tables.
   gJobDB = JobDB()
+  res = gJobDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
+  
+  # Create JobLoggingDB object and initialize its tables.
   gJobLoggingDB = JobLoggingDB()
-  gTaskQueueDB = TaskQueueDB()
+  res = gJobLoggingDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
+  
+  gTaskQueueDB   = TaskQueueDB()
+  
+  # Create PilotAgentsDB object and initialize its tables.
   gPilotAgentsDB = PilotAgentsDB()
+  res = gPilotAgentsDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
 
   gMonitor.registerActivity( 'matchTime', "Job matching time",
                              'Matching', "secs" , gMonitor.OP_MEAN, 300 )
