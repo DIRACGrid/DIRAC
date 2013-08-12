@@ -10,6 +10,16 @@ CHANGE: DFC - optimization and bug fixes of the bulk file addition
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
+NEW: JobPolicy - added getControlledUsers() to get users which jobs can be accessed for 
+     a given operation
+CHANGE: JobMonitoringHandler - Avoid doing a selection of all Jobs, first count matching jobs 
+        and then use "limit" to select only the required JobIDs.
+NEW: JobMonitoringHandler - use JobPolicy to filter jobs in getJobSummaryWeb()
+NEW: new Operations option /Services/JobMonitoring/GlobalJobsInfo ( True by default ) to 
+     allow or not job info lookup by anybody, used in JobMonitoringHandler       
+        
+*TS
+CHANGE: TransformationClient(DB,Manager) - set file status for transformation as bulk operation        
 
 [v6r9p15]
 
