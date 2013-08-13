@@ -128,7 +128,7 @@ class TransformationCleaningAgent( AgentModule ):
       for transDict in res['Value']:
         # # if transformation is of type `Replication` or `Removal`, there is nothing to clean.
         # # We just archive
-        if transDict[ 'Type' ] in self.dataProcTTypes:
+        if transDict[ 'Type' ] in self.dataManipTTypes:
           res = self.archiveTransformation( transDict['TransformationID'] )
           if not res['OK']:
             self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'],
