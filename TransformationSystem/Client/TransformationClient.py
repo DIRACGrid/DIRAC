@@ -338,9 +338,11 @@ class TransformationClient( Client, FileCatalogueBase ):
       transIDAsDict = {transID: [originalStatus, transformationType]}
       dictOfProposedstatus = {transID: paramValue}
       # applying the state machine to the proposed status
-      newStatus = self._applyTransformationStatusStateMachine( transIDAsDict, dictOfProposedstatus, force )
+      value = self._applyTransformationStatusStateMachine( transIDAsDict, dictOfProposedstatus, force )
+    else:
+      value = paramValue
 
-    return rpcClient.setTransformationParameter( self, transID, paramName, newStatus )
+    return rpcClient.setTransformationParameter( self, transID, paramName, value )
 
   def _applyTransformationStatusStateMachine( self, transIDAsDict, dictOfProposedstatus, force ):
     """ For easier extension, here we apply the state machine of the transformation status.
