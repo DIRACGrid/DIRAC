@@ -125,8 +125,7 @@ class RemovalTask( RequestTask ):
       subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError )
       return S_OK( requestObj )
     bulkRemoval = bulkRemoval["Value"]
-    successfulLfns = bulkRemoval["Successful"] if "Successful" in bulkRemoval else []
-    failedLfns = bulkRemoval["Failed"] if "Failed" in bulkRemoval else []
+    failedLfns = bulkRemoval.get( "Failed", [] )
     toRemove = []
     for lfn in removalStatus:
       if lfn in failedLfns and "no such file or directory" in str( bulkRemoval["Failed"][lfn] ).lower():
@@ -167,8 +166,9 @@ class RemovalTask( RequestTask ):
         # # make sure DataManager proxy is set back in place
         if not self.requestOwnerDN and self.dataManagerProxy():
           # # remove temp proxy
-          if os.environ["X509_USER_PROXY"] != self.dataManagerProxy():
-            os.unlink( os.environ["X509_USER_PROXY"] )
+          proxyFile = os.environ["X509_USER_PROXY"]
+          if proxyFile != self.dataManagerProxy() and os.path.exists( proxyFile ):
+            os.unlink( proxyFile )
           # # put back DataManager proxy
           os.environ["X509_USER_PROXY"] = self.dataManagerProxy()
 
