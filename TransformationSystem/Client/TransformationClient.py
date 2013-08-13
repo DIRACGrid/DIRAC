@@ -323,21 +323,36 @@ class TransformationClient( Client, FileCatalogueBase ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
 
     if paramName.lower() == 'status':
+      # get transformation Type
+      transformation = self.getTransformation( self, transID )
+      if not transformation['OK']:
+        return transformation
+      transformationType = transformation['Value']['Type']
+
+      # get status as of today
+      originalStatus = self.getTransformationParameters( transID, 'Status' )
+      if not originalStatus['OK']:
+        return originalStatus
+      originalStatus = originalStatus['Value']
+
+      transIDAsDict = {transID: [originalStatus, transformationType]}
+      dictOfProposedstatus = {transID: paramValue}
       # applying the state machine to the proposed status
-      newStatus = self._applyTransformationStatusStateMachine( transID, paramValue, force )
+      newStatus = self._applyTransformationStatusStateMachine( transIDAsDict, dictOfProposedstatus, force )
+
     return rpcClient.setTransformationParameter( self, transID, paramName, newStatus )
 
-  def _applyTransformationStatusStateMachine( self, transID, status, force ):
+  def _applyTransformationStatusStateMachine( self, transIDAsDict, dictOfProposedstatus, force ):
     """ For easier extension, here we apply the state machine of the transformation status.
         VOs might want to replace the standard here with something they prefer.
 
-        transID is the ID
-        status is the proposed status
+        transIDAsDict is a dictionary with the transID as key and as value a list with [Status, Type]
+        dictOfProposedstatus is a dictionary with the proposed status
         force is a boolean
 
         It returns the new status (the standard is just doing nothing: everything is possible)
     """
-    return status
+    return dictOfProposedstatus.values()[0]
 
   #####################################################################
   #
