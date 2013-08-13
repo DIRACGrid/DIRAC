@@ -273,7 +273,7 @@ class TransformationClient( Client, FileCatalogueBase ):
         tsFilesAsDict[tsFile['LFN']] = [tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']]
 
       # applying the state machine to the proposed status
-      newStatuses = self._applyProductionFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
+      newStatuses = self._applyTransformationFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
 
       # must do it for the file IDs...
       newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
@@ -281,7 +281,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     else:
       return S_OK( 'Nothing updated' )
 
-  def _applyProductionFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
+  def _applyTransformationFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
     """ For easier extension, here we apply the state machine of the production files.
         VOs might want to replace the standard here with something they prefer.
 
