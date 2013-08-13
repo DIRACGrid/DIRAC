@@ -246,7 +246,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return S_OK( ( parentProd, movedFiles ) )
 
   def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False,
-                                      rpc = '', url = '', timeout = 120 ):
+                                          rpc = '', url = '', timeout = 120 ):
     """ sets ths file status for LFNs of a transformation
 
         For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
@@ -315,6 +315,29 @@ class TransformationClient( Client, FileCatalogueBase ):
         newStatuses[lfn] = newStatus
 
     return newStatuses
+
+  def setTransformationParameter( self, transID, paramName, paramValue, force = False,
+                                  rpc = '', url = '', timeout = 120 ):
+    """ Sets a transformation parameter. There's a special case when coming to setting the status of a transformation.
+    """
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+
+    if paramName.lower() == 'status':
+      # applying the state machine to the proposed status
+      newStatus = self._applyTransformationStatusStateMachine( transID, paramValue, force )
+    return rpcClient.setTransformationParameter( self, transID, paramName, newStatus )
+
+  def _applyTransformationStatusStateMachine( self, transID, status, force ):
+    """ For easier extension, here we apply the state machine of the transformation status.
+        VOs might want to replace the standard here with something they prefer.
+
+        transID is the ID
+        status is the proposed status
+        force is a boolean
+
+        It returns the new status (the standard is just doing nothing: everything is possible)
+    """
+    return status
 
   #####################################################################
   #
