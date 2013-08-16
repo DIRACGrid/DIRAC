@@ -408,19 +408,6 @@ class ModuleBase( object ):
 
   #############################################################################
 
-  def setFileStatus( self, production, lfn, status, fileReport = None ):
-    """ set the file status for the given production in the Transformation Database
-    """
-    self.log.verbose( 'setFileStatus(%s,%s,%s)' % ( production, lfn, status ) )
-
-    if not fileReport:
-      fileReport = self._getFileReporter()
-
-    fileReport.setFileStatus( production, lfn, status )
-
-  #############################################################################
-
-
   def getCandidateFiles( self, outputList, outputLFNs, fileMask, stepMask = '' ):
     """ Returns list of candidate files to upload, check if some outputs are missing.
 
