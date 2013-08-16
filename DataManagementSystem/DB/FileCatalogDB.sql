@@ -57,15 +57,6 @@ CREATE TABLE FC_FileInfo (
 -- ALTER TABLE FC_Files ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
 -- ALTER TABLE FC_Files ADD COLUMN Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775 AFTER ModificationDate;
 
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS FC_Statuses;
-CREATE TABLE FC_Statuses (
-    StatusID INT AUTO_INCREMENT PRIMARY KEY,
-    Status VARCHAR(32),
-    INDEX(Status),
-    INDEX(StatusID)
-);
-
 -- -----------------------------------------------------------------------------
 drop table if exists FC_Replicas;
 CREATE TABLE FC_Replicas (
@@ -97,35 +88,6 @@ CREATE TABLE FC_ReplicaInfo (
 -- ALTER TABLE FC_Replicas ADD COLUMN PFN VARCHAR(1024) AFTER ModificationDate;
 
 -- ------------------------------------------------------------------------------
-
-drop table if exists FC_Groups;
-CREATE TABLE FC_Groups (
-    GID INTEGER NOT NULL AUTO_INCREMENT,
-    GroupName VARCHAR(127) NOT NULL,
-    PRIMARY KEY (GID),
-    UNIQUE KEY (GroupName)
-);
-
--- ------------------------------------------------------------------------------
-drop table if exists FC_Users;
-CREATE TABLE FC_Users (
-    UID INTEGER NOT NULL AUTO_INCREMENT,
-    UserName VARCHAR(127) NOT NULL,
-    PRIMARY KEY (UID),
-    UNIQUE KEY (UserName)
-);
-
--- ------------------------------------------------------------------------------
-
-drop table if exists FC_StorageElements;
-CREATE TABLE FC_StorageElements (
-    SEID INTEGER AUTO_INCREMENT PRIMARY KEY,
-    SEName VARCHAR(127) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
-    AliasName VARCHAR(127) DEFAULT '',
-    UNIQUE KEY (SEName)
-);
-
--- -----------------------------------------------------------------------------
 
 drop table if exists FC_DirectoryInfo;
 CREATE TABLE FC_DirectoryInfo (
