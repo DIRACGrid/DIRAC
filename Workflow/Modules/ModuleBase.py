@@ -272,6 +272,8 @@ class ModuleBase( object ):
     if self.InputData == ';':
       self.InputData = ''
 
+    self.inputDataList = [lfn.strip( 'LFN:' ) for lfn in self.InputData.split( ';' ) if lfn]
+
     if self.workflow_commons.has_key( 'appSteps' ):
       self.appSteps = self.workflow_commons['appSteps']
 
