@@ -6,65 +6,51 @@
 """  The SiteSEMapping module performs the necessary CS gymnastics to
      resolve site and SE combinations.  These manipulations are necessary
      in several components.
-
-     Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
+from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources, getSiteFullNames
 
 #############################################################################
-def getSiteSEMapping( gridName = '' ):
+def getSiteSEMapping():
   """ Returns a dictionary of all sites and their localSEs as a list, e.g.
       {'LCG.CERN.ch':['CERN-RAW','CERN-RDST',...]}
       If gridName is specified, result is restricted to that Grid type.
   """
   siteSEMapping = {}
-  gridTypes = gConfig.getSections( 'Resources/Sites/' )
-  if not gridTypes['OK']:
-    gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
-    return gridTypes
+  resourceHelper = Resources()
+  result = resourceHelper.getEligibleSites()
+  if not result['OK']:
+    return result
+  sites = result['Value']
+  
+  for site in sites:
+    result = resourceHelper.getEligibleResources( 'Storage', {'Site':site} )
+    if not result['OK']:
+      continue
+    seList = result['Value']
+    
+    result = getSiteFullNames( site )
+    if not result['OK']:
+      continue
+    for sName in result['Value']:
+      siteSEMapping[sName] = seList   
 
-  gridTypes = gridTypes['Value']
-  if gridName:
-    if not gridName in gridTypes:
-      return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
-    gridTypes = [gridName]
-
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
-  for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
-    if not sites['OK']:
-      gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
-      return sites
-    for candidate in sites['Value']:
-      candidateSEs = gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, candidate ), [] )
-      if candidateSEs:
-        siteSEMapping[candidate] = candidateSEs
-      else:
-        gLogger.debug( 'No SEs defined for site %s' % candidate )
-
-  # Add Sites from the SiteLocalSEMapping in the CS
-  cfgLocalSEPath = cfgPath( 'SiteLocalSEMapping' )
+  # Add Sites from the SiteToLocalSEMapping in the CS
   opsHelper = Operations()
-  result = opsHelper.getOptionsDict( cfgLocalSEPath )
+  result = opsHelper.getSiteMapping( 'Storage', 'LocalSE' )
   if result['OK']:
     mapping = result['Value']
     for site in mapping:
-      ses = opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] )
-      if not ses:
-        continue
-      if gridName and site not in sites:
-        continue
       if site not in siteSEMapping:
-        siteSEMapping[site] = []
-      for se in ses:
-        if se not in siteSEMapping[site]:
-          siteSEMapping[site].append( se )
+        siteSEMapping[site] = mapping[site]
+      else:  
+        for se in mapping[site]:
+          if se not in siteSEMapping[site]:
+            siteSEMapping[site].append( se )
 
   return S_OK( siteSEMapping )
 
@@ -75,33 +61,19 @@ def getSESiteMapping( gridName = '' ):
       Although normally one site exists for a given SE, it is possible over all
       Grid types to have multiple entries.
       If gridName is specified, result is restricted to that Grid type.
-      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
   """
   seSiteMapping = {}
-  gridTypes = gConfig.getSections( '/Resources/Sites/' )
-  if not gridTypes['OK']:
-    gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
-    return gridTypes
-
-  gridTypes = gridTypes['Value']
-  if gridName:
-    if not gridName in gridTypes:
-      return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
-    gridTypes = [gridName]
-
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
-  for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
-    if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
-      gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
-      return sites
-    if sites:
-      for candidate in sites['Value']:
-        siteSEs = gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, candidate ), [] )
-        for se in siteSEs:
-          if se not in seSiteMapping:
-            seSiteMapping[se] = []
-          seSiteMapping[se].append( candidate )
+  resourceHelper = Resources()
+  result = resourceHelper.getEligibleResources( 'Storage' )
+  if not result['OK']:
+    return result
+  seList = result['Value']
+  for se in seList:
+    result = getSitesForSE( se )
+    if not result['OK']:
+      continue
+    site = result['Value']
+    seSiteMapping[se] = site
 
   return S_OK( seSiteMapping )
 
@@ -166,8 +138,9 @@ def getSEsForCountry( country ):
   """ Determines the associated SEs from the country code
   """
   mappedCountries = [country]
+  opsHelper = Operations()
   while True:
-    mappedCountry = gConfig.getValue( '/Resources/Countries/%s/AssignedTo' % country, country )
+    mappedCountry = opsHelper.getValue( '/Countries/%s/AssignedTo' % country, country )
     if mappedCountry == country:
       break
     elif mappedCountry in mappedCountries:
@@ -175,7 +148,8 @@ def getSEsForCountry( country ):
     else:
       country = mappedCountry
       mappedCountries.append( mappedCountry )
-  res = gConfig.getOptionsDict( '/Resources/Countries/%s/AssociatedSEs' % country )
+  res = opsHelper.getOptionsDict( '/Countries/%s/AssociatedSEs' % country )
   if not res['OK']:
     return S_ERROR( 'Failed to obtain AssociatedSEs for %s' % country )
   return S_OK( res['Value'].values() )
+

@@ -23,7 +23,7 @@ from DIRAC.Core.Utilities.Pfn                       import pfnparse, pfnunparse
 from DIRAC.Core.DISET.TransferClient                import TransferClient
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.Utilities.File                      import getSize
-import os, types
+import os, types, random
 
 class DIPStorage( StorageBase ):
 
@@ -39,14 +39,27 @@ class DIPStorage( StorageBase ):
     self.protocol = protocol
     self.path = path
     self.host = host
-    self.port = port
+    
+    # Several ports can be specified as comma separated list, choose
+    # randomly one of those ports
+    ports = port.split( ',' )
+    random.shuffle( ports )
+    self.port = ports[0]
+    
     self.wspath = wspath
     self.spaceToken = spaceToken
 
-    self.url = protocol + "://" + host + ":" + port + wspath
-
+    self.url = protocol + "://" + host + ":" + self.port + wspath
     self.cwd = ''
+    self.checkSum = "CheckSum"
     self.isok = True
+
+  def setParameters( self, parameters ):
+    """ Applying extra storage parameters
+    """
+    if "CheckSum" in parameters and parameters['CheckSum'].lower() in ['no','false','off']:
+      self.checkSum = "NoCheckSum"      
+    return S_OK()  
 
   ################################################################################
   #
@@ -205,7 +218,7 @@ class DIPStorage( StorageBase ):
       gLogger.error( errStr, src_file )
       return S_ERROR( errStr )
     transferClient = TransferClient( self.url )
-    res = transferClient.sendFile( src_file, dest_url )
+    res = transferClient.sendFile( src_file, dest_url, token=self.checkSum )
     if localCache:
       os.unlink( src_file )
     if res['OK']:
@@ -239,7 +252,7 @@ class DIPStorage( StorageBase ):
 
   def __getFile( self, src_url, dest_file ):
     transferClient = TransferClient( self.url )
-    res = transferClient.receiveFile( dest_file, src_url )
+    res = transferClient.receiveFile( dest_file, src_url, token=self.checkSum )
     if not res['OK']:
       return res
     if not os.path.exists( dest_file ):
@@ -603,4 +616,15 @@ class DIPStorage( StorageBase ):
     
     return S_OK( res['Value']['Successful'][url] )
 
-
+  def getCurrentStatus(self):
+    """ Ask the server the current status (disk usage). Needed for RSS
+    """
+    serviceClient = RPCClient( self.url )
+    res = serviceClient.getAdminInfo()
+    if not res['OK']:
+      return res
+    se_status = {}
+    se_status['totalsize'] = res['Value']['AvailableSpace'] + res['Value']['UsedSpace']
+    se_status['unusedsize'] = res['Value']['AvailableSpace']
+    se_status['guaranteedsize'] = res['Value']['MaxCapacity']
+    return S_OK(se_status)

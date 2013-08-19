@@ -511,10 +511,11 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     escapedData = result['Value']
 
     outFields = ['AgentID']
+    condDict = { 'AgentName': agentName }
     inFields = [ 'AgentName' ]
     inValues = [ agentName ]
 
-    result = self._getFields( 'AgentPersistentData', outFields, inFields, inValues )
+    result = self.getFields( 'AgentPersistentData', outFields, condDict )
     if not result ['OK']:
       return result
     elif result['Value'] == ():
@@ -531,10 +532,9 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     """ Get persistent data needed by SystemLogging Agents
     """
     outFields = [ 'AgentData' ]
-    inFields = [ 'AgentName' ]
-    inValues = [ agentName ]
+    condDict = { 'AgentName': agentName }
 
-    return self._getFields( 'AgentPersistentData', outFields, inFields, inValues )
+    return self.getFields( 'AgentPersistentData', outFields, condDict )
 
 def testSystemLoggingDB():
   """ Some test cases
@@ -579,13 +579,13 @@ def testSystemLoggingDB():
   try:
     if False:
       for tableName in db.tableDict.keys():
-        result = db._update( 'DROP TABLE `%s`' % tableName )
+        result = db._update( 'DROP TABLE  IF EXISTS `%s`' % tableName )
         assert result['OK']
 
-    gLogger.info( '\n Creating Table\n' )
-    # Make sure it is there and it has been created for this test
-    result = db._checkTable()
-    assert result['OK']
+      gLogger.info( '\n Creating Table\n' )
+      # Make sure it is there and it has been created for this test
+      result = db._checkTable()
+      assert result['OK']
 
     result = db._checkTable()
     assert not result['OK']

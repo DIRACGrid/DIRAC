@@ -9,8 +9,8 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getQueueInfo
-from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
+from DIRAC import S_OK, S_ERROR
 import os, random
 
 # TODO: This should come from some place in the configuration
@@ -27,14 +27,14 @@ def queueNormalizedCPU( ceUniqueID ):
     return result
 
   ceInfoDict = result['Value']
-  siteCSSEction = ceInfoDict['SiteCSSEction']
-  queueCSSection = ceInfoDict['QueueCSSection']
 
-  benchmarkSI00 = __getQueueNormalization( queueCSSection, siteCSSEction )
-  maxCPUTime = __getMaxCPUTime( queueCSSection )
+  benchmarkSI00 = ceInfoDict['SI00']
+  maxCPUTime = ceInfoDict['maxCPUTime']
+  # For some sites there are crazy values in the CS
+  maxCPUTime = max( maxCPUTime, 0 )
+  maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
 
   if maxCPUTime and benchmarkSI00:
-    # To get to the Current LHCb 
     normCPUTime = NORMALIZATIONCONSTANT * maxCPUTime * benchmarkSI00
   else:
     if not benchmarkSI00:
@@ -54,11 +54,8 @@ def getQueueNormalization( ceUniqueID ):
     return result
 
   ceInfoDict = result['Value']
-  siteCSSEction = ceInfoDict['SiteCSSEction']
-  queueCSSection = ceInfoDict['QueueCSSection']
   subClusterUniqueID = ceInfoDict['SubClusterUniqueID']
-
-  benchmarkSI00 = __getQueueNormalization( queueCSSection, siteCSSEction )
+  benchmarkSI00 = ceInfoDict['SI00']
 
   if benchmarkSI00:
     return S_OK( benchmarkSI00 )
@@ -66,30 +63,6 @@ def getQueueNormalization( ceUniqueID ):
     return S_ERROR( 'benchmarkSI00 info not available for %s' % subClusterUniqueID )
     #errorList.append( ( subClusterUniqueID , 'benchmarkSI00 info not available' ) )
     #exitCode = 3
-
-def __getQueueNormalization( queueCSSection, siteCSSEction ):
-  """
-    Query the CS and return the Normalization
-  """
-  benchmarkSI00Option = '%s/%s' % ( queueCSSection, 'SI00' )
-  benchmarkSI00 = gConfig.getValue( benchmarkSI00Option, 0.0 )
-  if not benchmarkSI00:
-    benchmarkSI00Option = '%s/%s' % ( siteCSSEction, 'SI00' )
-    benchmarkSI00 = gConfig.getValue( benchmarkSI00Option, 0.0 )
-
-  return benchmarkSI00
-
-def __getMaxCPUTime( queueCSSection ):
-  """
-    Query the CS and return the maxCPUTime 
-  """
-  maxCPUTimeOption = '%s/%s' % ( queueCSSection, 'maxCPUTime' )
-  maxCPUTime = gConfig.getValue( maxCPUTimeOption, 0.0 )
-  # For some sites there are crazy values in the CS
-  maxCPUTime = max( maxCPUTime, 0 )
-  maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
-
-  return maxCPUTime
 
 def getCPUNormalization( reference = 'HS06', iterations = 1 ):
   """

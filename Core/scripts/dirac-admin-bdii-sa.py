@@ -8,7 +8,7 @@
   Check info on BDII for SA
 """
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base                                         import Script
 from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
@@ -45,13 +45,14 @@ if not voName:
   Script.gLogger.error( 'Could not determine VO' )
   Script.showHelp()
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 
 result = diracAdmin.getBDIISA( site, useVO = voName, host = host )
 if not ['OK']:
   print result['Message']
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 
 
 sas = result['Value']

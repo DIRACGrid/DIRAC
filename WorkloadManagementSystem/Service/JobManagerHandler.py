@@ -30,6 +30,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 
 # This is a global instance of the JobDB class
 gJobDB = False
@@ -253,6 +254,7 @@ class JobManagerHandler( RequestHandler ):
       return result
     killJobList = []
     deleteJobList = []
+    stagingJobList = []
     for jobID, sDict in result['Value'].items():
       if sDict['Status'] in ['Running','Matched','Stalled']:
         killJobList.append( jobID )
@@ -261,7 +263,9 @@ class JobManagerHandler( RequestHandler ):
           deleteJobList.append( jobID )
       else:
         deleteJobList.append( jobID )
-
+      if sDict['Status'] in ['Staging']:
+        stagingJobList.append( jobID )
+    
     bad_ids = []
     for jobID in killJobList:
       result = self.__killJob( jobID )
@@ -273,6 +277,13 @@ class JobManagerHandler( RequestHandler ):
       if not result['OK']:
         bad_ids.append( jobID )
 
+    if stagingJobList:
+      stagerClient = StorageManagerClient()
+      gLogger.info('Going to send killing signal to stager as well!')
+      result = stagerClient.killTasksBySourceTaskID(stagingJobList)
+      if not result['OK']:
+        gLogger.warn( 'Failed to kill some Stager tasks: %s' % result['Message'] )
+             
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR( 'Some jobs failed deletion' )
       if invalidJobList:

@@ -5,26 +5,13 @@
     Script that facilitates the modification of a element through the command line.
     However, the usage of this script will set the element token to the command
     issuer with a duration of 1 day.
-    
-    Usage:
-      dirac-rss-set-status
-        --element=            Element family to be Synchronized ( Site, Resource or Node )
-        --name=               Name, name of the element where the change applies
-        --statusType=         StatusType, if none applies to all possible statusTypes
-        --status=             Status to be changed
-        --reason=             Reason to set the Status         
-            
-    Verbosity:
-        -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..        
+ 
 """
 
 from datetime import datetime, timedelta
 
-from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
+from DIRAC                                     import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
-from DIRAC.Core.Security.ProxyInfo             import getProxyInfo
-from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.PolicySystem   import StateMachine
 
 __RCSID__  = '$Id:$'
 
@@ -137,7 +124,9 @@ def setStatus( tokenOwner ):
   elements = elements[ 'Value' ]
   
   if not elements:
-    subLogger.warning( 'Nothing found for %(element),%(name),%(statusType)' % switchDict )
+    subLogger.warn( 'Nothing found for %s, %s, %s' % ( switchDict[ 'element' ],
+                                                       switchDict[ 'name' ],
+                                                       switchDict[ 'statusType' ] ) )
     return S_OK()
   
   tomorrow = datetime.utcnow().replace( microsecond = 0 ) + timedelta( days = 1 )
@@ -192,6 +181,11 @@ if __name__ == "__main__":
   registerSwitches()
   registerUsageMessage()
   switchDict = parseSwitches()
+  
+  from DIRAC                                   import gConfig
+  from DIRAC.Core.Security.ProxyInfo           import getProxyInfo
+  from DIRAC.ResourceStatusSystem.Client       import ResourceStatusClient
+  from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
   
   #Run script
   run()

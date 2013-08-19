@@ -347,7 +347,7 @@ if ceName or siteName:
   
   if not siteName:
     if ceName:
-      result = resources.getSiteForResource( 'Computing', ceName )
+      result = resources.getSiteForResource( ceName )
       if result['OK']:
         site = result['Value']
         result = resources.getSiteFullName( site )

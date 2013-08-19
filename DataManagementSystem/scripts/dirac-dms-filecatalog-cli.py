@@ -17,7 +17,7 @@ catalogs = []
 Script.registerSwitch( "f:", "file-catalog=", "   Catalog name to use, default is the standard VO choice" )
 
 Script.parseCommandLine( ignoreErrors = False )
-
+  
 import sys, os
 import DIRAC
 from DIRAC import gLogger, gConfig

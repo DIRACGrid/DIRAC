@@ -10,7 +10,6 @@ from datetime                                              import datetime
 from DIRAC                                                 import S_OK, S_ERROR 
 from DIRAC.Core.Base.DB                                    import DB
 from DIRAC.ResourceStatusSystem.Utilities                  import MySQLWrapper
-from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration 
 
 __RCSID__ = '$Id: $'
 
@@ -26,7 +25,7 @@ class ResourceStatusDB( object ):
   _tablesLike[ 'ElementStatus' ]    = { 'Fields' : 
                     {
                      'Name'            : 'VARCHAR(64) NOT NULL',
-                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT "all"',
+                     'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
                      'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
                      'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
@@ -41,9 +40,9 @@ class ResourceStatusDB( object ):
     
   _tablesLike[ 'ElementWithID' ]       = { 'Fields' : 
                     {
-                     'ID'              : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                     'ID'              : 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
                      'Name'            : 'VARCHAR(64) NOT NULL',
-                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT "all"',
+                     'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
                      'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
                      'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
@@ -64,12 +63,12 @@ class ResourceStatusDB( object ):
                     'ResourceHistory'   : 'ElementWithID',
                     'NodeStatus'        : 'ElementStatus',
                     'NodeLog'           : 'ElementWithID',
-                    'NodeHistory'       : 'ElementWithID'            
+                    'NodeHistory'       : 'ElementWithID',
+                    'ComponentStatus'   : 'ElementStatus',
+                    'ComponentLog'      : 'ElementWithID',
+                    'ComponentHistory'  : 'ElementWithID',           
                    }
-
-# No idea whether they make sense or not
-#  __tables[ 'ElementPresent' ]   = {} #????  
-#  __tables[ 'Element' ]          = {} #????
+  
   
   def __init__( self, maxQueueSize = 10, mySQL = None ):
     '''
@@ -83,9 +82,7 @@ class ResourceStatusDB( object ):
       self.database = mySQL
     else:
       self.database = DB( 'ResourceStatusDB', 
-                          'ResourceStatus/ResourceStatusDB', maxQueueSize )  
-
-    self.recordLogs = RssConfiguration().getConfigRecordLogs() == 'Active'
+                          'ResourceStatus/ResourceStatusDB', maxQueueSize )
 
   ## SQL Methods ###############################################################
 
@@ -326,15 +323,14 @@ class ResourceStatusDB( object ):
     
     insertQuery = self.insert( params, meta )  
   
-    if self.recordLogs:
-      
-      if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
+    # Record logs     
+    if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
                 
-        meta[ 'table' ] = meta[ 'table' ].replace( 'Status', 'Log' )
+      meta[ 'table' ] = meta[ 'table' ].replace( 'Status', 'Log' )
 
-        logRes = self.insert( params, meta )
-        if not logRes[ 'OK' ]:
-          return logRes  
+      logRes = self.insert( params, meta )
+      if not logRes[ 'OK' ]:
+        return logRes  
         
     return insertQuery        
       
@@ -365,11 +361,8 @@ class ResourceStatusDB( object ):
 
   def _logRecord( self, params, meta, isUpdate ):
     '''
-      Method that records every change on a LogTable, if activated on the CS.
+      Method that records every change on a LogTable.
     '''
-
-    if not self.recordLogs:
-      return S_OK()
       
     if not ( 'table' in meta and meta[ 'table' ].endswith( 'Status' ) ):
       return S_OK()

@@ -13,6 +13,10 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     unittest for StrategyHandler
+
+
+    OBSOLETE
+    K.C.
 """
 
 __RCSID__ = "$Id $"
@@ -107,7 +111,8 @@ class StrategyHandlerTests(unittest.TestCase):
                       61L: {'Status': 'Active', 'Files': 0, 'Destination': 'SARA', 'Source': 'IN2P3', 'ChannelName': 'IN2P3-SARA', 'Size': 0},
                       62L: {'Status': 'Active', 'Files': 0, 'Destination': 'SARA', 'Source': 'NIKHEF', 'ChannelName': 'NIKHEF-SARA', 'Size': 0},
                       63L: {'Status': 'Active', 'Files': 0, 'Destination': 'SARA', 'Source': 'PIC', 'ChannelName': 'PIC-SARA', 'Size': 0},
-                      64L: {'Status': 'Active', 'Files': 0, 'Destination': 'SARA', 'Source': 'RAL', 'ChannelName': 'RAL-SARA', 'Size': 0}}
+                      64L: {'Status': 'Active', 'Files': 0, 'Destination': 'SARA', 'Source': 'RAL', 'ChannelName': 'RAL-SARA', 'Size': 0},
+                      65L: {'Status': 'Active', 'Files': 0, 'Destination': 'CERN', 'Source': 'RAL-HEP', 'ChannelName': 'CERN-RAL-HEP', 'Size':0 } }
 
     self.bands = dict.fromkeys( self.channels.keys() )
     for k in self.bands:
@@ -146,6 +151,9 @@ class StrategyHandlerTests(unittest.TestCase):
   def test_02_Strategies( self ):
     """ test strategies """
     sHandler = StrategyHandler( self.configPath, self.bands, self.channels, self.failedFiles ) 
+
+    tree = sHandler.minimiseTotalWait( [ 'CERN-DST' ], ['RAL-HEP-DST'] )
+    print tree
 
     ## simple - wrong args
     tree = sHandler.simple( ["CERN-USER", "PIC-USER"], ["CNAF-USER"] )

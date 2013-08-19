@@ -155,21 +155,25 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                  import gLogger
 from DIRAC                                  import S_OK, S_ERROR
-from DIRAC                                  import Time
 from DIRAC.Core.Utilities.DataStructures    import MutableStruct
+from DIRAC.Core.Utilities                   import Time
 
-import MySQLdb
+# Get rid of the annoying Deprecation warning of the current MySQLdb
+# FIXME: compile a newer MySQLdb version
+import warnings
+with warnings.catch_warnings():
+  warnings.simplefilter( 'ignore', DeprecationWarning )
+  import MySQLdb
+
 # This is for proper initialization of embeded server, it should only be called once
 MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
 gInstancesCount = 0
 gDebugFile = None
 
-import Queue
 import collections
-import types
 import time
 import threading
-from types import StringTypes, DictType, ListType
+from types import StringTypes, DictType, ListType, TupleType
 
 MAXCONNECTRETRY = 10
 
@@ -218,7 +222,6 @@ def _quotedList( fieldList = None ):
     return None
 
   return ', '.join( quotedFields )
-
 
 
 class MySQL:
@@ -432,7 +435,7 @@ class MySQL:
     self.__initialized = True
     result = self._connect()
     if not result[ 'OK' ]:
-      gLogger.error( "Cannot connecto to DB: %s" % result[ 'Message' ] )
+      gLogger.error( "Cannot connect to to DB: %s" % result[ 'Message' ] )
 
     if debug:
       try:
@@ -544,6 +547,14 @@ class MySQL:
         if not retDict['OK']:
           return retDict
         inEscapeValues.append( retDict['Value'] )
+      elif type( value ) == TupleType or type( value ) == ListType:
+        tupleValues = []
+        for v in list( value ):
+          retDict = self.__escapeString( v )
+          if not retDict['OK']:
+            return retDict
+          tupleValues.append( retDict['Value'] )
+        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' )
       else:
         retDict = self.__escapeString( str( value ) )
         if not retDict['OK']:
@@ -672,7 +683,7 @@ class MySQL:
       if cursor.lastrowid:
         retDict[ 'lastRowId' ] = cursor.lastrowid
     except Exception, x:
-      self.log.warn( '_update: %s: %s' % ( cmd, str(x) ) )
+      self.log.warn( '_update: %s: %s' % ( cmd, str( x ) ) )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
     try:
@@ -686,7 +697,6 @@ class MySQL:
 
     return retDict
 
-
   def _transaction( self, cmdList, conn = None ):
     """ dummy transaction support
 
@@ -699,7 +709,7 @@ class MySQL:
     if type( cmdList ) != ListType:
       return S_ERROR( "_transaction: wrong type (%s) for cmdList" % type( cmdList ) )
 
-    ## get connection
+    # # get connection
     connection = conn
     if not connection:
       retDict = self.__getConnection()
@@ -707,7 +717,7 @@ class MySQL:
         return retDict
       connection = retDict[ 'Value' ]
 
-    ## list with cmds and their results
+    # # list with cmds and their results
     cmdRet = []
     try:
       cursor = connection.cursor()
@@ -716,12 +726,55 @@ class MySQL:
       connection.commit()
     except Exception, error:
       self.logger.execption( error )
-      ## rollback, put back connection to the pool
+      # # rollback, put back connection to the pool
       connection.rollback()
       return S_ERROR( error )
-    ## close cursor, put back connection to the pool
+    # # close cursor, put back connection to the pool
     cursor.close()
     return S_OK( cmdRet )
+
+  def _createViews( self, viewsDict, force = False ):
+    """ create view based on query
+
+    :param dict viewDict: { 'ViewName': "Fields" : { "`a`": `tblA.a`, "`sumB`" : "SUM(`tblB.b`)" }
+                                        "SelectFrom" : "tblA join tblB on tblA.id = tblB.id",
+                                        "Clauses" : [ "`tblA.a` > 10", "`tblB.Status` = 'foo'" ] ## WILL USE AND CLAUSE
+                                        "GroupBy": [ "`a`" ],
+                                        "OrderBy": [ "`b` DESC" ] }
+    """
+    if force:
+      gLogger.debug( viewsDict )
+
+      for viewName, viewDict in viewsDict.items():
+
+        viewQuery = [ "CREATE OR REPLACE VIEW `%s`.`%s` AS" % ( self.__dbName, viewName ) ]
+
+        columns = ",".join( [ "%s AS %s" % ( colDef, colName )
+                             for colName, colDef in  viewDict.get( "Fields", {} ).items() ] )
+        tables = viewDict.get( "SelectFrom", "" )
+        if columns and tables:
+          viewQuery.append( "SELECT %s FROM %s" % ( columns, tables ) )
+
+        where = " AND ".join( viewDict.get( "Clauses", [] ) )
+        if where:
+          viewQuery.append( "WHERE %s" % where )
+
+        groupBy = ",".join( viewDict.get( "GroupBy", [] ) )
+        if groupBy:
+          viewQuery.append( "GROUP BY %s" % groupBy )
+
+        orderBy = ",".join( viewDict.get( "OrderBy", [] ) )
+        if orderBy:
+          viewQuery.append( "ORDER BY %s" % orderBy )
+
+        viewQuery.append( ";" )
+        viewQuery = " ".join( viewQuery )
+        self.log.debug( "`%s` VIEW QUERY IS: %s" % ( viewName, viewQuery ) )
+        createView = self._query( viewQuery )
+        if not createView["OK"]:
+          gLogger.error( createView["Message"] )
+          return createView
+    return S_OK()
 
   def _createTables( self, tableDict, force = False ):
     """
@@ -831,7 +884,7 @@ class MySQL:
           cmdList.append( '`%s` %s' % ( field, thisTable['Fields'][field] ) )
 
         if thisTable.has_key( 'PrimaryKey' ):
-          if type( thisTable['PrimaryKey'] ) == types.StringType:
+          if type( thisTable['PrimaryKey'] ) in StringTypes:
             cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'] )
           else:
             cmdList.append( 'PRIMARY KEY ( %s )' % ", ".join( [ "`%s`" % str( f ) for f in thisTable['PrimaryKey'] ] ) )
@@ -1100,13 +1153,16 @@ class MySQL:
     conjunction = "WHERE"
 
     if condDict != None:
-      for attrName, attrValue in condDict.items():
-        attrName = _quotedList( [attrName] )
+      for aName, attrValue in condDict.items():
+        if type( aName ) in StringTypes:
+          attrName = _quotedList( [aName] )
+        elif type( aName ) == TupleType:
+          attrName = '('+_quotedList( list( aName ) )+')'
         if not attrName:
           error = 'Invalid condDict argument'
           self.log.warn( 'buildCondition:', error )
           raise Exception( error )
-        if type( attrValue ) == types.ListType:
+        if type( attrValue ) == ListType:
           retDict = self._escapeValues( attrValue )
           if not retDict['OK']:
             self.log.warn( 'buildCondition:', retDict['Message'] )
@@ -1163,7 +1219,7 @@ class MySQL:
                                              timeStamp,
                                              escapeInValue )
 
-    if type( greater ) == types.DictType:
+    if type( greater ) == DictType:
       for attrName, attrValue in greater.items():
         attrName = _quotedList( [attrName] )
         if not attrName:
@@ -1183,7 +1239,7 @@ class MySQL:
                                              escapeInValue )
           conjunction = "AND"
 
-    if type( smaller ) == types.DictType:
+    if type( smaller ) == DictType:
       for attrName, attrValue in smaller.items():
         attrName = _quotedList( [attrName] )
         if not attrName:
@@ -1206,12 +1262,12 @@ class MySQL:
 
     orderList = []
     orderAttrList = orderAttribute
-    if type( orderAttrList ) != types.ListType:
+    if type( orderAttrList ) != ListType:
       orderAttrList = [ orderAttribute ]
     for orderAttr in orderAttrList:
       if orderAttr == None:
         continue
-      if type( orderAttr ) not in types.StringTypes:
+      if type( orderAttr ) not in StringTypes:
         error = 'Invalid orderAttribute argument'
         self.log.warn( 'buildCondition:', error )
         raise Exception( error )
@@ -1280,9 +1336,15 @@ class MySQL:
       condDict = {}
 
     try:
+      try:
+        mylimit = limit[0]
+        myoffset = limit[1]
+      except:
+        mylimit = limit
+        myoffset = None
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
-                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
-                        greater = None, smaller = None )
+                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = mylimit,
+                        greater = None, smaller = None, offset = myoffset )
     except Exception, x:
       return S_ERROR( x )
 
@@ -1356,7 +1418,7 @@ class MySQL:
       updateValues = []
 
     if updateDict:
-      if type( updateDict ) != types.DictType:
+      if type( updateDict ) != DictType:
         error = 'updateDict must be a of Type DictType'
         self.log.warn( 'updateFields:', error )
         return S_ERROR( error )
@@ -1413,7 +1475,7 @@ class MySQL:
       inValues = []
 
     if inDict:
-      if type( inDict ) != types.DictType:
+      if type( inDict ) != DictType:
         error = 'inDict must be a of Type DictType'
         self.log.warn( 'insertFields:', error )
         return S_ERROR( error )

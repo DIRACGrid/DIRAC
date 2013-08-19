@@ -10,7 +10,6 @@
 __RCSID__ = "$Id$"
 
 import time
-import pprint
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Resources.Storage.StorageElement                          import StorageElement
 from DIRAC                                                           import S_OK, S_ERROR
@@ -127,8 +126,6 @@ class InputDataResolution( OptimizerExecutor ):
     if badLFNs:
       errorMsg = "\n".join( badLFNs )
       self.jobLog.info( 'Found %s problematic LFN(s):\n%s' % ( len( badLFNs ), errorMsg ) )
-      if not result['OK']:
-        self.jobLog.error( result['Message'] )
       return S_ERROR( 'Input data not available' )
 
     lfnData = {}

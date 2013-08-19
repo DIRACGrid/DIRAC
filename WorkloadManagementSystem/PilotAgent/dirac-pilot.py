@@ -62,11 +62,11 @@ class CliParams:
     self.userDN = ""
     self.maxCycles = CliParams.MAX_CYCLES
     self.flavour = 'DIRAC'
-    self.gridVersion = '2012-02-20'
+    self.gridVersion = '2013-04-22'
     self.pilotReference = ''
     self.releaseVersion = ''
     self.releaseProject = ''
-    # The following parmaters are added for BOINC computing element with virtual machine.
+    # The following parameters are added for BOINC computing element with virtual machine.
     self.boincUserID = ''         #  The user ID in a BOINC computing element
     self.boincHostPlatform = ''   # The os type of the host machine running the pilot, not the virtual machine
     self.boincHostID = ''         # the host id in a  BOINC computing element
@@ -349,7 +349,12 @@ if os.environ.has_key( 'OSG_WN_TMP' ):
 # Direct SSH tunnel submission
 if os.environ.has_key( 'SSHCE_JOBID' ):
   cliParams.flavour = 'SSH'
-  pilotRef = 'ssh://'+cliParams.ceName+'/'+os.environ['SSHCE_JOBID']
+  pilotRef = 'ssh://'+cliParams.ceName+'/'+os.environ['SSHCE_JOBID']  
+  
+# ARC case  
+if os.environ.has_key( 'GRID_GLOBAL_JOBID' ):
+  cliParams.flavour = 'ARC'
+  pilotRef = os.environ['GRID_GLOBAL_JOBID']     
 
 # This is for BOINC case
 if os.environ.has_key( 'BOINC_JOB_ID' ):

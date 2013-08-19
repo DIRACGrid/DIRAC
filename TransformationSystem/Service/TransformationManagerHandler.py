@@ -144,14 +144,21 @@ class TransformationManagerHandler( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [TransTypes, StringTypes, ListType]
-  def export_setFileStatusForTransformation( self, transName, status, lfns, force = False ):
-    res = database.setFileStatusForTransformation( transName, status, lfns, force )
-    return self._parseRes( res )
+  types_setFileStatusForTransformation = [transTypes, DictType]
+  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus ):
+    """ Sets the file status for the transformation.
 
-  types_setFileUsedSEForTransformation = [TransTypes, StringTypes, ListType]
-  def export_setFileUsedSEForTransformation( self, transName, usedSE, lfns ):
-    res = database.setFileUsedSEForTransformation( transName, usedSE, lfns )
+        The dictOfNewFilesStatus is a dictionary with the form:
+        {12345: 'StatusA', 6789: 'StatusB',  ... }
+    """
+
+    res = database._getConnectionTransID( False, transName )
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+
+    res = database.setFileStatusForTransformation( transID, dictOfNewFilesStatus, connection = connection )
     return self._parseRes( res )
 
   types_getTransformationStats = [TransTypes]
@@ -715,6 +722,10 @@ class TransformationManagerHandler( RequestHandler ):
     statusDict = {}
     extendableTranfs = Operations().getValue( 'Transformations/ExtendableTransfTypes',
                                                 ['Simulation', 'MCsimulation'] )
+    givenUpFileStatus = Operations().getValue( 'Transformations/GivenUpFileStatus',
+                                               ['NotProcessed', 'Removed', 'MissingInFC', 'MissingLFC'] )
+    problematicStatuses = Operations().getValue( 'Transformations/ProblematicStatuses',
+                                               ['Problematic'] )
     # Add specific information for each selected transformation
     for trans in transList:
       transDict = dict( zip( paramNames, trans ) )
@@ -741,12 +752,15 @@ class TransformationManagerHandler( RequestHandler ):
         res = database.getTransformationStats( transID )
         if res['OK']:
           fileDict = res['Value']
-          total = fileDict['Total'] - fileDict.get( 'NotProcessed', 0 )
-          if total == 0:
-            fileDict['PercentProcessed'] = 0
-          else:
-            processed = fileDict.get( 'Processed', 0 )
-            fileDict['PercentProcessed'] = "%.1f" % ( int( processed * 1000. / total ) / 10. )
+          total = fileDict['Total']
+          for stat in givenUpFileStatus:
+            total -= fileDict.get( stat, 0 )
+          processed = fileDict.get( 'Processed', 0 )
+          fileDict['PercentProcessed'] = "%.1f" % ( int( processed * 1000. / total ) / 10. ) if total else 0.
+      problematic = 0
+      for stat in problematicStatuses:
+        problematic += fileDict.get( stat, 0 )
+      fileDict ['Problematic'] = problematic
       for state in fileStateNames:
         trans.append( fileDict.get( state, 0 ) )
 

@@ -8,10 +8,9 @@ import re, time, types, os, copy
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
-from DIRAC.Core.Utilities.List                                  import sortList, fromChar
+from DIRAC.Core.Utilities.List                                  import fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
 from DIRAC.Interfaces.API.Job                                   import Job
-from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
 from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
@@ -49,7 +48,7 @@ class TaskBase( object ):
     """
     updated = 0
     startTime = time.time()
-    for taskID in sortList( taskDict.keys() ):
+    for taskID in sorted( taskDict ):
       transID = taskDict[taskID]['TransformationID']
       if taskDict[taskID]['Success']:
         res = self.transClient.setTaskStatusAndWmsID( transID, taskID, 'Submitted',
@@ -87,11 +86,12 @@ class RequestTasks( TaskBase ):
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
     requestType = 'transfer'
     requestOperation = 'replicateAndRegister'
-    try:
-      requestType, requestOperation = transBody.split( ';' )
-    except AttributeError:
-      pass
-    for taskID in sortList( taskDict.keys() ):
+    if transBody:
+      try:
+        requestType, requestOperation = transBody.split( ';' )
+      except AttributeError:
+        pass
+    for taskID in sorted( taskDict ):
       paramDict = taskDict[taskID]
       transID = paramDict['TransformationID']
       oRequest = RequestContainer( init = False )
@@ -111,7 +111,7 @@ class RequestTasks( TaskBase ):
     submitted = 0
     failed = 0
     startTime = time.time()
-    for taskID in sortList( taskDict.keys() ):
+    for taskID in sorted( taskDict ):
       if not taskDict[taskID]['TaskObject']:
         taskDict[taskID]['Success'] = False
         failed += 1
@@ -175,7 +175,7 @@ class RequestTasks( TaskBase ):
       else:
         self.log.info( "getSubmittedTaskStatus: Failed to get requestID for request", res['Message'] )
       if newStatus and ( newStatus != oldStatus ):
-        if not updateDict.has_key( newStatus ):
+        if newStatus not in updateDict:
           updateDict[newStatus] = []
         updateDict[newStatus].append( taskID )
     return S_OK( updateDict )
@@ -186,12 +186,12 @@ class RequestTasks( TaskBase ):
       transID = fileDict['TransformationID']
       taskID = fileDict['TaskID']
       taskName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-      if not taskFiles.has_key( taskName ):
+      if taskName not in taskFiles:
         taskFiles[taskName] = {}
       taskFiles[taskName][fileDict['LFN']] = fileDict['Status']
 
     updateDict = {}
-    for taskName in sortList( taskFiles.keys() ):
+    for taskName in sorted( taskFiles ):
       lfnDict = taskFiles[taskName]
       res = self.requestClient.getRequestFileStatus( taskName, lfnDict.keys() )
       if not res['OK']:
@@ -260,9 +260,9 @@ class WorkflowTasks( TaskBase ):
       owner = proxyInfo['username']
       ownerGroup = proxyInfo['group']
 
-    oJob = self.jobClass( transBody )
 
-    for taskNumber in sortList( taskDict.keys() ):
+    for taskNumber in sorted( taskDict ):
+      oJob = self.jobClass( transBody )
       paramsDict = taskDict[taskNumber]
       site = oJob.workflow.findParameter( 'Site' ).getValue()
       paramsDict['Site'] = site
@@ -324,7 +324,8 @@ class WorkflowTasks( TaskBase ):
     try:
       sites = ['ANY']
       if paramsDict['Site']:
-        sites = fromChar( paramsDict['Site'] )
+        # 'Site' comes from the XML and therefore is ; separated
+        sites = fromChar( paramsDict['Site'], sepChar = ';' )
     except KeyError:
       pass
 
@@ -372,12 +373,12 @@ class WorkflowTasks( TaskBase ):
 
 
   def _handleInputs( self, oJob, paramsDict ):
-    ''' set job inputs (+ metadata)
-    '''
-    if paramsDict.has_key( 'InputData' ):
-      if paramsDict['InputData']:
-        self.log.verbose( 'Setting input data to %s' % paramsDict['InputData'] )
-        oJob.setInputData( paramsDict['InputData'] )
+    """ set job inputs (+ metadata)
+    """
+    inputData = paramsDict.get( 'InputData' )
+    if inputData:
+      self.log.verbose( 'Setting input data to %s' % inputData )
+      oJob.setInputData( inputData )
 
   def _handleRest( self, oJob, paramsDict ):
     ''' add as JDL parameters all the other parameters that are not for inputs or destination
@@ -416,7 +417,7 @@ class WorkflowTasks( TaskBase ):
     submitted = 0
     failed = 0
     startTime = time.time()
-    for taskID in sortList( taskDict.keys() ):
+    for taskID in sorted( taskDict ):
       if not taskDict[taskID]['TaskObject']:
         taskDict[taskID]['Success'] = False
         failed += 1
@@ -482,7 +483,7 @@ class WorkflowTasks( TaskBase ):
     noTask = []
     if allAccounted:
       for taskName in taskNames:
-        if not ( taskName in taskNameIDs.keys() ):
+        if taskName not in taskNameIDs:
           noTask.append( taskName )
     return S_OK( {'NoTasks':noTask, 'TaskNameIDs':taskNameIDs} )
 
@@ -505,7 +506,7 @@ class WorkflowTasks( TaskBase ):
         continue
       oldStatus = taskDict['ExternalStatus']
       newStatus = "Removed"
-      if wmsID in statusDict.keys():
+      if wmsID in statusDict:
         newStatus = statusDict[wmsID]['Status']
       if oldStatus != newStatus:
         if newStatus == "Removed":
@@ -514,7 +515,7 @@ class WorkflowTasks( TaskBase ):
                                                                                                  oldStatus ) )
           newStatus = "Failed"
         self.log.verbose( 'Setting job status for Production/Job %d/%d to %s' % ( transID, taskID, newStatus ) )
-        if not updateDict.has_key( newStatus ):
+        if newStatus not in updateDict:
           updateDict[newStatus] = []
         updateDict[newStatus].append( taskID )
     return S_OK( updateDict )
@@ -525,7 +526,7 @@ class WorkflowTasks( TaskBase ):
       transID = fileDict['TransformationID']
       taskID = fileDict['TaskID']
       taskName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-      if not taskFiles.has_key( taskName ):
+      if taskName not in taskFiles:
         taskFiles[taskName] = {}
       taskFiles[taskName][fileDict['LFN']] = fileDict['Status']
     res = self.updateTransformationReservedTasks( fileDicts )
@@ -546,7 +547,7 @@ class WorkflowTasks( TaskBase ):
     statusDict = res['Value']
     for taskName, wmsID in taskNameIDs.items():
       newFileStatus = ''
-      if statusDict.has_key( wmsID ):
+      if wmsID in statusDict:
         jobStatus = statusDict[wmsID]['Status']
         if jobStatus in ['Done', 'Completed']:
           newFileStatus = 'Processed'

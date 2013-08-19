@@ -5,6 +5,8 @@
     =================
 
     Helper class to perform FTS job submission and monitoring.
+
+    :deprecated:
 """
 ## imports
 import os
@@ -24,6 +26,7 @@ from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface, ReplicaManager
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 ## RCSID
 __RCSID__ = "$Id$"
@@ -126,6 +129,9 @@ class FTSRequest(object):
  
     ## replica manager handler
     self.replicaManager = ReplicaManager()
+    
+    ## Resources helper
+    self.resources = Resources()
 
   ####################################################################
   #
@@ -891,15 +897,16 @@ class FTSRequest(object):
       return S_ERROR( "Could not determine target site" )
     targetSite = res['Value'][0]
 
-    if ( sourceSite == 'LCG.CERN.ch' ) or ( targetSite == 'LCG.CERN.ch' ):
+    if ( sourceSite == "LCG.RAL-HEP.uk" ) or ( targetSite == "LCG.RAL-HEP.uk" ):
+      ep = "LCG.RAL-HEP.uk"
+    elif ( sourceSite == 'LCG.CERN.ch' ) or ( targetSite == 'LCG.CERN.ch' ):
       ep = 'LCG.CERN.ch'
     else:
       # Target site FTS server should be used
       ep = targetSite
 
     try:
-      configPath = '/Resources/FTSEndpoints/%s' % ep
-      endpointURL = gConfig.getValue( configPath )
+      endpointURL = self.resources.getTransferValue( ep, 'FTS', 'URL' )
       if not endpointURL:
         errStr = "FTSRequest.__resolveFTSServer: Failed to find FTS endpoint, check CS entry for '%s'." % ep
         return S_ERROR( errStr )

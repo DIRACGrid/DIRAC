@@ -22,6 +22,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers                       import Regis
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                   import SiteStatus
 
 
 class JobScheduling( OptimizerExecutor ):
@@ -108,14 +109,15 @@ class JobScheduling( OptimizerExecutor ):
     userSites, userBannedSites = result[ 'Value' ]
 
     # Get active and banned sites from DIRAC
-    result = self.__jobDB.getSiteMask( 'Active' )
+    siteStatus = SiteStatus()
+    result = siteStatus.getUsableSites( 'ComputingAccess' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve active sites from JobDB" )
-    wmsActiveSites = set( result[ 'Value' ] )
-    result = self.__jobDB.getSiteMask( 'Banned' )
+    usableSites = result[ 'Value' ]
+    result = siteStatus.getUnusableSites( 'ComputingAccess' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve banned sites from JobDB" )
-    wmsBannedSites = set( result[ 'Value' ] )
+    unusableSites = result[ 'Value' ]
 
     # If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
@@ -124,7 +126,7 @@ class JobScheduling( OptimizerExecutor ):
         return S_ERROR( "Could not retrieve job type" )
       jobType = result[ 'Value' ]
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
-        sites = userSites.intersection( wmsActiveSites ).difference( wmsBannedSites )
+        sites = userSites.intersection( usableSites ).difference( unusableSites )
         if not sites:
           raise OptimizerExecutor.FreezeTask( "Sites %s are inactive or banned" % ", ".join( userSites ) )
 

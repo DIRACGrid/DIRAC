@@ -220,8 +220,13 @@ class FileCatalog:
     result = self.opHelper.getSections( '/Services/Catalogs' )
     fileCatalogs = []
     operationsFlag = False
+    optCatalogDict = {}
     if result['OK']:
-      fileCatalogs = result['Value']
+      fcs = result['Value']
+      for fc in fcs:
+        fName = self.opHelper.getValue( '/Services/Catalogs/%s/CatalogName' % fc, fc )
+        fileCatalogs.append( fName )
+        optCatalogDict[fName] = fc
       operationsFlag = True
     else:   
       res = self.reHelper.getEligibleResources( 'Catalog' )
@@ -238,7 +243,7 @@ class FileCatalog:
         return res
       catalogConfig = res['Value']
       if operationsFlag:
-        result = self.opHelper.getOptionsDict( '/Services/Catalogs/%s' % catalogName )
+        result = self.opHelper.getOptionsDict( '/Services/Catalogs/%s' % optCatalogDict[catalogName] )
         if not result['OK']:
           return result
         catalogConfig.update( result['Value'] )        

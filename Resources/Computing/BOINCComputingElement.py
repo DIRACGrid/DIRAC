@@ -11,13 +11,9 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
-from DIRAC                                               import gConfig
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
-import os, sys, bz2, base64,tempfile
+import os, bz2, base64,tempfile
 from urlparse import urlparse
-from suds.client import Client
 
 CE_NAME = 'BOINC'
 
@@ -172,8 +168,8 @@ EOF
     try:
       result = self.BOINCClient.service.getDynamicInfo( )
     except:
-      self.log.error( 'Could not get the BONIC CE %s dynamic jobs information, commnication failed!' % self.wsdl )
-      return S_ERROR( 'Could not get the BONIC CE %s dynamic jobs information, commnication failed!' % self.wsdl )
+      self.log.error( 'Could not get the BOINC CE %s dynamic jobs information, communication failed!' % self.wsdl )
+      return S_ERROR( 'Could not get the BOINC CE %s dynamic jobs information, communication failed!' % self.wsdl )
 
     if not result['ok']:
       self.log.warn( 'Did not get the BONIC CE %s dynamic jobs information, the value returned is false!' % self.wsdl  )
@@ -286,21 +282,21 @@ EOF
           fileHander.close( )
     return strFile
  
- #####################################################################
+#####################################################################
   def _fromStrToFile(self, strContent, fileName ):
     """ Write a string to a file
     """
     try:
-      fileHander = open ( fileName, "w" )
-      strFile = fileHander.write ( strContent ) 
+      fileHandler = open ( fileName, "w" )
+      fileHandler.write ( strContent ) 
     except:
       self.log.verbose( "To create %s failed!" % fileName )
       pass
     finally:
-      if fileHander:
-        fileHander.close( )
+      if fileHandler:
+        fileHandler.close( )
 
- #####################################################################
+#####################################################################
   def _deleteFile(self, fileName ):
     """ delete a file
     """
@@ -340,8 +336,8 @@ if __name__ == "__main__":
     if not jobStatus['OK']:
       print jobStatus['Message']
     else:
-      for id in jobTestList:
-        print 'The status of the job %s is %s' % (id, jobStatus['Value'][id])
+      for id_ in jobTestList:
+        print 'The status of the job %s is %s' % (id_, jobStatus['Value'][id_])
 
   if test_parameter & test_getDynamic:
     serverState = test_boinc.getCEStatus()

@@ -35,9 +35,9 @@ import re
 from stat import ST_MODE, ST_SIZE, ST_ATIME, ST_CTIME, ST_MTIME, S_ISDIR, S_IMODE
 from types import StringType, StringTypes, ListType
 ## from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.Os import getDiskSpace, getDirectorySize
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+from DIRAC.Core.Utilities.Os import getDirectorySize
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
 BASE_PATH = ""
@@ -51,17 +51,16 @@ def initializeStorageElementHandler( serviceInfo ):
   global BASE_PATH
   global USE_TOKENS
   global MAX_STORAGE_SIZE
-  cfgPath = serviceInfo['serviceSectionPath']
 
-  BASE_PATH = gConfig.getValue( "%s/BasePath" % cfgPath, BASE_PATH )
+  BASE_PATH = getServiceOption( serviceInfo, "BasePath", BASE_PATH )
   if not BASE_PATH:
     gLogger.error( 'Failed to get the base path' )
     return S_ERROR( 'Failed to get the base path' )
   if not os.path.exists( BASE_PATH ):
     os.makedirs( BASE_PATH )
 
-  USE_TOKENS = gConfig.getValue( "%s/UseTokens" % cfgPath, USE_TOKENS )
-  MAX_STORAGE_SIZE = gConfig.getValue( "%s/MaxStorageSize" % cfgPath, MAX_STORAGE_SIZE )
+  USE_TOKENS = getServiceOption( serviceInfo, "%UseTokens", USE_TOKENS )
+  MAX_STORAGE_SIZE = getServiceOption( serviceInfo, "MaxStorageSize", MAX_STORAGE_SIZE )
 
   gLogger.info( 'Starting DIRAC Storage Element' )
   gLogger.info( 'Base Path: %s' % BASE_PATH )
@@ -83,16 +82,17 @@ class StorageElementHandler( RequestHandler ):
 
   @staticmethod
   def __checkForDiskSpace( dpath, size ):
-    """ Check if the directory dpath can accomodate 'size' volume of data
+    """ Check if the directory dpath can accommodate 'size' volume of data
     """
-    dsize = ( getDiskSpace( dpath ) - 1 ) * 1024 * 1024
+    stats = os.statvfs( dpath )
+    dsize = stats.f_bsize * stats.f_bavail
     maxStorageSizeBytes = MAX_STORAGE_SIZE * 1024 * 1024
     return ( min( dsize, maxStorageSizeBytes ) > size )
 
   def __resolveFileID( self, fileID ):
     """ get path to file for a given :fileID: """
-    
-    port = self.getCSOption('Port','')
+
+    port = self.getCSOption( 'Port', '' )
     if not port:
       return ''
 
@@ -100,16 +100,16 @@ class StorageElementHandler( RequestHandler ):
       loc = fileID.find( ":%s" % port )
       if loc >= 0:
         fileID = fileID[loc + len( ":%s" % port ):]
-      
+
     serviceName = self.serviceInfoDict['serviceName']
     loc = fileID.find( serviceName )
     if loc >= 0:
       fileID = fileID[loc + len( serviceName ):]
-      
+
     loc = fileID.find( '?=' )
     if loc >= 0:
       fileID = fileID[loc + 2:]
-      
+
     if fileID.find( BASE_PATH ) == 0:
       return fileID
     while fileID and fileID[0] == '/':
@@ -241,8 +241,10 @@ class StorageElementHandler( RequestHandler ):
     try:
       fd = open( file_path, "wb" )
     except Exception, error:
-      return S_ERROR( "Cannot open to write destination file %s: %s" % ( file_path, str(error) ) )
-    result = fileHelper.networkToDataSink( fd, maxFileSize=( MAX_STORAGE_SIZE * 1024 * 1024 ) )
+      return S_ERROR( "Cannot open to write destination file %s: %s" % ( file_path, str( error ) ) )
+    if "NoCheckSum" in token:
+      fileHelper.disableCheckSum()
+    result = fileHelper.networkToDataSink( fd, maxFileSize = ( MAX_STORAGE_SIZE * 1024 * 1024 ) )
     if not result[ 'OK' ]:
       return result
     fd.close()
@@ -254,6 +256,8 @@ class StorageElementHandler( RequestHandler ):
         token is used for access rights confirmation.
     """
     file_path = self.__resolveFileID( fileID )
+    if "NoCheckSum" in token:
+      fileHelper.disableCheckSum()
     result = fileHelper.getFileDescriptor( file_path, 'r' )
     if not result['OK']:
       result = fileHelper.sendEOF()
@@ -307,7 +311,7 @@ class StorageElementHandler( RequestHandler ):
         compress = True
       fileID = fileID.replace( '.tar', '' )
       strippedFiles.append( self.__resolveFileID( fileID ) )
-    res = fileHelper.bulkToNetwork( strippedFiles, compress=compress )
+    res = fileHelper.bulkToNetwork( strippedFiles, compress = compress )
     if not res['OK']:
       gLogger.error( 'Failed to send bulk to network', res['Message'] )
     return res
@@ -403,13 +407,14 @@ class StorageElementHandler( RequestHandler ):
     storageDict['BasePath'] = BASE_PATH
     storageDict['MaxCapacity'] = MAX_STORAGE_SIZE
     used_space = getDirectorySize( BASE_PATH )
-    available_space = getDiskSpace( BASE_PATH )
+    stats = os.statvfs( BASE_PATH )
+    available_space = ( stats.f_bsize * stats.f_bavail ) / 1024 / 1024
     allowed_space = MAX_STORAGE_SIZE - used_space
     actual_space = min( available_space, allowed_space )
     storageDict['AvailableSpace'] = actual_space
     storageDict['UsedSpace'] = used_space
     return S_OK( storageDict )
-  
+
   @staticmethod
   def __getDirectorySize( path ):
     """ Get the total size of the given directory in bytes

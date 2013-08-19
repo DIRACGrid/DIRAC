@@ -5,7 +5,7 @@
 __RCSID__ = "$Id$"
 
 from types import *
-from DIRAC                                                 import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                                 import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler                       import RequestHandler
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB  import StorageManagementDB
 # This is a global instance of the StorageDB
@@ -14,7 +14,8 @@ storageDB = False
 def initializeStorageManagerHandler( serviceInfo ):
   global storageDB
   storageDB = StorageManagementDB()
-  return S_OK()
+  return storageDB._checkTable()
+  
 
 class StorageManagerHandler( RequestHandler ):
 
@@ -75,6 +76,13 @@ class StorageManagerHandler( RequestHandler ):
       gLogger.error( 'getTasks: Failed to get Cache replicas', res['Message'] )
     return res
 
+  types_removeStageRequests = [ListType]
+  def export_removeStageRequests( self, replicaIDs):
+    res = storageDB.removeStageRequests( replicaIDs )
+    if not res['OK']:
+      gLogger.error( 'removeStageRequests: Failed to remove StageRequests', res['Message'] )
+    return res
+      
   types_getCacheReplicas = [DictType]
   def export_getCacheReplicas( self, condDict, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None ):
     """ Get the replcias known to the DB. """
@@ -303,3 +311,20 @@ class StorageManagerHandler( RequestHandler ):
     if not res['OK']:
       gLogger.error( 'getAssociatedReplicas: Failed to get Associated Replicas. ', res['Message'] )
     return res
+
+  types_killTasksBySourceTaskID = [ListType]
+  def export_killTasksBySourceTaskID(self, sourceTaskIDs ):
+    """ Given SourceTaskIDs (jobIDs), this will cancel further staging of files for the corresponding tasks"""
+    res = storageDB.killTasksBySourceTaskID( sourceTaskIDs )
+    if not res['OK']:
+      gLogger.error( 'removeTasks: Failed to kill staging', res['Message'] )
+    return res
+
+  types_getCacheReplicasSummary = []
+  def export_getCacheReplicasSummary(self):
+    """ Reports breakdown of file number/size in different staging states across storage elements """
+    res = storageDB.getCacheReplicasSummary()
+    if not res['OK']:
+      gLogger.error(' getCacheReplicasSummary: Failed to retrieve summary from server',res['Message'])
+    return res
+

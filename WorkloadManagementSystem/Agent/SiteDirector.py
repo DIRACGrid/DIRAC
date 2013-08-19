@@ -10,7 +10,7 @@
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
@@ -21,6 +21,7 @@ from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus 
 import os, base64, bz2, tempfile, random, socket
 import DIRAC
 
@@ -53,6 +54,7 @@ class SiteDirector( AgentModule ):
     self.queueDict = {}
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
+    self.siteStatus = SiteStatus()
     return S_OK()
 
   def beginExecution( self ):
@@ -78,7 +80,7 @@ class SiteDirector( AgentModule ):
           if 'NormalUser' in Registry.getPropertiesForGroup( group ):
             self.voGroups.append( group )
     else:
-      self.voGroups = [ self.group ]      
+      self.voGroups = [ self.group ]
 
     result = findGenericPilotCredentials( vo = self.vo )
     if not result[ 'OK' ]:
@@ -86,15 +88,15 @@ class SiteDirector( AgentModule ):
     self.pilotDN, self.pilotGroup = result[ 'Value' ]
     self.pilotDN = self.am_getOption( "PilotDN", self.pilotDN )
     self.pilotGroup = self.am_getOption( "PilotGroup", self.pilotGroup )
-   
-    self.platforms = [] 
+
+    self.platforms = []
     self.sites = []
     self.defaultSubmitPools = ''
     if self.group:
       self.defaultSubmitPools = Registry.getGroupOption( self.group, 'SubmitPools', '' )
     elif self.vo:
       self.defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
-      
+
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
@@ -104,7 +106,6 @@ class SiteDirector( AgentModule ):
     self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', self.maxPilotsToSubmit )
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
     self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 7200 )
-    self.extensions = self.am_getOption( 'PilotExtensions', [] )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -123,10 +124,10 @@ class SiteDirector( AgentModule ):
       ces = self.am_getOption( 'CEs', [] )
       
     self._resources = Resources.Resources( vo = self.vo )  
-    result = self._resources.getEligibleQueues( siteList = siteNames,
-                                                ceList = ces,
-                                                ceTypeList = ceTypes,
-                                                mode = 'Direct' )
+    result = self._resources.getEligibleQueuesInfo( siteList = siteNames,
+                                                    ceList = ces,
+                                                    ceTypeList = ceTypes,
+                                                    mode = 'Direct' )
     if not result['OK']:
       return result
     resourceDict = result['Value']
@@ -207,7 +208,7 @@ class SiteDirector( AgentModule ):
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
-          
+
           platform = ''
           if "Platform" in self.queueDict[queueName]['ParametersDict']:
             platform = self.queueDict[queueName]['ParametersDict']['Platform']
@@ -216,15 +217,15 @@ class SiteDirector( AgentModule ):
           elif "OS" in ceDict:
             architecture = ceDict.get( 'architecture', 'x86_64' )
             OS = ceDict['OS']
-            platform = '_'.join([architecture,OS])
+            platform = '_'.join( [architecture, OS] )
           if platform and not platform in self.platforms:
-            self.platforms.append(platform)
-            
+            self.platforms.append( platform )
+
           if not "Platform" in self.queueDict[queueName]['ParametersDict'] and platform:
             result = Resources.getDIRACPlatform( platform )
             if result['OK']:
-              self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value']  
-          
+              self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value']
+
           ceQueueDict = dict( ceDict )
           ceQueueDict.update( self.queueDict[queueName]['ParametersDict'] )
           result = ceFactory.getCE( ceName = ce,
@@ -244,7 +245,7 @@ class SiteDirector( AgentModule ):
           if 'BundleProxy' in self.queueDict[queueName]['ParametersDict']:
             self.queueDict[queueName]['BundleProxy'] = True
           elif 'BundleProxy' in ceDict:
-            self.queueDict[queueName]['BundleProxy'] = True  
+            self.queueDict[queueName]['BundleProxy'] = True
 
           if siteFullName not in self.sites:
             self.sites.append( siteFullName )
@@ -283,17 +284,17 @@ class SiteDirector( AgentModule ):
     if self.vo:
       tqDict['Community'] = self.vo
     if self.voGroups:
-      tqDict['OwnerGroup'] = self.voGroups  
-    
+      tqDict['OwnerGroup'] = self.voGroups
+
     result = Resources.getCompatiblePlatforms( self.platforms )
     if not result['OK']:
       return result
     tqDict['Platform'] = result['Value']
     tqDict['Site'] = self.sites
-    
+
     self.log.verbose( 'Checking overall TQ availability with requirements' )
     self.log.verbose( tqDict )
-    
+
     rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
     result = rpcMatcher.getMatchingTaskQueues( tqDict )
     if not result[ 'OK' ]:
@@ -301,12 +302,6 @@ class SiteDirector( AgentModule ):
     if not result['Value']:
       self.log.verbose( 'No Waiting jobs suitable for the director' )
       return S_OK()
-
-    # Check if the site is allowed in the mask
-    result = jobDB.getSiteMask()
-    if not result['OK']:
-      return S_ERROR( 'Can not get the site mask' )
-    siteMaskList = result['Value']
 
     queues = self.queueDict.keys()
     random.shuffle( queues )
@@ -316,7 +311,10 @@ class SiteDirector( AgentModule ):
       ceType = self.queueDict[queue]['CEType']
       queueName = self.queueDict[queue]['QueueName']
       siteName = self.queueDict[queue]['Site']
-      siteMask = siteName in siteMaskList
+      #
+      #FIXME: using only ComputingAccess
+      #
+      siteMask = self.siteStatus.isUsableSite( siteName, 'ComputingAccess' )
 
       if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
         queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )
@@ -358,9 +356,9 @@ class SiteDirector( AgentModule ):
         ceDict['Community'] = self.vo
       if self.voGroups:
         ceDict['OwnerGroup'] = self.voGroups
-      
+
       # This is a hack to get rid of !
-      ceDict['SubmitPool'] = self.defaultSubmitPools  
+      ceDict['SubmitPool'] = self.defaultSubmitPools
 
       result = Resources.getCompatiblePlatforms( self.platforms )
       if not result['OK']:
@@ -398,7 +396,7 @@ class SiteDirector( AgentModule ):
           totalWaitingPilots = result['Value']
           self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % tqIDList, totalWaitingPilots )
 
-      pilotsToSubmit = max( 0, min( totalSlots, totalTQJobs-totalWaitingPilots ) )
+      pilotsToSubmit = max( 0, min( totalSlots, totalTQJobs - totalWaitingPilots ) )
       self.log.info( 'Available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
                               ( totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
 
@@ -421,16 +419,17 @@ class SiteDirector( AgentModule ):
 
         executable, pilotSubmissionChunk = result['Value']
         result = ce.submitJob( executable, '', pilotSubmissionChunk )
+        os.unlink( executable )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
           pilotsToSubmit = 0
           continue
-        
+
         pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
         # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
         # task queue priorities
         pilotList = result['Value']
-        self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList), queueName, ceName ) )
+        self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList ), queueName, ceName ) )
         stampDict = {}
         if result.has_key( 'PilotStampDict' ):
           stampDict = result['PilotStampDict']
@@ -548,10 +547,18 @@ class SiteDirector( AgentModule ):
     # CS Servers
     csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
-    # DIRAC Extensions
-    # extensionsList = CSGlobals.getCSExtensions()
-    if self.extensions:
-      pilotOptions.append( '-e %s' % ",".join( self.extensions ) )
+    
+    # DIRAC Extensions to be used in pilots
+    pilotExtensionsList = opsHelper.getValue( "Pilot/Extensions", [] )
+    extensionsList = []
+    if pilotExtensionsList: 
+      if pilotExtensionsList[0] != 'None':
+        extensionsList = pilotExtensionsList
+    else:
+      extensionsList = CSGlobals.getCSExtensions()
+    if extensionsList:
+      pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
+      
     # Requested CPU time
     pilotOptions.append( '-T %s' % queueDict['CPUTime'] )
     # CEName
@@ -576,7 +583,7 @@ class SiteDirector( AgentModule ):
 
     # Hack
     if self.defaultSubmitPools:
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' %  self.defaultSubmitPools )
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
@@ -673,7 +680,9 @@ EOF
                                            'Queue':queueName,
                                            'GridType':ceType,
                                            'GridSite':siteName,
-                                           'Status':TRANSIENT_PILOT_STATUS} )
+                                           'Status':TRANSIENT_PILOT_STATUS,
+                                           'OwnerDN': self.pilotDN,
+                                           'OwnerGroup': self.pilotGroup } )
       if not result['OK']:
         self.log.error( 'Failed to select pilots: %s' % result['Message'] )
         continue
@@ -743,7 +752,7 @@ EOF
                 if not result['OK']:
                   self.log.error( 'Failed to store pilot output', result['Message'] )
               else:
-                self.log.warn( 'Empty pilot output not stored to PilotDB' )    
+                self.log.warn( 'Empty pilot output not stored to PilotDB' )
 
     # The pilot can be in Done state set by the job agent check if the output is retrieved
     for queue in self.queueDict:
@@ -870,4 +879,4 @@ EOF
       return result
 
     return S_OK()
-  
+

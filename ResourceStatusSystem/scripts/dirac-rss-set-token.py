@@ -1,144 +1,208 @@
 #!/usr/bin/env python
-################################################################################
-# $HeadURL $
-################################################################################
 """ 
-  Set the token for the given element.
-"""
-__RCSID__  = "$Id$"
-
-import DIRAC
-from DIRAC           import gLogger  
-from DIRAC.Core.Base import Script
-
-Script.registerSwitch( "g:", "Granularity=", "      Granularity of the element" )
-Script.registerSwitch( "n:", "ElementName=", "      Name of the element" )
-Script.registerSwitch( "k:", "Token="      , "      Token of the element ( write 'RS_SVC' to give it back to RSS )" )
-Script.registerSwitch( "r:", "Reason="     , "      Reason for the change" )
-Script.registerSwitch( "t:", "StatusType=" , "      StatusType of the element" )
-Script.registerSwitch( "u:", "Duration="   , "      Duration(hours) of the token" )
-
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     '\nUsage:',
-                                     '  %s [option|cfgfile] <granularity> <element_name> <token> [<reason>] [<status_type>] [<duration>]' % Script.scriptName,
-                                     '\nArguments:',
-                                     '  granularity (string): granularity of the resource, e.g. "Site"',
-                                     '  element_name (string): name of the resource, e.g. "LCG.CERN.ch"',
-                                     '  token (string, optional): token to be assigned ( "RS_SVC" gives it back to RSS ), e.g. "ubeda"',
-                                     '  reason (string, optional): reason for the change, e.g. "I dont like the site admin"',
-                                     '  statusType ( string, optional ): defines the status type, otherwise it applies to all',
-                                     '  duration( integer, optional ): duration of the token.\n'] ) )
-Script.parseCommandLine()
-
-DEFAULT_DURATION = 24
-
-params = {}
-
-for switch in Script.getUnprocessedSwitches():
-  if switch[0].lower() == "g" or switch[0].lower() == "granularity":
-    params['g'] = switch[ 1 ]
-  elif switch[0].lower() == "n" or switch[0].lower() == "elementname":
-    params['n'] = switch[ 1 ]  
-  elif switch[0].lower() == "k" or switch[0].lower() == "token":
-    params['k'] = switch[ 1 ]
-  elif switch[0].lower() == "r" or switch[0].lower() == "reason":
-    params['r'] = switch[ 1 ]    
-  elif switch[0].lower() == "t" or switch[0].lower() == "statustype":
-    params['t'] = switch[ 1 ]
-  elif switch[0].lower() == "u" or switch[0].lower() == "duration":
-    params['u'] = switch[ 1 ]
+  dirac-rss-set-token
+  
+    Script that helps setting the token of the elements in RSS. It can acquire or
+    release the token. If the releaseToken switch is used, no matter what was the
+    previous token, it will be set to rs_svc ( RSS owns it ). If not set, the token
+    will be set to whatever username is defined on the proxy loaded while issuing
+    this command. In the second case, the token lasts one day.
     
-if not params.has_key( 'g' ):
-  gLogger.error( 'Granularity not found')
-  Script.showHelp()
-  DIRAC.exit( 2 )          
-
-if not params.has_key( 'n' ):
-  gLogger.error( 'Name not found')
-  Script.showHelp()
-  DIRAC.exit( 2 )          
-
-#  gLogger.error( 'Token not found')
-#  Script.showHelp()
-#  DIRAC.exit( 2 )     
-
-from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration 
-
-res = getProxyInfo()
-if not res['OK']:
-  gLogger.error( "Failed to get proxy information", res['Message'] )
-  DIRAC.exit( 2 )
-userName = res['Value']['username']
-
-if not params.has_key( 'k' ):
-  params[ 'k' ] = userName
-
-validElements = RssConfiguration.getValidElements()
-if not params[ 'g' ] in validElements:
-  gLogger.error( '"%s" is not a valid granularity' % params[ 'g' ] )
-  DIRAC.exit( 2 )
-
-if params[ 'k' ] != 'RS_SVC':
-  
-  rmc = ResourceManagementClient()
-  u   = rmc.getUserRegistryCache( login = params[ 'k' ] )
-  
-  if not u[ 'OK' ] or not u[ 'Value' ]:
-    gLogger.error( '"%s" is not a known user' % params[ 'k' ] )
-    DIRAC.exit( 2 )
-
-if not params.has_key( 't' ):
-  params[ 't' ] = None
-
-if not params.has_key( 'r' ):
-  params[ 'r' ] = 'Status set by %s' % userName
-  
-if not params.has_key( 'u' ):
-  params[ 'u' ] = DEFAULT_DURATION  
-else:
-  if not isintance( params[ 'u' ], int ):
-    gLogger.error( 'Expecting integer for duration, got "%s"' % params[ 'u' ])
-    DIRAC.exit( 2 )  
-
-
-rsCl = ResourceStatusClient()
-element = rsCl.getElementStatus( params[ 'g' ], elementName = params[ 'n' ], 
-                                 statusType = params[ 't' ], meta = { 'columns' : [ 'StatusType', 'TokenOwner', 'TokenExpiration' ]} )
-
-if not element['OK']:
-  gLogger.error( 'Error trying to get (%s,%s,%s)' % ( params['g'], params['n'], params['t']) )
-  DIRAC.exit( 2 )  
-  
-if not element[ 'Value' ]:
-  gLogger.notice( 'Not found any record for this element (%s,%s,%s)' % ( params['g'], params['n'], params['t']) )  
-  DIRAC.exit( 0 )
+"""
 
 from datetime import datetime, timedelta
 
-for lst in element[ 'Value' ]:
-    
-  sType = lst[0]
-  tOwn  = lst[1]   
-  tExp  = lst[2] + timedelta( hours = params[ 'u' ] )
-    
-  if params[ 't' ] == tOwn:
-    gLogger.notice( 'TokenOwner for %s (%s) is already %s. Extending period.' % ( params['n'], sType, tOwn ))
-    #continue
-    
-  res = rsCl.modifyElementStatus( params['g'], params['n'], sType, reason = params['r'], 
-                                  tokenOwner = params['k'], tokenExpiration = tExp )
-    
-  if not res['OK']:
-    gLogger.error( res[ 'Message' ] )
-    DIRAC.exit( 2 )
+# DIRAC
+from DIRAC                                                  import gLogger, exit as DIRACExit, S_OK, version
+from DIRAC.Core.Base                                        import Script
+
+__RCSID__ = '$Id: $'
+
+subLogger  = None
+switchDict = {}
+
+#...............................................................................
+
+def registerSwitches():
+  """
+  Registers all switches that can be used while calling the script from the
+  command line interface.
+  """
   
-  _msg = '%s is responsible for %s ( %s ) until %s' % ( userName, params['n'], stype, tExp )
-  gLogger.notice( _msg )
+  switches = (
+    ( 'element=',     'Element family to be Synchronized ( Site, Resource or Node )' ),
+    ( 'name=',        'Name, name of the element where the change applies' ),
+    ( 'statusType=',  'StatusType, if none applies to all possible statusTypes' ),
+    ( 'reason=',      'Reason to set the Status' ),
+    ( 'releaseToken', 'Release the token and let the RSS go' )
+             )
   
-DIRAC.exit( 0 )  
+  for switch in switches:
+    Script.registerSwitch( '', switch[ 0 ], switch[ 1 ] )
+
+def registerUsageMessage():
+  """
+  Takes the script __doc__ and adds the DIRAC version to it
+  """
+
+  hLine = '  ' + '='*78 + '\n'
+  
+  usageMessage = hLine
+  usageMessage += '  DIRAC %s\n' % version
+  usageMessage += __doc__
+  usageMessage += '\n' + hLine
+  
+  Script.setUsageMessage( usageMessage )
+
+def parseSwitches():
+  """
+  Parses the arguments passed by the user
+  """
+  
+  Script.parseCommandLine( ignoreErrors = True )
+  args = Script.getPositionalArgs()
+  if args:
+    subLogger.error( "Found the following positional args '%s', but we only accept switches" % args )
+    subLogger.error( "Please, check documentation below" )
+    Script.showHelp()
+    DIRACExit( 1 )
+  
+  switches = dict( Script.getUnprocessedSwitches() )  
+  switches.setdefault( 'statusType'  , None )
+  switches.setdefault( 'releaseToken', False )
+  
+  for key in ( 'element', 'name', 'reason' ):
+
+    if not key in switches:
+      subLogger.error( "%s Switch missing" % key )
+      subLogger.error( "Please, check documentation below" )
+      Script.showHelp()
+      DIRACExit( 1 )
+    
+  if not switches[ 'element' ] in ( 'Site', 'Resource', 'Node' ):
+    subLogger.error( "Found %s as element switch" % switches[ 'element' ] )
+    subLogger.error( "Please, check documentation below" )
+    Script.showHelp()
+    DIRACExit( 1 )
+    
+  subLogger.debug( "The switches used are:" )
+  map( subLogger.debug, switches.iteritems() )
+
+  return switches  
+
+#...............................................................................
+
+def proxyUser():
+  """
+  Read proxy to get username.
+  """
+
+  res = getProxyInfo()
+  if not res[ 'OK' ]:
+    return res
+  
+  return S_OK( res[ 'Value' ][ 'username' ] ) 
+
+def setToken( user ):
+  '''
+    Function that gets the user token, sets the validity for it. Gets the elements
+    in the database for a given name and statusType(s). Then updates the status
+    of all them adding a reason and the token.
+  '''
+  
+  rssClient = ResourceStatusClient()
+  
+  # This is a little bit of a nonsense, and certainly needs to be improved.
+  # To modify a list of elements, we have to do it one by one. However, the
+  # modify method does not discover the StatusTypes ( which in this script is
+  # an optional parameter ). So, we get them from the DB and iterate over them.
+  elements = rssClient.selectStatusElement( switchDict[ 'element' ], 'Status', 
+                                            name       = switchDict[ 'name' ], 
+                                            statusType = switchDict[ 'statusType' ], 
+                                            meta = { 'columns' : [ 'StatusType', 'TokenOwner' ] } )
+  
+  if not elements[ 'OK']:
+    return elements
+  elements = elements[ 'Value' ]
+  
+  # If there list is empty they do not exist on the DB !
+  if not elements:
+    subLogger.warn( 'Nothing found for %s, %s, %s' % ( switchDict[ 'element' ],
+                                                       switchDict[ 'name' ],
+                                                       switchDict[ 'statusType' ] ) )
+    return S_OK()
+   
+  # If we want to release the token
+  if switchDict[ 'releaseToken' ] != False:
+    tokenExpiration = datetime.max
+    newTokenOwner   = 'rs_svc'
+  else:
+    tokenExpiration = datetime.utcnow().replace( microsecond = 0 ) + timedelta( days = 1 )
+    newTokenOwner   = user 
+  
+  subLogger.info( 'New token : %s until %s' % ( newTokenOwner, tokenExpiration ) )
+  
+  for statusType, tokenOwner in elements:
+    
+    # If a user different than the one issuing the command and RSS
+    if tokenOwner != user and tokenOwner != 'rs_svc':
+      subLogger.info( '%s(%s) belongs to the user: %s' % ( switchDict[ 'name' ], statusType, tokenOwner ) )
+        
+    # does the job    
+    result = rssClient.modifyStatusElement( switchDict[ 'element' ], 'Status', 
+                                            name       = switchDict[ 'name' ], 
+                                            statusType = statusType,
+                                            reason     = switchDict[ 'reason'],  
+                                            tokenOwner = newTokenOwner, 
+                                            tokenExpiration = tokenExpiration )
+    if not result[ 'OK' ]:
+      return result
+    
+    if tokenOwner == newTokenOwner:
+      msg = '(extended)'
+    elif newTokenOwner == 'rs_svc':
+      msg = '(released)'
+    else:
+      msg = '(aquired from %s)' % tokenOwner
+      
+    subLogger.info( '%s:%s %s' % ( switchDict[ 'name' ], statusType, msg ) )  
+  return S_OK()
+  
+def main():
+  """
+  Main function of the script. Gets the username from the proxy loaded and sets
+  the token taking into account that user and the switchDict parameters.
+  """
+  
+  user = proxyUser()
+  if not user[ 'OK' ]:
+    subLogger.error( user[ 'Message' ] )
+    DIRACExit( user[ 'Message' ] )
+  user = user[ 'Value' ]
+  
+  res = setToken( user )
+  if not res[ 'OK' ]:
+    subLogger.error( res[ 'Message' ] )
+    DIRACExit( res[ 'Message' ] )
+
+#...............................................................................
+
+if __name__ == '__main__':
+  
+  # Logger initialization
+  subLogger  = gLogger.getSubLogger( __file__ )
+
+  # Script initialization
+  registerSwitches()
+  registerUsageMessage()
+  switchDict = parseSwitches()
+  
+  from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
+  from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+  
+  main()
+  
+  DIRACExit( 0 )
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

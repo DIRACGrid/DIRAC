@@ -212,6 +212,9 @@ for the agent restart
     wmsAdminClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdminClient.getPilotInfo( pilotReference )
     if not result['OK']:
+      if "No pilots found" in result['Message']:
+        self.log.warn( result['Message'] )
+        return S_OK( 'NoPilot' )
       self.log.error( result['Message'] )
       return S_ERROR( 'Failed to get the pilot status' )
     pilotStatus = result['Value'][pilotReference]['Status']
@@ -366,6 +369,13 @@ used to fail jobs due to the optimizer chain.
                'OutputSandBoxSize' : 0.0,
                'ProcessedEvents' : 0
              }
+    
+    # For accidentally stopped jobs ExecTime can be not set
+    if not acData['ExecTime']:
+      acData['ExecTime'] = acData['CPUTime']
+    elif acData['ExecTime'] < acData['CPUTime']:
+      acData['ExecTime'] = acData['CPUTime']
+    
     self.log.verbose( 'Accounting Report is:' )
     self.log.verbose( acData )
     accountingReport.setValuesFromDict( acData )

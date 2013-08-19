@@ -60,27 +60,46 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'GocSite' ]
                                 }
 
+
   _tablesDB[ 'JobCache' ] = { 'Fields' :
                       {
                        'Site'          : 'VARCHAR(64) NOT NULL',
-                       'MaskStatus'    : 'VARCHAR(32) NOT NULL',    
-                       'Efficiency'    : 'DOUBLE NOT NULL DEFAULT 0',
-                       'Status'        : 'VARCHAR(16) NOT NULL',
-                       'LastCheckTime' : 'DATETIME NOT NULL'                       
+                       'Timespan'      : 'INTEGER NOT NULL',
+                       'Checking'      : 'INTEGER NOT NULL DEFAULT 0',
+                       'Completed'     : 'INTEGER NOT NULL DEFAULT 0',
+                       'Done'          : 'INTEGER NOT NULL DEFAULT 0',
+                       'Failed'        : 'INTEGER NOT NULL DEFAULT 0',
+                       'Killed'        : 'INTEGER NOT NULL DEFAULT 0',
+                       'Matched'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Received'      : 'INTEGER NOT NULL DEFAULT 0',
+                       'Running'       : 'INTEGER NOT NULL DEFAULT 0',                       
+                       'Staging'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Stalled'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Waiting'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'LastCheckTime' : 'DATETIME NOT NULL'
                       },
-                      'PrimaryKey' : [ 'Site' ]
+                      'PrimaryKey' : [ 'Site', 'Timespan' ]
                                 }
 
   _tablesDB[ 'PilotCache' ] = { 'Fields' :
                       {
-                       'Site'          : 'VARCHAR(64) NOT NULL',
                        'CE'            : 'VARCHAR(64) NOT NULL',
-                       'PilotsPerJob'  : 'DOUBLE NOT NULL DEFAULT 0',
-                       'PilotJobEff'   : 'DOUBLE NOT NULL DEFAULT 0',   
-                       'Status'        : 'VARCHAR(16) NOT NULL',
+                       'Timespan'      : 'INTEGER NOT NULL',
+                       'Scheduled'     : 'INTEGER NOT NULL DEFAULT 0',
+                       'Waiting'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Submitted'     : 'INTEGER NOT NULL DEFAULT 0',
+                       'Running'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Done'          : 'INTEGER NOT NULL DEFAULT 0',
+                       'Aborted'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Cancelled'     : 'INTEGER NOT NULL DEFAULT 0',
+                       'Deleted'       : 'INTEGER NOT NULL DEFAULT 0',
+                       'Failed'        : 'INTEGER NOT NULL DEFAULT 0',
+                       'Held'          : 'INTEGER NOT NULL DEFAULT 0',
+                       'Killed'        : 'INTEGER NOT NULL DEFAULT 0',
+                       'Stalled'       : 'INTEGER NOT NULL DEFAULT 0',
                        'LastCheckTime' : 'DATETIME NOT NULL'                                    
                       },
-                      'PrimaryKey' : [ 'Site', 'CE' ]
+                      'PrimaryKey' : [ 'CE', 'Timespan' ]
                                 }
 
   _tablesDB[ 'PolicyResult' ] = { 'Fields' : 
@@ -96,29 +115,14 @@ class ResourceManagementDB( object ):
                       },
                       'PrimaryKey' : [ 'Element', 'Name', 'StatusType', 'PolicyName' ] 
                                 }
-  
-  _tablesDB[ 'PolicyResultLog' ] = { 'Fields' : 
-                      {
-                       'PolicyResultLogID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
-                       'Element'           : 'VARCHAR(32) NOT NULL',
-                       'Name'              : 'VARCHAR(64) NOT NULL',
-                       'PolicyName'        : 'VARCHAR(64) NOT NULL',
-                       'StatusType'        : 'VARCHAR(16) NOT NULL DEFAULT ""',
-                       'Status'            : 'VARCHAR(8) NOT NULL',
-                       'Reason'            : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
-                       'DateEffective'     : 'DATETIME NOT NULL',                       
-                       'LastCheckTime'     : 'DATETIME NOT NULL'                                   
-                      },
-                      'PrimaryKey' : [ 'PolicyResultLogID' ]
-                                }
 
   _tablesDB[ 'SpaceTokenOccupancyCache' ] = { 'Fields' :
                       {
                        'Endpoint'       : 'VARCHAR( 64 ) NOT NULL',
                        'Token'          : 'VARCHAR( 64 ) NOT NULL',
-                       'Total'          : 'INTEGER NOT NULL DEFAULT 0',                      
-                       'Guaranteed'     : 'INTEGER NOT NULL DEFAULT 0',
-                       'Free'           : 'INTEGER NOT NULL DEFAULT 0',                     
+                       'Total'          : 'DOUBLE NOT NULL DEFAULT 0',                      
+                       'Guaranteed'     : 'DOUBLE NOT NULL DEFAULT 0',
+                       'Free'           : 'DOUBLE NOT NULL DEFAULT 0',                     
                        'LastCheckTime'  : 'DATETIME NOT NULL' 
                       },
                       'PrimaryKey' : [ 'Endpoint', 'Token' ]                                             
@@ -156,8 +160,39 @@ class ResourceManagementDB( object ):
                       'PrimaryKey' : [ 'Site', 'System' ]        
                                 }
   
+  _tablesDB[ 'ErrorReportBuffer' ] = { 'Fields' : 
+                      {
+                       'ID'            : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                       'Name'          : 'VARCHAR(64) NOT NULL',
+                       'ElementType'   : 'VARCHAR(32) NOT NULL',
+                       'Reporter'      : 'VARCHAR(64) NOT NULL',
+                       'ErrorMessage'  : 'VARCHAR(512) NOT NULL',
+                       'Operation'     : 'VARCHAR(64) NOT NULL',
+                       'Arguments'     : 'VARCHAR(512) NOT NULL DEFAULT ""',
+                       'DateEffective' : 'DATETIME NOT NULL'
+                      },
+                      'PrimaryKey' : [ 'ID' ]
+                                }  
+  
   _tablesLike  = {}
-  _likeToTable = {}
+  _tablesLike[ 'PolicyResultWithID' ] = { 'Fields' : 
+                      {
+                       'ID'            : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                       'Element'       : 'VARCHAR(32) NOT NULL',
+                       'Name'          : 'VARCHAR(64) NOT NULL',
+                       'PolicyName'    : 'VARCHAR(64) NOT NULL',
+                       'StatusType'    : 'VARCHAR(16) NOT NULL DEFAULT ""',
+                       'Status'        : 'VARCHAR(8) NOT NULL',
+                       'Reason'        : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
+                       'DateEffective' : 'DATETIME NOT NULL',                       
+                       'LastCheckTime' : 'DATETIME NOT NULL'                                   
+                      },
+                      'PrimaryKey' : [ 'ID' ]
+                                }
+  _likeToTable = {
+                   'PolicyResultLog'     : 'PolicyResultWithID',
+                   'PolicyResultHistory' : 'PolicyResultWithID',
+                  }
   
   def __init__( self, maxQueueSize = 10, mySQL = None ):
     '''
@@ -291,6 +326,8 @@ class ResourceManagementDB( object ):
     selectQuery = self.select( params, meta )
     if not selectQuery[ 'OK' ]:
       return selectQuery 
+    
+    isUpdate = False
               
     if selectQuery[ 'Value' ]:      
       
@@ -323,39 +360,20 @@ class ResourceManagementDB( object ):
       if 'dateEffective' in params:
         params[ 'dateEffective' ] = newDateEffective              
       
-      userQuery  = self.update( params, meta )
-
+      userQuery = self.update( params, meta )
+      isUpdate  = True
+      
     else:      
-
       userQuery = self.insert( params, meta )
+
+    # This part only applies to PolicyResult table
+    logResult = self._logRecord( params, meta, isUpdate )
+    if not logResult[ 'OK' ]:
+      return logResult
     
-#    if self.recordLogs:
-#      
-#      if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
-#        
-#        if isUpdate:
-#          updateRes = self.select( params, meta )
-#          if not updateRes[ 'OK' ]:
-#            return updateRes
-#          
-#          # If we are updating more that one result at a time, this is most likely
-#          # going to be a mess. All queries must be one at a time, if need to do
-#          if len( updateRes[ 'Value' ] ) != 1:
-#            return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
-#          if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
-#            # Uyyy, something went seriously wrong !!
-#            return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
-#                    
-#          params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] )) 
-#                
-#        meta[ 'tableName' ] = meta[ 'tableName' ].replace( 'Status', 'Log' )
-#
-#        logRes = self.insert( params, meta )
-#        if not logRes[ 'OK' ]:
-#          return logRes
-#    
     return userQuery      
 
+  # FIXME: this method looks unused. Maybe can be removed from the code.
   def addIfNotThere( self, params, meta ):
     '''
     Using the PrimaryKeys of the table, it looks for the record in the database.
@@ -405,6 +423,32 @@ class ResourceManagementDB( object ):
       Method used by database tools to write the schema
     '''  
     return self.__createTables()
+
+  def _logRecord( self, params, meta, isUpdate ):
+    '''
+      Method that records every change on a LogTable.
+    '''
+  
+    if not ( 'table' in meta and meta[ 'table' ] == 'PolicyResult' ):
+      return S_OK()
+        
+    if isUpdate:
+      
+      # This looks little bit like a non-sense. If we were updating, we may have
+      # not passed a complete set of parameters, so we have to get all them from the
+      # database :/. It costs us one more query.
+      updateRes = self.select( params, meta )
+      if not updateRes[ 'OK' ]:
+        return updateRes
+                    
+      params = dict( zip( updateRes[ 'Columns' ], updateRes[ 'Value' ][ 0 ] )) 
+
+    # Writes to PolicyResult"Log"                
+    meta[ 'table' ] += 'Log'
+
+    logRes = self.insert( params, meta )
+    
+    return logRes
 
   ## Private methods ###########################################################
 

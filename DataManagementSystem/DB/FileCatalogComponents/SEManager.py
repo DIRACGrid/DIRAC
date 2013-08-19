@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Pfn import pfnunparse
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
-import threading,time
+import threading, time, random
 from types import StringTypes, IntType, LongType
 
 class SEManagerBase:
@@ -16,9 +16,9 @@ class SEManagerBase:
   def __init__(self,database=None):
     self.db = database
     self.lock = threading.Lock()
-    self._refreshSEs()
     self.seUpdatePeriod = 600
     self.resourcesHelper = Resources()
+    self._refreshSEs()
     
   def _refreshSEs( self ):
     return S_ERROR( 'Should be implemented in a derived class' )  
@@ -85,6 +85,13 @@ class SEManagerDB(SEManagerBase):
     if not res['OK']:
       gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time()-waitTime,seName))
       self.lock.release()
+      if "Duplicate entry" in res['Message']:
+        result = self._refreshSEs( connection )
+        if not result['OK']:
+          return result
+        if seName in self.db.seNames.keys():
+          seid = self.db.seNames[seName]
+          return S_OK(seid)
       return res
     seid = res['lastRowId']
     self.db.seids[seid] = seName
@@ -171,6 +178,14 @@ class SEManagerDB(SEManagerBase):
     seDict = result['Value']
     self.db.seDefinitions[seID]['SEDict'] = seDict
     if seDict:
+      # A.T. Ports can be multiple, this can be better done using the Storage plugin
+      # to provide the replica prefix to keep implementations in one place
+      if 'Port' in seDict:
+        ports = seDict['Port']
+        if ',' in ports:
+          portList = [ x.strip() for x in ports.split(',') ]
+          random.shuffle( portList )
+          seDict['Port'] = portList[0]  
       tmpDict = dict(seDict)
       tmpDict['FileName'] = ''
       result = pfnunparse(tmpDict)

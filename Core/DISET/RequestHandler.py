@@ -12,6 +12,17 @@ from DIRAC.Core.DISET.private.MessageBroker import getGlobalMessageBroker
 from DIRAC.Core.Utilities import Time
 import DIRAC
 
+def getServiceOption( serviceInfo, optionName, defaultValue ):
+  """ Get service option resolving default values from the master service
+  """
+  if optionName[0] == "/":
+    return gConfig.getValue( optionName, defaultValue )
+  for csPath in serviceInfo[ 'csPaths' ]:
+    result = gConfig.getOption( "%s/%s" % ( csPath, optionName, ), defaultValue )
+    if result[ 'OK' ]:
+      return result[ 'Value' ]
+  return defaultValue
+
 class RequestHandler( object ):
 
   class ConnectionError( Exception ):
@@ -149,7 +160,7 @@ class RequestHandler( object ):
       return retVal
     self.__logRemoteQuery( "FileTransfer/%s" % sDirection, fileInfo )
 
-    self.__lockManager.lock( sDirection )
+    self.__lockManager.lock( "FileTransfer/%s" % sDirection )
     try:
       try:
         fileHelper = FileHelper( self.__trPool.get( self.__trid ) )
@@ -175,7 +186,7 @@ class RequestHandler( object ):
           return S_ERROR( "Incomplete transfer" )
         return uRetVal
       finally:
-        self.__lockManager.unlock( sDirection )
+        self.__lockManager.unlock( "FileTransfer/%s" % sDirection )
 
     except Exception, v:
       gLogger.exception( "Uncaught exception when serving Transfer", "%s" % sDirection )
@@ -228,7 +239,7 @@ class RequestHandler( object ):
     dRetVal = self.__checkExpectedArgumentTypes( method, args )
     if not dRetVal[ 'OK' ]:
       return dRetVal
-    self.__lockManager.lock( method )
+    self.__lockManager.lock( "RPC/%s" % method )
     self.__msgBroker.addTransportId( self.__trid,
                                      self.serviceInfoDict[ 'serviceName' ],
                                      idleRead = True )
@@ -237,7 +248,7 @@ class RequestHandler( object ):
         uReturnValue = oMethod( *args )
         return uReturnValue
       finally:
-        self.__lockManager.unlock( method )
+        self.__lockManager.unlock( "RPC/%s" % method )
         self.__msgBroker.removeTransport( self.__trid, closeTransport = False )
     except Exception, v:
       gLogger.exception( "Uncaught exception when serving RPC", "Function %s" % method )

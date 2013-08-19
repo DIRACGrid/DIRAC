@@ -27,7 +27,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getPilotOutput
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 # This is a global instance of the database classes
@@ -51,111 +51,6 @@ def initializeWMSAdministratorHandler( serviceInfo ):
   return S_OK()
 
 class WMSAdministratorHandler(RequestHandler):
-
-###########################################################################
-  types_setMask = [StringTypes]
-  def export_setSiteMask(self, siteList, comment='No comment'):
-    """ Set the site mask for matching. The mask is given in a form of Classad
-        string.
-    """
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-
-    maskList = [ (site,'Active') for site in siteList ]
-    result = jobDB.setSiteMask(maskList,dn,comment)
-    return result
-
-##############################################################################
-  types_getSiteMask = []
-  def export_getSiteMask(self):
-    """ Get the site mask
-    """
-
-    result = jobDB.getSiteMask('Active')
-    return result
-
-    if result['Status'] == "OK":
-      active_list = result['Value']
-      mask = []
-      for i in range(1,len(active_list),2):
-        mask.append(active_list[i])
-
-      return S_OK(mask)
-    else:
-      return S_ERROR('Failed to get the mask from the Job DB')
-
-##############################################################################
-  types_banSite = [StringTypes]
-  def export_banSite(self, site,comment='No comment'):
-    """ Ban the given site in the site mask
-    """
-
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-    result = getUsernameForDN(dn)
-    if result['OK']:
-      author = result['Value']
-    else:
-      author = dn
-    result = jobDB.banSiteInMask(site,author,comment)
-    return result
-
-##############################################################################
-  types_allowSite = [StringTypes]
-  def export_allowSite(self,site,comment='No comment'):
-    """ Allow the given site in the site mask
-    """
-
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-    result = getUsernameForDN(dn)
-    if result['OK']:
-      author = result['Value']
-    else:
-      author = dn
-    result = jobDB.allowSiteInMask(site,author,comment)
-    return result
-
-##############################################################################
-  types_clearMask = []
-  def export_clearMask(self):
-    """ Clear up the entire site mask
-    """
-
-    return jobDB.removeSiteFromMask("All")
-
-##############################################################################
-  types_getSiteMaskLogging = [ list(StringTypes)+[ListType] ]
-  def export_getSiteMaskLogging(self,sites):
-    """ Get the site mask logging history
-    """
-
-    if type(sites) in StringTypes:
-      msites = [sites]
-    else:
-      msites = sites
-    return jobDB.getSiteMaskLogging(msites)
-
-##############################################################################
-  types_getSiteMaskSummary = [ ]
-  def export_getSiteMaskSummary(self):
-    """ Get the mask status for all the configured sites
-    """
-
-    # Get all the configured site names
-    result = Resources().getSites()
-    if not result['OK']:
-      return result
-    sites = result['Value']
-
-    # Get the current mask status
-    result = jobDB.getSiteMaskStatus()
-    siteDict = result['Value']
-    for site in sites:
-      if site not in siteDict:
-        siteDict[site] = 'Unknown'
-
-    return S_OK(siteDict)
 
 ##############################################################################
   types_getCurrentPilotCounters = [ ]
@@ -255,7 +150,7 @@ class WMSAdministratorHandler(RequestHandler):
 
 
   ##############################################################################
-  types_getJobPilotOutput = [IntType]
+  types_getJobPilotOutput = [[StringType, IntType, LongType]]
   def export_getJobPilotOutput(self,jobID):
     """ Get the pilot job standard output and standard error files for the DIRAC
         job reference
@@ -263,13 +158,13 @@ class WMSAdministratorHandler(RequestHandler):
 
     pilotReference = ''
     # Get the pilot grid reference first from the job parameters
-    result = jobDB.getJobParameter(jobID,'Pilot_Reference')
+    result = jobDB.getJobParameter( int( jobID ), 'Pilot_Reference' )
     if result['OK']:
       pilotReference = result['Value']
 
     if not pilotReference:
       # Failed to get the pilot reference, try to look in the attic parameters
-      result = jobDB.getAtticJobParameters(jobID,['Pilot_Reference'])
+      result = jobDB.getAtticJobParameters( int( jobID ), ['Pilot_Reference'] )
       if result['OK']:
         c = -1
         # Get the pilot reference for the last rescheduling cycle
@@ -346,7 +241,7 @@ class WMSAdministratorHandler(RequestHandler):
     else:
       # Instantiate the appropriate CE
       ceFactory = ComputingElementFactory()
-      result = Resources( group=group ).getQueueDescription( pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'] )
+      result = Resources( group=group ).getQueueDescription( pilotDict['Queue'] )
       if not result['OK']:
         return result
       queueDict = result['Value']
@@ -465,7 +360,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##############################################################################
-  types_getPilots = [IntType]
+  types_getPilots = [[StringType, IntType, LongType]]
   def export_getPilots(self,jobID):
     """ Get pilot references and their states for :
       - those pilots submitted for the TQ where job is sitting
@@ -473,7 +368,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     pilots = []
-    result = pilotDB.getPilotsForJobID(jobID)
+    result = pilotDB.getPilotsForJobID( int( jobID ) )
     if not result['OK']:
       if result['Message'].find('not found') == -1:
         return S_ERROR('Failed to get pilot: '+result['Message'])
@@ -482,7 +377,7 @@ class WMSAdministratorHandler(RequestHandler):
     if not pilots:
       # Pilots were not found try to look in the Task Queue
       taskQueueID = 0
-      result = taskQueueDB.getTaskQueueForJob( jobID )
+      result = taskQueueDB.getTaskQueueForJob( int( jobID ) )
       if result['OK'] and result['Value']:
         taskQueueID = result['Value']
       if taskQueueID:
@@ -492,7 +387,7 @@ class WMSAdministratorHandler(RequestHandler):
         pilots += result['Value']
 
     if not pilots:
-      return S_ERROR( 'Failed to get pilot for Job %s' % jobID )
+      return S_ERROR( 'Failed to get pilot for Job %d' % int( jobID ) )
 
     return pilotDB.getPilotInfo(pilotID=pilots)
   
@@ -529,7 +424,7 @@ class WMSAdministratorHandler(RequestHandler):
     for key, pilotDict in pilotRefDict.items():
       
       owner,group,site,ce,queue = key.split( '@@@' )
-      result = Resources( group=group ).getQueueDescription( site, ce, queue )
+      result = Resources( group=group ).getQueueDescription( queue )
       if not result['OK']:
         return result
       queueDict = result['Value']
@@ -560,15 +455,15 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK()  
 
   ##############################################################################
-  types_setJobForPilot = [ [IntType,LongType], StringTypes]
+  types_setJobForPilot = [ [StringType, IntType, LongType], StringTypes]
   def export_setJobForPilot(self,jobID,pilotRef,destination=None):
     """ Report the DIRAC job ID which is executed by the given pilot job
     """
 
-    result = pilotDB.setJobForPilot(jobID,pilotRef)
+    result = pilotDB.setJobForPilot( int( jobID ), pilotRef )
     if not result['OK']:
       return result
-    result = pilotDB.setCurrentJobID(pilotRef,jobID)
+    result = pilotDB.setCurrentJobID( pilotRef, int( jobID ) )
     if not result['OK']:
       return result
     if destination:

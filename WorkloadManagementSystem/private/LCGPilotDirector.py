@@ -12,8 +12,9 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
-from DIRAC import S_OK, S_ERROR, List, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
+from DIRAC.Core.Utilities import List
 
 
 import os, time

@@ -79,5 +79,3 @@ class Splitter( OptimizerExecutor ):
       manifest.setOption( "SplitSourceJob", jid )
       manifest.expand()
     return self.splitJob( manifests )
-
-

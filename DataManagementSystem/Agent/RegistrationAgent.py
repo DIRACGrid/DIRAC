@@ -3,12 +3,13 @@
 ########################################################################
 
 """ RegistrationAgent takes 'register' requests from the RequestDB and registers them.
+
+  :deprecated:
 """
 
 __RCSID__ = "$Id$"
 
 ## imports
-from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.DataManagementSystem.private.RegistrationTask import RegistrationTask
 

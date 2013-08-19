@@ -10,7 +10,7 @@ from types                          import StringTypes
 import os
 
 import DIRAC
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
 
 DEBUG = 0
@@ -106,11 +106,11 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
   if DIRAC.platformTuple[0] == 'Windows':
     # this needs to be tested
     cmd = ' '.join( cmdTuple ) + envAsDict
-    ret = DIRAC.shellCall( timeout, [ cmd ], env = inputEnv )
+    ret = shellCall( timeout, [ cmd ], env = inputEnv )
   else:
     cmdTuple.insert( 0, 'source' )
     cmd = ' '.join( cmdTuple ) + envAsDict
-    ret = DIRAC.systemCall( timeout, [ '/bin/bash', '-c', cmd ], env = inputEnv )
+    ret = systemCall( timeout, [ '/bin/bash', '-c', cmd ], env = inputEnv )
 
   # 3.- Now get back the result
   stdout = ''
@@ -144,6 +144,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
 
   return result
 
+#FIXME: this is not used !
 def unifyLdLibraryPath( path, newpath ):
   """ for Linux and MacOS link all the files in the path in a single directory
       newpath. For that we go along the path in a reverse order and link all files

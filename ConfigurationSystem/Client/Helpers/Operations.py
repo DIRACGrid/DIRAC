@@ -1,8 +1,8 @@
-import threading, thread
+import thread
 import types
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import CFG, LockRing
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
+from DIRAC.Core.Utilities import CFG, LockRing, List
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals, Resources
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 class Operations( object ):
@@ -154,4 +154,43 @@ class Operations( object ):
       path += "/Defaults" 
     return "%s/%s" % ( path, option )
       
-
+  def getSiteMapping( self, resourceType, mapping='' ):
+    """ Get site mapping to resources of a given type 
+    """
+    resultDict = {}
+    
+    if mapping:
+      result = self.getOptions( "SiteTo%sMapping/%s" % ( resourceType, mapping ) )
+      if not result['OK']:
+        return result
+      for site in result['Value']:
+        if site != "UseLocalResources":
+          resultDict[site] = self.getValue( "SiteTo%sMapping/%s/%s" % ( resourceType, mapping, site ), [] )
+      
+    useLocalResources = self.getValue( "SiteTo%sMapping/%s/UseLocalResources" % ( resourceType, mapping), False )
+    if useLocalResources:  
+      reHelper = Resources.Resources( vo = self.__vo )
+      result = reHelper.getEligibleResources( resourceType )
+      if result['OK']:
+        for site in result['Value']:
+          resultDict.setdefault( site, [] )
+          resultDict[site].extend( result['Value'][site] )
+          resultDict[site] = List.uniqueElements( resultDict[site] )
+    
+    return S_OK( resultDict )      
+  
+  def getResourceMapping( self, resourceType, mapping = '' ):
+    """ Get mapping of resources of a given type to sites 
+    """ 
+    result = self.getSiteMapping( resourceType, mapping )
+    if not result['OK']:
+      return result
+    
+    resultDict = {}
+    for site in result['Value']:
+      for resource in result['Value'][site]:
+        resultDict.setdefault( resource, [] )
+        if not site in resultDict[resource]:
+          resultDict[resource].append( site ) 
+    
+    return S_OK( resultDict )        

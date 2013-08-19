@@ -6,10 +6,10 @@ from datetime                                                   import datetime,
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.AccountingSystem.Client.ReportsClient                import ReportsClient
+from DIRAC.ConfigurationSystem.Client.Helpers                   import Resources
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
 __RCSID__ = '$Id:  $'  
 
@@ -21,6 +21,8 @@ class TransferCommand( Command ):
   def __init__( self, args = None, clients = None ):
     
     super( TransferCommand, self ).__init__( args, clients )
+    
+    self.resources = Resources.Resources()
     
     if 'ReportsClient' in self.apis:
       self.rClient = self.apis[ 'ReportsClient' ]
@@ -211,12 +213,12 @@ class TransferCommand( Command ):
       It queries a portion of them.
     '''
 
-    sites = CSHelpers.getSites()
+    sites = Resources.getSites()
     if not sites[ 'OK' ]:
       return sites
     sites = sites[ 'Value' ]
   
-    ses = CSHelpers.getStorageElements()
+    ses = self.resources.getEligibleStorageElements()
     if not ses[ 'OK' ]:
       return ses
     ses = ses[ 'Value' ]

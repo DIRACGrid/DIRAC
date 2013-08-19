@@ -3,7 +3,8 @@ __RCSID__ = "$Id$"
 
 import os
 try:
-  import hashlib as md5
+  import hashlib
+  md5 = hashlib
 except:
   import md5
 import types
@@ -21,8 +22,9 @@ class FileHelper:
   __validDirections = ( "toClient", "fromClient", 'receive', 'send' )
   __directionsMapping = { 'toClient' : 'send', 'fromClient' : 'receive' }
 
-  def __init__( self, oTransport = None ):
+  def __init__( self, oTransport = None, checkSum = True ):
     self.oTransport = oTransport
+    self.__checkMD5 = checkSum
     self.__oMD5 = md5.md5()
     self.bFinishedTransmission = False
     self.bReceivedEOF = False
@@ -30,6 +32,12 @@ class FileHelper:
     self.packetSize = 1048576
     self.__fileBytes = 0
     self.__log = gLogger.getSubLogger( "FileHelper" )
+
+  def disableCheckSum( self ):
+    self.__checkMD5 = False
+    
+  def enableCheckSum( self ):
+    self.__checkMD5 = True  
 
   def setTransport( self, oTransport ):
     self.oTransport = oTransport
@@ -48,7 +56,8 @@ class FileHelper:
     return self.__fileBytes
 
   def sendData( self, sBuffer ):
-    self.__oMD5.update( sBuffer )
+    if self.__checkMD5:
+      self.__oMD5.update( sBuffer )
     retVal = self.oTransport.sendData( S_OK( ( True, sBuffer ) ) )
     if not retVal[ 'OK' ]:
       return retVal
@@ -80,11 +89,12 @@ class FileHelper:
       return retVal
     stBuffer = retVal[ 'Value' ]
     if stBuffer[0]:
-      self.__oMD5.update( stBuffer[1] )
+      if self.__checkMD5:
+        self.__oMD5.update( stBuffer[1] )
       self.oTransport.sendData( S_OK() )
     else:
       self.bReceivedEOF = True
-      if not self.__oMD5.hexdigest() == stBuffer[1]:
+      if self.__checkMD5 and not self.__oMD5.hexdigest() == stBuffer[1]:
         self.bErrorInMD5 = True
       self.__finishedTransmission()
       return S_OK( "" )

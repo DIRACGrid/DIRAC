@@ -32,7 +32,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getVOForGroup
 from DIRAC.Core.Utilities.Time                           import toString
-from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
+from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.Core.Base.AgentReactor                        import AgentReactor
@@ -65,9 +65,9 @@ class Dirac( API ):
         self.jobRepo = False
 
     self.scratchDir = gConfig.getValue( self.section + 'ScratchDir', '/tmp' )
-    self.sandboxClient = SandboxStoreClient( rpcClient=sbRPCClient,
-                                             transferClient=sbTransferClient,
-                                             useCertificates=useCertificates  )
+    self.sandboxClient = SandboxStoreClient( rpcClient = sbRPCClient,
+                                             transferClient = sbTransferClient,
+                                             useCertificates = useCertificates )
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
     # Determine the default file catalog
     self.defaultFileCatalog = None
@@ -147,9 +147,9 @@ class Dirac( API ):
       gLogger.warn( "No repository is initialised" )
       return S_OK()
     if requestedStates == None:
-      requestedStates = ['Done', 'Failed', 'Completed']#because users dont care about completed
+      requestedStates = ['Done', 'Failed', 'Completed']  # because users dont care about completed
     jobs = self.jobRepo.readRepository()['Value']
-    for jobID in sortList( jobs.keys() ):
+    for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.has_key( 'State' ) and ( jobDict['State'] in requestedStates ):
         if ( jobDict.has_key( 'Retrieved' ) and ( not int( jobDict['Retrieved'] ) ) ) \
@@ -177,7 +177,7 @@ class Dirac( API ):
     if requestedStates == None:
       requestedStates = ['Done']
     jobs = self.jobRepo.readRepository()['Value']
-    for jobID in sortList( jobs.keys() ):
+    for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.has_key( 'State' ) and ( jobDict['State'] in requestedStates ):
         if ( jobDict.has_key( 'OutputData' ) and ( not int( jobDict['OutputData'] ) ) ) \
@@ -202,7 +202,7 @@ class Dirac( API ):
       gLogger.warn( "No repository is initialised" )
       return S_OK()
     jobs = self.jobRepo.readRepository()['Value']
-    for jobID in sortList( jobs.keys() ):
+    for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.has_key( 'Sandbox' ) and os.path.exists( jobDict['Sandbox'] ):
         shutil.rmtree( jobDict['Sandbox'], ignore_errors = True )
@@ -210,7 +210,7 @@ class Dirac( API ):
         for fileName in eval( jobDict['OutputFiles'] ):
           if os.path.exists( fileName ):
             os.remove( fileName )
-    self.delete( sortList( jobs.keys() ) )
+    self.delete( sorted( jobs ) )
     os.remove( self.jobRepo.getLocation()['Value'] )
     self.jobRepo = False
     return S_OK()
@@ -287,8 +287,8 @@ class Dirac( API ):
           self.log.error( '>>>> Error in %s() <<<<\n%s' % ( method, '\n'.join( errorList ) ) )
         return S_ERROR( formulationErrors )
 
-      #Run any VO specific checks if desired prior to submission, this may or may not be overidden
-      #in a derived class for example
+      # Run any VO specific checks if desired prior to submission, this may or may not be overidden
+      # in a derived class for example
       try:
         result = self.preSubmissionChecks( job, mode )
         if not result['OK']:
@@ -338,7 +338,7 @@ class Dirac( API ):
         self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
         result = self.runLocalAgent( jdl )
       if mode.lower() == 'wms':
-        self.log.verbose( 'Will submit job to WMS' ) #this will happen by default anyway
+        self.log.verbose( 'Will submit job to WMS' )  # this will happen by default anyway
         result = self._sendJob( jdl )
         if not result['OK']:
           self.log.error( 'Job submission failure', result['Message'] )
@@ -401,7 +401,7 @@ class Dirac( API ):
 
     self.log.info( 'Job %s is now eligible to be picked up from the WMS by a local job agent' % jobID )
 
-    #now run job agent targetted to pick up this job
+    # now run job agent targetted to pick up this job
     result = self.__runJobAgent( jobID )
 
     return result
@@ -472,7 +472,7 @@ class Dirac( API ):
     localCfg.addDefaultEntry( '/Resources/Computing/%s/OwnerGroup' % ceType, ownerGroup )
     # localCfg.addDefaultEntry('/Resources/Computing/%s/JobID' %ceType,jobID)
 
-    #SKP can add compatible platforms here
+    # SKP can add compatible platforms here
     localCfg.setConfigurationForAgent( agentName )
     result = localCfg.loadUserData()
     if not result[ 'OK' ]:
@@ -543,7 +543,7 @@ class Dirac( API ):
       return result
 
     self.log.info( 'Job %s is now eligible to be picked up from the WMS by a local job agent' % jobID )
-    #now run job agent targetted to pick up this job
+    # now run job agent targetted to pick up this job
     result = self.__runJobAgent( jobID )
     return result
 
@@ -552,8 +552,8 @@ class Dirac( API ):
     """Internal function.  Monitors a submitted job until it is eligible to be
        retrieved or enters a failed state.
     """
-    pollingTime = 10 #seconds
-    maxWaitingTime = 600 #seconds
+    pollingTime = 10  # seconds
+    maxWaitingTime = 600  # seconds
 
     start = time.time()
     finalState = False
@@ -664,7 +664,7 @@ class Dirac( API ):
     resolvedData = guidDict
     diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'] )
     tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
-    #Add catalog path / name here as well as site name to override the standard policy of resolving automatically
+    # Add catalog path / name here as well as site name to override the standard policy of resolving automatically
     configDict = { 'JobID':None,
                    'LocalSEList':localSEList['Value'],
                    'DiskSEList':diskSE,
@@ -848,7 +848,7 @@ class Dirac( API ):
         self.log.warn( 'Input data resolution failed' )
         return result
 
-    localArch = None #If running locally assume the user chose correct platform (could check in principle)
+    localArch = None  # If running locally assume the user chose correct platform (could check in principle)
     if parameters['Value'].has_key( 'SystemConfig' ):
       if parameters['Value']['SystemConfig']:
         localArch = parameters['Value']['SystemConfig']
@@ -872,7 +872,7 @@ class Dirac( API ):
         return result
     else:
       self.log.verbose( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
-      #return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
+      # return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
 
     if parameters['Value'].has_key( 'InputSandbox' ):
       sandbox = parameters['Value']['InputSandbox']
@@ -896,9 +896,9 @@ class Dirac( API ):
           if not getFile['OK']:
             self.log.warn( 'Failed to download %s with error:%s' % ( isFile, getFile['Message'] ) )
             return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
-        basefname = os.path.basename(isFile)
+        basefname = os.path.basename( isFile )
         try:
-          if tarfile.is_tarfile(  basefname ):
+          if tarfile.is_tarfile( basefname ):
             tarFile = tarfile.open( basefname, 'r' )
             for member in tarFile.getmembers():
               tarFile.extract( member, os.getcwd() )
@@ -927,7 +927,7 @@ class Dirac( API ):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split( '=' )[0]
-        valEnv = urllib.unquote( var.split( '=' )[1] ) #this is needed to make the value contain strange things
+        valEnv = urllib.unquote( var.split( '=' )[1] )  # this is needed to make the value contain strange things
         executionEnv[nameEnv] = valEnv
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
@@ -1148,6 +1148,8 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
+    from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+    sitesForSE = {}
     if type( lfns ) == type( " " ):
       lfns = lfns.replace( 'LFN:', '' )
     elif type( lfns ) == type( [] ):
@@ -1164,28 +1166,23 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer for maxFilesPerJob' )
 
-    replicaDict = self.getReplicas( lfns )
+    replicaDict = self.getReplicas( lfns, active = True )
     if not replicaDict['OK']:
       return replicaDict
     if len( replicaDict['Value']['Successful'] ) == 0:
       return self._errorReport( replicaDict['Value']['Failed'].items()[0], 'Failed to get replica information' )
     siteLfns = {}
     for lfn, reps in replicaDict['Value']['Successful'].items():
-      possibleSites = []
-      for storageElement in sortList( reps.keys() ):
-        site = storageElement.split( '_' )[0].split( '-' )[0]
-        if not site in possibleSites:
-          possibleSites.append( site )
-      sitesStr = ''.join( possibleSites )
-      if not siteLfns.has_key( sitesStr ):
-        siteLfns[sitesStr] = []
-      siteLfns[sitesStr].append( lfn )
-      replicaDict['Value']['Successful'].pop( lfn )
+      possibleSites = set( [site for se in reps for site in sitesForSE.setdefault( se, getSitesForSE( se ).get( 'Value', [] ) )] )
+      siteLfns.setdefault( ','.join( sorted( possibleSites ) ), [] ).append( lfn )
 
+    if '' in siteLfns:
+      # Some files don't have active replicas
+      return self._errorReport( 'No active replica found for', str( siteLfns[''] ) )
     lfnGroups = []
-    for _sites, files in siteLfns.items():
+    for files in siteLfns.values():
       lists = breakListIntoChunks( files, maxFilesPerJob )
-      lfnGroups.extend( lists )
+      lfnGroups += lists
 
     if printOutput:
       print self.pPrint.pformat( lfnGroups )
@@ -1659,7 +1656,7 @@ class Dirac( API ):
 
     try:
       jobID = self.client.submitJob( jdl )
-      #raise 'problem'
+      # raise 'problem'
     except Exception, x:
       return S_ERROR( "Cannot submit job: %s" % str( x ) )
 
@@ -1691,7 +1688,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    #TODO: Do not check if dir already exists
+    # TODO: Do not check if dir already exists
     dirPath = ''
     if outputDir:
       dirPath = '%s/InputSandbox%s' % ( outputDir, jobID )
@@ -1742,7 +1739,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    #TODO: Do not check if dir already exists
+    # TODO: Do not check if dir already exists
     dirPath = ''
     if outputDir:
       dirPath = '%s/%s' % ( outputDir, jobID )
@@ -1759,7 +1756,7 @@ class Dirac( API ):
     except Exception, x:
       return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
 
-    #New download
+    # New download
     result = self.sandboxClient.downloadSandboxForJob( jobID, 'Output', dirPath )
     if result['OK']:
       self.log.info( 'Files retrieved and extracted in %s' % ( dirPath ) )
@@ -2113,7 +2110,7 @@ class Dirac( API ):
       outputData = newOutputData
 
     # These two lines will break backwards compatibility.
-    #if not destinationDir:
+    # if not destinationDir:
     #  destinationDir = jobID
     obtainedFiles = []
     for outputFile in outputData:
@@ -2265,7 +2262,7 @@ class Dirac( API ):
       return result
     try:
       jobSummary = eval( result['Value'] )
-      #self.log.info(self.pPrint.pformat(jobSummary))
+      # self.log.info(self.pPrint.pformat(jobSummary))
     except Exception, x:
       self.log.warn( 'Problem interpreting result from job monitoring service' )
       return S_ERROR( 'Problem while converting result from job monitoring' )
@@ -2600,7 +2597,7 @@ class Dirac( API ):
 
     if printOutput:
       loggingTupleList = result['Value']
-      #source is removed for printing to control width
+      # source is removed for printing to control width
       headers = ( 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' )
       line = ''
       for i in headers:
@@ -2776,4 +2773,4 @@ class Dirac( API ):
 
     return gConfig.getValue( option, default )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

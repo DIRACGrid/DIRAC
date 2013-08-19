@@ -1,4 +1,3 @@
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Splitters.BaseSplitter import BaseSplitter
 

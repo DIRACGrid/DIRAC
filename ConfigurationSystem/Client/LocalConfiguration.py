@@ -319,7 +319,7 @@ class LocalConfiguration:
     self.unprocessedSwitches = []
 
     for optionName, optionValue in self.parsedOptionList:
-      optionName = optionName.replace( "-", "" )
+      optionName = optionName.lstrip( "-" )
       for definedOptionTuple in self.commandOptionList:
         if optionName == definedOptionTuple[0].replace( ":", "" ) or \
           optionName == definedOptionTuple[1].replace( "=", "" ):

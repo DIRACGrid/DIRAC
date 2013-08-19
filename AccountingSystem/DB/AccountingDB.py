@@ -188,15 +188,28 @@ class AccountingDB( DB ):
     pending = 0
     now = Time.toEpoch()
     recordsPerSlot = self.getCSOption( "RecordsPerSlot", 100 )
-    for typeName in self.dbCatalog:
+    allTypes = self.dbCatalog.keys()
+    random.shuffle( allTypes )
+    for typeName in allTypes:
       self.log.info( "[PENDING] Checking %s" % typeName )
+      sqlTableName = _getTableName( "in", typeName )
+      result = self._query( "SELECT COUNT(id) FROM `%s`" % sqlTableName )
+      if result[ 'OK' ]:
+        incount = result[ 'Value' ][0][0]
+        self.log.info( "%s IN records for %s" % ( incount, typeName ) )
+        try:
+          gMonitor.addMark( "registerwaiting:%s" % typeName, incount )
+        except:
+          pass
+      else:
+        self.log.warn( "Could not count IN records for %s: %s" % ( typeName, result[ 'Value' ] ) )
       pendingInQueue = self.__threadPool.pendingJobs()
       emptySlots = max( 0, 3000 - pendingInQueue )
       self.log.info( "[PENDING] %s in the queue, %d empty slots" % ( pendingInQueue, emptySlots ) )
       if emptySlots < 1:
+        self.log.info( "[PENDING] No more empty slots." )
         continue
       emptySlots = min( 100, emptySlots )
-      sqlTableName = _getTableName( "in", typeName )
       sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
       sqlCond = "WHERE taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
       result = self._query( "SELECT %s FROM `%s` %s ORDER BY id ASC LIMIT %d" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
@@ -276,6 +289,11 @@ class AccountingDB( DB ):
     """
     Register a new type
     """
+    gMonitor.registerActivity( "registerwaiting:%s" % name,
+                               "Records waiting for insertion for %s" % " ".join( name.split( "_" ) ),
+                               "Accounting",
+                               "records",
+                               gMonitor.OP_MEAN )
     gMonitor.registerActivity( "registeradded:%s" % name,
                                "Register added for %s" % " ".join( name.split( "_" ) ),
                                "Accounting",
@@ -845,7 +863,7 @@ class AccountingDB( DB ):
       sqlFields.append( "`%s`.`%s`" % ( tableName, valueField ) )
     sqlFields.append( "`%s`.`entriesInBucket`" % ( tableName ) )
     cmd = "SELECT %s FROM `%s`" % ( ", ".join( sqlFields ), _getTableName( "bucket", typeName ) )
-    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
+    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % ( 
                                                                               tableName,
                                                                               startTime,
                                                                               tableName,
@@ -870,7 +888,7 @@ class AccountingDB( DB ):
                                                                                                bucketValues[-1],
                                                                                                proportion ) )
     cmd += ", ".join( sqlValList )
-    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
+    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % ( 
                                                                             tableName,
                                                                             startTime,
                                                                             tableName,
@@ -932,7 +950,7 @@ class AccountingDB( DB ):
                                                                                     bucketValues[-1],
                                                                                     proportion ) )
     cmd += ", ".join( sqlValList )
-    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
+    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % ( 
                                                                             tableName,
                                                                             startTime,
                                                                             tableName,
@@ -1023,6 +1041,9 @@ class AccountingDB( DB ):
     retVal = self.__checkIncomingFieldsForQuery( typeName, selectFields, condDict, groupFields, orderFields, "bucket" )
     if not retVal[ 'OK' ]:
       return retVal
+    nowEpoch = Time.toEpoch( Time.dateTime () )
+    bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch , startTime )
+    startTime = startTime - startTime % bucketTimeLength
     result = self.__queryType( typeName,
                              startTime,
                              endTime,
@@ -1214,10 +1235,6 @@ class AccountingDB( DB ):
     Compact all buckets for a given type
     """
     nowEpoch = Time.toEpoch()
-    retVal = self._getConnection()
-    if not retVal[ 'OK' ]:
-      return retVal
-    connObj = retVal[ 'Value' ]
     #retVal = self.__startTransaction( connObj )
     #if not retVal[ 'OK' ]:
     #  return retVal
@@ -1229,7 +1246,7 @@ class AccountingDB( DB ):
       nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
       self.log.info( "[COMPACT] Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
       #Retrieve the data
-      retVal = self.__selectForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, connObj )
+      retVal = self.__selectForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength )
       if not retVal[ 'OK' ]:
         #self.__rollbackTransaction( connObj )
         return retVal
@@ -1237,7 +1254,7 @@ class AccountingDB( DB ):
       self.log.info( "[COMPACT] Got %d records to compact" % len( bucketsData ) )
       if len( bucketsData ) == 0:
         continue
-      retVal = self.__deleteForCompactBuckets( typeName, timeLimit, bucketLength, connObj )
+      retVal = self.__deleteForCompactBuckets( typeName, timeLimit, bucketLength )
       if not retVal[ 'OK' ]:
         #self.__rollbackTransaction( connObj )
         return retVal
@@ -1247,13 +1264,12 @@ class AccountingDB( DB ):
         startTime = record[-2]
         endTime = record[-1]
         valuesList = record[:-2]
-        retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj )
+        retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList )
         if not retVal[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
           self.log.error( "[COMPACT] Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
       self.log.info( "[COMPACT] Finished compaction %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
     #return self.__commitTransaction( connObj )
-    connObj.close()
     return S_OK()
 
   def __slowCompactBucketsForType( self, typeName ):
@@ -1261,10 +1277,6 @@ class AccountingDB( DB ):
     Compact all buckets for a given type
     """
     nowEpoch = Time.toEpoch()
-    retVal = self._getConnection()
-    if not retVal[ 'OK' ]:
-      return retVal
-    connObj = retVal[ 'Value' ]
     for bPos in range( len( self.dbBucketsLength[ typeName ] ) - 1 ):
       self.log.info( "[COMPACT] Query %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
       secondsLimit = self.dbBucketsLength[ typeName ][ bPos ][0]
@@ -1281,7 +1293,7 @@ class AccountingDB( DB ):
                                                                                                        bucketLength ) )
         roundStartTime = time.time()
         result = self.__selectIndividualForCompactBuckets( typeName, timeLimit, bucketLength,
-                                                           nextBucketLength, querySize, connObj )
+                                                           nextBucketLength, querySize )
         if not result[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
           return result
@@ -1294,7 +1306,7 @@ class AccountingDB( DB ):
         if len( bucketsData ) == 0:
           break
 
-        result = self.__deleteIndividualForCompactBuckets( typeName, bucketsData, connObj )
+        result = self.__deleteIndividualForCompactBuckets( typeName, bucketsData )
         if not result[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
           return result
@@ -1307,7 +1319,7 @@ class AccountingDB( DB ):
           startTime = record[-2]
           endTime = record[-2] + record[-1]
           valuesList = record[:-2]
-          retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj )
+          retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList )
           if not retVal[ 'OK' ]:
             self.log.error( "[COMPACT] Error while compacting data for buckets in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
         totalCompacted += len( bucketsData )
@@ -1316,7 +1328,6 @@ class AccountingDB( DB ):
                                                                                             insertElapsedTime / len( bucketsData ) ) )
       self.log.info( "[COMPACT] Finised compaction %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
     #return self.__commitTransaction( connObj )
-    connObj.close()
     return S_OK()
 
   def __selectIndividualForCompactBuckets( self, typeName, timeLimit, bucketLength, nextBucketLength, querySize, connObj = False ):
@@ -1395,10 +1406,6 @@ class AccountingDB( DB ):
   def regenerateBuckets( self, typeName ):
     if self.__readOnly:
       return S_ERROR( "ReadOnly mode enabled. No modification allowed" )
-    retVal = self._getConnection()
-    if not retVal[ 'OK' ]:
-      return retVal
-    connObj = retVal[ 'Value' ]
     #Delete old entries if any
     if self.dbCatalog[ typeName ][ 'dataTimespan' ] > 0:
       self.log.info( "[REBUCKET] Deleting records older that timespan for type %s" % typeName )
@@ -1409,8 +1416,7 @@ class AccountingDB( DB ):
     #if not retVal[ 'OK' ]:
     #  return retVal
     self.log.info( "[REBUCKET] Deleting buckets for %s" % typeName )
-    retVal = self._update( "DELETE FROM `%s`" % _getTableName( "bucket", typeName ),
-                           conn = connObj )
+    retVal = self._update( "DELETE FROM `%s`" % _getTableName( "bucket", typeName ) )
     if not retVal[ 'OK' ]:
       return retVal
     #Generate the common part of the query
@@ -1492,7 +1498,7 @@ class AccountingDB( DB ):
     for sqlQuery in sqlQueries:
       self.log.info( "[REBUCKET] Executing query #%s..." % queryNum )
       queryNum += 1
-      retVal = self._query( sqlQuery, conn = connObj )
+      retVal = self._query( sqlQuery )
       if not retVal[ 'OK' ]:
         self.log.error( "[REBUCKET] Can't retrieve data for rebucketing", retVal[ 'Message' ] )
         #self.__rollbackTransaction( connObj )
@@ -1507,7 +1513,7 @@ class AccountingDB( DB ):
         startT = entry[0]
         endT = entry[1]
         values = entry[2:]
-        retVal = self.__splitInBuckets( typeName, startT, endT, values, connObj = connObj )
+        retVal = self.__splitInBuckets( typeName, startT, endT, values )
         if not retVal[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
           return retVal
@@ -1516,13 +1522,12 @@ class AccountingDB( DB ):
           queryAvg = rebucketedRecords / float( time.time() - startQuery )
           blockAvg = 1000 / float( time.time() - startBlock )
           startBlock = time.time()
-          perDone =  100 * rebucketedRecords / float ( numRecords )
+          perDone = 100 * rebucketedRecords / float ( numRecords )
           expectedEnd = str( datetime.timedelta( seconds = int( ( numRecords - rebucketedRecords ) / blockAvg ) ) )
           self.log.info( "[REBUCKET] Rebucketed %.2f%% %s (%.2f r/s block %.2f r/s query | ETA %s )..." % ( perDone, typeName,
                                                                                                             blockAvg, queryAvg,
                                                                                                             expectedEnd ) )
     #return self.__commitTransaction( connObj )
-    connObj.close()
     return S_OK()
 
 

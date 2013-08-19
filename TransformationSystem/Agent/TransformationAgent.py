@@ -281,8 +281,9 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     transID = transDict['TransformationID']
 
+    # Files that were problematic (either explicit or because SE was banned) may be recovered
     res = clients['TransformationClient'].getTransformationFiles( condDict = {'TransformationID':transID,
-                                                                              'Status':'Unused'} )
+                                                                              'Status':['Unused', 'ProbInFC']} )
     if not res['OK']:
       self._logError( "Failed to obtain input data: %s." % res['Message'],
                        method = "_getTransformationFiles", transID = transID )
@@ -301,14 +302,24 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
           self._logInfo( "Updated transformation status to 'Active'.",
                           method = "_getTransformationFiles", transID = transID )
       return S_OK()
-    # Check if something new happened
-    now = datetime.datetime.utcnow()
-    nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = self.noUnusedDelay )
-    skip = now < nextStamp
-    if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
-      self._logInfo( "No new 'Unused' files found for transformation.",
-                      method = "_getTransformationFiles", transID = transID )
-      return S_OK()
+    #Check if transformation is kicked
+    kickFile = os.path.join( self.workDirectory, 'KickTransformation_%s' % str( transID ) )
+    try:
+      kickTrans = os.path.exists( kickFile )
+      if kickTrans:
+        os.remove( kickFile )
+    except:
+      pass
+
+    #Check if something new happened
+    if not kickTrans:
+      now = datetime.datetime.utcnow()
+      nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = self.noUnusedDelay )
+      skip = now < nextStamp
+      if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
+        self._logInfo( "No new 'Unused' files found for transformation.",
+                        method = "_getTransformationFiles", transID = transID )
+        return S_OK()
 
     self.unusedTimeStamp[transID] = now
     return S_OK( transFiles )
@@ -481,8 +492,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     cacheChanged = False
     try:
       timeLimit = datetime.datetime.utcnow() - datetime.timedelta( days = self.replicaCacheValidity )
-      for transID in self.replicaCache:
-        for updateTime in self.replicaCache[transID]:
+      for transID in sorted( self.replicaCache ):
+        for updateTime in self.replicaCache[transID].keys():
           if updateTime < timeLimit or not self.replicaCache[transID][updateTime]:
             self._logVerbose( "Clear %d cached replicas for transformation %s" % ( len( self.replicaCache[transID][updateTime] ),
                                                                                     str( transID ) ), method = '__cleanCache' )

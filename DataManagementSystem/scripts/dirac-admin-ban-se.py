@@ -89,7 +89,7 @@ checkBanned = []
 
 resourceStatus = ResourceStatus()
 
-res = resourceStatus.getStorageElementStatus( ses )
+res = resourceStatus.getStorageStatus( ses )
 if not res['OK']:
   gLogger.error( "Storage Element %s does not exist" % ses )
   DIRAC.exit( -1 )

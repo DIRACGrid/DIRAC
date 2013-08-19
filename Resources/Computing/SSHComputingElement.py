@@ -9,17 +9,15 @@
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript    
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC.Core.Utilities.List                           import breakListIntoChunks, uniqueElements
+from DIRAC.Core.Utilities.List                           import uniqueElements
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Pfn                            import pfnparse 
 from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
-from DIRAC                                               import gConfig, gLogger
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
+from DIRAC                                               import rootPath
+from DIRAC                                               import gLogger
 
-import os, sys, time, re, socket, stat, shutil, urllib
-import string, shutil, bz2, base64, tempfile, random
+import os, urllib
+import shutil, tempfile
 from types import StringTypes
 
 CE_NAME = 'SSH'
@@ -49,7 +47,7 @@ class SSH:
       import pexpect
       expectFlag = True
     except:
-      from DIRAC import shellCall
+      from DIRAC.Core.Utilities.Subprocess import shellCall
       expectFlag = False
 
     if not timeout:
@@ -597,7 +595,7 @@ class SSHComputingElement( ComputingElement ):
     else:
       tempDir = localDir
 
-    ssh = SSH( host = host, parameters = self.ceParameters )
+    ssh = SSH( parameters = self.ceParameters )
     result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobStamp ), '%s' % outputFile, upload = False )
     if not result['OK']:
       return result

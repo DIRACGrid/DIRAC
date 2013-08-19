@@ -87,7 +87,7 @@ class RequestProxyHandler( RequestHandler ):
   def sweeper( cls ):
     """ move cached request to the central request manager
     
-    :param self: self reference
+    :param cls: class reference
     """
     cacheDir = cls.cacheDir()    
     ## cache dir empty? 

@@ -1,33 +1,46 @@
 # $HeadURL:  $
-''' PilotCommand
+""" PilotCommand
  
   The PilotCommand class is a command class to know about present pilots 
-  efficiency.
+  efficiency. It reads from the PilotAgentsDB the values of the number of pilots
+  for a given timespan.
   
-'''
+"""
+
+from datetime import datetime, timedelta
 
 from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers                   import Resources
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient 
-from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB            import PilotAgentsDB
 
 __RCSID__ = '$Id:  $'
 
 class PilotCommand( Command ):
-  '''
-    Pilot "master" Command.    
-  '''
+  """ Pilot 'master' Command.    
+  """
 
   def __init__( self, args = None, clients = None ):
+    """ Constructor.
+    
+    :Parameters:
+      **args** - [, `dict` ]
+        arguments to be passed to be used in the _prepareCommand method ( name and
+        timespan are the expected ones )
+      **clients - [, `dict` ]
+        clients from where information is fetched. Mainly used to avoid creating
+        new connections on agents looping over clients. ResourceManagementClient
+        and PilotsDB are most welcome.  
+    """
     
     super( PilotCommand, self ).__init__( args, clients )
 
-    if 'WMSAdministrator' in self.apis:
-      self.wmsAdmin = self.apis[ 'WMSAdministrator' ]
-    else:  
-      self.wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+    if 'PilotsDB' in self.apis:
+      self.pilotsDB = self.apis[ 'PilotsDB' ]
+    else:
+      self.pilotsDB = PilotAgentsDB()
 
     if 'ResourceManagementClient' in self.apis:
       self.rmClient = self.apis[ 'ResourceManagementClient' ]
@@ -35,90 +48,100 @@ class PilotCommand( Command ):
       self.rmClient = ResourceManagementClient()
 
   def _storeCommand( self, result ):
-    '''
-      Stores the results of doNew method on the database.
-    '''
+    """ Stores the results of doNew method on the database.
+    
+    :Parameters:
+      **result** - `list( dict )`
+        list of dictionaries to be inserted on the DB. Unfortunately, there is no
+        bulk insertion method on the database. The dictionaries are sanitized in
+        doNew method so that they match the column names in the database.
+      
+    :return: S_OK / S_ERROR
+    """
     
     for pilotDict in result:
       
-      resQuery = self.rmClient.addOrModifyPilotCache( pilotDict[ 'Site' ], 
-                                                      pilotDict[ 'CE' ], 
-                                                      pilotDict[ 'PilotsPerJob' ], 
-                                                      pilotDict[ 'PilotJobEff' ], 
-                                                      pilotDict[ 'Status' ] )
+      lowerCasePilotDict = {}
+      for key, value in pilotDict.iteritems():
+        lowerCasePilotDict[ key[0].lower() + key[1:] ] = value
+      
+      # I do not care about the **magic, it makes it cleaner
+      resQuery = self.rmClient.addOrModifyPilotCache( **lowerCasePilotDict )
       if not resQuery[ 'OK' ]:
         return resQuery
 
     return S_OK()
   
   def _prepareCommand( self ):
-    '''
-      JobCommand requires one arguments:
-      - name : <str>      
-    '''
+    """ Method that parses command arguments to extract the ones needed:
+      name : name of the computing element
+      timespan ( seconds ) : time window
+      
+    :return: : S_OK( name, timespan ) / S_ERROR        
+    """
 
     if not 'name' in self.args:
       return S_ERROR( '"name" not found in self.args' )
     name = self.args[ 'name' ]
   
-    if not 'element' in self.args:
-      return S_ERROR( 'element is missing' )
-    element = self.args[ 'element' ]     
-    
-    if element not in [ 'Site', 'Resource' ]:
-      return S_ERROR( '"%s" is not Site nor Resource' % element )
-     
-    return S_OK( ( element, name ) ) 
+    if not 'timespan' in self.args:
+      return S_ERROR( '"timespan" not found in self.args' )
+    timespan = self.args[ 'timespan' ]
+  
+    return S_OK( ( name, timespan ) )
   
   def doNew( self, masterParams = None ):
-  
-    if masterParams is not None:
-      element, name = masterParams
-    else:
-      params = self._prepareCommand()
-      if not params[ 'OK' ]:
-        return params
-      element, name = params[ 'Value' ]
-    
-    wmsDict = {}
-      
-    if element == 'Site':
-      wmsDict = { 'GridSite' : name }
-    elif element == 'Resource':
-      wmsDict = { 'ExpandSite' : name }
-    else:
-      # You should never see this error
-      return S_ERROR( '"%s" is not  Site nor Resource' % element  )
-      
-    wmsResults = self.wmsAdmin.getPilotSummaryWeb( wmsDict, [], 0, 0 )
+    """ doNew method. If is master execution, name is declared as '' so that 
+    all ce's are asked. Once values are obtained, they are stored on the Database.
+    The entries with name Unknown, NotAssigned and Total are skipped.
 
-    if not wmsResults[ 'OK' ]:
-      return wmsResults
-    wmsResults = wmsResults[ 'Value' ]
+    :Parameters:
+      **masterParams** - [, bool ]
+        if True, it queries for all elements in the database for the given timespan
     
-    if not 'ParameterNames' in wmsResults:
-      return S_ERROR( 'Wrong result dictionary, missing "ParameterNames"' )
-    params = wmsResults[ 'ParameterNames' ]
+    :return: S_OK( list ( dict ) ) / S_ERROR
+    """
     
-    if not 'Records' in wmsResults:
-      return S_ERROR( 'Wrong formed result dictionary, missing "Records"' )
-    records = wmsResults[ 'Records' ]
-    
+    # Ask for all CEs
+    if masterParams is True:
+      self.args[ 'name' ] = ''
+
+    params = self._prepareCommand()
+    if not params[ 'OK' ]:
+      return params
+    computingElement, timespan = params[ 'Value' ]
+  
+    # Calculate time window from timespan and utcnow  
+    endTimeWindow   = datetime.utcnow()
+    startTimeWindow = endTimeWindow - timedelta( seconds = timespan )
+  
+    # Get pilots information from DB 
+    pilotsRes = self.pilotsDB.getPilotSummaryShort( startTimeWindow, 
+                                                    endTimeWindow, 
+                                                    computingElement )
+    if not pilotsRes[ 'OK' ]:
+      return pilotsRes
+ 
+    # This list matches the database schema in ResourceManagemntDB. It is used
+    # to have a perfect match even it there are no pilots on a particular state
+    pilotStatuses = [ 'Scheduled', 'Waiting', 'Submitted', 'Running', 'Done', 'Aborted', 
+                      'Cancelled', 'Deleted', 'Failed', 'Held', 'Killed', 'Stalled' ]
+ 
     uniformResult = [] 
        
-    for record in records:
+    for ceName, pilotDict in pilotsRes[ 'Value' ].items():
       
-      # This returns a dictionary with the following keys:
-      # 'Site', 'CE', 'Submitted', 'Ready', 'Scheduled', 'Waiting', 'Running', 
-      # 'Done', 'Aborted', 'Done_Empty', 'Aborted_Hour', 'Total', 'PilotsPerJob', 
-      # 'PilotJobEff', 'Status', 'InMask'
-      pilotDict = dict( zip( params, record ) )
+      if ceName in [ 'Total', 'Unknown', 'NotAssigned' ]:
+        continue
       
-      pilotDict[ 'PilotsPerJob' ] = float( pilotDict[ 'PilotsPerJob' ] )
-      pilotDict[ 'PilotJobEff' ]  = float( pilotDict[ 'PilotJobEff' ] )
-      
-      uniformResult.append( pilotDict )
+      uniformPilotDict = dict.fromkeys( pilotStatuses, 0 )
+      uniformPilotDict.update( pilotDict )
+      uniformPilotDict[ 'Timespan' ] = timespan
+      uniformPilotDict[ 'CE' ]       = ceName
+            
+      uniformResult.append( uniformPilotDict )
     
+    # Store results
     storeRes = self._storeCommand( uniformResult )
     if not storeRes[ 'OK' ]:
       return storeRes
@@ -126,44 +149,35 @@ class PilotCommand( Command ):
     return S_OK( uniformResult )   
 
   def doCache( self ):
+    """ doCache gets values from the database instead from the PilotsDB tables.
+    If successful, returns a list of dictionaries with the database records. 
+     
+    :return: S_OK( list( dict ) ) / S_ERROR 
+    """
  
     params = self._prepareCommand()
     if not params[ 'OK' ]:
       return params
-    element, name = params[ 'Value' ]   
-    
-    if element == 'Site':
-      # WMS returns Site entries with CE = 'Multiple'
-      site, ce = name, 'Multiple'
-    elif element == 'Resource':
-      site, ce = None, name
-    else:  
-      # You should never see this error
-      return S_ERROR( '"%s" is not  Site nor Resource' % element  )      
+    computingElement, timespan = params[ 'Value' ]    
 
-    result = self.rmClient.selectPilotCache( site, ce )  
+    # Make sure the records we obtain are NOT out of date
+    lastValidRecord = datetime.utcnow() - timedelta( seconds = timespan )
+
+    result = self.rmClient.selectPilotCache( cE = computingElement, timespan = timespan,
+                                             meta = { 'older' : ( 'LastCheckTime', lastValidRecord ) } )  
     if result[ 'OK' ]:
       result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
       
     return result    
 
   def doMaster( self ):
+    """ Master method, asks for all information in the database for the given 
+    timespan ( see _prepareCommand ).
+
+    :return: : S_OK( failedMessages )
+    """
     
-    siteNames = CSHelpers.getSites()
-    if not siteNames[ 'OK' ]:
-      return siteNames
-    siteNames = siteNames[ 'Value' ]
-    
-    ces = CSHelpers.getComputingElements()
-    if not ces[ 'OK' ]:
-      return ces
-    ces = ces[ 'Value' ]
-    
-    pilotResults = self.doNew( ( 'Site', siteNames ) )
-    if not pilotResults[ 'OK' ]:
-      self.metrics[ 'failed' ].append( pilotResults[ 'Message' ] )
-    
-    pilotResults = self.doNew( ( 'Resource', ces ) )
+    pilotResults = self.doNew( masterParams = True )
     if not pilotResults[ 'OK' ]:
       self.metrics[ 'failed' ].append( pilotResults[ 'Message' ] )    
         
@@ -250,7 +264,7 @@ class PilotsWMSCommand( Command ):
     
     # If siteName is None, we take all sites
     if siteName is None:
-      siteName = CSHelpers.getSites()      
+      siteName = Resources.getSites()      
       if not siteName[ 'OK' ]:
         return self.returnERROR( siteName )
       siteName = siteName[ 'Value' ]

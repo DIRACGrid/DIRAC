@@ -13,20 +13,20 @@
 
 __RCSID__ = "$Id$"
 
-from types import *
+from types import IntType, LongType, ListType, DictType, StringTypes, StringType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 # These are global instances of the DB classes
-jobDB = False
-jobLoggingDB = False
-proxyRepository = False
-taskQueueDB = False
+gJobDB = False
+gJobLoggingDB = False
+gTaskQueueDB = False
 
 SUMMARY = ['JobType', 'Site', 'JobName', 'Owner', 'SubmissionTime',
            'LastUpdateTime', 'Status', 'MinorStatus', 'ApplicationStatus']
@@ -36,96 +36,104 @@ FINAL_STATES = ['Done', 'Completed', 'Stalled', 'Failed', 'Killed']
 
 def initializeJobMonitoringHandler( serviceInfo ):
 
-  global jobDB, jobLoggingDB, taskQueueDB
-  jobDB = JobDB()
-  jobLoggingDB = JobLoggingDB()
-  taskQueueDB = TaskQueueDB()
+  global gJobDB, gJobLoggingDB, gTaskQueueDB
+  gJobDB = JobDB()
+  gJobLoggingDB = JobLoggingDB()
+  gTaskQueueDB = TaskQueueDB()
   return S_OK()
 
 class JobMonitoringHandler( RequestHandler ):
 
   def initialize( self ):
-
-    global jobDB
-
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
-    self.userProperties = credDict[ 'properties' ]
-    self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
-    self.jobPolicy.setJobDB( jobDB )
+    operations = Operations( group = self.ownerGroup )
+    self.globalJobsInfo = operations.getValue( '/Services/JobMonitoring/GlobalJobsInfo', True )
+    self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.globalJobsInfo )
+    self.jobPolicy.setJobDB( gJobDB )
+
     return S_OK()
 
 ##############################################################################
   types_getApplicationStates = []
-  def export_getApplicationStates ( self ):
-    """ Return Distict Values of ApplicationStatus job Attribute in WMS
+  @staticmethod
+  def export_getApplicationStates ():
+    """ Return Distinct Values of ApplicationStatus job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'ApplicationStatus' )
+    return gJobDB.getDistinctJobAttributes( 'ApplicationStatus' )
 
 ##############################################################################
   types_getJobTypes = []
-  def export_getJobTypes ( self ):
-    """ Return Distict Values of JobType job Attribute in WMS
+  @staticmethod
+  def export_getJobTypes ():
+    """ Return Distinct Values of JobType job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'JobType' )
+    return gJobDB.getDistinctJobAttributes( 'JobType' )
 
 ##############################################################################
   types_getOwners = []
-  def export_getOwners ( self ):
+  @staticmethod
+  def export_getOwners ():
     """
-    Return Distict Values of Owner job Attribute in WMS
+    Return Distinct Values of Owner job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'Owner' )
+    return gJobDB.getDistinctJobAttributes( 'Owner' )
 
 ##############################################################################
   types_getProductionIds = []
-  def export_getProductionIds ( self ):
+  @staticmethod
+  def export_getProductionIds ():
     """
-    Return Distict Values of ProductionId job Attribute in WMS
+    Return Distinct Values of ProductionId job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'JobGroup' )
+    return gJobDB.getDistinctJobAttributes( 'JobGroup' )
 
 ##############################################################################
   types_getJobGroups = []
-  def export_getJobGroups( self, condDict = None, cutDate = None ):
+  @staticmethod
+  def export_getJobGroups( condDict = None, cutDate = None ):
     """
-    Return Distict Values of ProductionId job Attribute in WMS
+    Return Distinct Values of ProductionId job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'JobGroup', condDict,
-                                           newer = cutDate )
+    return gJobDB.getDistinctJobAttributes( 'JobGroup', condDict,
+                                             newer = cutDate )
 
 ##############################################################################
   types_getSites = []
-  def export_getSites ( self ):
+  @staticmethod
+  def export_getSites ():
     """
-    Return Distict Values of Site job Attribute in WMS
+    Return Distinct Values of Site job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'Site' )
+    return gJobDB.getDistinctJobAttributes( 'Site' )
 
 ##############################################################################
   types_getStates = []
-  def export_getStates ( self ):
+  @staticmethod
+  def export_getStates ():
     """
-    Return Distict Values of Status job Attribute in WMS
+    Return Distinct Values of Status job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'Status' )
+    return gJobDB.getDistinctJobAttributes( 'Status' )
 
 ##############################################################################
   types_getMinorStates = []
-  def export_getMinorStates ( self ):
+  @staticmethod
+  def export_getMinorStates ():
     """
     Return Distinct Values of Minor Status job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'MinorStatus' )
+    return gJobDB.getDistinctJobAttributes( 'MinorStatus' )
 
 ##############################################################################
   types_getJobs = []
-  def export_getJobs ( self, attrDict = None, cutDate = None ):
+  @staticmethod
+  def export_getJobs ( attrDict = None, cutDate = None ):
     """
     Return list of JobIds matching the condition given in attrDict
     """
-    queryDict = {}
+    #queryDict = {}
 
     #if attrDict:
     #  if type ( attrDict ) != DictType:
@@ -137,11 +145,12 @@ class JobMonitoringHandler( RequestHandler ):
 
     print attrDict
 
-    return jobDB.selectJobs( attrDict, newer = cutDate )
+    return gJobDB.selectJobs( attrDict, newer = cutDate )
 
 ##############################################################################
   types_getCounters = [ ListType ]
-  def export_getCounters( self, attrList, attrDict = {}, cutDate = '' ):
+  @staticmethod
+  def export_getCounters( attrList, attrDict = None, cutDate = '' ):
     """
     Retrieve list of distinct attributes values from attrList
     with attrDict as condition.
@@ -165,23 +174,27 @@ class JobMonitoringHandler( RequestHandler ):
     #  except:
     #    return S_ERROR( 'Condition Attribute not Allowed: %s.' % attr )
 
+    cutDate = str( cutDate )
+    if not attrDict:
+      attrDict = {}
 
-    cutdate = str( cutDate )
-
-    return jobDB.getCounters( 'Jobs', attrList, attrDict, newer = cutDate, timeStamp = 'LastUpdateTime' )
+    return gJobDB.getCounters( 'Jobs', attrList, attrDict, newer = cutDate, timeStamp = 'LastUpdateTime' )
 
 ##############################################################################
   types_getCurrentJobCounters = [ ]
-  def export_getCurrentJobCounters( self, attrDict = {} ):
+  @staticmethod
+  def export_getCurrentJobCounters( attrDict = None ):
     """ Get job counters per Status with attrDict selection. Final statuses are given for
         the last day.
     """
 
-    result = jobDB.getCounters( 'Jobs', ['Status'], attrDict, timeStamp = 'LastUpdateTime' )
+    if not attrDict:
+      attrDict = {}
+    result = gJobDB.getCounters( 'Jobs', ['Status'], attrDict, timeStamp = 'LastUpdateTime' )
     if not result['OK']:
       return result
     last_update = Time.dateTime() - Time.day
-    resultDay = jobDB.getCounters( 'Jobs', ['Status'], attrDict, newer = last_update,
+    resultDay = gJobDB.getCounters( 'Jobs', ['Status'], attrDict, newer = last_update,
                                    timeStamp = 'LastUpdateTime' )
     if not resultDay['OK']:
       return resultDay
@@ -201,78 +214,89 @@ class JobMonitoringHandler( RequestHandler ):
 
 ##############################################################################
   types_getJobStatus = [ IntType ]
-  def export_getJobStatus ( self, jobID ):
+  @staticmethod
+  def export_getJobStatus ( jobID ):
 
-    return jobDB.getJobAttribute( jobID, 'Status' )
+    return gJobDB.getJobAttribute( jobID, 'Status' )
 
 ##############################################################################
   types_getJobOwner = [ IntType ]
-  def export_getJobOwner ( self, jobID ):
+  @staticmethod
+  def export_getJobOwner ( jobID ):
 
-    return jobDB.getJobAttribute( jobID, 'Owner' )
+    return gJobDB.getJobAttribute( jobID, 'Owner' )
 
 ##############################################################################
   types_getJobSite = [ IntType ]
-  def export_getJobSite ( self, jobID ):
+  @staticmethod
+  def export_getJobSite ( jobID ):
 
-    return jobDB.getJobAttribute( jobID, 'Site' )
+    return gJobDB.getJobAttribute( jobID, 'Site' )
 
 ##############################################################################
   types_getJobJDL = [ IntType ]
-  def export_getJobJDL ( self, jobID ):
+  @staticmethod
+  def export_getJobJDL ( jobID ):
 
-    result = jobDB.getJobJDL( jobID )
-    return result
+    return gJobDB.getJobJDL( jobID )
 
 ##############################################################################
   types_getJobLoggingInfo = [ IntType ]
-  def export_getJobLoggingInfo( self, jobID ):
+  @staticmethod
+  def export_getJobLoggingInfo( jobID ):
 
-    return jobLoggingDB.getJobLoggingInfo( jobID )
+    return gJobLoggingDB.getJobLoggingInfo( jobID )
 
 ##############################################################################
   types_getJobsStatus = [ ListType ]
-  def export_getJobsStatus ( self, jobIDs ):
+  @staticmethod
+  def export_getJobsStatus ( jobIDs ):
     if not jobIDs:
       return S_OK( {} )
-    return jobDB.getAttributesForJobList( jobIDs, ['Status'] )
+    return gJobDB.getAttributesForJobList( jobIDs, ['Status'] )
 
 ##############################################################################
   types_getJobsMinorStatus = [ ListType ]
-  def export_getJobsMinorStatus ( self, jobIDs ):
+  @staticmethod
+  def export_getJobsMinorStatus ( jobIDs ):
 
-    return jobDB.getAttributesForJobList( jobIDs, ['MinorStatus'] )
+    return gJobDB.getAttributesForJobList( jobIDs, ['MinorStatus'] )
 
 ##############################################################################
   types_getJobsApplicationStatus = [ ListType ]
-  def export_getJobsApplicationStatus ( self, jobIDs ):
+  @staticmethod
+  def export_getJobsApplicationStatus ( jobIDs ):
 
-    return jobDB.getAttributesForJobList( jobIDs, ['ApplicationStatus'] )
+    return gJobDB.getAttributesForJobList( jobIDs, ['ApplicationStatus'] )
 
 ##############################################################################
   types_getJobsSites = [ ListType ]
-  def export_getJobsSites ( self, jobIDs ):
+  @staticmethod
+  def export_getJobsSites ( jobIDs ):
 
-    return jobDB.getAttributesForJobList( jobIDs, ['Site'] )
+    return gJobDB.getAttributesForJobList( jobIDs, ['Site'] )
 
 ##############################################################################
   types_getJobSummary = [ IntType ]
-  def export_getJobSummary( self, jobID ):
-    return jobDB.getJobAttributes( jobID, SUMMARY )
+  @staticmethod
+  def export_getJobSummary( jobID ):
+    return gJobDB.getJobAttributes( jobID, SUMMARY )
 
 ##############################################################################
   types_getJobPrimarySummary = [ IntType ]
-  def export_getJobPrimarySummary( self, jobID ):
-    return jobDB.getJobAttributes( jobID, PRIMARY_SUMMARY )
+  @staticmethod
+  def export_getJobPrimarySummary( jobID ):
+    return gJobDB.getJobAttributes( jobID, PRIMARY_SUMMARY )
 
 ##############################################################################
   types_getJobsSummary = [ ListType ]
-  def export_getJobsSummary( self, jobIDs ):
+  @staticmethod
+  def export_getJobsSummary( jobIDs ):
 
     if not jobIDs:
       return S_ERROR( 'JobMonitoring.getJobsSummary: Received empty job list' )
 
-    result = jobDB.getAttributesForJobList( jobIDs, SUMMARY )
+    result = gJobDB.getAttributesForJobList( jobIDs, SUMMARY )
     #return result
     restring = str( result['Value'] )
     return S_OK( restring )
@@ -296,40 +320,53 @@ class JobMonitoringHandler( RequestHandler ):
     if endDate:
       del selectDict['ToDate']
 
+    result = self.jobPolicy.getControlledUsers( RIGHT_GET_INFO )
+    if not result['OK']:
+      return S_ERROR( 'Failed to evaluate user rights' )
+    if result['Value'] != 'ALL':
+      selectDict[ ( 'Owner','OwnerGroup' ) ] = result['Value']
+
     # Sorting instructions. Only one for the moment.
     if sortList:
       orderAttribute = sortList[0][0] + ":" + sortList[0][1]
     else:
       orderAttribute = None
 
+    statusDict = {}
+    result = gJobDB.getCounters( 'Jobs', ['Status'], selectDict,
+                               newer = startDate,
+                               older = endDate,
+                               timeStamp = 'LastUpdateTime' )
+
+    nJobs = 0
+    if result['OK']:
+      for stDict, count in result['Value']:
+        nJobs += count
+        statusDict[stDict['Status']] = count
+
+    resultDict['TotalRecords'] = nJobs
+    if nJobs == 0:
+      return S_OK( resultDict )
+
+    resultDict['Extras'] = statusDict
+
     if selectJobs:
-      result = jobDB.selectJobs( selectDict, orderAttribute = orderAttribute,
-                                newer = startDate, older = endDate )
-      if not result['OK']:
-        return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
-
-      jobList = result['Value']
-
-      # A.T. This needs optimization
-      #validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
-      #                                                                                               RIGHT_GET_INFO )
-      #jobList = validJobList
-
-      nJobs = len( jobList )
-      resultDict['TotalRecords'] = nJobs
-      if nJobs == 0:
-        return S_OK( resultDict )
-
       iniJob = startItem
-      lastJob = iniJob + maxItems
       if iniJob >= nJobs:
         return S_ERROR( 'Item number out of range' )
 
-      if lastJob > nJobs:
-        lastJob = nJobs
+      result = gJobDB.selectJobs( selectDict, orderAttribute = orderAttribute,
+                                newer = startDate, older = endDate, limit = ( maxItems, iniJob ) )
+      if not result['OK']:
+        return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
-      summaryJobList = jobList[iniJob:lastJob]
-      result = jobDB.getAttributesForJobList( summaryJobList, SUMMARY )
+      summaryJobList = result['Value']
+      if not self.globalJobsInfo:
+        validJobs, invalidJobs, nonauthJobs, ownJobs = self.jobPolicy.evaluateJobRights( summaryJobList,
+                                                                                         RIGHT_GET_INFO )
+        summaryJobList = validJobs
+
+      result = gJobDB.getAttributesForJobList( summaryJobList, SUMMARY )
       if not result['OK']:
         return S_ERROR( 'Failed to get job summary: ' + result['Message'] )
 
@@ -348,7 +385,7 @@ class JobMonitoringHandler( RequestHandler ):
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
 
       tqDict = {}
-      result = taskQueueDB.getTaskQueueForJobs( summaryJobList )
+      result = gTaskQueueDB.getTaskQueueForJobs( summaryJobList )
       if result['OK']:
         tqDict = result['Value']
 
@@ -361,30 +398,18 @@ class JobMonitoringHandler( RequestHandler ):
         jParList = []
         for pname in paramNames:
           jParList.append( jobDict[pname] )
-        if tqDict and tqDict.has_key( jobID ):
-          jParList.append( tqDict[jobID] )
-        else:
-          jParList.append( 0 )
+        jParList.append( tqDict.get( jobID, 0 ) )
         records.append( jParList )
 
       resultDict['ParameterNames'] = paramNames + ['TaskQueueID']
       resultDict['Records'] = records
 
-    statusDict = {}
-    result = jobDB.getCounters( 'Jobs', ['Status'], selectDict,
-                               newer = startDate,
-                               older = endDate,
-                               timeStamp = 'LastUpdateTime' )
-    if result['OK']:
-      for stDict, count in result['Value']:
-        statusDict[stDict['Status']] = count
-    resultDict['Extras'] = statusDict
-
     return S_OK( resultDict )
 
 ##############################################################################
   types_getJobStats = [ StringTypes, DictType ]
-  def export_getJobStats ( self, attribute, selectDict ):
+  @staticmethod
+  def export_getJobStats ( attribute, selectDict ):
     """ Get job statistics distribution per attribute value with a given selection
     """
     startDate = selectDict.get( 'FromDate', None )
@@ -399,61 +424,71 @@ class JobMonitoringHandler( RequestHandler ):
     if endDate:
       del selectDict['ToDate']
 
-    result = jobDB.getCounters( 'Jobs', [attribute], selectDict,
+    result = gJobDB.getCounters( 'Jobs', [attribute], selectDict,
                                newer = startDate,
                                older = endDate,
                                timeStamp = 'LastUpdateTime' )
     resultDict = {}
     if result['OK']:
       for cDict, count in result['Value']:
-         resultDict[cDict[attribute]] = count
+        resultDict[cDict[attribute]] = count
 
     return S_OK( resultDict )
 
 ##############################################################################
   types_getJobsPrimarySummary = [ ListType ]
-  def export_getJobsPrimarySummary ( self, jobIDs ):
-    return jobDB.getAttributesForJobList( jobIDs, PRIMARY_SUMMARY )
+  @staticmethod
+  def export_getJobsPrimarySummary ( jobIDs ):
+    return gJobDB.getAttributesForJobList( jobIDs, PRIMARY_SUMMARY )
 
 ##############################################################################
-  types_getJobParameter = [ [IntType, LongType] , StringType ]
-  def export_getJobParameter( self, jobID, parName ):
-    return jobDB.getJobParameters( jobID, [parName] )
+  types_getJobParameter = [ [StringType, IntType, LongType] , StringTypes ]
+  @staticmethod
+  def export_getJobParameter( jobID, parName ):
+    return gJobDB.getJobParameters( jobID, [parName] )
 
 ##############################################################################
   types_getJobParameters = [ [IntType, LongType] ]
-  def export_getJobParameters( self, jobID ):
-    return jobDB.getJobParameters( jobID )
+  @staticmethod
+  def export_getJobParameters( jobID ):
+    return gJobDB.getJobParameters( jobID )
 
 ##############################################################################
   types_getAtticJobParameters = [ [IntType, LongType] ]
-  def export_getAtticJobParameters( self, jobID, parameters = [], rescheduleCycle = -1 ):
-    return jobDB.getAtticJobParameters( jobID, parameters, rescheduleCycle )
+  @staticmethod
+  def export_getAtticJobParameters( jobID, parameters = None, rescheduleCycle = -1 ):
+    if not parameters:
+      parameters = []
+    return gJobDB.getAtticJobParameters( jobID, parameters, rescheduleCycle )
 
 ##############################################################################
   types_getJobAttributes = [ IntType ]
-  def export_getJobAttributes( self, jobID ):
-    return jobDB.getJobAttributes( jobID )
+  @staticmethod
+  def export_getJobAttributes( jobID ):
+    return gJobDB.getJobAttributes( jobID )
 
 ##############################################################################
   types_getSiteSummary = [ ]
-  def export_getSiteSummary( self ):
-    return jobDB.getSiteSummary()
+  @staticmethod
+  def export_getSiteSummary():
+    return gJobDB.getSiteSummary()
 
 ##############################################################################
   types_getJobHeartBeatData = [ IntType ]
-  def export_getJobHeartBeatData( self, jobID ):
-    return jobDB.getHeartBeatData( jobID )
+  @staticmethod
+  def export_getJobHeartBeatData( jobID ):
+    return gJobDB.getHeartBeatData( jobID )
 
 ##############################################################################
   types_getInputData = [ [IntType, LongType] ]
-  def export_getInputData( self, jobID ):
+  @staticmethod
+  def export_getInputData( jobID ):
     """ Get input data for the specified jobs
     """
-    return  jobDB.getInputData( jobID )
+    return  gJobDB.getInputData( jobID )
 
   types_getJobsInHerd = [ ( IntType, LongType ) ]
   def export_getJobsInHerd( self, jobID ):
     """ Get jobs in the same herd as this job
     """
-    return jobDB.getJobsInHerd( jobID )
+    return gJobDB.getJobsInHerd( jobID )

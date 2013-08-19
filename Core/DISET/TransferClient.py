@@ -1,7 +1,6 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import tarfile
 import os
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -53,6 +52,8 @@ class TransferClient( BaseClient ):
     @return : S_OK/S_ERROR
     """
     fileHelper = FileHelper()
+    if "NoCheckSum" in token:
+      fileHelper.disableCheckSum()
     retVal = fileHelper.getFileDescriptor( filename, "r" )
     if not retVal[ 'OK' ]:
       return retVal
@@ -84,6 +85,8 @@ class TransferClient( BaseClient ):
     @return : S_OK/S_ERROR
     """
     fileHelper = FileHelper()
+    if "NoCheckSum" in token:
+      fileHelper.disableCheckSum()
     retVal = fileHelper.getDataSink( filename )
     if not retVal[ 'OK' ]:
       return retVal

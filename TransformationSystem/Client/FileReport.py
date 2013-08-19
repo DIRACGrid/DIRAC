@@ -1,25 +1,25 @@
-''' FileReport class encapsulates methods to report file status to the transformation DB '''
+""" FileReport class encapsulates methods to report file status to the transformation DB """
 
-__RCSID__ = "$Id: FileReport.py 18161 2009-11-11 12:07:09Z acasajus $"
-
-from DIRAC                                                      import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK
+from DIRAC.Core.Utilities                                     import DEncode
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
-from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
+from DIRAC.RequestManagementSystem.Client.Operation           import Operation
 
 import copy
 
-class FileReport:
-  ''' A stateful object for reporting to TransformationDB
-  '''
+class FileReport( object ):
+  """ A stateful object for reporting to TransformationDB
+  """
 
   def __init__( self, server = 'Transformation/TransformationManager' ):
-    self.client = TransformationClient()
-    self.client.setServer( server )
+    self.transClient = TransformationClient()
+    self.transClient.setServer( server )
     self.statusDict = {}
     self.transformation = None
+    self.force = False
 
   def setFileStatus( self, transformation, lfn, status, sendFlag = False ):
-    ''' Set file status in the context of the given transformation '''
+    """ Set file status in the context of the given transformation """
     if not self.transformation:
       self.transformation = transformation
     self.statusDict[lfn] = status
@@ -28,56 +28,35 @@ class FileReport:
     return S_OK()
 
   def setCommonStatus( self, status ):
-    ''' Set common status for all files in the internal cache '''
+    """ Set common status for all files in the internal cache """
     for lfn in self.statusDict.keys():
       self.statusDict[lfn] = status
     return S_OK()
 
   def getFiles( self ):
-    ''' Get the statuses of the files already accumulated in the FileReport object '''
+    """ Get the statuses of the files already accumulated in the FileReport object """
     return copy.deepcopy( self.statusDict )
 
   def commit( self ):
-    ''' Commit pending file status update records '''
+    """ Commit pending file status update records """
     if not self.statusDict:
       return S_OK()
 
-    # create intermediate status dictionary
-    sDict = {}
-    for lfn, status in self.statusDict.items():
-      if not sDict.has_key( status ):
-        sDict[status] = []
-      sDict[status].append( lfn )
+    res = self.transClient.setFileStatusForTransformation( self.transformation, self.statusDict, force = self.force )
+    if not res['OK']:
+      return res
 
-    summaryDict = {}
-    failedResults = []
-    for status, lfns in sDict.items():
-      res = self.client.setFileStatusForTransformation( self.transformation, status, lfns )
-      if not res['OK']:
-        failedResults.append( res )
-        continue
-      for lfn, error in res['Value']['Failed'].items():
-        gLogger.error( "Failed to update file status", "%s %s" % ( lfn, error ) )
-      if res['Value']['Successful']:
-        summaryDict[status] = len( res['Value']['Successful'] )
-        for lfn in res['Value']['Successful']:
-          self.statusDict.pop( lfn )
+    return S_OK()
 
-    if not self.statusDict:
-      return S_OK( summaryDict )
-    result = S_ERROR( "Failed to update all file statuses" )
-    result['FailedResults'] = failedResults
-    return result
-
-  def generateRequest( self ):
-    ''' Commit the accumulated records and generate request eventually '''
+  def generateForwardDISET( self ):
+    """ Commit the accumulated records and generate request eventually """
     result = self.commit()
-    request = None
+    forwardDISETOp = None
     if not result['OK']:
       # Generate Request
-      request = RequestContainer()
-      if result.has_key( 'FailedResults' ):
-        for res in result['FailedResults']:
-          if res.has_key( 'rpcStub' ):
-            request.setDISETRequest( res['rpcStub'] )
-    return S_OK( request )
+      if result.has_key( 'rpcStub' ):
+        forwardDISETOp = Operation()
+        forwardDISETOp.Type = "ForwardDISET"
+        forwardDISETOp.Arguments = DEncode.encode( result['rpcStub'] )
+
+    return S_OK( forwardDISETOp )
