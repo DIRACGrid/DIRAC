@@ -86,7 +86,10 @@ class RemovalTask( RequestTask ):
     if not ownerProxy:
       return S_ERROR( "Unable to get owner proxy" )
 
-    dumpToFile = ownerProxy.dumpAllToFile()
+    import tempfile
+    fd, dumpToFile = tempfile.mkstemp( suffix = '.' + self.requestName )
+    os.close( fd )
+    dumpToFile = ownerProxy.dumpAllToFile( dumpToFile )
     if not dumpToFile["OK"]:
       self.error( "getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"] )
       return dumpToFile
@@ -124,35 +127,33 @@ class RemovalTask( RequestTask ):
       subRequestError = bulkRemoval["Message"][:255]
       subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError )
       return S_OK( requestObj )
-    bulkRemoval = bulkRemoval["Value"]
-    failedLfns = bulkRemoval.get( "Failed", [] )
+    # Process errors
     toRemove = []
-    for lfn in removalStatus:
-      if lfn in failedLfns and "no such file or directory" in str( bulkRemoval["Failed"][lfn] ).lower():
-        removalStatus[lfn] = bulkRemoval["Failed"][lfn]
+    for lfn, error in bulkRemoval["Value"].get( "Failed", {} ).items():
+      if "no such file or directory" in str( error ).lower():
         removeCatalog = self.replicaManager().removeCatalogFile( lfn, singleFile = True )
         if not removeCatalog["OK"]:
           removalStatus[lfn] = removeCatalog["Message"]
-          continue
+        else:
+          # Removal was finally OK
+          removalStatus[lfn] = ''
       else:
         toRemove.append( lfn )
 
-    # # loop over LFNs to remove
+    # # loop over LFNs to remove those that are not yet
     for lfn in toRemove:
       self.debug( "removeFile: processing file %s" % lfn )
       try:
         # # try to remove using proxy already defined in os.environ
         removal = self.replicaManager().removeFile( lfn )
-        # # file is not existing?
-        if not removal["OK"] and "no such file or directory" in str( removal["Message"] ).lower():
+        # # failure?
+        if not removal["OK"]:
           removalStatus[lfn] = removal["Message"]
           continue
-        # # not OK but request belongs to DataManager?
+        # # not OK but request has no owner?
         if not self.requestOwnerDN and \
-           ( not removal["OK"] and "Write access not permitted for this credential." in removal["Message"] ) or \
-           ( removal["OK"] and "Failed" in removal["Value"] and
-             lfn in removal["Value"]["Failed"] and
-             "permission denied" in str( removal["Value"]["Failed"][lfn] ).lower() ):
+          removal["OK"] and \
+          "permission denied" in str( removal["Value"].get( "Failed", {} ).get( lfn, '' ) ).lower():
           self.debug( "removeFile: retrieving proxy for %s" % lfn )
           getProxyForLFN = self.getProxyForLFN( lfn )
           # # can't get correct proxy? continue...
