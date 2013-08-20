@@ -761,7 +761,7 @@ class TransferAgent( RequestAgentBase ):
 
       subRequestStatus = subAttrs["Status"]
 
-      execOrder = int( subAttrs["ExecutionOrder"] ) if "ExecutionOrder" in subAttrs else 0
+      execOrder = int( subAttrs.get( "ExecutionOrder", 0 ) )
       if execOrder != requestDict["executionOrder"]:
         strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
         self.log.warn( "schedule: skipping (%s) subrequest, exeOrder (%s) != request's exeOrder (%s)" % strTup )
@@ -792,16 +792,10 @@ class TransferAgent( RequestAgentBase ):
       subRequestFiles = requestObj.getSubRequestFiles( iSubRequest, "transfer" )
       if not subRequestFiles["OK"]:
         return subRequestFiles
-      subRequestFiles = subRequestFiles["Value"]
       # # collect not done LFNs
-      notDoneLFNs = []
-      for subRequestFile in subRequestFiles:
-        status = subRequestFile["Status"]
-        if status != "Done":
-          notDoneLFNs.append( subRequestFile["LFN"] )
+      notDoneLFNs = [subRequestFile["LFN"] for subRequestFile in subRequestFiles["Value"] if subRequestFile["Status"] != "Done"]
 
-      subRequestEmpty = requestObj.isSubRequestEmpty( iSubRequest, "transfer" )
-      subRequestEmpty = subRequestEmpty["Value"] if "Value" in subRequestEmpty else False
+      subRequestEmpty = requestObj.isSubRequestEmpty( iSubRequest, "transfer" ).get( "Value", False )
 
       # # schedule files, some are still in Waiting State
       if not subRequestEmpty:
@@ -813,7 +807,7 @@ class TransferAgent( RequestAgentBase ):
         requestObj = scheduleFiles["Value"]
       elif notDoneLFNs:
         # # maybe some are not Done yet?
-        self.log.info( "schedule: not-Done files found in subrequest" )
+        self.log.warn( "schedule: not-Done files found in 'empty' subrequest" )
       else:
         # # nope, all Done or no Waiting found
         self.log.debug( "schedule: subrequest %d is empty" % iSubRequest )
@@ -821,8 +815,7 @@ class TransferAgent( RequestAgentBase ):
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
 
       # # check if all files are in 'Done' status
-      subRequestDone = requestObj.isSubRequestDone( iSubRequest, "transfer" )
-      subRequestDone = subRequestDone["Value"] if "Value" in subRequestDone else False
+      subRequestDone = requestObj.isSubRequestDone( iSubRequest, "transfer" ).get( "Value", False )
       # # all files Done, make this subrequest Done too
       if subRequestDone:
         self.log.info( "schedule: subrequest %s is done" % iSubRequest )
@@ -1003,6 +996,10 @@ class TransferAgent( RequestAgentBase ):
           continue
 
       # # update File status to 'Scheduled'
+      res = requestObj.getSubRequestFileAttributeValue( index, 'transfer', waitingFileLFN, 'Attempt' )
+      attempt = int( res.get( 'Value', 0 ) ) + 1
+      requestObj.setSubRequestFileAttributeValue( index, 'transfer',
+                                                  waitingFileLFN, 'Attempt', attempt )
       requestObj.setSubRequestFileAttributeValue( index, "transfer",
                                                   waitingFileLFN, "Status", "Scheduled" )
       self.log.info( "scheduleFiles: %s has been scheduled for FTS" % waitingFileLFN )
