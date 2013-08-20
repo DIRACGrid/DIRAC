@@ -270,7 +270,7 @@ class RequestContainer:
     if 'Files' in requestDict:
       files = []
       for rFile in requestDict['Files']:
-        fileDict = {'Status':'Waiting', 'FileID':makeGuid(), 'Attempt':1}
+        fileDict = {'Status':'Waiting', 'FileID':makeGuid(), 'Attempt':0}
         for attr, value in rFile.items():
           fileDict[attr] = value
         files.append( fileDict )
@@ -430,7 +430,9 @@ class RequestContainer:
       numFiles = self.getSubRequestNumFiles( ind, rType )['Value']
       for rFile in range ( numFiles ):
         if self.subRequests[rType][ind]['Files'][rFile]['LFN'] == lfn:
-          value = self.subRequests[rType][ind]['Files'][rFile][attribute]
+          value = self.subRequests[rType][ind]['Files'][rFile].get( attribute, 'Unknown' )
+          if value == 'Unknown':
+            return S_ERROR( "Attribute not found" )
           return S_OK( value )
       return S_ERROR( "File not found" )
 
@@ -540,6 +542,9 @@ class RequestContainer:
           gLogger.error( "Ind:%s Type:%s" % ( ind, rType ), self.toXML()['Value'] )
         elif rFile['Status'] == 'Waiting':
           gLogger.verbose( 'Found some waiting files' )
+          return S_OK( 0 )
+        elif rFile['Status'] == 'Failed' and int( rFile.get( 'Attempt', 0 ) ) < 10:
+          gLogger.verbose( 'Found some failed files to be retried' )
           return S_OK( 0 )
       datasets = self.getSubRequestDatasets( ind, rType )['Value']
       for dataset in datasets:
