@@ -105,13 +105,20 @@ class DownloadInputData:
       if not downloadReplicas[lfn]['SE']:
         for seName in tapeSEs:
           if seName in reps:
-            downloadReplicas[lfn]['SE'].append( ( seName, reps[seName] ) )
+            # Only consider replicas that are cached
+            pfn = reps[seName]
+            result = self.replicaManager.getStorageFileMetadata( [pfn], seName )
+            if result['OK']:
+              cached = result['Value']['Successful'].get( pfn, {} ).get( 'Cached' )
+              if cached:
+                downloadReplicas[lfn]['SE'].append( ( seName, reps[seName] ) )
 
     totalSize = 0
     self.log.verbose( 'Replicas to download are:' )
     for lfn, reps in downloadReplicas.items():
       self.log.verbose( lfn )
       if not reps['SE']:
+        # FIXME: this cannot work!!!! PHc 130821
         self.log.info( 'Failed to find data at local SEs, will try to download from anywhere', lfn )
         reps['SE'] = ''
         reps['PFN'] = ''
