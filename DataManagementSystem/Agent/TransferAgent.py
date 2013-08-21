@@ -600,7 +600,7 @@ class TransferAgent( RequestAgentBase ):
       failback = strategyHandlerSetupError if strategyHandlerSetupError else False
       requestDict = self.getRequest( "transfer" )
       if not requestDict["OK"]:
-        self.log.error( "execute: error when getteing 'transfer' request: %s" % requestDict["Message"] )
+        self.log.error( "execute: error when getting 'transfer' request: %s" % requestDict["Message"] )
         return requestDict
       if not requestDict["Value"]:
         self.log.info( "execute: no more 'Waiting' requests found in RequestDB" )
@@ -617,7 +617,7 @@ class TransferAgent( RequestAgentBase ):
         if not executeFTS["OK"]:
           self.log.error( executeFTS["Message"] )
           failback = True
-        elif executeFTS["OK"]:
+        else:
           if executeFTS["Value"]:
             self.log.debug( "execute: request %s has been processed in FTS" % requestDict["requestName"] )
             requestCounter = requestCounter - 1
