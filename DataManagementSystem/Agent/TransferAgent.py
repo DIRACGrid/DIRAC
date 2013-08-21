@@ -509,6 +509,9 @@ class TransferAgent( RequestAgentBase ):
       if fileStatus != status:
         self.log.debug( "collectFiles: skipping %s file, status is '%s'" % ( fileLFN, fileStatus ) )
         continue
+      elif not fileLFN:
+        requestName = requestObj.getRequestAttributes().get( 'Value', {} ).get( 'RequestName', 'Unknown' )
+        self.log.warn( 'collectFiles (request %s, subreq %d): bad LFN encountered' % ( requestName, iSubRequest ), fileLFN )
       else:
         waitingFiles.setdefault( fileLFN, subRequestFile["FileID"] )
 
