@@ -50,18 +50,18 @@ class DownloadInputData:
        to leave room for any produced files.
     """
 
-    #Define local configuration options present at every site
+    # Define local configuration options present at every site
     localSEList = self.configuration['LocalSEList']
 
     if self.configuration.has_key( 'JobID' ):
       self.jobID = self.configuration['JobID']
 
-    #Problematic files will be returned and can be handled by another module
+    # Problematic files will be returned and can be handled by another module
     failedReplicas = []
 
     if dataToResolve:
       self.log.verbose( 'Data to resolve passed directly to DownloadInputData module' )
-      self.inputData = dataToResolve #e.g. list supplied by another module
+      self.inputData = dataToResolve  # e.g. list supplied by another module
 
     self.inputData = [x.replace( 'LFN:', '' ) for x in self.inputData]
     self.log.info( 'InputData to be downloaded is:' )
@@ -70,8 +70,8 @@ class DownloadInputData:
 
     replicas = self.fileCatalogResult['Value']['Successful']
 
-    #For the unlikely case that a file is found on two SEs at the same site
-    #disk-based replicas are favoured.
+    # For the unlikely case that a file is found on two SEs at the same site
+    # disk-based replicas are favoured.
     downloadReplicas = {}
     # determine Disk and Tape SEs
     diskSEs = []
@@ -125,7 +125,7 @@ class DownloadInputData:
         if value:
           self.log.verbose( '%s %s' % ( item, value ) )
         if item == 'Size':
-          totalSize += int( value ) #bytes
+          totalSize += int( value )  # bytes
 
     self.log.info( 'Total size of files to be downloaded is %s bytes' % ( totalSize ) )
     for lfn in failedReplicas:
@@ -207,7 +207,7 @@ class DownloadInputData:
           result['Value']['path'] = newPath
         resolvedData[lfn] = result['Value']
 
-    #Report datasets that could not be downloaded
+    # Report datasets that could not be downloaded
     report = ''
     if failedReplicas:
       report = 'The following LFN(s) could not be downloaded to the WN:\n'
@@ -225,7 +225,7 @@ class DownloadInputData:
 
     result = S_OK()
     result['Successful'] = resolvedData
-    result['Failed'] = failedReplicas #lfn list to be passed to another resolution mechanism
+    result['Failed'] = failedReplicas  # lfn list to be passed to another resolution mechanism
     return result
 
   #############################################################################
@@ -233,10 +233,10 @@ class DownloadInputData:
     """Compare available disk space to the file size reported from the catalog
        result.
     """
-    diskSpace = getDiskSpace() #MB
-    availableBytes = diskSpace * 1024 * 1024 #bytes
-    #below can be a configuration option sent via the job wrapper in the future
-    data = 3 * 1024 * 1024 * 1024 # 3GB in bytes
+    diskSpace = getDiskSpace()  # MB
+    availableBytes = diskSpace * 1024 * 1024  # bytes
+    # below can be a configuration option sent via the job wrapper in the future
+    data = 3 * 1024 * 1024 * 1024  # 3GB in bytes
     if ( data + totalSize ) < availableBytes:
       msg = 'Enough disk space available (%s bytes)' % ( availableBytes )
       self.log.verbose( msg )
@@ -339,4 +339,4 @@ class DownloadInputData:
 
     return jobParam
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
