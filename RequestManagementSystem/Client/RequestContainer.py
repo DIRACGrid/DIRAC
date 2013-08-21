@@ -596,8 +596,9 @@ class RequestContainer:
         if 'Status' not in rFile:
           gLogger.error( "!!! The file %s has no status information !!!" % rFile )
           gLogger.error( "Ind:%s Type:%s" % ( ind, rType ), self.toXML()['Value'] )
-        elif rFile['Status'] not in ( 'Done', 'Failed' ):
-          gLogger.verbose( 'Found file in a non-Done or non-Failed state' )
+        # elif rFile['Status'] not in ( 'Done', 'Failed' ):
+        elif rFile['Status'] != 'Done':
+          gLogger.verbose( 'Found file in a non-Done state' )
           return S_OK( 0 )
       datasets = self.getSubRequestDatasets( ind, rType )['Value']
       for dataset in datasets:
