@@ -3,10 +3,13 @@ __RCSID__ = "$Id$"
 
 import time, random, copy
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.Core.DISET.RPCClient                     import RPCClient
+from DIRAC.Core.Utilities.ThreadSafe                import Synchronizer
+from DIRAC.Core.Utilities                           import DEncode
+from DIRAC.RequestManagementSystem.Client.Request   import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+
 
 gAccountingSynchro = Synchronizer()
 random.seed()
@@ -110,13 +113,16 @@ class DataStoreClient:
     return self.__getRPCClient().ping()
 
 def _sendToFailover( rpcStub ):
-  requestClient = RequestClient()
-  request = RequestContainer()
-  request.setDISETRequest( rpcStub )
+  """ Create a ForwardDISET operation for failover
+  """
+  request = Request()
+  request.RequestName = "Accounting.DataStore.%s.%s" % ( time.time(), random.random() )
+  forwardDISETOp = Operation()
+  forwardDISETOp.Type = "ForwardDISET"
+  forwardDISETOp.Arguments = DEncode.encode( rpcStub )
+  request.addOperation( forwardDISETOp )
 
-  requestStub = request.toXML()['Value']
-  return requestClient.setRequest( "Accounting.DataStore.%s.%s" % ( time.time(), random.random() ),
-                                   requestStub )
+  return ReqClient().putRequest( request )
 
 
 gDataStoreClient = DataStoreClient()

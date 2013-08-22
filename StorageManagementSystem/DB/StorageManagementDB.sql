@@ -1,4 +1,3 @@
---DROP DATABASE IF EXISTS StorageManagementDB;
 
 --CREATE DATABASE StorageManagementDB;
 

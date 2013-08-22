@@ -67,7 +67,9 @@ __RCSID__ = "$Id$"
 from pkgutil import extend_path
 __path__ = extend_path( __path__, __name__ )
 
-import sys, os, platform
+import platform as pyPlatform
+import sys, os
+
 
 # Define Version
 
@@ -90,9 +92,9 @@ if preVersion:
 __pythonMajorVersion = ( "2", )
 __pythonMinorVersion = ( "4", "5", "6", "7" )
 
-pythonVersion = platform.python_version_tuple()
+pythonVersion = pyPlatform.python_version_tuple()
 if str( pythonVersion[0] ) not in __pythonMajorVersion or str( pythonVersion[1] ) not in __pythonMinorVersion:
-  print "Python Version %s not supported by DIRAC" % platform.python_version()
+  print "Python Version %s not supported by DIRAC" % pyPlatform.python_version()
   print "Supported versions are: "
   for major in __pythonMajorVersion:
     for minor in __pythonMinorVersion:

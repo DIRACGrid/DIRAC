@@ -1,6 +1,7 @@
 import unittest
 
 from mock import Mock
+from DIRAC.RequestManagementSystem.Client.Request             import Request
 from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 
@@ -22,7 +23,7 @@ class ClientsTestCase( unittest.TestCase ):
 
     self.WMSClientMock = Mock()
     self.jobMonitoringClient = Mock()
-    self.mockRequestClient = Mock()
+    self.mockReqClient = Mock()
 
     self.jobMock = Mock()
     self.jobMock2 = Mock()
@@ -43,7 +44,7 @@ class ClientsTestCase( unittest.TestCase ):
                                   outputDataModule = "mock",
                                   jobClass = self.jobMock )
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
-                                      requestClient = self.mockRequestClient
+                                      requestClient = self.mockReqClient
                                       )
 
     self.tc = TransformationClient()
@@ -109,77 +110,98 @@ class WorkflowTasksSuccess( ClientsTestCase ):
 
 #############################################################################
 
+class RequestTasksSuccess( ClientsTestCase ):
+
+  def test_prepareTranformationTasks( self ):
+    taskDict = {1:{'TransformationID':1, 'TargetSE':'SE1', 'b1':'bb1', 'Site':'MySite',
+                   'InputData':['/this/is/a1.lfn', '/this/is/a2.lfn']},
+                2:{'TransformationID':1, 'TargetSE':'SE2', 'b2':'bb2', 'InputData':"/this/is/a1.lfn;/this/is/a2.lfn"},
+                3:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}
+                }
+
+    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup' )
+
+    self.assert_( res['OK'] )
+    for task in res['Value'].values():
+      self.assert_( isinstance( task['TaskObject'], Request ) )
+      self.assertEqual( task['TaskObject'][0].Type, 'ReplicateAndRegister' )
+      self.assertEqual( task['TaskObject'][0][0].LFN, '/this/is/a1.lfn' )
+      self.assertEqual( task['TaskObject'][0][1].LFN, '/this/is/a2.lfn' )
+
+#############################################################################
+
+
 class TransformationClientSuccess( ClientsTestCase ):
 
-  def test__applyProductionFilesStateMachine( self ):
+  def test__applyTransformationFilesStateMachine( self ):
     tsFiles = {}
     dictOfNewLFNsStatus = {}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {} )
 
     tsFiles = {}
     dictOfNewLFNsStatus = {'foo':['status', 2L, 1234]}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {} )
 
     tsFiles = {'foo':['status', 2L, 1234]}
     dictOfNewLFNsStatus = {'foo':'status'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'status'} )
 
     tsFiles = {'foo':['status', 2L, 1234], 'bar':['status', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'status'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'status'} )
 
     tsFiles = {'foo':['status', 2L, 1234], 'bar': ['status', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'A', 'bar':'B'} )
 
     tsFiles = {'foo':['status', 2L, 1234]}
     dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'A'} )
 
     tsFiles = {'foo': ['Assigned', 2L, 1234]}
     dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'A'} )
 
     tsFiles = {'foo':['Assigned', 2L, 1234], 'bar':['Assigned', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'Assigned', 'bar':'Processed'} )
 
     tsFiles = {'foo':['Processed', 2L, 1234], 'bar':['Unused', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'Processed', 'bar':'Processed'} )
 
     tsFiles = {'foo':['Processed', 2L, 1234], 'bar':['Unused', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
     self.assertEqual( res, {'foo':'Assigned', 'bar':'Processed'} )
 
     tsFiles = {'foo':['MaxReset', 12L, 1234], 'bar':['Processed', 22L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
 
     tsFiles = {'foo':['MaxReset', 12L, 1234], 'bar':['Processed', 22L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
     self.assertEqual( res, {'foo':'Unused', 'bar':'Unused'} )
 
     tsFiles = {'foo':['Assigned', 20L, 1234], 'bar':['Processed', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
     self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
 
     tsFiles = {'foo':['Assigned', 20L, 1234], 'bar':['Processed', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
-    res = self.tc._applyProductionFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, True )
     self.assertEqual( res, {'foo':'Unused', 'bar':'Unused'} )
 
 #############################################################################
@@ -188,5 +210,6 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ClientsTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TaskBaseSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WorkflowTasksSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( RequestTasksSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationClientSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )

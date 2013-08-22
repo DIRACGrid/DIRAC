@@ -96,15 +96,18 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r10-pre1]
+[v6r10-pre2]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
      JobDB, PilotAgentsDB) after the new movement to the new MySQL implementation with a persistent 
      connection per running thread
+NEW: SystemAdministratorCLI - better support for executing remote commands 
+FIX: DIRAC.__init__.py - avoid re-definition of platform variable    
 
 *DMS
 CHANGE: DFC - optimization and bug fixes of the bulk file addition
+FIX: TransferAgent - protection against badly defined LFNs in collectFiles()
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
@@ -115,9 +118,33 @@ CHANGE: JobMonitoringHandler - Avoid doing a selection of all Jobs, first count 
 NEW: JobMonitoringHandler - use JobPolicy to filter jobs in getJobSummaryWeb()
 NEW: new Operations option /Services/JobMonitoring/GlobalJobsInfo ( True by default ) to 
      allow or not job info lookup by anybody, used in JobMonitoringHandler       
+BUGFIX: SiteDirector - take into account the target queue Platform
+BUGFIX: JobDB - bug in __insertNewJDL()        
         
 *TS
-CHANGE: TransformationClient(DB,Manager) - set file status for transformation as bulk operation        
+CHANGE: TransformationClient(DB,Manager) - set file status for transformation as bulk operation 
+CHANGE: TransformationClient - applying state machine when changing transformation status
+
+*RMS
+NEW: Migrate to use the new Request Management by all the clients
+CHANGE: RequestContainer - Retry failed transfers 10 times and avoid sub-requests to be set Done 
+        when the files are failed
+CHANGE: Use a unique name for storing the proxy as processes may use the same "random" name and 
+        give conflicts
+NEW: RequestClient(Handler) - add new method readRequest( requestname)                 
+
+*Workflow
+NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
+     simplify construction of workflows        
+
+[v6r9p16]
+
+*TS
+BUGFIX: typos in TransformationCleaningAgent.py
+
+*DMS
+CHANGE: DownloadInputData - check the available disk space in the right input data directory
+FIX: DownloadInputData - try to download only Cached replicas 
 
 [v6r9p15]
 

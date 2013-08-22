@@ -188,14 +188,21 @@ def unifyLdLibraryPath( path, newpath ):
     # Windows does nothing for the moment
     return path
 
-def which( fileToFind ):
+def which( program ):
   """ Utility that mimics the 'which' command from the shell
   """
-  if not "PATH" in os.environ:
-    return None
-  for path in List.fromChar( os.environ["PATH"], ":" ):
-    fpath = os.path.join( path, fileToFind )
-    if os.path.exists( fpath ):
-      return fpath
+  def is_exe( fpath ):
+    return os.path.isfile( fpath ) and os.access( fpath, os.X_OK )
+
+  fpath, _fname = os.path.split( program )
+  if fpath:
+    if is_exe( program ):
+      return program
+  else:
+    for path in os.environ["PATH"].split( os.pathsep ):
+      path = path.strip( '"' )
+      exe_file = os.path.join( path, program )
+      if is_exe( exe_file ):
+        return exe_file
 
   return None
