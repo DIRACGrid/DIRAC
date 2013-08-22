@@ -491,7 +491,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     failed = {}
     successful = {}
     for lfnList in lfnChunks:
-      fullLfnList = [self.__fullLfn( lfn ) for lfn in lfnList]
+      fullLfnList = [self.__fullLfn( lfn ) for lfn in lfnList if lfn]
       value, replicaList = lfc.lfc_getreplicasl( fullLfnList, '' )
       if value != 0:
         for lfn in lfnList:
@@ -531,7 +531,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
             guid = oReplica.guid
           if ( oReplica.status != 'P' ) or allStatus:
             se = oReplica.host
-            pfn = oReplica.sfn#.strip()
+            pfn = oReplica.sfn  # .strip()
             replicas[se] = pfn
       if replicas:
         successful[lfn] = replicas
@@ -809,11 +809,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       if not res['OK']:
         failed[datasetName] = res['Message']
       else:
-        #linkDict = res['Value']['Links']
+        # linkDict = res['Value']['Links']
         linkDict = res['Value']['Files']
         datasetFiles = {}
         for link, fileMetadata in linkDict.items():
-          #target = fileMetadata[link]['MetaData']['Target']
+          # target = fileMetadata[link]['MetaData']['Target']
           target = link
           datasetFiles[target] = fileMetadata['Replicas']
         successful[datasetName] = datasetFiles
@@ -850,7 +850,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       # If the directory exists
       if res['Value']:
         continue
-      #Make the directories recursively if needed
+      # Make the directories recursively if needed
       res = self.__makeDirs( baseDir )
       # If we failed to make the directory for the file
       if not res['OK']:
@@ -986,17 +986,17 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       created = self.__openSession()
       if created < 0:
         return S_ERROR( "Error opening LFC session" )
-    res = self.getReplicas( lfn ) #We need the PFNs of the input lfn (list)
+    res = self.getReplicas( lfn )  # We need the PFNs of the input lfn (list)
     if not res['OK']:
       return res
     for lfn, lfnrep in res['Value']['Successful'].items():
-      if not "PFN" in lfns[lfn]:#Update only if the PFN was not supplied
+      if not "PFN" in lfns[lfn]:  # Update only if the PFN was not supplied
         lfns[lfn]["PFN"] = lfnrep[ lfns[lfn]['SE'] ]
     failed = {}
     for lfn, message in res['Value']['Failed'].items():
-      if not "PFN" in lfns[lfn]:#Change only if PFN is not there
-        failed[lfn] = message #The replicas are not available, mark the lfn as failed
-        lfns.pop( lfn ) #and remove them
+      if not "PFN" in lfns[lfn]:  # Change only if PFN is not there
+        failed[lfn] = message  # The replicas are not available, mark the lfn as failed
+        lfns.pop( lfn )  # and remove them
     successful = {}
     for lfn, info in lfns.items():
       if ( 'PFN' not in info ) or ( 'SE' not in info ):
@@ -1345,7 +1345,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( path )
 
   def __getACLInformation( self, path ):
-    results, objects = lfc.lfc_getacl( self.__fullLfn( path ), 256 )#lfc.CNS_ACL_GROUP_OBJ)
+    results, objects = lfc.lfc_getacl( self.__fullLfn( path ), 256 )  # lfc.CNS_ACL_GROUP_OBJ)
     if results == -1:
       errStr = "LcgFileCatalogClient.__getACLInformation: Failed to obtain all path ACLs."
       gLogger.error( errStr, "%s %s" % ( path, lfc.sstrerror( lfc.cvar.serrno ) ) )
@@ -1879,11 +1879,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           failed[lfn] = lfc.sstrerror( lfc.cvar.serrno )
         continue
       for oReplica in replicaList:
-        #TODO WORK OUT WHICH LFN THIS CORRESPONDS
+        # TODO WORK OUT WHICH LFN THIS CORRESPONDS
         status = oReplica.status
         if ( status != 'P' ) or allStatus:
           se = oReplica.host
-          pfn = oReplica.sfn#.strip()
+          pfn = oReplica.sfn  # .strip()
           # replicas[se] = pfn
     if created:
       self.__closeSession()
