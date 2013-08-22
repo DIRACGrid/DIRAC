@@ -1090,13 +1090,14 @@ class ReplicaManager( CatalogToStorage ):
     paths = path
     if type( path ) in StringTypes:
       paths = [ path ]
+    result = {'Successful':[], 'Failed':{}}
     for path in paths:
       if path not in res['Value']['Successful']:
-        return S_OK( False )
+        result['Failed'][path] = ''
       catalogPerm = res['Value']['Successful'][path]
       if not ( "Write" in catalogPerm and catalogPerm['Write'] ):
-        return S_OK( False )
-    return S_OK( True )
+        result['Failed'].append( path )
+    return S_OK( result )
 
   ##########################################################################
   #
@@ -2257,7 +2258,7 @@ class ReplicaManager( CatalogToStorage ):
       infoStr = "__removeCatalogReplica: Successfully removed replica."
       self.log.debug( infoStr, lfn )
     if res['Value']['Successful']:
-      self.log.info( "__removeCatalogReplica: Removed %d replicas" % len( res['Value']['Successful'] ) )
+      self.log.verbose( "__removeCatalogReplica: Removed %d replicas" % len( res['Value']['Successful'] ) )
     for lfn, error in res['Value']['Failed'].items():
       errStr = "__removeCatalogReplica: Failed to remove replica."
       self.log.error( errStr, "%s %s" % ( lfn, error ) )

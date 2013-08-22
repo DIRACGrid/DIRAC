@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import checkArgumentFormat
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
 import time, threading, os
-from types import *
+from types import StringTypes, ListType
 import stat
 
 DEBUG = 0
@@ -34,53 +34,11 @@ class DirectoryTreeBase:
     """ Get the string of the Directory Tree type
     """
     return self.treeTable
+    
+  def setDatabase(self,database):
+    self.db = database  
 
-  def setDatabase( self, database ):
-    self.db = database
-
-  def makeDirectory( self, path, credDict, status = 0 ):
-    return self.makeDirectory_andrei( path, credDict, status )
-
-  def makeDirectory_andrew( self, path, credDict, status = 0 ):
-    """Create a new directory. The return value is the dictionary containing all the parameters of the newly created directory """
-    if path[0] != '/':
-      return S_ERROR( 'Not an absolute path' )
-    # Strip off the trailing slash if necessary
-    if len( path ) > 1 and path[-1] == '/':
-      path = path[:-1]
-
-    if path == '/':
-      # Create the root directory
-      l_uid = 0
-      l_gid = 0
-    else:
-      result = self.db.ugManager.getUserAndGroupID( credDict )
-      if not result['OK']:
-        return result
-      ( l_uid, l_gid ) = result['Value']
-
-    dirDict = {}
-    result = self.makeDir( path )
-    if not result['OK']:
-      return result
-    dirID = result['Value']
-    if result['NewDirectory']:
-      req = "INSERT INTO FC_DirectoryInfo (DirID,UID,GID,CreationDate,ModificationDate,Mode,Status) Values "
-      req = req + "(%d,%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % ( dirID, l_uid, l_gid, self.db.umask, status )
-      result = self.db._update( req )
-      if result['OK']:
-        resGet = self.getDirectoryParameters( dirID )
-        if resGet['OK']:
-          dirDict = resGet['Value']
-    else:
-      return S_OK( dirID )
-
-    if not dirDict:
-      self.removeDir( path )
-      return S_ERROR( 'Failed to create directory %s' % path )
-    return S_OK( dirID )
-
-  def makeDirectory_andrei( self, path, credDict, status = 0 ):
+  def makeDirectory(self,path,credDict,status=0):
     """Create a new directory. The return value is the dictionary
        containing all the parameters of the newly created directory
     """
