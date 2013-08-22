@@ -12,6 +12,10 @@ from DIRAC.Core.Utilities.Subprocess                            import pythonCal
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+
+from DIRAC.AccountingSystem.Client.Types.SpaceToken            import SpaceToken
+from DIRAC.AccountingSystem.Client.DataStoreClient             import gDataStoreClient
 
 __RCSID__ = '$Id:  $'
 
@@ -43,6 +47,24 @@ class SpaceTokenOccupancyCommand( Command ):
                                                                     result[ 'Free' ] )
       if not resQuery[ 'OK' ]:
         return resQuery
+    
+      accountingDict = {
+                        'SpaceToken' : result [ 'Token' ],
+                        'Endpoint'   : result[ 'Endpoint' ],
+                        'Site'       : self.getSiteNameFromEndpoint( result[ 'Endpoint' ] )
+                        }
+      
+      result[ 'Used' ] = result[ 'Total' ] - result[ 'Free' ]
+    
+      for sType in [ 'Total', 'Free', 'Used', 'Guaranteed' ]:
+        spaceTokenAccounting = SpaceToken()
+        spaceTokenAccounting.setNowAsStartAndEndTime()
+        spaceTokenAccounting.setValuesFromDict( accountingDict )
+        spaceTokenAccounting.setValueByKey( 'SpaceType', sType )
+        spaceTokenAccounting.setValueByKey( 'Space', result[ sType ] * 1e12 )
+      
+        print gDataStoreClient.addRegister( spaceTokenAccounting )
+    print gDataStoreClient.commit()
     
     return S_OK()  
 
@@ -173,6 +195,37 @@ class SpaceTokenOccupancyCommand( Command ):
         self.metrics[ 'failed' ].append( result )      
        
     return S_OK( self.metrics )
+
+  def getSiteNameFromEndpoint( self, endpoint ):
+    
+    endpointSE = ''
+    
+    ses = CSHelpers.getStorageElements()
+    if not ses[ 'OK' ]:
+      gLogger.error( ses[ 'Message' ] )
+    
+    for se in ses[ 'Value' ]:
+      # Ugly, ugly, ugly.. waiting for DIRAC v7r0 to do it properly
+      if ( not '-' in se ) or ( '_' in se ):
+        continue
+      
+      res = CSHelpers.getStorageElementEndpoint( se )
+      if not res[ 'OK' ]:
+        continue
+      
+      if endpoint == res[ 'Value' ]:
+        endpointSE = se
+        break
+    
+    if not endpointSE:
+      return ''
+    
+    site = getSitesForSE( endpointSE )
+    try:
+      return site[ 'Value' ][ 0 ]
+    except:
+      return ''
+    
       
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
