@@ -471,9 +471,9 @@ class TransformationCleaningAgent( AgentModule ):
         return res
       transType = res['Value']
       if transType in self.dataProcTTypes:
-        res = self.__removeRequests( externalIDs )
-      else:
         res = self.__removeWMSTasks( externalIDs )
+      else:
+        res = self.__removeRequests( externalIDs )
       if not res['OK']:
         return res
     return S_OK()
