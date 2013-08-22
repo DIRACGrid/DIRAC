@@ -39,6 +39,15 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
 
+[v6r9p16]
+
+*TS
+BUGFIX: typos in TransformationCleaningAgent.py
+
+*DMS
+CHANGE: DownloadInputData - check the available disk space in the right input data directory
+FIX: DownloadInputData - try to download only Cached replicas 
+
 [v6r9p15]
 
 *Core
