@@ -36,9 +36,7 @@ class DownloadInputData:
     self.configuration = argumentsDict['Configuration']
     self.fileCatalogResult = argumentsDict['FileCatalog']
     # By default put each input data file into a separate directory
-    self.inputDataDirectory = 'PerFile'
-    if argumentsDict.has_key( 'InputDataDirectory' ):
-      self.inputDataDirectory = argumentsDict['InputDataDirectory']
+    self.inputDataDirectory = argumentsDict.get( 'InputDataDirectory', 'PerFile' )
     self.jobID = None
     self.replicaManager = ReplicaManager()
     self.counter = 1
@@ -189,13 +187,13 @@ class DownloadInputData:
         continue
 
       self.log.info( 'Preliminary checks OK, download from LocalSE:', pfn )
-      result = self.__getPFN( pfn, seName, guid )
+      result = self.__downloadPFN( pfn, seName, guid )
       if not result['OK']:
         self.log.warn( 'Download from localSE failed with message:\n%s' % ( result ) )
         # if the replica was NOT on a Tape SE attempt a download from elsewhere
         if seName not in tapeSEs:
           self.log.info( 'Trying to download from any SE:', pfn )
-          result = self.__getLFN( lfn, pfn, seName, guid )
+          result = self.__downloadLFN( lfn, pfn, seName, guid )
           if not result['OK']:
             self.log.warn( 'Download from any SE failed with message:\n%s' % ( result ) )
             failedReplicas.append( lfn )
@@ -240,10 +238,11 @@ class DownloadInputData:
     """Compare available disk space to the file size reported from the catalog
        result.
     """
-    diskSpace = getDiskSpace()  # MB
+    diskSpace = getDiskSpace( self.__getDownloadDir( False ) )  # MB
     availableBytes = diskSpace * 1024 * 1024  # bytes
     # below can be a configuration option sent via the job wrapper in the future
-    data = 3 * 1024 * 1024 * 1024  # 3GB in bytes
+    # Moved from 3 to 5 GB (PhC 130822) for standard output file
+    data = 5 * 1024 * 1024 * 1024  # 5GB in bytes
     if ( data + totalSize ) < availableBytes:
       msg = 'Enough disk space available (%s bytes)' % ( availableBytes )
       self.log.verbose( msg )
@@ -254,24 +253,25 @@ class DownloadInputData:
       self.log.warn( msg )
       return S_ERROR( msg )
 
+  def __getDownloadDir( self, incrementCounter = True ):
+    if self.inputDataDirectory == "PerFile":
+      if incrementCounter:
+        self.counter += 1
+      return tempfile.mkdtemp( prefix = 'InputData_%s' % ( self.counter ), dir = os.getcwd() )
+    elif self.inputDataDirectory == "CWD":
+      return os.getcwd()
+    else:
+      return self.inputDataDirectory
+
   #############################################################################
-  def __getLFN( self, lfn, pfn, seName, guid ):
+  def __downloadLFN( self, lfn, pfn, seName, guid ):
     """ Download a local copy of a single LFN from the specified Storage Element.
         This is used as a last resort to attempt to retrieve the file.  The Replica
         Manager will perform an LFC lookup to refresh the stored result.
     """
-    start = os.getcwd()
-    if self.inputDataDirectory == "PerFile":
-      downloadDir = tempfile.mkdtemp( prefix = 'InputData_%s' % ( self.counter ), dir = start )
-    elif self.inputDataDirectory == "CWD":
-      downloadDir = start
-    else:
-      downloadDir = self.inputDataDirectory
-    self.counter += 1
-    os.chdir( downloadDir )
+    downloadDir = self.__getDownloadDir()
     self.log.verbose( 'Attempting to ReplicaManager.getFile for %s in %s' % ( lfn, downloadDir ) )
-    result = self.replicaManager.getFile( lfn )
-    os.chdir( start )
+    result = self.replicaManager.getFile( lfn, destinationDir = downloadDir )
     if not result['OK']:
       return result
     self.log.verbose( result )
@@ -290,7 +290,7 @@ class DownloadInputData:
       return S_ERROR( 'OK download result but file missing in current directory' )
 
   #############################################################################
-  def __getPFN( self, pfn, seName, guid ):
+  def __downloadPFN( self, pfn, seName, guid ):
     """ Download a local copy of a single PFN from the specified Storage Element.
     """
     if not pfn:
@@ -307,14 +307,7 @@ class DownloadInputData:
                    'path': os.path.join( os.getcwd(), fileName )}
       return S_OK( fileDict )
 
-    start = os.getcwd()
-    if self.inputDataDirectory == "PerFile":
-      downloadDir = tempfile.mkdtemp( prefix = 'InputData_%s' % ( self.counter ), dir = start )
-    elif self.inputDataDirectory == "CWD":
-      downloadDir = start
-    else:
-      downloadDir = self.inputDataDirectory
-    self.counter += 1
+    downloadDir = self.__getDownloadDir()
 
     result = self.replicaManager.getStorageFile( pfn, seName, localPath = downloadDir, singleFile = True )
     if not result['OK']:
