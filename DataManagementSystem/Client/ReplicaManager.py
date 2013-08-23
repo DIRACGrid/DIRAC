@@ -1090,14 +1090,17 @@ class ReplicaManager( CatalogToStorage ):
     paths = path
     if type( path ) in StringTypes:
       paths = [ path ]
-    result = {'Successful':[], 'Failed':{}}
+    # result = {'Successful':[], 'Failed':{}}
     for path in paths:
       if path not in res['Value']['Successful']:
-        result['Failed'][path] = ''
+        return S_OK( False )
+        # result['Failed'][path] = False
       catalogPerm = res['Value']['Successful'][path]
       if not ( "Write" in catalogPerm and catalogPerm['Write'] ):
-        result['Failed'].append( path )
-    return S_OK( result )
+        # result['Failed'][ path ] = False
+        return S_OK( False )
+    # return S_OK( result )
+    return S_OK( True )
 
   ##########################################################################
   #
