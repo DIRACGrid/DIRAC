@@ -14,12 +14,33 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryT
 
 class FileMetadata:
 
+  _tables = {}
+  _tables["FC_FileMeta"] = { "Fields": {
+                                       "FileID": "INTEGER NOT NULL",
+                                       "MetaKey": "VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname'",
+                                       "MetaValue": "VARCHAR(31) NOT NULL DEFAULT 'Noname'"
+                                      },
+                            "UniqueIndexes": { "FileID": ["MetaKey"] }
+                          }
+  
+  _tables = {}
+  _tables["FC_FileMetaFields"] = { "Fields": {
+                                              "MetaID": "INT AUTO_INCREMENT",
+                                              "MetaName": "VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                              "MetaType": "VARCHAR(128) NOT NULL"
+                                             },
+                                   "PrimaryKey": "MetaID"
+                                 }
+
   def __init__(self,database = None):
-          
-    self.db = database
-    
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
+
   def setDatabase( self, database ):
     self.db = database
+    result = self.db._createTables( self._tables )
+    return result
         
 ##############################################################################
 #

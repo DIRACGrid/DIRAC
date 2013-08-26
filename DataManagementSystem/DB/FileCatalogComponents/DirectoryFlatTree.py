@@ -12,6 +12,26 @@ from DIRAC.Core.Utilities.List                                                 i
 
 class DirectoryFlatTree(DirectoryTreeBase):
 
+  _tables = {}
+  _tables["DirectoryInfo"] = { "Fields": {
+                                           "DirID": "INTEGER AUTO_INCREMENT",
+                                           "Parent": "INTEGER NOT NULL",
+                                           "Status": "SMALLINT UNSIGNED NOT NULL DEFAULT 0",
+                                           "DirName": "VARCHAR(1024) NOT NULL",
+                                           "CreationDate": "DATETIME",
+                                           "ModificationDate": "DATETIME",
+                                           "UID": "CHAR(8) NOT NULL",
+                                           "GID": "CHAR(8) NOT NULL",
+                                           "Mode": "SMALLINT UNSIGNED NOT NULL DEFAULT 775"
+                                         },
+                               "PrimaryKey": "DirID",
+                               "Indexes": {
+                                            "Parent": ["Parent"],
+                                            "Status": ["Status"],
+                                            "DirName": ["DirName"]
+                                          }
+                             }
+
   def __init__(self,database=None):
     DirectoryTreeBase.__init__(self,database)
     self.treeTable = 'DirectoryInfo'

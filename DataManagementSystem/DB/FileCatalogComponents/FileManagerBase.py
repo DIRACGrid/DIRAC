@@ -13,9 +13,25 @@ from types import ListType, StringTypes
 
 class FileManagerBase:
 
+  _base_tables = {}
+  _base_tables['FC_FileAncestors'] = { "Fields":
+                                     { 
+                                       "FileID": "INT NOT NULL DEFAULT 0",
+                                       "AncestorID": "INT NOT NULL DEFAULT 0",
+                                       "AncestorDepth": "INT NOT NULL DEFAULT 0"
+                                     }, 
+                                       "PrimaryKey": "SEID",
+                                       "Indexes": {"FileID": ["FileID"], 
+                                                 "AncestorID": ["AncestorID"],
+                                                 "AncestorDepth": ["AncestorDepth"]},
+                                       "UniqueIndexes": { "File_Ancestor": ["FileID","AncestorID"]}  
+                                     } 
+
+
   def __init__( self, database = None ):
-    self.db = database
-    self.statusDict = {}
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
 
   def _getConnection( self, connection ):
     if connection:
@@ -28,7 +44,12 @@ class FileManagerBase:
 
   def setDatabase( self, database ):
     self.db = database
-
+    result = self.db._createTables( self.__base_tables )
+    if not result['OK']:
+      return result
+    result = self.db._createTables( self._tables )
+    return result
+  
   def getFileCounters( self, connection = False ):
     connection = self._getConnection( connection )
   

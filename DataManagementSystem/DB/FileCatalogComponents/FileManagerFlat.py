@@ -13,6 +13,53 @@ from types import TupleType, ListType, StringTypes
 
 class FileManagerFlat(FileManagerBase):
   
+  _tables = {}
+  _tables['FC_Files'] = { "Fields": { 
+                                     "FileID": "INT AUTO_INCREMENT",
+                                     "DirID": "INT NOT NULL",
+                                     "Size": "BIGINT UNSIGNED NOT NULL",
+                                     "UID": "SMALLINT UNSIGNED NOT NULL",
+                                     "GID": "TINYINT UNSIGNED NOT NULL",
+                                     "Status": "SMALLINT UNSIGNED NOT NULL",
+                                     "FileName": "VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                     "GUID": "char(36) NOT NULL",
+                                     "Checksum": "VARCHAR(32)",
+                                     "CheckSumType": "ENUM('Adler32','MD5')",
+                                     "Type": "ENUM('File','Link') NOT NULL DEFAULT 'File'",
+                                     "CreationDate": "DATETIME",
+                                     "ModificationDate": "DATETIME",
+                                     "LastAccessDate": "DateTime",
+                                     "Mode": "SMALLINT UNSIGNED NOT NULL DEFAULT 559"
+                                    }, 
+                          "PrimaryKey": "FileID",
+                          "Indexes": {
+                                       "DirID": ["DirID"],
+                                       "UID_GID": ["UID","GID"],
+                                       "Status": ["Status"],
+                                       "FileName": ["FileName"],
+                                       "Dir_File": ["DirID","FileName"],
+                                       "GUID": ["GUID"]
+                                     }  
+                                   }
+  _tables['FC_Replicas'] = { "Fields": { 
+                                         "RepID": "INT AUTO_INCREMENT",
+                                         "FileID": "INT NOT NULL",
+                                         "SEID": "INTEGER NOT NULL",
+                                         "Status": "SMALLINT UNSIGNED NOT NULL",
+                                         "RepType": "ENUM ('Master','Replica') NOT NULL DEFAULT 'Master'",
+                                         "CreationDate": "DATETIME",
+                                         "ModificationDate": "DATETIME",
+                                         "PFN": "VARCHAR(1024)"
+                                        },
+                             "PrimaryKey": "RepID",
+                             "Indexes": {
+                                          "FileID": ["FileID"],
+                                          "SEID": ["SEID"],
+                                          "Status": ["Status"] 
+                                        },
+                             "UniqueIndexes": { "File_SE": ["FileID","SEID"] }
+                            } 
+  
   ######################################################
   #
   # The all important _findFiles and _getDirectoryFiles methods
@@ -54,7 +101,7 @@ class FileManagerFlat(FileManagerBase):
     req = "SELECT FileName,%s FROM FC_Files WHERE DirID=%d" % (intListToString(metadata),dirID)
     if not allStatus:
       statusIDs = []
-      res = self._getStatusInt('AprioriGood',connection=connection)
+      res = self.db.getStatusInt('AprioriGood',connection=connection)
       if res['OK']:
         statusIDs.append(res['Value'])
       if statusIDs:
@@ -81,7 +128,7 @@ class FileManagerFlat(FileManagerBase):
     failed = {}
     directoryFiles = {}
     insertTuples = []
-    res = self._getStatusInt('AprioriGood',connection=connection)
+    res = self.db.getStatusInt('AprioriGood',connection=connection)
     statusID = 0
     if res['OK']:
       statusID = res['Value']
@@ -165,7 +212,7 @@ class FileManagerFlat(FileManagerBase):
   
   def _insertReplicas(self,lfns,master=False,connection=False): 
     connection = self._getConnection(connection)
-    res = self._getStatusInt('AprioriGood',connection=connection)
+    res = self.db.getStatusInt('AprioriGood',connection=connection)
     statusID = 0
     if res['OK']:
       statusID = res['Value']
@@ -295,7 +342,7 @@ class FileManagerFlat(FileManagerBase):
   
   def _setReplicaStatus(self,fileID,se,status,connection=False):
     connection = self._getConnection(connection)
-    res = self._getStatusInt(status,connection=connection)
+    res = self.db.getStatusInt(status,connection=connection)
     if not res['OK']:
       return res
     statusID = res['Value']
@@ -350,7 +397,7 @@ class FileManagerFlat(FileManagerBase):
         continue
       seName = res['Value']
       statusID = tuple[2]
-      res = self._getIntStatus(statusID,connection=connection)
+      res = self.db.getIntStatus(statusID,connection=connection)
       if not res['OK']:
         continue
       status = res['Value']

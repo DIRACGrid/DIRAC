@@ -16,8 +16,37 @@ DEBUG = 0
 #############################################################################
 class DirectoryTreeBase:
 
+  __base_tables = {}
+  __base_tables["FC_DirectoryUsage"] = { "Fields":
+                                        {
+                                          "DirID": "INTEGER NOT NULL",
+                                          "SEID": "INTEGER NOT NULL",
+                                          "SESize": "BIGINT NOT NULL",
+                                          "SEFiles": "BIGINT NOT NULL",
+                                          "LastUpdate": "DATETIME NOT NULL"
+                                        },
+                                        "UniqueIndexes" : {"DirID_SEID": ["DirID","SEID"]},
+                                        "Indexes": {
+                                                     "DirID": ["DirID"],
+                                                     "SEID": ["SEID"]
+                                                   }  
+                                       }
+  __base_tables["FC_DirectoryInfo"] = { "Fields": {
+                                                    "DirID": "INTEGER NOT NULL",
+                                                    "UID": "SMALLINT UNSIGNED NOT NULL DEFAULT 0",
+                                                    "GID": "SMALLINT UNSIGNED NOT NULL DEFAULT 0",
+                                                    "CreationDate": "DATETIME",
+                                                    "ModificationDate": "DATETIME",
+                                                    "Mode": "SMALLINT UNSIGNED NOT NULL DEFAULT 775",
+                                                    "Status": "SMALLINT UNSIGNED NOT NULL DEFAULT 0"
+                                                  }, 
+                                        "PrimaryKey": "DirID"
+                                       }
+  
   def __init__( self, database = None ):
-    self.db = database
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
     self.lock = threading.Lock()
     self.treeTable = ''
 
@@ -37,6 +66,11 @@ class DirectoryTreeBase:
     
   def setDatabase(self,database):
     self.db = database  
+    result = self.db._createTables( self.__base_tables )
+    if not result['OK']:
+      return result
+    result = self.db._createTables( self._tables )
+    return result
 
   def makeDir( self, path ):    
     return S_ERROR( 'Should be implemented in a derived class' )

@@ -13,12 +13,47 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryT
 
 class DirectoryMetadata:
 
-  def __init__( self, database = None ):
+  _tables = {}
+  _tables["FC_DirMeta"] = { "Fields": {
+                                       "DirID": "INTEGER NOT NULL",
+                                       "MetaKey": "VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname'",
+                                       "MetaValue": "VARCHAR(31) NOT NULL DEFAULT 'Noname'"
+                                      },
+                            "UniqueIndexes": { "DirID": ["MetaKey"] }
+                          }
+  
+  _tables = {}
+  _tables["FC_MetaFields"] = { "Fields": {
+                                          "MetaID": "INT AUTO_INCREMENT",
+                                          "MetaName": "VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                          "MetaType": "VARCHAR(128) NOT NULL"
+                                         },
+                               "PrimaryKey": "MetaID"
+                             }
+  _tables["FC_MetaSetNames"] = { "Fields": {
+                                            "MetaSetID": "INT AUTO_INCREMENT",
+                                            "MetaSetName": "VARCHAR(64)  NOT NULL"
+                                           },
+                                 "PrimaryKey": "MetaSetID",
+                                 "UniqueIndexes": { "MetaSetName": ["MetaSetName"] }
+                               }
+  _tables["FC_MetaSets"] = { "Fields": {
+                                         "MetaSetID": "INT NOT NULL",
+                                         "MetaKey": "VARCHAR(31) NOT NULL",
+                                         "MetaValue": "VARCHAR(31) NOT NULL"
+                                       },
+                             "Indexes": { "MetaSetID": ["MetaSetID"] }
+                           }
 
-    self.db = database
+  def __init__( self, database = None ):
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
 
   def setDatabase( self, database ):
     self.db = database
+    result = self.db._createTables( self._tables )
+    return result
 
 ##############################################################################
 #

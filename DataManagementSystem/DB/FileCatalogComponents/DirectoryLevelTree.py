@@ -21,6 +21,23 @@ class DirectoryLevelTree(DirectoryTreeBase):
       with full directory path stored in each node 
   """
   
+  _tables = {}
+  _tables["FC_DirectoryTree"] = { "Fields": {
+                                             "DirID": "INTEGER AUTO_INCREMENT",
+                                             "DirName": "VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                             "Parent": "INTEGER NOT NULL",
+                                             "Level": "INT NOT NULL"
+                                            },
+                                 "PrimaryKey": "DirID",
+                                 "Indexes": {
+                                              "Parent": ["Parent"],
+                                              "Level": ["Level"]
+                                            },
+                                  "UniqueIndexes": { "DirName": ["DirName"] }
+                                }
+  for i in range( 1, MAX_LEVELS+1 ):
+    _tables["FC_DirectoryTree"]["Fields"]['LPATH%d' % i] = "SMALLINT NOT NULL DEFAULT 0"
+  
   def __init__(self,database=None):
     DirectoryTreeBase.__init__(self,database)
     self.treeTable = 'FC_DirectoryLevelTree'
