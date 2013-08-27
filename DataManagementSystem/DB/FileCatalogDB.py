@@ -37,6 +37,8 @@ class FileCatalogDB(DB):
     result = self._createTables( self.__tables )
     if not result['OK']:
       gLogger.error( "Failed to create tables", str( self.__tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )    
     
     self.ugManager = None
     self.seManager = None
