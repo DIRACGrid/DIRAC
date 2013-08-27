@@ -20,7 +20,6 @@ class FileManagerBase:
                                        "AncestorID": "INT NOT NULL DEFAULT 0",
                                        "AncestorDepth": "INT NOT NULL DEFAULT 0"
                                      }, 
-                                       "PrimaryKey": "SEID",
                                        "Indexes": {"FileID": ["FileID"], 
                                                  "AncestorID": ["AncestorID"],
                                                  "AncestorDepth": ["AncestorDepth"]},
@@ -44,10 +43,17 @@ class FileManagerBase:
 
   def setDatabase( self, database ):
     self.db = database
-    result = self.db._createTables( self.__base_tables )
+    result = self.db._createTables( self._base_tables )
     if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._base_tables.keys() ) )
       return result
+    if result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )
     result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
     return result
   
   def getFileCounters( self, connection = False ):

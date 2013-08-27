@@ -13,8 +13,8 @@ from types import StringTypes, IntType, LongType
 
 class SEManagerBase:
 
-  __tables = {}
-  __tables['FC_StorageElements'] = { "Fields":
+  _tables = {}
+  _tables['FC_StorageElements'] = { "Fields":
                                      { 
                                        "SEID": "INTEGER AUTO_INCREMENT",
                                        "SEName": "VARCHAR(127) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
@@ -48,7 +48,11 @@ class SEManagerBase:
 
   def setDatabase(self,database):
     self.db = database  
-    result = self.db._createTables( self.__tables )
+    result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
     return result
 
   def _getConnection(self,connection):

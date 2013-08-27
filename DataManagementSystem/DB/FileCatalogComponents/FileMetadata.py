@@ -8,8 +8,9 @@
 
 __RCSID__ = "$Id$"
 
-import time, types
-from DIRAC import S_OK, S_ERROR
+# import time 
+import types
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 
 class FileMetadata:
@@ -23,7 +24,6 @@ class FileMetadata:
                             "UniqueIndexes": { "FileID": ["MetaKey"] }
                           }
   
-  _tables = {}
   _tables["FC_FileMetaFields"] = { "Fields": {
                                               "MetaID": "INT AUTO_INCREMENT",
                                               "MetaName": "VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
@@ -40,6 +40,10 @@ class FileMetadata:
   def setDatabase( self, database ):
     self.db = database
     result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
     return result
         
 ##############################################################################
@@ -232,7 +236,7 @@ class FileMetadata:
       return result
     metaFields = result['Value']
 
-    stringIDs = ','.join( [ '%s' % id for id in fileIDList ] )
+    stringIDs = ','.join( [ '%s' % id_ for id_ in fileIDList ] )
     metaDict = {}
     for meta in metaFields:
       req = "SELECT Value,FileID FROM FC_FileMeta_%s WHERE FileID in (%s)" % ( meta, stringIDs )
@@ -451,9 +455,6 @@ class FileMetadata:
   def findFilesByMetadata( self, metaDict, path, credDict ):
     """ Find Files satisfying the given metadata
     """
-
-    start = time.time()
-
     if not path:
       path = '/'
 

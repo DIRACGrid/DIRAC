@@ -14,8 +14,8 @@ from types import IntType, LongType
 
 class UserAndGroupManagerBase:
 
-  __tables = {} 
-  __tables["FC_Groups"] = { "Fields" :
+  _tables = {} 
+  _tables["FC_Groups"] = { "Fields" :
                             { 
                               "GID": "INTEGER NOT NULL AUTO_INCREMENT",
                               "GroupName": "VARCHAR(127) NOT NULL"
@@ -23,7 +23,7 @@ class UserAndGroupManagerBase:
                             "PrimaryKey": ['GID'],
                             "UniqueIndexes": { "GroupName": ["GroupName"] }
                           }  
-  __tables["FC_Users"] = { "Fields" :
+  _tables["FC_Users"] = { "Fields" :
                             { 
                               "UID": "INTEGER NOT NULL AUTO_INCREMENT",
                               "UserName": "VARCHAR(127) NOT NULL"
@@ -49,7 +49,11 @@ class UserAndGroupManagerBase:
     
   def setDatabase( self, database ):
     self.db = database
-    result = self.db._createTables( self.__tables )
+    result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
     return result
 
   def getUserAndGroupRight(self, credDict):

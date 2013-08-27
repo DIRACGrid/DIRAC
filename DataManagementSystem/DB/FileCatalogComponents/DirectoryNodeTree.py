@@ -18,7 +18,7 @@ class DirectoryNodeTree( DirectoryTreeBase ):
   """
   
   _tables = {}
-  _tables["FC_DirectoryTree"] = { "Fields": {
+  _tables["FC_DirectoryTreeM"] = { "Fields": {
                                              "DirID": "INTEGER AUTO_INCREMENT",
                                              "DirName": "VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
                                              "Parent": "INTEGER NOT NULL",
