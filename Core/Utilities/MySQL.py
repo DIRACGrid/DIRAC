@@ -498,7 +498,7 @@ class MySQL:
     if ( tableName, ) in retDict['Value']:
       if not force:
         # the requested exist and table creation is not force, return with error
-        return S_ERROR( 'The requested table already exist' )
+        return S_ERROR( 'The requested table already exists' )
       else:
         cmd = 'DROP TABLE %s' % table
         retDict = self._update( cmd, debug = True )
@@ -764,7 +764,7 @@ class MySQL:
           return createView
     return S_OK()
 
-  def _createTables( self, tableDict, force = False ):
+  def _createTables( self, tableDict, force = False, okIfTableExists = True ):
     """
     tableDict:
       tableName: { 'Fields' : { 'Field': 'Description' },
@@ -796,8 +796,10 @@ class MySQL:
         "Engine": use the given DB engine, InnoDB is the default if not present.
       force:
         if True, requested tables are DROP if they exist.
-        if False, returned with S_ERROR if table exist.
-
+        if False (default), tables are not overwritten
+      okIfTableExists:
+        if True (default), returns S_OK if table exists 
+        if False, returns S_ERROR if table exists 
     """
 
     # First check consistency of request
@@ -851,7 +853,7 @@ class MySQL:
                               % ( key, forKey, forTable ) )
 
         if toBeExtracted:
-          self.log.info( 'Table %s ready to be created' % table )
+          self.log.debug( 'Table %s ready to be created' % table )
           extracted = True
           tableList.remove( table )
           tableCreationList[i].append( table )
@@ -859,11 +861,16 @@ class MySQL:
     if tableList:
       return S_ERROR( 'Recursive Foreign Keys in %s' % ', '.join( tableList ) )
 
+    createdTablesList = []
+
     for tableList in tableCreationList:
       for table in tableList:
-        # Check if Table exist
+        # Check if Table exists
         retDict = self.__checkTable( table, force = force )
         if not retDict['OK']:
+          message = 'The requested table already exists'
+          if retDict['Message'] == message and okIfTableExists:
+            continue
           return retDict
 
         thisTable = tableDict[table]
@@ -911,9 +918,10 @@ class MySQL:
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
           return retDict
-        self.log.info( 'Table %s created' % table )
+        self.log.debug( 'Table %s created' % table )
+        createdTablesList.append( table )
 
-    return S_OK()
+    return S_OK( createdTablesList )
 
   def _getFields( self, tableName, outFields = None,
                   inFields = None, inValues = None,
