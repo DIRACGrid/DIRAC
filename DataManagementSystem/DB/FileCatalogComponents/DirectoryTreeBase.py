@@ -654,6 +654,28 @@ class DirectoryTreeBase:
         successful[path] = result['Value']
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
+  
+  def getDirectoryReplicas( self, lfns, allStatus = False ):
+    """ Get replicas for files in the given directories
+    """
+    paths = lfns.keys()
+    successful = {}
+    failed = {}
+    for path in paths:
+      result = self.findDir( path )
+      if not result['OK']:
+        failed[path] = result['Message']
+        continue
+      directoryID = result['Value']
+      result = self.db.fileManager.getDirectoryReplicas( directoryID, path, allStatus )
+      if not result['OK']:
+        failed[path] = result['Message']
+        continue
+      fileDict = result['Value']
+      successful[path] = {} 
+      for fileName in fileDict:
+        successful[path][fileName] = fileDict[fileName]        
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def getDirectorySize( self, lfns, longOutput = False, rawFileTables = False ):
     """ Get the total size of the requested directories. If long flag

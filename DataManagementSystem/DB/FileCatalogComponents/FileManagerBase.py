@@ -836,7 +836,8 @@ class FileManagerBase:
       fields = []
       if not self.db.lfnPfnConvention:
         fields = ['PFN']
-      res = self._getFileReplicas( fileIDLFNs.keys(), fields_input=fields, connection = connection )
+      res = self._getFileReplicas( fileIDLFNs.keys(), fields_input=fields, 
+                                   allStatus = allStatus, connection = connection )
       #print '_getFileReplicas',time.time()-startTime
       if not res['OK']:
         return res
@@ -844,14 +845,12 @@ class FileManagerBase:
         lfn = fileIDLFNs[fileID]
         replicas[lfn] = {}
         for se, repDict in seDict.items():
-          repStatus = repDict['Status']
-          if ( repStatus in self.db.visibleStatus ) or ( allStatus ):
-            pfn = repDict.get('PFN','')
-            if not pfn or self.db.lfnPfnConvention:
-              res = self._resolvePFN( lfn, se )
-              if res['OK']:
-                pfn = res['Value']
-            replicas[lfn][se] = pfn
+          pfn = repDict.get('PFN','')
+          if not pfn or self.db.lfnPfnConvention:
+            res = self._resolvePFN( lfn, se )
+            if res['OK']:
+              pfn = res['Value']
+          replicas[lfn][se] = pfn
     return S_OK( {'Successful':replicas, 'Failed':failed} )
 
   def _resolvePFN(self,lfn,se):
@@ -952,6 +951,37 @@ class FileManagerBase:
         files[fileName]['Replicas'] = seDict
         
     return S_OK( files )
+  
+  def getDirectoryReplicas( self, dirID, path, allStatus = False, connection = False ):
+    connection = self._getConnection( connection )
+    files = {}
+    res = self._getDirectoryFiles( dirID, [], ['FileID'], allStatus = allStatus, connection = connection )
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_OK( files )
+    fileIDNames = {}
+    for fileName, fileDict in res['Value'].items():
+      fileIDNames[fileDict['FileID']] = fileName
+      
+    result = self._getFileReplicas( fileIDNames.keys(), allStatus = allStatus, connection = connection )
+    if not result['OK']:
+      return result
+    
+    resultDict = {}
+    for fileID, seDict in result['Value'].items():
+      fileName = fileIDNames[fileID]
+      resultDict[fileName] = {}
+      for se, repDict in seDict.items():
+        pfn = repDict.get('PFN','')
+        if not pfn or self.db.lfnPfnConvention:
+          lfn = '%s/%s' % ( path, fileName )
+          res = self._resolvePFN( lfn, se )
+          if res['OK']:
+            pfn = res['Value']
+        resultDict[fileName].setdefault( se, pfn )
+  
+    return S_OK( resultDict )
 
   def _getFileDirectories( self, lfns ):
     dirDict = {}
