@@ -1,4 +1,4 @@
-[v6r10-pre2]
+[v6r10-pre3]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -10,6 +10,10 @@ FIX: DIRAC.__init__.py - avoid re-definition of platform variable
 *DMS
 CHANGE: DFC - optimization and bug fixes of the bulk file addition
 FIX: TransferAgent - protection against badly defined LFNs in collectFiles()
+NEW: DFC - added getDirectoryReplicas() service method support similar to the LFC
+CHANGE: DFC - added new option VisibleReplicaStatus which is used in replica getting commands
+CHANGE: FileCatalogClientCLI client shows number of replicas in the 2nd column rather than 
+        unimplemented number of links
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
