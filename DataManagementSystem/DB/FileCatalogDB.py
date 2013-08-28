@@ -53,6 +53,7 @@ class FileCatalogDB(DB):
     self.resolvePfn = databaseConfig['ResolvePFN']
     self.umask = databaseConfig['DefaultUmask']
     self.visibleStatus = databaseConfig['VisibleStatus']
+    self.visibleReplicaStatus = databaseConfig['VisibleReplicaStatus']
 
     try:
       # Obtain the plugins to be used for DB interaction
@@ -558,7 +559,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectoryReplicas(res['Value']['Successful'])
+    res = self.dtree.getDirectoryReplicas(res['Value']['Successful'],allStatus)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])

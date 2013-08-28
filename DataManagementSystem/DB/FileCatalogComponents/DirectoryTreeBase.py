@@ -208,7 +208,7 @@ class DirectoryTreeBase:
     if not result['OK']:
       return result
     dirID = result['Value']
-    result = self.db.fileManager.getFilesInDirectory( dirID, path )
+    result = self.db.fileManager.getFilesInDirectory( dirID )
     if not result['OK']:
       return result
     files = result['Value']
@@ -606,7 +606,7 @@ class DirectoryTreeBase:
           directories[dirName] = result['Value']
       else:
         directories[dirName] = True
-    res = self.db.fileManager.getFilesInDirectory( directoryID, path, verbose = details )
+    res = self.db.fileManager.getFilesInDirectory( directoryID, verbose = details )
     if not res['OK']:
       return res
     files = res['Value']
@@ -627,6 +627,28 @@ class DirectoryTreeBase:
       else:
         successful[path] = result['Value']
 
+    return S_OK( {'Successful':successful, 'Failed':failed} )
+  
+  def getDirectoryReplicas( self, lfns, allStatus = False ):
+    """ Get replicas for files in the given directories
+    """
+    paths = lfns.keys()
+    successful = {}
+    failed = {}
+    for path in paths:
+      result = self.findDir( path )
+      if not result['OK']:
+        failed[path] = result['Message']
+        continue
+      directoryID = result['Value']
+      result = self.db.fileManager.getDirectoryReplicas( directoryID, path, allStatus )
+      if not result['OK']:
+        failed[path] = result['Message']
+        continue
+      fileDict = result['Value']
+      successful[path] = {} 
+      for fileName in fileDict:
+        successful[path][fileName] = fileDict[fileName]        
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def getDirectorySize( self, lfns, longOutput = False, rawFileTables = False ):

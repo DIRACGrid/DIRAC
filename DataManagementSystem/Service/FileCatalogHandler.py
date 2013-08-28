@@ -49,12 +49,13 @@ def initializeFileCatalogHandler( serviceInfo ):
 
   # Obtain some general configuration of the database
   gLogger.info( "Initializing the FileCatalog with the following configuration:" )
-  defaultConfig = { 'UniqueGUID'        : False,
-                    'GlobalReadAccess'  : True,
-                    'LFNPFNConvention'  : True,
-                    'ResolvePFN'        : True,
-                    'DefaultUmask'      : 0775,
-                    'VisibleStatus'     : ['AprioriGood']}
+  defaultConfig = { 'UniqueGUID'          : False,
+                    'GlobalReadAccess'    : True,
+                    'LFNPFNConvention'    : True,
+                    'ResolvePFN'          : True,
+                    'DefaultUmask'        : 0775,
+                    'VisibleStatus'       : ['AprioriGood'],
+                    'VisibleReplicaStatus': ['AprioriGood']}
   for configKey in sortList( defaultConfig.keys() ):
     defaultValue = defaultConfig[configKey]
     configValue = getServiceOption( serviceInfo, configKey, defaultValue )
@@ -289,7 +290,7 @@ class FileCatalogHandler( RequestHandler ):
 
   types_getDirectoryReplicas = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
   def export_getDirectoryReplicas( self, lfns, allStatus = False ):
-    """ Get the replicas for file in the supplied directory """
+    """ Get replicas for files in the supplied directory """
     return gFileCatalogDB.getDirectoryReplicas( lfns, allStatus, self.getRemoteCredentials() )
 
   ########################################################################

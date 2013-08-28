@@ -6,7 +6,7 @@
 __RCSID__ = "$Id$"
 
 from types import ListType, DictType
-
+import os
 from DIRAC                              import S_OK, S_ERROR
 from DIRAC.Core.Base.Client             import Client
 
@@ -40,7 +40,17 @@ class FileCatalogClient(Client):
 
   def listDirectory(self, lfn, verbose=False, rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.listDirectory(lfn,verbose)
+    result = rpcClient.listDirectory(lfn,verbose)
+    
+    # Force returned directory entries to be LFNs
+    for entryType in ['Files','SubDirs','Links']:
+      for path in result['Value']['Successful']:
+        entryDict = result['Value']['Successful'][path][entryType]
+        for fname in entryDict.keys():
+          detailsDict = entryDict.pop( fname )
+          lfn = '%s/%s' % ( path, os.path.basename( fname ) )
+          entryDict[lfn] = detailsDict
+    return result      
 
   def removeDirectory(self, lfn, recursive=False, rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
@@ -48,7 +58,14 @@ class FileCatalogClient(Client):
 
   def getDirectoryReplicas(self,lfns,allStatus=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.getDirectoryReplicas(lfns,allStatus)
+    result = rpcClient.getDirectoryReplicas(lfns,allStatus)
+    for path in result['Value']['Successful']:
+      pathDict = result['Value']['Successful'][path]
+      for fname in pathDict.keys():
+        detailsDict = pathDict.pop( fname )
+        lfn = '%s/%s' % ( path, os.path.basename( fname ) )
+        pathDict[lfn] = detailsDict
+    return result      
 
   def findFilesByMetadata(self,metaDict,path='/',rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)

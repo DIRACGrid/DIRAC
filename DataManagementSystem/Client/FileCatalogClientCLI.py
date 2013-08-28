@@ -82,12 +82,13 @@ class DirectoryListing:
     
     self.entries = []
   
-  def addFile(self,name,fileDict,numericid):
+  def addFile(self,name,fileDict,repDict,numericid):
     """ Pretty print of the file ls output
     """        
     perm = fileDict['Mode']
     date = fileDict['ModificationDate']
-    nlinks = fileDict.get('NumberOfLinks',0)
+    #nlinks = fileDict.get('NumberOfLinks',0)
+    nreplicas = len( repDict )
     size = fileDict['Size']
     if fileDict.has_key('Owner'):
       uname = fileDict['Owner']
@@ -120,7 +121,7 @@ class DirectoryListing:
     if numericid:
       gname = str(fileDict['GID'])
     
-    self.entries.append( ('-'+self.__getModeString(perm),nlinks,uname,gname,size,date,name) )
+    self.entries.append( ('-'+self.__getModeString(perm),nreplicas,uname,gname,size,date,name) )
     
   def addDirectory(self,name,dirDict,numericid):
     """ Pretty print of the file ls output
@@ -1343,7 +1344,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     # Get directory contents now
     try:
-      result =  self.fc.listDirectory(path,long)                     
+      result =  self.fc.listDirectory(path,long)             
       dList = DirectoryListing()
       if result['OK']:
         if result['Value']['Successful']:
@@ -1353,8 +1354,9 @@ File Catalog Client $Revision: 1.17 $Date:
             # fname = entry.replace(self.cwd,'').replace('/','')
             if long:
               fileDict = result['Value']['Successful'][path]['Files'][entry]['MetaData']
+              repDict = result['Value']['Successful'][path]['Files'][entry].get( "Replicas", {} )
               if fileDict:
-                dList.addFile(fname,fileDict,numericid)
+                dList.addFile(fname,fileDict,repDict,numericid)
             else:  
               dList.addSimpleFile(fname)
           for entry in result['Value']['Successful'][path]['SubDirs']:
