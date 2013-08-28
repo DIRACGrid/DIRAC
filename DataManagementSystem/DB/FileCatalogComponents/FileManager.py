@@ -64,13 +64,15 @@ class FileManager(FileManagerBase):
     metadata = list(metadata_input)
     
     connection = self._getConnection(connection)
-    # metadata can be any of ['FileID','Size','UID','GID','Status','Checksum','CheckSumType','Type','CreationDate','ModificationDate','Mode']
+    # metadata can be any of ['FileID','Size','UID','GID','Status','Checksum','CheckSumType',
+    # 'Type','CreationDate','ModificationDate','Mode']
     req = "SELECT FileName,DirID,FileID,Size,UID,GID,Status FROM FC_Files WHERE DirID=%d" % (dirID)
     if not allStatus:
       statusIDs = []
-      res = self._getStatusInt('AprioriGood',connection=connection)
-      if res['OK']:
-        statusIDs.append(res['Value'])
+      for status in self.db.visibleStatus:
+        res = self._getStatusInt( status, connection=connection )
+        if res['OK']:
+          statusIDs.append( res['Value'] )
       if statusIDs:
         req = "%s AND Status IN (%s)" % (req,intListToString(statusIDs))
     if fileNames:
@@ -545,12 +547,12 @@ class FileManager(FileManagerBase):
   # _getFileReplicas related methods
   #
 
-  def _getFileReplicas(self,fileIDs,fields_input=['PFN'],connection=False):
+  def _getFileReplicas(self,fileIDs,fields_input=['PFN'],allStatus=False,connection=False):
     """ Get replicas for the given list of files specified by their fileIDs
     """
     fields = list(fields_input)
     connection = self._getConnection(connection)
-    res = self.__getFileIDReplicas(fileIDs,connection=connection)
+    res = self.__getFileIDReplicas(fileIDs,allStatus=allStatus,connection=connection)
     if not res['OK']:
       return res
     fileIDDict = res['Value']
@@ -596,11 +598,18 @@ class FileManager(FileManagerBase):
         replicas[fileID] = {}
     return S_OK(replicas)
 
-  def __getFileIDReplicas(self,fileIDs,connection=False):
+  def __getFileIDReplicas(self,fileIDs,allStatus=False,connection=False):
     connection = self._getConnection(connection)
     if not fileIDs:
       return S_ERROR("No such file or directory")
-    req = "SELECT FileID,SEID,RepID,Status FROM FC_Replicas WHERE FileID IN (%s);" % (intListToString(fileIDs))
+    req = "SELECT FileID,SEID,RepID,Status FROM FC_Replicas WHERE FileID IN (%s)" % (intListToString(fileIDs))
+    if not allStatus:
+      statusIDs = []
+      for status in self.db.visibleReplicaStatus:
+        result = self._getStatusInt( status, connection=connection )
+        if result['OK']:
+          statusIDs.append( result['Value'] )
+      req += " AND Status in (%s)" % (intListToString(statusIDs))
     res = self.db._query(req,connection)
     if not res['OK']:
       return res
