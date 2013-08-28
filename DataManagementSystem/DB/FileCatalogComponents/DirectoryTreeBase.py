@@ -232,7 +232,7 @@ class DirectoryTreeBase:
     if not result['OK']:
       return result
     dirID = result['Value']
-    result = self.db.fileManager.getFilesInDirectory( dirID, path )
+    result = self.db.fileManager.getFilesInDirectory( dirID )
     if not result['OK']:
       return result
     files = result['Value']
@@ -632,7 +632,7 @@ class DirectoryTreeBase:
           directories[dirName] = result['Value']
       else:
         directories[dirName] = True
-    res = self.db.fileManager.getFilesInDirectory( directoryID, path, verbose = details )
+    res = self.db.fileManager.getFilesInDirectory( directoryID, verbose = details )
     if not res['OK']:
       return res
     files = res['Value']

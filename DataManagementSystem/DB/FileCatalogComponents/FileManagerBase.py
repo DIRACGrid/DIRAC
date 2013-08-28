@@ -924,7 +924,7 @@ class FileManagerBase:
       return S_OK(self.statusDict[statusID])
     return S_OK('Unknown')
 
-  def getFilesInDirectory( self, dirID, path, verbose = False, connection = False ):
+  def getFilesInDirectory( self, dirID, verbose = False, connection = False ):
     connection = self._getConnection( connection )
     files = {}
     res = self._getDirectoryFiles( dirID, [], ['FileID', 'Size',
@@ -937,19 +937,20 @@ class FileManagerBase:
       return res
     if not res['Value']:
       return S_OK( files )
-    fileIDLFNs = {}
+    fileIDNames = {}
     for fileName, fileDict in res['Value'].items():
-      lfn = "%s/%s" % ( path, fileName )
-      files[lfn] = {}
-      files[lfn]['MetaData'] = fileDict
-      fileIDLFNs[fileDict['FileID']] = lfn
+      files[fileName] = {}
+      files[fileName]['MetaData'] = fileDict
+      fileIDNames[fileDict['FileID']] = fileName
+      
     if verbose:
-      result = self._getFileReplicas( fileIDLFNs.keys(), connection = connection )
+      result = self._getFileReplicas( fileIDNames.keys(), connection = connection )
       if not result['OK']:
         return result
       for fileID, seDict in result['Value'].items():
-        lfn = fileIDLFNs[fileID]
-        files[lfn]['Replicas'] = seDict
+        fileName = fileIDNames[fileID]
+        files[fileName]['Replicas'] = seDict
+        
     return S_OK( files )
 
   def _getFileDirectories( self, lfns ):
