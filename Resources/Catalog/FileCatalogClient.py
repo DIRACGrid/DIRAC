@@ -58,9 +58,6 @@ class FileCatalogClient(Client):
   def getDirectoryReplicas(self,lfns,allStatus=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     result = rpcClient.getDirectoryReplicas(lfns,allStatus)
-    
-    print "AT >>> result", result
-    
     for path in result['Value']['Successful']:
       pathDict = result['Value']['Successful'][path]
       for fname in pathDict.keys():
