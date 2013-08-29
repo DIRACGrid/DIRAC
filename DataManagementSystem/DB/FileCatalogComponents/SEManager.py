@@ -18,6 +18,7 @@ class SEManagerBase:
                                      { 
                                        "SEID": "INTEGER AUTO_INCREMENT",
                                        "SEName": "VARCHAR(127) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                       "SEPrefix": "VARCHAR(127) NOT NULL", 
                                        "AliasName": "VARCHAR(127) DEFAULT ''"
                                      }, 
                                      "PrimaryKey": "SEID",
