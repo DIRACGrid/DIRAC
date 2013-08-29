@@ -568,21 +568,22 @@ class FileManager(FileManagerBase):
         fields.remove('Status')
       repIDDict = {}  
       if fields:  
-        req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % (intListToString(fields),intListToString(fileIDDict.keys()))
+        req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % \
+              (intListToString(fields),intListToString(fileIDDict.keys()))
         res = self.db._query(req,connection)
         if not res['OK']:
           return res
         for tuple_ in res['Value']:
           repID = tuple_[0]
           repIDDict[repID] = dict(zip(fields,tuple_[1:])) 
-          statusID = fileIDDict[repID]['Status']
+          statusID = fileIDDict[repID][2]
           res = self._getIntStatus(statusID,connection=connection)
           if not res['OK']:
             continue
           repIDDict[repID]['Status'] = res['Value']
       else:
         for repID in fileIDDict:
-          statusID = fileIDDict[repID]['Status']
+          statusID = fileIDDict[repID][2]
           res = self._getIntStatus(statusID,connection=connection)
           if not res['OK']:
             continue
@@ -590,8 +591,7 @@ class FileManager(FileManagerBase):
     seDict = {}
     replicas = {}
     for repID in fileIDDict.keys():
-      fileID = fileIDDict[repID]['FileID']
-      seID =  fileIDDict[repID]['SEID']
+      fileID, seID, statusID = fileIDDict[repID]
       replicas.setdefault(fileID,{})
       if not seID in seDict:
         res = self.db.seManager.getSEName(seID)
@@ -600,9 +600,12 @@ class FileManager(FileManagerBase):
         seDict[seID] = res['Value']
       seName = seDict[seID]
       replicas[fileID][seName] = repIDDict.get(repID,{})
-    for fileID in fileIDs:
-      if not replicas.has_key(fileID):
-        replicas[fileID] = {}
+      
+    if len( replicas ) != len( fileIDs ):  
+      for fileID in fileIDs:
+        if not replicas.has_key(fileID):
+          replicas[fileID] = {}
+          
     return S_OK(replicas)
 
   def __getFileIDReplicas(self,fileIDs,allStatus=False,connection=False):
@@ -621,6 +624,6 @@ class FileManager(FileManagerBase):
     if not res['OK']:
       return res
     fileIDDict = {}
-    for fileID,seID,repID,status in res['Value']:
-      fileIDDict[repID] = {'FileID':fileID,'SEID':seID,'Status':status}
+    for fileID,seID,repID,statusID in res['Value']:
+      fileIDDict[repID] = ( fileID, seID, statusID )
     return S_OK(fileIDDict)
