@@ -1004,7 +1004,12 @@ class FileManagerBase:
     for fileName, fileDict in res['Value'].items():
       fileIDNames[fileDict['FileID']] = fileName
       
-    result = self._getFileReplicas( fileIDNames.keys(), allStatus = allStatus, connection = connection )
+    fields = []
+    if not self.db.lfnPfnConvention:
+      fields = ['PFN']  
+      
+    result = self._getFileReplicas( fileIDNames.keys(), fields_input = fields, 
+                                    allStatus = allStatus, connection = connection )
     if not result['OK']:
       return result
     
