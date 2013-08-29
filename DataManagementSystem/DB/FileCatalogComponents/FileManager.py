@@ -22,20 +22,22 @@ class FileManager(FileManagerBase):
 
   def _findFiles(self,lfns,metadata=['FileID'],connection=False):
     """ Find file ID if it exists for the given list of LFNs """
+    
     connection = self._getConnection(connection)
     dirDict = self._getFileDirectories(lfns)
     failed = {}
-    directoryIDs = {}
+    result = self.db.dtree.findDirs( dirDict.keys() )
+    if not result['OK']:
+      return result
+    directoryIDs = result['Value']
+
     for dirPath in dirDict:
-      res = self.db.dtree.findDir(dirPath)
-      if (not res['OK']) or (not res['Value']):
-        error = res.get('Message','No such file or directory')
+      if not dirPath in directoryIDs:
         for fileName in dirDict[dirPath]:
           fname = '%s/%s' % (dirPath,fileName)
           fname = fname.replace('//','/')
-          failed[fname] = error
-      else:
-        directoryIDs[dirPath] = res['Value']
+          failed[fname] = 'No such directory'
+
     successful = {}
     for dirPath in directoryIDs:
       fileNames = dirDict[dirPath]
@@ -56,6 +58,48 @@ class FileManager(FileManagerBase):
           fname = '%s/%s' % (dirPath,fileName)
           fname = fname.replace('//','/')
           failed[fname] = 'No such file or directory'    
+    return S_OK({"Successful":successful,"Failed":failed})
+
+  def _findFileIDs( self, lfns, connection=False ):
+    """ Find lfn <-> FileID correspondence
+    """
+    connection = self._getConnection(connection)
+    dirDict = self._getFileDirectories(lfns)
+    failed = {}
+    successful = {}
+    result = self.db.dtree.findDirs( dirDict.keys() )
+    if not result['OK']:
+      return result
+    directoryIDs = result['Value']
+    directoryPaths = {}
+
+    for dirPath in dirDict:
+      if not dirPath in directoryIDs:
+        for fileName in dirDict[dirPath]:
+          fname = '%s/%s' % (dirPath,fileName)
+          fname = fname.replace('//','/')
+          failed[fname] = 'No such directory'
+      else:
+        directoryPaths[directoryIDs[dirPath]] = dirPath
+
+    wheres = []
+    for dirPath in directoryIDs:
+      fileNames = dirDict[dirPath]
+      dirID = directoryIDs[dirPath]
+      wheres.append( "( DirID=%d AND FileName IN (%s) )" % (dirID, stringListToString(fileNames) ) )
+
+    req = "SELECT FileName,DirID,FileID FROM FC_Files WHERE %s" % " OR ".join( wheres )
+    result = self.db._query(req,connection)
+    if not result['OK']:
+      return result
+    for fileName, dirID, fileID in result['Value']:
+      fname = '%s/%s' % (directoryPaths[dirID],fileName)
+      fname = fname.replace('//','/')
+      successful[fname] = fileID
+    for lfn in lfns:
+      if not lfn in successful:
+        failed[lfn] = "No such file"
+
     return S_OK({"Successful":successful,"Failed":failed})
 
   def _getDirectoryFiles(self,dirID,fileNames,metadata_input,allStatus=False,connection=False):
