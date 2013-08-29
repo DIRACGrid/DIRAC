@@ -1,9 +1,10 @@
-import unittest
+import unittest, types, re
 
 from mock import Mock
 from DIRAC.RequestManagementSystem.Client.Request             import Request
 from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
+from DIRAC.TransformationSystem.Client.Transformation         import Transformation
 
 def getSitesForSE( ses ):
   if ses == 'pippo':
@@ -46,8 +47,8 @@ class ClientsTestCase( unittest.TestCase ):
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
                                       requestClient = self.mockReqClient
                                       )
-
     self.tc = TransformationClient()
+    self.transformation = Transformation()
 
     self.maxDiff = None
 
@@ -206,10 +207,76 @@ class TransformationClientSuccess( ClientsTestCase ):
 
 #############################################################################
 
+
+class TransformationSuccess( ClientsTestCase ):
+
+  def test_setGet( self ):
+
+    res = self.transformation.setTransformationName( 'TestTName' )
+    self.assert_( res['OK'] )
+    description = 'Test transformation description'
+    res = self.transformation.setDescription( description )
+    longDescription = 'Test transformation long description'
+    res = self.transformation.setLongDescription( longDescription )
+    self.assert_( res['OK'] )
+    res = self.transformation.setType( 'MCSimulation' )
+    self.assert_( res['OK'] )
+    res = self.transformation.setPlugin( 'aPlugin' )
+    self.assertTrue( res['OK'] )
+
+  def test_SetGetReset( self ):
+    """ Testing of the set, get and reset methods.
+
+          set*()
+          get*()
+          setTargetSE()
+          setSourceSE()
+          getTargetSE()
+          getSourceSE()
+          reset()
+        Ensures that after a reset all parameters are returned to their defaults
+    """
+
+    res = self.transformation.getParameters()
+    self.assert_( res['OK'] )
+    defaultParams = res['Value'].copy()
+    for parameterName, defaultValue in res['Value'].items():
+      if type( defaultValue ) in types.StringTypes:
+        testValue = 'TestValue'
+      else:
+        testValue = 99999
+      # # set*
+
+      setterName = 'set%s' % parameterName
+      self.assert_( hasattr( self.transformation, setterName ) )
+      setter = getattr( self.transformation, setterName )
+      self.assert_( callable( setter ) )
+      res = setter( testValue )
+      self.assert_( res['OK'] )
+      # # get*
+      getterName = "get%s" % parameterName
+      self.assert_( hasattr( self.transformation, getterName ) )
+      getter = getattr( self.transformation, getterName )
+      self.assert_( callable( getter ) )
+      res = getter()
+      self.assert_( res['OK'] )
+      self.assert_( res['Value'], testValue )
+
+    res = self.transformation.reset()
+    self.assert_( res['OK'] )
+    res = self.transformation.getParameters()
+    self.assert_( res['OK'] )
+    for parameterName, resetValue in res['Value'].items():
+      self.assertEqual( resetValue, defaultParams[parameterName] )
+    self.assertRaises( AttributeError, self.transformation.getTargetSE )
+    self.assertRaises( AttributeError, self.transformation.getSourceSE )
+
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ClientsTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TaskBaseSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WorkflowTasksSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( RequestTasksSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationClientSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
