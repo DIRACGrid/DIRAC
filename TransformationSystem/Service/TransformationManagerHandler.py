@@ -1,5 +1,4 @@
 """ DISET request handler base class for the TransformationDB."""
-__RCSID__ = "$Id$"
 
 from DIRAC                                               import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
@@ -113,7 +112,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.getTransformation( transName, extraParams = extraParams )
     return self._parseRes( res )
 
-  types_getTransformationParameters = [transTypes, [ListType, TupleType]]
+  types_getTransformationParameters = [transTypes, list( StringTypes ) + [ListType, TupleType]]
   def export_getTransformationParameters( self, transName, parameters ):
     res = database.getTransformationParameters( transName, parameters )
     return self._parseRes( res )
