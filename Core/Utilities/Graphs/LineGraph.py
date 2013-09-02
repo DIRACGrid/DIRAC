@@ -12,12 +12,11 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
-from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
-from pylab import setp
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, PrettyDateLocator, \
+                                                       PrettyDateFormatter, PrettyScalarFormatter  
 from matplotlib.patches import Polygon
 from matplotlib.dates import date2num
-import time,types
+import datetime
 
 class LineGraph( PlotBase ):
 
@@ -47,10 +46,8 @@ class LineGraph( PlotBase ):
     for n in range(nKeys):
       if self.prefs.has_key('log_yaxis'):
         tmp_b.append(0.001)
-        ymin = 0.001
       else:
         tmp_b.append(0.)  
-        ymin = 0.
         
     start_plot = 0
     end_plot = 0    
@@ -96,6 +93,9 @@ class LineGraph( PlotBase ):
       zorder -= 0.1
                     
     ymax = max(tmp_b); ymax *= 1.1
+    ymin = min(tmp_b); ymin *= 1.1
+    if self.prefs.has_key('log_yaxis'):
+      ymin = 0.001
     if self.log_xaxis:  
       xmin = 0.001
     else: 
@@ -118,7 +118,6 @@ class LineGraph( PlotBase ):
       ticks.sort()
       ax.set_xticks( [i+.5 for i in ticks] )
       ax.set_xticklabels( [reverse_smap[i] for i in ticks] )
-      labels = ax.get_xticklabels()
       ax.grid( False )
       if self.log_xaxis:
         xmin = 0.001
