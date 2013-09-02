@@ -23,20 +23,22 @@ class JobLoggingDB( DB ):
 
   _tablesDict = {}
   # LoggingInfo table
-  _tablesDict[ 'LoggingInfo' ] = { 
-                                  'Fields' : 
+  _tablesDict[ 'LoggingInfo' ] = {
+                                  'Fields' :
                                             {
                                              'JobID'             : 'INTEGER NOT NULL',
+                                             'SeqNum'            : 'INTEGER NOT NULL DEFAULT 0',
                                              'Status'            : 'VARCHAR(32) NOT NULL DEFAULT ""',
                                              'MinorStatus'       : 'VARCHAR(128) NOT NULL DEFAULT ""',
                                              'ApplicationStatus' : 'VARCHAR(256) NOT NULL DEFAULT ""',
                                              'StatusTime'        : 'DATETIME NOT NULL',
-                                             'StatusTimeOrder'   : 'DOUBLE(11,3) NOT NULL',
-                                             'StatusSource'      : 'VARCHAR(32) NOT NULL DEFAULT "Unknown"',                                                                                                                                                                                                                                                                     
+                                             'StatusTimeOrder'   : 'DOUBLE(12,3) NOT NULL',
+                                             'StatusSource'      : 'VARCHAR(32) NOT NULL DEFAULT "Unknown"',
                                             },
-                                  'Indexes' : { 'JobID' : [ 'JobID' ] }
-                                 } 
-
+                                  'PrimaryKey': ['JobID', 'SeqNum'],
+                                  'Engine': 'InnoDB'
+#                                  'Indexes' : { 'JobID' : [ 'JobID' ] }
+                                 }
 
   def __init__( self, maxQueueSize = 10 ):
     """ Standard Constructor
