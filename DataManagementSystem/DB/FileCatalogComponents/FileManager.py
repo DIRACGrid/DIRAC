@@ -22,20 +22,22 @@ class FileManager(FileManagerBase):
 
   def _findFiles(self,lfns,metadata=['FileID'],connection=False):
     """ Find file ID if it exists for the given list of LFNs """
+    
     connection = self._getConnection(connection)
     dirDict = self._getFileDirectories(lfns)
     failed = {}
-    directoryIDs = {}
+    result = self.db.dtree.findDirs( dirDict.keys() )
+    if not result['OK']:
+      return result
+    directoryIDs = result['Value']
+
     for dirPath in dirDict:
-      res = self.db.dtree.findDir(dirPath)
-      if (not res['OK']) or (not res['Value']):
-        error = res.get('Message','No such file or directory')
+      if not dirPath in directoryIDs:
         for fileName in dirDict[dirPath]:
           fname = '%s/%s' % (dirPath,fileName)
           fname = fname.replace('//','/')
-          failed[fname] = error
-      else:
-        directoryIDs[dirPath] = res['Value']
+          failed[fname] = 'No such directory'
+
     successful = {}
     for dirPath in directoryIDs:
       fileNames = dirDict[dirPath]
@@ -56,6 +58,48 @@ class FileManager(FileManagerBase):
           fname = '%s/%s' % (dirPath,fileName)
           fname = fname.replace('//','/')
           failed[fname] = 'No such file or directory'    
+    return S_OK({"Successful":successful,"Failed":failed})
+
+  def _findFileIDs( self, lfns, connection=False ):
+    """ Find lfn <-> FileID correspondence
+    """
+    connection = self._getConnection(connection)
+    dirDict = self._getFileDirectories(lfns)
+    failed = {}
+    successful = {}
+    result = self.db.dtree.findDirs( dirDict.keys() )
+    if not result['OK']:
+      return result
+    directoryIDs = result['Value']
+    directoryPaths = {}
+
+    for dirPath in dirDict:
+      if not dirPath in directoryIDs:
+        for fileName in dirDict[dirPath]:
+          fname = '%s/%s' % (dirPath,fileName)
+          fname = fname.replace('//','/')
+          failed[fname] = 'No such directory'
+      else:
+        directoryPaths[directoryIDs[dirPath]] = dirPath
+
+    wheres = []
+    for dirPath in directoryIDs:
+      fileNames = dirDict[dirPath]
+      dirID = directoryIDs[dirPath]
+      wheres.append( "( DirID=%d AND FileName IN (%s) )" % (dirID, stringListToString(fileNames) ) )
+
+    req = "SELECT FileName,DirID,FileID FROM FC_Files WHERE %s" % " OR ".join( wheres )
+    result = self.db._query(req,connection)
+    if not result['OK']:
+      return result
+    for fileName, dirID, fileID in result['Value']:
+      fname = '%s/%s' % (directoryPaths[dirID],fileName)
+      fname = fname.replace('//','/')
+      successful[fname] = fileID
+    for lfn in lfns:
+      if not lfn in successful:
+        failed[lfn] = "No such file"
+
     return S_OK({"Successful":successful,"Failed":failed})
 
   def _getDirectoryFiles(self,dirID,fileNames,metadata_input,allStatus=False,connection=False):
@@ -568,21 +612,22 @@ class FileManager(FileManagerBase):
         fields.remove('Status')
       repIDDict = {}  
       if fields:  
-        req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % (intListToString(fields),intListToString(fileIDDict.keys()))
+        req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % \
+              (intListToString(fields),intListToString(fileIDDict.keys()))
         res = self.db._query(req,connection)
         if not res['OK']:
           return res
         for tuple_ in res['Value']:
           repID = tuple_[0]
           repIDDict[repID] = dict(zip(fields,tuple_[1:])) 
-          statusID = fileIDDict[repID]['Status']
+          statusID = fileIDDict[repID][2]
           res = self._getIntStatus(statusID,connection=connection)
           if not res['OK']:
             continue
           repIDDict[repID]['Status'] = res['Value']
       else:
         for repID in fileIDDict:
-          statusID = fileIDDict[repID]['Status']
+          statusID = fileIDDict[repID][2]
           res = self._getIntStatus(statusID,connection=connection)
           if not res['OK']:
             continue
@@ -590,8 +635,7 @@ class FileManager(FileManagerBase):
     seDict = {}
     replicas = {}
     for repID in fileIDDict.keys():
-      fileID = fileIDDict[repID]['FileID']
-      seID =  fileIDDict[repID]['SEID']
+      fileID, seID, statusID = fileIDDict[repID]
       replicas.setdefault(fileID,{})
       if not seID in seDict:
         res = self.db.seManager.getSEName(seID)
@@ -600,9 +644,12 @@ class FileManager(FileManagerBase):
         seDict[seID] = res['Value']
       seName = seDict[seID]
       replicas[fileID][seName] = repIDDict.get(repID,{})
-    for fileID in fileIDs:
-      if not replicas.has_key(fileID):
-        replicas[fileID] = {}
+      
+    if len( replicas ) != len( fileIDs ):  
+      for fileID in fileIDs:
+        if not replicas.has_key(fileID):
+          replicas[fileID] = {}
+          
     return S_OK(replicas)
 
   def __getFileIDReplicas(self,fileIDs,allStatus=False,connection=False):
@@ -621,6 +668,6 @@ class FileManager(FileManagerBase):
     if not res['OK']:
       return res
     fileIDDict = {}
-    for fileID,seID,repID,status in res['Value']:
-      fileIDDict[repID] = {'FileID':fileID,'SEID':seID,'Status':status}
+    for fileID,seID,repID,statusID in res['Value']:
+      fileIDDict[repID] = ( fileID, seID, statusID )
     return S_OK(fileIDDict)
