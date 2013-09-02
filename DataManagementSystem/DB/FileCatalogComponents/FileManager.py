@@ -6,7 +6,9 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                                                import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase  import FileManagerBase
-from DIRAC.Core.Utilities.List                                            import stringListToString, intListToString
+from DIRAC.Core.Utilities.List                                            import stringListToString, \
+                                                                                 intListToString, \
+                                                                                 breakListIntoChunks
 
 DEBUG = 0
 
@@ -81,21 +83,24 @@ class FileManager(FileManagerBase):
           failed[fname] = 'No such directory'
       else:
         directoryPaths[directoryIDs[dirPath]] = dirPath
+    directoryIDList = directoryIDs.keys()
+    for dirIDs in breakListIntoChunks( directoryIDList, 1000 ):
 
-    wheres = []
-    for dirPath in directoryIDs:
-      fileNames = dirDict[dirPath]
-      dirID = directoryIDs[dirPath]
-      wheres.append( "( DirID=%d AND FileName IN (%s) )" % (dirID, stringListToString(fileNames) ) )
+      wheres = []
+      for dirPath in dirIDs:
+        fileNames = dirDict[dirPath]
+        dirID = directoryIDs[dirPath]
+        wheres.append( "( DirID=%d AND FileName IN (%s) )" % (dirID, stringListToString(fileNames) ) )
 
-    req = "SELECT FileName,DirID,FileID FROM FC_Files WHERE %s" % " OR ".join( wheres )
-    result = self.db._query(req,connection)
-    if not result['OK']:
-      return result
-    for fileName, dirID, fileID in result['Value']:
-      fname = '%s/%s' % (directoryPaths[dirID],fileName)
-      fname = fname.replace('//','/')
-      successful[fname] = fileID
+      req = "SELECT FileName,DirID,FileID FROM FC_Files WHERE %s" % " OR ".join( wheres )
+      result = self.db._query(req,connection)
+      if not result['OK']:
+        return result
+      for fileName, dirID, fileID in result['Value']:
+        fname = '%s/%s' % (directoryPaths[dirID],fileName)
+        fname = fname.replace('//','/')
+        successful[fname] = fileID
+
     for lfn in lfns:
       if not lfn in successful:
         failed[lfn] = "No such file"
