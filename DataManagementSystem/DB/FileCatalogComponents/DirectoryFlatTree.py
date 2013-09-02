@@ -5,12 +5,33 @@ __RCSID__ = "$Id$"
 
 """ DIRAC FileCatalog component representing a flat directory tree """
 
-import time, os, types,stat
+import os, types,stat
+# import time
 from DIRAC                                                                     import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase     import DirectoryTreeBase
 from DIRAC.Core.Utilities.List                                                 import stringListToString,intListToString
 
 class DirectoryFlatTree(DirectoryTreeBase):
+
+  _tables = {}
+  _tables["DirectoryInfo"] = { "Fields": {
+                                           "DirID": "INTEGER AUTO_INCREMENT",
+                                           "Parent": "INTEGER NOT NULL",
+                                           "Status": "SMALLINT UNSIGNED NOT NULL DEFAULT 0",
+                                           "DirName": "VARCHAR(1024) NOT NULL",
+                                           "CreationDate": "DATETIME",
+                                           "ModificationDate": "DATETIME",
+                                           "UID": "CHAR(8) NOT NULL",
+                                           "GID": "CHAR(8) NOT NULL",
+                                           "Mode": "SMALLINT UNSIGNED NOT NULL DEFAULT 775"
+                                         },
+                               "PrimaryKey": "DirID",
+                               "Indexes": {
+                                            "Parent": ["Parent"],
+                                            "Status": ["Status"],
+                                            "DirName": ["DirName"]
+                                          }
+                             }
 
   def __init__(self,database=None):
     DirectoryTreeBase.__init__(self,database)
@@ -25,7 +46,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
 
   def _findDirectories(self,paths,metadata=[]):
     """ Find file ID if it exists for the given list of LFNs """
-    startTime = time.time()
+    #startTime = time.time()
     successful = {}
     failed = {}
     req = "SELECT DirName,DirID" 
@@ -35,11 +56,11 @@ class DirectoryFlatTree(DirectoryTreeBase):
     res = self.db._query(req)
     if not res['OK']:
       return res
-    for tuple in res['Value']:
-      dirName = tuple[0]
-      dirID = tuple[1]
+    for tuple_ in res['Value']:
+      dirName = tuple_[0]
+      dirID = tuple_[1]
       metaDict = {'DirID':dirID}
-      metaDict.update(dict(zip(metadata,tuple[2:])))
+      metaDict.update(dict(zip(metadata,tuple_[2:])))
       successful[dirName] = metaDict
     for path in paths:
       if not successful.has_key(path):
@@ -54,9 +75,9 @@ class DirectoryFlatTree(DirectoryTreeBase):
       return res
     if not res['Value']:
       return S_OK(dirs)
-    for tuple in res['Value']:
-      dirID = tuple[0]
-      dirs[dirID] = dict(zip(metadata,tuple[1:]))
+    for tuple_ in res['Value']:
+      dirID = tuple_[0]
+      dirs[dirID] = dict(zip(metadata,tuple_[1:]))
     return S_OK(dirs)
 
   def getPathPermissions(self,paths,credDict):

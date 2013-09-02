@@ -8,17 +8,54 @@
 __RCSID__ = "$Id$"
 
 import os, types
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 
 class DirectoryMetadata:
 
-  def __init__( self, database = None ):
+  _tables = {}
+  _tables["FC_DirMeta"] = { "Fields": {
+                                       "DirID": "INTEGER NOT NULL",
+                                       "MetaKey": "VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname'",
+                                       "MetaValue": "VARCHAR(31) NOT NULL DEFAULT 'Noname'"
+                                      },
+                            "UniqueIndexes": { "DirID": ["MetaKey"] }
+                          }
+  _tables["FC_MetaFields"] = { "Fields": {
+                                          "MetaID": "INT AUTO_INCREMENT",
+                                          "MetaName": "VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                          "MetaType": "VARCHAR(128) NOT NULL"
+                                         },
+                               "PrimaryKey": "MetaID"
+                             }
+  _tables["FC_MetaSetNames"] = { "Fields": {
+                                            "MetaSetID": "INT AUTO_INCREMENT",
+                                            "MetaSetName": "VARCHAR(64)  NOT NULL"
+                                           },
+                                 "PrimaryKey": "MetaSetID",
+                                 "UniqueIndexes": { "MetaSetName": ["MetaSetName"] }
+                               }
+  _tables["FC_MetaSets"] = { "Fields": {
+                                         "MetaSetID": "INT NOT NULL",
+                                         "MetaKey": "VARCHAR(31) NOT NULL",
+                                         "MetaValue": "VARCHAR(31) NOT NULL"
+                                       },
+                             "Indexes": { "MetaSetID": ["MetaSetID"] }
+                           }
 
-    self.db = database
+  def __init__( self, database = None ):
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
 
   def setDatabase( self, database ):
     self.db = database
+    result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
+    return result
 
 ##############################################################################
 #
@@ -298,16 +335,16 @@ class DirectoryMetadata:
 
     if len( pathIDs ) > 1:
       pathString = ','.join( [ str( x ) for x in pathIDs ] )
-      req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID in (%s)" % pathString
+      req = "SELECT MetaKey,MetaValue from FC_DirMeta where DirID in (%s)" % pathString
     else:
-      req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID=%d " % dirID
+      req = "SELECT MetaKey,MetaValue from FC_DirMeta where DirID=%d " % dirID
     result = self.db._query( req )
     if not result['OK']:
       return result
     if not result['Value']:
       return S_OK( {} )
     metaDict = {}
-    for dID, key, value in result['Value']:
+    for key, value in result['Value']:
       if metaDict.has_key( key ):
         if type( metaDict[key] ) == types.ListType:
           metaDict[key].append( value )
@@ -664,7 +701,9 @@ class DirectoryMetadata:
     result = self.db.dtree.getFilesInDirectory( dirList, credDict )
     if not result['OK']:
       return result
-    for fileID, dirID, fname in result['Value']:
+    for fileTuple in result['Value']:
+      dirID = fileTuple[1]
+      fname = fileTuple[2]
       fileList.append( dirDict[dirID] + '/' + os.path.basename( fname ) )
 
     return S_OK( fileList )

@@ -8,10 +8,58 @@ from DIRAC                                  import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List              import stringListToString, intListToString, sortList
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
 
-import time,os
+import os
+# import time
 from types import TupleType, ListType, StringTypes
 
 class FileManagerFlat(FileManagerBase):
+  
+  _tables = {}
+  _tables['FC_Files'] = { "Fields": { 
+                                     "FileID": "INT AUTO_INCREMENT",
+                                     "DirID": "INT NOT NULL",
+                                     "Size": "BIGINT UNSIGNED NOT NULL",
+                                     "UID": "SMALLINT UNSIGNED NOT NULL",
+                                     "GID": "TINYINT UNSIGNED NOT NULL",
+                                     "Status": "SMALLINT UNSIGNED NOT NULL",
+                                     "FileName": "VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                     "GUID": "char(36) NOT NULL",
+                                     "Checksum": "VARCHAR(32)",
+                                     "CheckSumType": "ENUM('Adler32','MD5')",
+                                     "Type": "ENUM('File','Link') NOT NULL DEFAULT 'File'",
+                                     "CreationDate": "DATETIME",
+                                     "ModificationDate": "DATETIME",
+                                     "LastAccessDate": "DateTime",
+                                     "Mode": "SMALLINT UNSIGNED NOT NULL DEFAULT 559"
+                                    }, 
+                          "PrimaryKey": "FileID",
+                          "Indexes": {
+                                       "DirID": ["DirID"],
+                                       "UID_GID": ["UID","GID"],
+                                       "Status": ["Status"],
+                                       "FileName": ["FileName"],
+                                       "Dir_File": ["DirID","FileName"],
+                                       "GUID": ["GUID"]
+                                     }  
+                                   }
+  _tables['FC_Replicas'] = { "Fields": { 
+                                         "RepID": "INT AUTO_INCREMENT",
+                                         "FileID": "INT NOT NULL",
+                                         "SEID": "INTEGER NOT NULL",
+                                         "Status": "SMALLINT UNSIGNED NOT NULL",
+                                         "RepType": "ENUM ('Master','Replica') NOT NULL DEFAULT 'Master'",
+                                         "CreationDate": "DATETIME",
+                                         "ModificationDate": "DATETIME",
+                                         "PFN": "VARCHAR(1024)"
+                                        },
+                             "PrimaryKey": "RepID",
+                             "Indexes": {
+                                          "FileID": ["FileID"],
+                                          "SEID": ["SEID"],
+                                          "Status": ["Status"] 
+                                        },
+                             "UniqueIndexes": { "File_SE": ["FileID","SEID"] }
+                            } 
   
   ######################################################
   #
@@ -21,12 +69,12 @@ class FileManagerFlat(FileManagerBase):
   def _findFiles(self,lfns,metadata=['FileID'],connection=False):
     connection = self._getConnection(connection)
     """ Find file ID if it exists for the given list of LFNs """
-    startTime = time.time()
+    #startTime = time.time()
     dirDict = self._getFileDirectories(lfns)
     failed = {}
     directoryIDs = {}
     for dirPath in dirDict.keys():
-      startTime = time.time()
+      #startTime = time.time()
       res = self.db.dtree.findDir(dirPath)
       if (not res['OK']) or (not res['Value']):
         error = res.get('Message','No such file or directory')
@@ -37,7 +85,7 @@ class FileManagerFlat(FileManagerBase):
     successful = {}
     for dirPath in directoryIDs.keys():
       fileNames = dirDict[dirPath]
-      startTime = time.time()
+      #startTime = time.time()
       res = self._getDirectoryFiles(directoryIDs[dirPath],fileNames,metadata,connection=connection)
       if (not res['OK']) or (not res['Value']):
         error = res.get('Message','No such file or directory')
@@ -54,7 +102,7 @@ class FileManagerFlat(FileManagerBase):
     req = "SELECT FileName,%s FROM FC_Files WHERE DirID=%d" % (intListToString(metadata),dirID)
     if not allStatus:
       statusIDs = []
-      res = self._getStatusInt('AprioriGood',connection=connection)
+      res = self.db.getStatusInt('AprioriGood',connection=connection)
       if res['OK']:
         statusIDs.append(res['Value'])
       if statusIDs:
@@ -65,9 +113,9 @@ class FileManagerFlat(FileManagerBase):
     if not res['OK']:
       return res
     files = {}
-    for tuple in res['Value']:
-      fileName = tuple[0]
-      files[fileName] = dict(zip(metadata,tuple[1:]))
+    for tuple_ in res['Value']:
+      fileName = tuple_[0]
+      files[fileName] = dict(zip(metadata,tuple_[1:]))
     return S_OK(files)
 
   ######################################################
@@ -81,7 +129,7 @@ class FileManagerFlat(FileManagerBase):
     failed = {}
     directoryFiles = {}
     insertTuples = []
-    res = self._getStatusInt('AprioriGood',connection=connection)
+    res = self.db.getStatusInt('AprioriGood',connection=connection)
     statusID = 0
     if res['OK']:
       statusID = res['Value']
@@ -165,7 +213,7 @@ class FileManagerFlat(FileManagerBase):
   
   def _insertReplicas(self,lfns,master=False,connection=False): 
     connection = self._getConnection(connection)
-    res = self._getStatusInt('AprioriGood',connection=connection)
+    res = self.db.getStatusInt('AprioriGood',connection=connection)
     statusID = 0
     if res['OK']:
       statusID = res['Value']
@@ -295,7 +343,7 @@ class FileManagerFlat(FileManagerBase):
   
   def _setReplicaStatus(self,fileID,se,status,connection=False):
     connection = self._getConnection(connection)
-    res = self._getStatusInt(status,connection=connection)
+    res = self.db.getStatusInt(status,connection=connection)
     if not res['OK']:
       return res
     statusID = res['Value']
@@ -340,22 +388,22 @@ class FileManagerFlat(FileManagerBase):
     if not res['OK']:
       return res
     replicas = {}
-    for tuple in res['Value']:
-      fileID = tuple[0]
+    for tuple_ in res['Value']:
+      fileID = tuple_[0]
       if not replicas.has_key(fileID):
         replicas[fileID] = {}
-      seID = tuple[1]
+      seID = tuple_[1]
       res = self.db.seManager.getSEName(seID)
       if not res['OK']:
         continue
       seName = res['Value']
-      statusID = tuple[2]
-      res = self._getIntStatus(statusID,connection=connection)
+      statusID = tuple_[2]
+      res = self.db.getIntStatus(statusID,connection=connection)
       if not res['OK']:
         continue
       status = res['Value']
       replicas[fileID][seName] = {'Status':status}
-      replicas[fileID][seName].update(dict(zip(fields,tuple[3:])))
+      replicas[fileID][seName].update(dict(zip(fields,tuple_[3:])))
     for fileID in fileIDs:
       if not replicas.has_key(fileID):
         replicas[fileID] = {}
