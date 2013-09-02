@@ -161,33 +161,8 @@ def getSites( siteList = [], fullName = False ):
     
   return S_OK( resultList )
 
-<<<<<<< HEAD
 def getSiteFullNames( site_ ):
   """ Get site full names in all the eligible domains
-=======
-def getFTSServersForSites( self, siteList=None ):
-  """ get FTSServers for sites 
-  
-  :param list siteList: list of sites
-  """
-  siteList = siteList if siteList else None
-  if not siteList:
-    siteList = getSites()
-    if not siteList["OK"]:
-      return siteList
-    siteList = siteList["Value"]
-  ftsServers = dict()
-  for site in siteList:
-    grid = site.split(".")[0]
-    serv = gConfig.getValue( cfgPath( gBaseResourcesSection, "Sites", grid, site, "FTSServer" ), "" )
-    if serv:
-      ftsServers[site] = serv 
-  return S_OK( ftsServers )
-
-def getSiteTier( site ):
-  """
-    Return Tier level of the given Site
->>>>>>> rel-v6r9
   """
   result = getSiteName( site_ )
   if not result['OK']:
@@ -939,3 +914,28 @@ def getDIRACSiteName( gocSiteName ):
     return S_OK( diracSites )
 
   return S_ERROR( "There's no site with GOCDB name = %s in DIRAC CS" % gocSiteName )
+
+def getFTSServersForSites( self, siteList=None ):
+  """ get FTSServers for sites 
+  
+  :param list siteList: list of sites
+  """
+  siteList = siteList if siteList else None
+  if not siteList:
+    siteList = getSites()
+    if not siteList["OK"]:
+      return siteList
+    siteList = siteList["Value"]
+  ftsServers = dict()
+  resources = Resources()
+  for site in siteList:
+    result = resources.getEligibleResources( "Transfer", { "Site": site } )
+    if not result['OK']:
+      continue
+    if result['Value']:
+      transferSvcs = result['Value'] 
+      serv = resources.getTransferValue( transferSvcs, "FTSServer", "" )    
+      if serv:
+        ftsServers[site] = serv
+         
+  return S_OK( ftsServers )

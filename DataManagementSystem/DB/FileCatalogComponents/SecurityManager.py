@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
-from DIRAC.Core.Security.Properties import *
+from DIRAC.Core.Security.Properties import FC_MANAGEMENT
 
 class SecurityManagerBase:
 
