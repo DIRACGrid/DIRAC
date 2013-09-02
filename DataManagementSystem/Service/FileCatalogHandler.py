@@ -478,7 +478,7 @@ class FileCatalogHandler( RequestHandler ):
     """
     return gFileCatalogDB.dmeta.getMetadataSet( setName, expandFlag, self.getRemoteCredentials() )
 
-  types_listMetadatasets = []
+  types_listMetadataSets = []
   def export_listMetadataSets(self):
     """ Get the list of metadata sets with their definitions
     """
