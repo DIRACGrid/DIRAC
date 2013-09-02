@@ -2,8 +2,7 @@
 # $HeadURL$
 ########################################################################
 
-""" LineGraph represents line graphs both simple and stacked. It includes
-    also cumulative graph functionality. 
+""" CurveGraph represents simple line graphs with markers.
     
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
@@ -21,9 +20,7 @@ import datetime
 class CurveGraph( PlotBase ):
 
   """
-  The LineGraph class is a straightforward line graph; given a dictionary
-  of values, it takes the keys as the independent variable and the values
-  as the dependent variable.
+  The CurveGraph class is a straightforward line graph with markers
   """
   
   def __init__(self,data,ax,prefs,*args,**kw):
