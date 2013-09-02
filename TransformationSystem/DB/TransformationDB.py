@@ -745,6 +745,26 @@ class TransformationDB( DB ):
 
   ###########################################################################
   #
+  # These methods manipulate the TransformationFileTasks table
+  #
+
+  def __deleteTransformationFileTask( self, transID, taskID, connection = False ):
+    ''' Delete the file associated to a given task of a given transformation
+        from the TransformationFileTasks table for transformation with TransformationID and TaskID
+    '''
+    req = "DELETE FROM TransformationFileTasks WHERE TransformationID=%d AND TaskID=%d" % ( transID, taskID )
+    return self._update( req, connection )
+
+  def __deleteTransformationFileTasks( self, transID, connection = False ):
+    ''' Remove all associations between files, tasks and a transformation '''
+    req = "DELETE FROM TransformationFileTasks WHERE TransformationID = %d;" % transID
+    res = self._update( req, connection )
+    if not res['OK']:
+      gLogger.error( "Failed to delete transformation files/task history", res['Message'] )
+    return res
+
+  ###########################################################################
+  #
   # These methods manipulate the TransformationTasks table
   #
 
@@ -902,11 +922,12 @@ class TransformationDB( DB ):
       res = self.getCounters( 'TransformationTasks', ['ExternalStatus'], {'TransformationID':res['Value']},
                               connection = connection )
     else:
-      res = self.getCounters( 'TransformationTasks', ['ExternalStatus', 'TransformationID'], {}, connection = connection )
+      res = self.getCounters( 'TransformationTasks', ['ExternalStatus', 'TransformationID'], {},
+                              connection = connection )
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR( 'No records found' )
+      return S_ERROR( 'No recorded tasks found for transformation %s' % transName )
     statusDict = {}
     total = 0
     for attrDict, count in res['Value']:
@@ -1354,15 +1375,21 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    res = self.__deleteTransformationFiles( transID, connection = connection )
+    res = self.__deleteTransformationFileTasks( transID, connection = connection )
     if not res['OK']:
       return res
-    res = self.__deleteTransformationTasks( transID, connection = connection )
+    res = self.__deleteTransformationFiles( transID, connection = connection )
     if not res['OK']:
       return res
     res = self.__deleteTransformationTaskInputs( transID, connection = connection )
     if not res['OK']:
       return res
+    res = self.__deleteTransformationTasks( transID, connection = connection )
+    if not res['OK']:
+      return res
+
+    self.__updateTransformationLogging( transID, "Transformation Cleaned", author, connection = connection )
+
     return S_OK( transID )
 
   def deleteTransformation( self, transName, author = '', connection = False ):
@@ -1393,10 +1420,13 @@ class TransformationDB( DB ):
     res = self.__deleteTransformationTaskInputs( transID, taskID, connection = connection )
     if not res['OK']:
       return res
-    res = self.__deleteTransformationTask( transID, taskID, connection = connection )
+    res = self.__deleteTransformationFileTask( transID, taskID, connection = connection )
     if not res['OK']:
       return res
-    return self.__resetTransformationFile( transID, taskID, connection = connection )
+    res = self.__resetTransformationFile( transID, taskID, connection = connection )
+    if not res['OK']:
+      return res
+    return self.__deleteTransformationTask( transID, taskID, connection = connection )
 
   def __checkUpdate( self, table, param, paramValue, selectDict = {}, connection = False ):
     """ Check whether the update will perform an update """
@@ -1459,7 +1489,7 @@ class TransformationDB( DB ):
     return self.addFile( fileTuples, force )
 
   def addFile( self, fileTuples, force = False, connection = False ):
-    """  Add a new file to the TransformationDB together with its first replica.
+    """  Add new files to the TransformationDB together with its first replica.
     """
     gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileTuples ) )
     successful = {}
