@@ -1,4 +1,4 @@
-[v6r10-pre3]
+[v6r10-pre4]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -6,6 +6,7 @@ FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, T
      connection per running thread
 NEW: SystemAdministratorCLI - better support for executing remote commands 
 FIX: DIRAC.__init__.py - avoid re-definition of platform variable    
+CHANGE: Graphs - allow negative values for the Bar chat 
 
 *DMS
 CHANGE: DFC - optimization and bug fixes of the bulk file addition
@@ -14,6 +15,8 @@ NEW: DFC - added getDirectoryReplicas() service method support similar to the LF
 CHANGE: DFC - added new option VisibleReplicaStatus which is used in replica getting commands
 CHANGE: FileCatalogClientCLI client shows number of replicas in the 2nd column rather than 
         unimplemented number of links
+CHANGE: DFC - optimizations for the bulk replica look-up
+CHANGE: DFC updated scalability testing tool FC_Scaling_test.py        
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
@@ -30,6 +33,8 @@ BUGFIX: JobDB - bug in __insertNewJDL()
 *TS
 CHANGE: TransformationClient(DB,Manager) - set file status for transformation as bulk operation 
 CHANGE: TransformationClient - applying state machine when changing transformation status
+BUGFIX: TransformationClient(Handler) - few minor fixes
+NEW: TransformationDB - backported __deleteTransformationFileTask(s) methods
 
 *RMS
 NEW: Migrate to use the new Request Management by all the clients
