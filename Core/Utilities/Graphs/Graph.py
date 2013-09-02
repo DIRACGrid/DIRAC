@@ -11,13 +11,14 @@
 
 __RCSID__ = "$Id$"
 
-import types, datetime
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure 
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import pixelToPoint, evalPrefs, \
+                                                       to_timestamp, add_time_to_title
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.Legend import Legend
 #from DIRAC import S_OK, S_ERROR
+import datetime, time, types, os
 
 DEBUG=0
 
@@ -34,7 +35,6 @@ class Graph(object):
     #self.figure = Figure()
     figure = self.figure
     self.canvas = FigureCanvasAgg(figure) 
-    canvas = self.canvas
     
     dpi = prefs['dpi']
     width = float(prefs['width'])
@@ -157,7 +157,6 @@ class Graph(object):
     self.figure = Figure()
     figure = self.figure
     self.canvas = FigureCanvasAgg(figure) 
-    canvas = self.canvas
     
     prefs = self.prefs
     dpi = prefs['dpi']
@@ -219,7 +218,8 @@ class Graph(object):
       gdata = GraphData(data[i])       
       if i == 0: plot_type = plot_prefs[i]['plot_type']      
       if plot_prefs[i].has_key('sort_labels'):      
-        gdata.sortLabels(plot_prefs[i]['sort_labels'])      
+        reverse = plot_prefs[i].get( 'reverse_labels', False )
+        gdata.sortLabels(plot_prefs[i]['sort_labels'], reverse_order = reverse )      
       if plot_prefs[i].has_key('limit_labels'):
         if plot_prefs[i]['limit_labels'] > 0:
           gdata.truncateLabels(plot_prefs[i]['limit_labels'])
@@ -267,10 +267,9 @@ class Graph(object):
       try:
         exec "import %s" % plot_type
       except ImportError, x:
-        print "Failed to import graph type %s" % plot_type 
+        print "Failed to import graph type %s: %s" % ( plot_type, str( x ) ) 
         return None
         
-      ax = plot_axes[i]  
       plot = eval("%s.%s(graphData[i],ax,plot_prefs[i])" % (plot_type,plot_type) )
       plot.draw()
     
@@ -321,22 +320,21 @@ class Graph(object):
              img_size[1]/float(prefs['height'])*resize)
       #print box
       ax_wm = self.figure.add_axes( box )
-      im = ax_wm.imshow( i, origin='lower', aspect='equal', zorder = -10 )
+      #im = ax_wm.imshow( i, origin='lower', aspect='equal', zorder = -10 )
       ax_wm.axis('off')
       ax_wm.set_frame_on( False )
       ax_wm.set_clip_on( False )
     except Exception, e:
       print e 
       
-  def writeGraph(self,fname,format):
+  def writeGraph(self,fname,format_):
     """ Write out the resulting graph to a file with fname in a given format
     """
 
-    start = time.time()
     self.canvas.draw()
-    if format.lower() == 'png':
+    if format_.lower() == 'png':
       self.canvas.print_png(fname)
-    elif format.lower() == 'svg':
+    elif format_.lower() == 'svg':
       self.canvas.print_svg(fname)   
         
                      

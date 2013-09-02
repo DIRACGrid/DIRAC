@@ -11,7 +11,7 @@
 __RCSID__ = "$Id$"
 
 import types, datetime, numpy, time
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp, pretty_float
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, pretty_float
 from matplotlib.dates import date2num
 
 DEBUG = 0
@@ -123,7 +123,7 @@ class GraphData:
 
     return not self.plotdata is None
 
-  def sortLabels( self, sort_type = 'max_value' ):
+  def sortLabels( self, sort_type = 'max_value', reverse_order=False ):
     """ Sort labels with a specified method:
           alpha - alphabetic order
           max_value - by max value of the subplot
@@ -136,32 +136,40 @@ class GraphData:
           self.labels = self.plotdata.sortKeys( 'weight' )
         else:
           self.labels = self.plotdata.sortKeys()
+        if reverse_order:
+          self.labels.reverse()  
         self.label_values = [ self.plotdata.parsed_data[l] for l in self.labels]
-
     else:
       if sort_type == 'max_value':
         pairs = zip( self.subplots.keys(), self.subplots.values() )
-        pairs.sort( key = lambda x: x[1].max_value, reverse = True )
+        reverse = not reverse_order
+        pairs.sort( key = lambda x: x[1].max_value, reverse = reverse )
         self.labels = [ x[0] for x in pairs ]
         self.label_values = [ x[1].max_value for x in pairs ]
       elif sort_type == 'last_value':
         pairs = zip( self.subplots.keys(), self.subplots.values() )
-        pairs.sort( key = lambda x: x[1].last_value, reverse = True )
+        reverse = not reverse_order
+        pairs.sort( key = lambda x: x[1].last_value, reverse = reverse )
         self.labels = [ x[0] for x in pairs ]
-        self.label_values = [ x[1].last_value for x in pairs ]
+        self.label_values = [ x[1].last_value for x in pairs ]        
       elif sort_type == 'sum':
         pairs = []
         for key in self.subplots:
           pairs.append( ( key, self.subplots[key].sum_value ) )
-        pairs.sort( key = lambda x: x[1], reverse = True )
+        reverse = not reverse_order
+        pairs.sort( key = lambda x: x[1], reverse = reverse )
         self.labels = [ x[0] for x in pairs ]
         self.label_values = [ x[1] for x in pairs ]
       elif sort_type == 'alpha':
         self.labels = self.subplots.keys()
         self.labels.sort()
+        if reverse_order:
+          self.labels.reverse()  
         self.label_values = [ self.subplots[x].sum_value for x in self.labels ]
       else:
         self.labels = self.subplots.keys()
+        if reverse_order:
+          self.labels.reverse()  
 
   def sortKeys( self ):
     """ Sort the graph keys in a natural order

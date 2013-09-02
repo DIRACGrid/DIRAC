@@ -35,20 +35,12 @@ class CurveGraph( PlotBase ):
     if self.gdata.isEmpty():
       return None
         
-    tmp_x = []; tmp_y = []
-        
-    labels = self.gdata.getLabels()  
-    nKeys = self.gdata.getNumberOfKeys()
-        
     start_plot = 0
     end_plot = 0    
     if "starttime" in self.prefs and "endtime" in self.prefs:
       start_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['starttime'])))    
       end_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['endtime'])))                         
       
-    self.polygons = []
-    seq_b = [(self.gdata.max_num_key,0.0),(self.gdata.min_num_key,0.0)]    
-    zorder = 0.0      
     labels = self.gdata.getLabels()
     labels.reverse()
     
@@ -86,8 +78,12 @@ class CurveGraph( PlotBase ):
                      markeredgecolor = darkenColor( color ) )
       self.ax.add_line( line )  
                     
-    ymax = max(tmp_y); ymax *= 1.1
-    ymin = min(tmp_y); ymin *= 1.1
+    ymax = max(tmp_y)
+    ymax *= 1.1
+    ymin = min(tmp_y)
+    if ymin > 0.:
+      ymin = 0.
+    ymin *= 1.1
     if self.prefs.has_key('log_yaxis'):
       ymin = 0.001
     if self.log_xaxis:  
