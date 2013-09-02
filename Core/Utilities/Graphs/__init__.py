@@ -152,6 +152,10 @@ if matplotlib:
     kw = __checkKW( kw )
     graph( data, file, plot_type = 'LineGraph', statistics_line=True, *args, **kw )
   
+  def curveGraph( data, file, *args, **kw ):
+    kw = __checkKW( kw )
+    graph( data, file, plot_type = 'CurveGraph', statistics_line=True, *args, **kw )
+  
   def cumulativeGraph( data, file, *args, **kw ):
     kw = __checkKW( kw )
     graph( data, file, plot_type = 'LineGraph', cumulate_data = True, *args, **kw )
