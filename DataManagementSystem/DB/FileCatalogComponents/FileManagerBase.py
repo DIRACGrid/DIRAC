@@ -919,21 +919,23 @@ class FileManagerBase:
   def getReplicas( self, lfns, allStatus, connection = False ):
     """ Get file replicas from the catalog """
     connection = self._getConnection( connection )
-    res = self._findFiles( lfns, connection = connection )
-    #print 'findFiles',time.time()-startTime
+
+    # Get FileID <-> LFN correspondence first
+    res = self._findFileIDs( lfns, connection = connection )
+    if not res['OK']:
+      return res
     failed = res['Value']['Failed']
     fileIDLFNs = {}
-    for lfn, fileDict in res['Value']['Successful'].items():
-      fileID = fileDict['FileID']
+    for lfn, fileID in res['Value']['Successful'].items():
       fileIDLFNs[fileID] = lfn
+
     replicas = {}
     if fileIDLFNs:
       fields = []
       if not self.db.lfnPfnConvention:
         fields = ['PFN']
-      res = self._getFileReplicas( fileIDLFNs.keys(), fields_input=fields, 
+      res = self._getFileReplicas( fileIDLFNs.keys(), fields_input=fields,
                                    allStatus = allStatus, connection = connection )
-      #print '_getFileReplicas',time.time()-startTime
       if not res['OK']:
         return res
       for fileID, seDict in res['Value'].items():
@@ -946,8 +948,9 @@ class FileManagerBase:
             if res['OK']:
               pfn = res['Value']
           replicas[lfn][se] = pfn
+                
     return S_OK( {'Successful':replicas, 'Failed':failed} )
-
+  
   def _resolvePFN(self,lfn,se):
     resSE = self.db.seManager.getSEDefinition(se)
     if not resSE['OK']:
@@ -1059,7 +1062,12 @@ class FileManagerBase:
     for fileName, fileDict in res['Value'].items():
       fileIDNames[fileDict['FileID']] = fileName
       
-    result = self._getFileReplicas( fileIDNames.keys(), allStatus = allStatus, connection = connection )
+    fields = []
+    if not self.db.lfnPfnConvention:
+      fields = ['PFN']  
+      
+    result = self._getFileReplicas( fileIDNames.keys(), fields_input = fields, 
+                                    allStatus = allStatus, connection = connection )
     if not result['OK']:
       return result
     

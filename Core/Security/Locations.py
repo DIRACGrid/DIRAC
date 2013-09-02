@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 import os
 import DIRAC
-from DIRAC import gConfig, gLogger
+from DIRAC import gConfig
 g_SecurityConfPath = "/DIRAC/Security"
 
 def getProxyLocation():

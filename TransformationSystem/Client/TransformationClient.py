@@ -144,8 +144,8 @@ class TransformationClient( Client, FileCatalogueBase ):
 
 
   def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
-                              orderAttribute = None, limit = 10000, inputVector = False, rpc = '',
-                              url = '', timeout = 120 ):
+                                 orderAttribute = None, limit = 10000, inputVector = False, rpc = '',
+                                 url = '', timeout = 120 ):
     """ gets all the transformation tasks for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
@@ -317,14 +317,14 @@ class TransformationClient( Client, FileCatalogueBase ):
     return newStatuses
 
   def setTransformationParameter( self, transID, paramName, paramValue, force = False,
-                                  rpc = '', url = '', timeout = 120 ):
+                                      rpc = '', url = '', timeout = 120 ):
     """ Sets a transformation parameter. There's a special case when coming to setting the status of a transformation.
     """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
 
     if paramName.lower() == 'status':
       # get transformation Type
-      transformation = self.getTransformation( self, transID )
+      transformation = self.getTransformation( transID )
       if not transformation['OK']:
         return transformation
       transformationType = transformation['Value']['Type']
@@ -342,7 +342,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     else:
       value = paramValue
 
-    return rpcClient.setTransformationParameter( self, transID, paramName, value )
+    return rpcClient.setTransformationParameter( transID, paramName, value )
 
   def _applyTransformationStatusStateMachine( self, transIDAsDict, dictOfProposedstatus, force ):
     """ For easier extension, here we apply the state machine of the transformation status.

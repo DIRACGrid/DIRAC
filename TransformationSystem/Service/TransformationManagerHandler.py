@@ -2,7 +2,6 @@
 '''
 
 from types import StringType, ListType, DictType, IntType, LongType, StringTypes, TupleType
-
 from DIRAC                                               import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
 from DIRAC.TransformationSystem.DB.TransformationDB      import TransformationDB
@@ -119,7 +118,7 @@ class TransformationManagerHandler( RequestHandler ):
     res = database.getTransformation( transName, extraParams = extraParams )
     return self._parseRes( res )
 
-  types_getTransformationParameters = [TransTypes, [ListType, TupleType]]
+  types_getTransformationParameters = [TransTypes, list( StringTypes ) + [ListType, TupleType]]
   def export_getTransformationParameters( self, transName, parameters ):
     res = database.getTransformationParameters( transName, parameters )
     return self._parseRes( res )
@@ -144,7 +143,7 @@ class TransformationManagerHandler( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [transTypes, DictType]
+  types_setFileStatusForTransformation = [TransTypes, DictType]
   def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus ):
     """ Sets the file status for the transformation.
 

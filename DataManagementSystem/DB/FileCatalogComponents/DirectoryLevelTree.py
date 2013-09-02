@@ -63,6 +63,20 @@ class DirectoryLevelTree(DirectoryTreeBase):
     res['Level'] = result['Value'][0][1]
     return res
   
+  def findDirs( self, paths, connection=False ):
+    """ Find DirIDs for the given path list
+    """
+    dpaths = ','.join( [ "'"+os.path.normpath( path )+"'" for path in paths ] )
+    req = "SELECT DirName,DirID from FC_DirectoryLevelTree WHERE DirName in (%s)" % dpaths
+    result = self.db._query(req,connection)
+    if not result['OK']:
+      return result
+    dirDict = {}
+    for dirName, dirID in result['Value']:
+      dirDict[dirName] = dirID
+
+    return S_OK( dirDict )
+  
   def removeDir(self,path):
     """ Remove directory
     """
