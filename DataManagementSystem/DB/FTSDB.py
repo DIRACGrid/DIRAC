@@ -162,7 +162,6 @@ class FTSDB( DB ):
       cursor.close()
       return S_ERROR( str( error ) )
 
-<<<<<<< HEAD
   def putFTSSite( self, ftsSite ):
     """ put FTS site into DB """
     if not ftsSite.FTSSiteID:
@@ -217,8 +216,6 @@ class FTSDB( DB ):
     ftsSites = ftsSites["Value"][ftsSitesQuery] if ftsSitesQuery in ftsSites["Value"] else []
     return S_OK( [ FTSSite( ftsSiteDict ) for ftsSiteDict  in ftsSites ] )
 
-=======
->>>>>>> rel-v6r9
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into fts db """
     ftsFileSQL = ftsFile.toSQL()
