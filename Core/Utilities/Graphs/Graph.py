@@ -270,6 +270,7 @@ class Graph(object):
         print "Failed to import graph type %s: %s" % ( plot_type, str( x ) ) 
         return None
         
+      ax = plot_axes[i]  
       plot = eval("%s.%s(graphData[i],ax,plot_prefs[i])" % (plot_type,plot_type) )
       plot.draw()
     
@@ -320,21 +321,22 @@ class Graph(object):
              img_size[1]/float(prefs['height'])*resize)
       #print box
       ax_wm = self.figure.add_axes( box )
-      #im = ax_wm.imshow( i, origin='lower', aspect='equal', zorder = -10 )
+      im = ax_wm.imshow( i, origin='lower', aspect='equal', zorder = -10 )
       ax_wm.axis('off')
       ax_wm.set_frame_on( False )
       ax_wm.set_clip_on( False )
     except Exception, e:
       print e 
       
-  def writeGraph(self,fname,format_):
+  def writeGraph(self,fname,format):
     """ Write out the resulting graph to a file with fname in a given format
     """
 
+    start = time.time()
     self.canvas.draw()
-    if format_.lower() == 'png':
+    if format.lower() == 'png':
       self.canvas.print_png(fname)
-    elif format_.lower() == 'svg':
+    elif format.lower() == 'svg':
       self.canvas.print_svg(fname)   
         
                      
