@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 from DIRAC import S_OK, S_ERROR
-import math
+import math, sys, pprint, os
 
 Script.setUsageMessage( """
   Test suite for a generic File Catalog scalability tests
@@ -51,20 +51,33 @@ def setLFNListFile( value ):
   lfnListFile = value
   return S_OK()
 
+outputFile = "output.txt"
+def setOutputFile( value ):
+  global outputFile
+  outputFile = value
+  return S_OK()
+
 catalog = 'AugerTestFileCatalog'
 def setCatalog( value ):
   global catalog
   catalog = value
   return S_OK()
 
+fullTest = False
+def setFullTest( value ):
+  global fullTest
+  fullTest = True
+  return S_OK()
+
 Script.registerSwitch( "t:", "type=", "test type", setTestType )
 Script.registerSwitch( "D:", "directory=", "test directory", setTestDirectory )
 Script.registerSwitch( "N:", "clients=", "number of parallel clients", setNumberOfClients )
-Script.registerSwitch( "Q:", "queries=", "number of queries", setNumberOfQueries )
-Script.registerSwitch( "T:", "tests=", "number of tests", setNumberOfTests )
+Script.registerSwitch( "Q:", "queries=", "number of queries in one test", setNumberOfQueries )
+Script.registerSwitch( "T:", "tests=", "number of tests in a series", setNumberOfTests )
 Script.registerSwitch( "C:", "catalog=", "catalog to use", setCatalog )
 Script.registerSwitch( "L:", "lfnList=", "file with a list of LFNs", setLFNListFile )
-
+Script.registerSwitch( "F", "fullTest", "run the full test", setFullTest )
+Script.registerSwitch( "O:", "output=", "file with output result", setOutputFile )
 
 Script.parseCommandLine( ignoreErrors = True )
 
@@ -126,8 +139,8 @@ def getBulkReplicas( n_queries ):
     else:
       fCount += 1
 
-    if i % 50 == 0:
-      print '\033[1D' + ".",
+    #if i % 50 == 0:
+    #  print '\033[1D' + ".",
 
   total = time.time() - start
 
@@ -183,7 +196,9 @@ def doException( expt ):
 
 def runTest( testCount ):
 
-  global nClients, nQueries, testType
+  global nClients, nQueries, testType, resultTest
+
+  resultTest = []
 
   pp = ProcessPool( nClients )
 
@@ -199,7 +214,7 @@ def runTest( testCount ):
 
   average = 0.
 
-  print "\nTest %d results:" % testCount
+  #print "\nTest %d results:" % testCount
 
   sum = 0.
   count = 0
@@ -207,15 +222,15 @@ def runTest( testCount ):
     #print testTime,success,failure
     count += 1
     sum += testTime
-
   if count != 0:
     average = sum/count
     avQuery = average/nQueries
     avQueryRate = nQueries*nClients/average
-    print "Average time %.2f sec" % average
-    print "Average response time %.2f sec" % (average/nQueries)
-    print "Average query rate %.2f Hz" % (nQueries*nClients/average)
-    print "Success rate %.2f" % ( float(success)/float(success+failure)*100. )
+    #print "Average time %.2f sec" % average
+    #print "Average response time %.2f sec" % (average/nQueries)
+    #print "Average query rate %.2f Hz" % (nQueries*nClients/average)
+    if failure:
+      print "Success rate %.2f" % ( float(success)/float(success+failure)*100. )
   else:
     print "Test failed", sum,count
 
@@ -234,26 +249,115 @@ def doStats( array ):
 
   return average, stddev
 
-testCount = 0
-testTimes = []
-queryTimes = []
-queryRates = []
+def runTests():
 
-while testCount < nTests:
+  global nTests, nClients, lfnListFile, testDir
 
-  testCount += 1
+  testCount = 0
+  testTimes = []
+  queryTimes = []
+  queryRates = []
 
-  testTime, query, queryRate = runTest( testCount )
-  testTimes.append( testTime)
-  queryTimes.append( query )
-  queryRates.append( queryRate )
+  while testCount < nTests:
+
+    testCount += 1
+
+    testTime, query, queryRate = runTest( testCount )
+    testTimes.append( testTime)
+    queryTimes.append( query )
+    queryRates.append( queryRate )
+
+  if testDir:
+    print "\nTest results for clients %d, %s" % ( nClients, testDir )
+  else:
+    print "\nTest results for clients %d, %s" % ( nClients, lfnListFile )
+  a1,s1 = doStats( testTimes )
+  print "Test time: %.2f +/- %.2f" % (a1,s1)
+  a2,s2 = doStats( queryTimes )
+  print "Query time: %.2f +/- %.2f" % (a2,s2)
+  a3,s3 = doStats( queryRates )
+  print "Query rate: %.2f +/- %.2f" % (a3,s3)
+
+  return( (a1,s1), (a2,s2), (a3,s3) )
+
+numberOfFilesList = [ 10, 100, 500, 1000, 2000, 5000, 10000, 15000, 20000 ]
+numberOfClientsList = [1,2,3,5,7,10,12,15,20]
+directoriesList = [ (35455, "/auger/prod/QGSjetII_gr20_simADSTv2r5p1/en18.000/th0.65/2008/11/12"),
+                    (24024, "/auger/prod/QGSjetII_gr20/2008/09/04/en17.500/th0.65"),
+                    (15205, "/auger/generated/2012-09-03"),
+                    (9907, "/auger/prod/QGSjetII_gr20/2008/09/03/en17.500/th0.65"),
+                    (5157, "/auger/prod/QGSjetII_gr20/2008/09/04/en20.000/th0.65"),
+                    (3338, "/auger/prod/QGSjetII_gr20/2008/09/05/en17.500/th0.65"),
+                    (2538, "/auger/prod/QGSjetII_gr21/2009/01/12/en18.500/th0.65"),
+                    (1500, "/auger/prod/epos_gr03_sim/en17.500/th26.000"),
+                    (1000, "/auger/prod/PhotonLib_gr22/2009/02/27/en17.500/th26.000"),
+                    (502, "/auger/prod/REPLICATED20081014/epos_gr08/en21.250/th26.000")
+                  ]
+
+def executeTest( nc, nf, queryDict, rateDict, queryDict_r, rateDict_r ):
+
+  t1,t2,t3 = runTests()
+
+  query,querys = t2
+  rate, rates = t3
+
+  fileLabel = "%d files" % nf
+  queryDict.setdefault( fileLabel, {} )
+  queryDict[fileLabel][nc] = query
+  rateDict.setdefault( fileLabel, {} )
+  rateDict[fileLabel][nc] = rate
+
+  clientLabel = "%d clients" % nc
+  queryDict_r.setdefault( clientLabel, {} )
+  queryDict_r[clientLabel][nf] = query
+  rateDict_r.setdefault( clientLabel, {} )
+  rateDict_r[clientLabel][nf] = rate
 
 
-print "\nFinal results:"
-a,s = doStats( testTimes )
-print "Test time: %.2f +/- %.2f" % (a,s)
-a,s = doStats( queryTimes )
-print "Query time: %.2f +/- %.2f" % (a,s)
-a,s = doStats( queryRates )
-print "Query rate: %.2f +/- %.2f" % (a,s)
+def runFullTest():
 
+  global outputFile, nClients, testDir
+
+  queryDict = {}
+  rateDict = {}
+
+  queryDict_r = {}
+  rateDict_r = {}
+
+  for nc in numberOfClientsList:
+    if testType in ['getBulkReplicas']:
+      for nf in numberOfFilesList:
+        lfnListFile = "lfns_%d.txt" % nf
+        executeTest( nc, nf, queryDict, rateDict, queryDict_r, rateDict_r )
+    elif testType in ['getDirectoryReplicas', "listDirectory"]:
+      for nf, directory in directoriesList:
+        testDir = directory
+        executeTest( nc, nf, queryDict, rateDict, queryDict_r, rateDict_r )
+
+  # Writing out result
+  outFile = open( outputFile, "w" )
+  outFile.write( "Test type %s \n" % testType )
+  outFile.write( "Number of queries per unit test %d \n" % nQueries )
+  outFile.write( "Number of tests in a series %d \n" % nTests )
+  outFile.write( "Results: \n\n\n" )
+  outFile.write( str( queryDict ) + '\n\n\n' )
+  outFile.write( str( rateDict ) + '\n\n\n' )
+  outFile.write( str( queryDict_r ) + '\n\n\n' )
+  outFile.write( str( rateDict_r ) + '\n\n\n' )
+  outFile.close()
+
+  pprint.pprint( queryDict )
+  pprint.pprint( rateDict )
+  pprint.pprint( queryDict_r )
+  pprint.pprint( rateDict_r )
+
+#########################################################################
+
+if os.path.exists( outputFile ):
+  print "Output file %s already exists, exiting ..."
+  sys.exit(-1)
+
+if fullTest:
+  runFullTest()
+else:
+  runTests()
