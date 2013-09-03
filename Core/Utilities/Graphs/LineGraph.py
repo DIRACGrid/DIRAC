@@ -96,11 +96,18 @@ class LineGraph( PlotBase ):
     ymin = min(tmp_b); ymin *= 1.1
     if self.prefs.has_key('log_yaxis'):
       ymin = 0.001
+    xmax=max(tmp_x)  
     if self.log_xaxis:  
       xmin = 0.001
     else: 
       xmin = 0
-    self.ax.set_xlim( xmin=xmin, xmax=max(tmp_x) )
+      
+    ymin = self.prefs.get( 'ymin', ymin )  
+    ymax = self.prefs.get( 'ymax', ymax )
+    xmin = self.prefs.get( 'xmin', xmin )  
+    xmax = self.prefs.get( 'xmax', xmax )     
+      
+    self.ax.set_xlim( xmin=xmin, xmax=xmax )
     self.ax.set_ylim( ymin=ymin, ymax=ymax )
     if self.gdata.key_type == 'time':
       if start_plot and end_plot:
