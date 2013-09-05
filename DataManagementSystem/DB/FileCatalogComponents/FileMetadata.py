@@ -11,6 +11,7 @@ __RCSID__ = "$Id$"
 # import time 
 import types
 from DIRAC import S_OK, S_ERROR, gLogger
+
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 
 class FileMetadata:
@@ -452,7 +453,7 @@ class FileMetadata:
     return S_OK(fileList)
 
   @queryTime
-  def findFilesByMetadata( self, metaDict, path, credDict ):
+  def findFilesByMetadata( self, metaDict, path, credDict, extra = False ):
     """ Find Files satisfying the given metadata
     """
     if not path:
@@ -504,4 +505,8 @@ class FileMetadata:
       result = self.db.fileManager._getFileLFNs(fileList)
       lfnList = [ x[1] for x in result['Value']['Successful'].items() ]
 
-    return S_OK( lfnList ) 
+    result = S_OK( lfnList ) 
+    if extra:
+      result['LFNIDDict'] = result['Value']['Successful']
+      
+    return result  

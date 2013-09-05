@@ -214,6 +214,20 @@ class SEManagerDB(SEManagerBase):
     self.db.seDefinitions[seID]['LastUpdate'] = time.time()
     return S_OK(self.db.seDefinitions[seID])
 
+  def getSEPrefixes( self, connection=False ):
+    
+    result = self._refreshSEs(connection)
+    if not result['OK']:
+      return result
+    
+    resultDict = {}
+    
+    for seID in self.db.seDefinitions:
+      resultDict[self.db.seDefinitions[seID]['SEName']] = \
+         self.db.seDefinitions[seID]['SEDict'].get( 'PFNPrefix', '' )
+
+    return S_OK( resultDict )
+
 class SEManagerCS(SEManagerBase):
 
   def findSE(self,se):

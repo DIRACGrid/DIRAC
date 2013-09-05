@@ -915,6 +915,40 @@ class FileManagerBase:
   #
   # Replica read methods
   #
+  
+  def __getReplicasForIDs( self, fileIDLfnDict, allStatus, connection = False ):
+    """ Get replicas for files with already resolved IDs
+    """
+    replicas = {}
+    if fileIDLfnDict:
+      fields = []
+      if not self.db.lfnPfnConvention or self.db.lfnPfnConvention == "Weak":
+        fields = ['PFN']
+      res = self._getFileReplicas( fileIDLfnDict.keys(), fields_input=fields,
+                                   allStatus = allStatus, connection = connection )
+      if not res['OK']:
+        return res
+      for fileID, seDict in res['Value'].items():
+        lfn = fileIDLfnDict[fileID]
+        replicas[lfn] = {}
+        for se, repDict in seDict.items():
+          pfn = repDict.get('PFN','')
+          if not pfn or self.db.lfnPfnConvention:
+            res = self._resolvePFN( lfn, se )
+            if res['OK']:
+              pfn = res['Value']
+          replicas[lfn][se] = pfn
+                
+    result = S_OK( replicas )
+    
+    if self.db.lfnPfnConvention:
+      sePrefixDict = {}
+      resSE = self.db.seManager.getSEPrefixes()
+      if resSE['OK']:
+        sePrefixDict = resSE['Value']
+      result['Value']['SEPrefixes'] = sePrefixDict
+      
+    return result
 
   def getReplicas( self, lfns, allStatus, connection = False ):
     """ Get file replicas from the catalog """
@@ -929,27 +963,48 @@ class FileManagerBase:
     for lfn, fileID in res['Value']['Successful'].items():
       fileIDLFNs[fileID] = lfn
 
-    replicas = {}
-    if fileIDLFNs:
-      fields = []
-      if not self.db.lfnPfnConvention:
-        fields = ['PFN']
-      res = self._getFileReplicas( fileIDLFNs.keys(), fields_input=fields,
-                                   allStatus = allStatus, connection = connection )
-      if not res['OK']:
-        return res
-      for fileID, seDict in res['Value'].items():
-        lfn = fileIDLFNs[fileID]
-        replicas[lfn] = {}
-        for se, repDict in seDict.items():
-          pfn = repDict.get('PFN','')
-          if not pfn or self.db.lfnPfnConvention:
-            res = self._resolvePFN( lfn, se )
-            if res['OK']:
-              pfn = res['Value']
-          replicas[lfn][se] = pfn
-                
-    return S_OK( {'Successful':replicas, 'Failed':failed} )
+    result = self.__getReplicasForIDs( fileIDLFNs, allStatus, connection)
+    if not result['OK']:
+      return result
+    replicas = result['Value']
+    
+    result = S_OK( { "Successful": replicas, 'Failed': failed } )
+    
+    if self.db.lfnPfnConvention:
+      sePrefixDict = {}
+      resSE = self.db.seManager.getSEPrefixes()
+      if resSE['OK']:
+        sePrefixDict = resSE['Value']
+      result['Value']['SEPrefixes'] = sePrefixDict
+      
+    return result
+  
+  def getReplicasByMetadata( self, metaDict, path, allStatus, credDict, connection = False ):
+    """ Get file replicas for files corresponding to the given metadata """
+    connection = self._getConnection( connection )
+
+    # Get FileID <-> LFN correspondence first
+    failed = {}
+    result = self.db.fmeta.findFilesByMetadata( metaDict, path, credDict, extra = True)
+    if not result['OK']:
+      return result
+    fileIDLFNs = result['Value']
+
+    result = self.__getReplicasForIDs( fileIDLFNs, allStatus, connection)
+    if not result['OK']:
+      return result
+    replicas = result['Value']
+    
+    result = S_OK( { "Successful": replicas, 'Failed': failed } )
+    
+    if self.db.lfnPfnConvention:
+      sePrefixDict = {}
+      resSE = self.db.seManager.getSEPrefixes()
+      if resSE['OK']:
+        sePrefixDict = resSE['Value']
+      result['Value']['SEPrefixes'] = sePrefixDict
+      
+    return result
   
   def _resolvePFN(self,lfn,se):
     resSE = self.db.seManager.getSEDefinition(se)
@@ -1049,41 +1104,27 @@ class FileManagerBase:
         files[fileName]['Replicas'] = seDict
         
     return S_OK( files )
-  
+
   def getDirectoryReplicas( self, dirID, path, allStatus = False, connection = False ):
+    
     connection = self._getConnection( connection )
-    files = {}
-    res = self._getDirectoryFiles( dirID, [], ['FileID'], allStatus = allStatus, connection = connection )
-    if not res['OK']:
-      return res
-    if not res['Value']:
-      return S_OK( files )
-    fileIDNames = {}
-    for fileName, fileDict in res['Value'].items():
-      fileIDNames[fileDict['FileID']] = fileName
-      
-    fields = []
-    if not self.db.lfnPfnConvention:
-      fields = ['PFN']  
-      
-    result = self._getFileReplicas( fileIDNames.keys(), fields_input = fields, 
-                                    allStatus = allStatus, connection = connection )
+    result = self._getDirectoryReplicas( dirID, allStatus, connection)
     if not result['OK']:
       return result
     
     resultDict = {}
-    for fileID, seDict in result['Value'].items():
-      fileName = fileIDNames[fileID]
-      resultDict[fileName] = {}
-      for se, repDict in seDict.items():
-        pfn = repDict.get('PFN','')
-        if not pfn or self.db.lfnPfnConvention:
-          lfn = '%s/%s' % ( path, fileName )
-          res = self._resolvePFN( lfn, se )
-          if res['OK']:
-            pfn = res['Value']
-        resultDict[fileName].setdefault( se, pfn )
-  
+    seDict = {}
+    for fileName, fileID, seID, pfn in result['Value']:
+      resultDict.setdefault( fileName, {} )
+      if not seID in seDict:
+        res = self.db.seManager.getSEName(seID)
+        if not res['OK']:
+          seDict[seID] = 'Unknown'
+        else:  
+          seDict[seID] = res['Value']
+      se = seDict[seID]    
+      resultDict[fileName][se] = pfn
+
     return S_OK( resultDict )
 
   def _getFileDirectories( self, lfns ):

@@ -6,7 +6,9 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                                                import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase  import FileManagerBase
-from DIRAC.Core.Utilities.List                                            import stringListToString, intListToString
+from DIRAC.Core.Utilities.List                                            import stringListToString, \
+                                                                                 intListToString, \
+                                                                                 breakListIntoChunks
 
 DEBUG = 0
 
@@ -140,21 +142,24 @@ class FileManager(FileManagerBase):
           failed[fname] = 'No such directory'
       else:
         directoryPaths[directoryIDs[dirPath]] = dirPath
+    directoryIDList = directoryIDs.keys()
+    for dirIDs in breakListIntoChunks( directoryIDList, 1000 ):
 
-    wheres = []
-    for dirPath in directoryIDs:
-      fileNames = dirDict[dirPath]
-      dirID = directoryIDs[dirPath]
-      wheres.append( "( DirID=%d AND FileName IN (%s) )" % (dirID, stringListToString(fileNames) ) )
+      wheres = []
+      for dirPath in dirIDs:
+        fileNames = dirDict[dirPath]
+        dirID = directoryIDs[dirPath]
+        wheres.append( "( DirID=%d AND FileName IN (%s) )" % (dirID, stringListToString(fileNames) ) )
 
-    req = "SELECT FileName,DirID,FileID FROM FC_Files WHERE %s" % " OR ".join( wheres )
-    result = self.db._query(req,connection)
-    if not result['OK']:
-      return result
-    for fileName, dirID, fileID in result['Value']:
-      fname = '%s/%s' % (directoryPaths[dirID],fileName)
-      fname = fname.replace('//','/')
-      successful[fname] = fileID
+      req = "SELECT FileName,DirID,FileID FROM FC_Files WHERE %s" % " OR ".join( wheres )
+      result = self.db._query(req,connection)
+      if not result['OK']:
+        return result
+      for fileName, dirID, fileID in result['Value']:
+        fname = '%s/%s' % (directoryPaths[dirID],fileName)
+        fname = fname.replace('//','/')
+        successful[fname] = fileID
+
     for lfn in lfns:
       if not lfn in successful:
         failed[lfn] = "No such file"
@@ -730,3 +735,39 @@ class FileManager(FileManagerBase):
     for fileID,seID,repID,statusID in res['Value']:
       fileIDDict[repID] = ( fileID, seID, statusID )
     return S_OK(fileIDDict)
+
+  def _getDirectoryReplicas( self, dirID, allStatus=False, connection=False ):
+    """ Get replicas for files in a given directory
+    """
+    replicaStatusIDs = []
+    if not allStatus:
+      for status in self.db.visibleReplicaStatus:
+        result = self._getStatusInt( status, connection=connection )
+        if result['OK']:
+          replicaStatusIDs.append( result['Value'] )
+    fileStatusIDs = []
+    if not allStatus:
+      for status in self.db.visibleReplicaStatus:
+        result = self._getStatusInt( status, connection=connection )
+        if result['OK']:
+          fileStatusIDs.append( result['Value'] )
+    
+    if not self.db.lfnPfnConvention or self.db.lfnPfnConvention == "Weak":
+      req = 'SELECT FF.FileName,FR.FileID,FR.SEID,FI.PFN FROM FC_Files as FF,'
+      req += ' FC_Replicas as FR, FC_ReplicaInfo as FI'
+      req += ' WHERE FF.FileID=FR.FileID AND FR.RepID=FI.RepID AND FF.DirID=%d ' % dirID
+      if replicaStatusIDs:
+        req += ' AND FR.Status in (%s)' % intListToString( replicaStatusIDs )
+      if fileStatusIDs:
+        req += ' AND FF.Status in (%s)' % intListToString( fileStatusIDs )  
+    else:
+      req = "SELECT FF.FileName,FR.FileID,FR.SEID,'' FROM FC_Files as FF,"
+      req += ' FC_Replicas as FR'
+      req += ' WHERE FF.FileID=FR.FileID AND FF.DirID=%d ' % dirID
+      if replicaStatusIDs:
+        req += ' AND FR.Status in (%s)' % intListToString( replicaStatusIDs )
+      if fileStatusIDs:
+        req += ' AND FF.Status in (%s)' % intListToString( fileStatusIDs )                                                                             
+    
+    result = self.db._query( req, connection )
+    return result
