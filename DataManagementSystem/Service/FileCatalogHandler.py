@@ -51,7 +51,7 @@ def initializeFileCatalogHandler( serviceInfo ):
   gLogger.info( "Initializing the FileCatalog with the following configuration:" )
   defaultConfig = { 'UniqueGUID'          : False,
                     'GlobalReadAccess'    : True,
-                    'LFNPFNConvention'    : True,
+                    'LFNPFNConvention'    : 'Strong',
                     'ResolvePFN'          : True,
                     'DefaultUmask'        : 0775,
                     'VisibleStatus'       : ['AprioriGood'],
@@ -393,6 +393,15 @@ class FileCatalogHandler( RequestHandler ):
     """ Find all the files satisfying the given metadata set
     """
     return gFileCatalogDB.fmeta.findFilesByMetadata( metaDict, path, self.getRemoteCredentials() )
+
+  types_getReplicasByMetadata = [ DictType, StringTypes, BooleanType ]
+  def export_getReplicasByMetadata( self, metaDict, path = '/', allStatus = False ):
+    """ Find all the files satisfying the given metadata set
+    """
+    return gFileCatalogDB.fileManager.getReplicasByMetadata( metaDict, 
+                                                             path, 
+                                                             allStatus, 
+                                                             self.getRemoteCredentials() )
 
   types_findFilesByMetadataDetailed = [ DictType, StringTypes ]
   def export_findFilesByMetadataDetailed( self, metaDict, path = '/' ):
