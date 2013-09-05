@@ -147,11 +147,18 @@ class BarGraph( PlotBase ):
       if ymin > 0.: ymin = 0.
       ymin *= 1.1
     
+    xmax=max(tmp_x)
     if self.log_xaxis:  
       xmin = 0.001
     else: 
       xmin = 0
-    self.ax.set_xlim( xmin=xmin, xmax=max(tmp_x)+offset )
+      
+    ymin = self.prefs.get( 'ymin', ymin )  
+    ymax = self.prefs.get( 'ymax', ymax )
+    xmin = self.prefs.get( 'xmin', xmin )  
+    xmax = self.prefs.get( 'xmax', xmax )       
+      
+    self.ax.set_xlim( xmin=xmin, xmax=xmax+offset )
     self.ax.set_ylim( ymin=ymin, ymax=ymax )
     if self.gdata.key_type == 'time':
       if start_plot and end_plot:
