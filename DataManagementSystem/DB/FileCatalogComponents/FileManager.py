@@ -676,3 +676,39 @@ class FileManager(FileManagerBase):
     for fileID,seID,repID,statusID in res['Value']:
       fileIDDict[repID] = ( fileID, seID, statusID )
     return S_OK(fileIDDict)
+
+  def _getDirectoryReplicas( self, dirID, allStatus=False, connection=False ):
+    """ Get replicas for files in a given directory
+    """
+    replicaStatusIDs = []
+    if not allStatus:
+      for status in self.db.visibleReplicaStatus:
+        result = self._getStatusInt( status, connection=connection )
+        if result['OK']:
+          replicaStatusIDs.append( result['Value'] )
+    fileStatusIDs = []
+    if not allStatus:
+      for status in self.db.visibleReplicaStatus:
+        result = self._getStatusInt( status, connection=connection )
+        if result['OK']:
+          fileStatusIDs.append( result['Value'] )
+    
+    if not self.db.lfnPfnConvention or self.db.lfnPfnConvention == "Weak":
+      req = 'SELECT FF.FileName,FR.FileID,FR.SEID,FI.PFN FROM FC_Files as FF,'
+      req += ' FC_Replicas as FR, FC_ReplicaInfo as FI'
+      req += ' WHERE FF.FileID=FR.FileID AND FR.RepID=FI.RepID AND FF.DirID=%d ' % dirID
+      if replicaStatusIDs:
+        req += ' AND FR.Status in (%s)' % intListToString( replicaStatusIDs )
+      if fileStatusIDs:
+        req += ' AND FF.Status in (%s)' % intListToString( fileStatusIDs )  
+    else:
+      req = "SELECT FF.FileName,FR.FileID,FR.SEID,'' FROM FC_Files as FF,"
+      req += ' FC_Replicas as FR'
+      req += ' WHERE FF.FileID=FR.FileID AND FF.DirID=%d ' % dirID
+      if replicaStatusIDs:
+        req += ' AND FR.Status in (%s)' % intListToString( replicaStatusIDs )
+      if fileStatusIDs:
+        req += ' AND FF.Status in (%s)' % intListToString( fileStatusIDs )                                                                             
+    
+    result = self.db._query( req, connection )
+    return result
