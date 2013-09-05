@@ -632,8 +632,18 @@ class DirectoryTreeBase:
       fileDict = result['Value']
       successful[path] = {} 
       for fileName in fileDict:
-        successful[path][fileName] = fileDict[fileName]        
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+        successful[path][fileName] = fileDict[fileName]  
+        
+    result = S_OK( {'Successful':successful, 'Failed':failed} )
+    
+    if self.db.lfnPfnConvention:
+      sePrefixDict = {}
+      resSE = self.db.seManager.getSEPrefixes()
+      if resSE['OK']:
+        sePrefixDict = resSE['Value']
+      result['Value']['SEPrefixes'] = sePrefixDict
+      
+    return result
 
   def getDirectorySize( self, lfns, longOutput = False, rawFileTables = False ):
     """ Get the total size of the requested directories. If long flag

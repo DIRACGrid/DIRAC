@@ -50,6 +50,8 @@ class FileCatalogDB(DB):
     self.uniqueGUID = databaseConfig['UniqueGUID']
     self.globalReadAccess = databaseConfig['GlobalReadAccess']
     self.lfnPfnConvention = databaseConfig['LFNPFNConvention']
+    if self.lfnPfnConvention == "None":
+      self.lfnPfnConvention = False
     self.resolvePfn = databaseConfig['ResolvePFN']
     self.umask = databaseConfig['DefaultUmask']
     self.visibleStatus = databaseConfig['VisibleStatus']
@@ -415,7 +417,7 @@ class FileCatalogDB(DB):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
+    return S_OK( {'Successful':successful, 'Failed':failed, 'SEPrefixes': res['Value'].get( 'SEPrefixes', {} ) } )
 
   def getReplicaStatus(self, lfns, credDict):
     res = self._checkPathPermissions('Read', lfns, credDict)
@@ -564,7 +566,7 @@ class FileCatalogDB(DB):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
+    return S_OK( { 'Successful':successful, 'Failed':failed, 'SEPrefixes': res['Value'].get( 'SEPrefixes', {} )} )
 
   def getDirectorySize(self,lfns,longOutput,fromFiles,credDict):
     res = self._checkPathPermissions('Read', lfns, credDict)

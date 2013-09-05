@@ -35,12 +35,24 @@ class FileCatalogClient(Client):
     
   def getReplicas(self, lfns, allStatus=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.getReplicas(lfns,allStatus)
+    result = rpcClient.getReplicas(lfns,allStatus)
+    if not result['OK']:
+      return result
+    
+    lfnDict = result['Value']
+    seDict = result['Value'].get( 'SEPrefixes', {} )
+    for lfn in lfnDict:
+      for se in lfnDict[lfn]:
+        if not lfnDict[lfn][se] and se in seDict:
+          lfnDict[lfn][se] = seDict[se] + lfn
+      
+    return S_OK( lfnDict )  
 
   def listDirectory(self, lfn, verbose=False, rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     result = rpcClient.listDirectory(lfn,verbose)
-    
+    if not result['OK']:
+      return result
     # Force returned directory entries to be LFNs
     for entryType in ['Files','SubDirs','Links']:
       for path in result['Value']['Successful']:
@@ -56,13 +68,21 @@ class FileCatalogClient(Client):
     return rpcClient.removeDirectory(lfn)
 
   def getDirectoryReplicas(self,lfns,allStatus=False,rpc='',url='',timeout=120):
+    
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     result = rpcClient.getDirectoryReplicas(lfns,allStatus)
+    if not result['OK']:
+      return result
+    
+    seDict = result['Value'].get( 'SEPrefixes', {} )
     for path in result['Value']['Successful']:
       pathDict = result['Value']['Successful'][path]
       for fname in pathDict.keys():
         detailsDict = pathDict.pop( fname )
         lfn = '%s/%s' % ( path, os.path.basename( fname ) )
+        for se in detailsDict:
+          if not detailsDict[se] and se in seDict:
+            detailsDict[se] = seDict[se] + lfn
         pathDict[lfn] = detailsDict
     return result      
 
