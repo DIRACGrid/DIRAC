@@ -26,7 +26,11 @@ def evalPrefs( *args, **kw ):
   for pDict in list( args ) + [kw]:
     if type( pDict ) == types.DictType:
       for key in pDict:
-        prefs[key] = pDict[key]
+        if key == "metadata":
+          for mkey in pDict[key]:
+            prefs[mkey] = pDict[key][mkey]
+        else:    
+          prefs[key] = pDict[key]
 
   return prefs
 
