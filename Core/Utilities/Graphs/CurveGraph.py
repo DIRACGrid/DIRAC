@@ -54,7 +54,8 @@ class CurveGraph( PlotBase ):
       else:
         labels = [(color,0.)]
       
-    tmp_y = []
+    tmp_max_y = []
+    tmp_min_y = []
     tmp_x = []
     for label,num in labels:  
       xdata = []
@@ -67,7 +68,8 @@ class CurveGraph( PlotBase ):
         if value is None:
           value = 0.
         tmp_x.append( key )
-        tmp_y.append( value )   
+        tmp_max_y.append( value + error )
+        tmp_min_y.append( value - error )   
         xdata.append( key )
         ydata.append( value )
         xerror.append( 0. )
@@ -87,9 +89,9 @@ class CurveGraph( PlotBase ):
                         markeredgecolor = darkenColor( color ), xerr = xerror, yerr = yerror, ecolor=color )  
       
                     
-    ymax = max(tmp_y)
+    ymax = max(tmp_max_y)
     ymax *= 1.1
-    ymin = min(tmp_y)
+    ymin = min(tmp_min_y)
     if ymin > 0.:
       ymin = 0.
     ymin *= 1.1

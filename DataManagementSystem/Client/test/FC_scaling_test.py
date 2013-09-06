@@ -279,7 +279,7 @@ def doStats( testArray ):
 
 numberOfFilesList = [ 10, 100, 500, 1000, 2000, 5000, 10000, 15000, 20000 ]
 numberOfFilesList_short = [ 100, 1000, 5000, 10000, 20000 ]
-numberOfClientsList = [1,2,3,5,7,10,12,15,20]
+numberOfClientsList = [1,2,3,5,7,10,12,15,20,30,50,75]
 numberOfClientsList_short = [1,5,10,20]
 directoriesList = [ (35455, "/auger/prod/QGSjetII_gr20_simADSTv2r5p1/en18.000/th0.65/2008/11/12"),
                     (24024, "/auger/prod/QGSjetII_gr20/2008/09/04/en17.500/th0.65"),
