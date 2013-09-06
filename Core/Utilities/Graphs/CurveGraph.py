@@ -59,24 +59,33 @@ class CurveGraph( PlotBase ):
     for label,num in labels:  
       xdata = []
       ydata = []
+      xerror = []
+      yerror = []
       color = self.palette.getColor(label)      
       plot_data = self.gdata.getPlotNumData(label)
-      for key, value in plot_data:
+      for key, value, error in plot_data:
         if value is None:
           value = 0.
         tmp_x.append( key )
         tmp_y.append( value )   
         xdata.append( key )
         ydata.append( value )
+        xerror.append( 0. )
+        yerror.append( error )
         
-      linestyle = self.prefs.get( 'linestyle', None )  
+      linestyle = self.prefs.get( 'linestyle', '-' )  
       marker = self.prefs.get( 'marker', 'o' )  
       markersize = self.prefs.get( 'markersize', 6. )  
       markeredgewidth = self.prefs.get( 'markeredgewidth', 1. )  
-      line = Line2D( xdata, ydata, color=color, linewidth=1., marker=marker, linestyle=linestyle,  
-                     markersize=markersize, markeredgewidth=markeredgewidth, 
-                     markeredgecolor = darkenColor( color ) )
-      self.ax.add_line( line )  
+      #line = Line2D( xdata, ydata, color=color, linewidth=1., marker=marker, linestyle=linestyle,  
+      #               markersize=markersize, markeredgewidth=markeredgewidth, 
+      #               markeredgecolor = darkenColor( color ) )
+      #self.ax.add_line( line )
+      
+      self.ax.errorbar( xdata, ydata, color=color, linewidth=1., marker=marker, linestyle=linestyle,  
+                        markersize=markersize, markeredgewidth=markeredgewidth, 
+                        markeredgecolor = darkenColor( color ), xerr = xerror, yerr = yerror, ecolor=color )  
+      
                     
     ymax = max(tmp_y)
     ymax *= 1.1
