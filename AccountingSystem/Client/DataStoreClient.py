@@ -23,7 +23,7 @@ class DataStoreClient:
   """
   def __init__( self, setup = False, retryGraceTime = 0 ):
     self.__setup = setup
-    self.__maxRecordsInABundle = 100
+    self.__maxRecordsInABundle = 1000
     self.__registersList = []
     self.__maxTimeRetrying = retryGraceTime
     self.__lastSuccessfulCommit = time.time()
