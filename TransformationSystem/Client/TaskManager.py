@@ -197,7 +197,13 @@ class RequestTasks( TaskBase ):
       res = self.requestClient.getRequestStatus( taskName )
       newStatus = ''
       if res['OK']:
-        newStatus = res['Value']['RequestStatus']
+        # FIXME: for compatibility between old and new RMS
+        try:
+          # old
+          newStatus = res['Value']['RequestStatus']
+        except TypeError:
+          # new
+          newStatus = res['Value']
       elif re.search( "Failed to retrieve RequestID for Request", res['Message'] ):
         newStatus = 'Failed'
       else:
