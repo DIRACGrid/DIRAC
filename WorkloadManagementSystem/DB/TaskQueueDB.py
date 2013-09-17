@@ -35,6 +35,7 @@ class TaskQueueDB( DB ):
     self.__singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime' )
     self.__mandatoryMatchFields = ( 'Setup', 'CPUTime' )
     self.__priorityIgnoredFields = ( 'Sites', 'BannedSites' )
+    self.__maxJobsInTQ = 5000
     self.__defaultCPUSegments = maxCPUSegments
     self.__maxMatchRetry = 3
     self.__jobPriorityBoundaries = ( 0.001, 10 )
@@ -465,7 +466,7 @@ class TaskQueueDB( DB ):
     """ Disable and find TQ
     """
     for i in range( retries ):
-      result = self.findTaskQueue( tqDefDict, skipDefinitionCheck = skipDefinitionCheck, connObj = connObj )
+      result = self.__findSmallestTaskQueue( tqDefDict, skipDefinitionCheck = skipDefinitionCheck, connObj = connObj )
       if not result[ 'OK' ]:
         return result
       data = result[ 'Value' ]
@@ -478,7 +479,7 @@ class TaskQueueDB( DB ):
         return S_OK( data )
     return S_ERROR( "Could not disable TQ" )
 
-  def findTaskQueue( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
+  def __findSmallestTaskQueue( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
     """
       Find a task queue that has exactly the same requirements
     """
@@ -487,17 +488,15 @@ class TaskQueueDB( DB ):
     if not result[ 'OK' ]:
       return result
 
-    sqlCmd = "SELECT `tq_TaskQueues`.TQId, `tq_TaskQueues`.Enabled FROM `tq_TaskQueues` WHERE"
-    sqlCmd = "%s  %s" % ( sqlCmd, result[ 'Value' ] )
+    sqlCmd = "SELECT COUNT( `tq_Jobs`.JobID ), `tq_TaskQueues`.TQId, `tq_TaskQueues`.Enabled FROM `tq_TaskQueues`, `tq_Jobs`"
+    sqlCmd = "%s WHERE `tq_TaskQueues`.TQId = `tq_Jobs`.TQId AND %s GROUP BY `tq_Jobs`.TQId ORDER BY COUNT( `tq_Jobs`.JobID ) ASC" % ( sqlCmd, result[ 'Value' ] )
     result = self._query( sqlCmd, conn = connObj )
     if not result[ 'OK' ]:
       return S_ERROR( "Can't find task queue: %s" % result[ 'Message' ] )
     data = result[ 'Value' ]
-    if len( data ) == 0:
+    if len( data ) == 0 or data[0][0] >= self.__maxJobsInTQ:
       return S_OK( { 'found' : False } )
-    if len( data ) > 1:
-      gLogger.warn( "Found two task queues for the same requirements", self.__strDict( tqDefDict ) )
-    return S_OK( { 'found' : True, 'tqId' : data[0][0], 'enabled' : data[0][1] } )
+    return S_OK( { 'found' : True, 'tqId' : data[0][1], 'enabled' : data[0][2], 'jobs' : data[0][0] } )
 
 
   def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 50, numQueuesPerTry = 10, negativeCond = {} ):
