@@ -1,7 +1,7 @@
 ########################################################################
 # $HeadURL$
-# File : CondorComputingElement.py
-# Author : A.Tsaregorodtsev
+# File : SSHOSGComputingElement.py
+# Author : S.Poss
 ########################################################################
 
 from DIRAC.Resources.Computing.SSHComputingElement  import SSH, SSHComputingElement 
