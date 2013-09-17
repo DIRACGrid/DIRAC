@@ -338,7 +338,7 @@ class TaskQueueDB( DB ):
         return result
     return S_OK()
 
-  def setTaskQueueState( self, tqId, enabled = True, connObj = False ):
+  def __setTaskQueueEnabled( self, tqId, enabled = True, connObj = False ):
     if enabled:
       enabled = "+ 1"
     else:
@@ -406,7 +406,7 @@ class TaskQueueDB( DB ):
       if newTQ:
         self.recalculateTQSharesForEntity( tqDefDict[ 'OwnerDN' ], tqDefDict[ 'OwnerGroup' ], connObj = connObj )
     finally:
-      self.setTaskQueueState( tqId, True )
+      self.__setTaskQueueEnabled( tqId, True )
     return S_OK()
 
   def __insertJobInTaskQueue( self, jobId, tqId, jobPriority, checkTQExists = True, connObj = False ):
@@ -424,8 +424,8 @@ class TaskQueueDB( DB ):
       if not result[ 'OK' ] or len ( result[ 'Value' ] ) == 0:
         return S_OK( "Can't find task queue with id %s: %s" % ( tqId, result[ 'Message' ] ) )
     hackedPriority = self.__hackJobPriority( jobPriority )
-    result = self._update( "INSERT INTO tq_Jobs ( TQId, JobId, Priority, RealPriority ) VALUES ( %s, %s, %s, %f )" % ( tqId, jobId, jobPriority, hackedPriority ), conn = connObj )
-    if not result[ 'OK' ] and result[ 'Message' ].find( "Duplicate entry" ) == -1:
+    result = self._update( "INSERT INTO tq_Jobs ( TQId, JobId, Priority, RealPriority ) VALUES ( %s, %s, %s, %f ) ON DUPLICATE KEY UPDATE TQId = %s, Priority = %s, RealPriority = %f" % ( tqId, jobId, jobPriority, hackedPriority, tqId, jobPriority, hackedPriority ), conn = connObj )
+    if not result[ 'OK' ]:
       return result
     return S_OK()
 
@@ -471,10 +471,10 @@ class TaskQueueDB( DB ):
       data = result[ 'Value' ]
       if not data[ 'found' ]:
         return result
-      result = self._update( "UPDATE `tq_TaskQueues` SET Enabled = Enabled - 1 WHERE TQId = %d" % data[ 'tqId' ] )
-      if not result[ 'OK' ]:
-        return result
-      if result[ 'Value' ] > 0:
+      if data[ 'enabled' ] < 1:
+        gLogger.notice( "TaskQueue {tqId} seems to be already disabled ({enabled})".format( **data ) )
+      result = self.__setTaskQueueEnabled( data[ 'tqId' ], False )
+      if result[ 'OK' ]:
         return S_OK( data )
     return S_ERROR( "Could not disable TQ" )
 
@@ -487,7 +487,7 @@ class TaskQueueDB( DB ):
     if not result[ 'OK' ]:
       return result
 
-    sqlCmd = "SELECT `tq_TaskQueues`.TQId FROM `tq_TaskQueues` WHERE"
+    sqlCmd = "SELECT `tq_TaskQueues`.TQId, `tq_TaskQueues`.Enabled FROM `tq_TaskQueues` WHERE"
     sqlCmd = "%s  %s" % ( sqlCmd, result[ 'Value' ] )
     result = self._query( sqlCmd, conn = connObj )
     if not result[ 'OK' ]:
@@ -497,7 +497,7 @@ class TaskQueueDB( DB ):
       return S_OK( { 'found' : False } )
     if len( data ) > 1:
       gLogger.warn( "Found two task queues for the same requirements", self.__strDict( tqDefDict ) )
-    return S_OK( { 'found' : True, 'tqId' : data[0][0] } )
+    return S_OK( { 'found' : True, 'tqId' : data[0][0], 'enabled' : data[0][1] } )
 
 
   def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 50, numQueuesPerTry = 10, negativeCond = {} ):
@@ -654,7 +654,6 @@ class TaskQueueDB( DB ):
     Generate the SQL needed to match a task queue
     """
     #Only enabled TQs
-    #sqlCondList = [ "Enabled >= 1" ]
     sqlCondList = []
     sqlTables = { "tq_TaskQueues" : "tq" }
     #If OwnerDN and OwnerGroup are defined only use those combinations that make sense
@@ -935,7 +934,7 @@ class TaskQueueDB( DB ):
       sqlSelectEntries.append( "`tq_TaskQueues`.%s" % field )
       sqlGroupEntries.append( "`tq_TaskQueues`.%s" % field )
     sqlCmd = "SELECT %s FROM `tq_TaskQueues`, `tq_Jobs`" % ", ".join( sqlSelectEntries )
-    sqlTQCond = "AND Enabled >= 1"
+    sqlTQCond = ""
     if tqIdList != False:
       if len( tqIdList ) == 0:
         return S_OK( {} )
