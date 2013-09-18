@@ -571,7 +571,8 @@ class DirectoryMetadata:
     for meta in metaDict.keys():
       result = self.__getDirMeta(meta, pathString)
       if not result['OK']:
-        return result
+        #neither the dir nor the parents have this meta set
+        continue
       if len( result['Value'] ) > 1:
         return S_ERROR( 'Metadata conflict for directory %s' % path )
       if result['Value']:
@@ -579,6 +580,8 @@ class DirectoryMetadata:
         if finalmetadict[meta] == metaval:
           #the parent directory or the current directory is already OK for that meta data, no need to further check for that
           del finalmetadict[meta]
+        else:
+          return S_ERROR("Incompatible meta query with %s" % meta)
     
     if finalmetadict:
       pathSelection = ''
