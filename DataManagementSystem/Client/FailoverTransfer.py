@@ -176,11 +176,14 @@ class FailoverTransfer( object ):
     """ Sets a registration request
 
     :param str lfn: LFN
-    :param list se: list of SE
-    :param list catalog: list of catalogs to use
+    :param list se: list of SE (or just string)
+    :param list catalog: list (or string) of catalogs to use
     :param dict fileDict: file metadata
     """
     self.log.info( 'Setting registration request for %s at %s.' % ( lfn, targetSE ) )
+
+    if not type( catalog ) == type( [] ):
+      catalog = [catalog]
 
     for cat in catalog:
 
