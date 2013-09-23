@@ -120,10 +120,10 @@ class FileCatalog:
           successful[lfn][catalogName] = result
     # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
     for catalogName, errorMessage in failedCatalogs:
-      for _file in allLfns:
-        if not failed.has_key( file ):
-          failed[file] = {}
-        failed[file][catalogName] = errorMessage
+      for lfn in allLfns:
+        if not failed.has_key( lfn ):
+          failed[lfn] = {}
+        failed[lfn][catalogName] = errorMessage
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -151,7 +151,7 @@ class FileCatalog:
         else:
           return res  
     if ( len( successful ) == 0 ) and ( len( failed ) == 0 ):
-      return S_ERROR( 'Failed to perform %s from any catalog' % self.call )
+      return S_ERROR( "Failed to perform %s from any catalog" % self.call )
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
