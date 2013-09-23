@@ -120,7 +120,7 @@ class FileCatalog:
           successful[lfn][catalogName] = result
     # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
     for catalogName, errorMessage in failedCatalogs:
-      for file in allLfns:
+      for _file in allLfns:
         if not failed.has_key( file ):
           failed[file] = {}
         failed[file][catalogName] = errorMessage
@@ -132,7 +132,7 @@ class FileCatalog:
     """
     successful = {}
     failed = {}
-    for catalogName, oCatalog, master in self.readCatalogs:
+    for _catalogName, oCatalog, _master in self.readCatalogs:
       method = getattr( oCatalog, self.call )
       res = method( *parms, **kws )
       if res['OK']:
@@ -184,13 +184,13 @@ class FileCatalog:
     catalog_removed = False
 
     for i in range( len( self.readCatalogs ) ):
-      catalog, object, master = self.readCatalogs[i]
+      catalog, _object, _master = self.readCatalogs[i]
       if catalog == catalogName:
         del self.readCatalogs[i]
         catalog_removed = True
         break
     for i in range( len( self.writeCatalogs ) ):
-      catalog, object, master = self.writeCatalogs[i]
+      catalog, _object, _master = self.writeCatalogs[i]
       if catalog == catalogName:
         del self.writeCatalogs[i]
         catalog_removed = True
