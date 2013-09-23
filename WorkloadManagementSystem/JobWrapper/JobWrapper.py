@@ -34,8 +34,6 @@ from DIRAC.Core.Utilities.Adler                                     import fileA
 from DIRAC.Core.Utilities                                           import List
 from DIRAC.Core.Utilities                                           import DEncode
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, Time
-from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
-# from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
 
 import DIRAC
 
@@ -1402,17 +1400,6 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
       gLogger.warn( result['Message'] )
       if 'Maximum number of reschedulings is reached' in result['Message']:
         rescheduleResult = 'Failed'
-
-    # Send mail to debug errors
-    # mailAddress = DIRAC.alarmMail
-    # site = DIRAC.siteName()
-    # subject = 'Job rescheduled at %s' % site
-    # ret = systemCall( 5, 'hostname' )
-    # wn = ret['Value'][1]
-    # msg = 'Job %s rescheduled at %s, wn=%s\n' % ( jobID, site, wn )
-    # msg += message
-
-    # NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
 
     return rescheduleResult
   except Exception:
