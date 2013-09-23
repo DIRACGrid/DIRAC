@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL: $
-########################################################################
 """ Failover Transfer
 
     The failover transfer client exposes the following methods:
@@ -22,15 +19,15 @@
     getRequestObject() allows to retrieve the modified request object
     after transfer operations.
 """
-__RCSID__ = "$Id: $"
-
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
 
 from DIRAC import S_OK, S_ERROR, gLogger
+
+from DIRAC.DataManagementSystem.Client.ReplicaManager   import ReplicaManager
+from DIRAC.Resources.Storage.StorageElement             import StorageElement
+from DIRAC.RequestManagementSystem.Client.Request       import Request
+from DIRAC.RequestManagementSystem.Client.Operation     import Operation
+from DIRAC.RequestManagementSystem.Client.File          import File
+
 
 class FailoverTransfer( object ):
   """ .. class:: FailoverTransfer
@@ -53,12 +50,12 @@ class FailoverTransfer( object ):
 
   #############################################################################
   def transferAndRegisterFile( self,
-                               fileName,
-                               localPath,
-                               lfn,
-                               destinationSEList,
-                               fileMetaDict,
-                               fileCatalog = None ):
+                                  fileName,
+                                  localPath,
+                                  lfn,
+                                  destinationSEList,
+                                  fileMetaDict,
+                                  fileCatalog = None ):
     """Performs the transfer and register operation with failover.
     """
     errorList = []
@@ -112,13 +109,13 @@ class FailoverTransfer( object ):
 
   #############################################################################
   def transferAndRegisterFileFailover( self,
-                                       fileName,
-                                       localPath,
-                                       lfn,
-                                       targetSE,
-                                       failoverSEList,
-                                       fileMetaDict,
-                                       fileCatalog = None ):
+                                          fileName,
+                                          localPath,
+                                          lfn,
+                                          targetSE,
+                                          failoverSEList,
+                                          fileMetaDict,
+                                          fileCatalog = None ):
     """Performs the transfer and register operation to failover storage and sets the
        necessary replication and removal requests to recover.
     """
