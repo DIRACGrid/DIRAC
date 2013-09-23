@@ -141,12 +141,6 @@ class FailoverTransfer( object ):
     return S_OK( '%s uploaded to a failover SE' % fileName )
 
   #############################################################################
-  def getRequestObject( self ):
-    """Returns the potentially modified request object in order to propagate changes.
-    """
-    return S_OK( self.request )
-
-  #############################################################################
   def __setFileReplicationRequest( self, lfn, se, fileMetaDict ):
     """ Sets a registration request.
     """

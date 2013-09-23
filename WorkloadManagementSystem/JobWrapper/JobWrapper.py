@@ -35,7 +35,7 @@ from DIRAC.Core.Utilities                                           import List
 from DIRAC.Core.Utilities                                           import DEncode
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, Time
 from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
-#from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
+# from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
 
 import DIRAC
 
@@ -942,17 +942,6 @@ class JobWrapper:
 
       self.jobReport.setJobParameter( 'UploadedOutputData', report, sendFlag = False )
 
-    # Write out failover transfer request object in case of deferred operations
-    result = failoverTransfer.getRequestObject()
-    if not result['OK']:
-      self.log.error( result )
-      return S_ERROR( 'Could not retrieve modified request' )
-
-    # no fucking way!!!
-    # request = result['Value']
-    # if not request.isEmpty()['Value']:
-    #  request.toFile( 'transferOutputDataFiles_request.xml' )
-
     # TODO Notify the user of any output data / output sandboxes
     if missing:
       self.__setJobParam( 'OutputData', 'MissingFiles: %s' % ', '.join( missing ) )
@@ -1415,15 +1404,15 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
         rescheduleResult = 'Failed'
 
     # Send mail to debug errors
-    #mailAddress = DIRAC.alarmMail
-    #site = DIRAC.siteName()
-    #subject = 'Job rescheduled at %s' % site
-    #ret = systemCall( 5, 'hostname' )
-    #wn = ret['Value'][1]
-    #msg = 'Job %s rescheduled at %s, wn=%s\n' % ( jobID, site, wn )
-    #msg += message
+    # mailAddress = DIRAC.alarmMail
+    # site = DIRAC.siteName()
+    # subject = 'Job rescheduled at %s' % site
+    # ret = systemCall( 5, 'hostname' )
+    # wn = ret['Value'][1]
+    # msg = 'Job %s rescheduled at %s, wn=%s\n' % ( jobID, site, wn )
+    # msg += message
 
-    #NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
+    # NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
 
     return rescheduleResult
   except Exception:
