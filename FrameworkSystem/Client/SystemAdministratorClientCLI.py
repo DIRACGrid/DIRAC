@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 import cmd
 import sys
 import pprint
-import getpass
+import os
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 import DIRAC.Core.Utilities.InstallTools as InstallTools
@@ -56,7 +56,6 @@ def printTable( fields, records ):
 class SystemAdministratorClientCLI( cmd.Cmd ):
   """
   """
-
   def __errMsg( self, errMsg ):
     print "%s %s" % ( colorize( "[ERROR]", "red" ), errMsg )
 
@@ -65,9 +64,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     # Check if Port is given
     self.host = None
     self.port = None
-    self.prompt = '(%s)> ' % colorize( "no host", "yellow" )
+    self.prompt = '[%s]> ' % colorize( "no host", "yellow" )
     if host:
       self.__setHost( host )
+    self.cwd = ''  
 
   def __setHost( self, host ):
     hostList = host.split( ':' )
@@ -83,7 +83,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     else:
       self.__errMsg( "Could not connect to %s: %s" % ( self.host, result[ 'Message' ] ) )
       colorHost = colorize( host, "red" )
-    self.prompt = '(%s)> ' % colorHost
+    self.prompt = '[%s]> ' % colorHost
 
   def __getClient( self ):
     return SystemAdministratorClient( self.host, self.port )
@@ -719,9 +719,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           exec <cmd> [<arguments>]
     """
     client = SystemAdministratorClient( self.host, self.port )
-    result = client.executeCommand( args )
+    command = 'cd %s;' % self.cwd + args
+    result = client.executeCommand( command )
     if not result['OK']:
       self.__errMsg( result['Message'] )
+      return
     status, output, error = result['Value']
     print
     for line in output.split( '\n' ):
@@ -755,6 +757,29 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       command = elements[0]
       args = ' '.join( elements[1:] )
       eval( "self.do_%s(args)" % command )
+      
+  def do_cd( self, args ):    
+    """ Change the current working directory on the target host
+    
+        Usage:
+          cd <dirpath>
+    """
+    argss = args.split()
+    newPath = argss[0]
+    if newPath.startswith( '/' ):
+      self.cwd = newPath
+    else:
+      newPath = self.cwd + '/' + newPath
+      self.cwd = os.path.normpath( newPath )  
+    self.prompt = '[%s:%s]> ' % ( self.host, self.cwd )  
+
+  def default( self, args ):
+
+    argss = args.split()
+    command = argss[0]
+    if command in ['ls','cat','pwd','chown','chmod','chgrp',
+                   'id','date','uname','cp','mv','scp']:
+      self.do_exec( args )
 
   def do_exit( self, args ):
     """ Exit the shell.

@@ -1,3 +1,62 @@
+[v6r10-pre5]
+
+*Core
+FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
+     JobDB, PilotAgentsDB) after the new movement to the new MySQL implementation with a persistent 
+     connection per running thread
+NEW: SystemAdministratorCLI - better support for executing remote commands 
+FIX: DIRAC.__init__.py - avoid re-definition of platform variable    
+NEW: Graphs - added CurveGraph class to draw non-stacked lines with markers
+NEW: Graphs - allow graphs with negative Y values
+
+*DMS
+CHANGE: DFC - optimization and bug fixes of the bulk file addition
+FIX: TransferAgent - protection against badly defined LFNs in collectFiles()
+NEW: DFC - added getDirectoryReplicas() service method support similar to the LFC
+CHANGE: DFC - added new option VisibleReplicaStatus which is used in replica getting commands
+CHANGE: FileCatalogClientCLI client shows number of replicas in the 2nd column rather than 
+        unimplemented number of links
+CHANGE: DFC - optimizations for the bulk replica look-up
+CHANGE: DFC updated scalability testing tool FC_Scaling_test.py        
+NEW: DFC - methods returning replicas provide also SE definitions instead of PFNs to construct PFNs on the client side
+NEW: DFC - added getReplicasByMetadata() interface
+CHANGE: DFC - optimized getDirectoryReplicas()
+CHANGE: FileCatalogClient - treat the reduced output from various service queries restoring LFNs and PFNs on the fly
+NEW: DFC - LFNPFNConvention flag can be None, Weak or Strong to facilitate compatibility with LFC data 
+
+*WMS
+CHANGE: JobPolicy - optimization for bulk job verification
+NEW: JobPolicy - added getControlledUsers() to get users which jobs can be accessed for 
+     a given operation
+CHANGE: JobMonitoringHandler - Avoid doing a selection of all Jobs, first count matching jobs 
+        and then use "limit" to select only the required JobIDs.
+NEW: JobMonitoringHandler - use JobPolicy to filter jobs in getJobSummaryWeb()
+NEW: new Operations option /Services/JobMonitoring/GlobalJobsInfo ( True by default ) to 
+     allow or not job info lookup by anybody, used in JobMonitoringHandler       
+BUGFIX: SiteDirector - take into account the target queue Platform
+BUGFIX: JobDB - bug in __insertNewJDL()        
+        
+*Resources
+NEW: added SSHOARComputingElement class        
+        
+*TS
+CHANGE: TransformationClient(DB,Manager) - set file status for transformation as bulk operation 
+CHANGE: TransformationClient - applying state machine when changing transformation status
+BUGFIX: TransformationClient(Handler) - few minor fixes
+NEW: TransformationDB - backported __deleteTransformationFileTask(s) methods
+
+*RMS
+NEW: Migrate to use the new Request Management by all the clients
+CHANGE: RequestContainer - Retry failed transfers 10 times and avoid sub-requests to be set Done 
+        when the files are failed
+CHANGE: Use a unique name for storing the proxy as processes may use the same "random" name and 
+        give conflicts
+NEW: RequestClient(Handler) - add new method readRequest( requestname)                 
+
+*Workflow
+NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
+     simplify construction of workflows        
+
 [v6r9p16]
 
 *TS

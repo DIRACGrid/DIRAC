@@ -50,9 +50,12 @@ class FileCatalogDB(DB):
     self.uniqueGUID = databaseConfig['UniqueGUID']
     self.globalReadAccess = databaseConfig['GlobalReadAccess']
     self.lfnPfnConvention = databaseConfig['LFNPFNConvention']
+    if self.lfnPfnConvention == "None":
+      self.lfnPfnConvention = False
     self.resolvePfn = databaseConfig['ResolvePFN']
     self.umask = databaseConfig['DefaultUmask']
     self.visibleStatus = databaseConfig['VisibleStatus']
+    self.visibleReplicaStatus = databaseConfig['VisibleReplicaStatus']
 
     try:
       # Obtain the plugins to be used for DB interaction
@@ -414,7 +417,7 @@ class FileCatalogDB(DB):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
+    return S_OK( {'Successful':successful, 'Failed':failed, 'SEPrefixes': res['Value'].get( 'SEPrefixes', {} ) } )
 
   def getReplicaStatus(self, lfns, credDict):
     res = self._checkPathPermissions('Read', lfns, credDict)
@@ -558,12 +561,12 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectoryReplicas(res['Value']['Successful'])
+    res = self.dtree.getDirectoryReplicas(res['Value']['Successful'],allStatus)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
+    return S_OK( { 'Successful':successful, 'Failed':failed, 'SEPrefixes': res['Value'].get( 'SEPrefixes', {} )} )
 
   def getDirectorySize(self,lfns,longOutput,fromFiles,credDict):
     res = self._checkPathPermissions('Read', lfns, credDict)

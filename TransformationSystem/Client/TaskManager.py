@@ -11,9 +11,11 @@ from DIRAC.Core.Security.ProxyInfo                              import getProxyI
 from DIRAC.Core.Utilities.List                                  import fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
 from DIRAC.Interfaces.API.Job                                   import Job
-from DIRAC.Core.DISET.RPCClient                                 import RPCClient
-from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
-from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
+from DIRAC.RequestManagementSystem.Client.ReqClient             import ReqClient
+from DIRAC.RequestManagementSystem.Client.Request               import Request
+from DIRAC.RequestManagementSystem.Client.Operation             import Operation
+from DIRAC.RequestManagementSystem.Client.File                  import File
+from DIRAC.RequestManagementSystem.private.RequestValidator     import gRequestValidator
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
@@ -33,7 +35,7 @@ class TaskBase( object ):
     else:
       self.log = logger
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
+  def prepareTransformationTasks( self, transBody, taskDict ):
     return S_ERROR( "Not implemented" )
 
   def submitTransformationTasks( self, taskDict ):
@@ -70,7 +72,13 @@ class TaskBase( object ):
 
 class RequestTasks( TaskBase ):
 
-  def __init__( self, transClient = None, logger = None, requestClient = None ):
+  def __init__( self, transClient = None, logger = None, requestClient = None, requestClass = None, ):
+    """ c'tor
+
+        the requestClass is by default Request.
+        If extensions want to use an extended type, they can pass it as a parameter.
+        This is the same behavior as WorfkloTasks and jobClass
+    """
 
     if not logger:
       logger = gLogger.getSubLogger( 'RequestTasks' )
@@ -78,35 +86,61 @@ class RequestTasks( TaskBase ):
     super( RequestTasks, self ).__init__( transClient, logger )
 
     if not requestClient:
-      self.requestClient = RequestClient()
+      self.requestClient = ReqClient()
     else:
       self.requestClient = requestClient
 
+    if not requestClass:
+      self.requestClass = Request
+    else:
+      self.requestClass = requestClass
+
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
-    requestType = 'transfer'
-    requestOperation = 'replicateAndRegister'
+    """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
+    """
+    requestOperation = 'ReplicateAndRegister'
     if transBody:
       try:
-        requestType, requestOperation = transBody.split( ';' )
+        _requestType, requestOperation = transBody.split( ';' )
       except AttributeError:
         pass
+
     for taskID in sorted( taskDict ):
       paramDict = taskDict[taskID]
-      transID = paramDict['TransformationID']
-      oRequest = RequestContainer( init = False )
-      subRequestIndex = oRequest.initiateSubRequest( requestType )['Value']
-      attributeDict = {'Operation':requestOperation, 'TargetSE':paramDict['TargetSE']}
-      oRequest.setSubRequestAttributes( subRequestIndex, requestType, attributeDict )
-      files = []
-      for lfn in paramDict['InputData'].split( ';' ):
-        files.append( {'LFN':lfn} )
-      oRequest.setSubRequestFiles( subRequestIndex, requestType, files )
-      requestName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-      oRequest.setRequestAttributes( {'RequestName':requestName} )
-      taskDict[taskID]['TaskObject'] = oRequest.toXML()['Value']
+      if paramDict['InputData']:
+        transID = paramDict['TransformationID']
+
+        oRequest = Request()
+        transfer = Operation()
+        transfer.Type = requestOperation
+        transfer.TargetSE = paramDict['TargetSE']
+
+        if type( paramDict['InputData'] ) == type( [] ):
+          files = paramDict['InputData']
+        elif type( paramDict['InputData'] ) == type( '' ):
+          files = paramDict['InputData'].split( ';' )
+        for lfn in files:
+          trFile = File()
+          trFile.LFN = lfn
+
+          transfer.addFile( trFile )
+
+        oRequest.addOperation( transfer )
+        oRequest.RequestName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
+        oRequest.OwnerDN = owner
+        oRequest.OwnerGroup = ownerGroup
+
+      isValid = gRequestValidator.validate( oRequest )
+      if not isValid['OK']:
+        return isValid
+
+      taskDict[taskID]['TaskObject'] = oRequest
+
     return S_OK( taskDict )
 
   def submitTransformationTasks( self, taskDict ):
+    """ Submit requests one by one
+    """
     submitted = 0
     failed = 0
     startTime = time.time()
@@ -129,18 +163,13 @@ class RequestTasks( TaskBase ):
       self.log.info( 'submitTasks: Failed to submit %d tasks to RMS.' % ( failed ) )
     return S_OK( taskDict )
 
-  def submitTaskToExternal( self, request ):
-    """ Submits a request using RequestClient
+  def submitTaskToExternal( self, oRequest ):
+    """ Submits a request using ReqClient
     """
-    if type( request ) in types.StringTypes:
-      oRequest = RequestContainer( request )
-      name = oRequest.getRequestName()['Value']
-    elif type( request ) == types.InstanceType:
-      name = request.getRequestName()['Value']
-      request = request.toXML()['Value']
+    if isinstance( oRequest, self.requestClass ):
+      return self.requestClient.putRequest( oRequest )
     else:
-      return S_ERROR( "Request should be string or request object" )
-    return self.requestClient.setRequest( name, request )
+      return S_ERROR( "Request should be a Request object" )
 
   def updateTransformationReservedTasks( self, taskDicts ):
     taskNameIDs = {}

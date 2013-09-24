@@ -438,3 +438,20 @@ def makeDataFromCSV( csv ):
       graph_data[label] = dict( plot_data )
 
   return graph_data
+
+def darkenColor( color, factor=2 ):
+  
+  c1 = int( color[1:3], 16 )
+  c2 = int( color[3:5], 16 )
+  c3 = int( color[5:7], 16 )
+  
+  c1 /= factor
+  c2 /= factor
+  c3 /= factor
+  
+  result = '#' + (str( hex( c1) ).replace( '0x', '' ).zfill( 2 ) + 
+                  str( hex( c2) ).replace( '0x', '' ).zfill( 2 ) + 
+                  str( hex( c3) ).replace( '0x', '' ).zfill( 2 ) )
+  return result
+  
+  

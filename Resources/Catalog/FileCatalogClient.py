@@ -5,8 +5,7 @@
 
 __RCSID__ = "$Id$"
 
-import types
-
+import types, os
 from DIRAC                              import S_OK, S_ERROR
 from DIRAC.Core.Base.Client             import Client
 
@@ -36,19 +35,56 @@ class FileCatalogClient(Client):
     
   def getReplicas(self, lfns, allStatus=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.getReplicas(lfns,allStatus)
+    result = rpcClient.getReplicas(lfns,allStatus)
+    if not result['OK']:
+      return result
+    
+    lfnDict = result['Value']
+    seDict = result['Value'].get( 'SEPrefixes', {} )
+    for lfn in lfnDict:
+      for se in lfnDict[lfn]:
+        if not lfnDict[lfn][se] and se in seDict:
+          lfnDict[lfn][se] = seDict[se] + lfn
+      
+    return S_OK( lfnDict )  
 
   def listDirectory(self, lfn, verbose=False, rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.listDirectory(lfn,verbose)
+    result = rpcClient.listDirectory(lfn,verbose)
+    if not result['OK']:
+      return result
+    # Force returned directory entries to be LFNs
+    for entryType in ['Files','SubDirs','Links']:
+      for path in result['Value']['Successful']:
+        entryDict = result['Value']['Successful'][path][entryType]
+        for fname in entryDict.keys():
+          detailsDict = entryDict.pop( fname )
+          lfn = '%s/%s' % ( path, os.path.basename( fname ) )
+          entryDict[lfn] = detailsDict
+    return result      
 
   def removeDirectory(self, lfn, recursive=False, rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     return rpcClient.removeDirectory(lfn)
 
   def getDirectoryReplicas(self,lfns,allStatus=False,rpc='',url='',timeout=120):
+    
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.getDirectoryReplicas(lfns,allStatus)
+    result = rpcClient.getDirectoryReplicas(lfns,allStatus)
+    if not result['OK']:
+      return result
+    
+    seDict = result['Value'].get( 'SEPrefixes', {} )
+    for path in result['Value']['Successful']:
+      pathDict = result['Value']['Successful'][path]
+      for fname in pathDict.keys():
+        detailsDict = pathDict.pop( fname )
+        lfn = '%s/%s' % ( path, os.path.basename( fname ) )
+        for se in detailsDict:
+          if not detailsDict[se] and se in seDict:
+            detailsDict[se] = seDict[se] + lfn
+        pathDict[lfn] = detailsDict
+    return result      
 
   def findFilesByMetadata(self,metaDict,path='/',rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
@@ -60,9 +96,9 @@ class FileCatalogClient(Client):
     elif type(result['Value']) == types.DictType:
       # Process into the lfn list
       fileList = []
-      for dir,fList in result['Value'].items():
+      for dir_,fList in result['Value'].items():
         for f in fList:
-          fileList.append(dir+'/'+f)
+          fileList.append(dir_+'/'+f)
       result['Value'] = fileList    
       return result
     else:

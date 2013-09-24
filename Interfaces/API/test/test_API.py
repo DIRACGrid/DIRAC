@@ -49,10 +49,13 @@ class APISuccess( APITestCase ):
 <Parameter name="Owner" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified ID"><value><![CDATA[ownerName]]></value></Parameter>
 <Parameter name="OwnerGroup" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified owner group."><value><![CDATA[ownerGroup]]></value></Parameter>
 <ModuleDefinition>
-<body><![CDATA[from DIRAC.Core.Workflow.Modules.Script import Script
+<body><![CDATA[
+from DIRAC.Workflow.Modules.Script import Script
 ]]></body>
 <origin></origin>
-<description><![CDATA[A  script module that can execute any provided script.]]></description>
+<description><![CDATA[ The Script class provides a simple way for users to specify an executable
+    or file to run (and is also a simple example of a workflow module).
+]]></description>
 <descr_short></descr_short>
 <required></required>
 <version>0.0</version>
@@ -64,13 +67,12 @@ class APISuccess( APITestCase ):
 <type>ScriptStep1</type>
 <description><![CDATA[]]></description>
 <descr_short></descr_short>
-<Parameter name="name" type="string" linked_module="" linked_parameter="" in="False" out="False" description="Name of executable"><value><![CDATA[]]></value></Parameter>
-<Parameter name="executable" type="string" linked_module="" linked_parameter="" in="False" out="False" description="Executable Script"><value><![CDATA[]]></value></Parameter>
-<Parameter name="arguments" type="string" linked_module="" linked_parameter="" in="False" out="False" description="Arguments for executable Script"><value><![CDATA[]]></value></Parameter>
-<Parameter name="logFile" type="string" linked_module="" linked_parameter="" in="False" out="False" description="Log file name"><value><![CDATA[]]></value></Parameter>
+<Parameter name="executable" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Executable Script"><value><![CDATA[]]></value></Parameter>
+<Parameter name="arguments" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Arguments for executable Script"><value><![CDATA[]]></value></Parameter>
+<Parameter name="applicationLog" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Log file name"><value><![CDATA[]]></value></Parameter>
 <ModuleInstance>
 <type>Script</type>
-<name>ScriptStep1</name>
+<name>Script</name>
 <descr_short></descr_short>
 </ModuleInstance>
 </StepDefinition>
@@ -78,10 +80,9 @@ class APISuccess( APITestCase ):
 <type>ScriptStep1</type>
 <name>RunScriptStep1</name>
 <descr_short></descr_short>
-<Parameter name="name" type="string" linked_module="" linked_parameter="" in="False" out="False" description="Name of executable"><value><![CDATA[CodeSegment]]></value></Parameter>
-<Parameter name="executable" type="string" linked_module="" linked_parameter="" in="False" out="False" description="Executable Script"><value><![CDATA[someExe]]></value></Parameter>
-<Parameter name="arguments" type="string" linked_module="" linked_parameter="" in="False" out="False" description="Arguments for executable Script"><value><![CDATA[]]></value></Parameter>
-<Parameter name="logFile" type="string" linked_module="" linked_parameter="" in="False" out="False" description="Log file name"><value><![CDATA[Script1_CodeOutput.log]]></value></Parameter>
+<Parameter name="executable" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Executable Script"><value><![CDATA[someExe]]></value></Parameter>
+<Parameter name="arguments" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Arguments for executable Script"><value><![CDATA[]]></value></Parameter>
+<Parameter name="applicationLog" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Log file name"><value><![CDATA[CodeOutput.log]]></value></Parameter>
 </StepInstance>
 </Workflow>
 '''

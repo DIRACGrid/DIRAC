@@ -80,6 +80,13 @@ class SEManagerDB(SEManagerBase):
     if not res['OK']:
       gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time()-waitTime,seName))
       self.lock.release()
+      if "Duplicate entry" in res['Message']:
+        result = self._refreshSEs( connection )
+        if not result['OK']:
+          return result
+        if seName in self.db.seNames.keys():
+          seid = self.db.seNames[seName]
+          return S_OK(seid)
       return res
     seid = res['lastRowId']
     self.db.seids[seid] = seName
@@ -181,6 +188,20 @@ class SEManagerDB(SEManagerBase):
         self.db.seDefinitions[seID]['SEDict']['PFNPrefix'] = result['Value'] 
     self.db.seDefinitions[seID]['LastUpdate'] = time.time()
     return S_OK(self.db.seDefinitions[seID])
+
+  def getSEPrefixes( self, connection=False ):
+    
+    result = self._refreshSEs(connection)
+    if not result['OK']:
+      return result
+    
+    resultDict = {}
+    
+    for seID in self.db.seDefinitions:
+      resultDict[self.db.seDefinitions[seID]['SEName']] = \
+         self.db.seDefinitions[seID]['SEDict'].get( 'PFNPrefix', '' )
+
+    return S_OK( resultDict )
 
 class SEManagerCS(SEManagerBase):
 

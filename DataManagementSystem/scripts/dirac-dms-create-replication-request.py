@@ -2,7 +2,7 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-""" Create a DIRAC transfer/replicateAndRegister request to be executed 
+""" Create a DIRAC transfer/replicateAndRegister request to be executed
     by the DMS Transfer Agent
 """
 __RCSID__ = "$Id$"
@@ -56,31 +56,39 @@ if not se.valid:
   print
   Script.showHelp()
 
-from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
-from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
+from DIRAC.RequestManagementSystem.Client.Request           import Request
+from DIRAC.RequestManagementSystem.Client.Operation         import Operation
+from DIRAC.RequestManagementSystem.Client.File              import File
+from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
+from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
 
-requestClient = RequestClient()
-requestType = 'transfer'
+requestClient = ReqClient()
 requestOperation = 'replicateAndRegister'
 
 for lfnList in breakListIntoChunks( lfns, 100 ):
 
-  oRequest = RequestContainer()
-  subRequestIndex = oRequest.initiateSubRequest( requestType )['Value']
-  attributeDict = {'Operation':requestOperation, 'TargetSE':targetSE}
-  oRequest.setSubRequestAttributes( subRequestIndex, requestType, attributeDict )
-  files = []
+  oRequest = Request()
+  oRequest.RequestName = "%s_%s" % ( md5( repr( time.time() ) ).hexdigest()[:16], md5( repr( time.time() ) ).hexdigest()[:16] )
+
+  replicateAndRegister = Operation()
+  replicateAndRegister.Type = 'ReplicateAndRegister'
+  replicateAndRegister.TargetSE = targetSE
+
   for lfn in lfnList:
-    files.append( {'LFN':lfn} )
-  oRequest.setSubRequestFiles( subRequestIndex, requestType, files )
-  requestName = "%s_%s" % ( md5( repr( time.time() ) ).hexdigest()[:16], md5( repr( time.time() ) ).hexdigest()[:16] )
-  oRequest.setRequestAttributes( {'RequestName':requestName} )
+    rarFile = File()
+    rarFile.LFN = lfn
+    replicateAndRegister.addFile( rarFile )
 
-  DIRAC.gLogger.info( oRequest.toXML()['Value'] )
+  oRequest.addOperation( replicateAndRegister )
+  isValid = gRequestValidator.validate( oRequest )
+  if not isValid['OK']:
+    print "Request is not valid: ", isValid['Message']
+    DIRAC.exit( 1 )
 
-  result = requestClient.setRequest( requestName, oRequest.toXML()['Value'] )
+  DIRAC.gLogger.info( oRequest.toJSON()['Value'] )
+
+  result = requestClient.putRequest( oRequest )
   if result['OK']:
     print 'Submitted Request:', result['Value']
   else:
     print 'Failed to submit Request', result['Message']
-
