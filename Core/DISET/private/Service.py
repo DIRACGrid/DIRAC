@@ -402,7 +402,7 @@ class Service:
       gLogger.warn( "Unauthorized query", "to %s:%s by %s" % ( self._name,
                                                                "/".join( actionTuple ),
                                                                identity ) )
-      result = S_ERROR( "Unautorized query" )
+      result = S_ERROR( "Unauthorized query" )
     else:
       result = S_OK()
 

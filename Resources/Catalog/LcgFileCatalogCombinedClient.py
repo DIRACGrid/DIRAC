@@ -1,12 +1,13 @@
 """ File catalog client for the LFC service combined with multiple read-only mirrors """
 
+import time, os
+
 import DIRAC
 from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Catalog.LcgFileCatalogClient       import LcgFileCatalogClient
 from DIRAC.Core.Utilities.Subprocess                    import pythonCall
 from DIRAC.Core.Utilities.CountryMapping                import getCountryMappingTier1
 from DIRAC.Core.Utilities.List                          import randomize
-import random, time, os
 
 #######################################################################################
 #
@@ -37,7 +38,6 @@ def getLocationOrderedCatalogs( siteName = '' ):
   catalogDict = res['Value']
   # Get the tier1 associated to the current location
   if not siteName:
-    import DIRAC
     siteName = DIRAC.siteName()
   countryCode = siteName.split( '.' )[-1]
   res = getCountryMappingTier1( countryCode )

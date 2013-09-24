@@ -933,10 +933,10 @@ class FileManagerBase:
         replicas[lfn] = {}
         for se, repDict in seDict.items():
           pfn = repDict.get('PFN','')
-          if not pfn or self.db.lfnPfnConvention:
-            res = self._resolvePFN( lfn, se )
-            if res['OK']:
-              pfn = res['Value']
+          #if not pfn or self.db.lfnPfnConvention:
+          #  res = self._resolvePFN( lfn, se )
+          #  if res['OK']:
+          #    pfn = res['Value']
           replicas[lfn][se] = pfn
                 
     result = S_OK( replicas )
