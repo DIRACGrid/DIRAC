@@ -1,4 +1,4 @@
-[v6r10-pre5]
+[v6r10-pre6]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -8,6 +8,7 @@ NEW: SystemAdministratorCLI - better support for executing remote commands
 FIX: DIRAC.__init__.py - avoid re-definition of platform variable    
 NEW: Graphs - added CurveGraph class to draw non-stacked lines with markers
 NEW: Graphs - allow graphs with negative Y values
+NEW: Graphs - allow to provide errors with the data and display them in the CurveGraph
 
 *DMS
 CHANGE: DFC - optimization and bug fixes of the bulk file addition
@@ -23,6 +24,8 @@ NEW: DFC - added getReplicasByMetadata() interface
 CHANGE: DFC - optimized getDirectoryReplicas()
 CHANGE: FileCatalogClient - treat the reduced output from various service queries restoring LFNs and PFNs on the fly
 NEW: DFC - LFNPFNConvention flag can be None, Weak or Strong to facilitate compatibility with LFC data 
+CHANGE: FileCatalog - do not return PFNs, construct them on the client side
+CHANGE: FileCatalog - simplified FC_Scaling_test.py script
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
