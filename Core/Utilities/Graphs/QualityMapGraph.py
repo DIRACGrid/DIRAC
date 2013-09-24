@@ -112,7 +112,7 @@ class QualityMapGraph( PlotBase ):
     xmax = None
     for label, num in labels:
       labelNames.append( label )
-      for key, value in self.gdata.getPlotNumData( label ):
+      for key, value, error in self.gdata.getPlotNumData( label ):
 
         if xmin is None or xmin > ( key + offset ):
           xmin = key + offset

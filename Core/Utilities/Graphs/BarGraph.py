@@ -103,7 +103,7 @@ class BarGraph( PlotBase ):
       tmp_y = []
       tmp_t = []
       plot_data = self.gdata.getPlotNumData(label)
-      for key, value in plot_data:        
+      for key, value, error in plot_data:        
         if value is None:
           value = 0.
           
