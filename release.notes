@@ -1,3 +1,20 @@
+[v6r9p17]
+
+*Accounting
+FIX: DataStoreClient - send accounting records in batches of 1000 records instead of 100
+
+*DMS:
+FIX: FailoverTransfer - catalog name from list to string
+FIX: FTSSubmitAgent, FTSRequest - handle FTS3 as new protocol and fix bad submission time
+FIX: FTSSubmitAgent, FTSRequest - do not submit FTS transfers for staging files
+
+*WMS
+FIX: TaskQueueDB - do not check enabled when TQs are requested from Directors
+FIX: TaskQueueDB - check for Enabled in the TaskQueues when inserting jobs to print an alert
+NEW: TaskQueueDB - each TQ can have at most 5k jobs, if beyond the limit create a new TQ 
+     to prevent long matching times when there are way too many jobs in a single TQ
+
+
 [v6r9p16]
 
 *TS
