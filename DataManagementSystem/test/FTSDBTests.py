@@ -136,26 +136,6 @@ class FTSDBTests( unittest.TestCase ):
 
     db = FTSDB()
 
-    print "put site"
-    for ftsSite in self.ftsSites:
-      put = db.putFTSSite( ftsSite )
-      self.assertEqual( put["OK"], True, "putFTSSite failed" )
-      put = db.putFTSSite( ftsSite )
-      self.assertEqual( put["OK"], False, "re-putFTSSite failed" )
-    return
-
-    print "getFTSSite"
-    for i, ftsSite in enumerate( self.ftsSites ):
-      get = db.getFTSSite( i + 1 )
-      self.assertEqual( get["OK"], True, "getFTSSite failed" )
-      self.assertEqual( isinstance( get["Value"], FTSSite ), True, "getFTSSite wrong value returned" )
-
-    print "getFTSSiteList"
-    getFTSSitesList = db.getFTSSitesList()
-    self.assertEqual( getFTSSitesList["OK"], True, "getFTSSitesList failed" )
-    for item in getFTSSitesList["Value"]:
-      self.assertEqual( isinstance( item, FTSSite ), True, "getFTSSitesList wrong value returned" )
-
     print "putFile"
     for ftsFile in self.ftsFiles:
       put = db.putFTSFile( ftsFile )

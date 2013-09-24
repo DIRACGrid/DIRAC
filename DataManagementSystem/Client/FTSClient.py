@@ -85,33 +85,6 @@ class FTSClient( Client ):
       cls.__requestClient = RequestClient()
     return cls.__requestClient
 
-  def getFTSSite( self, ftsSiteID ):
-    """ get FTSSite given FTSSiteID """
-    getFTSSite = self.ftsManager().getFTSSite( ftsSiteID )
-    if not getFTSSite["OK"]:
-      self.log.error( "getFTSSite: %s" % getFTSSite["Message"] )
-      return getFTSSite
-    getFTSSite = FTSSite( getFTSSite["Value"] ) if getFTSSite["Value"] else None
-    return S_OK( getFTSSite )
-
-  def putFTSSite( self, ftsSite ):
-    """ put fts site """
-    ftsSiteJSON = ftsSite.toJSON()
-    if not ftsSiteJSON["OK"]:
-      self.log.error( "putFTSSite: %s" % ftsSiteJSON["Message"] )
-      return ftsSiteJSON
-    ftsSiteJSON = ftsSiteJSON["Value"]
-    return self.ftsManager().putFTSSite( ftsSiteJSON )
-
-  def getFTSSitesList( self ):
-    """ get list of FTSSites """
-    getFTSSitesList = self.ftsManager().getFTSSitesList()
-    if not getFTSSitesList["OK"]:
-      self.log.error( "getFTSSitesList: %s" % getFTSSitesList["Message"] )
-      return getFTSSitesList
-    getFTSSitesList = getFTSSitesList["Value"]
-    return S_OK( [ FTSSite( ftsSite ) for ftsSite in getFTSSitesList ] )
-
   def getFTSFileList( self, statusList = None, limit = None ):
     """ get list of FTSFiles with status in statusList """
     statusList = statusList if statusList else [ "Waiting" ]
@@ -159,8 +132,8 @@ class FTSClient( Client ):
     if not getJobs["OK"]:
       self.log.error( "getFTSJobsForRequest: %s" % getJobs["Message"] )
       return getJobs
-    return S_OK( [ FTSJob( ftsJobDict) for ftsJobDict in getJobs["Value"] ] )
-    
+    return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getJobs["Value"] ] )
+
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into FTSDB
 
