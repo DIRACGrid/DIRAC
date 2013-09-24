@@ -162,10 +162,7 @@ class FTSSubmitAgent( AgentModule ):
     noSource = [ lfn for lfn, fileInfo in oFTSRequest.fileDict.items()
                      if fileInfo.get( "Status", "" ) == "Failed" and fileInfo.get( "Reason", "" ) in ( "No replica at SourceSE",
                                                                                                    "Source file does not exist" ) ]
-    toReschedule = []
-    for fileMeta in files:
-      if fileMeta["LFN"] in noSource:
-        toReschedule.append( fileMeta["FileID"] )
+    toReschedule = [fileMeta["FileID"] for fileMeta in files if fileMeta["LFN"] in noSource]
 
     if toReschedule:
       self.log.info( "Found %s files to reschedule" % len( toReschedule ) )

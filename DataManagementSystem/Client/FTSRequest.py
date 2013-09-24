@@ -20,7 +20,6 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import checkGuid
 from DIRAC.Core.Utilities.Adler import compareAdler
-from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -54,7 +53,7 @@ class FTSRequest( object ):
                          'Finished', 'FinishedDirty' )
     # # failed states tuple
     self.failedStates = ( 'Canceled', 'Failed',
-                          'Hold', 'FinishedDirty' )
+                          'Hold', 'FinishedDirty', 'Staging' )
     # # successful states tuple
     self.successfulStates = ( 'Finished', 'Done' )
     # # all file states tuple
@@ -128,6 +127,12 @@ class FTSRequest( object ):
 
     # # replica manager handler
     self.replicaManager = ReplicaManager()
+
+    # # statuses that prevent submitting to FTS
+    self.noSubmitStatus = ( 'Failed', 'Done', 'Staging' )
+
+    # # were sources resolved?
+    self.sourceResolved = False
 
   ####################################################################
   #
@@ -363,7 +368,7 @@ class FTSRequest( object ):
     """
     completedFiles = 0
     totalFiles = 0
-    for state in ( self.statusSummary.keys() ):
+    for state in self.statusSummary:
       if state in self.successfulStates:
         completedFiles += self.statusSummary[state]
       totalFiles += self.statusSummary[state]
@@ -568,7 +573,7 @@ class FTSRequest( object ):
     if not res['OK']:
       return res
     resDict = { 'ftsGUID' : self.ftsGUID, 'ftsServer' : self.ftsServer }
-    print "Submitted %s @ %s" % ( self.ftsGUID, self.ftsServer )
+    # print "Submitted %s @ %s" % ( self.ftsGUID, self.ftsServer )
     if monitor:
       self.monitor( untilTerminal = True, printOutput = printOutput )
     return S_OK( resDict )
@@ -662,7 +667,12 @@ class FTSRequest( object ):
 
     :param self: self reference
     """
-    toResolve = [ lfn for lfn in self.fileDict ]
+
+    # Avoid resolving sources twice
+    if self.sourceResolved:
+      return S_OK()
+    # Only resolve files that need a transfer
+    toResolve = [ lfn for lfn in self.fileDict if self.fileDict[lfn].get( "Status", "" ) != "Failed" ]
     if not toResolve:
       return S_OK()
     res = self.__updateMetadataCache( toResolve )
@@ -671,9 +681,9 @@ class FTSRequest( object ):
     res = self.__updateReplicaCache( toResolve )
     if not res['OK']:
       return res
+
+    # Define the source URLs
     for lfn in toResolve:
-      if self.fileDict[lfn].get( "Status", "" ) == "Failed":
-        continue
       replicas = self.catalogReplicas.get( lfn, {} )
       if self.sourceSE not in replicas:
         gLogger.warn( "resolveSource: skipping %s - not replicas at SourceSE %s" % ( lfn, self.sourceSE ) )
@@ -699,9 +709,12 @@ class FTSRequest( object ):
         toResolve[self.fileDict[lfn]['Source']] = lfn
     if not toResolve:
       return S_ERROR( "No eligible Source files" )
+
+    # Get metadata of the sources, to check for existance, availability and caching
     res = self.oSourceSE.getFileMetadata( toResolve.keys() )
     if not res['OK']:
       return S_ERROR( "Failed to check source file metadata" )
+
     for pfn, error in res['Value']['Failed'].items():
       lfn = toResolve[pfn]
       if re.search( 'File does not exist', error ):
@@ -712,8 +725,12 @@ class FTSRequest( object ):
         gLogger.warn( "resolveSource: skipping %s - failed to get source metadata" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Failed to get Source metadata" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
+    toStage = []
+
+    nbStagedFiles = 0
     for pfn, metadata in res['Value']['Successful'].items():
       lfn = toResolve[pfn]
+      lfnStatus = self.fileDict.get( lfn, {} ).get( 'Status' )
       if metadata['Unavailable']:
         gLogger.warn( "resolveSource: skipping %s - source file unavailable" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source file Unavailable" )
@@ -723,12 +740,8 @@ class FTSRequest( object ):
         self.__setFileParameter( lfn, 'Reason', "Source file Lost" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
       elif not metadata['Cached']:
-        gLogger.warn( "resolveSource: source file %s not cached, prestaging..." % lfn )
-        stage = self.replicaManager.prestageStorageFile( pfn, self.sourceSE, singleFile = True )
-        if not stage["OK"]:
-          gLogger.warn( "resolveSource: skipping %s - %s" % ( lfn, stage["Message"] ) )
-          self.__setFileParameter( lfn, 'Reason', stage["Message"] )
-          self.__setFileParameter( lfn, 'Status', 'Failed' )
+        if lfnStatus != 'Staging':
+          toStage.append( pfn )
       elif metadata['Size'] != self.catalogMetadata[lfn]['Size']:
         gLogger.warn( "resolveSource: skipping %s - source file size mismatch" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source size mismatch" )
@@ -738,6 +751,35 @@ class FTSRequest( object ):
         gLogger.warn( "resolveSource: skipping %s - source file checksum mismatch" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source checksum mismatch" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
+      elif lfnStatus == 'Staging':
+        # file that was staging is now cached
+        self.__setFileParameter( lfn, 'Status', 'Waiting' )
+        nbStagedFiles += 1
+
+    # Some files were being staged
+    if nbStagedFiles:
+      self.log.info( 'resolveSource: %d files have been staged' % nbStagedFiles )
+
+    # Launching staging of files not in cache
+    if toStage:
+      gLogger.warn( "resolveSource: %s source files not cached, prestaging..." % len( toStage ) )
+      stage = self.replicaManager.prestageStorageFile( toStage, self.sourceSE )
+      if not stage["OK"]:
+        gLogger.error( "resolveSource: error is prestaging - %s" % stage["Message"] )
+        for pfn in toStage:
+          lfn = toResolve[pfn]
+          self.__setFileParameter( lfn, 'Reason', stage["Message"] )
+          self.__setFileParameter( lfn, 'Status', 'Failed' )
+      else:
+        for pfn in toStage:
+          lfn = toResolve[pfn]
+          if pfn in stage['Value']['Successful']:
+            self.__setFileParameter( lfn, 'Status', 'Staging' )
+          elif pfn in stage['Value']['Failed']:
+            self.__setFileParameter( lfn, 'Reason', stage['Value']['Failed'][pfn] )
+            self.__setFileParameter( lfn, 'Status', 'Failed' )
+
+    self.sourceResolved = True
     return S_OK()
 
   def resolveTarget( self ):
@@ -745,15 +787,14 @@ class FTSRequest( object ):
 
     :param self: self reference
     """
-    toResolve = [ lfn for lfn in self.fileDict ]
+    toResolve = [ lfn for lfn in self.fileDict
+                 if self.fileDict[lfn].get( 'Status' ) not in self.noSubmitStatus ]
     if not toResolve:
       return S_OK()
     res = self.__updateReplicaCache( toResolve )
     if not res['OK']:
       return res
     for lfn in toResolve:
-      if ( self.fileDict[lfn].get( 'Status' ) == 'Failed' ):
-        continue
       res = self.oTargetSE.getPfnForLfn( lfn )
       if not res['OK']:
         gLogger.warn( "resolveTarget: skipping %s - failed to create target pfn" % lfn )
@@ -795,7 +836,7 @@ class FTSRequest( object ):
           self.__setFileParameter( lfn, 'Reason', "Target exists" )
           self.__setFileParameter( lfn, 'Status', 'Failed' )
         elif res['Value'] == pfn:
-          gLogger.warn( "resolveTarget: skipping %s - source and target pfns are teh same" % lfn )
+          gLogger.warn( "resolveTarget: skipping %s - source and target pfns are the same" % lfn )
           self.__setFileParameter( lfn, 'Reason', "Source and Target the same" )
           self.__setFileParameter( lfn, 'Status', 'Failed' )
         else:
@@ -814,7 +855,7 @@ class FTSRequest( object ):
       lfnStatus = self.fileDict[lfn].get( 'Status' )
       source = self.fileDict[lfn].get( 'Source' )
       target = self.fileDict[lfn].get( 'Target' )
-      if ( lfnStatus != 'Failed' ) and ( lfnStatus != 'Done' ) and source and target:
+      if lfnStatus not in self.noSubmitStatus and source and target:
         return S_OK()
     return S_ERROR()
 
@@ -833,7 +874,7 @@ class FTSRequest( object ):
       lfnStatus = self.fileDict[lfn].get( 'Status' )
       source = self.fileDict[lfn].get( 'Source' )
       target = self.fileDict[lfn].get( 'Target' )
-      if ( lfnStatus not in ( 'Failed', 'Done' ) ) and source and target:
+      if lfnStatus not in self.noSubmitStatus and source and target:
         cksmStr = ""
         # # add chsmType:cksm only if cksmType is specified, else let FTS decide by itself
         if self.__cksmTest and self.__cksmType:
@@ -851,11 +892,9 @@ class FTSRequest( object ):
     """
     comm = [ 'glite-transfer-submit', '-s', self.ftsServer, '-f', self.surlFile, '-o' ]
     if self.targetToken:
-      comm.append( '-t' )
-      comm.append( self.targetToken )
+      comm += [ '-t', self.targetToken ]
     if self.sourceToken:
-      comm.append( '-S' )
-      comm.append( self.sourceToken )
+      comm += [ '-S', self.sourceToken ]
     if self.__cksmTest:
       comm.append( "--compare-checksums" )
     res = executeGridCommand( '', comm )
@@ -873,6 +912,17 @@ class FTSRequest( object ):
     #  comm = ['glite-transfer-setpriority','-s', self.ftsServer,self.ftsGUID,str(self.priority)]
     #  executeGridCommand('',comm)
     return res
+
+  def __getFTSServer( self, site ):
+    try:
+      configPath = '/Resources/FTSEndpoints/%s' % site
+      endpointURL = gConfig.getValue( configPath )
+      if not endpointURL:
+        errStr = "FTSRequest.__getFTSServer: Failed to find FTS endpoint, check CS entry for '%s'." % site
+        return S_ERROR( errStr )
+      return S_OK( endpointURL )
+    except Exception, x:
+      return S_ERROR( 'FTSRequest.__getFTSServer: Failed to obtain endpoint details from CS' )
 
   def __resolveFTSServer( self ):
     """
@@ -893,24 +943,31 @@ class FTSRequest( object ):
       return S_ERROR( "Could not determine target site" )
     targetSite = res['Value'][0]
 
-    if ( sourceSite == "LCG.RAL-HEP.uk" ) or ( targetSite == "LCG.RAL-HEP.uk" ):
-      ep = "LCG.RAL-HEP.uk"
-    elif ( sourceSite == 'LCG.CERN.ch' ) or ( targetSite == 'LCG.CERN.ch' ):
-      ep = 'LCG.CERN.ch'
+    # CERN is a special case, handling incoming and outgoing transfers
+    if ( sourceSite == 'LCG.CERN.ch' ) or ( targetSite == 'LCG.CERN.ch' ):
+      res = self.__getFTSServer( 'LCG.CERN.ch' )
+      if res['OK']:
+        self.ftsServer = res['Value']
+      else:
+        return res
     else:
       # Target site FTS server should be used
-      ep = targetSite
-
-    try:
-      configPath = '/Resources/FTSEndpoints/%s' % ep
-      endpointURL = gConfig.getValue( configPath )
-      if not endpointURL:
-        errStr = "FTSRequest.__resolveFTSServer: Failed to find FTS endpoint, check CS entry for '%s'." % ep
-        return S_ERROR( errStr )
-      self.ftsServer = endpointURL
-      return S_OK( endpointURL )
-    except Exception, x:
-      return S_ERROR( 'FTSRequest.__resolveFTSServer: Failed to obtain endpoint details from CS' )
+      sourceFTS = self.__getFTSServer( sourceSite )
+      if sourceFTS['OK']:
+        ftsSource = res['Value']
+        if 'fts3' in ftsSource:
+          self.ftsServer = ftsSource
+          return S_OK( self.ftsServer )
+      targetFTS = self.__getFTSServer( targetSite )
+      if targetFTS['OK']:
+        ftsTarget = res['Value']
+        if ftsTarget:
+          self.ftsServer = ftsTarget
+          return S_OK( self.ftsServer )
+        else:
+          return S_ERROR( 'No FTS server found for %s nor %s' % ( sourceSite, targetSite ) )
+      else:
+        return targetFTS
 
   ####################################################################
   #
@@ -971,7 +1028,7 @@ class FTSRequest( object ):
     """
 
     outStr = ''
-    for status in sortList( self.statusSummary.keys() ):
+    for status in sorted( self.statusSummary ):
       if self.statusSummary[status]:
         outStr = '%s\t%-10s : %-10s\n' % ( outStr, status, str( self.statusSummary[status] ) )
     outStr = outStr.rstrip( '\n' )
@@ -1003,7 +1060,7 @@ class FTSRequest( object ):
     print "%-10s : %-10s" % ( "Target", self.targetSE )
     print "%-10s : %-128s" % ( "Server", self.ftsServer )
     print "%-10s : %-128s" % ( "GUID", self.ftsGUID )
-    for lfn in sortList( self.fileDict.keys() ):
+    for lfn in sorted( self.fileDict ):
       print "\n  %-15s : %-128s" % ( 'LFN', lfn )
       for key in ['Source', 'Target', 'Status', 'Reason', 'Duration']:
         print "  %-15s : %-128s" % ( key, str( self.fileDict[lfn].get( key ) ) )
@@ -1071,7 +1128,7 @@ class FTSRequest( object ):
     fileInfo = re.findall( regExp, output )
     for source, target, status, retries, reason, duration in fileInfo:
       lfn = ''
-      for candidate in sortList( self.fileDict.keys() ):
+      for candidate in sorted( self.fileDict ):
         if re.search( candidate, source ):
           lfn = candidate
       if not lfn:
@@ -1121,7 +1178,7 @@ class FTSRequest( object ):
                   'transOK': 0,
                   'transSize': 0 }
 
-    for lfn in self.fileDict.keys():
+    for lfn in self.fileDict:
       if self.fileDict[lfn].get( 'Status' ) in self.successfulStates:
         if self.fileDict[lfn].get( 'Duration', 0 ):
           transDict['transLFNs'].append( lfn )
@@ -1185,13 +1242,22 @@ class FTSRequest( object ):
 
     submitTime = fromString( self.submitTime )
     oAccounting = DataOperation()
+    dt = transEndTime - submitTime
+    transferTime = dt.days * 86400 + dt.seconds
+    if 'fts3' in self.ftsServer and transferTime < 0:
+      import datetime
+      while transferTime < 0:
+        # Shift by one hour until transfer time is positive (ugly fix for FTS3 bug)
+        transferTime += 3600
+        submitTime -= datetime.timedelta( 0, 3600 )
+      self.log.verbose( 'Fixed UTC submit time... Submit: %s, end: %s' % ( submitTime, transEndTime ) )
     oAccounting.setEndTime( transEndTime )
     oAccounting.setStartTime( submitTime )
 
     accountingDict = {}
     accountingDict['OperationType'] = 'replicateAndRegister'
     accountingDict['User'] = 'acsmith'
-    accountingDict['Protocol'] = 'FTS'
+    accountingDict['Protocol'] = 'FTS' if 'fts3' not in self.ftsServer else 'FTS3'
     accountingDict['RegistrationTime'] = regTime
     accountingDict['RegistrationOK'] = regSuc
     accountingDict['RegistrationTotal'] = regTotal
@@ -1201,8 +1267,6 @@ class FTSRequest( object ):
     accountingDict['FinalStatus'] = self.requestStatus
     accountingDict['Source'] = self.sourceSE
     accountingDict['Destination'] = self.targetSE
-    dt = transEndTime - submitTime
-    transferTime = dt.days * 86400 + dt.seconds
     accountingDict['TransferTime'] = transferTime
     oAccounting.setValuesFromDict( accountingDict )
     self.log.verbose( "Attempting to commit accounting message..." )
@@ -1222,7 +1286,7 @@ class FTSRequest( object ):
                            'Another prepareToPut/Update is ongoing for this file',
                            'Requested file is still in SRM_SPACE_AVAILABLE state!' ]
     corruptedTarget = []
-    for lfn in sortList( self.fileDict.keys() ):
+    for lfn in sorted( self.fileDict ):
       if self.fileDict[lfn].get( 'Status', '' ) == 'Failed':
         reason = self.fileDict[lfn].get( 'Reason', '' )
         for error in corruptTargetErrors:
@@ -1244,7 +1308,7 @@ class FTSRequest( object ):
       'TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory',
       'SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist' ]
     missingSource = []
-    for lfn in sortList( self.fileDict.keys() ):
+    for lfn in sorted( self.fileDict ):
       if self.fileDict[lfn].get( 'Status', '' ) == 'Failed':
         reason = self.fileDict[lfn].get( 'Reason', '' )
         for error in missingSourceErrors:
