@@ -4,13 +4,13 @@
 """ :mod: FTSSubmitAgent
     ====================
 
-    FTS Submit Agent takes files from the TransferDB and submits them to the FTS using 
+    FTS Submit Agent takes files from the TransferDB and submits them to the FTS using
     FTSRequest helper class.
 
     :deprecated:
 """
 
-## imports
+# # imports
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
@@ -19,28 +19,28 @@ from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
 __RCSID__ = "$Id$"
 
 class FTSSubmitAgent( AgentModule ):
-  """ 
+  """
   .. class:: FTSSubmitAgent
 
-  This class is submitting previously scheduled files to the FTS system using helper class FTSRequest. 
+  This class is submitting previously scheduled files to the FTS system using helper class FTSRequest.
 
   Files to be transferred are read from TransferDB.Channel table, only those with Status = 'Waiting'.
-  After submission TransferDB.Channel.Status is set to 'Executing'. The rest of state propagation is 
+  After submission TransferDB.Channel.Status is set to 'Executing'. The rest of state propagation is
   done in FTSMonitorAgent.
 
-  An information about newly created FTS request is hold in TransferDB.FTSReq (request itself) table and  
-  TransferDB.FileToFTS (files in request) and TransferDB.FileToCat (files to be registered, for 
-  failover only). 
+  An information about newly created FTS request is hold in TransferDB.FTSReq (request itself) table and
+  TransferDB.FileToFTS (files in request) and TransferDB.FileToCat (files to be registered, for
+  failover only).
   """
-  ## placaholder for TransferDB reference 
+  # # placaholder for TransferDB reference
   transferDB = None
-  ## placeholder for max job per channel 
+  # # placeholder for max job per channel
   maxJobsPerChannel = 2
-  ## placeholder for checksum test option flag 
+  # # placeholder for checksum test option flag
   cksmTest = False
-  ## placeholder for checksum type 
+  # # placeholder for checksum type
   cksmType = ""
-  ## default checksum type
+  # # default checksum type
   __defaultCksmType = "ADLER32"
 
   def initialize( self ):
@@ -48,26 +48,26 @@ class FTSSubmitAgent( AgentModule ):
 
     :param self: self reference
     """
-    ## save tarsnferDB handler
+    # # save tarsnferDB handler
     self.transferDB = TransferDB()
-    ## read config options
+    # # read config options
     self.maxJobsPerChannel = self.am_getOption( 'MaxJobsPerChannel', self.maxJobsPerChannel )
-    self.log.info("max jobs/channel = %s" % self.maxJobsPerChannel )
+    self.log.info( "max jobs/channel = %s" % self.maxJobsPerChannel )
 
-    ## checksum test
-    self.cksmTest = bool( self.am_getOption( "ChecksumTest", False ) )  
-    ## ckecksum type
+    # # checksum test
+    self.cksmTest = bool( self.am_getOption( "ChecksumTest", False ) )
+    # # ckecksum type
     if self.cksmTest:
       self.cksmType = str( self.am_getOption( "ChecksumType", self.__defaultCksmType ) ).upper()
       if self.cksmType and self.cksmType not in ( "ADLER32", "MD5", "SHA1" ):
-        self.log.warn("unknown checksum type: %s, will use default %s" % ( self.cksmType, self.__defaultCksmType ) )
-        self.cksmType = self.__defaultCksmType                      
+        self.log.warn( "unknown checksum type: %s, will use default %s" % ( self.cksmType, self.__defaultCksmType ) )
+        self.cksmType = self.__defaultCksmType
 
     self.log.info( "checksum test is %s" % ( { True : "enabled using %s checksum" % self.cksmType,
                                                False : "disabled"}[self.cksmTest] ) )
-      
-    
-    # This sets the Default Proxy to used as that defined under 
+
+
+    # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
@@ -133,11 +133,11 @@ class FTSSubmitAgent( AgentModule ):
     oFTSRequest.setSourceSE( sourceSE )
     targetSE = filesDict['TargetSE']
     oFTSRequest.setTargetSE( targetSE )
-    self.log.info( "FTSSubmitAgent.submitTransfer: Attempting to obtain files for %s to %s channel." % ( sourceSE, 
+    self.log.info( "FTSSubmitAgent.submitTransfer: Attempting to obtain files for %s to %s channel." % ( sourceSE,
                                                                                                          targetSE ) )
     files = filesDict['Files']
 
-    ## enable/disable cksm test
+    # # enable/disable cksm test
     oFTSRequest.setCksmTest( self.cksmTest )
     if self.cksmType:
       oFTSRequest.setCksmType( self.cksmType )
@@ -159,8 +159,8 @@ class FTSSubmitAgent( AgentModule ):
       fileIDSizes[fileID] = fileMeta['Size']
 
     oFTSRequest.resolveSource()
-    noSource = [ lfn for lfn, fileInfo in oFTSRequest.fileDict.items() 
-                     if fileInfo.get("Status", "") == "Failed" and fileInfo.get("Reason", "") in ( "No replica at SourceSE", 
+    noSource = [ lfn for lfn, fileInfo in oFTSRequest.fileDict.items()
+                     if fileInfo.get( "Status", "" ) == "Failed" and fileInfo.get( "Reason", "" ) in ( "No replica at SourceSE",
                                                                                                    "Source file does not exist" ) ]
     toReschedule = []
     for fileMeta in files:
@@ -168,7 +168,7 @@ class FTSSubmitAgent( AgentModule ):
         toReschedule.append( fileMeta["FileID"] )
 
     if toReschedule:
-      self.log.info("Found %s files to reschedule" % len(toReschedule) )
+      self.log.info( "Found %s files to reschedule" % len( toReschedule ) )
       for fileID in toReschedule:
         res = self.transferDB.setFileToReschedule( fileID )
         if not res["OK"]:
@@ -178,7 +178,7 @@ class FTSSubmitAgent( AgentModule ):
           res = self.transferDB.setFileChannelStatus( channelID, fileID, 'Failed' )
           if not res["OK"]:
             self.log.error( "Failed to update Channel table for failed files.", res["Message"] )
-      
+
     #########################################################################
     #  Submit the FTS request and retrieve the FTS GUID/Server
     self.log.info( 'Submitting the FTS request' )
@@ -194,7 +194,7 @@ class FTSSubmitAgent( AgentModule ):
     ftsGUID = res['Value']['ftsGUID']
     ftsServer = res['Value']['ftsServer']
     infoStr = """Submitted FTS Job:
-    
+
               FTS Guid: %s
               FTS Server: %s
               ChannelID: %s
@@ -205,15 +205,15 @@ class FTSSubmitAgent( AgentModule ):
 """ % ( ftsGUID, ftsServer, str( channelID ), sourceSE, targetSE, str( len( files ) ) )
     self.log.info( infoStr )
 
-    ## filter out skipped files
+    # # filter out skipped files
     failedFiles = oFTSRequest.getFailed()
     if not failedFiles["OK"]:
-      self.log.warn("Unable to read skipped LFNs.")
+      self.log.warn( "Unable to read skipped LFNs." )
     failedFiles = failedFiles["Value"] if "Value" in failedFiles else []
     failedIDs = [ meta["FileID"] for meta in files if meta["LFN"] in failedFiles ]
-    ## only submitted
+    # # only submitted
     fileIDs = [ fileID for fileID in fileIDs if fileID not in failedIDs ]
-    ## sub failed from total size
+    # # sub failed from total size
     totalSize -= sum( [ meta["Size"] for meta in files if meta["LFN"] in failedFiles ] )
 
     #########################################################################
