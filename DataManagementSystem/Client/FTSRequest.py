@@ -53,7 +53,7 @@ class FTSRequest( object ):
                          'Finished', 'FinishedDirty' )
     # # failed states tuple
     self.failedStates = ( 'Canceled', 'Failed',
-                          'Hold', 'FinishedDirty' )
+                          'Hold', 'FinishedDirty', 'Staging' )
     # # successful states tuple
     self.successfulStates = ( 'Finished', 'Done' )
     # # all file states tuple
@@ -573,7 +573,7 @@ class FTSRequest( object ):
     if not res['OK']:
       return res
     resDict = { 'ftsGUID' : self.ftsGUID, 'ftsServer' : self.ftsServer }
-    print "Submitted %s @ %s" % ( self.ftsGUID, self.ftsServer )
+    # print "Submitted %s @ %s" % ( self.ftsGUID, self.ftsServer )
     if monitor:
       self.monitor( untilTerminal = True, printOutput = printOutput )
     return S_OK( resDict )
