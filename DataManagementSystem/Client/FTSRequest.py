@@ -53,7 +53,7 @@ class FTSRequest( object ):
                          'Finished', 'FinishedDirty' )
     # # failed states tuple
     self.failedStates = ( 'Canceled', 'Failed',
-                          'Hold', 'FinishedDirty', 'Staging' )
+                          'Hold', 'FinishedDirty' )
     # # successful states tuple
     self.successfulStates = ( 'Finished', 'Done' )
     # # all file states tuple
@@ -520,6 +520,11 @@ class FTSRequest( object ):
     """
     return S_OK( [ lfn for lfn in self.fileDict
                    if self.fileDict[lfn].get( 'Status', '' ) in self.failedStates ] )
+
+  def getStaging( self ):
+    """ get files set for prestaging """
+    return S_OK( [lfn for lfn in self.fileDict
+                  if self.fileDict[lfn].get( 'Status', '' ) == 'Staging'] )
 
   def getDone( self ):
     """ get list of succesfully transferred LFNs
