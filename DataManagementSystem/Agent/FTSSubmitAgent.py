@@ -71,6 +71,8 @@ class FTSSubmitAgent( AgentModule ):
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
+
+    self.filesBeingStaged = set()
     return S_OK()
 
   def execute( self ):
@@ -147,11 +149,15 @@ class FTSSubmitAgent( AgentModule ):
     fileIDs = []
     totalSize = 0
     fileIDSizes = {}
+    lfns = set()
     for fileMeta in files:
       lfn = fileMeta['LFN']
+      lfns.add( lfn )
       oFTSRequest.setLFN( lfn )
       oFTSRequest.setSourceSURL( lfn, fileMeta['SourceSURL'] )
       oFTSRequest.setTargetSURL( lfn, fileMeta['TargetSURL'] )
+      if lfn in self.filesBeingStaged:
+        oFTSRequest.setStatus( lfn, 'Staging' )
       fileID = fileMeta['FileID']
       fileIDs.append( fileID )
       totalSize += fileMeta['Size']
@@ -189,7 +195,7 @@ class FTSSubmitAgent( AgentModule ):
       return S_ERROR( errStr )
     ftsGUID = res['Value']['ftsGUID']
     ftsServer = res['Value']['ftsServer']
-    submittedFiles = res['Value']['submittedFiles']
+    nbSubmitted = res['Value']['submittedFiles']
     infoStr = """Submitted FTS Job:
 
               FTS Guid: %s
@@ -199,12 +205,17 @@ class FTSSubmitAgent( AgentModule ):
               TargetSE: %s
               Files: %s
 
-""" % ( ftsGUID, ftsServer, str( channelID ), sourceSE, targetSE, str( submittedFiles ) )
+""" % ( ftsGUID, ftsServer, str( channelID ), sourceSE, targetSE, str( nbSubmitted ) )
     self.log.info( infoStr )
 
     # # filter out skipped files
     failedFiles = oFTSRequest.getFailed()['Value']
     stagingFiles = oFTSRequest.getStaging()['Value']
+    # cache files being staged
+    self.filesBeingStaged.update( stagingFiles )
+    submittedFiles = lfns - set( failedFiles ) - set( stagingFiles )
+    # files being submitted are staged
+    self.filesBeingStaged.difference( submittedFiles )
     failedIDs = [ meta["FileID"] for meta in files if meta["LFN"] in failedFiles ]
     stagingIDs = [ meta["FileID"] for meta in files if meta["LFN"] in stagingFiles ]
     # # only submitted
