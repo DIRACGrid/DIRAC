@@ -203,15 +203,14 @@ class FTSSubmitAgent( AgentModule ):
     self.log.info( infoStr )
 
     # # filter out skipped files
-    failedFiles = oFTSRequest.getFailed()
-    if not failedFiles["OK"]:
-      self.log.warn( "Unable to read skipped LFNs." )
-    failedFiles = failedFiles.get( "Value", [] )
+    failedFiles = oFTSRequest.getFailed()['Value']
+    stagingFiles = oFTSRequest.getStaging()['Value']
     failedIDs = [ meta["FileID"] for meta in files if meta["LFN"] in failedFiles ]
+    stagingIDs = [ meta["FileID"] for meta in files if meta["LFN"] in stagingFiles ]
     # # only submitted
-    fileIDs = [ fileID for fileID in fileIDs if fileID not in failedIDs ]
-    # # sub failed from total size
-    totalSize -= sum( [ meta["Size"] for meta in files if meta["LFN"] in failedFiles ] )
+    submittedIDs = list( set( fileIDs ) - set( failedIDs ) - set( stagingIDs ) )
+    # # only count the submitted size
+    totalSize = sum( [ meta["Size"] for meta in files if meta["FileID"] in submittedIDs ] )
 
     #########################################################################
     #  Insert the FTS Req details and add the number of files and size
@@ -228,7 +227,7 @@ class FTSSubmitAgent( AgentModule ):
     res = self.transferDB.setFTSReqAttribute( ftsReqID, 'TargetSE', targetSE )
     if not res['OK']:
       self.log.error( "Failed to set TargetSE for FTSRequest", res['Message'] )
-    res = self.transferDB.setFTSReqAttribute( ftsReqID, 'NumberOfFiles', len( fileIDs ) )
+    res = self.transferDB.setFTSReqAttribute( ftsReqID, 'NumberOfFiles', len( submittedIDs ) )
     if not res['OK']:
       self.log.error( "Failed to set NumberOfFiles for FTSRequest", res['Message'] )
     res = self.transferDB.setFTSReqAttribute( ftsReqID, 'TotalSize', totalSize )
@@ -246,17 +245,18 @@ class FTSSubmitAgent( AgentModule ):
     #########################################################################
     #  Insert the FileToFTS details and remove the files from the channel
     self.log.info( 'Setting the files as Executing in the Channel table' )
-    res = self.transferDB.setChannelFilesExecuting( channelID, fileIDs )
+    res = self.transferDB.setChannelFilesExecuting( channelID, submittedIDs )
     if not res['OK']:
       self.log.error( 'Failed to update the Channel tables for files.', res['Message'] )
 
     lfns = []
     fileToFTSFileAttributes = []
     for fileMeta in files:
-      lfn = fileMeta['LFN']
       fileID = fileMeta['FileID']
-      lfns.append( lfn )
-      fileToFTSFileAttributes.append( ( fileID, fileIDSizes[fileID] ) )
+      # Staging is not an error case
+      if fileID not in stagingIDs:
+        lfns.append( fileMeta['LFN'] )
+        fileToFTSFileAttributes.append( ( fileID, fileIDSizes[fileID] ) )
 
     self.log.info( 'Populating the FileToFTS table with file information' )
     res = self.transferDB.setFTSReqFiles( ftsReqID, channelID, fileToFTSFileAttributes )
