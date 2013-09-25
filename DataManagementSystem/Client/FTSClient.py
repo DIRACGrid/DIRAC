@@ -134,26 +134,25 @@ class FTSClient( Client ):
       return getJobs
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getJobs["Value"] ] )
 
-  def putFTSFile( self, ftsFile ):
-    """ put FTSFile into FTSDB
-
-    :param FTSFile ftsFile: FTSFile instance
-    """
-    isValid = self.ftsValidator().validate( ftsFile )
-    if not isValid["OK"]:
-      self.log.error( isValid["Message"] )
-      return isValid
-    ftsFileJSON = ftsFile.toJSON()
-    if not ftsFileJSON["OK"]:
-      self.log.error( ftsFileJSON["Message"] )
-      return ftsFileJSON
-    ftsFileJSON = ftsFileJSON["Value"]
-    return self.ftsManager().putFTSFile( ftsFileJSON )
+#  def putFTSFile( self, ftsFile ):
+#    """ put FTSFile into FTSDB
+#
+#    :param FTSFile ftsFile: FTSFile instance
+#    """
+#    isValid = self.ftsValidator().validate( ftsFile )
+#    if not isValid["OK"]:
+#      self.log.error( isValid["Message"] )
+#      return isValid
+#    ftsFileJSON = ftsFile.toJSON()
+#    if not ftsFileJSON["OK"]:
+#      self.log.error( ftsFileJSON["Message"] )
+#      return ftsFileJSON
+#    ftsFileJSON = ftsFileJSON["Value"]
+#    return self.ftsManager().putFTSFile( ftsFileJSON )
 
   def getFTSFile( self, ftsFileID = None ):
     """ get FTSFile
 
-    :param int fileID: FileID
     :param int ftsFileID: FTSFileID
     """
     getFile = self.ftsManager().getFTSFile( ftsFileID )
@@ -166,16 +165,16 @@ class FTSClient( Client ):
         self.log.error( getFile["Message"] )
     return getFile
 
-  def deleteFTSFile( self, ftsFileID = None ):
-    """ get FTSFile
-
-    :param int ftsFileID: FTSFileID
-    """
-    deleteFile = self.ftsManager().deleteFTSFile( ftsFileID )
-    if not deleteFile["OK"]:
-      self.log.error( deleteFile["Message"] )
-      return deleteFile
-    return S_OK()
+#  def deleteFTSFile( self, ftsFileID = None ):
+#    """ get FTSFile
+#
+#    :param int ftsFileID: FTSFileID
+#    """
+#    deleteFile = self.ftsManager().deleteFTSFile( ftsFileID )
+#    if not deleteFile["OK"]:
+#      self.log.error( deleteFile["Message"] )
+#      return deleteFile
+#    return S_OK()
 
   def putFTSJob( self, ftsJob ):
     """ put FTSJob into FTSDB

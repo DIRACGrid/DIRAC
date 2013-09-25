@@ -110,7 +110,7 @@ class FTSManagerHandler( RequestHandler ):
     return S_OK()
 
   @classmethod
-  def refreshProxy(cls):
+  def refreshProxy( cls ):
     """ setup DataManager shifter proxy in env """
     gLogger.info( "refreshProxy: getting proxy for DataManager..." )
     proxy = setupShifterProxyInEnv( "DataManager" )
@@ -302,7 +302,7 @@ class FTSManagerHandler( RequestHandler ):
     return S_OK( ret )
 
 
-  types_getFTSFile = [ LongType ]
+  types_getFTSFile = [ [IntType, LongType] ]
   @classmethod
   def export_getFTSFile( cls, ftsFileID ):
     """ get FTSFile from FTSDB """
@@ -322,7 +322,7 @@ class FTSManagerHandler( RequestHandler ):
         gLogger.error( getFile["Message"] )
     return getFile
 
-  types_peekFTSFile = [ LongType ]
+  types_peekFTSFile = [ [IntType, LongType] ]
   @classmethod
   def export_peekFTSFile( cls, ftsFileID ):
     """ peek FTSFile given FTSFileID """
@@ -342,33 +342,33 @@ class FTSManagerHandler( RequestHandler ):
         gLogger.error( peekFile["Message"] )
     return peekFile
 
-  types_putFTSFile = [ DictType ]
-  @classmethod
-  def export_putFTSFile( cls, ftsFileJSON ):
-    """ put FTSFile into FTSDB """
-    try:
-      ftsFile = FTSFile( ftsFileJSON )
-      isValid = cls.ftsValidator().validate( ftsFile )
-      if not isValid["OK"]:
-        gLogger.error( isValid["Message"] )
-        return isValid
-      return cls.__ftsDB.putFTSFile( ftsFile )
-    except Exception, error:
-      gLogger.exception( error )
-      return S_ERROR( error )
-
-  types_deleteFTSFile = [ LongType ]
-  @classmethod
-  def export_deleteFTSFile( cls, ftsFileID ):
-    """ delete FTSFile record given FTSFileID """
-    try:
-      deleteFTSFile = cls.__ftsDB.deleteFTSFile( ftsFileID )
-      if not deleteFTSFile["OK"]:
-        gLogger.error( deleteFTSFile["Message"] )
-      return deleteFTSFile
-    except Exception, error:
-      gLogger.exception( error )
-      return S_ERROR( error )
+#  types_putFTSFile = [ DictType ]
+#  @classmethod
+#  def export_putFTSFile( cls, ftsFileJSON ):
+#    """ put FTSFile into FTSDB """
+#    try:
+#      ftsFile = FTSFile( ftsFileJSON )
+#      isValid = cls.ftsValidator().validate( ftsFile )
+#      if not isValid["OK"]:
+#        gLogger.error( isValid["Message"] )
+#        return isValid
+#      return cls.__ftsDB.putFTSFile( ftsFile )
+#    except Exception, error:
+#      gLogger.exception( error )
+#      return S_ERROR( error )
+#
+#  types_deleteFTSFile = [ [IntType, LongType] ]
+#  @classmethod
+#  def export_deleteFTSFile( cls, ftsFileID ):
+#    """ delete FTSFile record given FTSFileID """
+#    try:
+#      deleteFTSFile = cls.__ftsDB.deleteFTSFile( ftsFileID )
+#      if not deleteFTSFile["OK"]:
+#        gLogger.error( deleteFTSFile["Message"] )
+#      return deleteFTSFile
+#    except Exception, error:
+#      gLogger.exception( error )
+#      return S_ERROR( error )
 
   types_putFTSJob = [ DictType ]
   @classmethod
@@ -402,7 +402,7 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
-  types_getFTSJob = [ LongType ]
+  types_getFTSJob = [ [IntType, LongType] ]
   @classmethod
   def export_getFTSJob( cls, ftsJobID ):
     """ read FTSJob for processing given FTSJobID """
@@ -422,7 +422,7 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
-  types_peekFTSJob = [ LongType ]
+  types_peekFTSJob = [ [IntType, LongType] ]
   @classmethod
   def export_peekFTSJob( cls, ftsJobID ):
     """ peek FTSJob given ftsJobID """
@@ -442,7 +442,7 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
-  types_deleteFTSJob = [ LongType ]
+  types_deleteFTSJob = [ [IntType, LongType] ]
   @classmethod
   def export_deleteFTSJob( cls, ftsJobID ):
     """ delete FTSJob given FTSJobID """
