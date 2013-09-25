@@ -19,7 +19,7 @@ from types import IntType, LongType
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import checkGuid
-from DIRAC.Core.Utilities.Adler import compareAdler
+from DIRAC.Core.Utilities.Adler import compareAdler, intAdlerToHex, hexAdlerToInt
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -887,8 +887,9 @@ class FTSRequest( object ):
         cksmStr = ""
         # # add chsmType:cksm only if cksmType is specified, else let FTS decide by itself
         if self.__cksmTest and self.__cksmType:
-          if lfn in self.catalogMetadata and "Checksum" in self.catalogMetadata[lfn]:
-            cksmStr = " %s:%s" % ( self.__cksmType, self.catalogMetadata[lfn]["Checksum"] )
+          checkSum = self.catalogMetadata.get( lfn, {} ).get( 'Checksum' )
+          if checkSum:
+            cksmStr = " %s:%s" % ( self.__cksmType, intAdlerToHex( hexAdlerToInt( checkSum ) ) )
         surlFile.write( "%s %s%s\n" % ( source, target, cksmStr ) )
         self.submittedFiles += 1
     surlFile.close()
