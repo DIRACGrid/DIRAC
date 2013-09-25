@@ -213,13 +213,13 @@ class FTSSubmitAgent( AgentModule ):
     stagingFiles = oFTSRequest.getStaging()['Value']
     # cache files being staged
     self.filesBeingStaged.update( stagingFiles )
-    submittedFiles = lfns - set( failedFiles ) - set( stagingFiles )
+    submittedFiles = lfns.difference( failedFiles, stagingFiles )
     # files being submitted are staged
-    self.filesBeingStaged.difference( submittedFiles )
-    failedIDs = [ meta["FileID"] for meta in files if meta["LFN"] in failedFiles ]
-    stagingIDs = [ meta["FileID"] for meta in files if meta["LFN"] in stagingFiles ]
+    self.filesBeingStaged -= submittedFiles
+    failedIDs = set( [ meta["FileID"] for meta in files if meta["LFN"] in failedFiles ] )
+    stagingIDs = set( [ meta["FileID"] for meta in files if meta["LFN"] in stagingFiles ] )
     # # only submitted
-    submittedIDs = list( set( fileIDs ) - set( failedIDs ) - set( stagingIDs ) )
+    submittedIDs = set( fileIDs ) - failedIDs - stagingIDs
     # # only count the submitted size
     totalSize = sum( [ meta["Size"] for meta in files if meta["FileID"] in submittedIDs ] )
 
@@ -256,7 +256,7 @@ class FTSSubmitAgent( AgentModule ):
     #########################################################################
     #  Insert the FileToFTS details and remove the files from the channel
     self.log.info( 'Setting the files as Executing in the Channel table' )
-    res = self.transferDB.setChannelFilesExecuting( channelID, submittedIDs )
+    res = self.transferDB.setChannelFilesExecuting( channelID, list( submittedIDs ) )
     if not res['OK']:
       self.log.error( 'Failed to update the Channel tables for files.', res['Message'] )
 
