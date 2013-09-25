@@ -443,9 +443,12 @@ class FTSRequest( object ):
     :param self: self reference
     :param str lfn: LFN to add to
     """
-    if lfn not in self.fileDict:
-      self.fileDict[lfn] = {}
+    self.fileDict.setdefault( lfn, {'Status':'Waiting'} )
     return S_OK()
+
+  def setStatus( self, lfn, status ):
+    """ set status of a file """
+    return( self.__setFileParameter( lfn, 'Status', status ) )
 
   def setSourceSURL( self, lfn, surl ):
     """ source SURL setter
@@ -457,8 +460,7 @@ class FTSRequest( object ):
     target = self.fileDict[lfn].get( 'Target' )
     if target == surl:
       return S_ERROR( "Source and target the same" )
-    self.__setFileParameter( lfn, 'Source', surl )
-    return S_OK()
+    return( self.__setFileParameter( lfn, 'Source', surl ) )
 
   def getSourceSURL( self, lfn ):
     """ get source SURL for LFN :lfn:
@@ -478,8 +480,7 @@ class FTSRequest( object ):
     source = self.fileDict[lfn].get( 'Source' )
     if source == surl:
       return S_ERROR( "Source and target the same" )
-    self.__setFileParameter( lfn, 'Target', surl )
-    return S_OK()
+    return( self.__setFileParameter( lfn, 'Target', surl ) )
 
   def getTargetSURL( self, lfn ):
     """ target SURL getter
