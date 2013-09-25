@@ -134,6 +134,9 @@ class FTSRequest( object ):
     # # were sources resolved?
     self.sourceResolved = False
 
+    # # Number of file transfers actually submitted
+    self.submittedFiles = 0
+
   ####################################################################
   #
   #  Methods for setting/getting/checking the SEs
@@ -572,7 +575,7 @@ class FTSRequest( object ):
     res = self.__submitFTSTransfer()
     if not res['OK']:
       return res
-    resDict = { 'ftsGUID' : self.ftsGUID, 'ftsServer' : self.ftsServer }
+    resDict = { 'ftsGUID' : self.ftsGUID, 'ftsServer' : self.ftsServer, 'submittedFiles' : self.submittedFiles }
     # print "Submitted %s @ %s" % ( self.ftsGUID, self.ftsServer )
     if monitor:
       self.monitor( untilTerminal = True, printOutput = printOutput )
@@ -881,6 +884,7 @@ class FTSRequest( object ):
           if lfn in self.catalogMetadata and "Checksum" in self.catalogMetadata[lfn]:
             cksmStr = " %s:%s" % ( self.__cksmType, self.catalogMetadata[lfn]["Checksum"] )
         surlFile.write( "%s %s%s\n" % ( source, target, cksmStr ) )
+        self.submittedFiles += 1
     surlFile.close()
     self.surlFile = fileName
     return S_OK()
@@ -897,6 +901,7 @@ class FTSRequest( object ):
       comm += [ '-S', self.sourceToken ]
     if self.__cksmTest:
       comm.append( "--compare-checksums" )
+    gLogger.verbose( 'Executing %s' % ' '.join( comm ) )
     res = executeGridCommand( '', comm )
     os.remove( self.surlFile )
     if not res['OK']:
@@ -948,19 +953,20 @@ class FTSRequest( object ):
       res = self.__getFTSServer( 'LCG.CERN.ch' )
       if res['OK']:
         self.ftsServer = res['Value']
+        return S_OK( self.ftsServer )
       else:
         return res
     else:
       # Target site FTS server should be used
       sourceFTS = self.__getFTSServer( sourceSite )
       if sourceFTS['OK']:
-        ftsSource = res['Value']
+        ftsSource = sourceFTS['Value']
         if 'fts3' in ftsSource:
           self.ftsServer = ftsSource
           return S_OK( self.ftsServer )
       targetFTS = self.__getFTSServer( targetSite )
       if targetFTS['OK']:
-        ftsTarget = res['Value']
+        ftsTarget = targetFTS['Value']
         if ftsTarget:
           self.ftsServer = ftsTarget
           return S_OK( self.ftsServer )

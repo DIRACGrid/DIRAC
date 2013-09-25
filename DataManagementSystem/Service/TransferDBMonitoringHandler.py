@@ -5,7 +5,7 @@
 
 """ :mod: TransferDBMonitoringHandler
     =================================
- 
+
     .. module: TransferDBMonitoringHandler
     :synopsis: Implementation of the TransferDB monitoring service in the DISET framework.
 
@@ -15,9 +15,9 @@
 
 __RCSID__ = "$Id"
 
-## imports
+# # imports
 from types import IntType, StringType, DictType, ListType
-## fro DIARC
+# # fro DIARC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
@@ -78,7 +78,7 @@ def initializeTransferDBMonitoringHandler( serviceInfo ):
   return S_OK()
 
 class TransferDBMonitoringHandler( RequestHandler ):
-  """ 
+  """
   .. class:: TransferDBMonitoringHandler
   """
 
@@ -124,17 +124,17 @@ class TransferDBMonitoringHandler( RequestHandler ):
     """ Get the observed throughput on the channels defined """
     return gTransferDB.getChannelObservedThroughput( interval )
 
-  types_getChannelQueues = []
+  types_getChannelQueues = [ StringType]
   @staticmethod
-  def export_getChannelQueues():
+  def export_getChannelQueues( status ):
     """ Get the channel queues """
-    return gTransferDB.getChannelQueues() 
+    return gTransferDB.getChannelQueues( status )
 
   types_getCountFileToFTS = [ IntType, StringType ]
   @staticmethod
   def export_getCountFileToFTS( interval, status ):
     """ Get the count of distinct failed files in FileToFTS per channel """
-    return gTransferDB.getCountFileToFTS( interval, status ) 
+    return gTransferDB.getCountFileToFTS( interval, status )
 
   ##############################################################################
   types_getReqPageSummary = [ DictType, StringType, IntType, IntType ]
@@ -427,3 +427,15 @@ class TransferDBMonitoringHandler( RequestHandler ):
   def export_getChannelStatus():
     """ get distinct channel's statuses """
     return gTransferDB.getDistinctChannelsAttributes( 'Status' )
+
+  types_getFilesForChannel = [IntType, IntType, StringType, StringType, StringType]
+  @staticmethod
+  def export_getFilesForChannel( channelID, nFiles, status, sourceSE, targetSE ):
+    """ get files for a given channel and a given status"""
+    return gTransferDB.getFilesForChannel( channelID, nFiles, status, sourceSE, targetSE )
+
+  types_resetFileChannelStatus = [IntType, ListType]
+  @staticmethod
+  def export_resetFileChannelStatus( channelID, fileIDs ):
+    """ reset files for a given channel """
+    return gTransferDB.resetFileChannelStatus( channelID, fileIDs )
