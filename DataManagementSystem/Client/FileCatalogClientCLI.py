@@ -2035,13 +2035,19 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
     
-        usage: find <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
+        usage: find [-q] <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
    
     argss = args.split()
     if (len(argss) < 1):
       print self.do_find.__doc__
       return
+    
+    verbose = True
+    if argss[0] == "-q":
+      verbose  = False
+      del argss[0]
+
     path = argss[0]
     path = self.getPath(path)
     del argss[0]
@@ -2053,8 +2059,8 @@ File Catalog Client $Revision: 1.17 $Date:
         metaDict = self.__createQuery(' '.join(argss))
     else:
       metaDict = {}    
-    print "Query:",metaDict
-          
+    if verbose: print "Query:",metaDict
+
     result = self.fc.findFilesByMetadata(metaDict,path)
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
@@ -2064,12 +2070,18 @@ File Catalog Client $Revision: 1.17 $Date:
         print dir_
     else:
       print "No matching data found"      
-    if "QueryTime" in result:
+
+    if verbose and "QueryTime" in result:
       print "QueryTime %.2f sec" % result['QueryTime']  
 
   def complete_find(self, text, line, begidx, endidx):
     result = []
     args = line.split()
+
+    # skip "-q" optional switch
+    if len(args) >= 2 and args[1] == "-q":
+      if len(args) > 2 or line.endswith(" "):
+        del args[1]
 
     # the first argument -- LFN.
     if (1<=len(args)<=2):
