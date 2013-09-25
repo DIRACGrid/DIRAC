@@ -201,8 +201,8 @@ class FTSClient( Client ):
       self.log.error( getJob["Message"] )
       return getJob
     # # de-serialize
-    if getJob["Value"]:
-      getJob = FTSJob( getJob["Value"] )
+#    if getJob["Value"]:
+#      getJob = FTSJob( getJob["Value"] )
     return getJob
 
   def deleteFTSJob( self, ftsJobID ):
