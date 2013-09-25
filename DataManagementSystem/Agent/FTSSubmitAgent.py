@@ -110,31 +110,30 @@ class FTSSubmitAgent( AgentModule ):
     :param dict channelDict: dict with channel info as read from TransferDB.selectChannelsForSubmission
     """
 
-    # Create the FTSRequest object for preparing the submission
-    oFTSRequest = FTSRequest()
     channelID = channelDict['ChannelID']
     filesPerJob = channelDict['NumFiles']
 
     #########################################################################
     #  Obtain the first files in the selected channel.
-    self.log.info( "FTSSubmitAgent.submitTransfer: Attempting to obtain files to transfer on channel %s" % channelID )
+    self.log.info( "FTSSubmitAgent.submitTransfer: Attempting to obtain files for channel %s: %s to %s"
+                   % ( channelID, channelDict['Source'], channelDict['Destination'] ) )
     res = self.transferDB.getFilesForChannel( channelID, 2 * filesPerJob )
     if not res['OK']:
       errStr = 'FTSSubmitAgent.%s' % res['Message']
       self.log.error( errStr )
       return S_OK()
     if not res['Value']:
-      self.log.info( "FTSSubmitAgent.submitTransfer: No files to found for channel." )
+      self.log.info( "FTSSubmitAgent.submitTransfer: No files found for channel." )
       return S_OK()
     filesDict = res['Value']
-    self.log.info( 'Obtained %s files for channel' % len( filesDict['Files'] ) )
-
     sourceSE = filesDict['SourceSE']
-    oFTSRequest.setSourceSE( sourceSE )
     targetSE = filesDict['TargetSE']
+    self.log.info( 'Obtained %s files for channel %s to %s' % ( len( filesDict['Files'] ), sourceSE, targetSE ) )
+
+    # Create the FTSRequest object for preparing the submission
+    oFTSRequest = FTSRequest()
+    oFTSRequest.setSourceSE( sourceSE )
     oFTSRequest.setTargetSE( targetSE )
-    self.log.info( "FTSSubmitAgent.submitTransfer: Attempting to obtain files for %s to %s channel." % ( sourceSE,
-                                                                                                         targetSE ) )
     files = filesDict['Files']
 
     # # enable/disable cksm test
@@ -181,7 +180,7 @@ class FTSSubmitAgent( AgentModule ):
     self.log.info( 'Submitting the FTS request' )
     res = oFTSRequest.submit()
     if not res['OK']:
-      errStr = "FTSSubmitAgent.%s" % res['Message']
+      errStr = "FTSSubmitAgent.submit: %s" % res['Message']
       self.log.error( errStr )
       self.log.info( 'Updating the Channel table for files to retry' )
       res = self.transferDB.resetFileChannelStatus( channelID, fileIDs )
@@ -190,6 +189,7 @@ class FTSSubmitAgent( AgentModule ):
       return S_ERROR( errStr )
     ftsGUID = res['Value']['ftsGUID']
     ftsServer = res['Value']['ftsServer']
+    submittedFiles = res['Value']['submittedFiles']
     infoStr = """Submitted FTS Job:
 
               FTS Guid: %s
@@ -199,14 +199,14 @@ class FTSSubmitAgent( AgentModule ):
               TargetSE: %s
               Files: %s
 
-""" % ( ftsGUID, ftsServer, str( channelID ), sourceSE, targetSE, str( len( files ) ) )
+""" % ( ftsGUID, ftsServer, str( channelID ), sourceSE, targetSE, str( submittedFiles ) )
     self.log.info( infoStr )
 
     # # filter out skipped files
     failedFiles = oFTSRequest.getFailed()
     if not failedFiles["OK"]:
       self.log.warn( "Unable to read skipped LFNs." )
-    failedFiles = failedFiles["Value"] if "Value" in failedFiles else []
+    failedFiles = failedFiles.get( "Value", [] )
     failedIDs = [ meta["FileID"] for meta in files if meta["LFN"] in failedFiles ]
     # # only submitted
     fileIDs = [ fileID for fileID in fileIDs if fileID not in failedIDs ]
