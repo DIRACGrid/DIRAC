@@ -1,3 +1,9 @@
+[v6r9p19]
+
+*DMS
+FIX: FileCatalog/DirectoryMetadata - inherited metadata is used while selecting directories
+     in findDirIDsByMetadata()
+
 [v6r9p18]
 
 *DMS
