@@ -308,7 +308,7 @@ class FTSDB( DB ):
       ftsJob.addFile( ftsFile )
     if not readOnly:
       setAssigned = "UPDATE `FTSJob` SET `Status`='Assigned' WHERE `FTSJobID` = %s;" % ftsJobID
-      setAssigned = self._query( setAssigned )
+      setAssigned = self._update( setAssigned )
       if not setAssigned["OK"]:
         self.log.error( setAssigned["Message"] )
         return setAssigned
