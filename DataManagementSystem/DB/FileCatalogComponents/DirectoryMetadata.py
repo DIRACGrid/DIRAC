@@ -304,6 +304,13 @@ class DirectoryMetadata:
 
     return S_OK( metaDict )
 
+  def __getDirMeta(self, meta, pathString):
+    """ Return the list of associated meta values for the specified meta tag and paths IDs
+    """
+    req = "SELECT Value,DirID FROM FC_Meta_%s WHERE DirID in (%s)" % ( meta, pathString )
+    result = self.db._query( req )
+    return result
+  
   def getDirectoryMetadata( self, path, credDict, inherited = True, owndata = True ):
     """ Get metadata for the given directory aggregating metadata for the directory itself
         and for all the parent directories if inherited flag is True. Get also the non-indexed
@@ -328,10 +335,10 @@ class DirectoryMetadata:
       pathIDs = pathIDs[-1:]
     if not owndata:
       pathIDs = pathIDs[:-1]
-    pathString = ','.join( [ str( x ) for x in pathIDs ] )
+    #more efficient to do this once
+    pathString = ','.join( [ str( x ) for x in pathIDs ] )  
     for meta in metaFields:
-      req = "SELECT Value,DirID FROM FC_Meta_%s WHERE DirID in (%s)" % ( meta, pathString )
-      result = self.db._query( req )
+      result = self.__getDirMeta(meta, pathString)
       if not result['OK']:
         return result
       if len( result['Value'] ) > 1:
@@ -544,19 +551,39 @@ class DirectoryMetadata:
 
     pathDirList = []
     pathDirID = 0
+    pathString = '0'
     if path != '/':
-      result = self.db.dtree.findDir( path )
+      result = self.db.dtree.getPathIDs( path )
       if not result['OK']:
+        #as result[Value] is already checked in getPathIDs
         return result
-      if not result['Value']:
-        return S_ERROR( 'Path not found: %s' % path )
-      pathDirID = int( result['Value'] )
-
+      pathIDs = result['Value']
+      pathDirID = pathIDs[-1]
+      pathString = ','.join( [ str( x ) for x in pathIDs ] )
+      
     result = self.__expandMetaDictionary( queryDict, credDict )
     if not result['OK']:
       return result
     metaDict = result['Value']
-    if metaDict:
+    
+    #Now get the meta data for the dir and its parents
+    finalmetadict = metaDict
+    for meta in metaDict.keys():
+      result = self.__getDirMeta(meta, pathString)
+      if not result['OK']:
+        #neither the dir nor the parents have this meta set
+        continue
+      if len( result['Value'] ) > 1:
+        return S_ERROR( 'Metadata conflict for directory %s' % path )
+      if result['Value']:
+        metaval = result['Value'][0][0]
+        if finalmetadict[meta] == metaval:
+          #the parent directory or the current directory is already OK for that meta data, no need to further check for that
+          del finalmetadict[meta]
+        else:
+          return S_ERROR("Incompatible meta query with %s" % meta)
+    
+    if finalmetadict:
       pathSelection = ''
       if pathDirID:
         result = self.db.dtree.getSubdirectoriesByID( pathDirID, includeParent = True, requestString = True )
@@ -565,7 +592,7 @@ class DirectoryMetadata:
         pathSelection = result['Value']
       dirList = []
       first = True
-      for meta, value in metaDict.items():
+      for meta, value in finalmetadict.items():
         if value == "Missing":
           result = self.__findSubdirMissingMeta( meta, pathSelection )
         else:
