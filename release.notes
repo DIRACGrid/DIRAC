@@ -1,3 +1,9 @@
+[v6r9p18]
+
+*DMS
+FIX: FTSSubmitAgent, FTSRequest - fixes the staging mechanism in the FTS transfer submission
+NEW: TransferDBMonitoringHandler - added getFilesForChannel(), resetFileChannelStatus()
+
 [v6r9p17]
 
 *Accounting
