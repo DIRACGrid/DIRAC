@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSDB.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 15:13:51
@@ -13,8 +12,6 @@
 
     FTS DB
 """
-
-__RCSID__ = "$Id $"
 
 # #
 # @file FTSDB.py
