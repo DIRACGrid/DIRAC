@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSClient.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/08 14:29:43
@@ -14,8 +13,6 @@
 
     FTS client
 """
-
-__RCSID__ = "$Id $"
 
 # #
 # @file FTSClient.py
@@ -33,7 +30,6 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
-from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
@@ -160,10 +156,8 @@ class FTSClient( Client ):
       self.log.error( getFile["Message"] )
     # # de-serialize
     if getFile["Value"]:
-      getFile = FTSFile( getFile["Value"] )
-      if not getFile["OK"]:
-        self.log.error( getFile["Message"] )
-    return getFile
+      ftsFile = FTSFile( getFile["Value"] )
+    return S_OK( ftsFile )
 
 #  def deleteFTSFile( self, ftsFileID = None ):
 #    """ get FTSFile

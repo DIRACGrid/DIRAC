@@ -24,22 +24,24 @@ __RCSID__ = "$Id $"
 from types import DictType, LongType, ListType, IntType, StringTypes
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
+from DIRAC.ConfigurationSystem.Client.PathFinder        import getServiceSection
+from DIRAC.Core.Utilities.ThreadScheduler               import gThreadScheduler
 # # from Resources
-from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+from DIRAC.Resources.Storage.StorageFactory             import StorageFactory
 # # from DMS
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
-from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
+from DIRAC.DataManagementSystem.Client.ReplicaManager   import ReplicaManager
+from DIRAC.DataManagementSystem.Client.FTSJob           import FTSJob
+from DIRAC.DataManagementSystem.Client.FTSFile          import FTSFile
+from DIRAC.DataManagementSystem.private.FTSHistoryView  import FTSHistoryView
 # # for FTS scheduling
-from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
+from DIRAC.DataManagementSystem.private.FTSStrategy     import FTSStrategy
 # # for FTS objects validation
-from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
+from DIRAC.DataManagementSystem.private.FTSValidator    import FTSValidator
+# # FTS DB
+from DIRAC.DataManagementSystem.DB.FTSDB                import FTSDB
 # # for proxy
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.Shifter                       import setupShifterProxyInEnv
 
 ########################################################################
 class FTSManagerHandler( RequestHandler ):
@@ -64,7 +66,6 @@ class FTSManagerHandler( RequestHandler ):
   def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
     try:
-      from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
       cls.__ftsDB = FTSDB()
     except RuntimeError, error:
       gLogger.exception( error )
@@ -317,7 +318,7 @@ class FTSManagerHandler( RequestHandler ):
       return getFile
     # # serialize
     if getFile["Value"]:
-      getFile = getFile["Value"].toXML( True )
+      getFile = getFile["Value"].toJSON()
       if not getFile["OK"]:
         gLogger.error( getFile["Message"] )
     return getFile
@@ -337,7 +338,7 @@ class FTSManagerHandler( RequestHandler ):
       return peekFile
     # # serialize
     if peekFile["Value"]:
-      peekFile = peekFile["Value"].toXML( True )
+      peekFile = peekFile["Value"].toJSON()
       if not peekFile["OK"]:
         gLogger.error( peekFile["Message"] )
     return peekFile
@@ -469,7 +470,7 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
-  types_getFTSFilesIDs = [ ListType ]
+  types_getFTSFileIDs = [ ListType ]
   @classmethod
   def export_getFTSFileIDs( cls, statusList = None ):
     """ get FTSFilesIDs for a given status list """
