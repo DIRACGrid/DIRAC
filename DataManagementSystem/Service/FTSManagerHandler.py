@@ -326,38 +326,10 @@ class FTSManagerHandler( RequestHandler ):
         gLogger.error( peekFile["Message"] )
     return peekFile
 
-#  types_putFTSFile = [ DictType ]
-#  @classmethod
-#  def export_putFTSFile( self, ftsFileJSON ):
-#    """ put FTSFile into FTSDB """
-#    try:
-#      ftsFile = FTSFile( ftsFileJSON )
-#      isValid = self.ftsValidator.validate( ftsFile )
-#      if not isValid["OK"]:
-#        gLogger.error( isValid["Message"] )
-#        return isValid
-#      return self.ftsDB.putFTSFile( ftsFile )
-#    except Exception, error:
-#      gLogger.exception( error )
-#      return S_ERROR( error )
-#
-#  types_deleteFTSFile = [ [IntType, LongType] ]
-#  @classmethod
-#  def export_deleteFTSFile( self, ftsFileID ):
-#    """ delete FTSFile record given FTSFileID """
-#    try:
-#      deleteFTSFile = self.ftsDB.deleteFTSFile( ftsFileID )
-#      if not deleteFTSFile["OK"]:
-#        gLogger.error( deleteFTSFile["Message"] )
-#      return deleteFTSFile
-#    except Exception, error:
-#      gLogger.exception( error )
-#      return S_ERROR( error )
-
   types_putFTSJob = [ DictType ]
   @classmethod
   def export_putFTSJob( self, ftsJobJSON ):
-    """ put FTSLfn into FTSDB """
+    """ put FTSJob (serialized in JSON into FTSDB """
 
     ftsFiles = []
 
