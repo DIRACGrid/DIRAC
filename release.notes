@@ -166,6 +166,12 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
 
+[v6r9p18]
+
+*DMS
+FIX: FTSSubmitAgent, FTSRequest - fixes the staging mechanism in the FTS transfer submission
+NEW: TransferDBMonitoringHandler - added getFilesForChannel(), resetFileChannelStatus()
+
 [v6r9p17]
 
 *Accounting

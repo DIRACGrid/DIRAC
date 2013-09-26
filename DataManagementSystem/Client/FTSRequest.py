@@ -19,7 +19,7 @@ from types import IntType, LongType
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import checkGuid
-from DIRAC.Core.Utilities.Adler import compareAdler
+from DIRAC.Core.Utilities.Adler import compareAdler, intAdlerToHex, hexAdlerToInt
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -54,7 +54,7 @@ class FTSRequest( object ):
                          'Finished', 'FinishedDirty' )
     # # failed states tuple
     self.failedStates = ( 'Canceled', 'Failed',
-                          'Hold', 'FinishedDirty', 'Staging' )
+                          'Hold', 'FinishedDirty' )
     # # successful states tuple
     self.successfulStates = ( 'Finished', 'Done' )
     # # all file states tuple
@@ -137,6 +137,9 @@ class FTSRequest( object ):
 
     # # were sources resolved?
     self.sourceResolved = False
+
+    # # Number of file transfers actually submitted
+    self.submittedFiles = 0
 
   ####################################################################
   #
@@ -444,9 +447,12 @@ class FTSRequest( object ):
     :param self: self reference
     :param str lfn: LFN to add to
     """
-    if lfn not in self.fileDict:
-      self.fileDict[lfn] = {}
+    self.fileDict.setdefault( lfn, {'Status':'Waiting'} )
     return S_OK()
+
+  def setStatus( self, lfn, status ):
+    """ set status of a file """
+    return( self.__setFileParameter( lfn, 'Status', status ) )
 
   def setSourceSURL( self, lfn, surl ):
     """ source SURL setter
@@ -458,8 +464,7 @@ class FTSRequest( object ):
     target = self.fileDict[lfn].get( 'Target' )
     if target == surl:
       return S_ERROR( "Source and target the same" )
-    self.__setFileParameter( lfn, 'Source', surl )
-    return S_OK()
+    return( self.__setFileParameter( lfn, 'Source', surl ) )
 
   def getSourceSURL( self, lfn ):
     """ get source SURL for LFN :lfn:
@@ -479,8 +484,7 @@ class FTSRequest( object ):
     source = self.fileDict[lfn].get( 'Source' )
     if source == surl:
       return S_ERROR( "Source and target the same" )
-    self.__setFileParameter( lfn, 'Target', surl )
-    return S_OK()
+    return( self.__setFileParameter( lfn, 'Target', surl ) )
 
   def getTargetSURL( self, lfn ):
     """ target SURL getter
@@ -521,6 +525,11 @@ class FTSRequest( object ):
     """
     return S_OK( [ lfn for lfn in self.fileDict
                    if self.fileDict[lfn].get( 'Status', '' ) in self.failedStates ] )
+
+  def getStaging( self ):
+    """ get files set for prestaging """
+    return S_OK( [lfn for lfn in self.fileDict
+                  if self.fileDict[lfn].get( 'Status', '' ) == 'Staging'] )
 
   def getDone( self ):
     """ get list of succesfully transferred LFNs
@@ -576,7 +585,7 @@ class FTSRequest( object ):
     res = self.__submitFTSTransfer()
     if not res['OK']:
       return res
-    resDict = { 'ftsGUID' : self.ftsGUID, 'ftsServer' : self.ftsServer }
+    resDict = { 'ftsGUID' : self.ftsGUID, 'ftsServer' : self.ftsServer, 'submittedFiles' : self.submittedFiles }
     # print "Submitted %s @ %s" % ( self.ftsGUID, self.ftsServer )
     if monitor:
       self.monitor( untilTerminal = True, printOutput = printOutput )
@@ -882,9 +891,11 @@ class FTSRequest( object ):
         cksmStr = ""
         # # add chsmType:cksm only if cksmType is specified, else let FTS decide by itself
         if self.__cksmTest and self.__cksmType:
-          if lfn in self.catalogMetadata and "Checksum" in self.catalogMetadata[lfn]:
-            cksmStr = " %s:%s" % ( self.__cksmType, self.catalogMetadata[lfn]["Checksum"] )
+          checkSum = self.catalogMetadata.get( lfn, {} ).get( 'Checksum' )
+          if checkSum:
+            cksmStr = " %s:%s" % ( self.__cksmType, intAdlerToHex( hexAdlerToInt( checkSum ) ) )
         surlFile.write( "%s %s%s\n" % ( source, target, cksmStr ) )
+        self.submittedFiles += 1
     surlFile.close()
     self.surlFile = fileName
     return S_OK()
@@ -901,6 +912,7 @@ class FTSRequest( object ):
       comm += [ '-S', self.sourceToken ]
     if self.__cksmTest:
       comm.append( "--compare-checksums" )
+    gLogger.verbose( 'Executing %s' % ' '.join( comm ) )
     res = executeGridCommand( '', comm )
     os.remove( self.surlFile )
     if not res['OK']:
@@ -952,19 +964,20 @@ class FTSRequest( object ):
       res = self.__getFTSServer( 'LCG.CERN.ch' )
       if res['OK']:
         self.ftsServer = res['Value']
+        return S_OK( self.ftsServer )
       else:
         return res
     else:
       # Target site FTS server should be used
       sourceFTS = self.__getFTSServer( sourceSite )
       if sourceFTS['OK']:
-        ftsSource = res['Value']
+        ftsSource = sourceFTS['Value']
         if 'fts3' in ftsSource:
           self.ftsServer = ftsSource
           return S_OK( self.ftsServer )
       targetFTS = self.__getFTSServer( targetSite )
       if targetFTS['OK']:
-        ftsTarget = res['Value']
+        ftsTarget = targetFTS['Value']
         if ftsTarget:
           self.ftsServer = ftsTarget
           return S_OK( self.ftsServer )
