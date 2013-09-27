@@ -12,11 +12,13 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
-from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, pixelToPoint, \
+                                                       PrettyDateLocator, PrettyDateFormatter, \
+                                                       PrettyScalarFormatter
 from pylab import setp
 from matplotlib.patches import Polygon
 from matplotlib.dates import date2num
+import datetime
 
 class BarGraph( PlotBase ):
 
@@ -67,7 +69,6 @@ class BarGraph( PlotBase ):
       start_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['starttime'])))    
       end_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['endtime'])))        
         
-    labels = self.gdata.getLabels()  
     nKeys = self.gdata.getNumberOfKeys()
     tmp_b = []
     if self.prefs.has_key('log_yaxis'):
@@ -101,20 +102,21 @@ class BarGraph( PlotBase ):
       tmp_x = []
       tmp_y = []
       tmp_t = []
-      key_prev = None
       plot_data = self.gdata.getPlotNumData(label)
-      for key, value in plot_data:
+      for key, value, error in plot_data:        
         if value is None:
           value = 0.
           
         tmp_x.append( offset+key )
-        tmp_y.append( ymin )  
+        #tmp_y.append( ymin )  
+        tmp_y.append( 0.001 )  
         tmp_x.append( offset+key )
         tmp_y.append( float(value)+tmp_b[ind] )
         tmp_x.append( offset+key+width )
         tmp_y.append( float(value)+tmp_b[ind] )
         tmp_x.append( offset+key+width )
-        tmp_y.append( ymin )
+        #tmp_y.append( ymin )
+        tmp_y.append( 0.001 )  
         tmp_t.append(float(value)+tmp_b[ind])   
         ind += 1       
       seq_t = zip(tmp_x,tmp_y)     
@@ -135,12 +137,28 @@ class BarGraph( PlotBase ):
     #for idx in range(len(pivots)):
     #    self.coords[ pivots[idx] ] = self.bars[idx]
     
-    ymax = max(tmp_b); ymax *= 1.1
+    ymax = max(tmp_b)
+    ymax *= 1.1
+    
+    if self.prefs.has_key('log_yaxis'):
+      ymin = 0.001
+    else:
+      ymin = min(tmp_b)  
+      if ymin > 0.: ymin = 0.
+      ymin *= 1.1
+    
+    xmax=max(tmp_x)
     if self.log_xaxis:  
       xmin = 0.001
     else: 
       xmin = 0
-    self.ax.set_xlim( xmin=xmin, xmax=max(tmp_x)+offset )
+      
+    ymin = self.prefs.get( 'ymin', ymin )  
+    ymax = self.prefs.get( 'ymax', ymax )
+    xmin = self.prefs.get( 'xmin', xmin )  
+    xmax = self.prefs.get( 'xmax', xmax )       
+      
+    self.ax.set_xlim( xmin=xmin, xmax=xmax+offset )
     self.ax.set_ylim( ymin=ymin, ymax=ymax )
     if self.gdata.key_type == 'time':
       if start_plot and end_plot:

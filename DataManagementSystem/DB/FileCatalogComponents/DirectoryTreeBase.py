@@ -16,8 +16,37 @@ DEBUG = 0
 #############################################################################
 class DirectoryTreeBase:
 
+  _base_tables = {}
+  _base_tables["FC_DirectoryUsage"] = { "Fields":
+                                        {
+                                          "DirID": "INTEGER NOT NULL",
+                                          "SEID": "INTEGER NOT NULL",
+                                          "SESize": "BIGINT NOT NULL",
+                                          "SEFiles": "BIGINT NOT NULL",
+                                          "LastUpdate": "DATETIME NOT NULL"
+                                        },
+                                        "UniqueIndexes" : {"DirID_SEID": ["DirID","SEID"]},
+                                        "Indexes": {
+                                                     "DirID": ["DirID"],
+                                                     "SEID": ["SEID"]
+                                                   }  
+                                       }
+  _base_tables["FC_DirectoryInfo"] = { "Fields": {
+                                                    "DirID": "INTEGER NOT NULL",
+                                                    "UID": "SMALLINT UNSIGNED NOT NULL DEFAULT 0",
+                                                    "GID": "SMALLINT UNSIGNED NOT NULL DEFAULT 0",
+                                                    "CreationDate": "DATETIME",
+                                                    "ModificationDate": "DATETIME",
+                                                    "Mode": "SMALLINT UNSIGNED NOT NULL DEFAULT 775",
+                                                    "Status": "SMALLINT UNSIGNED NOT NULL DEFAULT 0"
+                                                  }, 
+                                        "PrimaryKey": "DirID"
+                                       }
+  
   def __init__( self, database = None ):
-    self.db = database
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
     self.lock = threading.Lock()
     self.treeTable = ''
 
@@ -35,8 +64,20 @@ class DirectoryTreeBase:
     """
     return self.treeTable
     
-  def setDatabase(self,database):
-    self.db = database  
+  def setDatabase( self, database ):
+    self.db = database
+    result = self.db._createTables( self._base_tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._base_tables.keys() ) )
+      return result
+    if result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )
+    result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
+    return result
 
   def makeDir( self, path ):    
     return S_ERROR( 'Should be implemented in a derived class' )
@@ -208,7 +249,7 @@ class DirectoryTreeBase:
     if not result['OK']:
       return result
     dirID = result['Value']
-    result = self.db.fileManager.getFilesInDirectory( dirID, path )
+    result = self.db.fileManager.getFilesInDirectory( dirID )
     if not result['OK']:
       return result
     files = result['Value']
@@ -394,8 +435,8 @@ class DirectoryTreeBase:
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path, dict in arguments.items():
-      group = dict['Group']
+    for path, dict_ in arguments.items():
+      group = dict_['Group']
       result = self.setDirectoryGroup( path, group )
       if not result['OK']:
         failed[path] = result['Message']
@@ -429,8 +470,8 @@ class DirectoryTreeBase:
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path, dict in arguments.items():
-      mode = dict['Mode']
+    for path, dict_ in arguments.items():
+      mode = dict_['Mode']
       result = self.setDirectoryMode( path, mode )
       if not result['OK']:
         failed[path] = result['Message']
@@ -504,7 +545,7 @@ class DirectoryTreeBase:
     if not dirs:
       dirs = [ -1 ]
 
-    dirListString = ','.join( [ str( dir ) for dir in dirs ] )
+    dirListString = ','.join( [ str( dir_ ) for dir_ in dirs ] )
 
     req = "SELECT COUNT( DirID ) FROM FC_Files USE INDEX (DirID) WHERE DirID IN ( %s )" % dirListString
     result = self.db._query( req )
@@ -606,7 +647,7 @@ class DirectoryTreeBase:
           directories[dirName] = result['Value']
       else:
         directories[dirName] = True
-    res = self.db.fileManager.getFilesInDirectory( directoryID, path, verbose = details )
+    res = self.db.fileManager.getFilesInDirectory( directoryID, verbose = details )
     if not res['OK']:
       return res
     files = res['Value']
@@ -628,6 +669,38 @@ class DirectoryTreeBase:
         successful[path] = result['Value']
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
+  
+  def getDirectoryReplicas( self, lfns, allStatus = False ):
+    """ Get replicas for files in the given directories
+    """
+    paths = lfns.keys()
+    successful = {}
+    failed = {}
+    for path in paths:
+      result = self.findDir( path )
+      if not result['OK']:
+        failed[path] = result['Message']
+        continue
+      directoryID = result['Value']
+      result = self.db.fileManager.getDirectoryReplicas( directoryID, path, allStatus )
+      if not result['OK']:
+        failed[path] = result['Message']
+        continue
+      fileDict = result['Value']
+      successful[path] = {} 
+      for fileName in fileDict:
+        successful[path][fileName] = fileDict[fileName]  
+        
+    result = S_OK( {'Successful':successful, 'Failed':failed} )
+    
+    if self.db.lfnPfnConvention:
+      sePrefixDict = {}
+      resSE = self.db.seManager.getSEPrefixes()
+      if resSE['OK']:
+        sePrefixDict = resSE['Value']
+      result['Value']['SEPrefixes'] = sePrefixDict
+      
+    return result
 
   def getDirectorySize( self, lfns, longOutput = False, rawFileTables = False ):
     """ Get the total size of the requested directories. If long flag
@@ -921,21 +994,12 @@ class DirectoryTreeBase:
     """
 
     req = "DROP TABLE IF EXISTS FC_DirectoryUsage_backup"
-    result = self.db._update( req )
+    self.db._update( req )
     req = "RENAME TABLE FC_DirectoryUsage TO FC_DirectoryUsage_backup"
-    result = self.db._update( req )
-    req = """CREATE TABLE `FC_DirectoryUsage` (
-  `DirID` int(11) NOT NULL,
-  `SEID` int(11) NOT NULL,
-  `SESize` bigint(20) NOT NULL,
-  `SEFiles` bigint(20) NOT NULL,
-  `LastUpdate` datetime NOT NULL,
-  PRIMARY KEY (`DirID`,`SEID`),
-  KEY `DirID` (`DirID`),
-  KEY `SEID` (`SEID`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 
-"""
-    result = self.db._update( req )
+    self.db._update( req )
+    
+    tableDict = { "FC_DirectoryUsage": self._base_tables['FC_DirectoryUsage'] }
+    result = self.db._createTables( tableDict )
     if not result['OK']:
       return result
 
@@ -965,7 +1029,6 @@ class DirectoryTreeBase:
     gLogger.verbose( 'Starting rebuilding Directory Usage, number of visible directories %d' % len( dirIDs ) )
 
     insertFields = ['DirID', 'SEID', 'SESize', 'SEFiles', 'LastUpdate']
-    insertCount = 0
     insertValues = []
 
     count = 0
@@ -1068,7 +1131,7 @@ class DirectoryTreeBase:
   def getDirectoryCounters( self, connection = False ):
     """ Get the total number of directories
     """
-    conn = self._getConnection( connection )
+    connection = self._getConnection( connection )
     resultDict = {}
     req = "SELECT COUNT(*) from FC_DirectoryInfo"
     res = self.db._query( req, connection )

@@ -238,6 +238,7 @@ class SiteDirector( AgentModule ):
           self.queueDict[queueName]['CEType'] = ceDict['CEType']
           self.queueDict[queueName]['Site'] = siteFullName
           self.queueDict[queueName]['QueueName'] = queue
+          self.queueDict[queueName]['Platform'] = platform
           result = self.queueDict[queueName]['CE'].isValid()
           if not result['OK']:
             self.log.fatal( result['Message'] )
@@ -311,10 +312,8 @@ class SiteDirector( AgentModule ):
       ceType = self.queueDict[queue]['CEType']
       queueName = self.queueDict[queue]['QueueName']
       siteName = self.queueDict[queue]['Site']
-      #
-      #FIXME: using only ComputingAccess
-      #
       siteMask = self.siteStatus.isUsableSite( siteName, 'ComputingAccess' )
+      platform = self.queueDict[queue]['Platform']
 
       if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
         queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )
@@ -360,7 +359,7 @@ class SiteDirector( AgentModule ):
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools
 
-      result = Resources.getCompatiblePlatforms( self.platforms )
+      result = Resources.getCompatiblePlatforms( platform )
       if not result['OK']:
         continue
       ceDict['Platform'] = result['Value']

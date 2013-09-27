@@ -11,7 +11,7 @@
 __RCSID__ = "$Id$"
 
 import types, datetime, numpy, time
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp, pretty_float
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, pretty_float
 from matplotlib.dates import date2num
 
 DEBUG = 0
@@ -123,7 +123,7 @@ class GraphData:
 
     return not self.plotdata is None
 
-  def sortLabels( self, sort_type = 'max_value' ):
+  def sortLabels( self, sort_type = 'max_value', reverse_order=False ):
     """ Sort labels with a specified method:
           alpha - alphabetic order
           max_value - by max value of the subplot
@@ -136,32 +136,40 @@ class GraphData:
           self.labels = self.plotdata.sortKeys( 'weight' )
         else:
           self.labels = self.plotdata.sortKeys()
+        if reverse_order:
+          self.labels.reverse()  
         self.label_values = [ self.plotdata.parsed_data[l] for l in self.labels]
-
     else:
       if sort_type == 'max_value':
         pairs = zip( self.subplots.keys(), self.subplots.values() )
-        pairs.sort( key = lambda x: x[1].max_value, reverse = True )
+        reverse = not reverse_order
+        pairs.sort( key = lambda x: x[1].max_value, reverse = reverse )
         self.labels = [ x[0] for x in pairs ]
         self.label_values = [ x[1].max_value for x in pairs ]
       elif sort_type == 'last_value':
         pairs = zip( self.subplots.keys(), self.subplots.values() )
-        pairs.sort( key = lambda x: x[1].last_value, reverse = True )
+        reverse = not reverse_order
+        pairs.sort( key = lambda x: x[1].last_value, reverse = reverse )
         self.labels = [ x[0] for x in pairs ]
-        self.label_values = [ x[1].last_value for x in pairs ]
+        self.label_values = [ x[1].last_value for x in pairs ]        
       elif sort_type == 'sum':
         pairs = []
         for key in self.subplots:
           pairs.append( ( key, self.subplots[key].sum_value ) )
-        pairs.sort( key = lambda x: x[1], reverse = True )
+        reverse = not reverse_order
+        pairs.sort( key = lambda x: x[1], reverse = reverse )
         self.labels = [ x[0] for x in pairs ]
         self.label_values = [ x[1] for x in pairs ]
       elif sort_type == 'alpha':
         self.labels = self.subplots.keys()
         self.labels.sort()
+        if reverse_order:
+          self.labels.reverse()  
         self.label_values = [ self.subplots[x].sum_value for x in self.labels ]
       else:
         self.labels = self.subplots.keys()
+        if reverse_order:
+          self.labels.reverse()  
 
   def sortKeys( self ):
     """ Sort the graph keys in a natural order
@@ -256,7 +264,7 @@ class GraphData:
 
     if self.plotdata:
       if zipFlag:
-        return zip( self.plotdata.getNumKeys(), self.plotdata.getValues() )
+        return zip( self.plotdata.getNumKeys(), self.plotdata.getValues(), self.plotdata.getErrors() )
       else:
         return self.plotdata.getValues()
     elif label is not None:
@@ -371,11 +379,13 @@ class PlotData:
 
     # Working copy of the parsed data  
     self.parsed_data = {}
+    self.parsed_errors = {}
 
     # Keys and values as synchronized lists
     self.keys = []
     self.num_keys = []
     self.values = []
+    self.errors = []
     self.sorted_keys = []
 
     # Do initial data parsing
@@ -391,6 +401,7 @@ class PlotData:
       self.keys = self.sortKeys()
 
     self.values = [ self.parsed_data[k] for k in self.keys ]
+    self.errors = [ self.parsed_errors[k] for k in self.keys ]
     values_to_sum = [ self.parsed_data[k] for k in self.keys if k != '' ]
 
     self.real_values = []
@@ -484,11 +495,25 @@ class PlotData:
     """
     Parse the specific data value; this is the identity.
     """
+    
+    if type( data ) in types.StringTypes and "::" in data:
+      datum,error = data.split("::")
+    elif type( data ) == types.TupleType:
+      datum,error = data
+    else:  
+      error = 0.  
+      datum = data
+    
     try:
-      result = float( data )
+      resultD = float( datum )
     except:
-      result = None
-    return result
+      resultD = None
+    try:
+      resultE = float( error )
+    except:
+      resultE = None
+        
+    return ( resultD, resultE )
 
   def parseData( self, key_type = None ):
     """
@@ -502,12 +527,15 @@ class PlotData:
     else:
       self.key_type = get_key_type( self.data.keys() )
     new_parsed_data = {}
+    new_passed_errors = {}
     for key, data in self.data.items():
       new_key = self.parseKey( key )
-      data = self.parseDatum( data )
+      data,error = self.parseDatum( data )
       #if data != None:
       new_parsed_data[ new_key ] = data
+      new_passed_errors[ new_key ] = error
     self.parsed_data = new_parsed_data
+    self.parsed_errors = new_passed_errors
 
     self.keys = self.parsed_data.keys()
 
@@ -533,19 +561,23 @@ class PlotData:
   def getPlotData( self ):
 
     return self.parsed_data
+  
+  def getPlotErrors( self ):
+
+    return self.parsed_errors
 
   def getPlotNumData( self ):
 
-    return zip( self.num_keys, self.values )
+    return zip( self.num_keys, self.values, self.errors )
 
   def getPlotDataForKeys( self, keys ):
 
     result_pairs = []
     for key in keys:
       if self.parsed_data.has_key( key ):
-        result_pairs.append( key, self.parsed_data[key] )
+        result_pairs.append( key, self.parsed_data[key], self.parsed_errors[key] )
       else:
-        result_pairs.append( key, None )
+        result_pairs.append( key, None, 0. )
 
     return result_pairs
 
@@ -556,14 +588,14 @@ class PlotData:
       try:
         ind = self.num_keys.index( num_key )
         if self.values[ind] is None and zeroes:
-          result_pairs.append( ( self.num_keys[ind], 0. ) )
+          result_pairs.append( ( self.num_keys[ind], 0., 0. ) )
         else:
-          result_pairs.append( ( self.num_keys[ind], self.values[ind] ) )
+          result_pairs.append( ( self.num_keys[ind], self.values[ind], self.errors[ind] ) )
       except ValueError:
         if zeroes:
-          result_pairs.append( ( num_key, 0. ) )
+          result_pairs.append( ( num_key, 0., 0. ) )
         else:
-          result_pairs.append( ( num_key, None ) )
+          result_pairs.append( ( num_key, None, 0. ) )
 
     return result_pairs
 

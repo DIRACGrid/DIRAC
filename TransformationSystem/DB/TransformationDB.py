@@ -1606,6 +1606,12 @@ class TransformationDB( DB ):
     res = self.__deleteTransformationTaskInputs( transID, connection = connection )
     if not res['OK']:
       return res
+    res = self.__deleteTransformationTasks( transID, connection = connection )
+    if not res['OK']:
+      return res
+
+    self.__updateTransformationLogging( transID, "Transformation Cleaned", author, connection = connection )
+
     return S_OK( transID )
 
   def deleteTransformation( self, transName, author = '', connection = False ):

@@ -12,12 +12,11 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
-from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
-from pylab import setp
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, PrettyDateLocator, \
+                                                       PrettyDateFormatter, PrettyScalarFormatter  
 from matplotlib.patches import Polygon
 from matplotlib.dates import date2num
-import time,types
+import datetime
 
 class LineGraph( PlotBase ):
 
@@ -47,10 +46,8 @@ class LineGraph( PlotBase ):
     for n in range(nKeys):
       if self.prefs.has_key('log_yaxis'):
         tmp_b.append(0.001)
-        ymin = 0.001
       else:
         tmp_b.append(0.)  
-        ymin = 0.
         
     start_plot = 0
     end_plot = 0    
@@ -81,7 +78,7 @@ class LineGraph( PlotBase ):
       tmp_x = []
       tmp_y = []
       plot_data = self.gdata.getPlotNumData(label)
-      for key, value in plot_data:
+      for key, value, error in plot_data:
         if value is None:
           value = 0.
         tmp_x.append( key )
@@ -96,11 +93,21 @@ class LineGraph( PlotBase ):
       zorder -= 0.1
                     
     ymax = max(tmp_b); ymax *= 1.1
+    ymin = min(tmp_b); ymin *= 1.1
+    if self.prefs.has_key('log_yaxis'):
+      ymin = 0.001
+    xmax=max(tmp_x)  
     if self.log_xaxis:  
       xmin = 0.001
     else: 
       xmin = 0
-    self.ax.set_xlim( xmin=xmin, xmax=max(tmp_x) )
+      
+    ymin = self.prefs.get( 'ymin', ymin )  
+    ymax = self.prefs.get( 'ymax', ymax )
+    xmin = self.prefs.get( 'xmin', xmin )  
+    xmax = self.prefs.get( 'xmax', xmax )     
+      
+    self.ax.set_xlim( xmin=xmin, xmax=xmax )
     self.ax.set_ylim( ymin=ymin, ymax=ymax )
     if self.gdata.key_type == 'time':
       if start_plot and end_plot:
@@ -118,7 +125,6 @@ class LineGraph( PlotBase ):
       ticks.sort()
       ax.set_xticks( [i+.5 for i in ticks] )
       ax.set_xticklabels( [reverse_smap[i] for i in ticks] )
-      labels = ax.get_xticklabels()
       ax.grid( False )
       if self.log_xaxis:
         xmin = 0.001

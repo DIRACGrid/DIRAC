@@ -17,6 +17,7 @@ from types import StringTypes, ListType, DictType, StringType, TupleType
 # # from DIRAC
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
@@ -114,6 +115,8 @@ class CatalogBase( object ):
     self.log.debug( "_callFileCatalogFcn: Will execute '%s' method with %s lfns." % ( method, len( lfns ) ) )
     # # create FileCatalog instance
     fileCatalog = FileCatalog( catalogs = catalogs )
+    if not fileCatalog.isOK():
+      return S_ERROR( "Can't get FileCatalogs %s" % catalogs )
     # # get symbol
     fcFcn = getattr( fileCatalog, method ) if hasattr( fileCatalog, method ) else None
     # # check if it is callable
@@ -1072,7 +1075,6 @@ class ReplicaManager( CatalogToStorage ):
     self.registrationProtocol = ['SRM2', 'DIP']
     self.thirdPartyProtocols = ['SRM2', 'DIP']
     self.resourceStatus = ResourceStatus()
-    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
     self.ignoreMissingInFC = Operations().getValue( 'DataManagement/IgnoreMissingInFC', False )
 
   def setAccountingClient( self, client ):
@@ -1392,6 +1394,8 @@ class ReplicaManager( CatalogToStorage ):
     # Instantiate the desired file catalog
     if catalog:
       self.fileCatalogue = FileCatalog( catalog )
+      if not self.fileCatalogue.isOK():
+        return S_ERROR( "Can't get FileCatalog %s" % catalog )
     else:
       self.fileCatalogue = FileCatalog()
     # Check that the local file exists
@@ -1845,7 +1849,7 @@ class ReplicaManager( CatalogToStorage ):
     """ Register a file.
 
     :param self: self reference
-    :param tuple fileTuple: (lfn, physicalFile, fileSize, storageElementName, fileGuid )
+    :param tuple fileTuple: (lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum )
     :param str catalog: catalog name
     """
     if type( fileTuple ) == ListType:
@@ -1894,6 +1898,8 @@ class ReplicaManager( CatalogToStorage ):
     self.log.verbose( "__registerFile: Resolved %s files for registration." % len( fileDict ) )
     if catalog:
       fileCatalog = FileCatalog( catalog )
+      if not fileCatalog.isOK():
+        return S_ERROR( "Can't get FileCatalog %s" % catalog )
       res = fileCatalog.addFile( fileDict )
     else:
       res = self.fileCatalogue.addFile( fileDict )

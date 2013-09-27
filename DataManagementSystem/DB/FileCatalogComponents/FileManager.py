@@ -6,7 +6,9 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                                                import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase  import FileManagerBase
-from DIRAC.Core.Utilities.List                                            import stringListToString, intListToString
+from DIRAC.Core.Utilities.List                                            import stringListToString, \
+                                                                                 intListToString, \
+                                                                                 breakListIntoChunks
 
 DEBUG = 0
 
@@ -15,6 +17,65 @@ from types import StringTypes, ListType, TupleType
 
 class FileManager(FileManagerBase):
 
+  _tables = {}
+  _tables['FC_Files'] = { "Fields": { 
+                                     "FileID": "INT AUTO_INCREMENT",
+                                     "DirID": "INT NOT NULL",
+                                     "Size": "BIGINT UNSIGNED NOT NULL",
+                                     "UID": "SMALLINT UNSIGNED NOT NULL",
+                                     "GID": "TINYINT UNSIGNED NOT NULL",
+                                     "Status": "SMALLINT UNSIGNED NOT NULL",
+                                     "FileName": "VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                    }, 
+                          "PrimaryKey": "FileID",
+                          "Indexes": {
+                                       "DirID": ["DirID"],
+                                       "UID_GID": ["UID","GID"],
+                                       "Status": ["Status"],
+                                       "FileName": ["FileName"],
+                                       "Dir_File": ["DirID","FileName"]
+                                     }  
+                                   }
+  _tables['FC_FileInfo'] = { "Fields": { 
+                                         "FileID": "INTEGER NOT NULL",
+                                         "GUID": "char(36) NOT NULL",
+                                         "Checksum": "VARCHAR(32)",
+                                         "CheckSumType": "ENUM('Adler32','MD5')",
+                                         "Type": "ENUM('File','Link') NOT NULL DEFAULT 'File'",
+                                         "CreationDate": "DATETIME",
+                                         "ModificationDate": "DATETIME",
+                                         "LastAccessDate": "DateTime",
+                                         "Mode": "SMALLINT UNSIGNED NOT NULL DEFAULT 559"
+                                       },
+                             "PrimaryKey": "FileID",
+                             "Indexes": {
+                                          "GUID": ["GUID"]  
+                                        }  
+                            }
+  _tables['FC_Replicas'] = { "Fields": { 
+                                         "RepID": "INT AUTO_INCREMENT",
+                                         "FileID": "INT NOT NULL",
+                                         "SEID": "INTEGER NOT NULL",
+                                         "Status": "SMALLINT UNSIGNED NOT NULL"
+                                       },
+                             "PrimaryKey": "RepID",
+                             "Indexes": {
+                                          "FileID": ["FileID"],
+                                          "SEID": ["SEID"],
+                                          "Status": ["Status"] 
+                                        },
+                             "UniqueIndexes": { "File_SE": ["FileID","SEID"] }
+                            } 
+  _tables['FC_ReplicaInfo'] = { "Fields": { 
+                                            "RepID": "INTEGER NOT NULL AUTO_INCREMENT",
+                                            "RepType": "ENUM ('Master','Replica') NOT NULL DEFAULT 'Master'",
+                                            "CreationDate": "DATETIME",
+                                            "ModificationDate": "DATETIME",
+                                            "PFN": "VARCHAR(1024)"
+                                          },
+                                "PrimaryKey": "RepID"
+                              } 
+
   ######################################################
   #
   # The all important _findFiles and _getDirectoryFiles methods
@@ -22,20 +83,22 @@ class FileManager(FileManagerBase):
 
   def _findFiles(self,lfns,metadata=['FileID'],connection=False):
     """ Find file ID if it exists for the given list of LFNs """
+    
     connection = self._getConnection(connection)
     dirDict = self._getFileDirectories(lfns)
     failed = {}
-    directoryIDs = {}
+    result = self.db.dtree.findDirs( dirDict.keys() )
+    if not result['OK']:
+      return result
+    directoryIDs = result['Value']
+
     for dirPath in dirDict:
-      res = self.db.dtree.findDir(dirPath)
-      if (not res['OK']) or (not res['Value']):
-        error = res.get('Message','No such file or directory')
+      if not dirPath in directoryIDs:
         for fileName in dirDict[dirPath]:
           fname = '%s/%s' % (dirPath,fileName)
           fname = fname.replace('//','/')
-          failed[fname] = error
-      else:
-        directoryIDs[dirPath] = res['Value']
+          failed[fname] = 'No such directory'
+
     successful = {}
     for dirPath in directoryIDs:
       fileNames = dirDict[dirPath]
@@ -58,19 +121,66 @@ class FileManager(FileManagerBase):
           failed[fname] = 'No such file or directory'    
     return S_OK({"Successful":successful,"Failed":failed})
 
+  def _findFileIDs( self, lfns, connection=False ):
+    """ Find lfn <-> FileID correspondence
+    """
+    connection = self._getConnection(connection)
+    dirDict = self._getFileDirectories(lfns)
+    failed = {}
+    successful = {}
+    result = self.db.dtree.findDirs( dirDict.keys() )
+    if not result['OK']:
+      return result
+    directoryIDs = result['Value']
+    directoryPaths = {}
+
+    for dirPath in dirDict:
+      if not dirPath in directoryIDs:
+        for fileName in dirDict[dirPath]:
+          fname = '%s/%s' % (dirPath,fileName)
+          fname = fname.replace('//','/')
+          failed[fname] = 'No such directory'
+      else:
+        directoryPaths[directoryIDs[dirPath]] = dirPath
+    directoryIDList = directoryIDs.keys()
+    for dirIDs in breakListIntoChunks( directoryIDList, 1000 ):
+
+      wheres = []
+      for dirPath in dirIDs:
+        fileNames = dirDict[dirPath]
+        dirID = directoryIDs[dirPath]
+        wheres.append( "( DirID=%d AND FileName IN (%s) )" % (dirID, stringListToString(fileNames) ) )
+
+      req = "SELECT FileName,DirID,FileID FROM FC_Files WHERE %s" % " OR ".join( wheres )
+      result = self.db._query(req,connection)
+      if not result['OK']:
+        return result
+      for fileName, dirID, fileID in result['Value']:
+        fname = '%s/%s' % (directoryPaths[dirID],fileName)
+        fname = fname.replace('//','/')
+        successful[fname] = fileID
+
+    for lfn in lfns:
+      if not lfn in successful:
+        failed[lfn] = "No such file"
+
+    return S_OK({"Successful":successful,"Failed":failed})
+
   def _getDirectoryFiles(self,dirID,fileNames,metadata_input,allStatus=False,connection=False):
     """ Get the metadata for files in the same directory
     """
     metadata = list(metadata_input)
     
     connection = self._getConnection(connection)
-    # metadata can be any of ['FileID','Size','UID','GID','Status','Checksum','CheckSumType','Type','CreationDate','ModificationDate','Mode']
+    # metadata can be any of ['FileID','Size','UID','GID','Status','Checksum','CheckSumType',
+    # 'Type','CreationDate','ModificationDate','Mode']
     req = "SELECT FileName,DirID,FileID,Size,UID,GID,Status FROM FC_Files WHERE DirID=%d" % (dirID)
     if not allStatus:
       statusIDs = []
-      res = self._getStatusInt('AprioriGood',connection=connection)
-      if res['OK']:
-        statusIDs.append(res['Value'])
+      for status in self.db.visibleStatus:
+        res = self._getStatusInt( status, connection=connection )
+        if res['OK']:
+          statusIDs.append( res['Value'] )
       if statusIDs:
         req = "%s AND Status IN (%s)" % (req,intListToString(statusIDs))
     if fileNames:
@@ -170,7 +280,7 @@ class FileManager(FileManagerBase):
     # Add the files
     failed = {}
     insertTuples = []
-    res = self._getStatusInt('AprioriGood',connection=connection)
+    res = self.db.getStatusInt('AprioriGood',connection=connection)
     statusID = 0
     if res['OK']:
       statusID = res['Value']
@@ -305,7 +415,7 @@ class FileManager(FileManagerBase):
     successful = {}
     insertTuples = []
     fileIDLFNs = {}
-    res = self._getStatusInt('AprioriGood')
+    res = self.db.getStatusInt('AprioriGood')
     statusID = 0
     if res['OK']:
       statusID = res['Value']
@@ -474,7 +584,7 @@ class FileManager(FileManagerBase):
   
   def _setReplicaStatus(self,fileID,se,status,connection=False):
     connection = self._getConnection(connection)
-    res = self._getStatusInt(status,connection=connection)
+    res = self.db.getStatusInt(status,connection=connection)
     if not res['OK']:
       return res
     statusID = res['Value']
@@ -552,12 +662,12 @@ class FileManager(FileManagerBase):
   # _getFileReplicas related methods
   #
 
-  def _getFileReplicas(self,fileIDs,fields_input=['PFN'],connection=False):
+  def _getFileReplicas(self,fileIDs,fields_input=['PFN'],allStatus=False,connection=False):
     """ Get replicas for the given list of files specified by their fileIDs
     """
     fields = list(fields_input)
     connection = self._getConnection(connection)
-    res = self.__getFileIDReplicas(fileIDs,connection=connection)
+    res = self.__getFileIDReplicas(fileIDs,allStatus=allStatus,connection=connection)
     if not res['OK']:
       return res
     fileIDDict = res['Value']
@@ -566,30 +676,30 @@ class FileManager(FileManagerBase):
         fields.remove('Status')
       repIDDict = {}  
       if fields:  
-        req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % (intListToString(fields),intListToString(fileIDDict.keys()))
+        req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % \
+              (intListToString(fields),intListToString(fileIDDict.keys()))
         res = self.db._query(req,connection)
         if not res['OK']:
           return res
         for tuple_ in res['Value']:
           repID = tuple_[0]
           repIDDict[repID] = dict(zip(fields,tuple_[1:])) 
-          statusID = fileIDDict[repID]['Status']
-          res = self._getIntStatus(statusID,connection=connection)
+          statusID = fileIDDict[repID][2]
+          res = self.db.getIntStatus(statusID,connection=connection)
           if not res['OK']:
             continue
           repIDDict[repID]['Status'] = res['Value']
       else:
         for repID in fileIDDict:
-          statusID = fileIDDict[repID]['Status']
-          res = self._getIntStatus(statusID,connection=connection)
+          statusID = fileIDDict[repID][2]
+          res = self.db.getIntStatus(statusID,connection=connection)
           if not res['OK']:
             continue
           repIDDict[repID] = {'Status' : res['Value'] }  
     seDict = {}
     replicas = {}
     for repID in fileIDDict.keys():
-      fileID = fileIDDict[repID]['FileID']
-      seID =  fileIDDict[repID]['SEID']
+      fileID, seID, statusID = fileIDDict[repID]
       replicas.setdefault(fileID,{})
       if not seID in seDict:
         res = self.db.seManager.getSEName(seID)
@@ -598,20 +708,66 @@ class FileManager(FileManagerBase):
         seDict[seID] = res['Value']
       seName = seDict[seID]
       replicas[fileID][seName] = repIDDict.get(repID,{})
-    for fileID in fileIDs:
-      if not replicas.has_key(fileID):
-        replicas[fileID] = {}
+      
+    if len( replicas ) != len( fileIDs ):  
+      for fileID in fileIDs:
+        if not replicas.has_key(fileID):
+          replicas[fileID] = {}
+          
     return S_OK(replicas)
 
-  def __getFileIDReplicas(self,fileIDs,connection=False):
+  def __getFileIDReplicas(self,fileIDs,allStatus=False,connection=False):
     connection = self._getConnection(connection)
     if not fileIDs:
       return S_ERROR("No such file or directory")
-    req = "SELECT FileID,SEID,RepID,Status FROM FC_Replicas WHERE FileID IN (%s);" % (intListToString(fileIDs))
+    req = "SELECT FileID,SEID,RepID,Status FROM FC_Replicas WHERE FileID IN (%s)" % (intListToString(fileIDs))
+    if not allStatus:
+      statusIDs = []
+      for status in self.db.visibleReplicaStatus:
+        result = self._getStatusInt( status, connection=connection )
+        if result['OK']:
+          statusIDs.append( result['Value'] )
+      req += " AND Status in (%s)" % (intListToString(statusIDs))
     res = self.db._query(req,connection)
     if not res['OK']:
       return res
     fileIDDict = {}
-    for fileID,seID,repID,status in res['Value']:
-      fileIDDict[repID] = {'FileID':fileID,'SEID':seID,'Status':status}
+    for fileID,seID,repID,statusID in res['Value']:
+      fileIDDict[repID] = ( fileID, seID, statusID )
     return S_OK(fileIDDict)
+
+  def _getDirectoryReplicas( self, dirID, allStatus=False, connection=False ):
+    """ Get replicas for files in a given directory
+    """
+    replicaStatusIDs = []
+    if not allStatus:
+      for status in self.db.visibleReplicaStatus:
+        result = self._getStatusInt( status, connection=connection )
+        if result['OK']:
+          replicaStatusIDs.append( result['Value'] )
+    fileStatusIDs = []
+    if not allStatus:
+      for status in self.db.visibleReplicaStatus:
+        result = self._getStatusInt( status, connection=connection )
+        if result['OK']:
+          fileStatusIDs.append( result['Value'] )
+    
+    if not self.db.lfnPfnConvention or self.db.lfnPfnConvention == "Weak":
+      req = 'SELECT FF.FileName,FR.FileID,FR.SEID,FI.PFN FROM FC_Files as FF,'
+      req += ' FC_Replicas as FR, FC_ReplicaInfo as FI'
+      req += ' WHERE FF.FileID=FR.FileID AND FR.RepID=FI.RepID AND FF.DirID=%d ' % dirID
+      if replicaStatusIDs:
+        req += ' AND FR.Status in (%s)' % intListToString( replicaStatusIDs )
+      if fileStatusIDs:
+        req += ' AND FF.Status in (%s)' % intListToString( fileStatusIDs )  
+    else:
+      req = "SELECT FF.FileName,FR.FileID,FR.SEID,'' FROM FC_Files as FF,"
+      req += ' FC_Replicas as FR'
+      req += ' WHERE FF.FileID=FR.FileID AND FF.DirID=%d ' % dirID
+      if replicaStatusIDs:
+        req += ' AND FR.Status in (%s)' % intListToString( replicaStatusIDs )
+      if fileStatusIDs:
+        req += ' AND FF.Status in (%s)' % intListToString( fileStatusIDs )                                                                             
+    
+    result = self.db._query( req, connection )
+    return result

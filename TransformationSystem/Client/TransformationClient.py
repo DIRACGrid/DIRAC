@@ -144,8 +144,8 @@ class TransformationClient( Client, FileCatalogueBase ):
 
 
   def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
-                              orderAttribute = None, limit = 10000, inputVector = False, rpc = '',
-                              url = '', timeout = 120 ):
+                                 orderAttribute = None, limit = 10000, inputVector = False, rpc = '',
+                                 url = '', timeout = 120 ):
     """ gets all the transformation tasks for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
@@ -246,7 +246,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return S_OK( ( parentProd, movedFiles ) )
 
   def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False,
-                                      rpc = '', url = '', timeout = 120 ):
+                                          rpc = '', url = '', timeout = 120 ):
     """ sets ths file status for LFNs of a transformation
 
         For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
@@ -273,7 +273,7 @@ class TransformationClient( Client, FileCatalogueBase ):
         tsFilesAsDict[tsFile['LFN']] = [tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']]
 
       # applying the state machine to the proposed status
-      newStatuses = self._applyProductionFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
+      newStatuses = self._applyTransformationFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
 
       # must do it for the file IDs...
       newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
@@ -281,7 +281,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     else:
       return S_OK( 'Nothing updated' )
 
-  def _applyProductionFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
+  def _applyTransformationFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
     """ For easier extension, here we apply the state machine of the production files.
         VOs might want to replace the standard here with something they prefer.
 
@@ -315,6 +315,46 @@ class TransformationClient( Client, FileCatalogueBase ):
         newStatuses[lfn] = newStatus
 
     return newStatuses
+
+  def setTransformationParameter( self, transID, paramName, paramValue, force = False,
+                                      rpc = '', url = '', timeout = 120 ):
+    """ Sets a transformation parameter. There's a special case when coming to setting the status of a transformation.
+    """
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+
+    if paramName.lower() == 'status':
+      # get transformation Type
+      transformation = self.getTransformation( transID )
+      if not transformation['OK']:
+        return transformation
+      transformationType = transformation['Value']['Type']
+
+      # get status as of today
+      originalStatus = self.getTransformationParameters( transID, 'Status' )
+      if not originalStatus['OK']:
+        return originalStatus
+      originalStatus = originalStatus['Value']
+
+      transIDAsDict = {transID: [originalStatus, transformationType]}
+      dictOfProposedstatus = {transID: paramValue}
+      # applying the state machine to the proposed status
+      value = self._applyTransformationStatusStateMachine( transIDAsDict, dictOfProposedstatus, force )
+    else:
+      value = paramValue
+
+    return rpcClient.setTransformationParameter( transID, paramName, value )
+
+  def _applyTransformationStatusStateMachine( self, transIDAsDict, dictOfProposedstatus, force ):
+    """ For easier extension, here we apply the state machine of the transformation status.
+        VOs might want to replace the standard here with something they prefer.
+
+        transIDAsDict is a dictionary with the transID as key and as value a list with [Status, Type]
+        dictOfProposedstatus is a dictionary with the proposed status
+        force is a boolean
+
+        It returns the new status (the standard is just doing nothing: everything is possible)
+    """
+    return dictOfProposedstatus.values()[0]
 
   #####################################################################
   #

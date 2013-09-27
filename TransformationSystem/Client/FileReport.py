@@ -1,6 +1,6 @@
 """ FileReport class encapsulates methods to report file status to the transformation DB """
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities                                     import DEncode
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 from DIRAC.RequestManagementSystem.Client.Operation           import Operation
@@ -58,5 +58,8 @@ class FileReport( object ):
         forwardDISETOp = Operation()
         forwardDISETOp.Type = "ForwardDISET"
         forwardDISETOp.Arguments = DEncode.encode( result['rpcStub'] )
+
+      else:
+        return S_ERROR( 'Could not create ForwardDISET operation' )
 
     return S_OK( forwardDISETOp )

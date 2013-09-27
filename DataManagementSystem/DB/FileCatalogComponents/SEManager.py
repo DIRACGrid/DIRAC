@@ -13,8 +13,22 @@ from types import StringTypes, IntType, LongType
 
 class SEManagerBase:
 
-  def __init__(self,database=None):
-    self.db = database
+  _tables = {}
+  _tables['FC_StorageElements'] = { "Fields":
+                                     { 
+                                       "SEID": "INTEGER AUTO_INCREMENT",
+                                       "SEName": "VARCHAR(127) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                       "SEPrefix": "VARCHAR(127) NOT NULL", 
+                                       "AliasName": "VARCHAR(127) DEFAULT ''"
+                                     }, 
+                                     "PrimaryKey": "SEID",
+                                     "UniqueIndexes": {"SEName":["SEName"]}  
+                                   }
+
+  def __init__( self, database=None ):
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
     self.lock = threading.Lock()
     self.seUpdatePeriod = 600
     self.resourcesHelper = Resources()
@@ -23,10 +37,10 @@ class SEManagerBase:
   def _refreshSEs( self ):
     return S_ERROR( 'Should be implemented in a derived class' )  
     
-  def setUpdatePeriod(self,period): 
+  def setUpdatePeriod( self, period ): 
     self.seUpdatePeriod = period
     
-  def setSEDefinitions(self,seDefinitions):
+  def setSEDefinitions( self, seDefinitions ):
     self.db.seDefinitions = seDefinitions
     self.seNames= {}
     for seID,seDef in self.db.seDefinitions.items():
@@ -35,6 +49,12 @@ class SEManagerBase:
 
   def setDatabase(self,database):
     self.db = database  
+    result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
+    return result
 
   def _getConnection(self,connection):
     if connection:
@@ -193,6 +213,20 @@ class SEManagerDB(SEManagerBase):
         self.db.seDefinitions[seID]['SEDict']['PFNPrefix'] = result['Value'] 
     self.db.seDefinitions[seID]['LastUpdate'] = time.time()
     return S_OK(self.db.seDefinitions[seID])
+
+  def getSEPrefixes( self, connection=False ):
+    
+    result = self._refreshSEs(connection)
+    if not result['OK']:
+      return result
+    
+    resultDict = {}
+    
+    for seID in self.db.seDefinitions:
+      resultDict[self.db.seDefinitions[seID]['SEName']] = \
+         self.db.seDefinitions[seID]['SEDict'].get( 'PFNPrefix', '' )
+
+    return S_OK( resultDict )
 
 class SEManagerCS(SEManagerBase):
 

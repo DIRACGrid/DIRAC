@@ -5,23 +5,23 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                                                     import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.DB                                                        import DB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata     import DirectoryMetadata
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileMetadata          import FileMetadata
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree   import DirectorySimpleTree 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree     import DirectoryNodeTree 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    import DirectoryLevelTree
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       import FileManagerFlat
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           import FileManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager,FullSecurityManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import checkArgumentDict 
+from DIRAC                                                            import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.DB                                               import DB
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities    import checkArgumentDict
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 #############################################################################
 class FileCatalogDB(DB):
+
+  __tables = {}
+  __tables["FC_Statuses"] = { "Fields":
+                              {
+                                "StatusID": "INT AUTO_INCREMENT",
+                                "Status": "VARCHAR(32)"
+                              },
+                              "UniqueIndexes": { "Status": ["Status"] },
+                              "PrimaryKey":"StatusID" 
+                            }
 
   def __init__( self, databaseLocation='DataManagement/FileCatalogDB', maxQueueSize=10 ):
     """ Standard Constructor
@@ -33,6 +33,21 @@ class FileCatalogDB(DB):
     if db.find('/') == -1:
       db = 'DataManagement/' + db
     DB.__init__(self,'FileCatalogDB',db,maxQueueSize)
+    
+    result = self._createTables( self.__tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self.__tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )    
+    
+    self.ugManager = None
+    self.seManager = None
+    self.securityManager = None
+    self.dtree = None
+    self.fileManager = None
+    self.dmeta = None
+    self.fmeta = None
+    self.statusDict = {}
 
   def setConfig(self,databaseConfig):
 
@@ -50,27 +65,111 @@ class FileCatalogDB(DB):
     self.uniqueGUID = databaseConfig['UniqueGUID']
     self.globalReadAccess = databaseConfig['GlobalReadAccess']
     self.lfnPfnConvention = databaseConfig['LFNPFNConvention']
+    if self.lfnPfnConvention == "None":
+      self.lfnPfnConvention = False
     self.resolvePfn = databaseConfig['ResolvePFN']
     self.umask = databaseConfig['DefaultUmask']
     self.visibleStatus = databaseConfig['VisibleStatus']
+    self.visibleReplicaStatus = databaseConfig['VisibleReplicaStatus']
 
-    try:
-      # Obtain the plugins to be used for DB interaction
-      self.ugManager = eval("%s(self)" % databaseConfig['UserGroupManager'])
-      self.seManager = eval("%s(self)" % databaseConfig['SEManager'])
-      self.securityManager = eval("%s(self)" % databaseConfig['SecurityManager'])
-      self.dtree = eval("%s(self)" % databaseConfig['DirectoryManager'])
-      self.fileManager = eval("%s(self)" % databaseConfig['FileManager'])
-      self.dmeta = eval("%s(self)" % databaseConfig['DirectoryMetadata'])
-      self.fmeta = eval("%s(self)" % databaseConfig['FileMetadata'])
-    except Exception, x:
-      gLogger.fatal("Failed to create database objects",x)
-      return S_ERROR("Failed to create database objects")
+    # Obtain the plugins to be used for DB interaction
+    self. objectLoader = ObjectLoader()
+    
+    result = self.__loadCatalogComponent( databaseConfig['UserGroupManager'] )
+    if not result['OK']:
+      return result
+    self.ugManager = result['Value']
+    
+    result = self.__loadCatalogComponent( databaseConfig['SEManager'] )
+    if not result['OK']:
+      return result
+    self.seManager = result['Value']
+    
+    result = self.__loadCatalogComponent( databaseConfig['SecurityManager'] )
+    if not result['OK']:
+      return result
+    self.securityManager = result['Value']
+    
+    result = self.__loadCatalogComponent( databaseConfig['DirectoryManager'] )
+    if not result['OK']:
+      return result
+    self.dtree = result['Value']
+    
+    result = self.__loadCatalogComponent( databaseConfig['FileManager'] )
+    if not result['OK']:
+      return result
+    self.fileManager = result['Value']
+    
+    result = self.__loadCatalogComponent( databaseConfig['DirectoryMetadata'] )
+    if not result['OK']:
+      return result
+    self.dmeta = result['Value']
+    
+    result = self.__loadCatalogComponent( databaseConfig['FileMetadata'] )
+    if not result['OK']:
+      return result
+    self.fmeta = result['Value']
 
     return S_OK()
+  
+  def __loadCatalogComponent( self, componentName ):
+    """ Create an object of a given catalog component
+    """
+    moduleName = componentName
+    # some modules contain several implementation classes
+    for m in ['SEManager','UserAndGroupManager','SecurityManager']:
+      if m in componentName:
+        moduleName = m
+    componentPath = 'DataManagementSystem.DB.FileCatalogComponents'
+    result = self.objectLoader.loadObject( '%s.%s' % ( componentPath, moduleName ), 
+                                      componentName )
+    if not result['OK']:
+      gLogger.error( 'Failed to load catalog component', result['Message'] )
+      return result
+    componentClass = result['Value']
+    component = componentClass( self )
+    return S_OK( component )
     
   def setUmask(self,umask):
     self.umask = umask
+
+  ########################################################################
+  #
+  #  General purpose utility methods
+
+  def getStatusInt( self, status, connection = False ):
+    
+    """ Get integer ID of the given status string
+    """
+    connection = self._getConnection( connection )
+    req = "SELECT StatusID FROM FC_Statuses WHERE Status = '%s';" % status
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    if res['Value']:
+      return S_OK( res['Value'][0][0] )
+    req = "INSERT INTO FC_Statuses (Status) VALUES ('%s');" % status
+    res = self.db._update( req, connection )
+    if not res['OK']:
+      return res
+    return S_OK( res['lastRowId'] )
+
+  def getIntStatus(self,statusID,connection=False):
+    """ Get status string for a given integer status ID
+    """
+    if statusID in self.statusDict:
+      return S_OK(self.statusDict[statusID])
+    connection = self._getConnection(connection)
+    req = "SELECT StatusID,Status FROM FC_Statuses" 
+    res = self.db._query(req,connection)
+    if not res['OK']:
+      return res
+    if res['Value']:
+      for row in res['Value']:
+        self.statusDict[int(row[0])] = row[1]
+    if statusID in self.statusDict:
+      return S_OK(self.statusDict[statusID])
+    return S_OK('Unknown')
 
   ########################################################################
   #
@@ -414,7 +513,7 @@ class FileCatalogDB(DB):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
+    return S_OK( {'Successful':successful, 'Failed':failed, 'SEPrefixes': res['Value'].get( 'SEPrefixes', {} ) } )
 
   def getReplicaStatus(self, lfns, credDict):
     res = self._checkPathPermissions('Read', lfns, credDict)
@@ -558,12 +657,12 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectoryReplicas(res['Value']['Successful'])
+    res = self.dtree.getDirectoryReplicas(res['Value']['Successful'],allStatus)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
+    return S_OK( { 'Successful':successful, 'Failed':failed, 'SEPrefixes': res['Value'].get( 'SEPrefixes', {} )} )
 
   def getDirectorySize(self,lfns,longOutput,fromFiles,credDict):
     res = self._checkPathPermissions('Read', lfns, credDict)
@@ -703,4 +802,4 @@ class FileCatalogDB(DB):
       else:  
         successful[lfn] = lfns[lfn]
     return S_OK( {'Successful':successful,'Failed':failed} )
- 
+  

@@ -133,8 +133,7 @@ class FileCatalog:
     """
     successful = {}
     failed = {}
-    for catalogTuple in self.readCatalogs:
-      oCatalog = catalogTuple[1]
+    for _catalogName, oCatalog, _master in self.readCatalogs:
       method = getattr( oCatalog, self.call )
       res = method( *parms, **kws )
       if res['OK']:
@@ -153,7 +152,7 @@ class FileCatalog:
         else:
           return res  
     if ( len( successful ) == 0 ) and ( len( failed ) == 0 ):
-      return S_ERROR( 'Failed to perform %s from any catalog' % self.call )
+      return S_ERROR( "Failed to perform %s from any catalog" % self.call )
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -186,13 +185,13 @@ class FileCatalog:
     catalog_removed = False
 
     for i in range( len( self.readCatalogs ) ):
-      catalog = self.readCatalogs[i][0]
+      catalog, _object, _master = self.readCatalogs[i]
       if catalog == catalogName:
         del self.readCatalogs[i]
         catalog_removed = True
         break
     for i in range( len( self.writeCatalogs ) ):
-      catalog = self.writeCatalogs[i][0]
+      catalog, _object, _master = self.writeCatalogs[i]
       if catalog == catalogName:
         del self.writeCatalogs[i]
         catalog_removed = True

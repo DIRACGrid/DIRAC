@@ -6,17 +6,18 @@
 """
 The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 """
-__RCSID__ = "$Id$"
 
+from DIRAC                                                     import S_OK, gLogger
 from DIRAC.Core.Base.AgentModule                               import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB                   import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB             import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB            import JobLoggingDB
-from DIRAC                                                     import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
-from DIRAC.RequestManagementSystem.Client.RequestContainer     import RequestContainer
-from DIRAC.RequestManagementSystem.Client.RequestClient        import RequestClient
+from DIRAC.RequestManagementSystem.Client.Request              import Request
+from DIRAC.RequestManagementSystem.Client.Operation            import Operation
+from DIRAC.RequestManagementSystem.Client.File                 import File
+from DIRAC.RequestManagementSystem.Client.ReqClient            import ReqClient
 
 import DIRAC.Core.Utilities.Time as Time
 
@@ -225,29 +226,19 @@ class JobCleaningAgent( AgentModule ):
   def __setRemovalRequest( self, lfn, ownerDN, ownerGroup ):
     """ Set removal request with the given credentials
     """
-    request = RequestContainer()
-    request.setRequestAttributes( { 'OwnerDN':ownerDN, 'OwnerGroup':ownerGroup } )
-    requestName = os.path.basename( lfn ).strip()+'_removal_request.xml'
-    request.setRequestName( requestName )
-    request.setSourceComponent( 'JobCleaningAgent' )
+    oRequest = Request()
+    oRequest.OwnerDN = ownerDN
+    oRequest.OwnerGroup = ownerGroup
+    oRequest.RequestName = os.path.basename( lfn ).strip() + '_removal_request.xml'
+    oRequest.SourceComponent = 'JobCleaningAgent'
 
-    removalDict = {'Attributes':{ 'Operation':'removeFile',
-                                  'TargetSE':'',
-                                  'ExecutionOrder':0
-                                }
-                   }
-    result = request.addSubRequest( removalDict, 'removal' )
-    if not result['OK']:
-      return result
+    removeFile = Operation()
+    removeFile.Type = 'RemoveFile'
 
-    index = result['Value']
-    fileDict = { 'LFN':lfn, 'PFN':'', 'Status':'Waiting' }
-    request.setSubRequestFiles( index, 'removal', [fileDict] )
+    removedFile = File()
+    removedFile.LFN = lfn
 
-    client = RequestClient()
-    result = request.toXML()
-    if not result['OK']:
-      return result
-    xmlRequest = result['Value']
-    result = client.setRequest( requestName, xmlRequest )
-    return result
+    removeFile.addFile( removedFile )
+    oRequest.addOperation( removeFile )
+
+    return ReqClient().putRequest( oRequest )

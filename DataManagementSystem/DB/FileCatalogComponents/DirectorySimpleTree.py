@@ -16,6 +16,20 @@ class DirectorySimpleTree(DirectoryTreeBase):
       directory path stored in each node
   """
   
+  _tables = {}
+  _tables["FC_DirectoryTree"] = { "Fields": {
+                                           "DirID": "INTEGER AUTO_INCREMENT",
+                                           "DirName": "VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                           "Parent": "INTEGER NOT NULL"
+                                            },
+                                  "PrimaryKey": "DirID",
+                                  "Indexes": {
+                                              "Parent": ["Parent"],
+                                              "Level": ["Level"]
+                                             },
+                                  "UniqueIndexes": { "DirName": ["DirName"] }
+                             }
+  
   def __init__(self,database=None):
     DirectoryTreeBase.__init__(self,database)
     self.treeTable = 'FC_DirectoryTree'

@@ -201,6 +201,6 @@ class JobReport( object ):
         forwardDISETOp.Arguments = DEncode.encode( rpcStub )
 
       else:
-        return S_ERROR( 'Could not create job parameters sub-request' )
+        return S_ERROR( 'Could not create ForwardDISET operation' )
 
     return S_OK( fowardDISETOp )
