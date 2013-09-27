@@ -48,18 +48,6 @@ class FTSManagerHandler( RequestHandler ):
   .. class:: FTSManagerHandler
 
   """
-  # # fts validator
-  __ftsValidator = None
-  # # storage factory
-  __storageFactory = None
-  # # replica manager
-  __replicaManager = None
-  # # FTSDB
-  __ftsDB = None
-  # # fts strategy
-  __ftsStrategy = None
-  # # fts graph
-  __ftsGraph = None
 
   @classmethod
   def initializeHandler( self, serviceInfoDict ):
@@ -78,14 +66,14 @@ class FTSManagerHandler( RequestHandler ):
     # # create tables for empty db
     getTables = self.ftsDB.getTables()
     if not getTables["OK"]:
-      gLogger.error( getTables["Message"] )
+      gLogger.error( getTables['Message'] )
       return getTables
-    getTables = getTables["Value"]
+    getTables = getTables['Value']
     toCreate = [ tab for tab in self.ftsDB.getTableMeta().keys() if tab not in getTables ]
     if toCreate:
       createTables = self.ftsDB.createTables( toCreate )
       if not createTables["OK"]:
-        gLogger.error( createTables["Message"] )
+        gLogger.error( createTables['Message'] )
         return createTables
     # # always re-create views
     createViews = self.ftsDB.createViews( True )
@@ -95,11 +83,11 @@ class FTSManagerHandler( RequestHandler ):
     # # connect
     connect = self.ftsDB._connect()
     if not connect["OK"]:
-      gLogger.error( connect["Message"] )
+      gLogger.error( connect['Message'] )
       return connect
 
     # # get FTSStrategy
-    self.ftsStrategy()
+    self.ftsStrategy = self.getFtsStrategy()
     # # put DataManager proxy to env
     dmProxy = self.refreshProxy()
     if not dmProxy["OK"]:
@@ -115,12 +103,26 @@ class FTSManagerHandler( RequestHandler ):
     return S_OK()
 
   @classmethod
+  def getFtsStrategy( self ):
+    """ fts strategy getter """
+    csPath = getServiceSection( "DataManagement/FTSManager" )
+    csPath = "%s/%s" % ( csPath, "FTSStrategy" )
+
+    ftsHistory = self.ftsDB.getFTSHistory()
+    if not ftsHistory["OK"]:
+      gLogger.warn( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory['Message'] )
+      ftsHistory['Value'] = []
+    ftsHistory = ftsHistory['Value']
+
+    return FTSStrategy( csPath, None, ftsHistory )
+
+  @classmethod
   def refreshProxy( self ):
     """ setup DataManager shifter proxy in env """
     gLogger.info( "refreshProxy: getting proxy for DataManager..." )
     proxy = setupShifterProxyInEnv( "DataManager" )
     if not proxy["OK"]:
-      gLogger.error( "refreshProxy: %s" % proxy["Message"] )
+      gLogger.error( "refreshProxy: %s" % proxy['Message'] )
     return proxy
 
   @classmethod
@@ -128,39 +130,23 @@ class FTSManagerHandler( RequestHandler ):
     """ update FTS graph in the FTSStrategy """
     ftsHistory = self.ftsDB.getFTSHistory()
     if not ftsHistory["OK"]:
-      return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
-    self.ftsStrategy().resetGraph( ftsHistory["Value"] )
+      return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory['Message'] )
+    self.ftsStrategy.resetGraph( ftsHistory['Value'] )
     return S_OK()
 
   @classmethod
   def updateRWAccess( self ):
     """ update RW access for SEs """
-    return self.ftsStrategy().updateRWAccess()
+    return self.ftsStrategy.updateRWAccess()
 
-  @classmethod
-  def ftsStrategy( self ):
-    """ fts strategy getter """
-    if not self.__ftsStrategy:
-      csPath = getServiceSection( "DataManagement/FTSManager" )
-      csPath = "%s/%s" % ( csPath, "FTSStrategy" )
-
-      ftsHistory = self.ftsDB.getFTSHistory()
-      if not ftsHistory["OK"]:
-        gLogger.warn( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
-        ftsHistory["Value"] = []
-      ftsHistory = ftsHistory["Value"]
-
-      self.__ftsStrategy = FTSStrategy( csPath, None, ftsHistory )
-
-    return self.__ftsStrategy
 
   types_setFTSFilesWaiting = [ ( IntType, LongType ), StringTypes, ListType ]
   def export_setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
     """ update states for waiting replications """
     try:
-      update = self.__ftsDB.setFTSFilesWaiting( operationID, sourceSE, opFileIDList )
+      update = self.ftsDB.setFTSFilesWaiting( operationID, sourceSE, opFileIDList )
       if not update["OK"]:
-        gLogger.error( "setFTSFilesWaiting: %s" % update["Message"] )
+        gLogger.error( "setFTSFilesWaiting: %s" % update['Message'] )
       return update
     except Exception, error:
       gLogger.exception( error )
@@ -171,9 +157,9 @@ class FTSManagerHandler( RequestHandler ):
     """ cleanup FTSFiles for rescheduling """
     opFileIDList = opFileIDList if opFileIDList else []
     try:
-      delete = self.__ftsDB.deleteFTSFiles( operationID, opFileIDList )
+      delete = self.ftsDB.deleteFTSFiles( operationID, opFileIDList )
       if not delete["OK"]:
-        gLogger.error( "deleteFTSFiles: %s" % delete["Message"] )
+        gLogger.error( "deleteFTSFiles: %s" % delete['Message'] )
       return delete
     except Exception, error:
       gLogger.exception( error )
@@ -197,10 +183,10 @@ class FTSManagerHandler( RequestHandler ):
     for fileJSON, sourceSEs, targetSEs in fileJSONList:
       fileID = int( fileJSON.get( "FileID" ) )
       fileIDs.append( fileID )
-    cleanUpFTSFiles = self.__ftsDB.cleanUpFTSFiles( requestID, fileIDs )
+    cleanUpFTSFiles = self.ftsDB.cleanUpFTSFiles( requestID, fileIDs )
     if not cleanUpFTSFiles["OK"]:
-      self.log.error( "ftsSchedule: %s" % cleanUpFTSFiles["Message"] )
-      return S_ERROR( cleanUpFTSFiles["Message"] )
+      self.log.error( "ftsSchedule: %s" % cleanUpFTSFiles['Message'] )
+      return S_ERROR( cleanUpFTSFiles['Message'] )
 
     ftsFiles = []
 
@@ -216,10 +202,10 @@ class FTSManagerHandler( RequestHandler ):
 
       replicaDict = self.replicaManager.getActiveReplicas( lfn )
       if not replicaDict["OK"]:
-        gLogger.error( "ftsSchedule: %s" % replicaDict["Message"] )
-        ret["Failed"][fileID] = replicaDict["Message"]
+        gLogger.error( "ftsSchedule: %s" % replicaDict['Message'] )
+        ret["Failed"][fileID] = replicaDict['Message']
         continue
-      replicaDict = replicaDict["Value"]
+      replicaDict = replicaDict['Value']
 
       if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
         ret["Failed"][fileID] = "no active replicas found"
@@ -232,12 +218,12 @@ class FTSManagerHandler( RequestHandler ):
         ret["Failed"][fileID] = "no active replicas found in sources"
         continue
 
-      tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
+      tree = self.ftsStrategy.replicationTree( sourceSEs, targetSEs, size )
       if not tree["OK"]:
-        gLogger.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree["Message"] ) )
-        ret["Failed"][fileID] = tree["Message"]
+        gLogger.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree['Message'] ) )
+        ret["Failed"][fileID] = tree['Message']
         continue
-      tree = tree["Value"]
+      tree = tree['Value']
 
       gLogger.info( "LFN=%s tree=%s" % ( lfn, tree ) )
 
@@ -246,10 +232,10 @@ class FTSManagerHandler( RequestHandler ):
                                                                             repDict["SourceSE"], repDict["TargetSE"] ) )
         transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, replicaDict )
         if not transferSURLs["OK"]:
-          ret["Failed"][fileID] = transferSURLs["Message"]
+          ret["Failed"][fileID] = transferSURLs['Message']
           continue
 
-        sourceSURL, targetSURL, fileStatus = transferSURLs["Value"]
+        sourceSURL, targetSURL, fileStatus = transferSURLs['Value']
         if sourceSURL == targetSURL:
           ret["Failed"][fileID] = "sourceSURL equals to targetSURL for %s" % lfn
           continue
@@ -271,12 +257,12 @@ class FTSManagerHandler( RequestHandler ):
     if not ftsFiles:
       return S_ERROR( "ftsSchedule: no FTSFiles to put" )
 
-    put = self.__ftsDB.putFTSFileList( ftsFiles )
+    put = self.ftsDB.putFTSFileList( ftsFiles )
     if not put["OK"]:
-      gLogger.error( "ftsSchedule: %s" % put["Message"] )
+      gLogger.error( "ftsSchedule: %s" % put['Message'] )
       return put
 
-    for fileJSON, sources, targets in fileJSONList:
+    for fileJSON, _sources, _targets in fileJSONList:
       lfn = fileJSON.get( "LFN", "" )
       fileID = fileJSON.get( "FileID", 0 )
       if fileID not in ret["Failed"]:
@@ -297,13 +283,13 @@ class FTSManagerHandler( RequestHandler ):
       return S_ERROR( error )
 
     if not getFile["OK"]:
-      gLogger.error( "getFTSFile: %s" % getFile["Message"] )
+      gLogger.error( "getFTSFile: %s" % getFile['Message'] )
       return getFile
     # # serialize
-    if getFile["Value"]:
-      getFile = getFile["Value"].toJSON()
+    if getFile['Value']:
+      getFile = getFile['Value'].toJSON()
       if not getFile["OK"]:
-        gLogger.error( getFile["Message"] )
+        gLogger.error( getFile['Message'] )
     return getFile
 
   types_peekFTSFile = [ [IntType, LongType] ]
@@ -317,13 +303,13 @@ class FTSManagerHandler( RequestHandler ):
       return S_ERROR( error )
 
     if not peekFile["OK"]:
-      gLogger.error( "peekFTSFile: %s" % peekFile["Message"] )
+      gLogger.error( "peekFTSFile: %s" % peekFile['Message'] )
       return peekFile
     # # serialize
-    if peekFile["Value"]:
-      peekFile = peekFile["Value"].toJSON()
+    if peekFile['Value']:
+      peekFile = peekFile['Value'].toJSON()
       if not peekFile["OK"]:
-        gLogger.error( peekFile["Message"] )
+        gLogger.error( peekFile['Message'] )
     return peekFile
 
   types_putFTSJob = [ DictType ]
@@ -347,12 +333,12 @@ class FTSManagerHandler( RequestHandler ):
 
     isValid = self.ftsValidator.validate( ftsJob )
     if not isValid["OK"]:
-      gLogger.error( isValid["Message"] )
+      gLogger.error( isValid['Message'] )
       return isValid
     try:
       put = self.ftsDB.putFTSJob( ftsJob )
       if not put["OK"]:
-        return S_ERROR( put["Message"] )
+        return S_ERROR( put['Message'] )
       return S_OK()
     except Exception, error:
       gLogger.exception( error )
@@ -365,38 +351,25 @@ class FTSManagerHandler( RequestHandler ):
     try:
       getFTSJob = self.ftsDB.getFTSJob( ftsJobID )
       if not getFTSJob["OK"]:
-        gLogger.error( getFTSJob["Error"] )
+        gLogger.error( getFTSJob['Message'] )
         return getFTSJob
-      getFTSJob = getFTSJob["Value"]
+      getFTSJob = getFTSJob['Value']
       if not getFTSJob:
         return S_OK()
       toJSON = getFTSJob.toJSON()
       if not toJSON["OK"]:
-        gLogger.error( toJSON["Message"] )
+        gLogger.error( toJSON['Message'] )
       return toJSON
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
 
-  types_peekFTSJob = [ [IntType, LongType] ]
+  types_setFTSJobStatus = [[IntType, LongType], StringTypes]
   @classmethod
-  def export_peekFTSJob( self, ftsJobID ):
-    """ peek FTSJob given ftsJobID """
-    try:
-      peekFTSJob = self.ftsDB.peekFTSJob( ftsJobID )
-      if not peekFTSJob["OK"]:
-        gLogger.error( peekFTSJob["Error"] )
-        return peekFTSJob
-      peekFTSJob = peekFTSJob["Value"]
-      if not peekFTSJob:
-        return S_OK()
-      toJSON = peekFTSJob.toJSON()
-      if not toJSON["OK"]:
-        gLogger.error( toJSON["Message"] )
-      return toJSON
-    except Exception, error:
-      gLogger.exception( error )
-      return S_ERROR( error )
+  def export_setFTSJobStatus( self, ftsJobID, status ):
+    """ set FTSJob status
+    """
+    return self.ftsDB.setFTSJobStatus( ftsJobID, status )
 
   types_deleteFTSJob = [ [IntType, LongType] ]
   @classmethod
@@ -405,7 +378,7 @@ class FTSManagerHandler( RequestHandler ):
     try:
       deleteFTSJob = self.ftsDB.deleteFTSJob( ftsJobID )
       if not deleteFTSJob["OK"]:
-        gLogger.error( deleteFTSJob["Message"] )
+        gLogger.error( deleteFTSJob['Message'] )
       return deleteFTSJob
     except Exception, error:
       gLogger.exception( error )
@@ -419,7 +392,7 @@ class FTSManagerHandler( RequestHandler ):
     try:
       getFTSJobIDs = self.ftsDB.getFTSJobIDs( statusList )
       if not getFTSJobIDs["OK"]:
-        gLogger.error( getFTSJobIDs["Message"] )
+        gLogger.error( getFTSJobIDs['Message'] )
       return getFTSJobIDs
     except Exception, error:
       gLogger.exception( error )
@@ -433,7 +406,7 @@ class FTSManagerHandler( RequestHandler ):
     try:
       getFTSFileIDs = self.ftsDB.getFTSFileIDs( statusList )
       if not getFTSFileIDs["OK"]:
-        gLogger.error( getFTSFileIDs["Message"] )
+        gLogger.error( getFTSFileIDs['Message'] )
       return getFTSFileIDs
     except Exception, error:
       gLogger.exception( error )
@@ -448,15 +421,15 @@ class FTSManagerHandler( RequestHandler ):
     try:
       getFTSFileList = self.ftsDB.getFTSFileList( statusList, limit )
       if not getFTSFileList["OK"]:
-        gLogger.error( getFTSFileList[ "Message" ] )
+        gLogger.error( getFTSFileList[ 'Message' ] )
         return getFTSFileList
       fileList = []
-      for ftsFile in getFTSFileList["Value"]:
+      for ftsFile in getFTSFileList['Value']:
         fileJSON = ftsFile.toJSON()
         if not fileJSON["OK"]:
-          gLogger.error( "getFTSFileList: %s" % fileJSON["Message"] )
+          gLogger.error( "getFTSFileList: %s" % fileJSON['Message'] )
           return fileJSON
-        fileList.append( fileJSON["Value"] )
+        fileList.append( fileJSON['Value'] )
       return S_OK( fileList )
     except Exception, error:
       gLogger.exception( error )
@@ -470,15 +443,15 @@ class FTSManagerHandler( RequestHandler ):
     try:
       ftsJobs = self.ftsDB.getFTSJobList( statusList, limit )
       if not ftsJobs["OK"]:
-        gLogger.error( "getFTSJobList: %s" % ftsJobs["Message"] )
+        gLogger.error( "getFTSJobList: %s" % ftsJobs['Message'] )
         return ftsJobs
       ftsJobsJSON = []
-      for ftsJob in ftsJobs["Value"]:
+      for ftsJob in ftsJobs['Value']:
         ftsJobJSON = ftsJob.toJSON()
         if not ftsJobJSON["OK"]:
-          gLogger.error( "getFTSJobList: %s" % ftsJobJSON["Message"] )
+          gLogger.error( "getFTSJobList: %s" % ftsJobJSON['Message'] )
           return ftsJobJSON
-        ftsJobsJSON.append( ftsJobJSON["Value"] )
+        ftsJobsJSON.append( ftsJobJSON['Value'] )
       return S_OK( ftsJobsJSON )
     except Exception, error:
       gLogger.exception( str( error ) )
@@ -498,15 +471,15 @@ class FTSManagerHandler( RequestHandler ):
       requestID = int( requestID )
       ftsJobs = self.ftsDB.getFTSJobsForRequest( requestID, statusList )
       if not ftsJobs["OK"]:
-        gLogger.error( "getFTSJobsForRequest: %s" % ftsJobs["Message"] )
+        gLogger.error( "getFTSJobsForRequest: %s" % ftsJobs['Message'] )
         return ftsJobs
       ftsJobsList = []
-      for ftsJob in ftsJobs["Value"]:
+      for ftsJob in ftsJobs['Value']:
         ftsJobJSON = ftsJob.toJSON()
         if not ftsJobJSON["OK"]:
-          gLogger.error( "getFTSJobsForRequest: %s" % ftsJobJSON["Message"] )
+          gLogger.error( "getFTSJobsForRequest: %s" % ftsJobJSON['Message'] )
           return ftsJobJSON
-        ftsJobsList.append( ftsJobJSON["Value"] )
+        ftsJobsList.append( ftsJobJSON['Value'] )
       return S_OK( ftsJobsList )
     except Exception, error:
       gLogger.exception( error )
@@ -521,15 +494,15 @@ class FTSManagerHandler( RequestHandler ):
       requestID = int( requestID )
       ftsFiles = self.ftsDB.getFTSFilesForRequest( requestID, statusList )
       if not ftsFiles["OK"]:
-        gLogger.error( "getFTSFilesForRequest: %s" % ftsFiles["Message"] )
+        gLogger.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
         return ftsFiles
       ftsFilesList = []
-      for ftsFile in ftsFiles["Value"]:
+      for ftsFile in ftsFiles['Value']:
         ftsFileJSON = ftsFile.toJSON()
         if not ftsFileJSON["OK"]:
-          gLogger.error( "getFTSFilesForRequest: %s" % ftsFileJSON["Message"] )
+          gLogger.error( "getFTSFilesForRequest: %s" % ftsFileJSON['Message'] )
           return ftsFileJSON
-        ftsFilesList.append( ftsFileJSON["Value"] )
+        ftsFilesList.append( ftsFileJSON['Value'] )
       return S_OK( ftsFilesList )
     except Exception, error:
       gLogger.exception( str( error ) )
@@ -542,15 +515,15 @@ class FTSManagerHandler( RequestHandler ):
     try:
       ftsHistory = self.ftsDB.getFTSHistory()
       if not ftsHistory["OK"]:
-        gLogger.error( ftsHistory["Message"] )
+        gLogger.error( ftsHistory['Message'] )
         return ftsHistory
-      ftsHistory = ftsHistory["Value"]
+      ftsHistory = ftsHistory['Value']
       history = []
       for ftsHistory in ftsHistory:
         ftsHistoryJSON = ftsHistory.toJSON()
         if not ftsHistoryJSON["OK"]:
           return ftsHistoryJSON
-        history.append( ftsHistoryJSON["Value"] )
+        history.append( ftsHistoryJSON['Value'] )
       return S_OK( history )
     except Exception, error:
       gLogger.exception( error )
@@ -563,7 +536,7 @@ class FTSManagerHandler( RequestHandler ):
     try:
       dbSummary = self.ftsDB.getDBSummary()
       if not dbSummary["OK"]:
-        gLogger.error( "getDBSummary: %s" % dbSummary["Message"] )
+        gLogger.error( "getDBSummary: %s" % dbSummary['Message'] )
       return dbSummary
     except Exception, error:
       gLogger.exception( error )
@@ -605,10 +578,10 @@ class FTSManagerHandler( RequestHandler ):
     """
     res = self.storageFactory.getStorages( targetSE, protocolList = ["SRM2"] )
     if not res["OK"]:
-      errStr = "_getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res["Message"] )
+      errStr = "_getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res['Message'] )
       gLogger.error( errStr )
       return S_ERROR( errStr )
-    storageObjects = res["Value"]["StorageObjects"]
+    storageObjects = res['Value']["StorageObjects"]
     for storageObject in storageObjects:
       res = storageObject.getCurrentURL( lfn )
       if res["OK"]:
@@ -626,9 +599,9 @@ class FTSManagerHandler( RequestHandler ):
     res = self.replicaManager.getPfnForProtocol( [pfn], sourceSE )
     if not res["OK"]:
       return res
-    if pfn in res["Value"]["Failed"]:
-      return S_ERROR( res["Value"]["Failed"][pfn] )
-    return S_OK( res["Value"]["Successful"][pfn] )
+    if pfn in res['Value']["Failed"]:
+      return S_ERROR( res['Value']["Failed"][pfn] )
+    return S_OK( res['Value']["Successful"][pfn] )
 
   def _getTransferURLs( self, lfn, repDict, replicas, replicaDict ):
     """ prepare TURLs for given LFN and replication tree
@@ -645,9 +618,9 @@ class FTSManagerHandler( RequestHandler ):
     # # get targetSURL
     res = self._getSurlForLFN( hopTargetSE, lfn )
     if not res["OK"]:
-      self.log.error( "_getTransferURLs: %s" % res["Message"] )
+      self.log.error( "_getTransferURLs: %s" % res['Message'] )
       return res
-    targetSURL = res["Value"]
+    targetSURL = res['Value']
 
     status = "Waiting"
 
@@ -656,12 +629,12 @@ class FTSManagerHandler( RequestHandler ):
       status = "Waiting#%s" % ( hopAncestor )
       res = self._getSurlForLFN( hopSourceSE, lfn )
       if not res["OK"]:
-        self.log.error( "_getTransferURLs: %s" % res["Message"] )
+        self.log.error( "_getTransferURLs: %s" % res['Message'] )
         return res
-      sourceSURL = res["Value"]
+      sourceSURL = res['Value']
     else:
       res = self._getSurlForPFN( hopSourceSE, replicaDict[hopSourceSE] )
-      sourceSURL = res["Value"] if res["OK"] else replicaDict[hopSourceSE]
+      sourceSURL = res['Value'] if res["OK"] else replicaDict[hopSourceSE]
 
     return S_OK( ( sourceSURL, targetSURL, status ) )
 

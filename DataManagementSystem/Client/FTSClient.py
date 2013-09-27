@@ -133,7 +133,7 @@ class FTSClient( Client ):
     return self.ftsManager.putFTSJob( ftsJobJSON["Value"] )
 
   def getFTSJob( self, ftsJobID ):
-    """ get FTS job
+    """ get FTS job, change its status to 'Assigned'
 
     :param int ftsJobID: FTSJobID
     """
@@ -141,9 +141,23 @@ class FTSClient( Client ):
     if not getJob["OK"]:
       self.log.error( getJob["Message"] )
       return getJob
+    setStatus = self.ftsManager.setFTSJobStatus( ftsJobID, 'Assigned' )
+    if not setStatus['OK']:
+      self.log.error( setStatus['Message'] )
     # # de-serialize
 #    if getJob["Value"]:
 #      getJob = FTSJob( getJob["Value"] )
+    return getJob
+
+  def peekFTSJob(self, ftsJobID ):
+    """ just peek FTSJob
+
+    :param int ftsJobID: FTSJobID
+    """
+    getJob = self.ftsManager.getFTSJob( ftsJobID )
+    if not getJob["OK"]:
+      self.log.error( getJob["Message"] )
+      return getJob
     return getJob
 
   def deleteFTSJob( self, ftsJobID ):

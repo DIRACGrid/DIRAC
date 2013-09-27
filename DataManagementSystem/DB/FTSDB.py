@@ -286,7 +286,7 @@ class FTSDB( DB ):
       self.log.error( putJob["Message"] )
     return putJob
 
-  def getFTSJob( self, ftsJobID = None, readOnly = False ):
+  def getFTSJob( self, ftsJobID = None ):
     """ get FTSJob given FTSJobID """
 
     getJob = [ "SELECT * FROM `FTSJob` WHERE `FTSJobID` = %s;" % ftsJobID ]
@@ -306,17 +306,17 @@ class FTSDB( DB ):
     ftsFiles = [ FTSFile( item ) for item in selectFiles.values()[0] ]
     for ftsFile in ftsFiles:
       ftsJob.addFile( ftsFile )
-    if not readOnly:
-      setAssigned = "UPDATE `FTSJob` SET `Status`='Assigned' WHERE `FTSJobID` = %s;" % ftsJobID
-      setAssigned = self._update( setAssigned )
-      if not setAssigned["OK"]:
-        self.log.error( setAssigned["Message"] )
-        return setAssigned
     return S_OK( ftsJob )
 
-  def peekFTSJob( self, ftsJobID = None ):
-    """ read FTSJob given FTSJobID """
-    return self.getFTSJob( ftsJobID, readOnly = True )
+  def setFTSJobStatus( self, ftsJobID, status = 'Assigned' ):
+    """ Set the status of an FTS job
+    """
+    setAssigned = "UPDATE `FTSJob` SET `Status`='%s' WHERE `FTSJobID` = %s;" % ( status, ftsJobID )
+    setAssigned = self._update( setAssigned )
+    if not setAssigned["OK"]:
+      self.log.error( setAssigned["Message"] )
+      return setAssigned
+    return setAssigned
 
   def deleteFTSJob( self, ftsJobID ):
     """ delete FTSJob given ftsJobID """
