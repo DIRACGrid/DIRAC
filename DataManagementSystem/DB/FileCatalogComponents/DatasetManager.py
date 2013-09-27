@@ -14,7 +14,7 @@ except ImportError:
   import md5
 from DIRAC import S_OK, S_ERROR
 
-class MetaDatasetManager:
+class DatasetManager:
 
   def __init__( self, database = None ):
 
