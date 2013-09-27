@@ -303,13 +303,6 @@ class DirectoryMetadata:
         metaDict[key] = value
 
     return S_OK( metaDict )
-
-  def __getDirMeta(self, meta, pathString):
-    """ Return the list of associated meta values for the specified meta tag and paths IDs
-    """
-    req = "SELECT Value,DirID FROM FC_Meta_%s WHERE DirID in (%s)" % ( meta, pathString )
-    result = self.db._query( req )
-    return result
   
   def getDirectoryMetadata( self, path, credDict, inherited = True, owndata = True ):
     """ Get metadata for the given directory aggregating metadata for the directory itself
@@ -335,10 +328,11 @@ class DirectoryMetadata:
       pathIDs = pathIDs[-1:]
     if not owndata:
       pathIDs = pathIDs[:-1]
-    #more efficient to do this once
     pathString = ','.join( [ str( x ) for x in pathIDs ] )  
+    
     for meta in metaFields:
-      result = self.__getDirMeta(meta, pathString)
+      req = "SELECT Value,DirID FROM FC_Meta_%s WHERE DirID in (%s)" % ( meta, pathString )
+      result = self.db._query( req )
       if not result['OK']:
         return result
       if len( result['Value'] ) > 1:
@@ -543,6 +537,25 @@ class DirectoryMetadata:
     result['ExtraMetadata'] = extraDict
     return result
 
+  def __checkDirsForMetadata( self, meta, value, pathString ):
+    """ Check if any of the given directories conform to the given metadata
+    """
+    result = self.__createMetaSelection( meta, value, "M." )
+    if not result['OK']:
+      return result
+    selectString = result['Value']
+     
+    req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE %s AND M.DirID IN (%s)" % ( meta, selectString, pathString )
+    result = self.db._query( req )
+    if not result['OK']:
+      return result
+    elif not result['Value']:
+      return S_OK( None ) 
+    elif len( result['Value'] ) > 1:
+      return S_ERROR( 'Conflict in the directory metadata hierarchy' )
+    else:
+      return S_OK( result['Value'][0][0] )
+
   @queryTime
   def findDirIDsByMetadata( self, queryDict, path, credDict ):
     """ Find Directories satisfying the given metadata and being subdirectories of 
@@ -566,23 +579,16 @@ class DirectoryMetadata:
       return result
     metaDict = result['Value']
     
-    # Now get the meta data for the requested directory and its parents
+    # Now check the meta data for the requested directory and its parents
     finalMetaDict = dict( metaDict )
     for meta in metaDict.keys():
-      result = self.__getDirMeta( meta, pathString )
+      result = self.__checkDirsForMetadata( meta, metaDict[meta], pathString )
       if not result['OK']:
-        #neither the dir nor the parents have this meta set
-        continue
-      if len( result['Value'] ) > 1:
-        return S_ERROR( 'Metadata conflict for directory %s' % path )
-      if result['Value']:
-        metaValue = result['Value'][0][0]
-        if finalMetaDict[meta] == metaValue:
-          # The parent directory or the current directory is already OK for that 
-          # meta data, no need to further check for that
-          del finalMetaDict[meta]
-        else:
-          return S_ERROR( "Incompatible meta query with %s" % meta )
+        return result
+      elif result['Value'] is not None:
+        # Some directory in the parent hierarchy is already conforming with the
+        # given metadata, no need to check it further 
+        del finalMetaDict[meta]
     
     if finalMetaDict:
       pathSelection = ''
@@ -619,7 +625,7 @@ class DirectoryMetadata:
 
     finalList = []
     dirSelect = False
-    if metaDict:
+    if finalMetaDict:
       dirSelect = True
       finalList = dirList
       if pathDirList:
