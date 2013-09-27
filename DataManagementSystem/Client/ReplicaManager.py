@@ -26,6 +26,7 @@ from DIRAC.Core.Utilities.List import sortList, randomize
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getSEsForCountry
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 class CatalogBase( object ):
@@ -2474,7 +2475,11 @@ class ReplicaManager( CatalogToStorage ):
 
   def __SEActive( self, se ):
     """ check is SE is active """
-    res = self.resourceStatus.getStorageElementStatus( se, default = None )
+    result = StorageFactory().getStorageName( se )
+    if not result['OK']:
+      return S_ERROR( 'SE not known' )
+    resolvedName = result['Value'] 
+    res = self.resourceStatus.getStorageElementStatus( resolvedName, default = None )
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )
 

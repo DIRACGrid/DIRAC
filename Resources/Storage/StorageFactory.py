@@ -199,7 +199,13 @@ class StorageFactory:
       return S_ERROR( errStr )
     if 'Alias' in res['Value']:
       configPath = '%s/%s/Alias' % ( self.rootConfigPath, storageName )
-      resolvedName = gConfig.getValue( configPath )
+      aliasName = gConfig.getValue( configPath )
+      result = self._getConfigStorageName( aliasName )
+      if not result['OK']:
+        errStr = "StorageFactory._getConfigStorageName: Supplied storage doesn't exist."
+        gLogger.error( errStr, configPath )
+        return S_ERROR( errStr )
+      resolvedName = result['Value']
     else:
       resolvedName = storageName
     return S_OK( resolvedName )
