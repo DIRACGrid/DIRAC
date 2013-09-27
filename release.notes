@@ -1,4 +1,4 @@
-[v6r10-pre6]
+[v6r10-pre7]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -38,6 +38,9 @@ NEW: new Operations option /Services/JobMonitoring/GlobalJobsInfo ( True by defa
      allow or not job info lookup by anybody, used in JobMonitoringHandler       
 BUGFIX: SiteDirector - take into account the target queue Platform
 BUGFIX: JobDB - bug in __insertNewJDL()        
+        
+*RSS
+FIX: DowntimeCommand - take the latest Downtime that fits        
         
 *Resources
 NEW: added SSHOARComputingElement class        
