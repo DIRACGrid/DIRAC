@@ -810,9 +810,14 @@ class FileManagerBase:
     res = self._findFiles( lfns, ['Size'], connection = connection )
     if not res['OK']:
       return res
+    
+    totalSize = 0
     for lfn in res['Value']['Successful'].keys():
       size = res['Value']['Successful'][lfn]['Size']
       res['Value']['Successful'][lfn] = size
+      totalSize += size
+      
+    res['TotalSize'] = totalSize  
     return res
 
   def getFileMetadata( self, lfns, connection = False ):
