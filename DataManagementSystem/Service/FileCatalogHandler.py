@@ -486,3 +486,49 @@ class FileCatalogHandler( RequestHandler ):
     """ Add a new metadata set
     """
     return gFileCatalogDB.dmeta.getMetadataSet( setName, expandFlag, self.getRemoteCredentials() )
+
+#########################################################################################
+#
+#  Dataset manipulation methods
+#
+  types_addDataset = [ StringTypes, DictType ]
+  def export_addDataset( self, datasetName, metaQuery ):
+    """ Add a new dynamic dataset defined by its meta query
+    """
+    return gFileCatalogDB.datasetManager.addDataset( datasetName, metaQuery, self.getRemoteCredentials() )
+  
+  types_checkDataset = [ StringTypes ]
+  def export_checkDataset( self, datasetName ):
+    """ Check the given dynamic dataset for changes since its definition
+    """
+    return gFileCatalogDB.datasetManager.checkDataset( datasetName, self.getRemoteCredentials() )
+  
+  types_updateDataset = [ StringTypes ]
+  def export_updateDataset( self, datasetName ):
+    """ Update the given dynamic dataset for changes since its definition
+    """
+    return gFileCatalogDB.datasetManager.updateDataset( datasetName, self.getRemoteCredentials() )
+  
+  types_getDatasetParameters = [ StringTypes ]
+  def export_getDatasetParameters( self, datasetName ):
+    """ Get parameters of the given dynamic dataset as they are stored in the database
+    """
+    return gFileCatalogDB.datasetManager.getDatasetParameters( datasetName, self.getRemoteCredentials() )
+  
+  types_freezeDataset = [ StringTypes ]
+  def export_freezeDataset( self, datasetName ):
+    """ Freeze the contents of the dataset making it effectively static
+    """
+    return gFileCatalogDB.datasetManager.freezeDataset( datasetName, self.getRemoteCredentials() )
+  
+  types_releaseDataset = [ StringTypes ]
+  def export_releaseDataset( self, datasetName ):
+    """ Release the contents of the frozen dataset allowing changes in its contents
+    """
+    return gFileCatalogDB.datasetManager.releaseDataset( datasetName, self.getRemoteCredentials() )
+  
+  types_getDatasetFiles = [ StringTypes ]
+  def export_getDatasetFiles( self, datasetName ):
+    """ Get lfns in the given dataset
+    """
+    return gFileCatalogDB.datasetManager.getDatasetFiles( datasetName, self.getRemoteCredentials() )
