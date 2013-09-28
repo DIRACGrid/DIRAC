@@ -468,9 +468,15 @@ class FileMetadata:
       if fileList:
         result = self.db.fileManager._getFileLFNs(fileList)
         lfnList = [ x[1] for x in result['Value']['Successful'].items() ]   
-        return S_OK(lfnList)  
+        finalResult = S_OK(lfnList)
+        if extra: 
+          finalResult['LFNIDDict'] = result['Value']['Successful']
+        return finalResult    
       else:
-        return S_OK([])
+        result = S_OK([])
+        if extra:
+          result['LFNIDDict'] = {}
+        return result  
 
     if fileMetaDict:
       result = self.__findFilesByMetadata( fileMetaDict,dirList,credDict )

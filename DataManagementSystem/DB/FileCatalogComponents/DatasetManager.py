@@ -2,7 +2,7 @@
 # $HeadURL$
 ########################################################################
 
-""" DIRAC FileCatalog mix-in class to manage dynamic datasets defined by a metadata query
+""" DIRAC FileCatalog plug-in class to manage dynamic datasets defined by a metadata query
 """
 
 __RCSID__ = "$Id$"
@@ -55,9 +55,12 @@ class DatasetManager:
                'DatasetHash': datasetHash,
                'Status': intStatus
              }
-    result = self.db.insertFields( inDict = inDict )
+    result = self.db.insertFields( 'FC_MetaDatasets', inDict = inDict )
     if not result['OK']:
-      return result
+      if "Duplicate" in result['Message']:
+        return S_ERROR( 'Dataset %s already exists' % datasetName )
+      else:
+        return result
     datasetID = result['lastRowId']
     return S_OK( datasetID )
        
@@ -74,7 +77,7 @@ class DatasetManager:
     result = self.db.fmeta.findFilesByMetadata( findMetaQuery, path, credDict, extra=True )
     if not result['OK']:
       return S_ERROR( 'Failed to apply the metaQuery' )
-    
+        
     lfnList = result['Value']
     lfnIDDict = result['LFNIDDict']
     lfnList.sort()
@@ -97,7 +100,7 @@ class DatasetManager:
   def checkDataset( self, datasetName, credDict ):
     """ Check that the dataset parameters correspond to the actual state
     """  
-    req = "SELECT MetaQuery,DatasetHash,Size,NumberOfFiles FROM FC_MetaDatasets"
+    req = "SELECT MetaQuery,DatasetHash,TotalSize,NumberOfFiles FROM FC_MetaDatasets"
     req += " WHERE DatasetName='%s'" % datasetName
     result = self.db._query( req )
     if not result['OK']:
@@ -118,23 +121,18 @@ class DatasetManager:
     datasetHash = result['Value']['DatasetHash']
     numberOfFiles = result['Value']['NumberOfFiles']
     
-    unchanged = True
     changeDict = {}
     if totalSize != totalSizeOld:
-      unchanged = False
       changeDict['TotalSize'] = ( totalSizeOld, totalSize )
     if datasetHash != datasetHashOld:
-      unchanged = False
       changeDict['DatasetHash'] = ( datasetHashOld, datasetHash )
     if numberOfFiles != numberOfFilesOld:
-      unchanged = False
       changeDict['NumberOfFiles'] = ( numberOfFilesOld, numberOfFiles )
       
-    result = S_OK( unchanged )
-    result['ChangeDict'] = changeDict 
+    result = S_OK( changeDict )
     return result
   
-  def updateDataset( self, datasetName, changeDict=None, credDict ):
+  def updateDataset( self, datasetName, credDict, changeDict=None ):
     """ Update the dataset parameters
     """
     
@@ -142,11 +140,11 @@ class DatasetManager:
       result = self.checkDataset( datasetName, credDict )
       if not result['OK']:
         return result
-      if result['Value']:
+      if not result['Value']:
         # The dataset is not changed
         return S_OK()
       else:
-        changeDict = result['ChangeDict']
+        changeDict = result['Value']
         
     req = "UPDATE FC_MetaDatasets SET "
     for field in changeDict:
@@ -163,7 +161,7 @@ class DatasetManager:
                      'UID','GID','Status','CreationDate','ModificationDate','DatasetHash','Mode']
     parameterString = ','.join( parameterList )
     
-    req = "SELECT %s FROM FC_MetaDatasets WHERE DatasetName=%s" % ( parameterString, datasetName )
+    req = "SELECT %s FROM FC_MetaDatasets WHERE DatasetName='%s'" % ( parameterString, datasetName )
     result = self.db._query( req )
     if not result['OK']:
       return result
@@ -276,7 +274,7 @@ class DatasetManager:
     if not result['OK']:
       return result
     status = result['Value']['Status']
-    if status == "Frozen":
+    if status in ["Frozen","Static"]:
       return self.__getFrozenDatasetFiles( datasetName, credDict )
     else:
       return self.__getDynamicDatasetFiles( datasetName, credDict )
