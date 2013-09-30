@@ -1,4 +1,4 @@
-[v6r10-pre7]
+[v6r10-pre8]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -26,6 +26,9 @@ CHANGE: FileCatalogClient - treat the reduced output from various service querie
 NEW: DFC - LFNPFNConvention flag can be None, Weak or Strong to facilitate compatibility with LFC data 
 CHANGE: FileCatalog - do not return PFNs, construct them on the client side
 CHANGE: FileCatalog - simplified FC_Scaling_test.py script
+NEW: FileCatalog/DatasetManager class to define and manipulate datasets corresponding to meta queries
+NEW: FileCatalogHandler - new interface methods to expose DatasetManager functionality
+NEW: FileCatalogClientCLI - new dataset family of commands
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
