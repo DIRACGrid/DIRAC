@@ -12,6 +12,9 @@ import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 
+RESERVED_METAKEYS = [ 'SE', 'CreationDate', 'ModificationDate', 'LastAccessDate', 'User'
+                      'Group', 'Path' ]
+
 class FileMetadata:
 
   def __init__(self,database = None):
@@ -30,6 +33,9 @@ class FileMetadata:
     """ Add a new metadata parameter to the Metadata Database.
         pname - parameter name, ptype - parameter type in the MySQL notation
     """
+
+    if pname in RESERVED_METAKEYS:
+      return S_ERROR( 'Illegal use of reserved metafield name' )
 
     result = self.db.dmeta.getMetadataFields( credDict )
     if not result['OK']:
@@ -453,7 +459,10 @@ class FileMetadata:
     lfnList = []
 
     if dirFlag == "None":
-      return S_OK([])
+      result = S_OK([])
+      if extra:
+        result['LFNIDDict'] = {}
+      return result  
     elif dirFlag == "All":
       result = self.__findFilesByMetadata( fileMetaDict, [], credDict )
       if not result['OK']:
@@ -462,9 +471,15 @@ class FileMetadata:
       if fileList:
         result = self.db.fileManager._getFileLFNs(fileList)
         lfnList = [ x[1] for x in result['Value']['Successful'].items() ]   
-        return S_OK(lfnList)  
+        finalResult = S_OK(lfnList)
+        if extra: 
+          finalResult['LFNIDDict'] = result['Value']['Successful']
+        return finalResult    
       else:
-        return S_OK([])
+        result = S_OK([])
+        if extra:
+          result['LFNIDDict'] = {}
+        return result  
 
     if fileMetaDict:
       result = self.__findFilesByMetadata( fileMetaDict,dirList,credDict )
@@ -479,8 +494,11 @@ class FileMetadata:
       result = self.db.fileManager._getFileLFNs(fileList)
       lfnList = [ x[1] for x in result['Value']['Successful'].items() ]
 
-    result = S_OK( lfnList ) 
+    finalResult = S_OK( lfnList ) 
     if extra:
-      result['LFNIDDict'] = result['Value']['Successful']
+      if fileList:
+        finalResult['LFNIDDict'] = result['Value']['Successful']
+      else:
+        finalResult['LFNIDDict'] = {}
       
-    return result  
+    return finalResult  
