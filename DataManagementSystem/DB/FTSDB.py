@@ -232,22 +232,22 @@ class FTSDB( DB ):
     ftsFiles = ftsFiles["Value"][query] if query in ftsFiles["Value"] else []
     return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles ] )
 
-  def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
+  def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList = None ):
     """ propagate states for descendants in replication tree
 
-    :param list opFileIDList: [ ReqDB.File.FileID, ... ]
     :param int operationID: ReqDB.Operation.OperationID
     :param str sourceSE: waiting source SE
+    :param list opFileIDList: [ ReqDB.File.FileID, ... ]
     """
     operationID = int( operationID )
-    opFileIDList = [ int( opFileID ) for opFileID in opFileIDList ]
+    if opFileIDList:
+      opFileIDList = [ int( opFileID ) for opFileID in opFileIDList ]
     status = "Waiting#%s" % sourceSE
-    query = "UPDATE `FTSFile` SET `Status` = 'Waiting' WHERE `Status` = '%s' "\
-      "AND `FileID` IN (%s) AND `OperationID` = %s;" % ( status, intListToString( opFileIDList ), operationID )
-    update = self._update( query )
-    if not update['OK']:
-      self.log.error( "setFTSFilesWaiting: %s" % update['Message'] )
-    return update
+    query = "UPDATE `FTSFile` SET `Status` = 'Waiting' WHERE `Status` = '%s' AND `OperationID` = %s " % ( status,
+                                                                                                          operationID )
+    if opFileIDList:
+      query = query + "AND `FileID` IN (%s)" % intListToString( opFileIDList )
+    return self._update( query )
 
   def peekFTSFile( self, ftsFileID ):
     """ peek FTSFile given FTSFileID """

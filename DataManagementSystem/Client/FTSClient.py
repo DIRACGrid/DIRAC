@@ -202,7 +202,7 @@ class FTSClient( Client ):
       self.log.error( "getDBSummary: %s" % dbSummary["Message"] )
     return dbSummary
 
-  def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
+  def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList = None ):
     """ update status for waiting FTSFiles from 'Waiting#SourceSE' to 'Waiting'
 
     :param int operationID: ReqDB.Operation.OperationID

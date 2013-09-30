@@ -140,7 +140,7 @@ class FTSManagerHandler( RequestHandler ):
     return self.ftsStrategy.updateRWAccess()
 
 
-  types_setFTSFilesWaiting = [ ( IntType, LongType ), StringTypes, ListType ]
+  types_setFTSFilesWaiting = [ ( IntType, LongType ), StringTypes, ( NoneType, ListType ) ]
   def export_setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
     """ update states for waiting replications """
     try:
