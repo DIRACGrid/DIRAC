@@ -48,7 +48,7 @@ class FTSDB( DB ):
     :param int maxQueueSize: size of queries queue
     """
     DB.__init__( self, "FTSDB", "DataManagement/FTSDB", maxQueueSize )
-    self.log = gLogger.getSubLogger( "DataManagement/FTSDB" )
+#    self.log = gLogger.getSubLogger( "DataManagement/FTSDB" )
     # # private lock
     self.getIdLock = LockRing().getLock( "FTSDBLock" )
     # # max attempt for reschedule
@@ -177,7 +177,7 @@ class FTSDB( DB ):
     ftsFile = FTSFile( select.values()[0][0] )
     return S_OK( ftsFile )
 
-  def deleteFTSFiles( self, operationID, opFileIDList ):
+  def deleteFTSFiles( self, operationID, opFileIDList = None ):
     """ delete FTSFiles for reschedule
 
     :param int operationID: ReqDB.Operation.OperationID
@@ -186,13 +186,8 @@ class FTSDB( DB ):
     query = [ "DELETE FROM `FTSFile` WHERE OperationID = %s" % operationID ]
     if opFileIDList:
       query.append( " AND `FileID` IN (%s)" % intListToString( opFileIDList ) )
-    else:
-      self.log.warn( "deleteFTSFile: will remove all FTSFiles for OperationID = %s" % operationID )
     query.append( ";" )
-    delete = self._update( "".join( query ) )
-    if not delete['OK']:
-      self.log.error( "deleteFTSFiles: %s" % delete['Message'] )
-    return delete
+    return self._update( "".join( query ) )
 
   def getFTSJobsForRequest( self, requestID, statusList = None ):
     """ get list of FTSJobs with status in :statusList: for request given its requestID

@@ -20,7 +20,7 @@
 # @brief Definition of FTSManagerHandler class.
 
 # # imports
-from types import DictType, LongType, ListType, IntType, StringTypes
+from types import DictType, LongType, ListType, IntType, StringTypes, NoneType
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
@@ -152,11 +152,13 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
-  types_deleteFTSFiles = [ ( IntType, LongType ), ListType ]
+  types_deleteFTSFiles = [ ( IntType, LongType ), ( NoneType, ListType ) ]
   def export_deleteFTSFiles( self, operationID, opFileIDList = None ):
     """ cleanup FTSFiles for rescheduling """
     opFileIDList = opFileIDList if opFileIDList else []
     try:
+      self.log.warn( "Removing %s FTSFiles for OperationID = %s" % ( ( 'All' if not opFileIDList else opFileIDList ),
+                                                                     operationID ) )
       delete = self.ftsDB.deleteFTSFiles( operationID, opFileIDList )
       if not delete["OK"]:
         gLogger.error( "deleteFTSFiles: %s" % delete['Message'] )

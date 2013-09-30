@@ -211,7 +211,7 @@ class FTSClient( Client ):
     """
     return self.ftsManager.setFTSFilesWaiting( operationID, sourceSE, opFileIDList )
 
-  def deleteFTSFiles( self, operationID, opFileIDList ):
+  def deleteFTSFiles( self, operationID, opFileIDList = None ):
     """ delete FTSFiles for rescheduling
 
     :param int operationID: ReqDB.Operation.OperationID
