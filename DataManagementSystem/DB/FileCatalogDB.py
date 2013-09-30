@@ -100,6 +100,11 @@ class FileCatalogDB(DB):
       return result
     self.fileManager = result['Value']
     
+    result = self.__loadCatalogComponent( databaseConfig['DatasetManager'] )
+    if not result['OK']:
+      return result
+    self.datasetManager = result['Value']
+    
     result = self.__loadCatalogComponent( databaseConfig['DirectoryMetadata'] )
     if not result['OK']:
       return result

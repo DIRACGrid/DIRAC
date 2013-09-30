@@ -161,6 +161,35 @@ class DirectoryListing:
     
     self.entries.append( ('d'+self.__getModeString(perm),nlinks,uname,gname,size,date,name) )  
     
+  def addDataset(self,name,datasetDict,numericid):
+    """ Pretty print of the file ls output
+    """    
+    perm = datasetDict['Mode']
+    date = datasetDict['ModificationDate']
+    size = 0
+    if datasetDict.has_key('Owner'):
+      uname = datasetDict['Owner']
+    elif datasetDict.has_key('OwnerDN'):
+      result = CS.getUsernameForDN(datasetDict['OwnerDN'])
+      if result['OK']:
+        uname = result['Value']
+      else:
+        uname = 'unknown'
+    else:
+      uname = 'unknown'
+    if numericid:
+      uname = str( datasetDict['UID'] )
+      
+    gname = 'unknown'  
+    if datasetDict.has_key('OwnerGroup'):
+      gname = datasetDict['OwnerGroup']
+    if numericid:
+      gname = str( datasetDict ['GID'] )
+    
+    numberOfFiles = datasetDict ['NumberOfFiles']
+    
+    self.entries.append( ('d'+self.__getModeString(perm),numberOfFiles,uname,gname,size,date,name) )   
+    
   def __getModeString(self,perm):
     """ Get string representation of the file/directory mode
     """  
@@ -220,7 +249,7 @@ class DirectoryListing:
         self.entries.sort(key=lambda x: x[6]) 
         
     # Determine the field widths
-    wList = [ 0 for x in range(7) ]
+    wList = [ 0 for _x in range(7) ]
     for d in self.entries:
       for i in range(7):
         if len(str(d[i])) > wList[i]:
@@ -400,15 +429,15 @@ File Catalog Client $Revision: 1.17 $Date:
       return
     lfn = argss[0]
     lfn = self.getPath(lfn)
-    dir = ''
+    dir_ = ''
     if len(argss)>1:
-      dir = argss[1]
+      dir_ = argss[1]
         
     dirac = Dirac()
     localCWD = ''
-    if dir:
+    if dir_:
       localCWD = os.getcwd()
-      os.chdir(dir)
+      os.chdir(dir_)
     result = dirac.getFile(lfn)
     if localCWD:
       os.chdir(localCWD)
@@ -499,7 +528,6 @@ File Catalog Client $Revision: 1.17 $Date:
     se = argss[1]
     try:
       result =  self.fc.setReplicaStatus( {lfn:{'SE':se,'Status':'Trash'}} )
-      done = 1
       if result['OK']:
         print "Replica at",se,"moved to Trash Bin"
       else:
@@ -597,7 +625,6 @@ File Catalog Client $Revision: 1.17 $Date:
     rmse = args[1]
     try:
       result =  self.fc.removeReplica( {lfn:{'SE':rmse}} )
-      done = 1
       if result['OK']:
         if 'Failed' in result['Value']:
           if lfn in result['Value']['Failed']:
@@ -759,7 +786,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if len(args) == 5:
       guid = args[4]
     else:
-      status,guid = commands.getstatusoutput('uuidgen')
+      _status,guid = commands.getstatusoutput('uuidgen')
     infoDict['GUID'] = guid
     infoDict['Checksum'] = ''    
       
@@ -843,7 +870,7 @@ File Catalog Client $Revision: 1.17 $Date:
       print "Exception while adding ancestors: ", str(x)                
                          
   def complete_ancestorset(self, text, line, begidx, endidx):
-    result = []
+
     args = line.split()
 
     if ( len(args) == 1 ):
@@ -890,10 +917,10 @@ File Catalog Client $Revision: 1.17 $Date:
         depthDict = {}  
         depSet = set()    
         for lfn,ancestorDict in  result['Value']['Successful'].items():
-           for ancestor,dep in ancestorDict.items():     
-             depthDict.setdefault(dep,[])
-             depthDict[dep].append(ancestor)
-             depSet.add(dep)
+          for ancestor,dep in ancestorDict.items():     
+            depthDict.setdefault(dep,[])
+            depthDict[dep].append(ancestor)
+            depSet.add(dep)
         depList = list(depSet)
         depList.sort()
         print lfn   
@@ -949,10 +976,10 @@ File Catalog Client $Revision: 1.17 $Date:
         depthDict = {}  
         depSet = set()    
         for lfn,descDict in  result['Value']['Successful'].items():
-           for desc,dep in descDict.items():     
-             depthDict.setdefault(dep,[])
-             depthDict[dep].append(desc)
-             depSet.add(dep)
+          for desc,dep in descDict.items():     
+            depthDict.setdefault(dep,[])
+            depthDict[dep].append(desc)
+            depSet.add(dep)
         depList = list(depSet)
         depList.sort()
         print lfn   
@@ -1013,8 +1040,8 @@ File Catalog Client $Revision: 1.17 $Date:
         if not result['Value']:
           print "No entries found"
         else:  
-          for user,id in result['Value'].items():
-            print user.rjust(20),':',id
+          for user,id_ in result['Value'].items():
+            print user.rjust(20),':',id_
     else:
       print "Unknown option:",option
 
@@ -1063,8 +1090,8 @@ File Catalog Client $Revision: 1.17 $Date:
         if not result['Value']:
           print "No entries found"
         else:  
-          for user,id in result['Value'].items():
-            print user.rjust(20),':',id
+          for user,id_ in result['Value'].items():
+            print user.rjust(20),':',id_
     else:
       print "Unknown option:",option  
   
@@ -1301,7 +1328,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     # Get switches
-    long = False
+    _long = False
     reverse = False
     timeorder = False
     numericid = False
@@ -1309,7 +1336,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if len(argss) > 0:
       if argss[0][0] == '-':
         if 'l' in argss[0]:
-          long = True
+          _long = True
         if 'r' in  argss[0]:
           reverse = True
         if 't' in argss[0]:
@@ -1344,7 +1371,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     # Get directory contents now
     try:
-      result =  self.fc.listDirectory(path,long)             
+      result =  self.fc.listDirectory(path,_long)             
       dList = DirectoryListing()
       if result['OK']:
         if result['Value']['Successful']:
@@ -1352,7 +1379,7 @@ File Catalog Client $Revision: 1.17 $Date:
             fname = entry.split('/')[-1]
             # print entry, fname
             # fname = entry.replace(self.cwd,'').replace('/','')
-            if long:
+            if _long:
               fileDict = result['Value']['Successful'][path]['Files'][entry]['MetaData']
               repDict = result['Value']['Successful'][path]['Files'][entry].get( "Replicas", {} )
               if fileDict:
@@ -1363,7 +1390,7 @@ File Catalog Client $Revision: 1.17 $Date:
             dname = entry.split('/')[-1]
             # print entry, dname
             # dname = entry.replace(self.cwd,'').replace('/','')  
-            if long:
+            if _long:
               dirDict = result['Value']['Successful'][path]['SubDirs'][entry]
               if dirDict:
                 dList.addDirectory(dname,dirDict,numericid)
@@ -1372,7 +1399,7 @@ File Catalog Client $Revision: 1.17 $Date:
           for entry in result['Value']['Successful'][path]['Links']:
             pass
               
-          if long:
+          if _long:
             dList.printListing(reverse,timeorder)      
           else:
             dList.printOrdered()
@@ -1577,11 +1604,11 @@ File Catalog Client $Revision: 1.17 $Date:
     """      
     
     argss = args.split()
-    long = False
+    _long = False
     fromFiles = False
     if len(argss) > 0:
       if argss[0] == '-l':
-        long = True
+        _long = True
         del argss[0]
     if len(argss) > 0:
       if argss[0] == '-f':
@@ -1613,13 +1640,13 @@ File Catalog Client $Revision: 1.17 $Date:
             print "File size failed:",result['Message']
         else:
           print "directory:",path
-          result =  self.fc.getDirectorySize( path, long, fromFiles )          
+          result =  self.fc.getDirectorySize( path, _long, fromFiles )          
           if result['OK']:
             if result['Value']['Successful']:
               print "Logical Size:",int_with_commas(result['Value']['Successful'][path]['LogicalSize']), \
                     "Files:",result['Value']['Successful'][path]['LogicalFiles'], \
                     "Directories:",result['Value']['Successful'][path]['LogicalDirectories']
-              if long:
+              if _long:
                 fields = ['StorageElement','Size','Replicas']
                 values = []
                 if "PhysicalSize" in result['Value']['Successful'][path]:
@@ -1679,7 +1706,6 @@ File Catalog Client $Revision: 1.17 $Date:
       print self.do_guid.__doc__
       return
     path = argss[0]
-    lfn = self.getPath(path)
     try:
       result =  self.fc.getFileMetadata(path)
       if result['OK']:
@@ -1799,12 +1825,6 @@ File Catalog Client $Revision: 1.17 $Date:
 
     result = [i for i in self._available_meta_cmd if i.startswith(text)]
     return result
-      
-  def __processArgs(self,argss):
-    """ Process the list of arguments to capture quoted strings
-    """
-    
-    argString = " ".join(argss)
             
   def removeMeta(self,argss):
     """ Remove the specified metadata for a directory or file
@@ -2010,7 +2030,7 @@ File Catalog Client $Revision: 1.17 $Date:
             metastr += "%s : %s, " % (key, val)
           metastr.rstrip(",")  
           print "%s -> %s" % (metasetname.rjust(20), metastr)
-          
+
   def registerMeta(self,argss):
     """ Add metadata field. 
     """
@@ -2249,6 +2269,168 @@ File Catalog Client $Revision: 1.17 $Date:
     
     return metaDict 
 
+  def do_dataset( self, args ):
+    """ A set of dataset manipulation commands
+    
+        Usage:
+          
+          dataset add <dataset_name> <path> <meta_query>   - add a new dataset definition
+          dataset show [-l] [<dataset_name>]               - show existing datasets
+          dataset status <dataset_name>                    - display the dataset status
+          dataset files <dataset_name>                     - show dataset files     
+          dataset rm <dataset_name>                        - remove dataset
+          dataset check <dataset_name>                     - check if the dataset parameters are still valid     
+          dataset update <dataset_name>                    - update the dataset parameters
+          dataset freeze <dataset_name>                    - fix the current contents of the dataset     
+          dataset release <dataset_name>                   - release the dynamci dataset
+    """
+    argss = args.split()
+    if (len(argss)==0):
+      print self.do_meta.__doc__
+      return
+    command = argss[0]
+    del argss[0]
+    if command == "add":
+      self.dataset_add( argss )
+    elif command == "show":
+      self.dataset_show( argss )  
+    elif command == "files":
+      self.dataset_files( argss )
+    elif command == "rm":
+      self.dataset_rm( argss )   
+    elif command == "check":
+      self.dataset_check( argss )
+    elif command == "update":
+      self.dataset_update( argss )     
+    elif command == "freeze":
+      self.dataset_freeze( argss )
+    elif command == "release":
+      self.dataset_release( argss )      
+    elif command == "status":
+      self.dataset_status( argss )        
+
+  def dataset_add( self, argss ):
+    """ Add a new dataset
+    """
+    datasetName = argss[0]
+    path = argss[1]
+    metaSelections = ' '.join( argss[2:] )
+    metaDict = self.__createQuery( metaSelections )
+    path = self.getPath( path )
+    metaDict['Path'] = path
+    
+    result = self.fc.addDataset( datasetName, metaDict )
+    if not result['OK']:
+      print "ERROR: failed to add dataset:", result['Message']
+    else:
+      print "Successfully added dataset", datasetName  
+
+  def dataset_status( self, argss ):
+    """ Display the dataset status
+    """
+    datasetName = argss[0]
+    result = self.fc.getDatasetParameters( datasetName )
+    if not result['OK']:
+      print "ERROR: failed to get status of dataset:", result['Message']
+    else:
+      parDict = result['Value']
+      for par,value in parDict.items():
+        print par.rjust(20),':',value  
+
+  def dataset_rm( self, argss ):
+    """ Remove the given dataset
+    """
+    datasetName = argss[0]
+    result = self.fc.removeDataset( datasetName )
+    if not result['OK']:
+      print "ERROR: failed to remove dataset:", result['Message']
+    else:
+      print "Successfully removed dataset", datasetName  
+
+  def dataset_check( self, argss ):
+    """ check if the dataset parameters are still valid
+    """
+    datasetName = argss[0]
+    result = self.fc.checkDataset( datasetName )
+    if not result['OK']:
+      print "ERROR: failed to check dataset:", result['Message']
+    else:
+      changeDict = result['Value']
+      if not changeDict:
+        print "Dataset is not changed"
+      else:
+        print "Dataset changed:"
+        for par in changeDict:
+          print "   ",par,': ',changeDict[par][0],'->',changeDict[par][1]
+          
+  def dataset_update( self, argss ):
+    """ Update the given dataset parameters
+    """
+    datasetName = argss[0]
+    result = self.fc.updateDataset( datasetName )
+    if not result['OK']:
+      print "ERROR: failed to update dataset:", result['Message']
+    else:
+      print "Successfully updated dataset", datasetName            
+
+  def dataset_freeze( self, argss ):
+    """ Freeze the given dataset
+    """
+    datasetName = argss[0]
+    result = self.fc.freezeDataset( datasetName )
+    if not result['OK']:
+      print "ERROR: failed to freeze dataset:", result['Message']
+    else:
+      print "Successfully frozen dataset", datasetName            
+
+  def dataset_release( self, argss ):
+    """ Release the given dataset
+    """
+    datasetName = argss[0]
+    result = self.fc.releaseDataset( datasetName )
+    if not result['OK']:
+      print "ERROR: failed to release dataset:", result['Message']
+    else:
+      print "Successfully released dataset", datasetName       
+
+  def dataset_files( self, argss ):
+    """ Get the given dataset files
+    """
+    datasetName = argss[0]
+    result = self.fc.getDatasetFiles( datasetName )
+    if not result['OK']:
+      print "ERROR: failed to get files for dataset:", result['Message']
+    else:
+      lfnList = result['Value']
+      for lfn in lfnList:
+        print lfn
+
+  def dataset_show( self, argss ):
+    """ Show existing requested datasets
+    """
+    long_ = False
+    if '-l' in argss:
+      long_ = True
+      del argss[argss.index('-l')]
+    datasetName = ''
+    if len( argss ) > 0:
+      datasetName = argss[0]
+
+    result = self.fc.getDatasets( datasetName )
+    if not result['OK']:
+      print "ERROR: failed to get datasets"
+      return
+
+    datasetDict = result['Value']
+    if not long_:
+      for dName in datasetDict.keys():
+        print dName
+    else:
+      dList = DirectoryListing()
+      for dName in datasetDict.keys():
+        dList.addDataset( dName, datasetDict[dName], False )
+      dList.printListing( False, False )            
+
   def do_stats( self, args ):
     """ Get the catalog statistics
     
@@ -2280,7 +2462,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     
     argss = args.split()
-    option = argss[0]
+    _option = argss[0]
     start = time.time()
     result = self.fc.rebuildDirectoryUsage()
     if not result['OK']:
@@ -2298,7 +2480,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     
     argss = args.split()
-    option = argss[0]
+    _option = argss[0]
     start = time.time()
     result = self.fc.repairCatalog()
     if not result['OK']:

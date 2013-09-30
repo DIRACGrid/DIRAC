@@ -184,7 +184,8 @@ class DowntimeCommand( Command ):
       
       if ( dt[ 'StartDate' ] < str( startDate ) ) and ( dt[ 'EndDate' ] > str( endDate ) ):
         result = dt
-        break        
+        #We want to take the latest one ( they are sorted by insertion time )
+        #break
            
     return S_OK( result )            
 
@@ -224,7 +225,8 @@ class DowntimeCommand( Command ):
       for dt in uniformResult:
         if ( dt[ 'StartDate' ] > dtDate ) and ( dt[ 'StartDate' ] < dtDateFuture ):
           result = dt
-          break
+          #We want to take the latest one ( they are sorted by insertion time )
+          #break
            
     return S_OK( result )       
 
