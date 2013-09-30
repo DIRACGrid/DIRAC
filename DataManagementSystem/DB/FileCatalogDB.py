@@ -18,6 +18,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager,FullSecurityManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DatasetManager        import DatasetManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
 
 #############################################################################
@@ -64,6 +65,7 @@ class FileCatalogDB(DB):
       self.securityManager = eval("%s(self)" % databaseConfig['SecurityManager'])
       self.dtree = eval("%s(self)" % databaseConfig['DirectoryManager'])
       self.fileManager = eval("%s(self)" % databaseConfig['FileManager'])
+      self.datasetManager = eval("%s(self)" % databaseConfig['DatasetManager'])
       self.dmeta = eval("%s(self)" % databaseConfig['DirectoryMetadata'])
       self.fmeta = eval("%s(self)" % databaseConfig['FileMetadata'])
     except Exception, x:
