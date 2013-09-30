@@ -40,7 +40,8 @@ def initializeFileCatalogHandler( serviceInfo ):
                        'DirectoryManager'  : 'DirectoryLevelTree',
                        'FileManager'       : 'FileManager',
                        'DirectoryMetadata' : 'DirectoryMetadata',
-                       'FileMetadata'      : 'FileMetadata'}
+                       'FileMetadata'      : 'FileMetadata',
+                       'DatasetManager'    : 'DatasetManager' }
   for configKey in sortList( defaultManagers.keys() ):
     defaultValue = defaultManagers[configKey]
     configValue = getServiceOption( serviceInfo, configKey, defaultValue )
@@ -497,6 +498,12 @@ class FileCatalogHandler( RequestHandler ):
     """
     return gFileCatalogDB.datasetManager.addDataset( datasetName, metaQuery, self.getRemoteCredentials() )
   
+  types_removeDataset = [ StringTypes ]
+  def export_removeDataset( self, datasetName ):
+    """ Check the given dynamic dataset for changes since its definition
+    """
+    return gFileCatalogDB.datasetManager.removeDataset( datasetName, self.getRemoteCredentials() )
+  
   types_checkDataset = [ StringTypes ]
   def export_checkDataset( self, datasetName ):
     """ Check the given dynamic dataset for changes since its definition
@@ -508,6 +515,12 @@ class FileCatalogHandler( RequestHandler ):
     """ Update the given dynamic dataset for changes since its definition
     """
     return gFileCatalogDB.datasetManager.updateDataset( datasetName, self.getRemoteCredentials() )
+  
+  types_getDatasets = [ list( StringTypes ) + [ListType] ]
+  def export_getDatasets( self, datasetName ):
+    """ Get parameters of the given dynamic dataset as they are stored in the database
+    """
+    return gFileCatalogDB.datasetManager.getDatasets( datasetName, self.getRemoteCredentials() )
   
   types_getDatasetParameters = [ StringTypes ]
   def export_getDatasetParameters( self, datasetName ):

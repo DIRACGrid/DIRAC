@@ -459,7 +459,10 @@ class FileMetadata:
     lfnList = []
 
     if dirFlag == "None":
-      return S_OK([])
+      result = S_OK([])
+      if extra:
+        result['LFNIDDict'] = {}
+      return result  
     elif dirFlag == "All":
       result = self.__findFilesByMetadata( fileMetaDict, [], credDict )
       if not result['OK']:
