@@ -258,14 +258,6 @@ class FTSDB( DB ):
     """ peek FTSFile given FTSFileID """
     return self.getFTSFile( ftsFileID )
 
-  def deleteFTSFile( self, ftsFileID ):
-    """ delete FTSFile given FTSFileID """
-    delete = "DELETE FROM `FTSFile` WHERE `FTSFileID` = %s;" % ftsFileID
-    delete = self._transaction( [ delete ] )
-    if not delete['OK']:
-      self.log.error( delete['Message'] )
-    return delete
-
   def putFTSJob( self, ftsJob ):
     """ put FTSJob to the db (INSERT or UPDATE)
 
