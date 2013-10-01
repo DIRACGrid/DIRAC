@@ -7,7 +7,7 @@
 """ ARC Computing Element 
 """
 
-__RCSID__ = "$Id$"
+__RCSID__ = "58c42fc (2013-07-07 22:54:57 +0200) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
@@ -108,7 +108,7 @@ class ARCComputingElement( ComputingElement ):
       else:
         break    
 
-    os.unlink( executableFile )
+    #os.unlink( executableFile )
     if batchIDList:
       result = S_OK( batchIDList )
       result['PilotStampDict'] = stampDict
@@ -149,6 +149,14 @@ class ARCComputingElement( ComputingElement ):
     resultDict = {}
     if not result['OK']:
       return result
+
+    if result['Value'][0]==1 and result['Value'][1]=="No jobs\n":
+      result = S_OK()
+      result['RunningJobs'] = 0
+      result['WaitingJobs'] = 0
+      result['SubmittedJobs'] = 0
+      return result
+
     if result['Value'][0]:
       if result['Value'][2]:
         return S_ERROR(result['Value'][2])
