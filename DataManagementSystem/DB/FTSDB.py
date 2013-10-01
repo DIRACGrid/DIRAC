@@ -418,10 +418,7 @@ class FTSDB( DB ):
     query = "DELETE FROM `FTSFile` WHERE `RequestID`= %s and `FileID` IN (%s)" % ( requestID,
                                                                                    intListToString( fileIDs ) )
     deleteFiles = self._transaction( [query] )
-    if not deleteFiles['OK']:
-      self.log.error( "cleanUpFTSFiles: %s" % deleteFiles['Message'] )
-      return deleteFiles
-    return S_OK()
+    return deleteFiles
 
   def getDBSummary( self ):
     """ get DB summary """
