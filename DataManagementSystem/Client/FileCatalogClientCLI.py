@@ -1365,7 +1365,7 @@ File Catalog Client $Revision: 1.17 $Date:
       result = self.fc.getFileMetadata(path)      
       dList = DirectoryListing()
       fileDict = result['Value']['Successful'][path]
-      dList.addFile(os.path.basename(path),fileDict,numericid)
+      dList.addFile(os.path.basename(path),fileDict,{},numericid)
       dList.printListing(reverse,timeorder)
       return         
     
