@@ -2113,7 +2113,12 @@ class SRM2Storage( StorageBase ):
     import DIRAC
     accountingDict = {}
     accountingDict['OperationType'] = operation
-    accountingDict['User'] = 'acsmith'
+    result = getProxyInfo()
+    if not result['OK']:
+      userName = 'system'
+    else:
+      userName = result['Value'].get( 'username', 'unknown' )   
+    accountingDict['User'] = userName
     accountingDict['Protocol'] = 'gfal'
     accountingDict['RegistrationTime'] = 0.0
     accountingDict['RegistrationOK'] = 0
@@ -2255,7 +2260,7 @@ class SRM2Storage( StorageBase ):
     :param gfalObject: gfalObject
     """
     self.log.debug( "SRM2Storage.__gfal_get_ids: Performing gfal_get_ids." )
-    numberOfResults, gfalObject, srm1RequestID, srm1FileIDs, srmRequestToken = self.gfal.gfal_get_ids( gfalObject )
+    numberOfResults, gfalObject, _srm1RequestID, _srm1FileIDs, srmRequestToken = self.gfal.gfal_get_ids( gfalObject )
     if numberOfResults <= 0:
       errStr = "SRM2Storage.__gfal_get_ids: Did not obtain SRM request ID."
       self.log.error( errStr )
