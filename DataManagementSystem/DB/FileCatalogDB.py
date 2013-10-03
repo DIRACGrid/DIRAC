@@ -19,7 +19,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager,FullSecurityManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DatasetManager        import DatasetManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import checkArgumentFormat
 
 #############################################################################
 class FileCatalogDB(DB):
@@ -187,7 +187,7 @@ class FileCatalogDB(DB):
   def getPathPermissions(self, lfns, credDict):
     """ Get permissions for the given user/group to manipulate the given lfns 
     """
-    res = checkArgumentDict(lfns)
+    res = checkArgumentFormat(lfns)
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -703,7 +703,7 @@ class FileCatalogDB(DB):
     return self.securityManager.hasAdminAccess(credDict)
 
   def _checkPathPermissions(self,operation,lfns,credDict):
-    res = checkArgumentDict(lfns)
+    res = checkArgumentFormat(lfns)
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -722,4 +722,3 @@ class FileCatalogDB(DB):
       else:  
         successful[lfn] = lfns[lfn]
     return S_OK( {'Successful':successful,'Failed':failed} )
- 
