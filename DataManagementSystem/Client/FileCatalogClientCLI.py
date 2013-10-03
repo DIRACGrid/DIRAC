@@ -2248,7 +2248,7 @@ File Catalog Client $Revision: 1.17 $Date:
           dataset check <dataset_name>                     - check if the dataset parameters are still valid     
           dataset update <dataset_name>                    - update the dataset parameters
           dataset freeze <dataset_name>                    - fix the current contents of the dataset     
-          dataset release <dataset_name>                   - release the dynamci dataset
+          dataset release <dataset_name>                   - release the dynamic dataset
     """
     argss = args.split()
     if (len(argss)==0):
