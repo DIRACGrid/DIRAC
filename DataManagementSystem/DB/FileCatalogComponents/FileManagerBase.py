@@ -667,6 +667,31 @@ class FileManagerBase:
     """ Set the file mode """
     connection = self._getConnection( connection )
     return self._setFileParameter( fileID, 'Mode', mode, connection = connection )
+  
+  def _setFileStatus( self, fileID, status, connection = False ):
+    """ Set file status
+    """
+    connection = self._getConnection( connection )
+    return self._setFileParameter( fileID, 'Status', status, connection = connection )
+  
+  def setFileStatus( self, lfns, connection = False ):
+    """ Set the status of the given files
+    """
+    successful = {}
+    failed = {}
+    for lfn,status in lfns.items():
+      result = self._findFiles( [lfn], ['FileID'], connection = connection )
+      if not result['Value']['Successful'].has_key( lfn ):
+        failed[lfn] = result['Value']['Failed'][lfn]
+        continue
+      fileID = result['Value']['Successful'][lfn]['FileID']
+      result = self._setFileStatus( fileID, status, connection )
+      if not result['OK']:
+        failed[lfn] = result['Message']
+      else:
+        successful['lfn'] = True  
+      
+    return S_OK( {'Successful':successful, 'Failed':failed} )  
 
   ######################################################
   #

@@ -293,7 +293,7 @@ class DirectoryMetadata:
     if not result['Value']:
       return S_OK( {} )
     metaDict = {}
-    for dID, key, value in result['Value']:
+    for _dID, key, value in result['Value']:
       if metaDict.has_key( key ):
         if type( metaDict[key] ) == types.ListType:
           metaDict[key].append( value )
@@ -684,7 +684,7 @@ class DirectoryMetadata:
     result = self.db.dtree.getFilesInDirectory( dirList, credDict )
     if not result['OK']:
       return result
-    for fileID, dirID, fname in result['Value']:
+    for _fileID, dirID, fname in result['Value']:
       fileList.append( dirDict[dirID] + '/' + os.path.basename( fname ) )
 
     return S_OK( fileList )
