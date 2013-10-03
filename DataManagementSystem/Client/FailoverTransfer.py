@@ -50,12 +50,12 @@ class FailoverTransfer( object ):
 
   #############################################################################
   def transferAndRegisterFile( self,
-                                  fileName,
-                                  localPath,
-                                  lfn,
-                                  destinationSEList,
-                                  fileMetaDict,
-                                  fileCatalog = None ):
+                               fileName,
+                               localPath,
+                               lfn,
+                               destinationSEList,
+                               fileMetaDict,
+                               fileCatalog = None ):
     """Performs the transfer and register operation with failover.
     """
     errorList = []
@@ -109,13 +109,13 @@ class FailoverTransfer( object ):
 
   #############################################################################
   def transferAndRegisterFileFailover( self,
-                                          fileName,
-                                          localPath,
-                                          lfn,
-                                          targetSE,
-                                          failoverSEList,
-                                          fileMetaDict,
-                                          fileCatalog = None ):
+                                       fileName,
+                                       localPath,
+                                       lfn,
+                                       targetSE,
+                                       failoverSEList,
+                                       fileMetaDict,
+                                       fileCatalog = None ):
     """Performs the transfer and register operation to failover storage and sets the
        necessary replication and removal requests to recover.
     """
@@ -237,8 +237,6 @@ class FailoverTransfer( object ):
   #############################################################################
   def __setFileRemovalRequest( self, lfn, se = '', pfn = '' ):
     """ Sets a removal request for a file including all replicas.
-
-
     """
     remove = Operation()
     remove.Type = "RemoveFile"
