@@ -627,6 +627,20 @@ class FileCatalogDB(DB):
       # This is a file      
       return self.fmeta.setMetadata(path,metadataDict,credDict)      
     
+  def setMetadataBulk( self, pathMetadataDict, credDict ):
+    """  Add metadata for the given paths
+    """  
+    successful = {}
+    failed = {}
+    for path, metadataDict in pathMetadataDict.items():
+      result = self.setMetadata( path, metadataDict, credDict )
+      if result['OK']:
+        successful[path] = True
+      else:
+        failed[path] = result['Message']
+        
+    return S_OK( { 'Successful': successful, 'Failed': failed } )      
+    
   def removeMetadata(self, path, metadata, credDict):
     """ Add metadata to the given path
     """

@@ -364,6 +364,12 @@ class FileCatalogHandler( RequestHandler ):
     """ Set metadata parameter for the given path
     """
     return gFileCatalogDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
+  
+  types_setMetadataBulk = [ DictType ]
+  def export_setMetadataBulk( self, pathMetadataDict ):
+    """ Set metadata parameter for the given path
+    """
+    return gFileCatalogDB.setMetadataBulk( pathMetadataDict, self.getRemoteCredentials() )
 
   types_removeMetadata = [ StringTypes, ListType ]
   def export_removeMetadata( self, path, metadata ):
