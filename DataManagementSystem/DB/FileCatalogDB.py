@@ -55,6 +55,8 @@ class FileCatalogDB(DB):
       self.lfnPfnConvention = False
     self.resolvePfn = databaseConfig['ResolvePFN']
     self.umask = databaseConfig['DefaultUmask']
+    self.validFileStatus = databaseConfig['ValidFileStatus']
+    self.validReplicaStatus = databaseConfig['ValidReplicaStatus']
     self.visibleStatus = databaseConfig['VisibleStatus']
     self.visibleReplicaStatus = databaseConfig['VisibleReplicaStatus']
 
@@ -252,6 +254,18 @@ class FileCatalogDB(DB):
       return res
     failed = res['Value']['Failed']
     res = self.fileManager.addFile(res['Value']['Successful'],credDict)
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    return S_OK( {'Successful':successful,'Failed':failed} )
+  
+  def setFileStatus(self, lfns, credDict):
+    res = self._checkPathPermissions('Write', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.setFileStatus( res['Value']['Successful'], credDict )
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])

@@ -55,6 +55,8 @@ def initializeFileCatalogHandler( serviceInfo ):
                     'LFNPFNConvention'    : 'Strong',
                     'ResolvePFN'          : True,
                     'DefaultUmask'        : 0775,
+                    'ValidFileStatus'     : ['AprioriGood','Trash','Removing','Probing'],
+                    'ValidReplicaStatus'  : ['AprioriGood','Removing','Probing'],
                     'VisibleStatus'       : ['AprioriGood'],
                     'VisibleReplicaStatus': ['AprioriGood']}
   for configKey in sortList( defaultConfig.keys() ):
@@ -180,6 +182,11 @@ class FileCatalogHandler( RequestHandler ):
   def export_removeFile( self, lfns ):
     """ Remove the supplied lfns """
     return gFileCatalogDB.removeFile( lfns, self.getRemoteCredentials() )
+  
+  types_setFileStatus = [ DictType ]
+  def export_setFileStatus( self, lfns ):
+    """ Remove the supplied lfns """
+    return gFileCatalogDB.setFileStatus( lfns, self.getRemoteCredentials() )
 
   types_addReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_addReplica( self, lfns ):
