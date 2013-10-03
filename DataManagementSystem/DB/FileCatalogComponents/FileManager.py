@@ -118,7 +118,7 @@ class FileManager(FileManagerBase):
     req = "SELECT FileName,DirID,FileID,Size,UID,GID,Status FROM FC_Files WHERE DirID=%d" % (dirID)
     if not allStatus:
       statusIDs = []
-      for status in self.db.visibleStatus:
+      for status in self.db.visibleFileStatus:
         res = self._getStatusInt( status, connection=connection )
         if res['OK']:
           statusIDs.append( res['Value'] )

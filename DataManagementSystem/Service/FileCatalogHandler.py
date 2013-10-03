@@ -57,7 +57,7 @@ def initializeFileCatalogHandler( serviceInfo ):
                     'DefaultUmask'        : 0775,
                     'ValidFileStatus'     : ['AprioriGood','Trash','Removing','Probing'],
                     'ValidReplicaStatus'  : ['AprioriGood','Removing','Probing'],
-                    'VisibleStatus'       : ['AprioriGood'],
+                    'VisibleFileStatus'   : ['AprioriGood'],
                     'VisibleReplicaStatus': ['AprioriGood']}
   for configKey in sortList( defaultConfig.keys() ):
     defaultValue = defaultConfig[configKey]

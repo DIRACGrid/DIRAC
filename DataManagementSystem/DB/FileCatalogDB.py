@@ -57,7 +57,7 @@ class FileCatalogDB(DB):
     self.umask = databaseConfig['DefaultUmask']
     self.validFileStatus = databaseConfig['ValidFileStatus']
     self.validReplicaStatus = databaseConfig['ValidReplicaStatus']
-    self.visibleStatus = databaseConfig['VisibleStatus']
+    self.visibleFileStatus = databaseConfig['VisibleFileStatus']
     self.visibleReplicaStatus = databaseConfig['VisibleReplicaStatus']
 
     try:
