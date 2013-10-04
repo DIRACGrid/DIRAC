@@ -134,6 +134,12 @@ class FTSManagerHandler( RequestHandler ):
     """ update RW access for SEs """
     return self.ftsStrategy.updateRWAccess()
 
+  types_getReplicationTree = [ListType, ListType, ( IntType, LongType )]
+  def export_getReplicationTree( self, sourceSEs, targetSEs, size ):
+    """ return a replication tree with an up-to-date replication strategy
+    """
+    return self.ftsStrategy.replicationTree( sourceSEs, targetSEs, size )
+
 
   types_setFTSFilesWaiting = [ ( IntType, LongType ), StringTypes, ( NoneType, ListType ) ]
   def export_setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):

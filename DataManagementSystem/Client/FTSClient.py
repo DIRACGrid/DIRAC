@@ -258,25 +258,25 @@ class FTSClient( Client ):
       gLogger.info( "ftsSchedule: LFN=%s FileID=%s OperationID=%s sources=%s targets=%s" % ( lfn, fileID, opID,
                                                                                              sourceSEs, targetSEs ) )
 
-      replicaDict = self.replicaManager.getActiveReplicas( lfn )
-      if not replicaDict['OK']:
-        gLogger.error( "ftsSchedule: %s" % replicaDict['Message'] )
-        ret["Failed"][fileID] = replicaDict['Message']
+      res = self.replicaManager.getActiveReplicas( lfn )
+      if not res['OK']:
+        gLogger.error( "ftsSchedule: %s" % res['Message'] )
+        ret["Failed"][fileID] = res['Message']
         continue
-      replicaDict = replicaDict['Value']
+      replicaDict = res['Value']
 
       if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
         ret["Failed"][fileID] = "no active replicas found"
         continue
       replicaDict = replicaDict["Successful"][lfn] if lfn in replicaDict["Successful"] else {}
       # # use valid replicas only
-      replicaDict = dict( [ ( se, pfn ) for se, pfn in replicaDict.items() if se in sourceSEs ] )
+      validReplicasDict = dict( [ ( se, pfn ) for se, pfn in replicaDict.items() if se in sourceSEs ] )
 
-      if not replicaDict:
+      if not validReplicasDict:
         ret["Failed"][fileID] = "no active replicas found in sources"
         continue
 
-      tree = self.ftsStrategy.replicationTree( sourceSEs, targetSEs, size )
+      tree = self.ftsManager.getReplicationTree( sourceSEs, targetSEs, size )
       if not tree['OK']:
         gLogger.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree['Message'] ) )
         ret["Failed"][fileID] = tree['Message']
@@ -288,7 +288,7 @@ class FTSClient( Client ):
       for repDict in tree.values():
         gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
                                                                             repDict["SourceSE"], repDict["TargetSE"] ) )
-        transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, replicaDict )
+        transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, validReplicasDict )
         if not transferSURLs['OK']:
           ret["Failed"][fileID] = transferSURLs['Message']
           continue
