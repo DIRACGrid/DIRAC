@@ -21,15 +21,19 @@
 # @brief Definition of FTSClient class.
 
 # # imports
-from DIRAC import gLogger, S_OK
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Base.Client import Client
+from DIRAC import gLogger, S_OK, S_ERROR
+
+from DIRAC.Core.DISET.RPCClient           import RPCClient
+from DIRAC.ConfigurationSystem.Client     import PathFinder
+from DIRAC.Core.Base.Client               import Client
 # # from DMS
-from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
-from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
-from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
+from DIRAC.DataManagementSystem.Client.FTSJob             import FTSJob
+from DIRAC.DataManagementSystem.Client.FTSFile            import FTSFile
+from DIRAC.DataManagementSystem.private.FTSHistoryView    import FTSHistoryView
+from DIRAC.DataManagementSystem.private.FTSValidator      import FTSValidator
+from DIRAC.DataManagementSystem.Client.ReplicaManager     import ReplicaManager
+# # from Resources
+from DIRAC.Resources.Storage.StorageFactory   import StorageFactory
 
 ########################################################################
 class FTSClient( Client ):
@@ -48,7 +52,10 @@ class FTSClient( Client ):
     self.log = gLogger.getSubLogger( "DataManagement/FTSClient" )
     self.setServer( "DataManagement/FTSManager" )
 
+    # getting other clients
     self.ftsValidator = FTSValidator()
+    self.replicaManager = ReplicaManager()
+    self.storageFactory = StorageFactory()
 
     url = PathFinder.getServiceURL( "DataManagement/FTSManager" )
     if not url:
@@ -149,7 +156,7 @@ class FTSClient( Client ):
 #      getJob = FTSJob( getJob["Value"] )
     return getJob
 
-  def peekFTSJob(self, ftsJobID ):
+  def peekFTSJob( self, ftsJobID ):
     """ just peek FTSJob
 
     :param int ftsJobID: FTSJobID
@@ -226,5 +233,172 @@ class FTSClient( Client ):
     :param int operationID: RequestDB.Operation.OperationID
     :param list opFileList: list of tuples ( File.toJSON()["Value"], sourcesList, targetList )
     """
-    return self.ftsManager.ftsSchedule( requestID, operationID, opFileList )
+
+    fileIDs = []
+    for fileJSON, _sourceSEs, _targetSEs in opFileList:
+      fileID = int( fileJSON.get( 'FileID' ) )
+      fileIDs.append( fileID )
+    res = self.ftsManager.cleanUpFTSFiles( requestID, fileIDs )
+    if not res['OK']:
+      self.log.error( "ftsSchedule: %s" % res['Message'] )
+      return S_ERROR( "ftsSchedule: %s" % res['Message'] )
+
+    ftsFiles = []
+
+    # # this will be returned on success
+    ret = { "Successful": [], "Failed": {} }
+
+    for fileJSON, sourceSEs, targetSEs in opFileList:
+
+      lfn = fileJSON.get( "LFN", "" )
+      size = int( fileJSON.get( "Size", 0 ) )
+      fileID = int( fileJSON.get( "FileID", 0 ) )
+      opID = int( fileJSON.get( "OperationID", 0 ) )
+
+      gLogger.info( "ftsSchedule: LFN=%s FileID=%s OperationID=%s sources=%s targets=%s" % ( lfn, fileID, opID,
+                                                                                             sourceSEs, targetSEs ) )
+
+      replicaDict = self.replicaManager.getActiveReplicas( lfn )
+      if not replicaDict['OK']:
+        gLogger.error( "ftsSchedule: %s" % replicaDict['Message'] )
+        ret["Failed"][fileID] = replicaDict['Message']
+        continue
+      replicaDict = replicaDict['Value']
+
+      if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
+        ret["Failed"][fileID] = "no active replicas found"
+        continue
+      replicaDict = replicaDict["Successful"][lfn] if lfn in replicaDict["Successful"] else {}
+      # # use valid replicas only
+      replicaDict = dict( [ ( se, pfn ) for se, pfn in replicaDict.items() if se in sourceSEs ] )
+
+      if not replicaDict:
+        ret["Failed"][fileID] = "no active replicas found in sources"
+        continue
+
+      tree = self.ftsStrategy.replicationTree( sourceSEs, targetSEs, size )
+      if not tree['OK']:
+        gLogger.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree['Message'] ) )
+        ret["Failed"][fileID] = tree['Message']
+        continue
+      tree = tree['Value']
+
+      gLogger.info( "LFN=%s tree=%s" % ( lfn, tree ) )
+
+      for repDict in tree.values():
+        gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
+                                                                            repDict["SourceSE"], repDict["TargetSE"] ) )
+        transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, replicaDict )
+        if not transferSURLs['OK']:
+          ret["Failed"][fileID] = transferSURLs['Message']
+          continue
+
+        sourceSURL, targetSURL, fileStatus = transferSURLs['Value']
+        if sourceSURL == targetSURL:
+          ret["Failed"][fileID] = "sourceSURL equals to targetSURL for %s" % lfn
+          continue
+
+        gLogger.info( "sourceURL=%s targetURL=%s FTSFile.Status=%s" % ( sourceSURL, targetSURL, fileStatus ) )
+
+        ftsFile = FTSFile()
+        for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
+          setattr( ftsFile, key, fileJSON.get( key ) )
+        ftsFile.RequestID = requestID
+        ftsFile.OperationID = operationID
+        ftsFile.SourceSURL = sourceSURL
+        ftsFile.TargetSURL = targetSURL
+        ftsFile.SourceSE = repDict["SourceSE"]
+        ftsFile.TargetSE = repDict["TargetSE"]
+        ftsFile.Status = fileStatus
+        ftsFiles.append( ftsFile )
+
+    if not ftsFiles:
+      self.log.error( "ftsSchedule: no FTSFiles to put" )
+      return S_ERROR( "ftsSchedule: no FTSFiles to put" )
+
+    res = self.ftsManager.putFTSFileList( ftsFiles )
+    if not res['OK']:
+      self.log.error( "ftsSchedule: %s" % res['Message'] )
+      return S_ERROR( "ftsSchedule: %s" % res['Message'] )
+
+    for fileJSON, _sources, _targets in opFileList:
+      lfn = fileJSON.get( "LFN", "" )
+      fileID = fileJSON.get( "FileID", 0 )
+      if fileID not in ret["Failed"]:
+        ret["Successful"].append( int( fileID ) )
+
+    # # if we land here some files have been properly scheduled
+    return S_OK( ret )
+
+  ################################################################################################################
+  # Some utilities function
+
+  def _getSurlForLFN( self, targetSE, lfn ):
+    """ Get the targetSURL for the storage and LFN supplied.
+
+    :param self: self reference
+    :param str targetSE: target SE
+    :param str lfn: LFN
+    """
+    res = self.storageFactory.getStorages( targetSE, protocolList = ["SRM2"] )
+    if not res['OK']:
+      errStr = "_getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res['Message'] )
+      gLogger.error( errStr )
+      return S_ERROR( errStr )
+    storageObjects = res['Value']["StorageObjects"]
+    for storageObject in storageObjects:
+      res = storageObject.getCurrentURL( lfn )
+      if res['OK']:
+        return res
+    gLogger.error( "_getSurlForLFN: Failed to get SRM compliant storage.", targetSE )
+    return S_ERROR( "_getSurlForLFN: Failed to get SRM compliant storage." )
+
+  def _getSurlForPFN( self, sourceSE, pfn ):
+    """Creates the targetSURL for the storage and PFN supplied.
+
+    :param self: self reference
+    :param str sourceSE: source storage element
+    :param str pfn: physical file name
+    """
+    res = self.replicaManager.getPfnForProtocol( [pfn], sourceSE )
+    if not res['OK']:
+      return res
+    if pfn in res['Value']["Failed"]:
+      return S_ERROR( res['Value']["Failed"][pfn] )
+    return S_OK( res['Value']["Successful"][pfn] )
+
+  def _getTransferURLs( self, lfn, repDict, replicas, replicaDict ):
+    """ prepare TURLs for given LFN and replication tree
+
+    :param self: self reference
+    :param str lfn: LFN
+    :param dict repDict: replication dictionary
+    :param dict replicas: LFN replicas
+    """
+    hopSourceSE = repDict["SourceSE"]
+    hopTargetSE = repDict["TargetSE"]
+    hopAncestor = repDict["Ancestor"]
+
+    # # get targetSURL
+    res = self._getSurlForLFN( hopTargetSE, lfn )
+    if not res['OK']:
+      self.log.error( "_getTransferURLs: %s" % res['Message'] )
+      return res
+    targetSURL = res['Value']
+
+    status = "Waiting"
+
+    # # get the sourceSURL
+    if hopAncestor:
+      status = "Waiting#%s" % ( hopAncestor )
+      res = self._getSurlForLFN( hopSourceSE, lfn )
+      if not res['OK']:
+        self.log.error( "_getTransferURLs: %s" % res['Message'] )
+        return res
+      sourceSURL = res['Value']
+    else:
+      res = self._getSurlForPFN( hopSourceSE, replicaDict[hopSourceSE] )
+      sourceSURL = res['Value'] if res['OK'] else replicaDict[hopSourceSE]
+
+    return S_OK( ( sourceSURL, targetSURL, status ) )
 
