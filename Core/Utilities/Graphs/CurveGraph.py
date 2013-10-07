@@ -87,8 +87,8 @@ class CurveGraph( PlotBase ):
       else:
         self.ax.errorbar( xdata, ydata, color=color, linewidth=2., marker=marker, linestyle=linestyle,  
                           markersize=markersize, markeredgewidth=markeredgewidth, 
-                          markeredgecolor = darkenColor( color ), xerr = xerror, yerr = 
-                          yerror, ecolor=color )  
+                          markeredgecolor = darkenColor( color ), xerr = xerror, yerr = yerror, 
+                          ecolor=color )  
       
                     
     ymax = max(tmp_max_y)
