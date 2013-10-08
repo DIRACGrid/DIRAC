@@ -106,15 +106,15 @@ class FTSJobTests( unittest.TestCase ):
     self.assertEqual( ftsJob.Files, 2, "2. Files prop error" )
     self.assertEqual( ftsJob.Size, 20, "2. Size prop error" )
 
-  def test03Submit( self ):
-    """ submit """
-    ftsJob = FTSJob()
-
-    ftsJob.addFile( self.fileA )
-    ftsJob.addFile( self.fileB )
-
-    submit = ftsJob.submitFTS2()
-    print submit
+#  def test03Submit( self ):
+#    """ submit """
+#    ftsJob = FTSJob()
+#
+#    ftsJob.addFile( self.fileA )
+#    ftsJob.addFile( self.fileB )
+#
+#    submit = ftsJob.submitFTS2()
+#    print submit
 
 
 # # test execution

@@ -47,12 +47,15 @@ class FTSSiteTests( unittest.TestCase ):
 
   def test( self ):
     """ test case """
-    ftsSite = FTSSite( self.fromDict )
+    ftsSite = FTSSite()
+
+    for k, v in self.fromDict.items():
+      ftsSite.k = v
 
     self.assertEqual( type( ftsSite ), FTSSite, "wrong type" )
     for k, v in self.fromDict.items():
       self.assertEqual( hasattr( ftsSite, k ), True, "%s attr is missing" % k )
-      self.assertEqual( getattr( ftsSite, k ), v, "wrong value for attr %s" % k )
+      self.assertEqual( getattr( ftsSite, k ), v )
 
     # # serialization
 
