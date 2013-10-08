@@ -21,6 +21,7 @@
 
 # # imports
 import MySQLdb.cursors
+import decimal
 from MySQLdb import Error as MySQLdbError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -428,6 +429,7 @@ class FTSDB( DB ):
                      "SELECT `Status`, COUNT(`Status`) FROM `FTSFile` GROUP BY `Status`;" : "FTSFile",
                      "SELECT * FROM `FTSHistoryView`;": "FTSHistory" }
     ret = self._transaction( transQueries.keys() )
+
     if not ret['OK']:
       self.log.error( "getDBSummary: %s" % ret['Message'] )
       return ret
@@ -448,9 +450,20 @@ class FTSDB( DB ):
             retDict["FTSFile"][status] = 0
           retDict["FTSFile"][status] += count
       else:  # # FTSHistory
-        retDict["FTSHistory"] = v
 
-    print retDict
+        if v:
+          newListOfHistoryDicts = []
+          for oldHistoryDict in v:
+            newHistoryDict = {}
+            for key, value in oldHistoryDict.items():
+              if type( value ) == decimal.Decimal:
+                newHistoryDict[key] = float( value )
+              else:
+                newHistoryDict[key] = value
+            newListOfHistoryDicts.append( newHistoryDict )
+
+        retDict["FTSHistory"] = newListOfHistoryDicts
+
     return S_OK( retDict )
 
   def _getFTSJobProperties( self, ftsJobID, columnNames = None ):
