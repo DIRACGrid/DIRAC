@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSGraphTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/08 09:05:23
@@ -13,7 +12,6 @@
 
     test cases for FTSGraph
 """
-__RCSID__ = "$Id: $"
 # #
 # @file FTSGraphTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -40,23 +38,23 @@ class FTSGraphTests( unittest.TestCase ):
 
   def setUp( self ):
     """ test set up """
-    self.ftsHistoryViews = [ 
+    self.ftsHistoryViews = [
       FTSHistoryView( { "TargetSE": "RAL-USER",
                         "SourceSE": "CERN-USER",
                         "FTSJobs": 10,
-                        "FTSServer": 
+                        "FTSServer":
                         "https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer",
                         "Status": "Active",
                         "Files" : 1000,
                         "Size": 10000000 } ) ]
-    
+
   def tearDown( self ):
     """ test case tear down """
     del self.ftsHistoryViews
 
   def test( self ):
     """ test case """
-    graph = FTSGraph( "ftsGraph",  self.ftsHistoryViews )
+    graph = FTSGraph( "ftsGraph", self.ftsHistoryViews )
 
     self.assertEqual( type( graph ), FTSGraph, "c'tor failed" )
 

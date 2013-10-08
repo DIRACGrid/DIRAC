@@ -1,4 +1,4 @@
-# TODO: to be moved to TestDIRAC
+# TODO: to be moved to TestDIRAC and transformed into a real test
 
 ########################################################################
 # File: ReplicateAndRegisterTests.py
