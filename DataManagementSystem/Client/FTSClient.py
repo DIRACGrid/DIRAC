@@ -67,10 +67,10 @@ class FTSClient( Client ):
     statusList = statusList if statusList else [ "Waiting" ]
     limit = limit if limit else 1000
     getFTSFileList = self.ftsManager.getFTSFileList( statusList, limit )
-    if not getFTSFileList["OK"]:
-      self.log.error( "getFTSFileList: %s" % getFTSFileList["Message"] )
+    if not getFTSFileList['OK']:
+      self.log.error( "getFTSFileList: %s" % getFTSFileList['Message'] )
       return getFTSFileList
-    getFTSFileList = getFTSFileList["Value"]
+    getFTSFileList = getFTSFileList['Value']
     return S_OK( [ FTSFile( ftsFile ) for ftsFile in getFTSFileList ] )
 
   def getFTSJobList( self, statusList = None, limit = None ):
@@ -78,10 +78,10 @@ class FTSClient( Client ):
     statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
     limit = limit if limit else 500
     getFTSJobList = self.ftsManager.getFTSJobList( statusList, limit )
-    if not getFTSJobList["OK"]:
-      self.log.error( "getFTSJobList: %s" % getFTSJobList["Message"] )
+    if not getFTSJobList['OK']:
+      self.log.error( "getFTSJobList: %s" % getFTSJobList['Message'] )
       return getFTSJobList
-    getFTSJobList = getFTSJobList["Value"]
+    getFTSJobList = getFTSJobList['Value']
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getFTSJobList ] )
 
   def getFTSFilesForRequest( self, requestID, operationID = None ):
@@ -91,10 +91,10 @@ class FTSClient( Client ):
     :param int operationID: ReqDB.Operation.OperationID
     """
     ftsFiles = self.ftsManager.getFTSFilesForRequest( requestID, operationID )
-    if not ftsFiles["OK"]:
-      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles["Message"] )
+    if not ftsFiles['OK']:
+      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
       return ftsFiles
-    return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles["Value"] ] )
+    return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles['Value'] ] )
 
   def getFTSJobsForRequest( self, requestID, statusList = None ):
     """ get list of FTSJobs with statues in :statusList: given requestID
@@ -106,10 +106,10 @@ class FTSClient( Client ):
     """
     statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
     getJobs = self.ftsManager.getFTSJobsForRequest( requestID, statusList )
-    if not getJobs["OK"]:
-      self.log.error( "getFTSJobsForRequest: %s" % getJobs["Message"] )
+    if not getJobs['OK']:
+      self.log.error( "getFTSJobsForRequest: %s" % getJobs['Message'] )
       return getJobs
-    return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getJobs["Value"] ] )
+    return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getJobs['Value'] ] )
 
   def getFTSFile( self, ftsFileID = None ):
     """ get FTSFile
@@ -117,11 +117,11 @@ class FTSClient( Client ):
     :param int ftsFileID: FTSFileID
     """
     getFile = self.ftsManager.getFTSFile( ftsFileID )
-    if not getFile["OK"]:
-      self.log.error( getFile["Message"] )
+    if not getFile['OK']:
+      self.log.error( getFile['Message'] )
     # # de-serialize
-    if getFile["Value"]:
-      ftsFile = FTSFile( getFile["Value"] )
+    if getFile['Value']:
+      ftsFile = FTSFile( getFile['Value'] )
     return S_OK( ftsFile )
 
   def putFTSJob( self, ftsJob ):
@@ -130,14 +130,14 @@ class FTSClient( Client ):
     :param FTSJob ftsJob: FTSJob instance
     """
     isValid = self.ftsValidator.validate( ftsJob )
-    if not isValid["OK"]:
-      self.log.error( isValid["Message"] )
+    if not isValid['OK']:
+      self.log.error( isValid['Message'] )
       return isValid
     ftsJobJSON = ftsJob.toJSON()
-    if not ftsJobJSON["OK"]:
-      self.log.error( ftsJobJSON["Message"] )
+    if not ftsJobJSON['OK']:
+      self.log.error( ftsJobJSON['Message'] )
       return ftsJobJSON
-    return self.ftsManager.putFTSJob( ftsJobJSON["Value"] )
+    return self.ftsManager.putFTSJob( ftsJobJSON['Value'] )
 
   def getFTSJob( self, ftsJobID ):
     """ get FTS job, change its status to 'Assigned'
@@ -145,15 +145,15 @@ class FTSClient( Client ):
     :param int ftsJobID: FTSJobID
     """
     getJob = self.ftsManager.getFTSJob( ftsJobID )
-    if not getJob["OK"]:
-      self.log.error( getJob["Message"] )
+    if not getJob['OK']:
+      self.log.error( getJob['Message'] )
       return getJob
     setStatus = self.ftsManager.setFTSJobStatus( ftsJobID, 'Assigned' )
     if not setStatus['OK']:
       self.log.error( setStatus['Message'] )
     # # de-serialize
-#    if getJob["Value"]:
-#      getJob = FTSJob( getJob["Value"] )
+#    if getJob['Value']:
+#      getJob = FTSJob( getJob['Value'] )
     return getJob
 
   def peekFTSJob( self, ftsJobID ):
@@ -162,8 +162,8 @@ class FTSClient( Client ):
     :param int ftsJobID: FTSJobID
     """
     getJob = self.ftsManager.getFTSJob( ftsJobID )
-    if not getJob["OK"]:
-      self.log.error( getJob["Message"] )
+    if not getJob['OK']:
+      self.log.error( getJob['Message'] )
       return getJob
     return getJob
 
@@ -173,40 +173,40 @@ class FTSClient( Client ):
     :param int ftsJob: FTSJobID
     """
     deleteJob = self.ftsManager.deleteFTSJob( ftsJobID )
-    if not deleteJob["OK"]:
-      self.log.error( deleteJob["Message"] )
+    if not deleteJob['OK']:
+      self.log.error( deleteJob['Message'] )
     return deleteJob
 
   def getFTSJobIDs( self, statusList = None ):
     """ get list of FTSJobIDs for a given status list """
     statusList = statusList if statusList else [ "Submitted", "Ready", "Active" ]
     ftsJobIDs = self.ftsManager.getFTSJobIDs( statusList )
-    if not ftsJobIDs["OK"]:
-      self.log.error( ftsJobIDs["Message"] )
+    if not ftsJobIDs['OK']:
+      self.log.error( ftsJobIDs['Message'] )
     return ftsJobIDs
 
   def getFTSFileIDs( self, statusList = None ):
     """ get list of FTSFileIDs for a given status list """
     statusList = statusList if statusList else [ "Waiting" ]
     ftsFileIDs = self.ftsManager.getFTSFileIDs( statusList )
-    if not ftsFileIDs["OK"]:
-      self.log.error( ftsFileIDs["Message"] )
+    if not ftsFileIDs['OK']:
+      self.log.error( ftsFileIDs['Message'] )
     return ftsFileIDs
 
   def getFTSHistory( self ):
     """ get FTS history snapshot """
     getFTSHistory = self.ftsManager.getFTSHistory()
-    if not getFTSHistory["OK"]:
-      self.log.error( getFTSHistory["Message"] )
+    if not getFTSHistory['OK']:
+      self.log.error( getFTSHistory['Message'] )
       return getFTSHistory
-    getFTSHistory = getFTSHistory["Value"]
+    getFTSHistory = getFTSHistory['Value']
     return S_OK( [ FTSHistoryView( ftsHistory ) for ftsHistory in getFTSHistory ] )
 
   def getDBSummary( self ):
     """ get FTDB summary """
     dbSummary = self.ftsManager.getDBSummary()
-    if not dbSummary["OK"]:
-      self.log.error( "getDBSummary: %s" % dbSummary["Message"] )
+    if not dbSummary['OK']:
+      self.log.error( "getDBSummary: %s" % dbSummary['Message'] )
     return dbSummary
 
   def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList = None ):
@@ -231,7 +231,7 @@ class FTSClient( Client ):
 
     :param int requestID: RequestDB.Request.RequestID
     :param int operationID: RequestDB.Operation.OperationID
-    :param list opFileList: list of tuples ( File.toJSON()["Value"], sourcesList, targetList )
+    :param list opFileList: list of tuples ( File.toJSON()['Value'], sourcesList, targetList )
     """
 
     fileIDs = []
