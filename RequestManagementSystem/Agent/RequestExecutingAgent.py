@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: RequestExecutingAgent.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/12 15:36:47
@@ -14,7 +13,6 @@
 
     request processing agent
 """
-__RCSID__ = "$Id $"
 # #
 # @file RequestExecutingAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
