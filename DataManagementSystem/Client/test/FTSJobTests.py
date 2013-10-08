@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSJobTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/16 07:18:51
@@ -15,7 +14,6 @@
     unittest for FTSJob class
 """
 
-__RCSID__ = "$Id $"
 
 # #
 # @file FTSJobTests.py

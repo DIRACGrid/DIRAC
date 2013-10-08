@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSSiteTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/16 08:52:36
@@ -14,8 +13,6 @@
 
     unittest for FTSSite class
 """
-
-__RCSID__ = "$Id $"
 
 # #
 # @file FTSSiteTests.py
