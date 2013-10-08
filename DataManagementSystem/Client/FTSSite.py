@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSSite.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/15 12:33:08
@@ -15,9 +14,6 @@
 
     we need this one to know which site is a part of FTS infrastructure
 """
-# for properties
-# pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103
-__RCSID__ = "$Id $"
 # #
 # @file FTSSite.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -33,15 +29,14 @@ class FTSSite( object ):
   .. class:: FTSSite
 
   FTS infrastructure
-  
+
   props:
     Name = LCG.FOO.bar
     FTSServer = FQDN for server
     MaxActiveJobs = 50
   """
-  MAX_ACTIVE_JOBS = 50
 
-  def __init__( self, name = None, ftsServer = None, maxActiveJobs = None ):
+  def __init__( self, name = "", ftsServer = "", maxActiveJobs = 50 ):
     """c'tor
 
     :param self: self reference
@@ -49,47 +44,27 @@ class FTSSite( object ):
     :param str ftsServer: FTS server URL
     :param int maxActiveJobs: max active jobs transferring to this site
     """
-    self.__name = ""
-    self.__ftsServer = ""
-    self.__maxActiveJobs = self.MAX_ACTIVE_JOBS
-    if name:
-      self.Name = name
-    if ftsServer:
-      self.FTSServer = ftsServer
-    if maxActiveJobs:
-      self.MaxActiveJobs = maxActiveJobs
 
-  @property
-  def Name( self ):
-    """ Name getter """
-    return self.__name
+    self.Name = name
+    self.FTSServer = ftsServer
+    self.MaxActiveJobs = maxActiveJobs
 
-  @Name.setter
-  def Name( self, value ):
-    """ Name setter """
-    self.__name = value
-
-  @property
-  def FTSServer( self ):
-    """ FTS server uri getter """
-    return self.__ftsServer
-
-  @FTSServer.setter
-  def FTSServer( self, value ):
-    """ server uri setter """
+  def set_FTSServer( self, value ):
+    """ Setter """
     if type( value ) != str:
       raise TypeError( "FTSServer has to be a string!" )
     if not urlparse.urlparse( value ).scheme:
       raise ValueError( "Wrongly formatted URI!" )
-    self.__ftsServer = value
+    self._FTSServer = value
+  def get_FTSServer( self ):
+    """ Getter """
+    return self._FTSServer
+  FTSServer = property( get_FTSServer, set_FTSServer )
 
-  @property
-  def MaxActiveJobs( self ):
-    """ max active jobs """
-    return self.__maxActiveJobs
-
-  @MaxActiveJobs.setter
-  def MaxActiveJobs( self, value ):
-    """ max active jobs setter """
-    self.__maxActiveJobs = int( value ) if value else 50
-
+  def set_MaxActiveJobs( self, value ):
+    """ Setter """
+    self._MaxActiveJobs = int( value ) if value else 50
+  def get_MaxActiveJobs( self ):
+    """ Getter """
+    return self._MaxActiveJobs
+  MaxActiveJobs = property( get_MaxActiveJobs, set_MaxActiveJobs )
