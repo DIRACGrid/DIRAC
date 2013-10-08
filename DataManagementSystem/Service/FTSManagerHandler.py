@@ -393,7 +393,7 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
-  types_getFTSFilesForRequest = [ ( IntType, LongType ), ListType ]
+  types_getFTSFilesForRequest = [ ( IntType, LongType ), ( NoneType, ListType ) ]
   @classmethod
   def export_getFTSFilesForRequest( self, requestID, statusList = None ):
     """ get list of FTSFiles with statuses in :statusList: given :requestID: """
