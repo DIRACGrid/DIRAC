@@ -73,7 +73,7 @@ class FTSDB( DB ):
     showTables = self._query( "SHOW TABLES;" )
     if not showTables['OK']:
       return showTables
-    return S_OK( [ table[0] for table in showTables["Value"] if table and table != "FTSHistoryView" ] )
+    return S_OK( [ table[0] for table in showTables['Value'] if table and table != "FTSHistoryView" ] )
 
   @staticmethod
   def getTableMeta():
@@ -108,7 +108,7 @@ class FTSDB( DB ):
       retDict = self._getConnection()
       if not retDict['OK']:
         return retDict
-      conn = retDict["Value"]
+      conn = retDict['Value']
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
     return S_OK( { "cursor" : cursor, "connection" : conn  } )
 
@@ -119,8 +119,8 @@ class FTSDB( DB ):
     getCursorAndConnection = self.dictCursor( connection )
     if not getCursorAndConnection['OK']:
       return getCursorAndConnection
-    cursor = getCursorAndConnection["Value"]["cursor"]
-    connection = getCursorAndConnection["Value"]["connection"]
+    cursor = getCursorAndConnection['Value']["cursor"]
+    connection = getCursorAndConnection['Value']["connection"]
 
     # # this iwll be returned as query result
     ret = { 'OK' : True }
@@ -138,7 +138,7 @@ class FTSDB( DB ):
       lastrowid = cursor.lastrowid
       # # close cursor
       cursor.close()
-      ret["Value"] = queryRes
+      ret['Value'] = queryRes
       ret["lastrowid"] = lastrowid
       connection.autocommit( True )
       return ret
@@ -158,7 +158,7 @@ class FTSDB( DB ):
     if not ftsFileSQL['OK']:
       self.log.error( ftsFileSQL['Message'] )
       return ftsFileSQL
-    ftsFileSQL = ftsFileSQL["Value"]
+    ftsFileSQL = ftsFileSQL['Value']
     putFTSFile = self._transaction( ftsFileSQL )
     if not putFTSFile['OK']:
       self.log.error( putFTSFile['Message'] )
@@ -171,7 +171,7 @@ class FTSDB( DB ):
     if not select['OK']:
       self.log.error( select['Message'] )
       return select
-    select = select["Value"]
+    select = select['Value']
     if not select.values()[0]:
       return S_OK()
     ftsFile = FTSFile( select.values()[0][0] )
@@ -203,7 +203,7 @@ class FTSDB( DB ):
       self.log.error( "getFTSJobsForRequest: %s" % ftsJobs['Message'] )
       return ftsJobs
 
-    ftsJobs = ftsJobs["Value"][query] if query in ftsJobs["Value"] else []
+    ftsJobs = ftsJobs['Value'][query] if query in ftsJobs['Value'] else []
 
     ftsJobs = [ FTSJob( ftsJobDict ) for ftsJobDict in ftsJobs  ]
 
@@ -214,7 +214,7 @@ class FTSDB( DB ):
       if not ftsFiles['OK']:
         self.log.error( "getFTSJobsForRequest: %s" % ftsFiles['Message'] )
         return ftsFiles
-      ftsFiles = ftsFiles["Value"][query] if query in ftsFiles["Value"] else []
+      ftsFiles = ftsFiles['Value'][query] if query in ftsFiles['Value'] else []
       for ftsFileDict in ftsFiles:
         ftsJob.addFile( FTSFile( ftsFileDict ) )
     return S_OK( ftsJobs )
@@ -229,7 +229,7 @@ class FTSDB( DB ):
     if not ftsFiles['OK']:
       self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
       return ftsFiles
-    ftsFiles = ftsFiles["Value"][query] if query in ftsFiles["Value"] else []
+    ftsFiles = ftsFiles['Value'][query] if query in ftsFiles['Value'] else []
     return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles ] )
 
   def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList = None ):
@@ -261,12 +261,12 @@ class FTSDB( DB ):
     ftsJobSQL = ftsJob.toSQL()
     if not ftsJobSQL['OK']:
       return ftsJobSQL
-    putJob = [ ftsJobSQL["Value"] ]
+    putJob = [ ftsJobSQL['Value'] ]
 
     for ftsFile in [ ftsFile.toSQL() for ftsFile in ftsJob ]:
       if not ftsFile['OK']:
         return ftsFile
-      putJob.append( ftsFile["Value"] )
+      putJob.append( ftsFile['Value'] )
 
     putJob = self._transaction( putJob )
     if not putJob['OK']:
@@ -281,7 +281,7 @@ class FTSDB( DB ):
     if not getJob['OK']:
       self.log.error( getJob['Message'] )
       return getJob
-    getJob = getJob["Value"]
+    getJob = getJob['Value']
     if not getJob:
       return S_OK()
     ftsJob = FTSJob( getJob.values()[0][0] )
@@ -289,7 +289,7 @@ class FTSDB( DB ):
     if not selectFiles['OK']:
       self.log.error( selectFiles['Message'] )
       return selectFiles
-    selectFiles = selectFiles["Value"]
+    selectFiles = selectFiles['Value']
     ftsFiles = [ FTSFile( item ) for item in selectFiles.values()[0] ]
     for ftsFile in ftsFiles:
       ftsJob.addFile( ftsFile )
@@ -321,7 +321,7 @@ class FTSDB( DB ):
       self.log.error( query['Message'] )
       return query
     # # convert to list of longs
-    return S_OK( [ item[0] for item in query["Value"] ] )
+    return S_OK( [ item[0] for item in query['Value'] ] )
 
   def getFTSFileIDs( self, statusList = None ):
     """ select FTSFileIDs for a given status list """
@@ -331,7 +331,7 @@ class FTSDB( DB ):
     if not query['OK']:
       self.log.error( query['Message'] )
       return query
-    return S_OK( [ item[0] for item in query["Value"] ] )
+    return S_OK( [ item[0] for item in query['Value'] ] )
 
   def getFTSJobList( self, statusList = None, limit = 500 ):
     """ select FTS jobs with statuses in :statusList: """
@@ -342,14 +342,14 @@ class FTSDB( DB ):
     if not trn['OK']:
       self.log.error( "getFTSJobList: %s" % trn['Message'] )
       return trn
-    ftsJobs = [ FTSJob( ftsJobDict ) for ftsJobDict in trn["Value"][query] ]
+    ftsJobs = [ FTSJob( ftsJobDict ) for ftsJobDict in trn['Value'][query] ]
     for ftsJob in ftsJobs:
       query = "SELECT * FROM `FTSFile` WHERE `FTSGUID` = '%s';" % ftsJob.FTSGUID
       trn = self._transaction( query )
       if not trn['OK']:
         self.log.error( "getFTSJobList: %s" % trn['Message'] )
         return trn
-      ftsFiles = [ FTSFile( ftsFileDict ) for ftsFileDict in trn["Value"][query] ]
+      ftsFiles = [ FTSFile( ftsFileDict ) for ftsFileDict in trn['Value'][query] ]
       for ftsFile in ftsFiles:
         ftsJob.addFile( ftsFile )
     return S_OK( ftsJobs )
@@ -365,7 +365,7 @@ class FTSDB( DB ):
       if not ftsFileSQL['OK']:
         gLogger.error( "putFTSFileList: %s" % ftsFileSQL['Message'] )
         return ftsFileSQL
-      queries.append( ftsFileSQL["Value"] )
+      queries.append( ftsFileSQL['Value'] )
     if not queries:
       return S_ERROR( "putFTSFileList: no queries to put" )
 
@@ -398,16 +398,16 @@ class FTSDB( DB ):
     if not trn['OK']:
       self.log.error( "getFTSFileList: %s" % trn['Message'] )
       return trn
-    return S_OK( [ FTSFile( fileDict ) for fileDict in trn["Value"][query] ] )
+    return S_OK( [ FTSFile( fileDict ) for fileDict in trn['Value'][query] ] )
 
   def getFTSHistory( self ):
     """ query FTSHistoryView, return list of FTSHistoryViews """
     query = self._transaction( [ "SELECT * FROM `FTSHistoryView`;" ] )
     if not query['OK']:
       return query
-    if not query["Value"]:
+    if not query['Value']:
       return S_OK()
-    return S_OK( [ FTSHistoryView( fromDict ) for fromDict in query["Value"].values()[0] ] )
+    return S_OK( [ FTSHistoryView( fromDict ) for fromDict in query['Value'].values()[0] ] )
 
   def cleanUpFTSFiles( self, requestID, fileIDs ):
     """ delete FTSFiles for given :requestID: and list of :fileIDs:
@@ -431,7 +431,7 @@ class FTSDB( DB ):
     if not ret['OK']:
       self.log.error( "getDBSummary: %s" % ret['Message'] )
       return ret
-    ret = ret["Value"]
+    ret = ret['Value']
     for k, v in ret.items():
       if transQueries[k] == "FTSJob":
         for aDict in v:
@@ -449,6 +449,8 @@ class FTSDB( DB ):
           retDict["FTSFile"][status] += count
       else:  # # FTSHistory
         retDict["FTSHistory"] = v
+
+    print retDict
     return S_OK( retDict )
 
   def _getFTSJobProperties( self, ftsJobID, columnNames = None ):
