@@ -191,7 +191,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     lfns = [lfnDict['LFN'] for lfnDict in parentFiles]
     if not lfns:
       gLogger.info( "No files found to be moved from transformation %d to %d" % ( parentProd, prod ) )
-      return res
+      return S_OK( ( parentProd, movedFiles ) )
     selectDict = { 'TransformationID': prod, 'LFN': lfns}
     res = self.getTransformationFiles( selectDict )
     if not res['OK']:
