@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSFileTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/16 06:45:16
@@ -13,7 +12,6 @@
 
     unittests for FTSFile
 """
-__RCSID__ = "$Id $"
 # #
 # @file FTSFileTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

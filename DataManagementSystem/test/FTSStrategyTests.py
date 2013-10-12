@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSStrategyTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/06 16:50:30
@@ -13,7 +12,6 @@
 
     unittests for FTSStrategy
 """
-__RCSID__ = "$Id: $"
 # #
 # @file FTSStrategyTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

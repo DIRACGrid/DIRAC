@@ -1,6 +1,3 @@
-########################################################################################
-# $HeadURL$
-########################################################################################
 """
     :mod:  ReqClient
     ================
@@ -8,8 +5,6 @@
     .. module:  ReqClient
     :synopsis: implementation of client for RequestDB using DISET framework
 """
-# # RCSID
-__RCSID__ = "$Id$"
 # # from DIRAC
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.DISET.RPCClient import RPCClient

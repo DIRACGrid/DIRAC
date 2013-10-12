@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSJobTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/16 07:18:51
@@ -15,7 +14,6 @@
     unittest for FTSJob class
 """
 
-__RCSID__ = "$Id $"
 
 # #
 # @file FTSJobTests.py
@@ -106,15 +104,15 @@ class FTSJobTests( unittest.TestCase ):
     self.assertEqual( ftsJob.Files, 2, "2. Files prop error" )
     self.assertEqual( ftsJob.Size, 20, "2. Size prop error" )
 
-  def test03Submit( self ):
-    """ submit """
-    ftsJob = FTSJob()
-
-    ftsJob.addFile( self.fileA )
-    ftsJob.addFile( self.fileB )
-
-    submit = ftsJob.submitFTS2()
-    print submit
+#  def test03Submit( self ):
+#    """ submit """
+#    ftsJob = FTSJob()
+#
+#    ftsJob.addFile( self.fileA )
+#    ftsJob.addFile( self.fileB )
+#
+#    submit = ftsJob.submitFTS2()
+#    print submit
 
 
 # # test execution
