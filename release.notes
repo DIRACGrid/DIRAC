@@ -77,6 +77,27 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
 
+[v6r9p20]
+
+*Core
+BUGFIX: ProxyUpload - an on the fly upload does not require a proxy to exist
+
+*DMS
+CHANGE: TransferAgent - use compareAdler() for checking checksum
+FIX: FailoverTransfer - recording the sourceSE in case of failover transfer request 
+
+*WMS
+FIX: ProcessMonitor - some fixes added, printout when <1 s of consumed CPU is found
+
+*Transformation
+BUGFIX: TransformationClient - fixed return value in moveFilesToDerivedTransformation()
+
+*RMS
+BUGFIX: CleanReqDBAgent - now() -> utcnow() in initialize()
+
+*Resources
+FIX: ARCComputingElement - fix the parsing of CE status if no jobs are available
+
 [v6r9p19]
 
 *DMS

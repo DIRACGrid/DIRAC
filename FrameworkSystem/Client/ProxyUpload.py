@@ -110,11 +110,6 @@ def uploadProxy( params ):
   if not proxyLoc:
     return S_ERROR( "Can't find any proxy" )
 
-  proxyChain = X509Chain()
-  retVal = proxyChain.loadProxyFromFile( proxyLoc )
-  if not retVal[ 'OK' ]:
-    return S_ERROR( "Can't load proxy file %s: %s" % ( params.proxyLoc, retVal[ 'Message' ] ) )
-
   if params.onTheFly:
     DIRAC.gLogger.info( "Uploading proxy on-the-fly" )
     certLoc = params.certLoc
@@ -163,6 +158,11 @@ def uploadProxy( params ):
     restrictLifeTime = params.proxyLifeTime
 
   else:
+    proxyChain = X509Chain()
+    retVal = proxyChain.loadProxyFromFile( proxyLoc )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't load proxy file %s: %s" % ( params.proxyLoc, retVal[ 'Message' ] ) )
+
     chain = proxyChain
     diracGroup = False
     restrictLifeTime = 0

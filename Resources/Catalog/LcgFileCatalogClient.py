@@ -477,7 +477,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     failed = {}
     successful = {}
     for lfnList in lfnChunks:
-      fullLfnList = [self.__fullLfn( lfn ) for lfn in lfnList]
+      fullLfnList = [self.__fullLfn( lfn ) for lfn in lfnList if lfn]
       value, replicaList = lfc.lfc_getreplicasl( fullLfnList, '' )
       if value != 0:
         for lfn in lfnList:
