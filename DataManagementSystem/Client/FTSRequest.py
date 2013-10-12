@@ -25,6 +25,7 @@ from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface, ReplicaManager
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 # # RCSID
 __RCSID__ = "$Id$"
@@ -1269,7 +1270,12 @@ class FTSRequest( object ):
 
     accountingDict = {}
     accountingDict['OperationType'] = 'replicateAndRegister'
-    accountingDict['User'] = 'acsmith'
+    result = getProxyInfo()
+    if not result['OK']:
+      userName = 'system'
+    else:
+      userName = result['Value'].get( 'username', 'unknown' )   
+    accountingDict['User'] = userName
     accountingDict['Protocol'] = 'FTS' if 'fts3' not in self.ftsServer else 'FTS3'
     accountingDict['RegistrationTime'] = regTime
     accountingDict['RegistrationOK'] = regSuc

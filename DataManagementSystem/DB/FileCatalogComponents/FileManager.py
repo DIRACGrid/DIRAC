@@ -118,7 +118,7 @@ class FileManager(FileManagerBase):
     req = "SELECT FileName,DirID,FileID,Size,UID,GID,Status FROM FC_Files WHERE DirID=%d" % (dirID)
     if not allStatus:
       statusIDs = []
-      for status in self.db.visibleStatus:
+      for status in self.db.visibleFileStatus:
         res = self._getStatusInt( status, connection=connection )
         if res['OK']:
           statusIDs.append( res['Value'] )
@@ -524,6 +524,8 @@ class FileManager(FileManagerBase):
   #
   
   def _setReplicaStatus(self,fileID,se,status,connection=False):
+    if not status in self.db.validReplicaStatus:
+      return S_ERROR( 'Invalid replica status %s' % status )
     connection = self._getConnection(connection)
     res = self._getStatusInt(status,connection=connection)
     if not res['OK']:
@@ -568,6 +570,9 @@ class FileManager(FileManagerBase):
     connection = self._getConnection(connection)
     if type(fileID) not in [TupleType,ListType]:
       fileID = [fileID]
+      
+    if paramName == 'Status' and not paramValue in self.db.validFileStatus:
+      return S_ERROR( 'Invalid file status %s' % paramValue )   
       
     if paramName in ['UID','GID','Status','Size']:
       # Treat primary file attributes specially
