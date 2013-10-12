@@ -50,12 +50,12 @@ class FailoverTransfer( object ):
 
   #############################################################################
   def transferAndRegisterFile( self,
-                                  fileName,
-                                  localPath,
-                                  lfn,
-                                  destinationSEList,
-                                  fileMetaDict,
-                                  fileCatalog = None ):
+                               fileName,
+                               localPath,
+                               lfn,
+                               destinationSEList,
+                               fileMetaDict,
+                               fileCatalog = None ):
     """Performs the transfer and register operation with failover.
     """
     errorList = []
@@ -109,13 +109,13 @@ class FailoverTransfer( object ):
 
   #############################################################################
   def transferAndRegisterFileFailover( self,
-                                          fileName,
-                                          localPath,
-                                          lfn,
-                                          targetSE,
-                                          failoverSEList,
-                                          fileMetaDict,
-                                          fileCatalog = None ):
+                                       fileName,
+                                       localPath,
+                                       lfn,
+                                       targetSE,
+                                       failoverSEList,
+                                       fileMetaDict,
+                                       fileCatalog = None ):
     """Performs the transfer and register operation to failover storage and sets the
        necessary replication and removal requests to recover.
     """
@@ -125,7 +125,7 @@ class FailoverTransfer( object ):
       return failover
 
     # set removal requests and replication requests
-    result = self.__setFileReplicationRequest( lfn, targetSE, fileMetaDict )
+    result = self.__setFileReplicationRequest( lfn, targetSE, fileMetaDict, sourceSE = failover['Value']['uploadedSE'] )
     if not result['OK']:
       self.log.error( 'Could not set file replication request', result['Message'] )
       return result
@@ -141,14 +141,16 @@ class FailoverTransfer( object ):
     return S_OK( '%s uploaded to a failover SE' % fileName )
 
   #############################################################################
-  def __setFileReplicationRequest( self, lfn, se, fileMetaDict ):
+  def __setFileReplicationRequest( self, lfn, targetSE, fileMetaDict, sourceSE = '' ):
     """ Sets a registration request.
     """
-    self.log.info( 'Setting replication request for %s to %s' % ( lfn, se ) )
+    self.log.info( 'Setting replication request for %s to %s' % ( lfn, targetSE ) )
 
     transfer = Operation()
     transfer.Type = "ReplicateAndRegister"
-    transfer.TargetSE = se
+    transfer.TargetSE = targetSE
+    if sourceSE:
+      transfer.SourceSE = sourceSE
 
     trFile = File()
     trFile.LFN = lfn
@@ -237,8 +239,6 @@ class FailoverTransfer( object ):
   #############################################################################
   def __setFileRemovalRequest( self, lfn, se = '', pfn = '' ):
     """ Sets a removal request for a file including all replicas.
-
-
     """
     remove = Operation()
     remove.Type = "RemoveFile"
