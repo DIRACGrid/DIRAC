@@ -72,14 +72,16 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, ResourcesDefaults, CSGlobals
-from DIRAC.Core.Security.Properties import *
+from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR, \
+                                           CS_ADMINISTRATOR, JOB_ADMINISTRATOR, \
+                                           FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR, \
+                                           NORMAL_USER, TRUSTED_HOST
 
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 
 
 # On command line tools this can be set to True to abort after the first error.
