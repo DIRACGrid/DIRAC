@@ -211,7 +211,7 @@ class CE2CSAgent( AgentModule ):
         body += newcestring
         possibleNewSites.append( 'dirac-admin-add-site DIRACSiteName %s %s' % ( nameBDII, ce ) )
     if body:
-      body = "We are glade to inform You about new CE(s) possibly suitable for %s:\n" % self.voName + body
+      body = "We are glad to inform You about new CE(s) possibly suitable for %s:\n" % self.voName + body
       body += "\n\nTo suppress information about CE add its name to BannedCEs list."
       for  possibleNewSite in  possibleNewSites:
         body = "%s\n%s" % ( body, possibleNewSite )
@@ -242,8 +242,6 @@ class CE2CSAgent( AgentModule ):
       sites = result['Value']
 
       for site in sites:
-  #      if site[-2:]!='ru':
-  #        continue
         siteSection = cfgPath( gridSection, site )
         opt = gConfig.getOptionsDict( siteSection )['Value']
         name = opt.get( 'Name', '' )

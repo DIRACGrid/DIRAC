@@ -1,3 +1,6 @@
+# TO-DO: to be moved to TestDIRAC
+
+########################################################################
 # $HeadURL$
 # File :    FC_Scaling_test
 # Author :  Andrei Tsaregorodtsev

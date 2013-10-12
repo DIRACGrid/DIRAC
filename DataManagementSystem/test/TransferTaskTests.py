@@ -1,3 +1,5 @@
+# TODO: to be removed
+
 ########################################################################
 # $HeadURL $
 # File: TransferTaskTests.py

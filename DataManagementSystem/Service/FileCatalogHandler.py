@@ -55,7 +55,9 @@ def initializeFileCatalogHandler( serviceInfo ):
                     'LFNPFNConvention'    : 'Strong',
                     'ResolvePFN'          : True,
                     'DefaultUmask'        : 0775,
-                    'VisibleStatus'       : ['AprioriGood'],
+                    'ValidFileStatus'     : ['AprioriGood','Trash','Removing','Probing'],
+                    'ValidReplicaStatus'  : ['AprioriGood','Removing','Probing'],
+                    'VisibleFileStatus'   : ['AprioriGood'],
                     'VisibleReplicaStatus': ['AprioriGood']}
   for configKey in sortList( defaultConfig.keys() ):
     defaultValue = defaultConfig[configKey]
@@ -180,6 +182,11 @@ class FileCatalogHandler( RequestHandler ):
   def export_removeFile( self, lfns ):
     """ Remove the supplied lfns """
     return gFileCatalogDB.removeFile( lfns, self.getRemoteCredentials() )
+  
+  types_setFileStatus = [ DictType ]
+  def export_setFileStatus( self, lfns ):
+    """ Remove the supplied lfns """
+    return gFileCatalogDB.setFileStatus( lfns, self.getRemoteCredentials() )
 
   types_addReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_addReplica( self, lfns ):
@@ -364,6 +371,12 @@ class FileCatalogHandler( RequestHandler ):
     """ Set metadata parameter for the given path
     """
     return gFileCatalogDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
+  
+  types_setMetadataBulk = [ DictType ]
+  def export_setMetadataBulk( self, pathMetadataDict ):
+    """ Set metadata parameter for the given path
+    """
+    return gFileCatalogDB.setMetadataBulk( pathMetadataDict, self.getRemoteCredentials() )
 
   types_removeMetadata = [ StringTypes, ListType ]
   def export_removeMetadata( self, path, metadata ):

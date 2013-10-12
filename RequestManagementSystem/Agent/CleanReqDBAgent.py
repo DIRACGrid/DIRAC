@@ -80,7 +80,7 @@ class CleanReqDBAgent( AgentModule ):
   def execute( self ):
     """ execution in one cycle """
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
     kickTime = now - datetime.timedelta( hours = self.KICK_GRACE_HOURS )
     rmTime = now - datetime.timedelta( days = self.DEL_GRACE_DAYS )
 

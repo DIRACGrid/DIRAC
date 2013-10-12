@@ -21,41 +21,39 @@ def checkArgumentFormat( path ):
   """ Bring the various possible form of arguments to FileCatalog methods to
       the standard dictionary form
   """
+  
+  def checkArgumentDict( path ):
+    """ Check and process format of the arguments to FileCatalog methods """
+    if type( path ) in StringTypes:
+      urls = {path:True}
+    elif type( path ) == ListType:
+      urls = {}
+      for url in path:
+        urls[url] = True
+    elif type( path ) == DictType:
+      urls = path
+    else:
+      return S_ERROR( "checkArgumentDict: Supplied path is not of the correct format" )
+    return S_OK( urls )
+    
   result = checkArgumentDict( path )
   if not result['OK']:
     return result
 
+  pathDict = result['Value']
+
   # Bring the lfn path to the normalized form
   urls = {}
-  for url in path:
-    normpath = os.path.normpath( url )
-    urls[normpath] = path[url]
-  return S_OK( urls )
-
-def checkArgumentList( path ):
-  """ Check and process format of the arguments to FileCatalog methods """
-  if type( path ) in StringTypes:
-    urls = [path]
-  elif type( path ) == ListType:
-    urls = path
-  elif type( path ) == DictType:
-    urls = path.keys()
-  else:
-    return S_ERROR( "checkArgumentList: Supplied path is not of the correct format" )
-  return S_OK( urls )
-
-def checkArgumentDict( path ):
-  """ Check and process format of the arguments to FileCatalog methods """
-  if type( path ) in StringTypes:
-    urls = {path:True}
-  elif type( path ) == ListType:
-    urls = {}
-    for url in path:
-      urls[url] = True
-  elif type( path ) == DictType:
-    urls = path
-  else:
-    return S_ERROR( "checkArgumentDict: Supplied path is not of the correct format" )
+  for url in pathDict:
+    mUrl = url
+    if url.startswith( 'lfn:' ):
+      mUrl = url[4:]
+    elif url.startswith( 'LFN:' ):
+      mUrl = url[4:]  
+    if mUrl.startswith('/grid'):  
+      mUrl = mUrl[5:] 
+    normpath = os.path.normpath( mUrl )
+    urls[normpath] = pathDict[url]
   return S_OK( urls )
 
 def generateGuid( checksum, checksumtype ):

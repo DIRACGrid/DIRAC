@@ -1,10 +1,7 @@
-#!/usr/bin/env python
-# -*- coding:utf-8 -*-
-# author: lintao
+# TO-DO: to be moved to TestDIRAC
 
 import cmd
 import sys
-import os
 import os.path
 
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import UnixLikeFileSystem

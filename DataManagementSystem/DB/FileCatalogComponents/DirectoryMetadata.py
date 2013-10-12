@@ -735,9 +735,7 @@ class DirectoryMetadata:
     result = self.db.dtree.getFilesInDirectory( dirList, credDict )
     if not result['OK']:
       return result
-    for fileTuple in result['Value']:
-      dirID = fileTuple[1]
-      fname = fileTuple[2]
+    for _fileID, dirID, fname in result['Value']:
       fileList.append( dirDict[dirID] + '/' + os.path.basename( fname ) )
 
     return S_OK( fileList )

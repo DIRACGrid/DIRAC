@@ -42,9 +42,9 @@ class JobAgent( AgentModule ):
   def initialize( self, loops = 0 ):
     """Sets default parameters and creates CE instance
     """
-    #Disable monitoring
+    # Disable monitoring
     self.am_setOption( 'MonitoringEnabled', False )
-   # self.log.setLevel('debug') #temporary for debugging
+    # self.log.setLevel('debug') #temporary for debugging
     self.am_setOption( 'MaxCycles', loops )
 
     ceType = self.am_getOption( 'CEType', 'InProcess' )
