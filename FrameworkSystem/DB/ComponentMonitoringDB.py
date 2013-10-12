@@ -15,8 +15,7 @@ from DIRAC.Core.Utilities import Time, List, Network
 
 class ComponentMonitoringDB( DB ):
 
-  def __init__( self, requireVoms = False,
-               useMyProxy = False,
+  def __init__( self, useMyProxy = False,
                maxQueueSize = 10 ):
     DB.__init__( self, 'ComponentMonitoringDB', 'Framework/ComponentMonitoringDB', maxQueueSize )
     random.seed()
