@@ -1,4 +1,6 @@
-import unittest,types,time,os,shutil
+# TO-DO: to be took back to life, and moved to TestDIRAC
+
+import unittest, time, os
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.Core.Utilities.File import makeGuid
 

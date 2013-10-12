@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: RequestExecutingAgent.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/12 15:36:47
@@ -14,7 +13,6 @@
 
     request processing agent
 """
-__RCSID__ = "$Id $"
 # #
 # @file RequestExecutingAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -76,8 +74,6 @@ class RequestExecutingAgent( AgentModule ):
   __poolSleep = 5
   # # placeholder for RequestClient instance
   __requestClient = None
-  # # FTS scheduling flag
-  __FTSMode = False
 
   def __init__( self, *args, **kwargs ):
     """ c'tor """
@@ -147,6 +143,8 @@ class RequestExecutingAgent( AgentModule ):
                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
     # # create request dict
     self.__requestCache = dict()
+
+    self.FTSMode = self.am_getOption( "FTSMode", False )
 
   def processPool( self ):
     """ facade for ProcessPool """

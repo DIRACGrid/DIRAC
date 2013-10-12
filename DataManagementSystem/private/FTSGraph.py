@@ -274,9 +274,10 @@ class FTSGraph( Graph ):
     ftsSites = []
     for site, ftsServerURL in ftsServers.items():
       ftsSite = FTSSite()
-      ftsSite.Name, ftsSite.FTSServer = site, ftsServerURL
-      ## should be read from CS as well
+      ftsSite.Name = site
+      ftsSite.FTSServer = ftsServerURL
+      # # should be read from CS as well
       ftsSite.MaxActiveJobs = 50
       ftsSites.append( ftsSite )
     return S_OK( ftsSites )
-    
+

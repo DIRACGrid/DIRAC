@@ -1,13 +1,14 @@
+# TO-DO: to be moved to TestDIRAC
+
 ########################################################################
-# $HeadURL $
 # File: DataLoggingClientTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/12 12:28:30
 ########################################################################
 
-""" :mod: DataLoggingClientTests 
+""" :mod: DataLoggingClientTests
     =======================
- 
+
     .. module: DataLoggingClientTests
     :synopsis: unitests for DataLoggingClient
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -15,26 +16,24 @@
     unitests for DataLoggingClient
 """
 
-__RCSID__ = "$Id $"
-
-##
+# #
 # @file DataLoggingClientTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/07/12 12:28:48
 # @brief Definition of DataLoggingClientTests class.
 
-## imports 
+# # imports
 import unittest
-## from DIRAC
+# # from DIRAC
 from DIRAC import gLogger
-## SUT
+# # SUT
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
 ########################################################################
 class DataLoggingClientTestCase( unittest.TestCase ):
   """
   .. class:: DataLoggingClientTests
-  
+
   """
   def setUp( self ):
     """ c'tor
@@ -43,7 +42,7 @@ class DataLoggingClientTestCase( unittest.TestCase ):
     """
     gLogger.setLevel( "VERBOSE" )
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
-    
+
   def test( self ):
     """ test
 
@@ -56,8 +55,8 @@ class DataLoggingClientTestCase( unittest.TestCase ):
     ping = dlc.ping()
     self.assertEqual( ping["OK"], True )
 
-## test execution
+# # test execution
 if __name__ == "__main__":
-  SUITE = unittest.defaultTestLoader.loadTestsFromTestCase(DataLoggingClientTestCase)
+  SUITE = unittest.defaultTestLoader.loadTestsFromTestCase( DataLoggingClientTestCase )
   unittest.TextTestRunner( verbosity = 2 ).run( SUITE )
 
