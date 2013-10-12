@@ -11,9 +11,10 @@ __RCSID__ = "$Id$"
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
+from DIRAC.Core.Utilities.List import intListToString
 
-RESERVED_METAKEYS = [ 'SE', 'CreationDate', 'ModificationDate', 'LastAccessDate', 'User'
-                      'Group', 'Path' ]
+FILE_STANDARD_METAKEYS = [ 'SE', 'CreationDate', 'ModificationDate', 'LastAccessDate', 'User'
+                           'Group', 'Path', 'Name' ]
 
 class FileMetadata:
 
@@ -34,7 +35,7 @@ class FileMetadata:
         pname - parameter name, ptype - parameter type in the MySQL notation
     """
 
-    if pname in RESERVED_METAKEYS:
+    if pname in FILE_STANDARD_METAKEYS:
       return S_ERROR( 'Illegal use of reserved metafield name' )
 
     result = self.db.dmeta.getMetadataFields( credDict )
@@ -407,6 +408,42 @@ class FileMetadata:
 
     return S_OK( fileList )
 
+  def __findFilesForSE( self, se, dirList ):
+    """ Find files in the given list of directories having replicas in the given se(s)
+    """
+    seList = se
+    if type( se ) in types.StringTypes:
+      seList = [se]
+    seIDs = []
+    for se in seList:
+      result = self.seManager.getSEID( se )
+      if not result['OK']:
+        return result
+      seIDs.append( result['Value'] )  
+    seString = intListToString( seIDs )
+    dirString = intListToString( dirList )
+    
+    req = "SELECT F.FileID FROM FC_Files as F, FC_Replicas as R WHERE F.DirID IN (%s)" % dirString
+    req += " AND R.SEID IN (%s) AND F.FileID=R.FileID" % seString  
+    result = self.db._query( req )
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_OK( [] )
+    
+    fileList = []
+    for row in result['Value']:
+      fileID = row[0]
+      fileList.append( fileID )
+
+    return S_OK( fileList )  
+      
+
+  def __findFilesForStandardMetaValue( self, meta, value, dirList ):
+    """ Find files in the given list of directories corresponding to the given
+        selection criteria using standard file metadata
+    """
+    return S_OK([])
 
   def __findFilesByMetadata( self,metaDict,dirList,credDict ):
     """ Find a list of file IDs meeting the metaDict requirements and belonging
@@ -416,7 +453,12 @@ class FileMetadata:
     fileList = []
     first = True    
     for meta,value in metaDict.items():
-      result = self.__findFilesForMetaValue( meta,value,dirList )
+      if not meta in FILE_STANDARD_METAKEYS:
+        result = self.__findFilesForMetaValue( meta, value, dirList )
+      elif meta == "SE":
+        result = self.__findFilesForSE( value, dirList ) 
+      else:
+        result = self.__findFilesForStandardMetaValue( meta, value, dirList )    
       if not result['OK']:
         return result
       mList = result['Value']
@@ -452,7 +494,7 @@ class FileMetadata:
 
     fileMetaDict = {}
     for key,value in metaDict.items():
-      if key in result['Value']:
+      if key in result['Value'] or key in FILE_STANDARD_METAKEYS:
         fileMetaDict[key] = value
 
     fileList = []
