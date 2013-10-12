@@ -1,4 +1,4 @@
-[v6r10-pre8]
+[v6r10-pre9]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -9,6 +9,9 @@ FIX: DIRAC.__init__.py - avoid re-definition of platform variable
 NEW: Graphs - added CurveGraph class to draw non-stacked lines with markers
 NEW: Graphs - allow graphs with negative Y values
 NEW: Graphs - allow to provide errors with the data and display them in the CurveGraph
+
+*Framework
+FIX: SystemAdministratorIntegrator - use Host option to get the host address in addition to the section name, closes #1628
 
 *DMS
 CHANGE: DFC - optimization and bug fixes of the bulk file addition
@@ -29,6 +32,14 @@ CHANGE: FileCatalog - simplified FC_Scaling_test.py script
 NEW: FileCatalog/DatasetManager class to define and manipulate datasets corresponding to meta queries
 NEW: FileCatalogHandler - new interface methods to expose DatasetManager functionality
 NEW: FileCatalogClientCLI - new dataset family of commands
+FIX: StorageFactory, ReplicaManager - resolve SE alias name recursively
+FIX: FTSRequest, ReplicaManager, SRM2Storage - use current proxy owner as user name in accounting reports, closes #1602
+BUGFIX: FileCatalogClientCLI - bug fix in do_ls, missing argument to addFile() call, closes #1658
+NEW: FileCatalog - added new setMetadataBulk() interface, closes #1358
+FIX: FileCatalog - initial argument check strips off leading lfn:, LFN:, /grid, closes #448
+NEW: FileCatalog - added new setFileStatus() interface, closes #170, valid and visible file and replica statuses can be defined in respective options.
+CHANGE: multiple new FTS system fixes
+CHANGE: uniform argument checking with checkArgumentFormat() in multiple modules
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
