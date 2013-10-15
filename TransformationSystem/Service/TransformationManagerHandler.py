@@ -301,13 +301,15 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
   types_addFile = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_addFile( self, fileDicts, force = False ):
-    """ Interface will send here { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
+    """ Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
     """
     res = database.addFile( fileDicts, force = force )
     return self._parseRes( res )
 
   types_removeFile = [ListType]
   def export_removeFile( self, lfns ):
+    """ Interface provides [ LFN1, LFN2, ... ]
+    """
     res = database.removeFile( lfns )
     return self._parseRes( res )
 
@@ -318,33 +320,43 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
   types_addReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_addReplica( self, replicaDicts, force = False ):
-    """Interface will send here { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
+    """ Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
     """
     res = database.addReplica( replicaDicts, force = force )
     return self._parseRes( res )
 
-  types_removeReplica = [ListType]
-  def export_removeReplica( self, replicaTuples ):
-    res = database.removeReplica( replicaTuples )
+  types_removeReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_removeReplica( self, replicaDict ):
+    """ Interface provides {LFN : { SE, ...} }
+    """
+    res = database.removeReplica( replicaDict )
     return self._parseRes( res )
 
-  types_getReplicas = [ListType]
+  types_getReplicas = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getReplicas( self, lfns ):
+    """ Interface provides [LFN1, LFN2, ...]
+    """
     res = database.getReplicas( lfns )
     return self._parseRes( res )
 
-  types_getReplicaStatus = [ListType]
-  def export_getReplicaStatus( self, replicaTuples ):
-    res = database.getReplicaStatus( replicaTuples )
+  types_getReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_getReplicaStatus( self, replicaDicts ):
+    """ Interface provides { LFN : { PFN, SE, Status, ... } }
+    """
+    res = database.getReplicaStatus( replicaDicts )
     return self._parseRes( res )
 
-  types_setReplicaStatus = [ListType]
-  def export_setReplicaStatus( self, replicaTuples ):
-    res = database.setReplicaStatus( replicaTuples )
+  types_setReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_setReplicaStatus( self, replicaDict ):
+    """ Interface provides { LFN : { PFN, SE, Status, ... } }
+    """
+    res = database.setReplicaStatus( replicaDict )
     return self._parseRes( res )
 
-  types_setReplicaHost = [ListType]
+  types_setReplicaHost = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_setReplicaHost( self, replicaTuples ):
+    """ Interface provides { LFN : {OldSE, NewSE, ... } }
+    """
     res = database.setReplicaHost( replicaTuples )
     return self._parseRes( res )
 
