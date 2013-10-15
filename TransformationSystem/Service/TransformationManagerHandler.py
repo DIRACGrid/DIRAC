@@ -319,46 +319,64 @@ class TransformationManagerHandlerBase( RequestHandler ):
   #
 
   types_addReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
-  def export_addReplica( self, replicaDicts, force = False ):
+  def export_addReplica( self, replicaDict, force = False ):
     """ Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
+    Not used anywhere, so fake the behaviour
     """
-    res = database.addReplica( replicaDicts, force = force )
-    return self._parseRes( res )
-
+    resdict = {}
+    for lfn in replicaDict.keys():
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
+  
   types_removeReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_removeReplica( self, replicaDict ):
     """ Interface provides {LFN : { SE, ...} }
+    expects back {LFN:True}
     """
-    res = database.removeReplica( replicaDict )
-    return self._parseRes( res )
+    resdict = {}
+    for lfn in replicaDict.keys():
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
 
   types_getReplicas = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getReplicas( self, lfns ):
     """ Interface provides [LFN1, LFN2, ...]
+    Fake the FC behavior, as not used
     """
-    res = database.getReplicas( lfns )
-    return self._parseRes( res )
+    resdict = {}
+    for lfn in lfns:
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
 
   types_getReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getReplicaStatus( self, replicaDicts ):
     """ Interface provides { LFN : { PFN, SE, Status, ... } }
+    Fake the FC service interface
     """
-    res = database.getReplicaStatus( replicaDicts )
-    return self._parseRes( res )
+    resdict = {}
+    for lfn in replicaDicts.keys():
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
 
   types_setReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_setReplicaStatus( self, replicaDict ):
     """ Interface provides { LFN : { PFN, SE, Status, ... } }
+    Fake the FC service interface
     """
-    res = database.setReplicaStatus( replicaDict )
-    return self._parseRes( res )
+    resdict = {}
+    for lfn in replicaDict.keys():
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
 
   types_setReplicaHost = [ [ ListType, DictType ] + list( StringTypes ) ]
-  def export_setReplicaHost( self, replicaTuples ):
+  def export_setReplicaHost( self, replicaDict ):
     """ Interface provides { LFN : {OldSE, NewSE, ... } }
+    Fake the FC service interface
     """
-    res = database.setReplicaHost( replicaTuples )
-    return self._parseRes( res )
+    resdict = {}
+    for lfn in replicaDict.keys():
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
 
   ####################################################################
   #
