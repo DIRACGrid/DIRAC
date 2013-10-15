@@ -1250,12 +1250,6 @@ class TransformationDB( DB ):
     if not res['OK']:
       return res
     lfnFileIDs = res['Value']
-    _toRemove = []
-    for lfn, pfn, se in fileTuples:
-      fileID = lfnFileIDs[lfn]
-      res = self.__addReplica( fileID, se, pfn, connection = connection )
-      if not res['OK']:
-        lfnFileIDs.pop( lfn )
     return S_OK( lfnFileIDs )
 
   ###########################################################################
