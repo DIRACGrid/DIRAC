@@ -1509,13 +1509,15 @@ class TransformationDB( DB ):
     """ Add new replica to the TransformationDB for an existing lfn.
     """
     gLogger.info( "TransformationDB.addReplica: Attempting to add %s replicas." % len( replicaTuples ) )
-    fileTuples = []
+    lfndict = {}  
+
     for lfn, pfn, se, _master in replicaTuples:
-      fileTuples.append( ( lfn, pfn, 0, se, 'IGNORED-GUID', 'IGNORED-CHECKSUM' ) )
-    return self.addFile( fileTuples, force )
+      lfndict[lfn] = {"PFN":pfn, "SE": se, "SIZE" : 0,"GUID":'IGNORED-GUID', "checksum":'IGNORED-CHECKSUM' }
+    return self.addFile( lfndict, force )
 
   def addFile( self, fileDicts, force = False, connection = False ):
     """  Add a new file to the TransformationDB together with its first replica.
+    In the input dict, the only mandatory info are PFN and SE
     """
     gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileDicts.keys() ) )
     successful = {}
