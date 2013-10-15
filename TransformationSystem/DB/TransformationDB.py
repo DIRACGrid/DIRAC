@@ -1505,15 +1505,12 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def addReplica( self, replicaTuples, force = False ):
+  def addReplica( self, replicaDicts, force = False ):
     """ Add new replica to the TransformationDB for an existing lfn.
     """
-    gLogger.info( "TransformationDB.addReplica: Attempting to add %s replicas." % len( replicaTuples ) )
-    lfndict = {}  
-
-    for lfn, pfn, se, _master in replicaTuples:
-      lfndict[lfn] = {"PFN":pfn, "SE": se, "SIZE" : 0,"GUID":'IGNORED-GUID', "checksum":'IGNORED-CHECKSUM' }
-    return self.addFile( lfndict, force )
+    gLogger.info( "TransformationDB.addReplica: Attempting to add %s replicas." % len( replicaDicts.keys() ) )
+    
+    return self.addFile( replicaDicts, force )
 
   def addFile( self, fileDicts, force = False, connection = False ):
     """  Add a new file to the TransformationDB together with its first replica.

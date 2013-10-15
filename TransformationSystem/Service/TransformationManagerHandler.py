@@ -316,9 +316,11 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods for replica manipulation
   #
 
-  types_addReplica = [ListType]
-  def export_addReplica( self, replicaTuples, force = False ):
-    res = database.addReplica( replicaTuples, force = force )
+  types_addReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_addReplica( self, replicaDicts, force = False ):
+    """Interface will send here { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
+    """
+    res = database.addReplica( replicaDicts, force = force )
     return self._parseRes( res )
 
   types_removeReplica = [ListType]
