@@ -1244,7 +1244,7 @@ class TransformationDB( DB ):
     return self._update( req, connection )
 
   def __addFileTuples( self, fileTuples, connection = False ):
-    """ Add files and replicas """
+    """ Add files """
     lfns = [x[0] for x in fileTuples ]
     res = self.__addDataFiles( lfns, connection = connection )
     if not res['OK']:
@@ -1458,7 +1458,7 @@ class TransformationDB( DB ):
           if not transFiles.has_key( trans ):
             transFiles[trans] = []
           transFiles[trans].append( lfn )
-    # Add the files to the DataFiles and Replicas tables
+    # Add the files to the DataFiles table
     if filesToAdd:
       connection = self.__getConnection( connection )
       res = self.__addFileTuples( filesToAdd, connection = connection )
@@ -1508,9 +1508,6 @@ class TransformationDB( DB ):
       res = self.__setTransformationFileStatus( fileIDs.keys(), 'Deleted', connection = connection )
       if not res['OK']:
         return res
-      res = self.__deleteFileReplicas( fileIDs.keys(), connection = connection )
-      if not res['OK']:
-        return S_ERROR( "TransformationDB.removeFile: Failed to remove file replicas." )
       res = self.__setDataFileStatus( fileIDs.keys(), 'Deleted', connection = connection )
       if not res['OK']:
         return S_ERROR( "TransformationDB.removeFile: Failed to remove files." )
