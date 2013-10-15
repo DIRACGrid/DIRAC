@@ -1549,7 +1549,7 @@ class TransformationDB( DB ):
       for transID, lfns in transFiles.items():
         fileIDs = []
         for lfn in lfns:
-          if lfn.has_key( lfn ):
+          if lfnFileIDs.has_key( lfn ):
             fileIDs.append( lfnFileIDs[lfn] )
         if fileIDs:
           res = self.__addFilesToTransformation( transID, fileIDs, connection = connection )
