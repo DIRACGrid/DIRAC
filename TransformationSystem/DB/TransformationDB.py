@@ -1514,21 +1514,21 @@ class TransformationDB( DB ):
       fileTuples.append( ( lfn, pfn, 0, se, 'IGNORED-GUID', 'IGNORED-CHECKSUM' ) )
     return self.addFile( fileTuples, force )
 
-  def addFile( self, fileTuples, force = False, connection = False ):
+  def addFile( self, fileDicts, force = False, connection = False ):
     """  Add a new file to the TransformationDB together with its first replica.
     """
-    gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileTuples ) )
+    gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileDicts.keys() ) )
     successful = {}
     failed = {}
     # Determine which files pass the filters and are to be added to transformations
     transFiles = {}
     filesToAdd = []
-    for lfn, pfn, _size, se, _guid, _checksum in fileTuples:
+    for lfn, info in fileDicts.items():
       fileTrans = self.__filterFile( lfn )
       if not ( fileTrans or force ):
         successful[lfn] = True
       else:
-        filesToAdd.append( ( lfn, pfn, se ) )
+        filesToAdd.append( ( lfn, info["PFN"], info["SE"] ) )
         for trans in fileTrans:
           if not transFiles.has_key( trans ):
             transFiles[trans] = []

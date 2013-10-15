@@ -270,11 +270,9 @@ class TransformationClient( Client, FileCatalogueBase ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    tuples = []
-    for lfn, info in res['Value'].items():
-      tuples.append( ( lfn, info['PFN'], info['Size'], info['SE'], info['GUID'], info['Checksum'] ) )
+    lfndicts = res['Value']  
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
-    return rpcClient.addFile( tuples, force )
+    return rpcClient.addFile( lfndicts, force )
 
   def addReplica( self, lfn, force = False, rpc = '', url = '', timeout = 120 ):
     res = self.__checkArgumentFormat( lfn )

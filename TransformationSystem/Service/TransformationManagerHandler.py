@@ -299,9 +299,11 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.exists( lfns )
     return self._parseRes( res )
 
-  types_addFile = [ListType]
-  def export_addFile( self, fileTuples, force = False ):
-    res = database.addFile( fileTuples, force = force )
+  types_addFile = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_addFile( self, fileDicts, force = False ):
+    """ Interface will send here { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
+    """
+    res = database.addFile( fileDicts, force = force )
     return self._parseRes( res )
 
   types_removeFile = [ListType]
