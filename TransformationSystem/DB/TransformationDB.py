@@ -1555,6 +1555,10 @@ class TransformationDB( DB ):
           res = self.__addFilesToTransformation( transID, fileIDs, connection = connection )
           if not res['OK']:
             gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
+            failed[lfn] = True
+            successful[lfn] = False
+          else:
+            successful[lfn] = True
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
