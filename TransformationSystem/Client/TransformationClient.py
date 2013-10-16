@@ -270,21 +270,17 @@ class TransformationClient( Client, FileCatalogueBase ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    tuples = []
-    for lfn, info in res['Value'].items():
-      tuples.append( ( lfn, info['PFN'], info['Size'], info['SE'], info['GUID'], info['Checksum'] ) )
+    lfndicts = res['Value']  
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
-    return rpcClient.addFile( tuples, force )
+    return rpcClient.addFile( lfndicts, force )
 
   def addReplica( self, lfn, force = False, rpc = '', url = '', timeout = 120 ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    tuples = []
-    for lfn, info in res['Value'].items():
-      tuples.append( ( lfn, info['PFN'], info['SE'], False ) )
+    lfndicts  = res['Value']
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
-    return rpcClient.addReplica( tuples, force )
+    return rpcClient.addReplica( lfndicts, force )
 
   def removeFile( self, lfn, rpc = '', url = '', timeout = 120 ):
     res = self.__checkArgumentFormat( lfn )
@@ -308,15 +304,20 @@ class TransformationClient( Client, FileCatalogueBase ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    tuples = []
-    for lfn, info in res['Value'].items():
-      tuples.append( ( lfn, info['PFN'], info['SE'] ) )
+    lfndicts = res['Value']
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     successful = {}
     failed = {}
-    listOfLists = breakListIntoChunks( tuples, 100 )
-    for fList in listOfLists:
-      res = rpcClient.removeReplica( fList )
+    #as lfndicts is a dict, the breakListIntoChunks will fail. Fake it!
+    listOfDicts = []
+    localdicts = {}
+    for lfn,info in lfndicts.items():
+      localdicts.update( { lfn : info } )  
+      if len(localdicts.keys())%100 == 0:
+        listOfDicts.append(localdicts)
+        localdicts = {}
+    for fDict in listOfDicts:
+      res = rpcClient.removeReplica( fDict )
       if not res['OK']:
         return res
       successful.update( res['Value']['Successful'] )
@@ -328,31 +329,25 @@ class TransformationClient( Client, FileCatalogueBase ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    tuples = []
-    for lfn, info in res['Value'].items():
-      tuples.append( ( lfn, info['SE'] ) )
+    lfndict = res['Value']
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
-    return rpcClient.getReplicaStatus( tuples )
+    return rpcClient.getReplicaStatus( lfndict )
 
   def setReplicaStatus( self, lfn, rpc = '', url = '', timeout = 120 ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    tuples = []
-    for lfn, info in res['Value'].items():
-      tuples.append( ( lfn, info['PFN'], info['SE'], info['Status'] ) )
+    lfndict = res['Value']
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
-    return rpcClient.setReplicaStatus( tuples )
+    return rpcClient.setReplicaStatus( lfndict )
 
   def setReplicaHost( self, lfn, rpc = '', url = '', timeout = 120 ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    tuples = []
-    for lfn, info in res['Value'].items():
-      tuples.append( ( lfn, info['PFN'], info['SE'], info['NewSE'] ) )
+    lfndict = res['Value']    
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
-    return rpcClient.setReplicaHost( tuples )
+    return rpcClient.setReplicaHost( lfndict )
 
   def removeDirectory( self, lfn, rpc = '', url = '', timeout = 120 ):
     return self.__returnOK( lfn )
