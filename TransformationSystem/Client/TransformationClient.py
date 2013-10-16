@@ -258,6 +258,14 @@ class TransformationClient( Client, FileCatalogueBase ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addDirectory( path, force )
 
+  def getReplicas( self, lfn, rpc = '', url = '', timeout = 120 ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfns = res['Value'].keys()
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    return rpcClient.getReplicas( lfns )
+
   def addFile( self, lfn, force = False, rpc = '', url = '', timeout = 120 ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
@@ -265,6 +273,14 @@ class TransformationClient( Client, FileCatalogueBase ):
     lfndicts = res['Value']  
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addFile( lfndicts, force )
+
+  def addReplica( self, lfn, force = False, rpc = '', url = '', timeout = 120 ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfndicts  = res['Value']
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    return rpcClient.addReplica( lfndicts, force )
 
   def removeFile( self, lfn, rpc = '', url = '', timeout = 120 ):
     res = self.__checkArgumentFormat( lfn )
@@ -283,6 +299,55 @@ class TransformationClient( Client, FileCatalogueBase ):
       failed.update( res['Value']['Failed'] )
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
+
+  def removeReplica( self, lfn, rpc = '', url = '', timeout = 120 ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfndicts = res['Value']
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    successful = {}
+    failed = {}
+    #as lfndicts is a dict, the breakListIntoChunks will fail. Fake it!
+    listOfDicts = []
+    localdicts = {}
+    for lfn,info in lfndicts.items():
+      localdicts.update( { lfn : info } )  
+      if len(localdicts.keys())%100 == 0:
+        listOfDicts.append(localdicts)
+        localdicts = {}
+    for fDict in listOfDicts:
+      res = rpcClient.removeReplica( fDict )
+      if not res['OK']:
+        return res
+      successful.update( res['Value']['Successful'] )
+      failed.update( res['Value']['Failed'] )
+    resDict = {'Successful': successful, 'Failed':failed}
+    return S_OK( resDict )
+
+  def getReplicaStatus( self, lfn, rpc = '', url = '', timeout = 120 ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfndict = res['Value']
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    return rpcClient.getReplicaStatus( lfndict )
+
+  def setReplicaStatus( self, lfn, rpc = '', url = '', timeout = 120 ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfndict = res['Value']
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    return rpcClient.setReplicaStatus( lfndict )
+
+  def setReplicaHost( self, lfn, rpc = '', url = '', timeout = 120 ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfndict = res['Value']    
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    return rpcClient.setReplicaHost( lfndict )
 
   def removeDirectory( self, lfn, rpc = '', url = '', timeout = 120 ):
     return self.__returnOK( lfn )
