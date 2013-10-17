@@ -1212,10 +1212,7 @@ class TransformationDB( DB ):
     """ Add files and replicas """
     lfns = [x[0] for x in fileTuples ]
     res = self.__addDataFiles( lfns, connection = connection )
-    if not res['OK']:
-      return res
-    lfnFileIDs = res['Value']
-    return S_OK( lfnFileIDs )
+    return res
 
   ###########################################################################
   #
@@ -1412,13 +1409,6 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def addReplica( self, replicaDicts, force = False ):
-    """ Add new replica to the TransformationDB for an existing lfn.
-    """
-    gLogger.info( "TransformationDB.addReplica: Attempting to add %s replicas." % len( replicaDicts.keys() ) )
-    
-    return self.addFile( replicaDicts, force )
-
   def addFile( self, fileDicts, force = False, connection = False ):
     """  Add a new file to the TransformationDB together with its first replica.
          In the input dict, the only mandatory info are PFN and SE
@@ -1466,6 +1456,38 @@ class TransformationDB( DB ):
             successful[lfn] = False
           else:
             successful[lfn] = True
+    resDict = {'Successful':successful, 'Failed':failed}
+    return S_OK( resDict )
+
+  def removeFile( self, lfns, connection = False ):
+    """ Remove file specified by lfn from the ProcessingDB
+    """
+    gLogger.info( "TransformationDB.removeFile: Attempting to remove %s files." % len( lfns ) )
+    failed = {}
+    successful = {}
+    connection = self.__getConnection( connection )
+    if not lfns:
+      return S_ERROR( "No LFNs supplied" )
+    res = self.__getFileIDsForLfns( lfns, connection = connection )
+    if not res['OK']:
+      return res
+    fileIDs, lfnFilesIDs = res['Value']
+    for lfn in lfns:
+      if not lfnFilesIDs.has_key( lfn ):
+        successful[lfn] = 'File did not exist'
+    if fileIDs:
+      res = self.__setTransformationFileStatus( fileIDs.keys(), 'Deleted', connection = connection )
+      if not res['OK']:
+        return res
+      res = self.__deleteFileReplicas( fileIDs.keys(), connection = connection )
+      if not res['OK']:
+        return S_ERROR( "TransformationDB.removeFile: Failed to remove file replicas." )
+      res = self.__setDataFileStatus( fileIDs.keys(), 'Deleted', connection = connection )
+      if not res['OK']:
+        return S_ERROR( "TransformationDB.removeFile: Failed to remove files." )
+    for lfn in lfnFilesIDs.keys():
+      if not failed.has_key( lfn ):
+        successful[lfn] = True
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
