@@ -473,9 +473,9 @@ class TransformationDB( DB ):
     fileIDsValues = set( fileIDs.values() )
     for lfn in lfns:
       if lfn not in fileIDsValues:
-        missing.append( ( lfn, 'Unknown', 'Unknown' ) )
+        missing.append( lfn )
     if missing:
-      res = self.__addFileTuples( missing, connection = connection )
+      res = self.__addDataFiles( missing, connection = connection )
       if not res['OK']:
         return res
       for lfn, fileID in res['Value'].items():
@@ -1208,11 +1208,6 @@ class TransformationDB( DB ):
     req = "UPDATE DataFiles SET Status = '%s' WHERE FileID IN (%s);" % ( status, intListToString( fileIDs ) )
     return self._update( req, connection )
 
-  def __addFileTuples( self, lfns, connection = False ):
-    """ Add files and replicas """
-    res = self.__addDataFiles( lfns, connection = connection )
-    return res
-
   ###########################################################################
   #
   # These methods manipulate multiple tables
@@ -1431,7 +1426,7 @@ class TransformationDB( DB ):
     # Add the files to the DataFiles and Replicas tables
     if filesToAdd:
       connection = self.__getConnection( connection )
-      res = self.__addFileTuples( filesToAdd, connection = connection )
+      res = self.__addDataFiles( filesToAdd, connection = connection )
       if not res['OK']:
         return res
       lfnFileIDs = res['Value']
