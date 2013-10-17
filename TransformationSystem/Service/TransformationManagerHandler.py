@@ -305,13 +305,17 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.exists( lfns )
     return self._parseRes( res )
 
-  types_addFile = [ListType]
-  def export_addFile( self, fileTuples, force = False ):
-    res = database.addFile( fileTuples, force = force )
+  types_addFile = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_addFile( self, fileDicts, force = False ):
+    """ Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
+    """
+    res = database.addFile( fileDicts, force = force )
     return self._parseRes( res )
 
   types_removeFile = [ListType]
   def export_removeFile( self, lfns ):
+    """ Interface provides [ LFN1, LFN2, ... ]
+    """
     res = database.removeFile( lfns )
     return self._parseRes( res )
 
@@ -320,35 +324,65 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods for replica manipulation
   #
 
-  types_addReplica = [ListType]
-  def export_addReplica( self, replicaTuples, force = False ):
-    res = database.addReplica( replicaTuples, force = force )
-    return self._parseRes( res )
+  types_addReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_addReplica( self, replicaDict, force = False ):
+    """ Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
+    Not used anywhere, so fake the behaviour
+    """
+    resdict = {}
+    for lfn in replicaDict.keys():
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
+  
+  types_removeReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_removeReplica( self, replicaDict ):
+    """ Interface provides {LFN : { SE, ...} }
+    expects back {LFN:True}
+    """
+    resdict = {}
+    for lfn in replicaDict.keys():
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
 
-  types_removeReplica = [ListType]
-  def export_removeReplica( self, replicaTuples ):
-    res = database.removeReplica( replicaTuples )
-    return self._parseRes( res )
-
-  types_getReplicas = [ListType]
+  types_getReplicas = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getReplicas( self, lfns ):
-    res = database.getReplicas( lfns )
-    return self._parseRes( res )
+    """ Interface provides [LFN1, LFN2, ...]
+    Fake the FC behavior, as not used
+    """
+    resdict = {}
+    for lfn in lfns:
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
 
-  types_getReplicaStatus = [ListType]
-  def export_getReplicaStatus( self, replicaTuples ):
-    res = database.getReplicaStatus( replicaTuples )
-    return self._parseRes( res )
+  types_getReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_getReplicaStatus( self, replicaDicts ):
+    """ Interface provides { LFN : { PFN, SE, Status, ... } }
+    Fake the FC service interface
+    """
+    resdict = {}
+    for lfn in replicaDicts.keys():
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
 
-  types_setReplicaStatus = [ListType]
-  def export_setReplicaStatus( self, replicaTuples ):
-    res = database.setReplicaStatus( replicaTuples )
-    return self._parseRes( res )
+  types_setReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_setReplicaStatus( self, replicaDict ):
+    """ Interface provides { LFN : { PFN, SE, Status, ... } }
+    Fake the FC service interface
+    """
+    resdict = {}
+    for lfn in replicaDict.keys():
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
 
-  types_setReplicaHost = [ListType]
-  def export_setReplicaHost( self, replicaTuples ):
-    res = database.setReplicaHost( replicaTuples )
-    return self._parseRes( res )
+  types_setReplicaHost = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_setReplicaHost( self, replicaDict ):
+    """ Interface provides { LFN : {OldSE, NewSE, ... } }
+    Fake the FC service interface
+    """
+    resdict = {}
+    for lfn in replicaDict.keys():
+      resdict[lfn] = True
+    return S_OK( {'Successful':resdict,'Failed':{}} )
 
   ####################################################################
   #

@@ -134,13 +134,3 @@ CREATE TABLE DataFiles (
    PRIMARY KEY (FileID, LFN)
 );
 
--- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS Replicas;
-CREATE TABLE Replicas (
-  FileID INTEGER NOT NULL,
-  PFN VARCHAR(255),
-  SE VARCHAR(32),
-  Status VARCHAR(32) DEFAULT 'AprioriGood',
-  INDEX (Status),
-  PRIMARY KEY (FileID, SE)
-);

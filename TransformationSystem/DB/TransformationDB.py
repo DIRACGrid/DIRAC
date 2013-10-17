@@ -681,9 +681,9 @@ class TransformationDB( DB ):
   def __insertExistingTransformationFiles( self, transID, fileTuples, connection = False ):
     req = "INSERT INTO TransformationFiles (TransformationID,Status,TaskID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
     candidates = False
-    for _tuple in fileTuples:
-      _lfn, originalID, fileID, status, taskID, targetSE, usedSE, _errorCount, _lastUpdate, _insertTime = tuple[:10]
-      if status != 'Unused':
+    for ft in fileTuples:
+      _lfn, originalID, fileID, status, taskID, targetSE, usedSE, _errorCount, _lastUpdate, _insertTime = ft[:10]
+      if status not in ( 'Unused', 'Removed' ):
         candidates = True
         if not re.search( '-', status ):
           status = "%s-%d" % ( status, originalID )
@@ -1479,30 +1479,29 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def addReplica( self, replicaTuples, force = False ):
+  def addReplica( self, replicaDicts, force = False ):
     """ Add new replica to the TransformationDB for an existing lfn.
     """
-    gLogger.info( "TransformationDB.addReplica: Attempting to add %s replicas." % len( replicaTuples ) )
-    fileTuples = []
-    for lfn, pfn, se, _master in replicaTuples:
-      fileTuples.append( ( lfn, pfn, 0, se, 'IGNORED-GUID', 'IGNORED-CHECKSUM' ) )
-    return self.addFile( fileTuples, force )
+    gLogger.info( "TransformationDB.addReplica: Attempting to add %s replicas." % len( replicaDicts.keys() ) )
+    
+    return self.addFile( replicaDicts, force )
 
-  def addFile( self, fileTuples, force = False, connection = False ):
-    """  Add new files to the TransformationDB together with its first replica.
+  def addFile( self, fileDicts, force = False, connection = False ):
+    """  Add a new file to the TransformationDB together with its first replica.
+         In the input dict, the only mandatory info are PFN and SE
     """
-    gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileTuples ) )
+    gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileDicts.keys() ) )
     successful = {}
     failed = {}
     # Determine which files pass the filters and are to be added to transformations
     transFiles = {}
     filesToAdd = []
-    for lfn, pfn, _size, se, _guid, _checksum in fileTuples:
+    for lfn, info in fileDicts.items():
       fileTrans = self.__filterFile( lfn )
       if not ( fileTrans or force ):
         successful[lfn] = True
       else:
-        filesToAdd.append( ( lfn, pfn, se ) )
+        filesToAdd.append( ( lfn, info["PFN"], info["SE"] ) )
         for trans in fileTrans:
           if not transFiles.has_key( trans ):
             transFiles[trans] = []
@@ -1524,12 +1523,16 @@ class TransformationDB( DB ):
       for transID, lfns in transFiles.items():
         fileIDs = []
         for lfn in lfns:
-          if lfn.has_key( lfn ):
+          if lfnFileIDs.has_key( lfn ):
             fileIDs.append( lfnFileIDs[lfn] )
         if fileIDs:
           res = self.__addFilesToTransformation( transID, fileIDs, connection = connection )
           if not res['OK']:
             gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
+            failed[lfn] = True
+            successful[lfn] = False
+          else:
+            successful[lfn] = True
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
@@ -1560,14 +1563,15 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def removeReplica( self, replicaTuples, connection = False ):
-    """ Remove replica pfn of lfn. """
-    gLogger.info( "TransformationDB.removeReplica: Attempting to remove %s replicas." % len( replicaTuples ) )
+  def removeReplica( self, replicaDicts, connection = False ):
+    """ Remove replica pfn of lfn. 
+    Input dict is {LFN:{SE}}
+    """
+    gLogger.info( "TransformationDB.removeReplica: Attempting to remove %s replicas." % len( replicaDicts.keys() ) )
     successful = {}
     failed = {}
-    lfns = []
-    for lfn, _pfn, se in replicaTuples:
-      lfns.append( lfn )
+    lfns = replicaDicts.keys()
+    
     connection = self.__getConnection( connection )
     res = self.__getFileIDsForLfns( lfns, connection = connection )
     if not res['OK']:
@@ -1578,7 +1582,8 @@ class TransformationDB( DB ):
         successful[lfn] = 'File did not exist'
     seFiles = {}
     if fileIDs:
-      for lfn, _pfn, se in replicaTuples:
+      for lfn, info in replicaDicts.items():
+        se = info['SE']
         if not seFiles.has_key( se ):
           seFiles[se] = []
         seFiles[se].append( lfnFilesIDs[lfn] )
@@ -1636,15 +1641,14 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def setReplicaStatus( self, replicaTuples, connection = False ):
+  def setReplicaStatus( self, replicaDict, connection = False ):
     """Set status for the supplied replica tuples
+    The replicaDict must be {LFN:{SE,Status}}
     """
-    gLogger.info( "TransformationDB.setReplicaStatus: Attempting to set statuses for %s replicas." % len( replicaTuples ) )
+    gLogger.info( "TransformationDB.setReplicaStatus: Attempting to set statuses for %s replicas." % len( replicaDict.keys() ) )
     successful = {}
     failed = {}
-    lfns = []
-    for lfn, _pfn, se, status in replicaTuples:
-      lfns.append( lfn )
+    lfns = replicaDict.keys()
     connection = self.__getConnection( connection )
     res = self.__getFileIDsForLfns( lfns, connection = connection )
     if not res['OK']:
@@ -1655,9 +1659,11 @@ class TransformationDB( DB ):
         successful[lfn] = True  # In the case that the file does not exist then return ok
     seFiles = {}
     if fileIDs:
-      for lfn, _pfn, se, status in replicaTuples:
+      for lfn, info in replicaDict.keys():
+        se = info['SE']
         if not seFiles.has_key( se ):
           seFiles[se] = {}
+        status = info['Status']  
         if not seFiles[se].has_key( status ):
           seFiles[se][status] = []
         seFiles[se][status].append( lfnFilesIDs[lfn] )
@@ -1673,15 +1679,13 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def getReplicaStatus( self, replicaTuples, connection = False ):
+  def getReplicaStatus( self, replicaDicts, connection = False ):
     """ Get the status for the supplied file replicas
     """
-    gLogger.info( "TransformationDB.getReplicaStatus: Attempting to get statuses of file replicas." )
+    gLogger.info( "TransformationDB.getReplicaStatus: Attempting to get statuses of file replicas for %s files." % len( replicaDicts.keys() ) )
     failed = {}
     successful = {}
-    lfns = []
-    for lfn, _pfn, se in replicaTuples:
-      lfns.append( lfn )
+    lfns = replicaDicts.keys()
     connection = self.__getConnection( connection )
     res = self.__getFileIDsForLfns( lfns, connection = connection )
     if not res['OK']:
@@ -1704,13 +1708,11 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def setReplicaHost( self, replicaTuples, connection = False ):
-    gLogger.info( "TransformationDB.setReplicaHost: Attempting to set SE for %s replicas." % len( replicaTuples ) )
+  def setReplicaHost( self, replicaDicts, connection = False ):
+    gLogger.info( "TransformationDB.setReplicaHost: Attempting to set SE for %s replicas." % len( replicaDicts.keys() ) )
     successful = {}
     failed = {}
-    lfns = []
-    for lfn, _pfn, oldSE, newSE in replicaTuples:
-      lfns.append( lfn )
+    lfns = replicaDicts.keys()
     connection = self.__getConnection( connection )
     res = self.__getFileIDsForLfns( lfns, connection = connection )
     if not res['OK']:
@@ -1721,12 +1723,15 @@ class TransformationDB( DB ):
         successful[lfn] = 'File did not exist'
     seFiles = {}
     if fileIDs:
-      for lfn, _pfn, oldSE, newSE in replicaTuples:
+      for lfn, info in replicaDicts.items():
+        oldSE = info["OldSE"]
         if not seFiles.has_key( oldSE ):
           seFiles[oldSE] = {}
+        newSE = info["NewSE"]  
         if not seFiles[oldSE].has_key( newSE ):
           seFiles[oldSE][newSE] = []
         seFiles[oldSE][newSE].append( lfnFilesIDs[lfn] )
+        
     for oldSE, seDict in seFiles.items():
       for newSE, files in seDict.items():
         res = self.__updateReplicaSE( files, oldSE, newSE, connection = connection )
