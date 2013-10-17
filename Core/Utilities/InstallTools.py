@@ -72,14 +72,16 @@ from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, ResourcesDefaults, CSGlobals
-from DIRAC.Core.Security.Properties import *
+from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR, \
+                                           CS_ADMINISTRATOR, JOB_ADMINISTRATOR, \
+                                           FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR, \
+                                           NORMAL_USER, TRUSTED_HOST
 
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 
 
 # On command line tools this can be set to True to abort after the first error.
@@ -1344,7 +1346,7 @@ def setupSite( scriptCfg, cfg = None ):
     else:
       centralCfg = _getCentralCfg( localCfg )
     _addCfgToLocalCS( centralCfg )
-    setupComponent( 'service', 'Configuration', 'Server', [] )
+    setupComponent( 'service', 'Configuration', 'Server', [], checkModule = False )
     runsvctrlComponent( 'Configuration', 'Server', 't' )
 
     while ['Configuration', 'Server'] in setupServices:
@@ -1487,7 +1489,7 @@ exec svlogd .
   os.chmod( logRunFile, gDefaultPerms )
 
 
-def installComponent( componentType, system, component, extensions, componentModule = '' ):
+def installComponent( componentType, system, component, extensions, componentModule = '', checkModule = True ):
   """ Install runit directory for the specified component
   """
   # Check if the component is already installed
@@ -1500,17 +1502,18 @@ def installComponent( componentType, system, component, extensions, componentMod
   # Check that the software for the component is installed
   # Any "Load" or "Module" option in the configuration defining what modules the given "component"
   # needs to load will be taken care of by checkComponentModule.
-  result = checkComponentModule( componentType, system, component )
-  if not result['OK']:
-  # cModule = componentModule
-  # if not cModule:
-  #   cModule = component
-  # if not checkComponentSoftware( componentType, system, cModule, extensions )['OK'] and componentType != 'executor':
-    error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
-    if exitOnError:
-      gLogger.error( error )
-      DIRAC.exit( -1 )
-    return S_ERROR( error )
+  if checkModule:
+    result = checkComponentModule( componentType, system, component )
+    if not result['OK']:
+    # cModule = componentModule
+    # if not cModule:
+    #   cModule = component
+    # if not checkComponentSoftware( componentType, system, cModule, extensions )['OK'] and componentType != 'executor':
+      error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
+      if exitOnError:
+        gLogger.error( error )
+        DIRAC.exit( -1 )
+      return S_ERROR( error )
 
   gLogger.notice( 'Installing %s %s/%s' % ( componentType, system, component ) )
 
@@ -1557,11 +1560,11 @@ exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(co
 
   return S_OK( runitCompDir )
 
-def setupComponent( componentType, system, component, extensions, componentModule = '' ):
+def setupComponent( componentType, system, component, extensions, componentModule = '', checkModule = True ):
   """
   Install and create link in startup
   """
-  result = installComponent( componentType, system, component, extensions, componentModule )
+  result = installComponent( componentType, system, component, extensions, componentModule, checkModule )
   if not result['OK']:
     return result
 

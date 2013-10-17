@@ -186,10 +186,12 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
+[v6r9p21]
+
+*TS
+FIX: Transformation(Client,DB,Manager) - restored FileCatalog compliant interface
+FIX: TransformationDB - fix in __insertIntoExistingTransformationFiles()
+
 [v6r9p20]
 
 *Core
@@ -211,17 +213,12 @@ BUGFIX: CleanReqDBAgent - now() -> utcnow() in initialize()
 *Resources
 FIX: ARCComputingElement - fix the parsing of CE status if no jobs are available
 
->>>>>>> rel-v6r10
 [v6r9p19]
 
 *DMS
 FIX: FileCatalog/DirectoryMetadata - inherited metadata is used while selecting directories
      in findDirIDsByMetadata()
 
-<<<<<<< HEAD
->>>>>>> rel-v6r10
-=======
->>>>>>> rel-v6r10
 [v6r9p18]
 
 *DMS

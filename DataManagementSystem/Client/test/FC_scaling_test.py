@@ -158,7 +158,11 @@ def getBulkReplicas( n_queries ):
       print "getReplicas: received lfns", len(result['Value']['Successful'])
       for lfn in result['Value']['Successful']:
         print result['Value']['Successful'][lfn]
-        break
+        if verbosity >= 3:
+          for lfn,res in result['Value']['Successful'].items():
+            print lfn
+            print res
+            break
 
     if result['OK']:
       sCount += 1
