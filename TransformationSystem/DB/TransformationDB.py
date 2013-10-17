@@ -1519,6 +1519,7 @@ class TransformationDB( DB ):
       res = self.addFile( {lfn:{}} )    
       if not res['OK']:
         failed.append(lfn)
+        continue
       if not lfn in res['Value']['Successful']:
         failed.append(lfn)
       else:
