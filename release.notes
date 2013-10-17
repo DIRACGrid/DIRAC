@@ -1,3 +1,9 @@
+[v6r9p21]
+
+*TS
+FIX: Transformation(Client,DB,Manager) - restored FileCatalog compliant interface
+FIX: TransformationDB - fix in __insertIntoExistingTransformationFiles()
+
 [v6r9p20]
 
 *Core
