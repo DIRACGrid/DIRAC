@@ -11,7 +11,7 @@ from types import IntType, LongType, StringTypes, StringType, ListType, TupleTyp
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
-from DIRAC.DataManagementSystem.Client.ReplicaManager     import CatalogDirectory
+from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Security.ProxyInfo                        import getProxyInfo
 from DIRAC.Core.Utilities.List                            import stringListToString, intListToString, sortList
 from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
@@ -1208,9 +1208,8 @@ class TransformationDB( DB ):
     req = "UPDATE DataFiles SET Status = '%s' WHERE FileID IN (%s);" % ( status, intListToString( fileIDs ) )
     return self._update( req, connection )
 
-  def __addFileTuples( self, fileTuples, connection = False ):
+  def __addFileTuples( self, lfns, connection = False ):
     """ Add files and replicas """
-    lfns = [x[0] for x in fileTuples ]
     res = self.__addDataFiles( lfns, connection = connection )
     return res
 
@@ -1419,12 +1418,12 @@ class TransformationDB( DB ):
     # Determine which files pass the filters and are to be added to transformations
     transFiles = {}
     filesToAdd = []
-    for lfn, info in fileDicts.items():
+    for lfn in fileDicts.keys():
       fileTrans = self.__filterFile( lfn )
       if not ( fileTrans or force ):
         successful[lfn] = True
       else:
-        filesToAdd.append( ( lfn, info["PFN"], info["SE"] ) )
+        filesToAdd.append( lfn )
         for trans in fileTrans:
           if not transFiles.has_key( trans ):
             transFiles[trans] = []
@@ -1436,7 +1435,7 @@ class TransformationDB( DB ):
       if not res['OK']:
         return res
       lfnFileIDs = res['Value']
-      for lfn, pfn, se in filesToAdd:
+      for lfn in filesToAdd:
         if lfnFileIDs.has_key( lfn ):
           successful[lfn] = True
         else:
@@ -1504,21 +1503,24 @@ class TransformationDB( DB ):
     res = setupShifterProxyInEnv( "ProductionManager" )
     if not res['OK']:
       return S_OK( "Failed to setup shifter proxy" )
-    catalog = CatalogDirectory()
+    catalog = FileCatalog()
     start = time.time()
-    res = catalog.getCatalogDirectoryReplicas( path, singleFile = True )
+    res = catalog.listDirectory( path )
     if not res['OK']:
-      gLogger.error( "TransformationDB.addDirectory: Failed to get replicas. %s" % res['Message'] )
+      gLogger.error( "TransformationDB.addDirectory: Failed to get files. %s" % res['Message'] )
       return res
-    gLogger.info( "TransformationDB.addDirectory: Obtained %s replicas in %s seconds." % ( path, time.time() - start ) )
-    fileTuples = []
-    for lfn, replicaDict in res['Value'].items():
-      for se, pfn in replicaDict.items():
-        fileTuples.append( ( lfn, pfn, 0, se, 'IGNORED-GUID', 'IGNORED-CHECKSUM' ) )
-    if fileTuples:
-      res = self.addFile( fileTuples, force = force )
+    if not path in res['Value']['Successful']:
+      gLogger.error("TransformationDB.addDirectory: Failed to get files.")
+      return res
+    gLogger.info( "TransformationDB.addDirectory: Obtained %s files in %s seconds." % ( path, time.time() - start ) )
+    successful = []
+    failed = []
+    for lfn in res['Value']['Successful'][path]["Files"].keys():
+      res = self.addFile( {lfn:{}} )    
       if not res['OK']:
-        return res
-      if not res['Value']['Successful']:
-        return S_ERROR( "Failed to add any files to database" )
-    return S_OK( len( res['Value']['Successful'] ) )
+        failed.append(lfn)
+      if not lfn in res['Value']['Successful']:
+        failed.append(lfn)
+      else:
+        successful.append(lfn)  
+    return {"OK":True, "Value": len( res['Value']['Successful'] ), "Successful":successful, "Failed": failed }
