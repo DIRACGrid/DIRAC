@@ -372,14 +372,6 @@ class TransformationClient( Client, FileCatalogueBase ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addDirectory( path, force )
 
-  def getReplicas( self, lfn, rpc = '', url = '', timeout = 120 ):
-    res = self.__checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value'].keys()
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
-    return rpcClient.getReplicas( lfns )
-
   def addFile( self, lfn, force = False, rpc = '', url = '', timeout = 120 ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
@@ -387,6 +379,36 @@ class TransformationClient( Client, FileCatalogueBase ):
     lfndicts = res['Value']  
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addFile( lfndicts, force )
+
+  def removeFile( self, lfn, rpc = '', url = '', timeout = 120 ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfns = res['Value'].keys()
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    successful = {}
+    failed = {}
+    listOfLists = breakListIntoChunks( lfns, 100 )
+    for fList in listOfLists:
+      res = rpcClient.removeFile( fList )
+      if not res['OK']:
+        return res
+      successful.update( res['Value']['Successful'] )
+      failed.update( res['Value']['Failed'] )
+    resDict = {'Successful': successful, 'Failed':failed}
+    return S_OK( resDict )
+
+  def removeDirectory( self, lfn, rpc = '', url = '', timeout = 120 ):
+    return self.__returnOK( lfn )
+
+  def createDirectory( self, lfn, rpc = '', url = '', timeout = 120 ):
+    return self.__returnOK( lfn )
+
+  def createLink( self, lfn, rpc = '', url = '', timeout = 120 ):
+    return self.__returnOK( lfn )
+
+  def removeLink( self, lfn, rpc = '', url = '', timeout = 120 ):
+    return self.__returnOK( lfn )
 
   def __returnOK( self, lfn ):
     res = self.__checkArgumentFormat( lfn )
