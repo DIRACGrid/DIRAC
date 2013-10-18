@@ -146,6 +146,8 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
             continue
         if community:
           comList = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/VO' % ( grid, site, ce ), [] )
+          if not comList:
+            continue
           if comList and not community in comList:
             continue
         result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( grid, site, ce ) )
