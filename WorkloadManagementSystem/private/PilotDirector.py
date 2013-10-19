@@ -102,6 +102,7 @@ class PilotDirector:
     self.installVersion = DIRAC_VERSION
     self.installProject = DIRAC_PROJECT
     self.installation = DIRAC_INSTALLATION
+    self.pilotExtensionsList = []
 
     self.virtualOrganization = VIRTUAL_ORGANIZATION
     self.install = DIRAC_INSTALL
@@ -137,6 +138,7 @@ class PilotDirector:
     self.installVersion = opsHelper.getValue( cfgPath( 'Pilot', 'Version' ), [ self.installVersion ] )[0]
     self.installProject = opsHelper.getValue( cfgPath( 'Pilot', 'Project' ), self.installProject )
     self.installation = opsHelper.getValue( cfgPath( 'Pilot', 'Installation' ), self.installation )
+    self.pilotExtensionsList = opsHelper.getValue( "Pilot/Extensions", self.pilotExtensionsList )
 
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
@@ -333,10 +335,17 @@ class PilotDirector:
       if master in csServers:
         csServers.remove( master )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
-    # DIRAC Extensions
-    extensionsList = getCSExtensions()
+    # DIRAC Extensions to be used in pilots
+    pilotExtensionsList = opsHelper.getValue( "Pilot/Extensions", [] )
+    extensionsList = []
+    if pilotExtensionsList:
+      if pilotExtensionsList[0] != 'None':
+        extensionsList = pilotExtensionsList
+    else:
+      extensionsList = getCSExtensions()
     if extensionsList:
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
+
     #Get DIRAC version and project, There might be global Setup defaults and per VO/Setup defaults (from configure)
     opsHelper = Operations( group = taskQueueDict['OwnerGroup'], setup = taskQueueDict['Setup'] )
     # Requested version of DIRAC (it can be a list, so we take the fist one)
