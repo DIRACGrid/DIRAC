@@ -43,7 +43,7 @@ for inputFileName in args:
     inputFile = open( inputFileName, 'r' )
     string = inputFile.read()
     inputFile.close()
-    lfns.extend( string.splitlines() )
+    lfns.extend( [ lfn.strip() for lfn in string.splitlines() ] )
   else:
     lfns.append( inputFileName )
 
