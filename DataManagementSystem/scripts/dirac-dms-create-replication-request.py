@@ -57,9 +57,9 @@ if not se.valid:
   Script.showHelp()
 
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
-from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
+from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
 
-requestClient = RequestClient()
+reqClient = ReqClient()
 requestType = 'transfer'
 requestOperation = 'replicateAndRegister'
 
@@ -78,9 +78,21 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
 
   DIRAC.gLogger.info( oRequest.toXML()['Value'] )
 
-  result = requestClient.setRequest( requestName, oRequest.toXML()['Value'] )
+  result = reqClient.setRequest( requestName, oRequest.toXML()['Value'] )
   if result['OK']:
     print 'Submitted Request:', result['Value']
   else:
     print 'Failed to submit Request', result['Message']
+  if monitor:
+    requestID = result['Value']
+    while True:
+      result = reqClient.getRequestStatus( requestID )
+      if not result['OK']:
+        Script.gLogger.error( result['Message'] )
+        break
+      Script.gLogger.notice( result['Value']['RequestStatus'] )
+      if result['Value']['RequestStatus'] == 'Done':
+        break
+      import time
+      time.sleep( 10 )
 
