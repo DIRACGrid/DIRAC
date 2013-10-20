@@ -2,10 +2,10 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-""" Create a DIRAC transfer/replicateAndRegister request to be executed 
-    by the DMS Transfer Agent
+""" Create a DIRAC removal/replicaRemoval|removeFile request to be executed 
+    by the DMS Removal Agent
 """
-__RCSID__ = "$Id$"
+__RCSID__ = "ea64b42 (2012-07-29 16:45:05 +0200) ricardo <Ricardo.Graciani@gmail.com>"
 
 import os
 from hashlib import md5
@@ -18,9 +18,9 @@ Script.registerSwitch( "m", "Monitor", "Monitor the execution of the Request (de
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[0],
                                      __doc__.split( '\n' )[1],
                                      'Usage:',
-                                     '  %s [option|cfgfile] ... DestSE LFN ...' % Script.scriptName,
+                                     '  %s [option|cfgfile] ... SE LFN ...' % Script.scriptName,
                                      'Arguments:',
-                                     '  DestSE:   Destination StorageElement',
+                                     '  SE:       StorageElement|All',
                                      '  LFN:      LFN or file containing a List of LFNs' ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
@@ -50,18 +50,21 @@ for inputFileName in args:
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 import DIRAC
 # Check is provided SE is OK
-se = StorageElement( targetSE )
-if not se.valid:
-  print se.errorReason
-  print
-  Script.showHelp()
+if targetSE != 'All':
+  se = StorageElement( targetSE )
+  if not se.valid:
+    print se.errorReason
+    print
+    Script.showHelp()
 
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
 from DIRAC.RequestManagementSystem.Client.ReqClient             import ReqClient
 
 reqClient = ReqClient()
-requestType = 'transfer'
-requestOperation = 'replicateAndRegister'
+requestType = 'removal'
+requestOperation = 'replicaRemoval'
+if targetSE == 'All':
+  requestOperation = 'removeFile'
 
 for lfnList in breakListIntoChunks( lfns, 100 ):
 
@@ -95,4 +98,3 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
         break
       import time
       time.sleep( 10 )
-
