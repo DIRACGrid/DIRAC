@@ -22,7 +22,7 @@ class AlwaysBannedPolicy( PolicyBase ):
 
     policyResult = { 
                      'Status' : 'Banned', 
-                     'Reason' : 'This is the AlwaysBanned policy' 
+                     'Reason' : 'AlwaysBanned' 
                    }
     
     return S_OK( policyResult )
