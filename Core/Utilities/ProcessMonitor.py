@@ -41,6 +41,7 @@ class ProcessMonitor:
   def getCPUConsumedLinux( self, pid ):
     """Returns the CPU consumed given a PID assuming a proc file system exists.
     """
+    pid = str( pid )
     masterProcPath = '/proc/%s/stat' % ( pid )
     if not os.path.exists( masterProcPath ):
       return S_ERROR( 'Process %s does not exist' % ( pid ) )
