@@ -1,4 +1,4 @@
-[v6r10-pre9]
+[v6r10-pre10]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -54,7 +54,8 @@ BUGFIX: SiteDirector - take into account the target queue Platform
 BUGFIX: JobDB - bug in __insertNewJDL()        
         
 *RSS
-FIX: DowntimeCommand - take the latest Downtime that fits        
+FIX: DowntimeCommand - take the latest Downtime that fits    
+NEW: porting new Policies from integration    
         
 *Resources
 NEW: added SSHOARComputingElement class        
@@ -64,6 +65,7 @@ CHANGE: TransformationClient(DB,Manager) - set file status for transformation as
 CHANGE: TransformationClient - applying state machine when changing transformation status
 BUGFIX: TransformationClient(Handler) - few minor fixes
 NEW: TransformationDB - backported __deleteTransformationFileTask(s) methods
+CHANGE: TransformationDB(Client) - fixes to reestablish the FileCatalog interface
 
 *RMS
 NEW: Migrate to use the new Request Management by all the clients
