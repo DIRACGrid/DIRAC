@@ -694,7 +694,7 @@ class TransformationDB( DB ):
         if status not in ( 'Unused', 'Removed' ):
           candidates = True
           if not re.search( '-', status ):
-            status = "%s-%d" % ( status, originalID )
+            status = "%s-inherited" % status
             if taskID:
               taskID = str( int( originalID ) ).zfill( 8 ) + '_' + str( int( taskID ) ).zfill( 8 )
           req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % ( req, transID, status, taskID,

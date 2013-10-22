@@ -188,24 +188,22 @@ class TransformationClient( Client, FileCatalogueBase ):
     if not parentProd:
       gLogger.warn( "Transformation %d was not derived..." % prod )
       return S_OK( ( parentProd, movedFiles ) )
-    statusToMove = [ 'Unused', 'MaxReset' ]
-    selectDict = {'TransformationID': parentProd, 'Status': statusToMove}
-    res = self.getTransformationFiles( selectDict )
+    # get the lfns in status Unused/MaxReset of the parent production
+    res = self.getTransformationFiles( condDict = {'TransformationID': parentProd, 'Status': [ 'Unused', 'MaxReset' ]} )
     if not res['OK']:
-      gLogger.error( "Error getting Unused files from transformation %s:" % parentProd, res['Message'] )
+      gLogger.error( "Error getting Unused/MaxReset files from transformation %s:" % parentProd, res['Message'] )
       return res
     parentFiles = res['Value']
     lfns = [lfnDict['LFN'] for lfnDict in parentFiles]
     if not lfns:
       gLogger.info( "No files found to be moved from transformation %d to %d" % ( parentProd, prod ) )
       return S_OK( ( parentProd, movedFiles ) )
-    selectDict = { 'TransformationID': prod, 'LFN': lfns}
-    res = self.getTransformationFiles( selectDict )
+    # get the lfns of the derived production that were Unused/MaxReset in the parent one
+    res = self.getTransformationFiles( condDict = { 'TransformationID': prod, 'LFN': lfns} )
     if not res['OK']:
       gLogger.error( "Error getting files from derived transformation %s" % prod, res['Message'] )
       return res
     derivedFiles = res['Value']
-    suffix = '-%d' % parentProd
     errorFiles = {}
     for parentDict in parentFiles:
       lfn = parentDict['LFN']
@@ -220,7 +218,7 @@ class TransformationClient( Client, FileCatalogueBase ):
           derivedStatus = derivedDict['Status']
           break
       if derivedStatus:
-        if derivedStatus.endswith( suffix ):
+        if derivedStatus.endswith( '-inherited' ):
           res = self.setFileStatusForTransformation( parentProd, 'Moved' % prod, [lfn] )
           if not res['OK']:
             gLogger.error( "Error setting status for %s in transformation %d to Moved" % ( lfn, parentProd ),
@@ -376,7 +374,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    lfndicts = res['Value']  
+    lfndicts = res['Value']
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addFile( lfndicts, force )
 
