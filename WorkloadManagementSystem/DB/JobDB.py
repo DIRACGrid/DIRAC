@@ -58,7 +58,7 @@ from DIRAC.Core.Base.DB                                          import DB
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry           import getUsernameForDN, getDNForUsername, \
                                                                         getVOForGroup, getVOOption, getGroupOption
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources          import getSites
-from DIRAC.ResourceStatusSystem.Client.SiteStatus                import SiteStatus                                                                       
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest  import JobManifest
 from DIRAC.Core.Utilities                                        import Time
 
@@ -85,8 +85,8 @@ class JobDB( DB ):
 
   _tablesDict = {}
   # Jobs table
-  _tablesDict[ 'Jobs' ] = { 
-                           'Fields' : 
+  _tablesDict[ 'Jobs' ] = {
+                           'Fields' :
                                      {
                                       'JobID'                : 'INTEGER NOT NULL AUTO_INCREMENT',
                                       'JobType'              : 'VARCHAR(32) NOT NULL DEFAULT "normal"',
@@ -116,13 +116,13 @@ class JobDB( DB ):
                                       'VerifiedFlag'         : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
                                       'DeletedFlag'          : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
                                       'KilledFlag'           : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
-                                      'FailedFlag'           : 'ENUM ("True","False") NOT NULL DEFAULT "False"',                                  
+                                      'FailedFlag'           : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
                                       'ISandboxReadyFlag'    : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
                                       'OSandboxReadyFlag'    : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
                                       'RetrievedFlag'        : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
                                       'AccountedFlag'        : 'ENUM ("True","False","Failed") NOT NULL DEFAULT "False"'
                                      },
-                           'Indexes' : 
+                           'Indexes' :
                                       {
                                        'JobType'           : [ 'JobType' ],
                                        'DIRACSetup'        : [ 'DIRACSetup' ],
@@ -141,19 +141,19 @@ class JobDB( DB ):
                           }
   # JobJDLs table
   _tablesDict[ 'JobJDLs' ] = {
-                              'Fields' : 
+                              'Fields' :
                                         {
                                          'JobID'           : 'INTEGER NOT NULL AUTO_INCREMENT',
                                          'JDL'             : 'BLOB NOT NULL',
                                          'JobRequirements' : 'BLOB NOT NULL',
                                          'OriginalJDL'     : 'BLOB NOT NULL',
-                                         
+
                                         },
                               'PrimaryKey' : [ 'JobID' ]
                              }
   # SubJobs table
   _tablesDict[ 'SubJobs' ] = {
-                              'Fields' : 
+                              'Fields' :
                                         {
                                          'JobID'    : 'INTEGER NOT NULL',
                                          'SubJobID' : 'INTEGER NOT NULL',
@@ -179,7 +179,7 @@ class JobDB( DB ):
                                }
   # JobParameters table
   _tablesDict[ 'JobParameters' ] = {
-                                    'Fields' : 
+                                    'Fields' :
                                               {
                                                'JobID' : 'INTEGER NOT NULL',
                                                'Name'  : 'VARCHAR(100) NOT NULL',
@@ -189,7 +189,7 @@ class JobDB( DB ):
                                    }
   # OptimizerParameters table
   _tablesDict[ 'OptimizerParameters' ] = {
-                                          'Fields' : 
+                                          'Fields' :
                                                     {
                                                      'JobID' : 'INTEGER NOT NULL',
                                                      'Name'  : 'VARCHAR(100) NOT NULL',
@@ -199,7 +199,7 @@ class JobDB( DB ):
                                          }
   # AtticJobParameters table
   _tablesDict[ 'AtticJobParameters' ] = {
-                                         'Fields' : 
+                                         'Fields' :
                                                    {
                                                     'JobID'           : 'INTEGER NOT NULL',
                                                     'RescheduleCycle' : 'INTEGER NOT NULL',
@@ -237,7 +237,7 @@ class JobDB( DB ):
                                           'Status'         : 'VARCHAR(64) NOT NULL',
                                           'LastUpdateTime' : 'DATETIME NOT NULL',
                                           'Author'         : 'VARCHAR(255) NOT NULL',
-                                          'Comment'        : 'BLOB NOT NULL'                
+                                          'Comment'        : 'BLOB NOT NULL'
                                          },
                                'PrimaryKey' : [ 'Site' ]
                               }
@@ -249,17 +249,17 @@ class JobDB( DB ):
                                                  'Status'     : 'VARCHAR(64) NOT NULL',
                                                  'UpdateTime' : 'DATETIME NOT NULL',
                                                  'Author'     : 'VARCHAR(255) NOT NULL',
-                                                 'Comment'    : 'BLOB NOT NULL'                                                
-                                                } 
+                                                 'Comment'    : 'BLOB NOT NULL'
+                                                }
                                      }
   # HeartBeatLoggingInfo table
   _tablesDict[ 'HeartBeatLoggingInfo' ] = {
-                                           'Fields' : 
+                                           'Fields' :
                                                      {
                                                       'JobID'         : 'INTEGER NOT NULL',
                                                       'Name'          : 'VARCHAR(100) NOT NULL',
                                                       'Value'         : 'BLOB NOT NULL',
-                                                      'HeartBeatTime' : 'DATETIME NOT NULL'                  
+                                                      'HeartBeatTime' : 'DATETIME NOT NULL'
                                                      },
                                            'Indexes' : { 'JobID' : [ 'JobID' ] }
                                           }
@@ -272,11 +272,11 @@ class JobDB( DB ):
                                              'Arguments'     : 'VARCHAR(100) NOT NULL',
                                              'Status'        : 'VARCHAR(64) NOT NULL DEFAULT "Received"',
                                              'ReceptionTime' : 'DATETIME NOT NULL',
-                                             'ExecutionTime' : 'DATETIME',                                             
+                                             'ExecutionTime' : 'DATETIME',
                                             },
                                   'Indexes' : { 'JobID' : [ 'JobID' ] }
                                  }
-  
+
 
   def __init__( self, maxQueueSize = 10 ):
     """ Standard Constructor
@@ -310,7 +310,7 @@ class JobDB( DB ):
     Method called on the MatcherHandler instead of on the JobDB constructor
     to avoid an awful number of unnecessary queries with "show tables".
     """
-    
+
     return self.__createTables()
 
 
@@ -330,22 +330,22 @@ class JobDB( DB ):
     # Makes a copy of the dictionary _tablesDict
     tables = {}
     tables.update( self._tablesDict )
-        
+
     for existingTable in existingTables:
       if existingTable in tables:
-        del tables[ existingTable ]  
-              
+        del tables[ existingTable ]
+
     res = self._createTables( tables )
     if not res[ 'OK' ]:
       return res
-    
+
     # Human readable S_OK message
     if res[ 'Value' ] == 0:
       res[ 'Value' ] = 'No tables created'
     else:
       res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
-    return res  
-  
+    return res
+
 
   def dumpParameters( self ):
     """  Dump the JobDB connection parameters to the stdout
@@ -1229,7 +1229,7 @@ class JobDB( DB ):
     if not 'lastRowId' in result:
       return S_ERROR( '%s' % err )
 
-    jobID = int( result['Value']['lastRowId'] )
+    jobID = int( result['Value'] )
 
     self.log.info( 'JobDB: New JobID served "%s"' % jobID )
 
@@ -1883,7 +1883,7 @@ class JobDB( DB ):
     # Get the site mask status
     siteStatus = SiteStatus()
     siteMask = {}
-    resultMask = getSites( fullName=True )
+    resultMask = getSites( fullName = True )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'NoMask'
