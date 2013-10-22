@@ -1,3 +1,18 @@
+[v6r9p22]
+
+*WMS
+FIX: PilotDirector - allow to properly define extensions to be installed by the 
+     Pilot differently to those installed at the server
+FIX: Watchdog - convert pid to string in ProcessMonitor
+
+*TS
+FIX: TransformationDB - splitting files in chunks
+
+*DMS
+NEW: dirac-dms-create-removal-request command
+CHANGE: update dirac-dms-xxx commands to use the new RMS client,
+        strip lines when reading LFNs from a file
+
 [v6r9p21]
 
 *TS
