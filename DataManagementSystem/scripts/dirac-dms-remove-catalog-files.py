@@ -2,16 +2,16 @@
 ########################################################################
 # $Header:  $
 ########################################################################
-__RCSID__   = "$Id:  $"
+__RCSID__ = "$Id:  $"
 
-from DIRAC.Core.Base import Script 
+from DIRAC.Core.Base import Script
 
-Script.setUsageMessage("""
+Script.setUsageMessage( """
 Remove the given file or a list of files from the File Catalog
 
 Usage:
    %s <LFN | fileContainingLFNs>
-""" % Script.scriptName)
+""" % Script.scriptName )
 
 Script.parseCommandLine()
 
@@ -29,17 +29,17 @@ else:
 if os.path.exists( inputFileName ):
   inputFile = open( inputFileName, 'r' )
   string = inputFile.read()
-  lfns = string.splitlines()
+  lfns = [ lfn.strip() for lfn in string.splitlines() ]
   inputFile.close()
 else:
   lfns = [inputFileName]
 
 res = rm.removeCatalogFile( lfns )
 if not res['OK']:
-  print "Error:",res['Message']
+  print "Error:", res['Message']
   sys.exit()
 for lfn in sortList( res['Value']['Failed'].keys() ):
   message = res['Value']['Failed'][lfn]
-  print 'Error: failed to remove %s: %s' % (lfn,message)
-print 'Successfully removed %d catalog files.' % (len(res['Value']['Successful']))
+  print 'Error: failed to remove %s: %s' % ( lfn, message )
+print 'Successfully removed %d catalog files.' % ( len( res['Value']['Successful'] ) )
 

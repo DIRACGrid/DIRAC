@@ -2,16 +2,16 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__   = "$Id$"
-from DIRAC.Core.Base import Script 
+__RCSID__ = "$Id$"
+from DIRAC.Core.Base import Script
 
-Script.setUsageMessage("""
+Script.setUsageMessage( """
 Remove the given file replica or a list of file replicas from the File Catalog 
 and from the storage.
 
 Usage:
    %s <LFN | fileContainingLFNs> SE [SE]
-""" % Script.scriptName)
+""" % Script.scriptName )
 
 Script.parseCommandLine()
 
@@ -30,7 +30,7 @@ else:
 if os.path.exists( inputFileName ):
   inputFile = open( inputFileName, 'r' )
   string = inputFile.read()
-  lfns = string.splitlines()
+  lfns = [ lfn.strip() for lfn in string.splitlines() ]
   inputFile.close()
 else:
   lfns = [inputFileName]
@@ -39,10 +39,10 @@ for lfnList in breakListIntoChunks( sortList( lfns, True ), 500 ):
   for storageElementName in storageElementNames:
     res = rm.removeReplica( storageElementName, lfnList )
     if not res['OK']:
-      print 'Error:',res['Message']
+      print 'Error:', res['Message']
     for lfn in sortList( res['Value']['Successful'].keys() ):
       print 'Successfully removed %s replica of %s' % ( storageElementName, lfn )
     for lfn in sortList( res['Value']['Failed'].keys() ):
       message = res['Value']['Failed'][lfn]
-      print 'Error: failed to remove %s replica of %s: %s' % (storageElementName,lfn,message)
+      print 'Error: failed to remove %s replica of %s: %s' % ( storageElementName, lfn, message )
 

@@ -2,16 +2,16 @@
 ########################################################################
 # $Header: $
 ########################################################################
-__RCSID__   = "$Id$"
+__RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script 
+from DIRAC.Core.Base import Script
 
-Script.setUsageMessage("""
+Script.setUsageMessage( """
 Remove the given file replica or a list of file replicas from the File Catalog
 
 Usage:
    %s <LFN | fileContainingLFNs>
-""" % Script.scriptName)
+""" % Script.scriptName )
 
 Script.parseCommandLine()
 
@@ -30,7 +30,7 @@ else:
 if os.path.exists( inputFileName ):
   inputFile = open( inputFileName, 'r' )
   string = inputFile.read()
-  lfns = string.splitlines()
+  lfns = [ lfn.strip() for lfn in string.splitlines() ]
   inputFile.close()
 else:
   lfns = [inputFileName]
