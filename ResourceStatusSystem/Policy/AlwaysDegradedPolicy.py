@@ -22,7 +22,7 @@ class AlwaysDegradedPolicy( PolicyBase ):
 
     policyResult = { 
                      'Status' : 'Degraded', 
-                     'Reason' : 'This is the AlwaysDegraded policy' 
+                     'Reason' : 'AlwaysDegraded' 
                    }
     
     return S_OK( policyResult )
