@@ -13,7 +13,7 @@ from DIRAC                                                import gLogger, S_OK, 
 from DIRAC.Core.Base.DB                                   import DB
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Security.ProxyInfo                        import getProxyInfo
-from DIRAC.Core.Utilities.List                            import stringListToString, intListToString, sortList
+from DIRAC.Core.Utilities.List                            import stringListToString, intListToString, sortList, breakListIntoChunks
 from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
 from DIRAC.Core.Utilities.Subprocess                      import pythonCall
@@ -162,28 +162,26 @@ class TransformationDB( DB ):
     if inheritedFrom:
       res = self._getTransformationID( inheritedFrom, connection = connection )
       if not res['OK']:
-        gLogger.error( "Failed to get ID for parent transformation", res['Message'] )
-        self.deleteTransformation( transID, connection = connection )
-        return res
+        gLogger.error( "Failed to get ID for parent transformation: %s, now deleting" % res['Message'] )
+        return self.deleteTransformation( transID, connection = connection )
       originalID = res['Value']
       # FIXME: this is not the right place to change status information, and in general the whole should not be here
       res = self.setTransformationParameter( originalID, 'Status', 'Completing',
                                              author = authorDN, connection = connection )
       if not res['OK']:
-        gLogger.error( "Failed to update parent transformation status", res['Message'] )
-        self.deleteTransformation( transID, connection = connection )
-        return res
+        gLogger.error( "Failed to update parent transformation status: %s, now deleting" % res['Message'] )
+        return self.deleteTransformation( transID, connection = connection )
       message = 'Creation of the derived transformation (%d)' % transID
       self.__updateTransformationLogging( originalID, message, authorDN, connection = connection )
       res = self.getTransformationFiles( condDict = {'TransformationID':originalID}, connection = connection )
       if not res['OK']:
-        self.deleteTransformation( transID, connection = connection )
-        return res
+        gLogger.error( "Could not get transformation files: %s, now deleting" % res['Message'] )
+        return self.deleteTransformation( transID, connection = connection )
       if res['Records']:
         res = self.__insertExistingTransformationFiles( transID, res['Records'], connection = connection )
         if not res['OK']:
-          self.deleteTransformation( transID, connection = connection )
-          return res
+          gLogger.error( "Could not insert files: %s, now deleting" % res['Message'] )
+          return self.deleteTransformation( transID, connection = connection )
     if addFiles and fileMask:
       self.__addExistingFiles( transID, connection = connection )
     message = "Created transformation %d" % transID
@@ -678,23 +676,38 @@ class TransformationDB( DB ):
         passFilter.append( fileID )
     return self.__addFilesToTransformation( transID, passFilter, connection = connection )
 
-  def __insertExistingTransformationFiles( self, transID, fileTuples, connection = False ):
+  def __insertExistingTransformationFiles( self, transID, fileTuplesList, connection = False ):
+    """ Inserting already transformation files in TransformationFiles table (e.g. for deriving transformations)
+    """
     req = "INSERT INTO TransformationFiles (TransformationID,Status,TaskID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
     candidates = False
-    for ft in fileTuples:
-      _lfn, originalID, fileID, status, taskID, targetSE, usedSE, _errorCount, _lastUpdate, _insertTime = ft[:10]
-      if status not in ( 'Unused', 'Removed' ):
-        candidates = True
-        if not re.search( '-', status ):
-          status = "%s-%d" % ( status, originalID )
-          if taskID:
-            taskID = str( int( originalID ) ).zfill( 8 ) + '_' + str( int( taskID ) ).zfill( 8 )
-        req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % ( req, transID, status, taskID,
-                                                                    fileID, targetSE, usedSE )
-    req = req.rstrip( "," )
-    if not candidates:
-      return S_OK()
-    return self._update( req, connection )
+
+    gLogger.info( "Inserting %d files in TransformationFiles" % len( fileTuplesList ) )
+
+    # splitting in various chunks, in case it is too big
+    for fileTuples in breakListIntoChunks( fileTuplesList, 10000 ):
+      gLogger.verbose( "Adding first %d files in TransformationFiles (out of %d)" % ( len( fileTuples ),
+                                                                                      len( fileTuplesList ) ) )
+
+      for ft in fileTuples:
+        _lfn, originalID, fileID, status, taskID, targetSE, usedSE, _errorCount, _lastUpdate, _insertTime = ft[:10]
+        if status not in ( 'Unused', 'Removed' ):
+          candidates = True
+          if not re.search( '-', status ):
+            status = "%s-%d" % ( status, originalID )
+            if taskID:
+              taskID = str( int( originalID ) ).zfill( 8 ) + '_' + str( int( taskID ) ).zfill( 8 )
+          req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % ( req, transID, status, taskID,
+                                                                      fileID, targetSE, usedSE )
+      req = req.rstrip( "," )
+      if not candidates:
+        continue
+
+      res = self._update( req, connection )
+      if not res['OK']:
+        return res
+
+    return S_OK()
 
   def __assignTransformationFile( self, transID, taskID, se, fileIDs, connection = False ):
     """ Make necessary updates to the TransformationFiles table for the newly created task
