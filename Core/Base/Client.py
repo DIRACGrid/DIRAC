@@ -1,8 +1,5 @@
 """ Base class for DIRAC Client """
-########################################################################
-# $Id$
-# $HeadURL$
-########################################################################
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -22,7 +19,15 @@ class Client:
     self.serverURL = url
 
   def setTimeout( self, timeout ):
-    self.__kwargs['timeout'] = timeout
+    if type( timeout ) == int:
+      timeout = timeout
+      self.__kwargs.setdefault( 'timeout', timeout )
+    elif type( timeout ) == str:
+      try:
+        timeout = str( timeout )
+        self.__kwargs.setdefault( 'timeout', timeout )
+      except ValueError:
+        pass
 
   def getServer( self ):
     return self.serverURL
@@ -55,11 +60,13 @@ class Client:
     # evalString = "rpcClient.%s(*parms,**kws)" % toExecute
     # return eval( evalString )
 
-  def _getRPC( self, rpc = False, url = '', timeout = 120 ):
-    
+  def _getRPC( self, rpc = False, url = '', timeout = None ):
+    """ Return RPCClient object to url
+    """
     if not rpc:
       if not url:
         url = self.serverURL
-      self.__kwargs.setdefault( 'timeout', timeout )       
+      if timeout:
+        self.setTimeout( timeout )
       rpc = RPCClient( url, **self.__kwargs )
     return rpc
