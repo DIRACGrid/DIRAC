@@ -21,11 +21,11 @@ class Client:
   def setTimeout( self, timeout ):
     if type( timeout ) == int:
       timeout = timeout
-      self.__kwargs.setdefault( 'timeout', timeout )
+      self.__kwargs['timeout'] = timeout
     elif type( timeout ) == str:
       try:
         timeout = int( timeout )
-        self.__kwargs.setdefault( 'timeout', timeout )
+        self.__kwargs['timeout'] = timeout
       except ValueError:
         pass
 
