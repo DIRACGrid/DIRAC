@@ -24,7 +24,7 @@ class Client:
       self.__kwargs.setdefault( 'timeout', timeout )
     elif type( timeout ) == str:
       try:
-        timeout = str( timeout )
+        timeout = int( timeout )
         self.__kwargs.setdefault( 'timeout', timeout )
       except ValueError:
         pass
