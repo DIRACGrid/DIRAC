@@ -679,15 +679,15 @@ class TransformationDB( DB ):
   def __insertExistingTransformationFiles( self, transID, fileTuplesList, connection = False ):
     """ Inserting already transformation files in TransformationFiles table (e.g. for deriving transformations)
     """
-    req = "INSERT INTO TransformationFiles (TransformationID,Status,TaskID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
-    candidates = False
-
     gLogger.info( "Inserting %d files in TransformationFiles" % len( fileTuplesList ) )
 
     # splitting in various chunks, in case it is too big
     for fileTuples in breakListIntoChunks( fileTuplesList, 10000 ):
+
       gLogger.verbose( "Adding first %d files in TransformationFiles (out of %d)" % ( len( fileTuples ),
                                                                                       len( fileTuplesList ) ) )
+      req = "INSERT INTO TransformationFiles (TransformationID,Status,TaskID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
+      candidates = False
 
       for ft in fileTuples:
         _lfn, originalID, fileID, status, taskID, targetSE, usedSE, _errorCount, _lastUpdate, _insertTime = ft[:10]
@@ -699,10 +699,10 @@ class TransformationDB( DB ):
               taskID = str( int( originalID ) ).zfill( 8 ) + '_' + str( int( taskID ) ).zfill( 8 )
           req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % ( req, transID, status, taskID,
                                                                       fileID, targetSE, usedSE )
-      req = req.rstrip( "," )
       if not candidates:
         continue
 
+      req = req.rstrip( "," )
       res = self._update( req, connection )
       if not res['OK']:
         return res
