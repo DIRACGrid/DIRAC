@@ -78,7 +78,7 @@ class TransformationClient( Client, FileCatalogueBase ):
                          maxTasks = 0,
                          eventsPerTask = 0,
                          addFiles = True,
-                         rpc = '', url = '', timeout = None ):
+                         rpc = '', url = '', timeout = 1800 ):
     """ add a new transformation
     """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
@@ -114,7 +114,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.getTransformation( transName, extraParams )
 
   def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
-                              orderAttribute = None, limit = 10000, rpc = '', url = '', timeout = None ):
+                              orderAttribute = None, limit = 10000, rpc = '', url = '', timeout = 1800 ):
     """ gets all the transformation files for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
@@ -138,7 +138,7 @@ class TransformationClient( Client, FileCatalogueBase ):
 
   def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
                               orderAttribute = None, limit = 10000, inputVector = False, rpc = '',
-                              url = '', timeout = None ):
+                              url = '', timeout = 1800 ):
     """ gets all the transformation tasks for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
