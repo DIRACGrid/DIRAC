@@ -1,3 +1,11 @@
+[v6r9p23]
+
+*Core
+BUGFIX: InstallTools - improper configuration prevents a fresh new installation
+
+*WMS
+BUGFIX: PilotDirector - Operations Helper non-instantiated
+
 [v6r9p22]
 
 *WMS
