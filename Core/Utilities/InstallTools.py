@@ -1328,19 +1328,33 @@ def setupSite( scriptCfg, cfg = None ):
 
   if ['Configuration', 'Server'] in setupServices and setupConfigurationMaster:
     # This server hosts the Master of the CS
+    from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
     gLogger.notice( 'Installing Master Configuration Server' )
     cfg = __getCfg( cfgPath( 'DIRAC', 'Setups', setup ), 'Configuration', instance )
     _addCfgToDiracCfg( cfg )
     cfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'Master' , 'yes' )
     cfg.setOption( cfgPath( 'DIRAC', 'Configuration', 'Name' ) , setupConfigurationName )
+
     serversCfgPath = cfgPath( 'DIRAC', 'Configuration', 'Servers' )
     if not localCfg.getOption( serversCfgPath , [] ):
       serverUrl = 'dips://%s:9135/Configuration/Server' % host
       cfg.setOption( serversCfgPath, serverUrl )
-      from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
       gConfigurationData.setOptionInCFG( serversCfgPath, serverUrl )
-
+    instanceOptionPath = cfgPath( 'DIRAC', 'Setups', setup )
+    instanceCfg = __getCfg( instanceOptionPath, 'Configuration', instance )
+    cfg = cfg.mergeWith( instanceCfg )
     _addCfgToDiracCfg( cfg )
+
+    result = getComponentCfg( 'service', 'Configuration', 'Server', instance, extensions, addDefaultOptions = True )
+    if not result['OK']:
+      if exitOnError:
+        DIRAC.exit( -1 )
+      else:
+        return result
+    compCfg = result['Value']
+    cfg = cfg.mergeWith( compCfg )
+    gConfigurationData.mergeWithLocal( cfg )
+
     addDefaultOptionsToComponentCfg( 'service', 'Configuration', 'Server', [] )
     if installCfg:
       centralCfg = _getCentralCfg( installCfg )
