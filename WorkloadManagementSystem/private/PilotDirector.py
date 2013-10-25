@@ -329,7 +329,9 @@ class PilotDirector:
         csServers.remove( master )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
     # DIRAC Extensions to be used in pilots
-    pilotExtensionsList = opsHelper.getValue( "Pilot/Extensions", [] )
+    # ubeda: I'm not entirely sure if we can use here the same opsHelper as in line
+    # line +352
+    pilotExtensionsList = Operations().getValue( "Pilot/Extensions", [] )
     extensionsList = []
     if pilotExtensionsList:
       if pilotExtensionsList[0] != 'None':

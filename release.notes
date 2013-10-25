@@ -188,6 +188,14 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
 
+[v6r9p23]
+
+*Core
+BUGFIX: InstallTools - improper configuration prevents a fresh new installation
+
+*WMS
+BUGFIX: PilotDirector - Operations Helper non-instantiated
+
 [v6r9p22]
 
 *WMS
