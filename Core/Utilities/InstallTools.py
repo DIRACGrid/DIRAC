@@ -1979,11 +1979,10 @@ def installMySQL():
                           ( mysqlHost, mysqlRootPwd ), localhost=True )
       if not result['OK']:
         return result
-      result = execMySQL( "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%s'" % \
+      result = execMySQL( "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%s' WITH GRANT OPTION" % \
                           mysqlHost, localhost=True )
       if not result['OK']:
         return result
-      
 
   result = execMySQL( "DELETE from user WHERE Password=''", localhost=True )
 
