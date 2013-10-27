@@ -970,14 +970,6 @@ class FileManagerBase:
           replicas[lfn][se] = pfn
                 
     result = S_OK( replicas )
-    
-    if self.db.lfnPfnConvention:
-      sePrefixDict = {}
-      resSE = self.db.seManager.getSEPrefixes()
-      if resSE['OK']:
-        sePrefixDict = resSE['Value']
-      result['Value']['SEPrefixes'] = sePrefixDict
-      
     return result
 
   def getReplicas( self, lfns, allStatus, connection = False ):
