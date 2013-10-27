@@ -1969,11 +1969,13 @@ def installMySQL():
   result = execCommand( 0, ['mysqladmin', '-u', 'root', 'password', mysqlRootPwd] )
   if not result['OK']:
     return result
+  
   if mysqlHost and socket.gethostbyname( mysqlHost ) != '127.0.0.1' :
-    result = execCommand( 0, ['mysqladmin', '-u', 'root',
-                              '-h', '%s' % mysqlHost, 'password', mysqlRootPwd] )
+    result = execMySQL( "CREATE USER 'root'@'%s' IDENTIFIED BY '%s'" % ( mysqlHost, mysqlRootPwd ), localhost=True )
     if not result['OK']:
       return result
+
+  result = execMySQL( "DELETE from user WHERE Password=''", localhost=True )
 
   if not _addMySQLToDiracCfg():
     return S_ERROR( 'Failed to add MySQL user password to local configuration' )
@@ -2169,7 +2171,7 @@ def installDatabase( dbName ):
 
   return S_OK( dbFile.split( '/' )[-4:-2] )
 
-def execMySQL( cmd, dbName = 'mysql' ):
+def execMySQL( cmd, dbName = 'mysql', localhost=False ):
   """
   Execute MySQL Command
   """
@@ -2178,7 +2180,10 @@ def execMySQL( cmd, dbName = 'mysql' ):
   if not mysqlRootPwd:
     return S_ERROR( 'MySQL root password is not defined' )
   if dbName not in db:
-    db[dbName] = MySQL( mysqlHost, mysqlRootUser, mysqlRootPwd, dbName, mysqlPort )
+    dbHost = mysqlHost
+    if localhost:
+      dbHost = 'localhost'
+    db[dbName] = MySQL( dbHost, mysqlRootUser, mysqlRootPwd, dbName, mysqlPort )
   if not db[dbName]._connected:
     error = 'Could not connect to MySQL server'
     gLogger.error( error )
