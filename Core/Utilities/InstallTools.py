@@ -1971,11 +1971,13 @@ def installMySQL():
     return result
   
   if mysqlHost and socket.gethostbyname( mysqlHost ) != '127.0.0.1' :
-    result = execMySQL( "SELECT User FROM user WHERE User='root' AND Host='%s'" % mysqlHost, localhost=True )
+    result = execMySQL( "SELECT User FROM user WHERE User='root' AND Host='%s'" % \
+                        mysqlHost, localhost=True )
     if not result['OK']:
       return result
     if not result['Value']:
-      result = execMySQL( "CREATE USER 'root'@'%s' IDENTIFIED BY '%s'" % ( mysqlHost, mysqlRootPwd ), localhost=True )
+      result = execMySQL( "CREATE USER 'root'@'%s' IDENTIFIED BY '%s'" % \
+                          ( mysqlHost, mysqlRootPwd ), localhost=True )
       if not result['OK']:
         return result
 
