@@ -107,7 +107,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r10-pre10]
+[v6r10-pre11]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -119,6 +119,9 @@ NEW: Graphs - added CurveGraph class to draw non-stacked lines with markers
 NEW: Graphs - allow graphs with negative Y values
 NEW: Graphs - allow to provide errors with the data and display them in the CurveGraph
 FIX: InstallTools - fix for creation of the root@'host' user in MySQL 
+FIX: dirac-install - create links to permanent directories before module installation
+CHANGE: InstallTools - use printTable() utility for table printing
+CHANGE: move printTable() utility to Core.Utilities.PrettyPrint
 
 *Framework
 FIX: SystemAdministratorIntegrator - use Host option to get the host address in addition to the section name, closes #1628
@@ -188,6 +191,12 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 *Workflow
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
+
+[v6r9p24]
+
+*TS
+FIX: TransformationClient - in moveFilesToDerivedTransformation() set file status
+     to Moved-<prod>
 
 [v6r9p23]
 

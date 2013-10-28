@@ -82,6 +82,7 @@ from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 
 # On command line tools this can be set to True to abort after the first error.
@@ -710,40 +711,42 @@ def printStartupStatus( rDict ):
   Print in nice format the return dictionary from getStartupComponentStatus 
   (also returned by runsvctrlComponent)
   """
+  fields = ['Name','Runit','Uptime','PID']
+  records = []
   try:
-    print 'Name'.rjust( 32 ), ':', 'Runit    Uptime    PID'
     for comp in rDict:
-      print comp.rjust( 32 ), ':', rDict[comp]['RunitStatus'].ljust( 7 ), rDict[comp]['Timeup'].rjust( 7 ), rDict[comp]['PID'].rjust( 8 )
-  except Exception:
-    pass
+      records.append( [comp, rDict[comp]['RunitStatus'], rDict[comp]['Timeup'], rDict[comp]['PID'] ] )
+    printTable( fields, records )
+  except Exception, x:
+    print "Exception while gathering data for printing: %s" % str( x )
   return S_OK()
 
 def printOverallStatus( rDict ):
   """
   Print in nice format the return dictionary from getOverallStatus
   """
+  fields = ['System','Name','Type','Setup','Installed','Runit','Uptime','PID']
+  records = []
   try:
-    print
-    print "   System", ' '*20, 'Name', ' '*5, 'Type', ' '*23, 'Setup    Installed   Runit    Uptime    PID'
-    print '-' * 116
     for compType in rDict:
       for system in rDict[compType]:
         for component in rDict[compType][system]:
-          print  system.ljust( 28 ), component.ljust( 28 ), compType.lower()[:-1].ljust( 7 ),
+          record = [ system, component, compType.lower()[:-1] ]
           if rDict[compType][system][component]['Setup']:
-            print 'SetUp'.rjust( 12 ),
+            record.append( 'SetUp' )
           else:
-            print 'NotSetup'.rjust( 12 ),
+            record.append( 'NotSetUp' )
           if rDict[compType][system][component]['Installed']:
-            print 'Installed'.rjust( 12 ),
+            record.append( 'Installed' )
           else:
-            print 'NotInstalled'.rjust( 12 ),
-          print str( rDict[compType][system][component]['RunitStatus'] ).ljust( 7 ),
-          print str( rDict[compType][system][component]['Timeup'] ).rjust( 7 ),
-          print str( rDict[compType][system][component]['PID'] ).rjust( 8 ),
-          print
-  except Exception:
-    pass
+            record.append( 'NotInstalled' )
+          record.append( str( rDict[compType][system][component]['RunitStatus'] ) )
+          record.append( str( rDict[compType][system][component]['Timeup'] ) )
+          record.append( str( rDict[compType][system][component]['PID'] ) ) 
+          records.append( record )
+    printTable( fields, records )
+  except Exception, x:
+    print "Exception while gathering data for printing: %s" % str( x )
 
   return S_OK()
 
@@ -1250,9 +1253,9 @@ def setupSite( scriptCfg, cfg = None ):
         gLogger.error( error )
         DIRAC.exit( -1 )
       return S_ERROR( error )
-    agentSysInstance = agentTuple[0]
-    if not agentSysInstance in setupSystems:
-      setupSystems.append( agentSysInstance )
+    executorSysInstance = executorTuple[0]
+    if not executorSysInstance in setupSystems:
+      setupSystems.append( executorSysInstance )
 
   # And to find out the available extensions
   result = getExtensions()
