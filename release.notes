@@ -1,3 +1,9 @@
+[v6r9p24]
+
+*TS
+FIX: TransformationClient - in moveFilesToDerivedTransformation() set file status
+     to Moved-<prod>
+
 [v6r9p23]
 
 *Core
