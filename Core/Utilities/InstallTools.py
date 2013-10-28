@@ -743,7 +743,7 @@ def printOverallStatus( rDict ):
             record.append( 'NotInstalled' )
           record.append( str( rDict[compType][system][component]['RunitStatus'] ) )
           record.append( str( rDict[compType][system][component]['Timeup'] ) )
-          record.append( rDict[compType][system][component]['PID'] ) 
+          record.append( str( rDict[compType][system][component]['PID'] ) ) 
           records.append( record )
     printTable( fields, records )
   except Exception, x:
