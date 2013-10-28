@@ -747,15 +747,19 @@ class TransformationDB( DB ):
                                                                                       len( fileTuplesList ) ) )
 
       for ft in fileTuples:
-        _lfn, originalID, fileID, status, taskID, targetSE, usedSE, _errorCount, _lastUpdate, _insertTime = ft[:10]
-        if status not in ( 'Unused', 'Removed' ):
+        originalID, fileID, status, taskID, targetSE, usedSE = ft[1:7]
+        if status == 'Unused':
+          # For safety set Unused files to NotProcesed in the original transformation
+          req += " (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % ( originalID, 'NotProcessed', taskID,
+                                                                     fileID, targetSE, usedSE )
+        elif status not in ( 'Removed' ):
           candidates = True
-          if not re.search( '-', status ):
+          if '-' not in status :
             status = "%s-%d" % ( status, originalID )
             if taskID:
               taskID = str( int( originalID ) ).zfill( 8 ) + '_' + str( int( taskID ) ).zfill( 8 )
-          req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % ( req, transID, status, taskID,
-                                                                      fileID, targetSE, usedSE )
+          req += " (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % ( transID, status, taskID,
+                                                                     fileID, targetSE, usedSE )
       req = req.rstrip( "," )
       if not candidates:
         continue
@@ -1522,7 +1526,7 @@ class TransformationDB( DB ):
     """ Add new replica to the TransformationDB for an existing lfn.
     """
     gLogger.info( "TransformationDB.addReplica: Attempting to add %s replicas." % len( replicaDicts.keys() ) )
-    
+
     return self.addFile( replicaDicts, force )
 
   def addFile( self, fileDicts, force = False, connection = False ):
@@ -1603,14 +1607,14 @@ class TransformationDB( DB ):
     return S_OK( resDict )
 
   def removeReplica( self, replicaDicts, connection = False ):
-    """ Remove replica pfn of lfn. 
+    """ Remove replica pfn of lfn.
     Input dict is {LFN:{SE}}
     """
     gLogger.info( "TransformationDB.removeReplica: Attempting to remove %s replicas." % len( replicaDicts.keys() ) )
     successful = {}
     failed = {}
     lfns = replicaDicts.keys()
-    
+
     connection = self.__getConnection( connection )
     res = self.__getFileIDsForLfns( lfns, connection = connection )
     if not res['OK']:
@@ -1702,7 +1706,7 @@ class TransformationDB( DB ):
         se = info['SE']
         if not seFiles.has_key( se ):
           seFiles[se] = {}
-        status = info['Status']  
+        status = info['Status']
         if not seFiles[se].has_key( status ):
           seFiles[se][status] = []
         seFiles[se][status].append( lfnFilesIDs[lfn] )
@@ -1766,11 +1770,11 @@ class TransformationDB( DB ):
         oldSE = info["OldSE"]
         if not seFiles.has_key( oldSE ):
           seFiles[oldSE] = {}
-        newSE = info["NewSE"]  
+        newSE = info["NewSE"]
         if not seFiles[oldSE].has_key( newSE ):
           seFiles[oldSE][newSE] = []
         seFiles[oldSE][newSE].append( lfnFilesIDs[lfn] )
-        
+
     for oldSE, seDict in seFiles.items():
       for newSE, files in seDict.items():
         res = self.__updateReplicaSE( files, oldSE, newSE, connection = connection )
