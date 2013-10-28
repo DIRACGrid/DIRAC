@@ -1254,9 +1254,9 @@ def setupSite( scriptCfg, cfg = None ):
         gLogger.error( error )
         DIRAC.exit( -1 )
       return S_ERROR( error )
-    agentSysInstance = agentTuple[0]
-    if not agentSysInstance in setupSystems:
-      setupSystems.append( agentSysInstance )
+    executorSysInstance = executorTuple[0]
+    if not executorSysInstance in setupSystems:
+      setupSystems.append( executorSysInstance )
 
   # And to find out the available extensions
   result = getExtensions()
