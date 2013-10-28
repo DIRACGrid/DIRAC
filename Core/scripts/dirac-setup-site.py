@@ -43,5 +43,6 @@ if not result['OK']:
   print 'ERROR:', result['Message']
   exit( -1 )
 
+print "\nStatus of installed components:\n"
 InstallTools.printStartupStatus( result['Value'] )
 

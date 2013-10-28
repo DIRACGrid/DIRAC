@@ -1381,6 +1381,8 @@ if __name__ == "__main__":
     logERROR( result[ 'Message' ] )
     sys.exit( 1 )
   releaseConfig = result[ 'Value' ]
+  if not createPermanentDirLinks():
+    sys.exit( 1 )
   if not cliParams.externalsOnly:
     logNOTICE( "Discovering modules to install" )
     result = releaseConfig.getModulesToInstall( cliParams.release, cliParams.extraModules )
@@ -1411,8 +1413,6 @@ if __name__ == "__main__":
   if not installExternals( releaseConfig ):
     sys.exit( 1 )
   fixMySQLScript()
-  if not createPermanentDirLinks():
-    sys.exit( 1 )
   if not createBashrc():
     sys.exit( 1 )
   if not createCshrc():

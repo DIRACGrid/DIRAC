@@ -15,43 +15,7 @@ import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
 from DIRAC import gConfig
-
-def printTable( fields, records ):
-  """ Utility function to pretty print table data
-  """
-  if not records:
-    print "No output"
-    return
-
-  nFields = len( fields )
-  if nFields != len( records[0] ):
-    print "Incorrect data structure to print"
-    return
-
-  lengths = []
-  for i in range( nFields ):
-    lengths.append( len( fields[i] ) )
-    for r in records:
-      if len( r[i] ) > lengths[i]:
-        lengths[i] = len( r[i] )
-
-  totalLength = 0
-  for i in lengths:
-    totalLength += i
-    totalLength += 2
-
-  print ' ' * 3,
-  for i in range( nFields ):
-    print fields[i].ljust( lengths[i] + 1 ),
-  print
-  print '=' * totalLength
-  count = 1
-  for r in records:
-    print str( count ).rjust( 3 ),
-    for i in range( nFields ):
-      print r[i].ljust( lengths[i] + 1 ),
-    print
-    count += 1
+from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
   """
