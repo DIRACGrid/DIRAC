@@ -1,8 +1,6 @@
 -- THESE ARE THE TABLES FOR THE TRANSFER DB
 -- Channels,Channel,FTSReq,FileToFTS,FTSReqLogging,FileToCat,ReplicationTree
 
-USE TransferDB;
-
 DROP TABLE IF EXISTS Channels;
 CREATE TABLE Channels (
    ChannelID INTEGER NOT NULL AUTO_INCREMENT,
