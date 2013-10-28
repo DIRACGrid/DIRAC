@@ -219,7 +219,7 @@ class TransformationClient( Client, FileCatalogueBase ):
           break
       if derivedStatus:
         if derivedStatus.endswith( '-inherited' ):
-          res = self.setFileStatusForTransformation( parentProd, 'Moved' % prod, [lfn] )
+          res = self.setFileStatusForTransformation( parentProd, 'Moved-%s' % prod, [lfn] )
           if not res['OK']:
             gLogger.error( "Error setting status for %s in transformation %d to Moved" % ( lfn, parentProd ),
                            res['Message'] )
