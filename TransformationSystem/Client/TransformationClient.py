@@ -179,61 +179,74 @@ class TransformationClient( Client, FileCatalogueBase ):
     parentProd = int( transDict.get( 'InheritedFrom', 0 ) )
     movedFiles = {}
     if not parentProd:
-      gLogger.warn( "Transformation %d was not derived..." % prod )
+      gLogger.warn( "[None] [%d] .moveFilesToDerivedTransformation: Transformation was not derived..." % prod )
       return S_OK( ( parentProd, movedFiles ) )
     statusToMove = [ 'Unused', 'MaxReset' ]
     selectDict = {'TransformationID': parentProd, 'Status': statusToMove}
     res = self.getTransformationFiles( selectDict )
     if not res['OK']:
-      gLogger.error( "Error getting Unused files from transformation %s:" % parentProd, res['Message'] )
+      gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error getting Unused files from transformation %s:" % ( prod, parentProd ), res['Message'] )
       return res
     parentFiles = res['Value']
     lfns = [lfnDict['LFN'] for lfnDict in parentFiles]
     if not lfns:
-      gLogger.info( "No files found to be moved from transformation %d to %d" % ( parentProd, prod ) )
+      gLogger.info( "[None] [%d] .moveFilesToDerivedTransformation: No files found to be moved from transformation %d" % ( prod, parentProd ) )
       return S_OK( ( parentProd, movedFiles ) )
     selectDict = { 'TransformationID': prod, 'LFN': lfns}
     res = self.getTransformationFiles( selectDict )
     if not res['OK']:
-      gLogger.error( "Error getting files from derived transformation %s" % prod, res['Message'] )
+      gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error getting files from derived transformation" % prod, res['Message'] )
       return res
     derivedFiles = res['Value']
     suffix = '-%d' % parentProd
-    errorFiles = {}
+    derivedStatusDict = dict( [( derivedDict['LFN'], derivedDict['Status'] ) for derivedDict in derivedFiles] )
+    newStatusFiles = {}
+    parentStatusFiles = {}
+    force = False
     for parentDict in parentFiles:
       lfn = parentDict['LFN']
-      status = parentDict['Status']
-      force = False
-      if resetUnused and status == 'MaxReset':
-        status = 'Unused'
-        force = True
-      derivedStatus = None
-      for derivedDict in derivedFiles:
-        if derivedDict['LFN'] == lfn:
-          derivedStatus = derivedDict['Status']
-          break
+      derivedStatus = derivedStatusDict.get( lfn )
       if derivedStatus:
-        if derivedStatus.endswith( suffix ):
-          res = self.setFileStatusForTransformation( parentProd, 'Moved-%s' % prod, [lfn] )
-          if not res['OK']:
-            gLogger.error( "Error setting status for %s in transformation %d to Moved" % ( lfn, parentProd ),
-                           res['Message'] )
-            continue
-          res = self.setFileStatusForTransformation( prod, status, [lfn], force = force )
-          if not res['OK']:
-            gLogger.error( "Error setting status for %s in transformation %d to %s" % ( lfn, prod, status ),
-                           res['Message'] )
-            self.setFileStatusForTransformation( parentProd, status , [lfn] )
-            continue
-          if force:
-            status = 'Unused from MaxReset'
-          movedFiles[status] = movedFiles.setdefault( status, 0 ) + 1
+        parentStatus = parentDict['Status']
+        if resetUnused and parentStatus == 'MaxReset':
+          status = 'Unused'
+          moveStatus = 'Unused from MaxReset'
+          force = True
         else:
-          errorFiles[derivedStatus] = errorFiles.setdefault( derivedStatus, 0 ) + 1
-    if errorFiles:
-      gLogger.error( "Some files didn't have the expected status in derived transformation %d" % prod )
-      for err, val in errorFiles.items():
-        gLogger.error( "\t%d files were in status %s" % ( val, err ) )
+          status = parentStatus
+          moveStatus = parentStatus
+        if derivedStatus.endswith( suffix ):
+          # This file is Unused or MaxReset while it was most likely Assigned at the time of derivation
+          parentStatusFiles.setdefault( 'Moved-%s' % str( prod ), [] ).append( lfn )
+          newStatusFiles.setdefault( ( status, parentStatus ), [] ).append( lfn )
+          movedFiles[moveStatus] = movedFiles.setdefault( moveStatus, 0 ) + 1
+        elif parentDict['Status'] == 'Unused':
+          # If the file was Unused already at derivation time, set it NotProcessed
+          parentStatusFiles.setdefault( 'NotProcessed', [] ).append( lfn )
+
+    # Set the status in the parent transformation first
+    for status, lfnList in parentStatusFiles.items():
+      for lfnChunk in breakListIntoChunks( lfnList, 5000 ):
+        res = self.setFileStatusForTransformation( parentProd, status, lfnChunk )
+        if not res['OK']:
+          gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files in transformation %d "
+                         % ( prod, status, len( lfnList ), parentProd ),
+                         res['Message'] )
+
+    # Set the status in the new transformation
+    for ( status, oldStatus ), lfnList in newStatusFiles.items():
+      for lfnChunk in breakListIntoChunks( lfnList, 5000 ):
+        res = self.setFileStatusForTransformation( prod, status, lfnChunk, force = force )
+        if not res['OK']:
+          gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files; resetting them %s in transformation %d"
+                         % ( prod, status, len( lfnChunk ), oldStatus, parentProd ),
+                         res['Message'] )
+          res = self.setFileStatusForTransformation( parentProd, oldStatus, lfnChunk )
+          if not res['OK']:
+            gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files in transformation %d"
+                           % ( prod, oldStatus, len( lfnChunk ), parentProd ),
+                           res['Message'] )
+
 
     return S_OK( ( parentProd, movedFiles ) )
 
@@ -270,7 +283,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    lfndicts = res['Value']  
+    lfndicts = res['Value']
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addFile( lfndicts, force )
 
@@ -278,7 +291,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    lfndicts  = res['Value']
+    lfndicts = res['Value']
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addReplica( lfndicts, force )
 
@@ -308,13 +321,13 @@ class TransformationClient( Client, FileCatalogueBase ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     successful = {}
     failed = {}
-    #as lfndicts is a dict, the breakListIntoChunks will fail. Fake it!
+    # as lfndicts is a dict, the breakListIntoChunks will fail. Fake it!
     listOfDicts = []
     localdicts = {}
-    for lfn,info in lfndicts.items():
-      localdicts.update( { lfn : info } )  
-      if len(localdicts.keys())%100 == 0:
-        listOfDicts.append(localdicts)
+    for lfn, info in lfndicts.items():
+      localdicts.update( { lfn : info } )
+      if len( localdicts.keys() ) % 100 == 0:
+        listOfDicts.append( localdicts )
         localdicts = {}
     for fDict in listOfDicts:
       res = rpcClient.removeReplica( fDict )
@@ -345,7 +358,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
-    lfndict = res['Value']    
+    lfndict = res['Value']
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.setReplicaHost( lfndict )
 
