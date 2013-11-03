@@ -194,7 +194,11 @@ def getDefaultVOMSVO():
   return getVO()
 
 def getVOMSVOForGroup( group ):
-  return gConfig.getValue( "%s/Groups/%s/VOMSVO" % ( gBaseSecuritySection, group ), getDefaultVOMSVO() )
+  vomsVO = gConfig.getValue( "%s/Groups/%s/VOMSVO" % ( gBaseSecuritySection, group ), getDefaultVOMSVO() )
+  if not vomsVO:
+    vo = getVOForGroup( group )
+    vomsVO = getVOOption( vo, 'VOMSName', '' )
+  return vomsVO  
 
 def getGroupsWithVOMSAttribute( vomsAttr ):
   retVal = gConfig.getSections( "%s/Groups" % ( gBaseSecuritySection ) )
