@@ -128,7 +128,7 @@ class ProxyManagerClient:
 
   def uploadProxy( self, proxy = False, diracGroup = False, chainToConnect = False, restrictLifeTime = 0 ):
     """
-    Upload a proxy to the proxy management service using delgation
+    Upload a proxy to the proxy management service using delegation
     """
     #Discover proxy location
     if type( proxy ) == g_X509ChainType:
