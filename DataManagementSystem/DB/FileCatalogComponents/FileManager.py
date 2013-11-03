@@ -38,7 +38,7 @@ class FileManager(FileManagerBase):
         for fileName in dirDict[dirPath]:
           fname = '%s/%s' % (dirPath,fileName)
           fname = fname.replace('//','/')
-          failed[fname] = 'No such directory'
+          failed[fname] = 'No such file or directory'
 
     successful = {}
     for dirPath in directoryIDs:
