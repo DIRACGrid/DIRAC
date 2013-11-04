@@ -117,6 +117,19 @@ class TaskQueueDB( DB ):
                                        'Indexes': { 'TaskIndex': [ 'TQId' ] },
                                      }
 
+    self.__tablesDesc[ 'tq_SubmitPools' ] = { 'Fields' : { 'hash' : 'VARCHAR(32) NOT NULL',
+                                                          'Requirements' : 'VARCHAR(32) NOT NULL'
+                                                         },
+                                             'PrimaryKey' : "hash"
+                                           }
+    self.__tablesDesc[ 'tq_QueueToSubmitPool' ] = { 'Fields' : { 'ID' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
+                                                               'hash' : 'VARCHAR(32) NOT NULL',
+                                                               'Queue' : 'VARCHAR(32) NOT NULL'
+                                                               },
+                                                   'PrimaryKey' : 'ID',
+                                                   'Indexes' : { 'hash' : [ 'hash' ] }
+                                                 }
+
     for multiField in self.__multiValueDefFields:
       tableName = 'tq_TQTo%s' % multiField
       self.__tablesDesc[ tableName ] = { 'Fields' : { 'TQId' : 'INTEGER UNSIGNED NOT NULL',
