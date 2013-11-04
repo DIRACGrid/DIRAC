@@ -485,6 +485,16 @@ class JobState( object ):
   def getRequirements( self ):
     return JobState.__db.job.getRequirements( self.__jid )
 
+  right_insertSubmitPool = RIGHT_CHANGE_STATUS
+  @RemoteMethod
+  def insertSubmitPool( self, requirement ):
+    return JobState.__db.tq.addSubmitPool( requirement )
+
+  right_insertQueueRequirementRelation = RIGHT_CHANGE_STATUS
+  @RemoteMethod
+  def insertQueueRequirementRelation(self, requ_hash, queue):
+    return JobState.__db.tq.addQueueToHashRelation( requ_hash, queue )
+
   right_insertIntoTQ = RIGHT_CHANGE_STATUS
   @RemoteMethod
   def insertIntoTQ( self ):
