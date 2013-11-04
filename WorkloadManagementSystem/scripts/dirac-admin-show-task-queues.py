@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-admin-submit-pilot-for-job
+# File :    dirac-admin-show-task-queues
 # Author :  Ricardo Graciani
 ########################################################################
 """
