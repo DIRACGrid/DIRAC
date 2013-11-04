@@ -56,9 +56,13 @@ class JobRequirements ( OptimizerExecutor ):
     if not result['OK']:
       return result
     
+    #Now define the SubmitPool so that it's added to the TQ DB properly, needed for matching
+    jobManifest.setOption("SubmitPool", requ_hash)
     
     #Finally, add those requirements to the JobDB, means all went fine
     result = jobState.setRequirements( requirements )
     if not result[ 'OK' ]:
-      return result    
+      return result
+    
+    
     return self.setNextOptimizer()
