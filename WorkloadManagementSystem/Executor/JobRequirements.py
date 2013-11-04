@@ -42,7 +42,7 @@ class JobRequirements ( OptimizerExecutor ):
       self.jobLog.notice( "Already resolved Requirements, skipping" )
       return self.setNextOptimizer()
     
-    
+    requirements = sorted(requirements)
     #Now get the Queues that match those requirements
     #Insert first in the SubmitPools table to get a hash
     result = jobState.insertSubmitPool( requirements )
