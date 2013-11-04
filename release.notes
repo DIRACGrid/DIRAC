@@ -1,4 +1,4 @@
-[v6r10-pre11]
+[v6r10-pre12]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -13,9 +13,14 @@ FIX: InstallTools - fix for creation of the root@'host' user in MySQL
 FIX: dirac-install - create links to permanent directories before module installation
 CHANGE: InstallTools - use printTable() utility for table printing
 CHANGE: move printTable() utility to Core.Utilities.PrettyPrint
+NEW: added installation configuration examples
+
+*CS
+CHANGE: getVOMSVOForGroup() uses the VOMSName option of the VO definition 
 
 *Framework
 FIX: SystemAdministratorIntegrator - use Host option to get the host address in addition to the section name, closes #1628
+FIX: dirac-proxy-init - uses getVOMSVOForGroup() when adding VOMS extensions
 
 *DMS
 CHANGE: DFC - optimization and bug fixes of the bulk file addition
@@ -55,7 +60,8 @@ NEW: JobMonitoringHandler - use JobPolicy to filter jobs in getJobSummaryWeb()
 NEW: new Operations option /Services/JobMonitoring/GlobalJobsInfo ( True by default ) to 
      allow or not job info lookup by anybody, used in JobMonitoringHandler       
 BUGFIX: SiteDirector - take into account the target queue Platform
-BUGFIX: JobDB - bug in __insertNewJDL()        
+BUGFIX: JobDB - bug in __insertNewJDL()    
+CHANGE: dirac-admin-show-task-queues - enhanced output    
         
 *RSS
 FIX: DowntimeCommand - take the latest Downtime that fits    
