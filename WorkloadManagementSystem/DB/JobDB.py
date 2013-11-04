@@ -60,7 +60,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry           import getUsern
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources          import getSites
 from DIRAC.ResourceStatusSystem.Client.SiteStatus                import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest  import JobManifest
-from DIRAC.Core.Utilities                                        import Time
+from DIRAC.Core.Utilities                                        import Time, DEncode
 
 DEBUG = False
 JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
@@ -177,6 +177,13 @@ class JobDB( DB ):
                                           },
                                 'PrimaryKey' : [ 'JobID', 'LFN' ]
                                }
+  #JobRequirements table
+  _tablesDict[ 'Requirements' ] = { 'Fields' : {'JobID'  : 'INTEGER NOT NULL',
+                                                'Requirements' : 'VARCHAR(255)'
+                                                 },
+                                     'PrimaryKey' : [ 'JobID' ]
+                                     }
+  
   # JobParameters table
   _tablesDict[ 'JobParameters' ] = {
                                     'Fields' :
@@ -763,6 +770,42 @@ class JobDB( DB ):
 
     return S_OK( {"CPUTime":int( cpu ), "WallClockTime":int( wctime )} )
 
+#############################################################################
+  def setRequirements (self, jobID, requirements ):
+    """ Set the job requirements (if any)
+    """
+    ret = self._escapeString( jobID )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+    result = self.deleteEntries( "Requirements", {'JobID' : jobID}  )
+    if not result['OK']:
+      result = S_ERROR( 'JobDB.setRequirements: operation failed.' )
+    
+    req_in_table = DEncode.encode(requirements)
+      
+    result = self.insertFields( "Requirements", ["JobID", "Requirements"],
+                                [ jobID, req_in_table] ) 
+    if not result['OK']:
+      return result 
+      
+    return S_OK()
+#############################################################################
+  def getRequirements(self, jobID):
+    """ Return the job requirements if any
+    """
+    ret = self._escapeString( jobID )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+    result = self.getFields("Requirements", ["Requirements"], {'JobID' : jobID})
+    if not result['OK']:
+      return result
+    reqs = result["Value"][0]#expect only one row at most
+    if len(reqs):
+      return S_OK(DEncode.decode(reqs[0]))#The req is the first columns
+    else:
+      return S_OK()
 #############################################################################
   def getInputData ( self, jobID ):
     """Get input data for the given job
