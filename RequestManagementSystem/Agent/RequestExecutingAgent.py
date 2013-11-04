@@ -13,6 +13,9 @@
 
     request processing agent
 """
+
+__RCSID__ = '$Id$'
+
 # #
 # @file RequestExecutingAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

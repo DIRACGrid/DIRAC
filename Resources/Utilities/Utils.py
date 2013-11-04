@@ -10,7 +10,9 @@ def checkArgumentFormat( path ):
 
   if type( path ) in types.StringTypes:
     return S_OK( {path:False} )
-  elif type( path ) in ( types.ListType, types.DictType ):
+  elif type( path ) == types.ListType:
     return S_OK( dict( [( url, False ) for url in path if type( url ) in types.StringTypes] ) )
+  elif type( path ) == types.DictType:
+    return S_OK( path )
   else:
     return S_ERROR( "%s.checkArgumentFormat: Supplied path is not of the correct format." % ( __class__.__name__ ) )

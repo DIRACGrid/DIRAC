@@ -1229,7 +1229,7 @@ class JobDB( DB ):
     if not 'lastRowId' in result:
       return S_ERROR( '%s' % err )
 
-    jobID = int( result['Value'] )
+    jobID = int( result['lastRowId'] )
 
     self.log.info( 'JobDB: New JobID served "%s"' % jobID )
 

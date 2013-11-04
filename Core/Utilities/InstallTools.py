@@ -71,7 +71,8 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, ResourcesDefaults, CSGlobals
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, \
+                                                     cfgInstallSection, ResourcesDefaults, CSGlobals
 from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR, \
                                            CS_ADMINISTRATOR, JOB_ADMINISTRATOR, \
                                            FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR, \
@@ -98,7 +99,8 @@ def loadDiracCfg( verbose = False ):
   global localCfg, cfgFile, setup, instance, logLevel, linkedRootPath, host
   global basePath, instancePath, runitDir, startDir
   global db, mysqlDir, mysqlDbDir, mysqlLogDir, mysqlMyOrg, mysqlMyCnf, mysqlStartupScript
-  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode, mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
+  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode
+  global mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
 
   from DIRAC.Core.Utilities.Network import getFQDN
 
@@ -315,7 +317,7 @@ def _addCfgToLocalCS( cfg ):
 
 def _getCentralCfg( installCfg ):
   """
-  Create the esqueleton of central Cfg for an initial Master CS
+  Create the skeleton of central Cfg for an initial Master CS
   """
   # First copy over from installation cfg
   centralCfg = CFG()
