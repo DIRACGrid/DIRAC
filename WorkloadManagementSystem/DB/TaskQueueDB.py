@@ -15,8 +15,10 @@ from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
+
 
 DEFAULT_GROUP_SHARE = 1000
 TQ_MIN_SHARE = 0.001
@@ -117,16 +119,18 @@ class TaskQueueDB( DB ):
                                        'Indexes': { 'TaskIndex': [ 'TQId' ] },
                                      }
 
-    self.__tablesDesc[ 'tq_SubmitPools' ] = { 'Fields' : { 'hash' : 'VARCHAR(32) NOT NULL',
-                                                          'Requirements' : 'VARCHAR(32) NOT NULL'
-                                                         },
+    self.__tablesDesc[ 'tq_SubmitPools' ] = { 'Fields' : { 'hash' : 'VARCHAR(20) NOT NULL',
+                                                           'Requirements' : 'VARCHAR(32) NOT NULL'
+                                                          },
                                              'PrimaryKey' : "hash"
                                            }
     self.__tablesDesc[ 'tq_QueueToSubmitPool' ] = { 'Fields' : { 'ID' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
-                                                               'hash' : 'VARCHAR(32) NOT NULL',
-                                                               'Queue' : 'VARCHAR(32) NOT NULL'
-                                                               },
+                                                                 'hash' : 'VARCHAR(20) NOT NULL',
+                                                                 'Queue' : 'VARCHAR(32) NOT NULL',
+                                                                 'LastUpdate' : "DATETIME NOT NULL"
+                                                                },
                                                    'PrimaryKey' : 'ID',
+                                                   'ForeignKeys': {'Field': 'tq_SubmitPools.hash' },
                                                    'Indexes' : { 'hash' : [ 'hash' ] }
                                                  }
 
@@ -1206,4 +1210,48 @@ class TaskQueueDB( DB ):
       return S_OK()
     return self.recalculateTQSharesForAll()
 
+  def addSubmitPool(self, requirements, connObj = False):
+    """ Given the requirements dict, hash it and store it in the DB. Return the hash/key.
+    """
+    import copy
+    def make_hash(o):
+
+      """
+      Makes a hash from a dictionary, list, tuple or set to any level, that contains
+      only other hashable types (including any lists, tuples, sets, and
+      dictionaries).
+      From http://stackoverflow.com/questions/5884066/hashing-a-python-dictionary
+      """
+    
+      if isinstance(o, (set, tuple, list)):
+    
+        return tuple([make_hash(e) for e in o])    
+    
+      elif not isinstance(o, dict):
+    
+        return hash(o)
+    
+      new_o = copy.deepcopy(o)
+      for k, v in new_o.items():
+        new_o[k] = make_hash(v)
+    
+      return hash(tuple(frozenset(sorted(new_o.items()))))
+    
+    req_hash = make_hash(requirements)
+    #The hash is now a 19 decimal number + sign
+    
+    res = self.getFields('tq_SubmitPools', {"hash" : req_hash }, conn = connObj)
+    if not res['OK']:
+      return res
+    if len(res["Value"][0]):
+      #The hash is already in the table
+      return S_OK(req_hash)
+
+    #the hash is not in the table
+    req_repr = DEncode.encode(requirements)
+    res = self.insertFields( "tq_SubmitPools", [ 'hash', "Requirements" ], [ req_hash, req_repr ], conn = connObj)
+    if not res['OK']:
+      return res
+    
+    return S_OK(req_hash)
 
