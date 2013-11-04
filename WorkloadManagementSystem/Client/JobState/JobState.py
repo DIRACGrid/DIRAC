@@ -480,6 +480,11 @@ class JobState( object ):
   def getInputData( self ):
     return JobState.__db.job.getInputData( self.__jid )
 
+  right_getRequirements = RIGHT_GET_INFO
+  @RemoteMethod
+  def getRequirements( self ):
+    return JobState.__db.job.getRequirements( self.__jid )
+
   right_insertIntoTQ = RIGHT_CHANGE_STATUS
   @RemoteMethod
   def insertIntoTQ( self ):
