@@ -11,9 +11,9 @@
 
     This agent has two modes of operation:
     - standalone, when all Requests are handled using ProcessPool and TransferTask
-    - scheduling for FTS with failback TransferTask functionality
+    - scheduling for FTS with fallback TransferTask functionality
 
-    The failback mechanism is fired in case that:
+    The fallback mechanism is fired in case that:
 
     - FTS channels between SourceSE and TargetSE is not defined
     - there is a trouble to define correct replication tree
