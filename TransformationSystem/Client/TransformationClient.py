@@ -73,8 +73,8 @@ class TransformationClient( Client, FileCatalogueBase ):
     self.serverURL = url
 
   def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None,
-                   rpc = '', url = '', timeout = 120 ):
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+                   rpc = '', url = '' ):
+    rpcClient = self._getRPC( rpc = rpc, url = url )
     return rpcClient. getCounters( table, attrList, condDict, older, newer, timeStamp )
 
   def addTransformation( self, transName, description, longDescription, transType, plugin, agentType, fileMask,
@@ -85,7 +85,7 @@ class TransformationClient( Client, FileCatalogueBase ):
                          maxTasks = 0,
                          eventsPerTask = 0,
                          addFiles = True,
-                         rpc = '', url = '', timeout = 120 ):
+                         rpc = '', url = '', timeout = 1800 ):
     """ add a new transformation
     """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
@@ -94,7 +94,7 @@ class TransformationClient( Client, FileCatalogueBase ):
                                         body, maxTasks, eventsPerTask, addFiles )
 
   def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate',
-                          orderAttribute = None, limit = 100, extraParams = False, rpc = '', url = '', timeout = 120 ):
+                          orderAttribute = None, limit = 100, extraParams = False, rpc = '', url = '', timeout = None ):
     """ gets all the transformations in the system, incrementally. "limit" here is just used to determine the offset.
     """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
@@ -116,12 +116,12 @@ class TransformationClient( Client, FileCatalogueBase ):
           break
     return S_OK( transformations )
 
-  def getTransformation( self, transName, extraParams = False, rpc = '', url = '', timeout = 120 ):
+  def getTransformation( self, transName, extraParams = False, rpc = '', url = '', timeout = None ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.getTransformation( transName, extraParams )
 
   def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
-                              orderAttribute = None, limit = 10000, rpc = '', url = '', timeout = 120 ):
+                              orderAttribute = None, limit = 10000, rpc = '', url = '', timeout = 1800 ):
     """ gets all the transformation files for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
@@ -144,8 +144,8 @@ class TransformationClient( Client, FileCatalogueBase ):
 
 
   def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
-                                 orderAttribute = None, limit = 10000, inputVector = False, rpc = '',
-                                 url = '', timeout = 120 ):
+                              orderAttribute = None, limit = 10000, inputVector = False, rpc = '',
+                              url = '', timeout = None ):
     """ gets all the transformation tasks for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
@@ -167,8 +167,7 @@ class TransformationClient( Client, FileCatalogueBase ):
           break
     return S_OK( transformationTasks )
 
-
-  def cleanTransformation( self, transID, rpc = '', url = '', timeout = 120 ):
+  def cleanTransformation( self, transID, pc = '', url = '', timeout = None ):
     """ Clean the transformation, and set the status parameter (doing it here, for easier extensibility)
     """
     # Cleaning
@@ -186,137 +185,76 @@ class TransformationClient( Client, FileCatalogueBase ):
     parentProd = int( transDict.get( 'InheritedFrom', 0 ) )
     movedFiles = {}
     if not parentProd:
-      gLogger.warn( "Transformation %d was not derived..." % prod )
+      gLogger.warn( "[None] [%d] .moveFilesToDerivedTransformation: Transformation was not derived..." % prod )
       return S_OK( ( parentProd, movedFiles ) )
     # get the lfns in status Unused/MaxReset of the parent production
     res = self.getTransformationFiles( condDict = {'TransformationID': parentProd, 'Status': [ 'Unused', 'MaxReset' ]} )
     if not res['OK']:
-      gLogger.error( "Error getting Unused/MaxReset files from transformation %s:" % parentProd, res['Message'] )
+      gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error getting Unused files from transformation %s:" % ( prod, parentProd ), res['Message'] )
       return res
     parentFiles = res['Value']
     lfns = [lfnDict['LFN'] for lfnDict in parentFiles]
     if not lfns:
-      gLogger.info( "No files found to be moved from transformation %d to %d" % ( parentProd, prod ) )
+      gLogger.info( "[None] [%d] .moveFilesToDerivedTransformation: No files found to be moved from transformation %d" % ( prod, parentProd ) )
       return S_OK( ( parentProd, movedFiles ) )
     # get the lfns of the derived production that were Unused/MaxReset in the parent one
     res = self.getTransformationFiles( condDict = { 'TransformationID': prod, 'LFN': lfns} )
     if not res['OK']:
-      gLogger.error( "Error getting files from derived transformation %s" % prod, res['Message'] )
+      gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error getting files from derived transformation" % prod, res['Message'] )
       return res
     derivedFiles = res['Value']
-    errorFiles = {}
+    suffix = '-%d' % parentProd
+    derivedStatusDict = dict( [( derivedDict['LFN'], derivedDict['Status'] ) for derivedDict in derivedFiles] )
+    newStatusFiles = {}
+    parentStatusFiles = {}
+    force = False
     for parentDict in parentFiles:
       lfn = parentDict['LFN']
-      status = parentDict['Status']
-      force = False
-      if resetUnused and status == 'MaxReset':
-        status = 'Unused'
-        force = True
-      derivedStatus = None
-      for derivedDict in derivedFiles:
-        if derivedDict['LFN'] == lfn:
-          derivedStatus = derivedDict['Status']
-          break
+      derivedStatus = derivedStatusDict.get( lfn )
       if derivedStatus:
-        if derivedStatus.endswith( '-inherited' ):
-          res = self.setFileStatusForTransformation( parentProd, 'Moved-%s' % prod, [lfn] )
-          if not res['OK']:
-            gLogger.error( "Error setting status for %s in transformation %d to Moved" % ( lfn, parentProd ),
-                           res['Message'] )
-            continue
-          res = self.setFileStatusForTransformation( prod, status, [lfn], force = force )
-          if not res['OK']:
-            gLogger.error( "Error setting status for %s in transformation %d to %s" % ( lfn, prod, status ),
-                           res['Message'] )
-            self.setFileStatusForTransformation( parentProd, status, [lfn] )
-            continue
-          if force:
-            status = 'Unused from MaxReset'
-          movedFiles[status] = movedFiles.setdefault( status, 0 ) + 1
+        parentStatus = parentDict['Status']
+        if resetUnused and parentStatus == 'MaxReset':
+          status = 'Unused'
+          moveStatus = 'Unused from MaxReset'
+          force = True
         else:
-          errorFiles[derivedStatus] = errorFiles.setdefault( derivedStatus, 0 ) + 1
-    if errorFiles:
-      gLogger.error( "Some files didn't have the expected status in derived transformation %d" % prod )
-      for err, val in errorFiles.items():
-        gLogger.error( "\t%d files were in status %s" % ( val, err ) )
+          status = parentStatus
+          moveStatus = parentStatus
+        if derivedStatus.endswith( suffix ):
+          # This file is Unused or MaxReset while it was most likely Assigned at the time of derivation
+          parentStatusFiles.setdefault( 'Moved-%s' % str( prod ), [] ).append( lfn )
+          newStatusFiles.setdefault( ( status, parentStatus ), [] ).append( lfn )
+          movedFiles[moveStatus] = movedFiles.setdefault( moveStatus, 0 ) + 1
+        elif parentDict['Status'] == 'Unused':
+          # If the file was Unused already at derivation time, set it NotProcessed
+          parentStatusFiles.setdefault( 'NotProcessed', [] ).append( lfn )
+
+    # Set the status in the parent transformation first
+    for status, lfnList in parentStatusFiles.items():
+      for lfnChunk in breakListIntoChunks( lfnList, 5000 ):
+        res = self.setFileStatusForTransformation( parentProd, status, lfnChunk )
+        if not res['OK']:
+          gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files in transformation %d "
+                         % ( prod, status, len( lfnList ), parentProd ),
+                         res['Message'] )
+
+    # Set the status in the new transformation
+    for ( status, oldStatus ), lfnList in newStatusFiles.items():
+      for lfnChunk in breakListIntoChunks( lfnList, 5000 ):
+        res = self.setFileStatusForTransformation( prod, status, lfnChunk, force = force )
+        if not res['OK']:
+          gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files; resetting them %s in transformation %d"
+                         % ( prod, status, len( lfnChunk ), oldStatus, parentProd ),
+                         res['Message'] )
+          res = self.setFileStatusForTransformation( parentProd, oldStatus, lfnChunk )
+          if not res['OK']:
+            gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files in transformation %d"
+                           % ( prod, oldStatus, len( lfnChunk ), parentProd ),
+                           res['Message'] )
 
     return S_OK( ( parentProd, movedFiles ) )
 
-  def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False,
-                                          rpc = '', url = '', timeout = 120 ):
-    """ sets ths file status for LFNs of a transformation
-
-        For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
-        - newLFNsStatus is a dictionary with the form:
-          {'/this/is/an/lfn1.txt': 'StatusA', '/this/is/an/lfn2.txt': 'StatusB',  ... }
-          and at this point lfns is not considered
-        - newLFNStatus is a string, that applies to all the LFNs in lfns
-    """
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
-
-    # create dictionary in case newLFNsStatus is a string
-    if type( newLFNsStatus ) == type( '' ):
-      newLFNsStatus = dict( [( lfn, newLFNsStatus ) for lfn in lfns ] )
-
-    # gets status as of today
-    tsFiles = self.getTransformationFiles( {'TransformationID':transName, 'LFN': newLFNsStatus.keys()} )
-    if not tsFiles['OK']:
-      return tsFiles
-    tsFiles = tsFiles['Value']
-    if tsFiles:
-      # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
-      tsFilesAsDict = {}
-      for tsFile in tsFiles:
-        tsFilesAsDict[tsFile['LFN']] = [tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']]
-
-      # applying the state machine to the proposed status
-      newStatuses = self._applyTransformationFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
-
-      # must do it for the file IDs...
-      newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
-      return rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
-    else:
-      return S_OK( 'Nothing updated' )
-
-  def _applyTransformationFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
-    """ For easier extension, here we apply the state machine of the production files.
-        VOs might want to replace the standard here with something they prefer.
-
-        tsFiles is a dictionary with the lfn as key and as value a list of [Status, ErrorCount, FileID]
-        dictOfNewLFNsStatus is a dictionary with the proposed status
-        force is a boolean
-
-        It returns a dictionary with the status updates
-    """
-    newStatuses = {}
-
-    for lfn in dictOfProposedLFNsStatus.keys():
-      if lfn not in tsFilesAsDict.keys():
-        continue
-      else:
-        newStatus = dictOfProposedLFNsStatus[lfn]
-        # Apply optional corrections
-        if tsFilesAsDict[lfn][0].lower() == 'processed' and dictOfProposedLFNsStatus[lfn].lower() != 'processed':
-          if not force:
-            newStatus = 'Processed'
-        elif tsFilesAsDict[lfn][0].lower() == 'maxreset':
-          if not force:
-            newStatus = 'MaxReset'
-        elif dictOfProposedLFNsStatus[lfn].lower() == 'unused':
-          errorCount = tsFilesAsDict[lfn][1]
-          # every 10 retries
-          if ( errorCount % self.maxResetCounter ) == 0:
-            if not force:
-              newStatus = 'MaxReset'
-
-        newStatuses[lfn] = newStatus
-
-    return newStatuses
-
-  def setTransformationParameter( self, transID, paramName, paramValue, force = False,
-                                      rpc = '', url = '', timeout = 120 ):
-    """ Sets a transformation parameter. There's a special case when coming to setting the status of a transformation.
-    """
+  def setFileStatusForTransformation( self, transName, status, lfns, force = False, timeout = None ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
 
     if paramName.lower() == 'status':
@@ -366,11 +304,19 @@ class TransformationClient( Client, FileCatalogueBase ):
     """
     return self.name
 
-  def addDirectory( self, path, force = False, rpc = '', url = '', timeout = 120 ):
+  def addDirectory( self, path, force = False, rpc = '', url = '', timeout = None ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addDirectory( path, force )
 
-  def addFile( self, lfn, force = False, rpc = '', url = '', timeout = 120 ):
+  def getReplicas( self, lfn, rpc = '', url = '', timeout = None ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfns = res['Value'].keys()
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    return rpcClient.getReplicas( lfns )
+
+  def addFile( self, lfn, force = False, rpc = '', url = '', timeout = None ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
@@ -378,7 +324,15 @@ class TransformationClient( Client, FileCatalogueBase ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     return rpcClient.addFile( lfndicts, force )
 
-  def removeFile( self, lfn, rpc = '', url = '', timeout = 120 ):
+  def addReplica( self, lfn, force = False, rpc = '', url = '', timeout = None ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfndicts = res['Value']
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    return rpcClient.addReplica( lfndicts, force )
+
+  def removeFile( self, lfn, rpc = '', url = '', timeout = None ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
@@ -396,16 +350,65 @@ class TransformationClient( Client, FileCatalogueBase ):
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def removeDirectory( self, lfn, rpc = '', url = '', timeout = 120 ):
+  def removeReplica( self, lfn, rpc = '', url = '', timeout = None ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfndicts = res['Value']
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    successful = {}
+    failed = {}
+    # as lfndicts is a dict, the breakListIntoChunks will fail. Fake it!
+    listOfDicts = []
+    localdicts = {}
+    for lfn, info in lfndicts.items():
+      localdicts.update( { lfn : info } )
+      if len( localdicts.keys() ) % 100 == 0:
+        listOfDicts.append( localdicts )
+        localdicts = {}
+    for fDict in listOfDicts:
+      res = rpcClient.removeReplica( fDict )
+      if not res['OK']:
+        return res
+      successful.update( res['Value']['Successful'] )
+      failed.update( res['Value']['Failed'] )
+    resDict = {'Successful': successful, 'Failed':failed}
+    return S_OK( resDict )
+
+  def getReplicaStatus( self, lfn, rpc = '', url = '', timeout = None ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfndict = res['Value']
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    return rpcClient.getReplicaStatus( lfndict )
+
+  def setReplicaStatus( self, lfn, rpc = '', url = '', timeout = None ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfndict = res['Value']
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    return rpcClient.setReplicaStatus( lfndict )
+
+  def setReplicaHost( self, lfn, rpc = '', url = '', timeout = None ):
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfndict = res['Value']
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    return rpcClient.setReplicaHost( lfndict )
+
+  def removeDirectory( self, lfn, rpc = '', url = '', timeout = None ):
     return self.__returnOK( lfn )
 
-  def createDirectory( self, lfn, rpc = '', url = '', timeout = 120 ):
+  def createDirectory( self, lfn, rpc = '', url = '', timeout = None ):
     return self.__returnOK( lfn )
 
-  def createLink( self, lfn, rpc = '', url = '', timeout = 120 ):
+  def createLink( self, lfn, rpc = '', url = '', timeout = None ):
     return self.__returnOK( lfn )
 
-  def removeLink( self, lfn, rpc = '', url = '', timeout = 120 ):
+  def removeLink( self, lfn, rpc = '', url = '', timeout = None ):
     return self.__returnOK( lfn )
 
   def __returnOK( self, lfn ):

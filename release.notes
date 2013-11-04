@@ -89,6 +89,12 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
 
+[v6r9p25]
+
+*TS
+CHANGE: TransformationClient - changed default timeout values for service calls
+FIX: TransformationClient - fixes for processing of derived transformations 
+
 [v6r9p24]
 
 *TS
