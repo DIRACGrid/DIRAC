@@ -1255,24 +1255,25 @@ class TaskQueueDB( DB ):
     
     return S_OK(req_hash)
 
-  def addQueueToHashRelation(self, req_hash, queue, connObj = False):
-    """ Add a relationship between a hash and a queue: that's where the jobs could run
+  def addQueueToHashRelation(self, req_hash, queues, connObj = False):
+    """ Add a relationship between a hash and a list of queue: that's where the jobs could run
     """
     #Check if such relation already exists
-    res = self.getFields('tq_QueueToSubmitPool', [ 'ID' ], 
+    for queue in queues:
+      res = self.getFields('tq_QueueToSubmitPool', [ 'ID' ], 
                          {'hash': req_hash, "Queue" : queue }, conn = connObj)
-    if not res['OK']:
-      return res
-    if len(res['Value'][0]):
-      #it does
-      return S_OK()
+      if not res['OK']:
+        continue
+      if len(res['Value'][0]):
+        #it does
+        continue
 
-    #it doesn't, add it!    
-    res = self.insertFields('tq_QueueToSubmitPool', ["hash", 'Queue', "LastUpdate"],
-                            [ req_hash, queue, 'UTC_TIMESTAMP()'], conn = connObj)
+      #it doesn't, add it!
+      res = self.insertFields('tq_QueueToSubmitPool', ["hash", 'Queue', "LastUpdate"],
+                              [ req_hash, queue, 'UTC_TIMESTAMP()'], conn = connObj)
     
-    if not res['OK']:
-      return res
+      if not res['OK']:
+        return res
     return S_OK()
   
   def getOldQueueSubmitPoolRelations(self, olderthan, connObj= False):
