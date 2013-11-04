@@ -8,7 +8,7 @@ __RCSID__ = "ebed3a8 (2012-07-06 20:33:11 +0200) Adri Casajs <adria@ecm.ub.es>"
 
 import types
 import random
-import time
+import datetime
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
@@ -1274,4 +1274,23 @@ class TaskQueueDB( DB ):
     if not res['OK']:
       return res
     return S_OK()
+  
+  def getOldQueueSubmitPoolRelations(self, olderthan, connObj= False):
+    """ Return the oldest relations
+    Returns a dict {hash: [queue1, queue2, etc.]}
+    """
     
+    oldtime= (datetime.datetime.utcnow() - datetime.timedelta( seconds = olderthan ) ).strftime( '%Y-%m-%d %H:%M:%S' )
+    
+    res = self.getFields('tq_QueueToSubmitPool', ["hash", 'Queue'], older = oldtime, 
+                         timeStamp = "LastUpdate", conn = connObj)
+    if not res['OK']:
+      return res
+    res_dict = {}
+    for row in res['Value']:
+      if not row[0] in res_dict:
+        res_dict[row[0]] = []
+        
+      res_dict[row[0]].append(row[1])
+      
+    return S_OK(res_dict)
