@@ -7,6 +7,7 @@ from DIRAC                                                          import S_OK,
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/UpdateTransformationCounters'
 

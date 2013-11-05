@@ -9,6 +9,8 @@ from DIRAC.Core.Utilities.List          import breakListIntoChunks, sortList, un
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 
+__RCSID__ = "$Id$"
+
 class TransformationPlugin( object ):
   """ A TransformationPlugin object should be instantiated by every transformation.
   """
