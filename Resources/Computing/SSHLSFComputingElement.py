@@ -7,7 +7,8 @@
 """ LSF Computing Element with remote job submission via ssh/scp and using site
     shared area for the job proxy placement
 
-    To get the proxy right, don't forget to add in the CS that for this kind of CE, the BundleProxy must be True (default False)
+    To get the proxy right, don't forget to add in the CS that for this kind of CE, the 
+    BundleProxy must be True (default False)
 
     Do not use yet as some cleanup of submission scripts is not done, as well as the cleanup of outputs.
 
@@ -16,23 +17,16 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.SSHComputingElement       import SSH, SSHComputingElement 
-from DIRAC.Core.Utilities.Subprocess                     import shellCall, systemCall
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 from DIRAC.Core.Utilities.Pfn                            import pfnparse 
 from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import rootPath
-from DIRAC                                               import gConfig
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-from DIRAC.Resources.Computing.SSHComputingElement       import SSH 
-
-import os, sys, time, re, socket, stat, shutil
-import string, shutil, bz2, base64, tempfile
 
 CE_NAME = 'SSHLSF'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSHLSFComputingElement( SSHComputingElement ):
-
+  """ To submit jobs to LSF via SSH
+  """
   #############################################################################
   def __init__( self, ceUniqueID ):
     """ Standard constructor.
@@ -139,6 +133,6 @@ class SSHLSFComputingElement( SSHComputingElement ):
     output = '%s/DIRACPilot.o%s' % ( self.batchOutput, jobStamp )
     error = '%s/DIRACPilot.e%s' % ( self.batchError, jobStamp )
 
-    return S_OK( (jobStamp,host,output,error) )
+    return S_OK( (jobStamp, host, output, error) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
