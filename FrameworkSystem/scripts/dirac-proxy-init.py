@@ -114,7 +114,7 @@ class ProxyInit:
     if not vomsAttr:
       return S_ERROR( "Requested adding a VOMS extension but no VOMS attribute defined for group %s" % self.__piParams.diracGroup )
 
-    result = VOMS.VOMS().setVOMSAttributes( self.__proxyGenerated, attribute = vomsAttr, vo = Registry.getVOForGroup( self.__piParams.diracGroup ) )
+    result = VOMS.VOMS().setVOMSAttributes( self.__proxyGenerated, attribute = vomsAttr, vo = Registry.getVOMSVOForGroup( self.__piParams.diracGroup ) )
     if not result[ 'OK' ]:
       return S_ERROR( "Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" % result[ 'Message' ] )
 

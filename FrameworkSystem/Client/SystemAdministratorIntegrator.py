@@ -41,12 +41,13 @@ class SystemAdministratorIntegrator:
   def __executeClient( self, host, method, *parms, **kwargs ):
     """ Execute RPC method on a given host 
     """        
-    client = SystemAdministratorClient( host, **self.__kwargs )
+    hostName = Registry.getHostOption( host, 'Host', host)
+    client = SystemAdministratorClient( hostName, **self.__kwargs )
     result = getattr( client, method )( *parms, **kwargs )
     result['Host'] = host   
     return result
     
-  def __processResult( self, id, result ):
+  def __processResult( self, id_, result ):
     """ Collect results in the final structure
     """
     host = result['Host']

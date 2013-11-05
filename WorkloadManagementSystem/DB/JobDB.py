@@ -1542,7 +1542,6 @@ class JobDB( DB ):
       return S_ERROR( 'Can not insert manifest into DB: %s' % result[ 'Message' ] )
 
     jid = result[ 'Value' ]
-
     result = self.__checkAndPrepareManifest( jobManifest, jid,
                                         owner, ownerDN,
                                         ownerGroup, diracSetup )
@@ -1942,7 +1941,7 @@ class JobDB( DB ):
     # Get the site mask status
     siteStatus = SiteStatus()
     siteMask = {}
-    resultMask = getSites( fullName=True )
+    resultMask = getSites( fullName = True )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'NoMask'

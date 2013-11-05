@@ -722,6 +722,31 @@ class FileManagerBase:
     """ Set the file mode """
     connection = self._getConnection( connection )
     return self._setFileParameter( fileID, 'Mode', mode, connection = connection )
+  
+  def _setFileStatus( self, fileID, status, connection = False ):
+    """ Set file status
+    """
+    connection = self._getConnection( connection )
+    return self._setFileParameter( fileID, 'Status', status, connection = connection )
+  
+  def setFileStatus( self, lfns, connection = False ):
+    """ Set the status of the given files
+    """
+    successful = {}
+    failed = {}
+    for lfn,status in lfns.items():
+      result = self._findFiles( [lfn], ['FileID'], connection = connection )
+      if not result['Value']['Successful'].has_key( lfn ):
+        failed[lfn] = result['Value']['Failed'][lfn]
+        continue
+      fileID = result['Value']['Successful'][lfn]['FileID']
+      result = self._setFileStatus( fileID, status, connection )
+      if not result['OK']:
+        failed[lfn] = result['Message']
+      else:
+        successful['lfn'] = True  
+      
+    return S_OK( {'Successful':successful, 'Failed':failed} )  
 
   ######################################################
   #
@@ -865,9 +890,14 @@ class FileManagerBase:
     res = self._findFiles( lfns, ['Size'], connection = connection )
     if not res['OK']:
       return res
+    
+    totalSize = 0
     for lfn in res['Value']['Successful'].keys():
       size = res['Value']['Successful'][lfn]['Size']
       res['Value']['Successful'][lfn] = size
+      totalSize += size
+      
+    res['TotalSize'] = totalSize  
     return res
 
   def getFileMetadata( self, lfns, connection = False ):
@@ -940,14 +970,6 @@ class FileManagerBase:
           replicas[lfn][se] = pfn
                 
     result = S_OK( replicas )
-    
-    if self.db.lfnPfnConvention:
-      sePrefixDict = {}
-      resSE = self.db.seManager.getSEPrefixes()
-      if resSE['OK']:
-        sePrefixDict = resSE['Value']
-      result['Value']['SEPrefixes'] = sePrefixDict
-      
     return result
 
   def getReplicas( self, lfns, allStatus, connection = False ):

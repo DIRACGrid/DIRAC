@@ -72,7 +72,7 @@ class FTSSubmitAgent( AgentModule ):
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
 
-    self.filesBeingStaged = set()
+    self.filesBeingStaged = {}
     return S_OK()
 
   def execute( self ):
@@ -131,6 +131,8 @@ class FTSSubmitAgent( AgentModule ):
     sourceSE = filesDict['SourceSE']
     targetSE = filesDict['TargetSE']
     self.log.info( 'Obtained %s files for channel %s to %s' % ( len( filesDict['Files'] ), sourceSE, targetSE ) )
+    if self.filesBeingStaged.get( channelID ):
+      self.log.info( '%d files are currently in staging status' % len( self.filesBeingStaged[channelID] ) )
 
     # Create the FTSRequest object for preparing the submission
     oFTSRequest = FTSRequest()
@@ -156,7 +158,7 @@ class FTSSubmitAgent( AgentModule ):
       oFTSRequest.setLFN( lfn )
       oFTSRequest.setSourceSURL( lfn, fileMeta['SourceSURL'] )
       oFTSRequest.setTargetSURL( lfn, fileMeta['TargetSURL'] )
-      if lfn in self.filesBeingStaged:
+      if lfn in self.filesBeingStaged.get( channelID, [] ):
         oFTSRequest.setStatus( lfn, 'Staging' )
       fileID = fileMeta['FileID']
       fileIDs.append( fileID )
@@ -212,10 +214,10 @@ class FTSSubmitAgent( AgentModule ):
     failedFiles = oFTSRequest.getFailed()['Value']
     stagingFiles = oFTSRequest.getStaging()['Value']
     # cache files being staged
-    self.filesBeingStaged.update( stagingFiles )
+    self.filesBeingStaged.setdefault( channelID, set() ).update( stagingFiles )
     submittedFiles = lfns.difference( failedFiles, stagingFiles )
     # files being submitted are staged
-    self.filesBeingStaged -= submittedFiles
+    self.filesBeingStaged[channelID] -= submittedFiles
     failedIDs = set( [ meta["FileID"] for meta in files if meta["LFN"] in failedFiles ] )
     stagingIDs = set( [ meta["FileID"] for meta in files if meta["LFN"] in stagingFiles ] )
     # # only submitted

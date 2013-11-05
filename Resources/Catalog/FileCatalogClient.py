@@ -42,10 +42,10 @@ class FileCatalogClient(Client):
     
     lfnDict = result['Value']
     seDict = result['Value'].get( 'SEPrefixes', {} )
-    for lfn in lfnDict:
-      for se in lfnDict[lfn]:
-        if not lfnDict[lfn][se] and se in seDict:
-          lfnDict[lfn][se] = seDict[se] + lfn
+    for lfn in lfnDict['Successful']:
+      for se in lfnDict['Successful'][lfn]:
+        if not lfnDict['Successful'][lfn][se] and se in seDict:
+          lfnDict['Successful'][lfn][se] = seDict[se] + lfn
       
     return S_OK( lfnDict )  
 

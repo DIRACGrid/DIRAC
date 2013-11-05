@@ -71,15 +71,19 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, ResourcesDefaults, CSGlobals
-from DIRAC.Core.Security.Properties import *
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, \
+                                                     cfgInstallSection, ResourcesDefaults, CSGlobals
+from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR, \
+                                           CS_ADMINISTRATOR, JOB_ADMINISTRATOR, \
+                                           FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR, \
+                                           NORMAL_USER, TRUSTED_HOST
 
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
+from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 
 # On command line tools this can be set to True to abort after the first error.
@@ -95,7 +99,8 @@ def loadDiracCfg( verbose = False ):
   global localCfg, cfgFile, setup, instance, logLevel, linkedRootPath, host
   global basePath, instancePath, runitDir, startDir
   global db, mysqlDir, mysqlDbDir, mysqlLogDir, mysqlMyOrg, mysqlMyCnf, mysqlStartupScript
-  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode, mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
+  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode
+  global mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
 
   from DIRAC.Core.Utilities.Network import getFQDN
 
@@ -312,7 +317,7 @@ def _addCfgToLocalCS( cfg ):
 
 def _getCentralCfg( installCfg ):
   """
-  Create the esqueleton of central Cfg for an initial Master CS
+  Create the skeleton of central Cfg for an initial Master CS
   """
   # First copy over from installation cfg
   centralCfg = CFG()
@@ -708,40 +713,42 @@ def printStartupStatus( rDict ):
   Print in nice format the return dictionary from getStartupComponentStatus 
   (also returned by runsvctrlComponent)
   """
+  fields = ['Name','Runit','Uptime','PID']
+  records = []
   try:
-    print 'Name'.rjust( 32 ), ':', 'Runit    Uptime    PID'
     for comp in rDict:
-      print comp.rjust( 32 ), ':', rDict[comp]['RunitStatus'].ljust( 7 ), rDict[comp]['Timeup'].rjust( 7 ), rDict[comp]['PID'].rjust( 8 )
-  except Exception:
-    pass
+      records.append( [comp, rDict[comp]['RunitStatus'], rDict[comp]['Timeup'], rDict[comp]['PID'] ] )
+    printTable( fields, records )
+  except Exception, x:
+    print "Exception while gathering data for printing: %s" % str( x )
   return S_OK()
 
 def printOverallStatus( rDict ):
   """
   Print in nice format the return dictionary from getOverallStatus
   """
+  fields = ['System','Name','Type','Setup','Installed','Runit','Uptime','PID']
+  records = []
   try:
-    print
-    print "   System", ' '*20, 'Name', ' '*5, 'Type', ' '*23, 'Setup    Installed   Runit    Uptime    PID'
-    print '-' * 116
     for compType in rDict:
       for system in rDict[compType]:
         for component in rDict[compType][system]:
-          print  system.ljust( 28 ), component.ljust( 28 ), compType.lower()[:-1].ljust( 7 ),
+          record = [ system, component, compType.lower()[:-1] ]
           if rDict[compType][system][component]['Setup']:
-            print 'SetUp'.rjust( 12 ),
+            record.append( 'SetUp' )
           else:
-            print 'NotSetup'.rjust( 12 ),
+            record.append( 'NotSetUp' )
           if rDict[compType][system][component]['Installed']:
-            print 'Installed'.rjust( 12 ),
+            record.append( 'Installed' )
           else:
-            print 'NotInstalled'.rjust( 12 ),
-          print str( rDict[compType][system][component]['RunitStatus'] ).ljust( 7 ),
-          print str( rDict[compType][system][component]['Timeup'] ).rjust( 7 ),
-          print str( rDict[compType][system][component]['PID'] ).rjust( 8 ),
-          print
-  except Exception:
-    pass
+            record.append( 'NotInstalled' )
+          record.append( str( rDict[compType][system][component]['RunitStatus'] ) )
+          record.append( str( rDict[compType][system][component]['Timeup'] ) )
+          record.append( str( rDict[compType][system][component]['PID'] ) ) 
+          records.append( record )
+    printTable( fields, records )
+  except Exception, x:
+    print "Exception while gathering data for printing: %s" % str( x )
 
   return S_OK()
 
@@ -1248,9 +1255,9 @@ def setupSite( scriptCfg, cfg = None ):
         gLogger.error( error )
         DIRAC.exit( -1 )
       return S_ERROR( error )
-    agentSysInstance = agentTuple[0]
-    if not agentSysInstance in setupSystems:
-      setupSystems.append( agentSysInstance )
+    executorSysInstance = executorTuple[0]
+    if not executorSysInstance in setupSystems:
+      setupSystems.append( executorSysInstance )
 
   # And to find out the available extensions
   result = getExtensions()
@@ -1325,26 +1332,40 @@ def setupSite( scriptCfg, cfg = None ):
 
   if ['Configuration', 'Server'] in setupServices and setupConfigurationMaster:
     # This server hosts the Master of the CS
+    from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
     gLogger.notice( 'Installing Master Configuration Server' )
     cfg = __getCfg( cfgPath( 'DIRAC', 'Setups', setup ), 'Configuration', instance )
     _addCfgToDiracCfg( cfg )
     cfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'Master' , 'yes' )
     cfg.setOption( cfgPath( 'DIRAC', 'Configuration', 'Name' ) , setupConfigurationName )
+
     serversCfgPath = cfgPath( 'DIRAC', 'Configuration', 'Servers' )
     if not localCfg.getOption( serversCfgPath , [] ):
       serverUrl = 'dips://%s:9135/Configuration/Server' % host
       cfg.setOption( serversCfgPath, serverUrl )
-      from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
       gConfigurationData.setOptionInCFG( serversCfgPath, serverUrl )
-
+    instanceOptionPath = cfgPath( 'DIRAC', 'Setups', setup )
+    instanceCfg = __getCfg( instanceOptionPath, 'Configuration', instance )
+    cfg = cfg.mergeWith( instanceCfg )
     _addCfgToDiracCfg( cfg )
+
+    result = getComponentCfg( 'service', 'Configuration', 'Server', instance, extensions, addDefaultOptions = True )
+    if not result['OK']:
+      if exitOnError:
+        DIRAC.exit( -1 )
+      else:
+        return result
+    compCfg = result['Value']
+    cfg = cfg.mergeWith( compCfg )
+    gConfigurationData.mergeWithLocal( cfg )
+
     addDefaultOptionsToComponentCfg( 'service', 'Configuration', 'Server', [] )
     if installCfg:
       centralCfg = _getCentralCfg( installCfg )
     else:
       centralCfg = _getCentralCfg( localCfg )
     _addCfgToLocalCS( centralCfg )
-    setupComponent( 'service', 'Configuration', 'Server', [] )
+    setupComponent( 'service', 'Configuration', 'Server', [], checkModule = False )
     runsvctrlComponent( 'Configuration', 'Server', 't' )
 
     while ['Configuration', 'Server'] in setupServices:
@@ -1487,7 +1508,7 @@ exec svlogd .
   os.chmod( logRunFile, gDefaultPerms )
 
 
-def installComponent( componentType, system, component, extensions, componentModule = '' ):
+def installComponent( componentType, system, component, extensions, componentModule = '', checkModule = True ):
   """ Install runit directory for the specified component
   """
   # Check if the component is already installed
@@ -1500,17 +1521,18 @@ def installComponent( componentType, system, component, extensions, componentMod
   # Check that the software for the component is installed
   # Any "Load" or "Module" option in the configuration defining what modules the given "component"
   # needs to load will be taken care of by checkComponentModule.
-  result = checkComponentModule( componentType, system, component )
-  if not result['OK']:
-  # cModule = componentModule
-  # if not cModule:
-  #   cModule = component
-  # if not checkComponentSoftware( componentType, system, cModule, extensions )['OK'] and componentType != 'executor':
-    error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
-    if exitOnError:
-      gLogger.error( error )
-      DIRAC.exit( -1 )
-    return S_ERROR( error )
+  if checkModule:
+    result = checkComponentModule( componentType, system, component )
+    if not result['OK']:
+    # cModule = componentModule
+    # if not cModule:
+    #   cModule = component
+    # if not checkComponentSoftware( componentType, system, cModule, extensions )['OK'] and componentType != 'executor':
+      error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
+      if exitOnError:
+        gLogger.error( error )
+        DIRAC.exit( -1 )
+      return S_ERROR( error )
 
   gLogger.notice( 'Installing %s %s/%s' % ( componentType, system, component ) )
 
@@ -1557,11 +1579,11 @@ exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(co
 
   return S_OK( runitCompDir )
 
-def setupComponent( componentType, system, component, extensions, componentModule = '' ):
+def setupComponent( componentType, system, component, extensions, componentModule = '', checkModule = True ):
   """
   Install and create link in startup
   """
-  result = installComponent( componentType, system, component, extensions, componentModule )
+  result = installComponent( componentType, system, component, extensions, componentModule, checkModule )
   if not result['OK']:
     return result
 
@@ -1951,11 +1973,13 @@ def installMySQL():
   result = execCommand( 0, ['mysqladmin', '-u', 'root', 'password', mysqlRootPwd] )
   if not result['OK']:
     return result
+  
   if mysqlHost and socket.gethostbyname( mysqlHost ) != '127.0.0.1' :
-    result = execCommand( 0, ['mysqladmin', '-u', 'root',
-                              '-h', '%s' % mysqlHost, 'password', mysqlRootPwd] )
+    result = execCommand( 0, ['mysqladmin', '-u', 'root', '-h', mysqlHost, 'password', mysqlRootPwd] )
     if not result['OK']:
       return result
+
+  result = execMySQL( "DELETE from user WHERE Password=''", localhost=True )
 
   if not _addMySQLToDiracCfg():
     return S_ERROR( 'Failed to add MySQL user password to local configuration' )
@@ -2151,7 +2175,7 @@ def installDatabase( dbName ):
 
   return S_OK( dbFile.split( '/' )[-4:-2] )
 
-def execMySQL( cmd, dbName = 'mysql' ):
+def execMySQL( cmd, dbName = 'mysql', localhost=False ):
   """
   Execute MySQL Command
   """
@@ -2160,7 +2184,10 @@ def execMySQL( cmd, dbName = 'mysql' ):
   if not mysqlRootPwd:
     return S_ERROR( 'MySQL root password is not defined' )
   if dbName not in db:
-    db[dbName] = MySQL( mysqlHost, mysqlRootUser, mysqlRootPwd, dbName, mysqlPort )
+    dbHost = mysqlHost
+    if localhost:
+      dbHost = 'localhost'
+    db[dbName] = MySQL( dbHost, mysqlRootUser, mysqlRootPwd, dbName, mysqlPort )
   if not db[dbName]._connected:
     error = 'Could not connect to MySQL server'
     gLogger.error( error )

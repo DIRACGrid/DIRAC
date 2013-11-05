@@ -98,6 +98,8 @@ class LocalConfiguration:
     if devLoader.enabled:
       self.registerCmdOpt( "", "autoreload", "Automatically restart if there's any change in the module",
                            self.__setAutoreload )
+    self.registerCmdOpt( "", "license", "Show DIRAC's LICENSE",
+                         self.showLicense )
     self.registerCmdOpt( "h", "help", "Shows this help",
                          self.showHelp )
 
@@ -448,6 +450,20 @@ class LocalConfiguration:
   def getDebugMode( self ):
     return self.__debugMode
 
+  def showLicense( self, dummy = False ):
+    """
+    Print license
+    """
+    lpath = os.path.join( DIRAC.rootPath, "DIRAC", "LICENSE" )
+    sys.stdout.write( " - DIRAC is GPLv3 licensed\n\n" )
+    try:
+      with open( lpath ) as fd:
+        sys.stdout.write( fd.read() )
+    except IOError:
+      sys.stdout.write( "Can't find GPLv3 license at %s. Somebody stole it!\n" % lpath )
+      sys.stdout.write( "Please check out http://www.gnu.org/licenses/gpl-3.0.html for more info\n" )
+    DIRAC.exit(0)
+
   def showHelp( self, dummy = False ):
     """
     Printout help message including a Usage message if defined via setUsageMessage method
@@ -464,10 +480,9 @@ class LocalConfiguration:
     iLastOpt = 0
     for iPos in range( len( self.commandOptionList ) ):
       optionTuple = self.commandOptionList[ iPos ]
-      if optionTuple[0]:
-        gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 3 ), optionTuple[1].ljust( 15 ), optionTuple[2] ) )
-      else:
-        gLogger.notice( "   %s --%s : %s" % ( '   ', optionTuple[1].ljust( 15 ), optionTuple[2] ) )
+      gLogger.notice( "  %s --%s : %s" % ( ( "-" + optionTuple[0].ljust( 3 ) if optionTuple[0] else  " " * 4 ),
+                                            optionTuple[1].ljust( 15 ),
+                                            optionTuple[2] ) )
 
       iLastOpt = iPos
       if optionTuple[0] == 'h':

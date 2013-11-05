@@ -26,7 +26,9 @@ from DIRAC.Core.Utilities.List import sortList, randomize
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getSEsForCountry
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 class CatalogBase( object ):
   """
@@ -1961,7 +1963,7 @@ class ReplicaManager( CatalogToStorage ):
     self.log.verbose( "__registerReplica: Successfully resolved %s replicas for registration." % len( replicaTuples ) )
     # HACK!
     replicaDict = {}
-    for lfn, pfn, se, master in replicaTuples:
+    for lfn, pfn, se, _master in replicaTuples:
       replicaDict[lfn] = {'SE':se, 'PFN':pfn}
 
     if catalog:
@@ -2447,7 +2449,11 @@ class ReplicaManager( CatalogToStorage ):
 
   def getSEStatus( self, se ):
     """ check is SE is active """
-    res = self.resourceStatus.getStorageStatus( se, default = None )
+    result = StorageFactory().getStorageName( se )
+    if not result['OK']:
+      return S_ERROR( 'SE not known' )
+    resolvedName = result['Value'] 
+    res = self.resourceStatus.getStorageElementStatus( resolvedName, default = None )
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )
 
@@ -2463,7 +2469,12 @@ class ReplicaManager( CatalogToStorage ):
     """ create accouting record """
     accountingDict = {}
     accountingDict['OperationType'] = operation
-    accountingDict['User'] = 'acsmith'
+    result = getProxyInfo()
+    if not result['OK']:
+      userName = 'system'
+    else:
+      userName = result['Value'].get( 'username', 'unknown' )   
+    accountingDict['User'] = userName
     accountingDict['Protocol'] = 'ReplicaManager'
     accountingDict['RegistrationTime'] = 0.0
     accountingDict['RegistrationOK'] = 0

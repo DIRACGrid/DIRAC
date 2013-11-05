@@ -1530,7 +1530,7 @@ if __name__ == '__main__':
   parseCommandLine()
 
   if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
-    gLogger.info( 'Unset pyhthon optimization "PYTHONOPTIMIZE"' )
+    gLogger.info( 'Unset python optimization "PYTHONOPTIMIZE"' )
     sys.exit( 0 )
 
   gLogger.info( 'Testing MySQL class...' )

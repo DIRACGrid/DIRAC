@@ -11,9 +11,9 @@
 
     This agent has two modes of operation:
     - standalone, when all Requests are handled using ProcessPool and TransferTask
-    - scheduling for FTS with failback TransferTask functionality
+    - scheduling for FTS with fallback TransferTask functionality
 
-    The failback mechanism is fired in case that:
+    The fallback mechanism is fired in case that:
 
     - FTS channels between SourceSE and TargetSE is not defined
     - there is a trouble to define correct replication tree
@@ -42,7 +42,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
-
+from DIRAC.Core.Utilities.Adler import compareAdler
 # # agent name
 AGENT_NAME = "DataManagement/TransferAgent"
 
@@ -341,13 +341,11 @@ class TransferAgent( RequestAgentBase ):
         self.log.warn( "checkSourceSE: %s" % seMetadata["Message"] )
         return S_ERROR( "checkSourceSE: failed to get metadata" )
       seMetadata = seMetadata["Value"]
-      catalogChecksum = catalogMetadata["Checksum"].replace( "x", "0" ).zfill( 8 ) if "Checksum" in catalogMetadata else None
-      storageChecksum = seMetadata["Checksum"].replace( "x", "0" ).zfill( 8 ) if "Checksum" in seMetadata else None
-      if catalogChecksum != storageChecksum:
+      if not compareAdler( catalogMetadata["Checksum"], seMetadata["Checksum"] ):
         self.log.warn( "checkSourceSE: %s checksum mismatch catalogue:%s %s:%s" % ( lfn,
-                                                                                    catalogChecksum,
+                                                                                    catalogMetadata["Checksum"],
                                                                                     sourceSE,
-                                                                                    storageChecksum ) )
+                                                                                    seMetadata["Checksum"] ) )
         return S_ERROR( "checkSourceSE: checksum mismatch" )
       # # if we're here everything is OK
       return S_OK()

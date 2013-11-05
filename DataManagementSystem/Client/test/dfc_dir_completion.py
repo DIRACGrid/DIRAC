@@ -1,16 +1,9 @@
-#!/usr/bin/env python
-# -*- coding:utf-8 -*-
-# author: lintao
-
-from DIRAC.Core.Base import Script
-Script.parseCommandLine( ignoreErrors = False )
+# TO-DO: to be moved to TestDIRAC
 
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
 import cmd
 import sys
-import os
-import os.path
 
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion

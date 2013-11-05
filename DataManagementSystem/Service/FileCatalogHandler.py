@@ -40,7 +40,8 @@ def initializeFileCatalogHandler( serviceInfo ):
                        'DirectoryManager'  : 'DirectoryLevelTree',
                        'FileManager'       : 'FileManager',
                        'DirectoryMetadata' : 'DirectoryMetadata',
-                       'FileMetadata'      : 'FileMetadata'}
+                       'FileMetadata'      : 'FileMetadata',
+                       'DatasetManager'    : 'DatasetManager' }
   for configKey in sortList( defaultManagers.keys() ):
     defaultValue = defaultManagers[configKey]
     configValue = getServiceOption( serviceInfo, configKey, defaultValue )
@@ -54,7 +55,9 @@ def initializeFileCatalogHandler( serviceInfo ):
                     'LFNPFNConvention'    : 'Strong',
                     'ResolvePFN'          : True,
                     'DefaultUmask'        : 0775,
-                    'VisibleStatus'       : ['AprioriGood'],
+                    'ValidFileStatus'     : ['AprioriGood','Trash','Removing','Probing'],
+                    'ValidReplicaStatus'  : ['AprioriGood','Removing','Probing'],
+                    'VisibleFileStatus'   : ['AprioriGood'],
                     'VisibleReplicaStatus': ['AprioriGood']}
   for configKey in sortList( defaultConfig.keys() ):
     defaultValue = defaultConfig[configKey]
@@ -179,6 +182,11 @@ class FileCatalogHandler( RequestHandler ):
   def export_removeFile( self, lfns ):
     """ Remove the supplied lfns """
     return gFileCatalogDB.removeFile( lfns, self.getRemoteCredentials() )
+  
+  types_setFileStatus = [ DictType ]
+  def export_setFileStatus( self, lfns ):
+    """ Remove the supplied lfns """
+    return gFileCatalogDB.setFileStatus( lfns, self.getRemoteCredentials() )
 
   types_addReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_addReplica( self, lfns ):
@@ -363,6 +371,12 @@ class FileCatalogHandler( RequestHandler ):
     """ Set metadata parameter for the given path
     """
     return gFileCatalogDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
+  
+  types_setMetadataBulk = [ DictType ]
+  def export_setMetadataBulk( self, pathMetadataDict ):
+    """ Set metadata parameter for the given path
+    """
+    return gFileCatalogDB.setMetadataBulk( pathMetadataDict, self.getRemoteCredentials() )
 
   types_removeMetadata = [ StringTypes, ListType ]
   def export_removeMetadata( self, path, metadata ):
@@ -492,3 +506,61 @@ class FileCatalogHandler( RequestHandler ):
     """ Get the list of metadata sets with their definitions
     """
     return gFileCatalogDB.dmeta.listMetadataSets(self.getRemoteCredentials())
+
+#########################################################################################
+#
+#  Dataset manipulation methods
+#
+  types_addDataset = [ StringTypes, DictType ]
+  def export_addDataset( self, datasetName, metaQuery ):
+    """ Add a new dynamic dataset defined by its meta query
+    """
+    return gFileCatalogDB.datasetManager.addDataset( datasetName, metaQuery, self.getRemoteCredentials() )
+  
+  types_removeDataset = [ StringTypes ]
+  def export_removeDataset( self, datasetName ):
+    """ Check the given dynamic dataset for changes since its definition
+    """
+    return gFileCatalogDB.datasetManager.removeDataset( datasetName, self.getRemoteCredentials() )
+  
+  types_checkDataset = [ StringTypes ]
+  def export_checkDataset( self, datasetName ):
+    """ Check the given dynamic dataset for changes since its definition
+    """
+    return gFileCatalogDB.datasetManager.checkDataset( datasetName, self.getRemoteCredentials() )
+  
+  types_updateDataset = [ StringTypes ]
+  def export_updateDataset( self, datasetName ):
+    """ Update the given dynamic dataset for changes since its definition
+    """
+    return gFileCatalogDB.datasetManager.updateDataset( datasetName, self.getRemoteCredentials() )
+  
+  types_getDatasets = [ list( StringTypes ) + [ListType] ]
+  def export_getDatasets( self, datasetName ):
+    """ Get parameters of the given dynamic dataset as they are stored in the database
+    """
+    return gFileCatalogDB.datasetManager.getDatasets( datasetName, self.getRemoteCredentials() )
+  
+  types_getDatasetParameters = [ StringTypes ]
+  def export_getDatasetParameters( self, datasetName ):
+    """ Get parameters of the given dynamic dataset as they are stored in the database
+    """
+    return gFileCatalogDB.datasetManager.getDatasetParameters( datasetName, self.getRemoteCredentials() )
+  
+  types_freezeDataset = [ StringTypes ]
+  def export_freezeDataset( self, datasetName ):
+    """ Freeze the contents of the dataset making it effectively static
+    """
+    return gFileCatalogDB.datasetManager.freezeDataset( datasetName, self.getRemoteCredentials() )
+  
+  types_releaseDataset = [ StringTypes ]
+  def export_releaseDataset( self, datasetName ):
+    """ Release the contents of the frozen dataset allowing changes in its contents
+    """
+    return gFileCatalogDB.datasetManager.releaseDataset( datasetName, self.getRemoteCredentials() )
+  
+  types_getDatasetFiles = [ StringTypes ]
+  def export_getDatasetFiles( self, datasetName ):
+    """ Get lfns in the given dataset
+    """
+    return gFileCatalogDB.datasetManager.getDatasetFiles( datasetName, self.getRemoteCredentials() )

@@ -1,12 +1,9 @@
-#################################################################################
-# $HeadURL $
-#################################################################################
-
 """ This is the Proxy storage element client """
 
 __RCSID__ = "$Id$"
 
 from DIRAC                                              import gLogger, S_OK, S_ERROR
+from DIRAC.Resources.Utilities.Utils                    import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase                import StorageBase
 from DIRAC.ConfigurationSystem.Client                   import PathFinder
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -14,7 +11,7 @@ from DIRAC.Core.DISET.TransferClient                    import TransferClient
 from DIRAC.Core.Utilities.File                          import getSize
 from DIRAC.Core.Utilities.Pfn                           import pfnunparse
 
-import types, os
+import os
 
 class ProxyStorage( StorageBase ):
 
@@ -63,7 +60,7 @@ class ProxyStorage( StorageBase ):
   ######################################
 
   def getFile( self, path, localPath = False ):
-    res = self.__checkArgumentFormatDict( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -102,15 +99,15 @@ class ProxyStorage( StorageBase ):
     return S_OK( resDict )
 
   def putFile( self, path, sourceSize = 0 ):
-    
+
     client = RPCClient( self.url )
 
     if sourceSize:
-      gLogger.debug( "ProxyStorage.putFile: The client has provided the source file size implying a replication is requested." )        
+      gLogger.debug( "ProxyStorage.putFile: The client has provided the source file size implying a replication is requested." )
       return client.callProxyMethod( self.name, 'putFile', [path], {'sourceSize':sourceSize} )
-      
+
     gLogger.debug( "ProxyStorage.putFile: No source size was provided therefore a simple put will be performed." )
-    res = self.__checkArgumentFormatDict( path )    
+    res = self.__checkArgumentFormatDict( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -221,19 +218,6 @@ class ProxyStorage( StorageBase ):
   def putDirectory( self, path ):
     return S_ERROR( "Not supported" )
 
-  def __checkArgumentFormatDict( self, path ):
-    if type( path ) in types.StringTypes:
-      urls = {path:False}
-    elif type( path ) == types.ListType:
-      urls = {}
-      for url in path:
-        urls[url] = False
-    elif type( path ) == types.DictType:
-      urls = path
-    else:
-      return S_ERROR( "ProxyStorage.__checkArgumentFormatDict: Supplied path is not of the correct format." )
-    return S_OK( urls )
-
   def __executeOperation( self, url, method ):
     """ Executes the requested functionality with the supplied url
     """
@@ -241,11 +225,11 @@ class ProxyStorage( StorageBase ):
     if hasattr( self, method ) and callable( getattr( self, method ) ):
       fcn = getattr( self, method )
     if not fcn:
-      return S_ERROR("Unable to invoke %s, it isn't a member function of ProxyStorage" % method )
+      return S_ERROR( "Unable to invoke %s, it isn't a member function of ProxyStorage" % method )
     res = fcn( [url] )
     if not res['OK']:
       return res
     elif url not in res['Value']['Successful']:
       return S_ERROR( res['Value']['Failed'][url] )
     return S_OK( res['Value']['Successful'][url] )
-    
+

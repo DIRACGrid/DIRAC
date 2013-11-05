@@ -12,8 +12,8 @@ __RCSID__  = '$Id:  $'
 
 class State( object ):
   """
-  State class that represents a single step on a StateMachine, with all the
-  possible transitions, the default transition and an ordering level.
+    State class that represents a single step on a StateMachine, with all the
+    possible transitions, the default transition and an ordering level.
   """
   
   def __init__( self, level, stateMap = list(), defState = None ):

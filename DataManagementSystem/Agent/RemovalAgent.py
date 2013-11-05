@@ -10,7 +10,6 @@ __RCSID__ = "$Id$"
 
 ## from DIRAC
 from DIRAC import gMonitor
-from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.DataManagementSystem.private.RemovalTask import RemovalTask
 
@@ -21,7 +20,7 @@ class RemovalAgent( RequestAgentBase ):
   """
   ..  class:: RemovalAgent
 
-  This agent is preocessing 'removal' requests read from RequestClient.
+  This agent is processing 'removal' requests read from RequestClient.
   Each request is executed in a separate sub-process using ProcessPool and 
   RemovalTask.
 

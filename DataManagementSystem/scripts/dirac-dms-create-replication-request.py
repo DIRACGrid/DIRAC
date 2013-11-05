@@ -43,7 +43,7 @@ for inputFileName in args:
     inputFile = open( inputFileName, 'r' )
     string = inputFile.read()
     inputFile.close()
-    lfns.extend( string.splitlines() )
+    lfns.extend( [ lfn.strip() for lfn in string.splitlines() ] )
   else:
     lfns.append( inputFileName )
 
@@ -56,13 +56,11 @@ if not se.valid:
   print
   Script.showHelp()
 
-from DIRAC.RequestManagementSystem.Client.Request           import Request
-from DIRAC.RequestManagementSystem.Client.Operation         import Operation
-from DIRAC.RequestManagementSystem.Client.File              import File
-from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
-from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
+from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
+from DIRAC.RequestManagementSystem.Client.ReqClient             import ReqClient
 
-requestClient = ReqClient()
+reqClient = ReqClient()
+requestType = 'transfer'
 requestOperation = 'replicateAndRegister'
 
 for lfnList in breakListIntoChunks( lfns, 100 ):
@@ -85,10 +83,21 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
     print "Request is not valid: ", isValid['Message']
     DIRAC.exit( 1 )
 
-  DIRAC.gLogger.info( oRequest.toJSON()['Value'] )
-
-  result = requestClient.putRequest( oRequest )
+  result = reqClient.setRequest( requestName, oRequest.toXML()['Value'] )
   if result['OK']:
     print 'Submitted Request:', result['Value']
   else:
     print 'Failed to submit Request', result['Message']
+  if monitor:
+    requestID = result['Value']
+    while True:
+      result = reqClient.getRequestStatus( requestID )
+      if not result['OK']:
+        Script.gLogger.error( result['Message'] )
+        break
+      Script.gLogger.notice( result['Value']['RequestStatus'] )
+      if result['Value']['RequestStatus'] == 'Done':
+        break
+      import time
+      time.sleep( 10 )
+

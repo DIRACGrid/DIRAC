@@ -69,7 +69,9 @@ class FileCatalogDB(DB):
       self.lfnPfnConvention = False
     self.resolvePfn = databaseConfig['ResolvePFN']
     self.umask = databaseConfig['DefaultUmask']
-    self.visibleStatus = databaseConfig['VisibleStatus']
+    self.validFileStatus = databaseConfig['ValidFileStatus']
+    self.validReplicaStatus = databaseConfig['ValidReplicaStatus']
+    self.visibleFileStatus = databaseConfig['VisibleFileStatus']
     self.visibleReplicaStatus = databaseConfig['VisibleReplicaStatus']
 
     # Obtain the plugins to be used for DB interaction
@@ -99,6 +101,11 @@ class FileCatalogDB(DB):
     if not result['OK']:
       return result
     self.fileManager = result['Value']
+    
+    result = self.__loadCatalogComponent( databaseConfig['DatasetManager'] )
+    if not result['OK']:
+      return result
+    self.datasetManager = result['Value']
     
     result = self.__loadCatalogComponent( databaseConfig['DirectoryMetadata'] )
     if not result['OK']:
@@ -281,7 +288,7 @@ class FileCatalogDB(DB):
   def getPathPermissions(self, lfns, credDict):
     """ Get permissions for the given user/group to manipulate the given lfns 
     """
-    res = checkArgumentDict(lfns)
+    res = checkArgumentFormat(lfns)
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -346,6 +353,18 @@ class FileCatalogDB(DB):
       return res
     failed = res['Value']['Failed']
     res = self.fileManager.addFile(res['Value']['Successful'],credDict)
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    return S_OK( {'Successful':successful,'Failed':failed} )
+  
+  def setFileStatus(self, lfns, credDict):
+    res = self._checkPathPermissions('Write', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.setFileStatus( res['Value']['Successful'], credDict )
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
@@ -721,6 +740,20 @@ class FileCatalogDB(DB):
       # This is a file      
       return self.fmeta.setMetadata(path,metadataDict,credDict)      
     
+  def setMetadataBulk( self, pathMetadataDict, credDict ):
+    """  Add metadata for the given paths
+    """  
+    successful = {}
+    failed = {}
+    for path, metadataDict in pathMetadataDict.items():
+      result = self.setMetadata( path, metadataDict, credDict )
+      if result['OK']:
+        successful[path] = True
+      else:
+        failed[path] = result['Message']
+        
+    return S_OK( { 'Successful': successful, 'Failed': failed } )      
+    
   def removeMetadata(self, path, metadata, credDict):
     """ Add metadata to the given path
     """
@@ -783,7 +816,7 @@ class FileCatalogDB(DB):
     return self.securityManager.hasAdminAccess(credDict)
 
   def _checkPathPermissions(self,operation,lfns,credDict):
-    res = checkArgumentDict(lfns)
+    res = checkArgumentFormat(lfns)
     if not res['OK']:
       return res
     lfns = res['Value']
@@ -802,4 +835,4 @@ class FileCatalogDB(DB):
       else:  
         successful[lfn] = lfns[lfn]
     return S_OK( {'Successful':successful,'Failed':failed} )
-  
+

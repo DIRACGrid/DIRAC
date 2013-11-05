@@ -25,22 +25,17 @@
 
 __RCSID__ = "$Id$"
 
-
 import collections
 import threading
 import time
-
-import DIRAC.Core.Utilities.Time as Time
-
-
 from types import *
 
+import DIRAC.Core.Utilities.Time as Time
 from DIRAC                                             import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                import DB
 from DIRAC.Core.Utilities.SiteCEMapping                import getSiteForCE, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from DIRAC.ResourceStatusSystem.Client.SiteStatus      import SiteStatus
-
 
 DEBUG = 1
 
@@ -189,10 +184,10 @@ class PilotAgentsDB( DB ):
       if not result['OK']:
         return result
 
-      if not 'lastRowId' in res['Value']:
+      if not 'lastRowId' in result:
         return S_ERROR( '%s' % err )
 
-      pilotID = int( res['Value']['lastRowId'] )
+      pilotID = int( result['lastRowId'] )
 
       req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % ( pilotID, e_requirements )
       res = self._update( req )

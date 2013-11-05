@@ -410,6 +410,9 @@ class Watchdog:
     wallClockTime = self.parameters['WallClockTime'][-1] - self.parameters['WallClockTime'][-1 - intervals ]
     try:
       cpuTime = self.__convertCPUTime( self.parameters['CPUConsumed'][-1] )['Value']
+      # For some reason, some times the CPU consumed estimation returns 0
+      # if cpuTime == 0:
+      #   return S_OK()
       cpuTime -= self.__convertCPUTime( self.parameters['CPUConsumed'][-1 - intervals ] )['Value']
 
       ratio = ( cpuTime / wallClockTime ) * 100.

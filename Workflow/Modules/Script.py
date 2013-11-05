@@ -2,6 +2,9 @@
     or file to run (and is also a simple example of a workflow module).
 """
 
+# FIXME: Remove me after v6r10
+# just a copy of Wokflow.Modules.Script, for backward compatibility with jobs already in the system.
+
 import os, sys, re
 
 from DIRAC.Core.Utilities.Subprocess    import shellCall

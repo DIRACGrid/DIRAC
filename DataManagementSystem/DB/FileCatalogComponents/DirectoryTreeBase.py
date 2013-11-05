@@ -604,20 +604,24 @@ class DirectoryTreeBase:
     if type( dirID ) != ListType:
       dirs = [dirID]
 
-    dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
+    dirListString = ','.join( [ str( dir_ ) for dir_ in dirs ] )
     treeTable = self.getTreeTable()
-    req = "SELECT D.DirName,F.FileName FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
+    req = "SELECT D.DirName,F.FileName,F.FileID FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
     req = req % ( treeTable, dirListString )
     result = self.db._query( req )
     if not result['OK']:
       return result
 
     lfnDict = {}
-    for dir_,fname in result['Value']:
-      lfnDict.setdefault(dir_,[])
-      lfnDict[dir_].append(fname)
+    lfnIDList = []
+    for dir_, fname, fileID in result['Value']:
+      lfnDict.setdefault( dir_, [] )
+      lfnDict[dir_].append( fname )
+      lfnIDList.append( fileID )
 
-    return S_OK( lfnDict )
+    result = S_OK( lfnDict )
+    result['LFNIDList'] = lfnIDList
+    return result
 
   def __getDirectoryContents( self, path, details = False ):
     """ Get contents of a given directory

@@ -74,7 +74,6 @@ class RssConfiguration:
         return List.fromChar( res[ 'Value' ][ 'default' ] )
         
     return _DEFAULTS
-
 ## RssConfiguration/Policies ###################################################
 
 def getPolicies():
@@ -108,9 +107,20 @@ def getValidElements():
   '''
   Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/ValidElements
   '''
-    
-  return ( 'Site', 'Resource', 'Node', 'Component' )  
+  _DEFAULTS = ( 'Site', 'Resource', 'Node', 'Component' )
+  
+#  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % _rssConfigPath )
+#  if result is not None:
+#    return List.fromChar( result )
+  return _DEFAULTS  
 
+def getValidStatus():
+  '''
+  Returns a list of statuses as were defined on the RSS(State)Machine  
+  '''
+
+  validStatus = RSSMachine( None ).getStates()
+  return S_OK( validStatus )
 
 #...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

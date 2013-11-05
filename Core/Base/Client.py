@@ -1,8 +1,5 @@
 """ Base class for DIRAC Client """
-########################################################################
-# $Id$
-# $HeadURL$
-########################################################################
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -55,8 +52,9 @@ class Client:
     # evalString = "rpcClient.%s(*parms,**kws)" % toExecute
     # return eval( evalString )
 
-  def _getRPC( self, rpc = None, url = '', timeout = 120 ):
-    
+  def _getRPC( self, rpc = False, url = '', timeout = 600 ):
+    """ Return RPCClient object to url
+    """
     if not rpc:
       if not url:
         url = self.serverURL

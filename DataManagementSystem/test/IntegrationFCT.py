@@ -1,5 +1,6 @@
+# TODO: to be moved to TestDIRAC and transformed into a real test
+
 ########################################################################
-# $HeadURL $
 # File: ReplicateAndRegisterTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/13 18:38:55
@@ -13,7 +14,6 @@
 
     unittest for replicateAndRegister operation handler
 """
-__RCSID__ = "$Id: $"
 # #
 # @file ReplicateAndRegisterTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

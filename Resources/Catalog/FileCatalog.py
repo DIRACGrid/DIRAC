@@ -1,30 +1,27 @@
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__ = "$Id$"
 """ File catalog class. This is a simple dispatcher for the file catalog plug-ins.
     It ensures that all operations are performed on the desired catalogs.
 """
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
-from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 import types, re
+
+from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
+from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
+from DIRAC.Resources.Utilities.Utils                        import checkArgumentFormat
+from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
 
 class FileCatalog:
 
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups','getFileUserMetadata']
+                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups', 'getFileUserMetadata']
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory', 'setDirectoryStatus',
                    'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset']
 
-  def __init__( self, catalogs = [], vo = None  ):
+  def __init__( self, catalogs = [], vo = None ):
     """ Default constructor
     """
     self.valid = True
@@ -69,19 +66,6 @@ class FileCatalog:
     else:
       raise AttributeError
 
-  def __checkArgumentFormat( self, path ):
-    if type( path ) in types.StringTypes:
-      urls = {path:False}
-    elif type( path ) == types.ListType:
-      urls = {}
-      for url in path:
-        urls[url] = False
-    elif type( path ) == types.DictType:
-      urls = path
-    else:
-      return S_ERROR( "FileCatalog.__checkArgumentFormat: Supplied path is not of the correct format." )
-    return S_OK( urls )
-
   def w_execute( self, *parms, **kws ):
     """ Write method executor.
     """
@@ -89,7 +73,7 @@ class FileCatalog:
     failed = {}
     failedCatalogs = []
     fileInfo = parms[0]
-    res = self.__checkArgumentFormat( fileInfo )
+    res = checkArgumentFormat( fileInfo )
     if not res['OK']:
       return res
     fileInfo = res['Value']
@@ -150,7 +134,7 @@ class FileCatalog:
             resDict = {'Failed':failed, 'Successful':successful}
             return S_OK( resDict )
         else:
-          return res  
+          return res
     if ( len( successful ) == 0 ) and ( len( failed ) == 0 ):
       return S_ERROR( "Failed to perform %s from any catalog" % self.call )
     resDict = {'Failed':failed, 'Successful':successful}
@@ -213,7 +197,7 @@ class FileCatalog:
     return S_OK()
 
   def _getCatalogs( self ):
-    
+
     # Get the eligible catalogs first
     # First, look in the Operations, if nothing defined look in /Resources 
     result = self.opHelper.getSections( '/Services/Catalogs' )
@@ -234,8 +218,8 @@ class FileCatalog:
         gLogger.error( errStr, res['Message'] )
         return S_ERROR( errStr )
       fileCatalogs = res['Value']
-    
-    # Get the catalogs now    
+
+    # Get the catalogs now
     for catalogName in fileCatalogs:
       res = self._getCatalogConfigDetails( catalogName )
       if not res['OK']:
@@ -245,7 +229,7 @@ class FileCatalog:
         result = self.opHelper.getOptionsDict( '/Services/Catalogs/%s' % optCatalogDict[catalogName] )
         if not result['OK']:
           return result
-        catalogConfig.update( result['Value'] )        
+        catalogConfig.update( result['Value'] )
       if catalogConfig['Status'] == 'Active':
         res = self._generateCatalogObject( catalogName )
         if not res['OK']:

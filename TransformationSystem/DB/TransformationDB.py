@@ -11,9 +11,9 @@ from types import IntType, LongType, StringTypes, StringType, ListType, TupleTyp
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
-from DIRAC.DataManagementSystem.Client.ReplicaManager     import CatalogDirectory
+from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Security.ProxyInfo                        import getProxyInfo
-from DIRAC.Core.Utilities.List                            import stringListToString, intListToString, sortList
+from DIRAC.Core.Utilities.List                            import stringListToString, intListToString, sortList, breakListIntoChunks
 from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
 from DIRAC.Core.Utilities.Subprocess                      import pythonCall
@@ -339,28 +339,26 @@ class TransformationDB( DB ):
     if inheritedFrom:
       res = self._getTransformationID( inheritedFrom, connection = connection )
       if not res['OK']:
-        gLogger.error( "Failed to get ID for parent transformation", res['Message'] )
-        self.deleteTransformation( transID, connection = connection )
-        return res
+        gLogger.error( "Failed to get ID for parent transformation: %s, now deleting" % res['Message'] )
+        return self.deleteTransformation( transID, connection = connection )
       originalID = res['Value']
       # FIXME: this is not the right place to change status information, and in general the whole should not be here
       res = self.setTransformationParameter( originalID, 'Status', 'Completing',
                                              author = authorDN, connection = connection )
       if not res['OK']:
-        gLogger.error( "Failed to update parent transformation status", res['Message'] )
-        self.deleteTransformation( transID, connection = connection )
-        return res
+        gLogger.error( "Failed to update parent transformation status: %s, now deleting" % res['Message'] )
+        return self.deleteTransformation( transID, connection = connection )
       message = 'Creation of the derived transformation (%d)' % transID
       self.__updateTransformationLogging( originalID, message, authorDN, connection = connection )
       res = self.getTransformationFiles( condDict = {'TransformationID':originalID}, connection = connection )
       if not res['OK']:
-        self.deleteTransformation( transID, connection = connection )
-        return res
+        gLogger.error( "Could not get transformation files: %s, now deleting" % res['Message'] )
+        return self.deleteTransformation( transID, connection = connection )
       if res['Records']:
         res = self.__insertExistingTransformationFiles( transID, res['Records'], connection = connection )
         if not res['OK']:
-          self.deleteTransformation( transID, connection = connection )
-          return res
+          gLogger.error( "Could not insert files: %s, now deleting" % res['Message'] )
+          return self.deleteTransformation( transID, connection = connection )
     if addFiles and fileMask:
       self.__addExistingFiles( transID, connection = connection )
     message = "Created transformation %d" % transID
@@ -650,9 +648,9 @@ class TransformationDB( DB ):
     fileIDsValues = set( fileIDs.values() )
     for lfn in lfns:
       if lfn not in fileIDsValues:
-        missing.append( ( lfn, 'Unknown', 'Unknown' ) )
+        missing.append( lfn )
     if missing:
-      res = self.__addFileTuples( missing, connection = connection )
+      res = self.__addDataFiles( missing, connection = connection )
       if not res['OK']:
         return res
       for lfn, fileID in res['Value'].items():
@@ -854,23 +852,38 @@ class TransformationDB( DB ):
         passFilter.append( fileID )
     return self.__addFilesToTransformation( transID, passFilter, connection = connection )
 
-  def __insertExistingTransformationFiles( self, transID, fileTuples, connection = False ):
-    req = "INSERT INTO TransformationFiles (TransformationID,Status,TaskID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
-    candidates = False
-    for _tuple in fileTuples:
-      _lfn, originalID, fileID, status, taskID, targetSE, usedSE, _errorCount, _lastUpdate, _insertTime = tuple[:10]
-      if status != 'Unused':
-        candidates = True
-        if not re.search( '-', status ):
-          status = "%s-%d" % ( status, originalID )
-          if taskID:
-            taskID = str( int( originalID ) ).zfill( 8 ) + '_' + str( int( taskID ) ).zfill( 8 )
-        req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % ( req, transID, status, taskID,
-                                                                    fileID, targetSE, usedSE )
-    req = req.rstrip( "," )
-    if not candidates:
-      return S_OK()
-    return self._update( req, connection )
+  def __insertExistingTransformationFiles( self, transID, fileTuplesList, connection = False ):
+    """ Inserting already transformation files in TransformationFiles table (e.g. for deriving transformations)
+    """
+    gLogger.info( "Inserting %d files in TransformationFiles" % len( fileTuplesList ) )
+
+    # splitting in various chunks, in case it is too big
+    for fileTuples in breakListIntoChunks( fileTuplesList, 10000 ):
+
+      gLogger.verbose( "Adding first %d files in TransformationFiles (out of %d)" % ( len( fileTuples ),
+                                                                                      len( fileTuplesList ) ) )
+      req = "INSERT INTO TransformationFiles (TransformationID,Status,TaskID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
+      candidates = False
+
+      for ft in fileTuples:
+        _lfn, originalID, fileID, status, taskID, targetSE, usedSE, _errorCount, _lastUpdate, _insertTime = ft[:10]
+        if status not in ( 'Unused', 'Removed' ):
+          candidates = True
+          if not re.search( '-', status ):
+            status = "%s-inherited" % status
+            if taskID:
+              taskID = str( int( originalID ) ).zfill( 8 ) + '_' + str( int( taskID ) ).zfill( 8 )
+          req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % ( req, transID, status, taskID,
+                                                                      fileID, targetSE, usedSE )
+      if not candidates:
+        continue
+
+      req = req.rstrip( "," )
+      res = self._update( req, connection )
+      if not res['OK']:
+        return res
+
+    return S_OK()
 
   def __assignTransformationFile( self, transID, taskID, se, fileIDs, connection = False ):
     ''' Make necessary updates to the TransformationFiles table for the newly created task
@@ -1384,82 +1397,6 @@ class TransformationDB( DB ):
     req = "UPDATE DataFiles SET Status = '%s' WHERE FileID IN (%s);" % ( status, intListToString( fileIDs ) )
     return self._update( req, connection )
 
-  def __addFileTuples( self, fileTuples, connection = False ):
-    ''' Add files and replicas '''
-    lfns = [x[0] for x in fileTuples ]
-    res = self.__addDataFiles( lfns, connection = connection )
-    if not res['OK']:
-      return res
-    lfnFileIDs = res['Value']
-    _toRemove = []
-    for lfn, pfn, se in fileTuples:
-      fileID = lfnFileIDs[lfn]
-      res = self.__addReplica( fileID, se, pfn, connection = connection )
-      if not res['OK']:
-        lfnFileIDs.pop( lfn )
-    return S_OK( lfnFileIDs )
-
-  ###########################################################################
-  #
-  # These methods manipulate the Replicas table
-  #
-
-  def __addReplica( self, fileID, se, pfn, connection = False ):
-    ''' Add a SE,PFN for the given fileID in the Replicas table.
-    '''
-    req = "SELECT FileID FROM Replicas WHERE FileID=%s AND SE='%s';" % ( fileID, se )
-    res = self._query( req, connection )
-    if not res['OK']:
-      return res
-    elif res['Value']:
-      return S_OK()
-    req = "INSERT INTO Replicas (FileID,SE,PFN) VALUES (%s,'%s','%s');" % ( fileID, se, pfn )
-    res = self._update( req, connection )
-    if not res['OK']:
-      return res
-    return S_OK()
-
-  def __getFileReplicas( self, fileIDs, allStatus = False, connection = False ):
-    fileReplicas = {}
-    req = "SELECT FileID,SE,PFN,Status FROM Replicas WHERE FileID IN (%s);" % intListToString( fileIDs )
-    res = self._query( req )
-    if not res['OK']:
-      return res
-    for fileID, se, pfn, status in res['Value']:
-      if ( allStatus ) or ( status.lower() != 'problematic' ):
-        if not fileReplicas.has_key( fileID ):
-          fileReplicas[fileID] = {}
-        fileReplicas[fileID][se] = pfn
-    return S_OK( fileReplicas )
-
-  def __deleteFileReplicas( self, fileIDs, se = '', connection = False ):
-    req = "DELETE FROM Replicas WHERE FileID IN (%s)" % intListToString( fileIDs )
-    if se:
-      req = "%s AND SE = '%s';" % ( req, se )
-    return self._update( req, connection )
-
-  def __updateReplicaStatus( self, fileIDs, status, se = '', connection = False ):
-    req = "UPDATE Replicas SET Status='%s' WHERE FileID IN (%s)" % ( status, intListToString( fileIDs ) )
-    if se and ( se.lower() != 'any' ):
-      req = "%s AND SE = '%s'" % ( req, se )
-    return self._update( req, connection )
-
-  def __getReplicaStatus( self, fileIDs, connection = False ):
-    req = "SELECT FileID,SE,Status FROM Replicas WHERE FileID IN (%s);" % intListToString( fileIDs )
-    return self._query( req )
-
-  def __updateReplicaSE( self, fileIDs, oldSE, newSE, connection = False ):
-    # First check whether there are existing replicas at this SE (to avoid primary key restrictions)
-    req = "SELECT FileID,SE FROM Replicas WHERE FileIDs IN (%s) AND SE = '%s';" % ( intListToString( fileIDs ), newSE )
-    res = self._query( req, connection )
-    if not res['OK']:
-      return res
-    for fileID, _se in res['Value']:
-      fileIDs.remove( fileID )
-    req = "UPDATE Replicas SET SE='%s' WHERE FileID IN (%s) AND SE = '%s';" % ( newSE,
-                                                                                intListToString( fileIDs ), oldSE )
-    return self._update( req, connection )
-
   ###########################################################################
   #
   # Fill in / get the counters
@@ -1701,30 +1638,22 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def addReplica( self, replicaTuples, force = False ):
-    ''' Add new replica to the TransformationDB for an existing lfn.
-    '''
-    gLogger.info( "TransformationDB.addReplica: Attempting to add %s replicas." % len( replicaTuples ) )
-    fileTuples = []
-    for lfn, pfn, se, _master in replicaTuples:
-      fileTuples.append( ( lfn, pfn, 0, se, 'IGNORED-GUID', 'IGNORED-CHECKSUM' ) )
-    return self.addFile( fileTuples, force )
-
-  def addFile( self, fileTuples, force = False, connection = False ):
-    '''  Add a new file to the TransformationDB together with its first replica.
-    '''
-    gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileTuples ) )
+  def addFile( self, fileDicts, force = False, connection = False ):
+    """  Add a new file to the TransformationDB together with its first replica.
+         In the input dict, the only mandatory info are PFN and SE
+    """
+    gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileDicts.keys() ) )
     successful = {}
     failed = {}
     # Determine which files pass the filters and are to be added to transformations
     transFiles = {}
     filesToAdd = []
-    for lfn, pfn, _size, se, _guid, _checksum in fileTuples:
+    for lfn in fileDicts.keys():
       fileTrans = self.__filterFile( lfn )
       if not ( fileTrans or force ):
         successful[lfn] = True
       else:
-        filesToAdd.append( ( lfn, pfn, se ) )
+        filesToAdd.append( lfn )
         for trans in fileTrans:
           if not transFiles.has_key( trans ):
             transFiles[trans] = []
@@ -1732,11 +1661,11 @@ class TransformationDB( DB ):
     # Add the files to the DataFiles and Replicas tables
     if filesToAdd:
       connection = self.__getConnection( connection )
-      res = self.__addFileTuples( filesToAdd, connection = connection )
+      res = self.__addDataFiles( filesToAdd, connection = connection )
       if not res['OK']:
         return res
       lfnFileIDs = res['Value']
-      for lfn, pfn, se in filesToAdd:
+      for lfn in filesToAdd:
         if lfnFileIDs.has_key( lfn ):
           successful[lfn] = True
         else:
@@ -1746,83 +1675,16 @@ class TransformationDB( DB ):
       for transID, lfns in transFiles.items():
         fileIDs = []
         for lfn in lfns:
-          if lfn.has_key( lfn ):
+          if lfnFileIDs.has_key( lfn ):
             fileIDs.append( lfnFileIDs[lfn] )
         if fileIDs:
           res = self.__addFilesToTransformation( transID, fileIDs, connection = connection )
           if not res['OK']:
             gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
-
-  def getReplicas( self, lfns, allStatus = False, connection = False ):
-    ''' Get replicas for the files specified by the lfn list '''
-    gLogger.info( "TransformationDB.getReplicas: Attempting to get replicas for %s files." % len( lfns ) )
-    connection = self.__getConnection( connection )
-    res = self.__getFileIDsForLfns( lfns, connection = connection )
-    if not res['OK']:
-      return res
-    fileIDs, _lfnFilesIDs = res['Value']
-    failed = {}
-    successful = {}
-    fileIDsValues = set( fileIDs.values() )
-    for lfn in lfns:
-      if not lfn in fileIDsValues:
-        failed[lfn] = 'File does not exist'
-    if fileIDs:
-      res = self.__getFileReplicas( fileIDs.keys(), allStatus = allStatus, connection = connection )
-      if not res['OK']:
-        return res
-      for fileID in fileIDs.keys():
-        # To catch the case where a file has no replicas
-        replicas = {}
-        if fileID in res['Value'].keys():
-          replicas = res['Value'][fileID]
-        successful[fileIDs[fileID]] = replicas
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
-
-  def removeReplica( self, replicaTuples, connection = False ):
-    ''' Remove replica pfn of lfn. '''
-    gLogger.info( "TransformationDB.removeReplica: Attempting to remove %s replicas." % len( replicaTuples ) )
-    successful = {}
-    failed = {}
-    lfns = []
-    for lfn, _pfn, se in replicaTuples:
-      lfns.append( lfn )
-    connection = self.__getConnection( connection )
-    res = self.__getFileIDsForLfns( lfns, connection = connection )
-    if not res['OK']:
-      return res
-    fileIDs, lfnFilesIDs = res['Value']
-    for lfn in lfns:
-      if not lfnFilesIDs.has_key( lfn ):
-        successful[lfn] = 'File did not exist'
-    seFiles = {}
-    if fileIDs:
-      for lfn, _pfn, se in replicaTuples:
-        if not seFiles.has_key( se ):
-          seFiles[se] = []
-        seFiles[se].append( lfnFilesIDs[lfn] )
-    for se, files in seFiles.items():
-      res = self.__deleteFileReplicas( files, se = se, connection = connection )
-      if not res['OK']:
-        for fileID in files:
-          failed[fileIDs[fileID]] = res['Message']
-      else:
-        for fileID in files:
-          successful[fileIDs[fileID]] = True
-    res = self.__getFileReplicas( fileIDs.keys(), allStatus = True, connection = connection )
-    if not res['OK']:
-      gLogger.warn( "Failed to remove single replica files" )
-    else:
-      noReplicas = []
-      fileReplicas = res['Value']
-      for fileID in fileIDs.keys():
-        if not fileID in fileReplicas.keys():
-          noReplicas.append( fileIDs[fileID] )
-      if noReplicas:
-        self.removeFile( noReplicas )
+            failed[lfn] = True
+            successful[lfn] = False
+          else:
+            successful[lfn] = True
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
@@ -1858,109 +1720,6 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def setReplicaStatus( self, replicaTuples, connection = False ):
-    '''Set status for the supplied replica tuples
-    '''
-    gLogger.info( "TransformationDB.setReplicaStatus: Attempting to set statuses for %s replicas." % len( replicaTuples ) )
-    successful = {}
-    failed = {}
-    lfns = []
-    for lfn, _pfn, se, status in replicaTuples:
-      lfns.append( lfn )
-    connection = self.__getConnection( connection )
-    res = self.__getFileIDsForLfns( lfns, connection = connection )
-    if not res['OK']:
-      return res
-    fileIDs, lfnFilesIDs = res['Value']
-    for lfn in lfns:
-      if not lfnFilesIDs.has_key( lfn ):
-        successful[lfn] = True  # In the case that the file does not exist then return ok
-    seFiles = {}
-    if fileIDs:
-      for lfn, _pfn, se, status in replicaTuples:
-        if not seFiles.has_key( se ):
-          seFiles[se] = {}
-        if not seFiles[se].has_key( status ):
-          seFiles[se][status] = []
-        seFiles[se][status].append( lfnFilesIDs[lfn] )
-    for se, statusDict in seFiles.items():
-      for status, files in statusDict.items():
-        res = self.__updateReplicaStatus( files, status, se = se, connection = connection )
-        if not res['OK']:
-          for fileID in files:
-            failed[fileIDs[fileID]] = res['Message']
-        else:
-          for fileID in files:
-            successful[fileIDs[fileID]] = True
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
-
-  def getReplicaStatus( self, replicaTuples, connection = False ):
-    ''' Get the status for the supplied file replicas
-    '''
-    gLogger.info( "TransformationDB.getReplicaStatus: Attempting to get statuses of file replicas." )
-    failed = {}
-    successful = {}
-    lfns = []
-    for lfn, _pfn, se in replicaTuples:
-      lfns.append( lfn )
-    connection = self.__getConnection( connection )
-    res = self.__getFileIDsForLfns( lfns, connection = connection )
-    if not res['OK']:
-      return res
-    fileIDs, lfnFilesIDs = res['Value']
-    for lfn in lfns:
-      if not lfnFilesIDs.has_key( lfn ):
-        failed[lfn] = 'File did not exist'
-    res = self.__getReplicaStatus( fileIDs.keys(), connection = connection )
-    if not res['OK']:
-      return res
-    for fileID, se, status in res['Value']:
-      lfn = fileIDs[fileID]
-      if not successful.has_key( lfn ):
-        successful[lfn] = {}
-      successful[lfn][se] = status
-    for lfn in fileIDs.values():
-      if not successful.has_key( lfn ):
-        failed[lfn] = "TransformationDB.getReplicaStatus: No replicas found."
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
-
-  def setReplicaHost( self, replicaTuples, connection = False ):
-    gLogger.info( "TransformationDB.setReplicaHost: Attempting to set SE for %s replicas." % len( replicaTuples ) )
-    successful = {}
-    failed = {}
-    lfns = []
-    for lfn, _pfn, oldSE, newSE in replicaTuples:
-      lfns.append( lfn )
-    connection = self.__getConnection( connection )
-    res = self.__getFileIDsForLfns( lfns, connection = connection )
-    if not res['OK']:
-      return res
-    fileIDs, lfnFilesIDs = res['Value']
-    for lfn in lfns:
-      if not lfnFilesIDs.has_key( lfn ):
-        successful[lfn] = 'File did not exist'
-    seFiles = {}
-    if fileIDs:
-      for lfn, _pfn, oldSE, newSE in replicaTuples:
-        if not seFiles.has_key( oldSE ):
-          seFiles[oldSE] = {}
-        if not seFiles[oldSE].has_key( newSE ):
-          seFiles[oldSE][newSE] = []
-        seFiles[oldSE][newSE].append( lfnFilesIDs[lfn] )
-    for oldSE, seDict in seFiles.items():
-      for newSE, files in seDict.items():
-        res = self.__updateReplicaSE( files, oldSE, newSE, connection = connection )
-        if not res['OK']:
-          for fileID in files:
-            failed[fileIDs[fileID]] = res['Message']
-        else:
-          for fileID in files:
-            successful[fileIDs[fileID]] = True
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
-
   def addDirectory( self, path, force = False ):
     ''' Adds all the files stored in a given directory in file catalog '''
     gLogger.info( "TransformationDB.addDirectory: Attempting to populate %s." % path )
@@ -1974,21 +1733,25 @@ class TransformationDB( DB ):
     res = setupShifterProxyInEnv( "ProductionManager" )
     if not res['OK']:
       return S_OK( "Failed to setup shifter proxy" )
-    catalog = CatalogDirectory()
+    catalog = FileCatalog()
     start = time.time()
-    res = catalog.getCatalogDirectoryReplicas( path, singleFile = True )
+    res = catalog.listDirectory( path )
     if not res['OK']:
-      gLogger.error( "TransformationDB.addDirectory: Failed to get replicas. %s" % res['Message'] )
+      gLogger.error( "TransformationDB.addDirectory: Failed to get files. %s" % res['Message'] )
       return res
-    gLogger.info( "TransformationDB.addDirectory: Obtained %s replicas in %s seconds." % ( path, time.time() - start ) )
-    fileTuples = []
-    for lfn, replicaDict in res['Value'].items():
-      for se, pfn in replicaDict.items():
-        fileTuples.append( ( lfn, pfn, 0, se, 'IGNORED-GUID', 'IGNORED-CHECKSUM' ) )
-    if fileTuples:
-      res = self.addFile( fileTuples, force = force )
+    if not path in res['Value']['Successful']:
+      gLogger.error("TransformationDB.addDirectory: Failed to get files.")
+      return res
+    gLogger.info( "TransformationDB.addDirectory: Obtained %s files in %s seconds." % ( path, time.time() - start ) )
+    successful = []
+    failed = []
+    for lfn in res['Value']['Successful'][path]["Files"].keys():
+      res = self.addFile( {lfn:{}} )    
       if not res['OK']:
-        return res
-      if not res['Value']['Successful']:
-        return S_ERROR( "Failed to add any files to database" )
-    return S_OK( len( res['Value']['Successful'] ) )
+        failed.append(lfn)
+        continue
+      if not lfn in res['Value']['Successful']:
+        failed.append(lfn)
+      else:
+        successful.append(lfn)  
+    return {"OK":True, "Value": len( res['Value']['Successful'] ), "Successful":successful, "Failed": failed }

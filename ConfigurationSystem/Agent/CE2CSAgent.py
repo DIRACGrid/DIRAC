@@ -211,7 +211,7 @@ class CE2CSAgent( AgentModule ):
         body += newcestring
         possibleNewSites.append( 'dirac-admin-add-site DIRACSiteName %s %s' % ( nameBDII, ce ) )
     if body:
-      body = "We are glade to inform You about new CE(s) possibly suitable for %s:\n" % self.voName + body
+      body = "We are glad to inform You about new CE(s) possibly suitable for %s:\n" % self.voName + body
       body += "\n\nTo suppress information about CE add its name to BannedCEs list."
       for  possibleNewSite in  possibleNewSites:
         body = "%s\n%s" % ( body, possibleNewSite )
@@ -242,8 +242,6 @@ class CE2CSAgent( AgentModule ):
       sites = result['Value']
 
       for site in sites:
-  #      if site[-2:]!='ru':
-  #        continue
         siteSection = cfgPath( gridSection, site )
         opt = gConfig.getOptionsDict( siteSection )['Value']
         name = opt.get( 'Name', '' )
@@ -414,27 +412,6 @@ class CE2CSAgent( AgentModule ):
                 self.csAPI.modifyValue( section, newpilot )
               changed = True
 
-          result = ldapService( ce )
-          if not result['OK'] :
-            result = self.__checkAlternativeBDIISite( ldapService, ce )
-          if result['OK'] and result['Value']:
-            services = result['Value']
-            newcetype = 'LCG'
-            for service in services:
-              if service['GlueServiceType'].count( 'CREAM' ):
-                newcetype = "CREAM"
-          else:
-            newcetype = 'Unknown'
-
-          if cetype != newcetype and newcetype != 'Unknown':
-            section = cfgPath( ceSection, 'CEType' )
-            self.log.info( section, " -> ".join( ( cetype, newcetype ) ) )
-            if cetype == 'Unknown':
-              self.csAPI.setOption( section, newcetype )
-            else:
-              self.csAPI.modifyValue( section, newcetype )
-            changed = True
-
           result = ldapCEState( ce, vo = self.voName )        #getBDIICEVOView
           if not result['OK']:
             self.log.warn( 'Error in bdii for queue %s' % ce, result['Message'] )
@@ -445,6 +422,30 @@ class CE2CSAgent( AgentModule ):
           except:
             self.log.warn( 'Error in bdii for queue %s' % ce, result['Massage'] )
             continue
+
+          newcetype = 'Unknown'
+          for queue in queues:
+            try:
+              queuetype = queue['GlueCEImplementationName']
+            except:
+              queuetype = 'Unknown'
+            if newcetype == 'Unknown':
+              newcetype = queuetype
+            else:
+              if queuetype != newcetype:
+                gLogger.warn( 'Error in bdii for ce %s '%ce, 'different cetypes %s %s' %(newcetype,queuetype))
+
+          if newcetype=='ARC-CE':
+            newcetype = 'ARC'
+
+          if cetype != newcetype and newcetype != 'Unknown':
+            section = cfgPath( ceSection, 'CEType' )
+            self.log.info( section, " -> ".join( ( cetype, newcetype ) ) )
+            if cetype == 'Unknown':
+              self.csAPI.setOption( section, newcetype )
+            else:
+              self.csAPI.modifyValue( section, newcetype )
+            changed = True
 
           for queue in queues:
             try:

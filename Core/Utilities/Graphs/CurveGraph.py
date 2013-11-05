@@ -66,7 +66,7 @@ class CurveGraph( PlotBase ):
       plot_data = self.gdata.getPlotNumData(label)
       for key, value, error in plot_data:
         if value is None:
-          value = 0.
+          continue
         tmp_x.append( key )
         tmp_max_y.append( value + error )
         tmp_min_y.append( value - error )   
@@ -77,16 +77,18 @@ class CurveGraph( PlotBase ):
         
       linestyle = self.prefs.get( 'linestyle', '-' )  
       marker = self.prefs.get( 'marker', 'o' )  
-      markersize = self.prefs.get( 'markersize', 6. )  
+      markersize = self.prefs.get( 'markersize', 8. )  
       markeredgewidth = self.prefs.get( 'markeredgewidth', 1. )  
-      #line = Line2D( xdata, ydata, color=color, linewidth=1., marker=marker, linestyle=linestyle,  
-      #               markersize=markersize, markeredgewidth=markeredgewidth, 
-      #               markeredgecolor = darkenColor( color ) )
-      #self.ax.add_line( line )
-      
-      self.ax.errorbar( xdata, ydata, color=color, linewidth=1., marker=marker, linestyle=linestyle,  
-                        markersize=markersize, markeredgewidth=markeredgewidth, 
-                        markeredgecolor = darkenColor( color ), xerr = xerror, yerr = yerror, ecolor=color )  
+      if not self.prefs.get( 'error_bars', False ):
+        line = Line2D( xdata, ydata, color=color, linewidth=1., marker=marker, linestyle=linestyle,  
+                       markersize=markersize, markeredgewidth=markeredgewidth, 
+                       markeredgecolor = darkenColor( color ) )
+        self.ax.add_line( line )
+      else:
+        self.ax.errorbar( xdata, ydata, color=color, linewidth=2., marker=marker, linestyle=linestyle,  
+                          markersize=markersize, markeredgewidth=markeredgewidth, 
+                          markeredgecolor = darkenColor( color ), xerr = xerror, yerr = yerror, 
+                          ecolor=color )  
       
                     
     ymax = max(tmp_max_y)
