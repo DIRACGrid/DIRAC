@@ -7,7 +7,7 @@
 '''
 
 import re, time, threading, copy
-from types import IntType, LongType, StringTypes, StringType, ListType, TupleType, DictType
+from types import IntType, LongType, StringTypes, ListType, TupleType, DictType
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
@@ -17,6 +17,8 @@ from DIRAC.Core.Utilities.List                            import stringListToStr
 from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
 from DIRAC.Core.Utilities.Subprocess                      import pythonCall
+
+__RCSID__ = "$Id$"
 
 MAX_ERROR_COUNT = 10
 
@@ -435,13 +437,13 @@ class TransformationDB( DB ):
         return S_ERROR( "Parameter %s not defined for transformation" % reqParam )
       paramDict[reqParam] = transParams[reqParam]
     if len( paramDict ) == 1:
-      return S_OK( paramDict[reqParam] )
+      return S_OK( paramDict[0] )
     return S_OK( paramDict )
 
   def getTransformationWithStatus( self, status, connection = False ):
     ''' Gets a list of the transformations with the supplied status '''
     req = "SELECT TransformationID FROM Transformations WHERE Status = '%s';" % status
-    res = self._query( req )
+    res = self._query( req, conn = connection)
     if not res['OK']:
       return res
     transIDs = []
@@ -1708,9 +1710,6 @@ class TransformationDB( DB ):
       res = self.__setTransformationFileStatus( fileIDs.keys(), 'Deleted', connection = connection )
       if not res['OK']:
         return res
-      res = self.__deleteFileReplicas( fileIDs.keys(), connection = connection )
-      if not res['OK']:
-        return S_ERROR( "TransformationDB.removeFile: Failed to remove file replicas." )
       res = self.__setDataFileStatus( fileIDs.keys(), 'Deleted', connection = connection )
       if not res['OK']:
         return S_ERROR( "TransformationDB.removeFile: Failed to remove files." )
@@ -1746,7 +1745,7 @@ class TransformationDB( DB ):
     successful = []
     failed = []
     for lfn in res['Value']['Successful'][path]["Files"].keys():
-      res = self.addFile( {lfn:{}} )    
+      res = self.addFile( {lfn:{}}, force = force )    
       if not res['OK']:
         failed.append(lfn)
         continue
