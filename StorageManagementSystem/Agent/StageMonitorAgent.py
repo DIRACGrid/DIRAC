@@ -1,10 +1,9 @@
 # $Header$
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath, siteName
+from DIRAC import gLogger, S_OK, S_ERROR, siteName
 
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager             import ReplicaManager
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import StorageManagementDB
@@ -14,8 +13,7 @@ from DIRAC.AccountingSystem.Client.DataStoreClient                import gDataSt
 
 from DIRAC.Core.Security.Misc                                     import getProxyInfo
 
-import time, os, sys, re
-from types import *
+import re
 
 AGENT_NAME = 'StorageManagement/StageMonitorAgent'
 
@@ -184,15 +182,15 @@ class StageMonitorAgent( AgentModule ):
 
   def __reportProblematicFiles( self, lfns, reason ):
     return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, self.name )
-    if not res['OK']:
-      gLogger.error( "StageMonitor.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
-      return res
-    if res['Value']['Successful']:
-      gLogger.info( "StageMonitor.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
-    if res['Value']['Failed']:
-      gLogger.info( "StageMonitor.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
-    return res
+    #res = self.dataIntegrityClient.setFileProblematic( lfns, reason, self.name )
+    #if not res['OK']:
+    #  gLogger.error( "StageMonitor.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
+    #  return res
+    #if res['Value']['Successful']:
+    #  gLogger.info( "StageMonitor.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
+    #if res['Value']['Failed']:
+    #  gLogger.info( "StageMonitor.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
+    #return res
 
   def __wakeupOldRequests( self, oldRequests ):
     gLogger.info( "StageMonitor.__wakeupOldRequests: Attempting..." )
