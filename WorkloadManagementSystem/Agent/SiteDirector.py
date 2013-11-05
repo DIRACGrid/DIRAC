@@ -21,7 +21,7 @@ from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
-from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus 
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 import os, base64, bz2, tempfile, random, socket
 import DIRAC
 
