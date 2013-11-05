@@ -2449,15 +2449,11 @@ class ReplicaManager( CatalogToStorage ):
 
   def __SEActive( self, se ):
     """ check is SE is active """
-<<<<<<< HEAD
-    res = self.resourceStatus.getStorageStatus( se, default = None )
-=======
     result = StorageFactory().getStorageName( se )
     if not result['OK']:
       return S_ERROR( 'SE not known' )
     resolvedName = result['Value'] 
     res = self.resourceStatus.getStorageElementStatus( resolvedName, default = None )
->>>>>>> rel-v6r10
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )
 
