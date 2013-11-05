@@ -12,10 +12,10 @@ from DIRAC                                               import S_OK, S_ERROR, g
 
 __RCSID__ = "$Id$"
 
-class ComputingElementFactory:
+class ComputingElementFactory(object):
 
   #############################################################################
-  def __init__(self,ceType=''):
+  def __init__(self, ceType=''):
     """ Standard constructor
     """
     self.ceType = ceType
@@ -26,7 +26,7 @@ class ComputingElementFactory:
     """This method returns the CE instance corresponding to the supplied
        CEUniqueID.  If no corresponding CE is available, this is indicated.
     """
-    self.log.verbose('Creating CE of %s type with the name %s' % (ceType,ceName) )
+    self.log.verbose('Creating CE of %s type with the name %s' % (ceType, ceName) )
     ceTypeLocal = ceType
     if not ceTypeLocal:
       ceTypeLocal = self.ceType
@@ -34,7 +34,7 @@ class ComputingElementFactory:
     if not ceNameLocal:
       ceNameLocal = self.ceType 
     ceConfigDict = getCEConfigDict( ceNameLocal )
-    self.log.verbose('CEConfigDict',ceConfigDict)
+    self.log.verbose('CEConfigDict', ceConfigDict)
     if 'CEType' in ceConfigDict:
       ceTypeLocal = ceConfigDict['CEType']
     if not ceTypeLocal:
@@ -44,7 +44,7 @@ class ComputingElementFactory:
     subClassName = "%sComputingElement" % (ceTypeLocal)
 
     try:
-      ceSubClass = __import__('DIRAC.Resources.Computing.%s' % subClassName,globals(),locals(),[subClassName])
+      ceSubClass = __import__('DIRAC.Resources.Computing.%s' % subClassName, globals(), locals(), [subClassName])
     except Exception, x:
       msg = 'ComputingElementFactory could not import DIRAC.Resources.Computing.%s' % ( subClassName )
       self.log.exception()
@@ -57,7 +57,7 @@ class ComputingElementFactory:
       if ceParametersDict:
         computingElement.setParameters(ceParametersDict)
     except Exception, x:
-      msg = 'ComputingElementFactory could not instantiate %s()' %(subClassName)
+      msg = 'ComputingElementFactory could not instantiate %s()' % ( subClassName )
       self.log.exception()
       self.log.warn( msg )
       return S_ERROR( msg )
