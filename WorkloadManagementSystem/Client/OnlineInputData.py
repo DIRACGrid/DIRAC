@@ -10,11 +10,9 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.DISET.RPCClient                                     import RPCClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC                                                          import S_OK, S_ERROR, gLogger
 
-import os,sys,re,string
+import os
 
 COMPONENT_NAME = 'OnlineInputData'
 
