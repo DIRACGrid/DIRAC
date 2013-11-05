@@ -15,6 +15,10 @@ class CachedJobState( object ):
     self.__jobState = JobState( jid )
     self.cleanState( skipInitState = skipInitState )
 
+  @property
+  def jobState( self ):
+    return self.__jobState
+
   def cleanState( self, skipInitState = False ):
     self.__cache = {}
     self.__jobLog = []
@@ -57,6 +61,17 @@ class CachedJobState( object ):
   def commitChanges( self ):
     if self.__initState == None:
       return S_ERROR( "CachedJobState( %d ) is not valid" % self.__jid )
+    #Save manifest
+    if self.__manifest and self.__manifest.isDirty():
+      result = self.__jobState.setManifest( self.__manifest )
+      if not result[ 'OK' ]:
+        self.cleanState()
+        for i in range( 5 ):
+          if self.__jobState.rescheduleJob()[ 'OK' ]:
+            break
+        return result
+      self.__manifest.clearDirty()
+    #Save changes
     changes = {}
     for k in self.__dirtyKeys:
       changes[ k ] = self.__cache[ k ]
@@ -74,16 +89,6 @@ class CachedJobState( object ):
     newState = result[ 'Value' ]
     self.__jobLog = []
     self.__dirtyKeys.clear()
-    #Save manifest
-    if self.__manifest and self.__manifest.isDirty():
-      result = self.__jobState.setManifest( self.__manifest )
-      if not result[ 'OK' ]:
-        self.cleanState()
-        for i in range( 5 ):
-          if self.__jobState.rescheduleJob()[ 'OK' ]:
-            break
-        return result
-      self.__manifest.clearDirty()
     #Insert into TQ
     if self.__insertIntoTQ:
       result = self.__jobState.insertIntoTQ()
@@ -179,7 +184,7 @@ class CachedJobState( object ):
           return result
         data = result[ 'Value' ]
         self.__cache[ cKey ] = data
-      return S_OK( self.__cache[ cKey ] )
+      return S_OK( copy.deepcopy( self.__cache[ cKey ] ) )
     #Tuple/List
     elif keyType in ( types.ListType, types.TupleType ):
       if not self.__cacheExists( cKey ):
@@ -198,24 +203,25 @@ class CachedJobState( object ):
         for i in range( len( cKey ) ):
           self.__cache[ cKey[ i ] ] = data[i]
       #Prepare result
-      return S_OK( tuple( [ self.__cache[ cK ]  for cK in cKey ] ) )
+      return S_OK( tuple( [ copy.deepcopy( self.__cache[ cK ] )  for cK in cKey ] ) )
     else:
       raise RuntimeError( "Cache key %s does not have a valid type" % cKey )
 
   def __cacheDict( self, prefix, functor, keyList = None ):
     if not keyList or not self.__cacheExists( [ "%s.%s" % ( prefix, key ) for key in keyList ] ):
+      data = [ ( key[ len( prefix ) + 1: ], self.__cache[ key ] ) for key in self.__cache if key.find( "%s." % prefix ) == 0 ]
+      data = dict( data )
       result = functor( keyList )
       if not result[ 'OK' ]:
         return result
-      data = result [ 'Value' ]
-      for key in data:
+      rData = result [ 'Value' ]
+      for key in rData:
         cKey = "%s.%s" % ( prefix, key )
         #If the key is already in the cache. DO NOT TOUCH. User may have already modified it.
         #We update the coming data with the cached data
-        if cKey in self.__cache:
-          data[ key ] = self.__cache[ cKey ]
-        else:
-          self.__cache[ cKey ] = data[ key ]
+        if cKey not in self.__cache:
+          self.__cache[ cKey ] = rData[ key ]
+          data[ key ] = rData[ key ]
       return S_OK( data )
     return S_OK( dict( [ ( key, self.__cache[ "%s.%s" % ( prefix, key ) ] ) for key in keyList ] ) )
 
@@ -377,8 +383,17 @@ class CachedJobState( object ):
   def getInputData( self ):
     return self.__cacheResult( "inputData" , self.__jobState.getInputData )
 
+  def setInputData( self, pDict ):
+    result = self.__jobState.checkInputDataStructure( pDict )
+    if not result[ 'OK' ]:
+      return result
+    self.__cacheAdd( 'inputData', pDict )
+    return S_OK()
+
+
   def insertIntoTQ( self ):
     if self.valid:
       self.__insertIntoTQ = True
       return S_OK()
     return S_ERROR( "Cached state is invalid" )
+

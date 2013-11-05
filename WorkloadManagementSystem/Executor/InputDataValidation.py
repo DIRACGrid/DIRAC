@@ -47,16 +47,14 @@ class InputDataValidation( OptimizerExecutor ):
       return S_ERROR( "Cannot connect to JobDB" )
 
     cls.__siteStatus = SiteStatus()
-
     cls.ex_setOption( "FailedStatus", "Input Data Not Available" )
     return S_OK()
-
 
   def optimizeJob( self, jid, jobState ):
     result = self.doTheThing( jid, jobState )
     if not result[ 'OK' ]:
       jobState.setAppStatus( result[ 'Message' ] )
-      return S_ERROR( self.ex_getOption( "FailedJobStatus", "Input Data Not Available" ) )
+      return result
     return S_OK()
 
   def doTheThing( self, jid, jobState ):

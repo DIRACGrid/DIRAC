@@ -126,8 +126,6 @@ class InputDataResolution( OptimizerExecutor ):
     if badLFNs:
       errorMsg = "\n".join( badLFNs )
       self.jobLog.info( 'Found %s problematic LFN(s):\n%s' % ( len( badLFNs ), errorMsg ) )
-      #if not result['OK']:
-      #  self.jobLog.error( result['Message'] )
       return S_ERROR( 'Input data not available' )
 
     lfnData = {}
@@ -189,3 +187,4 @@ class InputDataResolution( OptimizerExecutor ):
           replicas[ seName ][ 'Disk' ] = True
 
     return S_OK( lfnData )
+

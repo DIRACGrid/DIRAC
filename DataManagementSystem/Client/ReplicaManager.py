@@ -2437,7 +2437,7 @@ class ReplicaManager( CatalogToStorage ):
         continue
       for se in replicas.keys():
         if se not in seReadStatus:
-          res = self.__SEActive( se )
+          res = self.getSEStatus( se )
           if res['OK']:
             seReadStatus[se] = res['Value']['Read']
           else:
@@ -2447,7 +2447,7 @@ class ReplicaManager( CatalogToStorage ):
 
     return S_OK( replicaDict )
 
-  def __SEActive( self, se ):
+  def getSEStatus( self, se ):
     """ check is SE is active """
     result = StorageFactory().getStorageName( se )
     if not result['OK']:

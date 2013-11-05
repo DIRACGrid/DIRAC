@@ -13,6 +13,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection, getExecutorSection
+from DIRAC.Core.Utilities.Devloader import Devloader
 
 class LocalConfiguration:
   """
@@ -93,6 +94,10 @@ class LocalConfiguration:
                          self.__setUseCertByCmd )
     self.registerCmdOpt( "d", "debug", "Set debug mode (-dd is extra debug)",
                          self.__setDebugMode )
+    devLoader = Devloader()
+    if devLoader.enabled:
+      self.registerCmdOpt( "", "autoreload", "Automatically restart if there's any change in the module",
+                           self.__setAutoreload )
     self.registerCmdOpt( "", "license", "Show DIRAC's LICENSE",
                          self.showLicense )
     self.registerCmdOpt( "h", "help", "Shows this help",
@@ -245,6 +250,11 @@ class LocalConfiguration:
       gLogger.fatal( "Error when parsing command line arguments: %s" % str( x ) )
       self.showHelp()
       sys.exit( 2 )
+
+    for o, v in opts:
+      if o in ( '-h', '--help' ):
+        self.showHelp()
+        sys.exit(2)
 
     self.cliAdditionalCFGFiles = [ arg for arg in args if arg[-4:] == ".cfg" ]
     self.commandArgList = [ arg for arg in args if not arg[-4:] == ".cfg" ]
@@ -427,6 +437,14 @@ class LocalConfiguration:
 
   def __setDebugMode( self, dummy = False ):
     self.__debugMode += 1
+    return S_OK()
+
+  def __setAutoreload( self, filepath = False ):
+    devLoader = Devloader()
+    devLoader.bootstrap()
+    if filepath:
+      devLoader.watchFile( filepath )
+    gLogger.notice( "Devloader started" )
     return S_OK()
 
   def getDebugMode( self ):

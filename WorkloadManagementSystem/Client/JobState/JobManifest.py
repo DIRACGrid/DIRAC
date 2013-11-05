@@ -17,6 +17,13 @@ class JobManifest( object ):
       if not result[ 'OK' ]:
         raise Exception( result[ 'Message' ] )
 
+  def clone( self ):
+    manifest = JobManifest()
+    manifest.__manifest = self.__manifest.clone()
+    manifest.__dirty = self.__dirty
+    manifest.__ops = self.__ops
+    return manifest
+
   def isDirty( self ):
     return self.__dirty
 
@@ -158,8 +165,8 @@ class JobManifest( object ):
     for k in [ 'OwnerName', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ]:
       if k not in self.__manifest:
         return S_ERROR( "Missing var %s in manifest" % k )
-    # Check CPUTime
-    result = self.__checkNumericalVar( "CPUTime", 86400, 0, 500000 )
+    #Check CPUTime
+    result = self.__checkNumericalVar( "CPUTime", 86400, 100, 500000 )
     if not result[ 'OK' ]:
       return result
     result = self.__checkNumericalVar( "Priority", 1, 0, 10 )
@@ -268,3 +275,9 @@ class JobManifest( object ):
       return []
     cfg = cfg[ 'value' ]
     return cfg.listSections()
+
+  def expand( self ):
+    """
+    Expand all options into themselves
+    """
+    self.__manifest.expand()

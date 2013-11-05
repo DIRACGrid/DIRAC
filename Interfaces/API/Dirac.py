@@ -2195,6 +2195,28 @@ class Dirac( API ):
       return result
 
   #############################################################################
+  def getJobsInHerd( self, jobID ):
+    """Get all jobs in the same herd as the given one.
+
+       Example Usage:
+
+       >>> dirac.getJobsInHerd( 2342 )
+       {'OK': True, 'Value': [ 2342, 2533, 2534, 2643, 2650 ] }
+
+       :param jobID: JobID
+       :type JobID: int
+       :returns: S_OK,S_ERROR
+       """
+
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
+    result = monitoring.getJobsInHerd( jobID )
+    try:
+      result.pop( 'rpcStub' )
+    except:
+      pass
+    return result
+
+  #############################################################################
   def getJobSummary( self, jobID, outputFile = None, printOutput = False ):
     """Output similar to the web page can be printed to the screen
        or stored as a file or just returned as a dictionary for further usage.

@@ -1,10 +1,11 @@
 
 import types
 import os
+import sys
 import imp
 from DIRAC.Core.Utilities import List
 from DIRAC import gConfig, S_ERROR, S_OK, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import Extensions
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class ModuleLoader( object ):
@@ -23,6 +24,8 @@ class ModuleLoader( object ):
     self.__csSuffix = csSuffix
     #Module suffix (for Handlers)
     self.__modSuffix = moduleSuffix
+    #Helper
+    self.__exts = Extensions()
 
   def getModules( self ):
     data = dict( self.__modules )
@@ -58,7 +61,7 @@ class ModuleLoader( object ):
             return result
       #Look what is installed
       parentModule = False
-      for rootModule in getInstalledExtensions():
+      for rootModule in self.__exts.getInstalledExtensions():
         if system.find( "System" ) != len( system ) - 6:
           parentImport = "%s.%sSystem.%s" % ( rootModule, system, self.__csSuffix )
         else:
@@ -134,6 +137,7 @@ class ModuleLoader( object ):
       loadCSSection = self.__sectionFinder( loadName )
       handlerPath = gConfig.getValue( "%s/HandlerPath" % loadCSSection, "" )
       if handlerPath:
+        gLogger.info( "Trying to %s from CS defined path %s" % ( loadName, handlerPath ) )
         gLogger.verbose( "Found handler for %s: %s" % ( loadName, handlerPath ) )
         handlerPath = handlerPath.replace( "/", "." )
         if handlerPath.find( ".py", len( handlerPath ) -3 ) > -1:
@@ -144,6 +148,7 @@ class ModuleLoader( object ):
           return S_ERROR( "Cannot load user defined handler %s: %s" % ( handlerPath, result[ 'Message' ] ) )
         gLogger.verbose( "Loaded %s" % handlerPath )
       elif parentModule:
+        gLogger.info( "Trying to autodiscover %s from parent" % loadName )
         #If we've got a parent module, load from there.
         modImport = module
         if self.__modSuffix:
@@ -151,7 +156,8 @@ class ModuleLoader( object ):
         result = self.__recurseImport( modImport, parentModule, hideExceptions = hideExceptions )
       else:
         #Check to see if the module exists in any of the root modules
-        rootModulesToLook = getInstalledExtensions()
+        gLogger.info( "Trying to autodiscover %s" % loadName )
+        rootModulesToLook = self.__exts.getInstalledExtensions()
         for rootModule in rootModulesToLook:
           importString = '%s.%sSystem.%s.%s' % ( rootModule, system, self.__importLocation, module )
           if self.__modSuffix:
@@ -196,24 +202,44 @@ class ModuleLoader( object ):
     return S_OK()
 
   def __recurseImport( self, modName, parentModule = False, hideExceptions = False ):
+    #Is it already loaded?
+    fName = modName
+    if parentModule:
+      fName = "%s.%s" % ( parentModule.__name__, fName )
+    try:
+      return S_OK( sys.modules[ fName ] )
+    except KeyError:
+      pass
+    #Recurse time!
     if type( modName ) in types.StringTypes:
       modName = List.fromChar( modName, "." )
+    #Is the first already loaded?
+    impModule = False
+    fName = modName[0]
+    if parentModule:
+      fName = "%s.%s" % ( parentModule.__name__, fName )
     try:
-      if parentModule:
-        impData = imp.find_module( modName[0], parentModule.__path__ )
-      else:
-        impData = imp.find_module( modName[0] )
-      impModule = imp.load_module( modName[0], *impData )
-      if impData[0]:
-        impData[0].close()
-    except ImportError, excp:
-      strExcp = str( excp )
-      if strExcp.find( "No module named" ) == 0 and strExcp.find( modName[0] ) == len( strExcp ) - len( modName[0] ):
-        return S_OK()
-      errMsg = "Can't load %s" % ".".join( modName )
-      if not hideExceptions:
-        gLogger.exception( errMsg )
-      return S_ERROR( errMsg )
+      impModule = sys.modules[ fName ]
+    except KeyError:
+      pass
+    #Not loaded. Try to do so
+    if not impModule:
+      try:
+        if parentModule:
+          impData = imp.find_module( modName[0], parentModule.__path__ )
+        else:
+          impData = imp.find_module( modName[0] )
+        impModule = imp.load_module( modName[0], *impData )
+        if impData[0]:
+          impData[0].close()
+      except ImportError, excp:
+        strExcp = str( excp )
+        if strExcp.find( "No module named" ) == 0 and strExcp.find( modName[0] ) == len( strExcp ) - len( modName[0] ):
+          return S_OK()
+        errMsg = "Can't load %s" % ".".join( modName )
+        if not hideExceptions:
+          gLogger.exception( errMsg )
+        return S_ERROR( errMsg )
     if len( modName ) == 1:
       return S_OK( impModule )
     return self.__recurseImport( modName[1:], impModule )

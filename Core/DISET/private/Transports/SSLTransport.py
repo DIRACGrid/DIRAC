@@ -10,6 +10,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
+from DIRAC.Core.Utilities.Devloader import Devloader
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.X509Certificate import X509Certificate
@@ -64,6 +65,7 @@ class SSLTransport( BaseTransport ):
       return retVal
     self.oSocketInfo = retVal[ 'Value' ]
     self.oSocket = self.oSocketInfo.getSSLSocket()
+    Devloader().addStuffToClose( self.oSocket )
     return S_OK()
 
   def close( self ):

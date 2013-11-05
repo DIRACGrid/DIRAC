@@ -27,7 +27,7 @@ class Logger:
     self._outputList = []
     self._subLoggersDict = {}
     self._logLevels = LogLevels()
-    self.__backendOptions = { 'showHeaders' : True, 'showThreads' : False, 'Color' : False }
+    self.__backendOptions = { 'showHeaders' : True, 'showThreads' : False, 'Color' : True }
     self.__preinitialize()
     self.__initialized = False
 

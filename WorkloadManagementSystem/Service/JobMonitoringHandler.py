@@ -45,7 +45,6 @@ def initializeJobMonitoringHandler( serviceInfo ):
 class JobMonitoringHandler( RequestHandler ):
 
   def initialize( self ):
-
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
@@ -53,7 +52,7 @@ class JobMonitoringHandler( RequestHandler ):
     self.globalJobsInfo = operations.getValue( '/Services/JobMonitoring/GlobalJobsInfo', True )
     self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.globalJobsInfo )
     self.jobPolicy.setJobDB( gJobDB )
-    
+
     return S_OK()
 
 ##############################################################################
@@ -98,7 +97,7 @@ class JobMonitoringHandler( RequestHandler ):
     Return Distinct Values of ProductionId job Attribute in WMS
     """
     return gJobDB.getDistinctJobAttributes( 'JobGroup', condDict,
-                                           newer = cutDate )
+                                             newer = cutDate )
 
 ##############################################################################
   types_getSites = []
@@ -362,11 +361,11 @@ class JobMonitoringHandler( RequestHandler ):
         return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
       summaryJobList = result['Value']
-      if not self.globalJobsInfo:      
+      if not self.globalJobsInfo:
         validJobs, invalidJobs, nonauthJobs, ownJobs = self.jobPolicy.evaluateJobRights( summaryJobList,
                                                                                          RIGHT_GET_INFO )
         summaryJobList = validJobs
-      
+
       result = gJobDB.getAttributesForJobList( summaryJobList, SUMMARY )
       if not result['OK']:
         return S_ERROR( 'Failed to get job summary: ' + result['Message'] )
@@ -487,3 +486,9 @@ class JobMonitoringHandler( RequestHandler ):
     """ Get input data for the specified jobs
     """
     return  gJobDB.getInputData( jobID )
+
+  types_getJobsInHerd = [ ( IntType, LongType ) ]
+  def export_getJobsInHerd( self, jobID ):
+    """ Get jobs in the same herd as this job
+    """
+    return gJobDB.getJobsInHerd( jobID )

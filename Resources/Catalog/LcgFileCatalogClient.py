@@ -11,7 +11,7 @@ from DIRAC.Core.Security.ProxyInfo                            import getProxyInf
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getDNForUsername, getVOMSAttributeForGroup, \
                                                                      getVOForGroup, getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
-                                                                     
+
 from stat import *
 import os, re, types, time
 
@@ -167,14 +167,14 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       catConfig = {}
       if result['OK']:
         catConfig = result['Value']
-    
+
       if not infosys:
         # if not provided, take if from CS
         infosys = catConfig.get( 'LcgGfalInfosys', '' )
       if not infosys and 'LCG_GFAL_INFOSYS' in os.environ:
         # if not in CS take from environ
         infosys = os.environ['LCG_GFAL_INFOSYS']
-  
+
       if not host:
         # if not provided, take if from CS
         host = catConfig.get( 'MasterHost', '' )
@@ -509,10 +509,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if not res['OK']:
       return res
     lfns = res['Value']
-    lfnChunks = breakListIntoChunks( lfns.keys(), 1000 )
+    lfnChunks = breakListIntoChunks( lfns.keys(), 2 )
     # If we have less than three groups to query a session doesn't make sense
     created = False
-    if len( lfnChunks ) > 2:
+    if False and len( lfnChunks ) > 2:
       created = self.__openSession()
       if created < 0:
         return S_ERROR( "Error opening LFC session" )
