@@ -147,7 +147,6 @@ EOF
       batchIDList.append( jobID )
       stampDict[jobID] = diracStamp
     
-    self._deleteFile( submitFile )
     if batchIDList:
       resultRe = S_OK( batchIDList )
       resultRe['PilotStampDict'] = stampDict
@@ -295,16 +294,6 @@ EOF
     finally:
       if fileHander:
         fileHander.close( )
-
- #####################################################################
-  def _deleteFile(self, fileName ):
-    """ delete a file
-    """
-    try:
-      os.unlink( fileName )
-    except:
-      self.log.verbose( "To delete file %s failed!" % fileName )
-      pass
 
 # testing this
 if __name__ == "__main__":
