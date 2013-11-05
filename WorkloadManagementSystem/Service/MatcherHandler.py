@@ -446,7 +446,9 @@ class MatcherHandler( RequestHandler ):
         gridCE = resourceDict.get( 'GridCE', 'Unknown' )
         site = resourceDict.get( 'Site', 'Unknown' )
         benchmark = benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
-        gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
+        gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,
+                                                                                           gridCE, site,
+                                                                                           benchmark) )
         result = gPilotAgentsDB.setPilotStatus( pilotReference, status = 'Running',
                                                 gridSite = site,
                                                 destination = gridCE,
@@ -502,8 +504,8 @@ class MatcherHandler( RequestHandler ):
         return result
       return S_ERROR( "Job %s is not in Waiting state" % str( jobID ) )
 
-    attNames = ['Status','MinorStatus','ApplicationStatus','Site']
-    attValues = ['Matched','Assigned','Unknown',siteName]
+    attNames = ['Status', 'MinorStatus', 'ApplicationStatus', 'Site']
+    attValues = ['Matched', 'Assigned', 'Unknown', siteName]
     result = gJobDB.setJobAttributes( jobID, attNames, attValues )
     # result = gJobDB.setJobStatus( jobID, status = 'Matched', minor = 'Assigned' )
     result = gJobLoggingDB.addLoggingRecord( jobID,
