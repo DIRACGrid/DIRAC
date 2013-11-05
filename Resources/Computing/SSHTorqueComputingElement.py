@@ -9,19 +9,16 @@
 """
 
 __RCSID__ = "$Id$"
-
+from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Resources.Computing.SSHComputingElement       import SSH, SSHComputingElement 
-from DIRAC.Core.Utilities.Subprocess                     import shellCall, systemCall
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 from DIRAC.Core.Utilities.Pfn                            import pfnparse
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import rootPath
 from DIRAC                                               import gConfig
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-from DIRAC.Resources.Computing.SSHComputingElement       import SSH 
 
-import os, sys, time, re, socket, stat, shutil
-import string, shutil, bz2, base64, tempfile
+import os, re, socket, stat
+import bz2, base64, tempfile
 
 CE_NAME = 'SSHTorque'
 MANDATORY_PARAMETERS = [ 'Queue' ]
