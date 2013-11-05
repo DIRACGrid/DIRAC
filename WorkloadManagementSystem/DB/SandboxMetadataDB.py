@@ -6,9 +6,8 @@
 
 __RCSID__ = "$Id$"
 
-import time
 import types
-from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Security import Properties, CS
