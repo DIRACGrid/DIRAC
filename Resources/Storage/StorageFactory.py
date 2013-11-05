@@ -1,3 +1,6 @@
+###########################################################################
+# $HeadURL$
+###########################################################################
 """ Storage Factory Class - creates instances of various Storage plugins from the Core DIRAC or extensions
 
     This Class has three public methods:
@@ -20,7 +23,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus   import ResourceStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources, getSiteForResource
 import os
 
-class StorageFactory:
+class StorageFactory(object):
 
   def __init__( self, useProxy=False, vo = None ):
 
