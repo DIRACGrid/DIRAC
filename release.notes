@@ -1,4 +1,4 @@
-[v7r0-pre21]
+[v7r0-pre22]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -107,7 +107,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r10-pre12]
+[v6r10-pre13]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -126,6 +126,7 @@ NEW: added installation configuration examples
 
 *CS
 CHANGE: getVOMSVOForGroup() uses the VOMSName option of the VO definition 
+NEW: CE2CSAgent - added ARC CE information lookup
 
 *Framework
 FIX: SystemAdministratorIntegrator - use Host option to get the host address in addition to the section name, closes #1628
@@ -185,6 +186,7 @@ CHANGE: TransformationClient - applying state machine when changing transformati
 BUGFIX: TransformationClient(Handler) - few minor fixes
 NEW: TransformationDB - backported __deleteTransformationFileTask(s) methods
 CHANGE: TransformationDB(Client) - fixes to reestablish the FileCatalog interface
+FIX: TransformationAgent - added MissingInFC to consider for Removal transformations
 
 *RMS
 NEW: Migrate to use the new Request Management by all the clients

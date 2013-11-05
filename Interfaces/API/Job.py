@@ -925,9 +925,11 @@ class Job( API ):
         cmd = 'ls -d ' + name
         output = shellCall( 10, cmd )
         if not output['OK']:
-          self.log.error( 'Could not perform: %s' % ( cmd ) )
+          self.log.error( 'Could not perform: ', cmd )
+        elif output['Value'][0]:
+          self.log.error(" Failed getting the files ", output['Value'][2])
         else:
-          files = output['Value'].split()
+          files = output['Value'][1].split()
           for check in files:
             if os.path.isfile( check ):
               self.log.verbose( 'Found file ' + check + ' appending to Input Sandbox' )

@@ -275,15 +275,17 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   # Internal methods used by the agent
   #
 
-  def _getTransformationFiles( self, transDict, clients ):
+  def _getTransformationFiles( self, transDict, clients, statusList = ['Unused', 'ProbInFC'] ):
     """ get the data replicas for a certain transID
     """
 
     transID = transDict['TransformationID']
 
-    # Files that were problematic (either explicit or because SE was banned) may be recovered
+    # Files that were problematic (either explicit or because SE was banned) may be recovered,
+    # and always removing the missing ones
+    statusList = statusList + ['MissingInFC'] if transDict['Type'] == 'Removal' else statusList
     res = clients['TransformationClient'].getTransformationFiles( condDict = {'TransformationID':transID,
-                                                                              'Status':['Unused', 'ProbInFC']} )
+                                                                              'Status':statusList} )
     if not res['OK']:
       self._logError( "Failed to obtain input data: %s." % res['Message'],
                        method = "_getTransformationFiles", transID = transID )
