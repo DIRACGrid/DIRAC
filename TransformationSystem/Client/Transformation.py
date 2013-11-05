@@ -6,6 +6,8 @@ from DIRAC.Core.Base.API import API
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
+__RCSID__ = "$Id$"
+
 COMPONENT_NAME = 'Transformation'
 
 class Transformation( API ):
