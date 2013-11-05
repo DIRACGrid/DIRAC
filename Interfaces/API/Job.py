@@ -927,7 +927,7 @@ class Job( API ):
         if not output['OK']:
           self.log.error( 'Could not perform: %s' % ( cmd ) )
         else:
-          files = output['Value'].split()
+          files = output['Value'][1].split()
           for check in files:
             if os.path.isfile( check ):
               self.log.verbose( 'Found file ' + check + ' appending to Input Sandbox' )
