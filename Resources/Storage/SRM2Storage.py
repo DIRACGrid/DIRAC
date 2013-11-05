@@ -9,7 +9,7 @@ import os
 import re
 import time
 import errno
-from types import StringType, StringTypes, DictType, ListType, IntType
+from types import StringType, StringTypes, ListType, IntType
 from stat import S_ISREG, S_ISDIR, S_IMODE, ST_MODE, ST_SIZE
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
