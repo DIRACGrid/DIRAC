@@ -28,7 +28,7 @@ __RCSID__ = "$Id$"
 import collections
 import threading
 import time
-from types import *
+from types import ListType, IntType, LongType
 
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC                                             import gLogger, S_OK, S_ERROR
@@ -36,6 +36,7 @@ from DIRAC.Core.Base.DB                                import DB
 from DIRAC.Core.Utilities.SiteCEMapping                import getSiteForCE, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from DIRAC.ResourceStatusSystem.Client.SiteStatus      import SiteStatus
+
 
 DEBUG = 1
 
@@ -160,6 +161,7 @@ class PilotAgentsDB( DB ):
 ##########################################################################################
   def addPilotTQReference( self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker = 'Unknown',
                         gridType = 'DIRAC', requirements = 'Unknown', pilotStampDict = {} ):
+
     """ Add a new pilot job reference """
 
     err = 'PilotAgentsDB.addPilotTQReference: Failed to retrieve a new Id.'
@@ -186,7 +188,6 @@ class PilotAgentsDB( DB ):
 
       if not 'lastRowId' in result:
         return S_ERROR( '%s' % err )
-
       pilotID = int( result['lastRowId'] )
 
       req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % ( pilotID, e_requirements )
@@ -292,7 +293,7 @@ class PilotAgentsDB( DB ):
 ##########################################################################################
   def getPilotGroups( self, groupList = ['Status', 'OwnerDN', 'OwnerGroup', 'GridType'], condDict = {} ):
     """
-     Get all exisiting combinations of groupList Values
+     Get all existing combinations of groupList Values
     """
 
     cmd = 'SELECT %s from PilotAgents ' % ', '.join( groupList )
@@ -324,7 +325,7 @@ class PilotAgentsDB( DB ):
         failed = table
 
     if failed:
-      return S_ERROR( 'Failed to remove pilot from %s table' % table )
+      return S_ERROR( 'Failed to remove pilot from %s table' % failed )
     else:
       return S_OK()
 
@@ -456,7 +457,6 @@ class PilotAgentsDB( DB ):
   def setAccountingFlag( self, pilotRef, mark = 'True' ):
     """ Set the pilot AccountingSent flag
     """
-
     req = "UPDATE PilotAgents SET AccountingSent='%s' WHERE PilotJobReference='%s'" % ( mark, pilotRef )
     result = self._update( req )
     return result
@@ -559,6 +559,7 @@ class PilotAgentsDB( DB ):
         reason = 'Report from job %d' % int( jobID )
         result = self.setPilotStatus( pilotRef, status = 'Running', statusReason = reason,
                                      gridSite = site )
+
         if not result['OK']:
           return result
       req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID,jobID)
@@ -571,7 +572,6 @@ class PilotAgentsDB( DB ):
   def setCurrentJobID( self, pilotRef, jobID ):
     """ Set the pilot agent current DIRAC job ID
     """
-
     req = "UPDATE PilotAgents SET CurrentJobID=%d WHERE PilotJobReference='%s'" % ( jobID, pilotRef )
     result = self._update( req )
     return result
