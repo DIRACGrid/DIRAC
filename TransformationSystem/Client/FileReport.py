@@ -7,6 +7,8 @@ from DIRAC.RequestManagementSystem.Client.Operation           import Operation
 
 import copy
 
+__RCSID__ = "$Id$"
+
 class FileReport( object ):
   """ A stateful object for reporting to TransformationDB
   """
