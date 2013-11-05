@@ -1,6 +1,5 @@
 import types
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB

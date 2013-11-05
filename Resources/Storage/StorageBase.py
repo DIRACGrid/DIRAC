@@ -34,7 +34,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 
-class StorageBase:
+class StorageBase(object):
   """
   .. class:: StorageBase
   

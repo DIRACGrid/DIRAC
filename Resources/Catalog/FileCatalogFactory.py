@@ -12,7 +12,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
-class FileCatalogFactory:
+class FileCatalogFactory(object):
   
   def __init__(self):
     self.log = gLogger.getSubLogger('FileCatalogFactory')

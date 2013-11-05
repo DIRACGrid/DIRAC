@@ -1,5 +1,10 @@
+################################################################################
+# $HzeadURL$
+################################################################################
+
 '''
-Update the transformation files of active transformations given an InputDataQuery fetched from the Transformation Service.
+Update the transformation files of active transformations given an InputDataQuery fetched from the 
+Transformation Service.
 
 Possibility to speedup the query time by only fetching files that were added since the last iteration.
 Use the CS option RefreshOnly (False by default) and set the DateKey (empty by default) to the meta data
@@ -14,6 +19,8 @@ from DIRAC.TransformationSystem.Client.TransformationClient               import
 from DIRAC.Resources.Catalog.FileCatalogClient                            import FileCatalogClient
 from DIRAC.Core.Utilities.List                                            import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations                  import Operations
+
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/InputDataAgent'
 

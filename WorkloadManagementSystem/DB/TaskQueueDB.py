@@ -8,7 +8,6 @@ __RCSID__ = "ebed3a8 (2012-07-06 20:33:11 +0200) Adri Casajs <adria@ecm.ub.es>"
 
 import types
 import random
-import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
@@ -122,7 +121,8 @@ class TaskQueueDB( DB ):
       self.__tablesDesc[ tableName ] = { 'Fields' : { 'TQId' : 'INTEGER UNSIGNED NOT NULL',
                                                       'Value' : 'VARCHAR(64) NOT NULL',
                                                   },
-                                         'Indexes': { 'TaskIndex': [ 'TQId' ], '%sIndex' % multiField: [ 'Value' ] },
+                                         'Indexes': { 'TaskIndex': [ 'TQId' ], 
+                                                     '%sIndex' % multiField: [ 'Value' ] },
                                        }
 
     for tableName in self.__tablesDesc:
@@ -295,7 +295,8 @@ class TaskQueueDB( DB ):
     #Insert the TQ Disabled
     sqlSingleFields.append( "Enabled" )
     sqlValues.append( "0" )
-    cmd = "INSERT INTO tq_TaskQueues ( %s ) VALUES ( %s )" % ( ", ".join( sqlSingleFields ), ", ".join( [ str( v ) for v in sqlValues ] ) )
+    cmd = "INSERT INTO tq_TaskQueues ( %s ) VALUES ( %s )" % ( ", ".join( sqlSingleFields ), 
+                                                               ", ".join( [ str( v ) for v in sqlValues ] ) )
     result = self._update( cmd, conn = connObj )
     if not result[ 'OK' ]:
       self.log.error( "Can't insert TQ in DB", result[ 'Value' ] )

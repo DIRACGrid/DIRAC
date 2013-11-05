@@ -2,7 +2,7 @@
     of files by searching for an appropriate POOL XML Catalog in the specified directory.
 """
 
-import os, glob, tarfile, string
+import os, glob, tarfile
 
 from DIRAC.Resources.Catalog.PoolXMLCatalog           import PoolXMLCatalog
 from DIRAC.Core.Utilities.List                        import uniqueElements
@@ -26,7 +26,7 @@ def getGUID( fileNames, directory = '' ):
   if not type( fileNames ) == type( [] ):
     fileNames = [fileNames]
 
-  gLogger.verbose( 'Will look for POOL XML Catalog GUIDs in %s for %s' % ( directory, string.join( fileNames, ', ' ) ) )
+  gLogger.verbose( 'Will look for POOL XML Catalog GUIDs in %s for %s' % ( directory, ', '.join( fileNames ) ) )
 
   finalCatList = _getPoolCatalogs( directory )
 
@@ -43,9 +43,9 @@ def getGUID( fileNames, directory = '' ):
     pfnGUIDs[fname] = guid
 
   if not generated:
-    gLogger.info( 'Found GUIDs from POOL XML Catalogue for all files: %s' % string.join( fileNames, ', ' ) )
+    gLogger.info( 'Found GUIDs from POOL XML Catalogue for all files: %s' % ', '.join( fileNames ) )
   else:
-    gLogger.info( 'GUIDs not found from POOL XML Catalogue (and were generated) for: %s' % string.join( generated, ', ' ) )
+    gLogger.info( 'GUIDs not found from POOL XML Catalogue (and were generated) for: %s' % ', '.join( generated ) )
 
   result = S_OK( pfnGUIDs )
   result['directory'] = directory
@@ -69,7 +69,7 @@ def getType( fileNames, directory = '' ):
   if not type( fileNames ) == type( [] ):
     fileNames = [fileNames]
 
-  gLogger.verbose( 'Will look for POOL XML Catalog file types in %s for %s' % ( directory, string.join( fileNames, ', ' ) ) )
+  gLogger.verbose( 'Will look for POOL XML Catalog file types in %s for %s' % ( directory, ', '.join( fileNames ) ) )
 
   finalCatList = _getPoolCatalogs( directory )
 
@@ -86,9 +86,9 @@ def getType( fileNames, directory = '' ):
     pfnTypes[fname] = typeFile
 
   if not generated:
-    gLogger.info( 'Found Types from POOL XML Catalogue for all files: %s' % string.join( fileNames, ', ' ) )
+    gLogger.info( 'Found Types from POOL XML Catalogue for all files: %s' % ', '.join( fileNames ) )
   else:
-    gLogger.info( 'GUIDs not found from POOL XML Catalogue (and were generated) for: %s' % string.join( generated, ', ' ) )
+    gLogger.info( 'GUIDs not found from POOL XML Catalogue (and were generated) for: %s' % ', '.join( generated ) )
 
   result = S_OK( pfnTypes )
   result['directory'] = directory
@@ -134,7 +134,7 @@ def _getPoolCatalogs( directory = '' ):
     except Exception, x:
       gLogger.debug( 'Ignoring non-POOL catalogue file %s' % possibleCat )
 
-  gLogger.debug( 'Final list of catalog files are: %s' % string.join( finalCatList, ', ' ) )
+  gLogger.debug( 'Final list of catalog files are: %s' % ', '.join( finalCatList ) )
 
   return finalCatList
 

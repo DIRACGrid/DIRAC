@@ -18,14 +18,14 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Os import getDiskSpace
 
-import string,re,socket
+import socket
 
 class WatchdogLinux(Watchdog):
 
   def __init__(self, pid, thread, spObject, jobCPUtime, systemFlag='linux'):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__(self,pid,thread,spObject,jobCPUtime,systemFlag)
+    Watchdog.__init__(self, pid, thread, spObject, jobCPUtime, systemFlag)
     self.systemFlag = systemFlag
     self.pid = pid
 
@@ -37,17 +37,17 @@ class WatchdogLinux(Watchdog):
     """
     result = S_OK()
     try:
-      file = open ("/proc/cpuinfo","r")
-      info =  file.readlines()
-      file.close()
+      infofile = open ("/proc/cpuinfo","r")
+      info =  infofile.readlines()
+      infofile.close()
       result["HostName"] = socket.gethostname()
-      result["CPU(MHz)"]   = string.replace(string.replace(string.split(info[6],":")[1]," ",""),"\n","")
-      result["ModelName"] = string.replace(string.replace(string.split(info[4],":")[1]," ",""),"\n","")
-      result["CacheSize(kB)"] = string.replace(string.replace(string.split(info[7],":")[1]," ",""),"\n","")
-      file = open ("/proc/meminfo","r")
-      info =  file.readlines()
-      file.close()
-      result["Memory(kB)"] =  string.replace(string.replace(string.split(info[3],":")[1]," ",""),"\n","")
+      result["CPU(MHz)"]   = info[6].split(":")[1].replace(" ","").replace("\n","")
+      result["ModelName"] = info[4].split(":")[1].replace(" ","").replace("\n","")
+      result["CacheSize(kB)"] = info[7].split(":")[1].replace(" ","").replace("\n","")
+      infofile = open ("/proc/meminfo", "r")
+      info =  infofile.readlines()
+      infofile.close()
+      result["Memory(kB)"] =  info[3].split(":")[1].replace(" ","").replace("\n","")
       account = 'Unknown'
       localID = shellCall(10,'whoami')
       if localID['OK']:
@@ -56,9 +56,7 @@ class WatchdogLinux(Watchdog):
     except Exception, x:
       self.log.fatal('Watchdog failed to obtain node information with Exception:')
       self.log.fatal(str(x))
-      result = S_ERROR()
-      result['Message']='Failed to obtain system information for '+self.systemFlag
-      return result
+      return S_ERROR('Failed to obtain system information for '+self.systemFlag)
 
     return result
 
@@ -68,9 +66,9 @@ class WatchdogLinux(Watchdog):
     """
     result = S_OK()
     comm = '/bin/cat /proc/loadavg'
-    loadAvgDict = shellCall(5,comm)
+    loadAvgDict = shellCall(5, comm)
     if loadAvgDict['OK']:
-      la = float(string.split(loadAvgDict['Value'][1])[0])
+      la = float(loadAvgDict['Value'][1].split()[0])
       result['Value'] = la
     else:
       result = S_ERROR('Could not obtain load average')
@@ -85,9 +83,9 @@ class WatchdogLinux(Watchdog):
     """
     result = S_OK()
     comm = '/usr/bin/free'
-    memDict = shellCall(5,comm)
+    memDict = shellCall(5, comm)
     if memDict['OK']:
-      mem = string.split(memDict['Value'][1]) [8]
+      mem = memDict['Value'][1].split() [8]
       result['Value'] = float(mem)
     else:
       result = S_ERROR('Could not obtain memory used')
@@ -95,7 +93,7 @@ class WatchdogLinux(Watchdog):
       result['Value'] = 0
     return result
 
- #############################################################################
+  #############################################################################
   def getDiskSpace(self):
     """Obtains the disk space used.
     """

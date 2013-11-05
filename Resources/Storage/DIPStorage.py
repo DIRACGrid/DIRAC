@@ -1,3 +1,8 @@
+
+########################################################################
+# $HeadURL$
+########################################################################
+
 """ DIPStorage class is the client of the DIRAC Storage Element.
 
     The following methods are available in the Service interface
