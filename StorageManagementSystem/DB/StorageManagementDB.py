@@ -6,21 +6,21 @@
 
     There are five tables in the StorageManagementDB: Tasks, CacheReplicas, TaskReplicas, StageRequests.
 
-    The Tasks table is the place holder for the tasks that have requested files to be staged. These can be from different systems and have different associated call back methods.
-    The CacheReplicas table keeps the information on all the CacheReplicas in the system. It maps all the file information LFN, PFN, SE to an assigned ReplicaID.
+    The Tasks table is the place holder for the tasks that have requested files to be staged. These can be from 
+    different systems and have different associated call back methods.
+    The CacheReplicas table keeps the information on all the CacheReplicas in the system. It maps all the file 
+    information LFN, PFN, SE to an assigned ReplicaID.
     The TaskReplicas table maps the TaskIDs from the Tasks table to the ReplicaID from the CacheReplicas table.
     The StageRequests table contains each of the prestage request IDs for each of the replicas.
 """
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                        import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                           import DB
 from DIRAC.Core.Utilities.List                    import intListToString, stringListToString
-from DIRAC.Core.Utilities.Time                    import toString
-import string, threading, types
+import threading, types
 import inspect
-from sets import Set
 
 # Stage Request are issue with a length of "PinLength"
 # However, once Staged, the entry in the StageRequest will set a PinExpiryTime only for "PinLength" / THROTTLING_STEPS
@@ -394,7 +394,7 @@ class StorageManagementDB( DB ):
       return res
     replicaInfo = {}
     for lfn, storageElement, pfn, fileSize, status, lastupdate, reason in res['Value']:
-      replicaInfo[lfn] = {'StorageElement':storageElement, 'PFN':pfn, 'FileSize':fileSize, 'Status':status,'LastUpdate':lastupdate, 'Reason':reason}
+      replicaInfo[lfn] = {'StorageElement':storageElement, 'PFN':pfn, 'FileSize':fileSize, 'Status':status, 'LastUpdate':lastupdate, 'Reason':reason}
     resDict = {'TaskInfo':taskInfo, 'ReplicaInfo':replicaInfo}
     return S_OK( resDict )
 
@@ -960,41 +960,41 @@ class StorageManagementDB( DB ):
     return res
 
   def killTasksBySourceTaskID(self, sourceTaskIDs, connection = False):
-      """ Given SourceTaskIDs (jobs), this will cancel further staging of files for the corresponding tasks. 
-      The "cancel" is actually removing all stager DB records for these jobs. 
-      Care must be taken to NOT cancel staging of files that are requested also by other tasks. """
-      connection = self.__getConnection( connection )
-      
-      # get the TaskIDs
-      req = "SELECT TaskID from Tasks WHERE SourceTaskID IN (%s);"  % intListToString( sourceTaskIDs )
-      res = self._query( req )
+    """ Given SourceTaskIDs (jobs), this will cancel further staging of files for the corresponding tasks. 
+    The "cancel" is actually removing all stager DB records for these jobs. 
+    Care must be taken to NOT cancel staging of files that are requested also by other tasks. """
+    connection = self.__getConnection( connection )
+    
+    # get the TaskIDs
+    req = "SELECT TaskID from Tasks WHERE SourceTaskID IN (%s);"  % intListToString( sourceTaskIDs )
+    res = self._query( req )
+    if not res['OK']:
+      gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+    taskIDs = [ row[0] for row in res['Value'] ]
+    
+    # ! Make sure to only cancel file staging for files with no relations with other tasks (jobs) but the killed ones
+    req = "SELECT DISTINCT(CR.ReplicaID) FROM TaskReplicas AS TR, CacheReplicas AS CR WHERE TR.TaskID IN (%s) AND CR.Links=1 and TR.ReplicaID=CR.ReplicaID;" % intListToString( taskIDs )
+    res = self._query( req )
+    if not res['OK']:
+      gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+    
+       
+    replicaIDs = [ row[0] for row in res['Value'] ]
+    
+    if replicaIDs:
+      req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString ( replicaIDs )      
+      res = self._update( req, connection )
       if not res['OK']:
-        gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
-      taskIDs = [ row[0] for row in res['Value'] ]
-      
-      # ! Make sure to only cancel file staging for files with no relations with other tasks (jobs) but the killed ones
-      req = "SELECT DISTINCT(CR.ReplicaID) FROM TaskReplicas AS TR, CacheReplicas AS CR WHERE TR.TaskID IN (%s) AND CR.Links=1 and TR.ReplicaID=CR.ReplicaID;" % intListToString( taskIDs )
-      res = self._query( req )
+        gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+   
+      req = "DELETE FROM CacheReplicas WHERE ReplicaID in (%s) AND Links=1;" % intListToString ( replicaIDs )
+      res = self._update( req, connection )
       if not res['OK']:
-        gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
-      
-         
-      replicaIDs = [ row[0] for row in res['Value'] ]
-      
-      if replicaIDs:
-        req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString ( replicaIDs )      
-        res = self._update( req, connection )
-        if not res['OK']:
-          gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
-     
-        req = "DELETE FROM CacheReplicas WHERE ReplicaID in (%s) AND Links=1;" % intListToString ( replicaIDs )
-        res = self._update( req, connection )
-        if not res['OK']:
-          gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
-      
-      # Finally, remove the Task and TaskReplicas entries.
-      res = self.removeTasks(taskIDs, connection)
-      return res
+        gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+    
+    # Finally, remove the Task and TaskReplicas entries.
+    res = self.removeTasks(taskIDs, connection)
+    return res
   
   def removeStageRequests( self, replicaIDs, connection = False):
     connection = self.__getConnection( connection )
@@ -1025,7 +1025,7 @@ class StorageManagementDB( DB ):
     req = "DELETE FROM Tasks WHERE TaskID in (%s);" % intListToString( taskIDs )
     res = self._update( req, connection )
     if not res['OK']:
-       gLogger.error( "StorageManagementDB.removeTasks. Problem removing entries from Tasks." )
+      gLogger.error( "StorageManagementDB.removeTasks. Problem removing entries from Tasks." )
     gLogger.verbose( "%s.%s_DB: deleted Tasks" % ( self._caller(), 'removeTasks' ) )
     #gLogger.info( "%s_DB:%s" % ('removeTasks',req))
     return res
@@ -1042,7 +1042,7 @@ class StorageManagementDB( DB ):
       return res
     return res
 
-  def getCacheReplicasSummary( self,connection = False ):
+  def getCacheReplicasSummary(self, connection = False ):
     """
     Reports breakdown of file number/size in different staging states across storage elements 
     """
@@ -1056,11 +1056,11 @@ class StorageManagementDB( DB ):
     resSummary = {}
     i = 1
     for status, se, numFiles, sumFiles in res['Value']:
-      resSummary[i] = {'Status':status,'SE':se,'NumFiles':long(numFiles),'SumFiles':float(sumFiles)}
-      i+=1   
+      resSummary[i] = {'Status':status, 'SE':se, 'NumFiles':long(numFiles), 'SumFiles':float(sumFiles)}
+      i += 1   
     return S_OK(resSummary)
 
-  def removeUnlinkedReplicas( self, connection = False ):
+  def removeUnlinkedReplicas(self, connection = False ):
     """ This will remove Replicas from the CacheReplicas that are not associated to any Task.
         If the Replica has been Staged,
           wait until StageRequest.PinExpiryTime and remove the StageRequest and CacheReplicas entries
