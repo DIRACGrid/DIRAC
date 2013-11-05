@@ -14,7 +14,7 @@ import time
 import os
 import threading
 import Queue
-from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
+from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
