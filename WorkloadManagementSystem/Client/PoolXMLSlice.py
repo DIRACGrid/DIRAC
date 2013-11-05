@@ -9,12 +9,14 @@ from DIRAC                                                          import S_OK,
 
 import os
 
+__RCSID__ = "$Id$"
+
 COMPONENT_NAME = 'PoolXMLSlice'
 
-class PoolXMLSlice:
+class PoolXMLSlice( object ):
 
   #############################################################################
-  def __init__(self,catalogName):
+  def __init__(self, catalogName):
     """ Standard constructor
     """
     self.fileName = catalogName
@@ -22,7 +24,7 @@ class PoolXMLSlice:
     self.log = gLogger.getSubLogger(self.name)
 
   #############################################################################
-  def execute(self,dataDict):
+  def execute(self, dataDict):
     """ Given a dictionary of resolved input data, this will creates a POOL XML slice.
     """
     poolXMLCatName = self.fileName
@@ -31,7 +33,7 @@ class PoolXMLSlice:
       poolXMLCat = PoolXMLCatalog()
       self.log.verbose('Creating POOL XML slice')
 
-      for lfn,mdata in dataDict.items():
+      for lfn, mdata in dataDict.items():
         # lfn,pfn,se,guid tuple taken by POOL XML Catalogue
         if mdata.has_key('path'):
           poolXMLCat.addFile( ( lfn, mdata['path'], mdata['se'], mdata['guid'], mdata['pfntype'] ) )
@@ -47,16 +49,16 @@ class PoolXMLSlice:
       poolSlice = open(poolXMLCatName,'w')
       poolSlice.write(xmlSlice)
       poolSlice.close()
-      self.log.info('POOL XML Catalogue slice written to %s' %(poolXMLCatName))
+      self.log.info('POOL XML Catalogue slice written to %s' % (poolXMLCatName))
       try:
         # Temporary solution to the problem of storing the SE in the Pool XML slice
-        poolSlice_temp = open('%s.temp' %(poolXMLCatName),'w')
+        poolSlice_temp = open('%s.temp' % (poolXMLCatName), 'w')
         xmlSlice = poolXMLCat.toXML(True)
         poolSlice_temp.write(xmlSlice)
         poolSlice_temp.close()
-      except Exception,x:
-        self.log.warn('Attempted to write catalog also to %s.temp but this failed' %(poolXMLCatName))  
-    except Exception,x:
+      except Exception, x:
+        self.log.warn('Attempted to write catalog also to %s.temp but this failed' % (poolXMLCatName))  
+    except Exception, x:
       self.log.error(str(x))
       return S_ERROR('Exception during construction of POOL XML slice')
 
