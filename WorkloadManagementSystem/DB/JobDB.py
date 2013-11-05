@@ -49,7 +49,7 @@
 __RCSID__ = "$Id$"
 
 import sys, types
-import time, operator
+import operator
 
 from DIRAC                                                       import S_OK, S_ERROR, Time
 from DIRAC.ConfigurationSystem.Client.Config                     import gConfig
@@ -863,7 +863,7 @@ class JobDB( DB ):
         return S_ERROR( "Missing replicas for lfn %s" % lfn )
         replicas = pDict[ lfn ][ 'Replicas' ]
         for seName in replicas:
-          if 'SURL' not in replias or 'Disk' not in replicas:
+          if 'SURL' not in replicas or 'Disk' not in replicas:
             return S_ERROR( "Missing SURL or Disk for %s:%s replica" % ( seName, lfn ) )
     return S_OK()
 
@@ -1385,7 +1385,7 @@ class JobDB( DB ):
       self.log.error( 'Can not insert New JDL', result['Message'] )
       return result
 
-    jid = res[ 'lastRowId' ]
+    jid = result[ 'lastRowId' ]
     return S_OK( jid )
 
 
@@ -1626,8 +1626,8 @@ class JobDB( DB ):
 
     jobManifest.remove( "JobRequirements" )
     # Legacy check to suite the LHCb logic
-    if not systemConfig:
-      systemConfig = classAdJob.getAttributeString( 'SystemConfig' )
+    #if not systemConfig:
+    #  systemConfig = classAdJob.getAttributeString( 'SystemConfig' )
 
     result = jobManifest.check()
     if not result['OK']:
@@ -1677,9 +1677,9 @@ class JobDB( DB ):
         failedTablesList.append( table )
 
     result = S_OK()
-    if failedSubjobList:
-      result = S_ERROR( 'Errors while job removal' )
-      result['FailedSubjobs'] = failedSubjobList
+    #if failedSubjobList:
+    #  result = S_ERROR( 'Errors while job removal' )
+    #  result['FailedSubjobs'] = failedSubjobList
     if failedTablesList:
       result = S_ERROR( 'Errors while job removal' )
       result['FailedTables'] = failedTablesList
@@ -1704,7 +1704,7 @@ class JobDB( DB ):
     return S_OK()
 
 #############################################################################
-  def __failJob( jid, minor, errMsg ):
+  def __failJob( self, jid, minor, errMsg ):
     result = self.setJobStatus( jid, status = 'Failed', minor = minor )
     ret = S_ERROR( errMsg )
     if result[ 'OK' ]:
