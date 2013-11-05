@@ -11,7 +11,8 @@ from DIRAC                              import S_OK, S_ERROR
 from DIRAC.Core.Base.Client             import Client
 
 class FileCatalogClient(Client):
-
+  """ The Client that goes with the DIRAC File Catalog service
+  """
   def __init__( self, url=None, **kwargs ):
     """ Constructor function.
     """
@@ -24,9 +25,11 @@ class FileCatalogClient(Client):
 #    if res['OK']:
 #      self.available = res['Value']
 
-  def isOK(self,rpc='',url='',timeout=120):
+  def isOK(self, rpc='', url='', timeout=120):
+    """ Check if the server is OK and cache the response
+    """
     if not self.available:
-      rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+      rpcClient = self._getRPC(rpc=rpc, url=url, timeout=timeout)
       res = rpcClient.isOK()
       if not res['OK']:
         self.available = False
@@ -34,25 +37,36 @@ class FileCatalogClient(Client):
         self.available = True
     return S_OK(self.available)
     
-  def getReplicas(self, lfns, allStatus=False,rpc='',url='',timeout=120):
-    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.getReplicas(lfns,allStatus)
+  def getReplicas(self, lfns, allStatus=False, rpc='', url='', timeout=120):
+    """ Get the files replicas
+    """
+    rpcClient = self._getRPC(rpc=rpc, url=url, timeout=timeout)
+    return rpcClient.getReplicas(lfns, allStatus)
 
-  def listDirectory(self, lfn, verbose=False, rpc='',url='',timeout=120):
-    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.listDirectory(lfn,verbose)
+  def listDirectory(self, lfn, verbose=False, rpc='', url='', timeout=120):
+    """ List the supplied directory
+    """
+    rpcClient = self._getRPC(rpc=rpc, url=url, timeout=timeout)
+    return rpcClient.listDirectory(lfn, verbose)
 
-  def removeDirectory(self, lfn, recursive=False, rpc='',url='',timeout=120):
-    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+  def removeDirectory(self, lfn, recursive=False, rpc='', url='', timeout=120):
+    """ Remove the directory from the catalogue
+    Recursive keyword required by common FC interface.
+    """
+    rpcClient = self._getRPC(rpc=rpc, url=url, timeout=timeout)
     return rpcClient.removeDirectory(lfn)
 
-  def getDirectoryReplicas(self,lfns,allStatus=False,rpc='',url='',timeout=120):
-    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.getDirectoryReplicas(lfns,allStatus)
+  def getDirectoryReplicas(self, lfns, allStatus=False, rpc='', url='', timeout=120):
+    """ Get the directory' replicas: the SEs that have that directory
+    """
+    rpcClient = self._getRPC(rpc=rpc, url=url, timeout=timeout)
+    return rpcClient.getDirectoryReplicas(lfns, allStatus)
 
-  def findFilesByMetadata(self,metaDict,path='/',rpc='',url='',timeout=120):
-    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    result = rpcClient.findFilesByMetadata(metaDict,path)
+  def findFilesByMetadata(self, metaDict, path='/', rpc='', url='', timeout=120):
+    """ Get the file metadata, combined with its directories'
+    """
+    rpcClient = self._getRPC(rpc=rpc, url=url, timeout=timeout)
+    result = rpcClient.findFilesByMetadata(metaDict, path)
     if not result['OK']:
       return result
     if type(result['Value']) == types.ListType:
@@ -60,7 +74,7 @@ class FileCatalogClient(Client):
     elif type(result['Value']) == types.DictType:
       # Process into the lfn list
       fileList = []
-      for dir,fList in result['Value'].items():
+      for dir, fList in result['Value'].items():
         for f in fList:
           fileList.append(dir+'/'+f)
       result['Value'] = fileList    
