@@ -6,8 +6,10 @@
 
     There are five tables in the StorageManagementDB: Tasks, CacheReplicas, TaskReplicas, StageRequests.
 
-    The Tasks table is the place holder for the tasks that have requested files to be staged. These can be from different systems and have different associated call back methods.
-    The CacheReplicas table keeps the information on all the CacheReplicas in the system. It maps all the file information LFN, PFN, SE to an assigned ReplicaID.
+    The Tasks table is the place holder for the tasks that have requested files to be staged. These can be from 
+    different systems and have different associated call back methods.
+    The CacheReplicas table keeps the information on all the CacheReplicas in the system. It maps all the file 
+    information LFN, PFN, SE to an assigned ReplicaID.
     The TaskReplicas table maps the TaskIDs from the Tasks table to the ReplicaID from the CacheReplicas table.
     The StageRequests table contains each of the prestage request IDs for each of the replicas.
 """
