@@ -1,10 +1,11 @@
 
 import types
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import *
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, RIGHT_RESCHEDULE
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_CHANGE_STATUS
 
 __RCSID__ = "$Id"
 
@@ -494,7 +495,7 @@ class JobState( object ):
         return S_ERROR( "Missing replicas for lfn %s" % lfn )
         replicas = pDict[ lfn ][ 'Replicas' ]
         for seName in replicas:
-          if 'SURL' not in replias or 'Disk' not in replicas:
+          if 'SURL' not in replicas or 'Disk' not in replicas:
             return S_ERROR( "Missing SURL or Disk for %s:%s replica" % ( seName, lfn ) )
     return S_OK()
 
