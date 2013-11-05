@@ -12,9 +12,9 @@ from DIRAC                                               import S_OK, S_ERROR, g
 
 __RCSID__ = "$Id$"
 
-import re,sys,types,platform
+import re, platform
 
-class WatchdogFactory:
+class WatchdogFactory(object):
 
   #############################################################################
   def __init__(self):
@@ -24,36 +24,37 @@ class WatchdogFactory:
     self.log = gLogger
 
   #############################################################################
-  def getWatchdog(self,pid,thread,spObject,jobcputime):
+  def getWatchdog(self, pid, thread, spObject, jobcputime):
     """This method returns the CE instance corresponding to the local OS,
        the Linux watchdog is returned by default.
     """
     localOS = None
 
-    if re.search('Darwin',self.version[0]):
+    if re.search('Darwin', self.version[0]):
       localOS = 'Mac'
-      self.log.info('WatchdogFactory will create Watchdog%s instance' %(localOS))
-    elif re.search('Windows',self.version[0]):
+      self.log.info('WatchdogFactory will create Watchdog%s instance' % (localOS))
+    elif re.search('Windows', self.version[0]):
       localOS = 'Windows'
-      self.log.info('WatchdogFactory will create Watchdog%s instance' %(localOS))
+      self.log.info('WatchdogFactory will create Watchdog%s instance' % (localOS))
     else:
       localOS = 'Linux'
-      self.log.info('WatchdogFactory will create Watchdog%s instance' %(localOS))
+      self.log.info('WatchdogFactory will create Watchdog%s instance' % (localOS))
 
     try:
       subClassName = "Watchdog%s" % (localOS)
-      ceSubClass = __import__('DIRAC.WorkloadManagementSystem.JobWrapper.%s' % subClassName,globals(),locals(),[subClassName])
+      ceSubClass = __import__('DIRAC.WorkloadManagementSystem.JobWrapper.%s' % subClassName,
+                              globals(), locals(), [subClassName])
     except Exception, x:
-      msg = 'WatchdogFactory could not import DIRAC.WorkloadManagementSystem.JobWrapper.%s' %(subClassName)
-      self.log.error(msg,x)
+      msg = 'WatchdogFactory could not import DIRAC.WorkloadManagementSystem.JobWrapper.%s' % (subClassName)
+      self.log.error(msg, x)
       return S_ERROR(msg)
 
     try:
-      ceStr = 'ceSubClass.%s(pid, thread, spObject, jobcputime)' %(subClassName)
+      ceStr = 'ceSubClass.%s(pid, thread, spObject, jobcputime)' % (subClassName)
       watchdogInstance = eval(ceStr)
     except Exception, x:
-      msg = 'WatchdogFactory could not instantiate %s()' %(subClassName)
-      self.log.error(msg,x)
+      msg = 'WatchdogFactory could not instantiate %s()' % (subClassName)
+      self.log.error(msg, x)
       return S_ERROR(msg)
 
     return S_OK(watchdogInstance)
