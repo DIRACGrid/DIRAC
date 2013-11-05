@@ -9,8 +9,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
 from DIRAC.Resources.Utilities.Utils                        import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import Resources
 
-class FileCatalog:
+class FileCatalog( object ):
 
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',

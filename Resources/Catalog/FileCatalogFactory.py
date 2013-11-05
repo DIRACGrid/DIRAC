@@ -2,9 +2,10 @@
 # $HeadURL$
 ########################################################################
 __RCSID__ = "$Id$"
-""" FileCatalogFactory class to create file catalog client objects according to the 
-    configuration description 
-"""
+'''
+FileCatalogFactory class to create file catalog client objects according to the 
+configuration description
+'''
 
 from DIRAC  import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
@@ -12,7 +13,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
-class FileCatalogFactory:
+class FileCatalogFactory( object ):
   
   def __init__(self):
     self.log = gLogger.getSubLogger('FileCatalogFactory')
@@ -38,8 +39,8 @@ class FileCatalogFactory:
         return result
       catConfig = result['Value']
     
-    catalogType = catConfig.get('CatalogType',catalogName)
-    catalogURL = catConfig.get('CatalogURL','')
+    catalogType = catConfig.get('CatalogType', catalogName)
+    catalogURL = catConfig.get('CatalogURL', '')
     
     self.log.verbose( 'Creating %s client' % catalogName )
     
@@ -52,10 +53,10 @@ class FileCatalogFactory:
     catalogClass = result['Value']
      
     try:
-      if catalogType in ['LcgFileCatalogCombined','LcgFileCatalog']:
+      if catalogType in ['LcgFileCatalogCombined', 'LcgFileCatalog']:
         # The LFC special case
-        infoSys = catConfig.get('LcgGfalInfosys','')
-        host = catConfig.get('MasterHost','')
+        infoSys = catConfig.get('LcgGfalInfosys', '')
+        host = catConfig.get('MasterHost', '')
         catalog = catalogClass( infoSys, host )
       else:  
         if catalogURL:
