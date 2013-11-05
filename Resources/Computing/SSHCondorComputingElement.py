@@ -4,17 +4,17 @@
 # Author : A.Tsaregorodtsev
 ########################################################################
 
-import os, stat, tempfile, shutil
 
-from DIRAC.Resources.Computing.SSHComputingElement  import SSH, SSHComputingElement 
-from DIRAC.Resources.Computing.PilotBundle          import bundleProxy 
-from DIRAC import rootPath, S_OK, S_ERROR
+from DIRAC.Resources.Computing.SSHComputingElement  import SSHComputingElement 
+
+__RCSID__ = "$Id$"
 
 CE_NAME = 'SSHCondor'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSHCondorComputingElement( SSHComputingElement ):
-       
+  """ To use Condor CEs through SSH
+  """
   #############################################################################
   def __init__( self, ceUniqueID ):
     """ Standard constructor.
@@ -24,4 +24,3 @@ class SSHCondorComputingElement( SSHComputingElement ):
     self.ceType = CE_NAME
     self.controlScript = 'condorce'
     self.mandatoryParameters = MANDATORY_PARAMETERS         
-       
