@@ -8,15 +8,17 @@ __RCSID__ = "ebed3a8 (2012-07-06 20:33:11 +0200) Adri Casajs <adria@ecm.ub.es>"
 
 import types
 import random
-import time
+import datetime
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
+
 
 DEFAULT_GROUP_SHARE = 1000
 TQ_MIN_SHARE = 0.001
@@ -116,6 +118,21 @@ class TaskQueueDB( DB ):
                                        'PrimaryKey' : 'JobId',
                                        'Indexes': { 'TaskIndex': [ 'TQId' ] },
                                      }
+
+    self.__tablesDesc[ 'tq_SubmitPools' ] = { 'Fields' : { 'hash' : 'VARCHAR(20) NOT NULL',
+                                                           'Requirements' : 'VARCHAR(32) NOT NULL'
+                                                          },
+                                             'PrimaryKey' : "hash"
+                                           }
+    self.__tablesDesc[ 'tq_QueueToSubmitPool' ] = { 'Fields' : { 'ID' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
+                                                                 'hash' : 'VARCHAR(20) NOT NULL',
+                                                                 'Queue' : 'VARCHAR(32) NOT NULL',
+                                                                 'LastUpdate' : "DATETIME NOT NULL"
+                                                                },
+                                                   'PrimaryKey' : 'ID',
+                                                   'ForeignKeys': {'Field': 'tq_SubmitPools.hash' },
+                                                   'Indexes' : { 'hash' : [ 'hash' ] }
+                                                 }
 
     for multiField in self.__multiValueDefFields:
       tableName = 'tq_TQTo%s' % multiField
@@ -1193,4 +1210,88 @@ class TaskQueueDB( DB ):
       return S_OK()
     return self.recalculateTQSharesForAll()
 
+  def addSubmitPool(self, requirements, connObj = False):
+    """ Given the requirements dict, hash it and store it in the DB. Return the hash/key.
+    """
+    import copy
+    def make_hash(o):
 
+      """
+      Makes a hash from a dictionary, list, tuple or set to any level, that contains
+      only other hashable types (including any lists, tuples, sets, and
+      dictionaries).
+      From http://stackoverflow.com/questions/5884066/hashing-a-python-dictionary
+      """
+    
+      if isinstance(o, (set, tuple, list)):
+    
+        return tuple([make_hash(e) for e in o])    
+    
+      elif not isinstance(o, dict):
+    
+        return hash(o)
+    
+      new_o = copy.deepcopy(o)
+      for k, v in new_o.items():
+        new_o[k] = make_hash(v)
+    
+      return hash(tuple(frozenset(sorted(new_o.items()))))
+    
+    req_hash = make_hash(requirements)
+    #The hash is now a 19 decimal number + sign
+    
+    res = self.getFields('tq_SubmitPools', [ 'hash' ],  {"hash" : req_hash }, conn = connObj)
+    if not res['OK']:
+      return res
+    if len(res["Value"][0]):
+      #The hash is already in the table
+      return S_OK(req_hash)
+
+    #the hash is not in the table
+    req_repr = DEncode.encode(requirements)
+    res = self.insertFields( "tq_SubmitPools", [ 'hash', "Requirements" ], [ req_hash, req_repr ], conn = connObj)
+    if not res['OK']:
+      return res
+    
+    return S_OK(req_hash)
+
+  def addQueueToHashRelation(self, req_hash, queues, connObj = False):
+    """ Add a relationship between a hash and a list of queue: that's where the jobs could run
+    """
+    #Check if such relation already exists
+    for queue in queues:
+      res = self.getFields('tq_QueueToSubmitPool', [ 'ID' ], 
+                         {'hash': req_hash, "Queue" : queue }, conn = connObj)
+      if not res['OK']:
+        continue
+      if len(res['Value'][0]):
+        #it does
+        continue
+
+      #it doesn't, add it!
+      res = self.insertFields('tq_QueueToSubmitPool', ["hash", 'Queue', "LastUpdate"],
+                              [ req_hash, queue, 'UTC_TIMESTAMP()'], conn = connObj)
+    
+      if not res['OK']:
+        return res
+    return S_OK()
+  
+  def getOldQueueSubmitPoolRelations(self, olderthan, connObj= False):
+    """ Return the oldest relations
+    Returns a dict {hash: [queue1, queue2, etc.]}
+    """
+    
+    oldtime= (datetime.datetime.utcnow() - datetime.timedelta( seconds = olderthan ) ).strftime( '%Y-%m-%d %H:%M:%S' )
+    
+    res = self.getFields('tq_QueueToSubmitPool', ["hash", 'Queue'], older = oldtime, 
+                         timeStamp = "LastUpdate", conn = connObj)
+    if not res['OK']:
+      return res
+    res_dict = {}
+    for row in res['Value']:
+      if not row[0] in res_dict:
+        res_dict[row[0]] = []
+        
+      res_dict[row[0]].append(row[1])
+      
+    return S_OK(res_dict)
