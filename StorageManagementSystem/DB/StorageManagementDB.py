@@ -6,8 +6,10 @@
 
     There are five tables in the StorageManagementDB: Tasks, CacheReplicas, TaskReplicas, StageRequests.
 
-    The Tasks table is the place holder for the tasks that have requested files to be staged. These can be from different systems and have different associated call back methods.
-    The CacheReplicas table keeps the information on all the CacheReplicas in the system. It maps all the file information LFN, PFN, SE to an assigned ReplicaID.
+    The Tasks table is the place holder for the tasks that have requested files to be staged. 
+    These can be from different systems and have different associated call back methods.
+    The CacheReplicas table keeps the information on all the CacheReplicas in the system. 
+    It maps all the file information LFN, PFN, SE to an assigned ReplicaID.
     The TaskReplicas table maps the TaskIDs from the Tasks table to the ReplicaID from the CacheReplicas table.
     The StageRequests table contains each of the prestage request IDs for each of the replicas.
 """
@@ -513,11 +515,13 @@ class StorageManagementDB( DB ):
       return res
     replicaInfo = {}
     for lfn, storageElement, pfn, fileSize, status, lastupdate, reason in res['Value']:
-      replicaInfo[lfn] = {'StorageElement':storageElement, 'PFN':pfn, 'FileSize':fileSize, 'Status':status,'LastUpdate':lastupdate, 'Reason':reason}
+      replicaInfo[lfn] = {'StorageElement':storageElement, 'PFN':pfn, 'FileSize':fileSize, 
+                          'Status':status, 'LastUpdate':lastupdate, 'Reason':reason}
     resDict = {'TaskInfo':taskInfo, 'ReplicaInfo':replicaInfo}
     return S_OK( resDict )
 
-  def getTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'SubmitTime', orderAttribute = None, limit = None, connection = False ):
+  def getTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'SubmitTime', orderAttribute = None, 
+                limit = None, connection = False ):
     """ Get stage requests for the supplied selection with support for web standard structure """
     connection = self.__getConnection( connection )
     req = "SELECT %s FROM Tasks" % ( intListToString( self.TASKPARAMS ) )
@@ -1167,7 +1171,7 @@ class StorageManagementDB( DB ):
       return res
     return res
 
-  def getCacheReplicasSummary( self,connection = False ):
+  def getCacheReplicasSummary( self, connection = False ):
     """
     Reports breakdown of file number/size in different staging states across storage elements 
     """
@@ -1181,8 +1185,8 @@ class StorageManagementDB( DB ):
     resSummary = {}
     i = 1
     for status, se, numFiles, sumFiles in res['Value']:
-      resSummary[i] = {'Status':status,'SE':se,'NumFiles':long(numFiles),'SumFiles':float(sumFiles)}
-      i+=1   
+      resSummary[i] = {'Status':status, 'SE':se, 'NumFiles':long(numFiles), 'SumFiles':float(sumFiles)}
+      i += 1   
     return S_OK(resSummary)
 
   def removeUnlinkedReplicas( self, connection = False ):
@@ -1214,10 +1218,12 @@ class StorageManagementDB( DB ):
       reqSelect = "SELECT * FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
       resSelect = self._query( reqSelect )
       if not resSelect['OK']:
-        gLogger.warn( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'removeUnlinkedReplicas', reqSelect, resSelect['Message'] ) )
+        gLogger.warn( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'removeUnlinkedReplicas', 
+                                                                        reqSelect, resSelect['Message'] ) )
       else:  
         for record in resSelect['Value']:
-          gLogger.verbose( "%s.%s_DB: to_delete StageRequests = %s" % ( self._caller(), 'removeUnlinkedReplicas', record ) )
+          gLogger.verbose( "%s.%s_DB: to_delete StageRequests = %s" % ( self._caller(), 'removeUnlinkedReplicas', 
+                                                                        record ) )
 
       req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
       res = self._update( req, connection )

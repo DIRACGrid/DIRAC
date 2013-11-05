@@ -4,7 +4,7 @@
 """ StorageManagerHandler is the implementation of the StorageManagementDB in the DISET framework """
 __RCSID__ = "$Id$"
 
-from types import *
+from types import IntType, DictType, ListType, StringType, LongType
 from DIRAC                                                 import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler                       import RequestHandler
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB  import StorageManagementDB
@@ -325,6 +325,6 @@ class StorageManagerHandler( RequestHandler ):
     """ Reports breakdown of file number/size in different staging states across storage elements """
     res = storageDB.getCacheReplicasSummary()
     if not res['OK']:
-      gLogger.error(' getCacheReplicasSummary: Failed to retrieve summary from server',res['Message'])
+      gLogger.error(' getCacheReplicasSummary: Failed to retrieve summary from server', res['Message'])
     return res
 
