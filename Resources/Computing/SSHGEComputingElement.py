@@ -18,7 +18,8 @@ CE_NAME = 'SSHGE'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSHGEComputingElement( SSHComputingElement ):
-
+  """ For SUN Grid engine CE access through SSH
+  """
   #############################################################################
   def __init__( self, ceUniqueID ):
     """ Standard constructor.
@@ -41,6 +42,6 @@ class SSHGEComputingElement( SSHComputingElement ):
     output = '%s/DIRACPilot.o%s' % ( self.batchOutput, jobStamp )
     error = '%s/DIRACPilot.e%s' % ( self.batchError, jobStamp )
     
-    return S_OK( (jobStamp,host,output,error) )
+    return S_OK( (jobStamp, host, output, error) )
   
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
