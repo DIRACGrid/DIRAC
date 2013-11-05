@@ -14,10 +14,9 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall, syste
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import rootPath
 from DIRAC                                               import gConfig
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
-import os, sys, time, re, socket
-import string, shutil, bz2, base64, tempfile
+import os, re, socket
+import shutil, bz2, base64, tempfile
 
 CE_NAME = 'Torque'
 
@@ -25,7 +24,8 @@ UsedParameters = [ 'ExecQueue', 'SharedArea', 'BatchOutput', 'BatchError', 'User
 MandatoryParameters = [ 'Queue' ]
 
 class TorqueComputingElement( ComputingElement ):
-
+  """ Direct Torque submission
+  """
   mandatoryParameters = MandatoryParameters
 
   #############################################################################

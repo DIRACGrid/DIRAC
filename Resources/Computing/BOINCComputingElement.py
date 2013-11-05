@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC                                               import S_OK, S_ERROR
 
-import os, bz2, base64,tempfile
+import os, bz2, base64, tempfile
 from urlparse import urlparse
 
 CE_NAME = 'BOINC'
@@ -39,8 +39,8 @@ class BOINCComputingElement( ComputingElement ):
 ###############################################################################
   def createClient( self ):
     """
-    This method only can be called after the initialtion of this class. In this 
-    method, it will initial some variables and create a soap client for commnication 
+    This method only can be called after the initialisation of this class. In this 
+    method, it will initial some variables and create a soap client for communication 
     with BOINC server.
     """
 
@@ -55,7 +55,7 @@ class BOINCComputingElement( ComputingElement ):
         import logging
         logging.basicConfig(format="%(asctime)-15s %(message)s")
         self.BOINCClient = Client(self.wsdl)
-      except Exception,x:
+      except Exception, x:
         self.log.error( 'Creation of the soap client failed: %s' % str( x ) )
         pass
 
@@ -75,7 +75,7 @@ class BOINCComputingElement( ComputingElement ):
     # otherwise a wrapper script is needed to get the proxy to the execution node
     # The wrapper script makes debugging more complicated and thus it is
     # recommended to transfer a proxy inside the executable if possible.
-    wrapperContent= ''
+    wrapperContent = ''
     if proxy:
       self.log.verbose( 'Setting up proxy for payload' )
 
@@ -133,13 +133,14 @@ EOF
       try:
 #  print jobID + "\n" + wrapperContent
 #  print self.BOINCClient
-        result = self.BOINCClient.service.submitJob( jobID, wrapperContent,self.ceParameters['Platform'] )
+        result = self.BOINCClient.service.submitJob( jobID, wrapperContent, self.ceParameters['Platform'] )
       except:
         self.log.error( 'Could not submit the pilot %s to the BOINC CE %s, communication failed!' % (jobID, self.wsdl ))
         break;        
 
       if not result['ok']:
-        self.log.warn( 'Didn\'t submit the pilot %s to the BOINC CE %s, the value returned is false!' % (jobID, self.wsdl ))
+        self.log.warn( 'Didn\'t submit the pilot %s to the BOINC CE %s, the value returned is false!' % (jobID, 
+                                                                                                         self.wsdl ))
         break;
 
       self.log.verbose( 'Submit the pilot %s to the BONIC CE %s' % (jobID, self.wsdl) )
@@ -304,7 +305,7 @@ if __name__ == "__main__":
   test_getDynamic = 4
   test_getOutput = 8
   test_parameter = 4    
-  jobID ='zShvbK_0@mardirac3.in2p3.fr'
+  jobID = 'zShvbK_0@mardirac3.in2p3.fr'
   if test_parameter & test_submit: 
     fd, fname = tempfile.mkstemp( suffix = '_pilotwrapper.py', prefix = 'DIRAC_', dir = "/home/client/dirac/data/" )
     os.close( fd )
@@ -320,7 +321,7 @@ if __name__ == "__main__":
       print "Successfully submit a job %s" % jobID
 
   if test_parameter & test_getStatus:
-    jobTestList = ["Uu0ghO_0@mardirac3.in2p3.fr", "1aDmIf_0@mardirac3.in2p3.fr",jobID] 
+    jobTestList = ["Uu0ghO_0@mardirac3.in2p3.fr", "1aDmIf_0@mardirac3.in2p3.fr", jobID] 
     jobStatus = test_boinc.getJobStatus( jobTestList )
     if not jobStatus['OK']:
       print jobStatus['Message']
@@ -343,7 +344,7 @@ if __name__ == "__main__":
     if not outstate['OK']:
       print outstate['Message']
     else:
-      print "Please check the directory /tmp for the output and error files of job %s" %jobID 
+      print "Please check the directory /tmp for the output and error files of job %s" % jobID 
 
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
