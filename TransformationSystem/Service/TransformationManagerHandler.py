@@ -326,7 +326,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in replicaDict.keys():
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
   
   types_removeReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_removeReplica( self, replicaDict ):
@@ -336,7 +336,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in replicaDict.keys():
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
 
   types_getReplicas = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getReplicas( self, lfns ):
@@ -346,7 +346,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in lfns:
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
 
   types_getReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getReplicaStatus( self, replicaDicts ):
@@ -356,7 +356,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in replicaDicts.keys():
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
 
   types_setReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_setReplicaStatus( self, replicaDict ):
@@ -366,7 +366,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in replicaDict.keys():
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
 
   types_setReplicaHost = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_setReplicaHost( self, replicaDict ):
@@ -376,7 +376,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in replicaDict.keys():
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
 
   ####################################################################
   #
