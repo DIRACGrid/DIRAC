@@ -483,12 +483,12 @@ class StageRequestAgent( AgentModule ):
 
   def __reportProblematicFiles( self, lfns, reason ):
     return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, self.name )
-    if not res['OK']:
-      gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
-      return res
-    if res['Value']['Successful']:
-      gLogger.info( "RequestPreparation.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
-    if res['Value']['Failed']:
-      gLogger.info( "RequestPreparation.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
-    return res
+    #res = self.dataIntegrityClient.setFileProblematic( lfns, reason, self.name )
+    #if not res['OK']:
+    #  gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
+    #  return res
+    #if res['Value']['Successful']:
+    #  gLogger.info( "RequestPreparation.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
+    #if res['Value']['Failed']:
+    #  gLogger.info( "RequestPreparation.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
+    #return res
