@@ -1,5 +1,5 @@
 ########################################################################
-# $Id$
+# $HeadURL$
 ########################################################################
 
 """ DIPStorage class is the client of the DIRAC Storage Element.
@@ -57,7 +57,7 @@ class DIPStorage( StorageBase ):
   def setParameters( self, parameters ):
     """ Applying extra storage parameters
     """
-    if "CheckSum" in parameters and parameters['CheckSum'].lower() in ['no','false','off']:
+    if "CheckSum" in parameters and parameters['CheckSum'].lower() in ['no', 'false', 'off']:
       self.checkSum = "NoCheckSum"      
     return S_OK()  
 
