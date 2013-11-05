@@ -143,7 +143,7 @@ class CREAMComputingElement( ComputingElement ):
     if type( jobIDList ) in StringTypes:
       jobList = [ jobIDList ]
       
-    cmd = ['glite-ce-job-cancel','-n','-N']+jobList
+    cmd = ['glite-ce-job-cancel', '-n', '-N']+jobList
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     if not result['OK']:
       return result
@@ -196,7 +196,7 @@ class CREAMComputingElement( ComputingElement ):
     idFile.write( '##CREAMJOBS##' )
     for id_ in jobIDList:
       if ":::" in id_:
-        ref,stamp = id_.split(':::')
+        ref, stamp = id_.split(':::')
       else:
         ref = id_  
       idFile.write( '\n' + ref )

@@ -6,7 +6,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                      import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
 from DIRAC.Core.Utilities.Subprocess            import shellCall
 from DIRAC.Core.Utilities.Pfn                   import pfnparse, pfnunparse

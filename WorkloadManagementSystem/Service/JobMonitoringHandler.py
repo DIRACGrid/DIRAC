@@ -13,9 +13,9 @@
 
 __RCSID__ = "$Id$"
 
-from types import *
+from types import ListType, StringType, IntType, LongType, DictType, StringTypes
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -406,7 +406,7 @@ class JobMonitoringHandler( RequestHandler ):
     resultDict = {}
     if result['OK']:
       for cDict, count in result['Value']:
-         resultDict[cDict[attribute]] = count
+        resultDict[cDict[attribute]] = count
 
     return S_OK( resultDict )
 

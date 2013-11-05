@@ -10,13 +10,12 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler                import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                     import systemCall
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-from DIRAC                                               import gConfig, S_OK, S_ERROR
+from DIRAC                                               import S_OK, S_ERROR
 
-import os, sys
+import os
 
 MandatoryParameters = [ ]
 

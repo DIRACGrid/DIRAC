@@ -10,6 +10,8 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import sortList
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 
 class TaskManagerAgentBase( AgentModule ):

@@ -17,14 +17,14 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 from DIRAC.Core.Utilities.Subprocess                    import shellCall
 from DIRAC                                              import S_OK, S_ERROR
 
-import string,re
+import re
 
 class WatchdogMac(Watchdog):
 
   def __init__(self, pid, thread, spObject, jobCPUtime, systemFlag='mac'):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__(self,pid,thread,spObject,jobCPUtime,systemFlag)
+    Watchdog.__init__(self, pid, thread, spObject, jobCPUtime, systemFlag)
     self.systemFlag = systemFlag
     self.pid = pid
 
@@ -35,31 +35,31 @@ class WatchdogMac(Watchdog):
        available.
     """
     result = S_OK()
-    result['Value']={}
+    result['Value'] = {}
     comm = 'sysctl -a'
-    parameterDict = shellCall(5,comm)
+    parameterDict = shellCall(5, comm)
     if parameterDict['OK']:
       info = parameterDict['Value'][1].split('\n')
       for val in info:
-        if re.search('^kern.hostname',val):
+        if re.search('^kern.hostname', val):
           hostname = 'NA'
-          if re.search('=',val):
+          if re.search('=', val):
             hostname = val.split('=')[1].strip()
           else:
             hostname = val.split(':')[1].strip()  
-          result['Value']['HostName']=hostname
-        if re.search('^hw.model',val):
+          result['Value']['HostName'] = hostname
+        if re.search('^hw.model', val):
           model = val.split('=')[1].strip()
-          result['Value']['Model']=model
-        if re.search('^hw.machine',val):
+          result['Value']['Model'] = model
+        if re.search('^hw.machine', val):
           cpu = val.split('=')[1].strip()
-          result['Value']['CPU']=cpu
-        if re.search('^hw.cachelinesize =',val):
+          result['Value']['CPU'] = cpu
+        if re.search('^hw.cachelinesize =', val):
           cache = val.split('=')[1].strip()+'KB'
-          result['Value']['Cache']=cache
-        if re.search('^hw.memsize =',val):
+          result['Value']['Cache'] = cache
+        if re.search('^hw.memsize =', val):
           memory = str(int(val.split('=')[1].strip())/2**20)+'MB'
-          result['Value']['Memory']=memory
+          result['Value']['Memory'] = memory
       account = 'Unknown'
       localID = shellCall(10,'whoami')
       if localID['OK']:
@@ -76,9 +76,9 @@ class WatchdogMac(Watchdog):
     """
     result = S_OK()
     comm = 'sysctl vm.loadavg'
-    loadAvgDict = shellCall(5,comm)
+    loadAvgDict = shellCall(5, comm)
     if loadAvgDict['OK']:
-      la = float(string.split(loadAvgDict['Value'][1])[3])
+      la = float(loadAvgDict['Value'][1].split()[3])
       result['Value'] = la
     else:
       result = S_ERROR('Could not obtain load average')
@@ -91,11 +91,11 @@ class WatchdogMac(Watchdog):
     """
     result = S_OK()
     comm = 'sysctl vm.swapusage'
-    memDict = shellCall(5,comm)
+    memDict = shellCall(5, comm)
     if memDict['OK']:
-      mem = string.split(memDict['Value'][1]) [6]
-      if re.search('M$',mem):
-        mem = float(mem.replace('M',''))
+      mem = memDict['Value'][1].split() [6]
+      if re.search('M$', mem):
+        mem = float(mem.replace('M', ''))
         mem = 2**20*mem
 
       result['Value'] = float(mem)
@@ -104,15 +104,15 @@ class WatchdogMac(Watchdog):
 
     return result
 
- #############################################################################
+  #############################################################################
   def getDiskSpace(self):
     """Obtains the available disk space.
     """
     result = S_OK()
     comm = 'df -P -m .'
-    spaceDict = shellCall(5,comm)
+    spaceDict = shellCall(5, comm)
     if spaceDict['OK']:
-      space = string.split(spaceDict['Value'][1]) [10]
+      space = spaceDict['Value'][1].split() [10]
       result['Value'] = float(space)  # MB
     else:
       result = S_ERROR('Could not obtain disk usage')

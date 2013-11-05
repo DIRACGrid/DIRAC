@@ -32,10 +32,10 @@
     getName()
 
 """
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-import re, types
+from DIRAC import S_OK, S_ERROR
+import types
 
-class FileCatalogueBase:
+class FileCatalogueBase(object):
 
   def __init__( self, name = '' ):
     self.name = name

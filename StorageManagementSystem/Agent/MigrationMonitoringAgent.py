@@ -60,7 +60,7 @@ class MigrationMonitoringAgent( AgentModule ):
   def execute( self ):
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
     if not self.enableFlag == 'True':
-      self.log.info( 'MigrationMonitoringAgent is disabled by configuration option %s/EnableFlag' % ( self.section ) )
+      self.log.info( 'MigrationMonitoringAgent is disabled by configuration option EnableFlag' )
       return S_OK( 'Disabled via CS flag' )
     gMonitor.addMark( "Iteration", 1 )
     self.NewToMigrating()
