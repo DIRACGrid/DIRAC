@@ -11,7 +11,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
 from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
 from DIRAC.Core.Utilities import ObjectLoader
 
-class FileCatalogFactory:
+class FileCatalogFactory(object):
   
   def __init__(self):
     self.log = gLogger.getSubLogger('FileCatalogFactory')
