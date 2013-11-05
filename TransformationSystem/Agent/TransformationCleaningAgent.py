@@ -23,6 +23,8 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 
+__RCSID__ = "$Id$"
+
 # # agent's name
 AGENT_NAME = 'Transformation/TransformationCleaningAgent'
 

@@ -1,8 +1,19 @@
+##################################################################################"
+# $HeadURL$
+##################################################################################"
+
+""" 
+This agent takes care of creating new tasks given the NbTasks defined for a transformation
+
+"""
+
 from DIRAC                                                          import S_OK, gLogger
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.List                                      import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
+
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/MCExtensionAgent'
 
