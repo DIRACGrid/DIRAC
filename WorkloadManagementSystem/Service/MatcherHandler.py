@@ -16,7 +16,7 @@ import threading
 from DIRAC.ConfigurationSystem.Client.Helpers          import Registry, Operations
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight         import ClassAd
-from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC                                             import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
@@ -429,7 +429,9 @@ class MatcherHandler( RequestHandler ):
         gridCE = resourceDict.get( 'GridCE', 'Unknown' )
         site = destination = resourceDict.get( 'Site', 'Unknown' )
         benchmark = benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
-        gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
+        gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,
+                                                                                           gridCE, site,
+                                                                                           benchmark) )
         result = gPilotAgentsDB.setPilotStatus( pilotReference, status = 'Running',
                                                 gridSite = site,
                                                 destination = gridCE,
@@ -458,7 +460,7 @@ class MatcherHandler( RequestHandler ):
 
     gLogger.verbose( "Resource description:" )
     for key in resourceDict:
-     gLogger.verbose( "%s : %s" % ( key.rjust( 20 ), resourceDict[ key ] ) )
+      gLogger.verbose( "%s : %s" % ( key.rjust( 20 ), resourceDict[ key ] ) )
 
     negativeCond = self.__limiter.getNegativeCondForSite( siteName )
     result = gTaskQueueDB.matchAndGetJob( resourceDict, negativeCond = negativeCond )
@@ -485,8 +487,8 @@ class MatcherHandler( RequestHandler ):
         return result
       return S_ERROR( "Job %s is not in Waiting state" % str( jobID ) )
 
-    attNames = ['Status','MinorStatus','ApplicationStatus','Site']
-    attValues = ['Matched','Assigned','Unknown',siteName]
+    attNames = ['Status', 'MinorStatus', 'ApplicationStatus', 'Site']
+    attValues = ['Matched', 'Assigned', 'Unknown', siteName]
     result = gJobDB.setJobAttributes( jobID, attNames, attValues )
     # result = gJobDB.setJobStatus( jobID, status = 'Matched', minor = 'Assigned' )
     result = gJobLoggingDB.addLoggingRecord( jobID,

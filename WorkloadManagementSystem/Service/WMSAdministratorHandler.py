@@ -16,28 +16,26 @@ Access to the pilot data:
 
 __RCSID__ = "$Id$"
 
-import os, sys, string, uu, shutil
-from types import *
+from types import StringTypes, ListType, IntType, LongType, DictType, StringType, FloatType
 
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
+from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
+from DIRAC                                               import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC.WorkloadManagementSystem.DB.JobDB             import JobDB
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB       import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getPilotOutput
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getGroupOption, getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources  import getQueue
+from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-
-import threading
 
 # This is a global instance of the database classes
 jobDB = False
 pilotDB = False
 taskQueueDB = False
 
-FINAL_STATES = ['Done','Aborted','Cleared','Deleted','Stalled']
+FINAL_STATES = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Stalled']
 
 def initializeWMSAdministratorHandler( serviceInfo ):
   """  WMS AdministratorService initialization
@@ -64,7 +62,7 @@ class WMSAdministratorHandler(RequestHandler):
     dn = result['DN']
 
     maskList = [ (site,'Active') for site in siteList ]
-    result = jobDB.setSiteMask(maskList,dn,comment)
+    result = jobDB.setSiteMask(maskList, dn, comment)
     return result
 
 ##############################################################################
@@ -79,7 +77,7 @@ class WMSAdministratorHandler(RequestHandler):
     if result['Status'] == "OK":
       active_list = result['Value']
       mask = []
-      for i in range(1,len(active_list),2):
+      for i in range(1, len(active_list), 2):
         mask.append(active_list[i])
 
       return S_OK(mask)
@@ -88,7 +86,7 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
   types_banSite = [StringTypes]
-  def export_banSite(self, site,comment='No comment'):
+  def export_banSite(self, site, comment='No comment'):
     """ Ban the given site in the site mask
     """
 
@@ -99,12 +97,12 @@ class WMSAdministratorHandler(RequestHandler):
       author = result['Value']
     else:
       author = dn
-    result = jobDB.banSiteInMask(site,author,comment)
+    result = jobDB.banSiteInMask(site, author, comment)
     return result
 
 ##############################################################################
   types_allowSite = [StringTypes]
-  def export_allowSite(self,site,comment='No comment'):
+  def export_allowSite(self, site, comment='No comment'):
     """ Allow the given site in the site mask
     """
 
@@ -115,7 +113,7 @@ class WMSAdministratorHandler(RequestHandler):
       author = result['Value']
     else:
       author = dn
-    result = jobDB.allowSiteInMask(site,author,comment)
+    result = jobDB.allowSiteInMask(site, author, comment)
     return result
 
 ##############################################################################
@@ -128,7 +126,7 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
   types_getSiteMaskLogging = [ list(StringTypes)+[ListType] ]
-  def export_getSiteMaskLogging(self,sites):
+  def export_getSiteMaskLogging(self, sites):
     """ Get the site mask logging history
     """
 
@@ -172,11 +170,11 @@ class WMSAdministratorHandler(RequestHandler):
         the last day.
     """
 
-    result = pilotDB.getCounters( 'PilotAgents',['Status'], attrDict, timeStamp='LastUpdateTime')
+    result = pilotDB.getCounters( 'PilotAgents', ['Status'], attrDict, timeStamp='LastUpdateTime')
     if not result['OK']:
       return result
     last_update = Time.dateTime() - Time.day
-    resultDay = pilotDB.getCounters( 'PilotAgents',['Status'], attrDict, newer=last_update,
+    resultDay = pilotDB.getCounters( 'PilotAgents', ['Status'], attrDict, newer=last_update,
                                    timeStamp='LastUpdateTime')
     if not resultDay['OK']:
       return resultDay
@@ -187,7 +185,7 @@ class WMSAdministratorHandler(RequestHandler):
       resultDict[status] = count
       if status in FINAL_STATES:
         resultDict[status] = 0
-        for statusDayDict,ccount in resultDay['Value']:
+        for statusDayDict, ccount in resultDay['Value']:
           if status == statusDayDict['Status']:
             resultDict[status] = ccount
           break
@@ -206,7 +204,7 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getPilotOutput = [StringTypes]
-  def export_getPilotOutput(self,pilotReference):
+  def export_getPilotOutput(self, pilotReference):
     """ Get the pilot job standard output and standard error files for the Grid
         job reference
     """
@@ -215,28 +213,28 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getPilotInfo = [ list(StringTypes)+[ListType] ]
-  def export_getPilotInfo(self,pilotReference):
+  def export_getPilotInfo(self, pilotReference):
     """ Get the info about a given pilot job reference
     """
     return pilotDB.getPilotInfo(pilotReference)
 
   ##############################################################################
   types_selectPilots = [ DictType ]
-  def export_selectPilots(self,condDict):
+  def export_selectPilots(self, condDict):
     """ Select pilots given the selection conditions
     """
     return pilotDB.selectPilots(condDict)
 
   ##############################################################################
-  types_storePilotOutput = [ StringTypes,StringTypes,StringTypes ]
-  def export_storePilotOutput(self,pilotReference,output,error):
+  types_storePilotOutput = [ StringTypes, StringTypes, StringTypes ]
+  def export_storePilotOutput(self, pilotReference, output, error):
     """ Store the pilot output and error
     """
-    return pilotDB.storePilotOutput(pilotReference,output,error)
+    return pilotDB.storePilotOutput(pilotReference, output, error)
 
   ##############################################################################
   types_getPilotLoggingInfo = [StringTypes]
-  def export_getPilotLoggingInfo(self,pilotReference):
+  def export_getPilotLoggingInfo(self, pilotReference):
     """ Get the pilot logging info for the Grid job reference
     """
 
@@ -248,7 +246,7 @@ class WMSAdministratorHandler(RequestHandler):
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
 
-    group = getGroupOption(group,'VOMSRole',group)
+    group = getGroupOption(group, 'VOMSRole', group)
     ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
     if not ret['OK']:
       gLogger.error( ret['Message'] )
@@ -264,7 +262,7 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getJobPilotOutput = [[StringType, IntType, LongType]]
-  def export_getJobPilotOutput(self,jobID):
+  def export_getJobPilotOutput(self, jobID):
     """ Get the pilot job standard output and standard error files for the DIRAC
         job reference
     """
@@ -292,7 +290,7 @@ class WMSAdministratorHandler(RequestHandler):
       return S_ERROR('No pilot job reference found')
 
   ##############################################################################
-  def __getGridJobOutput(self,pilotReference):
+  def __getGridJobOutput(self, pilotReference):
     """ Get the pilot job standard output and standard error files for the Grid
         job reference
     """
@@ -322,8 +320,8 @@ class WMSAdministratorHandler(RequestHandler):
         gLogger.warn( 'Empty pilot output found for %s' % pilotReference )
 
     gridType = pilotDict['GridType']
-    if gridType in ["LCG","gLite","CREAM"]:
-      group = getGroupOption(group,'VOMSRole',group)
+    if gridType in ["LCG", "gLite", "CREAM"]:
+      group = getGroupOption(group, 'VOMSRole', group)
       ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
       if not ret['OK']:
         gLogger.error( ret['Message'] )
@@ -340,9 +338,9 @@ class WMSAdministratorHandler(RequestHandler):
       error = result['StdErr']
       fileList = result['FileList']
       if stdout:
-        result = pilotDB.storePilotOutput(pilotReference,stdout,error)
+        result = pilotDB.storePilotOutput(pilotReference, stdout, error)
         if not result['OK']:
-          gLogger.error('Failed to store pilot output:',result['Message'])
+          gLogger.error('Failed to store pilot output:', result['Message'])
 
       resultDict = {}
       resultDict['StdOut'] = stdout
@@ -369,11 +367,11 @@ class WMSAdministratorHandler(RequestHandler):
       result = ce.getJobOutput( pRef )
       if not result['OK']:
         return result
-      stdout,error = result['Value']
+      stdout, error = result['Value']
       if stdout:
-        result = pilotDB.storePilotOutput(pilotReference,stdout,error)
+        result = pilotDB.storePilotOutput(pilotReference, stdout, error)
         if not result['OK']:
-          gLogger.error('Failed to store pilot output:',result['Message'])
+          gLogger.error('Failed to store pilot output:', result['Message'])
 
       resultDict = {}
       resultDict['StdOut'] = stdout
@@ -385,11 +383,11 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getPilotSummary = []
-  def export_getPilotSummary(self,startdate='',enddate=''):
+  def export_getPilotSummary(self, startdate='', enddate=''):
     """ Get summary of the status of the LCG Pilot Jobs
     """
 
-    result = pilotDB.getPilotSummary(startdate,enddate)
+    result = pilotDB.getPilotSummary(startdate, enddate)
     return result
 
   ##############################################################################
@@ -447,27 +445,27 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     resultDict = {}
-    statusList = ['Good','Fair','Poor','Bad','Idle']
+    statusList = ['Good', 'Fair', 'Poor', 'Bad', 'Idle']
     resultDict['Status'] = statusList
-    maskStatus = ['Active','Banned','NoMask','Reduced']
+    maskStatus = ['Active', 'Banned', 'NoMask', 'Reduced']
     resultDict['MaskStatus'] = maskStatus
 
     gridTypes = []
-    result = gConfig.getSections('Resources/Sites/',[])
+    result = gConfig.getSections('Resources/Sites/', [])
     if result['OK']:
       gridTypes = result['Value']
 
     resultDict['GridType'] = gridTypes
     siteList = []
     for grid in gridTypes:
-      result = gConfig.getSections('Resources/Sites/%s' % grid,[])
+      result = gConfig.getSections('Resources/Sites/%s' % grid, [])
       if result['OK']:
         siteList += result['Value']
 
     countryList = []
     for site in siteList:
       if site.find('.') != -1:
-        grid,sname,country = site.split('.')
+        grid, sname, country = site.split('.')
         country = country.lower()
         if country not in countryList:
           countryList.append(country)
@@ -480,7 +478,7 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getPilots = [[StringType, IntType, LongType]]
-  def export_getPilots(self,jobID):
+  def export_getPilots(self, jobID):
     """ Get pilot references and their states for :
       - those pilots submitted for the TQ where job is sitting
       - (or) the pilots executing/having executed the Job
@@ -542,7 +540,7 @@ class WMSAdministratorHandler(RequestHandler):
     failed = []
     for key, pilotDict in pilotRefDict.items():
       
-      owner,group,site,ce,queue = key.split( '@@@' )
+      owner, group, site, ce, queue = key.split( '@@@' )
       result = getQueue( site, ce, queue )
       if not result['OK']:
         return result
@@ -553,8 +551,8 @@ class WMSAdministratorHandler(RequestHandler):
         return result
       ce = result['Value']
   
-      if gridType in ["LCG","gLite","CREAM"]:
-        group = getGroupOption(group,'VOMSRole',group)
+      if gridType in ["LCG", "gLite", "CREAM"]:
+        group = getGroupOption(group, 'VOMSRole', group)
         ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
         if not ret['OK']:
           gLogger.error( ret['Message'] )
@@ -575,7 +573,7 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_setJobForPilot = [ [StringType, IntType, LongType], StringTypes]
-  def export_setJobForPilot(self,jobID,pilotRef,destination=None):
+  def export_setJobForPilot(self, jobID, pilotRef, destination=None):
     """ Report the DIRAC job ID which is executed by the given pilot job
     """
 
@@ -586,39 +584,39 @@ class WMSAdministratorHandler(RequestHandler):
     if not result['OK']:
       return result
     if destination:
-      result = pilotDB.setPilotDestinationSite(pilotRef,destination)
+      result = pilotDB.setPilotDestinationSite(pilotRef, destination)
 
     return result
 
   ##########################################################################################
   types_setPilotBenchmark = [StringTypes, FloatType]
-  def export_setPilotBenchmark(self,pilotRef,mark):
+  def export_setPilotBenchmark(self, pilotRef, mark):
     """ Set the pilot agent benchmark
     """
-    result = pilotDB.setPilotBenchmark(pilotRef,mark)
+    result = pilotDB.setPilotBenchmark(pilotRef, mark)
     return result
 
   ##########################################################################################
   types_setAccountingFlag = [StringTypes]
-  def export_setAccountingFlag(self,pilotRef,mark='True'):
+  def export_setAccountingFlag(self, pilotRef, mark='True'):
     """ Set the pilot AccountingSent flag
     """
-    result = pilotDB.setAccountingFlag(pilotRef,mark)
+    result = pilotDB.setAccountingFlag(pilotRef, mark)
     return result
 
   ##########################################################################################
   types_setPilotStatus = [StringTypes, StringTypes]
-  def export_setPilotStatus(self,pilotRef,status,destination=None,reason=None,gridSite=None,queue=None):
+  def export_setPilotStatus(self, pilotRef, status, destination=None, reason=None, gridSite=None, queue=None):
     """ Set the pilot agent status
     """
 
-    result = pilotDB.setPilotStatus(pilotRef,status,destination=destination,
-                                    statusReason=reason,gridSite=gridSite,queue=queue)
+    result = pilotDB.setPilotStatus(pilotRef, status, destination=destination,
+                                    statusReason=reason, gridSite=gridSite, queue=queue)
     return result
 
   ##########################################################################################
   types_countPilots = [ DictType ]
-  def export_countPilots(self,condDict, older=None, newer=None, timeStamp='SubmissionTime'):
+  def export_countPilots(self, condDict, older=None, newer=None, timeStamp='SubmissionTime'):
     """ Set the pilot agent status
     """
 

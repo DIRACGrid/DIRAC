@@ -9,7 +9,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 
