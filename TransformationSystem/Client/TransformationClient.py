@@ -167,7 +167,7 @@ class TransformationClient( Client, FileCatalogueBase ):
           break
     return S_OK( transformationTasks )
 
-  def cleanTransformation( self, transID, pc = '', url = '', timeout = None ):
+  def cleanTransformation( self, transID, rpc = '', url = '', timeout = None ):
     """ Clean the transformation, and set the status parameter (doing it here, for easier extensibility)
     """
     # Cleaning
@@ -254,7 +254,81 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     return S_OK( ( parentProd, movedFiles ) )
 
-  def setFileStatusForTransformation( self, transName, status, lfns, force = False, timeout = None ):
+  def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False,
+                                          rpc = '', url = '', timeout = 120 ):
+    """ sets ths file status for LFNs of a transformation
+
+        For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
+        - newLFNsStatus is a dictionary with the form:
+          {'/this/is/an/lfn1.txt': 'StatusA', '/this/is/an/lfn2.txt': 'StatusB',  ... }
+          and at this point lfns is not considered
+        - newLFNStatus is a string, that applies to all the LFNs in lfns
+    """
+    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+
+    # create dictionary in case newLFNsStatus is a string
+    if type( newLFNsStatus ) == type( '' ):
+      newLFNsStatus = dict( [( lfn, newLFNsStatus ) for lfn in lfns ] )
+
+    # gets status as of today
+    tsFiles = self.getTransformationFiles( {'TransformationID':transName, 'LFN': newLFNsStatus.keys()} )
+    if not tsFiles['OK']:
+      return tsFiles
+    tsFiles = tsFiles['Value']
+    if tsFiles:
+      # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
+      tsFilesAsDict = {}
+      for tsFile in tsFiles:
+        tsFilesAsDict[tsFile['LFN']] = [tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']]
+
+      # applying the state machine to the proposed status
+      newStatuses = self._applyTransformationFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
+
+      # must do it for the file IDs...
+      newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
+      return rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
+    else:
+      return S_OK( 'Nothing updated' )
+
+  def _applyTransformationFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
+    """ For easier extension, here we apply the state machine of the production files.
+        VOs might want to replace the standard here with something they prefer.
+
+        tsFiles is a dictionary with the lfn as key and as value a list of [Status, ErrorCount, FileID]
+        dictOfNewLFNsStatus is a dictionary with the proposed status
+        force is a boolean
+
+        It returns a dictionary with the status updates
+    """
+    newStatuses = {}
+
+    for lfn in dictOfProposedLFNsStatus.keys():
+      if lfn not in tsFilesAsDict.keys():
+        continue
+      else:
+        newStatus = dictOfProposedLFNsStatus[lfn]
+        # Apply optional corrections
+        if tsFilesAsDict[lfn][0].lower() == 'processed' and dictOfProposedLFNsStatus[lfn].lower() != 'processed':
+          if not force:
+            newStatus = 'Processed'
+        elif tsFilesAsDict[lfn][0].lower() == 'maxreset':
+          if not force:
+            newStatus = 'MaxReset'
+        elif dictOfProposedLFNsStatus[lfn].lower() == 'unused':
+          errorCount = tsFilesAsDict[lfn][1]
+          # every 10 retries
+          if ( errorCount % self.maxResetCounter ) == 0:
+            if not force:
+              newStatus = 'MaxReset'
+
+        newStatuses[lfn] = newStatus
+
+    return newStatuses
+
+  def setTransformationParameter( self, transID, paramName, paramValue, force = False,
+                                      rpc = '', url = '', timeout = 120 ):
+    """ Sets a transformation parameter. There's a special case when coming to setting the status of a transformation.
+    """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
 
     if paramName.lower() == 'status':
