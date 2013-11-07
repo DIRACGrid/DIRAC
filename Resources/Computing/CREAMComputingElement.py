@@ -206,7 +206,7 @@ class CREAMComputingElement( ComputingElement ):
               delegationIDs.append( delegationID )
         if delegationIDs:
           cmd = ['glite-ce-proxy-renew', '-e', self.ceName ]
-          cmd.append( delegationIDs )
+          cmd.extend( delegationIDs )
           self.log.info( 'Refreshing proxy for:', ' '.join( delegationIDs ) )
           result = executeGridCommand( self.proxy, cmd, self.gridEnv )
 
