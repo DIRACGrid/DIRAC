@@ -35,6 +35,7 @@ class CREAMComputingElement( ComputingElement ):
     self.queue = ''
     self.outputURL = 'gsiftp://localhost'
     self.gridEnv = ''
+    self.proxyRenewal = 0
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -99,10 +100,10 @@ class CREAMComputingElement( ComputingElement ):
       if result['OK']:
         if result['Value'][0]:
           # We have got a non-zero status code
-          return S_ERROR('Pilot submission failed with error: %s ' % result['Value'][2].strip())
+          return S_ERROR( 'Pilot submission failed with error: %s ' % result['Value'][2].strip() )
         pilotJobReference = result['Value'][1].strip()
         if not pilotJobReference:
-          return S_ERROR('No pilot reference returned from the glite job submission command')
+          return S_ERROR( 'No pilot reference returned from the glite job submission command' )
         batchIDList.append( pilotJobReference )
         stampDict[pilotJobReference] = diracStamp
     else:
@@ -110,7 +111,7 @@ class CREAMComputingElement( ComputingElement ):
       cmd = [ 'glite-ce-delegate-proxy', '-e', '%s' % self.ceName, '%s' % delegationID ]
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
       if not result['OK']:
-        self.log.error('Failed to delegate proxy: %s' % result['Message'])
+        self.log.error( 'Failed to delegate proxy: %s' % result['Message'] )
         return result
       for i in range( numberOfJobs ):
         jdlName, diracStamp = self.__writeJDL( executableFile )
@@ -128,12 +129,12 @@ class CREAMComputingElement( ComputingElement ):
           batchIDList.append( pilotJobReference )
           stampDict[pilotJobReference] = diracStamp
         else:
-          break    
+          break
     if batchIDList:
       result = S_OK( batchIDList )
       result['PilotStampDict'] = stampDict
     else:
-      result = S_ERROR('No pilot references obtained from the glite job submission')  
+      result = S_ERROR( 'No pilot references obtained from the glite job submission' )
     return result
 
   def killJob( self, jobIDList ):
@@ -142,14 +143,14 @@ class CREAMComputingElement( ComputingElement ):
     jobList = list( jobIDList )
     if type( jobIDList ) in StringTypes:
       jobList = [ jobIDList ]
-      
-    cmd = ['glite-ce-job-cancel','-n','-N']+jobList
+
+    cmd = ['glite-ce-job-cancel', '-n', '-N'] + jobList
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     if not result['OK']:
       return result
     if result['Value'][0] != 0:
-      return S_ERROR( 'Failed kill job: %s' % result['Value'][0][1] )   
-      
+      return S_ERROR( 'Failed kill job: %s' % result['Value'][0][1] )
+
     return S_OK()
 
 #############################################################################
@@ -166,9 +167,9 @@ class CREAMComputingElement( ComputingElement ):
       return result
     if result['Value'][0]:
       if result['Value'][2]:
-        return S_ERROR(result['Value'][2])
+        return S_ERROR( result['Value'][2] )
       else:
-        return S_ERROR('Error while interrogating CE status')
+        return S_ERROR( 'Error while interrogating CE status' )
     if result['Value'][1]:
       resultDict = self.__parseJobStatus( result['Value'][1] )
 
@@ -189,6 +190,25 @@ class CREAMComputingElement( ComputingElement ):
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
+    if self.proxyRenewal % 60 == 0:
+      self.proxyRenewal += 1
+      statusList = ['REGISTERED', 'PENDING', 'IDLE', 'RUNNING', 'REALLY-RUNNING']
+      cmd = ['glite-ce-job-status', '-L', '2', '--all', '-e',
+             '%s' % self.ceName, '-s',
+             '%s' % ':'.join( statusList ) ]
+      result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+      if result['OK']:
+        delegationIDs = []
+        for line in result['Value'][1].split( '\n' ):
+          if line.find( 'Deleg Proxy ID' ) != -1:
+            delegationID = line.split()[-1].replace( '[', '' ).replace( ']', '' )
+            if delegationID not in delegationIDs:
+              delegationIDs.append( delegationID )
+        if delegationIDs:
+          cmd = ['glite-ce-proxy-renew', '-e', self.ceName ]
+          cmd.append( delegationIDs )
+          self.log.info( 'Refreshing proxy for:', ' '.join( delegationIDs ) )
+          result = executeGridCommand( self.proxy, cmd, self.gridEnv )
 
     workingDirectory = self.ceParameters['WorkingDirectory']
     fd, idFileName = tempfile.mkstemp( suffix = '.ids', prefix = 'CREAM_', dir = workingDirectory )
@@ -196,9 +216,9 @@ class CREAMComputingElement( ComputingElement ):
     idFile.write( '##CREAMJOBS##' )
     for id_ in jobIDList:
       if ":::" in id_:
-        ref,stamp = id_.split(':::')
+        ref, stamp = id_.split( ':::' )
       else:
-        ref = id_  
+        ref = id_
       idFile.write( '\n' + ref )
     idFile.close()
 
@@ -211,14 +231,14 @@ class CREAMComputingElement( ComputingElement ):
       return result
     if result['Value'][0]:
       if result['Value'][2]:
-        return S_ERROR(result['Value'][2])
+        return S_ERROR( result['Value'][2] )
       else:
-        return S_ERROR('Error while interrogating job statuses')
+        return S_ERROR( 'Error while interrogating job statuses' )
     if result['Value'][1]:
       resultDict = self.__parseJobStatus( result['Value'][1] )
-     
+
     if not resultDict:
-      return  S_ERROR('No job statuses returned')
+      return  S_ERROR( 'No job statuses returned' )
 
     # If CE does not know about a job, set the status to Unknown
     for job in jobIDList:
@@ -233,7 +253,7 @@ class CREAMComputingElement( ComputingElement ):
     resultDict = {}
     ref = ''
     for line in output.split( '\n' ):
-      if not line: 
+      if not line:
         continue
       match = re.search( 'JobID=\[(.*)\]', line )
       if match and len( match.groups() ) == 1:
@@ -297,7 +317,7 @@ class CREAMComputingElement( ComputingElement ):
         os.unlink( outFileName )
       else:
         error = '\n'.join( result['Value'][1:] )
-        return S_ERROR( error )  
+        return S_ERROR( error )
     else:
       return S_ERROR( 'Failed to retrieve output for %s' % jobID )
 
