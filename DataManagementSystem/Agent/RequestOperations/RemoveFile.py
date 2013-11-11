@@ -148,7 +148,7 @@ class RemoveFile( OperationHandlerBase ):
             if not removeFile["OK"]:
               opFile.Error = str( removeFile["Message"] )
               if self.reNotExisting.search( str( removeFile["Message"] ).lower() ):
-                opFile.Stats = "Done"
+                opFile.Status = "Done"
             else:
               removeFile = removeFile["Value"]
               if opFile.LFN in removeFile["Failed"]:
