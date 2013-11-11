@@ -59,19 +59,21 @@ class SpaceTokenOccupancyPolicy( PolicyBase ):
         result[ 'Reason' ] = 'Key %s missing' % key.lower()
         return S_OK( result )
     
-    free       = float( commandResult[ 'Free' ] )
-    percentage = ( free / commandResult[ 'Total' ] ) * 100
-    
+    free = float( commandResult[ 'Free' ] )
+        
     # Units are TB ! ( 0.01 == 10 GB )
     if free < 0.1: 
-      result[ 'Status' ] = 'Banned'     
+      result[ 'Status' ] = 'Banned'
+      result[ 'Reason' ] = 'Free space < 10GB'
     elif free < 5: 
       result[ 'Status' ] = 'Degraded'
+      result[ 'Reason' ] = 'Free space < 5TB'
     else: 
       result[ 'Status' ] = 'Active'
+      result[ 'Reason' ] = 'Free space > 5TB'
       
-    result[ 'Reason' ] = 'Free space %.2f TB (%.2f %%)' % ( free, percentage )
     return S_OK( result )
   
-################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
+#...............................................................................
+#EOF
+  
