@@ -67,7 +67,7 @@ if __name__ == "__main__":
     DIRAC.exit( -1 )
 
   if len( lfnList ) > Operation.MAX_FILES:
-    gLogger.error( "too much LFNs, max number of files per operation is %s" % Operation.MAX_FILES )
+    gLogger.error( "too many LFNs, max number of files per operation is %s" % Operation.MAX_FILES )
     DIRAC.exit( -1 )
 
   request = Request()
