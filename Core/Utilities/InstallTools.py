@@ -90,7 +90,7 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable
 exitOnError = False
 
 # First some global defaults
-gLogger.notice( 'DIRAC Root Path =', rootPath )
+gLogger.debug( 'DIRAC Root Path =', rootPath )
 
 def loadDiracCfg( verbose = False ):
   """
