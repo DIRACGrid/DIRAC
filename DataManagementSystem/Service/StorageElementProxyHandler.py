@@ -3,7 +3,6 @@
 # File: StorageElementProxyHandler.py
 ########################################################################
 """ :mod: StorageElementProxyHandler
-    ================================
  
   .. module: StorageElementProxyHandler
   :synopsis: This is a service which represents a DISET proxy to the Storage Element component.
