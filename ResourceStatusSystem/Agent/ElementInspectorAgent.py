@@ -1,104 +1,142 @@
 # $HeadURL:  $
-''' RSInspectorAgent
+""" ElementInspectorAgent
 
   This agent inspect Resources, and evaluates policies that apply.
 
-'''
+"""
 
 import datetime
+import math
 import Queue
 
-from DIRAC                                                      import S_OK
+from DIRAC                                                      import S_ERROR, S_OK
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                            import ThreadPool
-
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP                import PEP
 
+
 __RCSID__  = '$Id:  $'
 AGENT_NAME = 'ResourceStatus/ElementInspectorAgent'
 
-class ElementInspectorAgent( AgentModule ):
-  '''
-    The ElementInspector agent is a generic agent used to check the elements
-    of one of the elementTypes ( e.g. Site, Resource, Node ).
 
-    This Agent takes care of the Elements. In order to do so, it gathers
-    the eligible ones and then evaluates their statuses with the PEP.
-  '''
+class ElementInspectorAgent( AgentModule ):
+  """ ElementInspectorAgent
+  
+  The ElementInspector agent is a generic agent used to check the elements
+  of one of the elementTypes ( e.g. Site, Resource, Node ).
+
+  This Agent takes care of the Elements. In order to do so, it gathers
+  the eligible ones and then evaluates their statuses with the PEP.
+  
+  """
 
   # Max number of worker threads by default
-  __maxNumberOfThreads = 5
-  # ElementType, to be defined among Site, Resource or Node
-  __elementType = None
+  __maxNumberOfThreads = 15
+  
   # Inspection freqs, defaults, the lower, the higher priority to be checked.
   # Error state usually means there is a glitch somewhere, so it has the highest
   # priority.
-  __checkingFreqs = { 'Default' : 
-                       { 
-                         'Active' : 60, 'Degraded' : 30,  'Probing' : 30, 
-                         'Banned' : 30, 'Unknown'  : 15,  'Error'   : 15 
-                         } 
+  __checkingFreqs = { 
+                     'Active'   : 20, 
+                     'Degraded' : 20,  
+                     'Probing'  : 20, 
+                     'Banned'   : 15, 
+                     'Unknown'  : 10,  
+                     'Error'    : 5
                      }
-  # queue size limit to stop feeding
-  __limitQueueFeeder = 15
+  
   
   def __init__( self, *args, **kwargs ):
-    ''' c'tor
-    '''
+    """ c'tor
+    """
     
     AgentModule.__init__( self, *args, **kwargs )
 
-    # members initialization
-
-    self.maxNumberOfThreads = self.__maxNumberOfThreads
-    self.elementType        = self.__elementType
-    self.checkingFreqs      = self.__checkingFreqs
-    self.limitQueueFeeder   = self.__limitQueueFeeder
-    
+    # ElementType, to be defined among Site, Resource or Node
+    self.elementType         = ''
     self.elementsToBeChecked = None
     self.threadPool          = None
     self.rsClient            = None
     self.clients             = {}
 
+
   def initialize( self ):
-    ''' Standard initialize.
-        Uses the ProductionManager shifterProxy to modify the ResourceStatus DB
-    '''
+    """ Standard initialize.
+    """
 
-    self.maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', self.maxNumberOfThreads )   
-    self.elementType        = self.am_getOption( 'elementType',        self.elementType )
-    self.checkingFreqs      = self.am_getOption( 'checkingFreqs',      self.checkingFreqs )
-    self.limitQueueFeeder   = self.am_getOption( 'limitQueueFeeder',   self.limitQueueFeeder )      
-    
-    self.elementsToBeChecked = Queue.Queue()
-    self.threadPool          = ThreadPool( self.maxNumberOfThreads,
-                                           self.maxNumberOfThreads )
-
-    self.rsClient = ResourceStatusClient()
+    maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', self.__maxNumberOfThreads )
+    self.threadPool    = ThreadPool( maxNumberOfThreads, maxNumberOfThreads )
+       
+    self.elementType = self.am_getOption( 'elementType', self.elementType )   
+    self.rsClient    = ResourceStatusClient()
 
     self.clients[ 'ResourceStatusClient' ]     = self.rsClient
     self.clients[ 'ResourceManagementClient' ] = ResourceManagementClient() 
 
+    if not self.elementType:
+      return S_ERROR( 'Missing elementType' )
+
     return S_OK()
   
   def execute( self ):
+    """ execute
     
-    # If there are elements in the queue to be processed, we wait ( we know how
-    # many elements in total we can have, so if there are more than 15% of them
-    # on the queue, we do not add anything ), but the threads are running and
-    # processing items from the queue on background.    
+    This is the main method of the agent. It gets the elements from the Database
+    which are eligible to be re-checked, calculates how many threads should be
+    started and spawns them. Each thread will get an element from the queue until
+    it is empty. At the end, the method will join the queue such that the agent
+    will not terminate a cycle until all elements have been processed.
     
-    qsize = self.elementsToBeChecked.qsize() 
-    if qsize > self.limitQueueFeeder:
-      self.log.warn( 'Queue not empty ( %s > %s ), skipping feeding loop' % ( qsize, self.limitQueueFeeder ) )
-      return S_OK()
+    """
+    
+    # Gets elements to be checked ( returns a Queue ) 
+    elementsToBeChecked = self.getElementsToBeChecked()
+    if not elementsToBeChecked[ 'OK' ]:
+      self.log.error( elementsToBeChecked[ 'Message' ] )
+      return elementsToBeChecked
+    self.elementsToBeChecked = elementsToBeChecked[ 'Value' ]
+       
+    queueSize   = self.elementsToBeChecked.qsize()
+    pollingTime = self.am_getPollingTime()
+    
+    # Assigns number of threads on the fly such that we exhaust the PollingTime
+    # without having to spawn too many threads. We assume 10 seconds per element
+    # to be processed ( actually, it takes something like 1 sec per element ):
+    # numberOfThreads = elements * 10(s/element) / pollingTime
+    numberOfThreads = int( math.ceil( queueSize * 10. / pollingTime ) )
+            
+    self.log.info( 'Needed %d threads to process %d elements' % ( numberOfThreads, queueSize ) )
+    
+    for _x in xrange( numberOfThreads ):
+      jobUp = self.threadPool.generateJobAndQueueIt( self._execute )
+      if not jobUp[ 'OK' ]:
+        self.log.error( jobUp[ 'Message' ] )
+        
+    self.log.info( 'blocking until all elements have been processed' )
+    # block until all tasks are done
+    self.elementsToBeChecked.join()
+    self.log.info( 'done')  
+    
+    return S_OK()
+
+
+  def getElementsToBeChecked( self ):
+    """ getElementsToBeChecked
+    
+    This method gets all the rows in the <self.elementType>Status table, and then
+    discards entries with TokenOwner != rs_svc. On top of that, there are check
+    frequencies that are applied: depending on the current status of the element,
+    they will be checked more or less often.
+    
+    """
+    
+    toBeChecked = Queue.Queue()
     
     # We get all the elements, then we filter.
     elements = self.rsClient.selectStatusElement( self.elementType, 'Status' )
     if not elements[ 'OK' ]:
-      self.log.error( elements[ 'Message' ] )
       return elements
       
     utcnow = datetime.datetime.utcnow().replace( microsecond = 0 )  
@@ -110,86 +148,46 @@ class ElementInspectorAgent( AgentModule ):
       # of elements returned by mySQL on tuples
       elemDict = dict( zip( elements[ 'Columns' ], element ) )
       
-      # We skip the elements with token different than "rs_svc"
-      if elemDict[ 'TokenOwner' ] != 'rs_svc':
-        self.log.info( 'Skipping %s ( %s ) with token %s' % ( elemDict[ 'Name' ],
-                                                              elemDict[ 'StatusType' ],
-                                                              elemDict[ 'TokenOwner' ]
-                                                             ))
+      # This if-clause skips all the elements that are should not be checked yet
+      timeToNextCheck = self.__checkingFreqs[ elemDict[ 'Status' ] ]
+      if utcnow <= elemDict[ 'LastCheckTime' ] + datetime.timedelta( minutes = timeToNextCheck ):
         continue
       
-      if not elemDict[ 'ElementType' ] in self.checkingFreqs:
-        #self.log.warn( '"%s" not in inspectionFreqs, getting default' % elemDict[ 'ElementType' ] )
-        timeToNextCheck = self.checkingFreqs[ 'Default' ][ elemDict[ 'Status' ] ]
-      else:
-        timeToNextCheck = self.checkingFreqs[ elemDict[ 'ElementType' ] ][ elemDict[ 'Status' ] ]
+      # We skip the elements with token different than "rs_svc"
+      if elemDict[ 'TokenOwner' ] != 'rs_svc':
+        self.log.verbose( 'Skipping %s ( %s ) with token %s' % ( elemDict[ 'Name' ],
+                                                                 elemDict[ 'StatusType' ],
+                                                                 elemDict[ 'TokenOwner' ]
+                                                               ))
+        continue
               
-      if utcnow - datetime.timedelta( minutes = timeToNextCheck ) > elemDict[ 'LastCheckTime' ]:
-               
-        # We are not checking if the item is already on the queue or not. It may
-        # be there, but in any case, it is not a big problem.
+      # We are not checking if the item is already on the queue or not. It may
+      # be there, but in any case, it is not a big problem.
         
-        lowerElementDict = { 'element' : self.elementType }
-        for key, value in elemDict.items():
-          lowerElementDict[ key[0].lower() + key[1:] ] = value
+      lowerElementDict = { 'element' : self.elementType }
+      for key, value in elemDict.items():
+        lowerElementDict[ key[0].lower() + key[1:] ] = value
         
-        # We add lowerElementDict to the queue
-        self.elementsToBeChecked.put( lowerElementDict )
-        self.log.verbose( '%s # "%s" # "%s" # %s # %s' % ( elemDict[ 'Name' ], 
-                                                           elemDict[ 'ElementType' ],
-                                                           elemDict[ 'StatusType' ],
-                                                           elemDict[ 'Status' ],
-                                                           elemDict[ 'LastCheckTime' ]) )
-       
-    # Measure size of the queue, more or less, to know how many threads should
-    # we start !
-    queueSize      = self.elementsToBeChecked.qsize()
-    # 30, could have been other number.. but it works reasonably well. ( +1 to get ceil )
-    threadsToStart = max( min( self.maxNumberOfThreads, ( queueSize / 30 ) + 1 ), 1 ) 
-    threadsRunning = self.threadPool.numWorkingThreads()
+      # We add lowerElementDict to the queue
+      toBeChecked.put( lowerElementDict )
+      self.log.verbose( '%s # "%s" # "%s" # %s # %s' % ( elemDict[ 'Name' ], 
+                                                         elemDict[ 'ElementType' ],
+                                                         elemDict[ 'StatusType' ],
+                                                         elemDict[ 'Status' ],
+                                                         elemDict[ 'LastCheckTime' ]) )
+    return S_OK( toBeChecked )
     
-    self.log.info( 'Needed %d threads to process %d elements' % ( threadsToStart, queueSize ) )
-    if threadsRunning:
-      self.log.info( 'Already %d threads running' % threadsRunning )
-      threadsToStart = max( 0, threadsToStart - threadsRunning )
-      self.log.info( 'Starting %d threads to process %d elements' % ( threadsToStart, queueSize ) )
-    
-    # It may happen that we start two threads, 0 and 1. 1 goes DOWN, but 0 keeps 
-    # running. In next loop we will start a new thread, and will be called 0 
-    # again. To have a mechanism to see which thread is where, we append the
-    # cycle number before the threadId.
-    cycle = self._AgentModule__moduleProperties[ 'cyclesDone' ]
-    
-    for _x in xrange( threadsToStart ):
-      threadId = '%s_%s' % ( cycle, _x )
-      jobUp = self.threadPool.generateJobAndQueueIt( self._execute, args = ( threadId, ) )
-      if not jobUp[ 'OK' ]:
-        self.log.error( jobUp[ 'Message' ] )
         
-    return S_OK()
-
-  def finalize( self ):
-    
-    self.log.info( 'draining queue... blocking until empty' )
-    # block until all tasks are done
-    self.elementsToBeChecked.join()  
-    
-    return S_OK()
+  # Private methods ............................................................        
         
-## Private methods #############################################################        
-        
-  def _execute( self, threadNumber ):
-    '''
+  def _execute( self ):
+    """
       Method run by the thread pool. It enters a loop until there are no elements
       on the queue. On each iteration, it evaluates the policies for such element
       and enforces the necessary actions. If there are no more elements in the
       queue, the loop is finished.
-    '''
+    """
 
-    tHeader = '%sJob%s' % ( '* '*30, threadNumber )
-    
-    self.log.info( '%s UP' % tHeader )
-    
     pep = PEP( clients = self.clients )
     
     while True:
@@ -197,12 +195,11 @@ class ElementInspectorAgent( AgentModule ):
       try:
         element = self.elementsToBeChecked.get_nowait()
       except Queue.Empty:
-        self.log.info( '%s DOWN' % tHeader )
         return S_OK()
       
-      self.log.info( '%s ( %s / %s ) being processed' % ( element[ 'name' ], 
-                                                          element[ 'status' ],
-                                                          element[ 'statusType' ] ) )
+      self.log.verbose( '%s ( %s / %s ) being processed' % ( element[ 'name' ], 
+                                                             element[ 'status' ],
+                                                             element[ 'statusType' ] ) )
       
       resEnforce = pep.enforce( element )
       if not resEnforce[ 'OK' ]:
@@ -227,9 +224,5 @@ class ElementInspectorAgent( AgentModule ):
       # Used together with join !
       self.elementsToBeChecked.task_done()   
 
-    self.log.info( '%s DOWN' % tHeader )
-
-    return S_OK()
-
-################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+#...............................................................................
+#EOF
