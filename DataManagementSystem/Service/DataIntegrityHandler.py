@@ -2,12 +2,12 @@
 # $HeadURL $
 # File: DataIntegrityHandler.py
 ########################################################################
-""" :mod: DataIntegrityHandler
-    ==========================
+""" 
+:mod: DataIntegrityHandler
  
-    .. module: DataIntegrityHandler
-    :synopsis: DataIntegrityHandler is the implementation of the Data Integrity service in 
-    the DISET framework
+.. module: DataIntegrityHandler
+:synopsis: DataIntegrityHandler is the implementation of the Data Integrity service in 
+the DISET framework
 """
 
 __RCSID__ = "$Id$"

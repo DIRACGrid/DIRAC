@@ -34,10 +34,10 @@ def addProperty( arg ):
     groupProperties.append( arg )
 
 Script.setUsageMessage( '\n'.join( ['Add or Modify a Group info in DIRAC',
-                                    'Usage:',
-                                    '%s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
-                                    'Arguments:',
-                                    ' Property=<Value>: Other properties to be added to the User like (VOMSRole=XXXX)', ] ) )
+                                    '\nUsage:\n',
+                                    '  %s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
+                                    '\nArguments:\n',
+                                    '  Property=<Value>: Other properties to be added to the User like (VOMSRole=XXXX)', ] ) )
 
 Script.registerSwitch( 'G:', 'GroupName:', 'Name of the Group (Mandatory)', setGroupName )
 Script.registerSwitch( 'U:', 'UserName:', 'Short Name of user to be added to the Group (Allow Multiple instances or None)', addUserName )

@@ -469,21 +469,24 @@ class LocalConfiguration:
     Printout help message including a Usage message if defined via setUsageMessage method
     """
     if self.__usageMessage:
-      gLogger.notice( self.__usageMessage )
+      gLogger.notice( '\n'+self.__usageMessage.lstrip() )
     else:
-      gLogger.notice( "Usage:" )
-      gLogger.notice( "  %s (<options>|<cfgFile>)*" % os.path.basename( sys.argv[0] ) )
+      gLogger.notice( "\nUsage:" )
+      gLogger.notice( "\n  %s (<options>|<cfgFile>)*" % os.path.basename( sys.argv[0] ) )
       if dummy:
         gLogger.notice( dummy )
 
-    gLogger.notice( "General options:" )
+    gLogger.notice( "\nGeneral options:" )
     iLastOpt = 0
     for iPos in range( len( self.commandOptionList ) ):
       optionTuple = self.commandOptionList[ iPos ]
-      gLogger.notice( "  %s --%s : %s" % ( ( "-" + optionTuple[0].ljust( 3 ) if optionTuple[0] else  " " * 4 ),
-                                            optionTuple[1].ljust( 15 ),
-                                            optionTuple[2] ) )
-
+      if optionTuple[0].endswith( ':' ):
+        line = "\n  -%s --%s : %s" % ( optionTuple[0][:-1].ljust( 2 ), 
+                                       (optionTuple[1][:-1] + ' <value> ').ljust( 22 ), 
+                                       optionTuple[2] )
+        gLogger.notice( line )
+      else:  
+        gLogger.notice( "\n  -%s --%s : %s" % ( optionTuple[0].ljust( 2 ), optionTuple[1].ljust( 22 ), optionTuple[2] ) )
       iLastOpt = iPos
       if optionTuple[0] == 'h':
         #Last general opt is always help
@@ -492,11 +495,15 @@ class LocalConfiguration:
       gLogger.notice( " \nOptions:" )
       for iPos in range( iLastOpt + 1, len( self.commandOptionList ) ):
         optionTuple = self.commandOptionList[ iPos ]
-        if optionTuple[0]:
-          gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 3 ), optionTuple[1].ljust( 15 ), optionTuple[2] ) )
-        else:
-          gLogger.notice( "   %s --%s : %s" % ( '   ', optionTuple[1].ljust( 15 ), optionTuple[2] ) )
+        if optionTuple[0].endswith( ':' ):
+          line = "\n  -%s --%s : %s" % ( optionTuple[0][:-1].ljust( 2 ), 
+                                         (optionTuple[1][:-1] + ' <value> ').ljust( 22 ), 
+                                         optionTuple[2] )
+          gLogger.notice( line )
+        else:  
+          gLogger.notice( "\n  -%s --%s : %s" % ( optionTuple[0].ljust( 2 ), optionTuple[1].ljust( 22 ), optionTuple[2] ) )
 
+    gLogger.notice( "\n" )
     DIRAC.exit( 0 )
 
   def deleteOption( self, optionPath ):

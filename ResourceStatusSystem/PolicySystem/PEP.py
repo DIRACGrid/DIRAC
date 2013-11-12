@@ -93,7 +93,7 @@ class PEP:
     policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
     singlePolicyResults  = resDecisions[ 'singlePolicyResults' ]
 
-    # We have run the policies and at this point, we are about to execute the actions.
+    # We have run the actions and at this point, we are about to execute the actions.
     # One more final check before proceeding
     isNotUpdated = self.__isNotUpdated( decisionParams )
     if not isNotUpdated[ 'OK' ]:

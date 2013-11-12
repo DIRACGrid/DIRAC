@@ -1712,7 +1712,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def getOutputSandbox( self, jobID, outputDir = None, oversized = True ):
+  def getOutputSandbox( self, jobID, outputDir = None, oversized = True, noJobDir = False ):
     """Retrieve output sandbox for existing JobID.
 
        This method allows the retrieval of an existing job output sandbox.
@@ -1742,9 +1742,11 @@ class Dirac( API ):
     # TODO: Do not check if dir already exists
     dirPath = ''
     if outputDir:
-      dirPath = '%s/%s' % ( outputDir, jobID )
-      if os.path.exists( dirPath ):
-        return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
+      dirPath = outputDir
+      if not noJobDir:
+        dirPath = '%s/%s' % ( outputDir, jobID )
+      #if os.path.exists( dirPath ):
+      #  return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
     else:
       dirPath = '%s/%s' % ( os.getcwd(), jobID )
       if os.path.exists( dirPath ):
@@ -2129,7 +2131,7 @@ class Dirac( API ):
 
   #############################################################################
   def selectJobs( self, status = None, minorStatus = None, applicationStatus = None,
-                  site = None, owner = None, jobGroup = None, date = None ):
+                  site = None, owner = None, ownerGroup = None, jobGroup = None, date = None ):
     """Options correspond to the web-page table columns. Returns the list of JobIDs for
        the specified conditions.  A few notes on the formatting:
         - date must be specified as yyyy-mm-dd.  By default, the date is today.
@@ -2159,7 +2161,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
     """
     options = {'Status':status, 'MinorStatus':minorStatus, 'ApplicationStatus':applicationStatus, 'Owner':owner,
-               'Site':site, 'JobGroup':jobGroup}
+               'Site':site, 'JobGroup':jobGroup, 'OwnerGroup':ownerGroup }
     conditions = {}
     for key, value in options.items():
       if value:
@@ -2182,7 +2184,7 @@ class Dirac( API ):
     self.log.verbose( 'Will select jobs with last update %s and following conditions' % date )
     self.log.verbose( self.pPrint.pformat( conditions ) )
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
-    result = monitoring.getJobs( conditions, date )
+    result = monitoring.getJobs( conditions, date )    
     if not result['OK']:
       self.log.warn( result['Message'] )
       return result

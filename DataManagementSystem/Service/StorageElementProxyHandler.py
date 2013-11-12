@@ -2,13 +2,13 @@
 # $HeadURL $
 # File: StorageElementProxyHandler.py
 ########################################################################
-""" :mod: StorageElementProxyHandler
-    ================================
+""" 
+:mod: StorageElementProxyHandler
  
-    .. module: StorageElementProxyHandler
-    :synopsis: This is a service which represents a DISET proxy to the Storage Element component.
-  
-    This is used to get and put files from a remote storage.
+.. module: StorageElementProxyHandler
+:synopsis: This is a service which represents a DISET proxy to the Storage Element component.
+
+This is used to get and put files from a remote storage.
 """
 
 __RCSID__ = "$Id$"

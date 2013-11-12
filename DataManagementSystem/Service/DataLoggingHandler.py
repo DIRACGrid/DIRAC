@@ -2,18 +2,17 @@
 # $HeadURL$
 ########################################################################
 """ 
-    :mod: DataLoggingHandler
-    ========================
+:mod: DataLoggingHandler
 
-     .. module: DataLoggingHandler
-     :synopsis: DataLoggingHandler is the implementation of the Data Logging
-    service in the DISET framework.
+ .. module: DataLoggingHandler
+ :synopsis: DataLoggingHandler is the implementation of the Data Logging
+service in the DISET framework.
 
-    The following methods are available in the Service interface::
+The following methods are available in the Service interface::
 
-    * addFileRecord()
-    * addFileRecords()
-    * getFileLoggingInfo()
+* addFileRecord()
+* addFileRecords()
+* getFileLoggingInfo()
 
 """
 
