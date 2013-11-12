@@ -18,7 +18,7 @@ from DIRAC                                                          import S_OK,
 
 COMPONENT_NAME = 'InputDataByProtocol'
 
-class InputDataByProtocol:
+class InputDataByProtocol( object ):
 
   #############################################################################
   def __init__( self, argumentsDict ):

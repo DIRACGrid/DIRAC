@@ -2,14 +2,11 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
+from DIRAC import gLogger, S_OK
 
 from DIRAC.Core.Base.AgentModule                               import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
-
-import time, os, sys, re
-from types import *
 
 AGENT_NAME = 'StorageManagement/PinRequestAgent'
 

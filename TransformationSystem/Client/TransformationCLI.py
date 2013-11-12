@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities.Subprocess                            import shellCall
 from DIRAC.TransformationSystem.Client.Transformation           import Transformation
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
 
+__RCSID__ = "$Id$"
 
 def printDict( dictionary ):
   ''' Dictionary pretty printing '''

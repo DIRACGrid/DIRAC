@@ -10,7 +10,9 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxSto
 
 import os, commands
 
-class WMSClient:
+__RCSID__ = "$Id$"
+
+class WMSClient( object ):
 
   def __init__( self, jobManagerClient = False, sbRPCClient = False, sbTransferClient = False,
                 useCertificates = False, timeout = 120 ):
@@ -162,22 +164,22 @@ class WMSClient:
       # Check the Input Sandbox files
 
       totalSize = 0
-      for file in inputSandbox:
-        if file.find( 'lfn:' ) != 0 and file.find( 'LFN:' ) != 0 and file.find( "SB:" ) != 0:
-          if not os.path.exists( file ):
-            badfile = file
-            print "inputSandbox file/directory " + file + " not found"
+      for infile in inputSandbox:
+        if infile.find( 'lfn:' ) != 0 and infile.find( 'LFN:' ) != 0 and infile.find( "SB:" ) != 0:
+          if not os.path.exists( infile ):
+            badfile = infile
+            print "inputSandbox file/directory " + infile + " not found"
             ok = 0
           else:
-            if os.path.isdir( file ):
-              comm = 'du -b -s ' + file
+            if os.path.isdir( infile ):
+              comm = 'du -b -s ' + infile
               status, out = commands.getstatusoutput( comm )
               try:
                 dirSize = int( out.split()[0] )
               except Exception, x:
-                print "Input Sandbox directory name", file, "is not valid !"
+                print "Input Sandbox directory name", infile, "is not valid !"
                 print str( x )
-                badfile = file
+                badfile = infile
                 ok = 0
               totalSize = totalSize + dirSize
             else:
@@ -186,7 +188,7 @@ class WMSClient:
       # print "Total size of the inputSandbox: "+str(totalSize)
       if not ok:
         result = S_ERROR( 'Input Sandbox is not valid' )
-        result['BadFile'] = file
+        result['BadFile'] = badfile
         result['TotalSize'] = totalSize
         return result
 

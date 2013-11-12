@@ -23,7 +23,7 @@
 
    Note that several executables can be provided and wil be executed sequentially.
 """
-
+__RCSID__ = "$Id$"
 import re, os, types, urllib
 
 from DIRAC                                                    import S_OK, S_ERROR, gLogger
@@ -316,7 +316,7 @@ class Job( API ):
     if type( lfns ) == list and len( lfns ):
       for i in xrange( len( lfns ) ):
         lfns[i] = lfns[i].replace( 'LFN:', '' )
-      inputData = map( lambda x: 'LFN:' + x, lfns )
+      inputData = ['LFN:' + x for x in lfns ]
       inputDataStr = ';'.join( inputData )
       description = 'List of input data specified by LFNs'
       self._addParameter( self.workflow, 'InputData', 'JDL', inputDataStr, description )

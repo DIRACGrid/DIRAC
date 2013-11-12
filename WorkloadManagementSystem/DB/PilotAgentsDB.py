@@ -28,7 +28,7 @@ __RCSID__ = "$Id$"
 import collections
 import threading
 import time
-from types import *
+from types import ListType, IntType, LongType
 
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC                                             import gLogger, S_OK, S_ERROR
@@ -317,14 +317,14 @@ class PilotAgentsDB( DB ):
 
     failed = False
     for table in ['PilotAgents', 'PilotOutput', 'PilotRequirements', 'JobToPilotMapping']:
-      idString = ','.join( [ str( id ) for id in pilotIDs ] )
+      idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
       result = self._update( req, conn = conn )
       if not result['OK']:
         failed = table
 
     if failed:
-      return S_ERROR( 'Failed to remove pilot from %s table' % table )
+      return S_ERROR( 'Failed to remove pilot from %s table' % failed )
     else:
       return S_OK()
 
@@ -494,7 +494,7 @@ class PilotAgentsDB( DB ):
     if not result['OK']:
       return S_ERROR( 'Failed to escape error string' )
     e_error = result['Value']
-    req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%d,%s,%s)" % (pilotID,e_output,e_error)
+    req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%d,%s,%s)" % (pilotID, e_output, e_error)
     result = self._update(req)
     req = "UPDATE PilotAgents SET OutputReady='True' where PilotID=%d" % pilotID
     result = self._update( req )
@@ -561,7 +561,7 @@ class PilotAgentsDB( DB ):
                                      gridSite = site )
         if not result['OK']:
           return result
-      req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID,jobID)
+      req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID, jobID)
       result = self._update(req)
       return result
     else:

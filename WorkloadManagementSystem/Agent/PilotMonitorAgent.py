@@ -11,7 +11,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule    import AgentModule
-from DIRAC                    import S_OK, gLogger
+from DIRAC                          import S_OK
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
 class PilotMonitorAgent( AgentModule ):

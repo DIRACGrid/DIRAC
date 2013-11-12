@@ -22,6 +22,7 @@ from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
+__RCSID__ = "$Id$"
 
 # # agent's name
 AGENT_NAME = 'Transformation/TransformationCleaningAgent'
@@ -199,7 +200,7 @@ class TransformationCleaningAgent( AgentModule ):
       self.log.info( "No output directories found" )
     directories = sortList( directories )
     return S_OK( directories )
-
+  # FIXME If a classmethod, should it not have cls instead of self?
   @classmethod
   def _addDirs( self, transID, newDirs, existingDirs ):
     """ append uniqe :newDirs: list to :existingDirs: list

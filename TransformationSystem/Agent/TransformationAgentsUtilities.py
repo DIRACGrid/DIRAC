@@ -4,6 +4,8 @@
 
 from DIRAC import gLogger
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = ''
 
 class TransformationAgentsUtilities( object ):

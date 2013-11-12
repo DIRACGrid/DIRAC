@@ -102,7 +102,7 @@ class ARCComputingElement( ComputingElement ):
         break
       pilotJobReference = result['Value'][1].strip()
       if pilotJobReference and pilotJobReference.startswith('Job submitted with jobid:'):
-        pilotJobReference = pilotJobReference.replace('Job submitted with jobid:','').strip()
+        pilotJobReference = pilotJobReference.replace('Job submitted with jobid:', '').strip()
         batchIDList.append( pilotJobReference )
         stampDict[pilotJobReference] = diracStamp
       else:
@@ -130,7 +130,7 @@ class ARCComputingElement( ComputingElement ):
     for job in jobList:
       jobListFile.write( job+'\n' )  
       
-    cmd = ['arckill','-c',self.ceHost,'-i',name]
+    cmd = ['arckill', '-c', self.ceHost, '-i', name]
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     os.unlink( name )
     if not result['OK']:
@@ -150,7 +150,7 @@ class ARCComputingElement( ComputingElement ):
     if not result['OK']:
       return result
 
-    if result['Value'][0]==1 and result['Value'][1]=="No jobs\n":
+    if result['Value'][0] == 1 and result['Value'][1] == "No jobs\n":
       result = S_OK()
       result['RunningJobs'] = 0
       result['WaitingJobs'] = 0
@@ -203,12 +203,12 @@ class ARCComputingElement( ComputingElement ):
             exitCode = int( line )
           
           # Evaluate state now
-          if stateARC in ['ACCEPTING','ACCEPTED','PREPARING','PREPARED','SUBMITTING',
-                          'INLRMS:Q','INLRMS:S','INLRMS:O']:
+          if stateARC in ['ACCEPTING', 'ACCEPTED', 'PREPARING', 'PREPARED', 'SUBMITTING',
+                          'INLRMS:Q', 'INLRMS:S', 'INLRMS:O']:
             resultDict[jobRef] = "Scheduled"
-          elif stateARC in ['INLRMS:R','INLRMS:E','EXECUTED','FINISHING']:
+          elif stateARC in ['INLRMS:R', 'INLRMS:E', 'EXECUTED', 'FINISHING']:
             resultDict[jobRef] = "Running"
-          elif stateARC in ['KILLING','KILLED']:
+          elif stateARC in ['KILLING', 'KILLED']:
             resultDict[jobRef] = "Killed"
           elif stateARC in ['FINISHED']:
             if exitCode is not None:
@@ -249,7 +249,7 @@ class ARCComputingElement( ComputingElement ):
       jobList.append( job )
       jobListFile.write( job+'\n' )  
       
-    cmd = ['arcstat','-c',self.ceHost,'-i',name,'-j',self.ceParameters['JobListFile']]
+    cmd = ['arcstat', '-c', self.ceHost, '-i', name, '-j', self.ceParameters['JobListFile']]
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     os.unlink( name )
     

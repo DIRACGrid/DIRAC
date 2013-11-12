@@ -17,7 +17,7 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
-class SandboxStoreClient:
+class SandboxStoreClient( object ):
 
   __validSandboxTypes = ( 'Input', 'Output' )
   __smdb = None

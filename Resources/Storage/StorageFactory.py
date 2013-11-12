@@ -14,7 +14,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                              import gLogger, S_OK, S_ERROR, rootPath
+from DIRAC                                              import gLogger, S_OK, S_ERROR, rootPath, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers           import getInstalledExtensions
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus   import ResourceStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources, getSiteForResource
@@ -195,7 +195,8 @@ class StorageFactory:
       errStr = "StorageFactory._getConfigStorageName: Supplied storage doesn't exist."
       gLogger.error( errStr, storageName )
       return S_ERROR( errStr )
-    if 'Alias' in res['Value']:
+    if 'Alias' in result['Value']:
+      #FIXME This cannot work as self.rootConfigPath is undefined
       configPath = '%s/%s/Alias' % ( self.rootConfigPath, storageName )
       aliasName = gConfig.getValue( configPath )
       result = self._getConfigStorageName( aliasName )

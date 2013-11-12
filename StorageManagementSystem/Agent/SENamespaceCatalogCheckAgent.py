@@ -3,13 +3,12 @@
 ########################################################################
 __RCSID__ = "$Id$"
 
-from DIRAC                                                     import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
+from DIRAC                                                     import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.AgentModule                               import AgentModule
 from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
 from DIRAC.Core.Utilities.List                                 import sortList, breakListIntoChunks
-from datetime                                                  import datetime, timedelta
 
-import re, os, urllib2
+import re, urllib2
 
 
 AGENT_NAME = 'DataManagement/SENamespaceCatalogCheckAgent'
@@ -35,7 +34,7 @@ class SENamespaceCatalogCheckAgent( AgentModule ):
     """
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
     if not self.enableFlag == 'True':
-      self.log.info( 'SENamespaceCatalogCheck is disabled by configuration option %s/EnableFlag' % ( self.section ) )
+      self.log.info( 'SENamespaceCatalogCheck is disabled by configuration option EnableFlag' )
       return S_OK( 'Disabled via CS flag' )
 
     """
