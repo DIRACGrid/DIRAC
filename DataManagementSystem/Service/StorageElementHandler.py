@@ -2,27 +2,27 @@
 # $HeadURL $
 # File: StorageElementHandler.py
 ########################################################################
-""" :mod: StorageElementHandler 
-    ===========================
- 
-    .. module: StorageElementHandler
-    :synopsis: StorageElementHandler is the implementation of a simple StorageElement
-    service in the DISET framework
+""" 
+:mod: StorageElementHandler 
 
-    The following methods are available in the Service interface
+.. module: StorageElementHandler
+:synopsis: StorageElementHandler is the implementation of a simple StorageElement
+           service in the DISET framework
 
-    getMetadata()      - get file metadata
-    listDirectory()    - get directory listing
-    remove()           - remove one file
-    removeDirectory()  - remove on directory recursively
-    removeFileList()   - remove files in the list
-    getAdminInfo()     - get administration information about the SE status
+The following methods are available in the Service interface
 
-    The handler implements also the DISET data transfer calls
-    toClient(), fromClient(), bulkToClient(), bulkFromClient
-    which support single file, directory and file list upload and download
+getMetadata()      - get file metadata
+listDirectory()    - get directory listing
+remove()           - remove one file
+removeDirectory()  - remove on directory recursively
+removeFileList()   - remove files in the list
+getAdminInfo()     - get administration information about the SE status
 
-    The class can be used as the basis for more advanced StorageElement implementations
+The handler implements also the DISET data transfer calls
+toClient(), fromClient(), bulkToClient(), bulkFromClient
+which support single file, directory and file list upload and download
+
+The class can be used as the basis for more advanced StorageElement implementations
 
 """
 
