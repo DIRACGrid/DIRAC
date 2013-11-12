@@ -140,12 +140,14 @@ class ProxyDB( DB ):
           self.log.error( "Could not retrieve username for DN %s" % userDN )
           continue
         userName = result[ 'Value' ]
-        result = self._escapeString( userName )
-        if not result[ 'OK' ]:
-          self.log.error( "Could not escape username %s" % userName )
+        try:
+          userName = self._escapeString( userName )[ 'Value' ]
+          userDN = self._escapeString( userDN )[ 'Value' ]
+        except KeyError:
+          self.log.error( "Could not escape username %s or DN %s" % ( userName, userDN ) )
           continue
         userName = result[ 'Value' ]
-        result = self._update( "UPDATE `%s` SET UserName=%s WHERE UserDN='%s'" % ( tableName, userName, userDN ) )
+        result = self._update( "UPDATE `%s` SET UserName=%s WHERE UserDN=%s" % ( tableName, userName, userDN ) )
         if not result[ 'OK' ]:
           self.log.error( "Could update username for DN %s: %s" % ( userDN, result[ 'Message' ] ) )
           continue
@@ -186,9 +188,14 @@ class ProxyDB( DB ):
     if not retVal[ 'OK' ]:
       return retVal
     allStr = reqStr + retVal[ 'Value' ]
+    try:
+      sUserDN = self._escapeString( userDN )[ 'Value' ]
+      sAllStr = self._escapeString( allStr )[ 'Value' ]
+    except KeyError:
+      return S_ERROR( "Cannot escape DN" )
     cmd = "INSERT INTO `ProxyDB_Requests` ( Id, UserDN, Pem, ExpirationTime )"
-    cmd += " VALUES ( 0, '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userDN,
-                                                                              allStr,
+    cmd += " VALUES ( 0, %s, %s, TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( sUserDN,
+                                                                              sAllStr,
                                                                               self.__defaultRequestLifetime )
     retVal = self._update( cmd, conn = connObj )
     if not retVal[ 'OK' ]:
@@ -216,8 +223,12 @@ class ProxyDB( DB ):
     """
     Retrieve a request from the DB
     """
-    cmd = "SELECT Pem FROM `ProxyDB_Requests` WHERE Id = %s AND UserDN = '%s'" % ( requestId,
-                                                                                   userDN )
+    try:
+      sUserDN = self._escapeString( userDN )[ 'Value' ]
+    except KeyError:
+      return S_ERROR( "Cannot escape DN" )
+    cmd = "SELECT Pem FROM `ProxyDB_Requests` WHERE Id = %s AND UserDN = %s" % ( requestId,
+                                                                                   sUserDN )
     retVal = self._query( cmd )
     if not retVal[ 'OK' ]:
       return retVal
@@ -338,9 +349,13 @@ class ProxyDB( DB ):
     sLeft = remainingSecs - hLeft * 3600 - mLeft * 60 - dLeft * 86400
     self.log.info( "Storing proxy for credentials %s (%d:%02d:%02d:%02d left)" % ( proxyIdentityDN, dLeft, hLeft, mLeft, sLeft ) )
 
+    try:
+      sUserDN = self._escapeString( userDN )[ 'Value' ]
+      sUserGroup = self._escapeString( userGroup )[ 'Value' ]
+    except KeyError:
+      return S_ERROR( "Cannot escape DN" )
     # Check what we have already got in the repository
-    cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN,
-                                                                                                               userGroup )
+    cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem FROM `ProxyDB_Proxies` WHERE UserDN=%s AND UserGroup=%s" % ( sUserDN, sUserGroup )
     result = self._query( cmd )
     if not result['OK']:
       return result
@@ -358,8 +373,8 @@ class ProxyDB( DB ):
 
     pemChain = chain.dumpAllToString()['Value']
     dValues = { 'UserName' : self._escapeString( userName )[ 'Value' ],
-                'UserDN' : self._escapeString( userDN )[ 'Value' ],
-                'UserGroup' : self._escapeString( userGroup )[ 'Value' ],
+                'UserDN' : sUserDN,
+                'UserGroup' : sUserGroup,
                 'Pem' : self._escapeString( pemChain )[ 'Value' ],
                 'ExpirationTime' : 'TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )' % int( remainingSecs ),
                 'PersistentFlag' : "'False'" }
@@ -406,22 +421,34 @@ class ProxyDB( DB ):
   def deleteProxy( self, userDN, userGroup ):
     """ Remove proxy of the given user from the repository
     """
-
-    req = "DELETE FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN,
-                                                                                   userGroup )
+    try:
+      userDN = self._escapeString( userDN )[ 'Value' ]
+      userGroup = self._escapeString( userGroup )[ 'Value' ]
+    except KeyError:
+      return S_ERROR( "Invalid DN or group" )
+    req = "DELETE FROM `ProxyDB_Proxies` WHERE UserDN=%s AND UserGroup=%s" % ( userDN,
+                                                                               userGroup )
     return self._update( req )
 
   def __getPemAndTimeLeft( self, userDN, userGroup = False, vomsAttr = False ):
+    try:
+      sUserDN = self._escapeString( userDN )[ 'Value' ]
+      if userGroup:
+        sUserGroup = self._escapeString( userGroup )[ 'Value' ]
+      if vomsAttr:
+        sVomsAttr = self._escapeString( vomsAttr )[ 'Value' ]
+    except KeyError:
+      return S_ERROR( "Invalid DN or group" )
     if not vomsAttr:
       table = "`ProxyDB_Proxies`"
     else:
       table = "`ProxyDB_VOMSProxies`"
     cmd = "SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from %s" % table
-    cmd += "WHERE UserDN='%s' AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0" % ( userDN )
+    cmd += "WHERE UserDN=%s AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0" % ( sUserDN )
     if userGroup:
-      cmd += " AND UserGroup='%s'" % userGroup
+      cmd += " AND UserGroup=%s" % sUserGroup
     if vomsAttr:
-      cmd += " AND VOMSAttr='%s'" % vomsAttr
+      cmd += " AND VOMSAttr=%s" % sVomsAttr
     retVal = self._query( cmd )
     if not retVal['OK']:
       return retVal
@@ -617,9 +644,17 @@ class ProxyDB( DB ):
       userName = ""
     else:
       userName = result[ 'Value' ]
+    try:
+      sUserName = self._escapeString( userName )[ 'Value' ]
+      sUserDN = self._escapeString( userDN )[ 'Value' ]
+      sUserGroup = self._escapeString( userGroup )[ 'Value' ]
+      sVomsAttr = self._escapeString( vomsAttr )[ 'Value' ]
+      sPemData = self._escapeString( pemData )
+    except KeyError:
+      return S_ERROR( "Could not escape some data" )
     cmd = "REPLACE INTO `ProxyDB_VOMSProxies` ( UserName, UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
-    cmd += "( '%s', '%s', '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userName, userDN, userGroup,
-                                                                                              vomsAttr, pemData, secsLeft )
+    cmd += "( %s, %s, %s, %s, %s, TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() ) )" % ( sUserName, sUserDN, sUserGroup,
+                                                                                     sVomsAttr, sPemData, secsLeft )
     result = self._update( cmd, conn = connObj )
     if not result[ 'OK' ]:
       return result
@@ -629,8 +664,13 @@ class ProxyDB( DB ):
     """
     Returns the remaining time the proxy is valid
     """
+    try:
+      userDN = self._escapeString( userDN )[ 'Value' ]
+      userGroup = self._escapeString( userGroup )[ 'Value' ]
+    except KeyError:
+      return S_ERROR( "Invalid DN or group" )
     cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) FROM `ProxyDB_Proxies`"
-    retVal = self._query( "%s WHERE UserDN = '%s' AND UserGroup = '%s'" % ( cmd, userDN, userGroup ) )
+    retVal = self._query( "%s WHERE UserDN = %s AND UserGroup = %s" % ( cmd, userDN, userGroup ) )
     if not retVal[ 'OK' ]:
       return retVal
     data = retVal[ 'Value' ]
@@ -678,7 +718,7 @@ class ProxyDB( DB ):
 
   def getCredentialsAboutToExpire( self, requiredSecondsLeft, onlyPersistent = True ):
     cmd = "SELECT UserDN, UserGroup, ExpirationTime, PersistentFlag FROM `ProxyDB_Proxies`"
-    cmd += " WHERE TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) < %s and TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) > 0" % requiredSecondsLeft
+    cmd += " WHERE TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) < %d and TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) > 0" % requiredSecondsLeft
     if onlyPersistent:
       cmd += " AND PersistentFlag = 'True'"
     return self._query( cmd )
@@ -686,11 +726,16 @@ class ProxyDB( DB ):
   def setPersistencyFlag( self, userDN, userGroup, persistent = True ):
     """ Set the proxy PersistentFlag to the flag value
     """
+    try:
+      sUserDN = self._escapeString( userDN )[ 'Value' ]
+      sUserGroup = self._escapeString( userGroup )[ 'Value' ]
+    except KeyError:
+      return S_ERROR( "Can't escape something" )
     if persistent:
       sqlFlag = "True"
     else:
       sqlFlag = "False"
-    retVal = self._query( "SELECT PersistentFlag FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN, userGroup ) )
+    retVal = self._query( "SELECT PersistentFlag FROM `ProxyDB_Proxies` WHERE UserDN=%s AND UserGroup=%s" % ( sUserDN, sUserGroup ) )
     sqlInsert = True
     if retVal[ 'OK' ]:
       data = retVal[ 'Value' ]
@@ -703,11 +748,11 @@ class ProxyDB( DB ):
       if not persistent:
         return S_OK()
       cmd = "INSERT INTO `ProxyDB_Proxies` ( UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
-      cmd += "( '%s', '%s', '', UTC_TIMESTAMP(), 'True' )" % ( userDN, userGroup )
+      cmd += "( %s, %s, '', UTC_TIMESTAMP(), 'True' )" % ( sUserDN, sUserGroup )
     else:
-      cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN='%s' AND UserGroup='%s'" % ( sqlFlag,
-                                                                                            userDN,
-                                                                                            userGroup )
+      cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN=%s AND UserGroup=%s" % ( sqlFlag,
+                                                                                            sUserDN,
+                                                                                            sUserGroup )
 
     retVal = self._update( cmd )
     if not retVal[ 'OK' ]:
@@ -777,12 +822,16 @@ class ProxyDB( DB ):
     """
       Add an action to the log
     """
+    try:
+      sAction = self._escapeString( action )[ 'Value' ]
+      sIssuerDN = self._escapeString( issuerDN )[ 'Value' ]
+      sIssuerGroup = self._escapeString( issuerGroup )[ 'Value' ]
+      sTargetDN = self._escapeString( targetDN )[ 'Value' ]
+      sTargetGroup = self._escapeString( targetGroup )[ 'Value' ]
+    except KeyError:
+      return S_ERROR( "Can't escape from death" )
     cmd = "INSERT INTO `ProxyDB_Log` ( Action, IssuerDN, IssuerGroup, TargetDN, TargetGroup, Timestamp ) VALUES "
-    cmd += "( '%s', '%s', '%s', '%s', '%s', UTC_TIMESTAMP() )" % ( action,
-                                                                   issuerDN,
-                                                                   issuerGroup,
-                                                                   targetDN,
-                                                                   targetGroup )
+    cmd += "( %s, %s, %s, %s, %s, UTC_TIMESTAMP() )" % ( sAction, sIssuerDN, sIssuerGroup, sTargetDN, sTargetGroup )
     retVal = self._update( cmd )
     if not retVal[ 'OK' ]:
       self.log.error( "Can't add a proxy action log: ", retVal[ 'Message' ] )
@@ -881,7 +930,6 @@ class ProxyDB( DB ):
     return self._update( cmd )
 
   def sendExpirationNotifications( self ):
-    print "KEWL"*10
     result = self.__cleanExpNotifs()
     if not result[ 'OK' ]:
       return result
@@ -919,15 +967,20 @@ class ProxyDB( DB ):
         if not self.__notifyProxyAboutToExpire( userDN, group, lTime, notifLimit ):
           #Cannot send notification, retry later
           break
+        try:
+          sUserDN = self._escapeString( userDN )[ 'Value' ]
+          sGroup = self._escapeString( group )[ 'Value' ]
+        except KeyError:
+          return S_ERROR( "OOPS" )
         if notKey not in notifDone:
-          values = "( '%s', '%s', %d, TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userDN, group, notifLimit, lTime )
+          values = "( %s, %s, %d, TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( sUserDN, sGroup, notifLimit, lTime )
           cmd = "INSERT INTO `ProxyDB_ExpNotifs` ( UserDN, UserGroup, LifeLimit, ExpirationTime ) VALUES %s" % values
           result = self._update( cmd )
           if not result[ 'OK' ]:
             gLogger.error( "Could not mark notification as sent", result[ 'Message' ] )
         else:
           values = "LifeLimit = %d, ExpirationTime = TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )" % ( notifLimit, lTime )
-          cmd = "UPDATE `ProxyDB_ExpNotifs` SET %s WHERE UserDN = '%s' AND UserGroup = '%s'" % ( values, userDN, group )
+          cmd = "UPDATE `ProxyDB_ExpNotifs` SET %s WHERE UserDN = %s AND UserGroup = %s" % ( values, sUserDN, sGroup )
           result = self._update( cmd )
           if not result[ 'OK' ]:
             gLogger.error( "Could not mark notification as sent", result[ 'Message' ] )
