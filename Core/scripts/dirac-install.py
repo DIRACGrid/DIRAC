@@ -1022,9 +1022,10 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
           )
 
 def usage():
-  print "Usage %s <opts> <cfgFile>" % sys.argv[0]
+  print "\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename( sys.argv[0] )
+  print "\nOptions:"
   for cmdOpt in cmdOpts:
-    print " %s %s : %s" % ( cmdOpt[0].ljust( 3 ), cmdOpt[1].ljust( 20 ), cmdOpt[2] )
+    print "\n  %s %s : %s" % ( cmdOpt[0].ljust( 3 ), cmdOpt[1].ljust( 20 ), cmdOpt[2] )
   print
   print "Known options and default values from /defaults section of releases file"
   for options in [ ( 'Release', cliParams.release ),

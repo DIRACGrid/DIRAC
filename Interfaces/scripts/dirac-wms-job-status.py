@@ -16,9 +16,9 @@ from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.Time import toString, date, day
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
+                                     '\nUsage:\n',
                                      '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                     'Arguments:',
+                                     '\nArguments:\n',
                                      '  JobID:    DIRAC Job ID' ] ) )
 
 Script.registerSwitch( "f:", "File=", "Get status for jobs with IDs from the file" )

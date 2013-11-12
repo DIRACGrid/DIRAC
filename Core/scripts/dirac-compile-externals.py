@@ -119,161 +119,162 @@ def fixAbsoluteLinks( path ):
     elif os.path.isdir( entryPath ):
       fixAbsoluteLinks( entryPath )
 
-cmdOpts = ( ( 'D:', 'destination=', 'Destination where to build the externals' ),
-            ( 't:', 'type=', 'Type of compilation (default: client)' ),
-            ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
-            ( 'v:', 'version=', 'Version of the externals to compile (default will be the latest commit)' ),
-            ( 'h', 'help', 'Show this help' ),
-            ( 'i:', 'pythonVersion=', 'Python version to compile (default 26)' ),
-            ( 'f', 'fixLinksOnly', 'Only fix absolute soft links' ),
-            ( 'j:', 'makeJobs=', 'Number of make jobs, by default is 1' )
-          )
-
-compExtVersion = False
-compType = 'client'
-compDest = False
-compExtSource = False
-onlyFixLinks = False
-makeArgs = []
-compVersionDict = { 'PYTHONVERSION' : '2.6' }
-
-optList, args = getopt.getopt( sys.argv[1:],
-                               "".join( [ opt[0] for opt in cmdOpts ] ),
-                               [ opt[1] for opt in cmdOpts ] )
-for o, v in optList:
-  if o in ( '-h', '--help' ):
-    print __doc__.split( '\n' )[1]
-    print "Usage:\n  %s [options]..." % sys.argv[0]
-    print "Options:"
-    for cmdOpt in cmdOpts:
-      print "-%s --%s : %s" % ( cmdOpt[0].ljust( 3 ), cmdOpt[1].ljust( 15 ), cmdOpt[2] )
-    sys.exit( 1 )
-  elif o in ( '-t', '--type' ):
-    compType = v.lower()
-  elif o in ( '-e', '--externalsPath' ):
-    compExtSource = v
-  elif o in ( '-D', '--destination' ):
-    compDest = v
-  elif o in ( '-v', '--version' ):
-    compExtVersion = v
-  elif o in ( '-i', '--pythonversion' ):
-    compVersionDict[ 'PYTHONVERSION' ] = ".".join( [ c for c in v if c in "0123456789" ] )
-  elif o in ( '-f', '--fixLinksOnly' ):
-    onlyFixLinks = True
-  elif o in ( '-j', '--makeJobs' ):
-    try:
-      v = int( v )
-    except:
-      print "Value for makeJobs is not an integer (%s)" % v
+if __name__ == "__main__":
+  cmdOpts = ( ( 'D:', 'destination=', 'Destination where to build the externals' ),
+              ( 't:', 'type=', 'Type of compilation (default: client)' ),
+              ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
+              ( 'v:', 'version=', 'Version of the externals to compile (default will be the latest commit)' ),
+              ( 'h', 'help', 'Show this help' ),
+              ( 'i:', 'pythonVersion=', 'Python version to compile (default 26)' ),
+              ( 'f', 'fixLinksOnly', 'Only fix absolute soft links' ),
+              ( 'j:', 'makeJobs=', 'Number of make jobs, by default is 1' )
+            )
+  
+  compExtVersion = False
+  compType = 'client'
+  compDest = False
+  compExtSource = False
+  onlyFixLinks = False
+  makeArgs = []
+  compVersionDict = { 'PYTHONVERSION' : '2.6' }
+  
+  optList, args = getopt.getopt( sys.argv[1:],
+                                 "".join( [ opt[0] for opt in cmdOpts ] ),
+                                 [ opt[1] for opt in cmdOpts ] )
+  for o, v in optList:
+    if o in ( '-h', '--help' ):
+      print __doc__.split( '\n' )[1]
+      print "\nUsage:\n\n  %s [options]..." % sys.argv[0]
+      print "\nOptions:\n"
+      for cmdOpt in cmdOpts:
+        print "  -%s --%s : %s" % ( cmdOpt[0].ljust( 3 ), cmdOpt[1].ljust( 15 ), cmdOpt[2] )
       sys.exit( 1 )
-    if v < 1:
-      print "Value for makeJobs mas to be greater than 0 (%s)" % v
+    elif o in ( '-t', '--type' ):
+      compType = v.lower()
+    elif o in ( '-e', '--externalsPath' ):
+      compExtSource = v
+    elif o in ( '-D', '--destination' ):
+      compDest = v
+    elif o in ( '-v', '--version' ):
+      compExtVersion = v
+    elif o in ( '-i', '--pythonversion' ):
+      compVersionDict[ 'PYTHONVERSION' ] = ".".join( [ c for c in v if c in "0123456789" ] )
+    elif o in ( '-f', '--fixLinksOnly' ):
+      onlyFixLinks = True
+    elif o in ( '-j', '--makeJobs' ):
+      try:
+        v = int( v )
+      except:
+        print "Value for makeJobs is not an integer (%s)" % v
+        sys.exit( 1 )
+      if v < 1:
+        print "Value for makeJobs mas to be greater than 0 (%s)" % v
+        sys.exit( 1 )
+      makeArgs.append( "-j %d" % int( v ) )
+  
+  #Find platform
+  basePath = os.path.dirname( os.path.realpath( __file__ ) )
+  DIRACRoot = findDIRACRoot( basePath )
+  if DIRACRoot:
+    platformPath = os.path.join( DIRACRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
+    platFD = open( platformPath, "r" )
+    Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
+    platFD.close()
+    platform = Platform.getPlatformString()
+  
+  if not compDest:
+    if not DIRACRoot:
+      print "Error: Could not find DIRAC root"
       sys.exit( 1 )
-    makeArgs.append( "-j %d" % int( v ) )
-
-#Find platform
-basePath = os.path.dirname( os.path.realpath( __file__ ) )
-DIRACRoot = findDIRACRoot( basePath )
-if DIRACRoot:
-  platformPath = os.path.join( DIRACRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
-  platFD = open( platformPath, "r" )
-  Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-  platFD.close()
-  platform = Platform.getPlatformString()
-
-if not compDest:
-  if not DIRACRoot:
-    print "Error: Could not find DIRAC root"
+    print "Using platform %s" % platform
+    if not platform or platform == "ERROR":
+      print >> sys.stderr, "Can not determine local platform"
+      sys.exit( -1 )
+    compDest = os.path.join( DIRACRoot, platform )
+  
+  if onlyFixLinks:
+    print "Fixing absolute links"
+    fixAbsoluteLinks( compDest )
+    sys.exit( 0 )
+  
+  if compDest:
+    if os.path.isdir( compDest ):
+      oldCompDest = compDest + '.old'
+      print "Warning: %s already exists! Backing it up to %s" % ( compDest, oldCompDest )
+      if os.path.exists( oldCompDest ):
+        shutil.rmtree( oldCompDest )
+      os.rename( compDest, oldCompDest )
+  
+  if not compExtSource:
+    workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
+    print "Creating temporary work dir at %s" % workDir
+    downOK = False
+    if not downloadExternals( workDir, compExtVersion ):
+      print "Oops! Could not download Externals!"
+      sys.exit( 1 )
+    externalsDir = os.path.join( workDir, "Externals" )
+  else:
+    externalsDir = compExtSource
+  
+  copyFromDIRAC( "DIRAC/Core/scripts/dirac-platform.py", externalsDir, True )
+  copyFromDIRAC( "DIRAC/Core/Utilities/CFG.py", externalsDir, False, [ '@gCFGSynchro' ] )
+  
+  #Load CFG
+  cfgPath = os.path.join( externalsDir, "CFG.py" )
+  cfgFD = open( cfgPath, "r" )
+  CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
+  cfgFD.close()
+  
+  buildCFG = CFG.CFG().loadFromFile( os.path.join( externalsDir, "builds.cfg" ) )
+  
+  if compType not in buildCFG.listSections():
+    print "Invalid compilation type %s" % compType
+    print " Valid ones are: %s" % ", ".join( buildCFG.listSections() )
     sys.exit( 1 )
-  print "Using platform %s" % platform
-  if not platform or platform == "ERROR":
-    print >> sys.stderr, "Can not determine local platform"
-    sys.exit( -1 )
-  compDest = os.path.join( DIRACRoot, platform )
-
-if onlyFixLinks:
+  
+  packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
+  
+  
+  if compDest:
+    makeArgs.append( "-p '%s'" % os.path.realpath( compDest ) )
+  
+  #Substitution of versions
+  finalPackages = []
+  for prog in packagesToBuild:
+    for k in compVersionDict:
+      finalPackages.append( prog.replace( "$%s$" % k, compVersionDict[k] ) )
+  
+  print "Trying to get a raw environment"
+  patDet = os.path.join( DIRACRoot, platform )
+  for envVar in ( 'LD_LIBRARY_PATH', 'PATH' ):
+    if envVar not in os.environ:
+      continue
+    envValue = os.environ[ envVar ]
+    valList = [ val.strip() for val in envValue.split( ":" ) if envValue.strip() ]
+    fixedValList = []
+    for value in valList:
+      if value.find( patDet ) != 0:
+        fixedValList.append( value )
+    os.environ[ envVar ] = ":".join( fixedValList )
+  
+  makeArgs = " ".join( makeArgs )
+  print "Building %s" % ", ".join ( finalPackages )
+  for prog in finalPackages:
+    print "== BUILDING %s == " % prog
+    progDir = os.path.join( externalsDir, prog )
+    makePath = os.path.join( progDir, "dirac-make.py" )
+    buildOutPath = os.path.join( progDir, "build.out" )
+    os.chmod( makePath, executablePerms )
+    instCmd = "'%s' %s" % ( makePath, makeArgs )
+    print " - Executing %s" % instCmd
+    ret = os.system( "%s  > '%s' 2>&1" % ( instCmd, buildOutPath ) )
+    if ret:
+      print "Oops! Error while compiling %s" % prog
+      print "Take a look at %s for more info" % buildOutPath
+      sys.exit( 1 )
+  
   print "Fixing absolute links"
   fixAbsoluteLinks( compDest )
-  sys.exit( 0 )
-
-if compDest:
-  if os.path.isdir( compDest ):
-    oldCompDest = compDest + '.old'
-    print "Warning: %s already exists! Backing it up to %s" % ( compDest, oldCompDest )
-    if os.path.exists( oldCompDest ):
-      shutil.rmtree( oldCompDest )
-    os.rename( compDest, oldCompDest )
-
-if not compExtSource:
-  workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
-  print "Creating temporary work dir at %s" % workDir
-  downOK = False
-  if not downloadExternals( workDir, compExtVersion ):
-    print "Oops! Could not download Externals!"
-    sys.exit( 1 )
-  externalsDir = os.path.join( workDir, "Externals" )
-else:
-  externalsDir = compExtSource
-
-copyFromDIRAC( "DIRAC/Core/scripts/dirac-platform.py", externalsDir, True )
-copyFromDIRAC( "DIRAC/Core/Utilities/CFG.py", externalsDir, False, [ '@gCFGSynchro' ] )
-
-#Load CFG
-cfgPath = os.path.join( externalsDir, "CFG.py" )
-cfgFD = open( cfgPath, "r" )
-CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
-cfgFD.close()
-
-buildCFG = CFG.CFG().loadFromFile( os.path.join( externalsDir, "builds.cfg" ) )
-
-if compType not in buildCFG.listSections():
-  print "Invalid compilation type %s" % compType
-  print " Valid ones are: %s" % ", ".join( buildCFG.listSections() )
-  sys.exit( 1 )
-
-packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
-
-
-if compDest:
-  makeArgs.append( "-p '%s'" % os.path.realpath( compDest ) )
-
-#Substitution of versions
-finalPackages = []
-for prog in packagesToBuild:
-  for k in compVersionDict:
-    finalPackages.append( prog.replace( "$%s$" % k, compVersionDict[k] ) )
-
-print "Trying to get a raw environment"
-patDet = os.path.join( DIRACRoot, platform )
-for envVar in ( 'LD_LIBRARY_PATH', 'PATH' ):
-  if envVar not in os.environ:
-    continue
-  envValue = os.environ[ envVar ]
-  valList = [ val.strip() for val in envValue.split( ":" ) if envValue.strip() ]
-  fixedValList = []
-  for value in valList:
-    if value.find( patDet ) != 0:
-      fixedValList.append( value )
-  os.environ[ envVar ] = ":".join( fixedValList )
-
-makeArgs = " ".join( makeArgs )
-print "Building %s" % ", ".join ( finalPackages )
-for prog in finalPackages:
-  print "== BUILDING %s == " % prog
-  progDir = os.path.join( externalsDir, prog )
-  makePath = os.path.join( progDir, "dirac-make.py" )
-  buildOutPath = os.path.join( progDir, "build.out" )
-  os.chmod( makePath, executablePerms )
-  instCmd = "'%s' %s" % ( makePath, makeArgs )
-  print " - Executing %s" % instCmd
-  ret = os.system( "%s  > '%s' 2>&1" % ( instCmd, buildOutPath ) )
-  if ret:
-    print "Oops! Error while compiling %s" % prog
-    print "Take a look at %s for more info" % buildOutPath
-    sys.exit( 1 )
-
-print "Fixing absolute links"
-fixAbsoluteLinks( compDest )
-
-
-
+  
+  
+  
