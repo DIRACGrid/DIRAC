@@ -648,7 +648,7 @@ class ProxyDB( DB ):
       sUserDN = self._escapeString( userDN )[ 'Value' ]
       sUserGroup = self._escapeString( userGroup )[ 'Value' ]
       sVomsAttr = self._escapeString( vomsAttr )[ 'Value' ]
-      sPemData = self._escapeString( pemData )
+      sPemData = self._escapeString( pemData )[ 'Value' ]
     except KeyError:
       return S_ERROR( "Could not escape some data" )
     cmd = "REPLACE INTO `ProxyDB_VOMSProxies` ( UserName, UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
