@@ -236,10 +236,6 @@ def getFTS():
   ftsEndpoints = gConfig.getOptions( _basePath )
   return ftsEndpoints 
 
-def getSpaceTokens():
-  ''' Get Space Tokens '''
-  return  S_OK( ( 'LHCb_USER', 'LHCb-Disk', 'LHCb-Tape', 'LHCb-EOS' ) )
-
 def getSpaceTokenEndpoints():
   ''' Get Space Token Endpoints '''
   
