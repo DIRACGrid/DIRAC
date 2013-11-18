@@ -131,6 +131,6 @@ CREATE TABLE DataFiles (
    LFN VARCHAR(255) UNIQUE,
    Status varchar(32) DEFAULT 'AprioriGood',
    INDEX (Status),
-   PRIMARY KEY (FileID, LFN)
+   PRIMARY KEY (FileID)
 );
 
