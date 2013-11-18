@@ -96,6 +96,12 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
 
+[v6r9p27]
+
+*SMS
+FIX: StorageManagementDB - in removeUnlinkedReplicas() second look for CacheReplicas 
+     for which there is no entry in StageRequests
+
 [v6r9p26]
 
 *Resources

@@ -1102,6 +1102,14 @@ class StorageManagementDB( DB ):
 
       gLogger.debug( "StorageManagementDB.removeUnlinkedReplicas: Successfully removed %s StageRequests entries for ReplicaIDs: %s." % ( res['Value'], replicaIDs ) )
 
+    # Second look for CacheReplicas for which there is no entry in StageRequests
+    req = 'SELECT ReplicaID FROM CacheReplicas WHERE Links = 0 AND ReplicaID NOT IN ( SELECT DISTINCT( ReplicaID ) FROM StageRequests )'
+    res = self._query( req, connection )
+    if not res['OK']:
+       gLogger.error( "StorageManagementDB.removeUnlinkedReplicas. Problem selecting entries from CacheReplicas where Links = 0." )
+     else:
+      replicaIDs.extend( [ row[0] for row in res['Value'] ] )
+
     if not replicaIDs:
       return S_OK()
 
