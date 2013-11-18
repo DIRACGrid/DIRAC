@@ -1,3 +1,9 @@
+[v6r9p27]
+
+*SMS
+FIX: StorageManagementDB - in removeUnlinkedReplicas() second look for CacheReplicas 
+     for which there is no entry in StageRequests
+
 [v6r9p26]
 
 *Resources
