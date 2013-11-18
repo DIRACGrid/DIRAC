@@ -5,7 +5,9 @@
   
 '''
 
+
 import lcg_util
+
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess                            import pythonCall
@@ -13,12 +15,15 @@ from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
+
 __RCSID__ = '$Id:  $'
+
 
 class SpaceTokenOccupancyCommand( Command ):
   '''
   Uses lcg_util to query status of endpoint for a given token.
   ''' 
+
 
   def __init__( self, args = None, clients = None ):
     
@@ -28,6 +33,7 @@ class SpaceTokenOccupancyCommand( Command ):
       self.rmClient = self.apis[ 'ResourceManagementClient' ]
     else:
       self.rmClient = ResourceManagementClient()
+
 
   def _storeCommand( self, results ):
     '''
@@ -45,6 +51,7 @@ class SpaceTokenOccupancyCommand( Command ):
         return resQuery
     
     return S_OK()  
+
 
   def _prepareCommand( self ):
     '''
@@ -70,6 +77,7 @@ class SpaceTokenOccupancyCommand( Command ):
     spaceToken = spaceToken[ 'Value']
   
     return S_OK( ( endpoint, spaceToken ) )
+
 
   def doNew( self, masterParams = None ):
     '''
@@ -116,6 +124,7 @@ class SpaceTokenOccupancyCommand( Command ):
            
     return S_OK( [ sTokenDict ] )                                 
 
+
   def doCache( self ):
     '''
       Method that reads the cache table and tries to read from it. It will 
@@ -133,6 +142,7 @@ class SpaceTokenOccupancyCommand( Command ):
            
     return result    
 
+
   def doMaster( self ):
     '''
       Master method. Gets all endpoints from the storage elements and all 
@@ -141,38 +151,37 @@ class SpaceTokenOccupancyCommand( Command ):
       in the database for those combinations, which then are not queried. 
     '''
     
-    spaceTokens = CSHelpers.getSpaceTokens() 
-    if not spaceTokens[ 'OK' ]:
-      return spaceTokens
-    spaceTokens = spaceTokens[ 'Value' ]
-
-    elementsToCheck = []
-
-    seEndpoints = CSHelpers.getStorageElementEndpoints()
-    if not seEndpoints[ 'OK' ]:
-      return seEndpoints
-    seEndpoints = seEndpoints[ 'Value' ]   
-
-    for seEndpoint in seEndpoints:
-      for spaceToken in spaceTokens:
-        elementsToCheck.append( ( seEndpoint, spaceToken ) )
-                                  
-#    resQuery = self.rmClient.selectSpaceTokenOccupancyCache( meta = { 'columns' : [ 'Endpoint', 'Token' ] } )
-#    if not resQuery[ 'OK' ]:
-#      return resQuery
-#    resQuery = resQuery[ 'Value' ]                                  
-#
-#    elementsToQuery = list( set( elementsToCheck ).difference( set( resQuery ) ) )
+    storageElementNames = CSHelpers.getStorageElements()
+    if not storageElementNames[ 'OK' ]:
+      return storageElementNames
+    storageElementNames = storageElementNames[ 'Value' ]
     
-    gLogger.verbose( 'Processing %s' % elementsToCheck )
+    endpointTokenSet = set()
     
-    for elementToQuery in elementsToCheck:
+    for storageElementName in storageElementNames:
+    
+      endpoint = CSHelpers.getStorageElementEndpoint( storageElementName )
+      if not endpoint[ 'OK' ]:
+        continue
+      endpoint = endpoint[ 'Value' ]
+    
+      spaceToken = CSHelpers.getStorageElementSpaceToken( storageElementName )
+      if not spaceToken[ 'OK' ]:
+        continue
+      spaceToken = spaceToken[ 'Value' ]
+      
+      endpointTokenSet.add( ( endpoint, spaceToken ) )
+    
+    gLogger.verbose( 'Processing %s' % endpointTokenSet )
+    
+    for elementToQuery in endpointTokenSet:
 
       result = self.doNew( elementToQuery  ) 
       if not result[ 'OK' ]:
         self.metrics[ 'failed' ].append( result )      
        
     return S_OK( self.metrics )
-      
-################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+
+
+#...............................................................................
+#EOF

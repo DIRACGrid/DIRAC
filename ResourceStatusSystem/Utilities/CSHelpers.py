@@ -120,12 +120,6 @@ def getStorageElementEndpoints( storageElements = None ):
   
   return S_OK( list( set( storageElementEndpoints ) ) )
 
-
-def getSpaceTokens():
-  ''' Get Space Tokens '''
-  return  S_OK( ( 'LHCb_USER', 'LHCb-Disk', 'LHCb-Tape', 'LHCb-EOS' ) )
-
-
 def getSpaceTokenEndpoints():
   ''' Get Space Token Endpoints '''
   

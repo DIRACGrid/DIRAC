@@ -953,13 +953,17 @@ def fixBuildPaths():
 """
 
   # Locate build path (from header of pydoc)
-  pydocPath = os.path.join( cliParams.targetPath, cliParams.platform, 'bin', 'pydoc' )
+  binaryPath = os.path.join( cliParams.targetPath, cliParams.platform )
+  pydocPath = os.path.join( binaryPath, 'bin', 'pydoc' )
   try:
     fd = open( pydocPath )
     line = fd.readline()
     fd.close()
     buildPath = line[2:line.find( cliParams.platform ) - 1]
-    replaceCmd = "grep -rIl '%s' %s | xargs sed -i'.org' 's:%s:%s:g'" % ( buildPath, cliParams.targetPath, buildPath, cliParams.targetPath )
+    replaceCmd = "grep -rIl '%s' %s | xargs sed -i'.org' 's:%s:%s:g'" % ( buildPath, 
+                                                                          binaryPath, 
+                                                                          buildPath, 
+                                                                          cliParams.targetPath )
     os.system( replaceCmd )
 
   except:

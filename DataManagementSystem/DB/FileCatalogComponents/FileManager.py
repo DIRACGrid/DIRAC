@@ -752,7 +752,7 @@ class FileManager(FileManagerBase):
           replicaStatusIDs.append( result['Value'] )
     fileStatusIDs = []
     if not allStatus:
-      for status in self.db.visibleReplicaStatus:
+      for status in self.db.visibleFileStatus:
         result = self._getStatusInt( status, connection=connection )
         if result['OK']:
           fileStatusIDs.append( result['Value'] )
