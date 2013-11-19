@@ -1,11 +1,9 @@
-########################################################################
-# $Header$
-########################################################################
 """ StorageManagerHandler is the implementation of the StorageManagementDB in the DISET framework """
+
 __RCSID__ = "$Id$"
 
-from types import *
-from DIRAC                                                 import gLogger, gConfig, S_OK, S_ERROR
+from types import IntType, DictType, ListType, StringType, LongType
+from DIRAC                                                 import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler                       import RequestHandler
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB  import StorageManagementDB
 # This is a global instance of the StorageDB
