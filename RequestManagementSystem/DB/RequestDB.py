@@ -560,17 +560,19 @@ class RequestDB( DB ):
     requestStatus = query['Value'][0][0]
     return S_OK( requestStatus )
 
-  def getRequestFileStatus( self, requestID, lfnList ):
+  def getRequestFileStatus( self, requestName, lfnList ):
     """ get status for files in request given its name
 
     :param str requestName: Request.RequestName
     :param list lfnList: list of LFNs
     """
-    requestName = self.getRequestName( requestID )
+    if type( requestName ) == int:
+      requestName = self.getRequestName( requestName )
     if not requestName["OK"]:
       self.log.error( "getRequestFileStatus: %s" % requestName["Message"] )
       return requestName
-    requestName = requestName["Value"]
+    else:
+      requestName = requestName["Value"]
 
     req = self.peekRequest( requestName )
     if not req["OK"]:
@@ -585,13 +587,15 @@ class RequestDB( DB ):
           res[opFile.LFN] = opFile.Status
     return S_OK( res )
 
-  def getRequestInfo( self, requestID ):
+  def getRequestInfo( self, requestName ):
     """ get request info given Request.RequestID """
-    requestName = self.getRequestName( requestID )
+    if type( requestName ) == int:
+      requestName = self.getRequestName( requestName )
     if not requestName["OK"]:
       self.log.error( "getRequestInfo: %s" % requestName["Message"] )
       return requestName
-    requestName = requestName["Value"]
+    else:
+      requestName = requestName["Value"]
     requestInfo = self.getRequestProperties( requestName, [ "RequestID", "Status", "RequestName", "JobID",
                                                             "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent",
                                                             "CreationTime", "SubmitTime", "lastUpdate" ] )
