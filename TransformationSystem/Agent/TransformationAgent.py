@@ -27,7 +27,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     AgentModule.__init__( self, *args, **kwargs )
     TransformationAgentsUtilities.__init__( self )
 
-    #few parameters
+    # few parameters
     self.pluginLocation = self.am_getOption( 'PluginLocation',
                                              'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
@@ -41,14 +41,14 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
       self.transformationTypes = sortList( dataProc + dataManip )
 
-    #clients
+    # clients
     self.transfClient = TransformationClient()
 
-    #for the threading
+    # for the threading
     self.transQueue = Queue.Queue()
     self.transInQueue = []
 
-    #for caching using a pickle file
+    # for caching using a pickle file
     self.workDirectory = self.am_getWorkDirectory()
     self.cacheFile = os.path.join( self.workDirectory, 'ReplicaCache.pkl' )
     self.dateWriteCache = datetime.datetime.utcnow()
@@ -166,7 +166,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ thread - does the real job: processing the transformations to be processed
     """
 
-    #Each thread will have its own clients
+    # Each thread will have its own clients
     clients = self._getClients()
 
     while True:
@@ -307,7 +307,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
           self._logInfo( "Updated transformation status to 'Active'.",
                           method = "_getTransformationFiles", transID = transID )
       return S_OK()
-    #Check if transformation is kicked
+    # Check if transformation is kicked
     kickFile = os.path.join( self.workDirectory, 'KickTransformation_%s' % str( transID ) )
     try:
       kickTrans = os.path.exists( kickFile )
@@ -316,9 +316,9 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     except:
       pass
 
-    #Check if something new happened
+    # Check if something new happened
+    now = datetime.datetime.utcnow()
     if not kickTrans:
-      now = datetime.datetime.utcnow()
       nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = self.noUnusedDelay )
       skip = now < nextStamp
       if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
@@ -442,7 +442,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       dataReplicas[lfn] = []
     self._logInfo( "Replica results for %d files obtained in %.2f seconds" % ( len( lfns ), time.time() - startTime ),
                     method = method, transID = transID )
-    #If files are neither Successful nor Failed, they are set problematic in the FC
+    # If files are neither Successful nor Failed, they are set problematic in the FC
     problematicLfns = [lfn for lfn in lfns if lfn not in replicas['Successful'] and lfn not in replicas['Failed']]
     if problematicLfns:
       self._logInfo( "%d files found problematic in the catalog" % len( problematicLfns ) )
@@ -537,7 +537,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     if ( now - self.dateWriteCache ) < datetime.timedelta( minutes = 60 ) and not force:
       return
     while force and self.writingCache:
-      #If writing is forced, wait until the previous write is over
+      # If writing is forced, wait until the previous write is over
       time.sleep( 10 )
     try:
       startTime = time.time()
