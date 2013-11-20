@@ -51,6 +51,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # for caching using a pickle file
     self.workDirectory = self.am_getWorkDirectory()
     self.cacheFile = os.path.join( self.workDirectory, 'ReplicaCache.pkl' )
+    self.controlDirectory = self.am_getControlDirectory()
     self.dateWriteCache = datetime.datetime.utcnow()
 
     # Validity of the cache
@@ -308,7 +309,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                           method = "_getTransformationFiles", transID = transID )
       return S_OK()
     # Check if transformation is kicked
-    kickFile = os.path.join( self.workDirectory, 'KickTransformation_%s' % str( transID ) )
+    kickFile = os.path.join( self.controlDirectory, 'KickTransformation_%s' % str( transID ) )
     try:
       kickTrans = os.path.exists( kickFile )
       if kickTrans:
