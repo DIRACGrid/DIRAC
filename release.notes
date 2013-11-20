@@ -1,4 +1,4 @@
-[v6r10-pre14]
+[v6r10-pre15]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -14,6 +14,7 @@ FIX: dirac-install - create links to permanent directories before module install
 CHANGE: InstallTools - use printTable() utility for table printing
 CHANGE: move printTable() utility to Core.Utilities.PrettyPrint
 NEW: added installation configuration examples
+FIX: dirac-install - fixBuildPath() operates only on files in the directory
 
 *CS
 CHANGE: getVOMSVOForGroup() uses the VOMSName option of the VO definition 
@@ -50,6 +51,7 @@ FIX: FileCatalog - initial argument check strips off leading lfn:, LFN:, /grid, 
 NEW: FileCatalog - added new setFileStatus() interface, closes #170, valid and visible file and replica statuses can be defined in respective options.
 CHANGE: multiple new FTS system fixes
 CHANGE: uniform argument checking with checkArgumentFormat() in multiple modules
+CHANGE: FileCatalog - add Trash to the default replica valid statuses
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
@@ -62,11 +64,13 @@ NEW: new Operations option /Services/JobMonitoring/GlobalJobsInfo ( True by defa
      allow or not job info lookup by anybody, used in JobMonitoringHandler       
 BUGFIX: SiteDirector - take into account the target queue Platform
 BUGFIX: JobDB - bug in __insertNewJDL()    
-CHANGE: dirac-admin-show-task-queues - enhanced output    
+CHANGE: dirac-admin-show-task-queues - enhanced output  
+CHNAGE: JobLoggingDB.sql - use trigger to manage the new LoggingInfo structure  
         
 *RSS
 FIX: DowntimeCommand - take the latest Downtime that fits    
-NEW: porting new Policies from integration    
+NEW: porting new Policies from integration  
+NEW: RSS SpaceToken command querying endpoints/tokens that exist  
         
 *Resources
 NEW: added SSHOARComputingElement class        
@@ -78,6 +82,7 @@ BUGFIX: TransformationClient(Handler) - few minor fixes
 NEW: TransformationDB - backported __deleteTransformationFileTask(s) methods
 CHANGE: TransformationDB(Client) - fixes to reestablish the FileCatalog interface
 FIX: TransformationAgent - added MissingInFC to consider for Removal transformations
+FIX: TransformationDB.sql - DataFiles primary key is changed to (FileID) from (FileID,LFN) 
 
 *RMS
 NEW: Migrate to use the new Request Management by all the clients
@@ -90,6 +95,12 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 *Workflow
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
+
+[v6r9p27]
+
+*SMS
+FIX: StorageManagementDB - in removeUnlinkedReplicas() second look for CacheReplicas 
+     for which there is no entry in StageRequests
 
 [v6r9p26]
 

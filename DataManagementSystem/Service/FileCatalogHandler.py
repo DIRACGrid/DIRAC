@@ -56,7 +56,7 @@ def initializeFileCatalogHandler( serviceInfo ):
                     'ResolvePFN'          : True,
                     'DefaultUmask'        : 0775,
                     'ValidFileStatus'     : ['AprioriGood','Trash','Removing','Probing'],
-                    'ValidReplicaStatus'  : ['AprioriGood','Removing','Probing'],
+                    'ValidReplicaStatus'  : ['AprioriGood','Trash','Removing','Probing'],
                     'VisibleFileStatus'   : ['AprioriGood'],
                     'VisibleReplicaStatus': ['AprioriGood']}
   for configKey in sortList( defaultConfig.keys() ):
