@@ -184,18 +184,18 @@ class RequestTasks( TaskBase ):
       requestName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
 
       # FIXME: trying to see if it is in the old system
-      reqInfo = self.__getRequestInfoOLDSystem( requestName )
+      reqID = self.__getRequestIDOLDSystem( requestName )
       # FIXME: and in the new, if it is not in the previous one
-      if not reqInfo:
-        reqInfo = self.__getRequestInfo( requestName )
+      if not reqID:
+        reqID = self.__getRequestID( requestName )
 
-      if reqInfo:
-        taskNameIDs[requestName] = reqInfo
+      if reqID:
+        taskNameIDs[requestName] = reqID
       else:
         noTasks.append( requestName )
     return S_OK( {'NoTasks':noTasks, 'TaskNameIDs':taskNameIDs} )
 
-  def __getRequestInfoOLDSystem( self, requestName ):
+  def __getRequestIDOLDSystem( self, requestName ):
     """ for the OLD RMS
     """
     # FIXME: this should disappear
@@ -205,8 +205,8 @@ class RequestTasks( TaskBase ):
     else:
       return 0
 
-  def __getRequestInfo( self, requestName ):
-    """ Getting the Request status from the new RMS
+  def __getRequestID( self, requestName ):
+    """ Getting the info from the new RMS
     """
     # FIXME: this should stay
     res = self.requestClient.getRequestInfo( requestName )

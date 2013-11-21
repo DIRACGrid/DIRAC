@@ -202,16 +202,16 @@ class ReqClient( Client ):
     """ get request name for a given requestID """
     return self.requestManager().getRequestName( requestID )
 
-  def getRequestInfo( self, requestID ):
+  def getRequestInfo( self, requestName ):
     """ The the request info given a request id.
 
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestID )
-    requestInfo = self.requestManager().getRequestInfo( requestID )
+    self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestName )
+    requestInfo = self.requestManager().getRequestInfo( requestName )
     if not requestInfo["OK"]:
-      self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestID,
+      self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestName,
                                                                                       requestInfo["Message"] ) )
     return requestInfo
 

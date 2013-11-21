@@ -360,7 +360,7 @@ class RequestDB( DB ):
     """ select :columnNames: from Request table  """
     columnNames = columnNames if columnNames else Request.tableDesc()["Fields"].keys()
     columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
-    return "SELECT %s FROM `Request` WHERE `RequestName` = `%s`;" % ( columnNames, requestName )
+    return "SELECT %s FROM `Request` WHERE `RequestName` = '%s';" % ( columnNames, requestName )
 
   def _getOperationProperties( self, operationID, columnNames = None ):
     """ select :columnNames: from Operation table  """
@@ -568,11 +568,11 @@ class RequestDB( DB ):
     """
     if type( requestName ) == int:
       requestName = self.getRequestName( requestName )
-    if not requestName["OK"]:
-      self.log.error( "getRequestFileStatus: %s" % requestName["Message"] )
-      return requestName
-    else:
-      requestName = requestName["Value"]
+      if not requestName["OK"]:
+        self.log.error( "getRequestFileStatus: %s" % requestName["Message"] )
+        return requestName
+      else:
+        requestName = requestName["Value"]
 
     req = self.peekRequest( requestName )
     if not req["OK"]:
@@ -591,11 +591,11 @@ class RequestDB( DB ):
     """ get request info given Request.RequestID """
     if type( requestName ) == int:
       requestName = self.getRequestName( requestName )
-    if not requestName["OK"]:
-      self.log.error( "getRequestInfo: %s" % requestName["Message"] )
-      return requestName
-    else:
-      requestName = requestName["Value"]
+      if not requestName["OK"]:
+        self.log.error( "getRequestInfo: %s" % requestName["Message"] )
+        return requestName
+      else:
+        requestName = requestName["Value"]
     requestInfo = self.getRequestProperties( requestName, [ "RequestID", "Status", "RequestName", "JobID",
                                                             "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent",
                                                             "CreationTime", "SubmitTime", "lastUpdate" ] )

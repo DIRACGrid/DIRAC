@@ -261,10 +261,12 @@ class ReqManagerHandler( RequestHandler ):
       return S_ERROR( errStr )
 
 
-  types_getRequestFileStatus = [ list( StringTypes ) + [ IntType, LongType ], ListType ]
+  types_getRequestFileStatus = [ list( StringTypes ) + [ IntType, LongType ], list( StringTypes ) + [ListType] ]
   @classmethod
   def export_getRequestFileStatus( cls, requestName, lfnList ):
     """ get request file status for a given LFNs list and requestID/Name """
+    if type( lfnList ) == str:
+      lfnList = [lfnList]
     try:
       res = cls.__requestDB.getRequestFileStatus( requestName, lfnList )
       if not res["OK"]:
