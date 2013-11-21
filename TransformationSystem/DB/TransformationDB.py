@@ -1263,7 +1263,12 @@ class TransformationDB( DB ):
       self.lock.release()
       gLogger.error( "Failed to publish task for transformation", res['Message'] )
       return res
-    res = self._query( "SELECT LAST_INSERT_ID();", connection )
+    # res = self._query( "SELECT LAST_INSERT_ID();", connection )
+    # previous command is ok for the MyISAM schema, doesn't work with InnoDB schema.
+    # With InnoDB, TaskID is computed by a trigger, which sets the local variable @last (per connection)
+    # @last is the last insert TaskID. With multi-row inserts, will be the first new TaskID inserted.
+    # The trigger TaskID_Generator must be present with the InnoDB schema (defined in TransformationDB.sql)
+    res = self._query( "SELECT @last;", connection )
     self.lock.release()
     if not res['OK']:
       return res
