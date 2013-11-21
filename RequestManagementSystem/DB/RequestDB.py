@@ -541,8 +541,8 @@ class RequestDB( DB ):
     retDict = { "Failed": requestNames["Failed"], "Successful": {} }
 
     self.log.debug( "readRequestForJobs: got %d request names" % len( requestNames["Successful"] ) )
-    for jobID in requestNames:
-      request = self.peekRequest( requestNames[jobID] )
+    for jobID in requestNames['Successful']:
+      request = self.peekRequest( requestNames['Successful'][jobID] )
       if not request["OK"]:
         retDict["Failed"][jobID] = request["Message"]
         continue
