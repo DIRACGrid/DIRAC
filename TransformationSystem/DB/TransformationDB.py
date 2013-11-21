@@ -103,6 +103,16 @@ class TransformationDB( DB ):
                                  'ParameterType'
                                  ]
 
+    # This is here to ensure full compatibility between different versions of the MySQL DB schema
+    self.isTransformationTasksInnoDB = True
+    res = self._query( "SELECT Engine FROM INFORMATION_SCHEMA.TABLES WHERE table_name = 'TransformationTasks'" )
+    if not res['OK']:
+      return res
+    else:
+      engine = res['Value'][0][0]
+      if engine.lower() != 'innodb':
+        self.isTransformationTasksInnoDB = False
+
   def getName( self ):
     """  Get the database name
     """
@@ -1263,12 +1273,15 @@ class TransformationDB( DB ):
       self.lock.release()
       gLogger.error( "Failed to publish task for transformation", res['Message'] )
       return res
-    # res = self._query( "SELECT LAST_INSERT_ID();", connection )
-    # previous command is ok for the MyISAM schema, doesn't work with InnoDB schema.
+
     # With InnoDB, TaskID is computed by a trigger, which sets the local variable @last (per connection)
     # @last is the last insert TaskID. With multi-row inserts, will be the first new TaskID inserted.
     # The trigger TaskID_Generator must be present with the InnoDB schema (defined in TransformationDB.sql)
-    res = self._query( "SELECT @last;", connection )
+    if self.isTransformationTasksInnoDB:
+      res = self._query( "SELECT @last;", connection )
+    else:
+      res = self._query( "SELECT LAST_INSERT_ID();", connection )
+
     self.lock.release()
     if not res['OK']:
       return res
