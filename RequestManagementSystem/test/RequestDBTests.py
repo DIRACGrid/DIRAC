@@ -41,120 +41,14 @@ class RequestDBTests( unittest.TestCase ):
   unittest for RequestDB
   """
 
-  def setUp( self ):
-    """ test case setup """
-    self.request = Request( { "RequestName" : "test1", "JobID" : 1  } )
-    self.operation1 = Operation( { "Type" : "ReplicateAndRegister", "TargetSE" : "CERN-USER" } )
-    self.file = File( { "LFN" : "/a/b/c", "ChecksumType" : "ADLER32", "Checksum" : "123456" } )
-    self.request.addOperation( self.operation1 )
-    self.operation1.addFile( self.file )
-    self.operation2 = Operation()
-    self.operation2.Type = "RemoveFile"
-    self.operation2.addFile( File( { "LFN" : "/c/d/e" } ) )
-    self.request.addOperation( self.operation2 )
 
-    # ## set some defaults
-    gConfig.setOptionValue( 'DIRAC/Setup', 'Test' )
-    gConfig.setOptionValue( '/DIRAC/Setups/Test/RequestManagement', 'Test' )
-    gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/Host', 'localhost' )
-    gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/DBName', 'ReqDB' )
-    gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/User', 'Dirac' )
-
-    self.i = 1000
-
-  def tearDown( self ):
-    """ test case tear down """
-    del self.file
-    del self.operation1
-    del self.operation2
-    del self.request
-
-  def test01TableDesc( self ):
-    """ table description """
-    tableDict = RequestDB.getTableMeta()
-    self.assertEqual( "Request" in tableDict, True )
-    self.assertEqual( "Operation" in tableDict, True )
-    self.assertEqual( "File" in tableDict, True )
-    self.assertEqual( tableDict["Request"], Request.tableDesc() )
-    self.assertEqual( tableDict["Operation"], Operation.tableDesc() )
-    self.assertEqual( tableDict["File"], File.tableDesc() )
-
-  def test03RequestRW( self ):
-    """ db r/w requests """
-    db = RequestDB()
-    db._checkTables( True )
-
-    # # empty DB at that stage
-    ret = db.getDBSummary()
-    self.assertEqual( ret,
-                      { 'OK': True,
-                        'Value': { 'Operation': {}, 'Request': {}, 'File': {} } } )
-
-    # # insert
-    ret = db.putRequest( self.request )
-    self.assertEqual( ret, {'OK': True, 'Value': ''} )
-
-    # # get digest -> JSON
-    ret = db.getDigest( self.request.RequestName )
-    self.assertEqual( ret["OK"], True )
-    self.assertEqual( bool( ret["Value"] ), True )
-
-    # # db summary
-    ret = db.getDBSummary()
-    self.assertEqual( ret,
-                      { 'OK': True,
-                        'Value': { 'Operation': { 'RemoveFile': { 'Queued': 1L },
-                                                  'ReplicateAndRegister': { 'Waiting': 1L } },
-                                   'Request': { 'Waiting': 1L },
-                                   'File': {'Waiting': 2L } } } )
-
-    # # get request for jobs
-    ret = db.getRequestNamesForJobs( [ 1 ] )
-    self.assertEqual( ret["OK"], True )
-    self.assertEqual( ret["Value"], { 1 : 'test1'} )
 
     # # read requests
     ret = db.readRequestsForJobs( [1] )
     self.assertEqual( ret["OK"], True )
     self.assertEqual( ret["Value"][1]["OK"], True )
 
-    # # select
-    ret = db.getRequest()
-    self.assertEqual( ret["OK"], True )
-    request = ret["Value"]
-    self.assertEqual( isinstance( request, Request ), True )
 
-    # # summary
-    ret = db.getDBSummary()
-    self.assertEqual( ret,
-                      { 'OK': True,
-                        'Value': { 'Operation': { 'RemoveFile': { 'Queued': 1L },
-                                                  'ReplicateAndRegister': { 'Waiting': 1L } },
-                                   'Request': { 'Assigned': 1L },
-                                   'File': { 'Waiting': 2L} } } )
-    # # update
-    ret = db.putRequest( request )
-    self.assertEqual( ret, {'OK': True, 'Value': ''} )
-
-    # # get summary again
-    ret = db.getDBSummary()
-    self.assertEqual( ret,
-                      { 'OK': True,
-                        'Value': { 'Operation': { 'RemoveFile': { 'Queued': 1L },
-                                                  'ReplicateAndRegister': {'Waiting': 1L } },
-                                   'Request': { 'Waiting': 1L },
-                                   'File': { 'Waiting': 2L} } } )
-
-
-    # # delete
-    ret = db.deleteRequest( self.request.RequestName )
-    self.assertEqual( ret, {'OK': True, 'Value': ''} )
-
-    # # should be empty now
-    ret = db.getDBSummary()
-    self.assertEqual( ret,
-                      { 'OK': True,
-                        'Value': { 'Operation': {}, 'Request': {}, 'File': {} } } )
 
   def test04Stress( self ):
     """ stress test """
