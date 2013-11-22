@@ -98,7 +98,7 @@ CREATE TABLE TransformationTasks (
 
 -- This is required to mimic the AUTO_INCREMENT behavior of TaskID which was possible with MyISAM:
 CREATE TRIGGER `TaskID_Generator` BEFORE INSERT ON TransformationTasks
-FOR EACH ROW SET NEW.TaskID = ( SELECT @last := IFNULL(MAX(TaskID) + 1,1) FROM TransformationTasks WHERE TaskID=NEW.TaskID );
+FOR EACH ROW SET NEW.TaskID = ( SELECT @last := IFNULL(MAX(TaskID) + 1,1) FROM TransformationTasks WHERE TransformationID=NEW.TransformationID );
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationFiles;
