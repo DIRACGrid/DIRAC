@@ -18,17 +18,17 @@ import random, time
 
 class RequestDBMySQL( DB ):
   """
-  .. class:: RequestDBmySQL 
+  .. class:: RequestDBmySQL
 
-  An interface to mysql RequestDB database. 
+  An interface to mysql RequestDB database.
   """
 
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
     """ c'tor
-    
+
     :param self: self reference
-    :param str systemInstance: ??? 
-    :param int maxQueueSize: queue size    
+    :param str systemInstance: ???
+    :param int maxQueueSize: queue size
     """
     DB.__init__( self, 'RequestDB', 'RequestManagement/RequestDB', maxQueueSize )
     self.getIdLock = threading.Lock()
@@ -55,7 +55,7 @@ class RequestDBMySQL( DB ):
     """ Get subrequest IDs for the given request
 
     :param self: self reference
-    :param int requestID: Requests.RequestID 
+    :param int requestID: Requests.RequestID
     :return: list with SubRequestIDs
     """
     subRequestList = []
@@ -159,8 +159,8 @@ class RequestDBMySQL( DB ):
       self.getIdLock.release()
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     requestID = res['Value'][0][0]
-    #_getRequest(
-    #_removeRequest(
+    # _getRequest(
+    # _removeRequest(
     req = "SELECT * from SubRequests WHERE RequestID=%s" % requestID
     res = self._query( req )
     if not res['OK']:
@@ -172,7 +172,7 @@ class RequestDBMySQL( DB ):
       subRequestIDs.append( subRequestID[0] )
     req = "SELECT * from SubRequests WHERE RequestID IN =%s" % requestID
     self.getIdLock.release()
-    #THIS IS WHERE I AM IN THIS METHOD
+    # THIS IS WHERE I AM IN THIS METHOD
     # STILL TO DO: compile the request string
     # STILL TO DO: remove the request completely from the db
     # STILL TO DO: return the request string
@@ -180,7 +180,7 @@ class RequestDBMySQL( DB ):
 
   def getDBSummary( self ):
     """ get the summary of the Request DB contents
-    
+
     TODO: needs refactoring, all information can be read in one go
     """
     summaryDict = {}
@@ -230,7 +230,7 @@ class RequestDBMySQL( DB ):
     subRequests = []
     for subRequestID in res['Value'][0]:
       subRequests.append( subRequestID )
-    req = "SELECT `LFN`,`Status` FROM `Files` WHERE `SubRequestID` IN (%s) AND `LFN` in (%s);" %\
+    req = "SELECT `LFN`,`Status` FROM `Files` WHERE `SubRequestID` IN (%s) AND `LFN` in (%s);" % \
         ( intListToString( subRequests ), stringListToString( files ) )
     res = self._query( req )
     if not res['OK']:
@@ -246,7 +246,7 @@ class RequestDBMySQL( DB ):
     # RG: What if requestType is not given?
     # the first query will return nothing.
     # KC: maybe returning S_ERROR would be enough?
-    # alternatively we should check if requestType is known (in 'transfer', 'removal', 'register' and 'diset') 
+    # alternatively we should check if requestType is known (in 'transfer', 'removal', 'register' and 'diset')
 
     if not requestType or type( requestType ) not in types.StringTypes:
       return S_ERROR( "Request type not given." )
@@ -273,7 +273,7 @@ class RequestDBMySQL( DB ):
     # and get the 100 oldest ones of Type requestType
     req = "SELECT `RequestID`,`ExecutionOrder` FROM ( %s ) as T2 WHERE `RequestType`=%s "\
         "ORDER BY `LastUpdate` LIMIT 100" % ( req, myRequestType )
-    # and now get all waiting SubRequest for the selected RequestID and ExecutionOrder 
+    # and now get all waiting SubRequest for the selected RequestID and ExecutionOrder
     req = "SELECT A.%s FROM SubRequests AS A, ( %s ) AS B WHERE " % ( ', A.'.join( fields ), req )
     req = "%s A.RequestID=B.RequestID AND A.ExecutionOrder=B.ExecutionOrder" % ( req )
 
@@ -284,10 +284,10 @@ class RequestDBMySQL( DB ):
     if not result['Value']:
       return S_OK()
 
-    # We get up to 10 Request candidates, to add some randomness 
+    # We get up to 10 Request candidates, to add some randomness
     reqDict = {}
     for row in result['Value']:
-      if ('"%s"' % row[-1]) != myRequestType:
+      if ( '"%s"' % row[-1] ) != myRequestType:
         continue
       if row[-2] != 'Waiting':
         continue
@@ -316,7 +316,7 @@ class RequestDBMySQL( DB ):
         requestID = reqID
 
         break
-    # Haven't succeeded to get any request        
+    # Haven't succeeded to get any request
     if not requestID:
       return S_OK()
 
@@ -347,22 +347,22 @@ class RequestDBMySQL( DB ):
         self.__releaseSubRequests( requestID, subIDList )
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
 
-      req = "SELECT %s FROM `Files` WHERE `SubRequestID`=%s ORDER BY `FileID`;" % ( ', '.join( fields ), 
+      req = "SELECT %s FROM `Files` WHERE `SubRequestID`=%s ORDER BY `FileID`;" % ( ', '.join( fields ),
                                                                                     subRequestID )
       res = self._query( req )
       if not res['OK']:
-        err = 'RequestDB._getRequest: Failed to get File attributes for RequestID %s.%s' % ( requestID, 
+        err = 'RequestDB._getRequest: Failed to get File attributes for RequestID %s.%s' % ( requestID,
                                                                                              subRequestID )
         self.__releaseSubRequests( requestID, subIDList )
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
       files = []
       for fileID, lfn, size, pfn, guid, md5, addler, attempt, status in res['Value']:
-        fileDict = {'FileID':fileID, 'LFN':lfn, 'Size':size, 'PFN':pfn, 'GUID':guid, 
+        fileDict = {'FileID':fileID, 'LFN':lfn, 'Size':size, 'PFN':pfn, 'GUID':guid,
                     'Md5':md5, 'Addler':addler, 'Attempt':attempt, 'Status':status}
         files.append( fileDict )
       res = dmRequest.setSubRequestFiles( ind, requestType, files )
       if not res['OK']:
-        err = 'RequestDB._getRequest: Failed to set files into Request for RequestID %s.%s' % ( requestID, 
+        err = 'RequestDB._getRequest: Failed to set files into Request for RequestID %s.%s' % ( requestID,
                                                                                                 subRequestID )
         self.__releaseSubRequests( requestID, subIDList )
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -378,7 +378,7 @@ class RequestDBMySQL( DB ):
         datasets.append( dataset )
       res = dmRequest.setSubRequestDatasets( ind, requestType, datasets )
       if not res['OK']:
-        err = 'RequestDB._getRequest: Failed to set datasets into Request for RequestID %s.%s' % ( requestID, 
+        err = 'RequestDB._getRequest: Failed to set datasets into Request for RequestID %s.%s' % ( requestID,
                                                                                                    subRequestID )
         self.__releaseSubRequests( requestID, subIDList )
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -409,7 +409,7 @@ class RequestDBMySQL( DB ):
       self.__releaseSubRequests( requestID, subIDList )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     requestString = res['Value']
-    #still have to manage the status of the dataset properly
+    # still have to manage the status of the dataset properly
     resultDict = {}
     resultDict['RequestName'] = requestName
     resultDict['RequestString'] = requestString
@@ -428,7 +428,7 @@ class RequestDBMySQL( DB ):
 
   def setRequest( self, requestName, requestString ):
     """ insert request :requestName: to teh db
-    
+
     :param str requestName: Requests.RequestName
     :param str requestString: xml-serialised request
     """
@@ -540,7 +540,7 @@ class RequestDBMySQL( DB ):
               else:
                 updateRequestFailed = True
               if "Error" in subRequestDict:
-                result = self._setSubRequestAttribute( requestID, subRequestID, 
+                result = self._setSubRequestAttribute( requestID, subRequestID,
                                                        'Error', subRequestDict['Error'] )
                 if not result['OK']:
                   updateRequestFailed = True
@@ -575,11 +575,11 @@ class RequestDBMySQL( DB ):
     return self._deleteRequest( requestName )
 
   def _deleteRequest( self, requestName ):
-    """ nothig more than above 
-    
+    """ nothig more than above
+
     :param str requestName: Requests.RequestName
     """
-    #This method needs extended to truely remove everything that is being removed i.e.fts job entries etc.
+    # This method needs extended to truely remove everything that is being removed i.e.fts job entries etc.
     failed = False
     req = "SELECT `RequestID` FROM `Requests` WHERE `RequestName`='%s';" % requestName
     res = self._query( req )
@@ -656,7 +656,7 @@ class RequestDBMySQL( DB ):
       res = self._update( req )
       if not res['OK']:
         return S_ERROR( 'Failed to update file in db' )
-    
+
     return S_OK()
 
   def __setSubRequestFiles( self, ind, requestType, subRequestID, request ):
@@ -725,9 +725,9 @@ class RequestDBMySQL( DB ):
     :param str attrName: col name
     :param mixed attrValue: new value
     """
-    attrValue = str(attrValue) if type(attrValue) != list else ",".join( [str(i) for i in attrValue] )
-    req = "UPDATE `Requests` SET `%s`='%s', `LastUpdate`=UTC_TIMESTAMP() WHERE `RequestID`='%s';" % ( attrName, 
-                                                                                                      attrValue, 
+    attrValue = str( attrValue ) if type( attrValue ) != list else ",".join( [str( i ) for i in attrValue] )
+    req = "UPDATE `Requests` SET `%s`='%s', `LastUpdate`=UTC_TIMESTAMP() WHERE `RequestID`='%s';" % ( attrName,
+                                                                                                      attrValue,
                                                                                                       requestID )
     res = self._update( req )
     if res['OK']:
@@ -766,10 +766,10 @@ class RequestDBMySQL( DB ):
     :param str attrName: column name
     :param mixed attrValue: new value
     """
-    attrValue = str(attrValue) if type(attrValue) != list else ",".join( [ str(i) for i in attrValue ] )
-    req = "UPDATE `SubRequests` SET `%s`='%s', `LastUpdate`=UTC_TIMESTAMP() WHERE `RequestID`=%s AND `SubRequestID`=%s;" % ( attrName, 
-                                                                                                                             attrValue, 
-                                                                                                                             requestID, 
+    attrValue = str( attrValue ) if type( attrValue ) != list else ",".join( [ str( i ) for i in attrValue ] )
+    req = "UPDATE `SubRequests` SET `%s`='%s', `LastUpdate`=UTC_TIMESTAMP() WHERE `RequestID`=%s AND `SubRequestID`=%s;" % ( attrName,
+                                                                                                                             attrValue,
+                                                                                                                             requestID,
                                                                                                                              subRequestID )
     res = self._update( req )
     if res['OK']:
@@ -783,7 +783,7 @@ class RequestDBMySQL( DB ):
     :param int requestID: Requests.RequestID
     :param int subRequestID: SubRequests.SubRequestID
     """
-    req = "UPDATE `SubRequests` SET `LastUpdate`=UTC_TIMESTAMP() WHERE `RequestID`=%s AND `SubRequestID`=%s;" % ( requestID, 
+    req = "UPDATE `SubRequests` SET `LastUpdate`=UTC_TIMESTAMP() WHERE `RequestID`=%s AND `SubRequestID`=%s;" % ( requestID,
                                                                                                                   subRequestID )
     res = self._update( req )
     if res['OK']:
@@ -799,8 +799,8 @@ class RequestDBMySQL( DB ):
     :param str attrName: col name
     :param mixed attrValue: new value
     """
-    attrValue = str(attrValue) if type(attrValue) != list else ",".join( [ str(i) for i in attrValue ] )
-    req = "UPDATE `Files` SET `%s`='%s' WHERE `SubRequestID`='%s' AND `FileID`='%s';" % ( attrName, attrValue, 
+    attrValue = str( attrValue ) if type( attrValue ) != list else ",".join( [ str( i ) for i in attrValue ] )
+    req = "UPDATE `Files` SET `%s`='%s' WHERE `SubRequestID`='%s' AND `FileID`='%s';" % ( attrName, attrValue,
                                                                                           subRequestID, fileID )
     res = self._update( req )
     if res['OK']:
@@ -914,89 +914,88 @@ class RequestDBMySQL( DB ):
       jobIDs[jobID] = requestName
     return S_OK( jobIDs )
 
-  def readRequestsForJobs( self, jobIDs ):
-    """ read and return Requests for jobs 
-
-    :param mixed jobIDs: list with jobIDs or long JobIDs
-    """
-    if type(jobIDs) != list:
-      return S_ERROR("RequestDB: wrong format for jobIDs argument, got %s, expecting a list" )
-    # make sure list is uniqe and has only longs
-    jobIDs = list( set( [ int(jobID) for jobID in jobIDs if int(jobID) != 0 ] ) )
-    reqCols = [ "RequestID", "RequestName", "JobID", "Status", 
-                "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent", 
-                "CreationTime", "SubmissionTime", "LastUpdate" ] 
+  def readRequest( self, requestName ):
+    reqCols = [ "RequestID", "RequestName", "JobID", "Status",
+                "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent",
+                "CreationTime", "SubmissionTime", "LastUpdate" ]
     subCols = [ "SubRequestID", "Operation", "Arguments", "RequestType", "ExecutionOrder", "Error",
                 "SourceSE", "TargetSE", "Catalogue", "CreationTime", "SubmissionTime", "LastUpdate" ]
     fileCols = [ "FileID", "LFN", "Size", "PFN", "GUID", "Md5", "Addler", "Attempt", "Status" , "Error" ]
+    # # get request
+    queryStr = "SELECT %s FROM Requests WHERE RequestName = '%s';" % ( ",".join( reqCols ), requestName )
+    queryRes = self._query( queryStr )
+    if not queryRes["OK"]:
+      return queryRes
+    queryRes = queryRes.get( "Value" )
+    if not queryRes:
+      return S_ERROR( "Unable to read request attributes." )
+
+    requestObj = RequestContainer( init = False )
+    reqAttrs = dict( zip( reqCols, queryRes[0] ) )
+    requestObj.setRequestAttributes( reqAttrs )
+
+    queryStr = "SELECT %s FROM `SubRequests` WHERE `RequestID`=%s;" % ( ",".join( subCols ), reqAttrs["RequestID"] )
+    queryRes = self._query( queryStr )
+    if not queryRes["OK"]:
+      return queryRes
+    queryRes = queryRes.get( "Value" )
+    if not queryRes:
+      return S_ERROR( "Unable to read subrequest attributes." )
+
+    # # get sub-requests
+    for recTuple in queryRes:
+      subReqAttrs = dict( zip( subCols, recTuple ) )
+      subType = subReqAttrs["RequestType"]
+      subReqAttrs["ExecutionOrder"] = int( subReqAttrs["ExecutionOrder"] )
+      del subReqAttrs["RequestType"]
+      index = requestObj.initiateSubRequest( subType )
+      index = index["Value"]
+      requestObj.setSubRequestAttributes( index, subType, subReqAttrs )
+
+      # # get files
+      subFiles = []
+      fileQuery = "SELECT %s FROM `Files` WHERE `SubRequestID` = %s ORDER BY `FileID`;" % ( ",".join( fileCols ),
+                                                                                            subReqAttrs["SubRequestID"] )
+      fileQueryRes = self._query( fileQuery )
+      if fileQueryRes["OK"] and fileQueryRes["Value"]:
+        for fileRec in fileQueryRes["Value"]:
+          subFiles.append( dict( zip( fileCols, fileRec ) ) )
+      if subFiles:
+        requestObj.setSubRequestFiles( index, subType, subFiles )
+    return requestObj.toXML()
+
+  def readRequestsForJobs( self, jobIDs ):
+    """ read and return Requests for jobs
+
+    :param mixed jobIDs: list with jobIDs or long JobIDs
+    """
+    if type( jobIDs ) != list:
+      return S_ERROR( "RequestDB: wrong format for jobIDs argument, got %s, expecting a list" )
+    # make sure list is uniqe and has only longs
+    jobIDs = list( set( [ int( jobID ) for jobID in jobIDs if int( jobID ) != 0 ] ) )
 
     requestNames = self.getRequestForJobs( jobIDs )
     if not requestNames["OK"]:
       return requestNames
     requestNames = requestNames["Value"]
 
-    ## this will be returned
+    # # this will be returned
     retDict = { "Successful" : dict(), "Failed" : dict() }
     for jobID in jobIDs:
-      ## missing requests
+      # # missing requests
       if jobID not in requestNames:
-        retDict["Failed"][jobID] = "Request not found"  
+        retDict["Failed"][jobID] = "Request not found"
         continue
-      
+
       requestName = requestNames[jobID]
+      result = self.readRequest( requestName )
+      if not result['OK']:
+        retDict["Failed"][jobID] = result["Message"]
+      else:
+        retDict["Successful"][jobID] = result['Value']
 
-      ## get request
-      queryStr = "SELECT %s FROM Requests WHERE RequestName = '%s';" % ( ",".join( reqCols ), requestName ) 
-      queryRes = self._query( queryStr )
-      if not queryRes["OK"]:
-        retDict["Failed"][jobID] = queryRes["Message"] 
-        continue
-      
-      queryRes = queryRes["Value"] if queryRes["Value"] else None
-      if not queryRes:
-        retDict["Failed"][jobID] = "Unable to read request attributes."  
-        continue
-
-      requestObj = RequestContainer( init=False )
-      reqAttrs = dict( zip( reqCols, queryRes[0] ) )      
-      requestObj.setRequestAttributes( reqAttrs )
-
-      queryStr = "SELECT %s FROM `SubRequests` WHERE `RequestID`=%s;" % ( ",".join(subCols), reqAttrs["RequestID"] )
-      queryRes = self._query( queryStr )
-      if not queryRes["OK"]:
-        retDict["Failed"][jobID] = queryRes["Message"] 
-        continue
-      
-      queryRes = queryRes["Value"] if queryRes["Value"] else None
-      if not queryRes:
-        retDict["Failed"][jobID] = "Unable to read subrequest attributes."  
-        continue
-      
-      ## get sub-requests
-      for recTuple in queryRes:
-        subReqAttrs = dict( zip( subCols, recTuple ) )
-        subType = subReqAttrs["RequestType"]
-        subReqAttrs["ExecutionOrder"] = int( subReqAttrs["ExecutionOrder"] )
-        del subReqAttrs["RequestType"]
-        index = requestObj.initiateSubRequest( subType )
-        index = index["Value"]
-        requestObj.setSubRequestAttributes( index, subType, subReqAttrs )
-
-        ## get files
-        subFiles = []
-        fileQuery = "SELECT %s FROM `Files` WHERE `SubRequestID` = %s ORDER BY `FileID`;" % ( ",".join(fileCols), 
-                                                                                              subReqAttrs["SubRequestID"] )
-        fileQueryRes = self._query( fileQuery )
-        if fileQueryRes["OK"] and fileQueryRes["Value"]:
-          for fileRec in fileQueryRes["Value"]:
-            subFiles.append( dict( zip(fileCols, fileRec) ) )
-        if subFiles:
-          requestObj.setSubRequestFiles( index, subType, subFiles )
-      
-      retDict["Successful"][jobID] = requestObj.toXML()["Value"]
-      
     return S_OK( retDict )
-    
+
   def getDigest( self, requestID ):
     """ Get digest of the given request specified by its requestID
     """
@@ -1062,7 +1061,7 @@ class RequestDBMySQL( DB ):
     if not result["Value"]:
       subRequestStatus = "Empty"
     else:
-      ## make it unique
+      # # make it unique
       result = list( set( [ row[0] for row in result["Value"] ] ) )
       if "Empty" in result:
         subRequestStatus = "Empty"
