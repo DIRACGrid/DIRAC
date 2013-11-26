@@ -6,17 +6,14 @@ __RCSID__ = "$Id$"
 from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Utilities.Utils            import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
-from DIRAC.Core.Utilities.Subprocess            import shellCall
 from DIRAC.Core.Utilities.Pfn                   import pfnparse, pfnunparse
-from DIRAC.Core.Utilities.List                  import breakListIntoChunks
 from DIRAC.Core.Utilities.File                  import getSize
 import os
-from types import StringType, StringTypes, DictType, ListType, IntType, BooleanType
+from types import StringType, ListType
 
 
 from XRootD import client
 from XRootD.client.flags import DirListFlags, OpenFlags, MkDirFlags, QueryCode, StatInfoFlags
-
 
 
 class XROOTStorage( StorageBase ):
@@ -1317,13 +1314,13 @@ class XROOTStorage( StorageBase ):
       status = status[0]
 
       if not status.ok:
-          if status.errno == 3011:
-            errStr = "XROOTStorage.__removeSingleDirectory: File does not exist"
-            self.log.debug( errStr )
-          else:
-            errStr = "XROOTStorage.__removeSingleDirectory: Error in querying: %s" % status.message
-            self.log.debug( errStr )
-            allRemoved = False
+        if status.errno == 3011:
+          errStr = "XROOTStorage.__removeSingleDirectory: File does not exist"
+          self.log.debug( errStr )
+        else:
+          errStr = "XROOTStorage.__removeSingleDirectory: Error in querying: %s" % status.message
+          self.log.debug( errStr )
+          allRemoved = False
 
     resDict = {'AllRemoved': allRemoved, 'FilesRemoved': filesRemoved, 'SizeRemoved': sizeRemoved}
     return S_OK( resDict )  
@@ -1618,8 +1615,8 @@ class XROOTStorage( StorageBase ):
 
     # pfnunparse does not take into account the double // so I have to trick it
     # The problem is that I cannot take into account the port, which is always empty (it seems..)
+#     return pfnunparse( pfnDict )
     return S_OK( 'root://%s%s/%s' % ( self.host, pfnDict['Path'], pfnDict['FileName'] ) )
-    return pfnunparse( pfnDict )
 
 
   def getCurrentURL( self, fileName ):
