@@ -420,7 +420,7 @@ class StorageElement:
         fullPath = "%s%s" % ( res['Value'], lfn )
         return S_OK( fullPath )
     # This should never happen. DANGER!!
-    errStr = "getPfnForLfn: Failed to get the full pfn for any of the protocols!!"
+    errStr = "getPfnForLfn: Failed to get the full pfn for any of the protocols (%s)!!" % ( self.name )
     self.log.error( errStr )
     return S_ERROR( errStr )
 

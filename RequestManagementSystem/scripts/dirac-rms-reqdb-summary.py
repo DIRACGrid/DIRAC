@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
   dbSummary = reqClient.getDBSummary()
   if not dbSummary["OK"]:
-    DIRAC.gLogger.error( dbSumamry["Message"] )
+    DIRAC.gLogger.error( dbSummary["Message"] )
     DIRAC.exit( -1 )
 
   dbSummary = dbSummary["Value"]

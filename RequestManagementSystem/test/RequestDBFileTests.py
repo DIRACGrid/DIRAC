@@ -13,6 +13,8 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     Test suites for RequestDBFile module. 
+
+    :deprecated:
 """
 
 __RCSID__ = "$Id $"
