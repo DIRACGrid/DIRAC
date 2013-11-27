@@ -103,6 +103,15 @@ class TransformationDB( DB ):
                                  'ParameterType'
                                  ]
 
+    self.isTransformationTasksInnoDB = True
+    res = self._query( "SELECT Engine FROM INFORMATION_SCHEMA.TABLES WHERE table_name = 'TransformationTasks'" )
+    if not res['OK']:
+      return res
+    else:
+      engine = res['Value'][0][0]
+      if engine.lower() != 'innodb':
+        self.isTransformationTasksInnoDB = False
+
   def getName( self ):
     """  Get the database name
     """
@@ -815,6 +824,26 @@ class TransformationDB( DB ):
 
   ###########################################################################
   #
+  # These methods manipulate the TransformationFileTasks table
+  #
+
+  def __deleteTransformationFileTask( self, transID, taskID, connection = False ):
+    ''' Delete the file associated to a given task of a given transformation
+        from the TransformationFileTasks table for transformation with TransformationID and TaskID
+    '''
+    req = "DELETE FROM TransformationFileTasks WHERE TransformationID=%d AND TaskID=%d" % ( transID, taskID )
+    return self._update( req, connection )
+
+  def __deleteTransformationFileTasks( self, transID, connection = False ):
+    ''' Remove all associations between files, tasks and a transformation '''
+    req = "DELETE FROM TransformationFileTasks WHERE TransformationID = %d;" % transID
+    res = self._update( req, connection )
+    if not res['OK']:
+      gLogger.error( "Failed to delete transformation files/task history", res['Message'] )
+    return res
+
+  ###########################################################################
+  #
   # These methods manipulate the TransformationTasks table
   #
 
@@ -1125,7 +1154,7 @@ class TransformationDB( DB ):
     vector = str.join( ';', lfns )
     fields = ['TransformationID', 'TaskID', 'InputVector']
     values = [transID, taskID, vector]
-    res = self._insert( 'TaskInputs', fields, values, connection )
+    res = self.insertFields( 'TaskInputs', fields, values, connection )
     if not res['OK']:
       gLogger.error( "Failed to add input vector to task %d" % taskID )
     return res
@@ -1208,6 +1237,7 @@ class TransformationDB( DB ):
 
   def __getFileIDsForLfns( self, lfns, connection = False ):
     """ Get file IDs for the given list of lfns
+        warning: if the file is not present, we'll see no errors
     """
     req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % ( stringListToString( lfns ) )
     res = self._query( req, connection )
@@ -1374,7 +1404,12 @@ class TransformationDB( DB ):
       self.lock.release()
       gLogger.error( "Failed to publish task for transformation", res['Message'] )
       return res
-    res = self._query( "SELECT LAST_INSERT_ID();", connection )
+
+    if self.isTransformationTasksInnoDB:
+      res = self._query( "SELECT @last", connection )
+    else:
+      res = self._query( "SELECT LAST_INSERT_ID()", connection )
+
     self.lock.release()
     if not res['OK']:
       return res
@@ -1423,15 +1458,21 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    res = self.__deleteTransformationFiles( transID, connection = connection )
+    res = self.__deleteTransformationFileTasks( transID, connection = connection )
     if not res['OK']:
       return res
-    res = self.__deleteTransformationTasks( transID, connection = connection )
+    res = self.__deleteTransformationFiles( transID, connection = connection )
     if not res['OK']:
       return res
     res = self.__deleteTransformationTaskInputs( transID, connection = connection )
     if not res['OK']:
       return res
+    res = self.__deleteTransformationTasks( transID, connection = connection )
+    if not res['OK']:
+      return res
+
+    self.__updateTransformationLogging( transID, "Transformation Cleaned", author, connection = connection )
+
     return S_OK( transID )
 
   def deleteTransformation( self, transName, author = '', connection = False ):
@@ -1462,10 +1503,13 @@ class TransformationDB( DB ):
     res = self.__deleteTransformationTaskInputs( transID, taskID, connection = connection )
     if not res['OK']:
       return res
-    res = self.__deleteTransformationTask( transID, taskID, connection = connection )
+    res = self.__deleteTransformationFileTask( transID, taskID, connection = connection )
     if not res['OK']:
       return res
-    return self.__resetTransformationFile( transID, taskID, connection = connection )
+    res = self.__resetTransformationFile( transID, taskID, connection = connection )
+    if not res['OK']:
+      return res
+    return self.__deleteTransformationTask( transID, taskID, connection = connection )
 
   def __checkUpdate( self, table, param, paramValue, selectDict = {}, connection = False ):
     """ Check whether the update will perform an update """
