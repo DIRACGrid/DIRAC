@@ -20,11 +20,6 @@ class TransformationManagerHandlerBase( RequestHandler ):
     global database
     database = oDatabase
 
-  types_getName = []
-  def export_getName( self ):
-    res = database.getName()
-    return self._parseRes( res )
-
   types_getCounters = [StringType, ListType, DictType]
   def export_getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None ):
     res = database.getCounters( table, attrList, condDict, older = older, newer = newer, timeStamp = timeStamp )
@@ -332,8 +327,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in replicaDict.keys():
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
-  
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
+
   types_removeReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_removeReplica( self, replicaDict ):
     """ Interface provides {LFN : { SE, ...} }
@@ -342,7 +337,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in replicaDict.keys():
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
 
   types_getReplicas = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getReplicas( self, lfns ):
@@ -352,7 +347,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in lfns:
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
 
   types_getReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getReplicaStatus( self, replicaDicts ):
@@ -362,7 +357,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in replicaDicts.keys():
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
 
   types_setReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_setReplicaStatus( self, replicaDict ):
@@ -372,7 +367,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in replicaDict.keys():
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
 
   types_setReplicaHost = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_setReplicaHost( self, replicaDict ):
@@ -382,7 +377,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resdict = {}
     for lfn in replicaDict.keys():
       resdict[lfn] = True
-    return S_OK( {'Successful':resdict,'Failed':{}} )
+    return S_OK( {'Successful':resdict, 'Failed':{}} )
 
   ####################################################################
   #
