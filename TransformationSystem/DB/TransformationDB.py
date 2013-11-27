@@ -107,6 +107,15 @@ class TransformationDB( DB ):
                                  'ParameterType'
                                  ]
 
+    self.isTransformationTasksInnoDB = True
+    res = self._query( "SELECT Engine FROM INFORMATION_SCHEMA.TABLES WHERE table_name = 'TransformationTasks'" )
+    if not res['OK']:
+      return res
+    else:
+      engine = res['Value'][0][0]
+      if engine.lower() != 'innodb':
+        self.isTransformationTasksInnoDB = False
+
   ###########################################################################
   #
   # These methods manipulate the Transformations table
@@ -1262,7 +1271,12 @@ class TransformationDB( DB ):
       self.lock.release()
       gLogger.error( "Failed to publish task for transformation", res['Message'] )
       return res
-    res = self._query( "SELECT LAST_INSERT_ID();", connection )
+
+    if self.isTransformationTasksInnoDB:
+      res = self._query( "SELECT @last", connection )
+    else:
+      res = self._query( "SELECT LAST_INSERT_ID()", connection )
+
     self.lock.release()
     if not res['OK']:
       return res
