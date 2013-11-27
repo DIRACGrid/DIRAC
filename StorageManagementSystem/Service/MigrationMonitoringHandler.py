@@ -2,10 +2,10 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC                                                    import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                                    import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                          import RequestHandler
 from DIRAC.StorageManagementSystem.DB.MigrationMonitoringDB   import MigrationMonitoringDB
-from types                                                    import *
+from types                                                    import ListType, TupleType, StringType, DictType, IntType
 
 database = False
 
