@@ -15,4 +15,4 @@ def checkArgumentFormat( path ):
   elif type( path ) == types.DictType:
     return S_OK( path )
   else:
-    return S_ERROR( "%s.checkArgumentFormat: Supplied path is not of the correct format." % ( __class__.__name__ ) )
+    return S_ERROR( "Utils.checkArgumentFormat: Supplied path is not of the correct format." )
