@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r10-pre15]
+[v6r10-pre16]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -125,6 +125,7 @@ CHANGE: InstallTools - use printTable() utility for table printing
 CHANGE: move printTable() utility to Core.Utilities.PrettyPrint
 NEW: added installation configuration examples
 FIX: dirac-install - fixBuildPath() operates only on files in the directory
+FIX: VOMSService - added X-VOMS-CSRF-GUARD to the html header to be compliant with EMI-3 servers
 
 *CS
 CHANGE: getVOMSVOForGroup() uses the VOMSName option of the VO definition 
@@ -175,7 +176,8 @@ NEW: new Operations option /Services/JobMonitoring/GlobalJobsInfo ( True by defa
 BUGFIX: SiteDirector - take into account the target queue Platform
 BUGFIX: JobDB - bug in __insertNewJDL()    
 CHANGE: dirac-admin-show-task-queues - enhanced output  
-CHNAGE: JobLoggingDB.sql - use trigger to manage the new LoggingInfo structure  
+CHANGE: JobLoggingDB.sql - use trigger to manage the new LoggingInfo structure  
+CHANGE: JobWrapper - trying several times to upload a request before declaring the job failed
         
 *RSS
 FIX: DowntimeCommand - take the latest Downtime that fits    
@@ -183,7 +185,8 @@ NEW: porting new Policies from integration
 NEW: RSS SpaceToken command querying endpoints/tokens that exist  
         
 *Resources
-NEW: added SSHOARComputingElement class        
+NEW: added SSHOARComputingElement class 
+NEW: added XROOTStorage class       
         
 *TS
 CHANGE: TransformationClient(DB,Manager) - set file status for transformation as bulk operation 
@@ -192,7 +195,9 @@ BUGFIX: TransformationClient(Handler) - few minor fixes
 NEW: TransformationDB - backported __deleteTransformationFileTask(s) methods
 CHANGE: TransformationDB(Client) - fixes to reestablish the FileCatalog interface
 FIX: TransformationAgent - added MissingInFC to consider for Removal transformations
+BUGFIX: TransformationAgent - in _getTransformationFiles() variable 'now' was not defined
 FIX: TransformationDB.sql - DataFiles primary key is changed to (FileID) from (FileID,LFN) 
+CHANGE: TransformationDB(.sql) - schema changes suitable for InnoDB
 
 *RMS
 NEW: Migrate to use the new Request Management by all the clients
@@ -205,6 +210,11 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 *Workflow
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
+
+[v6r9p28]
+
+*TS
+FIX: TransformationDB(ManagerHandler) - several portings from v6r10
 
 [v6r9p27]
 

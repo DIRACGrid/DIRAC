@@ -261,12 +261,14 @@ class ReqManagerHandler( RequestHandler ):
       return S_ERROR( errStr )
 
 
-  types_getRequestFileStatus = [ (IntType, LongType), ListType ]
+  types_getRequestFileStatus = [ list( StringTypes ) + [ IntType, LongType ], list( StringTypes ) + [ListType] ]
   @classmethod
-  def export_getRequestFileStatus( cls, requestID, lfnList ):
-    """ get request file status for a given LFNs list and requestID """
+  def export_getRequestFileStatus( cls, requestName, lfnList ):
+    """ get request file status for a given LFNs list and requestID/Name """
+    if type( lfnList ) == str:
+      lfnList = [lfnList]
     try:
-      res = cls.__requestDB.getRequestFileStatus( requestID, lfnList )
+      res = cls.__requestDB.getRequestFileStatus( requestName, lfnList )
       if not res["OK"]:
         gLogger.error( "getRequestFileStatus: %s" % res["Message"] )
       return res
@@ -289,12 +291,12 @@ class ReqManagerHandler( RequestHandler ):
       gLogger.exception( errStr, "", lException = error )
       return S_ERROR( errStr )
 
-  types_getRequestInfo = [ ( IntType, LongType ) ]
+  types_getRequestInfo = [ list( StringTypes ) + [ IntType, LongType ] ]
   @classmethod
-  def export_getRequestInfo( cls, requestID ):
-    """ get request info for a given requestID """
+  def export_getRequestInfo( cls, requestName ):
+    """ get request info for a given requestID/Name """
     try:
-      requestInfo = cls.__requestDB.getRequestInfo( requestID )
+      requestInfo = cls.__requestDB.getRequestInfo( requestName )
       if not requestInfo["OK"]:
         gLogger.error( "getRequestInfo: %s" % requestInfo["Message"] )
       return requestInfo

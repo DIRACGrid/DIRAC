@@ -1,7 +1,5 @@
-########################################################################
-# $Header$
-########################################################################
 """ StorageManagerHandler is the implementation of the StorageManagementDB in the DISET framework """
+
 __RCSID__ = "$Id$"
 
 from types import IntType, DictType, ListType, StringType, LongType

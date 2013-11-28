@@ -365,7 +365,7 @@ class RequestDB( DB ):
     """ select :columnNames: from Request table  """
     columnNames = columnNames if columnNames else Request.tableDesc()["Fields"].keys()
     columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
-    return "SELECT %s FROM `Request` WHERE `RequestName` = `%s`;" % ( columnNames, requestName )
+    return "SELECT %s FROM `Request` WHERE `RequestName` = '%s';" % ( columnNames, requestName )
 
   def _getOperationProperties( self, operationID, columnNames = None ):
     """ select :columnNames: from Operation table  """
@@ -546,8 +546,8 @@ class RequestDB( DB ):
     retDict = { "Failed": requestNames["Failed"], "Successful": {} }
 
     self.log.debug( "readRequestForJobs: got %d request names" % len( requestNames["Successful"] ) )
-    for jobID in requestNames:
-      request = self.peekRequest( requestNames[jobID] )
+    for jobID in requestNames['Successful']:
+      request = self.peekRequest( requestNames['Successful'][jobID] )
       if not request["OK"]:
         retDict["Failed"][jobID] = request["Message"]
         continue
@@ -565,17 +565,19 @@ class RequestDB( DB ):
     requestStatus = query['Value'][0][0]
     return S_OK( requestStatus )
 
-  def getRequestFileStatus( self, requestID, lfnList ):
+  def getRequestFileStatus( self, requestName, lfnList ):
     """ get status for files in request given its name
 
     :param str requestName: Request.RequestName
     :param list lfnList: list of LFNs
     """
-    requestName = self.getRequestName( requestID )
-    if not requestName["OK"]:
-      self.log.error( "getRequestFileStatus: %s" % requestName["Message"] )
-      return requestName
-    requestName = requestName["Value"]
+    if type( requestName ) == int:
+      requestName = self.getRequestName( requestName )
+      if not requestName["OK"]:
+        self.log.error( "getRequestFileStatus: %s" % requestName["Message"] )
+        return requestName
+      else:
+        requestName = requestName["Value"]
 
     req = self.peekRequest( requestName )
     if not req["OK"]:
@@ -590,13 +592,15 @@ class RequestDB( DB ):
           res[opFile.LFN] = opFile.Status
     return S_OK( res )
 
-  def getRequestInfo( self, requestID ):
+  def getRequestInfo( self, requestName ):
     """ get request info given Request.RequestID """
-    requestName = self.getRequestName( requestID )
-    if not requestName["OK"]:
-      self.log.error( "getRequestInfo: %s" % requestName["Message"] )
-      return requestName
-    requestName = requestName["Value"]
+    if type( requestName ) == int:
+      requestName = self.getRequestName( requestName )
+      if not requestName["OK"]:
+        self.log.error( "getRequestInfo: %s" % requestName["Message"] )
+        return requestName
+      else:
+        requestName = requestName["Value"]
     requestInfo = self.getRequestProperties( requestName, [ "RequestID", "Status", "RequestName", "JobID",
                                                             "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent",
                                                             "CreationTime", "SubmitTime", "lastUpdate" ] )

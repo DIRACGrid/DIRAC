@@ -25,8 +25,8 @@ MAX_ERROR_COUNT = 10
 #############################################################################
 
 class TransformationDB( DB ):
-  ''' TransformationDB class
-  '''
+  """ TransformationDB class
+  """
 
   def __init__( self, maxQueueSize = 10, dbIn = None ):
     ''' The standard constructor takes the database name (dbname) and the name of the
@@ -1487,7 +1487,12 @@ class TransformationDB( DB ):
       self.lock.release()
       gLogger.error( "Failed to publish task for transformation", res['Message'] )
       return res
-    res = self._query( "SELECT LAST_INSERT_ID();", connection )
+
+    if self.isTransformationTasksInnoDB:
+      res = self._query( "SELECT @last", connection )
+    else:
+      res = self._query( "SELECT LAST_INSERT_ID()", connection )
+
     self.lock.release()
     if not res['OK']:
       return res

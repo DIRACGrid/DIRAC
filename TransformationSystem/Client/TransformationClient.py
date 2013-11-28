@@ -32,7 +32,6 @@ class TransformationClient( Client, FileCatalogueBase ):
 
           addFilesToTransformation(transName,lfns)
           addTaskForTransformation(transName,lfns=[],se='Unknown')
-          setFileStatusForTransformation(transName,status,lfns)
           getTransformationStats(transName)
 
       TransformationTasks table manipulation
@@ -256,7 +255,7 @@ class TransformationClient( Client, FileCatalogueBase ):
 
   def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False,
                                           rpc = '', url = '', timeout = 120 ):
-    """ sets ths file status for LFNs of a transformation
+    """ sets the file status for LFNs of a transformation
 
         For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
         - newLFNsStatus is a dictionary with the form:
@@ -284,11 +283,12 @@ class TransformationClient( Client, FileCatalogueBase ):
       # applying the state machine to the proposed status
       newStatuses = self._applyTransformationFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
 
-      # must do it for the file IDs...
-      newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
-      return rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
-    else:
-      return S_OK( 'Nothing updated' )
+      if newStatuses:  # if there's something to update
+        # must do it for the file IDs...
+        newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
+        return rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
+
+    return S_OK( 'Nothing to update' )
 
   def _applyTransformationFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
     """ For easier extension, here we apply the state machine of the production files.
@@ -321,7 +321,8 @@ class TransformationClient( Client, FileCatalogueBase ):
             if not force:
               newStatus = 'MaxReset'
 
-        newStatuses[lfn] = newStatus
+        if tsFilesAsDict[lfn][0].lower() != newStatus:
+          newStatuses[lfn] = newStatus
 
     return newStatuses
 

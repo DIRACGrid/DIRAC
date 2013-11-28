@@ -32,7 +32,9 @@ class VOMSService:
       while retries:
         retries -= 1
         try:
-          self.__soapClients[ key ] = getSOAPClient( "%s?wsdl" % url )
+          client = getSOAPClient( "%s?wsdl" % url )
+          client.set_options(headers={"X-VOMS-CSRF-GUARD":"1"})
+          self.__soapClients[ key ] = client
           break
         except Exception:
           if retries:

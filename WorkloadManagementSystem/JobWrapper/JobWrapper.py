@@ -1227,15 +1227,23 @@ class JobWrapper:
     if not isValid["OK"]:
       self.log.error( "failover request is not valid: %s" % isValid["Message"] )
     else:
-      requestClient = ReqClient()
-      result = requestClient.putRequest( request )
-      if result['OK']:
-        resDigest = request.getDigest()
-        digest = resDigest['Value']
-        self.jobReport.setJobParameter( 'PendingRequest', digest )
-      else:
-        self.__report( 'Failed', 'Failover Request Failed' )
-        self.log.error( 'Failed to set failover request', result['Message'] )
+      # We try several times to put the request before failing the job: it's very important that requests go through,
+      # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
+      # It's a poor man solution, but I don't see fancy alternatives
+      for counter in range( 10 ):
+        requestClient = ReqClient()
+        result = requestClient.putRequest( request )
+        if result['OK']:
+          resDigest = request.getDigest()
+          digest = resDigest['Value']
+          self.jobReport.setJobParameter( 'PendingRequest', digest )
+          break
+        else:
+          self.__report( 'Failed', 'Failover Request Failed' )
+          self.log.error( 'Failed to set failover request %d: %s. Sleeping a bit before re-trying' % ( counter,
+                                                                                                   result['Message'] ) )
+          del requestClient
+          time.sleep( counter ** 3 )
       return result
 
     return S_OK()

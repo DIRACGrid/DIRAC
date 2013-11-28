@@ -31,6 +31,10 @@ class TransformationManagerHandler( RequestHandler ):
       gLogger.error( res['Message'] )
     return res
 
+  def setDatabase( self, oDatabase ):
+    global database
+    database = oDatabase
+
   types_getCounters = [StringType, ListType, DictType]
   def export_getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None ):
     res = database.getCounters( table, attrList, condDict, older = older, newer = newer, timeStamp = timeStamp )
@@ -339,7 +343,7 @@ class TransformationManagerHandler( RequestHandler ):
     for lfn in replicaDict.keys():
       resdict[lfn] = True
     return S_OK( {'Successful':resdict, 'Failed':{}} )
-  
+
   types_removeReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_removeReplica( self, replicaDict ):
     """ Interface provides {LFN : { SE, ...} }

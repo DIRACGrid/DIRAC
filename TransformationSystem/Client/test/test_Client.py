@@ -1,4 +1,4 @@
-import unittest, types, re
+import unittest, types
 
 from mock import Mock
 from DIRAC.RequestManagementSystem.Client.Request             import Request
@@ -148,12 +148,22 @@ class TransformationClientSuccess( ClientsTestCase ):
     tsFiles = {'foo':['status', 2L, 1234]}
     dictOfNewLFNsStatus = {'foo':'status'}
     res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'status'} )
+    self.assertEqual( res, {} )
+
+    tsFiles = {'foo':['status', 2L, 1234]}
+    dictOfNewLFNsStatus = {'foo':'statusA'}
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'statusA'} )
 
     tsFiles = {'foo':['status', 2L, 1234], 'bar':['status', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'status'}
     res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'status'} )
+    self.assertEqual( res, {} )
+
+    tsFiles = {'foo':['status', 2L, 1234], 'bar':['status', 2L, 5678]}
+    dictOfNewLFNsStatus = {'foo':'statusA'}
+    res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
+    self.assertEqual( res, {'foo':'statusA'} )
 
     tsFiles = {'foo':['status', 2L, 1234], 'bar': ['status', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'A', 'bar':'B'}
