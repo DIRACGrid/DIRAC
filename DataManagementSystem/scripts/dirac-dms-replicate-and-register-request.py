@@ -59,7 +59,7 @@ if __name__ == "__main__":
     DIRAC.exit( -1 )
   metaDatas = metaDatas["Value"]
   for failedLFN, reason in metaDatas["Failed"].items():
-    self.log.error( "skipping %s: %s" % ( failedLFN, reason ) )
+    gLogger.error( "skipping %s: %s" % ( failedLFN, reason ) )
   lfnList = [ lfn for lfn in lfnList if lfn not in metaDatas["Failed"] ]
 
   if not lfnList:

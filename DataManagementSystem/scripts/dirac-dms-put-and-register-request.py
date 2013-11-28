@@ -70,8 +70,8 @@ if __name__ == "__main__":
   request.RequestName = requestName
 
   putAndRegister = Operation()
-  purAndRegister.Type = "PutAndRegister"
-  purAndRegister.TargetSE = targetSE
+  putAndRegister.Type = "PutAndRegister"
+  putAndRegister.TargetSE = targetSE
   opFile = File()
   opFile.LFN = LFN
   opFile.PFN = PFN

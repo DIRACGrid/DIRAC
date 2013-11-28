@@ -118,7 +118,7 @@ class AgentReactor:
       result = self.setAgentModuleCyclesToExecute( aName, numCycles )
       if not result['OK']:
         error = 'Failed to set cycles to execute'
-        gLogger( '%s:' % error, aName )
+        gLogger.error( '%s:' % error, aName )
         break
     if error:
       return S_ERROR( error )
