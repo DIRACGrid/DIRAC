@@ -1,4 +1,6 @@
-""" This is the XROOTD StorageClass """
+"""
+ This is the XROOTD StorageClass
+ """
 
 __RCSID__ = "$Id$"
 
@@ -9,7 +11,7 @@ from DIRAC.Resources.Storage.StorageBase        import StorageBase
 from DIRAC.Core.Utilities.Pfn                   import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.File                  import getSize
 import os
-from types import StringType, ListType
+from types import StringType, ListType, DictType
 
 
 from XRootD import client
@@ -220,7 +222,8 @@ class XROOTStorage( StorageBase ):
         dest_file = "%s/%s" % ( localPath, fileName )
       else:
         # other plugins use os.getcwd insted of self.cwd
-        dest_file = "%s/%s" % ( self.cwd, fileName )
+        # -> error self.cwd is for remote, ot is os.getcwd the right one
+        dest_file = "%s/%s" % ( os.getcwd(), fileName )
       res = self.__getSingleFile( src_url, dest_file )
       if res['OK']:
         successful[src_url] = res['Value']
@@ -281,7 +284,7 @@ class XROOTStorage( StorageBase ):
         os.remove( dest_file )
       except OSError, error:
         errStr = "XROOTStorage.__getSingleFile: Exception removing the file."
-        self.log.exception( errStr, error )
+        self.log.exception( errStr, "%s" % error )
         return S_ERROR( errStr )
 
 
@@ -324,10 +327,20 @@ class XROOTStorage( StorageBase ):
                 S_ERROR(errMsg) in case of arguments problems
     """
 
-    res = checkArgumentFormat( path )
-    if not res['OK']:
-      return res
-    urls = res['Value']
+    if type( path ) is StringType:
+      return S_ERROR ( "XROOTStorage.putFile: path argument must be a dictionary (or a list of dictionary) { url : local path}" )
+    elif type( path ) is ListType:
+      if not len( path ):
+        return S_OK( { 'Failed' : {}, 'Successful' : {} } )
+      else:
+        urls = dict( [( url, False ) for url in path] )
+    elif type( path )  is DictType:
+      if len(path) != 1:
+        return S_ERROR ( "XROOTStorage.putFile: path argument must be a dictionary (or a list of dictionary) { url : local path}" )
+      urls = path
+
+
+
 
     failed = {}
     successful = {}
@@ -350,6 +363,8 @@ class XROOTStorage( StorageBase ):
        :param int sourceSize: size in B (NOT USED)
        :returns: S_OK( file size ) if everything went fine, S_ERROR otherwise
     """
+
+    self.log.debug( "XROOTStorage.__putSingleFile: trying to upload %s to %s" % ( src_file, dest_url ) )
 
     # We create the folder first
     res = pfnparse( dest_url )
@@ -499,7 +514,7 @@ class XROOTStorage( StorageBase ):
         else:
           failed [url] = res['Message']
       else:
-        return res['Value']
+        return res
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
@@ -595,7 +610,6 @@ class XROOTStorage( StorageBase ):
           S_OK (S_ERROR (errorMsg)) if there was a problem geting the metadata
     """
     
-
     if expectedType and expectedType not in ['File', 'Directory']:
       return S_ERROR( "XROOTStorage.__getSingleMetadata : the 'expectedType' argument must be either 'File' or 'Directory'" )
 
@@ -789,12 +803,12 @@ class XROOTStorage( StorageBase ):
     urls = res['Value']
 
     if protocols:
-      if type( protocols ) == StringType:
+      if type( protocols ) is StringType:
         if protocols != self.protocol:
-          S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in (root)." )
-      elif type( protocols ) == ListType:
+          return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in (root)." )
+      elif type( protocols ) is ListType:
         if self.protocol not in protocols:
-          S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in (root)." )
+          return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in (root)." )
 
     # For the time being, I assume I should not check whether the file exists or not
     # So I just return the list of urls keys
@@ -914,7 +928,8 @@ class XROOTStorage( StorageBase ):
         dest_dir = "%s/%s" % ( localPath, dirName )
       else:
         # The other storage objects use os.getcwd(), I think it is a bug
-        dest_dir = "%s/%s" % ( self.cwd, dirName )
+        # -> no, self.cwd is remote
+        dest_dir = "%s/%s" % ( os.getcwd(), dirName )
 
       res = self.__getSingleDirectory( src_dir, dest_dir )
 
@@ -1070,6 +1085,9 @@ class XROOTStorage( StorageBase ):
                                     'Files': amount of files uploaded
                                     'Size': amount of data uploaded
     """
+
+    self.log.debug( "XROOTStorage.__putSingleDirectory: trying to upload %s to %s" % ( src_directory, dest_directory ) )
+
     filesPut = 0
     sizePut = 0
     # Check the local directory exists
@@ -1083,6 +1101,7 @@ class XROOTStorage( StorageBase ):
     allSuccessful = True
     directoryFiles = {}
     for fileName in contents:
+      self.log.debug( "FILENAME %s" % fileName )
       localPath = '%s/%s' % ( src_directory, fileName )
       remotePath = '%s/%s' % ( dest_directory, fileName )
       if not os.path.isdir( localPath ):
