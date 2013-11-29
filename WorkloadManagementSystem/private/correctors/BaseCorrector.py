@@ -4,12 +4,8 @@
 """ Base corrector for the group and ingroup shares
 """
 
-<<<<<<< HEAD
 from DIRAC import S_OK, S_ERROR
-=======
-from DIRAC  import S_OK, S_ERROR
 
->>>>>>> rel-v6r10
 __RCSID__ = "$Id$"
 
 from DIRAC import S_ERROR, S_OK
