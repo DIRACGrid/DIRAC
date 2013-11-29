@@ -11,7 +11,7 @@ from xml.sax.handler import ContentHandler
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
-from DIRAC.Core.Workflow.Workflow import *
+from DIRAC.Core.Workflow.Workflow import Workflow
 
 
 class WorkflowXMLHandler(ContentHandler):

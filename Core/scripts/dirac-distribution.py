@@ -277,7 +277,7 @@ class DistributionMaker:
                                            compileTarget,
                                            os.path.join( self.cliParams.destination, "mysql" ) )
       if not result[ 'OK' ]:
-        gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
+        gLogger.error( "Could not generate tarball for package %s" % requestedExternalsString, result[ 'Error' ] )
         sys.exit( 1 )
       os.system( "rm -rf '%s'" % compileTarget )
 

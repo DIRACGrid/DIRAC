@@ -4,6 +4,7 @@
 ########################################################################
 __RCSID__ = "$Id$"
 
+from DIRAC           import exit as DIRACExit
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( """
@@ -21,7 +22,7 @@ import os, sys
 
 if not len( sys.argv ) == 3:
   Script.showHelp()
-  DIRAC.exit( -1 )
+  DIRACExit( -1 )
 else:
   inputFileName = sys.argv[1]
   storageElement = sys.argv[2]
@@ -38,7 +39,7 @@ rm = ReplicaManager()
 res = rm.getReplicaMetadata( lfns, storageElement )
 if not res['OK']:
   print 'Error:', res['Message']
-  sys.exit( 1 )
+  DIRACExit( 1 )
 
 print '%s %s %s %s' % ( 'File'.ljust( 100 ), 'Migrated'.ljust( 8 ), 'Cached'.ljust( 8 ), 'Size (bytes)'.ljust( 10 ) )
 for lfn, metadata in res['Value']['Successful'].items():

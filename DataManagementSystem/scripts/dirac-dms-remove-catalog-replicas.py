@@ -4,6 +4,7 @@
 ########################################################################
 __RCSID__ = "$Id$"
 
+from DIRAC           import exit as DIRACExit
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( """
@@ -22,7 +23,7 @@ import os, sys
 
 if len( sys.argv ) < 3:
   Script.showHelp()
-  DIRAC.exit( -1 )
+  DIRACExit( -1 )
 else:
   inputFileName = sys.argv[1]
   storageElementName = sys.argv[2]
