@@ -1232,16 +1232,8 @@ def installExternals( releaseConfig ):
 def createPermanentDirLinks():
   """ Create links to permanent directories from within the version directory
   """
-  proPath = cliParams.targetPath
   if cliParams.useVersionsDir:
-    oldPath = os.path.join( cliParams.basePath, 'old' )
-    proPath = os.path.join( cliParams.basePath, 'pro' )
     try:
-      if os.path.exists( proPath ) or os.path.islink( proPath ):
-        if os.path.exists( oldPath ) or os.path.islink( oldPath ):
-          os.unlink( oldPath )
-        os.rename( proPath, oldPath )
-      os.symlink( cliParams.targetPath, proPath )
       for dir in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc', 'webRoot']:
         fake = os.path.join( cliParams.targetPath, dir )
         real = os.path.join( cliParams.basePath, dir )
@@ -1256,6 +1248,25 @@ def createPermanentDirLinks():
                 os.makedirs( os.path.join( real, fd ) )
           os.rename( fake, fake + '.bak' )
         os.symlink( real, fake )
+    except Exception, x:
+      logERROR( str( x ) )
+      return False
+
+  return True
+
+def createOldProLinks():
+  """ Create links to permanent directories from within the version directory
+  """
+  proPath = cliParams.targetPath
+  if cliParams.useVersionsDir:
+    oldPath = os.path.join( cliParams.basePath, 'old' )
+    proPath = os.path.join( cliParams.basePath, 'pro' )
+    try:
+      if os.path.exists( proPath ) or os.path.islink( proPath ):
+        if os.path.exists( oldPath ) or os.path.islink( oldPath ):
+          os.unlink( oldPath )
+        os.rename( proPath, oldPath )
+      os.symlink( cliParams.targetPath, proPath )
     except Exception, x:
       logERROR( str( x ) )
       return False
@@ -1418,6 +1429,8 @@ if __name__ == "__main__":
   if not installExternals( releaseConfig ):
     sys.exit( 1 )
   fixMySQLScript()
+  if not createOldProLinks():
+    sys.exit( 1 )
   if not createBashrc():
     sys.exit( 1 )
   if not createCshrc():
