@@ -3,9 +3,15 @@
 
 from xml.sax.handler import ContentHandler
 
+<<<<<<< HEAD
 from DIRAC.Core.Workflow.Parameter import Parameter
 from DIRAC.Core.Workflow.Module import ModuleInstance, ModuleDefinition
 from DIRAC.Core.Workflow.Step import StepDefinition, StepInstance
+=======
+from DIRAC.Core.Workflow.Parameter import *
+from DIRAC.Core.Workflow.Module import *
+from DIRAC.Core.Workflow.Step import *
+>>>>>>> rel-v6r10
 from DIRAC.Core.Workflow.Workflow import Workflow
 
 

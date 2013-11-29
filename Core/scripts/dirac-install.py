@@ -665,7 +665,7 @@ class ReleaseConfig:
     if project != "DIRAC":
       for modName in modules:
         if modName.find( project ) != 0:
-          S_ERROR( "Module %s does not start with the name %s" ( modName, project ) )
+          return S_ERROR( "Module %s does not start with the name %s" ( modName, project ) )
     return S_OK( modules )
 
   def getModSource( self, release, modName ):

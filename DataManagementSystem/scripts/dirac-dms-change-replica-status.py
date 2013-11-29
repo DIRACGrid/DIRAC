@@ -4,6 +4,7 @@
 ########################################################################
 __RCSID__   = "$Id$"
 
+from DIRAC           import exit as DIRACExit
 from DIRAC.Core.Base import Script 
 
 Script.setUsageMessage("""
@@ -21,7 +22,7 @@ import sys,os
 
 if not len(sys.argv) == 4:
   Script.showHelp()
-  DIRAC.exit( -1 )
+  DIRACExit( -1 )
 else:
   inputFileName = sys.argv[1]
   se = sys.argv[2]
@@ -38,7 +39,7 @@ else:
 res = catalog.getCatalogReplicas(lfns,True)
 if not res['OK']:
   print res['Message']
-  sys.exit()
+  DIRACExit( -1 )
 replicas = res['Value']['Successful']
 
 lfnDict = {}
