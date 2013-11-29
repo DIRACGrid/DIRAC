@@ -168,6 +168,18 @@ class CREAMComputingElement( ComputingElement ):
     if result['Value'][0]:
       if result['Value'][2]:
         return S_ERROR( result['Value'][2] )
+      elif "Authorization error" in result['Value'][1]:
+        return S_ERROR( "Authorization error" )
+      elif "FaultString" in result['Value'][1]:
+        res = re.search( 'FaultString=\[([\w\s]+)\]', result['Value'][1] )
+        fault = ''
+        if res:
+          fault = res.group( 1 )
+        detail = ''
+        res = re.search( 'FaultDetail=\[([\w\s]+)\]', result['Value'][1] )  
+        if res:
+          detail = res.group( 1 )
+          return S_ERROR( "Error: %s:%s" % (fault,detail) )
       else:
         return S_ERROR( 'Error while interrogating CE status' )
     if result['Value'][1]:
