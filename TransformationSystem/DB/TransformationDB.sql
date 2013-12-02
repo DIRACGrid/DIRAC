@@ -17,6 +17,8 @@ FLUSH PRIVILEGES;
 -- -----------------------------------------------------------------------------
 USE TransformationDB;
 
+SET FOREIGN_KEY_CHECKS = 0;
+
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Transformations;
 CREATE TABLE Transformations (
@@ -42,7 +44,17 @@ CREATE TABLE Transformations (
     EventsPerTask INT NOT NULL DEFAULT 0,
     PRIMARY KEY(TransformationID),
     INDEX(TransformationName)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- -------------------------------------------------------------------------------
+DROP TABLE IF EXISTS DataFiles;
+CREATE TABLE DataFiles (
+   FileID INTEGER NOT NULL AUTO_INCREMENT,
+   LFN VARCHAR(255) NOT NULL DEFAULT '',
+   Status varchar(32) DEFAULT 'AprioriGood',
+   INDEX (Status),
+   PRIMARY KEY (FileID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS AdditionalParameters;
@@ -51,86 +63,95 @@ CREATE TABLE AdditionalParameters (
     ParameterName VARCHAR(32) NOT NULL,
     ParameterValue LONGBLOB NOT NULL,
     ParameterType VARCHAR(32) DEFAULT 'StringType', 
-    PRIMARY KEY(TransformationID,ParameterName)
-);
+    PRIMARY KEY(TransformationID,ParameterName),
+    FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationLog;
 CREATE TABLE TransformationLog (
+	recid INTEGER NOT NULL AUTO_INCREMENT,
     TransformationID INTEGER NOT NULL,
     Message VARCHAR(255) NOT NULL,
-    Author VARCHAR(255) NOT NULL DEFAULT "Unknown",
+    Author VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     MessageDate DATETIME NOT NULL,
+    PRIMARY KEY(recid),
     INDEX (TransformationID),
-    INDEX (MessageDate)
-);
+    INDEX (MessageDate),
+    FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- -------------------------------------------------------------------------------
+DROP TABLE IF EXISTS TransformationTasks;
+CREATE TABLE TransformationTasks (
+    TransformationID INTEGER NOT NULL,
+    TaskID INTEGER NOT NULL,
+    ExternalStatus char(16) DEFAULT 'Created',
+    ExternalID char(16) DEFAULT '',
+    TargetSE char(255) DEFAULT 'Unknown',
+    CreationTime DATETIME NOT NULL,
+    LastUpdateTime DATETIME NOT NULL,
+    PRIMARY KEY(TransformationID,TaskID),
+    INDEX(ExternalStatus),
+	FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- This is required to mimic the AUTO_INCREMENT behavior of TaskID which was possible with MyISAM:
+CREATE TRIGGER `TaskID_Generator` BEFORE INSERT ON TransformationTasks
+FOR EACH ROW SET NEW.TaskID = ( SELECT @last := IFNULL(MAX(TaskID) + 1,1) FROM TransformationTasks WHERE TransformationID=NEW.TransformationID );
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationFiles;
 CREATE TABLE TransformationFiles(
     TransformationID INTEGER NOT NULL,
-    INDEX (TransformationID),
     FileID INTEGER NOT NULL,
-    Status VARCHAR(32) DEFAULT "Unused",
-    INDEX (Status),
+    Status VARCHAR(32) DEFAULT 'Unused',
     ErrorCount INT(4) NOT NULL DEFAULT 0,
-    TaskID VARCHAR(32),
-    TargetSE VARCHAR(255) DEFAULT "Unknown",
-    UsedSE VARCHAR(255) DEFAULT "Unknown",
+    TaskID INTEGER,
+    TargetSE VARCHAR(255) DEFAULT 'Unknown',
+    UsedSE VARCHAR(255) DEFAULT 'Unknown',
     LastUpdate DATETIME,
-    InsertedTime  DATETIME,
-    PRIMARY KEY (TransformationID,FileID)
-);
-
--- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS TransformationTasks;
-CREATE TABLE TransformationTasks (
-    TaskID INTEGER NOT NULL AUTO_INCREMENT,
-    TransformationID INTEGER NOT NULL,
-    ExternalStatus char(16) DEFAULT 'Created',
-    INDEX(ExternalStatus),
-    ExternalID char(16) DEFAULT '',
-    TargetSE char(255) DEFAULT 'Unknown',
-    CreationTime DATETIME NOT NULL,
-    LastUpdateTime DATETIME NOT NULL,
-    PRIMARY KEY(TransformationID,TaskID)
-);
+    InsertedTime DATETIME,
+    PRIMARY KEY (TransformationID,FileID),
+    INDEX (TransformationID),
+    INDEX (Status),
+    INDEX (FileID),
+    FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID),
+    FOREIGN KEY (FileID) REFERENCES DataFiles(FileID),
+    FOREIGN KEY (TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationFileTasks;
 CREATE TABLE TransformationFileTasks (
-  TransformationID INTEGER NOT NULL,
-  FileID INTEGER NOT NULL,
-  TaskID INTEGER NOT NULL,
-  PRIMARY KEY(TransformationID,FileID,TaskID)
-);
+	TransformationID INTEGER NOT NULL,
+	FileID INTEGER NOT NULL,
+	TaskID INTEGER NOT NULL,
+	PRIMARY KEY(TransformationID,FileID,TaskID),
+	FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID),
+	FOREIGN KEY (TransformationID, FileID) REFERENCES TransformationFiles(TransformationID, FileID),
+	FOREIGN KEY (TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TaskInputs;
 CREATE TABLE TaskInputs (
-TransformationID INTEGER NOT NULL,
-TaskID INTEGER NOT NULL,
-InputVector BLOB,
-PRIMARY KEY(TransformationID,TaskID)
-);
+	TransformationID INTEGER NOT NULL,
+	TaskID INTEGER NOT NULL,
+	InputVector BLOB,
+	PRIMARY KEY(TransformationID,TaskID),
+	FOREIGN KEY (TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationInputDataQuery;
-CREATE TABLE TransformationInputDataQuery(
-TransformationID INTEGER NOT NULL,
-ParameterName VARCHAR(512) NOT NULL,
-ParameterValue BLOB NOT NULL,
-ParameterType VARCHAR(8) NOT NULL,
-PRIMARY KEY(TransformationID,ParameterName)
-);
+CREATE TABLE TransformationInputDataQuery (
+	TransformationID INTEGER NOT NULL,
+	ParameterName VARCHAR(255) NOT NULL,
+	ParameterValue BLOB NOT NULL,
+	ParameterType VARCHAR(8) NOT NULL,
+	PRIMARY KEY (TransformationID,ParameterName),
+	FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS DataFiles;
-CREATE TABLE DataFiles (
-   FileID INTEGER NOT NULL AUTO_INCREMENT,
-   LFN VARCHAR(255) UNIQUE,
-   Status varchar(32) DEFAULT 'AprioriGood',
-   INDEX (Status),
-   PRIMARY KEY (FileID)
-);
-
+SET FOREIGN_KEY_CHECKS = 1;
