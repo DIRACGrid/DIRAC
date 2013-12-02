@@ -266,7 +266,7 @@ class TransformationDB( DB ):
         return S_ERROR( "Parameter %s not defined for transformation" % reqParam )
       paramDict[reqParam] = transParams[reqParam]
     if len( paramDict ) == 1:
-      return S_OK( paramDict[0] )
+      return S_OK( paramDict[reqParam] )
     return S_OK( paramDict )
 
   def getTransformationWithStatus( self, status, connection = False ):
