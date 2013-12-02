@@ -121,7 +121,7 @@ class TransformationDB( DB ):
   def getName( self ):
     """  Get the database name
     """
-    return self.dbname
+    return self.dbName
 
   ###########################################################################
   #
