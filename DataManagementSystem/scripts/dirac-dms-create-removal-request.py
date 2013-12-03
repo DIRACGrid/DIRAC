@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
-""" Create a DIRAC removal/replicaRemoval|removeFile request to be executed 
-    by the DMS Removal Agent
+""" Create a DIRAC RemoveReplica|RemoveFile request to be executed by the RMS
 """
 __RCSID__ = "ea64b42 (2012-07-29 16:45:05 +0200) ricardo <Ricardo.Graciani@gmail.com>"
 
@@ -57,31 +53,57 @@ if targetSE != 'All':
     print
     Script.showHelp()
 
-from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
-from DIRAC.RequestManagementSystem.Client.ReqClient             import ReqClient
+from DIRAC.RequestManagementSystem.Client.Request           import Request
+from DIRAC.RequestManagementSystem.Client.Operation         import Operation
+from DIRAC.RequestManagementSystem.Client.File              import File
+from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
+from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
 
 reqClient = ReqClient()
-requestType = 'removal'
-requestOperation = 'replicaRemoval'
+rm = ReplicaManager()
+
+requestOperation = 'RemoveReplica'
 if targetSE == 'All':
-  requestOperation = 'removeFile'
+  requestOperation = 'RemoveFile'
 
 for lfnList in breakListIntoChunks( lfns, 100 ):
 
-  oRequest = RequestContainer()
-  subRequestIndex = oRequest.initiateSubRequest( requestType )['Value']
-  attributeDict = {'Operation':requestOperation, 'TargetSE':targetSE}
-  oRequest.setSubRequestAttributes( subRequestIndex, requestType, attributeDict )
-  files = []
-  for lfn in lfnList:
-    files.append( {'LFN':lfn} )
-  oRequest.setSubRequestFiles( subRequestIndex, requestType, files )
+  oRequest = Request()
   requestName = "%s_%s" % ( md5( repr( time.time() ) ).hexdigest()[:16], md5( repr( time.time() ) ).hexdigest()[:16] )
-  oRequest.setRequestAttributes( {'RequestName':requestName} )
+  oRequest.RequestName = requestName
 
-  DIRAC.gLogger.info( oRequest.toXML()['Value'] )
+  oOperation = Operation()
+  oOperation.Type = requestOperation
+  oOperation.TargetSE = targetSE
 
-  result = reqClient.setRequest( requestName, oRequest.toXML()['Value'] )
+  res = rm.getCatalogFileMetadata( lfnList )
+  if not res['OK']:
+    print "Can't get file metadata: %s" % res['Message']
+    DIRAC.exit( 1 )
+  if res['Value']['Failed']:
+    print "Could not get the file metadata of the following, so skipping them:"
+    for fFile in res['Value']['Failed']:
+      print fFile
+
+  lfnMetadata = res['Value']['Successful']
+
+  for lfn in lfnMetadata:
+    rarFile = File()
+    rarFile.LFN = lfn
+    rarFile.Size = lfnMetadata[lfn]['Size']
+    rarFile.Checksum = lfnMetadata[lfn]['Checksum']
+    rarFile.GUID = lfnMetadata[lfn]['GUID']
+    rarFile.ChecksumType = 'ADLER32'
+    oOperation.addFile( rarFile )
+
+  oRequest.addOperation( oOperation )
+
+  isValid = gRequestValidator.validate( oRequest )
+  if not isValid['OK']:
+    print "Request is not valid: ", isValid['Message']
+    DIRAC.exit( 1 )
+
+  result = reqClient.putRequest( oRequest )
   if result['OK']:
     print 'Submitted Request:', result['Value']
   else:
