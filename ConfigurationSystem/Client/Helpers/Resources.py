@@ -21,12 +21,12 @@ def getSites():
     if not result['OK']:
       return result
     sites += result['Value']
-    
-  return S_OK( sites )  
 
-def getStorageElementSiteMapping( siteList=[] ):
-  """ Get Storage Element belonging to the given sites 
-  """ 
+  return S_OK( sites )
+
+def getStorageElementSiteMapping( siteList = [] ):
+  """ Get Storage Element belonging to the given sites
+  """
   if not siteList:
     result = getSites()
     if not result['OK']:
@@ -34,16 +34,16 @@ def getStorageElementSiteMapping( siteList=[] ):
     siteList = result['Value']
   siteDict = {}
   for site in siteList:
-    grid = site.split('.')[0]
+    grid = site.split( '.' )[0]
     ses = gConfig.getValue( cfgPath( gBaseResourcesSection, 'Sites', grid, site, 'SE' ), [] )
     if ses:
       siteDict[site] = ses
-    
-  return S_OK( siteDict )  
 
-def getFTSServersForSites( self, siteList=None ):
-  """ get FTSServers for sites 
-  
+  return S_OK( siteDict )
+
+def getFTSServersForSites( self, siteList = None ):
+  """ get FTSServers for sites
+
   :param list siteList: list of sites
   """
   siteList = siteList if siteList else None
@@ -54,10 +54,9 @@ def getFTSServersForSites( self, siteList=None ):
     siteList = siteList["Value"]
   ftsServers = dict()
   for site in siteList:
-    grid = site.split(".")[0]
-    serv = gConfig.getValue( cfgPath( gBaseResourcesSection, "Sites", grid, site, "FTSServer" ), "" )
+    serv = gConfig.getValue( cfgPath( gBaseResourcesSection, "FTSEndpoints", site ), "" )
     if serv:
-      ftsServers[site] = serv 
+      ftsServers[site] = serv
   return S_OK( ftsServers )
 
 def getSiteTier( site ):
@@ -112,19 +111,19 @@ def getStorageElementOptions( seName ):
   return S_OK( options )
 
 def getQueue( site, ce, queue ):
-  """ Get parameters of the specified queue 
+  """ Get parameters of the specified queue
   """
-  grid = site.split('.')[0]
+  grid = site.split( '.' )[0]
   result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( grid, site, ce ) )
   if not result['OK']:
-    return result 
+    return result
   resultDict = result['Value']
   result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
   if not result['OK']:
     return result
   resultDict.update( result['Value'] )
   resultDict['Queue'] = queue
-  
+
   return S_OK( resultDict )
 
 def getQueues( siteList = None, ceList = None, ceTypeList = None, community = None, mode = None ):
@@ -192,21 +191,21 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
   return S_OK( resultDict )
 
 def getCompatiblePlatforms( originalPlatforms ):
-  """ Get a list of platforms compatible with the given list 
+  """ Get a list of platforms compatible with the given list
   """
   if type( originalPlatforms ) == type( ' ' ):
     platforms = [originalPlatforms]
   else:
     platforms = list( originalPlatforms )
-    
+
   platformDict = {}
   result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
   if result['OK'] and result['Value']:
-    platformDict = result['Value'] 
+    platformDict = result['Value']
     for platform in platformDict:
       platformDict[platform] = [ x.strip() for x in platformDict[platform].split( ',' ) ]
   else:
-    return S_ERROR( 'OS compatibility info not found' )        
+    return S_ERROR( 'OS compatibility info not found' )
 
   resultList = list( platforms )
   for p in platforms:
@@ -226,20 +225,20 @@ def getDIRACPlatform( platform ):
   platformDict = {}
   result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
   if result['OK'] and result['Value']:
-    platformDict = result['Value'] 
+    platformDict = result['Value']
     for p in platformDict:
       if p == platform:
-        return S_OK( platform ) 
+        return S_OK( platform )
       platformDict[p] = [ x.strip() for x in platformDict[p].split( ',' ) ]
   else:
-    return S_ERROR( 'OS compatibility info not found' )    
-      
+    return S_ERROR( 'OS compatibility info not found' )
+
   for p in platformDict:
     if platform in platformDict[p]:
       return S_OK( p )
-  
+
   return S_ERROR( 'No compatible DIRAC platform found for %s' % platform )
-  
+
 def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
   """
