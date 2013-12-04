@@ -286,8 +286,8 @@ class TransformationCleaningAgent( AgentModule ):
     res = self.replicaManager.removeFile( filesFound, force = True )
     if not res['OK']:
       return res
+    realFailure = False
     for lfn, reason in res['Value']['Failed'].items():
-      realFailure = False
       if "File does not exist" in str( reason ):
         self.log.warn( "File %s not found in some catalog: " % ( lfn, reason ) )
       else:
