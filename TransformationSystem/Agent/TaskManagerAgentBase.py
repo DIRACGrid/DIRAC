@@ -7,7 +7,6 @@ from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.List import sortList
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
@@ -150,14 +149,17 @@ class TaskManagerAgentBase( AgentModule ):
                                                                                                      res['Message'] ) )
         continue
       statusDict = res['Value']
-      for status in sortList( statusDict.keys() ):
-        taskIDs = statusDict[status]
-        gLogger.info( "updateTaskStatus: Updating %d task(s) from transformation %d to %s" % ( len( taskIDs ),
-                                                                                               transID, status ) )
-        res = self.transClient.setTaskStatus( transID, taskIDs, status )
-        if not res['OK']:
-          gLogger.error( "updateTaskStatus: Failed to update task status for transformation", "%s %s" % ( transID,
-                                                                                                     res['Message'] ) )
+      if not statusDict:
+        gLogger.info( "updateTaskStatus: No tasks to update for transformation %d" % transID )
+      else:
+        for status in sorted( statusDict ):
+          taskIDs = statusDict[status]
+          gLogger.info( "updateTaskStatus: Updating %d task(s) from transformation %d to %s" % ( len( taskIDs ),
+                                                                                                 transID, status ) )
+          res = self.transClient.setTaskStatus( transID, taskIDs, status )
+          if not res['OK']:
+            gLogger.error( "updateTaskStatus: Failed to update task status for transformation", "%s %s" % ( transID,
+                                                                                                       res['Message'] ) )
 
     gLogger.info( "updateTaskStatus: Transformation task status update complete" )
     return S_OK()
@@ -166,7 +168,7 @@ class TaskManagerAgentBase( AgentModule ):
     ''' Update the files status
     '''
     gLogger.info( "updateFileStatus: Updating Status of task files" )
-    #Get the transformations to be updated
+    # Get the transformations to be updated
     status = self.am_getOption( 'UpdateFilesStatus', ['Active', 'Completing', 'Stopped'] )
     res = self._selectTransformations( transType = self.transType, status = status, agentType = [] )
     if not res['OK']:

@@ -172,22 +172,31 @@ class RequestTasks( TaskBase ):
       elif re.search( "Failed to retrieve RequestID for Request", res['Message'] ):
         newStatus = 'Failed'
       else:
-        self.log.info( "getSubmittedTaskStatus: Failed to get requestID for request", res['Message'] )
+        self.log.error( "getSubmittedTaskStatus: Failed to get requestID for request", res['Message'] )
       if newStatus and ( newStatus != oldStatus ):
-        if newStatus not in updateDict:
-          updateDict[newStatus] = []
-        updateDict[newStatus].append( taskID )
+        updateDict.setdefault( newStatus, [] ).append( taskID )
     return S_OK( updateDict )
 
   def getSubmittedFileStatus( self, fileDicts ):
     taskFiles = {}
+    submittedTasks = {}
+    for fileDict in fileDicts:
+      submittedTasks.setdefault( fileDict['TransformationID'], set() ).add( int( fileDict['TaskID'] ) )
+    for transID in submittedTasks:
+      res = self.transClient.getTransformationTasks( { 'TransformationID':transID, 'TaskID': list( submittedTasks[transID] )} )
+      if not res['OK']:
+        return res
+      for taskDict in res['Value']:
+        taskID = taskDict['TaskID']
+        if taskDict['ExternalStatus'] == 'Created' and taskID in submittedTasks[transID]:
+          submittedTasks[transID].remove( taskID )
+
     for fileDict in fileDicts:
       transID = fileDict['TransformationID']
-      taskID = fileDict['TaskID']
-      taskName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-      if taskName not in taskFiles:
-        taskFiles[taskName] = {}
-      taskFiles[taskName][fileDict['LFN']] = fileDict['Status']
+      taskID = int( fileDict['TaskID'] )
+      if taskID in submittedTasks[transID]:
+        taskName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
+        taskFiles.setdefault( taskName, {} )[fileDict['LFN']] = fileDict['Status']
 
     updateDict = {}
     for taskName in sorted( taskFiles ):
