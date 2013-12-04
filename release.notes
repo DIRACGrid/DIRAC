@@ -1,4 +1,4 @@
-[v6r10-pre17]
+[v6r10-pre18]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -88,6 +88,7 @@ FIX: TransformationAgent - added MissingInFC to consider for Removal transformat
 BUGFIX: TransformationAgent - in _getTransformationFiles() variable 'now' was not defined
 FIX: TransformationDB.sql - DataFiles primary key is changed to (FileID) from (FileID,LFN) 
 CHANGE: TransformationDB(.sql) - schema changes suitable for InnoDB
+FIX: TaskManager(AgentBase) - consider only submitted tasks for updating status
 
 *RMS
 NEW: Migrate to use the new Request Management by all the clients
