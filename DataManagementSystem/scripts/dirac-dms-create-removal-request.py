@@ -9,8 +9,6 @@ import time
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
-Script.registerSwitch( "m", "Monitor", "Monitor the execution of the Request (default: print request ID and exit)" )
-
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[0],
                                      __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -20,12 +18,6 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[0],
                                      '  LFN:      LFN or file containing a List of LFNs' ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
-
-monitor = False
-
-for switch in Script.getUnprocessedSwitches():
-  if switch[0].lower() == "m" or switch[0].lower() == "Monitor":
-    monitor = True
 
 args = Script.getPositionalArgs()
 if len( args ) < 2:
@@ -57,6 +49,7 @@ from DIRAC.RequestManagementSystem.Client.Request           import Request
 from DIRAC.RequestManagementSystem.Client.Operation         import Operation
 from DIRAC.RequestManagementSystem.Client.File              import File
 from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
+from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
 from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
 
 reqClient = ReqClient()
@@ -105,18 +98,6 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
 
   result = reqClient.putRequest( oRequest )
   if result['OK']:
-    print 'Submitted Request:', result['Value']
+    print 'Request Submitted'
   else:
-    print 'Failed to submit Request', result['Message']
-  if monitor:
-    requestID = result['Value']
-    while True:
-      result = reqClient.getRequestStatus( requestID )
-      if not result['OK']:
-        Script.gLogger.error( result['Message'] )
-        break
-      Script.gLogger.notice( result['Value']['RequestStatus'] )
-      if result['Value']['RequestStatus'] == 'Done':
-        break
-      import time
-      time.sleep( 10 )
+    print 'Failed to submit Request: ', result['Message']
