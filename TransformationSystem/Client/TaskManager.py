@@ -24,6 +24,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operation
 # FIXME: This should disappear!
 from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 
+def __taskName( transID, taskID ):
+  return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
 
 class TaskBase( object ):
 
@@ -130,7 +132,7 @@ class RequestTasks( TaskBase ):
           transfer.addFile( trFile )
 
         oRequest.addOperation( transfer )
-        oRequest.RequestName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
+        oRequest.RequestName = __taskName( transID, taskID )
         oRequest.OwnerDN = owner
         oRequest.OwnerGroup = ownerGroup
 
@@ -179,9 +181,7 @@ class RequestTasks( TaskBase ):
     taskNameIDs = {}
     noTasks = []
     for taskDict in taskDicts:
-      transID = taskDict['TransformationID']
-      taskID = taskDict['TaskID']
-      requestName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
+      requestName = __taskName( taskDict['TransformationID'], taskDict['TaskID'] )
 
       # FIXME: trying to see if it is in the old system
       reqID = self.__getRequestIDOLDSystem( requestName )
@@ -222,7 +222,7 @@ class RequestTasks( TaskBase ):
       transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
       oldStatus = taskDict['ExternalStatus']
-      requestName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
+      requestName = __taskName( transID, taskID )
 
       # FIXME: trying to see if it is in the old system
       newStatus = self.__getRequestStatusOLDSystem( requestName )
@@ -234,9 +234,7 @@ class RequestTasks( TaskBase ):
         self.log.info( "getSubmittedTaskStatus: Failed to get requestID for request" )
 
       if newStatus and ( newStatus != oldStatus ):
-        if newStatus not in updateDict:
-          updateDict[newStatus] = []
-        updateDict[newStatus].append( taskDict['TaskID'] )
+        updateDict.update( newStatus, [] ).append( taskDict['TaskID'] )
     return S_OK( updateDict )
 
   def __getRequestStatusOLDSystem( self, requestName ):
@@ -261,13 +259,25 @@ class RequestTasks( TaskBase ):
 
   def getSubmittedFileStatus( self, fileDicts ):
     taskFiles = {}
+    submittedTasks = {}
+    # Don't try and get status of not submitted tasks!
+    for fileDict in fileDicts:
+      submittedTasks.setdefault( fileDict['TransformationID'], set() ).add( int( fileDict['TaskID'] ) )
+    for transID in submittedTasks:
+      res = self.transClient.getTransformationTasks( { 'TransformationID':transID, 'TaskID': list( submittedTasks[transID] )} )
+      if not res['OK']:
+        return res
+      for taskDict in res['Value']:
+        taskID = taskDict['TaskID']
+        if taskDict['ExternalStatus'] == 'Created':
+          submittedTasks[transID].remove( taskID )
+
     for fileDict in fileDicts:
       transID = fileDict['TransformationID']
-      taskID = fileDict['TaskID']
-      requestName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-      if requestName not in taskFiles:
-        taskFiles[requestName] = {}
-      taskFiles[requestName][fileDict['LFN']] = fileDict['Status']
+      taskID = int( fileDict['TaskID'] )
+      if taskID in submittedTasks[transID]:
+        taskName = __taskName( transID, taskID )
+        taskFiles.setdefault( taskName, {} )[fileDict['LFN']] = fileDict['Status']
 
     updateDict = {}
     for taskName in sorted( taskFiles ):
@@ -571,7 +581,7 @@ class WorkflowTasks( TaskBase ):
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
-      taskName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
+      taskName = __taskName( transID, taskID )
       taskNames.append( taskName )
     res = self.jobMonitoringClient.getJobs( {'JobName':taskNames} )
     if not ['OK']:
@@ -622,9 +632,7 @@ class WorkflowTasks( TaskBase ):
                                                                                                  oldStatus ) )
           newStatus = "Failed"
         self.log.verbose( 'Setting job status for Production/Job %d/%d to %s' % ( transID, taskID, newStatus ) )
-        if newStatus not in updateDict:
-          updateDict[newStatus] = []
-        updateDict[newStatus].append( taskID )
+        updateDict.setdefault( newStatus, [] ).append( taskID )
     return S_OK( updateDict )
 
   def getSubmittedFileStatus( self, fileDicts ):
@@ -632,7 +640,7 @@ class WorkflowTasks( TaskBase ):
     for fileDict in fileDicts:
       transID = fileDict['TransformationID']
       taskID = fileDict['TaskID']
-      taskName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
+      taskName = __taskName( transID, taskID )
       if taskName not in taskFiles:
         taskFiles[taskName] = {}
       taskFiles[taskName][fileDict['LFN']] = fileDict['Status']
