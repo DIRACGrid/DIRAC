@@ -1,3 +1,8 @@
+[v6r9p29]
+
+*TS
+FIX: TaskManager(AgentBase) - fix for considering only submitted tasks 
+
 [v6r9p28]
 
 *TS
