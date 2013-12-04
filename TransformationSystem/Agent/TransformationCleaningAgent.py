@@ -287,8 +287,13 @@ class TransformationCleaningAgent( AgentModule ):
     if not res['OK']:
       return res
     for lfn, reason in res['Value']['Failed'].items():
-      self.log.error( "Failed to remove file found in the catalog", "%s %s" % ( lfn, reason ) )
-    if res['Value']['Failed']:
+      realFailure = False
+      if "File does not exist" in str( reason ):
+        self.log.warn( "File %s not found in some catalog: " % ( lfn, reason ) )
+      else:
+        self.log.error( "Failed to remove file found in the catalog", "%s %s" % ( lfn, reason ) )
+        realFailure = True
+    if realFailure:
       return S_ERROR( "Failed to remove all files found in the catalog" )
     return S_OK()
 
