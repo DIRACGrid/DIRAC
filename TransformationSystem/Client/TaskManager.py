@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'TaskManager'
 
-import re, time, types, os, copy
+import time, types, os, copy
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
@@ -20,6 +20,7 @@ from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getDNForUsername
 
 # FIXME: This should disappear!
 from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
@@ -102,6 +103,19 @@ class RequestTasks( TaskBase ):
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
+    if ( not owner ) or ( not ownerGroup ):
+      res = getProxyInfo( False, False )
+      if not res['OK']:
+        return res
+      proxyInfo = res['Value']
+      owner = proxyInfo['username']
+      ownerGroup = proxyInfo['group']
+
+    res = getDNForUsername( owner )
+    if not res['OK']:
+      return res
+    ownerDN = res['Value'][0]
+
     requestOperation = 'ReplicateAndRegister'
     if transBody:
       try:
@@ -131,7 +145,7 @@ class RequestTasks( TaskBase ):
 
         oRequest.addOperation( transfer )
         oRequest.RequestName = str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-        oRequest.OwnerDN = owner
+        oRequest.OwnerDN = ownerDN
         oRequest.OwnerGroup = ownerGroup
 
       isValid = gRequestValidator.validate( oRequest )

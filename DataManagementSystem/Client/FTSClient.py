@@ -316,7 +316,10 @@ class FTSClient( Client ):
       self.log.error( "ftsSchedule: no FTSFiles to put" )
       return S_ERROR( "ftsSchedule: no FTSFiles to put" )
 
-    res = self.ftsManager.putFTSFileList( ftsFiles )
+    ftsFilesJSONList = []
+    for ftsFile in ftsFiles:
+      ftsFilesJSONList.append( ftsFile.toJSON()['Value'] )
+    res = self.ftsManager.putFTSFileList( ftsFilesJSONList )
     if not res['OK']:
       self.log.error( "ftsSchedule: %s" % res['Message'] )
       return S_ERROR( "ftsSchedule: %s" % res['Message'] )

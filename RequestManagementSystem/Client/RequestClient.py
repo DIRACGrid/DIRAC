@@ -1,17 +1,17 @@
 ########################################################################################
 # $HeadURL$
 ########################################################################################
-""" 
+"""
     :mod:  RequestClient
     ====================
- 
+
     .. module:  RequestClient
     :synopsis: implementation of client for RequestDB using DISET framework
     :deprecated:
 """
-## RCSID
+# # RCSID
 __RCSID__ = "$Id$"
-## from DIRAC
+# # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
@@ -20,11 +20,11 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
 class RequestClient( Client ):
-  """ 
+  """
   .. class:: RequestClient
 
-  RequestClient is a class manipulating and operation on Requests. 
-  
+  RequestClient is a class manipulating and operation on Requests.
+
   :param RPCClient requestManager: RPC client to RequestManager
   :param dict requestProxiesDict: RPC client to ReqestProxy
   """
@@ -46,8 +46,8 @@ class RequestClient( Client ):
     if not self.__requestManager:
       url = PathFinder.getServiceURL( "RequestManagement/RequestManager" )
       if not url:
-        raise RuntimeError("CS option RequestManagement/RequestManager URL is not set!")
-      self.__requestManager = RPCClient( url, timeout=timeout )
+        raise RuntimeError( "CS option RequestManagement/RequestManager URL is not set!" )
+      self.__requestManager = RPCClient( url, timeout = timeout )
     return self.__requestManager
 
   def requestProxies( self, timeout = 120 ):
@@ -56,11 +56,11 @@ class RequestClient( Client ):
       self.__requestProxiesDict = {}
       proxiesURLs = fromChar( PathFinder.getServiceURL( "RequestManagement/RequestProxyURLs" ) )
       if not proxiesURLs:
-        self.log.warn( "CS option RequestManagement/RequestProxyURLs is not set!")
+        self.log.warn( "CS option RequestManagement/RequestProxyURLs is not set!" )
       for proxyURL in randomize( proxiesURLs ):
         self.log.debug( "creating RequestProxy for url = %s" % proxyURL )
-        self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout=timeout )
-    return self.__requestProxiesDict 
+        self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout = timeout )
+    return self.__requestProxiesDict
 
   ########################################################################
   #
@@ -72,42 +72,30 @@ class RequestClient( Client ):
 
     :param self: self reference
     :param str requestName: request name
-    :param str requestString: xml string 
+    :param str requestString: xml string
     """
-    self.log.debug("updateRequest: attempt to update '%s' request" % requestName )
-    updateRequest = self.requestManager().updateRequest( requestName, requestString )
-    if not updateRequest["OK"]:
-      self.log.error( "updateRequest: unable to update '%s' request: %s" % ( requestName, 
-                                                                             updateRequest["Message"] ) )
-    return updateRequest
+    self.log.debug( "updateRequest: attempt to update '%s' request" % requestName )
+    return self.requestManager().updateRequest( requestName, requestString )
 
   def deleteRequest( self, requestName ):
-    """ delete the request 
+    """ delete the request
 
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.debug("deleteRequest: attempt to delete '%s' request" % requestName )
-    deleteRequest = self.requestManager().deleteRequest( requestName )
-    if not deleteRequest["OK"]:
-      self.log.error( "deleteRequest: unable to delete '%s' request: %s" % ( requestName, 
-                                                                             deleteRequest["Message"] ) )
-    return deleteRequest
+    self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestName )
+    return self.requestManager().deleteRequest( requestName )
 
-  def setRequestStatus( self, requestName, requestStatus  ):
-    """ Set the status of a request. If url parameter is not present, the central 
+  def setRequestStatus( self, requestName, requestStatus ):
+    """ Set the status of a request. If url parameter is not present, the central
     request RPC client would be used.
-    
+
     :param self: self reference
     :param str requestName: request name
     :param str requestStatus: new status
     """
     self.log.debug( "setRequestStatus: attempt to set '%s' status for '%s' request" % ( requestStatus, requestName ) )
-    requestStatus = self.requestManager().setRequestStatus( requestName, requestStatus )
-    if not requestStatus["OK"]:
-      self.log.error( "setRequestStatus: unable to set status for '%s' request: %s" % ( requestName, 
-                                                                                        requestStatus["Message"] ) )
-    return requestStatus
+    return self.requestManager().setRequestStatus( requestName, requestStatus )
 
   def getRequestForJobs( self, jobID ):
     """ Get the request names for the supplied jobIDs.
@@ -116,15 +104,11 @@ class RequestClient( Client ):
     :param list jobID: list of job IDs (integers)
     """
     self.log.debug( "getRequestForJobs: attempt to get request(s) for job %s" % jobID )
-    requests = self.requestManager().getRequestForJobs( jobID )
-    if not requests["OK"]:
-      self.log.error( "getRequestForJobs: unable to get request(s) for jobs %s: %s" % ( jobID, 
-                                                                                        requests["Message"] ) )
-    return requests
+    return self.requestManager().getRequestForJobs( jobID )
 
   def setRequest( self, requestName, requestString ):
     """ set request to RequestManager
- 
+
     :param self: self reference
     :param str requestName: request name
     :param str requestString: xml string represenation of request
@@ -141,49 +125,43 @@ class RequestClient( Client ):
       setRequestProxy = proxyClient.setRequest( requestName, requestString )
       if setRequestProxy["OK"]:
         if setRequestProxy["Value"]["set"]:
-          self.log.debug( "setRequest: request '%s' successfully set using RequestProxy %s" % ( requestName, 
+          self.log.debug( "setRequest: request '%s' successfully set using RequestProxy %s" % ( requestName,
                                                                                                proxyURL ) )
         elif setRequestProxy["Value"]["saved"]:
-          self.log.debug( "setRequest: request '%s' successfully forwarded to RequestProxy %s" % ( requestName, 
+          self.log.debug( "setRequest: request '%s' successfully forwarded to RequestProxy %s" % ( requestName,
                                                                                                   proxyURL ) )
         return setRequestProxy
       else:
-        self.log.warn( "setRequest: unable to set request using RequestProxy %s: %s" % ( proxyURL, 
+        self.log.warn( "setRequest: unable to set request using RequestProxy %s: %s" % ( proxyURL,
                                                                                          setRequestProxy["Message"] ) )
         errorsDict["RequestProxy(%s)" % proxyURL] = setRequestProxy["Message"]
-    ## if we're here neither requestManager nor requestProxy were successfull
+    # # if we're here neither requestManager nor requestProxy were successfull
     self.log.error( "setRequest: unable to set request '%s'" % requestName )
     errorsDict["OK"] = False
     errorsDict["Message"] = "RequestClient.setRequest: unable to set request '%s'"
     return errorsDict
-      
-  def getRequest( self, requestType  ):
-    """ get request from RequestDB 
-    
+
+  def getRequest( self, requestType ):
+    """ get request from RequestDB
+
     :param self: self reference
     :param str requestType: type of request
     """
     self.log.debug( "getRequest: attempting to get '%s' request." % requestType )
-    getRequest = self.requestManager().getRequest( requestType )
-    if not getRequest["OK"]:
-      self.log.error("getRequest: unable to get '%s' request: %s" % ( requestType, getRequest["Message"] ) )
-    return getRequest  
+    return self.requestManager().getRequest( requestType )
 
   def serveRequest( self, requestType = "" ):
-    """ Get the request of type :requestType: from RequestDB.   
+    """ Get the request of type :requestType: from RequestDB.
 
     :param self: self reference
     :param str requestType: request type
     """
-    return self.getRequest( requestType  )
+    return self.getRequest( requestType )
 
   def getDBSummary( self ):
     """ Get the summary of requests in the RequestDBs. """
     self.log.debug( "getDBSummary: attempting to get RequestDB summary." )
-    dbSummary = self.requestManager().getDBSummary()
-    if not dbSummary["OK"]:
-      self.log.error( "getDBSummary: unable to get RequestDB summary: %s" % dbSummary["Message"] )
-    return dbSummary
+    return self.requestManager().getDBSummary()
 
   def getDigest( self, requestName ):
     """ Get the request digest given a request name.
@@ -192,10 +170,7 @@ class RequestClient( Client ):
     :param str requestName: request name
     """
     self.log.debug( "getDigest: attempting to get digest for '%s' request." % requestName )
-    digest = self.requestManager().getDigest( requestName )
-    if not digest["OK"]:
-      self.log.error( "getDigest: unable to get digest for '%s' request: %s" % ( requestName, digest["Message"] ) )
-    return digest
+    return self.requestManager().getDigest( requestName )
 
   def getCurrentExecutionOrder( self, requestName ):
     """ Get the request execution order given a request name.
@@ -204,37 +179,25 @@ class RequestClient( Client ):
     :param str requestName: name of the request
     """
     self.log.debug( "getCurrentExecutionOrder: attempt to get execution order for '%s' request." % requestName )
-    executionOrder = self.requestManager().getCurrentExecutionOrder( requestName )
-    if not executionOrder["OK"]:
-      self.log.error( "getCurrentExecutionOrder: unable to get execution order for '%s' request: %s" %\
-                        ( requestName, executionOrder["Message"] ) )
-    return executionOrder
+    return self.requestManager().getCurrentExecutionOrder( requestName )
 
-  def getRequestStatus( self, requestName  ):
+  def getRequestStatus( self, requestName ):
     """ Get the request status given a request name.
 
     :param self: self reference
     :param str requestName: name of teh request
     """
     self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestName )
-    requestStatus = self.requestManager().getRequestStatus( requestName )
-    if not requestStatus["OK"]:
-      self.log.error( "getRequestStatus: unable to get status for '%s' request: %s" % ( requestName, 
-                                                                                        requestStatus["Message"] ) )
-    return requestStatus
-                     
+    return self.requestManager().getRequestStatus( requestName )
+
   def getRequestInfo( self, requestName ):
-    """ The the request info given a request name. 
+    """ The the request info given a request name.
 
     :param self: self reference
     :param str requestName: request name
     """
     self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestName )
-    requestInfo = self.requestManager().getRequestInfo( requestName )
-    if not requestInfo["OK"]:
-      self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestName, 
-                                                                                      requestInfo["Message"] ) )
-    return requestInfo
+    return self.requestManager().getRequestInfo( requestName )
 
   def getRequestFileStatus( self, requestName, lfns ):
     """ Get fiel status for request given a request name.
@@ -244,11 +207,7 @@ class RequestClient( Client ):
     :param list lfns: list of LFNs
     """
     self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
-    fileStatus = self.requestManager().getRequestFileStatus( requestName, lfns )
-    if not fileStatus["OK"]:
-      self.log.error( "getRequestFileStatus: unable to get file status for '%s' request: %s" %\
-                        ( requestName, fileStatus["Message"] ) )
-    return fileStatus
+    return self.requestManager().getRequestFileStatus( requestName, lfns )
 
   def finalizeRequest( self, requestName, jobID ):
     """ check request status and perform finalisation if necessary
@@ -303,25 +262,25 @@ class RequestClient( Client ):
                                                                                      digest["Message"] ) )
 
     return S_OK()
-  
+
   def readRequestsForJobs( self, jobIDs ):
-    """ read requests for jobs 
-    
+    """ read requests for jobs
+
     :param list jobIDs: list with jobIDs
-    
+
     :return: S_OK( { "Successful" : { jobID1 : RequestContainer, ... },
-                     "Failed" : { jobIDn : "Fail reason" } } ) 
+                     "Failed" : { jobIDn : "Fail reason" } } )
     """
     readReqsForJobs = self.requestManager().readRequestsForJobs( jobIDs )
     if not readReqsForJobs["OK"]:
       return readReqsForJobs
     ret = readReqsForJobs["Value"] if readReqsForJobs["Value"] else None
     if not ret:
-      return S_ERROR("No values returned")
-    ## create RequestContainers out of xml strings for successful reads
-    if "Successful" in ret:    
+      return S_ERROR( "No values returned" )
+    # # create RequestContainers out of xml strings for successful reads
+    if "Successful" in ret:
       for jobID, xmlStr in ret["Successful"].items():
         req = RequestContainer( init = False )
-        req.parseRequest( request=xmlStr )
+        req.parseRequest( request = xmlStr )
         ret["Successful"][jobID] = req
     return S_OK( ret )
