@@ -7,7 +7,6 @@ from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.List import sortList
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
@@ -153,7 +152,7 @@ class TaskManagerAgentBase( AgentModule ):
       if not statusDict:
         gLogger.info( "updateTaskStatus: No tasks to update for transformation %d" % transID )
       else:
-        for status in sortList( statusDict ):
+        for status in sorted( statusDict ):
           taskIDs = statusDict[status]
           gLogger.info( "updateTaskStatus: Updating %d task(s) from transformation %d to %s" % ( len( taskIDs ),
                                                                                                  transID, status ) )
