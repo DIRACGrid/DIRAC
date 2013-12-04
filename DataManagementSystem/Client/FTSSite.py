@@ -46,7 +46,8 @@ class FTSSite( object ):
     """
 
     self.Name = name
-    self.FTSServer = ftsServer
+    if ftsServer:
+      self.FTSServer = ftsServer
     self.MaxActiveJobs = maxActiveJobs
 
   def set_FTSServer( self, value ):

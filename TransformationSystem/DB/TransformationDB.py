@@ -452,7 +452,7 @@ class TransformationDB( DB ):
         return S_ERROR( "Parameter %s not defined for transformation" % reqParam )
       paramDict[reqParam] = transParams[reqParam]
     if len( paramDict ) == 1:
-      return S_OK( paramDict[0] )
+      return S_OK( paramDict[reqParam] )
     return S_OK( paramDict )
 
   def getTransformationWithStatus( self, status, connection = False ):
@@ -1306,7 +1306,7 @@ class TransformationDB( DB ):
     if not authorDN:
       res = getProxyInfo( False, False )
       if res['OK']:
-        authorDN = res['Value']['identity']
+        authorDN = res['Value']['subject']
     res = self._getConnectionTransID( connection, transName )
     if not res['OK']:
       return res

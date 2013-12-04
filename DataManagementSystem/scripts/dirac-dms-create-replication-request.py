@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
 """ Create a DIRAC transfer/replicateAndRegister request to be executed
     by the DMS Transfer Agent
 """
@@ -12,8 +9,6 @@ from hashlib import md5
 import time
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.List import breakListIntoChunks
-
-Script.registerSwitch( "m", "Monitor", "Monitor the execution of the Request (default: print request ID and exit)" )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[0],
                                      __doc__.split( '\n' )[1],
@@ -26,10 +21,6 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[0],
 Script.parseCommandLine( ignoreErrors = False )
 
 monitor = False
-
-for switch in Script.getUnprocessedSwitches():
-  if switch[0].lower() == "m" or switch[0].lower() == "Monitor":
-    monitor = True
 
 args = Script.getPositionalArgs()
 if len( args ) < 2:
@@ -56,12 +47,15 @@ if not se.valid:
   print
   Script.showHelp()
 
-from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
-from DIRAC.RequestManagementSystem.Client.ReqClient             import ReqClient
+from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
+from DIRAC.RequestManagementSystem.Client.Request           import Request
+from DIRAC.RequestManagementSystem.Client.Operation         import Operation
+from DIRAC.RequestManagementSystem.Client.File              import File
+from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
+from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
 
 reqClient = ReqClient()
-requestType = 'transfer'
-requestOperation = 'replicateAndRegister'
+rm = ReplicaManager()
 
 for lfnList in breakListIntoChunks( lfns, 100 ):
 
@@ -72,9 +66,24 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
   replicateAndRegister.Type = 'ReplicateAndRegister'
   replicateAndRegister.TargetSE = targetSE
 
-  for lfn in lfnList:
+  res = rm.getCatalogFileMetadata( lfnList )
+  if not res['OK']:
+    print "Can't get file metadata: %s" % res['Message']
+    DIRAC.exit( 1 )
+  if res['Value']['Failed']:
+    print "Could not get the file metadata of the following, so skipping them:"
+    for fFile in res['Value']['Failed']:
+      print fFile
+
+  lfnMetadata = res['Value']['Successful']
+
+  for lfn in lfnMetadata:
     rarFile = File()
     rarFile.LFN = lfn
+    rarFile.Size = lfnMetadata[lfn]['Size']
+    rarFile.Checksum = lfnMetadata[lfn]['Checksum']
+    rarFile.GUID = lfnMetadata[lfn]['GUID']
+    rarFile.ChecksumType = 'ADLER32'
     replicateAndRegister.addFile( rarFile )
 
   oRequest.addOperation( replicateAndRegister )
@@ -83,21 +92,9 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
     print "Request is not valid: ", isValid['Message']
     DIRAC.exit( 1 )
 
-  result = reqClient.setRequest( requestName, oRequest.toXML()['Value'] )
+  result = reqClient.putRequest( oRequest )
   if result['OK']:
-    print 'Submitted Request:', result['Value']
+    print "Request submitted successfully"
   else:
-    print 'Failed to submit Request', result['Message']
-  if monitor:
-    requestID = result['Value']
-    while True:
-      result = reqClient.getRequestStatus( requestID )
-      if not result['OK']:
-        Script.gLogger.error( result['Message'] )
-        break
-      Script.gLogger.notice( result['Value']['RequestStatus'] )
-      if result['Value']['RequestStatus'] == 'Done':
-        break
-      import time
-      time.sleep( 10 )
+    print "Failed to submit Request: ", result['Message']
 

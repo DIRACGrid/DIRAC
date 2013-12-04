@@ -175,9 +175,12 @@ class FTSManagerHandler( RequestHandler ):
     return self.ftsDB.cleanUpFTSFiles( requestID, fileIDs )
 
   types_putFTSFileList = [ ListType ]
-  def export_putFTSFileList( self, ftsFiles ):
+  def export_putFTSFileList( self, ftsFilesJSONList ):
     """ put FTS files list
     """
+    ftsFiles = []
+    for ftsFileJSON in ftsFilesJSONList:
+      ftsFiles.append( FTSFile( ftsFileJSON ) )
     return self.ftsDB.putFTSFileList( ftsFiles )
 
   types_getFTSFile = [ [IntType, LongType] ]
