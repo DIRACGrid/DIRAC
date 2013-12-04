@@ -1121,7 +1121,7 @@ class TransformationDB( DB ):
     if not authorDN:
       res = getProxyInfo( False, False )
       if res['OK']:
-        authorDN = res['Value']['identity']
+        authorDN = res['Value']['subject']
     res = self._getConnectionTransID( connection, transName )
     if not res['OK']:
       return res
