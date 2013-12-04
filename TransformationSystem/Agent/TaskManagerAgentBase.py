@@ -149,14 +149,17 @@ class TaskManagerAgentBase( AgentModule ):
                                                                                                      res['Message'] ) )
         continue
       statusDict = res['Value']
-      for status in sorted( statusDict ):
-        taskIDs = statusDict[status]
-        gLogger.info( "updateTaskStatus: Updating %d task(s) from transformation %d to %s" % ( len( taskIDs ),
-                                                                                               transID, status ) )
-        res = self.transClient.setTaskStatus( transID, taskIDs, status )
-        if not res['OK']:
-          gLogger.error( "updateTaskStatus: Failed to update task status for transformation", "%s %s" % ( transID,
-                                                                                                     res['Message'] ) )
+      if not statusDict:
+        gLogger.info( "updateTaskStatus: No tasks to update for transformation %d" % transID )
+      else:
+        for status in sorted( statusDict ):
+          taskIDs = statusDict[status]
+          gLogger.info( "updateTaskStatus: Updating %d task(s) from transformation %d to %s" % ( len( taskIDs ),
+                                                                                                 transID, status ) )
+          res = self.transClient.setTaskStatus( transID, taskIDs, status )
+          if not res['OK']:
+            gLogger.error( "updateTaskStatus: Failed to update task status for transformation", "%s %s" % ( transID,
+                                                                                                       res['Message'] ) )
 
     gLogger.info( "updateTaskStatus: Transformation task status update complete" )
     return S_OK()
