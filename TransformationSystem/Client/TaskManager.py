@@ -246,8 +246,7 @@ class RequestTasks( TaskBase ):
 
       if not newStatus:
         self.log.info( "getSubmittedTaskStatus: Failed to get requestID for request" )
-
-      if newStatus and ( newStatus != oldStatus ):
+      elif newStatus != oldStatus:
         updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
     return S_OK( updateDict )
 
