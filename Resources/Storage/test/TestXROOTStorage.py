@@ -208,24 +208,24 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     ''' tests the output of getProtocolPfn
     '''
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', 'protocol', '/rootdir', 'host', 'port', 'spaceToken', 'wspath' )
     pfnDict = {}
     pfnDict['Protocol'] = 'root'
     pfnDict['Host'] = 'host'
     pfnDict['Port'] = 'port'
     pfnDict['WSUrl'] = 'WSUrl'
-    pfnDict['Path'] = '/path'
+    pfnDict['Path'] = '/subpath'
     pfnDict['FileName'] = 'fileName'
 
     res = resource.getProtocolPfn( pfnDict, False )
     self.assertEqual( True, res['OK'] )
     res = res[ 'Value' ]
-    self.assertEqual( "root://host/path/fileName", res )
+    self.assertEqual( "root://host//rootdir/subpath/fileName", res )
 
     res = resource.getProtocolPfn( pfnDict, True )
     self.assertEqual( True, res['OK'] )
     res = res[ 'Value' ]
-    self.assertEqual( "root://host/path/fileName", res )
+    self.assertEqual( "root://host//rootdir/subpath/fileName", res )
     
     
 

@@ -805,10 +805,10 @@ class XROOTStorage( StorageBase ):
     if protocols:
       if type( protocols ) is StringType:
         if protocols != self.protocol:
-          return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in (root)." )
+          return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in (%s)." % self.protocol )
       elif type( protocols ) is ListType:
         if self.protocol not in protocols:
-          return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in (root)." )
+          return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in (%s)." % self.protocol )
 
     # For the time being, I assume I should not check whether the file exists or not
     # So I just return the list of urls keys
@@ -1625,6 +1625,10 @@ class XROOTStorage( StorageBase ):
 
     pfnDict['Protocol'] = self.protocol
     pfnDict['Host'] = self.host
+    
+    if not pfnDict['Path'].startswith( "%s" % self.rootdir ):
+      pfnDict['Path'] = "%s%s" % ( self.rootdir, pfnDict['Path'] )
+    
 
     # These lines should be checked
     if withPort:
@@ -1634,8 +1638,7 @@ class XROOTStorage( StorageBase ):
 
     # pfnunparse does not take into account the double // so I have to trick it
     # The problem is that I cannot take into account the port, which is always empty (it seems..)
-#     return pfnunparse( pfnDict )
-    return S_OK( 'root://%s%s/%s' % ( self.host, pfnDict['Path'], pfnDict['FileName'] ) )
+    return S_OK( 'root://%s/%s/%s' % ( self.host, pfnDict['Path'], pfnDict['FileName'] ) )
 
 
   def getCurrentURL( self, fileName ):
