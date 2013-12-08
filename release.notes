@@ -1,3 +1,11 @@
+[v6r9p30]
+
+*DMS
+CHANGE: FileCatalogFactory - construct CatalogURL from CatalogType by default
+
+*SMS
+FIX: dirac-stager-stage-files - changed the order of the arguments
+
 [v6r9p29]
 
 *TS
