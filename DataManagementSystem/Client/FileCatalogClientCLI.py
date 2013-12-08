@@ -2187,7 +2187,8 @@ File Catalog Client $Revision: 1.17 $Date:
     
         Usage:
           
-          dataset add <dataset_name> <path> <meta_query>   - add a new dataset definition
+          dataset add <dataset_name> <meta_query>          - add a new dataset definition
+          dataset annotate <dataset_name> <annotation>     - add annotation to a dataset
           dataset show [-l] [<dataset_name>]               - show existing datasets
           dataset status <dataset_name>                    - display the dataset status
           dataset files <dataset_name>                     - show dataset files     
@@ -2205,6 +2206,8 @@ File Catalog Client $Revision: 1.17 $Date:
     del argss[0]
     if command == "add":
       self.dataset_add( argss )
+    elif command == "annotate":
+      self.dataset_annotate( argss )    
     elif command == "show":
       self.dataset_show( argss )  
     elif command == "files":
@@ -2226,17 +2229,28 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Add a new dataset
     """
     datasetName = argss[0]
-    path = argss[1]
-    metaSelections = ' '.join( argss[2:] )
+    metaSelections = ' '.join( argss[1:] )
     metaDict = self.__createQuery( metaSelections )
-    path = self.getPath( path )
-    metaDict['Path'] = path
+    datasetName = self.getPath( datasetName )
     
     result = self.fc.addDataset( datasetName, metaDict )
     if not result['OK']:
       print "ERROR: failed to add dataset:", result['Message']
     else:
       print "Successfully added dataset", datasetName  
+
+  def dataset_annotate( self, argss ):
+    """ Add a new dataset
+    """
+    datasetName = argss[0]
+    annotation = argss[1]
+    datasetName = self.getPath( datasetName )
+    
+    result = self.fc.addDatasetAnnotation( {datasetName: annotation} )
+    if not result['OK']:
+      print "ERROR: failed to add annotation:", result['Message']
+    else:
+      print "Successfully added annotation to", datasetName  
 
   def dataset_status( self, argss ):
     """ Display the dataset status

@@ -13,6 +13,7 @@ try:
 except ImportError:
   import md5
 from types import StringTypes, ListType, DictType
+import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import stringListToString
 
@@ -44,10 +45,26 @@ class DatasetManager:
       return result
     intStatus = result['Value']
 
+    dsDir = os.path.dirname( datasetName )
+    dsName = os.path.basename( datasetName )
+    if not dsDir:
+      return S_ERROR( 'Dataset name should be specified with full path' )
+    result = self.db.dtree.existsDir( dsDir )
+    if not result['OK']:
+      return result
+    if result['Value']['Exists']:
+      dirID = result['Value']['DirID']
+    else:  
+      result = self.db.dtree.makeDirectories( dsDir )
+      if not result['OK']:
+        return result
+      dirID = result['Value']
+
     # Add the new dataset entry now
     inDict = {
-               'DatasetName': datasetName,
+               'DatasetName': dsName,
                'MetaQuery': str(metaQuery),
+               'DirID': dirID,
                'TotalSize': totalSize,
                'NumberOfFiles': numberOfFiles,
                'UID': uid,
@@ -65,6 +82,95 @@ class DatasetManager:
         return result
     datasetID = result['lastRowId']
     return S_OK( datasetID )
+  
+  def _getDatasetDirectories( self, datasets ):
+    dirDict = {}
+    for path in datasets:
+      dsDir = os.path.dirname( path )
+      dsFile = os.path.basename( path )
+      dirDict.setdefault( dsDir, [] )
+      dirDict[dsDir].append( dsFile )
+    return dirDict
+  
+  def _findDatasets(self, datasets, connection=False ):
+    
+    connection = self._getConnection( connection )
+    dirDict = self._getDatasetDirectories( datasets )
+    failed = {}
+    successful = {}
+    result = self.db.dtree.findDirs( dirDict.keys() )
+    if not result['OK']:
+      return result
+    directoryIDs = result['Value']
+
+    directoryPaths = {}
+    for dirPath in dirDict:
+      if not dirPath in directoryIDs:
+        for dsName in dirDict[dirPath]:
+          dname = '%s/%s' % (dirPath,dsName)
+          dname = dname.replace('//','/')
+          failed[dname] = 'No such dataset or directory'
+      else:
+        directoryPaths[directoryIDs[dirPath]] = dirPath    
+
+    wheres = []
+    for dirPath in directoryIDs:
+      dsNames = dirDict[dirPath]
+      dirID = directoryIDs[dirPath]
+      wheres.append( "( DirID=%d AND DatasetName IN (%s) )" % ( dirID, stringListToString( dsNames ) ) )
+
+    req = "SELECT DatasetName,DirID,DatasetID FROM FC_Datasets WHERE %s" % " OR ".join( wheres )
+    result = self.db._query(req,connection)
+    if not result['OK']:
+      return result
+    for dsName, dirID, dsID in result['Value']:
+      dname = '%s/%s' % ( directoryPaths[dirID], dsName )
+      dname = dname.replace('//','/')
+      successful[dname] = dsID 
+  
+    for dataset in datasets:
+      if not dataset in successful:
+        failed[dataset] = "No such dataset"
+
+    return S_OK({"Successful":successful,"Failed":failed})
+  
+  def _findNoPathDatasets( self, nodirDatasets, connection = False ):
+
+    failed = {}
+    successful = {}
+    req = "SELECT COUNT(DatasetName),DatasetName,DatasetID FROM FC_Datasets WHERE DatasetName in "
+    req += "( %s ) GROUP BY DatasetName" % stringListToString( nodirDatasets )
+    result = self.db._query(req,connection)
+    if not result['OK']:
+      return result
+    for dsCount, dsName, dsID in result['Value']:
+      if dsCount > 1:
+        failed[dsName] = "Ambiguous dataset name"
+      else:  
+        successful[dsName] = dsID 
+        
+    return S_OK({"Successful":successful,"Failed":failed})    
+  
+  def addDatasetAnnotation( self, datasets, credDict ):
+    """ Add annotation to the given dataset
+    """
+    connection = self._getConnection()
+    successful = {}
+    result = self._findDatasets( datasets.keys, connection )
+    if not result['OK']:
+      return result
+    failed = result['Value']['Failed']
+    datasetDict = result['Value']['Successful']
+    for dataset, annotation in datasets.items():
+      if dataset in datasetDict:
+        req = "REPLACE FC_DatasetAnnotations SET Annotation='%s' WHERE DatasetID=%d" % (annotation,datasetDict[dataset])
+        result = self.db._update( req, connection)
+        if not result['OK']:
+          failed[dataset] = "Failed to add annotation"
+        else:
+          successful[dataset] = True  
+      
+    return S_OK( {'Successful':successful, 'Failed':failed} )  
 
   def __getMetaQueryParameters( self, metaQuery, credDict ):
     """ Get parameters ( hash, total size, number of files ) for the given metaquery
@@ -250,11 +356,19 @@ class DatasetManager:
   def getDatasetParameters( self, datasetName, credDict ):
     """ Get the currently stored dataset parameters
     """
+    result = self._findDatasets( [datasetName] )
+    if not result['OK']:
+      return result
+    if not result['Value']['Successful']:
+      return S_ERROR( result['Value']['Failed'][datasetName] )
+    dsID = result['Value']['Successful'][datasetName]     
+    dsName = os.path.basename( datasetName )
+    
     parameterList = ['DatasetID','MetaQuery','DirID','TotalSize','NumberOfFiles',
                      'UID','GID','Status','CreationDate','ModificationDate','DatasetHash','Mode']
     parameterString = ','.join( parameterList )
 
-    req = "SELECT %s FROM FC_MetaDatasets WHERE DatasetName='%s'" % ( parameterString, datasetName )
+    req = "SELECT %s FROM FC_MetaDatasets WHERE DatasetName='%s' AND DirID=%d" % ( parameterString, dsName, dsID )
     result = self.db._query( req )
     if not result['OK']:
       return result

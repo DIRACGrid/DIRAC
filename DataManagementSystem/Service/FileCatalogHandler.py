@@ -511,6 +511,12 @@ class FileCatalogHandler( RequestHandler ):
     """
     return gFileCatalogDB.datasetManager.addDataset( datasetName, metaQuery, self.getRemoteCredentials() )
   
+  types_addDatasetAnnotation = [ DictType ]
+  def export_addDatasetAnnotation( self, datasetDict ):
+    """ Add annotation to an already created dataset
+    """
+    return gFileCatalogDB.datasetManager.addDatasetAnnotation( datasetDict, self.getRemoteCredentials() )
+  
   types_removeDataset = [ StringTypes ]
   def export_removeDataset( self, datasetName ):
     """ Check the given dynamic dataset for changes since its definition

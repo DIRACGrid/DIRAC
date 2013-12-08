@@ -284,7 +284,7 @@ CREATE TABLE FC_MetaDatasets (
   ModificationDate DATETIME,
   DatasetHash char(36) NOT NULL,
   Mode SMALLINT UNSIGNED NOT NULL DEFAULT 509,
-  UNIQUE KEY ( DatasetName )
+  UNIQUE KEY ( DatasetName, DirID )
 );
 
 drop table if exists FC_MetaDatasetFiles;
@@ -292,6 +292,12 @@ CREATE TABLE FC_MetaDatasetFiles (
   DatasetID INT NOT NULL,
   FileID INT NOT NULL,
   UNIQUE KEY (DatasetID, FileID )
+);
+
+drop table if exists FC_DatasetAnnotations;
+CREATE TABLE FC_DatasetAnnotations (
+  DatasetID INT NOT NULL PRIMARY KEY,
+  Annotation VARCHAR(512)
 );
 
 -- ------------------------------------------------------------------------------
