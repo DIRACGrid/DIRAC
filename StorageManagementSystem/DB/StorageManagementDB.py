@@ -1107,7 +1107,7 @@ class StorageManagementDB( DB ):
     res = self._query( req, connection )
     if not res['OK']:
        gLogger.error( "StorageManagementDB.removeUnlinkedReplicas. Problem selecting entries from CacheReplicas where Links = 0." )
-     else:
+    else:
       replicaIDs.extend( [ row[0] for row in res['Value'] ] )
 
     if not replicaIDs:
