@@ -322,7 +322,7 @@ class AccountingDB( DB ):
     bucketFieldsDict = {}
     inbufferDict = { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT' }
     bucketIndexes = { 'startTimeIndex' : [ 'startTime' ], 'bucketLengthIndex' : [ 'bucketLength' ] }
-    uniqueIndexFields = []
+    uniqueIndexFields = ['startTime']
     for field in definitionKeyFields:
       bucketIndexes[ "%sIndex" % field[0] ] = [ field[0] ]
       uniqueIndexFields.append( field[ 0 ] )
@@ -341,15 +341,13 @@ class AccountingDB( DB ):
     inbufferDict[ 'endTime' ] = "INT UNSIGNED NOT NULL"
     inbufferDict[ 'taken' ] = "TINYINT(1) DEFAULT 1 NOT NULL"
     inbufferDict[ 'takenSince' ] = "DATETIME NOT NULL"
-    uniqueIndexFields.append( 'startTime' )
     bucketFieldsDict[ 'bucketLength' ] = "MEDIUMINT UNSIGNED NOT NULL"
     uniqueIndexFields.append( 'bucketLength' )
     bucketTableName = _getTableName( "bucket", name )
     if bucketTableName not in tablesInThere:
       tables[ bucketTableName ] = { 'Fields' : bucketFieldsDict,
-                                      'Indexes' : bucketIndexes,
-                                      'UniqueIndexes' : { 'UniqueConstraint' : uniqueIndexFields }
-                                    }
+                                    'UniqueIndexes' : { 'UniqueConstraint' : uniqueIndexFields }
+                                  }
     typeTableName = _getTableName( "type", name )
     if typeTableName not in tablesInThere:
       tables[ typeTableName ] = { 'Fields' : fieldsDict }
@@ -1123,9 +1121,7 @@ class AccountingDB( DB ):
                                                                         field,
                                                                         _getTableName( "key", typeName, field )
                                                                       ) )
-            preGenFields[1][i] = "`%s`.Value" % _getTableName( "key", typeName, field )
-          else:
-            preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
+          preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
     if sqlLinkList:
       cmd += " AND %s" % " AND ".join( sqlLinkList )
     if groupFields:
