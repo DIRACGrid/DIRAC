@@ -47,8 +47,8 @@ class Transformation( API ):
                           'MaxNumberOfTasks'       : 0,
                           'EventsPerTask'          : 0}
     self.ops = Operations()
-    self.supportedPlugins = self.ops.getValue('Transformations/AllowedPlugins',
-                                              ['Broadcast', 'Standard', 'BySize', 'ByShare'])
+    self.supportedPlugins = self.ops.getValue( 'Transformations/AllowedPlugins',
+                                              ['Broadcast', 'Standard', 'BySize', 'ByShare'] )
     if not transClient:
       self.transClient = TransformationClient()
     else:
@@ -350,6 +350,8 @@ class Transformation( API ):
     return S_OK( transID )
 
   def _checkCreation( self ):
+    """ Few checks
+    """
     if self.paramValues['TransformationID']:
       gLogger.info( "You are currently working with an active transformation definition." )
       gLogger.info( "If you wish to create a new transformation reset the TransformationID." )
@@ -363,21 +365,16 @@ class Transformation( API ):
         self.paramValues[parameter] = raw_input( "Please enter the value of " + parameter + " " )
 
     plugin = self.paramValues['Plugin']
-    if not plugin in self.supportedPlugins:
-      gLogger.info( "The selected Plugin (%s) is not known to the transformation agent." % plugin )
-      res = self.__promptForParameter( 'Plugin', choices = self.supportedPlugins, default = 'Standard' )
-      if not res['OK']:
-        return res
-      self.paramValues['Plugin'] = res['Value']
+    if plugin:
+      if not plugin in self.supportedPlugins:
+        gLogger.info( "The selected Plugin (%s) is not known to the transformation agent." % plugin )
+        res = self.__promptForParameter( 'Plugin', choices = self.supportedPlugins, default = 'Standard' )
+        if not res['OK']:
+          return res
+        self.paramValues['Plugin'] = res['Value']
 
     plugin = self.paramValues['Plugin']
-    #checkPlugin = "_check%sPlugin" % plugin
-    #fcn = None
-    #if hasattr( self, checkPlugin ) and callable( getattr( self, checkPlugin ) ):
-    #  fcn = getattr( self, checkPlugin )
-    #if not fcn:
-    #  return S_ERROR( "Unable to invoke %s, it isn't a member function" % checkPlugin )
-    #res = fcn()
+
     return S_OK()
 
   def _checkBySizePlugin( self ):
@@ -397,7 +394,7 @@ class Transformation( API ):
 
   def _checkBroadcastPlugin( self ):
     gLogger.info( "The Broadcast plugin requires the following parameters be set: %s" % ( ', '.join( ['SourceSE',
-                                                                                                      'TargetSE'] ) ) ) 
+                                                                                                      'TargetSE'] ) ) )
     requiredParams = ['SourceSE', 'TargetSE']
     for requiredParam in requiredParams:
       if ( not self.paramValues.has_key( requiredParam ) ) or ( not self.paramValues[requiredParam] ):
