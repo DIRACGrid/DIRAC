@@ -25,7 +25,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getDNForU
 # FIXME: This should disappear!
 from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 
-def __taskName( transID, taskID ):
+def _requestName( transID, taskID ):
   return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
 
 class TaskBase( object ):
@@ -146,7 +146,7 @@ class RequestTasks( TaskBase ):
           transfer.addFile( trFile )
 
         oRequest.addOperation( transfer )
-        oRequest.RequestName = __taskName( transID, taskID )
+        oRequest.RequestName = _requestName( transID, taskID )
         oRequest.OwnerDN = ownerDN
         oRequest.OwnerGroup = ownerGroup
 
@@ -192,10 +192,10 @@ class RequestTasks( TaskBase ):
       return S_ERROR( "Request should be a Request object" )
 
   def updateTransformationReservedTasks( self, taskDicts ):
-    taskNameIDs = {}
+    requestNameIDs = {}
     noTasks = []
     for taskDict in taskDicts:
-      requestName = __taskName( taskDict['TransformationID'], taskDict['TaskID'] )
+      requestName = _requestName( taskDict['TransformationID'], taskDict['TaskID'] )
 
       # FIXME: trying to see if it is in the old system
       reqID = self.__getRequestIDOLDSystem( requestName )
@@ -204,10 +204,10 @@ class RequestTasks( TaskBase ):
         reqID = self.__getRequestID( requestName )
 
       if reqID:
-        taskNameIDs[requestName] = reqID
+        requestNameIDs[requestName] = reqID
       else:
         noTasks.append( requestName )
-    return S_OK( {'NoTasks':noTasks, 'TaskNameIDs':taskNameIDs} )
+    return S_OK( {'NoTasks':noTasks, 'TaskNameIDs':requestNameIDs} )
 
   def __getRequestIDOLDSystem( self, requestName ):
     """ for the OLD RMS
@@ -236,7 +236,7 @@ class RequestTasks( TaskBase ):
       transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
       oldStatus = taskDict['ExternalStatus']
-      requestName = __taskName( transID, taskID )
+      requestName = _requestName( transID, taskID )
 
       # FIXME: trying to see if it is in the old system
       newStatus = self.__getRequestStatusOLDSystem( requestName )
@@ -246,9 +246,8 @@ class RequestTasks( TaskBase ):
 
       if not newStatus:
         self.log.info( "getSubmittedTaskStatus: Failed to get requestID for request" )
-
-      if newStatus and ( newStatus != oldStatus ):
-        updateDict.update( newStatus, [] ).append( taskDict['TaskID'] )
+      elif newStatus != oldStatus:
+        updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
     return S_OK( updateDict )
 
   def __getRequestStatusOLDSystem( self, requestName ):
@@ -290,12 +289,12 @@ class RequestTasks( TaskBase ):
       transID = fileDict['TransformationID']
       taskID = int( fileDict['TaskID'] )
       if taskID in submittedTasks[transID]:
-        taskName = __taskName( transID, taskID )
-        taskFiles.setdefault( taskName, {} )[fileDict['LFN']] = fileDict['Status']
+        requestName = _requestName( transID, taskID )
+        taskFiles.setdefault( requestName, {} )[fileDict['LFN']] = fileDict['Status']
 
     updateDict = {}
-    for taskName in sorted( taskFiles ):
-      lfnDict = taskFiles[taskName]
+    for requestName in sorted( taskFiles ):
+      lfnDict = taskFiles[requestName]
 
       # FIXME: trying to see if it is in the old system
       statusDict = self.__getRequestFileStatusOLDSystem( requestName, lfnDict.keys() )
@@ -474,33 +473,23 @@ class WorkflowTasks( TaskBase ):
     if not getSitesForSE:
       from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 
-    seSites = []
+    seSites = set()
     for se in seList:
       res = getSitesForSE( se )
       if not res['OK']:
         self.log.warn( 'Could not get Sites associated to SE', res['Message'] )
       else:
         thisSESites = res['Value']
-        if not thisSESites:
-          continue
-        if seSites == []:
-          seSites = copy.deepcopy( thisSESites )
-        else:
+        if thisSESites:
           # We make an OR of the possible sites
-          for nSE in list( thisSESites ):
-            if nSE not in seSites:
-              seSites.append( nSE )
+          seSites.update( thisSESites )
 
     # Now we need to make the AND with the sites, if defined
-    if sites == ['ANY']:
-      return seSites
-    else:
+    if sites != ['ANY']:
       # Need to get the AND
-      for nSE in list( seSites ):
-        if nSE not in sites:
-          seSites.remove( nSE )
+      seSites &= set( sites )
 
-      return seSites
+    return list( seSites )
 
 
   def _handleInputs( self, oJob, paramsDict ):
@@ -591,17 +580,17 @@ class WorkflowTasks( TaskBase ):
     return res
 
   def updateTransformationReservedTasks( self, taskDicts ):
-    taskNames = []
+    requestNames = []
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
-      taskName = __taskName( transID, taskID )
-      taskNames.append( taskName )
-    res = self.jobMonitoringClient.getJobs( {'JobName':taskNames} )
+      requestName = _requestName( transID, taskID )
+      requestNames.append( requestName )
+    res = self.jobMonitoringClient.getJobs( {'JobName':requestNames} )
     if not ['OK']:
       self.log.info( "updateTransformationReservedTasks: Failed to get task from WMS", res['Message'] )
       return res
-    taskNameIDs = {}
+    requestNameIDs = {}
     allAccounted = True
     for wmsID in res['Value']:
       res = self.jobMonitoringClient.getJobPrimarySummary( int( wmsID ) )
@@ -610,13 +599,9 @@ class WorkflowTasks( TaskBase ):
         allAccounted = False
         continue
       jobName = res['Value']['JobName']
-      taskNameIDs[jobName] = int( wmsID )
-    noTask = []
-    if allAccounted:
-      for taskName in taskNames:
-        if taskName not in taskNameIDs:
-          noTask.append( taskName )
-    return S_OK( {'NoTasks':noTask, 'TaskNameIDs':taskNameIDs} )
+      requestNameIDs[jobName] = int( wmsID )
+    noTask = [requestName for requestName in requestNames if requestName not in requestNameIDs] if allAccounted else []
+    return S_OK( {'NoTasks':noTask, 'TaskNameIDs':requestNameIDs} )
 
   def getSubmittedTaskStatus( self, taskDicts ):
     wmsIDs = []
@@ -654,27 +639,25 @@ class WorkflowTasks( TaskBase ):
     for fileDict in fileDicts:
       transID = fileDict['TransformationID']
       taskID = fileDict['TaskID']
-      taskName = __taskName( transID, taskID )
-      if taskName not in taskFiles:
-        taskFiles[taskName] = {}
-      taskFiles[taskName][fileDict['LFN']] = fileDict['Status']
+      requestName = _requestName( transID, taskID )
+      taskFiles.setdefault( requestName, {} )[fileDict['LFN']] = fileDict['Status']
     res = self.updateTransformationReservedTasks( fileDicts )
     if not res['OK']:
       self.log.warn( "Failed to obtain taskIDs for files" )
       return res
     noTasks = res['Value']['NoTasks']
-    taskNameIDs = res['Value']['TaskNameIDs']
+    requestNameIDs = res['Value']['TaskNameIDs']
     updateDict = {}
-    for taskName in noTasks:
-      for lfn, oldStatus in taskFiles[taskName].items():
+    for requestName in noTasks:
+      for lfn, oldStatus in taskFiles[requestName].items():
         if oldStatus != 'Unused':
           updateDict[lfn] = 'Unused'
-    res = self.jobMonitoringClient.getJobsStatus( taskNameIDs.values() )
+    res = self.jobMonitoringClient.getJobsStatus( requestNameIDs.values() )
     if not res['OK']:
       self.log.warn( "Failed to get job status from the WMS system" )
       return res
     statusDict = res['Value']
-    for taskName, wmsID in taskNameIDs.items():
+    for requestName, wmsID in requestNameIDs.items():
       newFileStatus = ''
       if wmsID in statusDict:
         jobStatus = statusDict[wmsID]['Status']
@@ -683,7 +666,7 @@ class WorkflowTasks( TaskBase ):
         elif jobStatus in ['Failed']:
           newFileStatus = 'Unused'
       if newFileStatus:
-        for lfn, oldFileStatus in taskFiles[taskName].items():
+        for lfn, oldFileStatus in taskFiles[requestName].items():
           if newFileStatus != oldFileStatus:
             updateDict[lfn] = newFileStatus
     return S_OK( updateDict )
