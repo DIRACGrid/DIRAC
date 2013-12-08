@@ -13,18 +13,18 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
-class FileCatalogFactory( object ):
-  
-  def __init__(self):
-    self.log = gLogger.getSubLogger('FileCatalogFactory')
-  
-  def createCatalog( self, catalogName, useProxy = False, vo = None, catalogConfig = {} ):
+class FileCatalogFactory:
+
+  def __init__( self ):
+    self.log = gLogger.getSubLogger( 'FileCatalogFactory' )
+
+  def createCatalog( self, catalogName, useProxy = False ):
     """ Create a file catalog object from its name and CS description
     """    
     if useProxy:
       catalog = FileCatalogProxyClient( catalogName )
       return S_OK( catalog )
-    
+
     # get the CS description first
     catConfig = catalogConfig
     if not catConfig:
@@ -40,7 +40,7 @@ class FileCatalogFactory( object ):
       catConfig = result['Value']
     
     catalogType = catConfig.get('CatalogType', catalogName)
-    catalogURL = catConfig.get('CatalogURL', '')
+    catalogURL = catConfig.get('CatalogURL', "DataManagement/" + catalogType)
     
     self.log.verbose( 'Creating %s client' % catalogName )
     
@@ -49,27 +49,27 @@ class FileCatalogFactory( object ):
     if not result['OK']:
       gLogger.error( 'Failed to load catalog object: %s' % result['Message'] )
       return result
-    
+
     catalogClass = result['Value']
-     
+
     try:
       if catalogType in ['LcgFileCatalogCombined', 'LcgFileCatalog']:
         # The LFC special case
-        infoSys = catConfig.get('LcgGfalInfosys', '')
-        host = catConfig.get('MasterHost', '')
+        infoSys = catConfig.get( 'LcgGfalInfosys', '' )
+        host = catConfig.get( 'MasterHost', '' )
         catalog = catalogClass( infoSys, host )
-      else:  
+      else:
         if catalogURL:
           catalog = catalogClass( url = catalogURL )  
         else:  
           catalog = catalogClass()
-      self.log.debug('Loaded module %sClient' % catalogType )
+      self.log.debug( 'Loaded module %sClient' % catalogType )
       return S_OK( catalog )
     except Exception, x:
       errStr = "Failed to instantiate %s()" % ( catalogType )
       gLogger.exception( errStr, lException = x )
       return S_ERROR( errStr )
-      
+
     # Catalog module was not loaded  
-    return S_ERROR( 'No suitable client found for %s' % catalogName )  
- 
+    return S_ERROR( 'No suitable client found for %s' % catalogName )
+

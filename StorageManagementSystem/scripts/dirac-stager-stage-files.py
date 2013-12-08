@@ -13,10 +13,10 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
-                                     '  %s SE FileName [...]' % Script.scriptName,
+                                     '  %s <LFN> <SE>' % Script.scriptName,
                                      'Arguments:',
-                                     '  SE:       Name of Storage Element',
-                                     '  FileName: LFN to Stage (or local file with list of LFNs)' ] ) )
+                                     '  <LFN>: LFN to Stage (or local file with list of LFNs)',
+                                     '  <SE>:  Name of Storage Element' ] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 
@@ -25,8 +25,8 @@ args = Script.getPositionalArgs()
 if len( args ) < 2:
   Script.showHelp()
 
-seName = args[0]
-fileName = args[1]
+seName = args[1]
+fileName = args[0]
 
 import os
 from DIRAC import exit as DIRACExit, gLogger
@@ -44,7 +44,7 @@ if os.path.exists( fileName ):
     gLogger.exception( 'Can not open file', fileName )
     DIRACExit( -1 )
 else:
-  lfns = args[1:]
+  lfns = args[:len(args)-1]
 
 stageLfns[seName] = lfns
 stagerClient = StorageManagerClient()
@@ -61,14 +61,14 @@ else:
   print "You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>"
 
 '''Example1:
-dirac-stager-stage-files.py GRIDKA-RDST filesToStage.txt 
+dirac-stager-stage-files.py filesToStage.txt GRIDKA-RDST 
 Stage request submitted for LFNs:
  ['/lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00023458_1.full.dst', '/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032669_1.full.dst', '/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032666_1.full.dst']
 SE= GRIDKA-RDST
 You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
 
 Example2:
-dirac-stager-stage-files.py GRIDKA-RDST /lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032641_1.full.dst
+dirac-stager-stage-files.py /lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032641_1.full.dst GRIDKA-RDST 
 Stage request submitted for LFNs:
  ['/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032641_1.full.dst']
 SE= GRIDKA-RDST

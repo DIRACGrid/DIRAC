@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r10-pre18]
+[v6r10-pre19]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -211,6 +211,14 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 *Workflow
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
+
+[v6r9p30]
+
+*DMS
+CHANGE: FileCatalogFactory - construct CatalogURL from CatalogType by default
+
+*SMS
+FIX: dirac-stager-stage-files - changed the order of the arguments
 
 [v6r9p29]
 
