@@ -312,7 +312,7 @@ class AccountingDB( DB ):
       if keyTableName not in tablesInThere:
         self.log.info( "Table for key %s has to be created" % key[0] )
         tables[ keyTableName  ] = { 'Fields' : { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT',
-                                                 'value' : '%s UNIQUE NOT NULL' % key[1]
+                                                 'value' : '%s NOT NULL' % key[1]
                                                },
                                     'UniqueIndexes' : { 'valueindex' : [ 'value' ] },
                                     'PrimaryKey' : 'id'
@@ -354,9 +354,8 @@ class AccountingDB( DB ):
     inTableName = _getTableName( "in", name )
     if inTableName not in tablesInThere:
       tables[ inTableName ] = { 'Fields' : inbufferDict,
-                                    'Indexes' : { 'idIndex' : [ 'id' ] },
-                                    'PrimaryKey' : 'id'
-                                  }
+                                'PrimaryKey' : 'id'
+                              }
     if self.__readOnly:
       if tables:
         self.log.notice( "ReadOnly mode: Skipping create of tables for %s. Removing from memory catalog" % name )
