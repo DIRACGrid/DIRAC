@@ -510,7 +510,7 @@ class FTSJob( Record ):
 
     regExp = re.compile( "[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)", re.S )
     fileInfo = re.findall( regExp, outputStr )
-    for sourceURL, targetURL, fileStatus, retries, reason, duration in fileInfo:
+    for sourceURL, _targetURL, fileStatus, _retries, reason, _duration in fileInfo:
       candidateFile = None
       for ftsFile in self:
         if ftsFile.SourceSURL == sourceURL:

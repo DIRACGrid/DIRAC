@@ -51,12 +51,17 @@ class File( Record ):
     """
     Record.__init__( self )
     self._parent = None
-    self.__data__["Status"] = "Waiting"
-    self.__data__["OperationID"] = 0
     self.__data__["FileID"] = 0
-    self.__data__["Checksum"] = ""
-    self.__data__["ChecksumType"] = ""
+    self.__data__["OperationID"] = 0
+    self.__data__["Status"] = "Waiting"
+    self.__data__["LFN"] = ''
+    self.__data__["PFN"] = ''
+    self.__data__["ChecksumType"] = ''
+    self.__data__["Checksum"] = ''
+    self.__data__["GUID"] = ''
     self.__data__["Attempt"] = 0
+    self.__data__["Size"] = 0
+    self.__data__["Error"] = ''
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
@@ -251,6 +256,5 @@ class File( Record ):
   def toJSON( self ):
     """ get json """
     digest = dict( zip( self.__data__.keys(),
-                        [ str( val ) if val else "" for val in self.__data__.values() ] ) )
-    digest["OperationID"] = str( self.OperationID )
+                        [ str( val ) if type( val ) != str else val for val in self.__data__.values() ] ) )
     return S_OK( digest )
