@@ -8,14 +8,15 @@ from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( """
 Remove the given file replica or a list of file replicas from the File Catalog
+This script should be used with great care as it may leave dark data in the storage!
+Use dirac-dms-remove-replicas instead
 
 Usage:
-   %s <LFN | fileContainingLFNs>
+   %s <LFN | fileContainingLFNs> <SE>
 """ % Script.scriptName )
 
 Script.parseCommandLine()
 
-from DIRAC.Core.Utilities.List import sortList
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 rm = ReplicaManager()
 import os, sys
@@ -39,7 +40,7 @@ res = rm.removeReplicaFromCatalog( storageElementName, lfns )
 if not res['OK']:
   print res['Message']
   sys.exit()
-for lfn in sortList( res['Value']['Failed'].keys() ):
+for lfn in sorted( res['Value']['Failed'] ):
   message = res['Value']['Failed'][lfn]
   print 'Failed to remove %s replica of %s: %s' % ( storageElementName, lfn, message )
 print 'Successfully remove %d catalog replicas at %s' % ( len( res['Value']['Successful'] ), storageElementName )
