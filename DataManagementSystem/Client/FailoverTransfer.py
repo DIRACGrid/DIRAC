@@ -138,7 +138,7 @@ class FailoverTransfer( object ):
       self.log.error( 'Could not set removal request', result['Message'] )
       return result
 
-    return S_OK( '%s uploaded to a failover SE' % fileName )
+    return S_OK( {'uploadedSE':failoverSE, 'lfn':lfn} )
 
   #############################################################################
   def _setFileReplicationRequest( self, lfn, targetSE, fileMetaDict, sourceSE = '' ):
