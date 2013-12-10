@@ -1,3 +1,10 @@
+[v6r9p31]
+
+*Accounting
+CHANGE: AccountingDB - changes to speed up queries: use "values" in GROUP By clause;
+        drop duplicate indexes; reorder fields in the UniqueConstraint index of the
+        "bucket" tables  
+
 [v6r9p30]
 
 *DMS
