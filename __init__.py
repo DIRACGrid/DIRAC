@@ -1,7 +1,7 @@
 # $HeadURL$
 """
    DIRAC - Distributed Infrastructure with Remote Agent Control
-
+   dummy change
    The LHCb distributed data production and analysis system.
 
    DIRAC is a software framework for distributed computing which
