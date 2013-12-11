@@ -264,6 +264,7 @@ class TaskManagerAgentBase( AgentModule ):
     proxyInfo = res['Value']
     owner = proxyInfo['username']
     ownerGroup = proxyInfo['group']
+    ownerDN = proxyInfo['identity']
     gLogger.info( "submitTasks: Tasks will be submitted with the credentials %s:%s" % ( owner, ownerGroup ) )
     # Get the transformations which should be submitted
     tasksPerLoop = self.am_getOption( 'TasksPerLoop', 50 )
@@ -283,7 +284,7 @@ class TaskManagerAgentBase( AgentModule ):
         gLogger.verbose( "submitTasks: No tasks found for submission for transformation %s" % transID )
         continue
       gLogger.info( "submitTasks: Obtained %d tasks for submission for transformation %s" % ( len( tasks ), transID ) )
-      res = self.taskManager.prepareTransformationTasks( transBody, tasks, owner, ownerGroup )
+      res = self.taskManager.prepareTransformationTasks( transBody, tasks, owner, ownerGroup, ownerDN )
       if not res['OK']:
         gLogger.error( "submitTasks: Failed to prepare tasks for transformation", "%s %s" % ( transID,
                                                                                               res['Message'] ) )
