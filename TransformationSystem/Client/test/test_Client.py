@@ -120,7 +120,7 @@ class RequestTasksSuccess( ClientsTestCase ):
                 3:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}
                 }
 
-    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup' )
+    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
 
     self.assert_( res['OK'] )
     for task in res['Value'].values():

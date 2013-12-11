@@ -102,7 +102,7 @@ class RequestTasks( TaskBase ):
     else:
       self.requestClass = requestClass
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
     if ( not owner ) or ( not ownerGroup ):
@@ -113,10 +113,11 @@ class RequestTasks( TaskBase ):
       owner = proxyInfo['username']
       ownerGroup = proxyInfo['group']
 
-    res = getDNForUsername( owner )
-    if not res['OK']:
-      return res
-    ownerDN = res['Value'][0]
+    if not ownerDN:
+      res = getDNForUsername( owner )
+      if not res['OK']:
+        return res
+      ownerDN = res['Value'][0]
 
     requestOperation = 'ReplicateAndRegister'
     if transBody:
