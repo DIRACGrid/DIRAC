@@ -137,11 +137,11 @@ class ReplicateAndRegister( OperationHandlerBase ):
 
       seRead = self.rssSEStatus( repSEName, "ReadAccess" )
       if not seRead["OK"]:
-        self.log.error( seRead["Message"] )
+        self.log.info( seRead["Message"] )
         ret["Banned"].append( repSEName )
         continue
       if not seRead["Value"]:
-        self.log.error( "StorageElement '%s' is banned for reading" % ( repSEName ) )
+        self.log.info( "StorageElement '%s' is banned for reading" % ( repSEName ) )
 
       repSE = self.seCache.get( repSEName, None )
       if not repSE:
@@ -184,7 +184,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
     for targetSE in targetSEs:
       writeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
       if not writeStatus["OK"]:
-        self.log.error( writeStatus["Message"] )
+        self.log.info( writeStatus["Message"] )
         for opFile in self.operation:
           opFile.Error = "unknown targetSE: %s" % targetSE
           opFile.Status = "Failed"
@@ -260,7 +260,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
       # # check source se for read
       sourceRead = self.rssSEStatus( sourceSE, "ReadAccess" )
       if not sourceRead["OK"]:
-        self.log.error( sourceRead["Message"] )
+        self.log.info( sourceRead["Message"] )
         for opFile in self.operation:
           opFile.Error = sourceRead["Message"]
           opFile.Status = "Failed"
@@ -271,7 +271,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
 
       if not sourceRead["Value"]:
         self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
-        self.log.error( self.operation.Error )
+        self.log.info( self.operation.Error )
         return S_ERROR( self.operation.Error )
 
     # # list of targetSEs
@@ -281,7 +281,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
     for targetSE in targetSEs:
       writeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
       if not writeStatus["OK"]:
-        self.log.error( writeStatus["Message"] )
+        self.log.info( writeStatus["Message"] )
         for opFile in self.operation:
           opFile.Error = "unknown targetSE: %s" % targetSE
           opFile.Status = "Failed"
@@ -289,7 +289,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
         return S_ERROR( self.operation.Error )
 
       if not writeStatus["Value"]:
-        self.log.error( "TargetSE %s in banned for writing right now" % targetSE )
+        self.log.info( "TargetSE %s in banned for writing right now" % targetSE )
         bannedTargets.append( targetSE )
         self.operation.Error += "banned targetSE: %s;" % targetSE
     # # some targets are banned? return
@@ -302,7 +302,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
       # # check target SE
       targetWrite = self.rssSEStatus( targetSE, "WriteAccess" )
       if not targetWrite["OK"]:
-        self.log.error( targetWrite["Message"] )
+        self.log.info( targetWrite["Message"] )
         for opFile in self.operation:
           opFile.Error = targetWrite["Message"]
           opFile.Status = "Failed"
@@ -310,7 +310,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
         return targetWrite
       if not targetWrite["Value"]:
         reason = "TargetSE %s is banned for writing" % targetSE
-        self.log.error( reason )
+        self.log.info( reason )
         self.operation.Error = reason
         continue
 
