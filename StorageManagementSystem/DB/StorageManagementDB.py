@@ -1025,7 +1025,7 @@ class StorageManagementDB( DB ):
     req = "DELETE FROM Tasks WHERE TaskID in (%s);" % intListToString( taskIDs )
     res = self._update( req, connection )
     if not res['OK']:
-       gLogger.error( "StorageManagementDB.removeTasks. Problem removing entries from Tasks." )
+      gLogger.error( "StorageManagementDB.removeTasks. Problem removing entries from Tasks." )
     gLogger.verbose( "%s.%s_DB: deleted Tasks" % ( self._caller(), 'removeTasks' ) )
     #gLogger.info( "%s_DB:%s" % ('removeTasks',req))
     return res
