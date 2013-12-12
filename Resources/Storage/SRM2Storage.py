@@ -82,7 +82,7 @@ class SRM2Storage( StorageBase ):
     self.gfalRetry = gConfig.getValue( "/Resources/StorageElements/GFAL_Retry", 3 )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '' )
     # enum gfal_cksm_type, all in lcg_util
     # 	GFAL_CKSM_NONE = 0,
     # 	GFAL_CKSM_CRC32,
@@ -319,11 +319,11 @@ class SRM2Storage( StorageBase ):
     :param self: self reference
     :param str path:
     """
-    srcFile = '%s/%s' % ( os.getcwd(), 'dirac_directory' )
+    srcFile = os.path.join( os.getcwd(), 'dirac_directory' )
     dfile = open( srcFile, 'w' )
     dfile.write( " " )
     dfile.close()
-    destFile = '%s/%s' % ( path, 'dirac_directory.%s' % time.time() )
+    destFile = os.path.join( path, 'dirac_directory.%s' % time.time() )
     res = self.__putFile( srcFile, destFile, 0 )
     if os.path.exists( srcFile ):
       os.remove( srcFile )
@@ -336,23 +336,21 @@ class SRM2Storage( StorageBase ):
     :param self: self reference
     :param str path: dir name
     """
-    dirName = os.path.dirname( path )
     res = self.__executeOperation( path, 'exists' )
     if not res['OK']:
       return res
     if res['Value']:
       return S_OK()
+    # directory doesn't exist, create it
+    dirName = os.path.dirname( path )
     res = self.__executeOperation( dirName, 'exists' )
     if not res['OK']:
       return res
-    if res['Value']:
-      res = self.__makeDir( path )
-    else:
+    if not res['Value']:
       res = self.__makeDirs( dirName )
       if not res['OK']:
         return res
-      res = self.__makeDir( path )
-    return res
+    return self.__makeDir( path )
 
 ################################################################################
 #
@@ -380,7 +378,7 @@ class SRM2Storage( StorageBase ):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if "surl" in urlDict and urlDict['surl']:
+      if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
           self.log.error( "removeFile: %s" % pathSURL["Message"] )
@@ -435,7 +433,7 @@ class SRM2Storage( StorageBase ):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if "surl" in urlDict and urlDict['surl']:
+      if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
           self.log.error( "getTransportURL: %s" % pathSURL["Message"] )
@@ -478,7 +476,7 @@ class SRM2Storage( StorageBase ):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if "surl" in urlDict and urlDict["surl"]:
+      if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
           self.log.error( "prestageFile: %s" % pathSURL["Message"] )
@@ -524,7 +522,7 @@ class SRM2Storage( StorageBase ):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if "surl" in urlDict and urlDict["surl"]:
+      if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
           self.log.error( "prestageFileStatus: %s" % pathSURL["Message"] )
@@ -574,7 +572,7 @@ class SRM2Storage( StorageBase ):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if "surl" in urlDict and urlDict['surl']:
+      if urlDict.get( 'surl' ):
         # Get back the input value for that surl
         path = urls[self.getUrl( urlDict['surl'] )['Value']]
         if urlDict['status'] == 0:
@@ -591,9 +589,9 @@ class SRM2Storage( StorageBase ):
           failed[path] = errMessage
         else:
           errStr = "SRM2Storage.getFileMetadata: Failed to get file metadata."
-          errMessage = urlDict['ErrorMessage']
-          self.log.error( errStr, "%s: %s" % ( path, errMessage ) )
-          failed[path] = "%s %s" % ( errStr, errMessage )
+          errMessage = "%s: %s" % ( path, urlDict['ErrorMessage'] )
+          self.log.error( errStr, errMessage )
+          failed[path] = "%s %s" % ( errStr, urlDict['ErrorMessage'] )
       else:
         errStr = "getFileMetadata: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
@@ -618,7 +616,7 @@ class SRM2Storage( StorageBase ):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if "surl" in urlDict and urlDict['surl']:
+      if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
           self.log.error( "isFile: %s" % pathSURL["Message"] )
@@ -669,7 +667,7 @@ class SRM2Storage( StorageBase ):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if "surl" in urlDict and urlDict['surl']:
+      if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
           self.log.error( "pinFile: %s" % pathSURL["Message"] )
@@ -711,7 +709,7 @@ class SRM2Storage( StorageBase ):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if 'surl' in urlDict and urlDict['surl']:
+      if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
           self.log.error( "releaseFile: %s" % pathSURL["Message"] )
@@ -749,7 +747,7 @@ class SRM2Storage( StorageBase ):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if "surl" in urlDict and urlDict["surl"]:
+      if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict["surl"] )
         if not pathSURL["OK"]:
           self.log.error( "SRM2Storage.exists: %s" % pathSURL["Message"] )
@@ -791,7 +789,7 @@ class SRM2Storage( StorageBase ):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if "surl" in urlDict and urlDict["surl"]:
+      if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
           self.log.error( "getFileSize: %s" % pathSURL["Message"] )
@@ -1117,7 +1115,7 @@ class SRM2Storage( StorageBase ):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if "surl" in urlDict and urlDict['surl']:
+      if urlDict.get( 'surl' ):
         dirSURL = self.getUrl( urlDict['surl'] )
         if not dirSURL["OK"]:
           self.log.error( "isDirectory: %s" % dirSURL["Message"] )
