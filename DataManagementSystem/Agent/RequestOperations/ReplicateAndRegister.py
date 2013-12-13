@@ -25,10 +25,11 @@ import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
-from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
-from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.RequestManagementSystem.Client.Operation             import Operation
+from DIRAC.RequestManagementSystem.Client.File                  import File
+from DIRAC.DataManagementSystem.Client.FTSClient                import FTSClient
+from DIRAC.Resources.Storage.StorageElement                     import StorageElement
+from DIRAC.DataManagementSystem.Client.ReplicaManager           import ReplicaManager
 
 ########################################################################
 class ReplicateAndRegister( OperationHandlerBase ):
@@ -37,7 +38,6 @@ class ReplicateAndRegister( OperationHandlerBase ):
 
   ReplicateAndRegister operation handler
   """
-  __ftsClient = None
 
   def __init__( self, operation = None, csPath = None ):
     """c'tor
@@ -68,12 +68,9 @@ class ReplicateAndRegister( OperationHandlerBase ):
     # # SE cache
     self.seCache = {}
 
-  @classmethod
-  def ftsClient( cls ):
-    """ facade for FTS client """
-    if not cls.__ftsClient:
-      cls.__ftsClient = FTSClient()
-    return cls.__ftsClient
+    # Clients
+    self.rm = ReplicaManager()
+    self.ftsClient = FTSClient()
 
   def __call__( self ):
     """ call me maybe """
@@ -114,6 +111,44 @@ class ReplicateAndRegister( OperationHandlerBase ):
         waitingFiles[successfulLFN].Status = "Done"
 
     return S_OK()
+
+  def _addMetadataToFiles( self, toSchedule ):
+    """ Add metadata to those files that need to be scheduled through FTS
+
+        toSchedule is a dictionary:
+        {'lfn1': [opFile, validReplicas, validTargets], 'lfn2': [opFile, validReplicas, validTargets]}
+    """
+    if toSchedule:
+      self.log.info( "found %s files to schedule, getting metadata from FC" % len( toSchedule ) )
+      lfns = toSchedule.keys()
+    else:
+      self.log.info( "No files to schedule" )
+      return S_OK()
+
+    res = self.rm.getCatalogFileMetadata( lfns )
+    if not res['OK']:
+      return res
+    else:
+      if res['Value']['Failed']:
+        self.log.warn( "Can't schedule %d files: problems getting the metadata: %s" % ( len( res['Value']['Failed'] ),
+                                                                                ', '.join( res['Value']['Failed'] ) ) )
+      metadata = res['Value']['Successful']
+
+    filesToScheduleList = []
+
+    for lfnsToSchedule, lfnMetadata in metadata.items():
+      opFileToSchedule = toSchedule[lfnsToSchedule][0]
+      opFileToSchedule.GUID = lfnMetadata['GUID']
+      opFileToSchedule.Checksum = metadata[lfnsToSchedule]['Checksum']
+      opFileToSchedule.Size = metadata[lfnsToSchedule]['Size']
+
+      filesToScheduleList.append( ( opFileToSchedule.toJSON()['Value'],
+                                   toSchedule[lfnsToSchedule][1],
+                                   toSchedule[lfnsToSchedule][1] ) )
+
+    return S_OK( filesToScheduleList )
+
+
 
   def _filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
@@ -191,7 +226,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
         self.operation.Error = "unknown targetSE: %s" % targetSE
         return S_ERROR( self.operation.Error )
 
-    toSchedule = []
+    toSchedule = {}
 
     for opFile in self.getWaitingFilesList():
       gMonitor.addMark( "FTSScheduleAtt", 1 )
@@ -220,15 +255,21 @@ class ReplicateAndRegister( OperationHandlerBase ):
           self.log.info( "file %s is already present at all targets" % opFile.LFN )
           opFile.Status = "Done"
           continue
-        toSchedule.append( ( opFile.toJSON()["Value"], validReplicas, validTargets ) )
 
-    if toSchedule:
-      self.log.info( "found %s files to schedule" % len( toSchedule ) )
+        toSchedule[opFile.LFN] = [ opFile, validReplicas, validTargets ]
+
+    res = self._addMetadataToFiles( toSchedule )
+    if not res['OK']:
+      return res
+    else:
+      filesToScheduleList = res['Value']
 
 
-      ftsSchedule = self.ftsClient().ftsSchedule( self.request.RequestID,
-                                                  self.operation.OperationID,
-                                                  toSchedule )
+    if filesToScheduleList:
+
+      ftsSchedule = self.ftsClient.ftsSchedule( self.request.RequestID,
+                                                self.operation.OperationID,
+                                                filesToScheduleList )
       if not ftsSchedule["OK"]:
         self.log.error( ftsSchedule["Message"] )
         return ftsSchedule
@@ -248,6 +289,8 @@ class ReplicateAndRegister( OperationHandlerBase ):
           if fileID == opFile.FileID:
             opFile.Error = reason
             self.log.error( "unable to schedule %s for FTS: %s" % ( opFile.LFN, opFile.Error ) )
+    else:
+      self.log.info( "No files to schedule after metadata checks" )
 
     return S_OK()
 
