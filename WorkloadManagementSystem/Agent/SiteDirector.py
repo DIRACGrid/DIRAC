@@ -34,7 +34,7 @@ __RCSID__ = "$Id$"
 
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
-TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready']
+TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready', 'Unknown']
 WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 MAX_PILOTS_TO_SUBMIT = 100
@@ -437,7 +437,7 @@ class SiteDirector( AgentModule ):
         lastUpdateTime = dateTime() - self.pilotWaitingTime * second
         result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
                                               'Status': WAITING_PILOT_STATUS },
-                                            None, lastUpdateTime )
+                                              None, lastUpdateTime )
         if not result['OK']:
           self.log.error( 'Failed to get Number of Waiting pilots', result['Message'] )
           totalWaitingPilots = 0
@@ -729,12 +729,12 @@ EOF
       siteName = self.queueDict[queue]['Site']
 
       result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
-                                           'Queue':queueName,
-                                           'GridType':ceType,
-                                           'GridSite':siteName,
-                                           'Status':TRANSIENT_PILOT_STATUS,
-                                           'OwnerDN': self.pilotDN,
-                                           'OwnerGroup': self.pilotGroup } )
+                                            'Queue':queueName,
+                                            'GridType':ceType,
+                                            'GridSite':siteName,
+                                            'Status':TRANSIENT_PILOT_STATUS,
+                                            'OwnerDN': self.pilotDN,
+                                            'OwnerGroup': self.pilotGroup } )
       if not result['OK']:
         self.log.error( 'Failed to select pilots: %s' % result['Message'] )
         continue
@@ -742,15 +742,11 @@ EOF
       if not pilotRefs:
         continue
 
-      #print "AT >>> pilotRefs", pilotRefs
-
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
         self.log.error( 'Failed to get pilots info from DB', result['Message'] )
         continue
       pilotDict = result['Value']
-
-      #print "AT >>> pilotDict", pilotDict
 
       stampedPilotRefs = []
       for pRef in pilotDict:
@@ -774,18 +770,25 @@ EOF
         continue
       pilotCEDict = result['Value']
 
-      #print "AT >>> pilotCEDict", pilotCEDict
-
       for pRef in pilotRefs:
         newStatus = ''
         oldStatus = pilotDict[pRef]['Status']
         ceStatus = pilotCEDict[pRef]
-        if oldStatus == ceStatus:
-          # Status did not change, continue
+        lastUpdateTime = pilotDict[pRef]['LastUpdateTime']
+        sinceLastUpdate = dateTime() - lastUpdateTime
+
+        if oldStatus == ceStatus and ceStatus != "Unknown":
+          # Normal status did not change, continue
           continue
+        elif ceStatus == "Unknown" and oldStatus == "Unknown":
+          if sinceLastUpdate < 3600*second:
+            # Allow 1 hour of Unknown status assuming temporary problems on the CE
+            continue
+          else:
+            newStatus = 'Aborted'
         elif ceStatus == "Unknown" and not oldStatus in FINAL_PILOT_STATUS:
-          # Pilot finished without reporting, consider it Aborted
-          newStatus = 'Aborted'
+          # Possible problems on the CE, let's keep the Unknown status for a while
+          newStatus = 'Unknown'
         elif ceStatus != 'Unknown' :
           # Update the pilot status to the new value
           newStatus = ceStatus
