@@ -102,6 +102,11 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
 
+[v6r9p32]
+
+*Accounting
+FIX: AccountingDB - use old style grouping if the default grouping is altered, e.g. by Country
+
 [v6r9p31]
 
 *Accounting
