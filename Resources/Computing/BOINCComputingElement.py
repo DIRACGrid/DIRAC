@@ -133,7 +133,7 @@ EOF
       try:
 #  print jobID + "\n" + wrapperContent
 #  print self.BOINCClient
-        result = self.BOINCClient.service.submitJob( jobID, wrapperContent,self.ceParameters['Platform'] )
+        result = self.BOINCClient.service.submitJob( jobID, wrapperContent,self.ceParameters['Platform'][0], self.ceParameters['MarketPlaceID'] )
       except:
         self.log.error( 'Could not submit the pilot %s to the BOINC CE %s, communication failed!' % (jobID, self.wsdl ))
         break;        
