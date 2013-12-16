@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r10-pre19]
+[v6r10-pre20]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -211,6 +211,11 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 *Workflow
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
+
+[v6r9p32]
+
+*Accounting
+FIX: AccountingDB - use old style grouping if the default grouping is altered, e.g. by Country
 
 [v6r9p31]
 

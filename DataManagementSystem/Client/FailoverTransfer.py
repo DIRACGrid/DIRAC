@@ -90,7 +90,7 @@ class FailoverTransfer( object ):
       if not fileCatalog:
         fileCatalog = ''
 
-      result = self.__setRegistrationRequest( lfn, se, fileMetaDict, fileCatalog )
+      result = self._setRegistrationRequest( lfn, se, fileMetaDict, fileCatalog )
       if not result['OK']:
         self.log.error( 'Failed to set registration request for: SE %s and metadata: \n%s' % ( se, fileMetaDict ) )
         errorList.append( 'Failed to set registration request for: SE %s and metadata: \n%s' % ( se, fileMetaDict ) )
@@ -125,7 +125,7 @@ class FailoverTransfer( object ):
       return failover
 
     # set removal requests and replication requests
-    result = self.__setFileReplicationRequest( lfn, targetSE, fileMetaDict, sourceSE = failover['Value']['uploadedSE'] )
+    result = self._setFileReplicationRequest( lfn, targetSE, fileMetaDict, sourceSE = failover['Value']['uploadedSE'] )
     if not result['OK']:
       self.log.error( 'Could not set file replication request', result['Message'] )
       return result
@@ -133,15 +133,15 @@ class FailoverTransfer( object ):
     lfn = failover['Value']['lfn']
     failoverSE = failover['Value']['uploadedSE']
     self.log.info( 'Attempting to set replica removal request for LFN %s at failover SE %s' % ( lfn, failoverSE ) )
-    result = self.__setReplicaRemovalRequest( lfn, failoverSE )
+    result = self._setReplicaRemovalRequest( lfn, failoverSE )
     if not result['OK']:
       self.log.error( 'Could not set removal request', result['Message'] )
       return result
 
-    return S_OK( '%s uploaded to a failover SE' % fileName )
+    return S_OK( {'uploadedSE':failoverSE, 'lfn':lfn} )
 
   #############################################################################
-  def __setFileReplicationRequest( self, lfn, targetSE, fileMetaDict, sourceSE = '' ):
+  def _setFileReplicationRequest( self, lfn, targetSE, fileMetaDict, sourceSE = '' ):
     """ Sets a registration request.
     """
     self.log.info( 'Setting replication request for %s to %s' % ( lfn, targetSE ) )
@@ -174,7 +174,7 @@ class FailoverTransfer( object ):
     return S_OK()
 
   #############################################################################
-  def __setRegistrationRequest( self, lfn, targetSE, fileDict, catalog ):
+  def _setRegistrationRequest( self, lfn, targetSE, fileDict, catalog ):
     """ Sets a registration request
 
     :param str lfn: LFN
@@ -214,7 +214,7 @@ class FailoverTransfer( object ):
     return S_OK()
 
   #############################################################################
-  def __setReplicaRemovalRequest( self, lfn, se ):
+  def _setReplicaRemovalRequest( self, lfn, se ):
     """ Sets a removal request for a replica.
 
     :param str lfn: LFN
@@ -237,7 +237,7 @@ class FailoverTransfer( object ):
     return S_OK()
 
   #############################################################################
-  def __setFileRemovalRequest( self, lfn, se = '', pfn = '' ):
+  def _setFileRemovalRequest( self, lfn, se = '', pfn = '' ):
     """ Sets a removal request for a file including all replicas.
     """
     remove = Operation()

@@ -1144,7 +1144,12 @@ class AccountingDB( DB ):
                                                                         field,
                                                                         _getTableName( "key", typeName, field )
                                                                       ) )
-          preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
+          if preGenFields[0] != "%s":
+            # The default grouping was changed
+            preGenFields[1][i] = "`%s`.Value" % _getTableName( "key", typeName, field )
+          else:    
+            # The default grouping is maintained
+            preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
     if sqlLinkList:
       cmd += " AND %s" % " AND ".join( sqlLinkList )
     if groupFields:

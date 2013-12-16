@@ -302,7 +302,8 @@ class FTSClient( Client ):
 
         ftsFile = FTSFile()
         for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
-          setattr( ftsFile, key, fileJSON.get( key ) )
+          if fileJSON.get( key ):
+            setattr( ftsFile, key, fileJSON.get( key ) )
         ftsFile.RequestID = requestID
         ftsFile.OperationID = operationID
         ftsFile.SourceSURL = sourceSURL
