@@ -74,7 +74,7 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'},
                 }
 
-    res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group' )
+    res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
 
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
@@ -120,7 +120,7 @@ class RequestTasksSuccess( ClientsTestCase ):
                 3:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}
                 }
 
-    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup' )
+    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
 
     self.assert_( res['OK'] )
     for task in res['Value'].values():

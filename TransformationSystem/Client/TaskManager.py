@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'TaskManager'
 
-import time, types, os, copy
+import time, types, os
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
@@ -42,7 +42,7 @@ class TaskBase( object ):
     else:
       self.log = logger
 
-  def prepareTransformationTasks( self, transBody, taskDict ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     return S_ERROR( "Not implemented" )
 
   def submitTransformationTasks( self, taskDict ):
@@ -102,7 +102,7 @@ class RequestTasks( TaskBase ):
     else:
       self.requestClass = requestClass
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
     if ( not owner ) or ( not ownerGroup ):
@@ -113,10 +113,11 @@ class RequestTasks( TaskBase ):
       owner = proxyInfo['username']
       ownerGroup = proxyInfo['group']
 
-    res = getDNForUsername( owner )
-    if not res['OK']:
-      return res
-    ownerDN = res['Value'][0]
+    if not ownerDN:
+      res = getDNForUsername( owner )
+      if not res['OK']:
+        return res
+      ownerDN = res['Value'][0]
 
     requestOperation = 'ReplicateAndRegister'
     if transBody:
@@ -378,7 +379,7 @@ class WorkflowTasks( TaskBase ):
       self.outputDataModule = outputDataModule
 
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
     """
@@ -390,6 +391,11 @@ class WorkflowTasks( TaskBase ):
       owner = proxyInfo['username']
       ownerGroup = proxyInfo['group']
 
+    if not ownerDN:
+      res = getDNForUsername( owner )
+      if not res['OK']:
+        return res
+      ownerDN = res['Value'][0]
 
     for taskNumber in sorted( taskDict ):
       oJob = self.jobClass( transBody )
@@ -400,6 +406,7 @@ class WorkflowTasks( TaskBase ):
       self.log.verbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ) )
       oJob.setOwner( owner )
       oJob.setOwnerGroup( ownerGroup )
+      oJob.setOwnerDN( ownerDN )
       transGroup = str( transID ).zfill( 8 )
       self.log.verbose( 'Adding default transformation group of %s' % ( transGroup ) )
       oJob.setJobGroup( transGroup )

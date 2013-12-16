@@ -55,8 +55,9 @@ class FTSFile( Record ):
     _parent = None
     Record.__init__( self )
     self._parent = None
-    self.__data__["Status"] = "Waiting"
+    self.__data__["Status"] = 'Waiting'
     self.__data__["Attempt"] = 0
+    self.__data__["ChecksumType"] = 'ADLER32'
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now
     self.__data__["LastUpdate"] = now
