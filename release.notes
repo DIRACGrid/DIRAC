@@ -53,6 +53,8 @@ NEW: FileCatalog - added new setFileStatus() interface, closes #170, valid and v
 CHANGE: multiple new FTS system fixes
 CHANGE: uniform argument checking with checkArgumentFormat() in multiple modules
 CHANGE: FileCatalog - add Trash to the default replica valid statuses
+CHANGE: ReplicaManager,FTSRequest,StorageElement - no use of PFN as returned by the FC except for file removal,
+        rather constructing it always on the fly
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
