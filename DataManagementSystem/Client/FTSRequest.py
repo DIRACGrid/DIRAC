@@ -699,7 +699,9 @@ class FTSRequest( object ):
         self.__setFileParameter( lfn, 'Reason', "No replica at SourceSE" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-      res = self.oSourceSE.getPfnForProtocol( replicas[self.sourceSE], 'SRM2', withPort = True )
+      # Fix first the PFN
+      pfn = self.oSourceSE.getPfnForLfn( lfn ).get( 'Value', replicas[self.sourceSE] )
+      res = self.oSourceSE.getPfnForProtocol( pfn, 'SRM2', withPort = True )
       if not res['OK']:
         gLogger.warn( "resolveSource: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
