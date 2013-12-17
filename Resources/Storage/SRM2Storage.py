@@ -9,7 +9,7 @@ import os
 import re
 import time
 import errno
-from types import StringType, StringTypes, DictType, ListType, IntType
+from types import StringType, StringTypes, ListType, IntType
 from stat import S_ISREG, S_ISDIR, S_IMODE, ST_MODE, ST_SIZE
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -99,7 +99,7 @@ class SRM2Storage( StorageBase ):
       else:
         gLogger.warn( "SRM2Storage: unknown checksum type %s, checksum check disabled" )
         # # GFAL_CKSM_NONE
-        self.checksumType = 0
+        self.checksumType = ''
     else:
       # # invert and get name
       self.log.debug( "SRM2Storage: will use %s checksum" % dict( zip( self.checksumTypes.values(),
@@ -2095,7 +2095,7 @@ class SRM2Storage( StorageBase ):
     if not result['OK']:
       userName = 'system'
     else:
-      userName = result['Value'].get( 'username', 'unknown' )   
+      userName = result['Value'].get( 'username', 'unknown' )
     accountingDict['User'] = userName
     accountingDict['Protocol'] = 'gfal'
     accountingDict['RegistrationTime'] = 0.0
