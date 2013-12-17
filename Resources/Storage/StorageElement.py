@@ -11,10 +11,10 @@
     self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
 """
 __RCSID__ = "$Id$"
-## custom duty
+# # custom duty
 import re
 from types import ListType, StringType, StringTypes, DictType
-## from DIRAC
+# # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
@@ -38,11 +38,12 @@ class StorageElement:
     :param list protocols: requested protocols
     """
 
-    self.vo = vo
-    if not vo:
+    if vo:
+      self.vo = vo
+    else:
       result = getVOfromProxyGroup()
       if not result['OK']:
-        return result
+        return
       self.vo = result['Value']
     self.opHelper = Operations( vo = self.vo )
     self.resources = Resources( vo = self.vo )
@@ -598,7 +599,7 @@ class StorageElement:
         'pfn' is the physical file name (as registered in the LFC)
         'method' is the functionality to be executed
     """
-    ## default args  = no args
+    # # default args  = no args
     argsDict = argsDict if argsDict else {}
     if type( pfn ) in StringTypes:
       pfns = {pfn:False}

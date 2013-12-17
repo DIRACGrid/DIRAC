@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r10-pre20]
+[v6r10-pre21]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -163,6 +163,8 @@ NEW: FileCatalog - added new setFileStatus() interface, closes #170, valid and v
 CHANGE: multiple new FTS system fixes
 CHANGE: uniform argument checking with checkArgumentFormat() in multiple modules
 CHANGE: FileCatalog - add Trash to the default replica valid statuses
+CHANGE: ReplicaManager,FTSRequest,StorageElement - no use of PFN as returned by the FC except for file removal,
+        rather constructing it always on the fly
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
@@ -211,6 +213,11 @@ NEW: RequestClient(Handler) - add new method readRequest( requestname)
 *Workflow
 NEW: Porting the LHCb Workflow package to DIRAC to make the use of general purpose modules and
      simplify construction of workflows        
+
+[v6r9p33]
+
+*Accounting
+BUGFIX: AccountingDB - wrong indentation
 
 [v6r9p32]
 
