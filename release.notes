@@ -1,4 +1,4 @@
-[v6r10-pre20]
+[v6r10-pre21]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
