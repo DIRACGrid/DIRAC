@@ -6,6 +6,8 @@ from DIRAC.Core.Base.Script                         import parseCommandLine
 parseCommandLine()
 from DIRAC.Resources.Storage.StorageElement         import StorageElement
 from DIRAC.Core.Utilities.File                      import getSize
+from DIRAC                                      import  gLogger
+
 import unittest, time, os, shutil, sys, types
 
 if len( sys.argv ) < 2:
@@ -224,8 +226,10 @@ class FileTestCases( StorageElementTestCase ):
     # Check that the metadata was done correctly
     self.assert_( getFileMetadataRes['OK'] )
     metadataDict = getFileMetadataRes['Value']
-    self.assert_( metadataDict['Cached'] )
-    self.assertFalse( metadataDict['Migrated'] )
+
+    # Works only for SRM2 plugin
+    # self.assert_( metadataDict['Cached'] )
+    # self.assertFalse( metadataDict['Migrated'] )
     self.assertEqual( metadataDict['Size'], self.localFileSize )
     # Check that the removal was done correctly
     self.assert_( removeFileRes['OK'] )
@@ -275,100 +279,104 @@ class FileTestCases( StorageElementTestCase ):
     expectedError = "Supplied path is not a file"
     self.assert_( expectedError in directorySizeRes['Message'] )
 
-  def test_prestageFile( self ):
-    print '\n\n#########################################################################\n\n\t\t\tPrestage file test\n'
-    destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
-    pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
-    destinationPfn = pfnForLfnRes['Value']
-    fileDict = {destinationPfn:self.localSourceFile}
-    putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
-    # Get the file metadata
-    prestageFileRes = self.storageElement.prestageFile( destinationPfn, singleFile = True )
-    # Now remove the destination file
-    removeFileRes = self.storageElement.removeFile( destinationPfn, singleFile = True )
-    # Get metadata for a removed file
-    missingPrestageFileRes = self.storageElement.prestageFile( destinationPfn, singleFile = True )
+# Works only for SRM2 plugins
+#   def test_prestageFile( self ):
+#     print '\n\n#########################################################################\n\n\t\t\tPrestage file test\n'
+#     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
+#     pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
+#     destinationPfn = pfnForLfnRes['Value']
+#     fileDict = {destinationPfn:self.localSourceFile}
+#     putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
+#     # Get the file metadata
+#     prestageFileRes = self.storageElement.prestageFile( destinationPfn, singleFile = True )
+#     # Now remove the destination file
+#     removeFileRes = self.storageElement.removeFile( destinationPfn, singleFile = True )
+#     # Get metadata for a removed file
+#     missingPrestageFileRes = self.storageElement.prestageFile( destinationPfn, singleFile = True )
+#
+#     # Check that the put was done correctly
+#     self.assert_( putFileRes['OK'] )
+#     self.assert_( putFileRes['Value'] )
+#     self.assertEqual( putFileRes['Value'], self.localFileSize )
+#     # Check that the prestage was done correctly
+#     self.assert_( prestageFileRes['OK'] )
+#     self.assertEqual( type( prestageFileRes['Value'] ), types.StringType )
+#     # Check that the removal was done correctly
+#     self.assert_( removeFileRes['OK'] )
+#     self.assert_( removeFileRes['Value'] )
+#     # Check the prestage for non existant file
+#     self.assertFalse( missingPrestageFileRes['OK'] )
+#     expectedError = "No such file or directory"
+#     self.assert_( expectedError in missingPrestageFileRes['Message'] )
 
-    # Check that the put was done correctly
-    self.assert_( putFileRes['OK'] )
-    self.assert_( putFileRes['Value'] )
-    self.assertEqual( putFileRes['Value'], self.localFileSize )
-    # Check that the prestage was done correctly
-    self.assert_( prestageFileRes['OK'] )
-    self.assertEqual( type( prestageFileRes['Value'] ), types.StringType )
-    # Check that the removal was done correctly
-    self.assert_( removeFileRes['OK'] )
-    self.assert_( removeFileRes['Value'] )
-    # Check the prestage for non existant file
-    self.assertFalse( missingPrestageFileRes['OK'] )
-    expectedError = "No such file or directory"
-    self.assert_( expectedError in missingPrestageFileRes['Message'] )
+# Works only for SRM2 plugins
+#   def test_prestageStatus( self ):
+#     print '\n\n#########################################################################\n\n\t\tPrestage status test\n'
+#     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
+#     pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
+#     destinationPfn = pfnForLfnRes['Value']
+#     fileDict = {destinationPfn:self.localSourceFile}
+#     putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
+#     # Get the file metadata
+#     prestageFileRes = self.storageElement.prestageFile( destinationPfn, singleFile = True )
+#     srmID = ''
+#     if prestageFileRes['OK']:
+#       srmID = prestageFileRes['Value']
+#     # Take a quick break to allow the SRM to realise the file is available
+#     sleepTime = 10
+#     print 'Sleeping for %s seconds' % sleepTime
+#     time.sleep( sleepTime )
+#     # Check that we can monitor the stage request
+#     prestageStatusRes = self.storageElement.prestageFileStatus( {destinationPfn:srmID}, singleFile = True )
+#     # Now remove the destination file
+#     removeFileRes = self.storageElement.removeFile( destinationPfn, singleFile = True )
+#
+#     # Check that the put was done correctly
+#     self.assert_( putFileRes['OK'] )
+#     self.assert_( putFileRes['Value'] )
+#     self.assertEqual( putFileRes['Value'], self.localFileSize )
+#     # Check that the prestage was done correctly
+#     self.assert_( prestageFileRes['OK'] )
+#     self.assertEqual( type( prestageFileRes['Value'] ), types.StringType )
+#     # Check the file was found to be staged
+#     self.assert_( prestageStatusRes['OK'] )
+#     self.assert_( prestageStatusRes['Value'] )
+#     # Check that the removal was done correctly
+#     self.assert_( removeFileRes['OK'] )
+#     self.assert_( removeFileRes['Value'] )
 
-  def test_prestageStatus( self ):
-    print '\n\n#########################################################################\n\n\t\tPrestage status test\n'
-    destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
-    pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
-    destinationPfn = pfnForLfnRes['Value']
-    fileDict = {destinationPfn:self.localSourceFile}
-    putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
-    # Get the file metadata
-    prestageFileRes = self.storageElement.prestageFile( destinationPfn, singleFile = True )
-    srmID = ''
-    if prestageFileRes['OK']:
-      srmID = prestageFileRes['Value']
-    # Take a quick break to allow the SRM to realise the file is available
-    sleepTime = 10
-    print 'Sleeping for %s seconds' % sleepTime
-    time.sleep( sleepTime )
-    # Check that we can monitor the stage request
-    prestageStatusRes = self.storageElement.prestageFileStatus( {destinationPfn:srmID}, singleFile = True )
-    # Now remove the destination file
-    removeFileRes = self.storageElement.removeFile( destinationPfn, singleFile = True )
 
-    # Check that the put was done correctly
-    self.assert_( putFileRes['OK'] )
-    self.assert_( putFileRes['Value'] )
-    self.assertEqual( putFileRes['Value'], self.localFileSize )
-    # Check that the prestage was done correctly
-    self.assert_( prestageFileRes['OK'] )
-    self.assertEqual( type( prestageFileRes['Value'] ), types.StringType )
-    # Check the file was found to be staged
-    self.assert_( prestageStatusRes['OK'] )
-    self.assert_( prestageStatusRes['Value'] )
-    # Check that the removal was done correctly
-    self.assert_( removeFileRes['OK'] )
-    self.assert_( removeFileRes['Value'] )
-
-  def test_pinRelease( self ):
-    print '\n\n#########################################################################\n\n\t\tPin release test\n'
-    destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
-    pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
-    destinationPfn = pfnForLfnRes['Value']
-    fileDict = {destinationPfn:self.localSourceFile}
-    putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
-    # Get the file metadata
-    pinFileRes = self.storageElement.pinFile( destinationPfn, singleFile = True )
-    srmID = ''
-    if pinFileRes['OK']:
-      srmID = pinFileRes['Value']
-    # Check that we can release the file
-    releaseFileRes = self.storageElement.releaseFile( {destinationPfn:srmID}, singleFile = True )
-    # Now remove the destination file
-    removeFileRes = self.storageElement.removeFile( destinationPfn, singleFile = True )
-
-    # Check that the put was done correctly
-    self.assert_( putFileRes['OK'] )
-    self.assert_( putFileRes['Value'] )
-    self.assertEqual( putFileRes['Value'], self.localFileSize )
-    # Check that the file pin was done correctly
-    self.assert_( pinFileRes['OK'] )
-    self.assertEqual( type( pinFileRes['Value'] ), types.StringType )
-    # Check the file was found to be staged
-    self.assert_( releaseFileRes['OK'] )
-    self.assert_( releaseFileRes['Value'] )
-    # Check that the removal was done correctly
-    self.assert_( removeFileRes['OK'] )
-    self.assert_( removeFileRes['Value'] )
+# Works only for SRM2 plugins
+#   def test_pinRelease( self ):
+#     print '\n\n#########################################################################\n\n\t\tPin release test\n'
+#     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
+#     pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
+#     destinationPfn = pfnForLfnRes['Value']
+#     fileDict = {destinationPfn:self.localSourceFile}
+#     putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
+#     # Get the file metadata
+#     pinFileRes = self.storageElement.pinFile( destinationPfn, singleFile = True )
+#     srmID = ''
+#     if pinFileRes['OK']:
+#       srmID = pinFileRes['Value']
+#     # Check that we can release the file
+#     releaseFileRes = self.storageElement.releaseFile( {destinationPfn:srmID}, singleFile = True )
+#     # Now remove the destination file
+#     removeFileRes = self.storageElement.removeFile( destinationPfn, singleFile = True )
+#
+#     # Check that the put was done correctly
+#     self.assert_( putFileRes['OK'] )
+#     self.assert_( putFileRes['Value'] )
+#     self.assertEqual( putFileRes['Value'], self.localFileSize )
+#     # Check that the file pin was done correctly
+#     self.assert_( pinFileRes['OK'] )
+#     self.assertEqual( type( pinFileRes['Value'] ), types.StringType )
+#     # Check the file was found to be staged
+#     self.assert_( releaseFileRes['OK'] )
+#     self.assert_( releaseFileRes['Value'] )
+#     # Check that the removal was done correctly
+#     self.assert_( removeFileRes['OK'] )
+#     self.assert_( removeFileRes['Value'] )
 
   def test_getAccessUrl( self ):
     print '\n\n#########################################################################\n\n\t\tGet access url test\n'
@@ -395,10 +403,12 @@ class FileTestCases( StorageElementTestCase ):
     # Check that the removal was done correctly
     self.assert_( removeFileRes['OK'] )
     self.assert_( removeFileRes['Value'] )
-    # Check that non-existant files are handled correctly
-    self.assertFalse( getMissingTurlRes['OK'] )
-    expectedError = "File does not exist"
-    self.assert_( expectedError in getMissingTurlRes['Message'] )
+
+    # Works only for SRM2 plugins
+    # # Check that non-existant files are handled correctly
+    # self.assertFalse( getMissingTurlRes['OK'] )
+    # expectedError = "File does not exist"
+    # self.assert_( expectedError in getMissingTurlRes['Message'] )
 
 class DirectoryTestCases( StorageElementTestCase ):
 
@@ -471,9 +481,9 @@ class DirectoryTestCases( StorageElementTestCase ):
     # Perform the checks for the list dir operation
     self.assert_( listDirRes['OK'] )
     self.assert_( listDirRes['Value'] )
-    self.assert_( listDirRes.has_key( 'SubDirs' ) )
-    self.assert_( listDirRes.has_key( 'Files' ) )
-    self.assertEqual( len( listDirRes['Files'].keys() ), self.numberOfFiles )
+    self.assert_( listDirRes['Value'].has_key( 'SubDirs' ) )
+    self.assert_( listDirRes['Value'].has_key( 'Files' ) )
+    self.assertEqual( len( listDirRes['Value']['Files'].keys() ), self.numberOfFiles )
     # Perform the checks for the remove directory operation
     self.assert_( removeDirRes['OK'] )
     self.assert_( removeDirRes['Value'] )
@@ -517,8 +527,11 @@ class DirectoryTestCases( StorageElementTestCase ):
     # Perform the checks for the list dir operation
     self.assert_( metadataDirRes['OK'] )
     self.assert_( metadataDirRes['Value'] )
-    self.assert_( metadataDirRes['Value']['Mode'] )
-    self.assert_( type( metadataDirRes['Value']['Mode'] ) == types.IntType )
+
+    # Works only for the SRM2 plugin
+    # self.assert_( metadataDirRes['Value']['Mode'] )
+    # self.assert_( type( metadataDirRes['Value']['Mode'] ) == types.IntType )
+
     self.assert_( metadataDirRes['Value']['Directory'] )
     self.assertFalse( metadataDirRes['Value']['File'] )
     # Perform the checks for the remove directory operation
@@ -667,6 +680,7 @@ class DirectoryTestCases( StorageElementTestCase ):
 
 
 if __name__ == '__main__':
+  gLogger.setLevel( "DEBUG" )
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( DirectoryTestCases )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( FileTestCases ) )
   #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GetInfoTestCase))
