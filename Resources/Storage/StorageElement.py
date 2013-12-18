@@ -105,6 +105,8 @@ class StorageElement:
     :param vo
     """
 
+    self.methodName = None
+
     if vo:
       self.vo = vo
     else:
