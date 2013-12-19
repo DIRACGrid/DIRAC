@@ -213,7 +213,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
   def ftsTransfer( self ):
     """ replicate and register using FTS """
 
-    self.log.info( "scheduling files..." )
+    self.log.info( "scheduling files in FTS..." )
     targetSEs = self.operation.targetSEList
 
     for targetSE in targetSEs:
