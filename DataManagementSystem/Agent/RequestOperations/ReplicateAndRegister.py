@@ -144,8 +144,8 @@ class ReplicateAndRegister( OperationHandlerBase ):
       opFileToSchedule.Size = metadata[lfnsToSchedule]['Size']
 
       filesToScheduleList.append( ( opFileToSchedule.toJSON()['Value'],
-                                   toSchedule[lfnsToSchedule][1],
-                                   toSchedule[lfnsToSchedule][1] ) )
+                                    toSchedule[lfnsToSchedule][1],
+                                    toSchedule[lfnsToSchedule][2] ) )
 
     return S_OK( filesToScheduleList )
 
