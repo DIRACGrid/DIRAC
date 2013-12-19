@@ -141,6 +141,12 @@ class ReqClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
+    if type( requestName ) == int:
+      res = self.getRequestName( requestName )
+      if not res['OK']:
+        return res
+      else:
+        requestName = res['Value']
     self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestName )
     deleteRequest = self.requestManager().deleteRequest( requestName )
     if not deleteRequest["OK"]:

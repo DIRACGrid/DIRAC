@@ -498,8 +498,11 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK( externalIDs )
 
   def __removeRequests( self, requestIDs ):
-    """ dummy method """
-    self.log.error( "Not removing requests but should do" )
+    """ This will remove requests from the (new) RMS system
+    """
+    for requestName in requestIDs:
+      self.reqClient.deleteRequest( requestName )
+
     return S_OK()
 
   def __removeWMSTasks( self, transJobIDs ):
