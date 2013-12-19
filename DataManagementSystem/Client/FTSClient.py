@@ -318,8 +318,8 @@ class FTSClient( Client ):
         ftsFiles.append( ftsFile )
 
     if not ftsFiles:
-      self.log.warn( "ftsSchedule: no FTSFiles to put" )
-      return S_ERROR( "ftsSchedule: no FTSFiles to put" )
+      self.log.info( "ftsSchedule: no FTSFiles to put for request %d" % requestID )
+      return S_OK()
 
     ftsFilesJSONList = []
     for ftsFile in ftsFiles:

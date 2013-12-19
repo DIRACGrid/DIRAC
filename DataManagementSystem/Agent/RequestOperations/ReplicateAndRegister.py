@@ -274,7 +274,10 @@ class ReplicateAndRegister( OperationHandlerBase ):
         self.log.error( ftsSchedule["Message"] )
         return ftsSchedule
 
+      # might have nothing to schedule
       ftsSchedule = ftsSchedule["Value"]
+      if not ftsSchedule:
+        return S_OK()
 
       for fileID in ftsSchedule["Successful"]:
         gMonitor.addMark( "FTSScheduleOK", 1 )
