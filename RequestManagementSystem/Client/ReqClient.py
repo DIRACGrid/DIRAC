@@ -141,6 +141,10 @@ class ReqClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
+    try:
+      requestName = int( requestName )
+    except ValueError:
+      pass
     if type( requestName ) == int:
       res = self.getRequestName( requestName )
       if not res['OK']:

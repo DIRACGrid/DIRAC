@@ -256,7 +256,8 @@ class FTSClient( Client ):
       opID = int( fileJSON.get( "OperationID", 0 ) )
 
       self.log.verbose( "ftsSchedule: LFN=%s FileID=%s OperationID=%s sources=%s targets=%s" % ( lfn, fileID, opID,
-                                                                                             sourceSEs, targetSEs ) )
+                                                                                                 sourceSEs,
+                                                                                                 targetSEs ) )
 
       res = self.replicaManager.getActiveReplicas( lfn )
       if not res['OK']:
@@ -273,6 +274,7 @@ class FTSClient( Client ):
       validReplicasDict = dict( [ ( se, pfn ) for se, pfn in replicaDict.items() if se in sourceSEs ] )
 
       if not validReplicasDict:
+        self.log.warn( "No active replicas found in sources" )
         ret["Failed"][fileID] = "no active replicas found in sources"
         continue
 
@@ -286,8 +288,10 @@ class FTSClient( Client ):
       self.log.verbose( "LFN=%s tree=%s" % ( lfn, tree ) )
 
       for repDict in tree.values():
-        self.log.verbose( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
-                                                                                repDict["SourceSE"], repDict["TargetSE"] ) )
+        self.log.verbose( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"],
+                                                                                repDict["Ancestor"],
+                                                                                repDict["SourceSE"],
+                                                                                repDict["TargetSE"] ) )
         transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, validReplicasDict )
         if not transferSURLs['OK']:
           ret["Failed"][fileID] = transferSURLs['Message']
