@@ -255,12 +255,12 @@ class FTSClient( Client ):
       fileID = int( fileJSON.get( "FileID", 0 ) )
       opID = int( fileJSON.get( "OperationID", 0 ) )
 
-      gLogger.info( "ftsSchedule: LFN=%s FileID=%s OperationID=%s sources=%s targets=%s" % ( lfn, fileID, opID,
+      self.log.verbose( "ftsSchedule: LFN=%s FileID=%s OperationID=%s sources=%s targets=%s" % ( lfn, fileID, opID,
                                                                                              sourceSEs, targetSEs ) )
 
       res = self.replicaManager.getActiveReplicas( lfn )
       if not res['OK']:
-        gLogger.error( "ftsSchedule: %s" % res['Message'] )
+        self.log.error( "ftsSchedule: %s" % res['Message'] )
         ret["Failed"][fileID] = res['Message']
         continue
       replicaDict = res['Value']
@@ -278,16 +278,16 @@ class FTSClient( Client ):
 
       tree = self.ftsManager.getReplicationTree( sourceSEs, targetSEs, size )
       if not tree['OK']:
-        gLogger.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree['Message'] ) )
+        self.log.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree['Message'] ) )
         ret["Failed"][fileID] = tree['Message']
         continue
       tree = tree['Value']
 
-      gLogger.info( "LFN=%s tree=%s" % ( lfn, tree ) )
+      self.log.verbose( "LFN=%s tree=%s" % ( lfn, tree ) )
 
       for repDict in tree.values():
-        gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
-                                                                            repDict["SourceSE"], repDict["TargetSE"] ) )
+        self.log.verbose( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
+                                                                                repDict["SourceSE"], repDict["TargetSE"] ) )
         transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, validReplicasDict )
         if not transferSURLs['OK']:
           ret["Failed"][fileID] = transferSURLs['Message']
@@ -298,7 +298,7 @@ class FTSClient( Client ):
           ret["Failed"][fileID] = "sourceSURL equals to targetSURL for %s" % lfn
           continue
 
-        gLogger.info( "sourceURL=%s targetURL=%s FTSFile.Status=%s" % ( sourceSURL, targetSURL, fileStatus ) )
+        self.log.verbose( "sourceURL=%s targetURL=%s FTSFile.Status=%s" % ( sourceSURL, targetSURL, fileStatus ) )
 
         ftsFile = FTSFile()
         for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
@@ -314,7 +314,7 @@ class FTSClient( Client ):
         ftsFiles.append( ftsFile )
 
     if not ftsFiles:
-      self.log.error( "ftsSchedule: no FTSFiles to put" )
+      self.log.warn( "ftsSchedule: no FTSFiles to put" )
       return S_ERROR( "ftsSchedule: no FTSFiles to put" )
 
     ftsFilesJSONList = []
@@ -347,14 +347,14 @@ class FTSClient( Client ):
     res = self.storageFactory.getStorages( targetSE, protocolList = ["SRM2"] )
     if not res['OK']:
       errStr = "_getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res['Message'] )
-      gLogger.error( errStr )
+      self.log.error( errStr )
       return S_ERROR( errStr )
     storageObjects = res['Value']["StorageObjects"]
     for storageObject in storageObjects:
       res = storageObject.getCurrentURL( lfn )
       if res['OK']:
         return res
-    gLogger.error( "_getSurlForLFN: Failed to get SRM compliant storage.", targetSE )
+    self.log.error( "_getSurlForLFN: Failed to get SRM compliant storage.", targetSE )
     return S_ERROR( "_getSurlForLFN: Failed to get SRM compliant storage." )
 
   def _getSurlForPFN( self, sourceSE, pfn ):
