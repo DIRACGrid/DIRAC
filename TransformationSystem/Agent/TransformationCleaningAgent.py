@@ -22,6 +22,7 @@ from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
+__RCSID__ = "$Id$"
 
 # # agent's name
 AGENT_NAME = 'Transformation/TransformationCleaningAgent'
@@ -463,8 +464,8 @@ class TransformationCleaningAgent( AgentModule ):
   #
 
   def cleanTransformationTasks( self, transID ):
-    ''' clean tasks from WMS, or from the RMS if it is a DataManipulation transformation
-    '''
+    """ clean tasks from WMS, or from the RMS if it is a DataManipulation transformation
+    """
     res = self.__getTransformationExternalIDs( transID )
     if not res['OK']:
       return res
