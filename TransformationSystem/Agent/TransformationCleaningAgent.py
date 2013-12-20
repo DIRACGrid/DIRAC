@@ -501,7 +501,7 @@ class TransformationCleaningAgent( AgentModule ):
   def __removeRequests( self, requestIDs ):
     """ This will remove requests from the (new) RMS system
     """
-    rIDs = [ int( j ) for j in requestIDs if int( j ) ]
+    rIDs = [ int( long( j ) ) for j in requestIDs if long( j ) ]
     for requestName in rIDs:
       self.reqClient.deleteRequest( requestName )
 
