@@ -499,8 +499,17 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK( externalIDs )
 
   def __removeRequests( self, requestIDs ):
-    """ This will remove requests from the (new) RMS system
+    """ This will remove requests from the (new) RMS system -
+
+        #FIXME: if the old system is still installed, it won't remove anything!!!
+        (we don't want to risk removing from the new RMS what is instead in the old)
     """
+    # FIXME: checking if the old system is still installed!
+    from DIRAC.ConfigurationSystem.Client import PathFinder
+    if PathFinder.getServiceURL( "RequestManagement/RequestManager" ):
+      self.log.warn( "NOT removing requests!!" )
+      return S_OK()
+
     rIDs = [ int( long( j ) ) for j in requestIDs if long( j ) ]
     for requestName in rIDs:
       self.reqClient.deleteRequest( requestName )
