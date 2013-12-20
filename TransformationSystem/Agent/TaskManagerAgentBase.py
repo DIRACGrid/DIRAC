@@ -113,9 +113,9 @@ class TaskManagerAgentBase( AgentModule ):
     if not res['OK']:
       gLogger.error( "_selectTransformations: Failed to get transformations for selection.", res['Message'] )
     elif not res['Value']:
-      gLogger.info( "_selectTransformations: No transformations found for selection." )
+      gLogger.verbose( "_selectTransformations: No transformations found for selection." )
     else:
-      gLogger.info( "_selectTransformations: Obtained %d transformations for selection" % len( res['Value'] ) )
+      gLogger.verbose( "_selectTransformations: Obtained %d transformations for selection" % len( res['Value'] ) )
     return res
 
   def updateTaskStatus( self ):
