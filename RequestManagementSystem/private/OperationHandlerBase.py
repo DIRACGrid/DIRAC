@@ -215,7 +215,7 @@ class OperationHandlerBase( object ):
     # gLogger.always( rssStatus )
     if not rssStatus["OK"]:
       return S_ERROR( "unknown SE: %s" % se )
-    if rssStatus["Value"] == "Banned":
+    if rssStatus["Value"][se][status] == "Banned":
       return S_OK( False )
     return S_OK( True )
 
