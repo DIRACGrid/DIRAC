@@ -385,6 +385,13 @@ class JobScheduling( OptimizerExecutor ):
     self.jobLog.verbose( "Stage request will be \n\t%s" % "\n\t".join( [ "%s:%s" % ( lfn, stageLFNs[ lfn ] ) for lfn in stageLFNs ] ) )
 
     stagerClient = StorageManagerClient()
+    result = jobState.setStatus( self.ex_getOption( 'StagingStatus', 'Staging' ),
+                                 self.ex_getOption( 'StagingMinorStatus', 'Request To Be Sent' ),
+                                 appStatus = "",
+                                 source = self.ex_optimizerName() )
+    if not result[ 'OK' ]:
+      return result
+
     result = stagerClient.setRequest( stageLFNs, 'WorkloadManagement',
                                       'updateJobFromStager@WorkloadManagement/JobStateUpdate',
                                       int( jobState.jid ) )
@@ -395,12 +402,14 @@ class JobScheduling( OptimizerExecutor ):
     rid = str( result[ 'Value' ] )
     self.jobLog.info( "Stage request %s sent" % rid )
     jobState.setParameter( "StageRequest", rid )
+
     result = jobState.setStatus( self.ex_getOption( 'StagingStatus', 'Staging' ),
                                  self.ex_getOption( 'StagingMinorStatus', 'Request Sent' ),
                                  appStatus = "",
                                  source = self.ex_optimizerName() )
     if not result[ 'OK' ]:
       return result
+
     return S_OK( stageLFNs )
 
 
