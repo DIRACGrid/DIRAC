@@ -184,7 +184,7 @@ class StageMonitorAgent( AgentModule ):
 
   def __reportProblematicFiles( self, lfns, reason ):
     return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, self.name )
+    res = self.dataIntegrityClient.setFileProblematic( lfns, reason,  sourceComponent = 'StageMonitorAgent'  )
     if not res['OK']:
       gLogger.error( "StageMonitor.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
       return res
