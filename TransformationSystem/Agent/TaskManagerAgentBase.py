@@ -145,6 +145,8 @@ class TaskManagerAgentBase( AgentModule ):
       if not res['Value']:
         gLogger.verbose( "updateTaskStatus: No tasks found to update for transformation %s" % transID )
         continue
+      gLogger.verbose( "updateTaskStatus: getting %d tasks status of transformation %s" % ( len( res['Value'] ),
+                                                                                            transID ) )
       res = self.taskManager.getSubmittedTaskStatus( res['Value'] )
       if not res['OK']:
         gLogger.error( "updateTaskStatus: Failed to get updated task statuses for transformation", "%s %s" % ( transID,
