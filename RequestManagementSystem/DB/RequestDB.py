@@ -207,7 +207,7 @@ class RequestDB( DB ):
               return deleteRequest
           return putFiles
 
-    return S_OK()
+    return S_OK( request.RequestID )
 
   def getScheduledRequest( self, operationID ):
     """ read scheduled request given its FTS operationID """
