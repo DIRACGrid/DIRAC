@@ -94,7 +94,7 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
 
   result = reqClient.putRequest( oRequest )
   if result['OK']:
-    print "Request submitted successfully"
+    print "Request %d submitted successfully" % result['Value']
   else:
     print "Failed to submit Request: ", result['Message']
 

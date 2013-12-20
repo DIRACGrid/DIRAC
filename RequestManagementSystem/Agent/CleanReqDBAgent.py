@@ -107,6 +107,8 @@ class CleanReqDBAgent( AgentModule ):
           if not putRequest["OK"]:
             self.log.error( "execute: unable to put request '%s': %s" % ( requestName, putRequest["Message"] ) )
             continue
+          else:
+            self.log.verbose( "Kicked request %d" % putRequest['Value'] )
           kicked += 1
 
     # # delete
