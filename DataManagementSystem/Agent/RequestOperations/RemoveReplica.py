@@ -135,7 +135,7 @@ class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
     :param str targetSE: target SE name
     :return: toRemoveDict with updated errors
     """
-    removeReplicas = self.replicaManager().removeReplica( targetSE, toRemoveDict.keys() )
+    removeReplicas = self.dataManager().removeReplica( targetSE, toRemoveDict.keys() )
     if not removeReplicas["OK"]:
       for opFile in toRemoveDict.values():
         opFile.Error = removeReplicas["Message"]
@@ -167,7 +167,7 @@ class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
             opFile.Error = proxyFile["Message"]
           else:
             proxyFile = proxyFile["Value"]
-            removeReplica = self.replicaManager().removeReplica( targetSE, opFile.LFN )
+            removeReplica = self.dataManager().removeReplica( targetSE, opFile.LFN )
             if not removeReplica["OK"]:
               opFile.Error = removeReplica["Message"]
             else:
