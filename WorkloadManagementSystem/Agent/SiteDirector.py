@@ -264,9 +264,11 @@ class SiteDirector( AgentModule ):
             self.log.fatal( result['Message'] )
             return result
           if 'BundleProxy' in self.queueDict[queueName]['ParametersDict']:
-            self.queueDict[queueName]['BundleProxy'] = True
+            if self.queueDict[queueName]['ParametersDict']['BundleProxy'].lower() in ['true','yes','1']:
+              self.queueDict[queueName]['BundleProxy'] = True
           elif 'BundleProxy' in ceDict:
-            self.queueDict[queueName]['BundleProxy'] = True
+            if ceDict['BundleProxy'].lower() in ['true','yes','1']:
+              self.queueDict[queueName]['BundleProxy'] = True
 
           if site not in self.sites:
             self.sites.append( site )
@@ -397,10 +399,12 @@ class SiteDirector( AgentModule ):
 
       ceDict = ce.getParameterDict()
       ceDict[ 'GridCE' ] = ceName
-      if not siteMask and 'Site' in ceDict:
-        self.log.info( 'Site not in the mask %s' % siteName )
-        self.log.info( 'Removing "Site" from matching Dict' )
-        del ceDict[ 'Site' ]
+      #if not siteMask and 'Site' in ceDict:
+      #  self.log.info( 'Site not in the mask %s' % siteName )
+      #  self.log.info( 'Removing "Site" from matching Dict' )
+      #  del ceDict[ 'Site' ]
+      if not siteMask:
+        ceDict['JobType'] = "Test"
       if self.vo:
         ceDict['Community'] = self.vo
       if self.voGroups:
