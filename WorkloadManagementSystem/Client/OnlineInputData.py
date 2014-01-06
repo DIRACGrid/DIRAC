@@ -11,7 +11,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
 import os,sys,re,string
