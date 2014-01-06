@@ -31,7 +31,7 @@ from DIRAC.DataManagementSystem.Client.FTSJob             import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile            import FTSFile
 from DIRAC.DataManagementSystem.private.FTSHistoryView    import FTSHistoryView
 from DIRAC.DataManagementSystem.private.FTSValidator      import FTSValidator
-from DIRAC.DataManagementSystem.Client.ReplicaManager     import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager     import DataManager
 # # from Resources
 from DIRAC.Resources.Storage.StorageFactory   import StorageFactory
 
@@ -54,7 +54,7 @@ class FTSClient( Client ):
 
     # getting other clients
     self.ftsValidator = FTSValidator()
-    self.replicaManager = ReplicaManager()
+    self.dataManager = DataManager()
     self.storageFactory = StorageFactory()
 
     url = PathFinder.getServiceURL( "DataManagement/FTSManager" )
@@ -259,7 +259,7 @@ class FTSClient( Client ):
                                                                                                  sourceSEs,
                                                                                                  targetSEs ) )
 
-      res = self.replicaManager.getActiveReplicas( lfn )
+      res = self.dataManager.getActiveReplicas( lfn )
       if not res['OK']:
         self.log.error( "ftsSchedule: %s" % res['Message'] )
         ret["Failed"][fileID] = res['Message']
@@ -368,7 +368,7 @@ class FTSClient( Client ):
     :param str sourceSE: source storage element
     :param str pfn: physical file name
     """
-    res = self.replicaManager.getPfnForProtocol( [pfn], sourceSE )
+    res = self.dataManager.getPfnForProtocol( [pfn], sourceSE )
     if not res['OK']:
       return res
     if pfn in res['Value']["Failed"]:
