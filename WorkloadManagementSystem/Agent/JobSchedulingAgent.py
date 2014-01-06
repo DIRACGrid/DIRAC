@@ -558,26 +558,29 @@ class JobSchedulingAgent( OptimizerModule ):
 
     if classAdJob.lookupAttribute( "SubmitPools" ):
       classAddReq.set_expression( 'SubmitPools', classAdJob.get_expression( 'SubmitPools' ) )
+    # Hack for backward compatibility  
+    elif classAdJob.lookupAttribute( "SubmitPool" ):
+      classAddReq.set_expression( 'SubmitPools', classAdJob.get_expression( 'SubmitPool' ) )  
 
     if classAdJob.lookupAttribute( "GridMiddleware" ):
       classAddReq.set_expression( 'GridMiddleware', classAdJob.get_expression( 'GridMiddleware' ) )
 
-    if classAdJob.lookupAttribute( "PilotTypes" ):
-      classAddReq.set_expression( 'PilotTypes', classAdJob.get_expression( 'PilotTypes' ) )
-    #HAck to migrate old jobs to new ones.
-    #DELETE ON 08/09
-    else:
-      if classAdJob.lookupAttribute( "PilotType" ):
-        classAddReq.set_expression( 'PilotTypes', classAdJob.get_expression( 'PilotType' ) )
+    if classAdJob.lookupAttribute( "PilotType" ):
+      classAddReq.set_expression( 'PilotTypes', classAdJob.get_expression( 'PilotType' ) )
 
     if classAdJob.lookupAttribute( "JobType" ):
       jobTypes = [ jt for jt in classAdJob.getListFromExpression( 'JobType' ) if jt ]
       classAddReq.insertAttributeVectorString( 'JobTypes', jobTypes )
 
     #Required CE's requirements
-    gridCEs = [ ce for ce in classAdJob.getListFromExpression( 'GridRequiredCEs' ) if ce ]
+    gridCEs = [ ce for ce in classAdJob.getListFromExpression( 'GridCE' ) if ce ]
     if gridCEs:
       classAddReq.insertAttributeVectorString( 'GridCEs', gridCEs )
+    # Hack for backward compatibility  
+    else:
+      gridCEs = [ ce for ce in classAdJob.getListFromExpression( 'GridRequiredCEs' ) if ce ]  
+      if gridCEs:
+        classAddReq.insertAttributeVectorString( 'GridCEs', gridCEs )
 
     if siteCandidates:
       sites = ','.join( siteCandidates )
