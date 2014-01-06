@@ -13,10 +13,13 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                              import AgentModule
 from DIRAC.Core.Utilities.List                                import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
-from DIRAC.DataManagementSystem.Client.ReplicaManager         import ReplicaManager
 from DIRAC.Resources.Catalog.FileCatalogClient                import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient          import WMSClient
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Resources.Storage.StorageElement         import StorageElement
+from DIRAC.Resources.Utilities import Utils
+from DIRAC.Resources.Catalog.FileCatalog            import FileCatalog
 
 # FIXME: double client: only ReqClient will survive in the end
 from DIRAC.RequestManagementSystem.Client.RequestClient       import RequestClient
@@ -31,7 +34,7 @@ class TransformationCleaningAgent( AgentModule ):
   """
   .. class:: TransformationCleaningAgent
 
-  :param ReplicaManger replicaManager: ReplicaManager instance
+  :param DataManger dm: DataManager instance
   :param TransfromationClient transClient: TransfromationClient instance
   :param FileCatalogClient metadataClient: FileCatalogClient instance
 
@@ -42,7 +45,7 @@ class TransformationCleaningAgent( AgentModule ):
     """
     AgentModule.__init__( self, *args, **kwargs )
     # # replica manager
-    self.replicaManager = ReplicaManager()
+    self.dm = DataManager()
     # # transformation client
     self.transClient = TransformationClient()
     # # wms client
@@ -239,7 +242,7 @@ class TransformationCleaningAgent( AgentModule ):
     :param str storageElement: SE name
     """
     self.log.info( 'Removing the contents of %s at %s' % ( directory, storageElement ) )
-    res = self.replicaManager.getPfnForLfn( [directory], storageElement )
+    res = self.dm.getPfnForLfn( [directory], storageElement )
     if not res['OK']:
       self.log.error( "Failed to get PFN for directory", res['Message'] )
       return res
@@ -248,7 +251,9 @@ class TransformationCleaningAgent( AgentModule ):
     if res['Value']['Failed']:
       return S_ERROR( 'Failed to obtain directory PFN from LFNs' )
     storageDirectory = res['Value']['Successful'].values()[0]
-    res = self.replicaManager.getStorageFileExists( storageDirectory, storageElement, singleFile = True )
+    se = StorageElement( storageElement )
+
+    res = Utils.executeSingleFileOrDirWrapper( se.exists( storageDirectory ) )
     if not res['OK']:
       self.log.error( "Failed to obtain existance of directory", res['Message'] )
       return res
@@ -256,10 +261,7 @@ class TransformationCleaningAgent( AgentModule ):
     if not exists:
       self.log.info( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
-    res = self.replicaManager.removeStorageDirectory( storageDirectory,
-                                                      storageElement,
-                                                      recursive = True,
-                                                      singleDirectory = True )
+    res = Utils.executeSingleFileOrDirWrapper( se.removeDirectory( storageDirectory, recursive = True ) )
     if not res['OK']:
       self.log.error( "Failed to remove storage directory", res['Message'] )
       return res
@@ -281,7 +283,7 @@ class TransformationCleaningAgent( AgentModule ):
     if not filesFound:
       return S_OK()
     self.log.info( "Attempting to remove %d possible remnants from the catalog and storage" % len( filesFound ) )
-    res = self.replicaManager.removeFile( filesFound, force = True )
+    res = self.dm.removeFile( filesFound, force = True )
     if not res['OK']:
       return res
     realFailure = False
@@ -306,9 +308,10 @@ class TransformationCleaningAgent( AgentModule ):
       self.log.info( directory )
     activeDirs = directories
     allFiles = {}
+    fc = FileCatalog()
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
-      res = self.replicaManager.getCatalogListDirectory( currentDir, singleFile = True )
+      res = Utils.executeSingleFileOrDirWrapper( fc.listDirectory( currentDir ) )
       activeDirs.remove( currentDir )
       if not res['OK'] and res['Message'].endswith( 'The supplied path does not exist' ):
         self.log.info( "The supplied directory %s does not exist" % currentDir )
@@ -328,7 +331,7 @@ class TransformationCleaningAgent( AgentModule ):
     :param str directory: folder name
     """
     self.log.info( "Removing log files found in the directory %s" % directory )
-    res = self.replicaManager.removeStorageDirectory( directory, self.logSE, singleDirectory = True )
+    res = Utils.executeSingleFileOrDirWrapper( StorageElement( self.logSE ).removeDirectory( directory ) )
     if not res['OK']:
       self.log.error( "Failed to remove log files", res['Message'] )
       return res
@@ -445,7 +448,7 @@ class TransformationCleaningAgent( AgentModule ):
     if not fileToRemove:
       self.log.info( 'No files found for transID %s' % transID )
       return S_OK()
-    res = self.replicaManager.removeFile( fileToRemove, force = True )
+    res = self.dm.removeFile( fileToRemove, force = True )
     if not res['OK']:
       return res
     for lfn, reason in res['Value']['Failed'].items():
