@@ -50,10 +50,10 @@ from DIRAC.RequestManagementSystem.Client.Operation         import Operation
 from DIRAC.RequestManagementSystem.Client.File              import File
 from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
-from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 reqClient = ReqClient()
-rm = ReplicaManager()
+fc = FileCatalog()
 
 requestOperation = 'RemoveReplica'
 if targetSE == 'All':
@@ -69,7 +69,7 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
   oOperation.Type = requestOperation
   oOperation.TargetSE = targetSE
 
-  res = rm.getCatalogFileMetadata( lfnList )
+  res = fc.getFileMetadata( lfnList )
   if not res['OK']:
     print "Can't get file metadata: %s" % res['Message']
     DIRAC.exit( 1 )
