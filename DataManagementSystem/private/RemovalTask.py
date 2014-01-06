@@ -29,6 +29,8 @@ import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.Resources.Utilities import Utils
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ########################################################################
 class RemovalTask( RequestTask ):
@@ -39,7 +41,7 @@ class RemovalTask( RequestTask ):
   - physicalRemoval - remove PFN from TargetSE
   - removeFile - completely remove LFNs from catalogues and SEs
   - replicaRemoval - remove replicas at specified TargetSEs
-  - reTransfer - delete file at source and issue a transfer request using ReplicaManager::onlineRetransfer
+  - reTransfer - delete file at source and issue a transfer request using DataManager::onlineRetransfer
   """
   def __init__( self, *args, **kwargs ):
     """c'tor
@@ -62,7 +64,7 @@ class RemovalTask( RequestTask ):
     :param self: self reference
     :param str lfn: LFN
     """
-    dirMeta = self.replicaManager().getCatalogDirectoryMetadata( lfn, singleFile = True )
+    dirMeta = Utils.executeSingleFileOrDirWrapper( self.fileCatalog().getDirectoryMetadata( lfn ) )
     if not dirMeta["OK"]:
       return dirMeta
     dirMeta = dirMeta["Value"]
@@ -121,7 +123,7 @@ class RemovalTask( RequestTask ):
     self.addMark( "RemoveFileAtt", len( lfns ) )
 
     # # bulk removal 1st
-    exists = self.replicaManager().getCatalogExists( lfns )
+    exists = self.fc.exists( lfns )
     if not exists['OK']:
       self.error( "removeFile: unable to check existence of files", exists['Message'] )
       return exists
@@ -129,7 +131,7 @@ class RemovalTask( RequestTask ):
     lfns = [lfn for lfn in exists if exists[lfn]]
     toRemove = []
     if lfns:
-      bulkRemoval = self.replicaManager().removeFile( lfns )
+      bulkRemoval = self.dm.removeFile( lfns )
       if not bulkRemoval["OK"]:
         bulkRemoval = { 'Failed' : dict.fromkeys( lfns, bulkRemoval['Message'] )}
       else:
@@ -138,7 +140,7 @@ class RemovalTask( RequestTask ):
       for lfn in removalStatus:
         if lfn in failedLfns and "no such file or directory" in str( bulkRemoval["Failed"][lfn] ).lower():
           removalStatus[lfn] = bulkRemoval["Failed"][lfn]
-          removeCatalog = self.replicaManager().removeCatalogFile( lfn, singleFile = True )
+          removeCatalog = Utils.executeSingleFileOrDirWrapper(self.fc.removeFile( lfn ) )
           if not removeCatalog["OK"]:
             removalStatus[lfn] = removeCatalog["Message"]
             continue
@@ -150,7 +152,7 @@ class RemovalTask( RequestTask ):
       self.debug( "removeFile: processing file %s" % lfn )
       try:
         # # try to remove using proxy already defined in os.environ
-        removal = self.replicaManager().removeFile( lfn )
+        removal = self.dataManager().removeFile( lfn )
         # # file is not existing?
         if not removal["OK"] and "no such file or directory" in str( removal["Message"] ).lower():
           removalStatus[lfn] = removal["Message"]
@@ -169,7 +171,7 @@ class RemovalTask( RequestTask ):
             removal = getProxyForLFN
           else:
             # # you're a DataManager, retry with the new one proxy
-            removal = self.replicaManager().removeFile( lfn )
+            removal = self.dataManager().removeFile( lfn )
       finally:
         # # make sure DataManager proxy is set back in place
         if not self.requestOwnerDN and self.dataManagerProxy():
@@ -270,7 +272,7 @@ class RemovalTask( RequestTask ):
       try:
         for targetSE in targetSEs:
           # # try to remove using current proxy
-          removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
+          removeReplica = self.dataManager().removeReplica( targetSE, lfn )
           # # file is not existing?
           if not removeReplica["OK"] and "no such file or directory" in str( removeReplica["Message"] ).lower():
             removalStatus[lfn][targetSE] = removeReplica["Message"]
@@ -291,7 +293,7 @@ class RemovalTask( RequestTask ):
               removeReplica = getProxyForLFN
             else:
               # # got correct proxy? try to remove again
-              removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
+              removeReplica = self.dataManager().removeReplica( targetSE, lfn )
 
           if not removeReplica["OK"]:
             removalStatus[lfn][targetSE] = removeReplica["Message"]
@@ -386,7 +388,7 @@ class RemovalTask( RequestTask ):
         continue
       failed.setdefault( lfn, {} )
       for targetSE in targetSEs:
-        reTransfer = self.replicaManager().onlineRetransfer( targetSE, pfn )
+        reTransfer = StorageElement( targetSE ).retransferOnlineFile( pfn )
         if reTransfer["OK"]:
           if pfn in reTransfer["Value"]["Successful"]:
             self.info( "reTransfer: succesfully requested retransfer of %s" % pfn )
@@ -441,7 +443,7 @@ class RemovalTask( RequestTask ):
     errors = {}
     self.addMark( 'PhysicalRemovalAtt', len( pfns ) )
     for targetSE in targetSEs:
-      remove = self.replicaManager().removeStorageFile( pfns, targetSE )
+      remove = StorageElement( targetSE ).removeFile( pfns )
       if remove["OK"]:
         for pfn in remove["Value"]["Failed"]:
           if pfn not in failed:
