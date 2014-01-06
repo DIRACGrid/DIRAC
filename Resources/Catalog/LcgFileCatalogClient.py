@@ -24,22 +24,22 @@ importedLFC = None
 def getClientCertInfo():
   res = getProxyInfo( False, False )
   if not res['OK']:
-    gLogger.error( "ReplicaManager.__getClientCertGroup: Failed to get client proxy information.",
+    gLogger.error( "getClientCertInfo: Failed to get client proxy information.",
                    res['Message'] )
     return res
   proxyInfo = res['Value']
   gLogger.debug( formatProxyInfoAsString( proxyInfo ) )
   if 'group' not in proxyInfo:
-    errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the group."
+    errStr = "getClientCertInfo: Proxy information does not contain the group."
     gLogger.error( errStr )
     return S_ERROR( errStr )
   if 'VOMS' not in proxyInfo:
     proxyInfo['VOMS'] = getVOMSAttributeForGroup( proxyInfo['group'] )
-    errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the VOMs information."
+    errStr = "getClientCertInfo: Proxy information does not contain the VOMs information."
     gLogger.warn( errStr )
   res = getDNForUsername( proxyInfo['username'] )
   if not res['OK']:
-    errStr = "ReplicaManager.__getClientCertGroup: Error getting known proxies for user."
+    errStr = "getClientCertInfo: Error getting known proxies for user."
     gLogger.error( errStr, res['Message'] )
     return S_ERROR( errStr )
   diracGroup = proxyInfo.get( 'group', 'Unknown' )
