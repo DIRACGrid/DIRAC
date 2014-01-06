@@ -13,7 +13,8 @@ import types
 import re
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Utilities import Utils
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
@@ -160,8 +161,9 @@ class SandboxStoreClient:
     except Exception, e:
       return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
-    rm = ReplicaManager()
-    result = rm.getStorageFile( SEPFN, SEName, tmpSBDir, singleFile = True )
+    se = StorageElement( SEName )
+    result = Utils.executeSingleFileOrDirWrapper( se.getFile( SEPFN, localPath = tmpSBDir ) )
+
     if not result[ 'OK' ]:
       return result
     sbFileName = os.path.basename( SEPFN )
@@ -282,6 +284,7 @@ class SandboxStoreClient:
     """
     rpcClient = self.__getRPCClient()
     return rpcClient.getSandboxesAssignedToEntity( eId )
+
 
   def __assignSandboxesToEntity( self, eId, sbList, ownerName = "", ownerGroup = "", eSetup = "" ):
     """
