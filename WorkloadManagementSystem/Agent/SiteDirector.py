@@ -66,7 +66,9 @@ class SiteDirector( AgentModule ):
 
     self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
     # The SiteDirector is for a particular user community
-    self.vo = self.am_getOption( "Community", '' )
+    self.vo = self.am_getOption( "VO", '' )
+    if not self.vo:
+      self.vo = self.am_getOption( "Community", '' )
     if not self.vo:
       self.vo = CSGlobals.getVO()
     # The SiteDirector is for a particular user group
