@@ -43,8 +43,8 @@ RequestClient = Mock(spec=RequestClient)
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 DataLoggingClient = Mock(spec=DataLoggingClient)
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-ReplicaManager = Mock(spec=ReplicaManager)
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+DataManager = Mock( spec = DataManager )
 from DIRAC.DataManagementSystem.private.RegistrationTask import RegistrationTask
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
@@ -131,9 +131,9 @@ class RegisterTaskTests(unittest.TestCase):
     self.registerTask.requestClient().finalizeRequest = Mock()
     self.registerTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
-    self.registerTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager) )
-    self.registerTask.replicaManager().registerFile = Mock()
-    self.registerTask.replicaManager().registerFile.return_value =  { "OK" : True,
+    self.registerTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
+    self.registerTask.dataManager().registerFile = Mock()
+    self.registerTask.dataManager().registerFile.return_value = { "OK" : True,
                                                                     "Value" : 
                                                                     { "Failed" : {},
                                                                       "Succesfull" : { "/lhcb/user/c/cblanks/11889/11889410/LDSB.rsQrRL" : True } } } 
