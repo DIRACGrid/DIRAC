@@ -37,14 +37,14 @@ class RequestTask( object ):
 
   All other DIRAC tools and clients (i.e. RequestManager) are private in RequestTask class and will
   be imported and instantiated on demand during first usage. They are accessible using proxied public methods, i.e.
-  if you are going to use ReplicaManager just call::
+  if you are going to use DataManager just call::
 
-    self.replicaManager().someMethod()
+    self.dataManager().someMethod()
 
   All currently proxied tools are::
 
   DataLoggingClient -- self.dataLoggingClient()
-  ReplicaManager    -- self.replicaManager()
+  DataManager    -- self.dataManager()
   RequestClient     -- self.requestClient()
   StorageFactory    -- self.storageFactory()
 
@@ -78,10 +78,8 @@ class RequestTask( object ):
   :RequestTask.__monitor: dict which at the end of processing is returned from :RequestTask.__call__:.
   The values are then processed and pushed to the gMonitor instance in the default callback function.
   """
-
-  # # reference to ReplicaManager
-  __replicaManager = None
-  # # reference to DataLoggingClient
+ 
+  ## reference to DataLoggingClient
   __dataLoggingClient = None
   # # reference to RequestClient
   __requestClient = None
@@ -147,6 +145,9 @@ class RequestTask( object ):
     from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
     from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
     from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+    from DIRAC.DataManagementSystem.Client.Datamanager import DataManager
+    from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+
 
     # # export DIRAC global tools and functions
     self.makeGlobal( "S_OK", S_OK )
@@ -184,6 +185,9 @@ class RequestTask( object ):
       self.__dataManagerProxy = os.environ["X509_USER_PROXY"]
     else:
       self.error( "'X509_USER_PROXY' environment variable not set" )
+
+    self.fc = FileCatalog()
+    self.dm = DataManager()
 
   def dataManagerProxy( self ):
     """ get dataManagerProxy file
@@ -241,15 +245,6 @@ class RequestTask( object ):
     self.debug( "Setting requestType to %s" % str( requestType ) )
     self.__requestType = requestType
 
-  @classmethod
-  def replicaManager( cls ):
-    """ ReplicaManager getter
-    :param cls: class reference
-    """
-    if not cls.__replicaManager:
-      from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-      cls.__replicaManager = ReplicaManager()
-    return cls.__replicaManager
 
   @classmethod
   def dataLoggingClient( cls ):
