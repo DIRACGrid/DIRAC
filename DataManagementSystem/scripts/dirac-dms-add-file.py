@@ -63,12 +63,12 @@ if len( args ) == 1:
 else:
   lfns.append( getDict( args ) )
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC import gLogger
 import DIRAC
 exitCode = 0
 
-rm = ReplicaManager()
+dm = DataManager()
 for lfn in lfns:
   if not os.path.exists( lfn['localfile'] ):
     gLogger.error( "File %s must exist locally" % lfn['localfile'] )
@@ -80,7 +80,7 @@ for lfn in lfns:
     continue
 
   gLogger.notice( "\nUploading %s" % lfn['lfn'] )
-  res = rm.putAndRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'] )
+  res = dm.putAndRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'] )
   if not res['OK']:
     exitCode = 3
     gLogger.error( 'Error: failed to upload %s to %s' % ( lfn['lfn'], lfn['SE'] ) )
