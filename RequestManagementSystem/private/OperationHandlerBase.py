@@ -18,7 +18,7 @@
 
     Helper functions and tools:
 
-    * self.replicaManager() -- returns ReplicaManager
+    * self.dataManager() -- returns DataManager
     * self.dataLoggingClient() -- returns DataLoggingClient
     * self.rssClient() -- returns RSSClient
     * self.getProxyForLFN( LFN ) -- sets X509_USER_PROXY environment variable to LFN owner proxy
@@ -56,6 +56,7 @@ from DIRAC.Core.Utilities.Graph import DynamicProps
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
+from DIRAC.Resources.Utilities  import Utils
 
 ########################################################################
 class OperationHandlerBase( object ):
@@ -65,8 +66,10 @@ class OperationHandlerBase( object ):
   request operation handler base class
   """
   __metaclass__ = DynamicProps
-  # # private replica manager
-  __replicaManager = None
+  # # private data manager
+  __dataManager = None
+  # # private FileCatalog
+  __fc = None
   # # private data logging client
   __dataLoggingClient = None
   # # private ResourceStatusClient
@@ -130,12 +133,21 @@ class OperationHandlerBase( object ):
                                                       self.request.Order,
                                                       self.operation.Type ) )
   @classmethod
-  def replicaManager( cls ):
-    """ ReplicaManger getter """
-    if not cls.__replicaManager:
-      from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-      cls.__replicaManager = ReplicaManager()
-    return cls.__replicaManager
+  def dataManager( cls ):
+    """ dataManager getter """
+    if not cls.__dataManager:
+      from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+      cls.__dataManager = DataManager()
+    return cls.__dataManager
+
+  @classmethod
+  def fileCatalog( cls ):
+    """FileCatalog getter """
+    if not cls.__fc:
+      from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+      cls.__fc = FileCatalog()
+    return cls.__fc
+
 
   @classmethod
   def dataLoggingClient( cls ):
@@ -159,7 +171,7 @@ class OperationHandlerBase( object ):
     :param str lfn: LFN
     :return: S_ERROR or S_OK( "/path/to/proxy/file" )
     """
-    dirMeta = self.replicaManager().getCatalogDirectoryMetadata( lfn, singleFile = True )
+    dirMeta = Utils.executeSingleFileOrDirWrapper( self.fileCatalog().getDirectoryMetadata( lfn ) )
     if not dirMeta["OK"]:
       return dirMeta
     dirMeta = dirMeta["Value"]
