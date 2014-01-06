@@ -238,9 +238,9 @@ class StorageElementProxyHandler(RequestHandler):
     os.makedirs(getFileDir)
    
     # Get the file to the cache 
-    from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-    replicaMgr = ReplicaManager()
-    result = replicaMgr.getFile( lfn, destinationDir=getFileDir )
+    from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+    dataMgr = DataManager()
+    result = dataMgr.getFile( lfn, destinationDir = getFileDir )
     result['CachePath'] = getFileDir
     return result  
     
