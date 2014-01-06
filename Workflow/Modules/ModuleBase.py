@@ -18,7 +18,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.TransformationSystem.Client.FileReport           import FileReport
 from DIRAC.RequestManagementSystem.Client.Request           import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
-from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
 
 
 class ModuleBase( object ):
@@ -42,7 +42,7 @@ class ModuleBase( object ):
 
     # These 2 are used in many places, so it's good to have them available here.
     self.opsH = Operations()
-    self.rm = ReplicaManager()
+    self.dm = DataManager()
 
     # Some job parameters
     self.production_id = 0
