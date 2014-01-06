@@ -53,7 +53,7 @@ from DIRAC.Core.Utilities.Time import fromString
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
@@ -66,6 +66,7 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog    import FileCatalog
 # # from Accounting
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
@@ -98,8 +99,8 @@ class FTSAgent( AgentModule ):
   MAX_ATTEMPT = 256
   # # stage flag
   STAGE_FILES = False
-  # # replica manager
-  __replicaManager = None
+  # # data manager
+  __dm = None
   # # placeholder for FTS client
   __ftsClient = None
   # # placeholder for request client
@@ -144,11 +145,11 @@ class FTSAgent( AgentModule ):
     return cls.__ftsClient
 
   @classmethod
-  def replicaManager( cls ):
-    """ replica manager getter """
-    if not cls.__replicaManager:
-      cls.__replicaManager = ReplicaManager()
-    return cls.__replicaManager
+  def dataManager( cls ):
+    """ data manager getter """
+    if not cls.__dm:
+      cls.__dm = DataManager()
+    return cls.__dm
 
   @classmethod
   def rssClient( cls ):
@@ -934,8 +935,7 @@ class FTSAgent( AgentModule ):
     scheduledFiles = dict( [ ( opFile.LFN, opFile ) for opFile in operation
                               if opFile.Status in ( "Scheduled", "Waiting" ) ] )
     # # get replicas
-    replicas = self.replicaManager().getCatalogReplicas( scheduledFiles.keys() )
-
+    replicas = FileCatalog().getReplicas( scheduledFiles )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
       return replicas
@@ -977,7 +977,7 @@ class FTSAgent( AgentModule ):
 
     ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
 
-    replicas = self.replicaManager().getActiveReplicas( opFile.LFN )
+    replicas = self.dataManager().getActiveReplicas( opFile.LFN )
     if not replicas["OK"]:
       log.error( replicas["Message"] )
     reNotExists = re.compile( "not such file or directory" )
