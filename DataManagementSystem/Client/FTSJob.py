@@ -34,11 +34,11 @@ from DIRAC.Core.Utilities.File import checkGuid
 # from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 # # from RMS
 from DIRAC.RequestManagementSystem.private.Record import Record
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 
 ########################################################################
 class FTSJob( Record ):
@@ -47,8 +47,8 @@ class FTSJob( Record ):
 
   class describing one FTS job
   """
-  # # replica manager
-  __replicaManager = None
+  # # FileCatalog
+  __fileCatalog = None
 
   # # initial states
   INITSTATES = ( "Submitted", "Ready", "Staging" )
@@ -102,11 +102,11 @@ class FTSJob( Record ):
         setattr( self, key, value )
 
   @classmethod
-  def replicaManager( cls ):
-    """ get replica manager """
-    if not cls.__replicaManager:
-      cls.__replicaManager = ReplicaManager()
-    return cls.__replicaManager
+  def fileCatalog( cls ):
+    """ get FileCatalog """
+    if not cls.__fileCatalog :
+      cls.__fileCatalog = FileCatalog()
+    return cls.__fileCatalog
 
   @staticmethod
   def tableDesc():
@@ -552,9 +552,9 @@ class FTSJob( Record ):
       toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
 
     if toRegisterDict:
-      self._regTotal += len( toRegisterDict )
-      register = self.replicaManager().addCatalogReplica( toRegisterDict )
-      self._regTime += time.time() - startTime
+      self.regTotal += len( toRegisterDict )
+      register = self.fileCatalog().addReplica( toRegisterDict )
+      self.regTime += time.time() - startTime
       if not register["OK"]:
         # FIXME: shouldn't be a print!
         for ftsFile in toRegister:
