@@ -264,12 +264,19 @@ class JobScheduling( OptimizerExecutor ):
     if bannedSites:
       reqCfg.setOption( "BannedSites", ", ".join( bannedSites ) )
 
-    for key in ( 'SubmitPools', "GridMiddleware", "PilotTypes", "JobType", "GridRequiredCEs" ):
+    # Job multivalue requirement keys are specified as singles in the job descriptions
+    # but for backward compatibility can be also plurals
+    for key in ( 'SubmitPools', "SubmitPool", "GridMiddleware", "PilotTypes", "PilotType", 
+                 "JobType", "GridRequiredCEs", "GridCE" ):
       reqKey = key
       if key == "JobType":
         reqKey = "JobTypes"
-      elif key == "GridRequiredCEs":
+      elif key == "GridRequiredCEs" or key == "GridCE":
         reqKey = "GridCEs"
+      elif key == "SubmitPools" or key == "SubmitPool":
+        reqKey = "SubmitPools"    
+      elif key == "PilotTypes" or key == "PilotType":
+        reqKey = "PilotTypes"  
       if key in manifest:
         reqCfg.setOption( reqKey, ", ".join( manifest.getOption( key, [] ) ) )
 
