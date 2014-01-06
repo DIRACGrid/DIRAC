@@ -1,13 +1,17 @@
-""" :mod: ReplicaManager
+""" :mod: DataManager
     =======================
 
-    .. module: ReplicaManager
-    :synopsis: ReplicaManager links the functionalities of StorageElement and FileCatalog.
+    .. module: DataManager
+    :synopsis: DataManager links the functionalities of StorageElement and FileCatalog.
 
-    This module consists ReplicaManager and related classes.
+    This module consists DataManager and related classes.
 
 """
 
+"""cgrep -Rin replicam . | grep -vE "release|git" | awk -F ':' {'print $1'} | sort -u"""
+
+# # RSCID
+__RCSID__ = "$Id$"
 # # imports
 from datetime import datetime, timedelta
 import fnmatch
@@ -414,6 +418,8 @@ from DIRAC.Resources.Utilities import Utils
 #     return super( CatalogBackwardCompatibility, self ).__getattr__( name )
 
 
+
+
 class DataManager( object ):
   """
   .. class:: DataManager
@@ -706,7 +712,7 @@ class DataManager( object ):
         else:
           return S_OK( localFile )
     self.log.debug( "getFile: Failed to get local copy from any replicas.", lfn )
-    return S_ERROR( "ReplicaManager.getFile: Failed to get local copy from any replicas." )
+    return S_ERROR( "DataManager.getFile: Failed to get local copy from any replicas." )
 
   def _getSEProximity( self, ses ):
     """ get SE proximity """
@@ -870,7 +876,7 @@ class DataManager( object ):
     res = self.__replicate( lfn, destSE, sourceSE, destPath, localCache )
     replicationTime = time.time() - startReplication
     if not res['OK']:
-      errStr = "ReplicaManager.replicateAndRegister: Completely failed to replicate file."
+      errStr = "DataManager.replicateAndRegister: Completely failed to replicate file."
       self.log.debug( errStr, res['Message'] )
       return S_ERROR( errStr )
     if not res['Value']:
@@ -1385,7 +1391,7 @@ class DataManager( object ):
     self.log.debug( "removeFile: Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
     res = self.fc.getReplicas( lfns, True )
     if not res['OK']:
-      errStr = "ReplicaManager.removeFile: Completely failed to get replicas for lfns."
+      errStr = "DataManager.removeFile: Completely failed to get replicas for lfns."
       self.log.debug( errStr, res['Message'] )
       return res
     lfnDict = res['Value']['Successful']
@@ -1856,7 +1862,7 @@ class DataManager( object ):
     else:
       userName = result['Value'].get( 'username', 'unknown' )
     accountingDict['User'] = userName
-    accountingDict['Protocol'] = 'ReplicaManager'
+    accountingDict['Protocol'] = 'DataManager'
     accountingDict['RegistrationTime'] = 0.0
     accountingDict['RegistrationOK'] = 0
     accountingDict['RegistrationTotal'] = 0
@@ -1871,3 +1877,251 @@ class DataManager( object ):
     oDataOperation.setValuesFromDict( accountingDict )
     return oDataOperation
 
+##########################################
+  #
+  # Defunct methods only there before checking backward compatability
+  #
+
+
+  def getReplicas( self, lfns ):
+    """ get replicas from catalogue """
+    res = FileCatalog().getReplicas( lfns, allStatus = False )
+    if res['OK']:
+      for lfn, replicas in res['Value']['Successful'].items():
+        for se in replicas:
+          replicas[se] = StorageElement( se ).getPfnForLfn( lfn ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[se] )
+    return res
+
+  def getFileSize( self, lfn ):
+    """ get file size from catalogue """
+    return FileCatalog().getFileSize( lfn )
+
+  # This should be removed, and adapt StorageElement.getPfnPath to follow the Successful/Failed convention
+  def getPfnForLfn( self, lfns, storageElementName ):
+    """ get PFNs for supplied LFNs at :storageElementName: SE
+
+    :param self: self reference
+    :param list lfns: list of LFNs
+    :param str stotrageElementName: DIRAC SE name
+    """
+    if type( lfns ) == type( '' ):
+      lfns = [lfns]
+    storageElement = StorageElement( storageElementName )
+    res = storageElement.isValid( "getPfnForLfn" )
+    if not res['OK']:
+      self.log.error( "getPfnForLfn: Failed to instantiate StorageElement at %s" % storageElementName )
+      return res
+    retDict = { "Successful" : {}, "Failed" : {} }
+    for lfn in lfns:
+      res = storageElement.getPfnForLfn( lfn )
+      if res["OK"]:
+        retDict["Successful"][lfn] = res["Value"]
+      else:
+        retDict["Failed"][lfn] = res["Message"]
+    return S_OK( retDict )
+
+  # This should be removed, and adapt StorageElement.getLfnForPfn to follow the Successful/Failed convention
+  def getLfnForPfn( self, pfns, storageElementName ):
+    """ get LFNs for supplied PFNs at :storageElementName: SE
+
+    :param self: self reference
+    :param list lfns: list of LFNs
+    :param str stotrageElementName: DIRAC SE name
+    """
+    storageElement = StorageElement( storageElementName )
+    res = storageElement.isValid( "getPfnPath" )
+    if not res['OK']:
+      self.log.error( "getLfnForPfn: Failed to instantiate StorageElement at %s" % storageElementName )
+      return res
+    retDict = { "Successful" : {}, "Failed" : {} }
+    for pfn in pfns:
+      res = storageElement.getPfnPath( pfn )
+      if res["OK"]:
+        retDict["Successful"][pfn] = res["Value"]
+      else:
+        retDict["Failed"][pfn] = res["Message"]
+    return S_OK( retDict )
+
+  # This should be removed, and adapt StorageElement.getPfnForProtocol to follow the Successful/Failed convention
+  def getPfnForProtocol( self, pfns, storageElementName, protocol = "SRM2", withPort = True ):
+    """ create PFNs strings at :storageElementName: SE using protocol :protocol:
+
+    :param self: self reference
+    :param list pfns: list of PFNs
+    :param str storageElementName: DIRAC SE name
+    :param str protocol: protocol name (default: 'SRM2')
+    :param bool withPort: flag to include port in PFN (default: True)
+    """
+    storageElement = StorageElement( storageElementName )
+    res = storageElement.isValid( "getPfnForProtocol" )
+    if not res["OK"]:
+      self.log.error( "getPfnForProtocol: Failed to instantiate StorageElement at %s" % storageElementName )
+      return res
+    retDict = { "Successful" : {}, "Failed" : {}}
+    for pfn in pfns:
+      res = storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort )
+      if res["OK"]:
+        retDict["Successful"][pfn] = res["Value"]
+      else:
+        retDict["Failed"][pfn] = res["Message"]
+    return S_OK( retDict )
+  
+  
+  
+  ##################################################################################################3
+  # Methods from the catalogToStorage. It would all work with the direct call to the SE, but this checks
+  # first if the replica is known to the catalog
+
+  
+  def __executeIfReplicaExists( self, storageElementName, lfn, method, **argsDict ):
+    """ a simple wrapper that allows replica querying then perform the StorageElement operation
+
+    :param self: self reference
+    :param str storageElementName: DIRAC SE name
+    :param mixed lfn: a LFN str, list of LFNs or dict with LFNs as keys
+    """
+    # # default value
+    argsDict = argsDict if argsDict else {}
+    # # get replicas for lfn
+    res = FileCatalog().getReplicas( lfn )
+    if not res["OK"]:
+      errStr = "_callReplicaSEFcn: Completely failed to get replicas for LFNs."
+      self.log.debug( errStr, res["Message"] )
+      return res
+    # # returned dict, get failed replicase
+    retDict = { "Failed": res["Value"]["Failed"],
+                "Successful" : {} }
+    # # print errors
+    for lfn, reason in retDict["Failed"].items():
+      self.log.error( "_callReplicaSEFcn: Failed to get replicas for file.", "%s %s" % ( lfn, reason ) )
+    # # good replicas
+    lfnReplicas = res["Value"]["Successful"]
+    # # store PFN to LFN mapping
+    pfnDict = {}
+    existingReplicas = []
+    for lfn, replicas in lfnReplicas.items():
+      if storageElementName  in replicas:
+        existingReplicas.append( lfn )
+      else:
+        errStr = "_callReplicaSEFcn: File hasn't got replica at supplied Storage Element."
+        self.log.error( errStr, "%s %s" % ( lfn, storageElementName ) )
+        retDict["Failed"][lfn] = errStr
+    # # call StorageElement function at least
+    se = StorageElement( storageElementName )
+    fcn = getattr( se, method )
+    res = fcn( existingReplicas, **argsDict )
+    # # check result
+    if not res["OK"]:
+      errStr = "_callReplicaSEFcn: Failed to execute %s StorageElement method." % method
+      self.log.error( errStr, res["Message"] )
+      return res
+    # # filter out failed nad successful
+    for pfn, pfnRes in res["Value"]["Successful"].items():
+      retDict["Successful"][pfnDict[pfn]] = pfnRes
+    for pfn, errorMessage in res["Value"]["Failed"].items():
+      retDict["Failed"][pfnDict[pfn]] = errorMessage
+    return S_OK( retDict )
+
+  def getReplicaIsFile( self, lfn, storageElementName ):
+    """ determine whether the supplied lfns are files at the supplied StorageElement
+
+    :param self: self reference
+    :param mixed lfn: LFN string, list if LFNs or dict with LFNs as keys
+    :param str storageElementName: DIRAC SE name
+    :param bool singleFile: execute for the first LFN only
+    """
+    return self.__executeIfReplicaExists( storageElementName, lfn, "isFile" )
+
+  def getReplicaSize( self, lfn, storageElementName ):
+    """ get the size of files for the lfns at the supplied StorageElement
+
+    :param self: self reference
+    :param mixed lfn: LFN string, list if LFNs or dict with LFNs as keys
+    :param str storageElementName: DIRAC SE name
+    :param bool singleFile: execute for the first LFN only
+    """
+    return self.__executeIfReplicaExists( storageElementName, lfn, "getFileSize" )
+
+  def getReplicaAccessUrl( self, lfn, storageElementName ):
+    """ get the access url for lfns at the supplied StorageElement
+
+    :param self: self reference
+    :param mixed lfn: LFN string, list if LFNs or dict with LFNs as keys
+    :param str storageElementName: DIRAC SE name
+    :param bool singleFile: execute for the first LFN only
+    """
+    return self.__executeIfReplicaExists( storageElementName, lfn, "getAccessUrl" )
+
+  def getReplicaMetadata( self, lfn, storageElementName ):
+    """ get the file metadata for lfns at the supplied StorageElement
+
+    :param self: self reference
+    :param mixed lfn: LFN string, list if LFNs or dict with LFNs as keys
+    :param str storageElementName: DIRAC SE name
+    :param bool singleFile: execute for the first LFN only
+    """
+    return self.__executeIfReplicaExists( storageElementName, lfn, "getFileMetadata" )
+
+  def prestageReplica( self, lfn, storageElementName, lifetime = 86400 ):
+    """ issue a prestage requests for the lfns at the supplied StorageElement
+
+    :param self: self reference
+    :param mixed lfn: LFN string, list if LFNs or dict with LFNs as keys
+    :param str storageElementName: DIRAC SE name
+    :param int lifetime: 24h in seconds
+    :param bool singleFile: execute for the first LFN only
+    """
+    return self.__executeIfReplicaExists( storageElementName, lfn,
+                                                  "prestageFile", lifetime = lifetime )
+
+
+  def pinReplica( self, lfn, storageElementName, lifetime = 86400 ):
+    """ pin the lfns at the supplied StorageElement
+
+    :param self: self reference
+    :param mixed lfn: LFN string, list if LFNs or dict with LFNs as keys
+    :param str storageElementName: DIRAC SE name
+    :param int lifetime: 24h in seconds
+    :param bool singleFile: execute for the first LFN only
+    """
+    return self.__executeIfReplicaExists( storageElementName, lfn,
+                                                  "pinFile", lifetime = lifetime )
+
+  def releaseReplica( self, lfn, storageElementName ):
+    """ release pins for the lfns at the supplied StorageElement
+
+    :param self: self reference
+    :param mixed lfn: LFN string, list if LFNs or dict with LFNs as keys
+    :param str storageElementName: DIRAC SE name
+    :param bool singleFile: execute for the first LFN only
+    """
+    return self.__executeIfReplicaExists( storageElementName, lfn, "releaseFile" )
+
+  def getReplica( self, lfn, storageElementName, localPath = False ):
+    """ copy replicas from DIRAC SE to local directory
+
+    :param self: self reference
+    :param mixed lfn: LFN string, list if LFNs or dict with LFNs as keys
+    :param str storageElementName: DIRAC SE name
+    :param mixed localPath: path in the local file system, if False, os.getcwd() will be used
+    :param bool singleFile: execute for the first LFN only
+    """
+    return self.__executeIfReplicaExists( storageElementName, lfn,
+                                                  "getFile", localPath = localPath )
+
+
+
+  # we should so something to get rid of this one
+  def removeCatalogFile( self, lfn ):
+    """ remove a file from the FileCatalog
+
+    :param self: self reference
+    :param mixed lfn: LFN as string or list of LFN strings or dict with LFNs as keys
+    :param bool singleFile: execute for the first LFN only
+    :param list catalogs: catalogs' names
+    """
+
+    # # make sure lfns are sorted from the longest to the shortest
+    if type( lfn ) == ListType:
+      lfn = sorted( lfn, reverse = True )
+    return FileCatalog().removeFile( lfn )
