@@ -25,6 +25,7 @@ __RCSID__ = "$Id $"
 # # imports
 from DIRAC import gMonitor, S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 ########################################################################
 class RegisterFile( OperationHandlerBase ):
@@ -56,6 +57,7 @@ class RegisterFile( OperationHandlerBase ):
     failedFiles = 0
     # # catalog to use
     catalog = self.operation.Catalog
+    dm = DataManager( catalogs = catalog )
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
     # # loop over files
@@ -66,9 +68,9 @@ class RegisterFile( OperationHandlerBase ):
       # # get LFN
       lfn = opFile.LFN
       # # and others
-      fileTuple = ( lfn , opFile.PFN, opFile.Size, self.operation.targetSEList[0], opFile.GUID, opFile.Checksum )
-      # # call ReplicaManager
-      registerFile = self.replicaManager().registerFile( fileTuple, catalog )
+      fileTuple = ( lfn , opFile.PFN, opFile.Size, targetSE, opFile.GUID, opFile.Checksum )
+      # # call DataManager
+      registerFile = dm.registerFile( fileTuple )
       # # check results
       if not registerFile["OK"] or lfn in registerFile["Value"]["Failed"]:
 
