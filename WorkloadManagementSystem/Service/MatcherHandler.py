@@ -16,7 +16,7 @@ import threading
 from DIRAC.ConfigurationSystem.Client.Helpers          import Registry, Operations
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight         import ClassAd
-from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC                                             import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
@@ -151,7 +151,7 @@ class Limiter:
       if result['OK']:
         delayCond = result['Value']
         gLogger.verbose( 'Negative conditions for site %s after delay checking are: %s' % ( siteName, str( delayCond ) ) )
-        negCond = self.__mergeCond( negativeCond, delayCond )
+        negativeCond = self.__mergeCond( negativeCond, delayCond )
 
     if negativeCond:
       gLogger.info( 'Negative conditions for site %s are: %s' % ( siteName, str( negativeCond ) ) )
@@ -427,7 +427,7 @@ class MatcherHandler( RequestHandler ):
     if pilotReference:
       if "PilotInfoReportedFlag" in resourceDict and not resourceDict['PilotInfoReportedFlag']:
         gridCE = resourceDict.get( 'GridCE', 'Unknown' )
-        site = destination = resourceDict.get( 'Site', 'Unknown' )
+        site = resourceDict.get( 'Site', 'Unknown' )
         benchmark = benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
         gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
         result = gPilotAgentsDB.setPilotStatus( pilotReference, status = 'Running',
@@ -449,16 +449,20 @@ class MatcherHandler( RequestHandler ):
 
     siteName = resourceDict['Site']
     if siteName not in maskList:
-      if 'GridCE' not in resourceDict:
-        return S_ERROR( 'Site not in mask and GridCE not specified' )
-      #Even if the site is banned, if it defines a CE, it must be able to check it
-      del resourceDict['Site']
+      
+      # if 'GridCE' not in resourceDict:
+      #  return S_ERROR( 'Site not in mask and GridCE not specified' )
+      # Even if the site is banned, if it defines a CE, it must be able to check it
+      # del resourceDict['Site']
+      
+      # Banned site can only take Test jobs 
+      resourceDict['JobType'] = 'Test'
 
     resourceDict['Setup'] = self.serviceInfoDict['clientSetup']
 
     gLogger.verbose( "Resource description:" )
     for key in resourceDict:
-     gLogger.verbose( "%s : %s" % ( key.rjust( 20 ), resourceDict[ key ] ) )
+      gLogger.verbose( "%s : %s" % ( key.rjust( 20 ), resourceDict[ key ] ) )
 
     negativeCond = self.__limiter.getNegativeCondForSite( siteName )
     result = gTaskQueueDB.matchAndGetJob( resourceDict, negativeCond = negativeCond )
