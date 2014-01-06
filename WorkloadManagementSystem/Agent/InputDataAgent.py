@@ -15,7 +15,8 @@ from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModul
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.List                             import uniqueElements
 from DIRAC                                                 import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager         import DataManager
+from DIRAC.Resources.Catalog.FileCatalog                   import FileCatalog
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import getStorageElementOptions
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus      import ResourceStatus
 
@@ -43,9 +44,9 @@ class InputDataAgent( OptimizerModule ):
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
     try:
-      self.replicaManager = ReplicaManager()
+      self.dataManager = DataManager()
     except Exception, e:
-      msg = 'Failed to create ReplicaManager'
+      msg = 'Failed to create DataManager'
       self.log.exception( msg )
       return S_ERROR( msg + str( e ) )
     
@@ -107,7 +108,7 @@ class InputDataAgent( OptimizerModule ):
     start = time.time()
     # In order to place jobs on Hold if a certain SE is banned we need first to check first if
     # if the replicas are really available
-    replicas = self.replicaManager.getActiveReplicas( lfns )
+    replicas = self.dataManager.getActiveReplicas( lfns )
     timing = time.time() - start
     self.log.verbose( 'Catalog Replicas Lookup Time: %.2f seconds ' % ( timing ) )
     if not replicas['OK']:
@@ -125,7 +126,7 @@ class InputDataAgent( OptimizerModule ):
     if self.checkFileMetadata:
       guids = True
       start = time.time()
-      guidDict = self.replicaManager.getCatalogFileMetadata( lfns )
+      guidDict = self.fc.getFileMetadata( lfns )
       timing = time.time() - start
       self.log.info( 'Catalog Metadata Lookup Time: %.2f seconds ' % ( timing ) )
 
@@ -188,7 +189,7 @@ class InputDataAgent( OptimizerModule ):
     the execution of the job
     """
     # Now let's check if some replicas might not be available due to banned SE's
-    activeReplicas = self.replicaManager.checkActiveReplicas( replicaDict )
+    activeReplicas = self.dataManager.checkActiveReplicas( replicaDict )
     if not activeReplicas['OK']:
       # due to banned SE's input data might no be available
       msg = "On Hold: Missing replicas due to banned SE"
