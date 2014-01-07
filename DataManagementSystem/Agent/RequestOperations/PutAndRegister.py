@@ -91,7 +91,7 @@ class PutAndRegister( OperationHandlerBase ):
 
     if not targetWrite["Value"]:
       self.operation.Error = "TargetSE %s is banned for writing"
-      return S_ERROR( self.operation.Error )
+      return S_OK( self.operation.Error )
 
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()

@@ -70,12 +70,12 @@ class PhysicalRemoval( OperationHandlerBase ):
         return S_ERROR( self.operation.Error )
 
       if not removeStatus["Value"]:
-        self.log.error( "%s in banned for remove right now" % targetSE )
+        self.log.info( "%s is banned for remove right now" % targetSE )
         bannedTargets.append( targetSE )
-        self.operation.Error += "banned targetSE: %s;" % targetSE
+        self.operation.Error = "banned targetSE: %s;" % targetSE
     # # some targets are banned? return
     if bannedTargets:
-      return S_ERROR( "targets %s are banned for removal" % ",".join( bannedTargets ) )
+      return S_OK( "targets %s are banned for removal" % ",".join( bannedTargets ) )
 
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()

@@ -319,7 +319,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
       if not sourceRead["Value"]:
         self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
         self.log.info( self.operation.Error )
-        return S_ERROR( self.operation.Error )
+        return S_OK( self.operation.Error )
 
     # # list of targetSEs
     targetSEs = self.operation.targetSEList
@@ -338,10 +338,10 @@ class ReplicateAndRegister( OperationHandlerBase ):
       if not writeStatus["Value"]:
         self.log.info( "TargetSE %s in banned for writing right now" % targetSE )
         bannedTargets.append( targetSE )
-        self.operation.Error += "banned targetSE: %s;" % targetSE
+        self.operation.Error = "banned targetSE: %s;" % targetSE
     # # some targets are banned? return
     if bannedTargets:
-      return S_ERROR( "%s targets are banned for writing" % ",".join( bannedTargets ) )
+      return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets ) )
 
     # # loop over targetSE
     for targetSE in targetSEs:

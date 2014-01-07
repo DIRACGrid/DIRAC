@@ -80,7 +80,7 @@ class RemoveReplica( OperationHandlerBase ):
         return S_ERROR( self.operation.Error )
 
       if not removeStatus["Value"]:
-        self.log.info( "%s in banned for remove right now" % targetSE )
+        self.log.info( "%s is banned for remove right now" % targetSE )
         bannedTargets.append( targetSE )
         self.operation.Error = "banned targetSE: %s;" % targetSE
 
