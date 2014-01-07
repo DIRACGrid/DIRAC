@@ -95,9 +95,9 @@ class JobScheduling( OptimizerExecutor ):
         sites = self.__applySiteFilter( userSites, wmsActiveSites, wmsBannedSites )
         if not sites:
           if len( userSites ) > 1:
-            return self.__holdJob( jobState, "Sites %s are inactive or banned" % ",".join( userSites ) )
+            return self.__holdJob( jobState, "Requested sites %s are inactive" % ",".join( userSites ) )
           else:
-            return self.__holdJob( jobState, "Site %s is inactive or banned" % userSites[0] )
+            return self.__holdJob( jobState, "Requested site %s is inactive" % userSites[0] )
 
     #Get the Input data
     # Third, check if there is input data
