@@ -199,7 +199,7 @@ class OperationHandlerBase( object ):
     waitingFiles = [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
     for opFile in waitingFiles:
       opFile.Attempt += 1
-      maxAttempts = getattr( self, "MaxAttempts" ) if hasattr( self, "MaxAttempts" ) else 256
+      maxAttempts = getattr( self, "MaxAttempts" ) if hasattr( self, "MaxAttempts" ) else 1024
       if opFile.Attempt > maxAttempts:
         opFile.Status = "Failed"
         opFile.Error = "Max attempts limit reached"
