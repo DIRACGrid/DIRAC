@@ -514,6 +514,8 @@ sys.path.insert( 0, diracScriptsPath )
 
 # Instead of dumping the Full configuration, include all Server in dirac.cfg
 configureOpts.append( '-I' )
+if cliParams.debug:
+  configureOpts.append( '-d' )
 configureCmd = "%s %s" % ( os.path.join( diracScriptsPath, "dirac-configure" ), " ".join( configureOpts ) )
 
 logDEBUG( "Configuring DIRAC with: %s" % configureCmd )
