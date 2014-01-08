@@ -88,7 +88,7 @@ class ReTransfer( OperationHandlerBase ):
       self.log.error( "TargetSE %s in banned for writing right now" % targetSE )
       self.operation.Error += "banned targetSE: %s;" % targetSE
       gMonitor.addMark( "FileReTransferFail", len( toRetransfer ) )
-      return S_ERROR( self.operation.Error )
+      return S_OK( self.operation.Error )
 
     for opFile in toRetransfer.values():
       reTransfer = self.replicaManager().onlineRetransfer( targetSE, opFile.PFN )

@@ -286,9 +286,11 @@ class TransformationClient( Client, FileCatalogueBase ):
       if newStatuses:  # if there's something to update
         # must do it for the file IDs...
         newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
-        return rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
+        res = rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
+        if not res['OK']:
+          return res
 
-    return S_OK( 'Nothing to update' )
+    return S_OK( newStatuses )
 
   def _applyTransformationFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
     """ For easier extension, here we apply the state machine of the production files.

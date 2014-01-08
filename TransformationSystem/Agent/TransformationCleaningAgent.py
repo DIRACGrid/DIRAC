@@ -10,18 +10,19 @@ import re
 from datetime import datetime, timedelta
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+from DIRAC.Core.Base.AgentModule                              import AgentModule
+from DIRAC.Core.Utilities.List                                import breakListIntoChunks
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
+from DIRAC.DataManagementSystem.Client.ReplicaManager         import ReplicaManager
+from DIRAC.Resources.Catalog.FileCatalogClient                import FileCatalogClient
+from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
+from DIRAC.WorkloadManagementSystem.Client.WMSClient          import WMSClient
 
 # FIXME: double client: only ReqClient will survive in the end
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.Client.RequestClient       import RequestClient
+from DIRAC.RequestManagementSystem.Client.ReqClient           import ReqClient
 
+__RCSID__ = "$Id$"
 
 # # agent's name
 AGENT_NAME = 'Transformation/TransformationCleaningAgent'
@@ -85,12 +86,12 @@ class TransformationCleaningAgent( AgentModule ):
     self.dataManipTTypes = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
     agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
     if agentTSTypes:
-      self.transformationTypes = sortList( agentTSTypes )
+      self.transformationTypes = sorted( agentTSTypes )
     else:
-      self.transformationTypes = sortList( self.dataProcTTypes + self.dataManipTTypes )
+      self.transformationTypes = sorted( self.dataProcTTypes + self.dataManipTTypes )
     self.log.info( "Will consider the following transformation types: %s" % str( self.transformationTypes ) )
     # # directory locations
-    self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', [ 'TransformationDB',
+    self.directoryLocations = sorted( self.am_getOption( 'DirectoryLocations', [ 'TransformationDB',
                                                                                    'MetadataCatalog' ] ) )
     self.log.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
     # # transformation metadata
@@ -100,7 +101,7 @@ class TransformationCleaningAgent( AgentModule ):
     self.archiveAfter = self.am_getOption( 'ArchiveAfter', 7 )  # days
     self.log.info( "Will archive Completed transformations after %d days" % self.archiveAfter )
     # # active SEs
-    self.activeStorages = sortList( self.am_getOption( 'ActiveSEs', [] ) )
+    self.activeStorages = sorted( self.am_getOption( 'ActiveSEs', [] ) )
     self.log.info( "Will check the following storage elements: %s" % str( self.activeStorages ) )
     # # transformation log SEs
     self.logSE = self.am_getOption( 'TransformationLogSE', 'LogSE' )
@@ -197,7 +198,7 @@ class TransformationCleaningAgent( AgentModule ):
 
     if not directories:
       self.log.info( "No output directories found" )
-    directories = sortList( directories )
+    directories = sorted( directories )
     return S_OK( directories )
 
   @classmethod
@@ -463,8 +464,8 @@ class TransformationCleaningAgent( AgentModule ):
   #
 
   def cleanTransformationTasks( self, transID ):
-    ''' clean tasks from WMS, or from the RMS if it is a DataManipulation transformation
-    '''
+    """ clean tasks from WMS, or from the RMS if it is a DataManipulation transformation
+    """
     res = self.__getTransformationExternalIDs( transID )
     if not res['OK']:
       return res
@@ -498,8 +499,21 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK( externalIDs )
 
   def __removeRequests( self, requestIDs ):
-    """ dummy method """
-    self.log.error( "Not removing requests but should do" )
+    """ This will remove requests from the (new) RMS system -
+
+        #FIXME: if the old system is still installed, it won't remove anything!!!
+        (we don't want to risk removing from the new RMS what is instead in the old)
+    """
+    # FIXME: checking if the old system is still installed!
+    from DIRAC.ConfigurationSystem.Client import PathFinder
+    if PathFinder.getServiceURL( "RequestManagement/RequestManager" ):
+      self.log.warn( "NOT removing requests!!" )
+      return S_OK()
+
+    rIDs = [ int( long( j ) ) for j in requestIDs if long( j ) ]
+    for requestName in rIDs:
+      self.reqClient.deleteRequest( requestName )
+
     return S_OK()
 
   def __removeWMSTasks( self, transJobIDs ):

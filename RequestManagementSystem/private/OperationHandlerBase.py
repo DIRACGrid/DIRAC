@@ -199,7 +199,7 @@ class OperationHandlerBase( object ):
     waitingFiles = [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
     for opFile in waitingFiles:
       opFile.Attempt += 1
-      maxAttempts = getattr( self, "MaxAttempts" ) if hasattr( self, "MaxAttempts" ) else 256
+      maxAttempts = getattr( self, "MaxAttempts" ) if hasattr( self, "MaxAttempts" ) else 1024
       if opFile.Attempt > maxAttempts:
         opFile.Status = "Failed"
         opFile.Error = "Max attempts limit reached"
@@ -215,7 +215,7 @@ class OperationHandlerBase( object ):
     # gLogger.always( rssStatus )
     if not rssStatus["OK"]:
       return S_ERROR( "unknown SE: %s" % se )
-    if rssStatus["Value"] == "Banned":
+    if rssStatus["Value"][se][status] == "Banned":
       return S_OK( False )
     return S_OK( True )
 

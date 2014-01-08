@@ -186,7 +186,10 @@ class File( Record ):
     if not value:
       self.__data__["ChecksumType"] = ""
     elif value and str( value ).strip().upper() not in ( "ADLER32", "MD5", "SHA1" ):
-      raise ValueError( "unknown checksum type: %s" % value )
+      if str( value ).strip().upper() == 'AD':
+        self.__data__["ChecksumType"] = 'ADLER32'
+      else:
+        raise ValueError( "unknown checksum type: %s" % value )
     else:
       self.__data__["ChecksumType"] = str( value ).strip().upper()
 

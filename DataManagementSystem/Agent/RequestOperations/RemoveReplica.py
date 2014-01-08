@@ -68,8 +68,8 @@ class RemoveReplica( OperationHandlerBase ):
     # # check targetSEs for removal
     bannedTargets = []
     for targetSE in targetSEs:
-      # removeStatus = self.rssSEStatus( targetSE, "RemoveAccess" )
-      removeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
+      removeStatus = self.rssSEStatus( targetSE, "RemoveAccess" )
+      # removeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
 
       if not removeStatus["OK"]:
         self.log.error( removeStatus["Message"] )
@@ -80,13 +80,13 @@ class RemoveReplica( OperationHandlerBase ):
         return S_ERROR( self.operation.Error )
 
       if not removeStatus["Value"]:
-        self.log.error( "%s in banned for remove right now" % targetSE )
+        self.log.info( "%s is banned for remove right now" % targetSE )
         bannedTargets.append( targetSE )
-        self.operation.Error += "banned targetSE: %s;" % targetSE
+        self.operation.Error = "banned targetSE: %s;" % targetSE
 
     # # some targets are banned? return
     if bannedTargets:
-      return S_ERROR( "targets %s are banned for removal" % ",".join( bannedTargets ) )
+      return S_OK( "targets %s are banned for removal" % ",".join( bannedTargets ) )
 
     # # keep status for each targetSE
     removalStatus = dict.fromkeys( toRemoveDict.keys(), None )

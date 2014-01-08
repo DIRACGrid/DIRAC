@@ -24,15 +24,13 @@ __RCSID__ = "$Id $"
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
-from DIRAC.RequestManagementSystem.Client.Operation             import Operation
-from DIRAC.RequestManagementSystem.Client.File                  import File
-from DIRAC.DataManagementSystem.Client.FTSClient                import FTSClient
-from DIRAC.Resources.Storage.StorageElement                     import StorageElement
-from DIRAC.DataManagementSystem.Client.ReplicaManager           import ReplicaManager
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase                   import OperationHandlerBase
+from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
+from DIRAC.Resources.Storage.StorageElement                                       import StorageElement
+from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
 
 ########################################################################
-class ReplicateAndRegister( OperationHandlerBase ):
+class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
   """
   .. class:: ReplicateAndRegister
 
@@ -46,7 +44,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
     :param Operation operation: Operation instance
     :param str csPath: CS path for this handler
     """
-    OperationHandlerBase.__init__( self, operation, csPath )
+    super( ReplicateAndRegister, self ).__init__( self, operation, csPath )
     # # own gMonitor stuff for files
     gMonitor.registerActivity( "ReplicateAndRegisterAtt", "Replicate and register attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
@@ -69,7 +67,6 @@ class ReplicateAndRegister( OperationHandlerBase ):
     self.seCache = {}
 
     # Clients
-    self.rm = ReplicaManager()
     self.ftsClient = FTSClient()
 
   def __call__( self ):
@@ -92,7 +89,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
                           if opFile.Status in ( "Waiting", "Scheduled" ) ] )
     targetSESet = set( self.operation.targetSEList )
 
-    replicas = self.replicaManager().getCatalogReplicas( waitingFiles.keys() )
+    replicas = self.rm.getCatalogReplicas( waitingFiles.keys() )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
       return replicas
@@ -140,11 +137,12 @@ class ReplicateAndRegister( OperationHandlerBase ):
       opFileToSchedule = toSchedule[lfnsToSchedule][0]
       opFileToSchedule.GUID = lfnMetadata['GUID']
       opFileToSchedule.Checksum = metadata[lfnsToSchedule]['Checksum']
+      opFileToSchedule.ChecksumType = metadata[lfnsToSchedule]['CheckSumType']
       opFileToSchedule.Size = metadata[lfnsToSchedule]['Size']
 
       filesToScheduleList.append( ( opFileToSchedule.toJSON()['Value'],
-                                   toSchedule[lfnsToSchedule][1],
-                                   toSchedule[lfnsToSchedule][1] ) )
+                                    toSchedule[lfnsToSchedule][1],
+                                    toSchedule[lfnsToSchedule][2] ) )
 
     return S_OK( filesToScheduleList )
 
@@ -155,7 +153,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
 
     ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
 
-    replicas = self.replicaManager().getActiveReplicas( opFile.LFN )
+    replicas = self.rm.getActiveReplicas( opFile.LFN )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
     reNotExists = re.compile( "not such file or directory" )
@@ -213,7 +211,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
   def ftsTransfer( self ):
     """ replicate and register using FTS """
 
-    self.log.info( "scheduling files..." )
+    self.log.info( "scheduling files in FTS..." )
     targetSEs = self.operation.targetSEList
 
     for targetSE in targetSEs:
@@ -274,7 +272,10 @@ class ReplicateAndRegister( OperationHandlerBase ):
         self.log.error( ftsSchedule["Message"] )
         return ftsSchedule
 
+      # might have nothing to schedule
       ftsSchedule = ftsSchedule["Value"]
+      if not ftsSchedule:
+        return S_OK()
 
       for fileID in ftsSchedule["Successful"]:
         gMonitor.addMark( "FTSScheduleOK", 1 )
@@ -315,7 +316,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
       if not sourceRead["Value"]:
         self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
         self.log.info( self.operation.Error )
-        return S_ERROR( self.operation.Error )
+        return S_OK( self.operation.Error )
 
     # # list of targetSEs
     targetSEs = self.operation.targetSEList
@@ -334,10 +335,10 @@ class ReplicateAndRegister( OperationHandlerBase ):
       if not writeStatus["Value"]:
         self.log.info( "TargetSE %s in banned for writing right now" % targetSE )
         bannedTargets.append( targetSE )
-        self.operation.Error += "banned targetSE: %s;" % targetSE
+        self.operation.Error = "banned targetSE: %s;" % targetSE
     # # some targets are banned? return
     if bannedTargets:
-      return S_ERROR( "%s targets are banned for writing" % ",".join( bannedTargets ) )
+      return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets ) )
 
     # # loop over targetSE
     for targetSE in targetSEs:
@@ -379,7 +380,7 @@ class ReplicateAndRegister( OperationHandlerBase ):
           sourceSE = replicas["Valid"][0]
 
         # # call ReplicaManager
-        res = self.replicaManager().replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
+        res = self.rm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
 
         if res["OK"]:
 
@@ -431,27 +432,4 @@ class ReplicateAndRegister( OperationHandlerBase ):
           self.log.info( "file %s has been replicated to all targetSEs" % lfn )
           opFile.Status = "Done"
 
-    return S_OK()
-
-  def addRegisterReplica( self, opFile, targetSE ):
-    """ add RegisterReplica operation for file
-
-    :param File opFile: operation file
-    :param str targetSE: target SE
-    """
-    # # add RegisterReplica operation
-    registerOperation = Operation()
-    registerOperation.Type = "RegisterFile"
-    registerOperation.TargetSE = targetSE
-
-    registerFile = File()
-    registerFile.LFN = opFile.LFN
-    registerFile.PFN = opFile.PFN
-    registerFile.GUID = opFile.GUID
-    registerFile.Checksum = opFile.Checksum
-    registerFile.ChecksumType = opFile.ChecksumType
-    registerFile.Size = opFile.Size
-
-    registerOperation.addFile( registerFile )
-    self.request.insertAfter( registerOperation, self.operation )
     return S_OK()

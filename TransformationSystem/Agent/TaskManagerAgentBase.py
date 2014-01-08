@@ -1,6 +1,6 @@
-''' The TaskManagerAgentBase is the base class to submit tasks to external systems,
+""" The TaskManagerAgentBase is the base class to submit tasks to external systems,
     monitor and update the tasks and file status in the transformation DB.
-'''
+"""
 
 import datetime
 from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
@@ -9,18 +9,20 @@ from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 
 class TaskManagerAgentBase( AgentModule ):
-  ''' To be extended. The extension needs to:
+  """ To be extended. The extension needs to:
       - provide a taskManager object as data member
       - provide a shifterProxy (string) as data member
       - provide a transType (list of strings) as data member
-  '''
+  """
 
   def __init__( self, *args, **kwargs ):
-    ''' c'tor
-    '''
+    """ c'tor
+    """
     AgentModule.__init__( self, *args, **kwargs )
 
     self.taskManager = None
@@ -31,8 +33,8 @@ class TaskManagerAgentBase( AgentModule ):
   #############################################################################
 
   def initialize( self ):
-    ''' agent initialization
-    '''
+    """ agent initialization
+    """
     if not self.taskManager:
       return S_ERROR( 'No task manager provided!' )
 
@@ -52,8 +54,8 @@ class TaskManagerAgentBase( AgentModule ):
   #############################################################################
 
   def execute( self ):
-    ''' The TaskManagerBase execution method.
-    '''
+    """ The TaskManagerBase execution method.
+    """
 
     # Determine whether the task status is to be monitored and updated
     enableTaskMonitor = self.am_getOption( 'MonitorTasks', '' )
@@ -98,8 +100,8 @@ class TaskManagerAgentBase( AgentModule ):
     return S_OK()
 
   def _selectTransformations( self, transType = [], status = ['Active', 'Completing'], agentType = ['Automatic'] ):
-    ''' get the transformations
-    '''
+    """ get the transformations
+    """
     selectCond = {}
     if status:
       selectCond['Status'] = status
@@ -111,14 +113,14 @@ class TaskManagerAgentBase( AgentModule ):
     if not res['OK']:
       gLogger.error( "_selectTransformations: Failed to get transformations for selection.", res['Message'] )
     elif not res['Value']:
-      gLogger.info( "_selectTransformations: No transformations found for selection." )
+      gLogger.verbose( "_selectTransformations: No transformations found for selection." )
     else:
-      gLogger.info( "_selectTransformations: Obtained %d transformations for selection" % len( res['Value'] ) )
+      gLogger.verbose( "_selectTransformations: Obtained %d transformations for selection" % len( res['Value'] ) )
     return res
 
   def updateTaskStatus( self ):
-    ''' Updates the task status
-    '''
+    """ Updates the task status
+    """
     gLogger.info( "updateTaskStatus: Updating the Status of tasks" )
     # Get the transformations to be updated
     status = self.am_getOption( 'UpdateTasksStatus', ['Active', 'Completing', 'Stopped'] )
@@ -130,7 +132,7 @@ class TaskManagerAgentBase( AgentModule ):
       # Get the tasks which are in a UPDATE state
       updateStatus = self.am_getOption( 'TaskUpdateStatus', ['Checking', 'Deleted', 'Killed', 'Staging', 'Stalled',
                                                              'Matched', 'Rescheduled', 'Completed', 'Submitted',
-                                                             'Received', 'Waiting', 'Running'] )
+                                                             'Assigned', 'Received', 'Waiting', 'Running'] )
       condDict = {"TransformationID":transID, "ExternalStatus":updateStatus}
       timeStamp = str( datetime.datetime.utcnow() - datetime.timedelta( minutes = 10 ) )
       res = self.transClient.getTransformationTasks( condDict = condDict,
@@ -143,6 +145,8 @@ class TaskManagerAgentBase( AgentModule ):
       if not res['Value']:
         gLogger.verbose( "updateTaskStatus: No tasks found to update for transformation %s" % transID )
         continue
+      gLogger.verbose( "updateTaskStatus: getting %d tasks status of transformation %s" % ( len( res['Value'] ),
+                                                                                            transID ) )
       res = self.taskManager.getSubmittedTaskStatus( res['Value'] )
       if not res['OK']:
         gLogger.error( "updateTaskStatus: Failed to get updated task statuses for transformation", "%s %s" % ( transID,
@@ -165,8 +169,8 @@ class TaskManagerAgentBase( AgentModule ):
     return S_OK()
 
   def updateFileStatus( self ):
-    ''' Update the files status
-    '''
+    """ Update the files status
+    """
     gLogger.info( "updateFileStatus: Updating Status of task files" )
     # Get the transformations to be updated
     status = self.am_getOption( 'UpdateFilesStatus', ['Active', 'Completing', 'Stopped'] )
