@@ -28,6 +28,8 @@ from DIRAC.RequestManagementSystem.private.OperationHandlerBase                 
 from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
 from DIRAC.Resources.Storage.StorageElement                                       import StorageElement
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
+from DIRAC.DataManagementSystem.Client.ReplicaManager                             import ReplicaManager
+
 
 ########################################################################
 class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
@@ -44,7 +46,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     :param Operation operation: Operation instance
     :param str csPath: CS path for this handler
     """
-    super( ReplicateAndRegister, self ).__init__( self, operation, csPath )
+    super( ReplicateAndRegister, self ).__init__( operation, csPath )
     # # own gMonitor stuff for files
     gMonitor.registerActivity( "ReplicateAndRegisterAtt", "Replicate and register attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
@@ -67,6 +69,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     self.seCache = {}
 
     # Clients
+    self.rm = ReplicaManager()
     self.ftsClient = FTSClient()
 
   def __call__( self ):

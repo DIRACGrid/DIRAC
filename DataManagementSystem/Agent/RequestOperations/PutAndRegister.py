@@ -25,8 +25,9 @@ __RCSID__ = "$Id $"
 
 # # imports
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
-from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase                   import OperationHandlerBase
+from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
+from DIRAC.DataManagementSystem.Client.ReplicaManager                             import ReplicaManager
 
 ########################################################################
 class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
@@ -44,7 +45,7 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     :param str csPath: CS path for this handler
     """
     # # base classes ctor
-    super( PutAndRegister, self ).__init__( self, operation, csPath )
+    super( PutAndRegister, self ).__init__( operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "PutAtt", "File put attempts",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
@@ -56,6 +57,8 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RegisterFail", "Failed file registrations",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
+
+    self.rm = ReplicaManager()
 
   def __call__( self ):
     """ PutAndRegister operation processing """
