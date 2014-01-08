@@ -33,7 +33,6 @@ class TransformationCleaningAgent( AgentModule ):
 
   :param ReplicaManger replicaManager: ReplicaManager instance
   :param TransfromationClient transClient: TransfromationClient instance
-  :param RequestClient requestClient: RequestClient instance
   :param FileCatalogClient metadataClient: FileCatalogClient instance
 
   """
@@ -49,8 +48,6 @@ class TransformationCleaningAgent( AgentModule ):
     # # wms client
     self.wmsClient = WMSClient()
     # # request client
-    # FIXME: double client: only ReqClient will survive in the end
-    self.requestClient = RequestClient()
     self.reqClient = ReqClient()
     # # file catalog clinet
     self.metadataClient = FileCatalogClient()
@@ -564,24 +561,27 @@ class TransformationCleaningAgent( AgentModule ):
     failed = 0
     # FIXME: double request client: old/new -> only the new will survive sooner or later
     # this is the old
-    res = self.requestClient.getRequestForJobs( jobIDs )
-    if not res['OK']:
-      self.log.error( "Failed to get requestID for jobs.", res['Message'] )
-      return res
-    failoverRequests = res['Value']
-    self.log.info( "Found %d jobs with associated failover requests (in the old RMS)" % len( failoverRequests ) )
-    if not failoverRequests:
-      return S_OK()
-    for jobID, requestName in failoverRequests.items():
-      # Put this check just in case, tasks must have associated jobs
-      if jobID == 0 or jobID == '0':
-        continue
-      res = self.requestClient.deleteRequest( requestName )
+    try:
+      res = RequestClient().getRequestForJobs( jobIDs )
       if not res['OK']:
-        self.log.error( "Failed to remove request from RequestDB", res['Message'] )
-        failed += 1
-      else:
-        self.log.verbose( "Removed request %s associated to job %d." % ( requestName, jobID ) )
+        self.log.error( "Failed to get requestID for jobs.", res['Message'] )
+        return res
+      failoverRequests = res['Value']
+      self.log.info( "Found %d jobs with associated failover requests (in the old RMS)" % len( failoverRequests ) )
+      if not failoverRequests:
+        return S_OK()
+      for jobID, requestName in failoverRequests.items():
+        # Put this check just in case, tasks must have associated jobs
+        if jobID == 0 or jobID == '0':
+          continue
+        res = RequestClient().deleteRequest( requestName )
+        if not res['OK']:
+          self.log.error( "Failed to remove request from RequestDB", res['Message'] )
+          failed += 1
+        else:
+          self.log.verbose( "Removed request %s associated to job %d." % ( requestName, jobID ) )
+    except RuntimeError:
+      pass
 
     # FIXME: and this is the new
     res = self.reqClient.getRequestNamesForJobs( jobIDs )
