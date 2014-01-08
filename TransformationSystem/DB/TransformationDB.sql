@@ -53,6 +53,7 @@ CREATE TABLE DataFiles (
    LFN VARCHAR(255) NOT NULL DEFAULT '',
    Status varchar(32) DEFAULT 'AprioriGood',
    INDEX (Status),
+   INDEX (LFN),
    PRIMARY KEY (FileID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
