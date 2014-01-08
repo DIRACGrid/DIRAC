@@ -20,9 +20,9 @@ class StageRequestAgent( AgentModule ):
 
   def initialize( self ):
     self.replicaManager = ReplicaManager()
-    #self.stagerClient = StorageManagerClient()
+    self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
-    self.storageDB = StorageManagementDB()
+    #self.storageDB = StorageManagementDB()
     # pin lifetime = 1 day
     self.pinLifetime = self.am_getOption( 'PinLifetime', THROTTLING_TIME )
     # Resources helper
@@ -49,7 +49,7 @@ class StageRequestAgent( AgentModule ):
     """
     self.storageElementCache = {}
 
-    res = self.storageDB.getSubmittedStagePins()
+    res = self.stagerClient.getSubmittedStagePins()
     if not res['OK']:
       gLogger.fatal( "StageRequest.getStorageUsage: Failed to obtain submitted requests from StorageManagementDB.", res['Message'] )
       return res
@@ -281,11 +281,11 @@ class StageRequestAgent( AgentModule ):
           updatedPfnIDs.append( pfnRepIDs[pfn] )
     if stageRequestMetadata:
       gLogger.info( "StageRequest._issuePrestageRequests: %s stage request metadata to be updated." % len( stageRequestMetadata ) )
-      res = self.storageDB.insertStageRequest( stageRequestMetadata, self.pinLifetime )
+      res = self.stagerClient.insertStageRequest( stageRequestMetadata, self.pinLifetime )
       if not res['OK']:
         gLogger.error( "StageRequest._issuePrestageRequests: Failed to insert stage request metadata.", res['Message'] )
         return res
-      res = self.storageDB.updateReplicaStatus( updatedPfnIDs, 'StageSubmitted' )
+      res = self.stagerClient.updateReplicaStatus( updatedPfnIDs, 'StageSubmitted' )
       if not res['OK']:
         gLogger.error( "StageRequest._issuePrestageRequests: Failed to insert replica status.", res['Message'] )
     return
@@ -308,7 +308,7 @@ class StageRequestAgent( AgentModule ):
   def __getStagedReplicas( self ):
     """ This obtains the Staged replicas from the Replicas table and for each LFN the requested storage element """
     # First obtain the Waiting replicas from the Replicas table
-    res = self.storageDB.getStagedReplicas()
+    res = self.stagerClient.getStagedReplicas()
     if not res['OK']:
       gLogger.error( "StageRequest.__getStagedReplicas: Failed to get replicas with Waiting status.", res['Message'] )
       return res
@@ -322,7 +322,7 @@ class StageRequestAgent( AgentModule ):
   def __getWaitingReplicas( self ):
     """ This obtains the Waiting replicas from the Replicas table and for each LFN the requested storage element """
     # First obtain the Waiting replicas from the Replicas table
-    res = self.storageDB.getWaitingReplicas()
+    res = self.stagerClient.getWaitingReplicas()
     if not res['OK']:
       gLogger.error( "StageRequest.__getWaitingReplicas: Failed to get replicas with Waiting status.", res['Message'] )
       return res
@@ -336,7 +336,7 @@ class StageRequestAgent( AgentModule ):
   def __getOfflineReplicas( self ):
     """ This obtains the Offline replicas from the Replicas table and for each LFN the requested storage element """
     # First obtain the Waiting replicas from the Replicas table
-    res = self.storageDB.getOfflineReplicas()
+    res = self.stagerClient.getOfflineReplicas()
     if not res['OK']:
       gLogger.error( "StageRequest.__getOfflineReplicas: Failed to get replicas with Waiting status.", res['Message'] )
       return res
@@ -350,7 +350,7 @@ class StageRequestAgent( AgentModule ):
   def __addAssociatedReplicas( self, replicasToStage, seReplicas, allReplicaInfo ):
     """ Retrieve the list of Replicas that belong to the same Tasks as the provided list
     """
-    res = self.storageDB.getAssociatedReplicas( replicasToStage )
+    res = self.stagerClient.getAssociatedReplicas( replicasToStage )
     if not res['OK']:
       gLogger.fatal( "StageRequest.__addAssociatedReplicas: Failed to get associated Replicas.", res['Message'] )
       return res
@@ -471,19 +471,19 @@ class StageRequestAgent( AgentModule ):
     # Update the states of the replicas in the database #TODO Sent status to integrity DB
     if terminalReplicaIDs:
       gLogger.info( "StageRequest.__checkIntegrity: %s replicas are terminally failed." % len( terminalReplicaIDs ) )
-      res = self.storageDB.updateReplicaFailure( terminalReplicaIDs )
+      res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
       if not res['OK']:
         gLogger.error( "StageRequest.__checkIntegrity: Failed to update replica failures.", res['Message'] )
     if onlineReplicaIDs:
       gLogger.info( "StageRequest.__checkIntegrity: %s replicas found Online." % len( onlineReplicaIDs ) )
     if offlineReplicaIDs:
       gLogger.info( "StageRequest.__checkIntegrity: %s replicas found Offline." % len( offlineReplicaIDs ) )
-      res = self.storageDB.updateReplicaStatus( offlineReplicaIDs, 'Offline' )
+      res = self.stagerClient.updateReplicaStatus( offlineReplicaIDs, 'Offline' )
     return S_OK( {'Online': onlineReplicaIDs, 'Offline': offlineReplicaIDs} )
 
   def __reportProblematicFiles( self, lfns, reason ):
     return S_OK()
-    #res = self.dataIntegrityClient.setFileProblematic( lfns, reason, self.name )
+    #res = self.dataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'StageRequestAgent' )
     #if not res['OK']:
     #  gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
     #  return res

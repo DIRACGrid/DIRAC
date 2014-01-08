@@ -465,11 +465,15 @@ class MatcherHandler( RequestHandler ):
     usableSites = result['Value']
 
     siteName = resourceDict['Site']
-    if siteName not in usableSites:
-      if 'GridCE' not in resourceDict:
-        return S_ERROR( 'Site not in mask and GridCE not specified' )
-      #Even if the site is banned, if it defines a CE, it must be able to check it
-      del resourceDict['Site']
+    if siteName not in maskList:
+      
+      # if 'GridCE' not in resourceDict:
+      #  return S_ERROR( 'Site not in mask and GridCE not specified' )
+      # Even if the site is banned, if it defines a CE, it must be able to check it
+      # del resourceDict['Site']
+      
+      # Banned site can only take Test jobs 
+      resourceDict['JobType'] = 'Test'
 
     resourceDict['Setup'] = self.serviceInfoDict['clientSetup']
 

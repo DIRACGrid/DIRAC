@@ -1,4 +1,4 @@
-[v7r0-pre26]
+[v7r0-pre27]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r10-pre21]
+[v6r10-pre22]
 
 *Core
 FIX: Several fixes on DB classes(AccountingDB, SystemLoggingDB, UserProfileDB, TransformationDB, 
@@ -165,6 +165,10 @@ CHANGE: uniform argument checking with checkArgumentFormat() in multiple modules
 CHANGE: FileCatalog - add Trash to the default replica valid statuses
 CHANGE: ReplicaManager,FTSRequest,StorageElement - no use of PFN as returned by the FC except for file removal,
         rather constructing it always on the fly
+        
+*SMS
+CHANGE: PinRequestAgent, SENamespaceCatalogCheckAgent - removed
+CHANGE: Use StorageManagerClient instead of StorageDB directly        
 
 *WMS
 CHANGE: JobPolicy - optimization for bulk job verification
@@ -180,6 +184,12 @@ BUGFIX: JobDB - bug in __insertNewJDL()
 CHANGE: dirac-admin-show-task-queues - enhanced output  
 CHANGE: JobLoggingDB.sql - use trigger to manage the new LoggingInfo structure  
 CHANGE: JobWrapper - trying several times to upload a request before declaring the job failed
+FIX: JobScheduling executor - fix race condition that causes a job to remain in Staging
+NEW: SiteDirector - do not touch sites for which there is no work available
+NEW: SiteDirector - allow sites not in mask to take jobs with JobType Test
+NEW: SiteDirector - allow 1 hour grace period for pilots in Unknown state before aborting them
+CHANGE: Allow usage of non-plural form of the job requirement options ( PilotType, GridCE, BannedSite, 
+        SubmitPool ), keep backward compatibility with a plural form
         
 *RSS
 FIX: DowntimeCommand - take the latest Downtime that fits    
@@ -189,6 +199,7 @@ NEW: RSS SpaceToken command querying endpoints/tokens that exist
 *Resources
 NEW: added SSHOARComputingElement class 
 NEW: added XROOTStorage class       
+FIX: CREAMComputingElement - extra checks for validity of returned pilot references
         
 *TS
 CHANGE: TransformationClient(DB,Manager) - set file status for transformation as bulk operation 
@@ -201,6 +212,7 @@ BUGFIX: TransformationAgent - in _getTransformationFiles() variable 'now' was no
 FIX: TransformationDB.sql - DataFiles primary key is changed to (FileID) from (FileID,LFN) 
 CHANGE: TransformationDB(.sql) - schema changes suitable for InnoDB
 FIX: TaskManager(AgentBase) - consider only submitted tasks for updating status
+CHANGE: TransformationDB(.sql) - added index on LFN in DataFiles table
 
 *RMS
 NEW: Migrate to use the new Request Management by all the clients

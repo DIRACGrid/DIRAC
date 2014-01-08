@@ -16,9 +16,9 @@ class RequestPreparationAgent( AgentModule ):
 
   def initialize( self ):
     self.fileCatalog = FileCatalog()
-    #self.stagerClient = StorageManagerClient()
+    self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
-    self.storageDB = StorageManagementDB()
+    #self.storageDB = StorageManagementDB()
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -114,13 +114,13 @@ class RequestPreparationAgent( AgentModule ):
     if terminalReplicaIDs:
       gLogger.info( "RequestPreparation.prepareNewReplicas: %s replicas are terminally failed." % len( terminalReplicaIDs ) )
       #res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
-      res = self.storageDB.updateReplicaFailure( terminalReplicaIDs )
+      res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
       if not res['OK']:
         gLogger.error( "RequestPreparation.prepareNewReplicas: Failed to update replica failures.", res['Message'] )
     if replicaMetadata:
       gLogger.info( "RequestPreparation.prepareNewReplicas: %s replica metadata to be updated." % len( replicaMetadata ) )
       # Sets the Status='Waiting' of CacheReplicas records that are OK with catalogue checks
-      res = self.storageDB.updateReplicaInformation( replicaMetadata )
+      res = self.stagerClient.updateReplicaInformation( replicaMetadata )
       if not res['OK']:
         gLogger.error( "RequestPreparation.prepareNewReplicas: Failed to update replica metadata.", res['Message'] )
     return S_OK()
@@ -128,7 +128,7 @@ class RequestPreparationAgent( AgentModule ):
   def __getNewReplicas( self ):
     """ This obtains the New replicas from the Replicas table and for each LFN the requested storage element """
     # First obtain the New replicas from the CacheReplicas table
-    res = self.storageDB.getCacheReplicas( {'Status':'New'} )
+    res = self.stagerClient.getCacheReplicas( {'Status':'New'} )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getNewReplicas: Failed to get replicas with New status.", res['Message'] )
       return res
@@ -211,7 +211,7 @@ class RequestPreparationAgent( AgentModule ):
 
   def __reportProblematicFiles( self, lfns, reason ):
     return S_OK()
-    #res = self.dataIntegrityClient.setFileProblematic( lfns, reason, self.name )
+    #res = self.dataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'RequestPreparationAgent' )
     #if not res['OK']:
     #  gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
     #  return res

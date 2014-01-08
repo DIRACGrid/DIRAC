@@ -22,7 +22,6 @@ __RCSID__ = "$Id $"
 # @brief Definition of RequestTask class.
 # # imports
 import os
-import time
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -39,8 +38,6 @@ class RequestTask( object ):
 
   request's processing task
   """
-  # # request client
-  __requestClient = None
 
   def __init__( self, requestJSON, handlersDict, csPath, agentName ):
     """c'tor
@@ -78,6 +75,8 @@ class RequestTask( object ):
                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RequestOK", "Requests done",
                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
+
+    self.requestClient = ReqClient()
 
   def __setupManagerProxies( self ):
     """ setup grid proxy for all defined managers """
@@ -218,16 +217,9 @@ class RequestTask( object ):
     # # and return
     return S_OK( handler )
 
-  @classmethod
-  def requestClient( cls ):
-    """ on demand request client """
-    if not cls.__requestClient:
-      cls.__requestClient = ReqClient()
-    return cls.__requestClient
-
   def updateRequest( self ):
     """ put back request to the RequestDB """
-    updateRequest = self.requestClient().putRequest( self.request )
+    updateRequest = self.requestClient.putRequest( self.request )
     if not updateRequest["OK"]:
       self.log.error( updateRequest["Message"] )
     return updateRequest
@@ -312,7 +304,7 @@ class RequestTask( object ):
       gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
-        finalizeRequest = self.requestClient().finalizeRequest( self.request.RequestName, self.request.JobID )
+        finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestName, self.request.JobID )
         if not finalizeRequest["OK"]:
           self.log.error( "unable to finalize request %s: %s" % ( self.request.RequestName,
                                                                   finalizeRequest["Message"] ) )

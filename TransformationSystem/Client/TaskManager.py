@@ -183,7 +183,7 @@ class RequestTasks( TaskBase ):
         failed += 1
     self.log.info( 'submitTasks: Submitted %d tasks to RMS in %.1f seconds' % ( submitted, time.time() - startTime ) )
     if failed:
-      self.log.info( 'submitTasks: Failed to submit %d tasks to RMS.' % ( failed ) )
+      self.log.warn( 'submitTasks: But at the same time failed to submit %d tasks to RMS.' % ( failed ) )
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, oRequest ):
@@ -527,7 +527,7 @@ class WorkflowTasks( TaskBase ):
     oJob.setDestination( hospitalSite )
     hospitalCEs = self.opsH.getValue( "Hospital/HospitalCEs", [] )
     if hospitalCEs:
-      oJob._addJDLParameter( 'GridRequiredCEs', hospitalCEs )
+      oJob._addJDLParameter( 'GridCE', hospitalCEs )
 
   #############################################################################
 

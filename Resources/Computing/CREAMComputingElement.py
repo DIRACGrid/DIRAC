@@ -104,6 +104,8 @@ class CREAMComputingElement( ComputingElement ):
         pilotJobReference = result['Value'][1].strip()
         if not pilotJobReference:
           return S_ERROR( 'No pilot reference returned from the glite job submission command' )
+        if not pilotJobReference.startswith( 'https' ):
+          return S_ERROR( 'Invalid pilot reference %s' % pilotJobReference )
         batchIDList.append( pilotJobReference )
         stampDict[pilotJobReference] = diracStamp
     else:
@@ -113,7 +115,7 @@ class CREAMComputingElement( ComputingElement ):
       if not result['OK']:
         self.log.error( 'Failed to delegate proxy: %s' % result['Message'] )
         return result
-      for i in range( numberOfJobs ):
+      for _i in range( numberOfJobs ):
         jdlName, diracStamp = self.__writeJDL( executableFile )
         cmd = ['glite-ce-job-submit', '-n', '-N', '-r',
                '%s/%s' % ( self.ceName, self.queue ),
@@ -125,7 +127,7 @@ class CREAMComputingElement( ComputingElement ):
         if result['Value'][0] != 0:
           break
         pilotJobReference = result['Value'][1].strip()
-        if pilotJobReference:
+        if pilotJobReference and pilotJobReference.startswith( 'https' ):
           batchIDList.append( pilotJobReference )
           stampDict[pilotJobReference] = diracStamp
         else:
@@ -168,6 +170,18 @@ class CREAMComputingElement( ComputingElement ):
     if result['Value'][0]:
       if result['Value'][2]:
         return S_ERROR( result['Value'][2] )
+      elif "Authorization error" in result['Value'][1]:
+        return S_ERROR( "Authorization error" )
+      elif "FaultString" in result['Value'][1]:
+        res = re.search( 'FaultString=\[([\w\s]+)\]', result['Value'][1] )
+        fault = ''
+        if res:
+          fault = res.group( 1 )
+        detail = ''
+        res = re.search( 'FaultDetail=\[([\w\s]+)\]', result['Value'][1] )  
+        if res:
+          detail = res.group( 1 )
+          return S_ERROR( "Error: %s:%s" % (fault,detail) )
       else:
         return S_ERROR( 'Error while interrogating CE status' )
     if result['Value'][1]:

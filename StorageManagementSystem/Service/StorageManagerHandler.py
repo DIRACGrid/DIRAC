@@ -120,7 +120,7 @@ class StorageManagerHandler( RequestHandler ):
   # The state transition of Replicas method
   #
 
-  types_updateReplicaStatus = []
+  types_updateReplicaStatus = [ListType, StringType]
   def export_updateReplicaStatus( self, replicaIDs, newReplicaStatus ):
     """ This allows to update the status of replicas """
     res = storageDB.updateReplicaStatus( replicaIDs, newReplicaStatus )

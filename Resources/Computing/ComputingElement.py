@@ -242,11 +242,10 @@ class ComputingElement(object):
     """
     # FIXME: need to take into account the possible requirements from the pilots,
     #        so far the cputime
-    ciInfoDict = {}
     result = self.getCEStatus()
     if not result['OK']:
-      self.log.warn( 'Could not obtain CE dynamic information' )
-      self.log.warn( result['Message'] )
+      #self.log.warn( 'Could not obtain CE dynamic information' )
+      #self.log.warn( result['Message'] )
       return result
     else:
       runningJobs = result['RunningJobs']

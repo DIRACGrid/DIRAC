@@ -141,6 +141,16 @@ class ReqClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
+    try:
+      requestName = int( requestName )
+    except ValueError:
+      pass
+    if type( requestName ) == int:
+      res = self.getRequestName( requestName )
+      if not res['OK']:
+        return res
+      else:
+        requestName = res['Value']
     self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestName )
     deleteRequest = self.requestManager().deleteRequest( requestName )
     if not deleteRequest["OK"]:
@@ -309,3 +319,21 @@ class ReqClient( Client ):
       for jobID, fromJSON in ret["Successful"].items():
         ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )
+  
+  def resetFailedRequest(self, requestName):
+    """ Reset a failed request to "Waiting" status
+    """
+    res = self.getRequest( requestName )
+    if not res['OK']:
+      return res
+    req = res['Value']
+    req.Status = 'Waiting'
+    for op in req:
+      op.Error = ''
+      op.Status = 'Waiting'
+      for f in op:
+        f.Attempt = 1
+        f.Error = ''
+        f.Status = 'Waiting'
+
+    return self.putRequest( req )
