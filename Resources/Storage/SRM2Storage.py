@@ -309,7 +309,7 @@ class SRM2Storage( StorageBase ):
         successful[url] = True
       else:
         self.log.error( "createDirectory: Failed to create directory on storage.",
-                       "%s: %s" % ( url, res['Message'] ) )
+                       "\n%s: \n%s" % ( url, res['Message'] ) )
         failed[url] = res['Message']
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
