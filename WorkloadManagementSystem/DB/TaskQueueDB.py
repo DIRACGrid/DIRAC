@@ -8,7 +8,6 @@ __RCSID__ = "ebed3a8 (2012-07-06 20:33:11 +0200) Adri Casajs <adria@ecm.ub.es>"
 
 import types
 import random
-import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
@@ -691,12 +690,12 @@ class TaskQueueDB( DB ):
       if field in tqMatchDict and tqMatchDict[ field ]:
         tableN, fullTableN = self.__generateTablesName( sqlTables, field )
         sqlMultiCondList = []
-        if field != 'GridCE' or 'Site' in tqMatchDict:
+        # if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
-          # that the GridCE matches explicetly so the COUNT can not be 0. In this case we skip this
+          # that the GridCE matches explicitly so the COUNT can not be 0. In this case we skip this
           # condition
-          sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
+        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
         csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN, fullTableN, fullTableN ), tqMatchDict[ field ] )
         sqlMultiCondList.append( csql )
         sqlCondList.append( "( %s )" % " OR ".join( sqlMultiCondList ) )

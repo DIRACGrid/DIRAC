@@ -94,7 +94,10 @@ class JobScheduling( OptimizerExecutor ):
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
         sites = self.__applySiteFilter( userSites, wmsActiveSites, wmsBannedSites )
         if not sites:
-          return self.__holdJob( jobState, "Sites %s are inactive or banned" % ", ".join( userSites ) )
+          if len( userSites ) > 1:
+            return self.__holdJob( jobState, "Requested sites %s are inactive" % ",".join( userSites ) )
+          else:
+            return self.__holdJob( jobState, "Requested site %s is inactive" % userSites[0] )
 
     #Get the Input data
     # Third, check if there is input data
@@ -264,12 +267,19 @@ class JobScheduling( OptimizerExecutor ):
     if bannedSites:
       reqCfg.setOption( "BannedSites", ", ".join( bannedSites ) )
 
-    for key in ( 'SubmitPools', "GridMiddleware", "PilotTypes", "JobType", "GridRequiredCEs" ):
+    # Job multivalue requirement keys are specified as singles in the job descriptions
+    # but for backward compatibility can be also plurals
+    for key in ( 'SubmitPools', "SubmitPool", "GridMiddleware", "PilotTypes", "PilotType", 
+                 "JobType", "GridRequiredCEs", "GridCE" ):
       reqKey = key
       if key == "JobType":
         reqKey = "JobTypes"
-      elif key == "GridRequiredCEs":
+      elif key == "GridRequiredCEs" or key == "GridCE":
         reqKey = "GridCEs"
+      elif key == "SubmitPools" or key == "SubmitPool":
+        reqKey = "SubmitPools"    
+      elif key == "PilotTypes" or key == "PilotType":
+        reqKey = "PilotTypes"  
       if key in manifest:
         reqCfg.setOption( reqKey, ", ".join( manifest.getOption( key, [] ) ) )
 

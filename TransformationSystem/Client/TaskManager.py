@@ -525,7 +525,7 @@ class WorkflowTasks( TaskBase ):
     oJob.setDestination( hospitalSite )
     hospitalCEs = self.opsH.getValue( "Hospital/HospitalCEs", [] )
     if hospitalCEs:
-      oJob._addJDLParameter( 'GridRequiredCEs', hospitalCEs )
+      oJob._addJDLParameter( 'GridCE', hospitalCEs )
 
   #############################################################################
 

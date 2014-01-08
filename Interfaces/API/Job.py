@@ -629,7 +629,9 @@ class Job( API ):
 
     diracSite = diracSite['Value']
     self.setDestination( diracSite )
+    # Keep GridRequiredCEs for backward compatibility
     self._addJDLParameter( 'GridRequiredCEs', ceName )
+    self._addJDLParameter( 'GridCE', ceName )
     return S_OK()
 
   #############################################################################
