@@ -26,11 +26,10 @@ __RCSID__ = "$Id $"
 # # imports
 from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 
 ########################################################################
-class PutAndRegister( OperationHandlerBase ):
+class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
   """
   .. class:: PutAndRegister
 
@@ -44,8 +43,8 @@ class PutAndRegister( OperationHandlerBase ):
     :param Operation operation: Operation instance
     :param str csPath: CS path for this handler
     """
-    # # base class ctor
-    OperationHandlerBase.__init__( self, operation, csPath )
+    # # base classes ctor
+    super( PutAndRegister, self ).__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "PutAtt", "File put attempts",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
@@ -108,18 +107,16 @@ class PutAndRegister( OperationHandlerBase ):
       checksum = opFile.Checksum
 
       # # call RM at least
-      putAndRegister = self.replicaManager().putAndRegister( lfn,
-                                                             pfn,
-                                                             targetSE,
-                                                             guid = guid,
-                                                             checksum = checksum,
-                                                             catalog = self.operation.Catalog )
+      putAndRegister = self.rm.putAndRegister( lfn, pfn, targetSE,
+                                               guid = guid,
+                                               checksum = checksum,
+                                               catalog = self.operation.Catalog )
       if not putAndRegister["OK"]:
         gMonitor.addMark( "PutFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
         self.log.error( "completely failed to put and register file: %s" % putAndRegister["Message"] )
-        opFile.Error = str(putAndRegister["Message"])
-        self.operation.Error = str(putAndRegister["Message"])
+        opFile.Error = str( putAndRegister["Message"] )
+        self.operation.Error = str( putAndRegister["Message"] )
         continue
 
       putAndRegister = putAndRegister["Value"]
@@ -176,27 +173,4 @@ class PutAndRegister( OperationHandlerBase ):
         for op in ( "put", "register" ):
           self.log.info( "%s of %s to %s took %s seconds" % ( op, lfn, targetSE, putAndRegister[lfn][op] ) )
 
-    return S_OK()
-
-  def addRegisterReplica( self, opFile, targetSE ):
-    """ add RegisterReplica operation for file
-
-    :param File opFile: operation file
-    :param str targetSE: target SE
-    """
-    # # add RegisterReplica operation
-    registerOperation = Operation()
-    registerOperation.Type = "RegisterFile"
-    registerOperation.TargetSE = targetSE
-
-    registerFile = File()
-    registerFile.LFN = opFile.LFN
-    registerFile.PFN = opFile.PFN
-    registerFile.GUID = opFile.GUID
-    registerFile.Checksum = opFile.Checksum
-    registerFile.ChecksumType = opFile.ChecksumType
-    registerFile.Size = opFile.Size
-
-    registerOperation.addFile( registerFile )
-    self.request.insertAfter( registerOperation, self.operation )
     return S_OK()
