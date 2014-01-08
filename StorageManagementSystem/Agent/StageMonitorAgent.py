@@ -23,9 +23,9 @@ class StageMonitorAgent( AgentModule ):
 
   def initialize( self ):
     self.replicaManager = ReplicaManager()
-    #self.stagerClient = StorageManagerClient()
+    self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
-    self.storageDB = StorageManagementDB()
+    #self.storageDB = StorageManagementDB()
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -110,15 +110,15 @@ class StageMonitorAgent( AgentModule ):
     # Update the states of the replicas in the database
     if terminalReplicaIDs:
       gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: %s replicas are terminally failed." % len( terminalReplicaIDs ) )
-      res = self.storageDB.updateReplicaFailure( terminalReplicaIDs )
+      res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
       if not res['OK']:
         gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Failed to update replica failures.", res['Message'] )
     if stagedReplicas:
       gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: %s staged replicas to be updated." % len( stagedReplicas ) )
-      res = self.storageDB.setStageComplete( stagedReplicas )
+      res = self.stagerClient.setStageComplete( stagedReplicas )
       if not res['OK']:
         gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Failed to updated staged replicas.", res['Message'] )
-      res = self.storageDB.updateReplicaStatus( stagedReplicas, 'Staged' )
+      res = self.stagerClient.updateReplicaStatus( stagedReplicas, 'Staged' )
       if not res['OK']:
         gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Failed to insert replica status.", res['Message'] )
     if oldRequests:
@@ -151,7 +151,7 @@ class StageMonitorAgent( AgentModule ):
 
   def __getStageSubmittedReplicas( self ):
     """ This obtains the StageSubmitted replicas from the Replicas table and the RequestID from the StageRequests table """
-    res = self.storageDB.getCacheReplicas( {'Status':'StageSubmitted'} )
+    res = self.stagerClient.getCacheReplicas( {'Status':'StageSubmitted'} )
     if not res['OK']:
       gLogger.error( "StageMonitor.__getStageSubmittedReplicas: Failed to get replicas with StageSubmitted status.", res['Message'] )
       return res
@@ -170,7 +170,7 @@ class StageMonitorAgent( AgentModule ):
       seReplicas[storageElement].append( replicaID )
 
     # RequestID was missing from replicaIDs dictionary BUGGY?
-    res = self.storageDB.getStageRequests( {'ReplicaID':replicaIDs.keys()} )
+    res = self.stagerClient.getStageRequests( {'ReplicaID':replicaIDs.keys()} )
     if not res['OK']:
       return res
     if not res['Value']:
@@ -184,7 +184,7 @@ class StageMonitorAgent( AgentModule ):
 
   def __reportProblematicFiles( self, lfns, reason ):
     return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, self.name )
+    res = self.dataIntegrityClient.setFileProblematic( lfns, reason,  sourceComponent = 'StageMonitorAgent'  )
     if not res['OK']:
       gLogger.error( "StageMonitor.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
       return res
@@ -197,7 +197,7 @@ class StageMonitorAgent( AgentModule ):
   def __wakeupOldRequests( self, oldRequests ):
     gLogger.info( "StageMonitor.__wakeupOldRequests: Attempting..." )
     retryInterval = self.am_getOption( 'RetryIntervalHour', 2 )
-    res = self.storageDB.wakeupOldRequests( oldRequests, retryInterval )
+    res = self.stagerClient.wakeupOldRequests( oldRequests, retryInterval )
     if not res['OK']:
       gLogger.error( "StageMonitor.__wakeupOldRequests: Failed to resubmit old requests.", res['Message'] )
       return res
