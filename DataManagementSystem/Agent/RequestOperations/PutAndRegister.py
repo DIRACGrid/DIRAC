@@ -80,20 +80,14 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
       return S_ERROR( "TargetSE should contain only one target, got %s" % targetSEs )
 
     targetSE = targetSEs[0]
-    targetWrite = self.rssSEStatus( targetSE, "WriteAccess" )
-    if not targetWrite["OK"]:
-      self.log.error( targetWrite["Message"] )
-      for opFile in self.operation:
-        opFile.Status = "Failed"
-        opFile.Error = "Wrong parameters: %s" % targetWrite["Message"]
-        gMonitor.addMark( "PutAtt", 1 )
-        gMonitor.addMark( "PutFail", 1 )
-      self.operation.Error = targetWrite["Message"]
-      return S_OK()
+    bannedTargets = self.checkTargetsWrite( targetSE )
+    if not bannedTargets['OK']:
+      gMonitor.addMark( "PutAtt" )
+      gMonitor.addMark( "PutFail" )
+      return bannedTargets
 
-    if not targetWrite["Value"]:
-      self.operation.Error = "TargetSE %s is banned for writing"
-      return S_OK( self.operation.Error )
+    if bannedTargets['Value']:
+      return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets['Value'] ) )
 
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
