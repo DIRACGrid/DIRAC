@@ -67,6 +67,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog    import FileCatalog
+from DIRAC.Resources.Utilities              import Utils
 # # from Accounting
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
@@ -875,7 +876,7 @@ class FTSAgent( AgentModule ):
       for ftsFile in ftsFileList:
         opFile = File()
         opFile.LFN = ftsFile.LFN
-        pfn = targetSE.getPfnForProtocol( ftsFile.TargetSURL, "SRM2", withPort = False )
+        pfn = Utils.executeSingleFileOrDirWrapper( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
         if not pfn["OK"]:
           continue
         opFile.PFN = pfn["Value"]
@@ -994,7 +995,7 @@ class FTSAgent( AgentModule ):
 
       repSE = self.getSE( repSEName )
 
-      pfn = repSE.getPfnForLfn( opFile.LFN )
+      pfn = Utils.executeSingleFileOrDirWrapper( repSE.getPfnForLfn( opFile.LFN ) )
       if not pfn["OK"]:
         log.warn( "unable to create pfn for %s lfn: %s" % ( opFile.LFN, pfn["Message"] ) )
         ret["Banned"].append( repSEName )

@@ -416,14 +416,17 @@ class StorageElement:
   #
 
 
-  def getPfnForProtocol( self, pfn, protocol, withPort = True ):
-    """ Transform the input lfn into a pfn with the given protocol for the Storage Element.
+  def __getSinglePfnForProtocol( self, pfn, protocol, withPort = True ):
+    """ Transform the input pfn into a pfn with the given protocol for the Storage Element.
       :param pfn : input PFN
       :param protocol : string or list of string of the protocol we want
       :param withPort : includes the port in the returned pfn
     """
-    self.log.verbose( "StorageElement.getPfnForProtocol: Getting pfn for given protocols in %s." % self.name )
+    self.log.verbose( "StorageElement.getSinglePfnForProtocol: Getting pfn for given protocols in %s." % self.name )
     
+
+    # This test of the available protocols could actually be done in getPfnForProtocol once for all
+    # but it is safer to put it here in case we decide to call this method internally (which I doubt!)
     res = self.getProtocols()
     if not res['OK']:
       return res
@@ -432,7 +435,7 @@ class StorageElement:
     elif type( protocol ) == ListType:
       protocols = protocol
     else:
-      errStr = "StorageElement.getPfnForProtocol: Supplied protocol must be string or list of strings."
+      errStr = "StorageElement.getSinglePfnForProtocol: Supplied protocol must be string or list of strings."
       self.log.debug( errStr, "%s %s" % ( protocol, self.name ) )
       return S_ERROR( errStr )
     availableProtocols = res['Value']
@@ -441,10 +444,10 @@ class StorageElement:
       if protocol in availableProtocols:
         protocolsToTry.append( protocol )
       else:
-        errStr = "StorageElement.getPfnForProtocol: Requested protocol not available for SE."
+        errStr = "StorageElement.getSinglePfnForProtocol: Requested protocol not available for SE."
         self.log.debug( errStr, '%s for %s' % ( protocol, self.name ) )
     if not protocolsToTry:
-      errStr = "StorageElement.getPfnForProtocol: None of the requested protocols were available for SE."
+      errStr = "StorageElement.getSinglePfnForProtocol: None of the requested protocols were available for SE."
       self.log.debug( errStr, '%s for %s' % ( protocol, self.name ) )
       return S_ERROR( errStr )
     # Check all available storages for required protocol then contruct the PFN
@@ -456,9 +459,46 @@ class StorageElement:
           res = storage.getProtocolPfn( res['Value'], withPort )
           if res['OK']:
             return res
-    errStr = "StorageElement.getPfnForProtocol: Failed to get PFN for requested protocols."
+    errStr = "StorageElement.getSinglePfnForProtocol: Failed to get PFN for requested protocols."
     self.log.debug( errStr, "%s for %s" % ( protocols, self.name ) )
     return S_ERROR( errStr )
+
+
+
+  def getPfnForProtocol( self, pfns, protocol = "SRM2", withPort = True ):
+    """ create PFNs strings using protocol :protocol:
+
+    :param self: self reference
+    :param list pfns: list of PFNs
+    :param str protocol: protocol name (default: 'SRM2')
+    :param bool withPort: flag to include port in PFN (default: True)
+    """
+
+    if type( pfns ) in StringTypes:
+      pfnDict = {pfns:False}
+    elif type( pfns ) == ListType:
+      pfnDict = {}
+      for pfn in pfns:
+        pfnDict[pfn] = False
+    elif type( pfns ) == DictType:
+      pfnDict = pfns.copy()
+    else:
+      errStr = "StorageElement.getLfnForPfn: Supplied pfns must be string, list of strings or a dictionary."
+      self.log.debug( errStr )
+      return S_ERROR( errStr )
+
+
+    res = self.isValid( "getPfnForProtocol" )
+    if not res["OK"]:
+      return res
+    retDict = { "Successful" : {}, "Failed" : {}}
+    for pfn in pfnDict:
+      res = self.__getSinglePfnForProtocol( pfn, protocol, withPort = withPort )
+      if res["OK"]:
+        retDict["Successful"][pfn] = res["Value"]
+      else:
+        retDict["Failed"][pfn] = res["Message"]
+    return S_OK( retDict )
 
 
   def getPfnPath( self, pfn ):
@@ -494,24 +534,91 @@ class StorageElement:
     errStr = "StorageElement.getPfnPath: Failed to get the pfn path for any of the protocols!!"
     self.log.debug( errStr )
     return S_ERROR( errStr )
+  
+  
+
+  def getLfnForPfn( self, pfns ):
+    """ Get the LFN from the PFNS .
+        :param lfn : input lfn or lfns (list/dict)
+    """
+
+    if type( pfns ) in StringTypes:
+      pfnDict = {pfns:False}
+    elif type( pfns ) == ListType:
+      pfnDict = {}
+      for pfn in pfns:
+        pfnDict[pfn] = False
+    elif type( pfns ) == DictType:
+      pfnDict = pfns.copy()
+    else:
+      errStr = "StorageElement.getLfnForPfn: Supplied pfns must be string, list of strings or a dictionary."
+      self.log.debug( errStr )
+      return S_ERROR( errStr )
 
 
-  def getPfnForLfn( self, lfn ):
+    res = self.isValid( "getPfnPath" )
+    if not res['OK']:
+      self.log.error( "StorageElement.getLfnForPfn: Failed to instantiate StorageElement at %s" % self.name )
+      return res
+    retDict = { "Successful" : {}, "Failed" : {} }
+    for pfn in pfnDict:
+      res = self.getPfnPath( pfn )
+      if res["OK"]:
+        retDict["Successful"][pfn] = res["Value"]
+      else:
+        retDict["Failed"][pfn] = res["Message"]
+    return S_OK( retDict )
+
+
+
+  def __getSinglePfnForLfn( self, lfn ):
     """ Get the full PFN constructed from the LFN.
         :param lfn : input lfn or lfns (list/dict)
     """
-    self.log.verbose( "StorageElement.getPfnForLfn: Getting pfn from lfn in %s." % self.name )
-    if not self.valid:
-      return S_ERROR( self.errorReason )
+    self.log.debug( "StorageElement.__getSinglePfnForLfn: Getting pfn from lfn in %s." % self.name )
+
     for storage in self.storages:
       res = storage.getPFNBase()
       if res['OK']:
         fullPath = "%s%s" % ( res['Value'], lfn )
         return S_OK( fullPath )
     # This should never happen. DANGER!!
-    errStr = "StorageElement.getPfnForLfn: Failed to get the full pfn for any of the protocols (%s)!!" % ( self.name )
+    errStr = "StorageElement.__getSinglePfnForLfn: Failed to get the full pfn for any of the protocols (%s)!!" % ( self.name )
     self.log.debug( errStr )
     return S_ERROR( errStr )
+
+  def getPfnForLfn( self, lfns ):
+    """ get PFNs for supplied LFNs at :storageElementName: SE
+
+    :param self: self reference
+    :param list lfns: list of LFNs
+    :param str stotrageElementName: DIRAC SE name
+    """
+
+    if type( lfns ) in StringTypes:
+      lfnDict = {lfns:False}
+    elif type( lfns ) == ListType:
+      lfnDict = {}
+      for lfn in lfns:
+        lfnDict[lfn] = False
+    elif type( lfns ) == DictType:
+      lfnDict = lfns.copy()
+    else:
+      errStr = "StorageElement.getPfnForLfn: Supplied lfns must be string, list of strings or a dictionary."
+      self.log.debug( errStr )
+      return S_ERROR( errStr )
+
+    if not self.valid:
+      return S_ERROR( self.errorReason )
+
+    retDict = { "Successful" : {}, "Failed" : {} }
+    for lfn in lfnDict:
+      res = self.__getSinglePfnForLfn( lfn )
+      if res["OK"]:
+        retDict["Successful"][lfn] = res["Value"]
+      else:
+        retDict["Failed"][lfn] = res["Message"]
+    return S_OK( retDict )
 
 
   def getPFNBase( self ):
@@ -609,6 +716,12 @@ class StorageElement:
     # args should normaly be empty to avoid problem...
     if len( args ):
       self.log.warn( "StorageElement.__executeMethod: args should be empty!%s" % args )
+      # because there is normaly normaly only one kw argument, I can move it from args to kwargs
+      methDefaultArgs = StorageElement.__defaultsArguments.get( self.methodName, {} ).keys()
+      if len( methDefaultArgs ):
+        kwargs[methDefaultArgs[0] ] = args[0]
+        args = args[1:]
+      self.log.warn( "StorageElement.__executeMethod: put it in kwargs, but dirty and might be dangerous!args %s kwargs %s" % ( args, kwargs ) )
 
 
     # We check the deprecated arguments
@@ -694,7 +807,8 @@ class StorageElement:
           for pfn in pfnDict:
             pfnsToUse[pfn] = lfnDict[pfnDict[pfn]]
 
-#           print "SE.execute: method %s pfnsToUse %s" % ( self.methodName, pfnsToUse )
+          print "SE.execute: method %s pfnsToUse %s args %s kwargs %s" % ( self.methodName, pfnsToUse, args, kwargs )
+
           res = fcn( pfnsToUse, *args, **kwargs )
 
 #           print "RES %s" % res

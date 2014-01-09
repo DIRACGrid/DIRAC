@@ -21,6 +21,7 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Utilities import Utils
 from DIRAC.Core.Security import Properties
 # from DIRAC.Core.Utilities import List
 
@@ -213,7 +214,7 @@ class SandboxStoreHandler( RequestHandler ):
       errStr = "Failed to instantiate destination StorageElement"
       gLogger.error( errStr, self.__externalSEName )
       return S_ERROR( errStr )
-    result = storageElement.getPfnForLfn( sbPath )
+    result = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( sbPath ) )
     if not result['OK']:
       errStr = "Failed to generate PFN"
       gLogger.error( errStr, self.__externalSEName )

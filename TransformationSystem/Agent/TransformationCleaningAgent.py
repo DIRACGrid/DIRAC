@@ -242,7 +242,10 @@ class TransformationCleaningAgent( AgentModule ):
     :param str storageElement: SE name
     """
     self.log.info( 'Removing the contents of %s at %s' % ( directory, storageElement ) )
-    res = self.dm.getPfnForLfn( [directory], storageElement )
+    
+    se = StorageElement( storageElement )
+    
+    res = se.getPfnForLfn( [directory] )
     if not res['OK']:
       self.log.error( "Failed to get PFN for directory", res['Message'] )
       return res
@@ -251,7 +254,6 @@ class TransformationCleaningAgent( AgentModule ):
     if res['Value']['Failed']:
       return S_ERROR( 'Failed to obtain directory PFN from LFNs' )
     storageDirectory = res['Value']['Successful'].values()[0]
-    se = StorageElement( storageElement )
 
     res = Utils.executeSingleFileOrDirWrapper( se.exists( storageDirectory ) )
     if not res['OK']:

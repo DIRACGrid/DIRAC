@@ -5,6 +5,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base.Script                         import parseCommandLine
 parseCommandLine()
 from DIRAC.Resources.Storage.StorageElement         import StorageElement
+from DIRAC.Resources.Utilities import Utils
 from DIRAC.Core.Utilities.File                      import getSize
 from DIRAC                                      import  gLogger
 
@@ -25,12 +26,12 @@ class StorageElementTestCase( unittest.TestCase ):
     self.localSourceFile = "/etc/group"
     self.localFileSize = getSize( self.localSourceFile )
     self.destDirectory = "/lhcb/test/unit-test/TestStorageElement"
-    destinationDir = self.storageElement.getPfnForLfn( self.destDirectory )['Value']
+    destinationDir = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( self.destDirectory ) )
     res = self.storageElement.createDirectory( destinationDir, singleDirectory = True )
     self.assert_( res['OK'] )
 
   def tearDown( self ):
-    destinationDir = self.storageElement.getPfnForLfn( self.destDirectory )['Value']
+    destinationDir = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( self.destDirectory ) )
     res = self.storageElement.removeDirectory( destinationDir, recursive = True, singleDirectory = True )
     self.assert_( res['OK'] )
 
@@ -94,7 +95,7 @@ class FileTestCases( StorageElementTestCase ):
     print '\n\n#########################################################################\n\n\t\t\tExists test\n'
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
     pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
-    destinationPfn = pfnForLfnRes['Value']
+    destinationPfn = pfnForLfnRes['Value']['Successful'].values()[0]
     fileDict = {destinationPfn:self.localSourceFile}
     putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
     # File exists
@@ -127,7 +128,7 @@ class FileTestCases( StorageElementTestCase ):
   def test_isFile( self ):
     print '\n\n#########################################################################\n\n\t\t\tIs file size test\n'
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
-    pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
+    pfnForLfnRes = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( destinationFilePath ) )
     destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationPfn:self.localSourceFile}
     putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
@@ -162,7 +163,7 @@ class FileTestCases( StorageElementTestCase ):
   def test_putFile( self ):
     print '\n\n#########################################################################\n\n\t\t\tPut file test\n'
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
-    pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
+    pfnForLfnRes = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( destinationFilePath ) )
     destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationPfn:self.localSourceFile}
     putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
@@ -180,7 +181,7 @@ class FileTestCases( StorageElementTestCase ):
   def test_getFile( self ):
     print '\n\n#########################################################################\n\n\t\t\tGet file test\n'
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
-    pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
+    pfnForLfnRes = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( destinationFilePath ) )
     destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationPfn:self.localSourceFile}
     putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
@@ -205,7 +206,7 @@ class FileTestCases( StorageElementTestCase ):
   def test_getFileMetadata( self ):
     print '\n\n#########################################################################\n\n\t\t\tGet file metadata test\n'
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
-    pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
+    pfnForLfnRes = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( destinationFilePath ) )
     destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationPfn:self.localSourceFile}
     putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
@@ -246,7 +247,7 @@ class FileTestCases( StorageElementTestCase ):
   def test_getFileSize( self ):
     print '\n\n#########################################################################\n\n\t\t\tGet file size test\n'
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
-    pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
+    pfnForLfnRes = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( destinationFilePath ) )
     destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationPfn:self.localSourceFile}
     putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
@@ -381,7 +382,7 @@ class FileTestCases( StorageElementTestCase ):
   def test_getAccessUrl( self ):
     print '\n\n#########################################################################\n\n\t\tGet access url test\n'
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
-    pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
+    pfnForLfnRes = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( destinationFilePath ) )
     destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationPfn:self.localSourceFile}
     putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
@@ -415,7 +416,7 @@ class DirectoryTestCases( StorageElementTestCase ):
   def test_createDirectory( self ):
     print '\n\n#########################################################################\n\n\t\t\tCreate directory test\n'
     directory = "%s/%s" % ( self.destDirectory, 'createDirectoryTest' )
-    pfnForLfnRes = self.storageElement.getPfnForLfn( directory )
+    pfnForLfnRes = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( directory ) )
     directoryPfn = pfnForLfnRes['Value']
     createDirRes = self.storageElement.createDirectory( directoryPfn, singleDirectory = True )
     # Remove the target dir
@@ -430,7 +431,7 @@ class DirectoryTestCases( StorageElementTestCase ):
 
   def test_isDirectory( self ):
     print '\n\n#########################################################################\n\n\t\t\tIs directory test\n'
-    destDirectory = self.storageElement.getPfnForLfn( self.destDirectory )['Value']
+    destDirectory = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( self.destDirectory ) )['Value']
     # Test that it is a directory
     isDirectoryRes = self.storageElement.isDirectory( destDirectory, singleDirectory = True )
     # Test that no existant dirs are handled correctly
@@ -448,7 +449,7 @@ class DirectoryTestCases( StorageElementTestCase ):
   def test_listDirectory( self ):
     print '\n\n#########################################################################\n\n\t\t\tList directory test\n'
     directory = "%s/%s" % ( self.destDirectory, 'listDirectoryTest' )
-    destDirectory = self.storageElement.getPfnForLfn( directory )['Value']
+    destDirectory = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( directory ) )['Value']
     # Create a local directory to upload
     localDir = '/tmp/unit-test'
     srcFile = '/etc/group'
@@ -496,7 +497,7 @@ class DirectoryTestCases( StorageElementTestCase ):
   def test_getDirectoryMetadata( self ):
     print '\n\n#########################################################################\n\n\t\t\tDirectory metadata test\n'
     directory = "%s/%s" % ( self.destDirectory, 'getDirectoryMetadataTest' )
-    destDirectory = self.storageElement.getPfnForLfn( directory )['Value']
+    destDirectory = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( directory ) )['Value']
     # Create a local directory to upload
     localDir = '/tmp/unit-test'
     srcFile = '/etc/group'
@@ -546,7 +547,7 @@ class DirectoryTestCases( StorageElementTestCase ):
   def test_getDirectorySize( self ):
     print '\n\n#########################################################################\n\n\t\t\tGet directory size test\n'
     directory = "%s/%s" % ( self.destDirectory, 'getDirectorySizeTest' )
-    destDirectory = self.storageElement.getPfnForLfn( directory )['Value']
+    destDirectory = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( directory ) )['Value']
     # Create a local directory to upload
     localDir = '/tmp/unit-test'
     srcFile = '/etc/group'
@@ -592,7 +593,7 @@ class DirectoryTestCases( StorageElementTestCase ):
   def test_removeDirectory( self ):
     print '\n\n#########################################################################\n\n\t\t\tRemove directory test\n'
     directory = "%s/%s" % ( self.destDirectory, 'removeDirectoryTest' )
-    destDirectory = self.storageElement.getPfnForLfn( directory )['Value']
+    destDirectory = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( directory ) )['Value']
     # Create a local directory to upload
     localDir = '/tmp/unit-test'
     srcFile = '/etc/group'
@@ -631,7 +632,7 @@ class DirectoryTestCases( StorageElementTestCase ):
   def test_getDirectory( self ):
     print '\n\n#########################################################################\n\n\t\t\tGet directory test\n'
     directory = "%s/%s" % ( self.destDirectory, 'getDirectoryTest' )
-    destDirectory = self.storageElement.getPfnForLfn( directory )['Value']
+    destDirectory = Utils.executeSingleFileOrDirWrapper( self.storageElement.getPfnForLfn( directory ) )['Value']
     # Create a local directory to upload
     localDir = '/tmp/unit-test'
     srcFile = '/etc/group'

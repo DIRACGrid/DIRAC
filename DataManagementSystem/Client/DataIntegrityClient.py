@@ -210,10 +210,8 @@ class DataIntegrityClient( Client ):
     gLogger.info( 'Checking %s storage files exist in the catalog' % len( storageMetadata ) )
 
     # RF_NOTE : this comment is completely wrong
-    # RF_NOTE This is ugly, one should change the StorageElement!
     # First get all the PFNs as they should be registered in the catalog
-#     res = StorageElement( storageElement ).getPfnForProtocol( storageMetadata.keys(), protocol = "SRM2", withPort = False )
-    res = self.dm.getPfnForProtocol( storageMetadata.keys(), storageElement, withPort = False )
+    res = StorageElement( storageElement ).getPfnForProtocol( storageMetadata.keys(), withPort = False )
     if not res['OK']:
       gLogger.error( "Failed to get registered PFNs for physical files", res['Message'] )
       return res
@@ -272,8 +270,7 @@ class DataIntegrityClient( Client ):
     gLogger.info( 'Obtaining the contents for %s directories at %s' % ( len( lfnDir ), storageElement ) )
 
     se = StorageElement(storageElement)
-    # RF_NOTE This is okay because there is only one dic
-    res = se.getPfnForLfn( lfnDir )
+    res = Utils.executeSingleFileOrDirWrapper( se.getPfnForLfn( lfnDir ) )
 
     if not res['OK']:
       gLogger.error( "Failed to get PFNs for directories", res['Message'] )
@@ -321,7 +318,7 @@ class DataIntegrityClient( Client ):
 #             res["Successful"][pfn] = inRes["Value"]
 #           else:
 #             res["Failed"][pfn] = inRes["Message"]
-        res = self.dm.getLfnForPfn( fileMetadata.keys(), storageElement )
+        res = se.getLfnForPfn( fileMetadata.keys() )
         if not res['OK']:
           gLogger.error( 'Failed to get directory content LFNs', res['Message'] )
           return res
@@ -360,7 +357,8 @@ class DataIntegrityClient( Client ):
   def __getStoragePathExists( self, lfnPaths, storageElement ):
     gLogger.info( 'Determining the existance of %d files at %s' % ( len( lfnPaths ), storageElement ) )
 
-    res = self.dm.getPfnForLfn( lfnPaths, storageElement )
+    se = StorageElement( storageElement )
+    res = se.getPfnForLfn( lfnPaths )
     if not res['OK']:
       gLogger.error( "Failed to get PFNs for LFNs", res['Message'] )
       return res
@@ -373,7 +371,7 @@ class DataIntegrityClient( Client ):
     for lfn, pfn in lfnPfns.items():
       pfnLfns[pfn] = lfn
 
-    res = StorageElement( storageElement ).exists( pfnLfns )
+    res = se.exists( pfnLfns )
     if not res['OK']:
       gLogger.error( "Failed to obtain existance of paths", res['Message'] )
       return res
@@ -595,7 +593,7 @@ class DataIntegrityClient( Client ):
 
   def __getRegisteredPFNLFN( self, pfn, storageElement ):
 
-    res = self.dm.getPfnForProtocol( [pfn], storageElement, withPort = False )
+    res = StorageElement( storageElement ).getPfnForProtocol( [pfn], withPort = False )
     if not res['OK']:
       gLogger.error( "Failed to get registered PFN for physical files", res['Message'] )
       return res
@@ -721,7 +719,7 @@ class DataIntegrityClient( Client ):
         seName = '%s_MC-DST' % site
 
     problematicDict['SE'] = seName
-    res = self.dm.getPfnForProtocol( [pfn], seName, withPort = False )
+    res = se.getPfnForProtocol( [pfn], withPort = False )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     for pfn, error in res['Value']['Failed'].items():

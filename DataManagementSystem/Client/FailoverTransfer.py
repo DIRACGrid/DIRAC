@@ -223,7 +223,7 @@ class FailoverTransfer( object ):
       regFile.GUID = fileDict.get( "GUID", "" )
 
       se = StorageElement( targetSE )
-      pfn = se.getPfnForLfn( lfn )
+      pfn = Utils.executeSingleFileOrDirWrapper( se.getPfnForLfn( lfn ) )
       if not pfn["OK"]:
         self.log.error( "unable to get PFN for LFN: %s" % pfn["Message"] )
         return pfn

@@ -39,6 +39,7 @@ from DIRAC.RequestManagementSystem.private.Record import Record
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
+from DIRAC.Resources.Utilities import Utils
 
 ########################################################################
 class FTSJob( Record ):
@@ -545,7 +546,7 @@ class FTSJob( Record ):
     toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
     toRegisterDict = {}
     for ftsFile in toRegister:
-      pfn = targetSE.getPfnForProtocol( ftsFile.TargetSURL, "SRM2", withPort = False )
+      pfn = Utils.executeSingleFileOrDirWrapper( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
       if not pfn["OK"]:
         continue
       pfn = pfn["Value"]

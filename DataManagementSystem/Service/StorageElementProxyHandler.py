@@ -196,7 +196,7 @@ class StorageElementProxyHandler(RequestHandler):
       errStr = "prepareFile: Exception while instantiating the Storage Element."
       gLogger.exception( errStr, se, str(x) )
       return S_ERROR(errStr)
-    res = storageElement.getFile( pfn, "%s/getFile" % BASE_PATH, True )
+    res = storageElement.getFile( pfn, localPath = "%s/getFile" % BASE_PATH, singleFile = True )
     if not res['OK']:
       gLogger.error( "prepareFile: Failed to get local copy of file.", res['Message'] )
       return res

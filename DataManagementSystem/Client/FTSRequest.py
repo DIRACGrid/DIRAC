@@ -24,7 +24,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog    import FileCatalog
-
+from DIRAC.Resources.Utilities import Utils
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -701,8 +701,8 @@ class FTSRequest( object ):
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
       # Fix first the PFN
-      pfn = self.oSourceSE.getPfnForLfn( lfn ).get( 'Value', replicas[self.sourceSE] )
-      res = self.oSourceSE.getPfnForProtocol( pfn, 'SRM2', withPort = True )
+      pfn = self.oSourceSE.getPfnForLfn( lfn ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[self.sourceSE] )
+      res = Utils.executeSingleFileOrDirWrapper( self.oSourceSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True ) )
       if not res['OK']:
         gLogger.warn( "resolveSource: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
@@ -807,13 +807,13 @@ class FTSRequest( object ):
     if not res['OK']:
       return res
     for lfn in toResolve:
-      res = self.oTargetSE.getPfnForLfn( lfn )
+      res = Utils.executeSingleFileOrDirWrapper( self.oTargetSE.getPfnForLfn( lfn ) )
       if not res['OK']:
         gLogger.warn( "resolveTarget: skipping %s - failed to create target pfn" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Failed to create Target" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-      res = self.oTargetSE.getPfnForProtocol( res['Value'], 'SRM2', withPort = True )
+      res = Utils.executeSingleFileOrDirWrapper( self.oTargetSE.getPfnForProtocol( res['Value'], protocol = 'SRM2', withPort = True ) )
       if not res['OK']:
         gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
@@ -1221,7 +1221,7 @@ class FTSRequest( object ):
     self.failedRegistrations = {}
     toRegister = {}
     for lfn in transLFNs:
-      res = self.oTargetSE.getPfnForProtocol( self.fileDict[lfn].get( 'Target' ), 'SRM2', withPort = False )
+      res = Utils.executeSingleFileOrDirWrapper( self.oTargetSE.getPfnForProtocol( self.fileDict[lfn].get( 'Target' ), protocol = 'SRM2', withPort = False ) )
       if not res['OK']:
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )

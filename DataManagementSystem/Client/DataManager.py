@@ -35,6 +35,13 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Resources.Utilities import Utils
 
+
+
+##############################3
+# The code commented under was design originally to modify the code of the ReplicaManager
+# in a backward compatible way. Finally, it will normally not be used, but I keep it here for a little
+# while, just in case...
+
 #
 # class StorageBackwardCompatibility( object ):
 #   """
@@ -417,7 +424,7 @@ from DIRAC.Resources.Utilities import Utils
 #
 #     return super( CatalogBackwardCompatibility, self ).__getattr__( name )
 
-
+###############################################################################################################################################
 
 
 class DataManager( object ):
@@ -431,7 +438,6 @@ class DataManager( object ):
 
     :param self: self reference
     """
-    super( DataManager, self ).__init()
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
     self.fc = FileCatalog( catalogs )
     self.accountingClient = None
@@ -799,7 +805,7 @@ class DataManager( object ):
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
     destinationSE = storageElement.getStorageElementName()['Value']
-    res = storageElement.getPfnForLfn( lfn )
+    res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
     if not res['OK']:
       errStr = "putAndRegister: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -976,7 +982,7 @@ class DataManager( object ):
       destPath = '%s/%s' % ( destPath, os.path.basename( lfn ) )
     else:
       destPath = lfn
-    res = destStorageElement.getPfnForLfn( destPath )
+    res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForLfn( destPath ) )
     if not res['OK']:
       errStr = "__replicate: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -1006,11 +1012,11 @@ class DataManager( object ):
         localDir = '.'
         if localCache:
           localDir = localCache
-        self.getFile( lfn, localDir )
+        self.getFile( lfn, destinationDir = localDir )
         localFile = os.path.join( localDir, os.path.basename( lfn ) )
         fileDict = {destPfn:localFile}
 
-      res = destStorageElement.replicateFile( fileDict, catalogueSize, singleFile = True )
+      res = destStorageElement.replicateFile( fileDict, sourceSize = catalogueSize, singleFile = True )
       if localFile and os.path.exists( localFile ):
         os.remove( localFile )
 
@@ -1097,22 +1103,11 @@ class DataManager( object ):
 
     self.log.debug( "%s Destination site not banned for Write." % logStr )
 
-#    configStr = '/Resources/StorageElements/BannedTarget'
-#    bannedTargets = gConfig.getValue( configStr, [] )
-#    if destSE in bannedTargets:
-#      infoStr = "__initializeReplication: Destination Storage Element is currently banned."
-#      self.log.debug( infoStr, destSE )
-#      return S_ERROR( infoStr )
-#
-#    self.log.debug( "__initializeReplication: Destination site not banned." )
-
     ###########################################################
     # Check whether the supplied source SE is sane
 
     self.log.debug( "%s: Determining whether source Storage Element is sane." % logStr )
 
-#    configStr = '/Resources/StorageElements/BannedSource'
-#    bannedSources = gConfig.getValue( configStr, [] )
 
     if sourceSE:
 
@@ -1183,7 +1178,7 @@ class DataManager( object ):
         else:
           if storageElement.getRemoteProtocols()['Value']:
             self.log.debug( "%s Attempting to get source pfns for remote protocols." % logStr )
-            res = storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols )
+            res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
             if res['OK']:
               sourcePfn = res['Value']
               self.log.debug( "%s Attempting to get source file size." % logStr )
@@ -1267,7 +1262,7 @@ class DataManager( object ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuple:
-          res = destStorageElement.getPfnForProtocol( physicalFile, self.registrationProtocol, withPort = False )
+          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( physicalFile, protocol = self.registrationProtocol, withPort = False ) )
           if not res['OK']:
             pfn = physicalFile
           else:
@@ -1331,7 +1326,7 @@ class DataManager( object ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, pfn in replicaTuple:
-          res = destStorageElement.getPfnForProtocol( pfn, self.registrationProtocol, withPort = False )
+          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( pfn, protocol = self.registrationProtocol, withPort = False ) )
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
@@ -1714,7 +1709,7 @@ class DataManager( object ):
           res['Value']['Successful'][surl] = surl
           res['Value']['Failed'].pop( surl )
       for surl in res['Value']['Successful']:
-        ret = storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False )
+        ret = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( surl, protocol = self.registrationProtocol, withPort = False ) )
         if not ret['OK']:
           res['Value']['Successful'][surl] = surl
         else:
@@ -1765,7 +1760,7 @@ class DataManager( object ):
       errStr = "put: The storage element is not currently valid."
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
-    res = storageElement.getPfnForLfn( lfn )
+    res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
     if not res['OK']:
       errStr = "put: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -1892,81 +1887,78 @@ class DataManager( object ):
           replicas[se] = StorageElement( se ).getPfnForLfn( lfn ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[se] )
     return res
 
-  def getFileSize( self, lfn ):
-    """ get file size from catalogue """
-    return FileCatalog().getFileSize( lfn )
 
-  # This should be removed, and adapt StorageElement.getPfnPath to follow the Successful/Failed convention
-  def getPfnForLfn( self, lfns, storageElementName ):
-    """ get PFNs for supplied LFNs at :storageElementName: SE
-
-    :param self: self reference
-    :param list lfns: list of LFNs
-    :param str stotrageElementName: DIRAC SE name
-    """
-    if type( lfns ) == type( '' ):
-      lfns = [lfns]
-    storageElement = StorageElement( storageElementName )
-    res = storageElement.isValid( "getPfnForLfn" )
-    if not res['OK']:
-      self.log.error( "getPfnForLfn: Failed to instantiate StorageElement at %s" % storageElementName )
-      return res
-    retDict = { "Successful" : {}, "Failed" : {} }
-    for lfn in lfns:
-      res = storageElement.getPfnForLfn( lfn )
-      if res["OK"]:
-        retDict["Successful"][lfn] = res["Value"]
-      else:
-        retDict["Failed"][lfn] = res["Message"]
-    return S_OK( retDict )
-
-  # This should be removed, and adapt StorageElement.getLfnForPfn to follow the Successful/Failed convention
-  def getLfnForPfn( self, pfns, storageElementName ):
-    """ get LFNs for supplied PFNs at :storageElementName: SE
-
-    :param self: self reference
-    :param list lfns: list of LFNs
-    :param str stotrageElementName: DIRAC SE name
-    """
-    storageElement = StorageElement( storageElementName )
-    res = storageElement.isValid( "getPfnPath" )
-    if not res['OK']:
-      self.log.error( "getLfnForPfn: Failed to instantiate StorageElement at %s" % storageElementName )
-      return res
-    retDict = { "Successful" : {}, "Failed" : {} }
-    for pfn in pfns:
-      res = storageElement.getPfnPath( pfn )
-      if res["OK"]:
-        retDict["Successful"][pfn] = res["Value"]
-      else:
-        retDict["Failed"][pfn] = res["Message"]
-    return S_OK( retDict )
-
-  # This should be removed, and adapt StorageElement.getPfnForProtocol to follow the Successful/Failed convention
-  def getPfnForProtocol( self, pfns, storageElementName, protocol = "SRM2", withPort = True ):
-    """ create PFNs strings at :storageElementName: SE using protocol :protocol:
-
-    :param self: self reference
-    :param list pfns: list of PFNs
-    :param str storageElementName: DIRAC SE name
-    :param str protocol: protocol name (default: 'SRM2')
-    :param bool withPort: flag to include port in PFN (default: True)
-    """
-    storageElement = StorageElement( storageElementName )
-    res = storageElement.isValid( "getPfnForProtocol" )
-    if not res["OK"]:
-      self.log.error( "getPfnForProtocol: Failed to instantiate StorageElement at %s" % storageElementName )
-      return res
-    retDict = { "Successful" : {}, "Failed" : {}}
-    for pfn in pfns:
-      res = storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort )
-      if res["OK"]:
-        retDict["Successful"][pfn] = res["Value"]
-      else:
-        retDict["Failed"][pfn] = res["Message"]
-    return S_OK( retDict )
-  
-  
+#   # This should be removed, and adapt StorageElement.getPfnPath to follow the Successful/Failed convention
+#   def getPfnForLfn( self, lfns, storageElementName ):
+#     """ get PFNs for supplied LFNs at :storageElementName: SE
+#
+#     :param self: self reference
+#     :param list lfns: list of LFNs
+#     :param str stotrageElementName: DIRAC SE name
+#     """
+#     if type( lfns ) == type( '' ):
+#       lfns = [lfns]
+#     storageElement = StorageElement( storageElementName )
+#     res = storageElement.isValid( "getPfnForLfn" )
+#     if not res['OK']:
+#       self.log.error( "getPfnForLfn: Failed to instantiate StorageElement at %s" % storageElementName )
+#       return res
+#     retDict = { "Successful" : {}, "Failed" : {} }
+#     for lfn in lfns:
+#       res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
+#       if res["OK"]:
+#         retDict["Successful"][lfn] = res["Value"]
+#       else:
+#         retDict["Failed"][lfn] = res["Message"]
+#     return S_OK( retDict )
+#
+#   # This should be removed, and adapt StorageElement.getLfnForPfn to follow the Successful/Failed convention
+#   def getLfnForPfn( self, pfns, storageElementName ):
+#     """ get LFNs for supplied PFNs at :storageElementName: SE
+#
+#     :param self: self reference
+#     :param list lfns: list of LFNs
+#     :param str stotrageElementName: DIRAC SE name
+#     """
+#     storageElement = StorageElement( storageElementName )
+#     res = storageElement.isValid( "getPfnPath" )
+#     if not res['OK']:
+#       self.log.error( "getLfnForPfn: Failed to instantiate StorageElement at %s" % storageElementName )
+#       return res
+#     retDict = { "Successful" : {}, "Failed" : {} }
+#     for pfn in pfns:
+#       res = storageElement.getPfnPath( pfn )
+#       if res["OK"]:
+#         retDict["Successful"][pfn] = res["Value"]
+#       else:
+#         retDict["Failed"][pfn] = res["Message"]
+#     return S_OK( retDict )
+#
+#   # This should be removed, and adapt StorageElement.getPfnForProtocol to follow the Successful/Failed convention
+#   def getPfnForProtocol( self, pfns, storageElementName, protocol = "SRM2", withPort = True ):
+#     """ create PFNs strings at :storageElementName: SE using protocol :protocol:
+#
+#     :param self: self reference
+#     :param list pfns: list of PFNs
+#     :param str storageElementName: DIRAC SE name
+#     :param str protocol: protocol name (default: 'SRM2')
+#     :param bool withPort: flag to include port in PFN (default: True)
+#     """
+#     storageElement = StorageElement( storageElementName )
+#     res = storageElement.isValid( "getPfnForProtocol" )
+#     if not res["OK"]:
+#       self.log.error( "getPfnForProtocol: Failed to instantiate StorageElement at %s" % storageElementName )
+#       return res
+#     retDict = { "Successful" : {}, "Failed" : {}}
+#     for pfn in pfns:
+#       res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort ) )
+#       if res["OK"]:
+#         retDict["Successful"][pfn] = res["Value"]
+#       else:
+#         retDict["Failed"][pfn] = res["Message"]
+#     return S_OK( retDict )
+#
+#
   
   ##################################################################################################3
   # Methods from the catalogToStorage. It would all work with the direct call to the SE, but this checks

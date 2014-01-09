@@ -30,6 +30,7 @@ from DIRAC.DataManagementSystem.Client.FTSClient                                
 from DIRAC.Resources.Storage.StorageElement                                       import StorageElement
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
 from DIRAC.Resources.Catalog.FileCatalog                        import FileCatalog
+from DIRAC.Resources.Utilities                                  import Utils
 
 
 
@@ -186,7 +187,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         repSE = StorageElement( repSEName, "SRM2" )
         self.seCache[repSE] = repSE
 
-      pfn = repSE.getPfnForLfn( opFile.LFN )
+      pfn = Utils.executeSingleFileOrDirWrapper( repSE.getPfnForLfn( opFile.LFN ) )
       if not pfn["OK"]:
         self.log.warn( "unable to create pfn for %s lfn: %s" % ( opFile.LFN, pfn["Message"] ) )
         ret["Banned"].append( repSEName )
