@@ -60,7 +60,7 @@ class PhysicalRemoval( OperationHandlerBase ):
     # # check targetSEs for removal
     bannedTargets = []
     for targetSE in targetSEs:
-      removeStatus = self.rssSEStatus( targetSE, "Remove" )
+      removeStatus = self.rssSEStatus( targetSE, "RemoveAccess" )
       if not removeStatus["OK"]:
         self.log.error( removeStatus["Message"] )
         for opFile in self.operation:
