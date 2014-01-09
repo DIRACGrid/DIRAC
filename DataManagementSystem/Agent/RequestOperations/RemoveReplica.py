@@ -69,8 +69,8 @@ class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
     # # check targetSEs for removal
     bannedTargets = self.checkSEsRSS( access = 'RemoveAccess' )
     if not bannedTargets['OK']:
-      gMonitor.addMark( "PhysicalRemovalAtt" )
-      gMonitor.addMark( "PhysicalRemovalFail" )
+      gMonitor.addMark( "RemoveReplicaAtt" )
+      gMonitor.addMark( "RemoveReplicaFail" )
       return bannedTargets
 
     if bannedTargets['Value']:

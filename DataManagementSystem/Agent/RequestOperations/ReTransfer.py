@@ -24,10 +24,11 @@ __RCSID__ = "$Id $"
 
 # # imports
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase                    import OperationHandlerBase
+from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase   import DMSRequestOperationsBase
 
 ########################################################################
-class ReTransfer( OperationHandlerBase ):
+class ReTransfer( OperationHandlerBase, DMSRequestOperationsBase ):
   """
   .. class:: ReTransfer
 
@@ -74,21 +75,15 @@ class ReTransfer( OperationHandlerBase ):
 
     # # check targetSEs for removal
     targetSE = targetSEs[0]
-    writeStatus = self.rssSEStatus( targetSE, "Write" )
-    if not writeStatus["OK"]:
-      self.log.error( writeStatus["Message"] )
-      for opFile in self.operation:
-        opFile.Error = "unknown targetSE: %s" % targetSE
-        opFile.Status = "Failed"
-      self.operation.Error = "unknown targetSE: %s" % targetSE
-      gMonitor.addMark( "FileReTransferFail", len( toRetransfer ) )
-      return S_ERROR( self.operation.Error )
 
-    if not writeStatus["Value"]:
-      self.log.error( "TargetSE %s in banned for writing right now" % targetSE )
-      self.operation.Error += "banned targetSE: %s;" % targetSE
-      gMonitor.addMark( "FileReTransferFail", len( toRetransfer ) )
-      return S_OK( self.operation.Error )
+    bannedTargets = self.checkSEsRSS( targetSE )
+    if not bannedTargets['OK']:
+      gMonitor.addMark( "FileReTransferAtt" )
+      gMonitor.addMark( "FileReTransferFail" )
+      return bannedTargets
+
+    if bannedTargets['Value']:
+      return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets['Value'] ) )
 
     for opFile in toRetransfer.values():
       reTransfer = self.replicaManager().onlineRetransfer( targetSE, opFile.PFN )
