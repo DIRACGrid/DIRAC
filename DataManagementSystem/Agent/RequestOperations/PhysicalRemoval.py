@@ -25,11 +25,12 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
+from DIRAC import S_OK, gMonitor
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase                   import OperationHandlerBase
+from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
 
 ########################################################################
-class PhysicalRemoval( OperationHandlerBase ):
+class PhysicalRemoval( OperationHandlerBase, DMSRequestOperationsBase ):
   """
   .. class:: PhysicalRemoval
 
@@ -55,33 +56,21 @@ class PhysicalRemoval( OperationHandlerBase ):
 
   def __call__( self ):
     """ perform physical removal operation """
-    # # prepare targetSE list
-    targetSEs = self.operation.targetSEList
-    # # check targetSEs for removal
-    bannedTargets = []
-    for targetSE in targetSEs:
-      removeStatus = self.rssSEStatus( targetSE, "RemoveAccess" )
-      if not removeStatus["OK"]:
-        self.log.error( removeStatus["Message"] )
-        for opFile in self.operation:
-          opFile.Error = "unknown targetSE: %s" % targetSE
-          opFile.Status = "Failed"
-        self.operation.Error = "unknown targetSE: %s" % targetSE
-        return S_ERROR( self.operation.Error )
+    bannedTargets = self.checkSEsRSS( access = 'RemoveAccess' )
+    if not bannedTargets['OK']:
+      gMonitor.addMark( "PhysicalRemovalAtt" )
+      gMonitor.addMark( "PhysicalRemovalFail" )
+      return bannedTargets
 
-      if not removeStatus["Value"]:
-        self.log.info( "%s is banned for remove right now" % targetSE )
-        bannedTargets.append( targetSE )
-        self.operation.Error = "banned targetSE: %s;" % targetSE
-    # # some targets are banned? return
-    if bannedTargets:
-      return S_OK( "targets %s are banned for removal" % ",".join( bannedTargets ) )
+    if bannedTargets['Value']:
+      return S_OK( "%s targets are banned for removal" % ",".join( bannedTargets['Value'] ) )
 
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
     # # prepare pfn dict
     toRemoveDict = dict( [ ( opFile.PFN, opFile ) for opFile in waitingFiles ] )
 
+    targetSEs = self.operation.targetSEList
     gMonitor.addMark( "PhysicalRemovalAtt", len( toRemoveDict ) * len( targetSEs ) )
 
     # # keep errors dict

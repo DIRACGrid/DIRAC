@@ -13,8 +13,9 @@ from DIRAC.RequestManagementSystem.Client.File                  import File
 
 class DMSRequestOperationsBase:
 
-  def checkTargetsWrite( self, targetSEs = None ):
-    """ check (targetSEs) for write
+  def checkSEsRSS( self, targetSEs = None, access = 'WriteAccess' ):
+    """ check SEs.
+        By default, we check the targetSEs for WriteAccess, but it is configurable
     """
     if not targetSEs:
       targetSEs = self.operation.targetSEList
@@ -23,9 +24,9 @@ class DMSRequestOperationsBase:
 
     bannedTargets = []
     for targetSE in targetSEs:
-      writeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
+      writeStatus = self.rssSEStatus( targetSE, access )
       if not writeStatus["OK"]:
-        self.log.info( writeStatus["Message"] )
+        self.log.error( writeStatus["Message"] )
         for opFile in self.operation:
           opFile.Error = "unknown targetSE: %s" % targetSE
           opFile.Status = "Failed"
@@ -33,7 +34,7 @@ class DMSRequestOperationsBase:
         return S_ERROR( self.operation.Error )
 
       if not writeStatus["Value"]:
-        self.log.info( "TargetSE %s is banned for writing right now" % targetSE )
+        self.log.info( "TargetSE %s is banned for %s right now" % ( targetSE, access ) )
         bannedTargets.append( targetSE )
         self.operation.Error = "banned targetSE: %s;" % targetSE
 

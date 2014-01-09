@@ -80,7 +80,7 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
       return S_ERROR( "TargetSE should contain only one target, got %s" % targetSEs )
 
     targetSE = targetSEs[0]
-    bannedTargets = self.checkTargetsWrite( targetSE )
+    bannedTargets = self.checkSEsRSS( targetSE )
     if not bannedTargets['OK']:
       gMonitor.addMark( "PutAtt" )
       gMonitor.addMark( "PutFail" )

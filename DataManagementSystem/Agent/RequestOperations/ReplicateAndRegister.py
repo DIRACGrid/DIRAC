@@ -216,7 +216,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
     self.log.info( "scheduling files in FTS..." )
 
-    bannedTargets = self.checkTargetsWrite()
+    bannedTargets = self.checkSEsRSS()
     if not bannedTargets['OK']:
       gMonitor.addMark( "FTSScheduleAtt" )
       gMonitor.addMark( "FTSScheduleFail" )
@@ -323,7 +323,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         return S_OK( self.operation.Error )
 
     # # check targetSEs for write
-    bannedTargets = self.checkTargetsWrite()
+    bannedTargets = self.checkSEsRSS()
     if not bannedTargets['OK']:
       gMonitor.addMark( "ReplicateAndRegisterAtt", len( self.operation ) )
       gMonitor.addMark( "ReplicateFail", len( self.operation ) )
