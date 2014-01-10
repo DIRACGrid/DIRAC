@@ -581,6 +581,7 @@ class TransformationCleaningAgent( AgentModule ):
         else:
           self.log.verbose( "Removed request %s associated to job %d." % ( requestName, jobID ) )
     except RuntimeError:
+      failoverRequests = {}
       pass
 
     # FIXME: and this is the new
