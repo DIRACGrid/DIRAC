@@ -14,17 +14,56 @@ except ImportError:
   import md5
 from types import StringTypes, ListType, DictType
 import os
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List import stringListToString
 
 class DatasetManager:
 
-  def __init__( self, database = None ):
+  _tables = {}
+  _tables["FC_MetaDatasets"] = { "Fields": {
+                                             "DatasetID": "INT AUTO_INCREMENT",
+                                             "DatasetName": "VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                             "MetaQuery": "VARCHAR(512)",
+                                             "DirID": "INT NOT NULL DEFAULT 0",
+                                             "TotalSize": "BIGINT UNSIGNED NOT NULL",
+                                             "NumberOfFiles": "INT NOT NULL", 
+                                             "UID": "SMALLINT UNSIGNED NOT NULL",
+                                             "GID": "TINYINT UNSIGNED NOT NULL",
+                                             "Status": "SMALLINT UNSIGNED NOT NULL",
+                                             "CreationDate": "DATETIME",
+                                             "ModificationDate": "DATETIME",
+                                             "DatasetHash": "CHAR(36) NOT NULL",
+                                             "Mode": "SMALLINT UNSIGNED NOT NULL DEFAULT 509"
+                                            },
+                                  "UniqueIndexes": { "DatasetName_DirID": ["DatasetName","DirID"] },
+                                  "PrimaryKey": "DatasetID"
+                                }
+  _tables["FC_MetaDatasetFiles"] = { "Fields": {
+                                                "DatasetID": "INT NOT NULL",
+                                                "FileID": "INT NOT NULL",      
+                                               },
+                                     "UniqueIndexes": ["DatasetID","FileID"]
+                                   }
+  _tables["FC_DatasetAnnotations"] = { "Fields": {
+                                                  "DatasetID": "INT NOT NULL",
+                                                  "Annotation": "VARCHAR(512)"
+                                                 },
+                                       "PrimaryKey": "DatasetID",
+                                     }
 
-    self.db = database
+  def __init__( self, database = None ):
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
 
   def setDatabase( self, database ):
     self.db = database
+    result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
+    return result
 
   def addDataset( self, datasetName, metaQuery, credDict ):
 
