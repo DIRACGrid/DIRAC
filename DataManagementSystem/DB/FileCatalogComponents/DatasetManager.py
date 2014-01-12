@@ -58,7 +58,19 @@ class DatasetManager:
 
   def setDatabase( self, database ):
     self.db = database
-    result = self.db._createTables( self._tables )
+    
+    # Have to check the existing table should be dropped when 
+    # existing tables will not be recreated
+    result = self.db._query("SHOW TABLES")
+    if not result['OK']:
+      return result
+    tableList = [ x[0] for x in result['Value'] ]
+    tablesToCreate = {}
+    for table in self._tables:
+      if not table in tableList:
+        tablesToCreate[table] = self._tables[table]
+
+    result = self.db._createTables( tablesToCreate )
     if not result['OK']:
       gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
     elif result['Value']:
