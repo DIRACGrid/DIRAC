@@ -41,7 +41,7 @@ class DMSRequestOperationsBase:
     return S_OK( bannedTargets )
 
 
-  def addRegisterReplica( self, opFile, targetSE ):
+  def getRegisterOperation( self, opFile, targetSE ):
     """ add RegisterReplica operation for file
 
     :param File opFile: operation file
@@ -61,5 +61,4 @@ class DMSRequestOperationsBase:
     registerFile.Size = opFile.Size
 
     registerOperation.addFile( registerFile )
-    self.request.insertAfter( registerOperation, self.operation )
-    return S_OK()
+    return registerOperation

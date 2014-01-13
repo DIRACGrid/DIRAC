@@ -157,7 +157,8 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
           opFile.Status = "Failed"
 
           self.log.info( opFile.Error )
-          self.addRegisterReplica( opFile, targetSE )
+          registerOperation = self.getRegisterOperation( opFile, targetSE )
+          self.request.insertAfter( registerOperation, self.operation )
           continue
 
         gMonitor.addMark( "PutOK", 1 )
