@@ -4,6 +4,7 @@
 ########################################################################
 __RCSID__ = "$Id:  $"
 
+import DIRAC
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( """
