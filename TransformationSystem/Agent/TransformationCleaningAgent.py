@@ -287,7 +287,7 @@ class TransformationCleaningAgent( AgentModule ):
     realFailure = False
     for lfn, reason in res['Value']['Failed'].items():
       if "File does not exist" in str( reason ):
-        self.log.warn( "File %s not found in some catalog: " % ( lfn, reason ) )
+        self.log.warn( "File %s not found in some catalog: " % ( lfn ) )
       else:
         self.log.error( "Failed to remove file found in the catalog", "%s %s" % ( lfn, reason ) )
         realFailure = True
