@@ -416,7 +416,7 @@ class FileMetadata:
       seList = [se]
     seIDs = []
     for se in seList:
-      result = self.seManager.getSEID( se )
+      result = self.db.seManager.getSEID( se )
       if not result['OK']:
         return result
       seIDs.append( result['Value'] )  

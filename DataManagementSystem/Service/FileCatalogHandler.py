@@ -547,6 +547,12 @@ class FileCatalogHandler( RequestHandler ):
     """
     return gFileCatalogDB.datasetManager.getDatasetParameters( datasetName, self.getRemoteCredentials() )
   
+  types_getDatasetAnnotation = [ list( StringTypes ) + [ListType] ]
+  def export_getDatasetAnnotation( self, datasetName ):
+    """ Get annotation of the given datasets 
+    """
+    return gFileCatalogDB.datasetManager.getDatasetAnnotation( datasetName, self.getRemoteCredentials() )
+  
   types_freezeDataset = [ StringTypes ]
   def export_freezeDataset( self, datasetName ):
     """ Freeze the contents of the dataset making it effectively static
