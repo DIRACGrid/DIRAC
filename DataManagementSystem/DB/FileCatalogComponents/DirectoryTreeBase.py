@@ -594,11 +594,15 @@ class DirectoryTreeBase:
           directories[dirName] = result['Value']
       else:
         directories[dirName] = True
-    res = self.db.fileManager.getFilesInDirectory( directoryID, verbose = details )
-    if not res['OK']:
-      return res
-    files = res['Value']
-    pathDict = {'Files': files, 'SubDirs':directories, 'Links':links}
+    result = self.db.fileManager.getFilesInDirectory( directoryID, verbose = details )
+    if not result['OK']:
+      return result
+    files = result['Value']
+    result = self.db.datasetManager.getDatasetsInDirectory( directoryID, verbose = details )
+    if not result['OK']:
+      return result
+    datasets = result['Value']
+    pathDict = {'Files': files, 'SubDirs':directories, 'Links':links, 'Datasets':datasets }
 
     return S_OK( pathDict )
 

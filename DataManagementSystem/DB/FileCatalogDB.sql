@@ -261,40 +261,6 @@ CREATE TABLE FC_MetaSetNames (
 );
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_MetaSets;
-CREATE TABLE FC_MetaSets (
-  MetaSetID INT NOT NULL,
-  MetaKey VARCHAR(31) NOT NULL,
-  MetaValue VARCHAR(31) NOT NULL,
-  INDEX (MetaSetID) 
-);
-
-drop table if exists FC_MetaDatasets;
-CREATE TABLE FC_MetaDatasets (
-  DatasetID INT AUTO_INCREMENT PRIMARY KEY,
-  DatasetName VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
-  MetaQuery VARCHAR(512),
-  DirID INT NOT NULL DEFAULT 0,
-  TotalSize BIGINT UNSIGNED NOT NULL,
-  NumberOfFiles INT NOT NULL, 
-  UID SMALLINT UNSIGNED NOT NULL,
-  GID TINYINT UNSIGNED NOT NULL,
-  Status SMALLINT UNSIGNED NOT NULL,
-  CreationDate DATETIME,
-  ModificationDate DATETIME,
-  DatasetHash char(36) NOT NULL,
-  Mode SMALLINT UNSIGNED NOT NULL DEFAULT 509,
-  UNIQUE KEY ( DatasetName )
-);
-
-drop table if exists FC_MetaDatasetFiles;
-CREATE TABLE FC_MetaDatasetFiles (
-  DatasetID INT NOT NULL,
-  FileID INT NOT NULL,
-  UNIQUE KEY (DatasetID, FileID )
-);
-
--- ------------------------------------------------------------------------------
 drop table if exists FC_FileAncestors;
 CREATE TABLE FC_FileAncestors (
   FileID INT NOT NULL DEFAULT 0,

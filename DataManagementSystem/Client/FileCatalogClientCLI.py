@@ -109,11 +109,11 @@ class DirectoryListing:
     self.entries.append( ('d'+self.__getModeString(perm),nlinks,uname,gname,size,date,name) )  
     
   def addDataset(self,name,datasetDict,numericid):
-    """ Pretty print of the file ls output
+    """ Pretty print of the dataset ls output
     """    
     perm = datasetDict['Mode']
     date = datasetDict['ModificationDate']
-    size = 0
+    size = datasetDict['TotalSize']
     if datasetDict.has_key('Owner'):
       uname = datasetDict['Owner']
     elif datasetDict.has_key('OwnerDN'):
@@ -134,8 +134,8 @@ class DirectoryListing:
       gname = str( datasetDict ['GID'] )
     
     numberOfFiles = datasetDict ['NumberOfFiles']
-    
-    self.entries.append( ('d'+self.__getModeString(perm),numberOfFiles,uname,gname,size,date,name) )   
+        
+    self.entries.append( ('s'+self.__getModeString(perm),numberOfFiles,uname,gname,size,date,name) )   
     
   def __getModeString(self,perm):
     """ Get string representation of the file/directory mode
@@ -1318,7 +1318,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     # Get directory contents now
     try:
-      result =  self.fc.listDirectory(path,_long)             
+      result =  self.fc.listDirectory(path,_long)                   
       dList = DirectoryListing()
       if result['OK']:
         if result['Value']['Successful']:
@@ -1343,8 +1343,17 @@ File Catalog Client $Revision: 1.17 $Date:
                 dList.addDirectory(dname,dirDict,numericid)
             else:    
               dList.addSimpleFile(dname)
+          
           for entry in result['Value']['Successful'][path]['Links']:
             pass
+          for entry in result['Value']['Successful'][path]['Datasets']:
+            dname = os.path.basename( entry )    
+            if _long:
+              dsDict = result['Value']['Successful'][path]['Datasets'][entry]['Metadata']  
+              if dsDict:
+                dList.addDataset(dname,dsDict,numericid)
+            else:    
+              dList.addSimpleFile(dname)
               
           if _long:
             dList.printListing(reverse,timeorder)      
@@ -2031,18 +2040,21 @@ File Catalog Client $Revision: 1.17 $Date:
     """   
    
     argss = args.split()
-    if (len(argss) < 2):
+    if (len(argss) < 1):
       print self.do_find.__doc__
       return
     path = argss[0]
     path = self.getPath(path)
     del argss[0]
  
-    if argss[0][0] == '{':
-      metaDict = eval(argss[0])
-    else:  
-      metaDict = self.__createQuery(' '.join(argss))
-      print "Query:",metaDict
+    if argss:
+      if argss[0][0] == '{':
+        metaDict = eval(argss[0])
+      else:  
+        metaDict = self.__createQuery(' '.join(argss))
+    else:
+      metaDict = {}    
+    print "Query:",metaDict
           
     result = self.fc.findFilesByMetadata(metaDict,path)
     if not result['OK']:
@@ -2086,6 +2098,13 @@ File Catalog Client $Revision: 1.17 $Date:
       return None
     typeDict = result['Value']['FileMetaFields']
     typeDict.update(result['Value']['DirectoryMetaFields'])
+    
+    # Special meta tags    
+    typeDict['SE'] = 'VARCHAR'
+    typeDict['User'] = 'VARCHAR'
+    typeDict['Group'] = 'VARCHAR'
+    typeDict['Path'] = 'VARCHAR'
+  
     metaDict = {}
     contMode = False
     for arg in argss:
@@ -2187,7 +2206,8 @@ File Catalog Client $Revision: 1.17 $Date:
     
         Usage:
           
-          dataset add <dataset_name> <path> <meta_query>   - add a new dataset definition
+          dataset add <dataset_name> <meta_query>          - add a new dataset definition
+          dataset annotate <dataset_name> <annotation>     - add annotation to a dataset
           dataset show [-l] [<dataset_name>]               - show existing datasets
           dataset status <dataset_name>                    - display the dataset status
           dataset files <dataset_name>                     - show dataset files     
@@ -2205,6 +2225,8 @@ File Catalog Client $Revision: 1.17 $Date:
     del argss[0]
     if command == "add":
       self.dataset_add( argss )
+    elif command == "annotate":
+      self.dataset_annotate( argss )    
     elif command == "show":
       self.dataset_show( argss )  
     elif command == "files":
@@ -2226,17 +2248,28 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Add a new dataset
     """
     datasetName = argss[0]
-    path = argss[1]
-    metaSelections = ' '.join( argss[2:] )
+    metaSelections = ' '.join( argss[1:] )
     metaDict = self.__createQuery( metaSelections )
-    path = self.getPath( path )
-    metaDict['Path'] = path
+    datasetName = self.getPath( datasetName )
     
     result = self.fc.addDataset( datasetName, metaDict )
     if not result['OK']:
       print "ERROR: failed to add dataset:", result['Message']
     else:
       print "Successfully added dataset", datasetName  
+
+  def dataset_annotate( self, argss ):
+    """ Add a new dataset
+    """
+    datasetName = argss[0]
+    annotation = ' '.join( argss[1:] )
+    datasetName = self.getPath( datasetName )
+    
+    result = self.fc.addDatasetAnnotation( {datasetName: annotation} )
+    if not result['OK']:
+      print "ERROR: failed to add annotation:", result['Message']
+    else:
+      print "Successfully added annotation to", datasetName  
 
   def dataset_status( self, argss ):
     """ Display the dataset status
@@ -2339,10 +2372,21 @@ File Catalog Client $Revision: 1.17 $Date:
       for dName in datasetDict.keys():
         print dName
     else:
-      dList = DirectoryListing()
-      for dName in datasetDict.keys():
-        dList.addDataset( dName, datasetDict[dName], False )
-      dList.printListing( False, False )            
+      fields = ['Key','Value']
+      datasets = datasetDict.keys()
+      dsAnnotations = {}
+      resultAnno = self.fc.getDatasetAnnotation( datasets )
+      if resultAnno['OK']:
+        dsAnnotations = resultAnno['Value']['Successful']
+      for dName in datasets:
+        records = []
+        print '\n'+dName+":"
+        print '='*(len(dName)+1)
+        for key,value in datasetDict[dName].items():
+          records.append( [key,str( value )] )
+        if dName in dsAnnotations:
+          records.append( [ 'Annotation',dsAnnotations[dName] ] )  
+        printTable( fields, records )  
 
   def do_stats( self, args ):
     """ Get the catalog statistics
