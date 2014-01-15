@@ -75,6 +75,7 @@ class JobWrapper:
       self.jobReport = jobReport
     else:
       self.jobReport = JobReport( self.jobID, 'JobWrapper@%s' % self.siteName )
+    self.failoverTransfer = FailoverTransfer()  
 
     # self.root is the path the Wrapper is running at
     self.root = os.getcwd()
@@ -856,9 +857,6 @@ class JobWrapper:
     else:
       pfnGUID = result['Value']
 
-    # Instantiate the failover transfer client
-    failoverTransfer = FailoverTransfer()
-
     for outputFile in outputData:
       ( lfn, localfile ) = self.__getLFNfromOutputFile( outputFile, outputPath )
       if not os.path.exists( localfile ):
@@ -887,12 +885,12 @@ class JobWrapper:
                        "GUID" : fileGUID }
 
       outputSEList = self.__getSortedSEList( outputSE )
-      upload = failoverTransfer.transferAndRegisterFile( localfile,
-                                                         outputFilePath,
-                                                         lfn,
-                                                         outputSEList,
-                                                         fileMetaDict,
-                                                         self.defaultCatalog )
+      upload = self.failoverTransfer.transferAndRegisterFile( localfile,
+                                                              outputFilePath,
+                                                              lfn,
+                                                              outputSEList,
+                                                              fileMetaDict,
+                                                              self.defaultCatalog )
       if upload['OK']:
         self.log.info( '"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile,
                                                                             upload['Value']['uploadedSE'],
@@ -912,13 +910,13 @@ class JobWrapper:
 
       failoverSEs = self.__getSortedSEList( self.defaultFailoverSE )
       targetSE = outputSEList[0]
-      result = failoverTransfer.transferAndRegisterFileFailover( localfile,
-                                                                 outputFilePath,
-                                                                 lfn,
-                                                                 targetSE,
-                                                                 failoverSEs,
-                                                                 fileMetaDict,
-                                                                 self.defaultCatalog )
+      result = self.failoverTransfer.transferAndRegisterFileFailover( localfile,
+                                                                      outputFilePath,
+                                                                      lfn,
+                                                                      targetSE,
+                                                                      failoverSEs,
+                                                                      fileMetaDict,
+                                                                      self.defaultCatalog )
       if not result['OK']:
         self.log.error( 'Completely failed to upload file to failover SEs with result:\n%s' % result )
         missing.append( outputFile )
@@ -1174,7 +1172,7 @@ class JobWrapper:
     """
     request = Request()
 
-    requestName = '%s.xml' % self.jobID
+    requestName = 'job_%s' % self.jobID
     if 'JobName' in self.jobArgs:
       # To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
@@ -1211,6 +1209,11 @@ class JobWrapper:
           request.addOperation( forwardDISETOp )
         else:
           self.log.warn( 'No rpcStub found to construct failover request for WMS accounting report' )
+
+    # Failover transfer requests
+    failoverRequest = self.failoverTransfer.getRequest()
+    for storedOperation in failoverRequest:
+      request.addOperation( storedOperation )
 
     # Any other requests in the current directory
     rfiles = self.__getRequestFiles()

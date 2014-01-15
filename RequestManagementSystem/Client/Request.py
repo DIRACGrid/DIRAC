@@ -242,6 +242,11 @@ class Request( Record ):
     self +=operation
     return S_OK()
 
+  def isEmpty( self ):
+    """ Evaluate if the request is empty
+    """
+    return len( self.__operations__ ) == 0
+
   def __iter__( self ):
     """ iterator for sub-request """
     return self.__operations__.__iter__()

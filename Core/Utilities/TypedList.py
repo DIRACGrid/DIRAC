@@ -89,7 +89,7 @@ class TypedList( list ):
     """ += operator
 
     :param self: self reference
-    :param mixed other: itarable to add
+    :param mixed other: iterable to add
     :raises: TypeError 
     """
     map( self._typeCheck, other )
