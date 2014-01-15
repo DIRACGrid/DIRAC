@@ -22,11 +22,13 @@
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager   import ReplicaManager
-from DIRAC.Resources.Storage.StorageElement             import StorageElement
-from DIRAC.RequestManagementSystem.Client.Request       import Request
-from DIRAC.RequestManagementSystem.Client.Operation     import Operation
-from DIRAC.RequestManagementSystem.Client.File          import File
+from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
+from DIRAC.Resources.Storage.StorageElement                 import StorageElement
+from DIRAC.RequestManagementSystem.Client.Request           import Request
+from DIRAC.RequestManagementSystem.Client.Operation         import Operation
+from DIRAC.RequestManagementSystem.Client.File              import File
+from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
+from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
 
 
 class FailoverTransfer( object ):
@@ -45,7 +47,7 @@ class FailoverTransfer( object ):
 
     if not self.request:
       self.request = Request()
-      self.request.RequestName = 'default_request.xml'
+      self.request.RequestName = 'noname_request'
       self.request.SourceComponent = 'FailoverTransfer'
 
   #############################################################################
@@ -139,6 +141,25 @@ class FailoverTransfer( object ):
       return result
 
     return S_OK( {'uploadedSE':failoverSE, 'lfn':lfn} )
+
+  def getRequest( self ):
+    """ get the accumulated request object
+    """
+    return self.request
+  
+  def commitRequest( self ):
+    """ Send request to the Request Management Service
+    """     
+    if self.request.isEmpty():
+      return S_OK()
+    
+    isValid = gRequestValidator.validate( self.request )
+    if not isValid["OK"]:
+      return S_ERROR( "Failover request is not valid: %s" % isValid["Message"] )
+    else:
+      requestClient = ReqClient()
+      result = requestClient.putRequest( self.request )
+      return result
 
   #############################################################################
   def _setFileReplicationRequest( self, lfn, targetSE, fileMetaDict, sourceSE = '' ):

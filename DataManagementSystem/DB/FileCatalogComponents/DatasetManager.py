@@ -495,7 +495,7 @@ class DatasetManager:
           dsDict[dsName]['OwnerGroup'] = group   
       datasets[dsName]['Metadata'] = dsDict
 
-    if verbose:
+    if verbose and datasets:
       result = self.getDatasetAnnotation( datasets.keys() )
       if result['OK']:
         for dataset in result['Value']['Successful']:
