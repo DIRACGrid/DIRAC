@@ -963,7 +963,7 @@ class TransformationDB( DB ):
       statusDict[status] = count
       total += count
     created = statusDict.get( 'Created', 0 )
-    statusDict['Created'] = total
+    statusDict['TotalCreated'] = total
     statusDict['Submitted'] = ( total - created )
     return S_OK( statusDict )
 
