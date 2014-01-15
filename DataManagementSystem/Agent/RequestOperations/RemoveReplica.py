@@ -27,10 +27,11 @@ __RCSID__ = "$Id $"
 import os
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase                    import OperationHandlerBase
+from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase   import DMSRequestOperationsBase
 
 ########################################################################
-class RemoveReplica( OperationHandlerBase ):
+class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
   """
   .. class:: RemoveReplica
 
@@ -66,27 +67,14 @@ class RemoveReplica( OperationHandlerBase ):
     gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
 
     # # check targetSEs for removal
-    bannedTargets = []
-    for targetSE in targetSEs:
-      removeStatus = self.rssSEStatus( targetSE, "RemoveAccess" )
-      # removeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
+    bannedTargets = self.checkSEsRSS( access = 'RemoveAccess' )
+    if not bannedTargets['OK']:
+      gMonitor.addMark( "RemoveReplicaAtt" )
+      gMonitor.addMark( "RemoveReplicaFail" )
+      return bannedTargets
 
-      if not removeStatus["OK"]:
-        self.log.error( removeStatus["Message"] )
-        for opFile in self.operation:
-          opFile.Error = "unknown targetSE: %s" % targetSE
-          opFile.Status = "Failed"
-        self.operation.Error = "unknown targetSE: %s" % targetSE
-        return S_ERROR( self.operation.Error )
-
-      if not removeStatus["Value"]:
-        self.log.info( "%s is banned for remove right now" % targetSE )
-        bannedTargets.append( targetSE )
-        self.operation.Error = "banned targetSE: %s;" % targetSE
-
-    # # some targets are banned? return
-    if bannedTargets:
-      return S_OK( "targets %s are banned for removal" % ",".join( bannedTargets ) )
+    if bannedTargets['Value']:
+      return S_OK( "%s targets are banned for removal" % ",".join( bannedTargets['Value'] ) )
 
     # # keep status for each targetSE
     removalStatus = dict.fromkeys( toRemoveDict.keys(), None )

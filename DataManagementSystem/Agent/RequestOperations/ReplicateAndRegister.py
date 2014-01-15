@@ -28,6 +28,8 @@ from DIRAC.RequestManagementSystem.private.OperationHandlerBase                 
 from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
 from DIRAC.Resources.Storage.StorageElement                                       import StorageElement
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
+from DIRAC.DataManagementSystem.Client.ReplicaManager                             import ReplicaManager
+
 
 ########################################################################
 class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
@@ -44,7 +46,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     :param Operation operation: Operation instance
     :param str csPath: CS path for this handler
     """
-    super( ReplicateAndRegister, self ).__init__( self, operation, csPath )
+    super( ReplicateAndRegister, self ).__init__( operation, csPath )
     # # own gMonitor stuff for files
     gMonitor.registerActivity( "ReplicateAndRegisterAtt", "Replicate and register attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
@@ -67,6 +69,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     self.seCache = {}
 
     # Clients
+    self.rm = ReplicaManager()
     self.ftsClient = FTSClient()
 
   def __call__( self ):
@@ -212,22 +215,23 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     """ replicate and register using FTS """
 
     self.log.info( "scheduling files in FTS..." )
-    targetSEs = self.operation.targetSEList
 
-    for targetSE in targetSEs:
-      writeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
-      if not writeStatus["OK"]:
-        self.log.info( writeStatus["Message"] )
-        for opFile in self.operation:
-          opFile.Error = "unknown targetSE: %s" % targetSE
-          opFile.Status = "Failed"
-        self.operation.Error = "unknown targetSE: %s" % targetSE
-        return S_ERROR( self.operation.Error )
+    bannedTargets = self.checkSEsRSS()
+    if not bannedTargets['OK']:
+      gMonitor.addMark( "FTSScheduleAtt" )
+      gMonitor.addMark( "FTSScheduleFail" )
+      return bannedTargets
+
+    if bannedTargets['Value']:
+      return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets['Value'] ) )
+
+    # Can continue now
+    self.log.verbose( "No targets banned for writing" )
 
     toSchedule = {}
 
     for opFile in self.getWaitingFilesList():
-      gMonitor.addMark( "FTSScheduleAtt", 1 )
+      gMonitor.addMark( "FTSScheduleAtt" )
       # # check replicas
       replicas = self._filterReplicas( opFile )
       if not replicas["OK"]:
@@ -236,7 +240,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
       if not replicas["Valid"] and replicas["Banned"]:
         self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-        gMonitor.addMark( "FTSScheduleFail", 1 )
+        gMonitor.addMark( "FTSScheduleFail" )
         continue
 
       validReplicas = replicas["Valid"]
@@ -244,7 +248,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
       if not validReplicas and bannedReplicas:
         self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-        gMonitor.addMark( "FTSScheduleFail", 1 )
+        gMonitor.addMark( "FTSScheduleFail" )
         continue
 
       if validReplicas:
@@ -318,45 +322,21 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         self.log.info( self.operation.Error )
         return S_OK( self.operation.Error )
 
-    # # list of targetSEs
-    targetSEs = self.operation.targetSEList
-    # # check targetSEs for removal
-    bannedTargets = []
-    for targetSE in targetSEs:
-      writeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
-      if not writeStatus["OK"]:
-        self.log.info( writeStatus["Message"] )
-        for opFile in self.operation:
-          opFile.Error = "unknown targetSE: %s" % targetSE
-          opFile.Status = "Failed"
-        self.operation.Error = "unknown targetSE: %s" % targetSE
-        return S_ERROR( self.operation.Error )
+    # # check targetSEs for write
+    bannedTargets = self.checkSEsRSS()
+    if not bannedTargets['OK']:
+      gMonitor.addMark( "ReplicateAndRegisterAtt", len( self.operation ) )
+      gMonitor.addMark( "ReplicateFail", len( self.operation ) )
+      return bannedTargets
 
-      if not writeStatus["Value"]:
-        self.log.info( "TargetSE %s in banned for writing right now" % targetSE )
-        bannedTargets.append( targetSE )
-        self.operation.Error = "banned targetSE: %s;" % targetSE
-    # # some targets are banned? return
-    if bannedTargets:
-      return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets ) )
+    if bannedTargets['Value']:
+      return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets['Value'] ) )
+
+    # Can continue now
+    self.log.verbose( "No targets banned for writing" )
 
     # # loop over targetSE
-    for targetSE in targetSEs:
-
-      # # check target SE
-      targetWrite = self.rssSEStatus( targetSE, "WriteAccess" )
-      if not targetWrite["OK"]:
-        self.log.info( targetWrite["Message"] )
-        for opFile in self.operation:
-          opFile.Error = targetWrite["Message"]
-          opFile.Status = "Failed"
-        self.operation.Error = targetWrite["Message"]
-        return targetWrite
-      if not targetWrite["Value"]:
-        reason = "TargetSE %s is banned for writing" % targetSE
-        self.log.info( reason )
-        self.operation.Error = reason
-        continue
+    for targetSE in self.operation.targetSEList:
 
       # # get waiting files
       waitingFiles = self.getWaitingFilesList()
@@ -407,7 +387,8 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
                 opFile.Error = "Failed to register"
                 opFile.Status = "Failed"
                 # # add register replica operation
-                self.addRegisterReplica( opFile, targetSE )
+                registerOperation = self.getRegisterOperation( opFile, targetSE )
+                self.request.insertAfter( registerOperation, self.operation )
 
             else:
 
