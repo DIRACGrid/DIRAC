@@ -216,10 +216,13 @@ class RequestTasks( TaskBase ):
     """ for the OLD RMS
     """
     # FIXME: this should disappear
-    res = RequestClient().getRequestInfo( requestName )
-    if res['OK']:
-      return res['Value'][0]
-    else:
+    try:
+      res = RequestClient().getRequestInfo( requestName )
+      if res['OK']:
+        return res['Value'][0]
+      else:
+        return 0
+    except RuntimeError:
       return 0
 
   def __getRequestID( self, requestName ):
@@ -257,10 +260,13 @@ class RequestTasks( TaskBase ):
     """ for the OLD RMS
     """
     # FIXME: this should disappear
-    res = RequestClient().getRequestStatus( requestName )
-    if res['OK']:
-      return res['Value']['RequestStatus']
-    else:
+    try:
+      res = RequestClient().getRequestStatus( requestName )
+      if res['OK']:
+        return res['Value']['RequestStatus']
+      else:
+        return ''
+    except RuntimeError:
       return ''
 
   def __getRequestStatus( self, requestName ):
@@ -322,10 +328,13 @@ class RequestTasks( TaskBase ):
     """ for the OLD RMS
     """
     # FIXME: this should disappear
-    res = RequestClient().getRequestFileStatus( requestName, lfns )
-    if res['OK']:
-      return res['Value']
-    else:
+    try:
+      res = RequestClient().getRequestFileStatus( requestName, lfns )
+      if res['OK']:
+        return res['Value']
+      else:
+        return {}
+    except RuntimeError:
       return {}
 
   def __getRequestFileStatus( self, requestName, lfns ):

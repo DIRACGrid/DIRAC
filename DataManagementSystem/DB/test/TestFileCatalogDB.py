@@ -3,16 +3,18 @@ Script.parseCommandLine()
 
 import unittest,types,time
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+#from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
-testUser  = 'testuser'
-testGroup = 'testgroup'
-testFile  = '/testdir/testfile'
+testUser  = 'atsareg'
+testGroup = 'dirac_user'
+testDir = '/vo.formation.idgrilles.fr/user/a/atsareg/testdir'
+testFile  = '/vo.formation.idgrilles.fr/user/a/atsareg/testdir/testfile'
 
 class FileCatalogDBTestCase(unittest.TestCase):
   """ Base class for the FileCatalogDB test cases
   """
   def setUp(self):
+    print "Creating FileCatalog Client"
     self.fc = FileCatalogClient()
 
 class UserGroupCase(FileCatalogDBTestCase):
@@ -39,13 +41,21 @@ class DirectoryCase(FileCatalogDBTestCase):
 
   def test_directoryOperations(self):
 
-    result = self.fc.createDirectory( '/' )
+    result = self.fc.createDirectory( testDir )
+    if not result['OK']:
+      print result
     self.assert_( result['OK'] )
-    result = self.fc.changePathOwner( { '/': testUser } )
+    result = self.fc.changePathOwner( { testDir: {"Owner":testUser} }, False )
+    if not result['OK']:
+      print result
     self.assert_( result['OK'] )
-    result = self.fc.changePathGroup(  {'/': testGroup } )
+    result = self.fc.changePathGroup(  { testDir: {"Group":testGroup} }, False )
+    if not result['OK']:
+      print result
     self.assert_( result['OK'] )
     result = self.fc.isDirectory('/')
+    if not result['OK']:
+      print result
     self.assert_( result['OK'])
 
 class FileCase(FileCatalogDBTestCase):
@@ -56,13 +66,13 @@ class FileCase(FileCatalogDBTestCase):
     """ 
     from DIRAC import gConfig
     testSE = 'testSE'
-    rssClient = ResourceStatusClient()
-    result = rssClient.getStorageElementsList( 'Read' )
+    #rssClient = ResourceStatusClient()
+    #result = rssClient.getStorageElementsList( 'Read' )
     #result = gConfig.getSections( '/Resources/StorageElements' )
     #if result['OK'] and result['Value']:
     #  testSE = result['Value'][0]
-    if result['Ok']:
-      testSE = result['Value'][ 0 ] 
+    #if result['Ok']:
+    #  testSE = result['Value'][ 0 ] 
       
     result = self.fc.addFile( { testFile: { 'PFN': 'testfile', 
                                          'SE': testSE , 

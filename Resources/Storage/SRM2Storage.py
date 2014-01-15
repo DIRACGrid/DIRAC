@@ -82,7 +82,7 @@ class SRM2Storage( StorageBase ):
     self.gfalRetry = gConfig.getValue( "/Resources/StorageElements/GFAL_Retry", 3 )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '' )
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
     # enum gfal_cksm_type, all in lcg_util
     # 	GFAL_CKSM_NONE = 0,
     # 	GFAL_CKSM_CRC32,
@@ -99,7 +99,7 @@ class SRM2Storage( StorageBase ):
       else:
         gLogger.warn( "SRM2Storage: unknown checksum type %s, checksum check disabled" )
         # # GFAL_CKSM_NONE
-        self.checksumType = ''
+        self.checksumType = 0
     else:
       # # invert and get name
       self.log.debug( "SRM2Storage: will use %s checksum" % dict( zip( self.checksumTypes.values(),
@@ -309,7 +309,7 @@ class SRM2Storage( StorageBase ):
         successful[url] = True
       else:
         self.log.error( "createDirectory: Failed to create directory on storage.",
-                       "%s: %s" % ( url, res['Message'] ) )
+                       "\n%s: \n%s" % ( url, res['Message'] ) )
         failed[url] = res['Message']
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 

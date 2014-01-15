@@ -5,7 +5,7 @@ __RCSID__ = "$Id: $"
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
-                                     ' %s [option|cfgfile] requestName' % Script.scriptName,
+                                     ' %s [option|cfgfile] requestName (or requestID)' % Script.scriptName,
                                      'Arguments:',
                                      ' requestName: a request name' ] ) )
 # # execution
@@ -27,6 +27,13 @@ if __name__ == "__main__":
   if requestName:
     from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
     reqClient = ReqClient()
+
+    try:
+      requestName = reqClient.getRequestName( int( requestName ) )
+      if requestName['OK']:
+        requestName = requestName['Value']
+    except ValueError:
+      pass
   
     request = reqClient.peekRequest( requestName )
     if not request["OK"]:

@@ -546,7 +546,10 @@ class DirectoryMetadata:
     dirList = result['Value']
     table = self.db.dtree.getTreeTable()
     dirString = ','.join( [ str( x ) for x in dirList ] )
-    req = 'SELECT DirID FROM %s WHERE DirID NOT IN ( %s )' % ( table, dirString )
+    if dirList:
+      req = 'SELECT DirID FROM %s WHERE DirID NOT IN ( %s )' % ( table, dirString )
+    else:
+      req = 'SELECT DirID FROM %s' % table
     result = self.db._query( req )
     if not result['OK']:
       return result
@@ -596,7 +599,10 @@ class DirectoryMetadata:
       return result
     selectString = result['Value']
      
-    req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE %s AND M.DirID IN (%s)" % ( meta, selectString, pathString )
+    if selectString:
+      req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE %s AND M.DirID IN (%s)" % ( meta, selectString, pathString )
+    else:
+      req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE M.DirID IN (%s)" % ( meta, pathString )
     result = self.db._query( req )
     if not result['OK']:
       return result

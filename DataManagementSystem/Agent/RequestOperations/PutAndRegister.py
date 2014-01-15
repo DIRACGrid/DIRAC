@@ -25,8 +25,9 @@ __RCSID__ = "$Id $"
 
 # # imports
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
-from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase                   import OperationHandlerBase
+from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
+from DIRAC.DataManagementSystem.Client.ReplicaManager                             import ReplicaManager
 
 ########################################################################
 class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
@@ -44,7 +45,7 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     :param str csPath: CS path for this handler
     """
     # # base classes ctor
-    super( PutAndRegister, self ).__init__( self, operation, csPath )
+    super( PutAndRegister, self ).__init__( operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "PutAtt", "File put attempts",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
@@ -56,6 +57,8 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RegisterFail", "Failed file registrations",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
+
+    self.rm = ReplicaManager()
 
   def __call__( self ):
     """ PutAndRegister operation processing """
@@ -77,20 +80,14 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
       return S_ERROR( "TargetSE should contain only one target, got %s" % targetSEs )
 
     targetSE = targetSEs[0]
-    targetWrite = self.rssSEStatus( targetSE, "WriteAccess" )
-    if not targetWrite["OK"]:
-      self.log.error( targetWrite["Message"] )
-      for opFile in self.operation:
-        opFile.Status = "Failed"
-        opFile.Error = "Wrong parameters: %s" % targetWrite["Message"]
-        gMonitor.addMark( "PutAtt", 1 )
-        gMonitor.addMark( "PutFail", 1 )
-      self.operation.Error = targetWrite["Message"]
-      return S_OK()
+    bannedTargets = self.checkSEsRSS( targetSE )
+    if not bannedTargets['OK']:
+      gMonitor.addMark( "PutAtt" )
+      gMonitor.addMark( "PutFail" )
+      return bannedTargets
 
-    if not targetWrite["Value"]:
-      self.operation.Error = "TargetSE %s is banned for writing"
-      return S_OK( self.operation.Error )
+    if bannedTargets['Value']:
+      return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets['Value'] ) )
 
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
@@ -160,7 +157,8 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
           opFile.Status = "Failed"
 
           self.log.info( opFile.Error )
-          self.addRegisterReplica( opFile, targetSE )
+          registerOperation = self.getRegisterOperation( opFile, targetSE )
+          self.request.insertAfter( registerOperation, self.operation )
           continue
 
         gMonitor.addMark( "PutOK", 1 )
