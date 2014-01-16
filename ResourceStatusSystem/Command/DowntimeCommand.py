@@ -125,7 +125,7 @@ class DowntimeCommand( Command ):
       element, elementName, hours = params[ 'Value' ]  
       elementNames = [ elementName ]     
 
-    startDate = datetime.utcnow() - timedelta( days = 2 )
+    startDate = datetime.utcnow() - timedelta( days = 14 )
           
     try:
       results = self.gClient.getStatus( element, elementName, startDate, 120 )
