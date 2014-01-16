@@ -34,7 +34,7 @@ def makeGuid( fileName = None ):
   if fileName:
     try:
       fd = open( fileName, 'r' )
-      data = fd.read( 1024 * 1024 )
+      data = fd.read( 10 * 1024 * 1024 )
       myMd5.update( data )
       fd.close()
     except:
