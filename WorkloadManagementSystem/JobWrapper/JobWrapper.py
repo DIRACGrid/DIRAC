@@ -1085,17 +1085,21 @@ class JobWrapper:
     """Perform any final actions to clean up after job execution.
     """
     self.log.info( 'Running JobWrapper finalization' )
+    # find if there are pending failover requests
     requests = self.__getRequestFiles()
-    if self.failedFlag and requests:
+    outputDataRequest = self.failoverTransfer.getRequest()
+    requestFlag = len( requests ) > 0 or not outputDataRequest.isEmpty()
+    
+    if self.failedFlag and requestFlag:
       self.log.info( 'Application finished with errors and there are pending requests for this job.' )
       self.__report( 'Failed', 'Pending Requests' )
-    elif not self.failedFlag and requests:
+    elif not self.failedFlag and requestFlag:
       self.log.info( 'Application finished successfully with pending requests for this job.' )
       self.__report( 'Completed', 'Pending Requests' )
-    elif self.failedFlag and not requests:
+    elif self.failedFlag and not requestFlag:
       self.log.info( 'Application finished with errors with no pending requests.' )
       self.__report( 'Failed' )
-    elif not self.failedFlag and not requests:
+    elif not self.failedFlag and not requestFlag:
       self.log.info( 'Application finished successfully with no pending requests for this job.' )
       self.__report( 'Done', 'Execution Complete' )
 
@@ -1227,7 +1231,7 @@ class JobWrapper:
     # The request is ready, send it now
     isValid = gRequestValidator.validate( request )
     if not isValid["OK"]:
-      self.log.error( "failover request is not valid: %s" % isValid["Message"] )
+      self.log.error( "Failover request is not valid", isValid["Message"] )
     else:
       # We try several times to put the request before failing the job: it's very important that requests go through,
       # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
@@ -1241,11 +1245,12 @@ class JobWrapper:
           self.jobReport.setJobParameter( 'PendingRequest', digest )
           break
         else:
-          self.__report( 'Failed', 'Failover Request Failed' )
-          self.log.error( 'Failed to set failover request %d: %s. Sleeping a bit before re-trying' % ( counter,
-                                                                                                   result['Message'] ) )
+          self.log.error( 'Failed to set failover request', '%d: %s. Re-trying...' % ( counter,
+                                                                                       result['Message'] ) )
           del requestClient
           time.sleep( counter ** 3 )
+      if not result['OK']:
+        self.__report( 'Failed', 'Failover Request Failed' )    
       return result
 
     return S_OK()
