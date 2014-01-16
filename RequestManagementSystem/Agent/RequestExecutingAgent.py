@@ -240,7 +240,7 @@ class RequestExecutingAgent( AgentModule ):
         self.log.error( "execute: %s" % getRequest["Message"] )
         break
       if not getRequest["Value"]:
-        self.log.info( "execute: not more 'Waiting' requests to process" )
+        self.log.info( "execute: no more 'Waiting' requests to process" )
         break
       # # OK, we've got you
       request = getRequest["Value"]

@@ -17,13 +17,13 @@ from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.Resources.Computing.ComputingElementFactory      import ComputingElementFactory
-from DIRAC                                                  import S_OK, S_ERROR, gConfig
+from DIRAC                                                  import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
 from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
 from DIRAC.Core.Security                                    import Properties
 from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob, AccountingJob
-
+from DIRAC.Core.Utilities.CFG                               import CFG
 
 import os, sys, re, time
 
@@ -108,6 +108,16 @@ class JobAgent( AgentModule ):
         result = self.computingElement.setCPUTimeLeft( cpuTimeLeft = self.timeLeft )
         if not result['OK']:
           return self.__finish( result['Message'] )
+        
+        # Update local configuration to be used by submitted job wrappers
+        localCfg = CFG()
+        localConfigFile = os.path.join( rootPath, "etc", "dirac.cfg" )
+        localCfg.loadFromFile( localConfigFile )
+        if not localCfg.isSection('/LocalSite'):
+          localCfg.createNewSection('/LocalSite')
+        localCfg.setOption( '/LocalSite/MaxCPUTime', self.timeLeft )
+        localCfg.writeToFile( localConfigFile )
+        
       else:
         return self.__finish( 'Filling Mode is Disabled' )
 
