@@ -115,7 +115,7 @@ class JobAgent( AgentModule ):
         localCfg.loadFromFile( localConfigFile )
         if not localCfg.isSection('/LocalSite'):
           localCfg.createNewSection('/LocalSite')
-        localCfg.setOption( '/LocalSite/MaxCPUTime', self.timeLeft )
+        localCfg.setOption( '/LocalSite/CPUTimeLeft', self.timeLeft )
         localCfg.writeToFile( localConfigFile )
         
       else:
