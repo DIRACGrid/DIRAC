@@ -962,7 +962,6 @@ class TransformationDB( DB ):
       status = attrDict['ExternalStatus']
       statusDict[status] = count
       total += count
-    created = statusDict.get( 'Created', 0 )
     statusDict['TotalCreated'] = total
     return S_OK( statusDict )
 
