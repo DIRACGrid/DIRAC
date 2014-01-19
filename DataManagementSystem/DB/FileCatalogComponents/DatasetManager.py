@@ -410,7 +410,7 @@ class DatasetManager:
 
     req = "UPDATE FC_MetaDatasets SET "
     for field in changeDict:
-      req += "%s=%s, " % ( field, str( changeDict[field] ) )
+      req += "%s='%s', " % ( field, str( changeDict[field] ) )
     req += "ModificationDate=UTC_TIMESTAMP() "
     req += "WHERE DatasetName='%s'" % datasetName
     result = self.db._update( req )
