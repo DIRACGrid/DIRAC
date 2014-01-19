@@ -458,7 +458,7 @@ class TransformationDB( DB ):
   def getTransformationWithStatus( self, status, connection = False ):
     ''' Gets a list of the transformations with the supplied status '''
     req = "SELECT TransformationID FROM Transformations WHERE Status = '%s';" % status
-    res = self._query( req, conn = connection)
+    res = self._query( req, conn = connection )
     if not res['OK']:
       return res
     transIDs = []
@@ -1140,9 +1140,7 @@ class TransformationDB( DB ):
       status = attrDict['ExternalStatus']
       statusDict[status] = count
       total += count
-    created = statusDict.get( 'Created', 0 )
     statusDict['TotalCreated'] = total
-    statusDict['Submitted'] = ( total - created )
     return S_OK( statusDict )
 
   def __setTaskParameterValue( self, transID, taskID, paramName, paramValue, connection = False ):
@@ -1762,18 +1760,18 @@ class TransformationDB( DB ):
       gLogger.error( "TransformationDB.addDirectory: Failed to get files. %s" % res['Message'] )
       return res
     if not path in res['Value']['Successful']:
-      gLogger.error("TransformationDB.addDirectory: Failed to get files.")
+      gLogger.error( "TransformationDB.addDirectory: Failed to get files." )
       return res
     gLogger.info( "TransformationDB.addDirectory: Obtained %s files in %s seconds." % ( path, time.time() - start ) )
     successful = []
     failed = []
     for lfn in res['Value']['Successful'][path]["Files"].keys():
-      res = self.addFile( {lfn:{}}, force = force )    
+      res = self.addFile( {lfn:{}}, force = force )
       if not res['OK']:
-        failed.append(lfn)
+        failed.append( lfn )
         continue
       if not lfn in res['Value']['Successful']:
-        failed.append(lfn)
+        failed.append( lfn )
       else:
-        successful.append(lfn)  
+        successful.append( lfn )
     return {"OK":True, "Value": len( res['Value']['Successful'] ), "Successful":successful, "Failed": failed }
