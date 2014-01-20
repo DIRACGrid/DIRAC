@@ -335,7 +335,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
       if not result['OK']:
         return result
       if not result['Value']:
-        return S_ERROR('Directory does not exists: %s' % path )
+        return S_ERROR('Directory does not exist: %s' % path )
       dirID = result['Value']
     else:
       dirID = path
