@@ -49,7 +49,6 @@ class CliParams:
     self.debug = False
     self.local = False
     self.dryRun = False
-    self.testVOMSOK = False
     self.site = ""
     self.ceName = ""
     self.queueName = ""
@@ -544,10 +543,6 @@ if not cliParams.platform:
   platFD.close()
   cliParams.platform = PlatformModule.getPlatformString()
 
-if cliParams.testVOMSOK:
-  # Check voms-proxy-info before touching the original PATH and LD_LIBRARY_PATH
-  os.system( 'which voms-proxy-info && voms-proxy-info -all' )
-
 diracLibPath = os.path.join( rootPath, cliParams.platform, 'lib' )
 diracBinPath = os.path.join( rootPath, cliParams.platform, 'bin' )
 for envVarName in ( 'LD_LIBRARY_PATH', 'PYTHONPATH' ):
@@ -562,17 +557,6 @@ os.environ['PATH'] = '%s:%s:%s' % ( diracBinPath, diracScriptsPath, os.getenv( '
 ###
 # End of initialisation
 ###
-
-#
-# Check proxy
-#
-
-ret = os.system( 'dirac-proxy-info' )
-if cliParams.testVOMSOK:
-  ret = os.system( 'dirac-proxy-info | grep -q fqan' )
-  if ret != 0:
-    os.system( 'dirac-proxy-info 2>&1 | mail -s "dirac-pilot: missing voms certs at %s" dirac.alarms@gmail.com' % cliParams.site )
-    sys.exit( -1 )
 
 #
 # Set the local architecture
