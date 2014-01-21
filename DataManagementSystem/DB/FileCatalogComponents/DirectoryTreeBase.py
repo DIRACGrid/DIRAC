@@ -204,7 +204,18 @@ class DirectoryTreeBase:
     """Remove an empty directory from the catalog """
     successful = {}
     failed = {}
-    for dir in dirs:
+    
+    # Check if requested directories exist in the catalog
+    result = self.findDirs( dirs )
+    if not result['OK']:
+      return result
+    dirDict = result['Value']
+    for d in dirs:
+      if not d in dirDict:
+        failed[d] = "Directory does not exist" 
+    dirList = dirDict.keys()
+
+    for dir in dirList:
       result = self.isEmpty( dir )
       if not result['OK']:
         return result
