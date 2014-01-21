@@ -118,8 +118,7 @@ CREATE TABLE TransformationFiles(
     INDEX (Status),
     INDEX (FileID),
     FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID),
-    FOREIGN KEY (FileID) REFERENCES DataFiles(FileID),
-    FOREIGN KEY (TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
+    FOREIGN KEY (FileID) REFERENCES DataFiles(FileID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- -------------------------------------------------------------------------------

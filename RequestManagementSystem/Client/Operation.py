@@ -104,7 +104,7 @@ class Operation( Record ):
                "Type" : "VARCHAR(64) NOT NULL",
                "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled') "\
                  "DEFAULT 'Queued'",
-               "Arguments" : "BLOB",
+               "Arguments" : "MEDIUMBLOB",
                "Order" : "INTEGER NOT NULL",
                "SourceSE" : "VARCHAR(255)",
                "TargetSE" : "VARCHAR(255)",
