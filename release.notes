@@ -108,6 +108,17 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
+[v6r10p1]
+
+*RMS:
+FIX: ReqDB.Operations - Arguments field changed type from BLOB to MEDIUMBLOB
+
+*DMS:
+FIX: FileCatalog - check for non-exiting directories in removeDirectory()
+
+*TMS:
+FIX: TransformationDB - removed constraint that was making impossible to derive a production
+
 [v6r10]
 
 *Core

@@ -318,8 +318,8 @@ class TransformationClient( Client, FileCatalogueBase ):
             newStatus = 'MaxReset'
         elif dictOfProposedLFNsStatus[lfn].lower() == 'unused':
           errorCount = tsFilesAsDict[lfn][1]
-          # every 10 retries
-          if ( errorCount % self.maxResetCounter ) == 0:
+          # every 10 retries (by default)
+          if errorCount and ( ( errorCount % self.maxResetCounter ) == 0 ):
             if not force:
               newStatus = 'MaxReset'
 
