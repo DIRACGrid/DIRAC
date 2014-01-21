@@ -132,13 +132,32 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [transTypes, DictType]
-  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus ):
+  types_setFileStatusForTransformation = [transTypes, [StringType, DictType]]
+  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus, lfns, force ):
     """ Sets the file status for the transformation.
 
         The dictOfNewFilesStatus is a dictionary with the form:
         {12345: 'StatusA', 6789: 'StatusB',  ... }
     """
+
+    # create dictionary in case newLFNsStatus is a string - for backward compatibility
+    if type( dictOfNewFilesStatus ) == type( '' ):
+      dictOfNewFilesStatus = dict( [( lfn, dictOfNewFilesStatus ) for lfn in lfns ] )
+      res = database.getTransformationFiles( {'TransformationID':transName, 'LFN': dictOfNewFilesStatus.keys()} )
+      if not res['OK']:
+        return res
+      if res['Value']:
+        tsFiles = res['Value']
+      # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
+      tsFilesAsDict = {}
+      for tsFile in tsFiles:
+        tsFilesAsDict[tsFile['LFN']] = tsFile['FileID']
+
+      newStatusForFileIDs = dict( [( tsFilesAsDict[lfn], dictOfNewFilesStatus[lfn] ) for lfn in dictOfNewFilesStatus.keys()] )
+
+    else:
+      newStatusForFileIDs = dictOfNewFilesStatus
+
 
     res = database._getConnectionTransID( False, transName )
     if not res['OK']:
@@ -146,7 +165,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
 
-    res = database.setFileStatusForTransformation( transID, dictOfNewFilesStatus, connection = connection )
+    res = database.setFileStatusForTransformation( transID, newStatusForFileIDs, connection = connection )
     return self._parseRes( res )
 
   types_getTransformationStats = [transTypes]
