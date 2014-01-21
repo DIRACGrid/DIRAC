@@ -48,8 +48,6 @@ class FTSJob( Record ):
 
   class describing one FTS job
   """
-  # # FileCatalog
-  __fileCatalog = None
 
   # # initial states
   INITSTATES = ( "Submitted", "Ready", "Staging" )
@@ -90,6 +88,8 @@ class FTSJob( Record ):
     self._regTotal = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
 
+    self.fc = FileCatalog()
+
     self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
 
     fromDict = fromDict if fromDict else {}
@@ -102,12 +102,7 @@ class FTSJob( Record ):
       if value:
         setattr( self, key, value )
 
-  @classmethod
-  def fileCatalog( cls ):
-    """ get FileCatalog """
-    if not cls.__fileCatalog :
-      cls.__fileCatalog = FileCatalog()
-    return cls.__fileCatalog
+
 
   @staticmethod
   def tableDesc():
@@ -554,7 +549,7 @@ class FTSJob( Record ):
 
     if toRegisterDict:
       self.regTotal += len( toRegisterDict )
-      register = self.fileCatalog().addReplica( toRegisterDict )
+      register = self.fc.addReplica( toRegisterDict )
       self.regTime += time.time() - startTime
       if not register["OK"]:
         # FIXME: shouldn't be a print!

@@ -100,8 +100,7 @@ class FTSAgent( AgentModule ):
   MAX_ATTEMPT = 256
   # # stage flag
   STAGE_FILES = False
-  # # data manager
-  __dm = None
+
   # # placeholder for FTS client
   __ftsClient = None
   # # placeholder for request client
@@ -145,12 +144,7 @@ class FTSAgent( AgentModule ):
       cls.__ftsClient = FTSClient()
     return cls.__ftsClient
 
-  @classmethod
-  def dataManager( cls ):
-    """ data manager getter """
-    if not cls.__dm:
-      cls.__dm = DataManager()
-    return cls.__dm
+
 
   @classmethod
   def rssClient( cls ):
@@ -274,6 +268,10 @@ class FTSAgent( AgentModule ):
 
   def initialize( self ):
     """ agent's initialization """
+
+
+      # # data manager
+    self.dm = DataManager()
 
     log = self.log.getSubLogger( "initialize" )
 
@@ -978,7 +976,7 @@ class FTSAgent( AgentModule ):
 
     ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
 
-    replicas = self.dataManager().getActiveReplicas( opFile.LFN )
+    replicas = self.dm.getActiveReplicas( opFile.LFN )
     if not replicas["OK"]:
       log.error( replicas["Message"] )
     reNotExists = re.compile( "not such file or directory" )

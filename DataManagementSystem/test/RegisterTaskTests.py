@@ -132,8 +132,8 @@ class RegisterTaskTests(unittest.TestCase):
     self.registerTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
     self.registerTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
-    self.registerTask.dataManager().registerFile = Mock()
-    self.registerTask.dataManager().registerFile.return_value = { "OK" : True,
+    self.registerTask.dm.registerFile = Mock()
+    self.registerTask.dm.registerFile.return_value = { "OK" : True,
                                                                     "Value" : 
                                                                     { "Failed" : {},
                                                                       "Succesfull" : { "/lhcb/user/c/cblanks/11889/11889410/LDSB.rsQrRL" : True } } } 

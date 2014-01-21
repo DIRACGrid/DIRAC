@@ -64,7 +64,7 @@ class RemovalTask( RequestTask ):
     :param self: self reference
     :param str lfn: LFN
     """
-    dirMeta = Utils.executeSingleFileOrDirWrapper( self.fileCatalog().getDirectoryMetadata( lfn ) )
+    dirMeta = Utils.executeSingleFileOrDirWrapper( self.fc.getDirectoryMetadata( lfn ) )
     if not dirMeta["OK"]:
       return dirMeta
     dirMeta = dirMeta["Value"]
@@ -152,7 +152,7 @@ class RemovalTask( RequestTask ):
       self.debug( "removeFile: processing file %s" % lfn )
       try:
         # # try to remove using proxy already defined in os.environ
-        removal = self.dataManager().removeFile( lfn )
+        removal = self.dm.removeFile( lfn )
         # # file is not existing?
         if not removal["OK"] and "no such file or directory" in str( removal["Message"] ).lower():
           removalStatus[lfn] = removal["Message"]
@@ -171,7 +171,7 @@ class RemovalTask( RequestTask ):
             removal = getProxyForLFN
           else:
             # # you're a DataManager, retry with the new one proxy
-            removal = self.dataManager().removeFile( lfn )
+            removal = self.dm.removeFile( lfn )
       finally:
         # # make sure DataManager proxy is set back in place
         if not self.requestOwnerDN and self.dataManagerProxy():
@@ -272,7 +272,7 @@ class RemovalTask( RequestTask ):
       try:
         for targetSE in targetSEs:
           # # try to remove using current proxy
-          removeReplica = self.dataManager().removeReplica( targetSE, lfn )
+          removeReplica = self.dm.removeReplica( targetSE, lfn )
           # # file is not existing?
           if not removeReplica["OK"] and "no such file or directory" in str( removeReplica["Message"] ).lower():
             removalStatus[lfn][targetSE] = removeReplica["Message"]
@@ -293,7 +293,7 @@ class RemovalTask( RequestTask ):
               removeReplica = getProxyForLFN
             else:
               # # got correct proxy? try to remove again
-              removeReplica = self.dataManager().removeReplica( targetSE, lfn )
+              removeReplica = self.dm.removeReplica( targetSE, lfn )
 
           if not removeReplica["OK"]:
             removalStatus[lfn][targetSE] = removeReplica["Message"]

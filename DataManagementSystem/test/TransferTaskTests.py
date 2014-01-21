@@ -129,8 +129,8 @@ class TransferTaskTests( unittest.TestCase ):
 
 
     tTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
-    tTask.dataManager().put = Mock()
-    tTask.dataManager().putAndRegister.return_value = { "OK": True,
+    tTask.dm.put = Mock()
+    tTask.dm.putAndRegister.return_value = { "OK": True,
                                                             "Value": { "Failed": {}, 
                                                                        "Successful": { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : 
                                                                                        { "put": 1, "register": 1 } } } }
@@ -161,8 +161,8 @@ class TransferTaskTests( unittest.TestCase ):
     tTask.requestClient().finalizeRequest = Mock()
     tTask.requestClient().finalizeRequest.return_value = SOK
     tTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
-    tTask.dataManager().replicateAndRegister = Mock()
-    tTask.dataManager().replicateAndRegister.return_value = { "OK": True,
+    tTask.dm.replicateAndRegister = Mock()
+    tTask.dm.replicateAndRegister.return_value = { "OK": True,
                                                                  "Value": { 
         "Failed": {}, 
         "Successful": { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : { "replicate": 1, "register": 1 } } } }

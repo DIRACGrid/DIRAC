@@ -24,6 +24,10 @@ __RCSID__ = "$Id$"
 # @date 2011/10/12 12:09:18
 # @brief Definition of RequestTask class.
 
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+
+
 class RequestTask( object ):
   """
   .. class:: RequestTask
@@ -34,17 +38,12 @@ class RequestTask( object ):
   The most important and common global DIRAC objects are created in RequestTask constructor.
   This includes gLogger, gConfig, gProxyManager, S_OK and S_ERROR. The constructor also
   imports a set of common modules: os, sys, re, time and everything from types module.
-
-  All other DIRAC tools and clients (i.e. RequestManager) are private in RequestTask class and will
-  be imported and instantiated on demand during first usage. They are accessible using proxied public methods, i.e.
-  if you are going to use DataManager just call::
-
-    self.dataManager().someMethod()
+  
+  All other DIRAC tools and clients (i.e. DataManager) are instance attributes of RequestTask class
 
   All currently proxied tools are::
 
   DataLoggingClient -- self.dataLoggingClient()
-  DataManager    -- self.dataManager()
   RequestClient     -- self.requestClient()
   StorageFactory    -- self.storageFactory()
 
@@ -78,7 +77,7 @@ class RequestTask( object ):
   :RequestTask.__monitor: dict which at the end of processing is returned from :RequestTask.__call__:.
   The values are then processed and pushed to the gMonitor instance in the default callback function.
   """
- 
+
   ## reference to DataLoggingClient
   __dataLoggingClient = None
   # # reference to RequestClient
@@ -188,6 +187,10 @@ class RequestTask( object ):
 
     self.fc = FileCatalog()
     self.dm = DataManager()
+
+    self.dm = DataManager()
+    self.fc = FileCatalog()
+
 
   def dataManagerProxy( self ):
     """ get dataManagerProxy file

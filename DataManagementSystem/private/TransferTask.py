@@ -30,6 +30,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
+
 ########################################################################
 class TransferTask( RequestTask ):
   """
@@ -237,7 +238,7 @@ class TransferTask( RequestTask ):
 
       for targetSE in targetSEs:
         self.addMark( "Replicate and register", 1 )
-        res = self.dataManager().replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
+        res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
         if res["OK"]:
           if lfn in res["Value"]["Successful"]:
             if "replicate" in res["Value"]["Successful"][lfn]:

@@ -121,8 +121,7 @@ class TransferAgent( RequestAgentBase ):
      - acceptable failure rate
       AcceptableFailureRate = 75
   """
-  # # placeholder for DataManager instance
-  __dataManager = None
+
   # # placeholder for rss client
   __rssClient = None
   # # placeholder for StorageFactory instance
@@ -232,14 +231,7 @@ class TransferAgent( RequestAgentBase ):
   ###################################################################################
   # facades for various DIRAC tools
   ###################################################################################
-  def dataManager( self ):
-    """ DataManager instance getter
 
-    :param self: self reference
-    """
-    if not self.__dataManager:
-      self.__dataManager = DataManager()
-    return self.__dataManager
 
   def rssClient( self ):
     """ rss client getter """
@@ -516,7 +508,7 @@ class TransferAgent( RequestAgentBase ):
         waitingFiles.setdefault( fileLFN, subRequestFile["FileID"] )
 
     if waitingFiles:
-      replicas = self.dataManager().getActiveReplicas( waitingFiles.keys() )
+      replicas = self.dm.getActiveReplicas( waitingFiles.keys() )
       if not replicas["OK"]:
         self.log.error( "collectFiles: failed to get replica information", replicas["Message"] )
         return replicas
@@ -571,6 +563,27 @@ class TransferAgent( RequestAgentBase ):
     waitingFiles = dict( [ ( k, v ) for k, v in waitingFiles.items() if k not in toRemove ] )
 
     return S_OK( ( waitingFiles, replicas, metadata ) )
+
+
+
+
+
+
+
+
+  def initialize( self ):
+    """ agent's initialization """
+
+    # # data manager
+    self.dm = DataManager()
+
+    return S_OK()
+
+
+
+
+
+
 
   ###################################################################################
   # agent execution
@@ -1099,7 +1112,7 @@ class TransferAgent( RequestAgentBase ):
         for pfn, se, channelID in toRegister:
           self.log.info( "registerFiles: failover registration of %s to %s" % ( lfn, se ) )
           # # register replica now
-          registerReplica = self.dataManager().registerReplica( ( lfn, pfn, se ) )
+          registerReplica = self.dm.registerReplica( ( lfn, pfn, se ) )
           if ( ( not registerReplica["OK"] )
                or ( not registerReplica["Value"] )
                or ( lfn in registerReplica["Value"]["Failed"] ) ):

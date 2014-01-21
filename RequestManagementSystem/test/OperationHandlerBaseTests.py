@@ -65,7 +65,7 @@ class OperationHandlerBaseTests( unittest.TestCase ):
     # # __call__ not implemented
     self.assertRaises( NotImplementedError, self.baseOp )
     # # replica manager
-    self.assertEqual( isinstance( self.baseOp.dataManager(), DataManager ), True, "DataManager is missing" )
+    self.assertEqual( isinstance( self.baseOp.dm, DataManager ), True, "DataManager is missing" )
     # # DataLoggingClient
     self.assertEqual( isinstance( self.baseOp.dataLoggingClient(), DataLoggingClient ), True, "DataLoggingClient is missing" )
 

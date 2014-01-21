@@ -95,7 +95,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
                           if opFile.Status in ( "Waiting", "Scheduled" ) ] )
     targetSESet = set( self.operation.targetSEList )
 
-    replicas = self.fileCatalog().getReplicas( waitingFiles )
+    replicas = self.fc.getReplicas( waitingFiles )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
       return replicas
@@ -159,7 +159,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
     ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
 
-    replicas = self.dataManager().getActiveReplicas( opFile.LFN )
+    replicas = self.dm.getActiveReplicas( opFile.LFN )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
     reNotExists = re.compile( "not such file or directory" )
@@ -362,7 +362,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
       for targetSE in self.operation.targetSEList:
 
         # # call DataManager
-        res = self.dataManager().replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
+        res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
 
         if res["OK"]:
 

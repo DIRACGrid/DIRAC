@@ -254,8 +254,8 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
     removalTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
-    removalTask.dataManager().removeReplica = Mock()
-    removalTask.dataManager().removeReplica.return_value = { "OK" : True,
+    removalTask.dm.removeReplica = Mock()
+    removalTask.dm.removeReplica.return_value = { "OK" : True,
                                                                  "Value" : { "Failed" : {},
                                                                    "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }
     
@@ -288,7 +288,7 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
     removalTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
-    removalTask.dataManager().removeFile = Mock( return_value = { "OK" : True,
+    removalTask.dm.removeFile = Mock( return_value = { "OK" : True,
                                                                        "Value" : 
                                                                        { "Failed" : {},
                                                                          "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } } )
@@ -327,8 +327,8 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
     removalTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
-    removalTask.dataManager().removeStorageFile = Mock()
-    removalTask.dataManager().removeStorageFile.return_value = { "OK" : True,
+    removalTask.dm.removeStorageFile = Mock()
+    removalTask.dm.removeStorageFile.return_value = { "OK" : True,
                                                                     "Value" : 
                                                                     { "Failed" : {},
                                                                       "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }
@@ -357,8 +357,8 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
     removalTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
-    removalTask.dataManager().onlineRetransfer = Mock()
-    removalTask.dataManager().onlineRetransfer.return_value = { "OK" : True,
+    removalTask.dm.onlineRetransfer = Mock()
+    removalTask.dm.onlineRetransfer.return_value = { "OK" : True,
                                                                     "Value" : 
                                                                     { "Failed" : {},
                                                                       "Successful" : { "srm://srm-lhcb.gridpp.rl.ac.uk/castor/ads.rl.ac.uk/prod/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }
