@@ -275,7 +275,7 @@ class JobManagerHandler( RequestHandler ):
                                       application = 'Unknown', source = 'JobManager' )
 
     if invalidJobList or nonauthJobList:
-      result = S_ERROR( 'Some jobs failed deletion' )
+      result = S_ERROR( 'Some jobs failed reschedule' )
       if invalidJobList:
         result['InvalidJobIDs'] = invalidJobList
       if nonauthJobList:
@@ -362,11 +362,9 @@ class JobManagerHandler( RequestHandler ):
       result = stagerClient.killTasksBySourceTaskID(stagingJobList)
       if not result['OK']:
         gLogger.warn( 'Failed to kill some Stager tasks: %s' % result['Message'] )
-             
-    if invalidJobList or nonauthJobList or bad_ids:
+
+    if nonauthJobList or bad_ids:
       result = S_ERROR( 'Some jobs failed deletion' )
-      if invalidJobList:
-        result['InvalidJobIDs'] = invalidJobList
       if nonauthJobList:
         result['NonauthorizedJobIDs'] = nonauthJobList
       if bad_ids:
@@ -375,6 +373,10 @@ class JobManagerHandler( RequestHandler ):
 
     result = S_OK( validJobList )
     result[ 'requireProxyUpload' ] = len( ownerJobList ) > 0 and self.__checkIfProxyUploadIsRequired()
+
+    if invalidJobList:
+      result['InvalidJobIDs'] = invalidJobList
+
     return result
 
 ###########################################################################
