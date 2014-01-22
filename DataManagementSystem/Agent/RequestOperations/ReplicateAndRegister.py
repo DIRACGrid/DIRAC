@@ -335,29 +335,28 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     # Can continue now
     self.log.verbose( "No targets banned for writing" )
 
-    # # loop over targetSE
-    for targetSE in self.operation.targetSEList:
+    # # get waiting files
+    waitingFiles = self.getWaitingFilesList()
+    # # loop over files
+    for opFile in waitingFiles:
 
-      # # get waiting files
-      waitingFiles = self.getWaitingFilesList()
+      gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
+      lfn = opFile.LFN
 
-      # # loop over files
-      for opFile in waitingFiles:
+      if not sourceSE:
+        replicas = self._filterReplicas( opFile )
+        if not replicas["OK"]:
+          self.log.error( replicas["Message"] )
+          continue
+        replicas = replicas["Value"]
+        if not replicas["Valid"]:
+          self.log.warn( "unable to find valid replicas for %s" % lfn )
+          continue
+        # # get the first one in the list
+        sourceSE = replicas["Valid"][0]
 
-        gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
-        lfn = opFile.LFN
-
-        if not sourceSE:
-          replicas = self._filterReplicas( opFile )
-          if not replicas["OK"]:
-            self.log.error( replicas["Message"] )
-            continue
-          replicas = replicas["Value"]
-          if not replicas["Valid"]:
-            self.log.warn( "unable to find valid replicas for %s" % lfn )
-            continue
-          # # get the first one in the list
-          sourceSE = replicas["Valid"][0]
+      # # loop over targetSE
+      for targetSE in self.operation.targetSEList:
 
         # # call ReplicaManager
         res = self.rm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
@@ -409,8 +408,11 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
           opFile.Error = "ReplicaManager error: %s" % res["Message"]
           self.log.error( opFile.Error )
 
-        if not opFile.Error:
-          self.log.info( "file %s has been replicated to all targetSEs" % lfn )
-          opFile.Status = "Done"
+        self.log.info( "file %s has been replicated to SE %s" % ( lfn, targetSE ) )
+
+      if not opFile.Error:
+        self.log.info( "file %s has been replicated to all targetSEs" % lfn )
+        opFile.Status = "Done"
+
 
     return S_OK()
