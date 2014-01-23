@@ -205,8 +205,8 @@ class TaskManagerAgentBase( AgentModule ):
         gLogger.error( "updateFileStatus: Failed to update file status for transformation", "%s %s" % ( transID,
                                                                                                       res['Message'] ) )
       else:
-        for status, update in res['Value'].items():
-          gLogger.info( "updateFileStatus: Updated %s files for %s to %s." % ( update, transID, status ) )
+        gLogger.info( "updateFileStatus: Updated  the status of %d files for transformation %s" % ( len( res['Value'] ),
+                                                                                                    transID ) )
     gLogger.info( "updateFileStatus: Transformation file status update complete" )
     return S_OK()
 

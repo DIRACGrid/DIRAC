@@ -1132,8 +1132,6 @@ class TransformationDB( DB ):
                               connection = connection )
     if not res['OK']:
       return res
-    if not res['Value']:
-      return S_ERROR( 'No recorded tasks found for transformation %s' % transName )
     statusDict = {}
     total = 0
     for attrDict, count in res['Value']:
