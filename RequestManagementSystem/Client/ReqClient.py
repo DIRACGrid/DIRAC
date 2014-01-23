@@ -6,7 +6,7 @@
     :synopsis: implementation of client for RequestDB using DISET framework
 """
 # # from DIRAC
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
