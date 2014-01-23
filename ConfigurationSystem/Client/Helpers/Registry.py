@@ -76,7 +76,8 @@ def findDefaultGroupForDN( dn ):
   return findDefaultGroupForUser( result[ 'Value' ] )
 
 def findDefaultGroupForUser( userName ):
-  defGroups = gConfig.getValue( "/%s/DefaultGroup" % gBaseSecuritySection, [ "user" ] )
+  userDefGroups = getUserOption( userName, "DefaultGroup", [] )
+  defGroups = userDefGroups + gConfig.getValue( "%s/DefaultGroup" % gBaseSecuritySection, [ "user" ] )
   result = getGroupsForUser( userName )
   if not result[ 'OK' ]:
     return result
@@ -198,7 +199,7 @@ def getVOMSVOForGroup( group ):
   if not vomsVO:
     vo = getVOForGroup( group )
     vomsVO = getVOOption( vo, 'VOMSName', '' )
-  return vomsVO  
+  return vomsVO
 
 def getGroupsWithVOMSAttribute( vomsAttr ):
   retVal = gConfig.getSections( "%s/Groups" % ( gBaseSecuritySection ) )
