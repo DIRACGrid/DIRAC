@@ -188,7 +188,7 @@ class JobReport( object ):
   def generateForwardDISET( self ):
     """ Generate and return failover requests for the operations in the internal cache
     """
-    fowardDISETOp = None
+    forwardDISETOp = None
 
     result = self.sendStoredStatusInfo()
     if not result['OK']:
@@ -203,4 +203,4 @@ class JobReport( object ):
       else:
         return S_ERROR( 'Could not create ForwardDISET operation' )
 
-    return S_OK( fowardDISETOp )
+    return S_OK( forwardDISETOp )
