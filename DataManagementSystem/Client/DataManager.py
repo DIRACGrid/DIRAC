@@ -687,6 +687,8 @@ class DataManager( object ):
         failed[lfn] = res['Message']
       else:
         successful[lfn] = res['Value']
+
+    gDataStoreClient.commit()
     return S_OK( { 'Successful': successful, 'Failed' : failed } )
 
   def __getFile( self, lfn, replicas, metadata, destinationDir ):
@@ -700,24 +702,49 @@ class DataManager( object ):
     for storageElementName in res['Value']:
       physicalFile = replicas[storageElementName]
       se = StorageElement( storageElementName )
+
+      oDataOperation = self.__initialiseAccountingObject( 'getFile', storageElementName, 1 )
+      oDataOperation.setStartTime()
+      startTime = time.time()
+
       res = Utils.executeSingleFileOrDirWrapper( se.getFile( physicalFile, localPath = os.path.realpath( destinationDir ) ) )
+
+      getTime = time.time() - startTime
+      oDataOperation.setValueByKey( 'TransferTime', getTime )
 
       if not res['OK']:
         self.log.debug( "Failed to get %s from %s" % ( lfn, storageElementName ), res['Message'] )
+        oDataOperation.setValueByKey( 'TransferOK', 0 )
+        oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
+        oDataOperation.setEndTime()
+
       else:
+        oDataOperation.setValueByKey( 'TransferSize', res['Value'] )
+
         if not destinationDir:
           destinationDir = '.'
         localFile = os.path.realpath( "%s/%s" % ( destinationDir, os.path.basename( lfn ) ) )
         localAdler = fileAdler( localFile )
+
         if ( metadata['Size'] != res['Value'] ):
+          oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
           self.log.debug( "Size of downloaded file (%d) does not match catalog (%d)" % ( res['Value'],
                                                                                         metadata['Size'] ) )
+
         elif ( metadata['Checksum'] ) and ( not compareAdler( metadata['Checksum'], localAdler ) ):
+          oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
           self.log.debug( "Checksum of downloaded file (%s) does not match catalog (%s)" % ( localAdler,
                                                                                             metadata['Checksum'] ) )
+
         else:
+          oDataOperation.setEndTime()
+          print "I add %s to gDataStoreClient" % oDataOperation
+          gDataStoreClient.addRegister( oDataOperation )
           return S_OK( localFile )
+
+    gDataStoreClient.addRegister( oDataOperation )
     self.log.debug( "getFile: Failed to get local copy from any replicas.", lfn )
+
     return S_ERROR( "DataManager.getFile: Failed to get local copy from any replicas." )
 
   def _getSEProximity( self, ses ):
@@ -1714,7 +1741,11 @@ class DataManager( object ):
           res['Value']['Successful'][surl] = surl
         else:
           res['Value']['Successful'][surl] = ret['Value']
-      oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'] ) )
+
+      ret = storageElement.getFileSize( res['Value']['Successful'] )
+      deletedSize = sum( ret.get( 'Value', {} ).get( 'Successful', {} ).values() )
+      oDataOperation.setValueByKey( 'TransferOK', deletedSize )
+
       gDataStoreClient.addRegister( oDataOperation )
       infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
       self.log.debug( infoStr )
