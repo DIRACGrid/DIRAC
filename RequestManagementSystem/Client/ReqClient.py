@@ -6,7 +6,7 @@
     :synopsis: implementation of client for RequestDB using DISET framework
 """
 # # from DIRAC
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -241,37 +241,13 @@ class ReqClient( Client ):
 
   def finalizeRequest( self, requestName, jobID ):
     """ check request status and perform finalization if necessary
+        update the request status and the corresponding job parameter
 
     :param self: self reference
     :param str requestName: request name
     :param int jobID: job id
     """
     stateServer = RPCClient( "WorkloadManagement/JobStateUpdate", useCertificates = True )
-    # update the request status and the corresponding job parameter
-    res = self.getRequestStatus( requestName )
-    if res["OK"]:
-      if res["Value"] == "Done":
-        if jobID:
-          monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
-          res = monitorServer.getJobPrimarySummary( int( jobID ) )
-          if not res["OK"] or not res["Value"]:
-            self.log.error( "finalizeRequest: Failed to get job status" )
-          else:
-            jobStatus = res["Value"]["Status"]
-            jobMinorStatus = res["Value"]["MinorStatus"]
-            if jobMinorStatus == "Pending Requests":
-              if jobStatus == "Completed":
-                self.log.info( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
-                res = stateServer.setJobStatus( jobID, "Done", "Requests done", "" )
-                if not res["OK"]:
-                  self.log.error( "finalizeRequest: Failed to set job status" )
-              elif jobStatus == "Failed":
-                self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
-                res = stateServer.setJobStatus( jobID, "", "Requests done", "" )
-                if not res["OK"]:
-                  self.log.error( "finalizeRequest: Failed to set job status" )
-    else:
-      self.log.error( "finalizeRequest: failed to get request status: %s" % res["Message"] )
 
     # update the job pending request digest in any case since it is modified
     self.log.info( "finalizeRequest: Updating request digest for job %d" % jobID )
@@ -281,10 +257,48 @@ class ReqClient( Client ):
       self.log.verbose( digest )
       res = stateServer.setJobParameter( jobID, "PendingRequest", digest )
       if not res["OK"]:
-        self.log.error( "finalizeRequest: Failed to set job parameter: %s" % res["Message"] )
+        self.log.error( "finalizeRequest: Failed to set job %d parameter: %s" % ( jobID, res["Message"] ) )
+        return res
     else:
       self.log.error( "finalizeRequest: Failed to get request digest for %s: %s" % ( requestName,
                                                                                      digest["Message"] ) )
+
+    # Checking if to update the job status - we should fail here, so it will be re-tried later
+    # Checking the state, first
+    res = self.getRequestStatus( requestName )
+    if not res['OK']:
+      self.log.error( "finalizeRequest: failed to get request %s status: %s" % ( requestName, res["Message"] ) )
+      return res
+    if res["Value"] != "Done":
+      return S_ERROR( "The request %s isn't 'Done', this should never happen, why are we here?" % requestName )
+
+    # The request is 'Done', let's update the job status. If we fail, we should re-try later
+    monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
+    res = monitorServer.getJobPrimarySummary( int( jobID ) )
+    if not res["OK"] or not res["Value"]:
+      self.log.error( "finalizeRequest: Failed to get job %d status" % jobID )
+      return S_ERROR( "finalizeRequest: Failed to get job %d status" % jobID )
+    else:
+      jobStatus = res["Value"]["Status"]
+      jobMinorStatus = res["Value"]["MinorStatus"]
+
+      if jobStatus == 'Failed':
+        self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
+        stateUpdate = stateServer.setJobStatus( jobID, "", "Requests done", "" )
+
+      elif jobStatus == 'Completed':
+        # What to do? Depends on what we have in the minorStatus
+        if jobMinorStatus == "Pending Requests":
+          self.log.info( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
+          stateUpdate = stateServer.setJobStatus( jobID, "Done", "Requests done", "" )
+
+        elif jobMinorStatus == "Application Finished With Errors":
+          self.log.info( "finalizeRequest: Updating job status for %d to Failed/Requests done" % jobID )
+          stateUpdate = stateServer.setJobStatus( jobID, "Failed", "Requests done", "" )
+
+      if not stateUpdate["OK"]:
+        self.log.error( "finalizeRequest: Failed to set job %d status: %s" % ( jobID, stateUpdate['Message'] ) )
+        return stateUpdate
 
     return S_OK()
 
@@ -319,12 +333,12 @@ class ReqClient( Client ):
       for jobID, fromJSON in ret["Successful"].items():
         ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )
-  
+
   def resetFailedRequest( self, requestName ):
     """ Reset a failed request to "Waiting" status - requestName can also be the RequestID
     """
     try:
-      requestName = self.getRequestName(int(requestName))['Value']
+      requestName = self.getRequestName( int( requestName ) )['Value']
     except ValueError:
       pass
 

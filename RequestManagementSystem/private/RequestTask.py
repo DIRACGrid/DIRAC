@@ -21,7 +21,7 @@ __RCSID__ = "$Id $"
 # @date 2013/03/13 12:42:54
 # @brief Definition of RequestTask class.
 # # imports
-import os
+import os, time
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -304,12 +304,16 @@ class RequestTask( object ):
       gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
-        finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestName, self.request.JobID )
-        if not finalizeRequest["OK"]:
-          self.log.error( "unable to finalize request %s: %s" % ( self.request.RequestName,
-                                                                  finalizeRequest["Message"] ) )
-          return finalizeRequest
-        else:
-          self.log.info( "request '%s' is finalized" % self.request.RequestName )
+        while True:
+          finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestName, self.request.JobID )
+          if not finalizeRequest["OK"]:
+            self.log.error( "unable to finalize request %s: %s, will retry" % ( self.request.RequestName,
+                                                                                finalizeRequest["Message"] ) )
+            self.log.verbose( "Waiting 10 seconds" )
+            time.sleep( 10 )
+
+          else:
+            self.log.info( "request '%s' is finalized" % self.request.RequestName )
+            break
 
     return S_OK()
