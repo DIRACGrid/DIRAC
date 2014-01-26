@@ -15,18 +15,23 @@ def int_with_commas(i):
     s = s[:-3] 
   return news[:-1]
 
-def printTable(fields,records):
+def printTable( fields, records, sortField='', numbering=True ):
     """ Utility to pretty print tabular data
     """
 
     if not records:
       print "No output"
       return
+    
+    records = list( records )
 
     nFields = len(fields)
     if nFields != len(records[0]):
-      print "Incorrect data structure to print"
+      print "Incorrect data structure to print, nFields %d, nRecords %d" % ( nFields, len(records[0]) )
       return
+
+    if sortField:
+      records.sort( None, lambda x: x[fields.index( sortField )] )
 
     lengths = []
     for i in range(nFields):
@@ -41,17 +46,19 @@ def printTable(fields,records):
       totalLength += 2
     totalLength += 2  
           
-    print ' '*3,      
+    if numbering:      
+      print ' '*3,      
     for i in range(nFields):
       print fields[i].ljust(lengths[i]+1),
     print
     print '='*totalLength
     count = 1
     for r in records:
-      if count == len(records) and records[-1][0] == "Total":
-        print " "*3,  
-      else:  
-        print str(count).rjust(3),
+      if numbering:
+        if count == len(records) and records[-1][0] == "Total":
+          print " "*3,  
+        else:  
+          print str(count).rjust(3),
       
       for i in range(nFields):
         print r[i].ljust(lengths[i]+1),

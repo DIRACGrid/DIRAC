@@ -108,6 +108,21 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
+[v6r10p4]
+
+*Core
+NEW: dirac-info - extra printout
+CHANGE: PrettyPrint - extra options in printTable()
+FIX: X509Certificate - bug fixed in getDIRACGroup()
+
+*Framework
+NEW: SystemAdministratorCLI - new showall command to show components across hosts
+NEW: ProxyDB - allow to upload proxies without DIRAC group
+
+*RMS
+CHANGE: ReqClient - requests from failed jobs update job status to Failed
+CHANGE: RequestTask - retry in the request finalize()
+
 [v6r10p3]
 
 *Configuration

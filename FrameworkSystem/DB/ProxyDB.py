@@ -268,8 +268,12 @@ class ProxyDB( DB ):
     if not retVal[ 'OK' ]:
       return retVal
     retVal = chain.isValidProxy( ignoreDefault = True )
+    noGroupFlag = False
     if not retVal[ 'OK' ]:
-      return retVal
+      if retVal['Message'] == "Proxy does not have an explicit group":
+        noGroupFlag = True
+      else:  
+        return retVal
 
     result = chain.isVOMS()
     if result[ 'OK' ] and result[ 'Value' ]:
@@ -293,6 +297,13 @@ class ProxyDB( DB ):
       return retVal
     if not userGroup in retVal[ 'Value' ]:
       return S_ERROR( "%s group is not valid for %s" % ( userGroup, userDN ) )
+
+    # For proxies without embedded DIRAC group only one default is allowed
+    # Cleaning all the proxies for this DN if any before uploading the new one.
+    if noGroupFlag:
+      retVal = self.deleteProxy( userDN )
+      if not retVal[ 'OK' ]:
+        return retVal
 
     retVal = self.storeProxy( userDN, userGroup, chain )
     if not retVal[ 'OK' ]:
@@ -418,16 +429,19 @@ class ProxyDB( DB ):
     return S_OK( purged )
 
 
-  def deleteProxy( self, userDN, userGroup ):
+  def deleteProxy( self, userDN, userGroup='any' ):
     """ Remove proxy of the given user from the repository
     """
     try:
       userDN = self._escapeString( userDN )[ 'Value' ]
-      userGroup = self._escapeString( userGroup )[ 'Value' ]
+      if userGroup != 'any':
+        userGroup = self._escapeString( userGroup )[ 'Value' ]
     except KeyError:
       return S_ERROR( "Invalid DN or group" )
-    req = "DELETE FROM `ProxyDB_Proxies` WHERE UserDN=%s AND UserGroup=%s" % ( userDN,
-                                                                               userGroup )
+    
+    req = "DELETE FROM `ProxyDB_Proxies` WHERE UserDN=%s" % userDN
+    if userGroup != 'any':
+      req += " AND UserGroup=%s" % userGroup
     return self._update( req )
 
   def __getPemAndTimeLeft( self, userDN, userGroup = False, vomsAttr = False ):

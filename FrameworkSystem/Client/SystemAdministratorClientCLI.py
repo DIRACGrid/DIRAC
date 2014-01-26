@@ -11,6 +11,7 @@ import pprint
 import os
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
+from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
 import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
@@ -737,7 +738,116 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       self.cwd = os.path.normpath( newPath )  
     self.prompt = '[%s:%s]> ' % ( self.host, self.cwd )  
 
-  def default( self, args ):
+  def do_showall( self, args ):
+    """ Show status of all the components in all the hosts
+    
+        Usage:
+          showall [-snmth] [-ASE] [-N name] [-H host] - show status of components
+                              
+        Options:
+            -d extra debug printout
+          Sorting options:                      
+            -s system
+            -n component name
+            -m component module
+            -t component type
+            -h component host  
+          Selection options:
+            -A select agents
+            -S select services
+            -E select executors
+            -N <component pattern> select component with the name containing the pattern 
+            -H <host name> select the given host  
+            -T <setup name> select the given setup
+    """
+    
+    argss = args.split()
+    sortOption = ''
+    componentType = ''
+    componentName = ''
+    hostName = ''
+    setupName = ''
+    debug = False
+    while len( argss ) > 0:
+      option = argss[0]
+      del argss[0]
+      sortOption = ''
+      if option == '-s':
+        sortOption = "System"
+      elif option == '-n':
+        sortOption = "Name" 
+      elif option == '-m':
+        sortOption = "Module"
+      elif option == '-t':
+        sortOption = "Type"
+      elif option == '-h':
+        sortOption = "Host"
+      elif option == "-A":
+        componentType = 'Agents'
+      elif option == "-S":
+        componentType = 'Services'
+      elif option == "-E":
+        componentType = 'Executors'
+      elif option == "-d":
+        debug = True  
+      elif option == "-N":
+        componentName = argss[0]        
+        del argss[0]      
+      elif option == "-H":
+        hostName = argss[0]        
+        del argss[0]   
+      elif option == "-T":
+        setupName = argss[0]        
+        del argss[0]     
+      else:
+        self.__errMsg( 'Invalid option %s' % option )  
+        return
+    
+    client = SystemAdministratorIntegrator()
+    resultAll = client.getOverallStatus()
+    resultInfo = client.getInfo()
+    
+    if not resultAll['OK']:
+      self.__errMsg( resultAll['Message'] )
+    else:
+      fields = ["System",'Name','Module','Type','Setup','Host','Runit','Uptime']
+      records = []
+      for host in resultAll['Value']:
+        if hostName and not hostName in host:
+          continue
+        result = resultAll['Value'][host]
+        if not result['OK']:
+          if debug:
+            self.__errMsg( "Host %s: %s" % (host,result['Message']) )
+          continue  
+        rDict = result['Value']
+        for compType in rDict:
+          if componentType and componentType != compType:
+            continue
+          for system in rDict[compType]:
+            components = rDict[compType][system].keys()
+            components.sort()
+            for component in components:
+              if componentName and not componentName in component:
+                continue
+              record = []
+              if rDict[compType][system][component]['Installed']:
+                module = str( rDict[compType][system][component]['Module'] )
+                record += [ system,component,module,compType.lower()[:-1]]
+                if resultInfo['OK'] and host in resultInfo['Value'] and resultInfo['Value'][host]['OK']:
+                  setup = resultInfo['Value'][host]['Value']['Setup']
+                else:
+                  setup = 'Unknown'
+                if setupName and not setupName in setup:
+                  continue  
+                record += [setup]    
+                record += [host]  
+                record += [str( rDict[compType][system][component]['RunitStatus'] )]
+                record += [str( rDict[compType][system][component]['Timeup'] )]
+                records.append(record)  
+      printTable( fields, records, sortOption )        
+
+  def default( self, args, sortOption ):
 
     argss = args.split()
     command = argss[0]
