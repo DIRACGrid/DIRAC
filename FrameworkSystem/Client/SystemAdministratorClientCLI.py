@@ -11,6 +11,7 @@ import pprint
 import os
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
+from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
 import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
@@ -737,7 +738,73 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       self.cwd = os.path.normpath( newPath )  
     self.prompt = '[%s:%s]> ' % ( self.host, self.cwd )  
 
-  def default( self, args ):
+  def do_showall( self, args ):
+    """ Show status of all the components in all the hosts
+    
+        Usage:
+          showall [-snmth] - show status of components sorted by:
+                              
+                              -s system
+                              -n component name
+                              -m component module
+                              -t component type
+                              -h component host  
+    """
+    
+    argss = args.split()
+    option = argss[0]
+    sortOption = ''
+    if option == '-s':
+      sortOption = "System"
+    elif option == '-n':
+      sortOption = "Name" 
+    elif option == '-m':
+      sortOption = "Module"
+    elif option == '-t':
+      sortOption = "Type"
+    elif option == '-h':
+      sortOption = "Host"      
+    else:
+      self.__errMsg( 'Invalid option %s' % option )  
+    
+    client = SystemAdministratorIntegrator()
+    resultAll = client.getOverallStatus()
+    
+    if not resultAll['OK']:
+      self.__errMsg( resultAll['Message'] )
+    else:
+      fields = ["System",'Name','Module','Type','Setup','Host','Installed','Runit','Uptime','PID']
+      records = []
+      for host in resultAll['Value']:
+        result = resultAll['Value'][host]
+        if not result['OK']:
+          continue  
+        rDict = result['Value']
+        for compType in rDict:
+          for system in rDict[compType]:
+            components = rDict[compType][system].keys()
+            components.sort()
+            for component in components:
+              record = []
+              if rDict[compType][system][component]['Installed']:
+                module = str( rDict[compType][system][component]['Module'] )
+                record += [ system,component,module,compType.lower()[:-1]]
+                if rDict[compType][system][component]['Setup']:
+                  record += ['Setup']
+                else:
+                  record += ['NotSetup']
+                record += [host]  
+                if rDict[compType][system][component]['Installed']:
+                  record += ['Installed']
+                else:
+                  record += ['NotInstalled']
+                record += [str( rDict[compType][system][component]['RunitStatus'] )]
+                record += [str( rDict[compType][system][component]['Timeup'] )]
+                record += [str( rDict[compType][system][component]['PID'] )]
+                records.append(record)  
+      printTable( fields, records, sortOption )        
+
+  def default( self, args, sortOption ):
 
     argss = args.split()
     command = argss[0]
