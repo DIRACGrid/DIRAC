@@ -15,7 +15,7 @@ def int_with_commas(i):
     s = s[:-3] 
   return news[:-1]
 
-def printTable(fields,records):
+def printTable( fields, records, sortField='' ):
     """ Utility to pretty print tabular data
     """
 
@@ -25,8 +25,11 @@ def printTable(fields,records):
 
     nFields = len(fields)
     if nFields != len(records[0]):
-      print "Incorrect data structure to print"
+      print "Incorrect data structure to print, nFields %d, nRecords %d" % ( nFields, len(records[0]) )
       return
+
+    if sortField:
+      records.sort( None, lambda x: x[fields.index( sortField )] )
 
     lengths = []
     for i in range(nFields):
