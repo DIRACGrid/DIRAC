@@ -14,6 +14,7 @@ from DIRAC                                                   import gConfig
 from DIRAC.Core.Base                                         import Script
 from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
+from DIRAC.Core.Utilities.PrettyPrint                        import printTable
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -31,6 +32,16 @@ if ret['OK'] and 'group' in ret['Value']:
 else:
   infoDict['VirtualOrganization'] = getVOForGroup( '' )
   
+if gConfig.getValue( '/DIRAC/Security/UseServerCertificate', True ):
+  infoDict['Use Server Certificate'] = 'Yes'
+else:
+  infoDict['Use Server Certificate'] = 'No'
+if gConfig.getValue( '/DIRAC/Security/SkipCAChecks', False ):
+  infoDict['Skip CA Checks'] = 'Yes'
+else:
+  infoDict['Skip CA Checks'] = 'No'  
+    
+  
 try:
   import gfalthr
   infoDict['gfal version'] = gfalthr.gfal_version()
@@ -43,7 +54,11 @@ try:
 except:
   pass    
 
-print 'DIRAC version'.rjust( 20 ), ':', DIRAC.version
+infoDict['DIRAC version'] = DIRAC.version
 
-for k, v in infoDict.items():
-  print k.rjust( 20 ), ':', str( v )
+fields = ['Option','Value']
+records = zip( infoDict.keys(),[ str(x) for x in infoDict.values()] )
+
+print
+printTable( fields, records, numbering=False )
+print

@@ -149,7 +149,7 @@ def uploadProxy( params ):
 
     diracGroup = params.diracGroup
     if not diracGroup:
-      result = proxyChain.getCredentials()
+      result = chain.getCredentials()
       if not result['OK']:
         return result
       if 'group' not in result['Value']:
