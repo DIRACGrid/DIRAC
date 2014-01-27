@@ -1983,41 +1983,54 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "removeFile: Supplied lfns must be string or list of strings."
       self.log.error( errStr )
       return S_ERROR( errStr )
+    # First check if the file exists in the FC
+    res = self.fileCatalogue.exists( lfns )
+    if not res['OK']:
+      return res
+    success = res['Value']['Successful']
+    lfns = [lfn for lfn in success if success[lfn] ]
+    if force:
+      # Files that don't exist are removed successfully
+      successful = dict.fromkeys( [lfn for lfn in success if not success[lfn] ], True )
+      failed = {}
+    else:
+      successful = {}
+      failed = dict.fromkeys( [lfn for lfn in success if not success[lfn] ], 'No such file or directory' )
     # Check that we have write permissions to this directory.
-    res = self.__verifyOperationPermission( lfns )
-    if not res['OK']:
-      return res
-    if not res['Value']:
-      errStr = "removeFile: Write access not permitted for this credential."
-      self.log.error( errStr, lfns )
-      return S_ERROR( errStr )
+    if lfns:
+      res = self.__verifyOperationPermission( lfns )
+      if not res['OK']:
+        return res
+      if not res['Value']:
+        errStr = "removeFile: Write access not permitted for this credential."
+        self.log.error( errStr, lfns )
+        return S_ERROR( errStr )
 
-    successful = {}
-    failed = {}
-    self.log.verbose( "removeFile: Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
-    res = self.fileCatalogue.getReplicas( lfns, True )
-    if not res['OK']:
-      errStr = "ReplicaManager.removeFile: Completely failed to get replicas for lfns."
-      self.log.error( errStr, res['Message'] )
-      return res
-    lfnDict = res['Value']['Successful']
+      self.log.verbose( "removeFile: Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
+      res = self.fileCatalogue.getReplicas( lfns, True )
+      if not res['OK']:
+        errStr = "ReplicaManager.removeFile: Completely failed to get replicas for lfns."
+        self.log.error( errStr, res['Message'] )
+        return res
+      lfnDict = res['Value']['Successful']
 
-    for lfn, reason in res['Value'].get( 'Failed', {} ).items():
-      # Ignore files missing in FC if force is set
-      if reason == 'No such file or directory' and force:
-        successful[lfn] = True
-      elif reason == 'File has zero replicas':
-        lfnDict[lfn] = {}
-      else:
-        failed[lfn] = reason
+      for lfn, reason in res['Value'].get( 'Failed', {} ).items():
+        # Ignore files missing in FC if force is set
+        if reason == 'No such file or directory' and force:
+          successful[lfn] = True
+        elif reason == 'File has zero replicas':
+          lfnDict[lfn] = {}
+        else:
+          failed[lfn] = reason
 
-    res = self.__removeFile( lfnDict )
-    if not res['OK']:
-      errStr = "removeFile: Completely failed to remove files."
-      self.log.error( errStr, res['Message'] )
-      return res
-    failed.update( res['Value']['Failed'] )
-    successful.update( res['Value']['Successful'] )
+      res = self.__removeFile( lfnDict )
+      if not res['OK']:
+        errStr = "removeFile: Completely failed to remove files."
+        self.log.error( errStr, res['Message'] )
+        return res
+      failed.update( res['Value']['Failed'] )
+      successful.update( res['Value']['Successful'] )
+
     resDict = {'Successful':successful, 'Failed':failed}
     gDataStoreClient.commit()
     return S_OK( resDict )
@@ -2434,7 +2447,7 @@ class ReplicaManager( CatalogToStorage ):
     result = StorageFactory().getStorageName( se )
     if not result['OK']:
       return S_ERROR( 'SE not known' )
-    resolvedName = result['Value'] 
+    resolvedName = result['Value']
     res = self.resourceStatus.getStorageElementStatus( resolvedName, default = None )
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )
@@ -2455,7 +2468,7 @@ class ReplicaManager( CatalogToStorage ):
     if not result['OK']:
       userName = 'system'
     else:
-      userName = result['Value'].get( 'username', 'unknown' )   
+      userName = result['Value'].get( 'username', 'unknown' )
     accountingDict['User'] = userName
     accountingDict['Protocol'] = 'ReplicaManager'
     accountingDict['RegistrationTime'] = 0.0
