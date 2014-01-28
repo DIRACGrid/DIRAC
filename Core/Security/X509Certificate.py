@@ -156,7 +156,7 @@ class X509Certificate:
         return S_OK( ext.get_value() )
     if ignoreDefault:
       return S_OK( False )
-    result = self.getIssuerDN()
+    result = self.getSubjectDN()
     if not result[ 'OK' ]:
       return result
     return Registry.findDefaultGroupForDN( result['Value'] )
