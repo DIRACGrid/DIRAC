@@ -1,3 +1,8 @@
+[v6r10p5]
+
+*Core
+FIX: X509Certificate - reverted fix in getDIRACGroup()
+
 [v6r10p4]
 
 *Core
