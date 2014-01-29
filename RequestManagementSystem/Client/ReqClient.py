@@ -275,9 +275,12 @@ class ReqClient( Client ):
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
     monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
     res = monitorServer.getJobPrimarySummary( int( jobID ) )
-    if not res["OK"] or not res["Value"]:
+    if not res["OK"]:
       self.log.error( "finalizeRequest: Failed to get job %d status" % jobID )
       return S_ERROR( "finalizeRequest: Failed to get job %d status" % jobID )
+    elif not res['Value']:
+      self.log.info( "finalizeRequest: job %d does not exist (anymore): finalizing" % jobID )
+      return S_OK()
     else:
       jobStatus = res["Value"]["Status"]
       jobMinorStatus = res["Value"]["MinorStatus"]
