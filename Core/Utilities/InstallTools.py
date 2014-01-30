@@ -199,11 +199,11 @@ def loadDiracCfg( verbose = False ):
 
   mysqlSmallMem = localCfg.getOption( cfgInstallPath( 'Database', 'MySQLSmallMem' ), False )
   if verbose and mysqlSmallMem:
-    gLogger.notice( 'Configuring MySQL server for Low Memory uasge' )
+    gLogger.notice( 'Configuring MySQL server for Low Memory usage' )
 
   mysqlLargeMem = localCfg.getOption( cfgInstallPath( 'Database', 'MySQLLargeMem' ), False )
   if verbose and mysqlLargeMem:
-    gLogger.notice( 'Configuring MySQL server for Large Memory uasge' )
+    gLogger.notice( 'Configuring MySQL server for Large Memory usage' )
 
 # FIXME: we probably need a better way to do this
 mysqlRootPwd = ''
@@ -1791,6 +1791,9 @@ def fixMySQLScripts( startupScript = mysqlStartupScript ):
     for line in orgLines:
       if line.find( 'export HOME' ) == 0:
         continue
+      if line.find( 'basedir=' ) == 0:
+        line = "basedir=%s\n" % mysqlDir
+        gLogger.debug( line )
       if line.find( 'datadir=' ) == 0:
         line = 'datadir=%s\n' % mysqlDbDir
         gLogger.debug( line )
