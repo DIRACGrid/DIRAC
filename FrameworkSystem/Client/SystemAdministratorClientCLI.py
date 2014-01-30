@@ -847,8 +847,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
                 records.append(record)  
       printTable( fields, records, sortOption )        
 
-  def default( self, args, sortOption ):
-
+  def default( self, args):
+    """ For all other commands
+    """
     argss = args.split()
     command = argss[0]
     if command in ['ls','cat','pwd','chown','chmod','chgrp',
