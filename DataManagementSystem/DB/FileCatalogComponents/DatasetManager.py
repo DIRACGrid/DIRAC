@@ -42,7 +42,7 @@ class DatasetManager:
                                                 "DatasetID": "INT NOT NULL",
                                                 "FileID": "INT NOT NULL",      
                                                },
-                                     "UniqueIndexes": ["DatasetID","FileID"]
+                                     "UniqueIndexes": {"DatasetID_FileID":["DatasetID","FileID"]}
                                    }
   _tables["FC_DatasetAnnotations"] = { "Fields": {
                                                   "DatasetID": "INT NOT NULL",
