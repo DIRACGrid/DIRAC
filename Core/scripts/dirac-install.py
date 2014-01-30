@@ -978,10 +978,10 @@ def fixMySQLScript():
   bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
   if cliParams.useVersionsDir:
     bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
+  command = 'source %s; %s > /dev/null' % (bashrcFile,scriptPath)
   if os.path.exists( scriptPath ):
-    logNOTICE( "Executing %s..." % scriptPath )
-    os.system( 'bash -c "source %s; %s > /dev/null"' % (bashrcFile,scriptPath) )
-
+    logNOTICE( "Executing %s..." % command )
+    os.system( 'bash -c "%s"' % command )
 
 def checkPlatformAliasLink():
   """
@@ -995,11 +995,15 @@ def installExternalRequirements( extType ):
   """ Install the extension requirements if any
   """
   reqScript = os.path.join( cliParams.targetPath, "scripts", 'dirac-externals-requirements' )
+  bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
+  if cliParams.useVersionsDir:
+    bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
   if os.path.isfile( reqScript ):
     os.chmod( reqScript , executablePerms )
     logNOTICE( "Executing %s..." % reqScript )
-    if os.system( "python '%s' -t '%s' > '%s.out' 2> '%s.err'" % ( reqScript, extType,
-                                                                   reqScript, reqScript ) ):
+    command = "python '%s' -t '%s' > '%s.out' 2> '%s.err'" % ( reqScript, extType,
+                                                               reqScript, reqScript )
+    if os.system( 'bash -c "source %s; %s"' % (bashrcFile,command) ):
       logERROR( "Requirements installation script %s failed. Check %s.err" % ( reqScript,
                                                                                reqScript ) )
   return True
