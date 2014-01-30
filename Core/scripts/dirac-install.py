@@ -975,9 +975,12 @@ def fixMySQLScript():
    Update the mysql.server script (if installed) to point to the proper datadir
   """
   scriptPath = os.path.join( cliParams.targetPath, 'scripts', 'dirac-fix-mysql-script' )
+  bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
+  if cliParams.useVersionsDir:
+    bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
   if os.path.exists( scriptPath ):
     logNOTICE( "Executing %s..." % scriptPath )
-    os.system( "%s > /dev/null " % scriptPath )
+    os.system( 'bash -c "source %s; %s > /dev/null"' % (bashrcFile,scriptPath) )
 
 
 def checkPlatformAliasLink():
@@ -1428,7 +1431,6 @@ if __name__ == "__main__":
   logNOTICE( "Installing %s externals..." % cliParams.externalsType )
   if not installExternals( releaseConfig ):
     sys.exit( 1 )
-  fixMySQLScript()
   if not createOldProLinks():
     sys.exit( 1 )
   if not createBashrc():
@@ -1437,6 +1439,8 @@ if __name__ == "__main__":
     sys.exit( 1 )
   runExternalsPostInstall()
   writeDefaultConfiguration()
+  if cliParams.externalsType == "server":
+    fixMySQLScript()
   installExternalRequirements( cliParams.externalsType )
   logNOTICE( "%s properly installed" % cliParams.installation )
   sys.exit( 0 )
