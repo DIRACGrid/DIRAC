@@ -84,6 +84,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities.Platform import getPlatformString
 
 
 # On command line tools this can be set to True to abort after the first error.
@@ -1795,6 +1796,9 @@ def fixMySQLScripts( startupScript = mysqlStartupScript ):
         line = 'datadir=%s\n' % mysqlDbDir
         gLogger.debug( line )
         line += 'export HOME=%s\n' % mysqlDir
+      if line.find( 'basedir=' ) == 0:
+        platform = getPlatformString()
+        line = 'basedir=%s\n' % os.path.join( rootPath, platform )  
       fd.write( line )
     fd.close()
   except Exception:
