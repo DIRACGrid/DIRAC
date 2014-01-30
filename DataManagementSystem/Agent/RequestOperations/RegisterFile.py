@@ -52,25 +52,6 @@ class RegisterFile( OperationHandlerBase ):
 
   def __call__( self ):
     """ call me maybe """
-    # # list of targetSE
-    targetSEs = self.operation.targetSEList
-    if len( targetSEs ) != 1:
-      self.log.error( "wrong TargetSE attribute, expecting one entry, got %s" % len( targetSEs ) )
-      self.operation.Error = "Wrongly formatted TargetSE"
-      for opFile in self.operation:
-
-        gMonitor.addMark( "RegisterAtt", 1 )
-        gMonitor.addMark( "RegisterFail", 1 )
-        self.dataLoggingClient().addFileRecord( opFile.LFN, "RegisterFail",
-                                                self.operation.TargetSE, "", "RegisterFile" )
-
-        opFile.Error = "wrongly formatted targetSE"
-        opFile.Status = "Failed"
-
-      self.operation.Status = "Failed"
-      return S_ERROR( self.operation.Error )
-
-    targetSE = targetSEs[0]
     # # counter for failed files
     failedFiles = 0
     # # catalog to use
@@ -85,14 +66,14 @@ class RegisterFile( OperationHandlerBase ):
       # # get LFN
       lfn = opFile.LFN
       # # and others
-      fileTuple = ( lfn , opFile.PFN, opFile.Size, targetSE, opFile.GUID, opFile.Checksum )
+      fileTuple = ( lfn , opFile.PFN, opFile.Size, self.operation.targetSEList[0], opFile.GUID, opFile.Checksum )
       # # call ReplicaManager
       registerFile = self.replicaManager().registerFile( fileTuple, catalog )
       # # check results
       if not registerFile["OK"] or lfn in registerFile["Value"]["Failed"]:
 
         gMonitor.addMark( "RegisterFail", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegisterFile" )
+        self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", catalog, "", "RegisterFile" )
 
         reason = registerFile["Message"] if not registerFile["OK"] else registerFile["Value"]["Failed"][lfn]
         errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
@@ -103,9 +84,9 @@ class RegisterFile( OperationHandlerBase ):
       else:
 
         gMonitor.addMark( "RegisterOK", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegisterFile" )
+        self.dataLoggingClient().addFileRecord( lfn, "Register", catalog, "", "RegisterFile" )
 
-        self.log.info( "file %s has been registered at %s" % ( lfn, targetSE ) )
+        self.log.info( "file %s has been registered at %s" % ( lfn, catalog ) )
         opFile.Status = "Done"
 
     # # final check

@@ -108,6 +108,17 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
+[v6r10p6]
+
+*Core
+FIX: X509Certificate - reenabled fix in getDIRACGroup()
+
+*Configuration
+FIX: CSAPI - Group should be taken from the X509 chain and not the certificate
+
+*RMS
+CHANGE: ReqClient - if the job does not exist, do not try further finalization
+
 [v6r10p5]
 
 *Core

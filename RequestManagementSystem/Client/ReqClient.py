@@ -275,18 +275,17 @@ class ReqClient( Client ):
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
     monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
     res = monitorServer.getJobPrimarySummary( int( jobID ) )
-    if not res["OK"] or not res["Value"]:
+    if not res["OK"]:
       self.log.error( "finalizeRequest: Failed to get job %d status" % jobID )
       return S_ERROR( "finalizeRequest: Failed to get job %d status" % jobID )
+    elif not res['Value']:
+      self.log.info( "finalizeRequest: job %d does not exist (anymore): finalizing" % jobID )
+      return S_OK()
     else:
       jobStatus = res["Value"]["Status"]
       jobMinorStatus = res["Value"]["MinorStatus"]
 
-      if jobStatus == 'Failed':
-        self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
-        stateUpdate = stateServer.setJobStatus( jobID, "", "Requests done", "" )
-
-      elif jobStatus == 'Completed':
+      if jobStatus == 'Completed':
         # What to do? Depends on what we have in the minorStatus
         if jobMinorStatus == "Pending Requests":
           self.log.info( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
@@ -295,6 +294,10 @@ class ReqClient( Client ):
         elif jobMinorStatus == "Application Finished With Errors":
           self.log.info( "finalizeRequest: Updating job status for %d to Failed/Requests done" % jobID )
           stateUpdate = stateServer.setJobStatus( jobID, "Failed", "Requests done", "" )
+
+      else:
+        self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
+        stateUpdate = stateServer.setJobStatus( jobID, "", "Requests done", "" )
 
       if not stateUpdate["OK"]:
         self.log.error( "finalizeRequest: Failed to set job %d status: %s" % ( jobID, stateUpdate['Message'] ) )

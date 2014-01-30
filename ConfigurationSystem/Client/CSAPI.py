@@ -45,7 +45,7 @@ class CSAPI:
       return False
     idCert = retVal[ 'Value' ]
     self.__userDN = idCert.getSubjectDN()[ 'Value' ]
-    self.__userGroup = idCert.getDIRACGroup()[ 'Value' ]
+    self.__userGroup = chain.getDIRACGroup()[ 'Value' ]
     return True
 
   def __getCertificateID( self ):
