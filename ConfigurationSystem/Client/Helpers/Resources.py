@@ -198,46 +198,52 @@ def getCompatiblePlatforms( originalPlatforms ):
   else:
     platforms = list( originalPlatforms )
 
-  platformDict = {}
   result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
-  if result['OK'] and result['Value']:
-    platformDict = result['Value']
-    for platform in platformDict:
-      platformDict[platform] = [ x.strip() for x in platformDict[platform].split( ',' ) ]
-  else:
-    return S_ERROR( 'OS compatibility info not found' )
+  if not ( result['OK'] and result['Value'] ):
+    return S_ERROR( "OS compatibility info not found" )
+
+  platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
+  for k, v in platformsDict.iteritems():
+    if k not in v:
+      v.append( k )
 
   resultList = list( platforms )
   for p in platforms:
-    tmpList = platformDict.get( p, [] )
-    for pp in platformDict:
-      if p in platformDict[pp]:
+    tmpList = platformsDict.get( p, [] )
+    for pp in platformsDict:
+      if p in platformsDict[pp]:
         tmpList.append( pp )
-        tmpList += platformDict[pp]
+        tmpList += platformsDict[pp]
     if tmpList:
       resultList += tmpList
 
   return S_OK( uniqueElements( resultList ) )
 
-def getDIRACPlatform( platform ):
-  """ Get standard DIRAC platform compatible with the argument
+def getDIRACPlatform( OS ):
+  """ Get standard DIRAC platform(s) compatible with the argument. The returned value is a list!
   """
-  platformDict = {}
   result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
-  if result['OK'] and result['Value']:
-    platformDict = result['Value']
-    for p in platformDict:
-      if p == platform:
-        return S_OK( platform )
-      platformDict[p] = [ x.strip() for x in platformDict[p].split( ',' ) ]
-  else:
-    return S_ERROR( 'OS compatibility info not found' )
+  if not ( result['OK'] and result['Value'] ):
+    return S_ERROR( "OS compatibility info not found" )
 
-  for p in platformDict:
-    if platform in platformDict[p]:
-      return S_OK( p )
+  platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
+  for k, v in platformsDict.iteritems():
+    if k not in v:
+      v.append( k )
 
-  return S_ERROR( 'No compatible DIRAC platform found for %s' % platform )
+  # making an os -> platforms dict
+  os2PlatformDict = dict()
+  for platform, osItems in platformsDict.iteritems():
+    for osItem in osItems:
+      if os2PlatformDict.get( osItem ):
+        os2PlatformDict[osItem].append( platform )
+      else:
+        os2PlatformDict[osItem] = [platform]
+
+  if OS not in os2PlatformDict:
+    return S_ERROR( 'No compatible DIRAC platform found for %s' % platform )
+
+  return S_OK( os2PlatformDict[OS] )
 
 def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
