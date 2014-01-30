@@ -848,9 +848,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       printTable( fields, records, sortOption )        
 
   def default( self, args):
-    """ In case a command isn't found, deal with it
+    """ For all other commands
     """
-    print "Command %s doesn't exist" % args
+    argss = args.split()
+    command = argss[0]
+    if command in ['ls','cat','pwd','chown','chmod','chgrp',
+                   'id','date','uname','cp','mv','scp']:
+      self.do_exec( args )
 
   def do_exit( self, args ):
     """ Exit the shell.
