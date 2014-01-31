@@ -469,7 +469,7 @@ class FTSAgent( AgentModule ):
       missingReplicas = missingReplicas["Value"]
       for opFile in operation:
         if opFile.LFN not in missingReplicas and opFile.Status != 'Done':
-          log.info( "%s is replicated at all targets" % opFile.LFN )
+          log.verbose( "%s is replicated at all targets" % opFile.LFN )
           opFile.Status = "Done"
 
     toFail = ftsFilesDict.get( "toFail", [] )
@@ -945,7 +945,7 @@ class FTSAgent( AgentModule ):
     for successfulLFN in replicas["Successful"]:
       reps = set( replicas['Successful'][successfulLFN] )
       if targetSESet.issubset( reps ):
-        log.verbose( "%s has been replicated to all targets" % successfulLFN )
+        log.info( "%s has been replicated to all targets" % successfulLFN )
         fullyReplicated += 1
         scheduledFiles[successfulLFN].Status = "Done"
       else:
