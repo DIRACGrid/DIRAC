@@ -24,7 +24,7 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
-import datetime
+import datetime, time
 import re
 import tempfile
 # # from DIRAC
@@ -84,6 +84,9 @@ class FTSJob( Record ):
     self.__data__["Status"] = "Submitted"
     self.__data__["Completeness"] = 0
     self.__data__["FTSJobID"] = 0
+    self.regTime = 0.
+    self.regSuccess = 0
+    self.regTotal = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
 
     self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
@@ -132,7 +135,7 @@ class FTSJob( Record ):
              "PrimaryKey" : [ "FTSJobID" ],
              "Indexes" : { "FTSJobID" : [ "FTSJobID" ], "FTSGUID": [ "FTSGUID" ] } }
 
-  @property
+    @property
   def FTSJobID( self ):
     """ FTSJobID getter """
     return self.__data__["FTSJobID"]
@@ -150,8 +153,7 @@ class FTSJob( Record ):
   @RequestID.setter
   def RequestID( self, value ):
     """ RequestID setter """
-    value = long( value ) if value else 0
-    self.__data__["RequestID"] = value
+    self.__data__["RequestID"] = long( value ) if value else 0
 
   @property
   def OperationID( self ):
@@ -161,8 +163,7 @@ class FTSJob( Record ):
   @OperationID.setter
   def OperationID( self, value ):
     """ OperationID setter """
-    value = long( value ) if value else 0
-    self.__data__["OperationID"] = value
+    self.__data__["OperationID"] = long( value ) if value else 0
 
   @property
   def FTSGUID( self ):
@@ -510,7 +511,7 @@ class FTSJob( Record ):
 
     regExp = re.compile( "[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)", re.S )
     fileInfo = re.findall( regExp, outputStr )
-    for sourceURL, _targetURL, fileStatus, _retries, reason, _duration in fileInfo:
+    for sourceURL, _targetURL, fileStatus, _retries, reason, duration in fileInfo:
       candidateFile = None
       for ftsFile in self:
         if ftsFile.SourceSURL == sourceURL:
@@ -520,6 +521,7 @@ class FTSJob( Record ):
         continue
       candidateFile.Status = fileStatus
       candidateFile.Error = reason
+      candidateFile.duration = duration
 
       if candidateFile.Status == "Failed":
         for missingSource in self.missingSourceErrors:
@@ -538,6 +540,7 @@ class FTSJob( Record ):
     if self.Status not in FTSJob.FINALSTATES:
       return S_OK()
 
+    startTime = time.time()
     targetSE = StorageElement( self.TargetSE )
     toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
     toRegisterDict = {}
@@ -549,14 +552,19 @@ class FTSJob( Record ):
       toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
 
     if toRegisterDict:
+      self.regTotal += len(toRegisterDict)
       register = self.replicaManager().addCatalogReplica( toRegisterDict )
+      self.regTime += time.time()-startTime
       if not register["OK"]:
+        # FIXME: shouldn't be a print!
         for ftsFile in toRegister:
           ftsFile.Error = "AddCatalogReplicaFailed"
           print ftsFile.Error
         return register
       register = register["Value"]
-      failedFiles = register["Failed"] if "Failed" in register else {}
+      self.regSuccess += len(register.get('Successful',{}))
+      failedFiles = register.get("Failed", {})
+      # FIXME
       for ftsFile in toRegister:
         if ftsFile.LFN in failedFiles:
           ftsFile.Error = "AddCatalogReplicaFailed"
