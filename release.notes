@@ -3,6 +3,7 @@
 *Core
 FIX: dirac-install - execute dirac-fix-mysql-script and dirac-external-requirements after sourcing the environment
 FIX: InstallTools - set basedir variable in fixMySQLScript()
+FIX: InstallTools - define user root@host.domain in installMySQL()
 
 *Framework
 BUGFIX: SystemAdministratorCLI - bug fixed in default() call signature
