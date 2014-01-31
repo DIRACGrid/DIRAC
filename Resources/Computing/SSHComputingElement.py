@@ -58,13 +58,13 @@ class SSH:
       try:
         child = pexpect.spawn( command, timeout = timeout )
   
-        i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
+        i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'assword: '] )
         if i == 0: # Timeout        
             return S_OK( ( -1, child.before, 'SSH login failed' ) )
         elif i == 1: # SSH does not have the public key. Just accept it.
           child.sendline ( 'yes' )
-          child.expect ( 'password: ' )
-          i = child.expect( [pexpect.TIMEOUT, 'password: '] )
+          child.expect ( 'assword: ' )
+          i = child.expect( [pexpect.TIMEOUT, 'assword: '] )
           if i == 0: # Timeout
             return S_OK( ( -1, str( child.before ) + str( child.after ), 'SSH login failed' ) )
           elif i == 1:
