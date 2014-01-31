@@ -108,6 +108,21 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
+[v6r10p7]
+
+*Core
+FIX: dirac-install - execute dirac-fix-mysql-script and dirac-external-requirements after sourcing the environment
+FIX: InstallTools - set basedir variable in fixMySQLScript()
+
+*Framework
+BUGFIX: SystemAdministratorCLI - bug fixed in default() call signature
+
+*DMS
+FIX: FTSRequest - handle properly FTS server in the old system 
+FIX: ReplicaManager - check if file is in FC before removing 
+FIX: Request/RemovalTask - handle properly proxies for removing files 
+BUGFIX: DatasetManager - in the table description
+
 [v6r10p6]
 
 *Core

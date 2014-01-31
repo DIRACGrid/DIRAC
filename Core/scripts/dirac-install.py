@@ -996,10 +996,13 @@ def fixMySQLScript():
    Update the mysql.server script (if installed) to point to the proper datadir
   """
   scriptPath = os.path.join( cliParams.targetPath, 'scripts', 'dirac-fix-mysql-script' )
+  bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
+  if cliParams.useVersionsDir:
+    bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
+  command = 'source %s; %s > /dev/null' % (bashrcFile,scriptPath)
   if os.path.exists( scriptPath ):
-    logNOTICE( "Executing %s..." % scriptPath )
-    os.system( "%s > /dev/null " % scriptPath )
-
+    logNOTICE( "Executing %s..." % command )
+    os.system( 'bash -c "%s"' % command )
 
 def checkPlatformAliasLink():
   """
@@ -1013,11 +1016,15 @@ def installExternalRequirements( extType ):
   """ Install the extension requirements if any
   """
   reqScript = os.path.join( cliParams.targetPath, "scripts", 'dirac-externals-requirements' )
+  bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
+  if cliParams.useVersionsDir:
+    bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
   if os.path.isfile( reqScript ):
     os.chmod( reqScript , executablePerms )
     logNOTICE( "Executing %s..." % reqScript )
-    if os.system( "python '%s' -t '%s' > '%s.out' 2> '%s.err'" % ( reqScript, extType,
-                                                                   reqScript, reqScript ) ):
+    command = "python '%s' -t '%s' > '%s.out' 2> '%s.err'" % ( reqScript, extType,
+                                                               reqScript, reqScript )
+    if os.system( 'bash -c "source %s; %s"' % (bashrcFile,command) ):
       logERROR( "Requirements installation script %s failed. Check %s.err" % ( reqScript,
                                                                                reqScript ) )
   return True
@@ -1452,7 +1459,6 @@ if __name__ == "__main__":
   logNOTICE( "Installing %s externals..." % cliParams.externalsType )
   if not installExternals( releaseConfig ):
     sys.exit( 1 )
-  fixMySQLScript()
   if not createOldProLinks():
     sys.exit( 1 )
   if not createBashrc():
@@ -1461,6 +1467,8 @@ if __name__ == "__main__":
     sys.exit( 1 )
   runExternalsPostInstall()
   writeDefaultConfiguration()
+  if cliParams.externalsType == "server":
+    fixMySQLScript()
   installExternalRequirements( cliParams.externalsType )
   logNOTICE( "%s properly installed" % cliParams.installation )
   sys.exit( 0 )

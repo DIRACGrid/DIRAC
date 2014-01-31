@@ -847,7 +847,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
                 records.append(record)  
       printTable( fields, records, sortOption )        
 
-  def default( self, args, sortOption ):
+  def default( self, args ):
 
     argss = args.split()
     command = argss[0]

@@ -956,38 +956,38 @@ class FTSRequest( object ):
     res = getSitesForSE( self.sourceSE, 'LCG' )
     if not res['OK'] or not res['Value']:
       return S_ERROR( "Could not determine source site" )
-    sourceSite = res['Value'][0]
+    sourceSites = res['Value']
     res = getSitesForSE( self.targetSE, 'LCG' )
     if not res['OK'] or not res['Value']:
       return S_ERROR( "Could not determine target site" )
-    targetSite = res['Value'][0]
+    targetSites = res['Value']
 
-    # CERN is a special case, handling incoming and outgoing transfers
-    if ( sourceSite == 'LCG.CERN.ch' ) or ( targetSite == 'LCG.CERN.ch' ):
+    if 'LCG.CERN.ch' in sourceSites + targetSites:
+      # CERN is a special case, handling incoming and outgoing transfers
       res = self.__getFTSServer( 'LCG.CERN.ch' )
       if res['OK']:
         self.ftsServer = res['Value']
         return S_OK( self.ftsServer )
       else:
         return res
-    else:
-      # Target site FTS server should be used
+    for sourceSite in sourceSites:
+      # Target site FTS2 server should be used, but FTS3 OK for source as well
       sourceFTS = self.__getFTSServer( sourceSite )
       if sourceFTS['OK']:
         ftsSource = sourceFTS['Value']
         if 'fts3' in ftsSource:
           self.ftsServer = ftsSource
           return S_OK( self.ftsServer )
+    for targetSite in targetSites:
       targetFTS = self.__getFTSServer( targetSite )
       if targetFTS['OK']:
         ftsTarget = targetFTS['Value']
         if ftsTarget:
           self.ftsServer = ftsTarget
           return S_OK( self.ftsServer )
-        else:
-          return S_ERROR( 'No FTS server found for %s nor %s' % ( sourceSite, targetSite ) )
       else:
         return targetFTS
+    return S_ERROR( 'No FTS server found for %s nor %s' % ( sourceSite, targetSite ) )
 
   ####################################################################
   #
@@ -1280,7 +1280,7 @@ class FTSRequest( object ):
     if not result['OK']:
       userName = 'system'
     else:
-      userName = result['Value'].get( 'username', 'unknown' )   
+      userName = result['Value'].get( 'username', 'unknown' )
     accountingDict['User'] = userName
     accountingDict['Protocol'] = 'FTS' if 'fts3' not in self.ftsServer else 'FTS3'
     accountingDict['RegistrationTime'] = regTime
