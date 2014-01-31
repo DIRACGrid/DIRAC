@@ -71,6 +71,8 @@ class RemovalTask( RequestTask ):
     ownerDN = dirMeta["OwnerDN"]
 
     ownerProxy = None
+    # Execute with server certificate
+    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
     for ownerGroup in getGroupsWithVOMSAttribute( ownerRole ):
       vomsProxy = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup, limited = True,
                                                    requiredVOMSAttribute = ownerRole )
@@ -83,6 +85,7 @@ class RemovalTask( RequestTask ):
       self.debug( "getProxyForLFN: got proxy for %s@%s [%s]" % ( ownerDN, ownerGroup, ownerRole ) )
       break
 
+    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
     if not ownerProxy:
       return S_ERROR( "Unable to get owner proxy" )
 
@@ -118,25 +121,29 @@ class RemovalTask( RequestTask ):
     self.addMark( "RemoveFileAtt", len( lfns ) )
 
     # # bulk removal 1st
-    bulkRemoval = self.replicaManager().removeFile( lfns )
-    if not bulkRemoval["OK"]:
-      self.error( "removeFile: unable to remove files: %s" % bulkRemoval["Message"] )
-      subRequestError = bulkRemoval["Message"][:255]
-      subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError )
-      return S_OK( requestObj )
-    bulkRemoval = bulkRemoval["Value"]
-    successfulLfns = bulkRemoval["Successful"] if "Successful" in bulkRemoval else []
-    failedLfns = bulkRemoval["Failed"] if "Failed" in bulkRemoval else []
+    exists = self.replicaManager().getCatalogExists( lfns )
+    if not exists['OK']:
+      self.error( "removeFile: unable to check existence of files", exists['Message'] )
+      return exists
+    exists = exists['Value']['Successful']
+    lfns = [lfn for lfn in exists if exists[lfn]]
     toRemove = []
-    for lfn in removalStatus:
-      if lfn in failedLfns and "no such file or directory" in str( bulkRemoval["Failed"][lfn] ).lower():
-        removalStatus[lfn] = bulkRemoval["Failed"][lfn]
-        removeCatalog = self.replicaManager().removeCatalogFile( lfn, singleFile = True )
-        if not removeCatalog["OK"]:
-          removalStatus[lfn] = removeCatalog["Message"]
-          continue
+    if lfns:
+      bulkRemoval = self.replicaManager().removeFile( lfns )
+      if not bulkRemoval["OK"]:
+        bulkRemoval = { 'Failed' : dict.fromkeys( lfns, bulkRemoval['Message'] )}
       else:
-        toRemove.append( lfn )
+        bulkRemoval = bulkRemoval["Value"]
+      failedLfns = bulkRemoval["Failed"] if "Failed" in bulkRemoval else []
+      for lfn in removalStatus:
+        if lfn in failedLfns and "no such file or directory" in str( bulkRemoval["Failed"][lfn] ).lower():
+          removalStatus[lfn] = bulkRemoval["Failed"][lfn]
+          removeCatalog = self.replicaManager().removeCatalogFile( lfn, singleFile = True )
+          if not removeCatalog["OK"]:
+            removalStatus[lfn] = removeCatalog["Message"]
+            continue
+        else:
+          toRemove.append( lfn )
 
     # # loop over LFNs to remove
     for lfn in toRemove:
