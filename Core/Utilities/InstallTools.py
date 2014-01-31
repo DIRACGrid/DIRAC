@@ -1979,6 +1979,16 @@ def installMySQL():
   if not result['OK']:
     return result
   
+  # MySQL tends to define root@host user rather than root@host.domain
+  hostName = mysqlHost.split('.')[0]
+  result = execMySQL( "UPDATE user SET Host='%s' WHERE Host='%s'" % (mysqlHost,hostName), 
+                                                                     localhost=True )
+  if not result['OK']:
+    return result
+  result = execMySQL( "FLUSH PRIVILEGES" )
+  if not result['OK']:
+    return result
+  
   if mysqlHost and socket.gethostbyname( mysqlHost ) != '127.0.0.1' :
     result = execCommand( 0, ['mysqladmin', '-u', 'root', '-h', mysqlHost, 'password', mysqlRootPwd] )
     if not result['OK']:
