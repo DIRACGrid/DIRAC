@@ -1,3 +1,21 @@
+[v6r10p8]
+
+*Core
+FIX: InstallTools - admin e-mail default location changed
+
+*Framework
+FIX: SystemAdministratorClientCLI - allow "set host localhost"
+
+*WMS
+FIX: SiteDirector - Pass siteNames and ceList as None if any is accepted
+FIX: WorkloadManagement.ConfigTemplate.SiteDorectory - set Site to Any by default 
+
+*DMS
+FIX: FileCatalogCLI - ignore Datasets in ls command for backward compatibility
+
+*Resources
+FIX: SSH - some platforms use Password instead of password prompt
+
 [v6r10p7]
 
 *Core
