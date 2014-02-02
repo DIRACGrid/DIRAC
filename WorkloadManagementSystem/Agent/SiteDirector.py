@@ -125,18 +125,22 @@ class SiteDirector( AgentModule ):
     siteNames = None
     if not self.am_getOption( 'Site', 'Any' ).lower() == "any":
       siteNames = self.am_getOption( 'Site', [] )
+      if not siteNames:
+        siteNames = None
     ceTypes = None
     if not self.am_getOption( 'CETypes', 'Any' ).lower() == "any":
       ceTypes = self.am_getOption( 'CETypes', [] )
     ces = None
     if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
       ces = self.am_getOption( 'CEs', [] )
-      
+      if not ces:
+        ces = None      
     self._resources = Resources.Resources( vo = self.vo )  
     result = self._resources.getEligibleQueuesInfo( siteList = siteNames,
                                                     ceList = ces,
                                                     ceTypeList = ceTypes,
                                                     mode = 'Direct' )
+
     if not result['OK']:
       return result
     resourceDict = result['Value']
