@@ -123,12 +123,16 @@ class SiteDirector( AgentModule ):
     siteNames = None
     if not self.am_getOption( 'Site', 'Any' ).lower() == "any":
       siteNames = self.am_getOption( 'Site', [] )
+      if not siteNames:
+        siteNames = None
     ceTypes = None
     if not self.am_getOption( 'CETypes', 'Any' ).lower() == "any":
       ceTypes = self.am_getOption( 'CETypes', [] )
     ces = None
     if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
       ces = self.am_getOption( 'CEs', [] )
+      if not ces:
+        ces = None
     result = Resources.getQueues( community = self.vo,
                                   siteList = siteNames,
                                   ceList = ces,

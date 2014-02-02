@@ -1346,14 +1346,16 @@ File Catalog Client $Revision: 1.17 $Date:
           
           for entry in result['Value']['Successful'][path]['Links']:
             pass
-          for entry in result['Value']['Successful'][path]['Datasets']:
-            dname = os.path.basename( entry )    
-            if _long:
-              dsDict = result['Value']['Successful'][path]['Datasets'][entry]['Metadata']  
-              if dsDict:
-                dList.addDataset(dname,dsDict,numericid)
-            else:    
-              dList.addSimpleFile(dname)
+          
+          if 'Datasets' in result['Value']['Successful'][path]:
+            for entry in result['Value']['Successful'][path]['Datasets']:
+              dname = os.path.basename( entry )    
+              if _long:
+                dsDict = result['Value']['Successful'][path]['Datasets'][entry]['Metadata']  
+                if dsDict:
+                  dList.addDataset(dname,dsDict,numericid)
+              else:    
+                dList.addSimpleFile(dname)
               
           if _long:
             dList.printListing(reverse,timeorder)      
