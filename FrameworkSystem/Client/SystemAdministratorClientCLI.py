@@ -81,7 +81,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
   def __do_set_host( self, args ):
     host = args[0]
-    if host.find( '.' ) == -1:
+    if host.find( '.' ) == -1 and host != "localhost":
       self.__errMsg( "Provide the full host name including its domain" )
       return
     self.__setHost( host )
