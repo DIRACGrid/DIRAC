@@ -5,6 +5,7 @@ FIX: InstallTools - admin e-mail default location changed
 
 *Framework
 FIX: SystemAdministratorClientCLI - allow "set host localhost"
+FIX: BundleDelivery - protect against empty bundle
 
 *WMS
 FIX: SiteDirector - Pass siteNames and ceList as None if any is accepted
