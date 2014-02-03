@@ -92,8 +92,8 @@ class LineGraph( PlotBase ):
       tmp_b = list(tmp_y)  
       zorder -= 0.1
                     
-    ymax = max(tmp_b); ymax *= 1.1
-    ymin = min(tmp_b); ymin *= 1.1
+    ymax = max( tmp_b ); ymax *= 1.1
+    ymin = min( tmp_b, 0. ); ymin *= 1.1
     if self.prefs.has_key('log_yaxis'):
       ymin = 0.001
     xmax=max(tmp_x)  

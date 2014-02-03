@@ -143,8 +143,7 @@ class BarGraph( PlotBase ):
     if self.prefs.has_key('log_yaxis'):
       ymin = 0.001
     else:
-      ymin = min(tmp_b)  
-      if ymin > 0.: ymin = 0.
+      ymin = min( tmp_b, 0. )  
       ymin *= 1.1
     
     xmax=max(tmp_x)
