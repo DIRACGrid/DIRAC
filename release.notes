@@ -1,3 +1,11 @@
+[v6r10p9]
+
+*Core
+BUGFIX: LineGraph - Ymin was set to a minimal plot value rather than 0.
+
+*DMS
+CHANGE: FTSJob(Agent) - get correct information for FTS accounting (registration)
+
 [v6r10p8]
 
 *Core
