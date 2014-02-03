@@ -135,7 +135,7 @@ class FTSJob( Record ):
              "PrimaryKey" : [ "FTSJobID" ],
              "Indexes" : { "FTSJobID" : [ "FTSJobID" ], "FTSGUID": [ "FTSGUID" ] } }
 
-    @property
+  @property
   def FTSJobID( self ):
     """ FTSJobID getter """
     return self.__data__["FTSJobID"]
@@ -552,9 +552,9 @@ class FTSJob( Record ):
       toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
 
     if toRegisterDict:
-      self.regTotal += len(toRegisterDict)
+      self.regTotal += len( toRegisterDict )
       register = self.replicaManager().addCatalogReplica( toRegisterDict )
-      self.regTime += time.time()-startTime
+      self.regTime += time.time() - startTime
       if not register["OK"]:
         # FIXME: shouldn't be a print!
         for ftsFile in toRegister:
@@ -562,8 +562,8 @@ class FTSJob( Record ):
           print ftsFile.Error
         return register
       register = register["Value"]
-      self.regSuccess += len(register.get('Successful',{}))
-      failedFiles = register.get("Failed", {})
+      self.regSuccess += len( register.get( 'Successful', {} ) )
+      failedFiles = register.get( "Failed", {} )
       # FIXME
       for ftsFile in toRegister:
         if ftsFile.LFN in failedFiles:
