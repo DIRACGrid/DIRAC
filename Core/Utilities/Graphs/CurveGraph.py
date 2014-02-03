@@ -91,11 +91,9 @@ class CurveGraph( PlotBase ):
                           ecolor=color )  
       
                     
-    ymax = max(tmp_max_y)
+    ymax = max( tmp_max_y )
     ymax *= 1.1
-    ymin = min(tmp_min_y)
-    if ymin > 0.:
-      ymin = 0.
+    ymin = min( tmp_min_y, 0. )
     ymin *= 1.1
     if self.prefs.has_key('log_yaxis'):
       ymin = 0.001

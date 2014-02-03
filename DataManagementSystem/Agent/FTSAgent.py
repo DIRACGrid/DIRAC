@@ -56,6 +56,7 @@ from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
+from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -467,8 +468,9 @@ class FTSAgent( AgentModule ):
     else:
       missingReplicas = missingReplicas["Value"]
       for opFile in operation:
-        if opFile.LFN not in missingReplicas:
-          log.info( "%s is replicated at all targets" % opFile.LFN )
+        # Actually the condition below should never happen... Change printout for checking
+        if opFile.LFN not in missingReplicas and opFile.Status != 'Done':
+          log.warn( "Should be set! %s is replicated at all targets" % opFile.LFN )
           opFile.Status = "Done"
 
     toFail = ftsFilesDict.get( "toFail", [] )
@@ -899,15 +901,16 @@ class FTSAgent( AgentModule ):
       username = username["Value"]
 
     accountingDict["User"] = username
-    accountingDict["Protocol"] = "FTS"
+    accountingDict["Protocol"] = "FTS3" if 'fts3' in ftsJob.FTSServer.lower() else 'FTS'
+    accountingDict['ExecutionSite'] = ftsJob.FTSServer
 
-    # accountingDict['RegistrationTime'] = 0
-    # accountingDict['RegistrationOK'] = 0
-    # accountingDict['RegistrationTotal'] = 0
+    accountingDict['RegistrationTime'] = ftsJob.regTime
+    accountingDict['RegistrationOK'] = ftsJob.regSuccess
+    accountingDict['RegistrationTotal'] = ftsJob.regTotal
 
-    accountingDict["TransferOK"] = len( [ f for f in ftsJob if f.Status == "Finished" ] )
+    accountingDict["TransferOK"] = len( [ f for f in ftsJob if f.Status in FTSFile.SUCCESS_STATES ] )
     accountingDict["TransferTotal"] = len( ftsJob )
-    accountingDict["TransferSize"] = ftsJob.Size
+    accountingDict["TransferSize"] = ftsJob.Size - ftsJob.FailedSize
     accountingDict["FinalStatus"] = ftsJob.Status
     accountingDict["Source"] = ftsJob.SourceSE
     accountingDict["Destination"] = ftsJob.TargetSE
@@ -915,6 +918,7 @@ class FTSAgent( AgentModule ):
     dt = ftsJob.LastUpdate - ftsJob.SubmitTime
     transferTime = dt.days * 86400 + dt.seconds
     accountingDict["TransferTime"] = transferTime
+    # accountingDict['TransferTime'] = sum( [f.duration for f in ftsJob])
     dataOp.setValuesFromDict( accountingDict )
     dataOp.commit()
 
@@ -937,23 +941,33 @@ class FTSAgent( AgentModule ):
       return replicas
     replicas = replicas["Value"]
 
-    for successfulLFN, reps in replicas["Successful"].items():
-
-      if targetSESet.issubset( set( reps.keys() ) ):
+    fullyReplicated = 0
+    missingSEs = {}
+    for successfulLFN in replicas["Successful"]:
+      reps = set( replicas['Successful'][successfulLFN] )
+      if targetSESet.issubset( reps ):
         log.info( "%s has been replicated to all targets" % successfulLFN )
+        fullyReplicated += 1
         scheduledFiles[successfulLFN].Status = "Done"
       else:
-        missingReplicas[successfulLFN] = [ rep for rep in targetSESet if rep not in reps ]
-        log.info( "%s is still missing at %s" % ( successfulLFN,
-                                                  ",".join( missingReplicas[ successfulLFN ] ) ) )
+        missingReplicas[successfulLFN] = sorted( targetSESet - reps )
+        ses = ",".join( missingReplicas[ successfulLFN ] )
+        missingSEs[ses] = missingSEs.setdefault( ses, 0 ) + 1
+        log.verbose( "%s is still missing at %s" % ( successfulLFN, ses ) )
+    if fullyReplicated:
+      log.info( "%d new files have been replicated to all targets" % fullyReplicated )
+    if missingSEs:
+      for ses in missingSEs:
+        log.info( "%d replicas still missing at %s" % ( missingSEs[ses], ses ) )
 
     reMissing = re.compile( "no such file or directory" )
     for failedLFN, errStr in replicas["Failed"].items():
-      log.warn( "unable to read replicas for %s: %s" % ( failedLFN, errStr ) )
       scheduledFiles[failedLFN].Error = errStr
       if reMissing.search( errStr.lower() ):
         log.error( "%s is missing, setting its status to 'Failed'" % failedLFN )
         scheduledFiles[failedLFN].Status = "Failed"
+      else:
+        log.warn( "unable to read replicas for %s: %s" % ( failedLFN, errStr ) )
 
     return S_OK( missingReplicas )
 
