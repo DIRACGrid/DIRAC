@@ -10,7 +10,6 @@ Currently used Cache per SE is also reported. (active pins)
 """
 
 __RCSID__ = "$Id$"
-import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
 

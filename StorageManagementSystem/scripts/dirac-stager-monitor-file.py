@@ -14,7 +14,6 @@
 -   - pin length
 """
 __RCSID__ = "$Id$"
-import DIRAC
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -28,6 +27,8 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 if len( args ) < 2:
   Script.showHelp()
+
+from DIRAC import exit as DIRACExit
 
 lfn = args[0]
 se = args[1]
@@ -79,7 +80,7 @@ else:
   #Script.showHelp() 
 print outStr
 
-DIRAC.exit( 0 )
+DIRACExit( 0 )
 
 ''' Example:
 dirac-stager-monitor-file.py /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00056603_1.full.dst GRIDKA-RDST
