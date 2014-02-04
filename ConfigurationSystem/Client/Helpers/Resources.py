@@ -249,7 +249,10 @@ def getDIRACPlatform( OS ):
   if OS not in os2PlatformDict:
     return S_ERROR( 'No compatible DIRAC platform found for %s' % platform )
 
-  return S_OK( os2PlatformDict[OS].sort( key = LooseVersion, reverse = True ) )
+  platforms = os2PlatformDict[OS]
+  platforms.sort( key = LooseVersion, reverse = True )
+
+  return S_OK( platforms )
 
 def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog

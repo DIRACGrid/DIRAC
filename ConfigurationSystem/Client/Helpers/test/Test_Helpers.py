@@ -35,7 +35,7 @@ class ResourcesSuccess( HelpersTestCase ):
 
     res = getDIRACPlatform( 'OS1' )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], ['plat1', 'plat3'] )
+    self.assertEqual( res['Value'], ['plat3', 'plat1'] )
 
     res = getDIRACPlatform( 'OS2' )
     self.assert_( res['OK'] )
@@ -47,7 +47,7 @@ class ResourcesSuccess( HelpersTestCase ):
 
     res = getDIRACPlatform( 'OS4' )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], ['plat2', 'plat3'] )
+    self.assertEqual( res['Value'], ['plat3', 'plat2'] )
 
     res = getDIRACPlatform( 'OS5' )
     self.assert_( res['OK'] )
@@ -55,7 +55,7 @@ class ResourcesSuccess( HelpersTestCase ):
 
     res = getDIRACPlatform( 'plat1' )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], ['plat1', 'plat3'] )
+    self.assertEqual( res['Value'], ['plat3', 'plat1'] )
 
     res = getDIRACPlatform( 'plat2' )
     self.assert_( res['OK'] )
