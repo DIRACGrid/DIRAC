@@ -1,10 +1,13 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
+import re
+from distutils.version import LooseVersion
+
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.Core.Utilities.List                          import uniqueElements
-import re
+
 
 gBaseResourcesSection = "/Resources"
 
@@ -220,7 +223,10 @@ def getCompatiblePlatforms( originalPlatforms ):
   return S_OK( uniqueElements( resultList ) )
 
 def getDIRACPlatform( OS ):
-  """ Get standard DIRAC platform(s) compatible with the argument. The returned value is a list!
+  """ Get standard DIRAC platform(s) compatible with the argument.
+
+      NB: The returned value is a list! ordered, in reverse, using distutils.version.LooseVersion
+      In practice the "highest" version (which should be the most "desirable" one is returned first)
   """
   result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
   if not ( result['OK'] and result['Value'] ):
@@ -243,7 +249,7 @@ def getDIRACPlatform( OS ):
   if OS not in os2PlatformDict:
     return S_ERROR( 'No compatible DIRAC platform found for %s' % platform )
 
-  return S_OK( os2PlatformDict[OS] )
+  return S_OK( os2PlatformDict[OS].sort( key = LooseVersion, reverse = True ) )
 
 def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
