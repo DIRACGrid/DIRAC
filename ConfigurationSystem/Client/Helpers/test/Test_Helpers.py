@@ -10,15 +10,15 @@ class HelpersTestCase( unittest.TestCase ):
     self.gConfigMock = Mock()
     self.resourcesHelper = importlib.import_module( 'DIRAC.ConfigurationSystem.Client.Helpers.Resources' )
     self.resourcesHelper.gConfig = self.gConfigMock
-    
+
   def tearDown( self ):
-    
+
     del self.resourcesHelper
-    
+
 
 class ResourcesSuccess( HelpersTestCase ):
 
-  def test_getDIRACPlatform(self):
+  def test_getDIRACPlatform( self ):
     self.gConfigMock.getOptionsDict.return_value = {'OK':False, 'Value':''}
     res = getDIRACPlatform( 'plat' )
     self.assertFalse( res['OK'] )
