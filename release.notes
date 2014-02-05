@@ -1,3 +1,8 @@
+[v6r10p10]
+
+*DMS
+FIX: Several fixes to make FTS accounting working (FTSAgent/Job, ReplicaManager, File )
+
 [v6r10p9]
 
 *Core
