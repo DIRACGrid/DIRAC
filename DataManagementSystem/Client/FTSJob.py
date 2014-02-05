@@ -84,9 +84,9 @@ class FTSJob( Record ):
     self.__data__["Status"] = "Submitted"
     self.__data__["Completeness"] = 0
     self.__data__["FTSJobID"] = 0
-    self.regTime = 0.
-    self.regSuccess = 0
-    self.regTotal = 0
+    self._regTime = 0.
+    self._regSuccess = 0
+    self._regTotal = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
 
     self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
@@ -521,7 +521,7 @@ class FTSJob( Record ):
         continue
       candidateFile.Status = fileStatus
       candidateFile.Error = reason
-      candidateFile.duration = duration
+      candidateFile._duration = duration
 
       if candidateFile.Status == "Failed":
         for missingSource in self.missingSourceErrors:
@@ -552,9 +552,9 @@ class FTSJob( Record ):
       toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
 
     if toRegisterDict:
-      self.regTotal += len( toRegisterDict )
+      self._regTotal += len( toRegisterDict )
       register = self.replicaManager().addCatalogReplica( toRegisterDict )
-      self.regTime += time.time() - startTime
+      self._regTime += time.time() - startTime
       if not register["OK"]:
         # FIXME: shouldn't be a print!
         for ftsFile in toRegister:
@@ -562,7 +562,7 @@ class FTSJob( Record ):
           print ftsFile.Error
         return register
       register = register["Value"]
-      self.regSuccess += len( register.get( 'Successful', {} ) )
+      self._regSuccess += len( register.get( 'Successful', {} ) )
       failedFiles = register.get( "Failed", {} )
       # FIXME
       for ftsFile in toRegister:

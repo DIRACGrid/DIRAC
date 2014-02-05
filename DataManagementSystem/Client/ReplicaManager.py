@@ -1272,7 +1272,7 @@ class ReplicaManager( CatalogToStorage ):
         for fileName in files:
           fileInfo = files[fileName]
           fileInfo = fileInfo.get( 'Metadata', fileInfo )
-          if ( not days ) or self.__isOlderThan( fileInfo['CreationDate'], days ):
+          if ( not days ) or not fileInfo.get( 'CreationDate' ) or self.__isOlderThan( fileInfo['CreationDate'], days ):
             if wildcard == '*' or fnmatch.fnmatch( fileName, wildcard ):
               fileName = fileInfo.get( 'LFN', fileName )
               allFiles.append( fileName )
