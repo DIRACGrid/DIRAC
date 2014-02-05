@@ -904,9 +904,9 @@ class FTSAgent( AgentModule ):
     accountingDict["Protocol"] = "FTS3" if 'fts3' in ftsJob.FTSServer.lower() else 'FTS'
     accountingDict['ExecutionSite'] = ftsJob.FTSServer
 
-    accountingDict['RegistrationTime'] = ftsJob.regTime
-    accountingDict['RegistrationOK'] = ftsJob.regSuccess
-    accountingDict['RegistrationTotal'] = ftsJob.regTotal
+    accountingDict['RegistrationTime'] = ftsJob._regTime
+    accountingDict['RegistrationOK'] = ftsJob._regSuccess
+    accountingDict['RegistrationTotal'] = ftsJob._regTotal
 
     accountingDict["TransferOK"] = len( [ f for f in ftsJob if f.Status in FTSFile.SUCCESS_STATES ] )
     accountingDict["TransferTotal"] = len( ftsJob )

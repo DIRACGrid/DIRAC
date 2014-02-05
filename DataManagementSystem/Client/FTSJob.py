@@ -84,9 +84,9 @@ class FTSJob( Record ):
     self.__data__["Status"] = "Submitted"
     self.__data__["Completeness"] = 0
     self.__data__["FTSJobID"] = 0
-    self.regTime = 0.
-    self.regSuccess = 0
-    self.regTotal = 0
+    self._regTime = 0.
+    self._regSuccess = 0
+    self._regTotal = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
 
     self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
