@@ -108,6 +108,11 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
+[v6r10p10]
+
+*DMS
+FIX: Several fixes to make FTS accounting working (FTSAgent/Job, ReplicaManager, File )
+
 [v6r10p9]
 
 *Core
