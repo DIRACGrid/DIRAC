@@ -918,7 +918,7 @@ class FTSAgent( AgentModule ):
     dt = ftsJob.LastUpdate - ftsJob.SubmitTime
     transferTime = dt.days * 86400 + dt.seconds
     accountingDict["TransferTime"] = transferTime
-    # accountingDict['TransferTime'] = sum( [f.duration for f in ftsJob])
+    # accountingDict['TransferTime'] = sum( [f._duration for f in ftsJob])
     dataOp.setValuesFromDict( accountingDict )
     dataOp.commit()
 

@@ -62,7 +62,7 @@ class File( Record ):
     self.__data__["Attempt"] = 0
     self.__data__["Size"] = 0
     self.__data__["Error"] = ''
-    self.duration = 0
+    self._duration = 0
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:

@@ -521,7 +521,7 @@ class FTSJob( Record ):
         continue
       candidateFile.Status = fileStatus
       candidateFile.Error = reason
-      candidateFile.duration = duration
+      candidateFile._duration = duration
 
       if candidateFile.Status == "Failed":
         for missingSource in self.missingSourceErrors:
