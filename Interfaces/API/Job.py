@@ -24,14 +24,10 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id$"
-
 import re, os, types, urllib
 
 from DIRAC                                                    import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Workflow.Parameter                            import Parameter
-from DIRAC.Core.Workflow.Module                               import ModuleDefinition
-from DIRAC.Core.Workflow.Step                                 import StepDefinition
 from DIRAC.Core.Workflow.Workflow                             import Workflow
 from DIRAC.Core.Base.API                                      import API
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight                import ClassAd
@@ -42,6 +38,8 @@ from DIRAC.Core.Utilities.Subprocess                          import shellCall
 from DIRAC.Core.Utilities.List                                import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
+from DIRAC.Interfaces.API.Dirac                               import Dirac
+from DIRAC.Workflow.Utilities.Utils                           import getStepDefinition, addStepToWorkflow
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 
@@ -100,7 +98,13 @@ class Job( API ):
       self.workflow = Workflow( script )
 
   #############################################################################
-  def setExecutable( self, executable, arguments = '', logFile = '' ):
+
+  def setExecutable( self, executable, arguments = '', logFile = '',
+                     modulesList = ['Script'],
+                     parameters = [( 'executable', 'string', '', "Executable Script" ),
+                                   ( 'arguments', 'string', '', 'Arguments for executable Script' ),
+                                   ( 'applicationLog', 'string', '', "Log file name" )]
+                    ):
     """Helper function.
 
        Specify executable script to run with optional arguments and log file
@@ -123,6 +127,10 @@ class Job( API ):
        @type arguments: string
        @param logFile: Optional log file name
        @type logFile: string
+       @param modulesList: Optional list of modules (to be used mostly when extending this method
+       @type modulesList: list
+       @param parameters: Optional list of parameters (to be used mostly when extending this method
+       @type parameters: list
     """
     kwargs = {'executable':executable, 'arguments':arguments, 'logFile':logFile}
     if not type( executable ) == type( ' ' ) or not type( arguments ) == type( ' ' ) or \
@@ -133,39 +141,28 @@ class Job( API ):
       self.log.verbose( 'Found script executable file %s' % ( executable ) )
       self.addToInputSandbox.append( executable )
       logName = '%s.log' % ( os.path.basename( executable ) )
-      moduleName = os.path.basename( executable )
     else:
-      self.log.verbose( 'Found executable code' )
+      self.log.warn( 'The executable code could not be found locally' )
       logName = 'CodeOutput.log'
-      moduleName = 'CodeSegment'
 
     if logFile:
       if type( logFile ) == type( ' ' ):
         logName = str(logFile)
 
     self.stepCount += 1
+    stepName = 'RunScriptStep%s' % ( self.stepCount )
 
-    moduleName = moduleName.replace( '.', '' )
-    stepNumber = self.stepCount
-    stepDefn = 'ScriptStep%s' % ( stepNumber )
-    step = self.__getScriptStep( stepDefn )
-    stepName = 'RunScriptStep%s' % ( stepNumber )
-    logPrefix = 'Script%s_' % ( stepNumber )
-    if logFile:
-      logPrefix = '' # Given that the user specified the log, no need to change it
-    logName = '%s%s' % ( logPrefix, logName )
+    step = getStepDefinition( 'ScriptStep%s' % ( self.stepCount ), modulesList, parametersList = parameters )
     self.addToOutputSandbox.append( logName )
-    self.workflow.addStep( step )
 
-    # Define Step and its variables
-    stepInstance = self.workflow.createStepInstance( stepDefn, stepName )
-    stepInstance.setValue( "name", moduleName )
-    stepInstance.setValue( "logFile", logName )
-    stepInstance.setValue( "executable", executable )
+    stepInstance = addStepToWorkflow( self.workflow, step, stepName )
+
+    stepInstance.setValue( 'applicationLog', logName )
+    stepInstance.setValue( 'executable', executable )
     if arguments:
-      stepInstance.setValue( "arguments", arguments )
+      stepInstance.setValue( 'arguments', arguments )
 
-    return S_OK()
+    return S_OK( stepInstance )
 
   #############################################################################
   def setName( self, jobName ):
@@ -784,28 +781,6 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def setMode( self, mode ):
-    """Developer function. Under development.
-    """
-    if not type( mode ) == type( " " ):
-      return self._reportError( 'Expected string for job mode', **{'mode':mode} )
-
-    description = 'Choose a different DIRAC job mode'
-    self._addParameter( self.workflow, 'JobMode', 'JDL', mode, description )
-    return S_OK()
-
-  #############################################################################
-  def selectSetup( self, setup ):
-    """Developer function. Under development.
-    """
-    if not type( setup ) == type( " " ):
-      return self._reportError( 'Expected string for DIRAC setup', **{'setup':setup} )
-
-    description = 'Choose a different DIRAC setup in which to execute the job'
-    self._addParameter( self.workflow, 'DIRACSetup', 'JDL', setup, description )
-    return S_OK()
-
-  #############################################################################
   def setExecutionEnv( self, environmentDict ):
     """Helper function.
 
@@ -841,25 +816,10 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def sendMail( self ):
-    """Under development.
-    """
-    description = 'Optional flag to send email when jobs complete'
-    self._addParameter( self.workflow, 'SendMail', 'JDL', 'True', description )
-
-  #############################################################################
-  def createCode( self ):
-    """Developer function. Wrapper method to create the code.
-    """
-    return self.workflow.createCode()
-
-  #############################################################################
   def execute( self ):
     """Developer function. Executes the job locally.
     """
-    self.createCode()
-    # code = self.createCode()
-    # eval(compile(code,'<string>','exec'))
+    self.workflow.createCode()
     self.workflow.execute()
 
   #############################################################################
@@ -1005,28 +965,7 @@ class Job( API ):
     return resolvedIS
 
   #############################################################################
-  @classmethod
-  def __getScriptStep( self, name = 'Script' ):
-    """Internal function. This method controls the definition for a script module.
-    """
-    # Create the script module first
-    moduleName = 'Script'
-    module = ModuleDefinition( moduleName )
-    module.setDescription( 'A  script module that can execute any provided script.' )
-    body = 'from DIRAC.Core.Workflow.Modules.Script import Script\n'
-    module.setBody( body )
-    # Create Step definition
-    step = StepDefinition( name )
-    step.addModule( module )
-    moduleInstance = step.createModuleInstance( 'Script', name )
-    # Define step parameters
-    step.addParameter( Parameter( "name", "", "string", "", "", False, False, 'Name of executable' ) )
-    step.addParameter( Parameter( "executable", "", "string", "", "", False, False, 'Executable Script' ) )
-    step.addParameter( Parameter( "arguments", "", "string", "", "", False, False, 'Arguments for executable Script' ) )
-    step.addParameter( Parameter( "logFile", "", "string", "", "", False, False, 'Log file name' ) )
-    return step
 
-  #############################################################################
   def _toXML( self ):
     """Creates an XML representation of itself as a Job.
     """
@@ -1231,5 +1170,16 @@ class Job( API ):
     """
     self._addParameter( self.workflow, name, 'JDL', value, 'Optional JDL parameter added' )
     return self.workflow.setValue( name, value )
+
+  #############################################################################
+
+  def runLocal( self, dirac = None ):
+    """ The dirac (API) object is for local submission.
+    """
+
+    if dirac is None:
+      dirac = Dirac()
+
+    return dirac.submit( self, mode = 'local' )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
