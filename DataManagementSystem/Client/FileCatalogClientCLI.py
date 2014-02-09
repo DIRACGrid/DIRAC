@@ -2074,6 +2074,7 @@ File Catalog Client $Revision: 1.17 $Date:
     path = argss[0]
     path = self.getPath(path)
     del argss[0]
+
     if argss:
       if argss[0][0] == '{':
         metaDict = eval(argss[0])
@@ -2081,7 +2082,8 @@ File Catalog Client $Revision: 1.17 $Date:
         metaDict = self.__createQuery(' '.join(argss))
     else:
       metaDict = {}    
-    if verbose: print "Query:",metaDict
+    if verbose: 
+      print "Query:",metaDict
 
     result = self.fc.findFilesByMetadata(metaDict,path)
     if not result['OK']:
