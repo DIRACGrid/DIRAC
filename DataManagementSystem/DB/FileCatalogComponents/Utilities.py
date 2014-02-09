@@ -46,7 +46,7 @@ def checkArgumentFormat( path ):
   urls = {}
   for url in pathDict:
     mUrl = url
-    if url.startswith( 'lfn:' ):
+    if url.lower().startswith( 'lfn:' ):
       mUrl = url[4:]
     elif url.startswith( 'LFN:' ):
       mUrl = url[4:]  
