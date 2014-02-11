@@ -87,7 +87,7 @@ class FTSDB( DB ):
 
     at the moment only one view - FTSHistoryView
     """
-    return { FTSHistoryView.__name__: FTSHistoryView.viewDesc() }
+    return { 'FTSHistoryView': FTSHistoryView.viewDesc() }
 
   def createViews( self, force = False ):
     """ create views """
