@@ -107,7 +107,7 @@ class ProxyStorage( StorageBase ):
       return client.callProxyMethod( self.name, 'putFile', [path], {'sourceSize':sourceSize} )
 
     gLogger.debug( "ProxyStorage.putFile: No source size was provided therefore a simple put will be performed." )
-    res = self.__checkArgumentFormatDict( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
