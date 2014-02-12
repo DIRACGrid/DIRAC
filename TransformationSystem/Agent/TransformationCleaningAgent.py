@@ -44,7 +44,7 @@ class TransformationCleaningAgent( AgentModule ):
     """ c'tor
     """
     AgentModule.__init__( self, *args, **kwargs )
-    # # replica manager
+    # # data manager
     self.dm = DataManager()
     # # transformation client
     self.transClient = TransformationClient()
