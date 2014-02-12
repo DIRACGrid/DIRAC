@@ -282,6 +282,10 @@ class Request( Record ):
     """ nb of subRequests """
     return len( self.__operations__ )
 
+  def __str__( self ):
+    """ str operator """
+    return str( self.toJSON()["Value"] )
+
   def subStatusList( self ):
     """ list of statuses for all operations """
     return [ subReq.Status for subReq in self ]
@@ -488,7 +492,7 @@ class Request( Record ):
 
   def getDigest( self ):
     """ return digest for request """
-    digest = []
+    digest = ['Name:' + self.RequestName]
     for op in self:
       opDigest = [ str( item ) for item in ( op.Type, op.Type, op.Status, op.Order ) ]
       if op.TargetSE:
