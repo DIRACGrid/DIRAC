@@ -475,7 +475,7 @@ class X509Chain:
     childCert.set_pubkey( req.get_pubkey() )
     childCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
     childCert.gmtime_adj_notBefore( -900 )
-    childCert.gmtime_adj_notAfter( lifetime )
+    childCert.gmtime_adj_notAfter( int( lifetime ) )
     childCert.sign( self.__keyObj, 'md5' )
 
     childString = crypto.dump_certificate( crypto.FILETYPE_PEM, childCert )

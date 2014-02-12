@@ -108,6 +108,21 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
+[v6r10p11]
+
+*Core
+FIX: X509Chain - cast life time to int before creating cert
+
+*Accounting
+FIX: DataStoreClient - self.__maxRecordsInABundle = 5000 instead of 1000
+FIX: JobPolicy - allow access for JOB_MONITOR property
+
+*RMS
+FIX: ReqClient - fix the case when a job is Completed but in an unknown minor status
+
+*Resources
+BUGFIX: ProxyStorage - use checkArgumentFormat() instead of self.__checkArgumentFormatDict()
+
 [v6r10p10]
 
 *DMS

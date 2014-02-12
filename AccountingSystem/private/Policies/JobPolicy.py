@@ -18,6 +18,8 @@ class JobPolicy:
 
     if Properties.JOB_ADMINISTRATOR in userProps:
       return condDict
+    elif Properties.JOB_MONITOR in userProps:
+      return condDict
     elif Properties.JOB_SHARING in userProps:
       condDict[ 'UserGroup' ] = [ credDict[ 'group' ] ]
     elif Properties.NORMAL_USER in userProps:
@@ -32,6 +34,8 @@ class JobPolicy:
     userProps = credDict[ 'properties' ]
 
     if Properties.JOB_ADMINISTRATOR in userProps:
+      return S_OK()
+    elif Properties.JOB_MONITOR in userProps:
       return S_OK()
     elif Properties.JOB_SHARING in userProps:
       if 'User' in condDict:
@@ -69,6 +73,8 @@ class JobPolicy:
     userProps = credDict[ 'properties' ]
 
     if Properties.JOB_ADMINISTRATOR in userProps:
+      return S_OK( dataDict )
+    elif Properties.JOB_MONITOR in userProps:
       return S_OK( dataDict )
     elif Properties.JOB_SHARING in userProps:
       dataDict[ 'User' ] = [ credDict[ 'username' ] ]

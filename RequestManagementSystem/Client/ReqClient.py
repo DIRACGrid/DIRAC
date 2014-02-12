@@ -285,6 +285,7 @@ class ReqClient( Client ):
       jobStatus = res["Value"]["Status"]
       jobMinorStatus = res["Value"]["MinorStatus"]
 
+      stateUpdate = None
       if jobStatus == 'Completed':
         # What to do? Depends on what we have in the minorStatus
         if jobMinorStatus == "Pending Requests":
@@ -295,7 +296,7 @@ class ReqClient( Client ):
           self.log.info( "finalizeRequest: Updating job status for %d to Failed/Requests done" % jobID )
           stateUpdate = stateServer.setJobStatus( jobID, "Failed", "Requests done", "" )
 
-      else:
+      if not stateUpdate:
         self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
         stateUpdate = stateServer.setJobStatus( jobID, "", "Requests done", "" )
 
