@@ -68,7 +68,7 @@ class RegisterFile( OperationHandlerBase ):
       # # get LFN
       lfn = opFile.LFN
       # # and others
-      fileTuple = ( lfn , opFile.PFN, opFile.Size, targetSE, opFile.GUID, opFile.Checksum )
+      fileTuple = ( lfn , opFile.PFN, opFile.Size, self.operation.targetSEList[0], opFile.GUID, opFile.Checksum )
       # # call DataManager
       registerFile = dm.registerFile( fileTuple )
       # # check results
