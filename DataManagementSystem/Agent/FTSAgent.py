@@ -53,7 +53,7 @@ from DIRAC.Core.Utilities.Time import fromString
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
@@ -66,6 +66,8 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog    import FileCatalog
+from DIRAC.Resources.Utilities              import Utils
 # # from Accounting
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
@@ -98,8 +100,7 @@ class FTSAgent( AgentModule ):
   MAX_ATTEMPT = 256
   # # stage flag
   STAGE_FILES = False
-  # # replica manager
-  __replicaManager = None
+
   # # placeholder for FTS client
   __ftsClient = None
   # # placeholder for request client
@@ -143,12 +144,7 @@ class FTSAgent( AgentModule ):
       cls.__ftsClient = FTSClient()
     return cls.__ftsClient
 
-  @classmethod
-  def replicaManager( cls ):
-    """ replica manager getter """
-    if not cls.__replicaManager:
-      cls.__replicaManager = ReplicaManager()
-    return cls.__replicaManager
+
 
   @classmethod
   def rssClient( cls ):
@@ -272,6 +268,10 @@ class FTSAgent( AgentModule ):
 
   def initialize( self ):
     """ agent's initialization """
+
+
+      # # data manager
+    self.dm = DataManager()
 
     log = self.log.getSubLogger( "initialize" )
 
@@ -874,7 +874,7 @@ class FTSAgent( AgentModule ):
       for ftsFile in ftsFileList:
         opFile = File()
         opFile.LFN = ftsFile.LFN
-        pfn = targetSE.getPfnForProtocol( ftsFile.TargetSURL, "SRM2", withPort = False )
+        pfn = Utils.executeSingleFileOrDirWrapper( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
         if not pfn["OK"]:
           continue
         opFile.PFN = pfn["Value"]
@@ -934,8 +934,7 @@ class FTSAgent( AgentModule ):
     scheduledFiles = dict( [ ( opFile.LFN, opFile ) for opFile in operation
                               if opFile.Status in ( "Scheduled", "Waiting" ) ] )
     # # get replicas
-    replicas = self.replicaManager().getCatalogReplicas( scheduledFiles.keys() )
-
+    replicas = FileCatalog().getReplicas( scheduledFiles )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
       return replicas
@@ -977,7 +976,7 @@ class FTSAgent( AgentModule ):
 
     ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
 
-    replicas = self.replicaManager().getActiveReplicas( opFile.LFN )
+    replicas = self.dm.getActiveReplicas( opFile.LFN )
     if not replicas["OK"]:
       log.error( replicas["Message"] )
     reNotExists = re.compile( "not such file or directory" )
@@ -994,7 +993,7 @@ class FTSAgent( AgentModule ):
 
       repSE = self.getSE( repSEName )
 
-      pfn = repSE.getPfnForLfn( opFile.LFN )
+      pfn = Utils.executeSingleFileOrDirWrapper( repSE.getPfnForLfn( opFile.LFN ) )
       if not pfn["OK"]:
         log.warn( "unable to create pfn for %s lfn: %s" % ( opFile.LFN, pfn["Message"] ) )
         ret["Banned"].append( repSEName )

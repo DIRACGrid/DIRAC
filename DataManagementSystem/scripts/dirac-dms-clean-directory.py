@@ -35,14 +35,14 @@ if os.path.exists(inputFileName):
 else:
   lfns = [inputFileName]
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-rm = ReplicaManager()
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+dm = DataManager()
 for lfn in sortList(lfns):
   lfn = lfn.strip()
   if not lfn: continue
   print "Cleaning directory %s ... " % lfn,
   sys.stdout.flush()
-  result = rm.cleanLogicalDirectory(lfn)
+  result = dm.cleanLogicalDirectory( lfn )
   if result['OK']:
     print 'OK'
   else:

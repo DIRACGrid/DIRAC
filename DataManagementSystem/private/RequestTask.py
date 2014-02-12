@@ -24,6 +24,10 @@ __RCSID__ = "$Id$"
 # @date 2011/10/12 12:09:18
 # @brief Definition of RequestTask class.
 
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+
+
 class RequestTask( object ):
   """
   .. class:: RequestTask
@@ -34,17 +38,12 @@ class RequestTask( object ):
   The most important and common global DIRAC objects are created in RequestTask constructor.
   This includes gLogger, gConfig, gProxyManager, S_OK and S_ERROR. The constructor also
   imports a set of common modules: os, sys, re, time and everything from types module.
-
-  All other DIRAC tools and clients (i.e. RequestManager) are private in RequestTask class and will
-  be imported and instantiated on demand during first usage. They are accessible using proxied public methods, i.e.
-  if you are going to use ReplicaManager just call::
-
-    self.replicaManager().someMethod()
+  
+  All other DIRAC tools and clients (i.e. DataManager) are instance attributes of RequestTask class
 
   All currently proxied tools are::
 
   DataLoggingClient -- self.dataLoggingClient()
-  ReplicaManager    -- self.replicaManager()
   RequestClient     -- self.requestClient()
   StorageFactory    -- self.storageFactory()
 
@@ -79,9 +78,7 @@ class RequestTask( object ):
   The values are then processed and pushed to the gMonitor instance in the default callback function.
   """
 
-  # # reference to ReplicaManager
-  __replicaManager = None
-  # # reference to DataLoggingClient
+  ## reference to DataLoggingClient
   __dataLoggingClient = None
   # # reference to RequestClient
   __requestClient = None
@@ -147,6 +144,9 @@ class RequestTask( object ):
     from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
     from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
     from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+    from DIRAC.DataManagementSystem.Client.Datamanager import DataManager
+    from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+
 
     # # export DIRAC global tools and functions
     self.makeGlobal( "S_OK", S_OK )
@@ -184,6 +184,13 @@ class RequestTask( object ):
       self.__dataManagerProxy = os.environ["X509_USER_PROXY"]
     else:
       self.error( "'X509_USER_PROXY' environment variable not set" )
+
+    self.fc = FileCatalog()
+    self.dm = DataManager()
+
+    self.dm = DataManager()
+    self.fc = FileCatalog()
+
 
   def dataManagerProxy( self ):
     """ get dataManagerProxy file
@@ -241,15 +248,6 @@ class RequestTask( object ):
     self.debug( "Setting requestType to %s" % str( requestType ) )
     self.__requestType = requestType
 
-  @classmethod
-  def replicaManager( cls ):
-    """ ReplicaManager getter
-    :param cls: class reference
-    """
-    if not cls.__replicaManager:
-      from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-      cls.__replicaManager = ReplicaManager()
-    return cls.__replicaManager
 
   @classmethod
   def dataLoggingClient( cls ):

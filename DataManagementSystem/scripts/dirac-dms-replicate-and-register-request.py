@@ -51,9 +51,9 @@ if __name__ == "__main__":
   from DIRAC.RequestManagementSystem.Client.Operation import Operation
   from DIRAC.RequestManagementSystem.Client.File import File
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-  from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-  metaDatas = ReplicaManager().getCatalogFileMetadata( lfnList )
+  metaDatas = FileCatalog().getFileMetadata( lfnList )
   if not metaDatas["OK"]:
     gLogger.error( "unable to read metadata for lfns: %s" % metaDatas["Message"] )
     DIRAC.exit( -1 )

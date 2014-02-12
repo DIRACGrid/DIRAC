@@ -30,7 +30,7 @@ from DIRAC import gMonitor, S_OK, S_ERROR
 # # base class
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 # # replica manager
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 # # startegy handler
 from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler, SHGraphCreationError
 # # task to be executed
@@ -43,6 +43,8 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Adler import compareAdler
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Utilities           import Utils
 # # agent name
 AGENT_NAME = "DataManagement/TransferAgent"
 
@@ -119,8 +121,7 @@ class TransferAgent( RequestAgentBase ):
      - acceptable failure rate
       AcceptableFailureRate = 75
   """
-  # # placeholder for ReplicaManager instance
-  __replicaManager = None
+
   # # placeholder for rss client
   __rssClient = None
   # # placeholder for StorageFactory instance
@@ -147,6 +148,9 @@ class TransferAgent( RequestAgentBase ):
     self.setRequestTask( TransferTask )
     RequestAgentBase.__init__( self, *args, **kwargs )
     agentName = args[0]
+
+
+    self.fc = FileCatalog()
 
     # # gMonitor stuff
     self.monitor.registerActivity( "Replicate and register", "Replicate and register operations",
@@ -227,14 +231,7 @@ class TransferAgent( RequestAgentBase ):
   ###################################################################################
   # facades for various DIRAC tools
   ###################################################################################
-  def replicaManager( self ):
-    """ ReplicaManager instance getter
 
-    :param self: self reference
-    """
-    if not self.__replicaManager:
-      self.__replicaManager = ReplicaManager()
-    return self.__replicaManager
 
   def rssClient( self ):
     """ rss client getter """
@@ -331,7 +328,7 @@ class TransferAgent( RequestAgentBase ):
       if not se:
         se = StorageElement( sourceSE, "SRM2" )
         self.seCache[sourceSE] = se
-      pfn = se.getPfnForLfn( lfn )
+      pfn = Utils.executeSingleFileOrDirWrapper( se.getPfnForLfn( lfn ) )
       if not pfn["OK"]:
         self.log.warn( "checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) )
         return pfn
@@ -471,7 +468,7 @@ class TransferAgent( RequestAgentBase ):
     :param str sourceSE: source storage element
     :param str pfn: phisical file name
     """
-    res = self.replicaManager().getPfnForProtocol( [pfn], sourceSE )
+    res = StorageElement( sourceSE ).getPfnForProtocol( [pfn] )
     if not res["OK"]:
       return res
     if pfn in res["Value"]["Failed"]:
@@ -483,7 +480,7 @@ class TransferAgent( RequestAgentBase ):
   ###################################################################################
   def collectFiles( self, requestObj, iSubRequest, status = 'Waiting' ):
     """ Get SubRequest files with status :status:, collect their replicas and metadata information from
-    ReplicaManager.
+    DataManager.
 
     :param self: self reference
     :param RequestContainer requestObj: request being processed
@@ -511,7 +508,7 @@ class TransferAgent( RequestAgentBase ):
         waitingFiles.setdefault( fileLFN, subRequestFile["FileID"] )
 
     if waitingFiles:
-      replicas = self.replicaManager().getActiveReplicas( waitingFiles.keys() )
+      replicas = self.dm.getActiveReplicas( waitingFiles.keys() )
       if not replicas["OK"]:
         self.log.error( "collectFiles: failed to get replica information", replicas["Message"] )
         return replicas
@@ -520,7 +517,7 @@ class TransferAgent( RequestAgentBase ):
       replicas = replicas["Value"]["Successful"]
 
       if replicas:
-        metadata = self.replicaManager().getCatalogFileMetadata( replicas.keys() )
+        metadata = self.fc.getFileMetadata( replicas )
         if not metadata["OK"]:
           self.log.error( "collectFiles: failed to get file size information", metadata["Message"] )
           return metadata
@@ -566,6 +563,27 @@ class TransferAgent( RequestAgentBase ):
     waitingFiles = dict( [ ( k, v ) for k, v in waitingFiles.items() if k not in toRemove ] )
 
     return S_OK( ( waitingFiles, replicas, metadata ) )
+
+
+
+
+
+
+
+
+  def initialize( self ):
+    """ agent's initialization """
+
+    # # data manager
+    self.dm = DataManager()
+
+    return S_OK()
+
+
+
+
+
+
 
   ###################################################################################
   # agent execution
@@ -1035,7 +1053,7 @@ class TransferAgent( RequestAgentBase ):
     replicas = None
     if fileLFNs:
       self.log.debug( "checkReadyReplicas: got %s not-done files" % str( len( fileLFNs ) ) )
-      replicas = self.replicaManager().getCatalogReplicas( fileLFNs )
+      replicas = self.fc.getReplicas( fileLFNs )
       if not replicas["OK"]:
         return replicas
       for lfn, failure in replicas["Value"]["Failed"].items():
@@ -1094,7 +1112,7 @@ class TransferAgent( RequestAgentBase ):
         for pfn, se, channelID in toRegister:
           self.log.info( "registerFiles: failover registration of %s to %s" % ( lfn, se ) )
           # # register replica now
-          registerReplica = self.replicaManager().registerReplica( ( lfn, pfn, se ) )
+          registerReplica = self.dm.registerReplica( ( lfn, pfn, se ) )
           if ( ( not registerReplica["OK"] )
                or ( not registerReplica["Value"] )
                or ( lfn in registerReplica["Value"]["Failed"] ) ):

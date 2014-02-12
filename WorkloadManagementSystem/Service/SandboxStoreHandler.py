@@ -15,12 +15,13 @@ import tempfile
 from DIRAC import gLogger, S_OK, S_ERROR  # , gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Utilities import Utils
 from DIRAC.Core.Security import Properties
 # from DIRAC.Core.Utilities import List
 
@@ -213,7 +214,7 @@ class SandboxStoreHandler( RequestHandler ):
       errStr = "Failed to instantiate destination StorageElement"
       gLogger.error( errStr, self.__externalSEName )
       return S_ERROR( errStr )
-    result = storageElement.getPfnForLfn( sbPath )
+    result = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( sbPath ) )
     if not result['OK']:
       errStr = "Failed to generate PFN"
       gLogger.error( errStr, self.__externalSEName )
@@ -291,8 +292,8 @@ class SandboxStoreHandler( RequestHandler ):
     Copy uploaded file to external SE
     """
     try:
-      rm = ReplicaManager()
-      result = rm.put( sbPath, localFilePath, self.__externalSEName )
+      dm = DataManager()
+      result = dm.put( sbPath, localFilePath, self.__externalSEName )
       if not result[ 'OK' ]:
         return result
       if 'Successful' not in result[ 'Value' ]:
@@ -471,8 +472,7 @@ class SandboxStoreHandler( RequestHandler ):
     else:
       gLogger.info( "Deleting external Sandbox" )
       try:
-        rm = ReplicaManager()
-        return rm.removeStorageFile( SEPFN, SEName )
+        return StorageElement( SEName ).removeFile( SEPFN )
       except Exception, e:
         gLogger.exception( "RM raised an exception while trying to delete a remote sandbox" )
         return S_ERROR( "RM raised an exception while trying to delete a remote sandbox" )

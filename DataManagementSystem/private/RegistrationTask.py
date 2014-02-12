@@ -91,11 +91,11 @@ class RegistrationTask( RequestTask ):
         if "" in fileTuple:
           self.warn( "registerFile: missing arg in (LFN, PFN, Size, TargetSE, GUID, Addler) = %s" % str(fileTuple) )
 
-        res = self.replicaManager().registerFile( fileTuple, catalogue )
-        
+        res = self.dm.registerFile( fileTuple, catalogue )
+
         if not res["OK"] or lfn in res["Value"]["Failed"]:
           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegistrationAgent" )
-          reason = res["Message"] if not res["OK"] else res["Value"]["Failed"][lfn] # "registration in ReplicaManager failed"
+          reason = res["Message"] if not res["OK"] else res["Value"]["Failed"][lfn]  # "registration in DataManager failed"
           errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
           failed[lfn][targetSE] = reason
           self.warn( "registerFile: %s" % errorStr )

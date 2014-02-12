@@ -45,11 +45,11 @@ import DIRAC
 from DIRAC                                                   import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
 from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
-from DIRAC.DataManagementSystem.Client.ReplicaManager        import ReplicaManager
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Utilities.List                               import sortList
 from datetime import datetime, timedelta
 import sys, os, time, fnmatch
-rm = ReplicaManager()
+fc = FileCatalog()
 
 def isOlderThan( cTimeStruct, days ):
   timeDelta = timedelta( days = days )
@@ -91,7 +91,7 @@ allFiles = []
 emptyDirs = []
 while len( activeDirs ) > 0:
   currentDir = activeDirs[0]
-  res = rm.getCatalogListDirectory( currentDir, verbose )
+  res = fc.listDirectory( currentDir, verbose )
   activeDirs.remove( currentDir )
   if not res['OK']:
     gLogger.error( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Message'] ) )

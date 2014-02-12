@@ -13,10 +13,11 @@ import time
 import pprint
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Resources.Storage.StorageElement                          import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog                             import FileCatalog
 from DIRAC.Core.Utilities.SiteSEMapping                              import getSitesForSE
 from DIRAC.Core.Utilities.List                                       import uniqueElements
 from DIRAC                                                           import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Client.ReplicaManager                import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager                   import DataManager
 
 
 class InputData( OptimizerExecutor ):
@@ -41,9 +42,16 @@ class InputData( OptimizerExecutor ):
     cls.ex_setProperty( 'shifterProxy', 'DataManager' )
 
     try:
-      cls.__replicaMan = ReplicaManager()
+      cls.__dataMan = DataManager()
     except Exception, e:
-      msg = 'Failed to create ReplicaManager'
+      msg = 'Failed to create DataManager'
+      cls.log.exception( msg )
+      return S_ERROR( msg + str( e ) )
+
+    try:
+      cls.__fc = FileCatalog()
+    except Exception, e:
+      msg = 'Failed to create FileCatalog'
       cls.log.exception( msg )
       return S_ERROR( msg + str( e ) )
 
@@ -102,7 +110,7 @@ class InputData( OptimizerExecutor ):
 
     print "LFNS", lfns
 
-    result = self.__replicaMan.getActiveReplicas( lfns )  # This will return already active replicas, excluding banned SEs
+    result = self.__dataMan.getActiveReplicas( lfns )  # This will return already active replicas, excluding banned SEs
     self.jobLog.info( 'Catalog replicas lookup time: %.2f seconds ' % ( time.time() - startTime ) )
     if not result['OK']:
       self.log.warn( result['Message'] )
@@ -121,7 +129,7 @@ class InputData( OptimizerExecutor ):
 
     if self.ex_getOption( 'CheckFileMetadata', True ):
       start = time.time()
-      guidDict = self.__replicaMan.getCatalogFileMetadata( lfns )
+      guidDict = self.__fc.getFileMetadata( lfns )
       self.jobLog.info( 'Catalog Metadata Lookup Time: %.2f seconds ' % ( time.time() - startTime ) )
 
       if not guidDict['OK']:
@@ -185,7 +193,7 @@ class InputData( OptimizerExecutor ):
     # Now let's check if some replicas might not be available due to banned SE's
     self.jobLog.info( "Checking active replicas" )
     startTime = time.time()
-    result = self.__replicaMan.checkActiveReplicas( replicaDict )
+    result = self.__dataMan.checkActiveReplicas( replicaDict )
     self.jobLog.info( "Active replica check took %.2f secs" % ( time.time() - startTime ) )
     if not result['OK']:
       # due to banned SE's input data might no be available
