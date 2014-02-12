@@ -364,8 +364,8 @@ class JobWrapper:
     watchdog.initialize()
     self.log.verbose( 'Calibrating Watchdog instance' )
     watchdog.calibrate()
-    # do not kill SAM jobs by CPU time
-    if self.jobArgs.has_key( 'JobType' ) and self.jobArgs['JobType'] == 'SAM':
+    # do not kill Test jobs by CPU time
+    if self.jobArgs.has_key( 'JobType' ) and self.jobArgs['JobType'] == 'Test':
       watchdog.testCPUConsumed = False
 
     if self.jobArgs.has_key( 'DisableCPUCheck' ):
