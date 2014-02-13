@@ -415,8 +415,9 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
           opFile.Error = "ReplicaManager error: %s" % res["Message"]
           self.log.error( opFile.Error )
 
-      if not opFile.Error and len( self.operation.targetSEList ) > 1:
-        self.log.info( "file %s has been replicated to all targetSEs" % lfn )
+      if not opFile.Error:
+        if len( self.operation.targetSEList ) > 1:
+          self.log.info( "file %s has been replicated to all targetSEs" % lfn )
         opFile.Status = "Done"
 
 
