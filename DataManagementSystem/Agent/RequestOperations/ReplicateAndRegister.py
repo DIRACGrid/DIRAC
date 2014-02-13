@@ -355,13 +355,16 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
       # # get the first one in the list
       if sourceSE not in replicas['Valid']:
         if sourceSE:
-          self.log.warn( "%s is not at specified sourceSE %s, changed to %s" ( lfn, sourceSE, replicas["Valid"][0] ) )
+          self.log.warn( "%s is not at specified sourceSE %s, changed to %s" % ( lfn, sourceSE, replicas["Valid"][0] ) )
         sourceSE = replicas["Valid"][0]
 
       # # loop over targetSE
       for targetSE in self.operation.targetSEList:
 
         # # call ReplicaManager
+        if targetSE == sourceSE:
+          self.log.warn( "Request to replicate %s to the source SE: %s" % ( lfn, sourceSE ) )
+          continue
         res = self.rm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
 
         if res["OK"]:
