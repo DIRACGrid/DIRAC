@@ -231,6 +231,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     toSchedule = {}
 
     for opFile in self.getWaitingFilesList():
+      opFile.Error = ''
       gMonitor.addMark( "FTSScheduleAtt" )
       # # check replicas
       replicas = self._filterReplicas( opFile )
@@ -297,10 +298,15 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     else:
       self.log.info( "No files to schedule after metadata checks" )
 
-    return S_OK()
+    # Just in case some transfers could not be scheduled, try them with RM
+    return self.rmTransfer()
 
   def rmTransfer( self ):
     """ replicate and register using ReplicaManager  """
+    # # get waiting files. If none just return
+    waitingFiles = self.getWaitingFilesList()
+    if not waitingFiles:
+      return S_OK()
     self.log.info( "transferring files using replica manager..." )
     # # source SE
     sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
@@ -335,8 +341,6 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     # Can continue now
     self.log.verbose( "No targets banned for writing" )
 
-    # # get waiting files
-    waitingFiles = self.getWaitingFilesList()
     # # loop over files
     for opFile in waitingFiles:
 
@@ -375,7 +379,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
             if "replicate" in res["Value"]["Successful"][lfn]:
 
               repTime = res["Value"]["Successful"][lfn]["replicate"]
-              self.log.info( "file %s replicated at %s in %s s." % ( lfn, targetSE, repTime ) )
+              prString = "file %s replicated at %s in %s s." % ( lfn, targetSE, repTime )
 
               gMonitor.addMark( "ReplicateOK", 1 )
 
@@ -383,12 +387,13 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
                 gMonitor.addMark( "RegisterOK", 1 )
                 regTime = res["Value"]["Successful"][lfn]["register"]
-                self.log.info( "file %s registered at %s in %s s." % ( lfn, targetSE, regTime ) )
-
+                prString += ' and registered in %s s.' % regTime
+                self.log.info( prString )
               else:
 
                 gMonitor.addMark( "RegisterFail", 1 )
-                self.log.warn( "failed to register %s at %s." % ( lfn, targetSE ) )
+                prString += " but failed to register"
+                self.log.warn( prString )
 
                 opFile.Error = "Failed to register"
                 opFile.Status = "Failed"
