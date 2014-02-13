@@ -154,6 +154,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
   def _filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
 
+    from DIRAC.Core.Utilities.Adler import compareAdler
     ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
 
     replicas = self.rm.getActiveReplicas( opFile.LFN )
@@ -198,8 +199,8 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         continue
       repSEMetadata = repSEMetadata["Value"]
 
-      seChecksum = repSEMetadata["Checksum"].replace( "x", "0" ).zfill( 8 ) if "Checksum" in repSEMetadata else None
-      if opFile.Checksum and opFile.Checksum != seChecksum:
+      seChecksum = repSEMetadata.get( "Checksum" )
+      if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
         self.log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
                                                              opFile.Checksum,
                                                              repSE,
