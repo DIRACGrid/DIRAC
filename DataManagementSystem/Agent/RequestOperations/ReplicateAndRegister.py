@@ -341,7 +341,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     for opFile in waitingFiles:
 
       gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
-      opFile.Error = None
+      opFile.Error = ''
       lfn = opFile.LFN
 
       # Check if replica is at the specified source
