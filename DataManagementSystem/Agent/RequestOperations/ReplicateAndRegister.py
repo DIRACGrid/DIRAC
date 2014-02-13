@@ -299,15 +299,18 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
       self.log.info( "No files to schedule after metadata checks" )
 
     # Just in case some transfers could not be scheduled, try them with RM
-    return self.rmTransfer()
+    return self.rmTransfer( fromFTS = True )
 
-  def rmTransfer( self ):
+  def rmTransfer( self, fromFTS = False ):
     """ replicate and register using ReplicaManager  """
     # # get waiting files. If none just return
     waitingFiles = self.getWaitingFilesList()
     if not waitingFiles:
       return S_OK()
-    self.log.info( "transferring files using replica manager..." )
+    if fromFTS:
+      self.log.info( "Trying transfer using replica manager as FTS failed" )
+    else:
+      self.log.info( "Transferring files using replica manager..." )
     # # source SE
     sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
     if sourceSE:
