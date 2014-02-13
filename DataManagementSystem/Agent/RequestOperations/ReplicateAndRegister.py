@@ -381,7 +381,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
               else:
 
                 gMonitor.addMark( "RegisterFail", 1 )
-                self.log.info( "failed to register %s at %s." % ( lfn, targetSE ) )
+                self.log.warn( "failed to register %s at %s." % ( lfn, targetSE ) )
 
                 opFile.Error = "Failed to register"
                 opFile.Status = "Failed"
@@ -391,7 +391,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
             else:
 
-              self.log.info( "failed to replicate %s to %s." % ( lfn, targetSE ) )
+              self.log.error( "failed to replicate %s to %s." % ( lfn, targetSE ) )
               gMonitor.addMark( "ReplicateFail", 1 )
               opFile.Error = "Failed to replicate"
 
@@ -408,9 +408,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
           opFile.Error = "ReplicaManager error: %s" % res["Message"]
           self.log.error( opFile.Error )
 
-        self.log.info( "file %s has been replicated to SE %s" % ( lfn, targetSE ) )
-
-      if not opFile.Error:
+      if not opFile.Error and len( self.operation.targetSEList ) > 1:
         self.log.info( "file %s has been replicated to all targetSEs" % lfn )
         opFile.Status = "Done"
 
