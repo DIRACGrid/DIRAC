@@ -343,16 +343,19 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
       gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
       lfn = opFile.LFN
 
-      if not sourceSE:
-        replicas = self._filterReplicas( opFile )
-        if not replicas["OK"]:
-          self.log.error( replicas["Message"] )
-          continue
-        replicas = replicas["Value"]
-        if not replicas["Valid"]:
-          self.log.warn( "unable to find valid replicas for %s" % lfn )
-          continue
-        # # get the first one in the list
+      # Check if replica is at the specified source
+      replicas = self._filterReplicas( opFile )
+      if not replicas["OK"]:
+        self.log.error( replicas["Message"] )
+        continue
+      replicas = replicas["Value"]
+      if not replicas["Valid"]:
+        self.log.warn( "unable to find valid replicas for %s" % lfn )
+        continue
+      # # get the first one in the list
+      if sourceSE not in replicas['Valid']:
+        if sourceSE:
+          self.log.warn( "%s is not at specified sourceSE %s, changed to %s" ( lfn, sourceSE, replicas["Valid"][0] ) )
         sourceSE = replicas["Valid"][0]
 
       # # loop over targetSE
