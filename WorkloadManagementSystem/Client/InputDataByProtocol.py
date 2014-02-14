@@ -39,25 +39,25 @@ class InputDataByProtocol:
        If TURLs are missing these are conveyed in the result to
     """
 
-    #Define local configuration options present at every site
+    # Define local configuration options present at every site
     localSEList = self.configuration['LocalSEList']
     if self.configuration.has_key( 'JobID' ):
       self.jobID = self.configuration['JobID']
 
-    #Problematic files will be returned and can be handled by another module
+    # Problematic files will be returned and can be handled by another module
     failedReplicas = []
 
     if dataToResolve:
       self.log.verbose( 'Data to resolve passed directly to InputDataByProtocol module' )
-      self.inputData = dataToResolve #e.g. list supplied by another module
+      self.inputData = dataToResolve  # e.g. list supplied by another module
 
     self.inputData = [x.replace( 'LFN:', '' ) for x in self.inputData]
     self.log.info( 'InputData requirement to be resolved by protocol is:' )
     for i in self.inputData:
       self.log.verbose( i )
 
-    #First make a check in case replicas have been removed or are not accessible
-    #from the local site (remove these from consideration for local protocols)
+    # First make a check in case replicas have been removed or are not accessible
+    # from the local site (remove these from consideration for local protocols)
     replicas = self.fileCatalogResult['Value']['Successful']
     self.log.verbose( 'File Catalogue result is:' )
     self.log.verbose( replicas )
@@ -89,8 +89,8 @@ class InputDataByProtocol:
       self.log.info( 'The following file(s) were found not to have replicas for available LocalSEs:' )
       self.log.info( '', '\n'.join( failedReplicas ) )
 
-    #For the unlikely case that a file is found on two SEs at the same site
-    #disk-based replicas are favoured.
+    # For the unlikely case that a file is found on two SEs at the same site
+    # disk-based replicas are favoured.
     newReplicasDict = {}
     for lfn, reps in replicas.items():
       newReplicasDict[lfn] = []
@@ -102,11 +102,11 @@ class InputDataByProtocol:
           if seName in reps:
             newReplicasDict[lfn].append( ( seName, reps[seName] ) )
 
-    #Need to group files by SE in order to stage optimally
-    #we know from above that all remaining files have a replica
-    #(preferring disk if >1) in the local storage.
-    #IMPORTANT, only add replicas for input data that is requested
-    #since this module could have been executed after another.
+    # Need to group files by SE in order to stage optimally
+    # we know from above that all remaining files have a replica
+    # (preferring disk if >1) in the local storage.
+    # IMPORTANT, only add replicas for input data that is requested
+    # since this module could have been executed after another.
     seFilesDict = {}
     for lfn, seList in newReplicasDict.items():
       if lfn not in self.inputData:
@@ -136,8 +136,8 @@ class InputDataByProtocol:
       for pfn in pfnList:
         self.log.info( '%s %s' % ( seName, pfn ) )
 
-    #Can now start to obtain TURLs for files grouped by localSE
-    #for requested input data
+    # Can now start to obtain TURLs for files grouped by localSE
+    # for requested input data
     requestedProtocol = self.configuration.get( 'Protocol', '' )
     for seName, lfnDict in seFilesDict.items():
       pfnList = lfnDict.values()
@@ -153,7 +153,7 @@ class InputDataByProtocol:
       if result['Value']['Failed']:
         error = 'Could not get Storage Metadata from %s' % seName
         self.log.error( error )
-        # If MetaData can not be retrieved for some PFNs 
+        # If MetaData can not be retrieved for some PFNs
         # declared them failed and go on
         for lfn in lfnDict:
           pfn = lfnDict[lfn]
@@ -164,7 +164,7 @@ class InputDataByProtocol:
         if metadata['Lost']:
           error = "PFN has been Lost by the StorageElement"
           self.log.error( error , pfn )
-          # If PFN has been lost 
+          # If PFN has been lost
           # declared it failed and go on
           for lfn in lfnDict:
             if pfn == lfnDict[lfn]:
@@ -235,7 +235,7 @@ class InputDataByProtocol:
       if not mdata.has_key( 'turl' ):
         self.log.verbose( '%s: No TURL resolved for %s' % ( COMPONENT_NAME, lfn ) )
 
-    #Remove any failed replicas from the resolvedData dictionary
+    # Remove any failed replicas from the resolvedData dictionary
     if failedReplicas:
       self.log.verbose( 'The following LFN(s) were not resolved by protocol:\n%s' % ( '\n'.join( failedReplicas ) ) )
       for lfn in failedReplicas:
@@ -244,7 +244,7 @@ class InputDataByProtocol:
 
     result = S_OK()
     result['Successful'] = trackLFNs
-    result['Failed'] = failedReplicas #lfn list to be passed to another resolution mechanism
+    result['Failed'] = failedReplicas  # lfn list to be passed to another resolution mechanism
     return result
 
   #############################################################################
@@ -262,4 +262,4 @@ class InputDataByProtocol:
 
     return jobParam
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
