@@ -12,7 +12,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
 
@@ -36,7 +35,9 @@ class InputDataByProtocol:
     self.configuration = argumentsDict['Configuration']
     self.fileCatalogResult = argumentsDict['FileCatalog']
     self.jobID = None
-    self.replicaManager = ReplicaManager()
+
+  def __storagelement( self, seName ):
+    return self.storageElements.setdefault( seName, StorageElement( seName ) )
 
   #############################################################################
   def execute( self, dataToResolve = None ):
@@ -64,7 +65,7 @@ class InputDataByProtocol:
     diskSEs = set()
     tapeSEs = set()
     for localSE in localSEList:
-      seStatus = StorageElement( localSE ).getStatus()['Value']
+      seStatus = self.__storageElement( localSE ).getStatus()['Value']
       if seStatus['Read'] and seStatus['DiskSE']:
         diskSEs.add( localSE )
       elif seStatus['Read'] and seStatus['TapeSE']:
@@ -126,9 +127,9 @@ class InputDataByProtocol:
       pfnList = lfnDict.values()
       if not pfnList:
         continue
-      result = self.replicaManager.getStorageFileMetadata( pfnList, seName )
+      result = self.__storageElement( seName ).getFileMetadata( pfnList )
       if not result['OK']:
-        self.log.error( "Error getting metada.", result['Message'] + ':\n%s' % '\n'.join( pfnList ) )
+        self.log.error( "Error getting metadata.", result['Message'] + ':\n%s' % '\n'.join( pfnList ) )
         # If we can not get MetaData, most likely there is a problem with the SE
         # declare the replicas failed and continue
         failedReplicas.update( lfnDict )
@@ -167,7 +168,7 @@ class InputDataByProtocol:
       else:
         self.log.warn( "Errors during preliminary checks for %d files" % len( failedReplicas ) )
 
-      result = self.replicaManager.getStorageFileAccessUrl( pfnList, seName, protocol = requestedProtocol )
+      result = self.__storageElement( seName ).getAccessUrl( pfnList, protocol = requestedProtocol )
       if not result['OK']:
         self.log.error( "Error getting TURLs", result['Message'] )
         return result
