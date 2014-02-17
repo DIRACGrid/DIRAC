@@ -1,14 +1,8 @@
-##########################################################################
-# $HeadURL$
-##########################################################################
-
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK
-
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
-from DIRAC.StorageManagementSystem.DB.StorageManagementDB       import StorageManagementDB
 
 AGENT_NAME = 'StorageManagement/RequestFinalizationAgent'
 
@@ -20,14 +14,19 @@ class RequestFinalizationAgent( AgentModule ):
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
-    #self.storageDB = StorageManagementDB()
     self.stagerClient = StorageManagerClient()
     return S_OK()
 
   def execute( self ):
     res = self.clearFailedTasks()
+    if not res['OK']:
+      return res
     res = self.callbackStagedTasks()
+    if not res['OK']:
+      return res
     res = self.removeUnlinkedReplicas()
+    if not res['OK']:
+      return res
     res = self.setOldTasksAsFailed( self.am_getOption( 'FailIntervalDay', 3 ) )
     return res
 
@@ -40,7 +39,7 @@ class RequestFinalizationAgent( AgentModule ):
       return res
     failedTasks = res['Value']
     gLogger.info( "RequestFinalization.clearFailedTasks: Obtained %s tasks in the 'Failed' status." % len( failedTasks ) )
-    for taskID, ( source, callback, sourceTask ) in failedTasks.items():
+    for taskID, ( _source, callback, sourceTask ) in failedTasks.items():
       if ( callback and sourceTask ):
         res = self.__performCallback( 'Failed', callback, sourceTask )
         if not res['OK']:
@@ -65,7 +64,7 @@ class RequestFinalizationAgent( AgentModule ):
       return res
     doneTasks = res['Value']
     gLogger.info( "RequestFinalization.callbackDoneTasks: Obtained %s tasks in the 'Done' status." % len( doneTasks ) )
-    for taskID, ( source, callback, sourceTask ) in doneTasks.items():
+    for taskID, ( _source, callback, sourceTask ) in doneTasks.items():
       if ( callback and sourceTask ):
         res = self.__performCallback( 'Done', callback, sourceTask )
         if not res['OK']:
@@ -87,7 +86,7 @@ class RequestFinalizationAgent( AgentModule ):
       return res
     stagedTasks = res['Value']
     gLogger.info( "RequestFinalization.callbackStagedTasks: Obtained %s tasks in the 'Staged' status." % len( stagedTasks ) )
-    for taskID, ( source, callback, sourceTask ) in stagedTasks.items():
+    for taskID, ( _source, callback, sourceTask ) in stagedTasks.items():
       if ( callback and sourceTask ):
         res = self.__performCallback( 'Done', callback, sourceTask )
         if not res['OK']:
@@ -99,7 +98,7 @@ class RequestFinalizationAgent( AgentModule ):
       gLogger.info( "RequestFinalization.callbackStagedTasks: No tasks to update to Done." )
       return S_OK()
     # Daniela: Why is the line below commented out?
-    #res = self.stagerClient.setTasksDone(stagedTasks.keys())
+    # res = self.stagerClient.setTasksDone(stagedTasks.keys())
     res = self.stagerClient.removeTasks( stagedTasks.keys() )
     if not res['OK']:
       gLogger.fatal( "RequestFinalization.callbackStagedTasks: Failed to remove staged Tasks.", res['Message'] )

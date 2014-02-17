@@ -2,16 +2,13 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK
-
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
 #from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
 from DIRAC.Core.Utilities.List                                    import sortList
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager             import ReplicaManager
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import THROTTLING_STEPS, THROTTLING_TIME
-from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import StorageManagementDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources           import Resources
-
 import re
 
 AGENT_NAME = 'StorageManagement/StageRequestAgent'
@@ -135,7 +132,7 @@ class StageRequestAgent( AgentModule ):
 
     allReplicaInfo = res['Value']['AllReplicaInfo']
     replicasToStage = []
-    for storageElement, seReplicaIDs in res['Value']['SEReplicas'].items():
+    for _storageElement, seReplicaIDs in res['Value']['SEReplicas'].items():
       # Consider all SEs
       replicasToStage.extend( seReplicaIDs )
 

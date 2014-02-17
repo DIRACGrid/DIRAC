@@ -154,6 +154,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
   def _filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
 
+    from DIRAC.Core.Utilities.Adler import compareAdler
     ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
 
     replicas = self.rm.getActiveReplicas( opFile.LFN )
@@ -198,8 +199,8 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         continue
       repSEMetadata = repSEMetadata["Value"]
 
-      seChecksum = repSEMetadata["Checksum"].replace( "x", "0" ).zfill( 8 ) if "Checksum" in repSEMetadata else None
-      if opFile.Checksum and opFile.Checksum != seChecksum:
+      seChecksum = repSEMetadata.get( "Checksum" )
+      if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
         self.log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
                                                              opFile.Checksum,
                                                              repSE,
@@ -231,6 +232,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     toSchedule = {}
 
     for opFile in self.getWaitingFilesList():
+      opFile.Error = ''
       gMonitor.addMark( "FTSScheduleAtt" )
       # # check replicas
       replicas = self._filterReplicas( opFile )
@@ -297,11 +299,19 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     else:
       self.log.info( "No files to schedule after metadata checks" )
 
-    return S_OK()
+    # Just in case some transfers could not be scheduled, try them with RM
+    return self.rmTransfer( fromFTS = True )
 
-  def rmTransfer( self ):
+  def rmTransfer( self, fromFTS = False ):
     """ replicate and register using ReplicaManager  """
-    self.log.info( "transferring files using replica manager..." )
+    # # get waiting files. If none just return
+    waitingFiles = self.getWaitingFilesList()
+    if not waitingFiles:
+      return S_OK()
+    if fromFTS:
+      self.log.info( "Trying transfer using replica manager as FTS failed" )
+    else:
+      self.log.info( "Transferring files using replica manager..." )
     # # source SE
     sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
     if sourceSE:
@@ -335,30 +345,35 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     # Can continue now
     self.log.verbose( "No targets banned for writing" )
 
-    # # get waiting files
-    waitingFiles = self.getWaitingFilesList()
     # # loop over files
     for opFile in waitingFiles:
 
       gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
+      opFile.Error = ''
       lfn = opFile.LFN
 
-      if not sourceSE:
-        replicas = self._filterReplicas( opFile )
-        if not replicas["OK"]:
-          self.log.error( replicas["Message"] )
-          continue
-        replicas = replicas["Value"]
-        if not replicas["Valid"]:
-          self.log.warn( "unable to find valid replicas for %s" % lfn )
-          continue
-        # # get the first one in the list
+      # Check if replica is at the specified source
+      replicas = self._filterReplicas( opFile )
+      if not replicas["OK"]:
+        self.log.error( replicas["Message"] )
+        continue
+      replicas = replicas["Value"]
+      if not replicas["Valid"]:
+        self.log.warn( "unable to find valid replicas for %s" % lfn )
+        continue
+      # # get the first one in the list
+      if sourceSE not in replicas['Valid']:
+        if sourceSE:
+          self.log.warn( "%s is not at specified sourceSE %s, changed to %s" % ( lfn, sourceSE, replicas["Valid"][0] ) )
         sourceSE = replicas["Valid"][0]
 
       # # loop over targetSE
       for targetSE in self.operation.targetSEList:
 
         # # call ReplicaManager
+        if targetSE == sourceSE:
+          self.log.warn( "Request to replicate %s to the source SE: %s" % ( lfn, sourceSE ) )
+          continue
         res = self.rm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
 
         if res["OK"]:
@@ -368,7 +383,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
             if "replicate" in res["Value"]["Successful"][lfn]:
 
               repTime = res["Value"]["Successful"][lfn]["replicate"]
-              self.log.info( "file %s replicated at %s in %s s." % ( lfn, targetSE, repTime ) )
+              prString = "file %s replicated at %s in %s s." % ( lfn, targetSE, repTime )
 
               gMonitor.addMark( "ReplicateOK", 1 )
 
@@ -376,12 +391,13 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
                 gMonitor.addMark( "RegisterOK", 1 )
                 regTime = res["Value"]["Successful"][lfn]["register"]
-                self.log.info( "file %s registered at %s in %s s." % ( lfn, targetSE, regTime ) )
-
+                prString += ' and registered in %s s.' % regTime
+                self.log.info( prString )
               else:
 
                 gMonitor.addMark( "RegisterFail", 1 )
-                self.log.info( "failed to register %s at %s." % ( lfn, targetSE ) )
+                prString += " but failed to register"
+                self.log.warn( prString )
 
                 opFile.Error = "Failed to register"
                 opFile.Status = "Failed"
@@ -391,7 +407,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
             else:
 
-              self.log.info( "failed to replicate %s to %s." % ( lfn, targetSE ) )
+              self.log.error( "failed to replicate %s to %s." % ( lfn, targetSE ) )
               gMonitor.addMark( "ReplicateFail", 1 )
               opFile.Error = "Failed to replicate"
 
@@ -408,10 +424,9 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
           opFile.Error = "ReplicaManager error: %s" % res["Message"]
           self.log.error( opFile.Error )
 
-        self.log.info( "file %s has been replicated to SE %s" % ( lfn, targetSE ) )
-
       if not opFile.Error:
-        self.log.info( "file %s has been replicated to all targetSEs" % lfn )
+        if len( self.operation.targetSEList ) > 1:
+          self.log.info( "file %s has been replicated to all targetSEs" % lfn )
         opFile.Status = "Done"
 
 

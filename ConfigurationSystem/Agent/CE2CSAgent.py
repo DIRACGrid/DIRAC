@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ Queries BDII for unknown CE.
     Queries BDII for CE information and puts it to CS.
 """
@@ -9,7 +6,7 @@ __RCSID__ = "$Id$"
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                        import AgentModule
 from DIRAC.Core.Utilities                               import List
-from DIRAC.Core.Utilities.Grid                          import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapService
+from DIRAC.Core.Utilities.Grid                          import ldapSite, ldapCluster, ldapCE, ldapCEState
 from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
 from DIRAC.ConfigurationSystem.Client.CSAPI             import CSAPI
 from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo, formatProxyInfoAsString
@@ -45,9 +42,9 @@ class CE2CSAgent( AgentModule ):
     self.subject = "CE2CSAgent"
 
     # This sets the Default Proxy to used as that defined under
-    # /Operations/Shifter/SAMManager
+    # /Operations/Shifter/TestManager
     # the shifterProxy option in the Configuration can be used to change this default.
-    self.am_setOption( 'shifterProxy', 'SAMManager' )
+    self.am_setOption( 'shifterProxy', 'TestManager' )
 
     self.voName = self.am_getOption( 'VirtualOrganization', self.voName )
     if not self.voName:
@@ -433,7 +430,7 @@ class CE2CSAgent( AgentModule ):
               newcetype = queuetype
             else:
               if queuetype != newcetype:
-                gLogger.warn( 'Error in bdii for ce %s '%ce, 'different cetypes %s %s' %(newcetype,queuetype))
+                self.log.warn( 'Error in bdii for ce %s ' % ce, 'different cetypes %s %s' % ( newcetype, queuetype ) )
 
           if newcetype=='ARC-CE':
             newcetype = 'ARC'

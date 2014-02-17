@@ -245,7 +245,7 @@ class SiteDirector( AgentModule ):
           if not "Platform" in self.queueDict[queueName]['ParametersDict'] and platform:
             result = Resources.getDIRACPlatform( platform )
             if result['OK']:
-              self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value']
+              self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value'][0]
 
           ceQueueDict = dict( ceDict )
           ceQueueDict.update( self.queueDict[queueName]['ParametersDict'] )

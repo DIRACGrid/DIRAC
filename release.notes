@@ -1,4 +1,4 @@
-[v7r0-pre28]
+[v7r0-pre29]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -107,6 +107,45 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
      
 *SMS
 NEW: StorageManagementDB - use python table description      
+
+[v6r11-pre1]
+
+*Configuration
+CHANGE: Resources.getDIRACPlatform() returns a list of compatible DIRAC platforms
+
+*DMS
+NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
+
+*Resources
+CHANGE: StorageElement - changes to avoid usage PFNs
+
+*RMS
+CHANGE: ReqDB - added Foreign Keys to ReqDB tables
+
+*SMS
+FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p12]
+
+*WMS
+CHANGE: Replace consistently everywhere SAM JobType by Test JobType
+FIX: JobWrapper - the outputSandbox should be always uploaded (outsized, in failed job)
+
+*DMS
+FIX: RemoveFile - bugfix
+FIX: ReplicateAndRegister - fixes in the checksum check, retry failed FTS transfer 
+     with RM transfer
+NEW: RegisterReplica request operation     
+
+*RMS
+FIX: ReqClient - fix in the request state machine
+FIX: Request - enhance digest string
+NEW: dirac-dms-reset-request command
+CHANGE: dirac-rms-show-request - allow selection of a request by job ID
+
+*TS
+FIX: TransformationDB - in getTransformationParameters() dropped "Submitted" counter 
+     in the output
 
 [v6r10p11]
 

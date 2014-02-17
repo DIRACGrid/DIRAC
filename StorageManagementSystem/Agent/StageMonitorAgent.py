@@ -1,4 +1,3 @@
-# $Header$
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR, siteName
@@ -6,7 +5,6 @@ from DIRAC import gLogger, S_OK, S_ERROR, siteName
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager             import ReplicaManager
-from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import StorageManagementDB
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation            import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient                import gDataStoreClient
@@ -23,7 +21,6 @@ class StageMonitorAgent( AgentModule ):
     self.replicaManager = ReplicaManager()
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
-    #self.storageDB = StorageManagementDB()
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -75,7 +72,8 @@ class StageMonitorAgent( AgentModule ):
       if requestID:
         pfnReqIDs[pfn] = replicaIDs[replicaID]['RequestID']
 
-    gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % ( len( pfnRepIDs ), storageElement ) )
+    gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % ( len( pfnRepIDs ),
+                                                                                                                storageElement ) )
     oAccounting = DataOperation()
     oAccounting.setStartTime()
 

@@ -1,14 +1,16 @@
-########################################################################
-# $Header$
-########################################################################
-
 """ StorageManagementDB is a front end to the Stager Database.
 
     There are five tables in the StorageManagementDB: Tasks, CacheReplicas, TaskReplicas, StageRequests.
 
+<<<<<<< HEAD
     The Tasks table is the place holder for the tasks that have requested files to be staged. 
     These can be from different systems and have different associated call back methods.
     The CacheReplicas table keeps the information on all the CacheReplicas in the system. 
+=======
+    The Tasks table is the place holder for the tasks that have requested files to be staged.
+    These can be from different systems and have different associated call back methods.
+    The CacheReplicas table keeps the information on all the CacheReplicas in the system.
+>>>>>>> rel-v6r11
     It maps all the file information LFN, PFN, SE to an assigned ReplicaID.
     The TaskReplicas table maps the TaskIDs from the Tasks table to the ReplicaID from the CacheReplicas table.
     The StageRequests table contains each of the prestage request IDs for each of the replicas.
@@ -18,7 +20,6 @@ __RCSID__ = "$Id$"
 
 import inspect
 import types
-
 from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                           import DB
 from DIRAC.Core.Utilities.List                    import intListToString, stringListToString
@@ -194,7 +195,7 @@ class StorageManagementDB( DB ):
     if not toUpdate:
       return S_OK( toUpdate )
 
-    #reqSelect = "SELECT * FROM Tasks WHERE TaskID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newTaskStatus )
+    # reqSelect = "SELECT * FROM Tasks WHERE TaskID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newTaskStatus )
     reqSelect = "SELECT TaskID FROM Tasks WHERE TaskID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newTaskStatus )
     resSelect = self._query( reqSelect, connection )
     if not resSelect['OK']:
@@ -264,7 +265,7 @@ class StorageManagementDB( DB ):
     toUpdate = res['Value']
     if not toUpdate:
       return S_OK( toUpdate )
-    #reqSelect = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newReplicaStatus )
+    # reqSelect = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newReplicaStatus )
     reqSelect = "SELECT ReplicaID FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newReplicaStatus )
     resSelect = self._query( reqSelect, connection )
     if not resSelect['OK']:
@@ -391,7 +392,7 @@ class StorageManagementDB( DB ):
     toUpdate = res['Value']
     if not toUpdate:
       return S_OK( toUpdate )
-    #reqSelect = "Select * FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newStageStatus )
+    # reqSelect = "Select * FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newStageStatus )
     reqSelect = "Select ReplicaID FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newStageStatus )
     resSelect = self._query( reqSelect, connection )
     if not resSelect['OK']:
@@ -709,7 +710,7 @@ class StorageManagementDB( DB ):
     resSelect = self._query( reqSelect, connection )
     if not resSelect['OK']:
       gLogger.info( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), '_createTask', reqSelect, resSelect['Message'] ) )
-    else:  
+    else:
       gLogger.verbose( "%s.%s_DB: inserted Tasks = %s" % ( self._caller(), '_createTask', resSelect['Value'][0] ) )
 
     # gLogger.info("StorageManagementDB._createTask: Created task with ('%s','%s','%s') and obtained TaskID %s" % (source,callbackMethod,sourceTaskID,taskID))
@@ -745,7 +746,7 @@ class StorageManagementDB( DB ):
       gLogger.warn( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), '_insertReplicaInformation', reqSelect, resSelect['Message'] ) )
     else:
       gLogger.verbose( "%s.%s_DB: inserted CacheReplicas = %s" % ( self._caller(), '_insertReplicaInformation', resSelect['Value'][0] ) )
-    #gLogger.verbose("_insertReplicaInformation: Inserted Replica ('%s','%s') and obtained ReplicaID %s" % (lfn,storageElement,replicaID))
+    # gLogger.verbose("_insertReplicaInformation: Inserted Replica ('%s','%s') and obtained ReplicaID %s" % (lfn,storageElement,replicaID))
     return S_OK( replicaID )
 
   def _insertTaskReplicaInformation( self, taskID, replicaIDs, connection = False ):
@@ -890,7 +891,7 @@ class StorageManagementDB( DB ):
   def updateReplicaInformation( self, replicaTuples ):
     """ This method set the replica size information and pfn for the requested storage element.  """
     for replicaID, pfn, size in replicaTuples:
-      #reqSelect = "SELECT * FROM CacheReplicas WHERE ReplicaID = %s and Status != 'Cancelled';" % ( replicaID )
+      # reqSelect = "SELECT * FROM CacheReplicas WHERE ReplicaID = %s and Status != 'Cancelled';" % ( replicaID )
       reqSelect = "SELECT ReplicaID FROM CacheReplicas WHERE ReplicaID = %s and Status != 'Cancelled';" % ( replicaID )
       resSelect = self._query( reqSelect )
       if not resSelect['OK']:
@@ -954,7 +955,7 @@ class StorageManagementDB( DB ):
         resSelect = self._query( reqSelect )
         if not resSelect['OK']:
           gLogger.warn( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'insertStageRequest', reqSelect, resSelect['Message'] ) )
-        else:  
+        else:
           gLogger.verbose( "%s.%s_DB: inserted StageRequests = %s" % ( self._caller(), 'insertStageRequest', resSelect['Value'][0] ) )
 
     # gLogger.info( "%s_DB: howmany = %s" % ('insertStageRequest',res))
@@ -1215,11 +1216,11 @@ class StorageManagementDB( DB ):
       reqSelect = "SELECT * FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
       resSelect = self._query( reqSelect )
       if not resSelect['OK']:
-        gLogger.warn( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'removeUnlinkedReplicas', 
+        gLogger.warn( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'removeUnlinkedReplicas',
                                                                         reqSelect, resSelect['Message'] ) )
-      else:  
+      else:
         for record in resSelect['Value']:
-          gLogger.verbose( "%s.%s_DB: to_delete StageRequests = %s" % ( self._caller(), 'removeUnlinkedReplicas', 
+          gLogger.verbose( "%s.%s_DB: to_delete StageRequests = %s" % ( self._caller(), 'removeUnlinkedReplicas',
                                                                         record ) )
 
       req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
