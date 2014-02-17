@@ -114,8 +114,9 @@ class Request( Record ):
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",
                "LastUpdate" : "DATETIME"  },
-             "PrimaryKey" : [ "RequestID", "RequestName" ],
-             "Indexes" : { "RequestName" : [ "RequestName"] } }
+             "PrimaryKey" : [ "RequestID" ],
+             'UniqueIndexes': {'RequestName' : [ 'RequestName'] }
+           }
 
   def _notify( self ):
     """ simple state machine for sub request statuses """
