@@ -140,7 +140,7 @@ class RemoveFile( OperationHandlerBase ):
           if not fileProxy["OK"]:
             opFile.Error = fileProxy["Message"]
           else:
-            proxyFile = saveProxy["Value"]
+            proxyFile = fileProxy["Value"]
 
             removeFile = self.replicaManager().removeFile( opFile.LFN, force = True )
             self.log.always( str( removeFile ) )

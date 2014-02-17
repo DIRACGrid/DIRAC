@@ -364,8 +364,8 @@ class JobWrapper:
     watchdog.initialize()
     self.log.verbose( 'Calibrating Watchdog instance' )
     watchdog.calibrate()
-    # do not kill SAM jobs by CPU time
-    if self.jobArgs.has_key( 'JobType' ) and self.jobArgs['JobType'] == 'SAM':
+    # do not kill Test jobs by CPU time
+    if self.jobArgs.has_key( 'JobType' ) and self.jobArgs['JobType'] == 'Test':
       watchdog.testCPUConsumed = False
 
     if self.jobArgs.has_key( 'DisableCPUCheck' ):
@@ -736,6 +736,8 @@ class JobWrapper:
     if not self.failedFlag:
       self.__report( 'Completed', 'Uploading Output Sandbox' )
 
+    uploadOutputDataInAnyCase = False
+
     if fileList and self.jobID:
       self.outputSandboxSize = getGlobbedTotalSize( fileList )
       self.log.info( 'Attempting to upload Sandbox with limit:', self.sandboxSizeLimit )
@@ -747,7 +749,11 @@ class JobWrapper:
         if result.has_key( 'SandboxFileName' ):
           outputSandboxData = result['SandboxFileName']
           self.log.info( 'Attempting to upload %s as output data' % ( outputSandboxData ) )
-          outputData.append( outputSandboxData )
+          if self.failedFlag:
+            outputData = [outputSandboxData]
+            uploadOutputDataInAnyCase = True
+          else:
+            outputData.append( outputSandboxData )
           self.jobReport.setJobParameter( 'OutputSandbox', 'Sandbox uploaded to grid storage', sendFlag = False )
           self.jobReport.setJobParameter( 'OutputSandboxLFN',
                                           self.__getLFNfromOutputFile( outputSandboxData )[0], sendFlag = False )
@@ -760,8 +766,9 @@ class JobWrapper:
           self.__report( 'Completed', 'Output Sandbox Uploaded' )
         self.log.info( 'Sandbox uploaded successfully' )
 
-    if outputData and not self.failedFlag:
+    if ( outputData and not self.failedFlag ) or uploadOutputDataInAnyCase:
       # Do not upload outputdata if the job has failed.
+      # The exception is when the outputData is what was the OutputSandbox, which should be uploaded in any case
       if self.jobArgs.has_key( 'OutputSE' ):
         outputSE = self.jobArgs['OutputSE']
         if type( outputSE ) in types.StringTypes:

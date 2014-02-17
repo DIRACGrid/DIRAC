@@ -960,9 +960,7 @@ class TransformationDB( DB ):
       status = attrDict['ExternalStatus']
       statusDict[status] = count
       total += count
-    created = statusDict.get( 'Created', 0 )
     statusDict['TotalCreated'] = total
-    statusDict['Submitted'] = ( total - created )
     return S_OK( statusDict )
 
   def __setTaskParameterValue( self, transID, taskID, paramName, paramValue, connection = False ):

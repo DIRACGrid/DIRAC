@@ -353,10 +353,12 @@ class ReqClient( Client ):
     req.Status = 'Waiting'
     for op in req:
       op.Error = ''
-      op.Status = 'Waiting'
+      if op.Status == 'Failed':
+        op.Status = 'Waiting'
       for f in op:
-        f.Attempt = 1
-        f.Error = 'reset'
-        f.Status = 'Waiting'
+        f.Error = ''
+        if f.Status == 'Failed':
+          f.Attempt += 1
+          f.Status = 'Waiting'
 
     return self.putRequest( req )

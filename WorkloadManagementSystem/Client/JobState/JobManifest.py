@@ -186,7 +186,7 @@ class JobManifest( object ):
     if not result[ 'OK' ]:
       return result
     transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
-    result = self.__checkMultiChoice( "JobType", ['User', 'SAM', 'Hospital'] + transformationTypes )
+    result = self.__checkMultiChoice( "JobType", ['User', 'Test', 'Hospital'] + transformationTypes )
     if not result[ 'OK' ]:
       return result
     return S_OK()
