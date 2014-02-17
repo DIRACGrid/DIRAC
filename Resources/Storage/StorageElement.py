@@ -807,11 +807,7 @@ class StorageElement:
           for pfn in pfnDict:
             pfnsToUse[pfn] = lfnDict[pfnDict[pfn]]
 
-          print "SE.execute: method %s pfnsToUse %s args %s kwargs %s" % ( self.methodName, pfnsToUse, args, kwargs )
-
           res = fcn( pfnsToUse, *args, **kwargs )
-
-#           print "RES %s" % res
 
           if not res['OK']:
             errStr = "StorageElement.__executeMethod: Completely failed to perform %s." % self.methodName

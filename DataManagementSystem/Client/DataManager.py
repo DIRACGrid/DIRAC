@@ -1915,7 +1915,6 @@ class DataManager( object ):
     # # good replicas
     lfnReplicas = res["Value"]["Successful"]
     # # store PFN to LFN mapping
-    pfnDict = {}
     existingReplicas = []
     for lfn, replicas in lfnReplicas.items():
       if storageElementName  in replicas:
@@ -1924,6 +1923,7 @@ class DataManager( object ):
         errStr = "_callReplicaSEFcn: File hasn't got replica at supplied Storage Element."
         self.log.error( errStr, "%s %s" % ( lfn, storageElementName ) )
         retDict["Failed"][lfn] = errStr
+
     # # call StorageElement function at least
     se = StorageElement( storageElementName )
     fcn = getattr( se, method )
@@ -1933,11 +1933,12 @@ class DataManager( object ):
       errStr = "_callReplicaSEFcn: Failed to execute %s StorageElement method." % method
       self.log.error( errStr, res["Message"] )
       return res
+
     # # filter out failed nad successful
-    for pfn, pfnRes in res["Value"]["Successful"].items():
-      retDict["Successful"][pfnDict[pfn]] = pfnRes
-    for pfn, errorMessage in res["Value"]["Failed"].items():
-      retDict["Failed"][pfnDict[pfn]] = errorMessage
+    for lfn, lfnRes in res["Value"]["Successful"].items():
+      retDict["Successful"][lfn] = lfnRes
+    for lfn, errorMessage in res["Value"]["Failed"].items():
+      retDict["Failed"][lfn] = errorMessage
     return S_OK( retDict )
 
   def getReplicaIsFile( self, lfn, storageElementName ):
