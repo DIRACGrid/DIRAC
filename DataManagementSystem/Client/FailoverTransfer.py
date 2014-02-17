@@ -22,7 +22,7 @@
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
 from DIRAC.Resources.Storage.StorageElement                 import StorageElement
 from DIRAC.RequestManagementSystem.Client.Request           import Request
 from DIRAC.RequestManagementSystem.Client.Operation         import Operation
@@ -42,7 +42,6 @@ class FailoverTransfer( object ):
         FailoverTransfer or a new request object is created.
     """
     self.log = gLogger.getSubLogger( "FailoverTransfer" )
-    self.replicaMgr = ReplicaManager()
     self.request = requestObject
 
     if not self.request:
@@ -69,7 +68,8 @@ class FailoverTransfer( object ):
                                                                                                se,
                                                                                                fileGUID,
                                                                                                fileCatalog ) )
-      result = self.replicaMgr.putAndRegister( lfn, localPath, se, guid = fileGUID, catalog = fileCatalog )
+
+      result = DataManager( catalogs = fileCatalog ).putAndRegister( lfn, localPath, se, guid = fileGUID )
       self.log.verbose( result )
       if not result['OK']:
         self.log.error( 'rm.putAndRegister failed with message', result['Message'] )
@@ -223,7 +223,7 @@ class FailoverTransfer( object ):
       regFile.GUID = fileDict.get( "GUID", "" )
 
       se = StorageElement( targetSE )
-      pfn = se.getPfnForLfn( lfn )
+      pfn = Utils.executeSingleFileOrDirWrapper( se.getPfnForLfn( lfn ) )
       if not pfn["OK"]:
         self.log.error( "unable to get PFN for LFN: %s" % pfn["Message"] )
         return pfn

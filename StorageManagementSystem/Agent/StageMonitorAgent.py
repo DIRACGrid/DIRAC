@@ -6,7 +6,7 @@ from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath, siteName
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager             import ReplicaManager
+from DIRAC.Resources.Storage.StorageElement                       import StorageElement
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import StorageManagementDB
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation            import DataOperation
@@ -22,7 +22,6 @@ AGENT_NAME = 'StorageManagement/StageMonitorAgent'
 class StageMonitorAgent( AgentModule ):
 
   def initialize( self ):
-    self.replicaManager = ReplicaManager()
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
     #self.storageDB = StorageManagementDB()
@@ -81,7 +80,7 @@ class StageMonitorAgent( AgentModule ):
     oAccounting = DataOperation()
     oAccounting.setStartTime()
 
-    res = self.replicaManager.getStorageFileMetadata( pfnReqIDs.keys(), storageElement )
+    res = StorageElement( storageElement ).getFileMetadata( pfnReqIDs )
     if not res['OK']:
       gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.", res['Message'] )
       return

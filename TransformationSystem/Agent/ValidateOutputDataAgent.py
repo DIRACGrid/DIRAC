@@ -8,7 +8,7 @@ from DIRAC.Core.Base.AgentModule                               import AgentModul
 from DIRAC.Core.Utilities.List                                 import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegrityClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
+from DIRAC.Resources.Catalog.FileCatalog                       import FileCatalog
 from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient    import TransformationClient
 import re
@@ -23,7 +23,7 @@ class ValidateOutputDataAgent( AgentModule ):
     AgentModule.__init__( self, *args, **kwargs )
 
     self.integrityClient = DataIntegrityClient()
-    self.replicaManager = ReplicaManager()
+    self.fc = FileCatalog()
     self.transClient = TransformationClient()
     self.fileCatalogClient = FileCatalogClient()
 
@@ -174,7 +174,7 @@ class ValidateOutputDataAgent( AgentModule ):
     #
     # This check performs Catalog->SE for possible output directories
     #
-    res = self.replicaManager.getCatalogExists( directories )
+    res = self.fc.exists( directories )
     if not res['OK']:
       gLogger.error( res['Message'] )
       return res

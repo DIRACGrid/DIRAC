@@ -17,8 +17,8 @@ Usage:
 Script.parseCommandLine()
 
 from DIRAC.Core.Utilities.List import sortList
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-rm = ReplicaManager()
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+dm = DataManager()
 import os, sys
 
 if len( sys.argv ) < 2:
@@ -35,7 +35,7 @@ if os.path.exists( inputFileName ):
 else:
   lfns = [inputFileName]
 
-res = rm.removeCatalogFile( lfns )
+res = dm.removeCatalogFile( lfns )
 if not res['OK']:
   print "Error:", res['Message']
   sys.exit()

@@ -1231,7 +1231,7 @@ class XROOTStorage( StorageBase ):
        :returns: S_ERROR if there is a fatal error
                   S_OK (statistics dictionary ) if we could upload something :
                                     'AllRemoved': boolean of whether we could delete everything
-                                    'FileRemoved': amount of files deleted
+                                    'FilesRemoved': amount of files deleted
                                     'SizeRemoved': amount of data deleted
     """
     filesRemoved = 0
@@ -1419,7 +1419,7 @@ class XROOTStorage( StorageBase ):
     subDirs = {}
 
     for entry in listing:
-      fullPath = "root://%s%s/%s" % ( self.host, xFilePath, entry.name )
+      fullPath = "root://%s%s%s" % ( self.host, xFilePath, entry.name )
       metadataDict = self.__parseStatInfoFromApiOutput( entry.statinfo )
       if metadataDict['Directory']:
         subDirs[fullPath] = True

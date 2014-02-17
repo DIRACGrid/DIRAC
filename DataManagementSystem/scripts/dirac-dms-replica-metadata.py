@@ -17,7 +17,7 @@ Usage:
 Script.parseCommandLine()
 
 from DIRAC import gLogger
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 import os, sys
 
 if not len( sys.argv ) == 3:
@@ -35,8 +35,7 @@ if os.path.exists( inputFileName ):
 else:
   lfns = [inputFileName]
 
-rm = ReplicaManager()
-res = rm.getReplicaMetadata( lfns, storageElement )
+res = DataManager().getReplicaMetadata( lfns, storageElement )
 if not res['OK']:
   print 'Error:', res['Message']
   DIRACExit( 1 )

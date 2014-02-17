@@ -12,7 +12,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
 
@@ -30,7 +29,6 @@ class InputDataByProtocol:
     self.configuration = argumentsDict['Configuration']
     self.fileCatalogResult = argumentsDict['FileCatalog']
     self.jobID = None
-    self.replicaManager = ReplicaManager()
 
   #############################################################################
   def execute( self, dataToResolve = None ):
@@ -143,7 +141,7 @@ class InputDataByProtocol:
       pfnList = lfnDict.values()
       if not pfnList:
         continue
-      result = self.replicaManager.getStorageFileMetadata( pfnList, seName )
+      result = StorageElement( seName ).getFileMetadata( pfnList )
       if not result['OK']:
         self.log.warn( result['Message'] )
         # If we can not get MetaData, most likely there is a problem with the SE
@@ -191,7 +189,7 @@ class InputDataByProtocol:
 
       self.log.info( 'Preliminary checks OK, getting TURLS:\n', '\n'.join( pfnList ) )
 
-      result = self.replicaManager.getStorageFileAccessUrl( pfnList, seName, protocol = requestedProtocol )
+      result = StorageElement( seName ).getAccessUrl( pfnList, protocol = requestedProtocol )
       self.log.debug( result )
       if not result['OK']:
         self.log.warn( result['Message'] )
