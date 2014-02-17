@@ -29,7 +29,7 @@ seName = args[1]
 fileName = args[0]
 
 import os
-import DIRAC
+from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 
@@ -41,8 +41,8 @@ if os.path.exists( fileName ):
     lfns = [ k.strip() for k in lfnFile.readlines() ]
     lfnFile.close()
   except Exception:
-    DIRAC.gLogger.exception( 'Can not open file', fileName )
-    DIRAC.exit( -1 )
+    gLogger.exception( 'Can not open file', fileName )
+    DIRACExit( -1 )
 else:
   lfns = args[:len(args)-1]
 
@@ -53,8 +53,8 @@ res = stagerClient.setRequest( stageLfns, 'WorkloadManagement',
                                       'updateJobFromStager@WorkloadManagement/JobStateUpdate',
                                       0 ) # fake JobID = 0
 if not res['OK']:
-  DIRAC.gLogger.error( res['Message'] )
-  DIRAC.exit( -1 )
+  gLogger.error( res['Message'] )
+  DIRACExit( -1 )
 else:
   print "Stage request submitted for LFNs:\n %s" %lfns
   print "SE= %s" %seName
@@ -75,4 +75,4 @@ SE= GRIDKA-RDST
 You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
 '''
 
-DIRAC.exit()
+DIRACExit()
