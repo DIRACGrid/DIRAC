@@ -92,21 +92,22 @@ class DownloadInputData:
 
       size = reps['Size']
       guid = reps['GUID' ]
+      del reps['Size']
+      del reps['GUID']
       downloadReplicas[lfn] = {'SE':[], 'Size':size, 'GUID':guid}
       # First get Disk replicas
       for seName in diskSEs:
         if seName in reps:
-          downloadReplicas[lfn]['SE'].append( ( seName, reps[seName] ) )
+          downloadReplicas[lfn]['SE'].append( seName )
       # If no disk replicas, take tape replicas
       if not downloadReplicas[lfn]['SE']:
         for seName in tapeSEs:
           if seName in reps:
             # Only consider replicas that are cached
-            pfn = reps[seName]
-            result = self.__storageElement( seName ).getFileMetadata( pfn )
-            cached = result.get( 'Value', {} ).get( 'Successful', {} ).get( pfn, {} ).get( 'Cached', False )
+            result = self.__storageElement( seName ).getFileMetadata( lfn )
+            cached = result.get( 'Value', {} ).get( 'Successful', {} ).get( lfn, {} ).get( 'Cached', False )
             if cached:
-              downloadReplicas[lfn]['SE'].append( ( seName, pfn ) )
+              downloadReplicas[lfn]['SE'].append( seName )
 
     totalSize = 0
     self.log.verbose( 'Replicas to download are:' )
@@ -115,13 +116,12 @@ class DownloadInputData:
       if not reps['SE']:
         self.log.info( 'Failed to find data at local SEs, will try to download from anywhere', lfn )
         reps['SE'] = ''
-        reps['PFN'] = ''
       else:
         if len( reps['SE'] ) > 1:
           # if more than one SE is available randomly select one
           random.shuffle( reps['SE'] )
         # get SE and pfn from tuple
-        reps['SE'], reps['PFN'] = reps['SE'][0]
+        reps['SE'] = reps['SE'][0]
       totalSize += int( reps.get( 'Size', 0 ) )
       for item, value in sorted( reps.items() ):
         if value:
@@ -148,20 +148,20 @@ class DownloadInputData:
     resolvedData = {}
     localSECount = 0
     for lfn in downloadReplicas:
-      pfn = downloadReplicas[lfn]['PFN']
       seName = downloadReplicas[lfn]['SE']
       guid = downloadReplicas[lfn]['GUID']
+      reps = replicas.get( lfn, {} )
       if seName:
-        result = self.__storageElement( seName ).getFileMetadata( pfn )
+        result = self.__storageElement( seName ).getFileMetadata( lfn )
         if not result['OK']:
           self.log.error( "Error getting metadata", result['Message'] )
           failedReplicas.add( lfn )
           continue
-        if pfn in result['Value']['Failed']:
-          self.log.error( 'Could not get Storage Metadata for %s at %s: %s' % ( lfn, seName, result['Value']['Failed'][pfn] ) )
+        if lfn in result['Value']['Failed']:
+          self.log.error( 'Could not get Storage Metadata for %s at %s: %s' % ( lfn, seName, result['Value']['Failed'][lfn] ) )
           failedReplicas.add( lfn )
           continue
-        metadata = result['Value']['Successful'][pfn]
+        metadata = result['Value']['Successful'][lfn]
         if metadata['Lost']:
           error = "PFN has been Lost by the StorageElement"
         elif metadata['Unavailable']:
@@ -171,19 +171,18 @@ class DownloadInputData:
         else:
           error = ''
         if error:
-          self.log.error( error, pfn )
+          self.log.error( error, lfn )
           failedReplicas.add( lfn )
           continue
 
-        self.log.info( 'Preliminary checks OK, download %s from %s:' % ( pfn, seName ) )
-        result = self.__downloadPFN( pfn, seName, guid )
+        self.log.info( 'Preliminary checks OK, download %s from %s:' % ( lfn, seName ) )
+        result = self.__downloadPFN( lfn, seName, reps, guid )
         if not result['OK']:
           self.log.error( 'Download from %s failed:' % seName, result['Message'] )
       else:
         result = {'OK':False}
 
       if not result['OK']:
-        reps = replicas.get( lfn, {} )
         reps.pop( seName, None )
         # Check the other SEs
         if reps:
@@ -254,7 +253,7 @@ class DownloadInputData:
       return self.inputDataDirectory
 
   #############################################################################
-  def __downloadLFN( self, lfn, replicas, guid ):
+  def __downloadLFN( self, lfn, reps, guid ):
     """ Download a local copy of a single LFN from a list of Storage Elements.
         This is used as a last resort to attempt to retrieve the file.
     """
@@ -269,49 +268,48 @@ class DownloadInputData:
         tapeSEs.add( localSE )
 
     for seName in list( diskSEs ) + list( tapeSEs ):
-      pfn = replicas[seName]
       if seName in tapeSEs:
         # Check if file is cached
-        result = self.__storageElement( seName ).getFileMetadata( pfn )
+        result = self.__storageElement( seName ).getFileMetadata( lfn )
         if not result['OK'] or not result.get( 'Value', {} ).get( 'Successful', {} ).get( 'Cached', False ):
           continue
-      result = self.__downloadPFN( pfn, seName, guid )
-      if result['OK'] and pfn in result['Value']['Successful']:
+      result = self.__downloadPFN( lfn, seName, reps, guid )
+      if result['OK'] and lfn in result['Value']['Successful']:
         return result
     return S_ERROR( 'Unable to download the file from any SE' )
 
   #############################################################################
-  def __downloadPFN( self, pfn, seName, guid ):
+  def __downloadPFN( self, lfn, seName, reps, guid ):
     """ Download a local copy of a single PFN from the specified Storage Element.
     """
-    if not pfn:
+    if not lfn:
       return S_ERROR( 'Assume file is not at this site' )
 
     downloadDir = self.__getDownloadDir()
-    fileName = os.path.basename( pfn )
+    fileName = os.path.basename( lfn )
     for localFile in ( os.path.join( os.getcwd(), fileName ), os.path.join( downloadDir, fileName ) ):
       if os.path.exists( localFile ):
         self.log.info( 'File %s already exists locally as %s' % ( fileName, localFile ) )
         fileDict = { 'turl':'LocalData',
                      'protocol':'LocalData',
                      'se':seName,
-                     'pfn':pfn,
+                     'pfn':reps[seName],
                      'guid':guid,
                      'path': localFile}
         return S_OK( fileDict )
 
 
-    result = self.__storageElement( seName ).getFile( pfn, localPath = downloadDir )
+    result = self.__storageElement( seName ).getFile( lfn, localPath = downloadDir )
     if not result['OK']:
-      self.log.warn( 'Problem getting PFN %s:\n%s' % ( pfn, result['Message'] ) )
+      self.log.warn( 'Problem getting %s at %s:\n%s' % ( lfn, seName, result['Message'] ) )
       return result
-    if pfn in result['Value']['Failed']:
-      self.log.warn( 'Problem getting PFN %s:\n%s' % ( pfn, result['Value']['Failed'][pfn] ) )
-      return S_ERROR( result['Value']['Failed'][pfn] )
+    if lfn in result['Value']['Failed']:
+      self.log.warn( 'Problem getting %s at %s:\n%s' % ( lfn, seName, result['Value']['Failed'][lfn] ) )
+      return S_ERROR( result['Value']['Failed'][lfn] )
 
     if os.path.exists( localFile ):
       self.log.verbose( 'File %s exists in download directory' % ( fileName ) )
-      fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':seName, 'pfn':pfn, 'guid':guid, 'path':localFile}
+      fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':seName, 'pfn':reps[seName], 'guid':guid, 'path':localFile}
       return S_OK( fileDict )
     else:
       self.log.warn( 'File does not exist in local directory after download' )

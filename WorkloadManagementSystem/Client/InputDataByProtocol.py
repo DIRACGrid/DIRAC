@@ -17,12 +17,6 @@ from DIRAC                                                          import S_OK,
 
 COMPONENT_NAME = 'InputDataByProtocol'
 
-def findInDict( val, dictionary ):
-  for key, value in dictionary.items():
-    if value == val:
-      return key
-  return None
-
 class InputDataByProtocol:
 
   #############################################################################
@@ -83,10 +77,10 @@ class InputDataByProtocol:
           failedReplicas.add( lfn )
           continue
         for seName in diskSEs & set( reps ):
-          newReplicasDict.setdefault( lfn, [] ).append( ( seName, reps[seName] ) )
+          newReplicasDict.setdefault( lfn, [] ).append( seName )
         if not newReplicasDict[lfn]:
           for seName in tapeSEs & set( reps ):
-            newReplicasDict.setdefault( lfn, [] ).append( ( seName, reps[seName] ) )
+            newReplicasDict.setdefault( lfn, [] ).append( seName )
 
     # Check that all LFNs have at least one replica and GUID
     if failedReplicas:
@@ -101,50 +95,47 @@ class InputDataByProtocol:
     # since this module could have been executed after another.
     seFilesDict = {}
     for lfn, seList in newReplicasDict.items():
-      for seName, pfn in seList:
-        seFilesDict.setdefault( seName, {} )[lfn] = pfn
+      for seName in seList:
+        seFilesDict.setdefault( seName, [] ).append( lfn )
 
     sortedSEs = sorted( [ ( len( lfns ), seName ) for seName, lfns in seFilesDict.items() ], reverse = True )
 
     trackLFNs = {}
     for _len, seName in sortedSEs:
-      for lfn, pfn in seFilesDict[seName].items():
+      for lfn in seFilesDict[seName]:
         if lfn not in trackLFNs:
           if 'Size' in replicas[lfn] and 'GUID' in replicas[lfn]:
-            trackLFNs[lfn] = { 'pfn': pfn, 'se': seName, 'size': replicas[lfn]['Size'], 'guid': replicas[lfn]['GUID'] }
+            trackLFNs[lfn] = { 'pfn': replicas.get( lfn, {} ).get( seName, lfn ), 'se': seName, 'size': replicas[lfn]['Size'], 'guid': replicas[lfn]['GUID'] }
         else:
           # Remove the lfn from those SEs with less lfns
           del seFilesDict[seName][lfn]
 
     self.log.verbose( 'Files grouped by LocalSE are:\n%s' % str( seFilesDict ) )
-    for seName, pfnList in seFilesDict.items():
-      self.log.info( ' %s SURLs found from catalog for LocalSE %s\n%s' % ( len( pfnList ), seName, '\n'.join( pfnList.values() ) ) )
+    for seName, lfns in seFilesDict.items():
+      self.log.info( ' %s LFNs found from catalog at LocalSE %s\n%s' % ( len( lfns ), seName, '\n'.join( lfns ) ) )
 
     # Can now start to obtain TURLs for files grouped by localSE
     # for requested input data
     requestedProtocol = self.configuration.get( 'Protocol', '' )
-    for seName, lfnDict in seFilesDict.items():
-      pfnList = lfnDict.values()
-      if not pfnList:
+    for seName, lfns in seFilesDict.items():
+      if not lfns:
         continue
-      result = self.__storageElement( seName ).getFileMetadata( pfnList )
+      result = self.__storageElement( seName ).getFileMetadata( lfns )
       if not result['OK']:
-        self.log.error( "Error getting metadata.", result['Message'] + ':\n%s' % '\n'.join( pfnList ) )
+        self.log.error( "Error getting metadata.", result['Message'] + ':\n%s' % '\n'.join( lfns ) )
         # If we can not get MetaData, most likely there is a problem with the SE
         # declare the replicas failed and continue
-        failedReplicas.update( lfnDict )
+        failedReplicas.update( lfns )
         continue
       failed = result['Value']['Failed']
       if failed:
         # If MetaData can not be retrieved for some PFNs
         # declared them failed and go on
-        for pfn in failed:
+        for lfn in failed:
           if type( failed ) == type( {} ):
-            self.log.error( failed( pfn ), pfn )
-          pfnList.remove( pfn )
-          lfn = findInDict( pfn, lfnDict )
+            self.log.error( failed( lfn ), lfn )
           failedReplicas.add( lfn )
-      for pfn, metadata in result['Value']['Successful'].items():
+      for lfn, metadata in result['Value']['Successful'].items():
         if metadata['Lost']:
           error = "File has been Lost by the StorageElement %s" % seName
         elif metadata['Unavailable']:
@@ -154,21 +145,20 @@ class InputDataByProtocol:
         else:
           error = ''
         if error:
-          self.log.error( error, pfn )
+          lfns.remove( lfn )
+          self.log.error( error, lfn )
           # If PFN is not available
           # declared it failed and go on
-          pfnList.remove( pfn )
-          lfn = findInDict( pfn, lfnDict )
           failedReplicas.add( lfn )
 
       if None in failedReplicas:
         failedReplicas.remove( None )
       if not failedReplicas:
-        self.log.info( 'Preliminary checks OK, getting TURLS:\n', '\n'.join( pfnList ) )
+        self.log.info( 'Preliminary checks OK, getting TURLS for at %s:\n' % seName, '\n'.join( lfns ) )
       else:
         self.log.warn( "Errors during preliminary checks for %d files" % len( failedReplicas ) )
 
-      result = self.__storageElement( seName ).getAccessUrl( pfnList, protocol = requestedProtocol )
+      result = self.__storageElement( seName ).getAccessUrl( lfns, protocol = requestedProtocol )
       if not result['OK']:
         self.log.error( "Error getting TURLs", result['Message'] )
         return result
@@ -177,10 +167,9 @@ class InputDataByProtocol:
       badTURLs = []
       seResult = result['Value']
 
-      for pfn, cause in seResult['Failed'].items():
+      for lfn, cause in seResult['Failed'].items():
         badTURLCount += 1
-        badTURLs.append( 'Failed to obtain TURL for %s: %s' % ( pfn, cause ) )
-        lfn = findInDict( pfn, lfnDict )
+        badTURLs.append( 'Failed to obtain TURL for %s: %s' % ( lfn, cause ) )
         failedReplicas.add( lfn )
 
       if badTURLCount:
@@ -191,12 +180,11 @@ class InputDataByProtocol:
         if not result['OK']:
           self.log.warn( "Error setting job param", result['Message'] )
 
-      for pfn, turl in seResult['Successful'].items():
-        lfn = findInDict( pfn, lfnDict )
+      for lfn, turl in seResult['Successful'].items():
         trackLFNs[lfn]['turl'] = turl
         seName = trackLFNs[lfn]['se']
-        self.log.info( 'Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>PFN: %s\n>>>>TURL: %s' %
-                       ( seName, lfn, pfn, turl ) )
+        self.log.info( 'Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>TURL: %s' %
+                       ( seName, lfn, turl ) )
 
 
     self.log.debug( trackLFNs )
