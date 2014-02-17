@@ -158,7 +158,7 @@ class JobDescription:
     if not result[ 'OK' ]:
       return result
     transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
-    result = self.__checkMultiChoiceInDescription( "JobType", ['User', 'SAM', 'Hospital'] + transformationTypes )
+    result = self.__checkMultiChoiceInDescription( "JobType", ['User', 'Test', 'Hospital'] + transformationTypes )
     return S_OK()
 
   def setVar( self, varName, varValue ):
