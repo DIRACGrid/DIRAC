@@ -1,3 +1,25 @@
+[v6r10p12]
+
+*WMS
+CHANGE: Replace consistently everywhere SAM JobType by Test JobType
+FIX: JobWrapper - the outputSandbox should be always uploaded (outsized, in failed job)
+
+*DMS
+FIX: RemoveFile - bugfix
+FIX: ReplicateAndRegister - fixes in the checksum check, retry failed FTS transfer 
+     with RM transfer
+NEW: RegisterReplica request operation     
+
+*RMS
+FIX: ReqClient - fix in the request state machine
+FIX: Request - enhance digest string
+NEW: dirac-dms-reset-request command
+CHANGE: dirac-rms-show-request - allow selection of a request by job ID
+
+*TS
+FIX: TransformationDB - in getTransformationParameters() dropped "Submitted" counter 
+     in the output
+
 [v6r10p11]
 
 *Core
