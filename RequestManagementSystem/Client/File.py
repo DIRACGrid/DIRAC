@@ -86,6 +86,7 @@ class File( Record ):
                "Attempt": "INTEGER",
                "Error" : "VARCHAR(255)" },
              "PrimaryKey" : "FileID",
+             'ForeignKeys': {'OperationID': 'Operation.OperationID' },
              "Indexes" : { "LFN" : [ "LFN" ] } }
 
   # # properties

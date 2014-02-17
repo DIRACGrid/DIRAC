@@ -113,6 +113,7 @@ class Operation( Record ):
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",
                "LastUpdate" : "DATETIME" },
+             'ForeignKeys': {'RequestID': 'Request.RequestID' },
              "PrimaryKey" : "OperationID" }
 
   # # protected methods for parent only
