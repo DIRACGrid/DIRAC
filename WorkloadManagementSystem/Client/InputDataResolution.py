@@ -44,7 +44,7 @@ class InputDataResolution( object ):
     if not resolvedInputData['OK']:
       self.log.error( 'InputData resolution failed with result:\n%s' % ( resolvedInputData ) )
 
-    #For local running of this module we can expose an option to ignore missing files
+    # For local running of this module we can expose an option to ignore missing files
     ignoreMissing = False
     if self.arguments.has_key( 'IgnoreMissing' ):
       ignoreMissing = self.arguments['IgnoreMissing']
@@ -106,9 +106,9 @@ class InputDataResolution( object ):
     if not self.arguments.has_key( 'Job' ):
       self.arguments['Job'] = {}
 
-    if self.arguments['Job'].has_key( 'InputDataPolicy' ):
+    if 'InputDataPolicy' in self.arguments['Job']:
       policy = self.arguments['Job']['InputDataPolicy']
-      #In principle this can be a list of modules with the first taking precedence
+      # In principle this can be a list of modules with the first taking precedence
       if type( policy ) in types.StringTypes:
         policy = [policy]
       self.log.info( 'Job has a specific policy setting: %s' % ( ', '.join( policy ) ) )
@@ -128,7 +128,7 @@ class InputDataResolution( object ):
         policy = [x.strip() for x in policy.split( ',' )]
         self.log.info( 'Applying default input data policy for site %s:\n%s' % ( site, '\n'.join( policy ) ) )
 
-    dataToResolve = None #if none, all supplied input data is resolved
+    dataToResolve = None  # if none, all supplied input data is resolved
     allDataResolved = False
     successful = {}
     failedReplicas = []
@@ -161,8 +161,8 @@ class InputDataResolution( object ):
   #############################################################################
   def __runModule( self, modulePath, remainingReplicas ):
     """This method provides a way to run the modules specified by the VO that
-       govern the input data access policy for the current site. Using the 
-       InputDataPolicy section from Operations different modules can be defined for 
+       govern the input data access policy for the current site. Using the
+       InputDataPolicy section from Operations different modules can be defined for
        particular sites or for InputDataPolicy defined in the JDL of the jobs.
     """
     self.log.info( 'Attempting to run %s' % ( modulePath ) )
@@ -175,4 +175,4 @@ class InputDataResolution( object ):
     result = module.execute( remainingReplicas )
     return result
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
