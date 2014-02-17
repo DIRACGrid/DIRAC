@@ -1,3 +1,20 @@
+[v6r11-pre1]
+
+*Configuration
+CHANGE: Resources.getDIRACPlatform() returns a list of compatible DIRAC platforms
+
+*DMS
+NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
+
+*Resources
+CHANGE: StorageElement - changes to avoid usage PFNs
+
+*RMS
+CHANGE: ReqDB - added Foreign Keys to ReqDB tables
+
+*SMS
+FIX: few minor fixes to avoid pylint warnings
+
 [v6r10p11]
 
 *Core
