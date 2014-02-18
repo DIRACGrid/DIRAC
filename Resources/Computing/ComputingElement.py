@@ -21,9 +21,11 @@ from DIRAC.Core.Security                              import CS
 from DIRAC.Core.Security                              import Properties
 from DIRAC.Core.Utilities.Time                        import dateTime, second
 from DIRAC                                            import S_OK, S_ERROR, gLogger, version
+import os
 
 INTEGER_PARAMETERS = ['CPUTime']
 FLOAT_PARAMETERS = []
+LIST_PARAMETERS = ['Tag']
 WAITING_TO_RUNNING_RATIO = 0.5
 MAX_WAITING_JOBS = 1
 MAX_TOTAL_JOBS = 1
@@ -195,6 +197,8 @@ class ComputingElement(object):
         ceOptions[key] = int( ceOptions[key] )
       if key in FLOAT_PARAMETERS:
         ceOptions[key] = float( ceOptions[key] )
+      if key in LIST_PARAMETERS:
+        ceOptions[key] = gConfig( os.path.join( section, key ), [] )  
     self.ceParameters.update( ceOptions )
     return S_OK()
 

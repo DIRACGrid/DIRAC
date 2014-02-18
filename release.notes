@@ -113,6 +113,9 @@ NEW: StorageManagementDB - use python table description
 *Configuration
 CHANGE: Resources.getDIRACPlatform() returns a list of compatible DIRAC platforms
 
+*WMS
+NEW: WMS tags to allow jobs require special site/CE/queue properties  
+
 *DMS
 NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
 

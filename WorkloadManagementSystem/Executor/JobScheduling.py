@@ -292,7 +292,7 @@ class JobScheduling( OptimizerExecutor ):
 
     for key in ( 'SubmitPools', "GridMiddleware", "PilotTypes", "JobType", "GridRequiredCEs",
                  "OwnerDN", "OwnerGroup", "VirtualOrganization", 'Priority', 'DIRACSetup',
-                 'CPUTime' ):
+                 'CPUTime', 'Tags' ):
       if key == "JobType":
         reqKey = "JobTypes"
       elif key == "GridRequiredCEs" or key == "GridCE":

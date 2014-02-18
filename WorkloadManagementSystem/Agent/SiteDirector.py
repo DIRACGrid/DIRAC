@@ -28,7 +28,8 @@ from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
-import os, base64, bz2, tempfile, random, socket
+from DIRAC.Core.Utilities.List                             import fromChar
+import os, base64, bz2, tempfile, random, socket, types
 import DIRAC
 
 __RCSID__ = "$Id$"
@@ -327,6 +328,7 @@ class SiteDirector( AgentModule ):
       return result
     tqDict['Platform'] = result['Value']
     tqDict['Site'] = self.sites
+    tqDict['Tag'] = []
     self.log.verbose( 'Checking overall TQ availability with requirements' )
     self.log.verbose( tqDict )
 
@@ -425,6 +427,9 @@ class SiteDirector( AgentModule ):
 
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools
+      
+      if "Tag" in ceDict and type( ceDict['Tag'] ) in types.StringTypes:
+        ceDict['Tag'] = fromChar( ceDict['Tag'] )
 
       result = Resources.getCompatiblePlatforms( platform )
       if not result['OK']:
@@ -629,6 +634,8 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-T %s' % queueDict['CPUTime'] )
     # CEName
     pilotOptions.append( '-N %s' % self.queueDict[queue]['CEName'] )
+    # Queue
+    pilotOptions.append( '-Q %s' % self.queueDict[queue]['QueueName'] )
     # SiteName
     pilotOptions.append( '-n %s' % queueDict['Site'] )
     if 'ClientPlatform' in queueDict:
@@ -653,6 +660,10 @@ class SiteDirector( AgentModule ):
     # Hack
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
+
+    if "Tag" in queueDict:
+      tagString = ','.join( queueDict['Tag'] )
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
