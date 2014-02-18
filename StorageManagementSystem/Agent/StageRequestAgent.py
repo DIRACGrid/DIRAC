@@ -7,7 +7,7 @@ from DIRAC.Core.Base.AgentModule                                  import AgentMo
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
 from DIRAC.Core.Utilities.List                                    import sortList
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager             import ReplicaManager
+from DIRAC.Resources.Storage.StorageElement                       import StorageElement
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import THROTTLING_STEPS, THROTTLING_TIME
 
 import re
@@ -17,7 +17,6 @@ AGENT_NAME = 'StorageManagement/StageRequestAgent'
 class StageRequestAgent( AgentModule ):
 
   def initialize( self ):
-    self.replicaManager = ReplicaManager()
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
     #self.storageDB = StorageManagementDB()
@@ -260,8 +259,8 @@ class StageRequestAgent( AgentModule ):
     updatedPfnIDs = []
     if pfnRepIDs:
       gLogger.info( "StageRequest._issuePrestageRequests: Submitting %s stage requests for %s." % ( len( pfnRepIDs ), storageElement ) )
-      res = self.replicaManager.prestageStorageFile( pfnRepIDs.keys(), storageElement, lifetime = self.pinLifetime )
-      gLogger.debug( "StageRequest._issuePrestageRequests: replicaManager.prestageStorageFile: res=", res )
+      res = StorageElement( storageElement ).prestageFile( pfnRepIDs, lifetime = self.pinLifetime )
+      gLogger.debug( "StageRequest._issuePrestageRequests: StorageElement.prestageStorageFile: res=", res )
       #Daniela: fishy result from ReplicaManager!!! Should NOT return OK
       #res= {'OK': True, 'Value': {'Successful': {}, 'Failed': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/EXPRESS/LHCb/COLLISION10/71476/071476_0000000241.raw': ' SRM2Storage.__gfal_exec: Failed to perform gfal_prestage.[SE][BringOnline][SRM_INVALID_REQUEST] httpg://srm-lhcb.cern.ch:8443/srm/managerv2: User not able to access specified space token\n'}}}
       #res= {'OK': True, 'Value': {'Successful': {'srm://gridka-dCache.fzk.de/pnfs/gridka.de/lhcb/data/2009/RAW/FULL/LHCb/COLLISION09/63495/063495_0000000001.raw': '-2083846379'}, 'Failed': {}}}
@@ -428,7 +427,7 @@ class StageRequestAgent( AgentModule ):
       pfnRepIDs[pfn] = replicaID
 
     gLogger.info( "StageRequest.__checkIntegrity: Checking the integrity of %s replicas at %s." % ( len( pfnRepIDs ), storageElement ) )
-    res = self.replicaManager.getStorageFileMetadata( pfnRepIDs.keys(), storageElement )
+    res = StorageElement( storageElement ).getFileMetadata( pfnRepIDs )
     if not res['OK']:
       gLogger.error( "StageRequest.__checkIntegrity: Completely failed to obtain metadata for replicas.", res['Message'] )
       return res

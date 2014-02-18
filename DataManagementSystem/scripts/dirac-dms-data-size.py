@@ -43,10 +43,8 @@ for inputFileName in args:
   else:
     lfns.append( inputFileName )
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-rm = ReplicaManager()
-
-res = rm.getCatalogFileSize( lfns )
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+res = FileCatalog().getFileSize( lfns )
 if not res['OK']:
   gLogger.error( "Failed to get size of data", res['Message'] )
   DIRAC.exit( -2 )

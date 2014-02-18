@@ -17,8 +17,8 @@ Usage:
 Script.parseCommandLine()
 
 from DIRAC.Core.Utilities.List                        import sortList, breakListIntoChunks
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-rm = ReplicaManager()
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+dm = DataManager()
 import os, sys
 
 if len( sys.argv ) < 3:
@@ -38,7 +38,7 @@ else:
 
 for lfnList in breakListIntoChunks( sortList( lfns, True ), 500 ):
   for storageElementName in storageElementNames:
-    res = rm.removeReplica( storageElementName, lfnList )
+    res = dm.removeReplica( storageElementName, lfnList )
     if not res['OK']:
       print 'Error:', res['Message']
     for lfn in sortList( res['Value']['Successful'].keys() ):

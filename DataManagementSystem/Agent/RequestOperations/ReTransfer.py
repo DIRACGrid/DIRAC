@@ -26,6 +26,8 @@ __RCSID__ = "$Id $"
 from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase                    import OperationHandlerBase
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase   import DMSRequestOperationsBase
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+
 
 ########################################################################
 class ReTransfer( OperationHandlerBase, DMSRequestOperationsBase ):
@@ -85,8 +87,9 @@ class ReTransfer( OperationHandlerBase, DMSRequestOperationsBase ):
     if bannedTargets['Value']:
       return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets['Value'] ) )
 
+    se = StorageElement( targetSE )
     for opFile in toRetransfer.values():
-      reTransfer = self.replicaManager().onlineRetransfer( targetSE, opFile.PFN )
+      reTransfer = se.retransferOnlineFile( opFile.PFN )
       if not reTransfer["OK"]:
         opFile.Error = reTransfer["Message"]
         self.log.error( "%s retransfer failed: %s" % opFile.Error )

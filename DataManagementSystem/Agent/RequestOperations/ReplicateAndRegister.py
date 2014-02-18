@@ -24,11 +24,14 @@ __RCSID__ = "$Id $"
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
+
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase                   import OperationHandlerBase
 from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
 from DIRAC.Resources.Storage.StorageElement                                       import StorageElement
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
-from DIRAC.DataManagementSystem.Client.ReplicaManager                             import ReplicaManager
+from DIRAC.Resources.Catalog.FileCatalog                        import FileCatalog
+from DIRAC.Resources.Utilities                                  import Utils
+
 
 
 ########################################################################
@@ -69,7 +72,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     self.seCache = {}
 
     # Clients
-    self.rm = ReplicaManager()
+    self.fc = FileCatalog()
     self.ftsClient = FTSClient()
 
   def __call__( self ):
@@ -92,7 +95,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
                           if opFile.Status in ( "Waiting", "Scheduled" ) ] )
     targetSESet = set( self.operation.targetSEList )
 
-    replicas = self.rm.getCatalogReplicas( waitingFiles.keys() )
+    replicas = self.fc.getReplicas( waitingFiles )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
       return replicas
@@ -125,7 +128,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
       self.log.info( "No files to schedule" )
       return S_OK()
 
-    res = self.rm.getCatalogFileMetadata( lfns )
+    res = self.fc.getFileMetadata( lfns )
     if not res['OK']:
       return res
     else:
@@ -157,7 +160,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     from DIRAC.Core.Utilities.Adler import compareAdler
     ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
 
-    replicas = self.rm.getActiveReplicas( opFile.LFN )
+    replicas = self.dm.getActiveReplicas( opFile.LFN )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
     reNotExists = re.compile( "not such file or directory" )
@@ -185,7 +188,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         repSE = StorageElement( repSEName, "SRM2" )
         self.seCache[repSE] = repSE
 
-      pfn = repSE.getPfnForLfn( opFile.LFN )
+      pfn = Utils.executeSingleFileOrDirWrapper( repSE.getPfnForLfn( opFile.LFN ) )
       if not pfn["OK"]:
         self.log.warn( "unable to create pfn for %s lfn: %s" % ( opFile.LFN, pfn["Message"] ) )
         ret["Banned"].append( repSEName )
@@ -311,7 +314,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     if fromFTS:
       self.log.info( "Trying transfer using replica manager as FTS failed" )
     else:
-      self.log.info( "Transferring files using replica manager..." )
+      self.log.info( "Transferring files using Data manager..." )
     # # source SE
     sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
     if sourceSE:
@@ -370,12 +373,11 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
       # # loop over targetSE
       for targetSE in self.operation.targetSEList:
 
-        # # call ReplicaManager
+        # # call DataManager
         if targetSE == sourceSE:
           self.log.warn( "Request to replicate %s to the source SE: %s" % ( lfn, sourceSE ) )
           continue
         res = self.rm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
-
         if res["OK"]:
 
           if lfn in res["Value"]["Successful"]:
@@ -421,7 +423,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         else:
 
           gMonitor.addMark( "ReplicateFail", 1 )
-          opFile.Error = "ReplicaManager error: %s" % res["Message"]
+          opFile.Error = "DataManager error: %s" % res["Message"]
           self.log.error( opFile.Error )
 
       if not opFile.Error:
