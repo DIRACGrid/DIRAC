@@ -27,7 +27,7 @@ __RCSID__ = "$Id $"
 from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase                   import OperationHandlerBase
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
-from DIRAC.DataManagementSystem.Client.ReplicaManager                             import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 ########################################################################
 class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
@@ -58,7 +58,7 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     gMonitor.registerActivity( "RegisterFail", "Failed file registrations",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
-    self.rm = ReplicaManager()
+    self.dm = DataManager()
 
   def __call__( self ):
     """ PutAndRegister operation processing """
@@ -104,10 +104,11 @@ class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
       checksum = opFile.Checksum
 
       # # call RM at least
-      putAndRegister = self.rm.putAndRegister( lfn, pfn, targetSE,
-                                               guid = guid,
-                                               checksum = checksum,
-                                               catalog = self.operation.Catalog )
+      putAndRegister = DataManager( catalogs = self.operation.Catalog ).putAndRegister( lfn,
+                                                             pfn,
+                                                             targetSE,
+                                                             guid = guid,
+                                                             checksum = checksum )
       if not putAndRegister["OK"]:
         gMonitor.addMark( "PutFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )

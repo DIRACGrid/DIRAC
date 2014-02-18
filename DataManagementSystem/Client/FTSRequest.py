@@ -23,7 +23,9 @@ from DIRAC.Core.Utilities.Adler import compareAdler, intAdlerToHex, hexAdlerToIn
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface, ReplicaManager
+from DIRAC.Resources.Catalog.FileCatalog    import FileCatalog
+from DIRAC.Resources.Utilities import Utils
+
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
@@ -78,7 +80,7 @@ class FTSRequest( object ):
     # # dict for files that failed to register
     self.failedRegistrations = {}
 
-    # # placehoder for CatalogInterface reference
+    # # placehoder for FileCatalog reference
     self.oCatalog = None
 
     # # submit timestamp
@@ -126,8 +128,6 @@ class FTSRequest( object ):
     # # disable checksum test by default
     self.__cksmTest = False
 
-    # # replica manager handler
-    self.replicaManager = ReplicaManager()
 
     # # statuses that prevent submitting to FTS
     self.noSubmitStatus = ( 'Failed', 'Done', 'Staging' )
@@ -617,7 +617,7 @@ class FTSRequest( object ):
     """
     try:
       if not self.oCatalog:
-        self.oCatalog = CatalogInterface()
+        self.oCatalog = FileCatalog()
       return S_OK()
     except:
       return S_ERROR()
@@ -637,7 +637,7 @@ class FTSRequest( object ):
     res = self.__getCatalogObject()
     if not res['OK']:
       return res
-    res = self.oCatalog.getCatalogReplicas( toUpdate )
+    res = self.oCatalog.getReplicas( toUpdate )
     if not res['OK']:
       return S_ERROR( "Failed to update replica cache: %s" % res['Message'] )
     for lfn, error in res['Value']['Failed'].items():
@@ -662,7 +662,7 @@ class FTSRequest( object ):
     res = self.__getCatalogObject()
     if not res['OK']:
       return res
-    res = self.oCatalog.getCatalogFileMetadata( toUpdate )
+    res = self.oCatalog.getFileMetadata( toUpdate )
     if not res['OK']:
       return S_ERROR( "Failed to get source catalog metadata: %s" % res['Message'] )
     for lfn, error in res['Value']['Failed'].items():
@@ -701,8 +701,8 @@ class FTSRequest( object ):
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
       # Fix first the PFN
-      pfn = self.oSourceSE.getPfnForLfn( lfn ).get( 'Value', replicas[self.sourceSE] )
-      res = self.oSourceSE.getPfnForProtocol( pfn, 'SRM2', withPort = True )
+      pfn = self.oSourceSE.getPfnForLfn( lfn ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[self.sourceSE] )
+      res = Utils.executeSingleFileOrDirWrapper( self.oSourceSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True ) )
       if not res['OK']:
         gLogger.warn( "resolveSource: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
@@ -775,7 +775,7 @@ class FTSRequest( object ):
     # Launching staging of files not in cache
     if toStage:
       gLogger.warn( "resolveSource: %s source files not cached, prestaging..." % len( toStage ) )
-      stage = self.replicaManager.prestageStorageFile( toStage, self.sourceSE )
+      stage = self.oSourceSE.prestageFile( toStage )
       if not stage["OK"]:
         gLogger.error( "resolveSource: error is prestaging - %s" % stage["Message"] )
         for pfn in toStage:
@@ -807,13 +807,13 @@ class FTSRequest( object ):
     if not res['OK']:
       return res
     for lfn in toResolve:
-      res = self.oTargetSE.getPfnForLfn( lfn )
+      res = Utils.executeSingleFileOrDirWrapper( self.oTargetSE.getPfnForLfn( lfn ) )
       if not res['OK']:
         gLogger.warn( "resolveTarget: skipping %s - failed to create target pfn" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Failed to create Target" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-      res = self.oTargetSE.getPfnForProtocol( res['Value'], 'SRM2', withPort = True )
+      res = Utils.executeSingleFileOrDirWrapper( self.oTargetSE.getPfnForProtocol( res['Value'], protocol = 'SRM2', withPort = True ) )
       if not res['OK']:
         gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
@@ -1221,7 +1221,7 @@ class FTSRequest( object ):
     self.failedRegistrations = {}
     toRegister = {}
     for lfn in transLFNs:
-      res = self.oTargetSE.getPfnForProtocol( self.fileDict[lfn].get( 'Target' ), 'SRM2', withPort = False )
+      res = Utils.executeSingleFileOrDirWrapper( self.oTargetSE.getPfnForProtocol( self.fileDict[lfn].get( 'Target' ), protocol = 'SRM2', withPort = False ) )
       if not res['OK']:
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
@@ -1235,7 +1235,7 @@ class FTSRequest( object ):
         self.failedRegistrations = toRegister
         self.log.error( 'Failed to get Catalog Object', res['Message'] )
         return S_OK( ( 0, len( toRegister ) ) )
-    res = self.oCatalog.addCatalogReplica( toRegister )
+    res = self.oCatalog.addReplica( toRegister )
     if not res['OK']:
       self.failedRegistrations = toRegister
       self.log.error( 'Failed to get Catalog Object', res['Message'] )

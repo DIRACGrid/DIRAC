@@ -39,7 +39,6 @@ from DIRAC.RequestManagementSystem.private.Record import Record
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
-from DIRAC.Resources.Utilities import Utils
 
 ########################################################################
 class FTSJob( Record ):
@@ -48,6 +47,8 @@ class FTSJob( Record ):
 
   class describing one FTS job
   """
+  # # FileCatalog
+  __fileCatalog = None
 
   # # initial states
   INITSTATES = ( "Submitted", "Ready", "Staging" )
@@ -88,8 +89,6 @@ class FTSJob( Record ):
     self._regTotal = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
 
-    self.fc = FileCatalog()
-
     self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
 
     fromDict = fromDict if fromDict else {}
@@ -102,7 +101,12 @@ class FTSJob( Record ):
       if value:
         setattr( self, key, value )
 
-
+  @classmethod
+  def fileCatalog( cls ):
+    """ get FileCatalog """
+    if not cls.__fileCatalog :
+      cls.__fileCatalog = FileCatalog()
+    return cls.__fileCatalog
 
   @staticmethod
   def tableDesc():
@@ -541,16 +545,22 @@ class FTSJob( Record ):
     toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
     toRegisterDict = {}
     for ftsFile in toRegister:
-      pfn = Utils.executeSingleFileOrDirWrapper( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
+      pfn = targetSE.getPfnForProtocol( ftsFile.TargetSURL, "SRM2", withPort = False )
       if not pfn["OK"]:
         continue
       pfn = pfn["Value"]
       toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
 
     if toRegisterDict:
+<<<<<<< HEAD
+      self._regTotal += len( toRegisterDict )
+      register = self.replicaManager().addCatalogReplica( toRegisterDict )
+      self._regTime += time.time() - startTime
+=======
       self.regTotal += len( toRegisterDict )
-      register = self.fc.addReplica( toRegisterDict )
+      register = self.fileCatalog().addReplica( toRegisterDict )
       self.regTime += time.time() - startTime
+>>>>>>> Replace ReplicaManager with DataManager, StorageElement and FileCatalog
       if not register["OK"]:
         # FIXME: shouldn't be a print!
         for ftsFile in toRegister:

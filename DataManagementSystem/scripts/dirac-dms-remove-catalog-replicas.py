@@ -18,8 +18,8 @@ Usage:
 
 Script.parseCommandLine()
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-rm = ReplicaManager()
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+dm = DataManager()
 import os, sys
 
 if len( sys.argv ) < 3:
@@ -37,7 +37,7 @@ if os.path.exists( inputFileName ):
 else:
   lfns = [inputFileName]
 
-res = rm.removeReplicaFromCatalog( storageElementName, lfns )
+res = dm.removeReplicaFromCatalog( storageElementName, lfns )
 if not res['OK']:
   print res['Message']
   sys.exit()

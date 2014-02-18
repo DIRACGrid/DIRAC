@@ -18,7 +18,6 @@
 
     Helper functions and tools:
 
-    * self.replicaManager() -- returns ReplicaManager
     * self.dataLoggingClient() -- returns DataLoggingClient
     * self.rssClient() -- returns RSSClient
     * self.getProxyForLFN( LFN ) -- sets X509_USER_PROXY environment variable to LFN owner proxy
@@ -56,6 +55,9 @@ from DIRAC.Core.Utilities.Graph import DynamicProps
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
+from DIRAC.Resources.Utilities  import Utils
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 ########################################################################
 class OperationHandlerBase( object ):
@@ -65,8 +67,7 @@ class OperationHandlerBase( object ):
   request operation handler base class
   """
   __metaclass__ = DynamicProps
-  # # private replica manager
-  __replicaManager = None
+
   # # private data logging client
   __dataLoggingClient = None
   # # private ResourceStatusClient
@@ -83,6 +84,10 @@ class OperationHandlerBase( object ):
     # # placeholders for operation and request
     self.operation = None
     self.request = None
+
+    self.dm = DataManager()
+    self.fc = FileCatalog()
+
 
     self.csPath = csPath if csPath else ""
     # # get name
@@ -129,13 +134,7 @@ class OperationHandlerBase( object ):
       self.log = gLogger.getSubLogger( "%s/%s/%s" % ( self.request.RequestName,
                                                       self.request.Order,
                                                       self.operation.Type ) )
-  @classmethod
-  def replicaManager( cls ):
-    """ ReplicaManger getter """
-    if not cls.__replicaManager:
-      from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-      cls.__replicaManager = ReplicaManager()
-    return cls.__replicaManager
+
 
   @classmethod
   def dataLoggingClient( cls ):
@@ -159,7 +158,7 @@ class OperationHandlerBase( object ):
     :param str lfn: LFN
     :return: S_ERROR or S_OK( "/path/to/proxy/file" )
     """
-    dirMeta = self.replicaManager().getCatalogDirectoryMetadata( lfn, singleFile = True )
+    dirMeta = Utils.executeSingleFileOrDirWrapper( self.fc.getDirectoryMetadata( lfn ) )
     if not dirMeta["OK"]:
       return dirMeta
     dirMeta = dirMeta["Value"]

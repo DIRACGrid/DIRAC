@@ -28,6 +28,7 @@ import os
 from DIRAC import S_OK, gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase                   import OperationHandlerBase
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ########################################################################
 class PhysicalRemoval( OperationHandlerBase, DMSRequestOperationsBase ):
@@ -132,7 +133,9 @@ class PhysicalRemoval( OperationHandlerBase, DMSRequestOperationsBase ):
     :param dict toRemoveDict: { pfn : opFile, ... }
     :param str targetSE: target SE name
     """
-    bulkRemoval = self.replicaManager().removeStorageFile( toRemoveDict.keys(), targetSE )
+
+
+    bulkRemoval = StorageElement( targetSE ).removeFile( toRemoveDict )
     return bulkRemoval
 
   def singleRemoval( self, opFile, targetSE ):
@@ -154,7 +157,7 @@ class PhysicalRemoval( OperationHandlerBase, DMSRequestOperationsBase ):
             opFile.Error = proxyFile["Message"]
           else:
             proxyFile = proxyFile["Value"]
-            removeFile = self.replicaManager().removeStorageFile( opFile.PFN, targetSE )
+            removeFile = StorageElement( targetSE ).removeFile( opFile.PFN )
             if not removeFile["OK"]:
               opFile.Error = removeFile["Message"]
             else:

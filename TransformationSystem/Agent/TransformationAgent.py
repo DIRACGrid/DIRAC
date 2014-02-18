@@ -10,7 +10,7 @@ from DIRAC.Core.Utilities.List                                      import sortL
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
-from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager                  import DataManager
 
 __RCSID__ = "$Id$"
 
@@ -158,10 +158,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ returns the clients used in the threads
     """
     threadTransformationClient = TransformationClient()
-    threadReplicaManager = ReplicaManager()
+    threadDataManager = DataManager()
 
     return {'TransformationClient': threadTransformationClient,
-            'ReplicaManager': threadReplicaManager}
+            'DataManager': threadDataManager}
 
   def _execute( self, threadID ):
     """ thread - does the real job: processing the transformations to be processed
@@ -431,9 +431,9 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self._logVerbose( "Getting replicas for %d files from catalog" % len( lfns ),
                       method = method, transID = transID )
     if active:
-      res = clients['ReplicaManager'].getActiveReplicas( lfns )
+      res = clients['DataManager'].getActiveReplicas( lfns )
     else:
-      res = clients['ReplicaManager'].getReplicas( lfns )
+      res = clients['DataManager'].getReplicas( lfns )
     if not res['OK']:
       return res
     replicas = res['Value']
@@ -574,7 +574,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     try:
       plugin_o = getattr( plugModule, 'TransformationPlugin' )( '%s' % plugin,
                                                                 transClient = clients['TransformationClient'],
-                                                                replicaManager = clients['ReplicaManager'] )
+                                                                dataManager = clients['DataManager'] )
       return S_OK( plugin_o )
     except AttributeError, e:
       self._logException( "Failed to create %s(): %s." % ( plugin, e ), method = "__generatePluginObject" )

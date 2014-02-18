@@ -38,7 +38,7 @@ parseCommandLine()
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger 
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 ## tested code
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
@@ -128,9 +128,9 @@ class TransferTaskTests( unittest.TestCase ):
     tTask.requestClient().finalizeRequest.return_value = SOK
 
 
-    tTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager ) )
-    tTask.replicaManager().put = Mock()
-    tTask.replicaManager().putAndRegister.return_value =  { "OK": True, 
+    tTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
+    tTask.dm.put = Mock()
+    tTask.dm.putAndRegister.return_value = { "OK": True,
                                                             "Value": { "Failed": {}, 
                                                                        "Successful": { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : 
                                                                                        { "put": 1, "register": 1 } } } }
@@ -160,9 +160,9 @@ class TransferTaskTests( unittest.TestCase ):
                                                                         "SubRequestStatus" : "Done" }}
     tTask.requestClient().finalizeRequest = Mock()
     tTask.requestClient().finalizeRequest.return_value = SOK
-    tTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager) )
-    tTask.replicaManager().replicateAndRegister = Mock()
-    tTask.replicaManager().replicateAndRegister.return_value = { "OK": True, 
+    tTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
+    tTask.dm.replicateAndRegister = Mock()
+    tTask.dm.replicateAndRegister.return_value = { "OK": True,
                                                                  "Value": { 
         "Failed": {}, 
         "Successful": { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : { "replicate": 1, "register": 1 } } } }

@@ -12,7 +12,8 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager                  import DataManager
+from DIRAC.Resources.Utilities                                      import Utils
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.Core.Utilities.Os                                        import getDiskSpace
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
@@ -38,7 +39,6 @@ class DownloadInputData:
     # By default put each input data file into a separate directory
     self.inputDataDirectory = argumentsDict.get( 'InputDataDirectory', 'PerFile' )
     self.jobID = None
-    self.replicaManager = ReplicaManager()
     self.counter = 1
 
   #############################################################################
@@ -105,7 +105,7 @@ class DownloadInputData:
           if seName in reps:
             # Only consider replicas that are cached
             pfn = reps[seName]
-            result = self.replicaManager.getStorageFileMetadata( [pfn], seName )
+            result = StorageElement( seName ).getFileMetadata( [pfn] )
             if result['OK']:
               cached = result['Value']['Successful'].get( pfn, {} ).get( 'Cached' )
               if cached:
@@ -159,7 +159,7 @@ class DownloadInputData:
       pfn = downloadReplicas[lfn]['PFN']
       seName = downloadReplicas[lfn]['SE']
       guid = downloadReplicas[lfn]['GUID']
-      result = self.replicaManager.getStorageFileMetadata( [pfn], seName )
+      result = StorageElement( seName ).getFileMetadata( [pfn] )
       if not result['OK']:
         self.log.error( result['Message'] )
         failedReplicas.append( lfn )
@@ -270,8 +270,8 @@ class DownloadInputData:
         Manager will perform an LFC lookup to refresh the stored result.
     """
     downloadDir = self.__getDownloadDir()
-    self.log.verbose( 'Attempting to ReplicaManager.getFile for %s in %s' % ( lfn, downloadDir ) )
-    result = self.replicaManager.getFile( lfn, destinationDir = downloadDir )
+    self.log.verbose( 'Attempting to DataManager.getFile for %s in %s' % ( lfn, downloadDir ) )
+    result = DataManager().getFile( lfn, destinationDir = downloadDir )
     if not result['OK']:
       return result
     self.log.verbose( result )
@@ -309,7 +309,7 @@ class DownloadInputData:
 
     downloadDir = self.__getDownloadDir()
 
-    result = self.replicaManager.getStorageFile( pfn, seName, localPath = downloadDir, singleFile = True )
+    result = Utils.executeSingleFileOrDirWrapper( StorageElement( seName ).getFile( pfn, localPath = downloadDir ) )
     if not result['OK']:
       self.log.warn( 'Problem getting PFN %s:\n%s' % ( pfn, result ) )
       return result
