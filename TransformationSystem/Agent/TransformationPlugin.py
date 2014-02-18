@@ -7,7 +7,8 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE, getSEsForSite
 from DIRAC.Core.Utilities.List          import breakListIntoChunks, sortList, uniqueElements, randomize
 
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
 
 __RCSID__ = "$Id$"
 
@@ -15,7 +16,7 @@ class TransformationPlugin( object ):
   """ A TransformationPlugin object should be instantiated by every transformation.
   """
 
-  def __init__( self, plugin, transClient = None, replicaManager = None ):
+  def __init__( self, plugin, transClient = None, dataManager = None ):
     """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
         plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
     """
@@ -28,10 +29,12 @@ class TransformationPlugin( object ):
     else:
       self.transClient = transClient
 
-    if replicaManager is None:
-      self.rm = ReplicaManager()
+    if dataManager is None:
+      self.dm = DataManager()
     else:
-      self.rm = replicaManager
+      self.dm = DataManager
+
+    self.fc = FileCatalog()
 
 
   def isOK( self ):
@@ -302,7 +305,7 @@ class TransformationPlugin( object ):
     # Group files by SE
     fileGroups = self._getFileGroups( self.data )
     # Get the file sizes
-    res = self.rm.getCatalogFileSize( self.data.keys() )
+    res = self.fc.getFileSize( self.data )
     if not res['OK']:
       return S_ERROR( "Failed to get sizes for files" )
     if res['Value']['Failed']:

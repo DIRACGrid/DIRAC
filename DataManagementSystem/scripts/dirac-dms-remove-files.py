@@ -31,13 +31,13 @@ for inputFileName in args:
     lfns.append( inputFileName )
 
 from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-rm = ReplicaManager()
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+dm = DataManager()
 
 errorReasons = {}
 successfullyRemoved = 0
 for lfnList in breakListIntoChunks( lfns, 100 ):
-  res = rm.removeFile( lfnList )
+  res = dm.removeFile( lfnList )
   if not res['OK']:
     gLogger.error( "Failed to remove data", res['Message'] )
     DIRAC.exit( -2 )

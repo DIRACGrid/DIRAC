@@ -9,7 +9,8 @@
 """
 __RCSID__ = "$Id: $"
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager                  import DataManager
+from DIRAC.Resources.Catalog.FileCatalog                            import FileCatalog
 from DIRAC.DataManagementSystem.Client.FailoverTransfer             import FailoverTransfer
 from DIRAC.Resources.Catalog.PoolXMLFile                            import getGUID
 from DIRAC.RequestManagementSystem.Client.Request                   import Request
@@ -106,7 +107,8 @@ class JobWrapper:
     self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', [] )
     self.defaultFailoverSE = gConfig.getValue( '/Resources/StorageElementGroups/Tier1-Failover', [] )
     self.defaultOutputPath = ''
-    self.rm = ReplicaManager()
+    self.dm = DataManager()
+    self.fc = FileCatalog()
     self.log.verbose( '===========================================================================' )
     self.log.verbose( 'SVN version %s' % ( __RCSID__ ) )
     self.log.verbose( self.diracVersion )
@@ -645,7 +647,7 @@ class JobWrapper:
         and check the result.
     """
     start = time.time()
-    repsResult = self.rm.getReplicas( lfns )
+    repsResult = self.dm.getReplicas( lfns )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     if not repsResult['OK']:
@@ -676,7 +678,7 @@ class JobWrapper:
 
     # Must retrieve GUIDs from LFC for files
     start = time.time()
-    guidDict = self.rm.getCatalogFileMetadata( lfns )
+    guidDict = self.fc.getFileMetadata( lfns )
     timing = time.time() - start
     self.log.info( 'GUID Lookup Time: %.2f seconds ' % ( timing ) )
     if not guidDict['OK']:
@@ -1053,7 +1055,7 @@ class JobWrapper:
     if lfns:
       self.__report( 'Running', 'Downloading InputSandbox LFN(s)' )
       lfns = [fname.replace( 'LFN:', '' ).replace( 'lfn:', '' ) for fname in lfns]
-      download = self.rm.getFile( lfns )
+      download = self.dm.getFile( lfns )
       if not download['OK']:
         self.log.warn( download )
         self.__report( 'Running', 'Failed Downloading InputSandbox LFN(s)' )

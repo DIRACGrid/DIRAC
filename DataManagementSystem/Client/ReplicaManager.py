@@ -27,6 +27,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getS
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+from DIRAC.Resources.Utilities import Utils
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
@@ -577,7 +578,7 @@ class StorageBase( object ):
       return res
     retDict = { "Successful" : {}, "Failed" : {} }
     for lfn in lfns:
-      res = storageElement.getPfnForLfn( lfn )
+      res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
       if res["OK"]:
         retDict["Successful"][lfn] = res["Value"]
       else:
@@ -621,7 +622,7 @@ class StorageBase( object ):
       return res
     retDict = { "Successful" : {}, "Failed" : {}}
     for pfn in pfns:
-      res = storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort )
+      res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort ) )
       if res["OK"]:
         retDict["Successful"][pfn] = res["Value"]
       else:
@@ -1443,7 +1444,7 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
     destinationSE = storageElement.getStorageElementName()['Value']
-    res = storageElement.getPfnForLfn( lfn )
+    res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
     if not res['OK']:
       errStr = "putAndRegister: Failed to generate destination PFN."
       self.log.error( errStr, res['Message'] )
@@ -1620,7 +1621,7 @@ class ReplicaManager( CatalogToStorage ):
       destPath = '%s/%s' % ( destPath, os.path.basename( lfn ) )
     else:
       destPath = lfn
-    res = destStorageElement.getPfnForLfn( destPath )
+    res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForLfn( destPath ) )
     if not res['OK']:
       errStr = "__replicate: Failed to generate destination PFN."
       self.log.error( errStr, res['Message'] )
@@ -1827,10 +1828,10 @@ class ReplicaManager( CatalogToStorage ):
           errStr = "%s The storage element is not currently valid." % logStr
           self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
-          pfn = storageElement.getPfnForLfn( lfn ).get( 'Value', pfn )
+          pfn = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
           if storageElement.getRemoteProtocols()['Value']:
             self.log.verbose( "%s Attempting to get source pfns for remote protocols." % logStr )
-            res = storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols )
+            res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols ) )
             if res['OK']:
               sourcePfn = res['Value']
               self.log.verbose( "%s Attempting to get source file size." % logStr )
@@ -1911,7 +1912,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuple:
-          res = destStorageElement.getPfnForProtocol( physicalFile, self.registrationProtocol, withPort = False )
+          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( physicalFile, self.registrationProtocol, withPort = False ) )
           if not res['OK']:
             pfn = physicalFile
           else:
@@ -1973,7 +1974,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, pfn in replicaTuple:
-          res = destStorageElement.getPfnForProtocol( pfn, self.registrationProtocol, withPort = False )
+          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( pfn, self.registrationProtocol, withPort = False ) )
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
@@ -2364,7 +2365,7 @@ class ReplicaManager( CatalogToStorage ):
           result['Failed'][lfn] = value
       for surl in res['Value']['Successful']:
         lfn = pfnsToRemove[surl]
-        ret = storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False )
+        ret = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False ) )
         if not ret['OK']:
           result['Successful'][lfn] = surl
         else:
@@ -2415,7 +2416,7 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "put: The storage element is not currently valid."
       self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
-    res = storageElement.getPfnForLfn( lfn )
+    res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
     if not res['OK']:
       errStr = "put: Failed to generate destination PFN."
       self.log.error( errStr, res['Message'] )

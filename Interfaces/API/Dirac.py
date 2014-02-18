@@ -13,7 +13,6 @@
     - Local execution of workflows for testing purposes.
 
 """
-
 __RCSID__ = "$Id$"
 
 import re, os, sys, time, shutil, types, tempfile, glob, tarfile, urllib
@@ -26,7 +25,10 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient     import SandboxStoreClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
+# from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager       import DataManager
+from DIRAC.Resources.Storage.StorageElement              import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog                 import FileCatalog
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection, getServiceURL
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
@@ -1065,11 +1067,11 @@ class Dirac( API ):
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     start = time.time()
-    rm = ReplicaManager()
+    dm = DataManager()
     if active:
-      repsResult = rm.getActiveReplicas( lfns )
+      repsResult = dm.getActiveReplicas( lfns )
     else:
-      repsResult = rm.getReplicas( lfns )
+      repsResult = dm.getReplicas( lfns )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     self.log.verbose( repsResult )
@@ -1113,9 +1115,14 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
-    rm = ReplicaManager()
+#     rm = ReplicaManager()
+#     start = time.time()
+#     repsResult = rm.getCatalogReplicas( lfns )
+    # RF_NOTE : this method will return different values that api.getReplicas
+    fc = FileCatalog()
     start = time.time()
-    repsResult = rm.getCatalogReplicas( lfns )
+    repsResult = fc.getReplicas( lfns )
+
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     self.log.verbose( repsResult )
@@ -1215,9 +1222,9 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
-    rm = ReplicaManager()
+    fc = FileCatalog()
     start = time.time()
-    repsResult = rm.getCatalogFileMetadata( lfns )
+    repsResult = fc.getFileMetadata( lfns )
     timing = time.time() - start
     self.log.info( 'Metadata Lookup Time: %.2f seconds ' % ( timing ) )
     self.log.verbose( repsResult )
@@ -1265,8 +1272,8 @@ class Dirac( API ):
     if not os.path.isfile( fullPath ):
       return self._errorReport( 'Expected path to file not %s' % ( fullPath ) )
 
-    rm = ReplicaManager()
-    result = rm.putAndRegister( lfn, fullPath, diracSE, guid = fileGuid, catalog = self.defaultFileCatalog )
+    dm = DataManager( catalogs = self.defaultFileCatalog )
+    result = dm.putAndRegister( lfn, fullPath, diracSE, guid = fileGuid )
     if not result['OK']:
       return self._errorReport( 'Problem during putAndRegister call', result['Message'] )
     if not printOutput:
@@ -1304,8 +1311,8 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
-    rm = ReplicaManager()
-    result = rm.getFile( lfn, destinationDir = destDir )
+    dm = DataManager()
+    result = dm.getFile( lfn, destinationDir = destDir )
     if not result['OK']:
       return self._errorReport( 'Problem during getFile call', result['Message'] )
 
@@ -1361,8 +1368,8 @@ class Dirac( API ):
     if not type( localCache ) == type( " " ):
       return self._errorReport( 'Expected string for path to local cache' )
 
-    rm = ReplicaManager()
-    result = rm.replicateAndRegister( lfn, destinationSE, sourceSE, '', localCache )
+    dm = DataManager()
+    result = dm.replicateAndRegister( lfn, destinationSE, sourceSE, '', localCache )
     if not result['OK']:
       return self._errorReport( 'Problem during replicateFile call', result['Message'] )
     if not printOutput:
@@ -1404,8 +1411,8 @@ class Dirac( API ):
     if not type( sourceSE ) == type( " " ):
       return self._errorReport( 'Expected string for source SE name' )
 
-    rm = ReplicaManager()
-    result = rm.replicate( lfn, destinationSE, sourceSE, '' )
+    dm = DataManager()
+    result = dm.replicate( lfn, destinationSE, sourceSE, '' )
     if not result['OK']:
       return self._errorReport( 'Problem during replicate call', result['Message'] )
     if not printOutput:
@@ -1438,8 +1445,8 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string for LFN' )
 
-    rm = ReplicaManager()
-    result = rm.getReplicaAccessUrl( [lfn], storageElement )
+    dm = DataManager()
+    result = dm.getReplicaAccessUrl( [lfn], storageElement )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if not printOutput:
@@ -1479,8 +1486,7 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string for PFN' )
 
-    rm = ReplicaManager()
-    result = rm.getStorageFileAccessUrl( [pfn], storageElement )
+    result = StorageElement( storageElement ).getAccessUrl( [pfn] )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if not printOutput:
@@ -1522,8 +1528,7 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string or list of strings for PFN(s)' )
 
-    rm = ReplicaManager()
-    result = rm.getStorageFileMetadata( pfn, storageElement )
+    result = StorageElement( storageElement ).getFileMetadata( pfn )
     if not result['OK']:
       return self._errorReport( 'Problem during getStorageFileMetadata call', result['Message'] )
     if not printOutput:
@@ -1554,8 +1559,8 @@ class Dirac( API ):
     elif type( lfn ) != types.ListType:
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
-    rm = ReplicaManager()
-    result = rm.removeFile( lfn )
+    dm = DataManager()
+    result = dm.removeFile( lfn )
     if printOutput and result['OK']:
       print self.pPrint.pformat( result['Value'] )
     return result
@@ -1581,8 +1586,8 @@ class Dirac( API ):
     elif type( lfn ) != types.ListType:
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
-    rm = ReplicaManager()
-    result = rm.removeReplica( storageElement, lfn )
+    dm = DataManager()
+    result = dm.removeReplica( storageElement, lfn )
     if printOutput and result['OK']:
       print self.pPrint.pformat( result['Value'] )
     return result

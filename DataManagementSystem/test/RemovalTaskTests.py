@@ -46,8 +46,8 @@ RequestClient = Mock(spec=RequestClient)
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 DataLoggingClient = Mock(spec=DataLoggingClient)
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-ReplicaManager = Mock(spec=ReplicaManager)
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+DataManager = Mock( spec = DataManager )
 from DIRAC.DataManagementSystem.private.RemovalTask import RemovalTask
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
@@ -253,9 +253,9 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().finalizeRequest = Mock()
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
-    removalTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager) )
-    removalTask.replicaManager().removeReplica = Mock()
-    removalTask.replicaManager().removeReplica.return_value =  { "OK" : True,
+    removalTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
+    removalTask.dm.removeReplica = Mock()
+    removalTask.dm.removeReplica.return_value = { "OK" : True,
                                                                  "Value" : { "Failed" : {},
                                                                    "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }
     
@@ -287,8 +287,8 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().finalizeRequest = Mock()
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
-    removalTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager) )
-    removalTask.replicaManager().removeFile = Mock( return_value =   { "OK" : True,
+    removalTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
+    removalTask.dm.removeFile = Mock( return_value = { "OK" : True,
                                                                        "Value" : 
                                                                        { "Failed" : {},
                                                                          "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } } )
@@ -326,9 +326,9 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().finalizeRequest = Mock()
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
-    removalTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager) )
-    removalTask.replicaManager().removeStorageFile = Mock()
-    removalTask.replicaManager().removeStorageFile.return_value = { "OK" : True,
+    removalTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
+    removalTask.dm.removeStorageFile = Mock()
+    removalTask.dm.removeStorageFile.return_value = { "OK" : True,
                                                                     "Value" : 
                                                                     { "Failed" : {},
                                                                       "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }
@@ -356,9 +356,9 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().finalizeRequest = Mock()
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
-    removalTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager) )
-    removalTask.replicaManager().onlineRetransfer = Mock()
-    removalTask.replicaManager().onlineRetransfer.return_value = { "OK" : True,
+    removalTask.dataManager = Mock( return_value = Mock( spec = DataManager ) )
+    removalTask.dm.onlineRetransfer = Mock()
+    removalTask.dm.onlineRetransfer.return_value = { "OK" : True,
                                                                     "Value" : 
                                                                     { "Failed" : {},
                                                                       "Successful" : { "srm://srm-lhcb.gridpp.rl.ac.uk/castor/ads.rl.ac.uk/prod/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }

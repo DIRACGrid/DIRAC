@@ -28,6 +28,8 @@ __RCSID__ = "$Id $"
 ## imports 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+
 
 ########################################################################
 class TransferTask( RequestTask ):
@@ -109,12 +111,11 @@ class TransferTask( RequestTask ):
         continue
 
       ## call RM at least
-      putAndRegister = self.replicaManager().putAndRegister( lfn, 
+      putAndRegister = DataManager( catalogs = catalog ).putAndRegister( lfn,
                                                              pfn, 
                                                              targetSE, 
                                                              guid = guid, 
-                                                             checksum = addler, 
-                                                             catalog = catalog )
+                                                             checksum = addler )
       if putAndRegister["OK"]:
 
         if lfn in putAndRegister["Value"]["Successful"]:
@@ -237,7 +238,7 @@ class TransferTask( RequestTask ):
 
       for targetSE in targetSEs:
         self.addMark( "Replicate and register", 1 )
-        res = self.replicaManager().replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
+        res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
         if res["OK"]:
           if lfn in res["Value"]["Successful"]:
             if "replicate" in res["Value"]["Successful"][lfn]:
@@ -282,7 +283,7 @@ class TransferTask( RequestTask ):
             failed[lfn][targetSE] = res["Value"]["Failed"][lfn]
         else:
           self.addMark( "Replication failed", 1 )
-          self.error( "replicateAndRegister: ReplicaManager error: %s" % res["Message"] )
+          self.error( "replicateAndRegister: DataaManager error: %s" % res["Message"] )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "ReplicaMgrFailure" )
           #requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
           failed[lfn][targetSE] = res["Message"]

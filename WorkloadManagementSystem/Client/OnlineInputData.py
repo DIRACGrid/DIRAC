@@ -10,7 +10,8 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                                          import S_OK, S_ERROR, gLogger
+from DIRAC.Core.DISET.RPCClient                                     import RPCClient
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
 import os
 

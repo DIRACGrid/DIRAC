@@ -18,8 +18,9 @@ Usage:
 Script.parseCommandLine()
 
 from DIRAC.Core.Utilities.List                          import sortList
-from DIRAC.DataManagementSystem.Client.ReplicaManager   import ReplicaManager
-import os,sys
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+
+import os, sys
 
 if not len(sys.argv) >= 2:
   Script.showHelp()
@@ -29,6 +30,7 @@ else:
   catalogs = []
   if len(sys.argv) == 3:
     catalogs = [sys.argv[2]]  
+  
 
 if os.path.exists(inputFileName):
   inputFile = open(inputFileName,'r')
@@ -38,8 +40,7 @@ if os.path.exists(inputFileName):
 else:
   lfns = [inputFileName]
 
-rm = ReplicaManager()
-res = rm.getCatalogFileMetadata(lfns,catalogs=catalogs)
+res = FileCatalog( catalogs = catalogs ).getFileMetadata( lfns )
 if not res['OK']:
   print "ERROR:",res['Message']
   DIRACExit( -1 )

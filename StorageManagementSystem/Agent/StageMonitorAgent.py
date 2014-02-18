@@ -4,11 +4,9 @@ from DIRAC import gLogger, S_OK, S_ERROR, siteName
 
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager             import ReplicaManager
-
+from DIRAC.Resources.Storage.StorageElement                       import StorageElement
 from DIRAC.AccountingSystem.Client.Types.DataOperation            import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient                import gDataStoreClient
-
 from DIRAC.Core.Security.Misc                                     import getProxyInfo
 
 import re
@@ -18,7 +16,6 @@ AGENT_NAME = 'StorageManagement/StageMonitorAgent'
 class StageMonitorAgent( AgentModule ):
 
   def initialize( self ):
-    self.replicaManager = ReplicaManager()
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
     # This sets the Default Proxy to used as that defined under
@@ -77,7 +74,7 @@ class StageMonitorAgent( AgentModule ):
     oAccounting = DataOperation()
     oAccounting.setStartTime()
 
-    res = self.replicaManager.getStorageFileMetadata( pfnReqIDs.keys(), storageElement )
+    res = StorageElement( storageElement ).getFileMetadata( pfnReqIDs )
     if not res['OK']:
       gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.", res['Message'] )
       return

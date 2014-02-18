@@ -16,8 +16,8 @@ Usage:
 
 Script.parseCommandLine()
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface
-catalog = CatalogInterface()
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+catalog = FileCatalog()
 import sys,os
 
 if not len(sys.argv) == 4:
@@ -36,7 +36,7 @@ if os.path.exists(inputFileName):
 else:
   lfns = [inputFileName]
 
-res = catalog.getCatalogReplicas(lfns,True)
+res = catalog.getReplicas( lfns, True )
 if not res['OK']:
   print res['Message']
   DIRACExit( -1 )
@@ -49,7 +49,7 @@ for lfn in lfns:
   lfnDict[lfn]['Status'] = newStatus
   lfnDict[lfn]['PFN'] = replicas[lfn][se]
 
-res = catalog.setCatalogReplicaStatus(lfnDict)
+res = catalog.setReplicaStatus( lfnDict )
 if not res['OK']:
   print "ERROR:",res['Message']
 if res['Value']['Failed']:
