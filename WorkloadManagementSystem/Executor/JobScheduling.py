@@ -270,7 +270,7 @@ class JobScheduling( OptimizerExecutor ):
     # Job multivalue requirement keys are specified as singles in the job descriptions
     # but for backward compatibility can be also plurals
     for key in ( 'SubmitPools', "SubmitPool", "GridMiddleware", "PilotTypes", "PilotType", 
-                 "JobType", "GridRequiredCEs", "GridCE" ):
+                 "JobType", "GridRequiredCEs", "GridCE", "Tags" ):
       reqKey = key
       if key == "JobType":
         reqKey = "JobTypes"

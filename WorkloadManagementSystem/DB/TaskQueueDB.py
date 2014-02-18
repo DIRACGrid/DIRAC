@@ -26,11 +26,12 @@ class TaskQueueDB( DB ):
     random.seed()
     DB.__init__( self, 'TaskQueueDB', 'WorkloadManagement/TaskQueueDB', maxQueueSize )
     self.__multiValueDefFields = ( 'Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
-                                   'Platforms', 'PilotTypes', 'SubmitPools', 'JobTypes' )
+                                   'Platforms', 'PilotTypes', 'SubmitPools', 'JobTypes', 'Tags' )
     self.__multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'Platform',
-                                     'PilotType', 'SubmitPool', 'JobType' )
+                                     'PilotType', 'SubmitPool', 'JobType', 'Tag' )
+    self.__tagMatchFields = ( 'Tag', )
     self.__bannedJobMatchFields = ( 'Site', )
-    self.__strictRequireMatchFields = ( 'SubmitPool', 'Platform', 'PilotType' )
+    self.__strictRequireMatchFields = ( 'SubmitPool', 'Platform', 'PilotType', 'Tag' )
     self.__singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime' )
     self.__mandatoryMatchFields = ( 'Setup', 'CPUTime' )
     self.__priorityIgnoredFields = ( 'Sites', 'BannedSites' )
@@ -119,11 +120,11 @@ class TaskQueueDB( DB ):
     for multiField in self.__multiValueDefFields:
       tableName = 'tq_TQTo%s' % multiField
       self.__tablesDesc[ tableName ] = { 'Fields' : { 'TQId' : 'INTEGER UNSIGNED NOT NULL',
-                                                      'Value' : 'VARCHAR(64) NOT NULL',
-                                                  },
+                                                      'Value' : 'VARCHAR(64) NOT NULL'
+                                                    },
                                          'Indexes': { 'TaskIndex': [ 'TQId' ], '%sIndex' % multiField: [ 'Value' ] },
                                        }
-
+ 
     for tableName in self.__tablesDesc:
       if not tableName in tablesInDB:
         tablesToCreate[ tableName ] = self.__tablesDesc[ tableName ]
@@ -695,8 +696,11 @@ class TaskQueueDB( DB ):
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
           # that the GridCE matches explicitly so the COUNT can not be 0. In this case we skip this
           # condition
-        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
-        csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN, fullTableN, fullTableN ), tqMatchDict[ field ] )
+        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) ) 
+        if field in self.__tagMatchFields:
+          csql = self.__generateTagSQLSubCond( fullTableN, tqMatchDict[field] )
+        else:  
+          csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN, fullTableN, fullTableN ), tqMatchDict[ field ] )
         sqlMultiCondList.append( csql )
         sqlCondList.append( "( %s )" % " OR ".join( sqlMultiCondList ) )
         #In case of Site, check it's not in job banned sites
@@ -731,6 +735,18 @@ class TaskQueueDB( DB ):
     if numQueuesToGet:
       tqSqlCmd = "%s LIMIT %s" % ( tqSqlCmd, numQueuesToGet )
     return S_OK( tqSqlCmd )
+
+  def __generateTagSQLSubCond( self, tableName, tagMatchList ):
+    """ Generate SQL condition where ALL the specified multiValue requirements must be
+        present in the matching resource list
+    """
+    sql1 = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId=tq.TQId" % ( tableName, tableName, tableName )
+    if type( tagMatchList ) in [types.ListType, types.TupleType]: 
+      sql2 = sql1 + " AND %s.Value in ( %s )" % ( tableName, ','.join( [ "%s" % v for v in tagMatchList] ) )
+    else:
+      sql2 = sql1 + " AND %s.Value=%s" % ( tableName, tagMatchList )  
+    sql = '( '+sql1+' ) = ('+sql2+' )'
+    return sql
 
   def deleteJob( self, jobId, connObj = False ):
     """

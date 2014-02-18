@@ -171,6 +171,7 @@ cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
             ( 'D:', 'disk=', 'Require at least <space> MB available' ),
             ( 'M:', 'MaxCycles=', 'Maximum Number of JobAgent cycles to run' ),
             ( 'N:', 'Name=', 'Use <CEName> to determine Site Name' ),
+            ( 'Q:', 'queue=', 'Queue name' ),
             ( 'P:', 'path=', 'Install under <path>' ),
             ( 'E', 'server', 'Make a full server installation' ),
             ( 'S:', 'setup=', 'DIRAC Setup to use' ),
@@ -229,6 +230,8 @@ for o, v in optList:
   elif o == '-N' or o == '--Name':
     configureOpts.append( '-N "%s"' % v )
     cliParams.ceName = v
+  elif o == '-Q' or o == '--queue':
+    cliParams.queueName = v  
   elif o == '-D' or o == '--disk':
     try:
       cliParams.minDiskSpace = int( v )
