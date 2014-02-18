@@ -35,7 +35,7 @@ class InputDataByProtocol:
     return self.storageElements.setdefault( seName, StorageElement( seName ) )
 
   #############################################################################
-  def execute( self, dataToResolve = None ):
+  def execute( self, dataToResolve = None, allReplicas = False ):
     """This method is called to obtain the TURLs for all requested input data
        firstly by available site protocols and redundantly via TURL construction.
        If TURLs are missing these are conveyed in the result to
@@ -55,11 +55,40 @@ class InputDataByProtocol:
     # First make a check in case replicas have been removed or are not accessible
     # from the local site (remove these from consideration for local protocols)
     replicas = self.fileCatalogResult['Value']['Successful']
-    self.log.verbose( 'File Catalogue result is:\n%s' % str( replicas ) )
+    self.log.debug( 'File Catalogue result is:\n%s' % str( replicas ) )
 
+    # First get the preferred replica:
+    result = self.__resolveReplicas( localSEList, replicas )
+    if not result['OK']:
+      return result
+    success = result['Successful']
+    if not allReplicas:
+      bestReplica = {}
+      for lfn in success:
+        bestReplica[lfn] = success[lfn][0]
+      ret = S_OK()
+      ret.update( {'Successful': bestReplica, 'Failed':result['Failed']} )
+      return ret
+
+    # If all replicas are requested, get results for other SEs
+    seList = set()
+    for lfn in replicas:
+      seList.update( set( replicas[lfn] ) )
+    seList -= set( localSEList )
+
+    result = self.__resolveReplicas( seList, replicas, ignoreTape = True )
+    if not result['OK']:
+      return result
+    for lfn in result['Successful']:
+      success.setdefault( lfn, [] ).append( result['Successful'][lfn] )
+    ret = S_OK()
+    ret.update( {'Successful': success, 'Failed':result['Failed']} )
+    return ret
+
+  def __resolveReplicas( self, seList, replicas, ignoreTape = False ):
     diskSEs = set()
     tapeSEs = set()
-    for localSE in localSEList:
+    for localSE in seList:
       seStatus = self.__storageElement( localSE ).getStatus()['Value']
       if seStatus['Read'] and seStatus['DiskSE']:
         diskSEs.add( localSE )
@@ -79,7 +108,7 @@ class InputDataByProtocol:
           continue
         for seName in diskSEs & set( reps ):
           newReplicasDict.setdefault( lfn, [] ).append( seName )
-        if not newReplicasDict[lfn]:
+        if not newReplicasDict[lfn] and not ignoreTape:
           for seName in tapeSEs & set( reps ):
             newReplicasDict.setdefault( lfn, [] ).append( seName )
 
@@ -104,16 +133,13 @@ class InputDataByProtocol:
     trackLFNs = {}
     for _len, seName in sortedSEs:
       for lfn in seFilesDict[seName]:
-        if lfn not in trackLFNs:
-          if 'Size' in replicas[lfn] and 'GUID' in replicas[lfn]:
-            trackLFNs[lfn] = { 'pfn': replicas.get( lfn, {} ).get( seName, lfn ), 'se': seName, 'size': replicas[lfn]['Size'], 'guid': replicas[lfn]['GUID'] }
-        else:
-          # Remove the lfn from those SEs with less lfns
-          del seFilesDict[seName][lfn]
+        if 'Size' in replicas[lfn] and 'GUID' in replicas[lfn]:
+          trackLFNs.setdefault( lfn, [] ).append( { 'pfn': replicas.get( lfn, {} ).get( seName, lfn ), 'se': seName, 'size': replicas[lfn]['Size'], 'guid': replicas[lfn]['GUID'] } )
 
-    self.log.verbose( 'Files grouped by LocalSE are:\n%s' % str( seFilesDict ) )
+    self.log.debug( 'Files grouped by SEs are:\n%s' % str( seFilesDict ) )
     for seName, lfns in seFilesDict.items():
-      self.log.info( ' %s LFNs found from catalog at LocalSE %s\n%s' % ( len( lfns ), seName, '\n'.join( lfns ) ) )
+      self.log.info( ' %s LFNs found from catalog at SE %s' % ( len( lfns ), seName ) )
+      self.log.verbose( '\n'.join( lfns ) )
 
     # Can now start to obtain TURLs for files grouped by localSE
     # for requested input data
@@ -182,16 +208,19 @@ class InputDataByProtocol:
           self.log.warn( "Error setting job param", result['Message'] )
 
       for lfn, turl in seResult['Successful'].items():
-        trackLFNs[lfn]['turl'] = turl
-        seName = trackLFNs[lfn]['se']
+        for track in trackLFNs[lfn]:
+          if track['se'] == seName:
+            track['turl'] = turl
+            break
         self.log.info( 'Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>TURL: %s' %
                        ( seName, lfn, turl ) )
 
 
-    self.log.debug( trackLFNs )
-    for lfn, mdata in trackLFNs.items():
-      if 'turl' not in mdata:
-        self.log.verbose( 'No TURL resolved for %s' % lfn )
+    self.log.debug( 'All resolved data', trackLFNs )
+    for lfn, mdataList in trackLFNs.items():
+      for mdata in mdataList:
+        if 'turl' not in mdata:
+          self.log.verbose( 'No TURL resolved for %s at %s' % ( lfn, mdata['se'] ) )
 
     # Remove any failed replicas from the resolvedData dictionary
     if failedReplicas:
@@ -199,10 +228,9 @@ class InputDataByProtocol:
       for lfn in failedReplicas:
         trackLFNs.pop( lfn, None )
 
-    result = S_OK()
-    result['Successful'] = trackLFNs
-    result['Failed'] = sorted( failedReplicas )  # lfn list to be passed to another resolution mechanism
-    return result
+    ret = S_OK()
+    ret.update( {'Successful': trackLFNs, 'Failed': sorted( failedReplicas )} )
+    return ret
 
   #############################################################################
   def __setJobParam( self, name, value ):

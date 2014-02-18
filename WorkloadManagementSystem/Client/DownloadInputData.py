@@ -40,7 +40,7 @@ class DownloadInputData:
     self.storageElements = {}
     self.counter = 1
 
-  def __storagelement( self, seName ):
+  def __storageElement( self, seName ):
     return self.storageElements.setdefault( seName, StorageElement( seName ) )
 
   #############################################################################

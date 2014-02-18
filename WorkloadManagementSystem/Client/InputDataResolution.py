@@ -135,7 +135,8 @@ class InputDataResolution( object ):
         self.log.info( 'All replicas resolved after %s execution' % ( modulePath ) )
         break
 
-    self.log.verbose( 'Successfully resolved:', str( successful ) )
+    if successful:
+      self.log.verbose( 'Successfully resolved:', str( successful ) )
 
     return S_OK( {'Successful': successful, 'Failed':dataToResolve} )
 
