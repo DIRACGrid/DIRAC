@@ -705,7 +705,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def _runInputDataResolution( self, inputData ):
+  def _runInputDataResolution( self, inputData, site = None ):
     """ Run the VO plugin input data resolution mechanism.
     """
     localSEList = gConfig.getValue( '/LocalSite/LocalSE', '' )
@@ -715,9 +715,9 @@ class Dirac( API ):
       localSEList = localSEList.replace( ' ', '' ).split( ',' )
     else:
       localSEList = [localSEList.replace( ' ', '' )]
-    self.log.verbose( localSEList )
-    inputDataPolicy = self.__getVOPolicyModule( 'InputDataModule' )
-    if not inputDataPolicy:
+    self.log.verbose( 'Local SEs:', localSEList )
+    inputDataModule = self.__getVOPolicyModule( 'InputDataModule' )
+    if not inputDataModule:
       return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
 
     self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
@@ -738,11 +738,13 @@ class Dirac( API ):
     diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'] )
     tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
     configDict = {'JobID':None, 'LocalSEList':localSEList, 'DiskSEList':diskSE, 'TapeSEList':tapeSE}
-    self.log.verbose( configDict )
+    self.log.debug( configDict )
+    if site:
+      configDict.update( {'SiteName':site} )
     argumentsDict = {'FileCatalog':resolvedData, 'Configuration':configDict, 'InputData':inputData}
-    self.log.verbose( argumentsDict )
+    self.log.debug( argumentsDict )
     moduleFactory = ModuleFactory()
-    moduleInstance = moduleFactory.getModule( inputDataPolicy, argumentsDict )
+    moduleInstance = moduleFactory.getModule( inputDataModule, argumentsDict )
     if not moduleInstance['OK']:
       self.log.warn( 'Could not create InputDataModule' )
       return moduleInstance
@@ -1074,7 +1076,7 @@ class Dirac( API ):
       repsResult = dm.getReplicas( lfns )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
-    self.log.verbose( repsResult )
+    self.log.debug( repsResult )
     if not repsResult['OK']:
       self.log.warn( repsResult['Message'] )
       return repsResult
@@ -1750,7 +1752,7 @@ class Dirac( API ):
       dirPath = outputDir
       if not noJobDir:
         dirPath = '%s/%s' % ( outputDir, jobID )
-      #if os.path.exists( dirPath ):
+      # if os.path.exists( dirPath ):
       #  return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
     else:
       dirPath = '%s/%s' % ( os.getcwd(), jobID )
@@ -2189,7 +2191,7 @@ class Dirac( API ):
     self.log.verbose( 'Will select jobs with last update %s and following conditions' % date )
     self.log.verbose( self.pPrint.pformat( conditions ) )
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
-    result = monitoring.getJobs( conditions, date )    
+    result = monitoring.getJobs( conditions, date )
     if not result['OK']:
       self.log.warn( result['Message'] )
       return result
