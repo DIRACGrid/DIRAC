@@ -30,12 +30,14 @@ class InputDataByProtocol:
     self.fileCatalogResult = argumentsDict['FileCatalog']
     self.jobID = None
     self.storageElements = {}
+    # This is because stupidly replicas contain SEs and metadata keys!
+    self.metaKeys = set( ['CheckSumType', 'Checksum', 'NumberOfLinks', 'Mode', 'GUID', 'Status', 'ModificationDate', 'CreationDate', 'Size'] )
 
   def __storageElement( self, seName ):
     return self.storageElements.setdefault( seName, StorageElement( seName ) )
 
   #############################################################################
-  def execute( self, dataToResolve = None, allReplicas = False ):
+  def execute( self, dataToResolve = None ):
     """This method is called to obtain the TURLs for all requested input data
        firstly by available site protocols and redundantly via TURL construction.
        If TURLs are missing these are conveyed in the result to
@@ -44,6 +46,9 @@ class InputDataByProtocol:
     # Define local configuration options present at every site
     localSEList = self.configuration['LocalSEList']
     self.jobID = self.configuration.get( 'JobID' )
+    allReplicas = self.configuration.get( 'AllReplicas', False )
+    if allReplicas:
+      self.log.info( 'All replicas will be used in the resolution' )
 
     if dataToResolve:
       self.log.verbose( 'Data to resolve passed directly to InputDataByProtocol module' )
@@ -75,12 +80,13 @@ class InputDataByProtocol:
     for lfn in replicas:
       seList.update( set( replicas[lfn] ) )
     seList -= set( localSEList )
+    seList -= self.metaKeys
 
     result = self.__resolveReplicas( seList, replicas, ignoreTape = True )
     if not result['OK']:
       return result
     for lfn in result['Successful']:
-      success.setdefault( lfn, [] ).append( result['Successful'][lfn] )
+      success.setdefault( lfn, [] ).extend( result['Successful'][lfn] )
     ret = S_OK()
     ret.update( {'Successful': success, 'Failed':result['Failed']} )
     return ret
