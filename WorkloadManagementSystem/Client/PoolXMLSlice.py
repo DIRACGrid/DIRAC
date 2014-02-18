@@ -26,7 +26,6 @@ class PoolXMLSlice:
     """ Given a dictionary of resolved input data, this will creates a POOL XML slice.
     """
     poolXMLCatName = self.fileName
-    mdata = dataDict
     try:
       poolXMLCat = PoolXMLCatalog()
       self.log.verbose( 'Creating POOL XML slice' )
@@ -36,7 +35,7 @@ class PoolXMLSlice:
         if type( mdataList ) != types.ListType:
           mdataList = [mdataList]
         # As a file may have several replicas, set first the file, then the replicas
-        poolXMLCat.addFile( ( lfn, None, None, mdata['guid'], None ) )
+        poolXMLCat.addFile( ( lfn, None, None, mdataList[0]['guid'], None ) )
         for mdata in mdataList:
           path = ''
           if 'path' in mdata:
