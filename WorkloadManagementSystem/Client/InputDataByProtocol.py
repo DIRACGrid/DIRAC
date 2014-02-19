@@ -153,21 +153,23 @@ class InputDataByProtocol:
     for seName, lfns in seFilesDict.items():
       if not lfns:
         continue
+      failedReps = set()
       result = self.__storageElement( seName ).getFileMetadata( lfns )
       if not result['OK']:
         self.log.error( "Error getting metadata.", result['Message'] + ':\n%s' % '\n'.join( lfns ) )
         # If we can not get MetaData, most likely there is a problem with the SE
         # declare the replicas failed and continue
-        failedReplicas.update( lfns )
+        failedReps.update( lfns )
         continue
       failed = result['Value']['Failed']
       if failed:
         # If MetaData can not be retrieved for some PFNs
         # declared them failed and go on
         for lfn in failed:
+          lfns.remove( lfn )
           if type( failed ) == type( {} ):
-            self.log.error( failed( lfn ), lfn )
-          failedReplicas.add( lfn )
+            self.log.error( failed[ lfn ], lfn )
+          failedReps.add( lfn )
       for lfn, metadata in result['Value']['Successful'].items():
         if metadata['Lost']:
           error = "File has been Lost by the StorageElement %s" % seName
@@ -182,14 +184,14 @@ class InputDataByProtocol:
           self.log.error( error, lfn )
           # If PFN is not available
           # declared it failed and go on
-          failedReplicas.add( lfn )
+          failedReps.add( lfn )
 
-      if None in failedReplicas:
-        failedReplicas.remove( None )
-      if not failedReplicas:
+      if None in failedReps:
+        failedReps.remove( None )
+      if not failedReps:
         self.log.info( 'Preliminary checks OK, getting TURLS for at %s:\n' % seName, '\n'.join( lfns ) )
       else:
-        self.log.warn( "Errors during preliminary checks for %d files" % len( failedReplicas ) )
+        self.log.warn( "Errors during preliminary checks for %d files" % len( failedReps ) )
 
       result = self.__storageElement( seName ).getAccessUrl( lfns, protocol = requestedProtocol )
       if not result['OK']:
@@ -203,7 +205,7 @@ class InputDataByProtocol:
       for lfn, cause in seResult['Failed'].items():
         badTURLCount += 1
         badTURLs.append( 'Failed to obtain TURL for %s: %s' % ( lfn, cause ) )
-        failedReplicas.add( lfn )
+        failedReps.add( lfn )
 
       if badTURLCount:
         self.log.warn( 'Found %s problematic TURL(s) for job %s' % ( badTURLCount, self.jobID ) )
@@ -213,6 +215,7 @@ class InputDataByProtocol:
         if not result['OK']:
           self.log.warn( "Error setting job param", result['Message'] )
 
+      failedReplicas.update( failedReps )
       for lfn, turl in seResult['Successful'].items():
         for track in trackLFNs[lfn]:
           if track['se'] == seName:
@@ -220,19 +223,22 @@ class InputDataByProtocol:
             break
         self.log.info( 'Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>TURL: %s' %
                        ( seName, lfn, turl ) )
+      ##### End of loop on SE #######
 
-
-    self.log.debug( 'All resolved data', trackLFNs )
+    # Check if the files were actually resolved (i.e. have a TURL)
+    # If so, remove them from failed list
     for lfn, mdataList in trackLFNs.items():
-      for mdata in mdataList:
+      for mdata in list( mdataList ):
         if 'turl' not in mdata:
-          self.log.verbose( 'No TURL resolved for %s at %s' % ( lfn, mdata['se'] ) )
-
-    # Remove any failed replicas from the resolvedData dictionary
-    if failedReplicas:
-      self.log.verbose( 'The following LFN(s) were not resolved by protocol:\n%s' % ( '\n'.join( sorted( failedReplicas ) ) ) )
-      for lfn in failedReplicas:
-        trackLFNs.pop( lfn, None )
+          mdataList.remove( mdata )
+          self.log.info( 'No TURL resolved for %s at %s' % ( lfn, mdata['se'] ) )
+      if not mdataList:
+        transLFNs.pop( lfn, None )
+        failedReplicas.add( lfn )
+      elif lfn in failedReplicas:
+        failedReplicas.remove( lfn )
+    self.log.debug( 'All resolved data', sorted( trackLFNs ) )
+    self.log.debug( 'All failed data', sorted( failedReplicas ) )
 
     ret = S_OK()
     ret.update( {'Successful': trackLFNs, 'Failed': sorted( failedReplicas )} )
