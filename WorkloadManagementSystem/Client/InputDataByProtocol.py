@@ -30,7 +30,7 @@ class InputDataByProtocol:
     self.fileCatalogResult = argumentsDict['FileCatalog']
     self.jobID = None
     self.storageElements = {}
-    # This is because stupidly replicas contain SEs and metadata keys!
+    # This is because  replicas contain SEs and metadata keys!
     self.metaKeys = set( ['CheckSumType', 'Checksum', 'NumberOfLinks', 'Mode', 'GUID', 'Status', 'ModificationDate', 'CreationDate', 'Size'] )
 
   def __storageElement( self, seName ):
