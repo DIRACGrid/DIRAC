@@ -218,8 +218,7 @@ class DownloadInputData:
       self.__setJobParam( COMPONENT_NAME, report )
 
     result = S_OK()
-    result['Successful'] = resolvedData
-    result['Failed'] = sorted( failedReplicas )  # lfn list to be passed to another resolution mechanism
+    result.update( {'Successful': resolvedData, 'Failed':sorted( failedReplicas )} )
     return result
 
   #############################################################################
