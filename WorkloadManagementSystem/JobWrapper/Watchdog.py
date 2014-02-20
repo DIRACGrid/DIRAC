@@ -118,13 +118,13 @@ class Watchdog:
 
     result = self.initialize()
     if not result['OK']:
-      gLogger.always( 'Can not start wtchdog for the following reason' )
+      gLogger.always( 'Can not start watchdog for the following reason' )
       gLogger.always( result['Message'] )
       return result
 
     try:
       while True:
-        gLogger.debug( 'Starting agent loop # %d' % self.count )
+        gLogger.debug( 'Starting watchdog loop # %d' % self.count )
         start_cycle_time = time.time()
         result = self.execute()
         exec_cycle_time = time.time() - start_cycle_time
