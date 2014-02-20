@@ -168,7 +168,9 @@ class CREAMComputingElement( ComputingElement ):
     if not result['OK']:
       return result
     if result['Value'][0]:
-      if result['Value'][2]:
+      if result['Value'][0] == 11:
+        return S_ERROR( 'Segmentation fault while calling glite-ce-job-status' )
+      elif result['Value'][2]:
         return S_ERROR( result['Value'][2] )
       elif "Authorization error" in result['Value'][1]:
         return S_ERROR( "Authorization error" )
