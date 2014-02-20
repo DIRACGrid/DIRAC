@@ -184,24 +184,9 @@ class DiracAdmin( API ):
     if not gConfig.getSections( '/Resources/Sites/%s' % ( gridType ) )['OK']:
       return S_ERROR( '/Resources/Sites/%s is not a valid site section' % ( gridType ) )
 
-    result = self.getCSDict( '/Resources/Sites/%s/%s' % ( gridType, site ) )
+    result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s' % ( gridType, site ) )
     if printOutput and result['OK']:
       print self.pPrint.pformat( result['Value'] )
-    return result
-
-  #############################################################################
-  def getCSDict( self, sectionPath ):
-    """Retrieve a dictionary from the CS for the specified path.
-
-       Example usage:
-
-       >>> print diracAdmin.getCSDict('Resources/Computing/OSCompatibility')
-       {'OK': True, 'Value': {'slc4_amd64_gcc34': 'slc4_ia32_gcc34,slc4_amd64_gcc34', 'slc4_ia32_gcc34': 'slc4_ia32_gcc34'}}
-
-       @return: S_OK,S_ERROR
-
-    """
-    result = gConfig.getOptionsDict( sectionPath )
     return result
 
   #############################################################################
