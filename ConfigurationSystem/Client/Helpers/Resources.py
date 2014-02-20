@@ -195,22 +195,35 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
 
 def getCompatiblePlatforms( originalPlatforms ):
   """ Get a list of platforms compatible with the given list
+
+      This consider the possibility that the CS is in one of the following states:
+      - a first section named PlatformToDistribution and a second named PlatformsToConfigs
+      or
+      - one section named OSCompatibility. This second option is to be considered as deprecated
   """
   if type( originalPlatforms ) == type( ' ' ):
     platforms = [originalPlatforms]
   else:
     platforms = list( originalPlatforms )
 
-  result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
-  if not ( result['OK'] and result['Value'] ):
-    return S_ERROR( "OS compatibility info not found" )
+  result = gConfig.getOptionsDict( '/Resources/Computing/PlatformsToConfigs' )
+  if result['OK'] and result['Value']:
+    platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
 
-  platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
-  for k, v in platformsDict.iteritems():
-    if k not in v:
-      v.append( k )
+    resultList = list()
 
-  resultList = list( platforms )
+  else:
+    result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+    if not ( result['OK'] and result['Value'] ):
+      return S_ERROR( "OS compatibility info not found" )
+
+    platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
+    for k, v in platformsDict.iteritems():
+      if k not in v:
+        v.append( k )
+
+    resultList = list( platforms )
+
   for p in platforms:
     tmpList = platformsDict.get( p, [] )
     for pp in platformsDict:
@@ -225,19 +238,30 @@ def getCompatiblePlatforms( originalPlatforms ):
 def getDIRACPlatform( OS ):
   """ Get standard DIRAC platform(s) compatible with the argument.
 
+      This consider the possibility that the CS is in one of the following states:
+      - a first section named PlatformToDistribution and a second named PlatformsToConfigs
+      or
+      - one section named OSCompatibility. This second option is to be considered as deprecated
+
       NB: The returned value is a list! ordered, in reverse, using distutils.version.LooseVersion
       In practice the "highest" version (which should be the most "desirable" one is returned first)
   """
-  result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
-  if not ( result['OK'] and result['Value'] ):
-    return S_ERROR( "OS compatibility info not found" )
+  # Looking for DistributionToPlatform section
+  result = gConfig.getOptionsDict( '/Resources/Computing/PlatformToDistribution' )
+  if result['OK'] and result['Value']:
+    platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
+  else:
+    # Failing back looking for OSCompatibility section
+    result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+    if not ( result['OK'] and result['Value'] ):
+      return S_ERROR( "OS compatibility info not found" )
 
-  platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
-  for k, v in platformsDict.iteritems():
-    if k not in v:
-      v.append( k )
+    platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
+    for k, v in platformsDict.iteritems():
+      if k not in v:
+        v.append( k )
 
-  # making an os -> platforms dict
+  # making an distribution -> platforms dict
   os2PlatformDict = dict()
   for platform, osItems in platformsDict.iteritems():
     for osItem in osItems:
