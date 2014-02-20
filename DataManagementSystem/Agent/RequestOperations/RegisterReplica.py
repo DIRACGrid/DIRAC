@@ -40,9 +40,6 @@ class RegisterReplica( OperationHandlerBase ):
     """ call me maybe """
     # # counter for failed replicas
 
-    print "YEAHHH"
-    import time
-    time.sleep( 2 )
     failedReplicas = 0
     # # catalog to use
     catalog = self.operation.Catalog
@@ -58,7 +55,7 @@ class RegisterReplica( OperationHandlerBase ):
       # # and others
       replicaTuple = ( lfn , opFile.PFN, self.operation.targetSEList[0] )
       # # call ReplicaManager
-      registerReplica = self.replicaManager().registerReplica( replicaTuple, catalog )
+      registerReplica = self.dm.registerReplica( replicaTuple, catalog )
       # # check results
       if not registerReplica["OK"] or lfn in registerReplica["Value"]["Failed"]:
 
