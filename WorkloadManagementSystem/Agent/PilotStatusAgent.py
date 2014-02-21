@@ -185,7 +185,7 @@ class PilotStatusAgent( AgentModule ):
                  'Broker':condDict['Broker']}
     result = self.pilotDB.selectPilots( clearDict, older = last_update )
     if not result['OK']:
-      self.log.warn( 'Failed to get the Pilot Agents fpr Waiting state' )
+      self.log.warn( 'Failed to get the Pilot Agents for Waiting state' )
       return result
     if not result['Value']:
       return S_OK()
