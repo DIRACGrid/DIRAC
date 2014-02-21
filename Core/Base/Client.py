@@ -25,6 +25,7 @@ class Client:
     return self.serverURL
 
   def __getattr__( self, name ):
+    # This allows the dir() method to work as well as tab completion in ipython
     if name == '__dir__':
       return super( object, self ).__getattr__()
     self.call = name
