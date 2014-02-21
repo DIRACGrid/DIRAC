@@ -2500,7 +2500,7 @@ class ReplicaManager( CatalogToStorage ):
 
   def getReplicas( self, lfns ):
     """ get replicas from catalogue """
-    res = self.getCatalogReplicas( lfns )
+    res = self.getCatalogReplicas( lfns, allStatus = True )
     if res['OK']:
       for lfn, replicas in res['Value']['Successful'].items():
         for se in replicas:
