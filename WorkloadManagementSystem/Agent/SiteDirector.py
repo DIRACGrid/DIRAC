@@ -297,7 +297,6 @@ class SiteDirector( AgentModule ):
     if not result['OK']:
       self.log.error( 'Errors in the job submission: ', result['Message'] )
 
-
     if self.updateStatus:
       result = self.updatePilotStatus()
       if not result['OK']:
@@ -793,6 +792,7 @@ EOF
       queueName = self.queueDict[queue]['QueueName']
       ceType = self.queueDict[queue]['CEType']
       siteName = self.queueDict[queue]['Site']
+      abortedPilots = 0
 
       result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
                                             'Queue':queueName,
@@ -862,6 +862,8 @@ EOF
         if newStatus:
           self.log.info( 'Updating status to %s for pilot %s' % ( newStatus, pRef ) )
           result = pilotAgentsDB.setPilotStatus( pRef, newStatus, '', 'Updated by SiteDirector' )
+          if newStatus == "Aborted":
+            abortedPilots += 1
         # Retrieve the pilot output now
         if newStatus in FINAL_PILOT_STATUS:
           if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
@@ -881,6 +883,10 @@ EOF
                   self.log.error( 'Failed to store pilot output', result['Message'] )
               else:
                 self.log.warn( 'Empty pilot output not stored to PilotDB' )
+
+      # If something wrong in the queue, make a pause for the job submission
+      if abortedPilots:
+        self.failedQueues[queue] += 1 
 
     # The pilot can be in Done state set by the job agent check if the output is retrieved
     for queue in self.queueDict:
