@@ -362,6 +362,7 @@ class TaskQueueDB( DB ):
       return 10 ** 6
     return jobPriority
 
+  # FIXME: used only by TaskQueueAgent? Shouldn't we get rid of it?
   def insertJob( self, jobId, tqDefDict, jobPriority, skipTQDefCheck = False, numRetries = 10 ):
     """
     Insert a job in a task queue
