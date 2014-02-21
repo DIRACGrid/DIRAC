@@ -58,6 +58,9 @@ class SiteDirector( AgentModule ):
     self.am_setOption( "maxPilotWaitingHours", 6 )
     self.queueDict = {}
     self.queueCECache = {}
+    self.queueSlots = {}
+    self.failedQueues = {}
+    self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
     return S_OK()
@@ -112,7 +115,7 @@ class SiteDirector( AgentModule ):
     self.maxJobsInFillMode = self.am_getOption( 'MaxJobsInFillMode', self.maxJobsInFillMode )
     self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', self.maxPilotsToSubmit )
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
-    self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 7200 )
+    self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 3600 )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -171,13 +174,14 @@ class SiteDirector( AgentModule ):
     self.localhost = socket.getfqdn()
     self.proxy = ''
 
-    if self.queueDict:
-      self.log.always( "Agent will serve queues:" )
-      for queue in self.queueDict:
-        self.log.always( "Site: %s, CE: %s, Queue: %s" % ( self.queueDict[queue]['Site'],
-                                                         self.queueDict[queue]['CEName'],
-                                                         queue ) )
-
+    if self.firstPass:
+      if self.queueDict:
+        self.log.always( "Agent will serve queues:" )
+        for queue in self.queueDict:
+          self.log.always( "Site: %s, CE: %s, Queue: %s" % ( self.queueDict[queue]['Site'],
+                                                           self.queueDict[queue]['CEName'],
+                                                           queue ) )
+    self.firstPass = False
     return S_OK()
 
   def __generateQueueHash( self, queueDict ):
@@ -334,6 +338,7 @@ class SiteDirector( AgentModule ):
     jobSites = set()
     anySite = False
     testSites = set()
+    totalWaitingJobs = 0
     for tqID in result['Value']:
       if "Sites" in result['Value'][tqID]:
         for site in result['Value'][tqID]['Sites']:
@@ -348,6 +353,19 @@ class SiteDirector( AgentModule ):
           for site in result['Value'][tqID]['Sites']:
             if site.lower() != 'any':
               testSites.add( site )
+      totalWaitingJobs += result['Value'][tqID]['Jobs']
+
+    tqIDList = result['Value'].keys()
+    result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
+                                          'Status': WAITING_PILOT_STATUS },
+                                           None )
+    totalWaitingPilots = 0
+    if result['OK']:
+      totalWaitingPilots = result['Value']
+    self.log.info( 'Total %d jobs in %d task queues with %d waiting pilots' % (totalWaitingJobs, len( tqIDList ), totalWaitingPilots ) )
+    #if totalWaitingPilots >= totalWaitingJobs:
+    #  self.log.info( 'No more pilots to be submitted in this cycle' )
+    #  return S_OK()
 
     # Check if the site is allowed in the mask
     result = jobDB.getSiteMask()
@@ -357,7 +375,16 @@ class SiteDirector( AgentModule ):
 
     queues = self.queueDict.keys()
     random.shuffle( queues )
+    totalSubmittedPilots = 0
     for queue in queues:
+
+      # Check if the queue failed previously
+      failedCount = self.failedQueues.setdefault( queue, 0 ) % 10
+      if failedCount != 0:
+        self.log.warn( "%s queue failed recently, skipping %d cycles" % ( queue, 10-failedCount ) )
+        self.failedQueues[queue] += 1
+        continue
+
       ce = self.queueDict[queue]['CE']
       ceName = self.queueDict[queue]['CEName']
       ceType = self.queueDict[queue]['CEType']
@@ -381,28 +408,7 @@ class SiteDirector( AgentModule ):
       if queueCPUTime > self.maxQueueLength:
         queueCPUTime = self.maxQueueLength
 
-      # Get the working proxy
-      cpuTime = queueCPUTime + 86400
-
-      self.log.verbose( "Getting pilot proxy for %s/%s %d long" % ( self.pilotDN, self.pilotGroup, cpuTime ) )
-      result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, cpuTime )
-      if not result['OK']:
-        return result
-      self.proxy = result['Value']
-      ce.setProxy( self.proxy, cpuTime - 60 )
-
-      # Get the number of available slots on the target site/queue
-      result = ce.available()
-      if not result['OK']:
-        self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
-        continue
-      ceInfoDict = result['CEInfoDict']
-      self.log.info( "CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" % \
-                     ( ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
-                       ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
-
-      totalSlots = result['Value']
-
+      # Prepare the queue description to look for eligible jobs
       ceDict = ce.getParameterDict()
       ceDict[ 'GridCE' ] = ceName
       #if not siteMask and 'Site' in ceDict:
@@ -431,7 +437,7 @@ class SiteDirector( AgentModule ):
         return result
       taskQueueDict = result['Value']
       if not taskQueueDict:
-        self.log.info( 'No matching TQs found' )
+        self.log.verbose( 'No matching TQs found for %s' % queue )
         continue
 
       totalTQJobs = 0
@@ -439,9 +445,9 @@ class SiteDirector( AgentModule ):
       for tq in taskQueueDict:
         totalTQJobs += taskQueueDict[tq]['Jobs']
 
-      pilotsToSubmit = min( totalSlots, totalTQJobs )
+      self.log.verbose( '%d job(s) from %d task queue(s) are eligible for %s queue' % (totalTQJobs, len( tqIDList ), queue) )
 
-      # Get the number of already waiting pilots for this queue
+      # Get the number of already waiting pilots for these task queues
       totalWaitingPilots = 0
       if self.pilotWaitingFlag:
         lastUpdateTime = dateTime() - self.pilotWaitingTime * second
@@ -454,10 +460,29 @@ class SiteDirector( AgentModule ):
         else:
           totalWaitingPilots = result['Value']
           self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % tqIDList, totalWaitingPilots )
-          
+      if totalWaitingPilots >= totalTQJobs:
+        self.log.verbose( "%d waiting pilots already for all the available jobs" % totalWaitingPilots )
+        continue
+
+      self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" % (totalWaitingPilots, totalTQJobs, queue) )
+
+      # Get the working proxy
+      cpuTime = queueCPUTime + 86400
+      self.log.verbose( "Getting pilot proxy for %s/%s %d long" % ( self.pilotDN, self.pilotGroup, cpuTime ) )
+      result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, cpuTime )
+      if not result['OK']:
+        return result
+      self.proxy = result['Value']
+      ce.setProxy( self.proxy, cpuTime - 60 )
+
+      # Get the number of available slots on the target site/queue
+      totalSlots = self.__getQueueSlots( queue )
+      if totalSlots == 0:
+        continue
+
       pilotsToSubmit = max( 0, min( totalSlots, totalTQJobs - totalWaitingPilots ) )
-      self.log.info( 'Available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
-                              ( totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
+      self.log.info( '%s: available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
+                              ( queue, totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
 
       # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
       pilotsToSubmit = min( self.maxPilotsToSubmit, pilotsToSubmit )
@@ -482,12 +507,15 @@ class SiteDirector( AgentModule ):
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
           pilotsToSubmit = 0
+          self.failedQueues[queue] += 1
           continue
 
         pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
         # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
         # task queue priorities
         pilotList = result['Value']
+        self.queueSlots[queue]['AvailableSlots'] -= len( pilotList )
+        totalSubmittedPilots += len( pilotList )
         self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList ), queueName, ceName ) )
         stampDict = {}
         if result.has_key( 'PilotStampDict' ):
@@ -529,7 +557,35 @@ class SiteDirector( AgentModule ):
               self.log.error( 'Failed to set pilot status: ', result['Message'] )
               continue
 
+    self.log.info( "%d pilots submitted in total in this cycle" % totalSubmittedPilots )
     return S_OK()
+
+  def __getQueueSlots( self, queue ):
+    """ Get the number of available slots in the queue
+    """
+    ce = self.queueDict[queue]['CE']
+    ceName = self.queueDict[queue]['CEName']
+    queueName = self.queueDict[queue]['QueueName']
+
+    self.queueSlots.setdefault( queue, {} )
+    totalSlots = self.queueSlots[queue].get( 'AvailableSlots', 0 )
+    availableSlotsCount = self.queueSlots[queue].setdefault( 'AvailableSlotsCount', 0 )
+    if totalSlots == 0:
+      if availableSlotsCount % 10 == 0:
+        result = ce.available()
+        if not result['OK']:
+          self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
+          self.failedQueues[queue] += 1
+        else:
+          ceInfoDict = result['CEInfoDict']
+          self.log.info( "CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" % \
+                         ( ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
+                           ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
+          totalSlots = result['Value']
+          self.queueSlots[queue]['AvailableSlots'] = totalSlots
+
+    self.queueSlots[queue]['AvailableSlotsCount'] += 1
+    return totalSlots
 
 #####################################################################################
   def __getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '' ):
