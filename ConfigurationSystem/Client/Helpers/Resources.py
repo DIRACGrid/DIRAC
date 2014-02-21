@@ -196,7 +196,7 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
 def getCompatiblePlatforms( originalPlatforms ):
   """ Get a list of platforms compatible with the given list
 
-      This consider the possibility that the CS is in one of the following states:
+      This considers the possibility that the CS is in one of the following states:
       - a first section named PlatformToDistribution and a second named PlatformsToConfigs
       or
       - one section named OSCompatibility. This second option is to be considered as deprecated
@@ -238,7 +238,7 @@ def getCompatiblePlatforms( originalPlatforms ):
 def getDIRACPlatform( OS ):
   """ Get standard DIRAC platform(s) compatible with the argument.
 
-      This consider the possibility that the CS is in one of the following states:
+      This considers the possibility that the CS is in one of the following states:
       - a first section named PlatformToDistribution and a second named PlatformsToConfigs
       or
       - one section named OSCompatibility. This second option is to be considered as deprecated
@@ -277,6 +277,25 @@ def getDIRACPlatform( OS ):
   platforms.sort( key = LooseVersion, reverse = True )
 
   return S_OK( platforms )
+
+def getDIRACPlatforms():
+  """ just returns list of platforms defined in the CS
+
+      This considers the possibility that the CS is in one of the following states:
+      - a first section named PlatformToDistribution and a second named PlatformsToConfigs
+      or
+      - one section named OSCompatibility. This second option is to be considered as deprecated
+  """
+  # Looking for DistributionToPlatform section
+  result = gConfig.getOptionsDict( '/Resources/Computing/PlatformToDistribution' )
+  if result['OK'] and result['Value']:
+    return S_OK( result['Value'].keys() )
+  else:
+    # Failing back looking for OSCompatibility section
+    result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+    if not ( result['OK'] and result['Value'] ):
+      return S_ERROR( "OS compatibility info not found" )
+    return S_OK( result['Value'].keys() )
 
 def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
