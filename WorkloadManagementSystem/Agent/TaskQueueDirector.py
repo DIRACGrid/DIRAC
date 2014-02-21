@@ -126,22 +126,15 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.AgentModule import AgentModule
-
-from DIRAC.WorkloadManagementSystem.private.gLitePilotDirector   import gLitePilotDirector
-from DIRAC.WorkloadManagementSystem.private.LCGPilotDirector     import LCGPilotDirector
-from DIRAC.WorkloadManagementSystem.private.DIRACPilotDirector   import DIRACPilotDirector
-
-from DIRAC.Resources.Computing.ComputingElement                  import getResourceDict
-
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils           import pilotAgentsDB
-
+import random, time
+from DIRAC                                                       import S_OK, S_ERROR, List, Time, gConfig, abort
 from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
 from DIRAC.Core.DISET.RPCClient                                  import RPCClient
-from DIRAC                                                       import S_OK, S_ERROR, List, Time, gConfig
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources          import getDIRACPlatforms
+from DIRAC.Resources.Computing.ComputingElement                  import getResourceDict
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils           import pilotAgentsDB
 
-import random, time
-import DIRAC
 
 random.seed()
 
@@ -201,9 +194,9 @@ class TaskQueueDirector( AgentModule ):
     self.directorDict[ 'SubmitPool' ] = self.am_getOption( "SubmitPools" ) 
     #Add all DIRAC platforms if not specified otherwise
     if not 'Platform' in self.directorDict:
-      result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+      result = getDIRACPlatforms()
       if result['OK']:
-        self.directorDict['Platform'] = result['Value'].keys()
+        self.directorDict['Platform'] = result['Value']
 
     rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
     result = rpcMatcher.getMatchingTaskQueues( self.directorDict )
@@ -445,7 +438,7 @@ class TaskQueueDirector( AgentModule ):
 
     else:
       if submitPool not in self.directors:
-        DIRAC.abort( -1, "Submit Pool not available", submitPool )
+        abort( -1, "Submit Pool not available", submitPool )
       director = self.directors[submitPool]['director']
 
       # Pass reference to our CS section so that defaults can be taken from there
