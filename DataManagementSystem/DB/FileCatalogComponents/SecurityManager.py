@@ -46,7 +46,6 @@ class SecurityManagerBase:
       resDict = {'Successful':successful,'Failed':{}}
       return S_OK(resDict)
 
-    
     result = self.getPathPermissions(paths,credDict)
     if not result['OK']:
       return result
