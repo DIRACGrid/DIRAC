@@ -81,6 +81,18 @@ class DirectorySecurityManager(SecurityManagerBase):
   def getPathPermissions(self,paths,credDict):
     """ Get path permissions according to the policy
     """
+    
+    # Check if admin access is granted first
+    result = self.hasAdminAccess( credDict )
+    if not result['OK']:
+      return result
+    if result['Value']:
+      # We are admins, allow everything
+      permissions = {}
+      for path in paths:
+        permissions[path] = {'Read':True,'Write':True,'Execute':True}
+      return S_OK( {'Successful':permissions,'Failed':{}} )
+    
     toGet = dict(zip(paths,[ [path] for path in paths ]))
     permissions = {}
     failed = {}
@@ -117,6 +129,18 @@ class FullSecurityManager(SecurityManagerBase):
   def getPathPermissions(self,paths,credDict):
     """ Get path permissions according to the policy
     """
+    
+    # Check if admin access is granted first
+    result = self.hasAdminAccess( credDict )
+    if not result['OK']:
+      return result
+    if result['Value']:
+      # We are admins, allow everything
+      permissions = {}
+      for path in paths:
+        permissions[path] = {'Read':True,'Write':True,'Execute':True}
+      return S_OK( {'Successful':permissions,'Failed':{}} )
+    
     toGet = dict(zip(paths,[ [path] for path in paths ]))
     permissions = {}
     failed = {}
