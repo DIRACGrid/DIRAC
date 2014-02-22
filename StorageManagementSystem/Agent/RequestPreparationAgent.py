@@ -198,7 +198,7 @@ class RequestPreparationAgent( AgentModule ):
     """ This obtains the replicas from the FileCatalog. """
     replicas = {}
     noReplicas = {}
-    res = self.rm.getReplicas( lfns )
+    res = self.rm.getActiveReplicas( lfns )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getFileReplicas: Failed to obtain file replicas.", res['Message'] )
       return res
