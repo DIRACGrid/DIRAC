@@ -6,10 +6,9 @@
 
 __RCSID__ = "$Id$"
 
-import time,os
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
-from DIRAC.Core.Security.Properties import *
+import os
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Security.Properties import FC_MANAGEMENT
 
 class SecurityManagerBase:
 
@@ -25,6 +24,18 @@ class SecurityManagerBase:
     return S_ERROR('The getPathPermissions method must be implemented in the inheriting class')
 
   def hasAccess(self,opType,paths,credDict):
+    
+    # Check if admin access is granted first
+    result = self.hasAdminAccess( credDict )
+    if not result['OK']:
+      return result
+    if result['Value']:
+      # We are admins, allow everything
+      permissions = {}
+      for path in paths:
+        permissions[path] = True
+      return S_OK( {'Successful':permissions,'Failed':{}} )
+    
     successful = {}
     failed = {}
     if not opType.lower() in ['read','write','execute']:
@@ -35,6 +46,7 @@ class SecurityManagerBase:
       resDict = {'Successful':successful,'Failed':{}}
       return S_OK(resDict)
 
+    
     result = self.getPathPermissions(paths,credDict)
     if not result['OK']:
       return result
@@ -49,8 +61,7 @@ class SecurityManagerBase:
     return S_OK(resDict)
 
   def hasAdminAccess(self,credDict):
-    group = credDict.get('group','')
-    if FC_MANAGEMENT in getPropertiesForGroup(group):
+    if FC_MANAGEMENT in credDict['properties']:
       return S_OK(True)
     return S_OK(False)
 
@@ -81,17 +92,6 @@ class DirectorySecurityManager(SecurityManagerBase):
   def getPathPermissions(self,paths,credDict):
     """ Get path permissions according to the policy
     """
-    
-    # Check if admin access is granted first
-    result = self.hasAdminAccess( credDict )
-    if not result['OK']:
-      return result
-    if result['Value']:
-      # We are admins, allow everything
-      permissions = {}
-      for path in paths:
-        permissions[path] = {'Read':True,'Write':True,'Execute':True}
-      return S_OK( {'Successful':permissions,'Failed':{}} )
     
     toGet = dict(zip(paths,[ [path] for path in paths ]))
     permissions = {}
@@ -129,17 +129,6 @@ class FullSecurityManager(SecurityManagerBase):
   def getPathPermissions(self,paths,credDict):
     """ Get path permissions according to the policy
     """
-    
-    # Check if admin access is granted first
-    result = self.hasAdminAccess( credDict )
-    if not result['OK']:
-      return result
-    if result['Value']:
-      # We are admins, allow everything
-      permissions = {}
-      for path in paths:
-        permissions[path] = {'Read':True,'Write':True,'Execute':True}
-      return S_OK( {'Successful':permissions,'Failed':{}} )
     
     toGet = dict(zip(paths,[ [path] for path in paths ]))
     permissions = {}
