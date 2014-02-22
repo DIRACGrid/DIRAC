@@ -9,19 +9,21 @@ from DIRAC.StorageManagementSystem.Client.StorageManagerClient  import StorageMa
 from DIRAC.Resources.Catalog.FileCatalog                        import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient      import DataIntegrityClient
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB       import StorageManagementDB
+from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
 
 import time, os, sys, re
 from types import *
-#test 1
+# test 1
 AGENT_NAME = 'StorageManagement/RequestPreparationAgent'
 
 class RequestPreparationAgent( AgentModule ):
 
   def initialize( self ):
     self.fileCatalog = FileCatalog()
+    selt.rm = ReplicaManager()
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
-    #self.storageDB = StorageManagementDB()
+    # self.storageDB = StorageManagementDB()
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -116,7 +118,7 @@ class RequestPreparationAgent( AgentModule ):
     # Update the states of the files in the database
     if terminalReplicaIDs:
       gLogger.info( "RequestPreparation.prepareNewReplicas: %s replicas are terminally failed." % len( terminalReplicaIDs ) )
-      #res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
+      # res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
       res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
       if not res['OK']:
         gLogger.error( "RequestPreparation.prepareNewReplicas: Failed to update replica failures.", res['Message'] )
@@ -196,7 +198,7 @@ class RequestPreparationAgent( AgentModule ):
     """ This obtains the replicas from the FileCatalog. """
     replicas = {}
     noReplicas = {}
-    res = self.fileCatalog.getReplicas( lfns )
+    res = self.rm.getReplicas( lfns )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getFileReplicas: Failed to obtain file replicas.", res['Message'] )
       return res
@@ -214,7 +216,7 @@ class RequestPreparationAgent( AgentModule ):
 
   def __reportProblematicFiles( self, lfns, reason ):
     return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'RequestPreparationAgent')
+    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'RequestPreparationAgent' )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
       return res
