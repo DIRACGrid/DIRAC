@@ -116,6 +116,8 @@ class SiteDirector( AgentModule ):
     self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', self.maxPilotsToSubmit )
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
     self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 3600 )
+    self.failedQueueCycleFactor = self.am_getOption( 'FailedQueueCycleFactor', 10 )
+    self.pilotStatusUpdateCycleFactor = self.am_getOption( 'PilotStatusUpdateCycleFactor', 10 ) 
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -297,7 +299,8 @@ class SiteDirector( AgentModule ):
     if not result['OK']:
       self.log.error( 'Errors in the job submission: ', result['Message'] )
 
-    if self.updateStatus:
+    cyclesDone = self.am_getModuleParam( 'cyclesDone' )
+    if self.updateStatus and cyclesDone % self.pilotStatusUpdateCycleFactor == 0:
       result = self.updatePilotStatus()
       if not result['OK']:
         self.log.error( 'Errors in updating pilot status: ', result['Message'] )
@@ -378,7 +381,7 @@ class SiteDirector( AgentModule ):
     for queue in queues:
 
       # Check if the queue failed previously
-      failedCount = self.failedQueues.setdefault( queue, 0 ) % 10
+      failedCount = self.failedQueues.setdefault( queue, 0 ) % self.failedQueueCycleFactor
       if failedCount != 0:
         self.log.warn( "%s queue failed recently, skipping %d cycles" % ( queue, 10-failedCount ) )
         self.failedQueues[queue] += 1
@@ -824,11 +827,11 @@ EOF
 
       result = ce.isProxyValid()
       if not result['OK']:
-        result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, 600 )
+        result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, 23400 )
         if not result['OK']:
           return result
         self.proxy = result['Value']
-        ce.setProxy( self.proxy, 500 )
+        ce.setProxy( self.proxy, 23300 )
 
       result = ce.getJobStatus( stampedPilotRefs )
       if not result['OK']:
