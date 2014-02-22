@@ -483,7 +483,7 @@ class SiteDirector( AgentModule ):
         continue
 
       pilotsToSubmit = max( 0, min( totalSlots, totalTQJobs - totalWaitingPilots ) )
-      self.log.info( '%s: available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
+      self.log.info( '%s: Slots=%d, TQ jobs=%d, Pilots: waiting %d, to submit=%d' % \
                               ( queue, totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
 
       # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
