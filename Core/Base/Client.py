@@ -7,12 +7,12 @@ from DIRAC.Core.DISET.RPCClient                     import RPCClient
 class Client:
   """ Simple class to redirect unknown actions directly to the server. Arguments
       to the constructor are passed to the RPCClient constructor as they are.
-      
+
       - The self.serverURL member should be set by the inheriting class
   """
   def __init__( self, **kwargs ):
     self.serverURL = None
-    self.call = None    
+    self.call = None
     self.__kwargs = kwargs
 
   def setServer( self, url ):
@@ -25,6 +25,9 @@ class Client:
     return self.serverURL
 
   def __getattr__( self, name ):
+    # This allows the dir() method to work as well as tab completion in ipython
+    if name == '__dir__':
+      return super( object, self ).__getattr__()
     self.call = name
     return self.executeRPC
 
@@ -58,6 +61,6 @@ class Client:
     if not rpc:
       if not url:
         url = self.serverURL
-      self.__kwargs.setdefault( 'timeout', timeout )       
+      self.__kwargs.setdefault( 'timeout', timeout )
       rpc = RPCClient( url, **self.__kwargs )
     return rpc

@@ -517,7 +517,7 @@ class DataManager( object ):
         failed = True
     if failed:
       return S_ERROR( "Failed to clean storage directory at all SEs" )
-    res = Utils.executeSingleFileOrDirWrapper(self.fc.removeDirectory( folder, recursive = True ))
+    res = Utils.executeSingleFileOrDirWrapper( self.fc.removeDirectory( folder, recursive = True ) )
     if not res['OK']:
       return res
     return S_OK()
@@ -536,7 +536,7 @@ class DataManager( object ):
     if not res['OK']:
       self.log.debug( "Failed to obtain existance of directory", res['Message'] )
       return res
-    
+
     exists = res['Value']
     if not exists:
       self.log.debug( "The directory %s does not exist at %s " % ( directory, storageElement ) )
@@ -720,7 +720,7 @@ class DataManager( object ):
       else:
         oDataOperation.setValueByKey( 'TransferSize', res['Value'] )
 
-        
+
         localFile = os.path.realpath( os.path.join( destinationDir, os.path.basename( lfn ) ) )
         localAdler = fileAdler( localFile )
 
@@ -1796,7 +1796,7 @@ class DataManager( object ):
   def getActiveReplicas( self, lfns ):
     """ Get all the replicas for the SEs which are in Active status for reading.
     """
-    res = self.fc.getReplicas( lfns )
+    res = self.fc.getReplicas( lfns, allStatus = False )
     if not res['OK']:
       return res
     replicas = res['Value']
@@ -1878,7 +1878,7 @@ class DataManager( object ):
 
   def getReplicas( self, lfns ):
     """ get replicas from catalogue """
-    res = FileCatalog().getReplicas( lfns, allStatus = False )
+    res = FileCatalog().getReplicas( lfns, allStatus = True )
     if res['OK']:
       for lfn, replicas in res['Value']['Successful'].items():
         for se in replicas:
@@ -1890,7 +1890,7 @@ class DataManager( object ):
   # Methods from the catalogToStorage. It would all work with the direct call to the SE, but this checks
   # first if the replica is known to the catalog
 
-  
+
   def __executeIfReplicaExists( self, storageElementName, lfn, method, **argsDict ):
     """ a simple wrapper that allows replica querying then perform the StorageElement operation
 

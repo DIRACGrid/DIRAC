@@ -42,7 +42,7 @@ if __name__ == "__main__":
       if not jobName:
         print 'Job %d not found' % job
       else:
-        requestName = jobname + '_job_%d' % job
+        requestName = jobName + '_job_%d' % job
 
 
   if requestName:
