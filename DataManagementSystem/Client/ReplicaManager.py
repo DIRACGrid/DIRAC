@@ -2411,7 +2411,7 @@ class ReplicaManager( CatalogToStorage ):
   def getActiveReplicas( self, lfns ):
     """ Get all the replicas for the SEs which are in Active status for reading.
     """
-    res = self.getReplicas( lfns )
+    res = self.getReplicas( lfns, allStatus = False )
     if not res['OK']:
       return res
     replicas = res['Value']
@@ -2498,9 +2498,9 @@ class ReplicaManager( CatalogToStorage ):
     """
     return self._callStorageElementFcn( storageElementName, physicalFile, 'retransferOnlineFile' )
 
-  def getReplicas( self, lfns ):
+  def getReplicas( self, lfns, allStatus = True ):
     """ get replicas from catalogue """
-    res = self.getCatalogReplicas( lfns )
+    res = self.getCatalogReplicas( lfns, allStatus = allStatus )
     if res['OK']:
       for lfn, replicas in res['Value']['Successful'].items():
         for se in replicas:
