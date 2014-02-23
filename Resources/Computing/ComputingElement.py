@@ -273,7 +273,7 @@ class ComputingElement:
     message += ', MaxTotalJobs=%s' % ( maxTotalJobs )
 
     if totalJobs >= maxTotalJobs:
-      self.log.info( 'Max Number of Jobs reached:', maxTotalJobs )
+      self.log.verbose( 'Max Number of Jobs reached:', maxTotalJobs )
       result['Value'] = 0
       message = 'There are %s waiting jobs and total jobs %s >= %s max total jobs' % ( waitingJobs, totalJobs, maxTotalJobs )
     else:
