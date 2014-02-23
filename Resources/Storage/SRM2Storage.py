@@ -216,6 +216,8 @@ class SRM2Storage( StorageBase ):
     # For srm2 keep the file name and path
     pfnDict['Protocol'] = self.protocol
     pfnDict['Host'] = self.host
+    if not pfnDict['Path'].startswith( self.path ):
+      pfnDict['Path'] = os.path.join( self.path, pfnDict['Path'].strip( '/' ) )
     if withPort:
       pfnDict['Port'] = self.port
       pfnDict['WSUrl'] = self.wspath
@@ -251,8 +253,8 @@ class SRM2Storage( StorageBase ):
       self.log.error( "getUrl: %s" % pfnDict["Message"] )
       return pfnDict
     pfnDict = pfnDict['Value']
-    if not re.search( self.path, path ):
-      pfnDict['Path'] = "%s/%s" % ( self.path, pfnDict['Path'] )
+    if not pfnDict['Path'].startswith( self.path ):
+      pfnDict['Path'] = os.path.join( self.path, pfnDict['Path'].strip( '/' ) )
     pfnDict['Protocol'] = 'srm'
     pfnDict['Host'] = self.host
     pfnDict['Port'] = self.port

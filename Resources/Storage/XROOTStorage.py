@@ -49,7 +49,7 @@ class XROOTStorage( StorageBase ):
     self.port = port
     self.wspath = wspath
     self.spaceToken = spaceToken
-    
+
     # Aweful hack to cope for the moment with the anability of RSS to deal with something else than SRM
 
     self.port = ""
@@ -79,7 +79,7 @@ class XROOTStorage( StorageBase ):
     failed = {}
 
     for url in urls:
-      res = self.__singleExists(url)
+      res = self.__singleExists( url )
 
       # Check if there was a fatal error
       if not res['OK']:
@@ -335,7 +335,7 @@ class XROOTStorage( StorageBase ):
       else:
         urls = dict( [( url, False ) for url in path] )
     elif type( path )  is DictType:
-      if len(path) != 1:
+      if len( path ) != 1:
         return S_ERROR ( "XROOTStorage.putFile: path argument must be a dictionary (or a list of dictionary) { url : local path}" )
       urls = path
 
@@ -378,7 +378,7 @@ class XROOTStorage( StorageBase ):
 
     # the API returns (status,None...)
     status = status[0]
-    
+
     if status.fatal:
       errStr = "XROOTStorage.__putSingleFile: Completely failed to create the destination folder."
       gLogger.error( errStr, status.message )
@@ -387,7 +387,7 @@ class XROOTStorage( StorageBase ):
     if status.error:
       errStr = "XROOTStorage.__putSingleFile: failed to create the destination folder."
       gLogger.debug( errStr, status.message )
-      
+
 
     # Now we check if there is already a remote file. If yes, we remove it
     res = self.__singleExists( dest_url )
@@ -464,7 +464,7 @@ class XROOTStorage( StorageBase ):
       return res
 
     # This is true only if the file exists. Then we remove it
-    if res['Value'] == True: 
+    if res['Value'] == True:
       self.log.debug( "XROOTStorage.__putSingleFile: Removing remote residual file.", dest_url )
 
       res = self.__removeSingleFile( dest_url )
@@ -556,7 +556,7 @@ class XROOTStorage( StorageBase ):
           errStr = "XROOTStorage.__removeSingleFile: Failed to remove the file"
           self.log.debug( errStr, status.message )
           return S_OK( S_ERROR( errStr ) )
-        
+
     return S_ERROR ( "XROOTStorage.__removeSingleFile: reached the end of the method, should not happen" )
 
 
@@ -590,7 +590,7 @@ class XROOTStorage( StorageBase ):
         failed[url] = res['Message']
       else:
         successful[url] = res['Value']
-        
+
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
 
@@ -609,7 +609,7 @@ class XROOTStorage( StorageBase ):
           S_OK (S_OK (Bool)) if we could get the metadata and is of type expectedType
           S_OK (S_ERROR (errorMsg)) if there was a problem geting the metadata
     """
-    
+
     if expectedType and expectedType not in ['File', 'Directory']:
       return S_ERROR( "XROOTStorage.__getSingleMetadata : the 'expectedType' argument must be either 'File' or 'Directory'" )
 
@@ -680,10 +680,10 @@ class XROOTStorage( StorageBase ):
 
     return S_OK( S_OK( metadataDic ) )
 
-      
 
-  
-  
+
+
+
   def __parseStatInfoFromApiOutput( self, statInfo ):
     """  Split the content of the statInfo object into a dictionary
       :param self: self reference
@@ -945,9 +945,9 @@ class XROOTStorage( StorageBase ):
         failed[src_dir] = {'Files':0, 'Size':0}
 
     return S_OK( {'Failed' : failed, 'Successful' : successful } )
-  
-  
-  def __getSingleDirectory(self, src_dir, dest_dir):
+
+
+  def __getSingleDirectory( self, src_dir, dest_dir ):
     """Download a single directory recursively
       :param self: self reference
       :param src_dir : remote directory to download (root://...)
@@ -1016,7 +1016,7 @@ class XROOTStorage( StorageBase ):
       else:
         receivedAllFiles = False
 
-        
+
     # Then recursively get the sub directories
     receivedAllDirs = True
     self.log.debug( "XROOTStorage.__getSingleDirectory: Trying to recursively download the %s folder." % len( subDirsDict ) )
@@ -1024,7 +1024,7 @@ class XROOTStorage( StorageBase ):
       subDirName = os.path.basename( subDir )
       localPath = '%s/%s' % ( dest_dir, subDirName )
       res = self.__getSingleDirectory( subDir, localPath )
-      
+
       if not res['OK']:
         receivedAllDirs = False
       if res['OK']:
@@ -1289,7 +1289,7 @@ class XROOTStorage( StorageBase ):
             removedAllDirs = False
           filesRemoved += res['Value']['FilesRemoved']
           sizeRemoved += res['Value']['SizeRemoved']
-      
+
 
     # Remove all the files in the directory
     self.log.debug( "XROOTStorage.__removeSingleDirectory: Trying to remove %s files." % len( sFilesDict ) )
@@ -1307,7 +1307,7 @@ class XROOTStorage( StorageBase ):
       else:
         removedAllFiles = False
 
-        
+
     # Check whether all the operations were successful
     if removedAllDirs and removedAllFiles:
       allRemoved = True
@@ -1342,8 +1342,8 @@ class XROOTStorage( StorageBase ):
           allRemoved = False
 
     resDict = {'AllRemoved': allRemoved, 'FilesRemoved': filesRemoved, 'SizeRemoved': sizeRemoved}
-    return S_OK( resDict )  
-    
+    return S_OK( resDict )
+
 
 
   def listDirectory( self, path ):
@@ -1388,7 +1388,7 @@ class XROOTStorage( StorageBase ):
     return S_OK( resDict )
 
 
-  def __listSingleDirectory(self, path):
+  def __listSingleDirectory( self, path ):
     """List the content of a single directory, NOT RECURSIVE
       :param self: self reference
       :param path: single path on storage (pfn : root://...)
@@ -1414,7 +1414,7 @@ class XROOTStorage( StorageBase ):
       errorMsg = "XROOTStorage.__listSingleDirectory : could not list the directory content"
       self.log.error( errorMsg, status.message )
       return S_ERROR ( errorMsg )
-      
+
     files = {}
     subDirs = {}
 
@@ -1426,11 +1426,11 @@ class XROOTStorage( StorageBase ):
         continue
       elif metadataDict['File']:
         files[fullPath] = metadataDict
-      else: #This "other", whatever that is
+      else:  # This "other", whatever that is
         self.log.debug( "XROOTStorage.__listSingleDirectory : found an item which is not a file nor a directory", fullPath )
 
     return S_OK( {'SubDirs' : subDirs, 'Files' : files } )
-      
+
 
 
   def __getSingleDirectoryMetadata( self, path ):
@@ -1530,7 +1530,7 @@ class XROOTStorage( StorageBase ):
     self.log.debug( "XROOTStorage.__getSingleDirectorySize: Successfully obtained size of %s." % path )
     subDirectories = len( res['Value']['SubDirs'] )
     return S_OK( { 'Files' : directoryFiles, 'Size' : directorySize, 'SubDirs' : subDirectories } )
-  
+
 
   def getDirectorySize( self, path ):
     """ Get the size of the directory on the storage
@@ -1552,7 +1552,7 @@ class XROOTStorage( StorageBase ):
 
     failed = {}
     successful = {}
-    
+
     for url in urls:
       res = self.__getSingleDirectorySize( url )
       if not res['OK']:
@@ -1625,10 +1625,9 @@ class XROOTStorage( StorageBase ):
 
     pfnDict['Protocol'] = self.protocol
     pfnDict['Host'] = self.host
-    
-    if not pfnDict['Path'].startswith( "%s" % self.rootdir ):
-      pfnDict['Path'] = "%s%s" % ( self.rootdir, pfnDict['Path'] )
-    
+
+    if not pfnDict['Path'].startswith( self.rootdir ):
+      pfnDict['Path'] = os.path.join( self.rootdir, pfnDict['Path'].strip( '/' ) )
 
     # These lines should be checked
     if withPort:
@@ -1638,7 +1637,7 @@ class XROOTStorage( StorageBase ):
 
     # pfnunparse does not take into account the double // so I have to trick it
     # The problem is that I cannot take into account the port, which is always empty (it seems..)
-    return S_OK( 'root://%s/%s/%s' % ( self.host, pfnDict['Path'], pfnDict['FileName'] ) )
+    return S_OK( 'root://%s%s/%s' % ( self.host, pfnDict['Path'], pfnDict['FileName'] ) )
 
 
   def getCurrentURL( self, fileName ):
@@ -1655,7 +1654,7 @@ class XROOTStorage( StorageBase ):
       return S_OK( fullUrl )
     except TypeError, error:
       return S_ERROR( "Failed to create URL %s" % error )
-  
+
   def getPFNBase( self, withPort = False ):
     """ This will get the pfn base. This is then appended with the LFN in DIRAC convention.
 
@@ -1664,4 +1663,4 @@ class XROOTStorage( StorageBase ):
     :returns PFN
     """
     return S_OK( { True : 'root://%s:%s/%s' % ( self.host, self.port, self.rootdir ),
-                   False : 'root://%s/%s' % ( self.host, self.rootdir ) }[withPort] )
+                   False : 'root://%s%s' % ( self.host, self.rootdir ) }[withPort] )

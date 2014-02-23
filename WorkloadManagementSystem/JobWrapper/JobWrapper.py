@@ -388,11 +388,11 @@ class JobWrapper:
       if not threadResult['OK']:
         self.log.error( 'Failed to execute the payload', threadResult['Message'] )
 
-        self.__report( 'Failed', 'Application failed, check job parameters', sendFlag = True )
+        self.__report( 'Failed', 'Application thread failed', sendFlag = True )
         if 'Value' in threadResult:
-          outputs = threadResult['Value']
-        if outputs:
-          self.__setJobParam( 'ApplicationError', outputs[0], sendFlag = True )
+          outs = threadResult['Value']
+        if outs:
+          self.__setJobParam( 'ApplicationError', outs[0], sendFlag = True )
         else:
           self.__setJobParam( 'ApplicationError', 'None reported', sendFlag = True )
       else:

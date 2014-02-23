@@ -168,7 +168,9 @@ class CREAMComputingElement( ComputingElement ):
     if not result['OK']:
       return result
     if result['Value'][0]:
-      if result['Value'][2]:
+      if result['Value'][0] == 11:
+        return S_ERROR( 'Segmentation fault while calling glite-ce-job-status' )
+      elif result['Value'][2]:
         return S_ERROR( result['Value'][2] )
       elif "Authorization error" in result['Value'][1]:
         return S_ERROR( "Authorization error" )
@@ -329,6 +331,10 @@ class CREAMComputingElement( ComputingElement ):
         output = outFile.read()
         outFile.close()
         os.unlink( outFileName )
+      elif result['Value'][0] == 1 and "No such file or directory" in result['Value'][2]:
+        output = "Standard Output is not available on the CREAM service"
+        if os.path.exists( outFileName ):
+          os.unlink( outFileName )
       else:
         error = '\n'.join( result['Value'][1:] )
         return S_ERROR( error )
@@ -344,6 +350,10 @@ class CREAMComputingElement( ComputingElement ):
         error = errFile.read()
         errFile.close()
         os.unlink( errFileName )
+    elif result['Value'][0] == 1 and "No such file or directory" in result['Value'][2]:
+        error = "Standard Error is not available on the CREAM service"
+        if os.path.exists( errFileName ):
+          os.unlink( errFileName )
     else:
       return S_ERROR( 'Failed to retrieve error for %s' % jobID )
 

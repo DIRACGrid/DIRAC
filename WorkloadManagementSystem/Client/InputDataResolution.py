@@ -32,8 +32,7 @@ class InputDataResolution( object ):
     self.log = gLogger.getSubLogger( self.name )
 
     # By default put input data into the current directory
-    if not self.arguments.has_key( 'InputDataDirectory' ):
-      self.arguments['InputDataDirectory'] = 'CWD'
+    self.arguments.setdefault( 'InputDataDirectory', 'CWD' )
 
   #############################################################################
   def execute( self ):
@@ -42,24 +41,20 @@ class InputDataResolution( object ):
     """
     resolvedInputData = self.__resolveInputData()
     if not resolvedInputData['OK']:
-      self.log.error( 'InputData resolution failed with result:\n%s' % ( resolvedInputData ) )
+      self.log.error( 'InputData resolution failed with result:\n%s' % ( resolvedInputData['Message'] ) )
 
-    #For local running of this module we can expose an option to ignore missing files
-    ignoreMissing = False
-    if self.arguments.has_key( 'IgnoreMissing' ):
-      ignoreMissing = self.arguments['IgnoreMissing']
+    # For local running of this module we can expose an option to ignore missing files
+    ignoreMissing = self.arguments.get( 'IgnoreMissing', False )
 
     # Missing some of the input files is a fatal error unless ignoreMissing option is defined
-    if resolvedInputData.has_key( 'Failed' ):
-      failedReplicas = resolvedInputData['Failed']
-      if failedReplicas and not ignoreMissing:
-        self.log.error( 'Failed to obtain access to the following files:\n%s'
-                        % ( '\n'.join( failedReplicas ) ) )
-        return S_ERROR( 'Failed to access all of requested input data' )
+    failedReplicas = resolvedInputData.get( 'Failed', {} )
+    if failedReplicas and not ignoreMissing:
+      self.log.error( 'Failed to obtain access to the following files:\n%s'
+                      % ( '\n'.join( failedReplicas ) ) )
+      return S_ERROR( 'Failed to access all of requested input data' )
 
-    if not resolvedInputData.has_key( 'Successful' ):
+    if 'Successful' not in resolvedInputData:
       return resolvedInputData
-
     if not resolvedInputData['Successful']:
       return S_ERROR( 'Could not access any requested input data' )
 
@@ -83,8 +78,7 @@ class InputDataResolution( object ):
       tmpDict[lfn]['pfntype'] = pfnType
       self.log.verbose( 'Adding PFN file type %s for LFN:%s' % ( pfnType, lfn ) )
 
-    if self.arguments['Configuration'].has_key( 'CatalogName' ):
-      catalogName = self.arguments['Configuration']['CatalogName']
+    catalogName = self.arguments['Configuration'].get( 'CatalogName', catalogName )
     self.log.verbose( 'Catalog name will be: %s' % catalogName )
 
     resolvedData = tmpDict
@@ -97,72 +91,60 @@ class InputDataResolution( object ):
     """This method controls the execution of the DIRAC input data modules according
        to the VO policy defined in the configuration service.
     """
-    if self.arguments['Configuration'].has_key( 'SiteName' ):
-      site = self.arguments['Configuration']['SiteName']
-    else:
-      site = DIRAC.siteName()
+    site = self.arguments['Configuration'].get( 'SiteName', DIRAC.siteName() )
 
-    policy = []
-    if not self.arguments.has_key( 'Job' ):
-      self.arguments['Job'] = {}
+    self.arguments.setdefault( 'Job', {} )
 
-    if self.arguments['Job'].has_key( 'InputDataPolicy' ):
-      policy = self.arguments['Job']['InputDataPolicy']
-      #In principle this can be a list of modules with the first taking precedence
+    policy = self.arguments['Job'].get( 'InputDataPolicy', [] )
+    if policy:
+      # In principle this can be a list of modules with the first taking precedence
       if type( policy ) in types.StringTypes:
         policy = [policy]
       self.log.info( 'Job has a specific policy setting: %s' % ( ', '.join( policy ) ) )
     else:
-      self.log.verbose( 'Attempting to resolve input data policy for site %s' % site )
+      self.log.debug( 'Attempting to resolve input data policy for site %s' % site )
       inputDataPolicy = Operations().getOptionsDict( 'InputDataPolicy' )
       if not inputDataPolicy['OK']:
         return S_ERROR( 'Could not resolve InputDataPolicy from Operations InputDataPolicy' )
 
       options = inputDataPolicy['Value']
-      if options.has_key( site ):
-        policy = options[site]
+      policy = options.get( site, options.get( 'Default', [] ) )
+      if policy:
         policy = [x.strip() for x in policy.split( ',' )]
-        self.log.info( 'Found specific input data policy for site %s:\n%s' % ( site, '\n'.join( policy ) ) )
-      elif options.has_key( 'Default' ):
-        policy = options['Default']
-        policy = [x.strip() for x in policy.split( ',' )]
-        self.log.info( 'Applying default input data policy for site %s:\n%s' % ( site, '\n'.join( policy ) ) )
+        if site in options:
+          prStr = 'Found specific'
+        else:
+          prStr = 'Applying default'
+        self.log.info( '%s input data policy for site %s:\n%s' % ( prStr, site, '\n'.join( policy ) ) )
 
-    dataToResolve = None #if none, all supplied input data is resolved
-    allDataResolved = False
+    dataToResolve = []  # if none, all supplied input data is resolved
     successful = {}
     failedReplicas = []
     for modulePath in policy:
-      if not allDataResolved:
-        result = self.__runModule( modulePath, dataToResolve )
-        if not result['OK']:
-          self.log.warn( 'Problem during %s execution' % modulePath )
-          return result
+      result = self.__runModule( modulePath, dataToResolve )
+      if not result['OK']:
+        self.log.warn( 'Problem during %s execution' % modulePath )
+        return result
 
-        if result.has_key( 'Failed' ):
-          failedReplicas = result['Failed']
+      successful.update( result.get( 'Successful', {} ) )
+      dataToResolve = result.get( 'Failed', [] )
+      if dataToResolve:
+        self.log.info( '%s failed for the following files:\n%s'
+                       % ( modulePath, '\n'.join( dataToResolve ) ) )
+      else:
+        self.log.info( 'All replicas resolved after %s execution' % ( modulePath ) )
+        break
 
-        if failedReplicas:
-          self.log.info( '%s failed for the following files:\n%s'
-                         % ( modulePath, '\n'.join( failedReplicas ) ) )
-          dataToResolve = failedReplicas
-        else:
-          self.log.info( 'All replicas resolved after %s execution' % ( modulePath ) )
-          allDataResolved = True
+    if successful:
+      self.log.verbose( 'Successfully resolved:', str( successful ) )
 
-        successful.update( result['Successful'] )
-        self.log.verbose( successful )
-
-    result = S_OK()
-    result['Successful'] = successful
-    result['Failed'] = failedReplicas
-    return result
+    return S_OK( {'Successful': successful, 'Failed':dataToResolve} )
 
   #############################################################################
   def __runModule( self, modulePath, remainingReplicas ):
     """This method provides a way to run the modules specified by the VO that
-       govern the input data access policy for the current site. Using the 
-       InputDataPolicy section from Operations different modules can be defined for 
+       govern the input data access policy for the current site. Using the
+       InputDataPolicy section from Operations different modules can be defined for
        particular sites or for InputDataPolicy defined in the JDL of the jobs.
     """
     self.log.info( 'Attempting to run %s' % ( modulePath ) )
@@ -175,4 +157,4 @@ class InputDataResolution( object ):
     result = module.execute( remainingReplicas )
     return result
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
