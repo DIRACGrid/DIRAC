@@ -28,6 +28,19 @@ NEW: dirac-rms-reset-request command
 *SMS
 FIX: few minor fixes to avoid pylint warnings
 
+[v6r10p13]
+
+*SMS
+FIX: RequestPreparationAgent - use ReplicaManager to get active replicas
+
+*DMS
+FIX: ReplicaManager - getReplicas returns all replicas ( in all statuses ) by default
+CHANGE: FC/SecurityManager - give full ACL access to the catalog to groups with admin rights
+
+*WMS
+CHANGE: SiteDirector - changes to reduce the load on computing elements
+FIX: JobWrapper - do not set Completed status for the case with failed application thread
+
 [v6r10p12]
 
 *WMS

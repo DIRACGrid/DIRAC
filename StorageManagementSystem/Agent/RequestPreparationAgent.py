@@ -8,6 +8,7 @@ from DIRAC.Core.Base.AgentModule                                import AgentModu
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient  import StorageManagerClient
 from DIRAC.Resources.Catalog.FileCatalog                        import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient      import DataIntegrityClient
+from DIRAC.DataManagementSystem.Client.DataManager              import DataManager
 
 # test 1
 AGENT_NAME = 'StorageManagement/RequestPreparationAgent'
@@ -16,6 +17,7 @@ class RequestPreparationAgent( AgentModule ):
 
   def initialize( self ):
     self.fileCatalog = FileCatalog()
+    self.dm = DataManager()
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
     # This sets the Default Proxy to used as that defined under
@@ -191,7 +193,7 @@ class RequestPreparationAgent( AgentModule ):
     """ This obtains the replicas from the FileCatalog. """
     replicas = {}
     noReplicas = {}
-    res = self.fileCatalog.getReplicas( lfns )
+    res = self.dm.getActiveReplicas( lfns )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getFileReplicas: Failed to obtain file replicas.", res['Message'] )
       return res
