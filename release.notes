@@ -1,19 +1,29 @@
-[v6r11-pre1]
+[v6r11-pre2]
+
+*Core
+FIX: Client - fix in __getattr__() to provide dir() functionality
 
 *Configuration
 CHANGE: Resources.getDIRACPlatform() returns a list of compatible DIRAC platforms
 
 *WMS
 NEW: WMS tags to allow jobs require special site/CE/queue properties  
+CHANGES: DownloadInputData, InputDataByProtocol, InputDataResolution - allows to get multiple 
+         PFNs for the protocol resolution
 
 *DMS
 NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
 
+*Interfaces
+CHANGE: Dirac - instantiate SandboxStoreClient and WMSClient when needed, not in the constructor
+
 *Resources
 CHANGE: StorageElement - changes to avoid usage PFNs
+FIX: XROOTStorage, SRM2Storage - changes in PFN construction 
 
 *RMS
 CHANGE: ReqDB - added Foreign Keys to ReqDB tables
+NEW: dirac-rms-reset-request command
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
