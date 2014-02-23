@@ -736,7 +736,6 @@ class DataManager( object ):
 
         else:
           oDataOperation.setEndTime()
-          print "I add %s to gDataStoreClient" % oDataOperation
           gDataStoreClient.addRegister( oDataOperation )
           return S_OK( localFile )
 
@@ -1239,45 +1238,27 @@ class DataManager( object ):
 
   def __registerFile( self, fileTuples, catalog ):
     """ register file to cataloge """
-    seDict = {}
-    for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuples:
-      seDict.setdefault( storageElementName, [] ).append( ( lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum ) )
-    failed = {}
+
     fileDict = {}
-    for storageElementName, fileTuple in seDict.items():
-      destStorageElement = StorageElement( storageElementName )
-      res = destStorageElement.isValid()
-      if not res['OK']:
-        errStr = "__registerFile: The storage element is not currently valid."
-        self.log.debug( errStr, "%s %s" % ( storageElementName, res['Message'] ) )
-        for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuple:
-          failed[lfn] = errStr
-      else:
-        storageElementName = destStorageElement.getStorageElementName()['Value']
-        for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuple:
-          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( physicalFile, protocol = self.registrationProtocol, withPort = False ) )
-          if not res['OK']:
-            pfn = physicalFile
-          else:
-            pfn = res['Value']
-          # tuple = ( lfn, pfn, fileSize, storageElementName, fileGuid, checksum )
-          fileDict[lfn] = {'PFN':pfn, 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
-    self.log.debug( "__registerFile: Resolved %s files for registration." % len( fileDict ) )
+
+    for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuples:
+      fileDict[lfn] = {'PFN':physicalFile, 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
+
+    fileCatalog = self.fc
+
     if catalog:
       fileCatalog = FileCatalog( catalog )
       if not fileCatalog.isOK():
         return S_ERROR( "Can't get FileCatalog %s" % catalog )
-      res = fileCatalog.addFile( fileDict )
-    else:
-      res = self.fc.addFile( fileDict )
+
+    res = fileCatalog.addFile( fileDict )
+
     if not res['OK']:
       errStr = "__registerFile: Completely failed to register files."
       self.log.debug( errStr, res['Message'] )
       return S_ERROR( errStr )
-    failed.update( res['Value']['Failed'] )
-    successful = res['Value']['Successful']
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
+
+    return S_OK( {'Successful':res['Value']['Successful'], 'Failed':res['Value']['Failed']} )
 
   def registerReplica( self, replicaTuple, catalog = '' ):
     """ Register a replica (or list of) supplied in the replicaTuples.

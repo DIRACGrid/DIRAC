@@ -1637,7 +1637,7 @@ class XROOTStorage( StorageBase ):
 
     # pfnunparse does not take into account the double // so I have to trick it
     # The problem is that I cannot take into account the port, which is always empty (it seems..)
-    return S_OK( 'root://%s/%s/%s' % ( self.host, pfnDict['Path'], pfnDict['FileName'] ) )
+    return S_OK( 'root://%s%s/%s' % ( self.host, pfnDict['Path'], pfnDict['FileName'] ) )
 
 
   def getCurrentURL( self, fileName ):
@@ -1663,4 +1663,4 @@ class XROOTStorage( StorageBase ):
     :returns PFN
     """
     return S_OK( { True : 'root://%s:%s/%s' % ( self.host, self.port, self.rootdir ),
-                   False : 'root://%s/%s' % ( self.host, self.rootdir ) }[withPort] )
+                   False : 'root://%s%s' % ( self.host, self.rootdir ) }[withPort] )
