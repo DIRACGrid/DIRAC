@@ -54,7 +54,7 @@ class ResourcesSuccess( HelpersTestCase ):
     self.assertEqual( res['Value'], ['plat2'] )
 
     res = getDIRACPlatform( 'plat1' )
-    self.assertFalse( res['OK'] )
+    self.assertTrue( res['OK'] )
 
   def test_getCompatiblePlatforms( self ):
     self.gConfigMock.getOptionsDict.return_value = {'OK':False, 'Value':''}
@@ -70,11 +70,11 @@ class ResourcesSuccess( HelpersTestCase ):
                                                                         'plat3': 'sys1, xOS1, xOS4'}}
     res = getCompatiblePlatforms( 'plat' )
     self.assertTrue( res['OK'] )
-    self.assertEqual( res['Value'], [] )
+    self.assertEqual( res['Value'], ['plat'] )
 
     res = getCompatiblePlatforms( 'plat1' )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], ['xOS1', 'xOS2', 'xOS3'] )
+    self.assertEqual( res['Value'], ['plat1', 'xOS1', 'xOS2', 'xOS3'] )
 
 
 
