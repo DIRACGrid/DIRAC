@@ -138,6 +138,11 @@ NEW: dirac-rms-reset-request command
 *SMS
 FIX: few minor fixes to avoid pylint warnings
 
+[v6r10p14]
+
+*SMS
+FIX: RequestPreparationAgent - typo fixed
+
 [v6r10p13]
 
 *SMS
