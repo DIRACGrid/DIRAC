@@ -20,7 +20,7 @@ class RequestPreparationAgent( AgentModule ):
 
   def initialize( self ):
     self.fileCatalog = FileCatalog()
-    selt.rm = ReplicaManager()
+    self.rm = ReplicaManager()
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
     # self.storageDB = StorageManagementDB()
