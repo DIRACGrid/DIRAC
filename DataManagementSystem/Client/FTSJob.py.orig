@@ -552,15 +552,9 @@ class FTSJob( Record ):
       toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
 
     if toRegisterDict:
-<<<<<<< HEAD
-      self._regTotal += len( toRegisterDict )
-      register = self.replicaManager().addCatalogReplica( toRegisterDict )
-      self._regTime += time.time() - startTime
-=======
       self.regTotal += len( toRegisterDict )
       register = self.fileCatalog().addReplica( toRegisterDict )
       self.regTime += time.time() - startTime
->>>>>>> Replace ReplicaManager with DataManager, StorageElement and FileCatalog
       if not register["OK"]:
         # FIXME: shouldn't be a print!
         for ftsFile in toRegister:
