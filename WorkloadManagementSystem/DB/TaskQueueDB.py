@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
@@ -368,8 +365,8 @@ class TaskQueueDB( DB ):
       Returns S_OK( tqId ) / S_ERROR
     """
     try:
-      test = long( jobId )
-    except:
+      long( jobId )
+    except ValueError:
       return S_ERROR( "JobId is not a number!" )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
@@ -465,7 +462,7 @@ class TaskQueueDB( DB ):
   def __findAndDisableTaskQueue( self, tqDefDict, skipDefinitionCheck = False, retries = 10, connObj = False ):
     """ Disable and find TQ
     """
-    for i in range( retries ):
+    for _ in range( retries ):
       result = self.__findSmallestTaskQueue( tqDefDict, skipDefinitionCheck = skipDefinitionCheck, connObj = connObj )
       if not result[ 'OK' ]:
         return result
@@ -517,7 +514,7 @@ class TaskQueueDB( DB ):
     preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s AND `tq_Jobs`.Priority = %s"
     prioSQL = "SELECT `tq_Jobs`.Priority FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     postJobSQL = " ORDER BY `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
-    for matchTry in range( self.__maxMatchRetry ):
+    for _ in range( self.__maxMatchRetry ):
       if 'JobID' in tqMatchDict:
         # A certain JobID is required by the resource, so all TQ are to be considered
         retVal = self.matchAndGetTaskQueue( tqMatchDict, numQueuesToGet = 0, skipMatchDictDef = True, connObj = connObj )
@@ -689,7 +686,7 @@ class TaskQueueDB( DB ):
       #It has to be %ss , with an 's' at the end because the columns names
       # are plural and match options are singular
       if field in tqMatchDict and tqMatchDict[ field ]:
-        tableN, fullTableN = self.__generateTablesName( sqlTables, field )
+        _, fullTableN = self.__generateTablesName( sqlTables, field )
         sqlMultiCondList = []
         # if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
@@ -769,11 +766,9 @@ class TaskQueueDB( DB ):
     retVal = self._update( "DELETE FROM `tq_Jobs` WHERE JobId = %s" % jobId, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete job from task queue %s: %s" % ( jobId, retVal[ 'Message' ] ) )
-    result = retVal[ 'Value' ]
-    if retVal[ 'Value' ] == 0:
+    if retVal['Value'] == 0:
       #No job deleted
       return S_OK( False )
-    retries = 10
     #Always return S_OK() because job has already been taken out from the TQ
     self.__deleteTQWithDelay.add( tqId, 300, ( tqId, tqOwnerDN, tqOwnerGroup ) )
     return S_OK( True )
@@ -904,7 +899,7 @@ class TaskQueueDB( DB ):
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete task queue %s: %s" % ( tqId, retVal[ 'Message' ] ) )
-    for mvField in self.__multiValueDefFields:
+    for _ in self.__multiValueDefFields:
       retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % tqId, conn = connObj )
       if not retVal[ 'OK' ]:
         return retVal
@@ -953,7 +948,7 @@ class TaskQueueDB( DB ):
       if len( tqIdList ) == 0:
         return S_OK( {} )
       else:
-        sqlTQCond += " AND `tq_TaskQueues`.TQId in ( %s )" % ", ".join( [ str( id ) for id in tqIdList ] )
+        sqlTQCond += " AND `tq_TaskQueues`.TQId in ( %s )" % ", ".join( [ str( id ) for _ in tqIdList ] )
     sqlCmd = "%s WHERE `tq_TaskQueues`.TQId = `tq_Jobs`.TQId %s GROUP BY %s" % ( sqlCmd,
                                                                                  sqlTQCond,
                                                                                  ", ".join( sqlGroupEntries ) )
@@ -1024,7 +1019,6 @@ class TaskQueueDB( DB ):
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
-    connObj = retVal[ 'Value' ]
     result = self._query( "SELECT DISTINCT( OwnerGroup ) FROM `tq_TaskQueues`" )
     if not result[ 'OK' ]:
       return result
