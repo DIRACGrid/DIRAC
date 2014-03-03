@@ -3,6 +3,7 @@
 """
 
 from DIRAC.Core.DISET.RPCClient                import RPCClient
+from DIRAC.Core.DISET.TransferClient           import TransferClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC                                     import S_OK, S_ERROR
 from DIRAC.Core.Utilities                      import File
@@ -14,21 +15,29 @@ __RCSID__ = "$Id$"
 
 class WMSClient( object ):
 
-  def __init__( self, jobManagerClient = False, sbRPCClient = False, sbTransferClient = False,
+  def __init__( self, jobManagerClient = None, sbRPCClient = None, sbTransferClient = None,
                 useCertificates = False, timeout = 600 ):
     """ WMS Client constructor
+
+        Here we also initialize the needed clients and connections
     """
-    self.useCertificates = useCertificates
     self.timeout = timeout
 
-
     if not jobManagerClient:
-      self.jobManagerClient = RPCClient( 'WorkloadManagement/JobManager', useCertificates = self.useCertificates,
-                              timeout = self.timeout )
+      self.jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = useCertificates,
+                                   timeout = self.timeout )
     else:
-      self.jobManagerClient = jobManagerClient
-    self.sandboxClient = SandboxStoreClient( useCertificates = useCertificates, rpcClient = sbRPCClient,
-                                             transferClient = sbTransferClient )
+      self.jobManager = jobManagerClient
+
+    if not sbRPCClient:
+      sbRPCClient = RPCClient( 'WorkloadManagement/SandboxStore', useCertificates = useCertificates )
+
+    if not sbTransferClient:
+      sbTransferClient = TransferClient( 'WorkloadManagement/SandboxStore', useCertificates = useCertificates )
+
+    self.sandboxClient = SandboxStoreClient( rpcClient = sbRPCClient,
+                                             transferClient = sbTransferClient,
+                                             useCertificates = useCertificates )
 
 ###############################################################################
 
@@ -132,7 +141,7 @@ class WMSClient( object ):
       return result
 
     # Submit the job now and get the new job ID
-    result = self.jobManagerClient.submitJob( classAdJob.asJDL() )
+    result = self.jobManager.submitJob( classAdJob.asJDL() )
 #     if 'requireProxyUpload' in result['Value'] and result['Value']['requireProxyUpload']:
 #       # TODO: We should notify the user to upload a proxy with proxy-upload
 #       pass
