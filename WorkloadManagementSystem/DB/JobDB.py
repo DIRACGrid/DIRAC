@@ -57,6 +57,7 @@ from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getUsernameForDN, getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources      import getDIRACPlatform
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
 
 DEBUG = False
@@ -1326,16 +1327,9 @@ class JobDB( DB ):
     classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
 
     if systemConfig and systemConfig.lower() != 'any':
-      # FIXME: need to reformulate in a VO independent mode
-      # Get the LHCb Platforms that are compatible with the requested systemConfig
-      platformReqs = [systemConfig]
-      result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+      result = getDIRACPlatform( systemConfig )
       if result['OK'] and result['Value']:
-        platforms = result['Value']
-        for platform in platforms:
-          if systemConfig in [ x.strip() for x in platforms[platform].split( ',' ) ] and platform != systemConfig:
-            platformReqs.append( platform )
-        classAdReq.insertAttributeVectorString( 'Platforms', platformReqs )
+        classAdReq.insertAttributeVectorString( 'Platforms', result['Value'] )
       else:
         error = "OS compatibility info not found"
 

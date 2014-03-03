@@ -237,7 +237,7 @@ def getDIRACPlatform( OS ):
     if k not in v:
       v.append( k )
 
-  # making an os -> platforms dict
+  # making an OS -> platforms dict
   os2PlatformDict = dict()
   for platform, osItems in platformsDict.iteritems():
     for osItem in osItems:
@@ -253,6 +253,14 @@ def getDIRACPlatform( OS ):
   platforms.sort( key = LooseVersion, reverse = True )
 
   return S_OK( platforms )
+
+def getDIRACPlatforms():
+  """ just returns list of platforms defined in the CS
+  """
+  result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+  if not ( result['OK'] and result['Value'] ):
+    return S_ERROR( "OS compatibility info not found" )
+  return S_OK( result['Value'].keys() )
 
 def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog

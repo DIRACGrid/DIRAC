@@ -353,6 +353,7 @@ class MatcherHandler( RequestHandler ):
       if resourceDescription.has_key( 'JobID' ):
         resourceDict['JobID'] = resourceDescription['JobID']
 
+      # FIXME: shoudn't we get rid of LHCbPlatform here? Isn't this the last thing to remove?
       for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
                  'PilotReference', 'PilotInfoReportedFlag', 'PilotBenchmark', 'LHCbPlatform' ):
         if k in resourceDescription:
