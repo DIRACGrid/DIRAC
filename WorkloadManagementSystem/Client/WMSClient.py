@@ -2,18 +2,17 @@
     methods necessary to communicate with the Workload Management System
 """
 
-__RCSID__ = "$Id$"
-
-import os
-
 from DIRAC.Core.DISET.RPCClient                import RPCClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC                                     import S_OK, S_ERROR
 from DIRAC.Core.Utilities                      import File
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 
+import os
 
-class WMSClient:
+__RCSID__ = "$Id$"
+
+class WMSClient( object ):
 
   def __init__( self, jobManagerClient = False, sbRPCClient = False, sbTransferClient = False,
                 useCertificates = False, timeout = 600 ):
