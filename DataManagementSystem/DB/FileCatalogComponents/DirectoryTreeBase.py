@@ -465,9 +465,17 @@ class DirectoryTreeBase:
     if not result['OK']:
       if "not found" in result['Message']:
         # If the directory does not exist, check the nearest parent for the permissions
-        pDir = os.path.dirname( path )
-        result = self.getDirectoryPermissions( pDir, credDict )
-        return result
+        if path == '/':
+          # Nothing yet exists, starting from the scratch
+          resultDict = {}  
+          resultDict['Write'] = True
+          resultDict['Read'] = True 
+          resultDict['Execute'] = True
+          return S_OK( resultDict )
+        else:
+          pDir = os.path.dirname( path )
+          result = self.getDirectoryPermissions( pDir, credDict )
+          return result
       else:
         return result
 
