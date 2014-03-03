@@ -875,7 +875,7 @@ def getDIRACPlatform( OS ):
     if k not in v:
       v.append( k )
 
-  # making an os -> platforms dict
+  # making an OS -> platforms dict
   os2PlatformDict = dict()
   for platform, osItems in platformsDict.iteritems():
     for osItem in osItems:

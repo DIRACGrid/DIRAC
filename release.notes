@@ -108,13 +108,15 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r11-pre2]
+[v6r11-pre3]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
 
 *Configuration
 CHANGE: Resources.getDIRACPlatform() returns a list of compatible DIRAC platforms
+NEW: Resources.getDIRACPlatforms() used to access platforms from /Resources/Computing/OSCompatibility
+     section
 
 *WMS
 NEW: WMS tags to allow jobs require special site/CE/queue properties  
@@ -137,6 +139,15 @@ NEW: dirac-rms-reset-request command
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p15]
+
+*DMS
+FIX: FTSAgent - added missing monitoring activity
+FIX: FileCatalog - do not check directory permissions when creating / directory
+
+*Resources
+FIX: SSHTorqueComputingElement - removed obsoleted stuff
 
 [v6r10p14]
 

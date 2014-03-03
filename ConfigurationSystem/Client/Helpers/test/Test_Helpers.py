@@ -28,8 +28,8 @@ class ResourcesSuccess( HelpersTestCase ):
     self.assertFalse( res['OK'] )
 
     self.gConfigMock.getOptionsDict.return_value = {'OK':True, 'Value':{'plat1': 'OS1, OS2,  OS3',
-                                                                        'plat2': 'plat2, OS4, OS5',
-                                                                        'plat3': 'plat1, OS1, OS4'}}
+                                                                        'plat2': 'OS4, OS5',
+                                                                        'plat3': 'OS1, OS4'}}
     res = getDIRACPlatform( 'plat' )
     self.assertFalse( res['OK'] )
 
@@ -54,16 +54,7 @@ class ResourcesSuccess( HelpersTestCase ):
     self.assertEqual( res['Value'], ['plat2'] )
 
     res = getDIRACPlatform( 'plat1' )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], ['plat3', 'plat1'] )
-
-    res = getDIRACPlatform( 'plat2' )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], ['plat2'] )
-
-    res = getDIRACPlatform( 'plat3' )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], ['plat3'] )
+    self.assertTrue( res['OK'] )
 
   def test_getCompatiblePlatforms( self ):
     self.gConfigMock.getOptionsDict.return_value = {'OK':False, 'Value':''}
@@ -74,16 +65,16 @@ class ResourcesSuccess( HelpersTestCase ):
     res = getCompatiblePlatforms( 'plat' )
     self.assertFalse( res['OK'] )
 
-    self.gConfigMock.getOptionsDict.return_value = {'OK':True, 'Value':{'plat1': 'OS1, OS2,  OS3',
-                                                                        'plat2': 'plat2, OS4, OS5',
-                                                                        'plat3': 'plat1, OS1, OS4'}}
+    self.gConfigMock.getOptionsDict.return_value = {'OK':True, 'Value':{'plat1': 'xOS1, xOS2,  xOS3',
+                                                                        'plat2': 'sys2, xOS4, xOS5',
+                                                                        'plat3': 'sys1, xOS1, xOS4'}}
     res = getCompatiblePlatforms( 'plat' )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value'], ['plat'] )
 
-    res = getCompatiblePlatforms( 'OS1' )
+    res = getCompatiblePlatforms( 'plat1' )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], ['OS1', 'plat1', 'OS2', 'OS3', 'plat3', 'OS4'] )
+    self.assertEqual( res['Value'], ['plat1', 'xOS1', 'xOS2', 'xOS3'] )
 
 
 
