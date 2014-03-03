@@ -1,10 +1,13 @@
 
 import types
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import *
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, RIGHT_RESCHEDULE
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_CHANGE_STATUS
+
+__RCSID__ = "$Id"
 
 class JobState( object ):
 
@@ -15,9 +18,9 @@ class JobState( object ):
       self.reset()
 
     def reset( self ):
-      self.job = False
-      self.log = False
-      self.tq = False
+      self.job = None
+      self.log = None
+      self.tq = None
 
   __db = DBHold()
 
@@ -28,8 +31,8 @@ class JobState( object ):
     def __init__( self, functor ):
       self.__functor = functor
 
-    def __get__( self, obj, type = None ):
-      return self.__class__( self.__functor.__get__( obj, type ) )
+    def __get__( self, obj, oType = None ):
+      return self.__class__( self.__functor.__get__( obj, oType ) )
 
     def __call__( self, *args, **kwargs ):
       funcSelf = self.__functor.__self__
@@ -182,6 +185,11 @@ class JobState( object ):
 
     for k,v in  data[ 'optp' ]:
       result = self.__retryFunction( 5, jobDB.setJobOptParameter, ( self.__jid, k, v ) )
+      if not result[ 'OK' ]:
+        return result
+
+    if 'inputData' in cache:
+      result = self.__retryFunction( 5, jobDB.setInputData, ( self.__jid, cache[ 'inputData' ] ) )
       if not result[ 'OK' ]:
         return result
 
@@ -442,7 +450,7 @@ class JobState( object ):
       if not result[ 'OK' ]:
         gLogger.error( "Cannot reschedule in JobDB job %s: %s" % ( jid, result[ 'Message' ] ) )
         continue
-      JobState.__db.log.addLoggingRecord( jid, "Received", "", "", source = source )
+      JobState.__db.log.addLoggingRecord( jid, "Received", "", "", source = "JobState" )
     return S_OK()
 
 
@@ -478,13 +486,22 @@ class JobState( object ):
   def getInputData( self ):
     return JobState.__db.job.getInputData( self.__jid )
 
-  right_insertIntoTQ = RIGHT_CHANGE_STATUS
+  right_setInputData = RIGHT_GET_INFO
   @RemoteMethod
-  def insertIntoTQ( self ):
-    result = self.getManifest()
+  def set_InputData( self, lfnData ):
+    result = self.checkInputDataStructure( lfnData )
     if not result[ 'OK' ]:
       return result
-    manifest = result[ 'Value' ]
+    return self.__db.job.setInputData( self.__jid, lfnData )
+
+  right_insertIntoTQ = RIGHT_CHANGE_STATUS
+  @RemoteMethod
+  def insertIntoTQ( self, manifest = None ):
+    if not manifest:
+      result = self.getManifest()
+      if not result[ 'OK' ]:
+        return result
+      manifest = result[ 'Value' ]
 
     reqSection = "JobRequirements"
 
@@ -514,7 +531,7 @@ class JobState( object ):
       result = JobState.__db.tq.deleteJob( self.__jid )
       if result['OK']:
         if result['Value']:
-          self.log.info( "Job %s removed from the TQ" % self.__jid )
+          gLogger.info( "Job %s removed from the TQ" % self.__jid )
       return S_ERROR( "Cannot insert in task queue: %s" % errMsg )
     return S_OK()
 

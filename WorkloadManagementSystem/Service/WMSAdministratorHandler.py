@@ -1,6 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
 """
 This is a DIRAC WMS administrator interface.
 It exposes the following methods:
@@ -16,8 +13,7 @@ Access to the pilot data:
 
 __RCSID__ = "$Id$"
 
-import os, sys, string, uu, shutil
-from types import *
+from types import DictType, ListType, IntType, LongType, StringTypes, StringType, FloatType
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
@@ -25,12 +21,11 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getPilotOutput
+from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-
-import threading
 
 # This is a global instance of the database classes
 jobDB = False
@@ -467,8 +462,7 @@ class WMSAdministratorHandler(RequestHandler):
     countryList = []
     for site in siteList:
       if site.find('.') != -1:
-        grid,sname,country = site.split('.')
-        country = country.lower()
+        country = site.split('.')[2].lower()
         if country not in countryList:
           countryList.append(country)
     countryList.sort()
