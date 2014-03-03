@@ -30,6 +30,15 @@ NEW: dirac-rms-reset-request command
 *SMS
 FIX: few minor fixes to avoid pylint warnings
 
+[v6r10p15]
+
+*DMS
+FIX: FTSAgent - added missing monitoring activity
+FIX: FileCatalog - do not check directory permissions when creating / directory
+
+*Resources
+FIX: SSHTorqueComputingElement - removed obsoleted stuff
+
 [v6r10p14]
 
 *SMS

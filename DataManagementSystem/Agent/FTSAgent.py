@@ -333,6 +333,10 @@ class FTSAgent( AgentModule ):
     gMonitor.registerActivity( "FTSJobsMonFail", "FTSJobs attempts failed",
                                "FTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
+    gMonitor.registerActivity( "FTSMonitorFail", "Failed FTS monitor executions",
+                               "FTSAgent", "Execution/mins", gMonitor.OP_SUM )
+
+
     pollingTime = self.am_getOption( "PollingTime", 60 )
     for status in list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FAILEDSTATES + FTSJob.FINALSTATES ):
       gMonitor.registerActivity( "FTSJobs%s" % status, "FTSJobs %s" % status ,
