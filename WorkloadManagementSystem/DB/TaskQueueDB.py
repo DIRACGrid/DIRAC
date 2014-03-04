@@ -146,13 +146,19 @@ class TaskQueueDB( DB ):
 
   def __strDict( self, dDict ):
     lines = []
+    keyLength = 0
+    for key in dDict:
+      if len( key ) > keyLength:
+        keyLength = len( key )
     for key in sorted( dDict ):
-      lines.append( " %s" % key )
+      line = "%s: " % key
+      line = line.rjust( keyLength + 2 )
       value = dDict[ key ]
       if type( value ) in ( types.ListType, types.TupleType ):
-        lines.extend( [ "   %s" % v for v in value ] )
+        line += ','.join( list( value ) )
       else:
-        lines.append( "   %s" % str( value ) )
+        line += str( value )
+      lines.append( line )
     return "{\n%s\n}" % "\n".join( lines )
 
   def fitCPUTimeToSegments( self, cpuTime ):
