@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
@@ -370,7 +367,7 @@ class TaskQueueDB( DB ):
     """
     try:
       long( jobId )
-    except:
+    except ValueError:
       return S_ERROR( "JobId is not a number!" )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
@@ -770,8 +767,7 @@ class TaskQueueDB( DB ):
     retVal = self._update( "DELETE FROM `tq_Jobs` WHERE JobId = %s" % jobId, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete job from task queue %s: %s" % ( jobId, retVal[ 'Message' ] ) )
-
-    if retVal[ 'Value' ] == 0:
+    if retVal['Value'] == 0:
       #No job deleted
       return S_OK( False )
     #Always return S_OK() because job has already been taken out from the TQ
