@@ -30,7 +30,7 @@ class TransformationPlugin( object ):
     if dataManager is None:
       self.dm = DataManager()
     else:
-      self.dm = DataManager
+      self.dm = dataManager
 
     self.fc = FileCatalog()
 
