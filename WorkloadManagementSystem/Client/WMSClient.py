@@ -2,10 +2,11 @@
     methods necessary to communicate with the Workload Management System
 """
 
+from DIRAC                                     import S_OK, S_ERROR, gLogger
+
 from DIRAC.Core.DISET.RPCClient                import RPCClient
 from DIRAC.Core.DISET.TransferClient           import TransferClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC                                     import S_OK, S_ERROR
 from DIRAC.Core.Utilities                      import File
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 
@@ -38,6 +39,8 @@ class WMSClient( object ):
     self.sandboxClient = SandboxStoreClient( rpcClient = sbRPCClient,
                                              transferClient = sbTransferClient,
                                              useCertificates = useCertificates )
+
+    self.jobManagerSafe = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
 
 ###############################################################################
 
@@ -80,12 +83,12 @@ class WMSClient( object ):
     for isFile in realFiles:
       if not os.path.exists( isFile ):
         badFiles.append( isFile )
-        print "inputSandbox file/directory " + isFile + " not found"
+        gLogger.warn( "inputSandbox file/directory " + isFile + " not found. Keep looking for the others" )
         continue
       okFiles.append( isFile )
 
-    # print "Total size of the inputSandbox: "+str(totalSize)
     totalSize = File.getGlobbedTotalSize( okFiles )
+    gLogger.verbose( "Total size of the inputSandbox: " + str( totalSize ) )
     if badFiles:
       result = S_ERROR( 'Input Sandbox is not valid' )
       result['BadFile'] = badFiles
@@ -142,9 +145,8 @@ class WMSClient( object ):
 
     # Submit the job now and get the new job ID
     result = self.jobManager.submitJob( classAdJob.asJDL() )
-#     if 'requireProxyUpload' in result['Value'] and result['Value']['requireProxyUpload']:
-#       # TODO: We should notify the user to upload a proxy with proxy-upload
-#       pass
+    if 'requireProxyUpload' in result['Value'] and result['Value']['requireProxyUpload']:
+      gLogger.warn( "Missing uploaded proxy" )
 
     return result
 
@@ -152,30 +154,22 @@ class WMSClient( object ):
     """ Kill running job.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
-    result = jobManager.killJob( jobID )
-    return result
+    return self.jobManagerSafe.killJob( jobID )
 
   def deleteJob( self, jobID ):
     """ Delete job(s) from the WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
-    result = jobManager.deleteJob( jobID )
-    return result
+    return self.jobManagerSafe.deleteJob( jobID )
 
   def rescheduleJob( self, jobID ):
     """ Reschedule job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
-    result = jobManager.rescheduleJob( jobID )
-    return result
+    return self.jobManagerSafe.rescheduleJob( jobID )
 
   def resetJob( self, jobID ):
     """ Reset job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
-    result = jobManager.resetJob( jobID )
-    return result
+    return self.jobManagerSafe.resetJob( jobID )
