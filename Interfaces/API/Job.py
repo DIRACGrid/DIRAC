@@ -23,7 +23,7 @@
 
    Note that several executables can be provided and wil be executed sequentially.
 """
-
+__RCSID__ = "$Id$"
 import re, os, types, urllib
 
 from DIRAC                                                    import S_OK, S_ERROR, gLogger
@@ -38,6 +38,7 @@ from DIRAC.Core.Utilities.Subprocess                          import shellCall
 from DIRAC.Core.Utilities.List                                import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers                 import Resources
 from DIRAC.Interfaces.API.Dirac                               import Dirac
 from DIRAC.Workflow.Utilities.Utils                           import getStepDefinition, addStepToWorkflow
 
@@ -182,8 +183,8 @@ class Job( API ):
        >>> job=Job()
        >>> job.setName("myJobName")
 
-       @param jobName: Name of job
-       @type jobName: string
+       :param jobName: Name of job
+       :type jobName: string
     """
     kwargs = {'jobname':jobName}
     if not type( jobName ) == type( ' ' ):
@@ -214,8 +215,8 @@ class Job( API ):
        >>> job = Job()
        >>> job.setInputSandbox(['DaVinci.opts'])
 
-       @param files: Input sandbox files, can specify full path
-       @type files: Single string or list of strings ['','']
+       :param files: Input sandbox files, can specify full path
+       :type files: Single string or list of strings ['','']
     """
     if type( files ) == list and len( files ):
       resolvedFiles = self._resolveInputSandbox( files )
@@ -247,8 +248,8 @@ class Job( API ):
        >>> job = Job()
        >>> job.setParametricInputSandbox(['LFN:/Some_file','LFN:/Some_other_file'])
 
-       @param files: Logical File Names
-       @type files: Single LFN string or list of LFNs
+       :param files: Logical File Names
+       :type files: Single LFN string or list of LFNs
     """
     kwargs = {'files':files}
     if type( files ) == list and len( files ):
@@ -282,8 +283,8 @@ class Job( API ):
        >>> job = Job()
        >>> job.setOutputSandbox(['DaVinci_v19r12.log','DVNTuples.root'])
 
-       @param files: Output sandbox files
-       @type files: Single string or list of strings ['','']
+       :param files: Output sandbox files
+       :type files: Single string or list of strings ['','']
 
     """
     if type( files ) == list and len( files ):
@@ -310,13 +311,13 @@ class Job( API ):
        >>> job = Job()
        >>> job.setInputData(['/lhcb/production/DC04/v2/DST/00000742_00003493_10.dst'])
 
-       @param lfns: Logical File Names
-       @type lfns: Single LFN string or list of LFNs
+       :param lfns: Logical File Names
+       :type lfns: Single LFN string or list of LFNs
     """
     if type( lfns ) == list and len( lfns ):
       for i in xrange( len( lfns ) ):
         lfns[i] = lfns[i].replace( 'LFN:', '' )
-      inputData = map( lambda x: 'LFN:' + x, lfns )
+      inputData = ['LFN:' + x for x in lfns ]
       inputDataStr = ';'.join( inputData )
       description = 'List of input data specified by LFNs'
       self._addParameter( self.workflow, 'InputData', 'JDL', inputDataStr, description )
@@ -340,8 +341,8 @@ class Job( API ):
        >>> job = Job()
        >>> job.setParametricInputData(['/lhcb/production/DC04/v2/DST/00000742_00003493_10.dst'])
 
-       @param lfns: Logical File Names
-       @type lfns: Single LFN string or list of LFNs
+       :param lfns: Logical File Names
+       :type lfns: Single LFN string or list of LFNs
     """
     if type( lfns ) == list and len( lfns ):
       for i in xrange( len( lfns ) ):
@@ -366,8 +367,8 @@ class Job( API ):
        Define a generic parametric job with this function. Should not be used when
        the ParametricInputData of ParametricInputSandbox are used.
 
-       @param inputlist: Input list of parameters to build the parametric job
-       @type inputlist: list
+       :param inputlist: Input list of parameters to build the parametric job
+       :type inputlist: list
 
     """
     kwargs = {'inputlist':inputlist}
@@ -438,13 +439,13 @@ class Job( API ):
        >>> job = Job()
        >>> job.setOutputData(['DVNtuple.root'])
 
-       @param lfns: Output data file or files
-       @type lfns: Single string or list of strings ['','']
-       @param outputSE: Optional parameter to specify the Storage Element
-       @param outputPath: Optional parameter to specify part of the path in the storage (see above)
+       :param lfns: Output data file or files
+       :type lfns: Single string or list of strings ['','']
+       :param outputSE: Optional parameter to specify the Storage Element
+       :param outputPath: Optional parameter to specify part of the path in the storage (see above)
        Element to store data or files, e.g. CERN-tape
-       @type outputSE: string or list
-       @type outputPath: string
+       :type outputSE: string or list
+       :type outputPath: string
     """
     if outputSE == None:
       outputSE = []
@@ -482,17 +483,23 @@ class Job( API ):
 
   #############################################################################
   def setPlatform( self, platform ):
-    """Developer function.
-
-       Choose the target Operating System, e.g. Linux_x86_64_glibc-2.5
+    """Developer function: sets the target platform, e.g. Linux_x86_64_glibc-2.5.
+       This platform is in the form of what it is returned by the dirac-platform script
+       (or dirac-architecture if your extension provides it)
     """
-    #should add protection here for list of supported platforms
     kwargs = {'platform':platform}
+
     if not type( platform ) == type( " " ):
-      return self._reportError( 'Expected string for platform', **kwargs )
+      return self._reportError( "Expected string for platform", **kwargs )
 
     if not platform.lower() == 'any':
-      self._addParameter( self.workflow, 'Platform', 'JDL', platform, 'Platform ( Operating System )' )
+      availablePlatforms = Resources.getDIRACPlatforms()
+      if not availablePlatforms['OK']:
+        return self._reportError( "Can't check for platform", **kwargs )
+      if platform in availablePlatforms['Value']:
+        self._addParameter( self.workflow, 'Platform', 'JDL', platform, 'Platform ( Operating System )' )
+      else:
+        return self._reportError( "Invalid platform", **kwargs )
 
     return S_OK()
 
@@ -506,10 +513,10 @@ class Job( API ):
     #should add protection here for list of supported platforms
     kwargs = {'backend':backend}
     if not type( backend ) == type( " " ):
-      return self._reportError( 'Expected string for platform', **kwargs )
+      return self._reportError( 'Expected string for SubmitPools', **kwargs )
 
     if not backend.lower() == 'any':
-      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Platform ( Operating System )' )
+      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'SubmitPools' )
 
     return S_OK()
 
@@ -526,8 +533,8 @@ class Job( API ):
        >>> job=Job()
        >>> job.setSystemConfig("slc4_ia32_gcc34")
 
-       @param config: architecture, CMTCONFIG value
-       @type config: string
+       :param config: architecture, CMTCONFIG value
+       :type config: string
     """
     kwargs = {'config':config}
     if not type( config ) == type( " " ):
@@ -549,8 +556,8 @@ class Job( API ):
        >>> job = Job()
        >>> job.setCPUTime(5000)
 
-       @param timeInSecs: CPU time
-       @type timeInSecs: Int
+       :param timeInSecs: CPU time
+       :type timeInSecs: Int
     """
     kwargs = {'timeInSecs':timeInSecs}
     if not type( timeInSecs ) == int:
@@ -577,8 +584,8 @@ class Job( API ):
        >>> job = Job()
        >>> job.setDestination('LCG.CERN.ch')
 
-       @param destination: site string
-       @type destination: string or list
+       :param destination: site string
+       :type destination: string or list
     """
     kwargs = {'destination':destination}
     if type( destination ) == type( "  " ):
@@ -647,8 +654,8 @@ class Job( API ):
        >>> job = Job()
        >>> job.setBannedSites(['LCG.GRIDKA.de','LCG.CNAF.it'])
 
-       @param sites: single site string or list
-       @type sites: string or list
+       :param sites: single site string or list
+       :type sites: string or list
     """
     if type( sites ) == list and len( sites ):
       bannedSites = ';'.join( sites )
@@ -724,8 +731,8 @@ class Job( API ):
        >>> job=Job()
        >>> job.setSoftwareTags(['VO-lhcb-Brunel-v30r17','VO-lhcb-Boole-v12r10','VO-lhcb-Gauss-v25r12'])
 
-       @param tags: software tags
-       @type tags: string or list
+       :param tags: software tags
+       :type tags: string or list
     """
     if type( tags ) == type( " " ):
       self._addParameter( self.workflow, 'SoftwareTag', 'JDL', tags, 'VO software tag' )
@@ -749,8 +756,8 @@ class Job( API ):
        >>> job = Job()
        >>> job.setJobGroup('Bs2JPsiPhi')
 
-       @param jobGroup: JobGroup name
-       @type jobGroup: string
+       :param jobGroup: JobGroup name
+       :type jobGroup: string
     """
     if not type( jobGroup ) == type( " " ):
       return self._reportError( 'Expected string for job group name', **{'jobGroup':jobGroup} )
@@ -772,8 +779,8 @@ class Job( API ):
        >>> job = Job()
        >>> job.setLogLevel('debug')
 
-       @param logLevel: Logging level
-       @type logLevel: string
+       :param logLevel: Logging level
+       :type logLevel: string
     """
     kwargs = {'logLevel':logLevel}
     if type( logLevel ) in types.StringTypes:
@@ -814,8 +821,8 @@ class Job( API ):
        >>> job = Job()
        >>> job.setExecutionEnv({'<MYVARIABLE>':'<VALUE>'})
 
-       @param environmentDict: Environment variables
-       @type environmentDict: dictionary
+       :param environmentDict: Environment variables
+       :type environmentDict: dictionary
     """
     kwargs = {'environmentDict':environmentDict}
     if not type( environmentDict ) == type( {} ):
