@@ -104,20 +104,6 @@ class WMSClient( object ):
 
     return S_OK()
 
-  def __assignSandboxesToJob( self, jobID, classAdJob ):
-    sandboxClient = SandboxStoreClient()
-    inputSandboxes = self.__getInputSandboxEntries( classAdJob )
-    sbToAssign = []
-    for isb in inputSandboxes:
-      if isb.find( "SB:" ) == 0:
-        sbToAssign.append( isb )
-    if sbToAssign:
-      assignList = [ ( isb, 'Input' ) for isb in sbToAssign ]
-      result = sandboxClient.assignSandboxesToJob( jobID, assignList )
-      if not result[ 'OK' ]:
-        return result
-    return S_OK()
-
   def submitJob( self, jdl ):
     """ Submit one job specified by its JDL to WMS
     """
@@ -145,10 +131,11 @@ class WMSClient( object ):
 
     # Submit the job now and get the new job ID
     result = self.jobManager.submitJob( classAdJob.asJDL() )
-    if 'requireProxyUpload' in result['Value'] and result['Value']['requireProxyUpload']:
-      gLogger.warn( "Missing uploaded proxy" )
+    if 'requireProxyUpload' in result and result['requireProxyUpload']:
+      gLogger.warn( "Need to upload the proxy" )
 
     return result
+
 
   def killJob( self, jobID ):
     """ Kill running job.
