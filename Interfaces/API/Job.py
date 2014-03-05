@@ -11,7 +11,6 @@
 
      j = Job()
      j.setCPUTime(500)
-     j.setSystemConfig('slc4_ia32_gcc34')
      j.setExecutable('/bin/echo hello')
      j.setExecutable('yourPythonScript.py')
      j.setExecutable('/bin/echo hello again')
@@ -81,14 +80,7 @@ class Job( API ):
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
     self.addToInputData = []
-    self.systemConfig = 'ANY'
-    self.reqParams = {'MaxCPUTime':   'other.NAME>=VALUE',
-                      'MinCPUTime':   'other.NAME<=VALUE',
-                      'Site':         'other.NAME=="VALUE"',
-                      'Platform':     'other.NAME=="VALUE"',
-                      #'BannedSites':  '!Member(other.Site,BannedSites)', #doesn't work unfortunately
-                      'BannedSites':  'other.Site!="VALUE"',
-                      'SystemConfig': 'Member("VALUE",other.CompatiblePlatforms)'}
+
     ##Add member to handle Parametric jobs
     self.parametric = {}
     self.script = script
@@ -521,31 +513,6 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def setSystemConfig( self, config ):
-    """Helper function.
-
-       Choose system configuration (e.g. where user DLLs have been compiled). Default ANY in place
-       for user jobs.  Available system configurations can be browsed
-       via dirac.checkSupportedPlatforms() method.
-
-       Example usage:
-
-       >>> job=Job()
-       >>> job.setSystemConfig("slc4_ia32_gcc34")
-
-       :param config: architecture, CMTCONFIG value
-       :type config: string
-    """
-    kwargs = {'config':config}
-    if not type( config ) == type( " " ):
-      return self._reportError( 'Expected string for system configuration', **kwargs )
-
-    description = 'User specified system configuration for job'
-    self._addParameter( self.workflow, 'SystemConfig', 'JDLReqt', config, description )
-    self.systemConfig = config
-    return S_OK()
-
-  #############################################################################
   def setCPUTime( self, timeInSecs ):
     """Helper function.
 
@@ -568,7 +535,7 @@ class Job( API ):
           return self._reportError( 'Expected numerical string or int for CPU time in seconds', **kwargs )
 
     description = 'CPU time in secs'
-    self._addParameter( self.workflow, 'MaxCPUTime', 'JDLReqt', timeInSecs, description )
+    self._addParameter( self.workflow, 'MaxCPUTime', 'JDL', timeInSecs, description )
     return S_OK()
 
   #############################################################################
@@ -594,7 +561,7 @@ class Job( API ):
         if not result['OK']:
           return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
       description = 'User specified destination site'
-      self._addParameter( self.workflow, 'Site', 'JDLReqt', destination, description )
+      self._addParameter( self.workflow, 'Site', 'JDL', destination, description )
     elif type( destination ) == list:
       for site in destination:
         if not re.search( '^DIRAC.', site ) and not site.lower() == 'any':
@@ -603,7 +570,7 @@ class Job( API ):
             return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
       destSites = ';'.join( destination )
       description = 'List of sites selected by user'
-      self._addParameter( self.workflow, 'Site', 'JDLReqt', destSites, description )
+      self._addParameter( self.workflow, 'Site', 'JDL', destSites, description )
     else:
       return self._reportError( '%s is not a valid destination site, expected string' % ( destination ), **kwargs )
     return S_OK()
@@ -660,10 +627,10 @@ class Job( API ):
     if type( sites ) == list and len( sites ):
       bannedSites = ';'.join( sites )
       description = 'List of sites excluded by user'
-      self._addParameter( self.workflow, 'BannedSites', 'JDLReqt', bannedSites, description )
+      self._addParameter( self.workflow, 'BannedSites', 'JDL', bannedSites, description )
     elif type( sites ) == type( " " ):
       description = 'Site excluded by user'
-      self._addParameter( self.workflow, 'BannedSites', 'JDLReqt', sites, description )
+      self._addParameter( self.workflow, 'BannedSites', 'JDL', sites, description )
     else:
       kwargs = {'sites':sites}
       return self._reportError( 'Expected site string or list of sites', **kwargs )
@@ -894,7 +861,6 @@ class Job( API ):
     self._addParameter( self.workflow, 'JobGroup', 'JDL', self.group, 'Name of the JobGroup' )
     self._addParameter( self.workflow, 'JobName', 'JDL', self.name, 'Name of Job' )
     #self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
-    self._addParameter( self.workflow, 'SystemConfig', 'JDLReqt', self.systemConfig, 'System configuration for job' )
     self._addParameter( self.workflow, 'Site', 'JDL', self.site, 'Site Requirement' )
     self._addParameter( self.workflow, 'Origin', 'JDL', self.origin, 'Origin of client' )
     self._addParameter( self.workflow, 'StdOutput', 'JDL', self.stdout, 'Standard output file' )
