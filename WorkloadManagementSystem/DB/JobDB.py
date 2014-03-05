@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ DIRAC JobDB class is a front-end to the main WMS database containing
     job definitions and status information. It is used in most of the WMS
     components
@@ -132,7 +128,8 @@ class JobDB( DB ):
       return res
 
     self.jobAttributeNames = []
-    for field, fieldtype, null, key, default, extra in res['Value']:
+    for row in res['Value']:
+      field = row[0]
       self.jobAttributeNames.append( field )
 
     self.nJobAttributeNames = len( self.jobAttributeNames )
@@ -450,7 +447,7 @@ class JobDB( DB ):
     else:
       return S_ERROR( 'Failed to access database' )
 
- #############################################################################
+#############################################################################
   def getJobOptParameters( self, jobID, paramList = None ):
     """ Get optimizer parameters for the given job. If the list of parameter names is
         empty, get all the parameters then
@@ -511,7 +508,6 @@ class JobDB( DB ):
     if not cpu:
       cpu = 0.0
 
-    wctime = 0.0
     req = "SELECT SUM(Value) from JobParameters WHERE Name='WallClockTime(s)' and JobID in (%s)" % jobString
     result = self._query( req )
     if not result['OK']:
@@ -576,7 +572,7 @@ class JobDB( DB ):
     result = self.setJobOptParameter( jobID, 'OptimizerChain', optString )
     return result
 
- #############################################################################
+#############################################################################
   def setNextOptimizer( self, jobID, currentOptimizer ):
     """ Set the job status to be processed by the next optimizer in the
         chain
@@ -767,7 +763,7 @@ class JobDB( DB ):
     result = self._update( req )
     return result
 
- #############################################################################
+#############################################################################
   def setStartExecTime( self, jobID, startDate = None ):
     """ Set StartExecTime time stamp
     """
@@ -789,30 +785,6 @@ class JobDB( DB ):
     return result
 
 #############################################################################
-  def setJobParameter_old( self, jobID, key, value ):
-    """ Set a parameter specified by name,value pair for the job JobID
-    """
-    ret = self._escapeString( jobID )
-    if not ret['OK']:
-      return ret
-    e_jobID = ret['Value']
-
-    ret = self._escapeString( key )
-    if not ret['OK']:
-      return ret
-    e_key = ret['Value']
-
-    cmd = 'DELETE FROM JobParameters WHERE JobID=%s AND Name=%s' % ( e_jobID, e_key )
-    if not self._update( cmd )['OK']:
-      result = S_ERROR( 'JobDB.setJobParameter: operation failed.' )
-
-    result = self.insertFields( 'JobParameters', ['JobID', 'Name', 'Value'], [jobID, key, value] )
-    if not result['OK']:
-      result = S_ERROR( 'JobDB.setJobParameter: operation failed.' )
-
-    return result
-
-#############################################################################
   def setJobParameter( self, jobID, key, value ):
     """ Set a parameter specified by name,value pair for the job JobID
     """
@@ -830,45 +802,6 @@ class JobDB( DB ):
     result = self._update( cmd )
     if not result['OK']:
       result = S_ERROR( 'JobDB.setJobParameter: operation failed.' )
-
-    return result
-
-#############################################################################
-  def setJobParameters_old( self, jobID, parameters ):
-    """ Set parameters specified by a list of name/value pairs for the job JobID
-    """
-
-    ret = self._escapeString( jobID )
-    if not ret['OK']:
-      return ret
-    jobID = ret['Value']
-
-    if not parameters:
-      return S_OK()
-
-    deleteCondList = []
-    insertValueList = []
-    for name, value in parameters:
-      ret = self._escapeString( name )
-      if not ret['OK']:
-        return ret
-      name = ret['Value']
-      ret = self._escapeString( value )
-      if not ret['OK']:
-        return ret
-      value = ret['Value']
-      deleteCondList.append( '(JobID=%s AND Name=%s)' % ( jobID, name ) )
-      insertValueList.append( '(%s,%s,%s)' % ( jobID, name, value ) )
-
-    cmd = 'DELETE FROM JobParameters WHERE %s ' % ' OR '.join( deleteCondList )
-    if not self._update( cmd )['OK']:
-      result = S_ERROR( 'JobDB.setJobParameters: operation failed.' )
-
-    cmd = 'INSERT INTO JobParameters (JobID,Name,Value) VALUES %s' % ', '.join( insertValueList )
-
-    result = self._update( cmd )
-    if not result['OK']:
-      return S_ERROR( 'JobDB.setJobParameters: operation failed.' )
 
     return result
 
@@ -899,7 +832,7 @@ class JobDB( DB ):
 
     return result
 
- #############################################################################
+#############################################################################
   def setJobOptParameter( self, jobID, name, value ):
     """ Set an optimzer parameter specified by name,value pair for the job JobID
     """
@@ -1312,22 +1245,22 @@ class JobDB( DB ):
           classAdJob.insertAttributeString( param, val )
 
     priority = classAdJob.getAttributeInt( 'Priority' )
-    systemConfig = classAdJob.getAttributeString( 'Platform' )
+    platform = classAdJob.getAttributeString( 'Platform' )
     # Legacy check to suite the LHCb logic
-    if not systemConfig:
-      systemConfig = classAdJob.getAttributeString( 'SystemConfig' )
+    if not platform:
+      platform = classAdJob.getAttributeString( 'SystemConfig' )
     cpuTime = classAdJob.getAttributeInt( 'CPUTime' )
     if cpuTime == 0:
       # Just in case check for MaxCPUTime for backward compatibility
       cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
       if cpuTime > 0:
         classAdJob.insertAttributeInt( 'CPUTime', cpuTime )
-
     classAdReq.insertAttributeInt( 'UserPriority', priority )
     classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
 
-    if systemConfig and systemConfig.lower() != 'any':
-      result = getDIRACPlatform( systemConfig )
+    if platform and platform.lower() != 'any':
+      result = getDIRACPlatform( platform )
+      print result
       if result['OK'] and result['Value']:
         classAdReq.insertAttributeVectorString( 'Platforms', result['Value'] )
       else:
@@ -1481,7 +1414,7 @@ class JobDB( DB ):
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter > self.maxRescheduling:
       self.log.warn( 'Maximum number of reschedulings is reached', 'Job %s' % jobID )
-      res = self.setJobStatus( jobID, status = 'Failed', minor = 'Maximum of reschedulings reached' )
+      self.setJobStatus( jobID, status = 'Failed', minor = 'Maximum of reschedulings reached' )
       return S_ERROR( 'Maximum number of reschedulings is reached: %s' % self.maxRescheduling )
 
     jobAttrNames = []
@@ -2148,8 +2081,6 @@ class JobDB( DB ):
         ok = False
         self.log.warn( result['Message'] )
 
-    #print "AT >>>> insertion time ",time.time()-start
-
     if ok:
       return S_OK()
     else:
@@ -2207,7 +2138,7 @@ class JobDB( DB ):
     result = self._update( req )
     return result
 
- #####################################################################################
+#####################################################################################
   def getJobCommand( self, jobID, status = 'Received' ):
     """ Get a command to be passed to the job together with the
         next heart beat
