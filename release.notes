@@ -19,7 +19,7 @@ FIX: dirac-install - update creation of bashrc/cshrc to allow multiplatform inst
 NEW: InstallTools - check inheritance of modules to be loaded to determine their types;
      executors can now be handled by dirac-setup-site
 FIX: LocalConfiguration - allow '-' character in long script options, e.g. "--long-script-option"     
-CHANGE: Removed "import *" from DIRAC.__init__
+CHANGE: Removed wild card imports from DIRAC.__init__
 NEW: dirac-install allows projects to define mirrors from where to download other projects 
      (DIRAC mirrors for instance)
 FIX: Removed deprecation warning when importing MySQLdb package
@@ -1228,7 +1228,7 @@ FIX: Shifter - pass filePath argument when downloading proxy
 *DMS
 CHANGE: StrategyHandler - move out SourceSE checking to TransferAgent
 CHANGE: ReplicaManager, InputDataAgent - get active replicas
-FIX: StorageElement, SRM2Storage - support for '*Access' statuses, checking results
+FIX: StorageElement, SRM2Storage - support for 'xxxAccess' statuses, checking results
      of return structures
      
 *RSS
