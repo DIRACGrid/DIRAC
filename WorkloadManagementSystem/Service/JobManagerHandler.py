@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ JobManagerHandler is the implementation of the JobManager service
     in the DISET framework
 
@@ -16,10 +12,9 @@
 
 __RCSID__ = "$Id$"
 
-from types import *
+from types import StringType, IntType, ListType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB

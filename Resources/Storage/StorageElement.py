@@ -693,7 +693,7 @@ class StorageElement:
 
       if ":" in lfn:
         errStr = "StorageElement.__generatePfnDict: received a pfn as input. It should not happen anymore, please check your code"
-        self.log.warn( errStr, lfn )
+        self.log.verbose( errStr, lfn )
       res = pfnparse( lfn )  # pfnparse can take an lfn as input, it will just fill the path and filename
       if not res['OK']:
         errStr = "StorageElement.__generatePfnDict: Failed to parse supplied LFN."

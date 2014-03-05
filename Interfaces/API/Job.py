@@ -11,7 +11,6 @@
 
      j = Job()
      j.setCPUTime(500)
-     j.setSystemConfig('slc4_ia32_gcc34')
      j.setExecutable('/bin/echo hello')
      j.setExecutable('yourPythonScript.py')
      j.setExecutable('/bin/echo hello again')
@@ -38,6 +37,7 @@ from DIRAC.Core.Utilities.Subprocess                          import shellCall
 from DIRAC.Core.Utilities.List                                import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers                 import Resources
 from DIRAC.Interfaces.API.Dirac                               import Dirac
 from DIRAC.Workflow.Utilities.Utils                           import getStepDefinition, addStepToWorkflow
 
@@ -80,14 +80,7 @@ class Job( API ):
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
     self.addToInputData = []
-    self.systemConfig = 'ANY'
-    self.reqParams = {'MaxCPUTime':   'other.NAME>=VALUE',
-                      'MinCPUTime':   'other.NAME<=VALUE',
-                      'Site':         'other.NAME=="VALUE"',
-                      'Platform':     'other.NAME=="VALUE"',
-                      #'BannedSites':  '!Member(other.Site,BannedSites)', #doesn't work unfortunately
-                      'BannedSites':  'other.Site!="VALUE"',
-                      'SystemConfig': 'Member("VALUE",other.CompatiblePlatforms)'}
+
     ##Add member to handle Parametric jobs
     self.parametric = {}
     self.script = script
@@ -482,17 +475,23 @@ class Job( API ):
 
   #############################################################################
   def setPlatform( self, platform ):
-    """Developer function.
-
-       Choose the target Operating System, e.g. Linux_x86_64_glibc-2.5
+    """Developer function: sets the target platform, e.g. Linux_x86_64_glibc-2.5.
+       This platform is in the form of what it is returned by the dirac-platform script
+       (or dirac-architecture if your extension provides it)
     """
-    #should add protection here for list of supported platforms
     kwargs = {'platform':platform}
+
     if not type( platform ) == type( " " ):
-      return self._reportError( 'Expected string for platform', **kwargs )
+      return self._reportError( "Expected string for platform", **kwargs )
 
     if not platform.lower() == 'any':
-      self._addParameter( self.workflow, 'Platform', 'JDL', platform, 'Platform ( Operating System )' )
+      availablePlatforms = Resources.getDIRACPlatforms()
+      if not availablePlatforms['OK']:
+        return self._reportError( "Can't check for platform", **kwargs )
+      if platform in availablePlatforms['Value']:
+        self._addParameter( self.workflow, 'Platform', 'JDL', platform, 'Platform ( Operating System )' )
+      else:
+        return self._reportError( "Invalid platform", **kwargs )
 
     return S_OK()
 
@@ -506,36 +505,11 @@ class Job( API ):
     #should add protection here for list of supported platforms
     kwargs = {'backend':backend}
     if not type( backend ) == type( " " ):
-      return self._reportError( 'Expected string for platform', **kwargs )
+      return self._reportError( 'Expected string for SubmitPools', **kwargs )
 
     if not backend.lower() == 'any':
-      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Platform ( Operating System )' )
+      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'SubmitPools' )
 
-    return S_OK()
-
-  #############################################################################
-  def setSystemConfig( self, config ):
-    """Helper function.
-
-       Choose system configuration (e.g. where user DLLs have been compiled). Default ANY in place
-       for user jobs.  Available system configurations can be browsed
-       via dirac.checkSupportedPlatforms() method.
-
-       Example usage:
-
-       >>> job=Job()
-       >>> job.setSystemConfig("slc4_ia32_gcc34")
-
-       :param config: architecture, CMTCONFIG value
-       :type config: string
-    """
-    kwargs = {'config':config}
-    if not type( config ) == type( " " ):
-      return self._reportError( 'Expected string for system configuration', **kwargs )
-
-    description = 'User specified system configuration for job'
-    self._addParameter( self.workflow, 'SystemConfig', 'JDLReqt', config, description )
-    self.systemConfig = config
     return S_OK()
 
   #############################################################################
@@ -561,7 +535,7 @@ class Job( API ):
           return self._reportError( 'Expected numerical string or int for CPU time in seconds', **kwargs )
 
     description = 'CPU time in secs'
-    self._addParameter( self.workflow, 'CPUTime', 'JDLReqt', timeInSecs, description )
+    self._addParameter( self.workflow, 'CPUTime', 'JDL', timeInSecs, description )
     return S_OK()
 
   #############################################################################
@@ -587,7 +561,7 @@ class Job( API ):
         if not result['OK']:
           return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
       description = 'User specified destination site'
-      self._addParameter( self.workflow, 'Site', 'JDLReqt', destination, description )
+      self._addParameter( self.workflow, 'Site', 'JDL', destination, description )
     elif type( destination ) == list:
       for site in destination:
         if not re.search( '^DIRAC.', site ) and not site.lower() == 'any':
@@ -596,7 +570,7 @@ class Job( API ):
             return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
       destSites = ';'.join( destination )
       description = 'List of sites selected by user'
-      self._addParameter( self.workflow, 'Site', 'JDLReqt', destSites, description )
+      self._addParameter( self.workflow, 'Site', 'JDL', destSites, description )
     else:
       return self._reportError( '%s is not a valid destination site, expected string' % ( destination ), **kwargs )
     return S_OK()
@@ -653,10 +627,10 @@ class Job( API ):
     if type( sites ) == list and len( sites ):
       bannedSites = ';'.join( sites )
       description = 'List of sites excluded by user'
-      self._addParameter( self.workflow, 'BannedSites', 'JDLReqt', bannedSites, description )
+      self._addParameter( self.workflow, 'BannedSites', 'JDL', bannedSites, description )
     elif type( sites ) == type( " " ):
       description = 'Site excluded by user'
-      self._addParameter( self.workflow, 'BannedSites', 'JDLReqt', sites, description )
+      self._addParameter( self.workflow, 'BannedSites', 'JDL', sites, description )
     else:
       kwargs = {'sites':sites}
       return self._reportError( 'Expected site string or list of sites', **kwargs )
@@ -887,7 +861,6 @@ class Job( API ):
     self._addParameter( self.workflow, 'JobGroup', 'JDL', self.group, 'Name of the JobGroup' )
     self._addParameter( self.workflow, 'JobName', 'JDL', self.name, 'Name of Job' )
     #self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
-    self._addParameter( self.workflow, 'SystemConfig', 'JDLReqt', self.systemConfig, 'System configuration for job' )
     self._addParameter( self.workflow, 'Site', 'JDL', self.site, 'Site Requirement' )
     self._addParameter( self.workflow, 'Origin', 'JDL', self.origin, 'Origin of client' )
     self._addParameter( self.workflow, 'StdOutput', 'JDL', self.stdout, 'Standard output file' )
@@ -1124,13 +1097,11 @@ class Job( API ):
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
     #Add any JDL parameters to classad obeying lists with ';' rule
-    requirements = False
     for name, props in paramsDict.items():
       ptype = props['type']
       value = props['value']
       if name.lower() == 'requirements' and ptype == 'JDL':
         self.log.verbose( 'Found existing requirements: %s' % ( value ) )
-        requirements = True
 
       if re.search( '^JDL', ptype ):
         if type( value ) == list:
@@ -1144,30 +1115,6 @@ class Job( API ):
           classadJob.insertAttributeString( name, value )
         else:
           classadJob.insertAttributeVectorString( name, value.split( ';' ) )
-
-    if not requirements:
-      reqtsDict = self.reqParams
-      exprn = ''
-      plus = ''
-      for name, props in paramsDict.items():
-        ptype = paramsDict[name]['type']
-        value = paramsDict[name]['value']
-        if not ptype == 'dict':
-          if ptype == 'JDLReqt':
-            if value and not value.lower() == 'any':
-              plus = ' && '
-              if re.search( ';', value ):
-                for val in value.split( ';' ):
-                  exprn += reqtsDict[name].replace( 'NAME', name ).replace( 'VALUE', str( val ) ) + plus
-              else:
-                exprn += reqtsDict[name].replace( 'NAME', name ).replace( 'VALUE', str( value ) ) + plus
-
-      if len( plus ):
-        exprn = exprn[:-len( plus )]
-      if not exprn:
-        exprn = 'true'
-      self.log.verbose( 'Requirements: %s' % ( exprn ) )
-      #classadJob.set_expression('Requirements', exprn)
 
     self.addToInputSandbox.remove( scriptname )
     self.addToOutputSandbox.remove( self.stdout )

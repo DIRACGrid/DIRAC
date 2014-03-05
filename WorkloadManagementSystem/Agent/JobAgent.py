@@ -302,7 +302,7 @@ class JobAgent( AgentModule ):
     for i in range( len( currentTimes ) ):
       currentTimes[i] -= self.initTimes[i]
 
-    utime, stime, cutime, cstime, elapsed = currentTimes
+    utime, stime, cutime, cstime, _elapsed = currentTimes
     cpuTime = utime + stime + cutime + cstime
 
     result = self.timeLeftUtil.getTimeLeft( cpuTime )
@@ -327,7 +327,7 @@ class JobAgent( AgentModule ):
   def __getCPUTimeLeft( self ):
     """Return the TimeLeft as estimated by DIRAC using the Normalization Factor in the Local Config.
     """
-    utime, stime, cutime, cstime, elapsed = os.times()
+    utime, stime, cutime, _cstime, _elapsed = os.times()
     cpuTime = utime + stime + cutime
     self.log.info( 'Current raw CPU time consumed is %s' % cpuTime )
     timeleft = self.timeLeft - cpuTime * self.cpuFactor
@@ -510,6 +510,7 @@ class JobAgent( AgentModule ):
     if jobParams.has_key( 'SystemConfig' ):
       systemConfig = jobParams['SystemConfig']
       self.log.verbose( 'Job system configuration requirement is %s' % ( systemConfig ) )
+      # FIXME: this seems like LHCb...
       if resourceParams.has_key( 'Root' ):
         jobPython = '%s/%s/bin/python' % ( resourceParams['Root'], systemConfig )
         if os.path.exists( jobPython ):

@@ -5,7 +5,6 @@
 
 __RCSID__ = "$Id$"
 
-import re
 import types, tempfile
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -80,28 +79,31 @@ class PlottingClient:
 
     return result
 
-  def barGraph( self, data, file, *args, **kw ):
-    return self.graph( data, file, plot_type = 'BarGraph', statistics_line = True, *args, **kw )
+  def barGraph( self, data, fileName, *args, **kw ):
+    return self.graph( data, fileName, plot_type = 'BarGraph', statistics_line = True, *args, **kw )
 
-  def lineGraph( self, data, file, *args, **kw ):
-    return self.graph( data, file, plot_type = 'LineGraph', statistics_line = True, *args, **kw )
+  def lineGraph( self, data, fileName, *args, **kw ):
+    return self.graph( data, fileName, plot_type = 'LineGraph', statistics_line = True, *args, **kw )
 
-  def cumulativeGraph( self, data, file, *args, **kw ):
-    return self.graph( data, file, plot_type = 'LineGraph', cumulate_data = True, *args, **kw )
+  def curveGraph( self, data, fileName, *args, **kw ):
+    return self.graph( data, fileName, plot_type = 'CurveGraph', statistics_line = True, *args, **kw )
+  
+  def cumulativeGraph( self, data, fileName, *args, **kw ):
+    return self.graph( data, fileName, plot_type = 'LineGraph', cumulate_data = True, *args, **kw )
 
-  def pieGraph( self, data, file, *args, **kw ):
+  def pieGraph( self, data, fileName, *args, **kw ):
     prefs = {'xticks':False, 'yticks':False, 'legend_position':'right'}
-    return self.graph( data, file, prefs, plot_type = 'PieGraph', *args, **kw )
+    return self.graph( data, fileName, prefs, plot_type = 'PieGraph', *args, **kw )
 
-  def qualityGraph( self, data, file, *args, **kw ):
+  def qualityGraph( self, data, fileName, *args, **kw ):
     prefs = {'plot_axis_grid':False}
-    return self.graph( data, file, prefs, plot_type = 'QualityMapGraph', *args, **kw )
+    return self.graph( data, fileName, prefs, plot_type = 'QualityMapGraph', *args, **kw )
 
-  def textGraph( self, text, file, *args, **kw ):
+  def textGraph( self, text, fileName, *args, **kw ):
     prefs = {'text_image':text}
-    return self.graph( {}, file, prefs, *args, **kw )
+    return self.graph( {}, fileName, prefs, *args, **kw )
 
-  def histogram( self, data, file, bins, *args, **kw ):
+  def histogram( self, data, fileName, bins, *args, **kw ):
     try:
       from pylab import hist
     except:
@@ -109,4 +111,4 @@ class PlottingClient:
     values, vbins, patches = hist( data, bins )
     histo = dict( zip( vbins, values ) )
     span = ( max( data ) - min( data ) ) / float( bins ) * 0.98
-    return self.graph( histo, file, plot_type = 'BarGraph', span = span, statistics_line = True, *args, **kw )
+    return self.graph( histo, fileName, plot_type = 'BarGraph', span = span, statistics_line = True, *args, **kw )

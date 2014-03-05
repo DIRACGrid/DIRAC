@@ -128,6 +128,7 @@ NEW: DataManager to replace ReplicaManager class ( simplification, streamlining 
 
 *Interfaces
 CHANGE: Dirac - instantiate SandboxStoreClient and WMSClient when needed, not in the constructor
+CHANGE: Job - removed setSystemConfig() method
 
 *Resources
 CHANGE: StorageElement - changes to avoid usage PFNs
@@ -139,6 +140,26 @@ NEW: dirac-rms-reset-request command
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p16]
+
+*Framework
+NEW: PlottingClient - added curveGraph() function
+
+*Transformation
+FIX: TaskManagerAgentBase - add the missing Scheduled state
+
+*WMS
+FIX: TaskQueueDB - reduced number of lines in the matching parameters printout
+
+*DMS
+FIX: dirac-dms-show-se-status - exit on error in the service call, closes #1840
+
+*Interface
+FIX: API.Job - removed special interpretation of obsoleted JDLreqt type parameters
+
+*Resources
+FIX: SSHComputingElement - increased timeout in getJobStatusOnHost() ssh call, closes #1830
 
 [v6r10p15]
 

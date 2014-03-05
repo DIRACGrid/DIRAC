@@ -1672,7 +1672,7 @@ class Dirac( API ):
       return S_ERROR( 'Submission disabled by /LocalSite/DisableSubmission flag for debugging purposes' )
 
     try:
-      jobID = self._wmcClient().submitJob( jdl )
+      jobID = self._wmsClient().submitJob( jdl )
       # raise 'problem'
     except Exception, x:
       return S_ERROR( "Cannot submit job: %s" % str( x ) )
@@ -1858,7 +1858,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self._wmcClient().deleteJob( jobID )
+    result = self._wmsClient().deleteJob( jobID )
     if result['OK']:
       if self.jobRepo:
         for jobID in result['Value']:
@@ -1893,7 +1893,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self._wmcClient().rescheduleJob( jobID )
+    result = self._wmsClient().rescheduleJob( jobID )
     if result['OK']:
       if self.jobRepo:
         repoDict = {}
@@ -1928,7 +1928,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self._wmcClient().killJob( jobID )
+    result = self._wmsClient().killJob( jobID )
     if result['OK']:
       if self.jobRepo:
         for jobID in result['Value']:

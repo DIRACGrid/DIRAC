@@ -1,6 +1,8 @@
-########################################################################
-# $Id$
-########################################################################
+""" Client for the SandboxStore.
+    Will connect to the WorkloadManagement/SandboxStore service.
+"""
+
+__RCSID__ = "$Id$"
 
 import os
 import tarfile
@@ -84,14 +86,14 @@ class SandboxStoreClient( object ):
     if type( fileList ) not in ( types.TupleType, types.ListType ):
       return S_ERROR( "fileList must be a tuple!" )
 
-    for file in fileList:
-      if re.search( '^lfn:', file ) or re.search( '^LFN:', file ):
+    for sFile in fileList:
+      if re.search( '^lfn:', sFile ) or re.search( '^LFN:', sFile ):
         pass
       else:
-        if os.path.exists( file ):
-          files2Upload.append( file )
+        if os.path.exists( sFile ):
+          files2Upload.append( sFile )
         else:
-          errorFiles.append( file )
+          errorFiles.append( sFile )
 
     if errorFiles:
       return S_ERROR( "Failed to locate files: %s" % ", ".join( errorFiles ) )
@@ -103,8 +105,8 @@ class SandboxStoreClient( object ):
       return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
     tf = tarfile.open( name = tmpFilePath, mode = "w|bz2" )
-    for file in files2Upload:
-      tf.add( os.path.realpath( file ), os.path.basename( file ), recursive = True )
+    for sFile in files2Upload:
+      tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
     tf.close()
 
     if sizeLimit > 0:

@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ DIRAC JobDB class is a front-end to the main WMS database containing
     job definitions and status information. It is used in most of the WMS
     components
@@ -1625,10 +1621,6 @@ class JobDB( DB ):
           jobManifest.setOption( k, voPolicy[ k ] )
 
     jobManifest.remove( "JobRequirements" )
-    # Legacy check to suite the LHCb logic
-    #if not systemConfig:
-    #  systemConfig = classAdJob.getAttributeString( 'SystemConfig' )
-
     result = jobManifest.check()
     if not result['OK']:
       return result
@@ -1756,9 +1748,15 @@ class JobDB( DB ):
 
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter > self.maxRescheduling:
+<<<<<<< HEAD
       self.log.warn( 'Maximum number of reschedulings is reached', 'Job %s' % jid )
       return self.__failJob( jid, 'Maximum of reschedulings reached',
                              'Maximum number of reschedulings is reached: %s' % self.maxRescheduling )
+=======
+      self.log.warn( 'Maximum number of reschedulings is reached', 'Job %s' % jobID )
+      self.setJobStatus( jobID, status = 'Failed', minor = 'Maximum of reschedulings reached' )
+      return S_ERROR( 'Maximum number of reschedulings is reached: %s' % self.maxRescheduling )
+>>>>>>> rel-v6r11
 
 
     # Save the job parameters for later debugging

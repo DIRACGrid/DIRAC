@@ -1,6 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
 """
 This is a DIRAC WMS administrator interface.
 It exposes the following methods:
@@ -16,7 +13,7 @@ Access to the pilot data:
 
 __RCSID__ = "$Id$"
 
-from types import DictType, ListType, IntType, LongType, StringTypes, FloatType
+from types import DictType, ListType, IntType, LongType, StringTypes, StringType, FloatType
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR

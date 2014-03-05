@@ -171,7 +171,7 @@ class DiracAdmin( API ):
     if not gConfig.getSections( '/Resources/Sites/%s' % ( gridType ) )['OK']:
       return S_ERROR( '/Resources/Sites/%s is not a valid site section' % ( gridType ) )
 
-    result = self.getCSDict( '/Resources/Sites/%s/%s' % ( gridType, site ) )
+    result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s' % ( gridType, site ) )
     if printOutput and result['OK']:
       print self.pPrint.pformat( result['Value'] )
     return result

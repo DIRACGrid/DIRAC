@@ -533,7 +533,7 @@ class SSHComputingElement( ComputingElement ):
                                                          '#'.join( stampList ), 
                                                          self.infoArea,
                                                          self.ceParameters['SSHUser'] )    
-    result = ssh.sshCall( 10, cmd )
+    result = ssh.sshCall( 30, cmd )
     if not result['OK']:
       return result
     sshStatus = result['Value'][0]

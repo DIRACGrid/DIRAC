@@ -31,8 +31,8 @@ class JobState( object ):
     def __init__( self, functor ):
       self.__functor = functor
 
-    def __get__( self, obj, type = None ):
-      return self.__class__( self.__functor.__get__( obj, type ) )
+    def __get__( self, obj, oType = None ):
+      return self.__class__( self.__functor.__get__( obj, oType ) )
 
     def __call__( self, *args, **kwargs ):
       funcSelf = self.__functor.__self__
@@ -506,7 +506,6 @@ class JobState( object ):
     if not result[ 'OK' ]:
       return result
     return self.__db.job.setInputData( self.__jid, lfnData )
-
 
   right_insertIntoTQ = RIGHT_CHANGE_STATUS
   @RemoteMethod
