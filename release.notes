@@ -18,6 +18,7 @@ NEW: DataManager to replace ReplicaManager class ( simplification, streamlining 
 
 *Interfaces
 CHANGE: Dirac - instantiate SandboxStoreClient and WMSClient when needed, not in the constructor
+CHANGE: Job - removed setSystemConfig() method
 
 *Resources
 CHANGE: StorageElement - changes to avoid usage PFNs
