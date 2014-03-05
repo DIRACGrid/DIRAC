@@ -15,6 +15,7 @@ import DIRAC
 from DIRAC                                            import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Utilities.List                        import sortList
+from DIRAC.Core.Utilities.PrettyPrint                 import printTable
 
 storageCFGBase = "/Resources/StorageElements"
 
@@ -33,17 +34,19 @@ resourceStatus = ResourceStatus()
 res = resourceStatus.getStorageElementStatus( seList )
 if not res[ 'OK' ]:
   gLogger.error( "Failed to get StorageElement status for %s" % str( seList ) )
+  DIRAC.exit( 1 )
+  
+fields = ['SE','ReadAccess','WriteAccess','RemoveAccess','CheckAccess']  
+records = []
 
-for k, v in res[ 'Value' ].items():
-
-  readState, writeState = 'Active', 'Active'
-
-  if v.has_key( 'ReadAccess' ):
-    readState = v[ 'ReadAccess' ]
-
-  if v.has_key( 'WriteAccess' ):
-    writeState = v[ 'WriteAccess']
-  gLogger.notice( "%s %s %s" % ( k.ljust( 25 ), readState.rjust( 15 ), writeState.rjust( 15 ) ) )
+for se, statusDict in res[ 'Value' ].items():
+  record = [se]
+  for status in fields[1:]:
+    value = statusDict.get( status, 'Unknown' )
+    record.append( value )
+  records.append( record )    
+    
+printTable( fields, records, numbering=False ) 
 
 DIRAC.exit( 0 )
 
