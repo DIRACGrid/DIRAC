@@ -152,7 +152,7 @@ class TaskQueueDB( DB ):
         keyLength = len( key )
     for key in sorted( dDict ):
       line = "%s: " % key
-      line = line.rjust( keyLength + 2 )
+      line = line.ljust( keyLength + 2 )
       value = dDict[ key ]
       if type( value ) in ( types.ListType, types.TupleType ):
         line += ','.join( list( value ) )
