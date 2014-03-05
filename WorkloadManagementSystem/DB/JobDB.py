@@ -1260,7 +1260,6 @@ class JobDB( DB ):
 
     if platform and platform.lower() != 'any':
       result = getDIRACPlatform( platform )
-      print result
       if result['OK'] and result['Value']:
         classAdReq.insertAttributeVectorString( 'Platforms', result['Value'] )
       else:
