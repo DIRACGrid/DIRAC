@@ -1124,13 +1124,11 @@ class Job( API ):
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
     #Add any JDL parameters to classad obeying lists with ';' rule
-    requirements = False
     for name, props in paramsDict.items():
       ptype = props['type']
       value = props['value']
       if name.lower() == 'requirements' and ptype == 'JDL':
         self.log.verbose( 'Found existing requirements: %s' % ( value ) )
-        requirements = True
 
       if re.search( '^JDL', ptype ):
         if type( value ) == list:
@@ -1144,30 +1142,6 @@ class Job( API ):
           classadJob.insertAttributeString( name, value )
         else:
           classadJob.insertAttributeVectorString( name, value.split( ';' ) )
-
-    if not requirements:
-      reqtsDict = self.reqParams
-      exprn = ''
-      plus = ''
-      for name, props in paramsDict.items():
-        ptype = paramsDict[name]['type']
-        value = paramsDict[name]['value']
-        if not ptype == 'dict':
-          if ptype == 'JDLReqt':
-            if value and not value.lower() == 'any':
-              plus = ' && '
-              if re.search( ';', value ):
-                for val in value.split( ';' ):
-                  exprn += reqtsDict[name].replace( 'NAME', name ).replace( 'VALUE', str( val ) ) + plus
-              else:
-                exprn += reqtsDict[name].replace( 'NAME', name ).replace( 'VALUE', str( value ) ) + plus
-
-      if len( plus ):
-        exprn = exprn[:-len( plus )]
-      if not exprn:
-        exprn = 'true'
-      self.log.verbose( 'Requirements: %s' % ( exprn ) )
-      #classadJob.set_expression('Requirements', exprn)
 
     self.addToInputSandbox.remove( scriptname )
     self.addToOutputSandbox.remove( self.stdout )
