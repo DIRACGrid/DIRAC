@@ -1,3 +1,20 @@
+[v6r10p16]
+
+*Transformation
+FIX: TaskManagerAgentBase - add the missing Scheduled state
+
+*WMS
+FIX: TaskQueueDB - reduced number of lines in the matching parameters printout
+
+*DMS
+FIX: dirac-dms-show-se-status - exit on error in the service call, closes #1840
+
+*Interface
+FIX: API.Job - removed special interpretation of obsoleted JDLreqt type parameters
+
+*Resources
+FIX: SSHComputingElement - increased timeout in getJobStatusOnHost() ssh call, closes #1830
+
 [v6r10p15]
 
 *DMS
