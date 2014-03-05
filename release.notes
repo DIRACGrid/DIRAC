@@ -1,5 +1,8 @@
 [v6r10p16]
 
+*Framework
+NEW: PlottingClient - added curveGraph() function
+
 *Transformation
 FIX: TaskManagerAgentBase - add the missing Scheduled state
 
