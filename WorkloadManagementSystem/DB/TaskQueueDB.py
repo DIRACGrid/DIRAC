@@ -955,7 +955,7 @@ class TaskQueueDB( DB ):
       if len( tqIdList ) == 0:
         return S_OK( {} )
       else:
-        sqlTQCond += " AND `tq_TaskQueues`.TQId in ( %s )" % ", ".join( [ str( id ) for _ in tqIdList ] )
+        sqlTQCond += " AND `tq_TaskQueues`.TQId in ( %s )" % ", ".join( [ str( _id ) for _id in tqIdList ] )
     sqlCmd = "%s WHERE `tq_TaskQueues`.TQId = `tq_Jobs`.TQId %s GROUP BY %s" % ( sqlCmd,
                                                                                  sqlTQCond,
                                                                                  ", ".join( sqlGroupEntries ) )
