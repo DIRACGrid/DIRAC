@@ -398,7 +398,7 @@ class SiteDirector( AgentModule ):
       siteMask = siteName in siteMaskList
 
       if not anySite and siteName not in jobSites:
-        self.log.verbose( "Skipping queue %s at site %s since no workload expected" % (queueName, siteName) )
+        self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )
         continue
       if not siteMask and siteName not in testSites:
         self.log.verbose( "Skipping queue %s at site %s not in the mask" % (queueName, siteName) )
