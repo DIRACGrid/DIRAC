@@ -93,7 +93,7 @@ class FTSDB( DB ):
 
     at the moment only one view - FTSHistoryView
     """
-    return { FTSHistoryView.__name__: FTSHistoryView.viewDesc() }
+    return { 'FTSHistoryView': FTSHistoryView.viewDesc() }
 
   def createViews( self, force = False ):
     """ create views """
@@ -109,14 +109,14 @@ class FTSDB( DB ):
   def dictCursor( self, conn = None ):
     """ get dict cursor for connection :conn:
 
-    :return: S_OK( { "cursor": MySQLdb.cursors.DictCursor, "connection" : connection  } ) or S_ERROR
+    :return: S_OK( { "cursor": cursors.DictCursor, "connection" : connection  } ) or S_ERROR
     """
     if not conn:
       retDict = self._getConnection()
       if not retDict['OK']:
         return retDict
       conn = retDict['Value']
-    cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
+    cursor = conn.cursor( cursorclass = cursors.DictCursor )
     return S_OK( { "cursor" : cursor, "connection" : conn  } )
 
   def _transaction( self, queries, connection = None ):

@@ -223,8 +223,6 @@ class JobWrapper:
     parameters = []
     if self.ceArgs.has_key( 'LocalSE' ):
       parameters.append( ( 'AgentLocalSE', ','.join( self.ceArgs['LocalSE'] ) ) )
-    if self.ceArgs.has_key( 'CompatiblePlatforms' ):
-      parameters.append( ( 'AgentCompatiblePlatforms', ','.join( self.ceArgs['CompatiblePlatforms'] ) ) )
     if self.ceArgs.has_key( 'PilotReference' ):
       parameters.append( ( 'Pilot_Reference', self.ceArgs['PilotReference'] ) )
     if self.ceArgs.has_key( 'CPUScalingFactor' ):

@@ -121,7 +121,7 @@ class TaskQueueDB( DB ):
                                                     },
                                          'Indexes': { 'TaskIndex': [ 'TQId' ], '%sIndex' % multiField: [ 'Value' ] },
                                        }
- 
+
     for tableName in self.__tablesDesc:
       if not tableName in tablesInDB:
         tablesToCreate[ tableName ] = self.__tablesDesc[ tableName ]
@@ -365,7 +365,6 @@ class TaskQueueDB( DB ):
       return 10 ** 6
     return jobPriority
 
-  # FIXME: used only by TaskQueueAgent? Shouldn't we get rid of it?
   def insertJob( self, jobId, tqDefDict, jobPriority, skipTQDefCheck = False, numRetries = 10 ):
     """
     Insert a job in a task queue
@@ -700,10 +699,11 @@ class TaskQueueDB( DB ):
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
           # that the GridCE matches explicitly so the COUNT can not be 0. In this case we skip this
           # condition
-        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) ) 
+        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
         if field in self.__tagMatchFields:
-          csql = self.__generateTagSQLSubCond( fullTableN, tqMatchDict[field] )
-        else:  
+          if tqMatchDict[field] != '"Any"':
+            csql = self.__generateTagSQLSubCond( fullTableN, tqMatchDict[field] )
+        else:
           csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN, fullTableN, fullTableN ), tqMatchDict[ field ] )
         sqlMultiCondList.append( csql )
         sqlCondList.append( "( %s )" % " OR ".join( sqlMultiCondList ) )
@@ -745,10 +745,10 @@ class TaskQueueDB( DB ):
         present in the matching resource list
     """
     sql1 = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId=tq.TQId" % ( tableName, tableName, tableName )
-    if type( tagMatchList ) in [types.ListType, types.TupleType]: 
+    if type( tagMatchList ) in [types.ListType, types.TupleType]:
       sql2 = sql1 + " AND %s.Value in ( %s )" % ( tableName, ','.join( [ "%s" % v for v in tagMatchList] ) )
     else:
-      sql2 = sql1 + " AND %s.Value=%s" % ( tableName, tagMatchList )  
+      sql2 = sql1 + " AND %s.Value=%s" % ( tableName, tagMatchList )
     sql = '( '+sql1+' ) = ('+sql2+' )'
     return sql
 
@@ -955,11 +955,10 @@ class TaskQueueDB( DB ):
       if len( tqIdList ) == 0:
         return S_OK( {} )
       else:
-        sqlTQCond += " AND `tq_TaskQueues`.TQId in ( %s )" % ", ".join( [ str( id ) for _ in tqIdList ] )
+        sqlTQCond += " AND `tq_TaskQueues`.TQId in ( %s )" % ", ".join( [ str( id_ ) for id_ in tqIdList ] )
     sqlCmd = "%s WHERE `tq_TaskQueues`.TQId = `tq_Jobs`.TQId %s GROUP BY %s" % ( sqlCmd,
                                                                                  sqlTQCond,
                                                                                  ", ".join( sqlGroupEntries ) )
-
     retVal = self._query( sqlCmd )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't retrieve task queues info: %s" % retVal[ 'Message' ] )
@@ -1208,5 +1207,4 @@ class TaskQueueDB( DB ):
     if not updated:
       return S_OK()
     return self.recalculateTQSharesForAll()
-
 

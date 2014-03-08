@@ -570,9 +570,6 @@ if architectureScript:
   retCode, localArchitecture = executeAndGetOutput( architectureScript )
   if not retCode:
     localArchitecture = localArchitecture.strip()
-    # FIXME: this seems like LHCb...
-    os.environ['CMTCONFIG'] = localArchitecture
-    logINFO( 'Setting CMTCONFIG=%s' % localArchitecture )
     # os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, localArchitecture ) )
     # dirac-configure will not change existing cfg unless -U option is used.
     os.system( "%s -F -o '/LocalSite/Architecture=%s'" % ( configureScript, localArchitecture ) )

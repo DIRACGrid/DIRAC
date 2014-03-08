@@ -36,8 +36,7 @@ class APISuccess( APITestCase ):
 <Parameter name="Priority" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User Job Priority"><value><![CDATA[1]]></value></Parameter>
 <Parameter name="JobGroup" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified job group"><value><![CDATA[jobGroup]]></value></Parameter>
 <Parameter name="JobName" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified name"><value><![CDATA[jobName]]></value></Parameter>
-<Parameter name="SystemConfig" type="JDLReqt" linked_module="" linked_parameter="" in="True" out="False" description="System configuration for job"><value><![CDATA[ANY]]></value></Parameter>
-<Parameter name="Site" type="JDLReqt" linked_module="" linked_parameter="" in="True" out="False" description="User specified destination site"><value><![CDATA[DIRAC.someSite.ch]]></value></Parameter>
+<Parameter name="Site" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified destination site"><value><![CDATA[DIRAC.someSite.ch]]></value></Parameter>
 <Parameter name="Origin" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Origin of client"><value><![CDATA[DIRAC]]></value></Parameter>
 <Parameter name="StdOutput" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Standard output file"><value><![CDATA[std.out]]></value></Parameter>
 <Parameter name="StdError" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Standard error file"><value><![CDATA[std.err]]></value></Parameter>

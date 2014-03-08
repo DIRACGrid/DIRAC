@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r11-pre3]
+[v6r11-pre4]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
@@ -140,6 +140,11 @@ NEW: dirac-rms-reset-request command
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p17]
+
+*DMS
+CHANGE: ReplicaManager - bulk PFN lookup in getReplicas()
 
 [v6r10p16]
 

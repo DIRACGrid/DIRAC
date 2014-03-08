@@ -405,7 +405,7 @@ class SiteDirector( AgentModule ):
       platform = self.queueDict[queue]['Platform']
 
       if not anySite and siteName not in jobSites:
-        self.log.verbose( "Skipping queue %s at site %s since no workload expected" % (queueName, siteName) )
+        self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )
         continue
       if not siteMask and siteName not in testSites:
         self.log.verbose( "Skipping queue %s at site %s not in the mask" % (queueName, siteName) )
@@ -720,7 +720,7 @@ class SiteDirector( AgentModule ):
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
     if "Tag" in queueDict:
-      tagString = ','.join( queueDict['Tag'] )
+      tagString = ','.join( fromChar( queueDict['Tag'] ) )
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:

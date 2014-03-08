@@ -780,6 +780,7 @@ class Dirac( API ):
        All output files are written to the local directory.
     """
     # FIXME: Better create an unique local directory for this job
+    # FIXME: This has to reviewed. Probably some of the things here are not needed at all
 
     if disableCopies:
       self.log.verbose( 'DisableLocalJobDirectory is set, leaving everything in local dir' )
@@ -861,15 +862,6 @@ class Dirac( API ):
       if not result['OK']:
         self.log.warn( 'Input data resolution failed' )
         return result
-
-    localArch = None  # If running locally assume the user chose correct platform (could check in principle)
-    if parameters['Value'].has_key( 'SystemConfig' ):
-      if parameters['Value']['SystemConfig']:
-        localArch = parameters['Value']['SystemConfig']
-
-    if localArch:
-      jobParamsDict['CE'] = {}
-      jobParamsDict['CE']['CompatiblePlatforms'] = localArch
 
     softwarePolicy = self.__getVOPolicyModule( 'SoftwareDistModule' )
     if softwarePolicy:

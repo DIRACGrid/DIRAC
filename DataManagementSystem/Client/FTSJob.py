@@ -88,7 +88,7 @@ class FTSJob( Record ):
     self._regTotal = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
 
-    self.fc = FileCatalog()
+    self._fc = FileCatalog()
 
     self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
 
@@ -549,7 +549,7 @@ class FTSJob( Record ):
 
     if toRegisterDict:
       self.regTotal += len( toRegisterDict )
-      register = self.fc.addReplica( toRegisterDict )
+      register = self._fc.addReplica( toRegisterDict )
       self.regTime += time.time() - startTime
       if not register["OK"]:
         # FIXME: shouldn't be a print!

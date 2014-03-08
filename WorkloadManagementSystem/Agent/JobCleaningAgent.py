@@ -126,7 +126,7 @@ class JobCleaningAgent( AgentModule ):
       
     result = self.deleteJobOversizedSandbox( jobList ) 
     if not result[ 'OK' ]:
-      gLogger.warn( "Cannot schedle removal of oversized sandboxes", result[ 'Message' ] )
+      gLogger.warn( "Cannot schedule removal of oversized sandboxes", result[ 'Message' ] )
       return result 
     
     failedJobs = result['Value']['Failed']
