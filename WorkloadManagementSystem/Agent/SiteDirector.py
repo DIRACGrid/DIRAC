@@ -713,7 +713,7 @@ class SiteDirector( AgentModule ):
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
     if "Tag" in queueDict:
-      tagString = ','.join( queueDict['Tag'] )
+      tagString = ','.join( fromChar( queueDict['Tag'] ) )
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:
