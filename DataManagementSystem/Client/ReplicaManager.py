@@ -2503,9 +2503,19 @@ class ReplicaManager( CatalogToStorage ):
     """ get replicas from catalogue """
     res = self.getCatalogReplicas( lfns, allStatus = allStatus )
     if res['OK']:
-      for lfn, replicas in res['Value']['Successful'].items():
-        for se in replicas:
-          replicas[se] = self.getPfnForLfn( lfn, se ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[se] )
+      se_lfn = {}
+      catalogReplicas = res['Value']['Successful']
+
+      # We group the query to getPfnForLfn by storage element to gain in speed
+      for lfn in catalogReplicas:
+        for se in catalogReplicas[lfn]:
+          se_lfn.setdefault( se, [] ).append( lfn )
+
+      for se in se_lfn:
+        succPfn = self.getPfnForLfn( se_lfn[se], se ).get( 'Value', {} ).get( 'Successful', {} )
+        for lfn in succPfn:
+          # catalogReplicas still points res["value"]["Successful"] so res will be updated
+          catalogReplicas[se] = succPfn[lfn]
     return res
 
   def getFileSize( self, lfn ):
