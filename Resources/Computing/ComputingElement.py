@@ -198,7 +198,7 @@ class ComputingElement:
       if key in FLOAT_PARAMETERS:
         ceOptions[key] = float( ceOptions[key] )
       if key in LIST_PARAMETERS:
-        ceOptions[key] = gConfig( os.path.join( section, key ), [] )  
+        ceOptions[key] = gConfig.getValue( os.path.join( section, key ), [] )  
     self.ceParameters.update( ceOptions )
     return S_OK()
 
