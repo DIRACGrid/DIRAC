@@ -1118,7 +1118,7 @@ FIX: Shifter - pass filePath argument when downloading proxy
 *DMS
 CHANGE: StrategyHandler - move out SourceSE checking to TransferAgent
 CHANGE: ReplicaManager, InputDataAgent - get active replicas
-FIX: StorageElement, SRM2Storage - support for '*Access' statuses, checking results
+FIX: StorageElement, SRM2Storage - support for 'xxxAccess' statuses, checking results
      of return structures
      
 *RSS
