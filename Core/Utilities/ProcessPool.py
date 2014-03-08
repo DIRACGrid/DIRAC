@@ -578,7 +578,7 @@ class ProcessPool( object ):
     
     ## flag to trigger workers draining
     self.__draining = False
-    ## placeholder for deamon results processing
+    ## placeholder for daemon results processing
     self.__daemonProcess = False
     
     ## create initial workers

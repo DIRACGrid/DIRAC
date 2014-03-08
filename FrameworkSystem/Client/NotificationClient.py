@@ -10,7 +10,6 @@ import os
 import types
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC import gLogger, S_OK, S_ERROR
 
