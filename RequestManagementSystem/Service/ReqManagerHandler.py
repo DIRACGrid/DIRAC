@@ -148,6 +148,18 @@ class ReqManagerHandler( RequestHandler ):
     """
     return cls.__requestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
 
+  types_getDistinctValues = [ StringTypes ]
+  @classmethod
+  def export_getDistinctValues( cls, attribute ):
+    """ Get distinct values for a given (sub)request attribute """
+    onames = ['Type', 'Status']
+    rnames = ['OwnerDN', 'OwnerGroup']
+    if attribute in onames:
+      return cls.__requestDB.getDistinctAttributeValues('Operation', attribute)
+    elif attribute in rnames:
+      return cls.__requestDB.getDistinctAttributeValues('Request', attribute)
+    return S_ERROR('Invalid attribute %s' % attribute)
+
   types_deleteRequest = [ StringTypes ]
   @classmethod
   def export_deleteRequest( cls, requestName ):
