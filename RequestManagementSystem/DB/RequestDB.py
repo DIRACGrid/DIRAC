@@ -438,7 +438,7 @@ class RequestDB( DB ):
     # parameterList.append( 'LastUpdateTime' )
 
     req = "SELECT R.RequestID, R.RequestName, R.JobID, R.OwnerDN, R.OwnerGroup,"
-    req += "O.Type, O.Status, O.Type, O.Error, O.CreationTime, O.LastUpdate FROM Requests as R, Operation as O "
+    req += "O.Type, O.Status, O.Type, O.Error, O.CreationTime, O.LastUpdate FROM Request as R, Operation as O "
 
     new_selectDict = {}
     older = None
