@@ -33,6 +33,10 @@ FIX: few minor fixes to avoid pylint warnings
 
 [v6r10p17]
 
+*RMS
+FIX: RequestDB.py - typo in a table name
+NEW: ReqManagerHandler - added getDistinctValues() to allow selectors in the web page
+
 *DMS
 CHANGE: ReplicaManager - bulk PFN lookup in getReplicas()
 
