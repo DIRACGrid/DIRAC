@@ -1803,7 +1803,8 @@ class DataManager( object ):
         replicaDict['Failed'][lfn] = 'Wrong replica info'
         continue
       for se in replicas.keys():
-        if not seReadStatus.setdefault( se, self.__SEActive( se ).get( 'Value', {} ).get( 'Read', False ) ):
+        readStatus = seReadStatus[se] if se in seReadStatus else seReadStatus.setdefault( se, self.__SEActive( se ).get( 'Value', {} ).get( 'Read', False ) )
+        if not readStatus:
           replicas.pop( se )
 
     return S_OK( replicaDict )
