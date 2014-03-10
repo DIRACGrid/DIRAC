@@ -1184,7 +1184,6 @@ class Dirac( API ):
       return self._errorReport( replicaDict['Value']['Failed'].items()[0], 'Failed to get replica information' )
     siteLfns = {}
     for lfn, reps in replicaDict['Value']['Successful'].items():
-#       possibleSites = set( [site for se in reps for site in sitesForSE.setdefault( se, getSitesForSE( se ).get( 'Value', [] ) )] )
       possibleSites = set( [site for se in reps for site in ( sitesForSE[se] if se in sitesForSE else  sitesForSE.setdefault( se, getSitesForSE( se ).get( 'Value', [] ) ) )] )
       siteLfns.setdefault( ','.join( sorted( possibleSites ) ), [] ).append( lfn )
 
