@@ -1,12 +1,14 @@
-[v6r11-pre4]
+[v6r11-pre5]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
+CHANGE: dirac-configure - use Registry helper to get VOMS servers information
 
 *Configuration
 CHANGE: Resources.getDIRACPlatform() returns a list of compatible DIRAC platforms
 NEW: Resources.getDIRACPlatforms() used to access platforms from /Resources/Computing/OSCompatibility
      section
+NEW: Registry - added getVOs() and getVOMSServerInfo()     
 
 *WMS
 NEW: WMS tags to allow jobs require special site/CE/queue properties  
@@ -15,6 +17,7 @@ CHANGES: DownloadInputData, InputDataByProtocol, InputDataResolution - allows to
 
 *DMS
 NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
+FIX: InputDataByProtocol - fix the case where file is only on tape
 
 *Interfaces
 CHANGE: Dirac - instantiate SandboxStoreClient and WMSClient when needed, not in the constructor
