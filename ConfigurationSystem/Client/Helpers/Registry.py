@@ -221,5 +221,5 @@ def getDefaultBDII():
       port = gConfig.getValue( "%s/BDII/%s/Port" % ( gBaseSecuritySection, bdii ), "")
       if port:
         bdiis.append( bdii + ":" + port )
-  return bdiis
-  
+  return bdiis  
+
