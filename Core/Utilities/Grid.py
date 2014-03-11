@@ -7,7 +7,7 @@ import os, types
 from DIRAC.Core.Utilities.Os import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers         import Local
+from DIRAC.ConfigurationSystem.Client.Helpers         import Local, Registry
 from DIRAC import systemCall, shellCall, S_OK, S_ERROR
 
 def executeGridCommand( proxy, cmd, gridEnvScript = None ):
@@ -68,17 +68,25 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
         'objectClass':        List of classes in response
         'attr':               Dictionary of attributes
   """
-
+  
+  bdii = []
   if filt == None:
     filt = ''
   if attr == None:
     attr = '*'
   if host == None:
-    host = 'lcg-bdii.cern.ch:2170'
+    bdii = Registry.getDefaultBDII()
+    if bdii == []:
+      bdii = [ 'lcg-bdii.cern.ch:2170' ]
   if base == None:
     base = 'Mds-Vo-name=local,o=grid'
 
-  cmd = 'ldapsearch -x -LLL -h %s -b %s "%s" "%s"' % ( host, base, filt, attr )
+  cmd = ''
+  for host in bdii:
+    if cmd != '':
+      cmd += ' && '
+    cmd += 'ldapsearch -x -LLL -h %s -b %s "%s" "%s"' % ( host, base, filt, attr )
+
   result = shellCall( 0, cmd )
 
   response = []
