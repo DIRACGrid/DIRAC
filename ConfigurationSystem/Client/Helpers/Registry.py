@@ -210,3 +210,16 @@ def getGroupsWithVOMSAttribute( vomsAttr ):
     if vomsAttr == gConfig.getValue( "%s/Groups/%s/VOMSRole" % ( gBaseSecuritySection, group ), "" ):
       groups.append( group )
   return groups
+
+def getDefaultBDII():
+  retVal = gConfig.getSections( "%s/BDII" % ( gBaseSecuritySection ) )
+  if not retVal[ 'OK' ]:
+    return []
+  bdiis = []
+  for bdii in retVal[ 'Value' ]:
+    if bdii:
+      port = gConfig.getValue( "%s/BDII/%s/Port" % ( gBaseSecuritySection, bdii ), "")
+      if port:
+        bdiis.append( bdii + ":" + port )
+  return bdiis
+  
