@@ -215,7 +215,7 @@ class OperationHandlerBase( object ):
       rssStatus = self.rssClient().getStorageElementStatus( se, status )
       # gLogger.always( rssStatus )
       if rssStatus["OK"]:
-        return rssStatus["Value"][se][status] != "Banned"
+        return S_OK( rssStatus["Value"][se][status] != "Banned" )
     return S_ERROR( "unknown SE: %s" % se )
 
   @property
