@@ -95,7 +95,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
                           if opFile.Status in ( "Waiting", "Scheduled" ) ] )
     targetSESet = set( self.operation.targetSEList )
 
-    replicas = self.fc.getReplicas( waitingFiles )
+    replicas = self.fc.getReplicas( waitingFiles.keys() )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
       return replicas
@@ -185,7 +185,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
       repSE = self.seCache.get( repSEName, None )
       if not repSE:
-        repSE = StorageElement( repSEName, "SRM2" )
+        repSE = StorageElement( repSEName )
         self.seCache[repSE] = repSE
 
       pfn = Utils.executeSingleFileOrDirWrapper( repSE.getPfnForLfn( opFile.LFN ) )
@@ -377,7 +377,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         if targetSE == sourceSE:
           self.log.warn( "Request to replicate %s to the source SE: %s" % ( lfn, sourceSE ) )
           continue
-        res = self.rm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
+        res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
         if res["OK"]:
 
           if lfn in res["Value"]["Successful"]:

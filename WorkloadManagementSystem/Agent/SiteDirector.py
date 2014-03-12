@@ -1005,7 +1005,7 @@ EOF
         pA.setValueByKey( 'Jobs', 0 )
       else:
         pA.setValueByKey( 'Jobs', len( pilotDict[pRef]['Jobs'] ) )
-      self.log.info( "Adding accounting record for pilot %s" % pilotDict[pRef][ 'PilotID' ] )
+      self.log.verbose( "Adding accounting record for pilot %s" % pilotDict[pRef][ 'PilotID' ] )
       retVal = gDataStoreClient.addRegister( pA )
       if not retVal[ 'OK' ]:
         self.log.error( 'Failed to send accounting info for pilot ', pRef )
