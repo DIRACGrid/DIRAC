@@ -144,6 +144,11 @@ NEW: dirac-rms-reset-request command
 *SMS
 FIX: few minor fixes to avoid pylint warnings
 
+[v6r10p18]
+
+*DMS
+FIX: ReplicateAndRegister - dictionary items incorrectly called in ftsTransfer()
+
 [v6r10p17]
 
 *RMS
