@@ -1,3 +1,8 @@
+[v6r10p18]
+
+*DMS
+FIX: ReplicateAndRegister - dictionary items incorrectly called in ftsTransfer()
+
 [v6r10p17]
 
 *RMS
