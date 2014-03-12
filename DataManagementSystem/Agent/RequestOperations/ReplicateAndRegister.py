@@ -290,7 +290,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
             opFile.Status = "Scheduled"
             self.log.always( "%s has been scheduled for FTS" % opFile.LFN )
 
-      for fileID, reason in ftsSchedule["Failed"]:
+      for fileID, reason in ftsSchedule["Failed"].items():
         gMonitor.addMark( "FTSScheduleFail", 1 )
         for opFile in self.operation:
           if fileID == opFile.FileID:
