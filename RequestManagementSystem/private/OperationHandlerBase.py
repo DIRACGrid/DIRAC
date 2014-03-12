@@ -204,19 +204,19 @@ class OperationHandlerBase( object ):
         opFile.Error = "Max attempts limit reached"
     return [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
 
-  def rssSEStatus( self, se, status ):
+  def rssSEStatus( self, se, status, retries = 2 ):
     """ check SE :se: for status :status:
 
     :param str se: SE name
     :param str status: RSS status
     """
-    rssStatus = self.rssClient().getStorageElementStatus( se, status )
-    # gLogger.always( rssStatus )
-    if not rssStatus["OK"]:
-      return S_ERROR( "unknown SE: %s" % se )
-    if rssStatus["Value"][se][status] == "Banned":
-      return S_OK( False )
-    return S_OK( True )
+    # Allow a transient failure
+    for _i in range( retries ):
+      rssStatus = self.rssClient().getStorageElementStatus( se, status )
+      # gLogger.always( rssStatus )
+      if rssStatus["OK"]:
+        return rssStatus["Value"][se][status] != "Banned"
+    return S_ERROR( "unknown SE: %s" % se )
 
   @property
   def shifter( self ):
