@@ -1,3 +1,9 @@
+[v6r10p19]
+
+*DMS
+FIX: FTSAgent - putRequest when leaving processRequest
+FIX: ReplicaManager - bug in getReplicas() in dictionary creation
+
 [v6r10p18]
 
 *DMS
