@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r11-pre5]
+[v6r11-pre6]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
@@ -143,6 +143,12 @@ NEW: dirac-rms-reset-request command
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p19]
+
+*DMS
+FIX: FTSAgent - putRequest when leaving processRequest
+FIX: ReplicaManager - bug in getReplicas() in dictionary creation
 
 [v6r10p18]
 

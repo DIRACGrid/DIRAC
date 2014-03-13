@@ -2557,7 +2557,7 @@ class ReplicaManager( CatalogToStorage ):
         succPfn = self.getPfnForLfn( se_lfn[se], se ).get( 'Value', {} ).get( 'Successful', {} )
         for lfn in succPfn:
           # catalogReplicas still points res["value"]["Successful"] so res will be updated
-          catalogReplicas[se] = succPfn[lfn]
+          catalogReplicas[lfn][se] = succPfn[lfn]
     return res
 
   def getFileSize( self, lfn ):

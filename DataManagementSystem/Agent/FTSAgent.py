@@ -566,7 +566,7 @@ class FTSAgent( AgentModule ):
         log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
         return putJobs
 
-    return S_OK()
+    return self.putRequest( request )
 
   def __reschedule( self, request, operation, toReschedule ):
     """ reschedule list of :toReschedule: files in request for operation :operation:
