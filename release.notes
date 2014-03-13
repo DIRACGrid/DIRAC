@@ -34,6 +34,12 @@ NEW: dirac-rms-reset-request command
 *SMS
 FIX: few minor fixes to avoid pylint warnings
 
+[v6r10p19]
+
+*DMS
+FIX: FTSAgent - putRequest when leaving processRequest
+FIX: ReplicaManager - bug in getReplicas() in dictionary creation
+
 [v6r10p18]
 
 *DMS
