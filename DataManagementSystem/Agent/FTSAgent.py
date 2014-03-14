@@ -179,10 +179,11 @@ class FTSAgent( AgentModule ):
     return S_OK( cls.__reqCache[reqName] )
 
   @classmethod
-  def putRequest( cls, request ):
+  def putRequest( cls, request, clearCache = True ):
     """ put request back to ReqDB
 
     :param Request request: Request instance
+    :param bool clearCache: clear the cache?
 
     also finalize request if status == Done
     """
@@ -190,14 +191,17 @@ class FTSAgent( AgentModule ):
     put = cls.requestClient().putRequest( request )
     if not put["OK"]:
       return put
-    # # finalize first is possible
+    # # finalize first if possible
     if request.Status == "Done" and request.JobID:
       finalizeRequest = cls.requestClient().finalizeRequest( request.RequestName, request.JobID )
       if not finalizeRequest["OK"]:
         request.Status = "Scheduled"
-    # # del request from cache
-    if request.RequestName in cls.__reqCache:
-      del cls.__reqCache[ request.RequestName ]
+    # # del request from cache if needed
+    if clearCache:
+      cls.__reqCache.pop( request.RequestName, None )
+    else:
+      # get back the request in order to set it Assigned in the DB
+      cls.requestClient().getRequest( request.RequestName )
     return S_OK()
 
   @classmethod
@@ -444,7 +448,7 @@ class FTSAgent( AgentModule ):
     if not ftsJobs["OK"]:
       log.error( ftsJobs["Message"] )
       return ftsJobs
-    ftsJobs = ftsJobs["Value"] if ftsJobs["Value"] else []
+    ftsJobs = ftsJobs.get( "Value", [] )
 
     # # dict keeping info about files to reschedule, submit, fail and register
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
@@ -566,7 +570,7 @@ class FTSAgent( AgentModule ):
         log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
         return putJobs
 
-    return self.putRequest( request )
+    return self.putRequest( request, clearCache = False )
 
   def __reschedule( self, request, operation, toReschedule ):
     """ reschedule list of :toReschedule: files in request for operation :operation:
