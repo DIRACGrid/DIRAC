@@ -295,6 +295,9 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         for opFile in self.operation:
           if fileID == opFile.FileID:
             opFile.Error = ftsSchedule["Failed"][fileID]
+            if 'sourceSURL equals to targetSURL' in opFile.Error:
+              # In this case there is no need to continue
+              opFile.Status = 'Failed'
             self.log.error( "unable to schedule %s for FTS: %s" % ( opFile.LFN, opFile.Error ) )
     else:
       self.log.info( "No files to schedule after metadata checks" )
