@@ -1,4 +1,4 @@
-[v6r11-pre6]
+[v6r11-pre7]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
@@ -33,6 +33,12 @@ NEW: dirac-rms-reset-request command
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p20]
+
+*DMS
+FIX: FTSAgent/Client, ReplicateAndRegister - fixes to properly process failed
+     FTS request scheduling
 
 [v6r10p19]
 
