@@ -1,3 +1,9 @@
+[v6r10p20]
+
+*DMS
+FIX: FTSAgent/Client, ReplicateAndRegister - fixes to properly process failed
+     FTS request scheduling
+
 [v6r10p19]
 
 *DMS
