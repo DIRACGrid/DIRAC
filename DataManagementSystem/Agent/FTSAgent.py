@@ -1012,12 +1012,7 @@ class FTSAgent( AgentModule ):
       pfn = pfn["Value"]
 
       repSEMetadata = repSE.getFileMetadata( pfn )
-      if not repSEMetadata["OK"]:
-        error = repSEMetadata["Message"]
-      elif pfn in repSEMetadata['Failed']:
-        error = repSEMetadata['Failed'][pfn]
-      else:
-        error = None
+      error = repSEMetadata( 'Message', repSEMetadata.get( 'Failed', {} ).get( pfn ) )
       if error:
         self.log.warn( error )
         if 'File does not exist' in error:
