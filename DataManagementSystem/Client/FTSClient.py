@@ -316,7 +316,7 @@ class FTSClient( Client ):
 
     if not ftsFiles:
       self.log.info( "ftsSchedule: no FTSFiles to put for request %d" % requestID )
-      return S_OK()
+      return S_OK( ret )
 
     ftsFilesJSONList = []
     for ftsFile in ftsFiles:
