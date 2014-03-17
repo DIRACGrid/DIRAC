@@ -596,25 +596,27 @@ class FTSAgent( AgentModule ):
       if not replicas["OK"]:
         continue
       replicas = replicas["Value"]
-
-      if not replicas["Valid"] and replicas["Banned"]:
-        log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-        continue
-
       validReplicas = replicas["Valid"]
       bannedReplicas = replicas["Banned"]
+      noReplicas = replicas["NoReplicas"]
+      badReplicas = replicas['Bad']
 
-      if not validReplicas and bannedReplicas:
-        log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-        continue
-
-      if validReplicas:
+      if not validReplicas:
+        if bannedReplicas:
+          log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+        elif noReplicas:
+          log.warn( "unable to schedule %s, file doesn't exist" % opFile.LFN )
+          opFile.Status = 'Failed'
+        elif badReplicas:
+          log.warn( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
+          opFile.Status = 'Failed'
+      else:
         validTargets = list( set( operation.targetSEList ) - set( validReplicas ) )
         if not validTargets:
           log.info( "file %s is already present at all targets" % opFile.LFN )
           opFile.Status = "Done"
-          continue
-        toSchedule.append( ( opFile.toJSON()["Value"], validReplicas, validTargets ) )
+        else:
+          toSchedule.append( ( opFile.toJSON()["Value"], validReplicas, validTargets ) )
 
     # # do real schedule here
     if toSchedule:
@@ -983,7 +985,7 @@ class FTSAgent( AgentModule ):
     """ filter out banned/invalid source SEs """
     log = self.log.getSubLogger( "filterReplicas" )
 
-    ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
+    ret = { "Valid" : [], "Banned" : [], "Bad" : [], 'NoReplicas':[] }
 
     replicas = self.replicaManager().getActiveReplicas( opFile.LFN )
     if not replicas["OK"]:
@@ -1009,10 +1011,19 @@ class FTSAgent( AgentModule ):
         continue
       pfn = pfn["Value"]
 
-      repSEMetadata = repSE.getFileMetadata( pfn, singleFile = True )
+      repSEMetadata = repSE.getFileMetadata( pfn )
       if not repSEMetadata["OK"]:
-        self.log.warn( repSEMetadata["Message"] )
-        ret["Banned"].append( repSEName )
+        error = repSEMetadata["Message"]
+      elif pfn in repSEMetadata['Failed']:
+        error = repSEMetadata['Failed'][pfn]
+      else:
+        error = None
+      if error:
+        self.log.warn( error )
+        if 'File does not exist' in error:
+          ret['NoReplicas'].append( repSEName )
+        else:
+          ret["Banned"].append( repSEName )
         continue
       repSEMetadata = repSEMetadata["Value"]
 
