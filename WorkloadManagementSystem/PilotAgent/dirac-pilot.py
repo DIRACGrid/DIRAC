@@ -584,7 +584,7 @@ if architectureScript:
     # dirac-configure will not change existing cfg unless -U option is used.
     os.system( "%s -F -o '/LocalSite/Architecture=%s'" % ( configureScript, localArchitecture ) )
   else:
-    logERROR( "There was an error calling %s" % architectureScript )
+    logERROR( "There was an error calling %s: %s" % ( architectureScript, localArchitecture ) )
 #
 # Get host and local user info
 #
