@@ -762,7 +762,7 @@ class FTSAgent( AgentModule ):
         log.error( "FTSJob not known (expired on server?)" )
         for ftsFile in ftsJob:
           ftsFile.Status = "Waiting"
-          ftsFilesDict["toSubmit"] = ftsFile
+          ftsFilesDict["toSubmit"].append( ftsFile )
         return S_OK( ftsFilesDict )
       return monitor
 
