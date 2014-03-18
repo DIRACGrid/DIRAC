@@ -195,7 +195,7 @@ class RequestExecutingAgent( AgentModule ):
     :param str requestName: request's name
     """
     if requestName in self.__requestCache:
-      reset = self.requestClient().updateRequest( self.__requestCache[requestName] )
+      reset = self.requestClient().putRequest( self.__requestCache[requestName] )
       if not reset["OK"]:
         return S_ERROR( "resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
     return S_OK()
