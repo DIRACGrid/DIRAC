@@ -258,11 +258,17 @@ class RequestExecutingAgent( AgentModule ):
       self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                     self.processPool().getNumWorkingProcesses() ) )
 
+      looping = 0
       while True:
         if not self.processPool().getFreeSlots():
-          self.log.info( "No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
+          if not looping:
+            self.log.info( "No free slots available in processPool, will wait in steps of %d seconds" % self.__poolSleep )
           time.sleep( self.__poolSleep )
+          looping += 1
         else:
+          if looping:
+            self.log.info( "Free slot found after %d seconds" % looping * self.__poolSleep )
+          looping = 0
           self.log.info( "spawning task for request '%s'" % ( request.RequestName ) )
           timeOut = self.getTimeout( request )
           enqueue = self.processPool().createAndQueueTask( RequestTask,
