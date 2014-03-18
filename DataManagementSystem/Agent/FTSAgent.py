@@ -461,8 +461,8 @@ class FTSAgent( AgentModule ):
         if not monitor["OK"]:
           log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
           ftsJob.Status = "Submitted"
-          continue
-        ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
+        else:
+          ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
       log.info( "monitoring of FTSJobs completed" )
       for key, ftsFiles in ftsFilesDict.items():
@@ -489,14 +489,14 @@ class FTSAgent( AgentModule ):
 
     # # PHASE TWO = Failed files? -> make request Failed and return
     if toFail:
-      log.error( "==> found %s 'Failed' FTSFiles, request execution cannot proceed..." % len( toFail ) )
+      log.error( "==> found %s 'Failed' FTSFiles, but maybe other files can be processed..." % len( toFail ) )
       for opFile in operation:
         for ftsFile in toFail:
           if opFile.FileID == ftsFile.FileID:
             opFile.Error = ftsFile.Error
             opFile.Status = "Failed"
       operation.Error = "%s files are missing any replicas" % len( toFail )
-      # # requets.Status should be Failed at this stage "Failed"
+      # # requets.Status should be Failed if all files in the operation "Failed"
       if request.Status == "Failed":
         request.Error = "ReplicateAndRegister %s failed" % operation.Order
         log.error( "request is set to 'Failed'" )
@@ -555,6 +555,12 @@ class FTSAgent( AgentModule ):
         log.error( submit["Message"] )
       else:
         ftsJobs += submit["Value"]
+
+    # FIXME: this is a hack in order to recover unduly Scheduled files
+    lfnsInJobs = set( [ftsFile.LFN for ftsJob in ftsJobs for ftsFile in ftsjob] )
+    for opFile in operation:
+      if opFile.Status == 'Scheduled' and opFile.LFN not in lfnsInJobs:
+        opFile.Status = 'Waiting'
 
     # # status change? - put back request
     if request.Status != "Scheduled":
@@ -759,10 +765,14 @@ class FTSAgent( AgentModule ):
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
       if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"] or 'was not found' in monitor['Message']:
-        log.error( "FTSJob not known (expired on server?)" )
+        log.error( "FTSJob not known (expired on server?): delete it" )
         for ftsFile in ftsJob:
           ftsFile.Status = "Waiting"
           ftsFilesDict["toSubmit"].append( ftsFile )
+        # #  No way further for that job: delete it
+        res = self.ftsClient().deleteFTSJob( ftsJob.FTSJobID )
+        if not res['OK']:
+          log.error( "Unable to delete FTSJob", res['Message'] )
         return S_OK( ftsFilesDict )
       return monitor
 
