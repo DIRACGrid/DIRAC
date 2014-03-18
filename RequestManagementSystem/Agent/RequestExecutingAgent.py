@@ -207,7 +207,7 @@ class RequestExecutingAgent( AgentModule ):
     """
     self.log.info( "resetAllRequests: will put %s back requests" % len( self.__requestCache ) )
     for requestName, request in self.__requestCache.iteritems():
-      reset = self.requestClient().updateRequest( request )
+      reset = self.requestClient().putRequest( request )
       if not reset["OK"]:
         self.log.error( "resetAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
         continue
