@@ -49,7 +49,7 @@ class TransformationCleaningAgent( AgentModule ):
     # # transformation client
     self.transClient = TransformationClient()
     # # wms client
-    self.wmsClient = WMSClient()
+    self.wmsClient = WMSClient( useCertificates = True )
     # # request client
     self.reqClient = ReqClient()
     # # file catalog clinet
