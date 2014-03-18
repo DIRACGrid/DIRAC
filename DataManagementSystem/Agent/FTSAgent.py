@@ -477,7 +477,7 @@ class FTSAgent( AgentModule ):
       missingReplicas = missingReplicas["Value"]
       for opFile in operation:
         # Actually the condition below should never happen... Change printout for checking
-        if opFile.LFN not in missingReplicas and opFile.Status != 'Done':
+        if opFile.LFN not in missingReplicas and opFile.Status not in ( 'Done', 'Failed' ):
           log.warn( "Should be set! %s is replicated at all targets" % opFile.LFN )
           opFile.Status = "Done"
 
