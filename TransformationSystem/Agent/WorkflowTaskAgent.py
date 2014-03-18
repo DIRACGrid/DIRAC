@@ -16,7 +16,7 @@ class WorkflowTaskAgent( TaskManagerAgentBase ):
     '''
     TaskManagerAgentBase.__init__( self, *args, **kwargs )
 
-    self.submissionClient = WMSClient()
+    self.submissionClient = WMSClient( useCertificates = True )
     self.taskManager = WorkflowTasks( transClient = self.transClient, submissionClient = self.submissionClient )
     self.shifterProxy = 'ProductionManager'
     agentTSTypes = self.am_getOption( 'TransType', [] )
