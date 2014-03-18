@@ -118,29 +118,19 @@ class Operation( Record ):
   # # protected methods for parent only
   def _notify( self ):
     """ notify self about file status change """
-    fStatus = list( set( self.fileStatusList() ) )
+    fStatus = set( self.fileStatusList() )
 
-    newStatus = "Done"
-    while sorted( fStatus ):
-
-      status = fStatus.pop( 0 )
-
-      # # one file Failed -> Failed
-      if status == "Failed":
-        newStatus = "Failed"
-        break
-
-      elif status == "Scheduled":
-        if newStatus == "Done":
-          newStatus = "Scheduled"
-        continue
-
-      elif status == "Waiting":
-        newStatus = "Queued"
-        continue
-
-      elif status == "Done":
-        continue
+    if fStatus == set( ['Failed'] ):
+      # All files Failed -> Failed
+      newStatus = 'Failed'
+    elif "Waiting" in fStatus:
+      newStatus = 'Queued'
+    elif 'Scheduled' in fStatus:
+      newStatus = 'Scheduled'
+    elif 'Failed' in fStatus:
+      newStatus = 'Failed'
+    else:
+      newStatus = 'Done'
 
     self.__data__["Status"] = newStatus
     if self._parent:
