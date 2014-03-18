@@ -758,7 +758,7 @@ class FTSAgent( AgentModule ):
     if not monitor["OK"]:
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
-      if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"]:
+      if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"] or 'was not found' in monitor['Message']:
         log.error( "FTSJob not known (expired on server?)" )
         for ftsFile in ftsJob:
           ftsFile.Status = "Waiting"
