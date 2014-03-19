@@ -16,31 +16,13 @@ __RCSID__ = "$Id$"
 
 class WMSClient( object ):
 
-  def __init__( self, jobManagerClient = None, sbRPCClient = None, sbTransferClient = None,
-                useCertificates = False, timeout = 600 ):
+  def __init__( self, useCertificates = False, timeout = 600 ):
     """ WMS Client constructor
 
         Here we also initialize the needed clients and connections
     """
+    self.useCertificates = useCertificates
     self.timeout = timeout
-
-    if not jobManagerClient:
-      self.jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = useCertificates,
-                                   timeout = self.timeout )
-    else:
-      self.jobManager = jobManagerClient
-
-    if not sbRPCClient:
-      sbRPCClient = RPCClient( 'WorkloadManagement/SandboxStore', useCertificates = useCertificates )
-
-    if not sbTransferClient:
-      sbTransferClient = TransferClient( 'WorkloadManagement/SandboxStore', useCertificates = useCertificates )
-
-    self.sandboxClient = SandboxStoreClient( rpcClient = sbRPCClient,
-                                             transferClient = sbTransferClient,
-                                             useCertificates = useCertificates )
-
-    self.jobManagerSafe = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
 
 ###############################################################################
 
@@ -96,7 +78,7 @@ class WMSClient( object ):
       return result
 
     if okFiles:
-      result = self.sandboxClient.uploadFilesAsSandbox( okFiles )
+      result = SandboxStoreClient( useCertificates = self.useCertificates ).uploadFilesAsSandbox( okFiles )
       if not result[ 'OK' ]:
         return result
       inputSandbox.append( result[ 'Value' ] )
@@ -130,7 +112,10 @@ class WMSClient( object ):
       return result
 
     # Submit the job now and get the new job ID
-    result = self.jobManager.submitJob( classAdJob.asJDL() )
+    jobManager = RPCClient( 'WorkloadManagement/JobManager',
+                            useCertificates = self.useCertificates,
+                            timeout = self.timeout )
+    result = jobManager.submitJob( classAdJob.asJDL() )
     if 'requireProxyUpload' in result and result['requireProxyUpload']:
       gLogger.warn( "Need to upload the proxy" )
 
@@ -141,22 +126,26 @@ class WMSClient( object ):
     """ Kill running job.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    return self.jobManagerSafe.killJob( jobID )
+    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
+    return jobManager.killJob( jobID )
 
   def deleteJob( self, jobID ):
     """ Delete job(s) from the WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    return self.jobManagerSafe.deleteJob( jobID )
+    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
+    return jobManager.deleteJob( jobID )
 
   def rescheduleJob( self, jobID ):
     """ Reschedule job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    return self.jobManagerSafe.rescheduleJob( jobID )
+    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
+    return jobManager.rescheduleJob( jobID )
 
   def resetJob( self, jobID ):
     """ Reset job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    return self.jobManagerSafe.resetJob( jobID )
+    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
+    return jobManager.resetJob( jobID )
