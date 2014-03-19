@@ -62,7 +62,7 @@ def filterReplicas( opFile, logger = None, replicaManager = None, seCache = None
   for repSEName in replicas:
 
     repSE = seCache[repSEName] if repSEName in seCache else \
-            seCache.setdefault( repSE, StorageElement( repSEName, "SRM2" ) )
+            seCache.setdefault( repSEName, StorageElement( repSEName, "SRM2" ) )
 
     pfn = repSE.getPfnForLfn( opFile.LFN )
     if not pfn["OK"]:
