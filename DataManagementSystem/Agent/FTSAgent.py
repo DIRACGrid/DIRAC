@@ -561,7 +561,7 @@ class FTSAgent( AgentModule ):
         ftsJobs += submit["Value"]
 
     # FIXME: this is a hack in order to recover unduly Scheduled files
-    lfnsInJobs = set( [ftsFile.LFN for ftsJob in ftsJobs for ftsFile in ftsjob] )
+    lfnsInJobs = set( [ftsFile.LFN for ftsJob in ftsJobs for ftsFile in ftsJob] )
     for opFile in operation:
       if opFile.Status == 'Scheduled' and opFile.LFN not in lfnsInJobs:
         opFile.Status = 'Waiting'
