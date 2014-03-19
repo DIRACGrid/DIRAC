@@ -160,9 +160,13 @@ class FTSAgent( AgentModule ):
   @classmethod
   def getSE( cls, seName ):
     """ keep SEs in cache """
-    if seName not in cls.__seCache:
-      cls.__seCache[seName] = StorageElement( seName )
-    return cls.__seCache[seName]
+    return cls.__seCache[seName] if seName in cls.__seCache else \
+           cls.__seCache.setdefault( seName, StorageElement( seName ) )
+
+  @classmethod
+  def getSECache( cls ):
+    """ return the cache dictionary"""
+    return cls.__seCache
 
   @classmethod
   def getRequest( cls, reqName ):
@@ -993,54 +997,5 @@ class FTSAgent( AgentModule ):
 
   def __filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
-    log = self.log.getSubLogger( "filterReplicas" )
-
-    ret = { "Valid" : [], "Banned" : [], "Bad" : [], 'NoReplicas':[] }
-
-    replicas = self.replicaManager().getActiveReplicas( opFile.LFN )
-    if not replicas["OK"]:
-      log.error( replicas["Message"] )
-    reNotExists = re.compile( "not such file or directory" )
-    replicas = replicas["Value"]
-    failed = replicas["Failed"].get( opFile.LFN , "" )
-    if reNotExists.match( failed.lower() ):
-      opFile.Status = "Failed"
-      opFile.Error = failed
-      return S_ERROR( failed )
-
-    replicas = replicas["Successful"][opFile.LFN] if opFile.LFN in replicas["Successful"] else {}
-
-    for repSEName in replicas:
-
-      repSE = self.getSE( repSEName )
-
-      pfn = repSE.getPfnForLfn( opFile.LFN )
-      if not pfn["OK"]:
-        log.warn( "unable to create pfn for %s lfn: %s" % ( opFile.LFN, pfn["Message"] ) )
-        ret["Banned"].append( repSEName )
-        continue
-      pfn = pfn["Value"]
-
-      repSEMetadata = repSE.getFileMetadata( pfn )
-      error = repSEMetadata( 'Message', repSEMetadata.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )
-      if error:
-        self.log.warn( error )
-        if 'File does not exist' in error:
-          ret['NoReplicas'].append( repSEName )
-        else:
-          ret["Banned"].append( repSEName )
-        continue
-      repSEMetadata = repSEMetadata["Value"]
-
-      seChecksum = repSEMetadata["Checksum"].replace( "x", "0" ).zfill( 8 ) if "Checksum" in repSEMetadata else None
-      if opFile.Checksum and opFile.Checksum != seChecksum:
-        self.log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
-                                                             opFile.Checksum,
-                                                             repSE,
-                                                             seChecksum ) )
-        ret["Bad"].append( repSEName )
-        continue
-      # # if we're here repSE is OK
-      ret["Valid"].append( repSEName )
-
-    return S_OK( ret )
+    from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import filterReplicas
+    return filterReplicas( opFile, logger = self.log, replicaManager = self.replicaManager(), seCache = self.getSEcache )
