@@ -72,7 +72,7 @@ def filterReplicas( opFile, logger = None, replicaManager = None, seCache = None
       pfn = pfn["Value"]
 
       repSEMetadata = repSE.getFileMetadata( pfn )
-      error = repSEMetadata( 'Message', repSEMetadata.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )
+      error = repSEMetadata.get( 'Message', repSEMetadata.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )
       if error:
         log.warn( 'unable to get metadata at %s for %s' % ( repSEName, opFile.LFN ), error )
         if 'File does not exist' in error:
