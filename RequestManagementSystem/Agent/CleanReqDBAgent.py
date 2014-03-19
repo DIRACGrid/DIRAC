@@ -60,7 +60,7 @@ class CleanReqDBAgent( AgentModule ):
     """ initialization """
     self.DEL_GRACE_DAYS = self.am_getOption( "DeleteGraceDays", self.DEL_GRACE_DAYS )
     self.log.info( "Delete grace period = %s days" % self.DEL_GRACE_DAYS )
-    self.DEL_LIMIT = self.am_getOption( "DeleleLimit", self.DEL_LIMIT )
+    self.DEL_LIMIT = self.am_getOption( "DeleteLimit", self.DEL_LIMIT )
     self.log.info( "Delete limit = %s request/cycle" % self.DEL_LIMIT )
     self.DEL_FAILED = self.am_getOption( "DeleteFailed", self.DEL_FAILED )
     self.log.info( "Delete failed requests: %s" % { True: "yes", False: "no"}[self.DEL_FAILED] )
