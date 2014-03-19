@@ -2,15 +2,14 @@
     methods necessary to communicate with the Workload Management System
 """
 
+import os
+
 from DIRAC                                     import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.DISET.RPCClient                import RPCClient
-from DIRAC.Core.DISET.TransferClient           import TransferClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities                      import File
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
-
-import os
 
 __RCSID__ = "$Id$"
 
