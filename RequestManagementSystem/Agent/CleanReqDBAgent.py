@@ -43,7 +43,7 @@ class CleanReqDBAgent( AgentModule ):
   # # KICK PERIOD in HOURS
   KICK_GRACE_HOURS = 1
   # # KICK LIMIT
-  KICK_LIMIT = 100
+  KICK_LIMIT = 10000
   # # remove failed requests flag
   DEL_FAILED = False
 
@@ -86,7 +86,7 @@ class CleanReqDBAgent( AgentModule ):
 
     # # kick
     statusList = [ "Assigned" ]
-    requestNamesList = self.requestClient().getRequestNamesList( statusList, self.DEL_LIMIT )
+    requestNamesList = self.requestClient().getRequestNamesList( statusList, self.KICK_LIMIT )
     if not requestNamesList["OK"]:
       self.log.error( "execute: %s" % requestNamesList["Message"] )
       return requestNamesList
