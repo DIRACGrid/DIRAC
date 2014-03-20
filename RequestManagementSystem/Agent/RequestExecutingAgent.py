@@ -186,7 +186,9 @@ class RequestExecutingAgent( AgentModule ):
 
     :param Request request: Request instance
     """
-    self.__requestCache.setdefault( request.RequestName, request )
+    if request.RequestName in self.__requestCache:
+      return S_ERROR( "Duplicate request, ignore: %s" % request.RequestName )
+    self.__requestCache[ request.RequestName ] = request
     return S_OK()
 
   def resetRequest( self, requestName ):
@@ -196,6 +198,7 @@ class RequestExecutingAgent( AgentModule ):
     """
     if requestName in self.__requestCache:
       reset = self.requestClient().putRequest( self.__requestCache[requestName] )
+      del self.__requestCache[requestName]
       if not reset["OK"]:
         return S_ERROR( "resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
     return S_OK()
@@ -208,6 +211,7 @@ class RequestExecutingAgent( AgentModule ):
     self.log.info( "resetAllRequests: will put %s back requests" % len( self.__requestCache ) )
     for requestName, request in self.__requestCache.iteritems():
       reset = self.requestClient().putRequest( request )
+      del self.__requestCache[requestName]
       if not reset["OK"]:
         self.log.error( "resetAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
         continue
@@ -247,7 +251,10 @@ class RequestExecutingAgent( AgentModule ):
       # # set task id
       taskID = request.RequestName
       # # save current request in cache
-      self.cacheRequest( request )
+      res = self.cacheRequest( request )
+      if not res['OK']:
+        self.log.warn( res['Message'] )
+        continue
       # # serialize to JSON
       requestJSON = request.toJSON()
       if not requestJSON["OK"]:
