@@ -65,7 +65,7 @@ if __name__ == "__main__":
     if not res['OK']:
         print "Error", res['Message'];
     elif res['Value']:
-      requests = res['Value']
+      requests = [reqName for reqName, _x, _y in res['Value']]
 
   if not requests:
     print "No requests to reset"
@@ -79,7 +79,6 @@ if __name__ == "__main__":
     else:
       freq = 0
     for reqName in requests:
-      reqName = reqName[0]
       toReset = True
       if len( requests ) < maxReset:
         req = reqClient.peekRequest( reqName ).get( 'Value' )
