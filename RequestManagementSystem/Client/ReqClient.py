@@ -352,7 +352,7 @@ class ReqClient( Client ):
         return res
       req = res['Value']
     # Only reset requests that
-    if force or req.Status != Failed:
+    if force or req.Status != 'Failed':
       res = self.getRequest( requestName )
       if not res['OK']:
         return res
@@ -369,4 +369,4 @@ class ReqClient( Client ):
 
       return self.putRequest( req )
     else:
-      return S_OK()
+      return S_OK( "Not reset" )
