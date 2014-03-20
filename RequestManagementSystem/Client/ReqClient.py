@@ -338,7 +338,7 @@ class ReqClient( Client ):
         ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )
 
-  def resetFailedRequest( self, requestName ):
+  def resetFailedRequest( self, requestName, force = False ):
     """ Reset a failed request to "Waiting" status - requestName can also be the RequestID
     """
     try:
@@ -346,17 +346,27 @@ class ReqClient( Client ):
     except ValueError:
       pass
 
-    res = self.getRequest( requestName )
-    if not res['OK']:
-      return res
-    req = res['Value']
-    for op in req:
-      for f in op:
-        if f.Status == 'Failed':
-          f.Attempt += 1
-          f.Error = ''
-          f.Status = 'Waiting'
-      if op.Status != 'Failed':
-        op.Error = ''
+    if not force:
+      res = self.peekRequest( requestName )
+      if not res['OK']:
+        return res
+      req = res['Value']
+    # Only reset requests that
+    if force or req.Status != Failed:
+      res = self.getRequest( requestName )
+      if not res['OK']:
+        return res
+      req = res['Value']
+      for op in req:
+        op.Status = 'Waiting'
+        for f in op:
+          if f.Status == 'Failed':
+            f.Attempt += 1
+            f.Error = ''
+            f.Status = 'Waiting'
+        if op.Status != 'Failed':
+          op.Error = ''
 
-    return self.putRequest( req )
+      return self.putRequest( req )
+    else:
+      return S_OK()
