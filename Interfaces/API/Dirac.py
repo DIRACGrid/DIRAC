@@ -51,8 +51,7 @@ class Dirac( API ):
   """
 
   #############################################################################
-  def __init__( self, withRepo = False, repoLocation = '', jobManagerClient = False,
-                sbRPCClient = False, sbTransferClient = False, useCertificates = False ):
+  def __init__( self, withRepo = False, repoLocation = '', useCertificates = False ):
     """Internal initialization of the DIRAC API.
     """
     super( Dirac, self ).__init__()
@@ -67,25 +66,12 @@ class Dirac( API ):
         self.jobRepo = False
 
     self.scratchDir = gConfig.getValue( self.section + 'ScratchDir', '/tmp' )
-    self.__clients = {'JobManager':jobManagerClient, 'SBRPC':sbRPCClient, 'SBTransfer':sbTransferClient}
-    self.__useCertificates = useCertificates
+    self.useCertificates = useCertificates
 
     # Determine the default file catalog
     self.defaultFileCatalog = gConfig.getValue( self.section + '/FileCatalog', None )
 
-  #############################################
-  # Client instantiation
-  #############################################
-  def _wmsClient( self ):
-    return self.__clients.setdefault( 'WMS', WMSClient( self.__clients[ 'JobManager' ],
-                                                       self.__clients[ 'SBRPC' ],
-                                                       self.__clients[ 'SBTransfer' ],
-                                                       self.__useCertificates ) )
-  def _sbClient( self ):
-    return self.__clients.setdefault( 'SandboxClient',
-                                      SandboxStoreClient( rpcClient = self.__clients[ 'SBRPC' ],
-                                                          transferClient = self.__clients[ 'SBTransfer' ],
-                                                          useCertificates = self.__useCertificates ) )
+    self.__clients = None
 
   #############################################################################
   # Repository specific methods
@@ -1664,7 +1650,7 @@ class Dirac( API ):
       return S_ERROR( 'Submission disabled by /LocalSite/DisableSubmission flag for debugging purposes' )
 
     try:
-      jobID = self._wmsClient().submitJob( jdl )
+      jobID = WMSClient().submitJob( jdl )
       # raise 'problem'
     except Exception, x:
       return S_ERROR( "Cannot submit job: %s" % str( x ) )
@@ -1713,7 +1699,7 @@ class Dirac( API ):
     except Exception, x:
       return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
 
-    result = self._sbClient().downloadSandboxForJob( jobID, 'Input', dirPath )
+    result = SandboxStoreClient( useCertificates = self.useCertificates ).downloadSandboxForJob( jobID, 'Input', dirPath )
     if not result[ 'OK' ]:
       self.log.warn( result[ 'Message' ] )
     else:
@@ -1768,7 +1754,7 @@ class Dirac( API ):
       return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
 
     # New download
-    result = self._sbClient().downloadSandboxForJob( jobID, 'Output', dirPath )
+    result = SandboxStoreClient( useCertificates = self.useCertificates ).downloadSandboxForJob( jobID, 'Output', dirPath )
     if result['OK']:
       self.log.info( 'Files retrieved and extracted in %s' % ( dirPath ) )
       if self.jobRepo:
@@ -1850,7 +1836,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self._wmsClient().deleteJob( jobID )
+    result = WMSClient().deleteJob( jobID )
     if result['OK']:
       if self.jobRepo:
         for jobID in result['Value']:
@@ -1885,7 +1871,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self._wmsClient().rescheduleJob( jobID )
+    result = WMSClient().rescheduleJob( jobID )
     if result['OK']:
       if self.jobRepo:
         repoDict = {}
@@ -1920,7 +1906,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self._wmsClient().killJob( jobID )
+    result = WMSClient().killJob( jobID )
     if result['OK']:
       if self.jobRepo:
         for jobID in result['Value']:

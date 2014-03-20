@@ -1803,6 +1803,7 @@ class DataManager( object ):
         replicaDict['Failed'][lfn] = 'Wrong replica info'
         continue
       for se in replicas.keys():
+        # Fix the caching
         readStatus = seReadStatus[se] if se in seReadStatus else seReadStatus.setdefault( se, self.__SEActive( se ).get( 'Value', {} ).get( 'Read', False ) )
         if not readStatus:
           replicas.pop( se )
@@ -1875,7 +1876,7 @@ class DataManager( object ):
         succPfn = seObj.getPfnForLfn( se_lfn[se] ).get( 'Value', {} ).get( 'Successful', {} )
         for lfn in succPfn:
           # catalogReplicas still points res["value"]["Successful"] so res will be updated
-          catalogReplicas[se] = succPfn[lfn]
+          catalogReplicas[lfn][se] = succPfn[lfn]
 
     return res
 

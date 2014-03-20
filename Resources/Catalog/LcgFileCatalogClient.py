@@ -527,6 +527,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           if 'Could not secure the connection' in reason:
             # This is a fatal error
             return S_ERROR( 'Could not secure the connection' )
+          elif 'Bad credentials' in reason:
+            return S_ERROR( "Bad Credentials" )
         continue
       guid = ''
       it = iter( lfnList )
