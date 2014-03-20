@@ -105,7 +105,7 @@ if __name__ == "__main__":
             reset += 1
           else:
             notReset += 1
-      if freq and ( reset + notReset % freq ) == 0:
+      if freq and ( ( reset + notReset ) % freq ) == 0:
         sys.stdout.write( '.' )
         sys.stdout.flush()
     if reset:
