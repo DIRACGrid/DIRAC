@@ -211,7 +211,7 @@ class OperationHandlerBase( object ):
     :param str se: SE name
     :param str status: RSS status
     """
-    while _i in range( 2 ):
+    for _i in range( 2 ):
       rssStatus = self.rssClient().getStorageElementStatus( se, status )
       # gLogger.always( rssStatus )
       if rssStatus['OK']:
