@@ -350,15 +350,13 @@ class ReqClient( Client ):
     if not res['OK']:
       return res
     req = res['Value']
-    req.Status = 'Waiting'
     for op in req:
-      op.Error = ''
-      if op.Status == 'Failed':
-        op.Status = 'Waiting'
       for f in op:
-        f.Error = ''
         if f.Status == 'Failed':
           f.Attempt += 1
+          f.Error = ''
           f.Status = 'Waiting'
+      if op.Status != 'Failed':
+        op.Error = ''
 
     return self.putRequest( req )
