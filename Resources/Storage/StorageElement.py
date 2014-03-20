@@ -715,19 +715,19 @@ class StorageElement:
 
     # args should normaly be empty to avoid problem...
     if len( args ):
-      self.log.warn( "StorageElement.__executeMethod: args should be empty!%s" % args )
+      self.log.verbose( "StorageElement.__executeMethod: args should be empty!%s" % args )
       # because there is normaly normaly only one kw argument, I can move it from args to kwargs
       methDefaultArgs = StorageElement.__defaultsArguments.get( self.methodName, {} ).keys()
       if len( methDefaultArgs ):
         kwargs[methDefaultArgs[0] ] = args[0]
         args = args[1:]
-      self.log.warn( "StorageElement.__executeMethod: put it in kwargs, but dirty and might be dangerous!args %s kwargs %s" % ( args, kwargs ) )
+      self.log.verbose( "StorageElement.__executeMethod: put it in kwargs, but dirty and might be dangerous!args %s kwargs %s" % ( args, kwargs ) )
 
 
     # We check the deprecated arguments
     for depArg in StorageElement.__deprecatedArguments:
       if depArg in kwargs:
-        self.log.warn( "StorageElement.__executeMethod: %s is not an allowed argument anymore. Please change your code!" % depArg )
+        self.log.verbose( "StorageElement.__executeMethod: %s is not an allowed argument anymore. Please change your code!" % depArg )
         removedArgs[depArg] = kwargs[depArg]
         del kwargs[depArg]
 
@@ -838,7 +838,7 @@ class StorageElement:
     retValue = S_OK( { 'Failed': failed, 'Successful': successful } )
     
     if singleFileOrDir:
-      self.log.warn( "StorageElement.__executeMethod : use Utils.executeSingleFileOrDirWrapper for backward compatibility. You should fix your code " )
+      self.log.verbose( "StorageElement.__executeMethod : use Utils.executeSingleFileOrDirWrapper for backward compatibility. You should fix your code " )
       retValue = Utils.executeSingleFileOrDirWrapper( retValue )
 
     return retValue
