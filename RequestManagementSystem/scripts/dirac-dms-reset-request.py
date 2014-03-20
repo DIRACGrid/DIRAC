@@ -60,7 +60,9 @@ if __name__ == "__main__":
   requests = []
   if requestName:
     requests = [requestName]
+    force = False
   elif resetFailed:
+    force = True
     res = reqClient.getRequestNamesList( ['Failed'], maxReset );
     if not res['OK']:
         print "Error", res['Message'];
@@ -82,7 +84,7 @@ if __name__ == "__main__":
       toReset = True
       if len( requests ) < maxReset:
         req = reqClient.peekRequest( reqName ).get( 'Value' )
-        if not req:
+        if not req or req.Status == 'Failed':
           continue
         for op in req:
           if op.Status == 'Failed':
@@ -94,15 +96,21 @@ if __name__ == "__main__":
                   break
             break
       if toReset:
-        ret = reqClient.resetFailedRequest( reqName )
+        ret = reqClient.resetFailedRequest( reqName, force = force )
         if not ret['OK']:
+          notReset += 1
           print "Error", ret['Message']
         else:
-          if freq and ( reset % freq ) == 0:
-            sys.stdout.write( '.' )
-            sys.stdout.flush()
-          reset += 1
+          if ret['Value'] != 'Not reset':
+            reset += 1
+          else:
+            notReset += 1
+      if freq and ( reset + notReset % freq ) == 0:
+        sys.stdout.write( '.' )
+        sys.stdout.flush()
     if reset:
       print "\nReset", reset, 'Requests'
+    else:
+      print ''
     if notReset:
-      print "Not reset (File doesn't exist) %d requests" % notReset
+      print "Not reset (Request doesn't exist or really Failed) %d requests" % notReset
