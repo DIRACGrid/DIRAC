@@ -411,6 +411,8 @@ class Request( Record ):
     """ status setter """
     if value not in Request.ALL_STATES:
       raise ValueError( "Unknown status: %s" % str( value ) )
+    if value == 'Done':
+      self.__data__['Error'] = ''
     self.__data__["Status"] = value
 
   @property
