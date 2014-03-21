@@ -218,11 +218,7 @@ class RSSCache( Cache ):
 
     self.acquireLock()
     try:
-      match = self._match( elementNames, statusTypes )
-
-      if not match[ 'OK' ]:
-        self.log.error( match[ 'Message' ] )
-      return match
+      return self._match( elementNames, statusTypes )
     finally:
       # Release lock, no matter what !
       self.releaseLock()
