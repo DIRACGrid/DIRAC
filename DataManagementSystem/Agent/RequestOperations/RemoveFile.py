@@ -138,12 +138,10 @@ class RemoveFile( OperationHandlerBase ):
         try:
           fileProxy = self.getProxyForLFN( opFile.LFN )
           if not fileProxy["OK"]:
-            opFile.Error = fileProxy["Message"]
-            if not opFile.Error:
-              opFile.Error = "Error getting owner's proxy"
+            opFile.Error = "Error getting owner's proxy : %s" % fileProxy['Message']
           else:
-            self.log.info( "Trying to remove file with owner's proxy" )
             proxyFile = fileProxy["Value"]
+            self.log.info( "Trying to remove file with owner's proxy (file %s)" % proxyFile )
 
             removeFile = self.replicaManager().removeFile( opFile.LFN, force = True )
 
