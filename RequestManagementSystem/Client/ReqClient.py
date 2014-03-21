@@ -346,27 +346,34 @@ class ReqClient( Client ):
     except ValueError:
       pass
 
-    if not force:
-      res = self.peekRequest( requestName )
-      if not res['OK']:
-        return res
-      req = res['Value']
+    # # we can safely only peek the request as it is Failed and therefore not owned by an agent
+    res = self.peekRequest( requestName )
+    if not res['OK']:
+      return res
+    req = res['Value']
+    toReset = True
+    for op in req:
+      if op.Status == 'Failed':
+        if not op.Type.startswith( 'Remove' ):
+          for f in op:
+            if f.Status == 'Failed' and 'no such file or directory' in f.Error.lower() :
+              toReset = force
+              break
+        break
     # Only reset requests that
-    if force or req.Status != 'Failed':
-      res = self.getRequest( requestName )
-      if not res['OK']:
-        return res
-      req = res['Value']
+    if toReset:
       for op in req:
-        op.Status = 'Waiting'
+        op.Error = ' '
         for f in op:
           if f.Status == 'Failed':
-            f.Attempt += 1
-            f.Error = ''
+            if 'Max attempts limit reached' in f.Error:
+              f.Attempt = 1
+            else:
+              f.Attempt += 1
+            f.Error = ' '
             f.Status = 'Waiting'
-        if op.Status != 'Failed':
-          op.Error = ''
+        if op.Status == 'Failed':
+          op.Status = 'Waiting'
 
       return self.putRequest( req )
-    else:
-      return S_OK( "Not reset" )
+    return S_OK( "Not reset" )
