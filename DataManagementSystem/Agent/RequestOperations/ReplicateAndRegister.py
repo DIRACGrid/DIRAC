@@ -259,10 +259,10 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
           self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
           gMonitor.addMark( "FTSScheduleFail" )
         elif noReplicas:
-          log.warn( "unable to schedule %s, file doesn't exist" % opFile.LFN )
+          self.log.warn( "unable to schedule %s, file doesn't exist" % opFile.LFN )
           opFile.Status = 'Failed'
         elif badReplicas:
-          log.warn( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
+          self.log.warn( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
           opFile.Status = 'Failed'
 
       else:
