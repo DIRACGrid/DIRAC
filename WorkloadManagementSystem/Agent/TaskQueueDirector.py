@@ -127,7 +127,7 @@
 __RCSID__ = "$Id$"
 
 import random, time
-from DIRAC                                                       import S_OK, S_ERROR, List, Time, gConfig, abort
+from DIRAC                                                       import S_OK, S_ERROR, List, Time, abort
 from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
 from DIRAC.Core.DISET.RPCClient                                  import RPCClient
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -385,8 +385,7 @@ class TaskQueueDirector( AgentModule ):
     """
 
     self.log.info( 'Creating Director for SubmitPool:', submitPool )
-    # 1. check the GridMiddleware
-    # Comprobar esto
+    # check the GridMiddleware
     directorGridMiddleware = self.am_getOption( submitPool + '/GridMiddleware', '' )
     if not directorGridMiddleware:
       self.log.error( 'No Director GridMiddleware defined for SubmitPool:', submitPool )
@@ -394,12 +393,10 @@ class TaskQueueDirector( AgentModule ):
 
     directorName = '%sPilotDirector' % directorGridMiddleware
 
-    try:
-      self.log.info( 'Instantiating Director Object:', directorName )
-      director = eval( '%s( "%s" )' % ( directorName, submitPool ) )
-    except Exception, x:
-      self.log.exception()
-      return
+    self.log.info( 'Instantiating Director Object:', directorName )
+    directorClass_ = getattr( __import__( "DIRAC.WorkloadManagementSystem.private.%s" % directorName,
+                                          globals(), locals(), [directorName], -1 ), directorName )
+    director = directorClass_( submitPool )
 
     self.log.info( 'Director Object instantiated:', directorName )
 
@@ -419,8 +416,6 @@ class TaskQueueDirector( AgentModule ):
                                    }
 
     self.log.verbose( 'Created Director for SubmitPool', submitPool )
-
-    return
 
   def __configureDirector( self, submitPool = None ):
     """
