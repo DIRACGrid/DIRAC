@@ -216,7 +216,7 @@ class OperationHandlerBase( object ):
       # gLogger.always( rssStatus )
       if rssStatus['OK']:
         return S_OK( rssStatus["Value"][se][status] != "Banned" )
-    return S_ERROR( "unknown SE: %s" % se )
+    return S_ERROR( "%s status not found in RSS for SE %s" % ( status, se ) )
 
   @property
   def shifter( self ):
