@@ -1860,10 +1860,14 @@ class ReplicaManager( CatalogToStorage ):
   def __registerFile( self, fileTuples, catalog ):
     """ register file to cataloge """
     seDict = {}
-    for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuples:
-      seDict.setdefault( storageElementName, [] ).append( ( lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum ) )
-    failed = {}
     fileDict = {}
+    for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuples:
+      if storageElementName:
+        seDict.setdefault( storageElementName, [] ).append( ( lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum ) )
+      else:
+        # If no SE name, this could be just registration in a dummy catalog like LHCb bookkeeping
+        fileDict[lfn] = {'PFN':'', 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
+    failed = {}
     for storageElementName, fileTuple in seDict.items():
       destStorageElement = StorageElement( storageElementName )
       res = destStorageElement.isValid()
