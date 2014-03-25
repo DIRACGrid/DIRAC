@@ -32,6 +32,70 @@ from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase
 from DIRAC.Resources.Catalog.FileCatalog                        import FileCatalog
 from DIRAC.Resources.Utilities                                  import Utils
 
+def filterReplicas( opFile, logger = None, replicaManager = None, seCache = None ):
+  """ filter out banned/invalid source SEs """
+  from DIRAC.Core.Utilities.Adler import compareAdler
+
+  if not logger:
+    logger = gLogger
+  if not replicaManager:
+    replicaManager = ReplicaManager()
+  if not seCache:
+    seCache = {}
+
+  log = logger.getSubLogger( "filterReplicas" )
+  ret = { "Valid" : [], "Banned" : [], "Bad" : [], 'NoReplicas':[] }
+
+  replicas = replicaManager.getReplicas( opFile.LFN, allStatus = False )
+  if not replicas["OK"]:
+    log.error( replicas["Message"] )
+    return replicas
+  reNotExists = re.compile( "not such file or directory" )
+  replicas = replicas["Value"]
+  failed = replicas["Failed"].get( opFile.LFN , "" )
+  if reNotExists.match( failed.lower() ):
+    opFile.Status = "Failed"
+    opFile.Error = failed
+    return S_ERROR( failed )
+
+  replicas = replicas["Successful"].get( opFile.LFN, {} )
+
+  for repSEName in replicas:
+
+    repSE = seCache[repSEName] if repSEName in seCache else \
+            seCache.setdefault( repSEName, StorageElement( repSEName, "SRM2" ) )
+
+    pfn = repSE.getPfnForLfn( opFile.LFN )
+    if not pfn["OK"]:
+      log.warn( "unable to create pfn for %s lfn at %s: %s" % ( opFile.LFN, repSEName, pfn["Message"] ) )
+      ret["NoReplicas"].append( repSEName )
+    else:
+      pfn = pfn["Value"]
+
+      repSEMetadata = repSE.getFileMetadata( pfn )
+      error = repSEMetadata.get( 'Message', repSEMetadata.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )
+      if error:
+        log.warn( 'unable to get metadata at %s for %s' % ( repSEName, opFile.LFN ), error )
+        if 'File does not exist' in error:
+          ret['NoReplicas'].append( repSEName )
+        else:
+          log.verbose( "StorageElement '%s' is banned for reading" % ( repSEName ) )
+          ret["Banned"].append( repSEName )
+      else:
+        repSEMetadata = repSEMetadata['Value']['Successful'][pfn]
+
+        seChecksum = repSEMetadata.get( "Checksum" )
+        if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
+          log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
+                                                               opFile.Checksum,
+                                                               repSE,
+                                                               seChecksum ) )
+          ret["Bad"].append( repSEName )
+        else:
+          # # if we're here repSE is OK
+          ret["Valid"].append( repSEName )
+
+  return S_OK( ret )
 
 
 ########################################################################
@@ -156,64 +220,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
   def _filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
-
-    from DIRAC.Core.Utilities.Adler import compareAdler
-    ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
-
-    replicas = self.dm.getActiveReplicas( opFile.LFN )
-    if not replicas["OK"]:
-      self.log.error( replicas["Message"] )
-    reNotExists = re.compile( "not such file or directory" )
-    replicas = replicas["Value"]
-    failed = replicas["Failed"].get( opFile.LFN , "" )
-    if reNotExists.match( failed.lower() ):
-      opFile.Status = "Failed"
-      opFile.Error = failed
-      return S_ERROR( failed )
-
-    replicas = replicas["Successful"][opFile.LFN] if opFile.LFN in replicas["Successful"] else {}
-
-    for repSEName in replicas:
-
-      seRead = self.rssSEStatus( repSEName, "ReadAccess" )
-      if not seRead["OK"]:
-        self.log.info( seRead["Message"] )
-        ret["Banned"].append( repSEName )
-        continue
-      if not seRead["Value"]:
-        self.log.info( "StorageElement '%s' is banned for reading" % ( repSEName ) )
-
-      repSE = self.seCache.get( repSEName, None )
-      if not repSE:
-        repSE = StorageElement( repSEName )
-        self.seCache[repSE] = repSE
-
-      pfn = Utils.executeSingleFileOrDirWrapper( repSE.getPfnForLfn( opFile.LFN ) )
-      if not pfn["OK"]:
-        self.log.warn( "unable to create pfn for %s lfn: %s" % ( opFile.LFN, pfn["Message"] ) )
-        ret["Banned"].append( repSEName )
-        continue
-      pfn = pfn["Value"]
-
-      repSEMetadata = repSE.getFileMetadata( pfn, singleFile = True )
-      if not repSEMetadata["OK"]:
-        self.log.warn( repSEMetadata["Message"] )
-        ret["Banned"].append( repSEName )
-        continue
-      repSEMetadata = repSEMetadata["Value"]
-
-      seChecksum = repSEMetadata.get( "Checksum" )
-      if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
-        self.log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
-                                                             opFile.Checksum,
-                                                             repSE,
-                                                             seChecksum ) )
-        ret["Bad"].append( repSEName )
-        continue
-      # # if we're here repSE is OK
-      ret["Valid"].append( repSEName )
-
-    return S_OK( ret )
+    return filterReplicas( opFile, logger = self.log, replicaManager = self.rm, seCache = self.seCache )
 
   def ftsTransfer( self ):
     """ replicate and register using FTS """
@@ -243,27 +250,29 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         continue
       replicas = replicas["Value"]
 
-      if not replicas["Valid"] and replicas["Banned"]:
-        self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-        gMonitor.addMark( "FTSScheduleFail" )
-        continue
-
       validReplicas = replicas["Valid"]
       bannedReplicas = replicas["Banned"]
+      noReplicas = replicas['NoReplicas']
+      badReplicas = replicas['Bad']
 
-      if not validReplicas and bannedReplicas:
-        self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-        gMonitor.addMark( "FTSScheduleFail" )
-        continue
+      if not validReplicas:
+        if bannedReplicas:
+          self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+          gMonitor.addMark( "FTSScheduleFail" )
+        elif noReplicas:
+          self.log.warn( "unable to schedule %s, file doesn't exist" % opFile.LFN )
+          opFile.Status = 'Failed'
+        elif badReplicas:
+          self.log.warn( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
+          opFile.Status = 'Failed'
 
-      if validReplicas:
+      else:
         validTargets = list( set( self.operation.targetSEList ) - set( validReplicas ) )
         if not validTargets:
           self.log.info( "file %s is already present at all targets" % opFile.LFN )
           opFile.Status = "Done"
-          continue
-
-        toSchedule[opFile.LFN] = [ opFile, validReplicas, validTargets ]
+        else:
+          toSchedule[opFile.LFN] = [ opFile, validReplicas, validTargets ]
 
     res = self._addMetadataToFiles( toSchedule )
     if not res['OK']:
@@ -301,7 +310,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
             if 'sourceSURL equals to targetSURL' in opFile.Error:
               # In this case there is no need to continue
               opFile.Status = 'Failed'
-            self.log.error( "unable to schedule %s for FTS: %s" % ( opFile.LFN, opFile.Error ) )
+            self.log.warn( "unable to schedule %s for FTS: %s" % ( opFile.LFN, opFile.Error ) )
     else:
       self.log.info( "No files to schedule after metadata checks" )
 

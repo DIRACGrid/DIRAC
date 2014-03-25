@@ -54,7 +54,7 @@ class DMSRequestOperationsBase:
 
     registerFile = File()
     registerFile.LFN = opFile.LFN
-    registerFile.PFN = opFile.PFN
+    registerFile.PFN = self.rm.getPfnForLfn( opFile.LFN, targetSE )
     registerFile.GUID = opFile.GUID
     registerFile.Checksum = opFile.Checksum
     registerFile.ChecksumType = opFile.ChecksumType

@@ -461,8 +461,8 @@ class FTSAgent( AgentModule ):
         if not monitor["OK"]:
           log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
           ftsJob.Status = "Submitted"
-          continue
-        ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
+        else:
+          ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
       log.info( "monitoring of FTSJobs completed" )
       for key, ftsFiles in ftsFilesDict.items():
@@ -477,7 +477,7 @@ class FTSAgent( AgentModule ):
       missingReplicas = missingReplicas["Value"]
       for opFile in operation:
         # Actually the condition below should never happen... Change printout for checking
-        if opFile.LFN not in missingReplicas and opFile.Status != 'Done':
+        if opFile.LFN not in missingReplicas and opFile.Status not in ( 'Done', 'Failed' ):
           log.warn( "Should be set! %s is replicated at all targets" % opFile.LFN )
           opFile.Status = "Done"
 
@@ -489,14 +489,14 @@ class FTSAgent( AgentModule ):
 
     # # PHASE TWO = Failed files? -> make request Failed and return
     if toFail:
-      log.error( "==> found %s 'Failed' FTSFiles, request execution cannot proceed..." % len( toFail ) )
+      log.error( "==> found %s 'Failed' FTSFiles, but maybe other files can be processed..." % len( toFail ) )
       for opFile in operation:
         for ftsFile in toFail:
           if opFile.FileID == ftsFile.FileID:
             opFile.Error = ftsFile.Error
             opFile.Status = "Failed"
       operation.Error = "%s files are missing any replicas" % len( toFail )
-      # # requets.Status should be Failed at this stage "Failed"
+      # # requets.Status should be Failed if all files in the operation "Failed"
       if request.Status == "Failed":
         request.Error = "ReplicateAndRegister %s failed" % operation.Order
         log.error( "request is set to 'Failed'" )
@@ -596,25 +596,27 @@ class FTSAgent( AgentModule ):
       if not replicas["OK"]:
         continue
       replicas = replicas["Value"]
-
-      if not replicas["Valid"] and replicas["Banned"]:
-        log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-        continue
-
       validReplicas = replicas["Valid"]
       bannedReplicas = replicas["Banned"]
+      noReplicas = replicas["NoReplicas"]
+      badReplicas = replicas['Bad']
 
-      if not validReplicas and bannedReplicas:
-        log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-        continue
-
-      if validReplicas:
+      if not validReplicas:
+        if bannedReplicas:
+          log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+        elif noReplicas:
+          log.warn( "unable to schedule %s, file doesn't exist" % opFile.LFN )
+          opFile.Status = 'Failed'
+        elif badReplicas:
+          log.warn( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
+          opFile.Status = 'Failed'
+      else:
         validTargets = list( set( operation.targetSEList ) - set( validReplicas ) )
         if not validTargets:
           log.info( "file %s is already present at all targets" % opFile.LFN )
           opFile.Status = "Done"
-          continue
-        toSchedule.append( ( opFile.toJSON()["Value"], validReplicas, validTargets ) )
+        else:
+          toSchedule.append( ( opFile.toJSON()["Value"], validReplicas, validTargets ) )
 
     # # do real schedule here
     if toSchedule:
@@ -756,11 +758,15 @@ class FTSAgent( AgentModule ):
     if not monitor["OK"]:
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
-      if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"]:
-        log.error( "FTSJob not known (expired on server?)" )
+      if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"] or 'was not found' in monitor['Message']:
+        log.error( "FTSJob not known (expired on server?): delete it" )
         for ftsFile in ftsJob:
           ftsFile.Status = "Waiting"
-          ftsFilesDict["toSubmit"] = ftsFile
+          ftsFilesDict["toSubmit"].append( ftsFile )
+        # #  No way further for that job: delete it
+        res = self.ftsClient().deleteFTSJob( ftsJob.FTSJobID )
+        if not res['OK']:
+          log.error( "Unable to delete FTSJob", res['Message'] )
         return S_OK( ftsFilesDict )
       return monitor
 
@@ -980,50 +986,5 @@ class FTSAgent( AgentModule ):
 
   def __filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
-    log = self.log.getSubLogger( "filterReplicas" )
-
-    ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
-
-    replicas = self.dm.getActiveReplicas( opFile.LFN )
-    if not replicas["OK"]:
-      log.error( replicas["Message"] )
-    reNotExists = re.compile( "not such file or directory" )
-    replicas = replicas["Value"]
-    failed = replicas["Failed"].get( opFile.LFN , "" )
-    if reNotExists.match( failed.lower() ):
-      opFile.Status = "Failed"
-      opFile.Error = failed
-      return S_ERROR( failed )
-
-    replicas = replicas["Successful"][opFile.LFN] if opFile.LFN in replicas["Successful"] else {}
-
-    for repSEName in replicas:
-
-      repSE = self.getSE( repSEName )
-
-      pfn = Utils.executeSingleFileOrDirWrapper( repSE.getPfnForLfn( opFile.LFN ) )
-      if not pfn["OK"]:
-        log.warn( "unable to create pfn for %s lfn: %s" % ( opFile.LFN, pfn["Message"] ) )
-        ret["Banned"].append( repSEName )
-        continue
-      pfn = pfn["Value"]
-
-      repSEMetadata = repSE.getFileMetadata( pfn, singleFile = True )
-      if not repSEMetadata["OK"]:
-        self.log.warn( repSEMetadata["Message"] )
-        ret["Banned"].append( repSEName )
-        continue
-      repSEMetadata = repSEMetadata["Value"]
-
-      seChecksum = repSEMetadata["Checksum"].replace( "x", "0" ).zfill( 8 ) if "Checksum" in repSEMetadata else None
-      if opFile.Checksum and opFile.Checksum != seChecksum:
-        self.log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
-                                                             opFile.Checksum,
-                                                             repSE,
-                                                             seChecksum ) )
-        ret["Bad"].append( repSEName )
-        continue
-      # # if we're here repSE is OK
-      ret["Valid"].append( repSEName )
-
-    return S_OK( ret )
+    from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import filterReplicas
+    return filterReplicas( opFile, logger = self.log, replicaManager = self.replicaManager(), seCache = self.getSEcache )
