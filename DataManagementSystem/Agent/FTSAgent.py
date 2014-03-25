@@ -987,4 +987,4 @@ class FTSAgent( AgentModule ):
   def __filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
     from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import filterReplicas
-    return filterReplicas( opFile, logger = self.log, replicaManager = self.replicaManager(), seCache = self.getSEcache )
+    return filterReplicas( opFile, logger = self.log, datamanager = self.datamanager(), seCache = self.getSEcache )
