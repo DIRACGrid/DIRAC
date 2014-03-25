@@ -1244,21 +1244,19 @@ class DataManager( object ):
     for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuples:
       fileDict[lfn] = {'PFN':physicalFile, 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
 
-    fileCatalog = self.fc
-
     if catalog:
       fileCatalog = FileCatalog( catalog )
       if not fileCatalog.isOK():
         return S_ERROR( "Can't get FileCatalog %s" % catalog )
+    else:
+      fileCatalog = self.fc
 
     res = fileCatalog.addFile( fileDict )
-
     if not res['OK']:
       errStr = "__registerFile: Completely failed to register files."
       self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
 
-    return S_OK( {'Successful':res['Value']['Successful'], 'Failed':res['Value']['Failed']} )
+    return res
 
   def registerReplica( self, replicaTuple, catalog = '' ):
     """ Register a replica (or list of) supplied in the replicaTuples.
