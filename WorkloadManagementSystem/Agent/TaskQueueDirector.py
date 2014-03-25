@@ -126,12 +126,14 @@
 """
 __RCSID__ = "$Id$"
 
-import random, time
+import random, time, threading
 from DIRAC                                                       import S_OK, S_ERROR, List, Time, abort
 from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
 from DIRAC.Core.DISET.RPCClient                                  import RPCClient
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources          import getDIRACPlatforms
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals          import getVO, getCSExtensions
+
 from DIRAC.Resources.Computing.ComputingElement                  import getResourceDict
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils           import pilotAgentsDB
 
@@ -152,8 +154,6 @@ class TaskQueueDirector( AgentModule ):
   def initialize( self ):
     """ Standard constructor
     """
-    import threading
-
     self.am_setOption( "PollingTime", 60.0 )
 
     self.am_setOption( "pilotsPerIteration", 40.0 )
@@ -166,10 +166,11 @@ class TaskQueueDirector( AgentModule ):
     self.am_setOption( 'SubmitPools', [] )
     self.am_setOption( 'DefaultSubmitPools', [] )
 
-
     self.am_setOption( 'minThreadsInPool', 0 )
     self.am_setOption( 'maxThreadsInPool', 2 )
     self.am_setOption( 'totalThreadsInPool', 40 )
+
+    self.directorsImportLine = self.am_getOption( 'directorsImportLine', 'DIRAC.WorkloadManagementSystem.private' )
 
     self.directors = {}
     self.pools = {}
@@ -394,11 +395,24 @@ class TaskQueueDirector( AgentModule ):
     directorName = '%sPilotDirector' % directorGridMiddleware
 
     self.log.info( 'Instantiating Director Object:', directorName )
-    directorClass_ = getattr( __import__( "DIRAC.WorkloadManagementSystem.private.%s" % directorName,
-                                          globals(), locals(), [directorName], -1 ), directorName )
+
+    # In case the importLine is not set, this is looking for a DIRAC extension, if any.
+    # The extension is supposed to be called ExtDIRAC.
+    for ext in getCSExtensions():
+      if ext.lower() == getVO():
+        importLine = ext + self.directorsImportLine
+        break
+
+    try:
+      directorClass_ = getattr( __import__( "%s.%s" % ( importLine, directorName ),
+                                            globals(), locals(), [directorName], -1 ), directorName )
+    except ImportError:
+      importLine = "DIRAC.WorkloadManagementSystem.private"
+      directorClass_ = getattr( __import__( "%s.%s" % ( importLine, directorName ),
+                                            globals(), locals(), [directorName], -1 ), directorName )
     director = directorClass_( submitPool )
 
-    self.log.info( 'Director Object instantiated:', directorName )
+    self.log.verbose( "Director Object instantiated: %s.%s" % ( importLine, directorName ) )
 
     # 2. check the requested ThreadPool (if not defined use the default one)
     directorPool = self.am_getOption( submitPool + '/Pool', 'Default' )
