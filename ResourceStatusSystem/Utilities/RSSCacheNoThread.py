@@ -107,7 +107,6 @@ class Cache( object ):
 
       cacheRow = self.__cache.get( cacheKey, validSeconds = self.__validSeconds )
       if not cacheRow:
-        self.log.error( str( cacheKey ) )
         return S_ERROR( 'Cannot get %s' % str( cacheKey ) )
       result.update( { cacheKey : cacheRow } )
       
@@ -219,11 +218,7 @@ class RSSCache( Cache ):
     
     self.acquireLock()
     try:
-      match = self._match( elementNames, statusTypes )
-        
-      if not match[ 'OK' ]:
-        self.log.error( match[ 'Message' ] )
-      return match  
+      return self._match( elementNames, statusTypes )
     finally:
       # Release lock, no matter what !
       self.releaseLock()  
