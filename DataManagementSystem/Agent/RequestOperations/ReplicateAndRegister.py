@@ -32,21 +32,22 @@ from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase
 from DIRAC.Resources.Catalog.FileCatalog                        import FileCatalog
 from DIRAC.Resources.Utilities                                  import Utils
 
-def filterReplicas( opFile, logger = None, replicaManager = None, seCache = None ):
+def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
   """ filter out banned/invalid source SEs """
   from DIRAC.Core.Utilities.Adler import compareAdler
 
   if not logger:
     logger = gLogger
-  if not replicaManager:
-    replicaManager = ReplicaManager()
+  if not dataManager:
+    from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+    datamanager = DataManager()
   if not seCache:
     seCache = {}
 
   log = logger.getSubLogger( "filterReplicas" )
   ret = { "Valid" : [], "Banned" : [], "Bad" : [], 'NoReplicas':[] }
 
-  replicas = replicaManager.getReplicas( opFile.LFN, allStatus = False )
+  replicas = dataManager.getReplicas( opFile.LFN, allStatus = False )
   if not replicas["OK"]:
     log.error( replicas["Message"] )
     return replicas
@@ -220,7 +221,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
 
   def _filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
-    return filterReplicas( opFile, logger = self.log, replicaManager = self.rm, seCache = self.seCache )
+    return filterReplicas( opFile, logger = self.log, dataManager = self.dm, seCache = self.seCache )
 
   def ftsTransfer( self ):
     """ replicate and register using FTS """
@@ -318,7 +319,7 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
     return self.rmTransfer( fromFTS = True )
 
   def rmTransfer( self, fromFTS = False ):
-    """ replicate and register using ReplicaManager  """
+    """ replicate and register using dataManager  """
     # # get waiting files. If none just return
     waitingFiles = self.getWaitingFilesList()
     if not waitingFiles:
