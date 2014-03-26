@@ -220,8 +220,9 @@ class JobDB( DB ):
   def traceJobParameters( self, site, localID, paramList = None, date = None ):
     import datetime
     exactTime = False
+    now = datetime.datetime.utcnow()
     if not date:
-      until = datetime.datetime.utcnow()
+      until = now
       since = until - datetime.timedelta( hours = 24 )
     else:
       since = None
@@ -234,12 +235,12 @@ class JobDB( DB ):
       if not since:
         return S_ERROR( 'Error in date format' )
       if exactTime:
-        delta = 1
         exactTime = since
-      else:
-        delta = 12
-      since -= datetime.timedelta( hours = delta )
-      until = since + datetime.timedelta( hours = 2 * delta )
+      until = since + datetime.timedelta( hours = 24 )
+      if since >= now:
+        return S_OK( {} )
+      if until > now:
+        until = now
     result = self.selectJobs( {'Site':site}, older = str( until ), newer = str( since ) )
     if not result['OK']:
       return result
@@ -252,22 +253,34 @@ class JobDB( DB ):
         if not ret['OK']:
           return ret
         if ret['Value'] and int( ret['Value'] ) == int( localID ):
+          attributes = self.getJobAttributes( jobID, ['StartExecTime', 'SubmissionTime', 'HeartBeatTime', 'EndExecTime'] )
+          if not attributes['OK']:
+            return attributes
+          attributes = attributes['Value']
           if exactTime:
-            attributes = self.getJobAttributes( jobID, ['StartExecTime', 'SubmissionTime', 'HeartBeatTime', 'EndExecTime'] )
-            if not attributes['OK']:
-              return attributes
-            attributes = attributes['Value']
-            startTime = datetime.datetime.strptime( attributes.get( 'StartExecTime', attributes.get( 'SubmissionTime' ) ), '%Y-%m-%d %H:%M:%S' )
-            lastTime = attributes.get( 'EndExecTime', attributes.get( 'HeartBeatTime' ) )
-            lastTime = datetime.datetime.strptime( lastTime, '%Y-%m-%d %H:%M:%S' ) if lastTime else datetime.datetime.utcnow()
-            okTime = ( exactTime > startTime and exactTime < lastTime )
+            for att in ( 'StartExecTime', 'SubmissionTime' ):
+              startTime = attributes.get( att )
+              if startTime == 'None':
+                startTime = None
+              if startTime:
+                break
+            startTime = datetime.datetime.strptime( startTime , '%Y-%m-%d %H:%M:%S' ) if startTime else now
+            for att in ( 'EndExecTime', 'HeartBeatTime' ):
+              lastTime = attributes.get( att )
+              if lastTime == 'None':
+                lastTime = None
+              if lastTime:
+                break
+            lastTime = datetime.datetime.strptime( lastTime, '%Y-%m-%d %H:%M:%S' ) if lastTime else now
+            okTime = ( exactTime >= startTime and exactTime <= lastTime )
           else:
             okTime = True
           if okTime:
             ret = self.getJobParameters( jobID, paramList = paramList )
             if not ret['OK']:
               return ret
-            resultDict[int( jobID )] = ret['Value']
+            attributes.update( ret['Value'] )
+            resultDict[int( jobID )] = attributes
     return S_OK( resultDict )
 
 #############################################################################
