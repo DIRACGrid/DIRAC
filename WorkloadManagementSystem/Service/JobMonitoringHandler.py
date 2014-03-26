@@ -13,7 +13,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import IntType, LongType, ListType, DictType, StringTypes, StringType
+from types import IntType, LongType, ListType, DictType, StringTypes, StringType, NoneType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -53,7 +53,7 @@ class JobMonitoringHandler( RequestHandler ):
     self.globalJobsInfo = operations.getValue( '/Services/JobMonitoring/GlobalJobsInfo', True )
     self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.globalJobsInfo )
     self.jobPolicy.setJobDB( gJobDB )
-    
+
     return S_OK()
 
 ##############################################################################
@@ -134,9 +134,9 @@ class JobMonitoringHandler( RequestHandler ):
     """
     Return list of JobIds matching the condition given in attrDict
     """
-    #queryDict = {}
+    # queryDict = {}
 
-    #if attrDict:
+    # if attrDict:
     #  if type ( attrDict ) != DictType:
     #    return S_ERROR( 'Argument must be of Dict Type' )
     #  for attribute in self.queryAttributes:
@@ -163,13 +163,13 @@ class JobMonitoringHandler( RequestHandler ):
     # Check that Attributes in attrList and attrDict, they must be in
     # self.queryAttributes.
 
-    #for attr in attrList:
+    # for attr in attrList:
     #  try:
     #    self.queryAttributes.index(attr)
     #  except:
     #    return S_ERROR( 'Requested Attribute not Allowed: %s.' % attr )
     #
-    #for attr in attrDict:
+    # for attr in attrDict:
     #  try:
     #    self.queryAttributes.index(attr)
     #  except:
@@ -298,7 +298,7 @@ class JobMonitoringHandler( RequestHandler ):
       return S_ERROR( 'JobMonitoring.getJobsSummary: Received empty job list' )
 
     result = gJobDB.getAttributesForJobList( jobIDs, SUMMARY )
-    #return result
+    # return result
     restring = str( result['Value'] )
     return S_OK( restring )
 
@@ -325,7 +325,7 @@ class JobMonitoringHandler( RequestHandler ):
     if not result['OK']:
       return S_ERROR( 'Failed to evaluate user rights' )
     if result['Value'] != 'ALL':
-      selectDict[ ( 'Owner','OwnerGroup' ) ] = result['Value']
+      selectDict[ ( 'Owner', 'OwnerGroup' ) ] = result['Value']
 
     # Sorting instructions. Only one for the moment.
     if sortList:
@@ -362,11 +362,11 @@ class JobMonitoringHandler( RequestHandler ):
         return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
       summaryJobList = result['Value']
-      if not self.globalJobsInfo:      
+      if not self.globalJobsInfo:
         validJobs, invalidJobs, nonauthJobs, ownJobs = self.jobPolicy.evaluateJobRights( summaryJobList,
                                                                                          RIGHT_GET_INFO )
         summaryJobList = validJobs
-      
+
       result = gJobDB.getAttributesForJobList( summaryJobList, SUMMARY )
       if not result['OK']:
         return S_ERROR( 'Failed to get job summary: ' + result['Message'] )
@@ -453,6 +453,18 @@ class JobMonitoringHandler( RequestHandler ):
   @staticmethod
   def export_getJobParameters( jobID ):
     return gJobDB.getJobParameters( jobID )
+
+##############################################################################
+  types_traceJobParameter = [ StringTypes, [IntType, StringType, LongType], StringTypes, [StringType, NoneType] ]
+  @staticmethod
+  def export_traceJobParameter( site, localID, parameter, date ):
+    return gJobDB.traceJobParameter( site, localID, parameter, date )
+
+##############################################################################
+  types_traceJobParameters = [ StringTypes, [IntType, StringType, LongType], [ListType, NoneType], [StringType, NoneType] ]
+  @staticmethod
+  def export_traceJobParameters( site, localID, parameterList, date ):
+    return gJobDB.traceJobParameters( site, localID, parameterList, date )
 
 ##############################################################################
   types_getAtticJobParameters = [ [IntType, LongType] ]
