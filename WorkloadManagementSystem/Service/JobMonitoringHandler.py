@@ -455,16 +455,16 @@ class JobMonitoringHandler( RequestHandler ):
     return gJobDB.getJobParameters( jobID )
 
 ##############################################################################
-  types_traceJobParameter = [ StringTypes, [IntType, StringType, LongType, ListType], StringTypes, [StringType, NoneType] ]
+  types_traceJobParameter = [ StringTypes, [IntType, StringType, LongType, ListType], StringTypes, [StringType, NoneType], [StringType, NoneType] ]
   @staticmethod
-  def export_traceJobParameter( site, localID, parameter, date ):
-    return gJobDB.traceJobParameter( site, localID, parameter, date )
+  def export_traceJobParameter( site, localID, parameter, date, until ):
+    return gJobDB.traceJobParameter( site, localID, parameter, date, until )
 
 ##############################################################################
-  types_traceJobParameters = [ StringTypes, [IntType, StringType, LongType, ListType], [ListType, NoneType], [ListType, NoneType], [StringType, NoneType] ]
+  types_traceJobParameters = [ StringTypes, [IntType, StringType, LongType, ListType], [ListType, NoneType], [ListType, NoneType], [StringType, NoneType], [StringType, NoneType] ]
   @staticmethod
-  def export_traceJobParameters( site, localID, parameterList, attributeList, date ):
-    return gJobDB.traceJobParameters( site, localID, parameterList, attributeList, date )
+  def export_traceJobParameters( site, localID, parameterList, attributeList, date, until ):
+    return gJobDB.traceJobParameters( site, localID, parameterList, attributeList, date, until )
 
 ##############################################################################
   types_getAtticJobParameters = [ [IntType, LongType] ]

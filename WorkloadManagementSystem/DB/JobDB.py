@@ -207,8 +207,8 @@ class JobDB( DB ):
 
 
 #############################################################################
-  def traceJobParameter( self, site, localID, parameter, date = None ):
-    ret = self.traceJobParameters( site, localID, [parameter], None, date )
+  def traceJobParameter( self, site, localID, parameter, date = None, until = None ):
+    ret = self.traceJobParameters( site, localID, [parameter], None, date, until )
     if not ret['OK']:
       return ret
     returnDict = {}
@@ -217,7 +217,7 @@ class JobDB( DB ):
     return S_OK( returnDict )
 
 #############################################################################
-  def traceJobParameters( self, site, localIDs, paramList = None, attributeList = None, date = None ):
+  def traceJobParameters( self, site, localIDs, paramList = None, attributeList = None, date = None, until = None ):
     import datetime
     exactTime = False
     if not attributeList:
@@ -232,6 +232,14 @@ class JobDB( DB ):
     except:
       return S_ERROR( "localIDs must be integers" )
     now = datetime.datetime.utcnow()
+    if until:
+      if until.lower() == 'now':
+        until = now
+      else:
+        try:
+          until = datetime.datetime.strptime( until, '%Y-%m-%d' )
+        except:
+          return S_ERROR( "Error in format for 'until', expected '%Y-%m-%d'" )
     if not date:
       until = now
       since = until - datetime.timedelta( hours = 24 )
@@ -247,9 +255,11 @@ class JobDB( DB ):
         return S_ERROR( 'Error in date format' )
       if exactTime:
         exactTime = since
-        until = now
+        if not until:
+          until = now
       else:
-        until = since + datetime.timedelta( hours = 24 )
+        if not until:
+          until = since + datetime.timedelta( hours = 24 )
       if since > now:
         return S_ERROR( 'Cannot find jobs in the future' )
       if until > now:
