@@ -593,13 +593,12 @@ class DataIntegrityClient( Client ):
 
   def __getRegisteredPFNLFN( self, pfn, storageElement ):
 
-    res = StorageElement( storageElement ).getPfnForProtocol( [pfn], withPort = False )
+    res = StorageElement( storageElement ).getPfnForProtocol( pfn, withPort = False )
     if not res['OK']:
       gLogger.error( "Failed to get registered PFN for physical files", res['Message'] )
       return res
     for pfn, error in res['Value']['Failed'].items():
       gLogger.error( 'Failed to obtain registered PFN for physical file', '%s %s' % ( pfn, error ) )
-    if res['Value']['Failed']:
       return S_ERROR( 'Failed to obtain registered PFNs from physical file' )
     registeredPFN = res['Value']['Successful'][pfn]
     res = Utils.executeSingleFileOrDirWrapper( self.fc.getLFNForPFN( registeredPFN ) )
@@ -719,12 +718,11 @@ class DataIntegrityClient( Client ):
         seName = '%s_MC-DST' % site
 
     problematicDict['SE'] = seName
-    res = se.getPfnForProtocol( [pfn], withPort = False )
+    res = se.getPfnForProtocol( pfn, withPort = False )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     for pfn, error in res['Value']['Failed'].items():
       gLogger.error( 'Failed to obtain registered PFN for physical file', '%s %s' % ( pfn, error ) )
-    if res['Value']['Failed']:
       return S_ERROR( 'Failed to obtain registered PFNs from physical file' )
     problematicDict['PFN'] = res['Value']['Successful'][pfn]
 
