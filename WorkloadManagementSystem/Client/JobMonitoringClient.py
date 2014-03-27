@@ -15,8 +15,8 @@ class JobMonitoringClient( Client ):
     self.setServer( 'WorkloadManagement/JobMonitoring' )
     self.monitoringHandler = self._getRPC()
 
-  def traceJobParameters( self, site, localID, parameterList = None, date = None ):
-    return self.monitoringHandler.traceJobParameters( site, localID, parameterList, date )
+  def traceJobParameters( self, site, localID, parameterList = None, attributeList = None, date = None ):
+    return self.monitoringHandler.traceJobParameters( site, localID, parameterList, attributeList, date )
 
   def traceJobParameter( self, site, localID, parameter, date = None ):
     return self.monitoringHandler.traceJobParameter( site, localID, parameter, date )

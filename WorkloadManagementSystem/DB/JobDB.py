@@ -208,7 +208,7 @@ class JobDB( DB ):
 
 #############################################################################
   def traceJobParameter( self, site, localID, parameter, date = None ):
-    ret = self.traceJobParameters( site, localID, [parameter], date )
+    ret = self.traceJobParameters( site, localID, [parameter], None, date )
     if not ret['OK']:
       return ret
     returnDict = {}
@@ -217,9 +217,20 @@ class JobDB( DB ):
     return S_OK( returnDict )
 
 #############################################################################
-  def traceJobParameters( self, site, localID, paramList = None, date = None ):
+  def traceJobParameters( self, site, localIDs, paramList = None, attributeList = None, date = None ):
     import datetime
     exactTime = False
+    if not attributeList:
+      attributeList = []
+    attributeList = list( set( attributeList ) | set( ['StartExecTime', 'SubmissionTime', 'HeartBeatTime',
+                                                    'EndExecTime', 'JobName', 'OwnerDN', 'OwnerGroup'] ) )
+    try:
+      if type( localIDs ) == type( [] ) or type( localIDs ) == type( {} ):
+        localIDs = [int( localID ) for localID in localIDs]
+      else:
+        localIDs = [int( localIDs )]
+    except:
+      return S_ERROR( "localIDs must be integers" )
     now = datetime.datetime.utcnow()
     if not date:
       until = now
@@ -236,9 +247,11 @@ class JobDB( DB ):
         return S_ERROR( 'Error in date format' )
       if exactTime:
         exactTime = since
-      until = since + datetime.timedelta( hours = 24 )
-      if since >= now:
-        return S_OK( {} )
+        until = now
+      else:
+        until = since + datetime.timedelta( hours = 24 )
+      if since > now:
+        return S_ERROR( 'Cannot find jobs in the future' )
       if until > now:
         until = now
     result = self.selectJobs( {'Site':site}, older = str( until ), newer = str( since ) )
@@ -246,14 +259,15 @@ class JobDB( DB ):
       return result
     if not result['Value']:
       return S_ERROR( 'No jobs found at %s for date %s' % ( site, date ) )
-    resultDict = {}
+    resultDict = {'Successful':{}, 'Failed':{}}
     for jobID in result['Value']:
       if jobID:
         ret = self.getJobParameter( jobID, 'LocalJobID' )
         if not ret['OK']:
           return ret
-        if ret['Value'] and int( ret['Value'] ) == int( localID ):
-          attributes = self.getJobAttributes( jobID, ['StartExecTime', 'SubmissionTime', 'HeartBeatTime', 'EndExecTime'] )
+        localID = ret['Value']
+        if localID and int( localID ) in localIDs:
+          attributes = self.getJobAttributes( jobID, attributeList )
           if not attributes['OK']:
             return attributes
           attributes = attributes['Value']
@@ -280,7 +294,10 @@ class JobDB( DB ):
             if not ret['OK']:
               return ret
             attributes.update( ret['Value'] )
-            resultDict[int( jobID )] = attributes
+            resultDict['Successful'].setdefault( int( localID ), {} )[int( jobID )] = attributes
+    for localID in localIDs:
+      if localID not in resultDict['Successful']:
+        resultDict['Failed'][localID] = 'localID not found'
     return S_OK( resultDict )
 
 #############################################################################
