@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-  dirac-rss-status
+  dirac-rss-db
 
     Script that dumps the DB information for the elements into the standard output.
     If returns information concerning the StatusType and Status attributes.
