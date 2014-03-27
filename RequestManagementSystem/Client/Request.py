@@ -150,7 +150,7 @@ class Request( Record ):
           rStatus = "Waiting"
       # # First operation Waiting is next to execute, others are queued
       elif opStatus == "Waiting":
-          rStatus = "Waiting"
+        rStatus = "Waiting"
         if self.__waiting == None:
           self.__waiting = op
         else:
