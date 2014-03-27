@@ -579,7 +579,7 @@ class StorageBase( object ):
     retDict = { "Successful" : {}, "Failed" : {} }
     for lfn in lfns:
       res = storageElement.getPfnForLfn( lfn )
-      if res["OK"] and lfn in res['Successful']:
+      if res["OK"] and lfn in res['Value']['Successful']:
         retDict["Successful"][lfn] = res["Value"]['Successful'][lfn]
       else:
         retDict["Failed"][lfn] = res.get( "Message", res.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) )
