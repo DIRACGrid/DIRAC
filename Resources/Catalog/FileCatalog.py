@@ -117,9 +117,8 @@ class FileCatalog:
       if res['OK']:
         if 'Successful' in res['Value']:
           for key, item in res['Value']['Successful'].items():
-            if key not in successful:
-              successful[key] = item
-              failed.pop( key, None )
+            successful.setdefault( key, item )
+            failed.pop( key, None )
           for key, item in res['Value']['Failed'].items():
             if key not in successful:
               failed[key] = item
@@ -258,10 +257,7 @@ class FileCatalog:
       gLogger.error( errStr, catalogName )
       return S_ERROR( errStr )
     # Anything other than 'True' in the 'Master' option means it is not
-    if catalogConfig.setdefault( 'Master', False ) == 'True':
-      catalogConfig['Master'] = True
-    else:
-      catalogConfig['Master'] = False
+    catalogConfig['Master'] = ( catalogConfig.setdefault( 'Master', False ) == 'True' )
     return S_OK( catalogConfig )
 
   def _generateCatalogObject( self, catalogName ):
