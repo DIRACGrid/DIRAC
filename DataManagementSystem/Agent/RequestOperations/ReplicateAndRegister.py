@@ -67,11 +67,11 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
             seCache.setdefault( repSEName, StorageElement( repSEName, "SRM2" ) )
 
     pfn = repSE.getPfnForLfn( opFile.LFN )
-    if not pfn["OK"]:
-      log.warn( "unable to create pfn for %s lfn at %s: %s" % ( opFile.LFN, repSEName, pfn["Message"] ) )
+    if not pfn["OK"] or opFile.LFN not in pfn['Value']['Successful']:
+      log.warn( "unable to create pfn for %s lfn at %s: %s" % ( opFile.LFN, repSEName, pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( opFile.LFN ) ) ) )
       ret["NoReplicas"].append( repSEName )
     else:
-      pfn = pfn["Value"]
+      pfn = pfn["Value"]['Successful'][ opFile.LFN ]
 
       repSEMetadata = repSE.getFileMetadata( pfn )
       error = repSEMetadata.get( 'Message', repSEMetadata.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )

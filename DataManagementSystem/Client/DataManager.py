@@ -1658,6 +1658,8 @@ class DataManager( object ):
                                                                                          storageElementName ) )
     storageElement = StorageElement( storageElementName )
     pfnsToRemove = dict( [( storageElement.getPfnForLfn( lfn )['Value'].get( 'Successful', {} ).get( lfn ), lfn ) for lfn in lfnsToRemove] )
+    # In case no PFN was returned for some LFNs
+    pfnsToRemove.pop( None, None )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "__removePhysicalReplica: The storage element is not currently valid."

@@ -269,8 +269,8 @@ class DataIntegrityClient( Client ):
     """
     gLogger.info( 'Obtaining the contents for %s directories at %s' % ( len( lfnDir ), storageElement ) )
 
-    se = StorageElement(storageElement)
-    res = Utils.executeSingleFileOrDirWrapper( se.getPfnForLfn( lfnDir ) )
+    se = StorageElement( storageElement )
+    res = se.getPfnForLfn( lfnDir )
 
     if not res['OK']:
       gLogger.error( "Failed to get PFNs for directories", res['Message'] )
@@ -341,9 +341,9 @@ class DataIntegrityClient( Client ):
         metadata = allFiles[pfn]
         if metadata['Size'] == 0:
           zeroSizeFiles.append( ( metadata['LFN'], pfn, storageElement, 'PFNZeroSize' ) )
-        #if metadata['Lost']:
+        # if metadata['Lost']:
         #  lostFiles.append((metadata['LFN'],pfn,storageElement,'PFNLost'))
-        #if metadata['Unavailable']:
+        # if metadata['Unavailable']:
         #  unavailableFiles.append((metadata['LFN'],pfn,storageElement,'PFNUnavailable'))
     if zeroSizeFiles:
       self.__reportProblematicReplicas( zeroSizeFiles, storageElement, 'PFNZeroSize' )
