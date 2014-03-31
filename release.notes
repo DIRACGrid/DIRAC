@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r11-pre9]
+[v6r11-pre10]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
@@ -120,14 +120,19 @@ NEW: Resources.getDIRACPlatforms() used to access platforms from /Resources/Comp
      section
 NEW: Registry - added getVOs() and getVOMSServerInfo()     
 
+*Accounting
+FIX: AccountingDB, Job - extra checks for invalid values
+
 *WMS
 NEW: WMS tags to allow jobs require special site/CE/queue properties  
 CHANGES: DownloadInputData, InputDataByProtocol, InputDataResolution - allows to get multiple 
          PFNs for the protocol resolution
+NEW: JobDB, JobMonitoringHandler - added traceJobParameters(s)() methods         
 
 *DMS
 NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
 FIX: InputDataByProtocol - fix the case where file is only on tape
+FIX: FTSAgent - multiple fixes
 
 *Interfaces
 CHANGE: Dirac - instantiate SandboxStoreClient and WMSClient when needed, not in the constructor

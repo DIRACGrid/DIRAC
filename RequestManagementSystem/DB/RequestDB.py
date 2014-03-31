@@ -315,7 +315,7 @@ class RequestDB( DB ):
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
     query = "SELECT `RequestName`, `Status`, `LastUpdate` FROM `Request` WHERE "\
-      " `Status` IN (%s) ORDER BY `LastUpdate` DESC LIMIT %s;" % ( stringListToString( statusList ), limit )
+      " `Status` IN (%s) ORDER BY `LastUpdate` ASC LIMIT %s;" % ( stringListToString( statusList ), limit )
     reqNamesList = self._query( query )
     if not reqNamesList["OK"]:
       self.log.error( "getRequestNamesList: %s" % reqNamesList["Message"] )

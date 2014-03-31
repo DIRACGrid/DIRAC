@@ -481,12 +481,12 @@ class LocalConfiguration:
     for iPos in range( len( self.commandOptionList ) ):
       optionTuple = self.commandOptionList[ iPos ]
       if optionTuple[0].endswith( ':' ):
-        line = "\n  -%s --%s : %s" % ( optionTuple[0][:-1].ljust( 2 ), 
-                                       (optionTuple[1][:-1] + ' <value> ').ljust( 22 ), 
+        line = "  -%s --%s : %s" % ( optionTuple[0][:-1].ljust( 2 ),
+                                       (optionTuple[1][:-1] + ' <value> ').ljust( 22 ),
                                        optionTuple[2] )
         gLogger.notice( line )
-      else:  
-        gLogger.notice( "\n  -%s --%s : %s" % ( optionTuple[0].ljust( 2 ), optionTuple[1].ljust( 22 ), optionTuple[2] ) )
+      else:
+        gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 2 ), optionTuple[1].ljust( 22 ), optionTuple[2] ) )
       iLastOpt = iPos
       if optionTuple[0] == 'h':
         #Last general opt is always help
@@ -496,14 +496,14 @@ class LocalConfiguration:
       for iPos in range( iLastOpt + 1, len( self.commandOptionList ) ):
         optionTuple = self.commandOptionList[ iPos ]
         if optionTuple[0].endswith( ':' ):
-          line = "\n  -%s --%s : %s" % ( optionTuple[0][:-1].ljust( 2 ), 
-                                         (optionTuple[1][:-1] + ' <value> ').ljust( 22 ), 
+          line = "\n  -%s --%s : %s" % ( optionTuple[0][:-1].ljust( 2 ),
+                                         (optionTuple[1][:-1] + ' <value> ').ljust( 22 ),
                                          optionTuple[2] )
           gLogger.notice( line )
-        else:  
+        else:
           gLogger.notice( "\n  -%s --%s : %s" % ( optionTuple[0].ljust( 2 ), optionTuple[1].ljust( 22 ), optionTuple[2] ) )
 
-    gLogger.notice( "\n" )
+    gLogger.notice( "" )
     DIRAC.exit( 0 )
 
   def deleteOption( self, optionPath ):

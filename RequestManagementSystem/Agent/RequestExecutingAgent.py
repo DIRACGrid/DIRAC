@@ -186,7 +186,9 @@ class RequestExecutingAgent( AgentModule ):
 
     :param Request request: Request instance
     """
-    self.__requestCache.setdefault( request.RequestName, request )
+    if request.RequestName in self.__requestCache:
+      return S_ERROR( "Duplicate request, ignore: %s" % request.RequestName )
+    self.__requestCache[ request.RequestName ] = request
     return S_OK()
 
   def resetRequest( self, requestName ):
@@ -195,7 +197,8 @@ class RequestExecutingAgent( AgentModule ):
     :param str requestName: request's name
     """
     if requestName in self.__requestCache:
-      reset = self.requestClient().updateRequest( self.__requestCache[requestName] )
+      reset = self.requestClient().putRequest( self.__requestCache[requestName] )
+      del self.__requestCache[requestName]
       if not reset["OK"]:
         return S_ERROR( "resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
     return S_OK()
@@ -207,7 +210,8 @@ class RequestExecutingAgent( AgentModule ):
     """
     self.log.info( "resetAllRequests: will put %s back requests" % len( self.__requestCache ) )
     for requestName, request in self.__requestCache.iteritems():
-      reset = self.requestClient().updateRequest( request )
+      reset = self.requestClient().putRequest( request )
+      del self.__requestCache[requestName]
       if not reset["OK"]:
         self.log.error( "resetAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
         continue
@@ -247,7 +251,10 @@ class RequestExecutingAgent( AgentModule ):
       # # set task id
       taskID = request.RequestName
       # # save current request in cache
-      self.cacheRequest( request )
+      res = self.cacheRequest( request )
+      if not res['OK']:
+        self.log.warn( res['Message'] )
+        continue
       # # serialize to JSON
       requestJSON = request.toJSON()
       if not requestJSON["OK"]:
@@ -258,11 +265,17 @@ class RequestExecutingAgent( AgentModule ):
       self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                     self.processPool().getNumWorkingProcesses() ) )
 
+      looping = 0
       while True:
         if not self.processPool().getFreeSlots():
-          self.log.info( "No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
+          if not looping:
+            self.log.info( "No free slots available in processPool, will wait in steps of %d seconds" % self.__poolSleep )
           time.sleep( self.__poolSleep )
+          looping += 1
         else:
+          if looping:
+            self.log.info( "Free slot found after %d seconds" % looping * self.__poolSleep )
+          looping = 0
           self.log.info( "spawning task for request '%s'" % ( request.RequestName ) )
           timeOut = self.getTimeout( request )
           enqueue = self.processPool().createAndQueueTask( RequestTask,

@@ -13,7 +13,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import IntType, LongType, ListType, DictType, StringTypes, StringType
+from types import IntType, LongType, ListType, DictType, StringTypes, StringType, NoneType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -133,9 +133,9 @@ class JobMonitoringHandler( RequestHandler ):
     """
     Return list of JobIds matching the condition given in attrDict
     """
-    #queryDict = {}
+    # queryDict = {}
 
-    #if attrDict:
+    # if attrDict:
     #  if type ( attrDict ) != DictType:
     #    return S_ERROR( 'Argument must be of Dict Type' )
     #  for attribute in self.queryAttributes:
@@ -162,13 +162,13 @@ class JobMonitoringHandler( RequestHandler ):
     # Check that Attributes in attrList and attrDict, they must be in
     # self.queryAttributes.
 
-    #for attr in attrList:
+    # for attr in attrList:
     #  try:
     #    self.queryAttributes.index(attr)
     #  except:
     #    return S_ERROR( 'Requested Attribute not Allowed: %s.' % attr )
     #
-    #for attr in attrDict:
+    # for attr in attrDict:
     #  try:
     #    self.queryAttributes.index(attr)
     #  except:
@@ -297,7 +297,7 @@ class JobMonitoringHandler( RequestHandler ):
       return S_ERROR( 'JobMonitoring.getJobsSummary: Received empty job list' )
 
     result = gJobDB.getAttributesForJobList( jobIDs, SUMMARY )
-    #return result
+    # return result
     restring = str( result['Value'] )
     return S_OK( restring )
 
@@ -324,7 +324,7 @@ class JobMonitoringHandler( RequestHandler ):
     if not result['OK']:
       return S_ERROR( 'Failed to evaluate user rights' )
     if result['Value'] != 'ALL':
-      selectDict[ ( 'Owner','OwnerGroup' ) ] = result['Value']
+      selectDict[ ( 'Owner', 'OwnerGroup' ) ] = result['Value']
 
     # Sorting instructions. Only one for the moment.
     if sortList:
@@ -454,6 +454,18 @@ class JobMonitoringHandler( RequestHandler ):
     return gJobDB.getJobParameters( jobID )
 
 ##############################################################################
+  types_traceJobParameter = [ StringTypes, [IntType, StringType, LongType, ListType], StringTypes, [StringType, NoneType], [StringType, NoneType] ]
+  @staticmethod
+  def export_traceJobParameter( site, localID, parameter, date, until ):
+    return gJobDB.traceJobParameter( site, localID, parameter, date, until )
+
+##############################################################################
+  types_traceJobParameters = [ StringTypes, [IntType, StringType, LongType, ListType], [ListType, NoneType], [ListType, NoneType], [StringType, NoneType], [StringType, NoneType] ]
+  @staticmethod
+  def export_traceJobParameters( site, localID, parameterList, attributeList, date, until ):
+    return gJobDB.traceJobParameters( site, localID, parameterList, attributeList, date, until )
+
+##############################################################################
   types_getAtticJobParameters = [ [IntType, LongType] ]
   @staticmethod
   def export_getAtticJobParameters( jobID, parameters = None, rescheduleCycle = -1 ):
@@ -466,6 +478,12 @@ class JobMonitoringHandler( RequestHandler ):
   @staticmethod
   def export_getJobAttributes( jobID ):
     return gJobDB.getJobAttributes( jobID )
+
+##############################################################################
+  types_getJobAttribute = [ IntType, StringTypes ]
+  @staticmethod
+  def export_getJobAttribute( jobID, attribute ):
+    return gJobDB.getJobAttribute( jobID, attribute )
 
 ##############################################################################
   types_getSiteSummary = [ ]

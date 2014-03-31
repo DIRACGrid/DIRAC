@@ -806,19 +806,21 @@ class FTSRequest( object ):
     if not res['OK']:
       return res
     for lfn in toResolve:
-      res = Utils.executeSingleFileOrDirWrapper( self.oTargetSE.getPfnForLfn( lfn ) )
-      if not res['OK']:
+      res = self.oTargetSE.getPfnForLfn( lfn )
+      if not res['OK'] or lfn not in res['Value']['Successful']:
         gLogger.warn( "resolveTarget: skipping %s - failed to create target pfn" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Failed to create Target" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-      res = Utils.executeSingleFileOrDirWrapper( self.oTargetSE.getPfnForProtocol( res['Value'], protocol = 'SRM2', withPort = True ) )
-      if not res['OK']:
-        gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, res["Message"] ) )
+      pfn = res['Value']['Successful'][lfn]
+      res = self.oTargetSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True )
+      if not res['OK'] or lfn not in res['Value']['Successful']:
+        gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, res.get( 'Message', res.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-      res = self.setTargetSURL( lfn, res['Value'] )
+      pfn = res['Value']['Successful'][lfn]
+      res = self.setTargetSURL( lfn, pfn )
       if not res['OK']:
         gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
