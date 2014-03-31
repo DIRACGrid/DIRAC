@@ -9,8 +9,9 @@
       dirac-rss-query-resourcestatusdb
         --element=            Element family to be Synchronized ( Site, Resource or Node )
         --tableType=          A valid table type (Status, Log, History)
-        --name=               ElementName; None if default
-        --statusType=         StatusType; None if default
+        --name=               ElementName (it admits a comma-separated list of element names); None if default
+        --statusType=         StatusType (it admits a comma-separated list of statusTypes
+                                          e.g. ReadAccess,WriteAccess,RemoveAccess ); None if default
         --status=             Status; None if default
         --elementType=        ElementType narrows the search (string, list); None if default
         --reason=             Decision that triggered the assigned status
@@ -25,9 +26,10 @@
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
-from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Base                           import Script
-from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
+from DIRAC                                                  import gConfig, gLogger, exit as DIRACExit, S_OK, version
+from DIRAC.Core.Base                                        import Script
+from DIRAC.ResourceStatusSystem.Client                      import ResourceStatusClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 import datetime
 
 
@@ -123,6 +125,67 @@ def parseSwitches():
   map( subLogger.debug, switches.iteritems() )
 
   return switches
+
+
+#...............................................................................
+
+
+def checkStatusTypes( statusTypes ):
+  '''
+    To check if values for 'statusType' are valid
+  '''
+
+  opsH = Operations().getValue( 'ResourceStatus/Config/StatusTypes/StorageElement' )
+  acceptableStatusTypes = opsH.replace( ',', '' ).split()
+
+  for statusType in statusTypes:
+    if statusType not in acceptableStatusTypes :
+      error( "'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
+             % ( statusType, str( acceptableStatusTypes ) ) )
+
+
+def unpack( switchDict ):
+  '''
+    To split and process comma-separated list of values for 'name' and 'statusType'
+  '''
+
+  switchDictSet = []
+  names = []
+  statusTypes = []
+
+  if switchDict[ 'name' ] is not None:
+    names = filter( None, switchDict[ 'name' ].split( ',' ) )
+
+  if switchDict[ 'statusType' ] is not None:
+    statusTypes = filter( None, switchDict[ 'statusType' ].split( ',' ) )
+    checkStatusTypes( statusTypes )
+
+
+  if len( names ) > 0 and len( statusTypes ) > 0:
+    combinations = [ ( a, b ) for a in names for b in statusTypes ]
+    for combination in combinations:
+      n, s = combination
+      switchDictClone = switchDict.copy()
+      switchDictClone[ 'name' ] = n
+      switchDictClone[ 'statusType' ] = s
+      switchDictSet.append( switchDictClone )
+  elif len( names ) > 0 and len( statusTypes ) == 0:
+    for name in names:
+      switchDictClone = switchDict.copy()
+      switchDictClone[ 'name' ] = name
+      switchDictSet.append( switchDictClone )
+  elif len( names ) == 0 and len( statusTypes ) > 0:
+    for statusType in statusTypes:
+      switchDictClone = switchDict.copy()
+      switchDictClone[ 'statusType' ] = statusType
+      switchDictSet.append( switchDictClone )
+  elif len( names ) == 0 and len( statusTypes ) == 0:
+    switchDictClone = switchDict.copy()
+    switchDictClone[ 'name' ] = None
+    switchDictClone[ 'statusType' ] = None
+    switchDictSet.append( switchDictClone )
+
+  return switchDictSet
 
 #...............................................................................
 
@@ -366,7 +429,6 @@ def run( switchDict ):
     printTable( table, output[ 'Columns' ] )
   confirm( query, output[ 'Value' ] )
 
-
 #...............................................................................
 
 if __name__ == "__main__":
@@ -378,8 +440,12 @@ if __name__ == "__main__":
   registerUsageMessage()
   switchDict = parseSwitches()
 
+  #Unpack switchDict if 'name' or 'statusType' have multiple values
+  switchDictSet = unpack( switchDict )
+
   #Run script
-  run( switchDict )
+  for switchDict in switchDictSet:
+    run( switchDict )
 
   #Bye
   DIRACExit( 0 )
