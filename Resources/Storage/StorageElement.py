@@ -61,7 +61,7 @@ class StorageElement:
 
   """
 
-  __deprecatedArguments = ["singleFile", "singleDirectory"] #Arguments that are now useless
+  __deprecatedArguments = ["singleFile", "singleDirectory"]  # Arguments that are now useless
 
   # Some methods have a different name in the StorageElement and the plugins...
   # We could avoid this static list in the __getattr__ by checking the storage plugin and so on
@@ -423,7 +423,7 @@ class StorageElement:
       :param withPort : includes the port in the returned pfn
     """
     self.log.verbose( "StorageElement.getSinglePfnForProtocol: Getting pfn for given protocols in %s." % self.name )
-    
+
 
     # This test of the available protocols could actually be done in getPfnForProtocol once for all
     # but it is safer to put it here in case we decide to call this method internally (which I doubt!)
@@ -481,7 +481,7 @@ class StorageElement:
       for pfn in pfns:
         pfnDict[pfn] = False
     elif type( pfns ) == DictType:
-      pfnDict = pfns.copy()
+      pfnDict = pfns
     else:
       errStr = "StorageElement.getLfnForPfn: Supplied pfns must be string, list of strings or a dictionary."
       self.log.debug( errStr )
@@ -534,8 +534,8 @@ class StorageElement:
     errStr = "StorageElement.getPfnPath: Failed to get the pfn path for any of the protocols!!"
     self.log.debug( errStr )
     return S_ERROR( errStr )
-  
-  
+
+
 
   def getLfnForPfn( self, pfns ):
     """ Get the LFN from the PFNS .
@@ -645,9 +645,9 @@ class StorageElement:
       :param str lfn: string, list or dictionnary of lfns
       :param protocol: if no protocol is specified, we will request self.turlProtocols
     """
-    
+
     self.log.verbose( "StorageElement.getAccessUrl: Getting accessUrl for lfn in %s." % self.name )
-    
+
     if not protocol:
       protocols = self.turlProtocols
     else:
@@ -741,7 +741,7 @@ class StorageElement:
          Setting value %s." % ( argName, self.methodName, methDefaultArgs[argName] ) )
         kwargs[argName] = methDefaultArgs[argName]
 
-    
+
     if type( lfn ) in StringTypes:
       lfnDict = {lfn:False}
     elif type( lfn ) == ListType:
@@ -833,10 +833,10 @@ class StorageElement:
 
 
     # Ensure backward compatibility for singleFile and singleDirectory for the time of a version
-    singleFileOrDir = removedArgs.get("singleFile", False) or removedArgs.get("singleDirectory", False)
-    
+    singleFileOrDir = removedArgs.get( "singleFile", False ) or removedArgs.get( "singleDirectory", False )
+
     retValue = S_OK( { 'Failed': failed, 'Successful': successful } )
-    
+
     if singleFileOrDir:
       self.log.verbose( "StorageElement.__executeMethod : use Utils.executeSingleFileOrDirWrapper for backward compatibility. You should fix your code " )
       retValue = Utils.executeSingleFileOrDirWrapper( retValue )
@@ -849,15 +849,15 @@ class StorageElement:
     """ Forwards the equivalent Storage calls to StorageElement.__executeMethod"""
     # We take either the equivalent name, or the name itself
     self.methodName = StorageElement.__equivalentMethodNames.get( name, None )
-    
+
     if self.methodName:
       return self.__executeMethod
-    
-    raise AttributeError  
-        
 
-    
+    raise AttributeError
 
-    
-    
+
+
+
+
+
 

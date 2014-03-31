@@ -10,6 +10,7 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.RequestManagementSystem.Client.Operation             import Operation
 from DIRAC.RequestManagementSystem.Client.File                  import File
+from DIRAC.Resources.Storage.StorageElement                     import StorageElement
 
 class DMSRequestOperationsBase:
 
@@ -54,7 +55,7 @@ class DMSRequestOperationsBase:
 
     registerFile = File()
     registerFile.LFN = opFile.LFN
-    registerFile.PFN = opFile.PFN
+    registerFile.PFN = StorageElement( targetSE ).getPfnForLfn( opFile.LFN ).get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN )
     registerFile.GUID = opFile.GUID
     registerFile.Checksum = opFile.Checksum
     registerFile.ChecksumType = opFile.ChecksumType

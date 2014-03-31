@@ -578,11 +578,11 @@ class StorageBase( object ):
       return res
     retDict = { "Successful" : {}, "Failed" : {} }
     for lfn in lfns:
-      res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
-      if res["OK"]:
-        retDict["Successful"][lfn] = res["Value"]
+      res = storageElement.getPfnForLfn( lfn )
+      if res["OK"] and lfn in res['Value']['Successful']:
+        retDict["Successful"][lfn] = res["Value"]['Successful'][lfn]
       else:
-        retDict["Failed"][lfn] = res["Message"]
+        retDict["Failed"][lfn] = res.get( "Message", res.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) )
     return S_OK( retDict )
 
   def getLfnForPfn( self, pfns, storageElementName ):
@@ -1444,12 +1444,12 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
     destinationSE = storageElement.getStorageElementName()['Value']
-    res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
-    if not res['OK']:
+    res = storageElement.getPfnForLfn( lfn )
+    if not res['OK'] or lfn not in res['Value']['Successful']:
       errStr = "putAndRegister: Failed to generate destination PFN."
-      self.log.error( errStr, res['Message'] )
+      self.log.error( errStr, res.get( 'Message', res.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
       return S_ERROR( errStr )
-    destPfn = res['Value']
+    destPfn = res['Value']['Successful'][lfn]
     fileDict = {destPfn:fileName}
 
     successful = {}
@@ -1621,12 +1621,12 @@ class ReplicaManager( CatalogToStorage ):
       destPath = '%s/%s' % ( destPath, os.path.basename( lfn ) )
     else:
       destPath = lfn
-    res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForLfn( destPath ) )
-    if not res['OK']:
+    res = destStorageElement.getPfnForLfn( destPath )
+    if not res['OK'] or destPath not in res['Value']['Successful']:
       errStr = "__replicate: Failed to generate destination PFN."
-      self.log.error( errStr, res['Message'] )
+      self.log.error( errStr, res.get( 'Message', res.get( 'Value', {} ).get( 'Failed', {} ).get( destPath ) ) )
       return S_ERROR( errStr )
-    destPfn = res['Value']
+    destPfn = res['Value']['Successful'][destPath]
     # Find out if there is a replica already at the same site
     localReplicas = []
     otherReplicas = []
@@ -1792,7 +1792,7 @@ class ReplicaManager( CatalogToStorage ):
           errStr = "%s The storage element is not currently valid." % logStr
           self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
-          pfn = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
+          pfn = storageElement.getPfnForLfn( lfn ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, pfn )
           if storageElement.getRemoteProtocols()['Value']:
             self.log.verbose( "%s Attempting to get source pfns for remote protocols." % logStr )
             res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols ) )
@@ -1861,10 +1861,14 @@ class ReplicaManager( CatalogToStorage ):
   def __registerFile( self, fileTuples, catalog ):
     """ register file to cataloge """
     seDict = {}
-    for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuples:
-      seDict.setdefault( storageElementName, [] ).append( ( lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum ) )
-    failed = {}
     fileDict = {}
+    for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuples:
+      if storageElementName:
+        seDict.setdefault( storageElementName, [] ).append( ( lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum ) )
+      else:
+        # If no SE name, this could be just registration in a dummy catalog like LHCb bookkeeping
+        fileDict[lfn] = {'PFN':'', 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
+    failed = {}
     for storageElementName, fileTuple in seDict.items():
       destStorageElement = StorageElement( storageElementName )
       res = destStorageElement.isValid()
@@ -2380,12 +2384,12 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "put: The storage element is not currently valid."
       self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
-    res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
-    if not res['OK']:
+    res = storageElement.getPfnForLfn( lfn )
+    if not res['OK']or lfn not in res['Value']['Successful']:
       errStr = "put: Failed to generate destination PFN."
-      self.log.error( errStr, res['Message'] )
+      self.log.error( errStr, res.get( 'Message', res.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
       return S_ERROR( errStr )
-    destPfn = res['Value']
+    destPfn = res['Value']['Successful'][lfn]
     fileDict = {destPfn:fileName}
 
     successful = {}

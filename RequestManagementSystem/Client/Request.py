@@ -128,11 +128,8 @@ class Request( Record ):
 
     self.__waiting = None
 
-    isScheduled = False
-    isWaiting = False
-
     while opStatusList:
-
+      # # Scan all status in order!
       opStatus, op = opStatusList.pop( 0 )
 
       # # Failed -> Failed
@@ -142,34 +139,24 @@ class Request( Record ):
 
       # Scheduled -> Scheduled
       if opStatus == "Scheduled":
-        if not isWaiting:
+        if self.__waiting == None:
+          self.__waiting = op
           rStatus = "Scheduled"
+      # # First operation Queued becomes Waiting if no Waiting/Scheduled before
+      elif opStatus == "Queued":
+        if self.__waiting == None:
           self.__waiting = op
-          isScheduled = True
-        continue
-
-      if opStatus == "Queued":
-        if isScheduled or isWaiting:
-          continue
-        else:  # not isWaiting:
           op._setWaiting( self )
-          self.__waiting = op
           rStatus = "Waiting"
-          isWaiting = True
-
-      if opStatus == "Waiting":
-        if isScheduled or isWaiting:
+      # # First operation Waiting is next to execute, others are queued
+      elif opStatus == "Waiting":
+        rStatus = "Waiting"
+        if self.__waiting == None:
+          self.__waiting = op
+        else:
           op._setQueued( self )
-          rStatus = "Waiting"
-        else:
-          self.__waiting = op
-          isWaiting = True
-          rStatus = "Waiting"
-
-      if opStatus == "Done":
-        if isScheduled or isWaiting:
-          continue
-        else:
+      # # All operations Done -> Done
+      elif opStatus == "Done" and self.__waiting == None:
           rStatus = "Done"
     self.Status = rStatus
 
@@ -426,6 +413,8 @@ class Request( Record ):
     """ status setter """
     if value not in Request.ALL_STATES:
       raise ValueError( "Unknown status: %s" % str( value ) )
+    if value == 'Done':
+      self.__data__['Error'] = ''
     self.__data__["Status"] = value
 
   @property
