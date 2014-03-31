@@ -207,6 +207,110 @@ class JobDB( DB ):
 
 
 #############################################################################
+  def traceJobParameter( self, site, localID, parameter, date = None, until = None ):
+    ret = self.traceJobParameters( site, localID, [parameter], None, date, until )
+    if not ret['OK']:
+      return ret
+    returnDict = {}
+    for jobID in ret['Value']:
+      returnDict[jobID] = ret['Value'][jobID].get( parameter )
+    return S_OK( returnDict )
+
+#############################################################################
+  def traceJobParameters( self, site, localIDs, paramList = None, attributeList = None, date = None, until = None ):
+    import datetime
+    exactTime = False
+    if not attributeList:
+      attributeList = []
+    attributeList = list( set( attributeList ) | set( ['StartExecTime', 'SubmissionTime', 'HeartBeatTime',
+                                                    'EndExecTime', 'JobName', 'OwnerDN', 'OwnerGroup'] ) )
+    try:
+      if type( localIDs ) == type( [] ) or type( localIDs ) == type( {} ):
+        localIDs = [int( localID ) for localID in localIDs]
+      else:
+        localIDs = [int( localIDs )]
+    except:
+      return S_ERROR( "localIDs must be integers" )
+    now = datetime.datetime.utcnow()
+    if until:
+      if until.lower() == 'now':
+        until = now
+      else:
+        try:
+          until = datetime.datetime.strptime( until, '%Y-%m-%d' )
+        except:
+          return S_ERROR( "Error in format for 'until', expected '%Y-%m-%d'" )
+    if not date:
+      until = now
+      since = until - datetime.timedelta( hours = 24 )
+    else:
+      since = None
+      for format in ( '%Y-%m-%d', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S' ):
+        try:
+          since = datetime.datetime.strptime( date, format )
+          break
+        except:
+          exactTime = True
+      if not since:
+        return S_ERROR( 'Error in date format' )
+      if exactTime:
+        exactTime = since
+        if not until:
+          until = now
+      else:
+        if not until:
+          until = since + datetime.timedelta( hours = 24 )
+      if since > now:
+        return S_ERROR( 'Cannot find jobs in the future' )
+      if until > now:
+        until = now
+    result = self.selectJobs( {'Site':site}, older = str( until ), newer = str( since ) )
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR( 'No jobs found at %s for date %s' % ( site, date ) )
+    resultDict = {'Successful':{}, 'Failed':{}}
+    for jobID in result['Value']:
+      if jobID:
+        ret = self.getJobParameter( jobID, 'LocalJobID' )
+        if not ret['OK']:
+          return ret
+        localID = ret['Value']
+        if localID and int( localID ) in localIDs:
+          attributes = self.getJobAttributes( jobID, attributeList )
+          if not attributes['OK']:
+            return attributes
+          attributes = attributes['Value']
+          if exactTime:
+            for att in ( 'StartExecTime', 'SubmissionTime' ):
+              startTime = attributes.get( att )
+              if startTime == 'None':
+                startTime = None
+              if startTime:
+                break
+            startTime = datetime.datetime.strptime( startTime , '%Y-%m-%d %H:%M:%S' ) if startTime else now
+            for att in ( 'EndExecTime', 'HeartBeatTime' ):
+              lastTime = attributes.get( att )
+              if lastTime == 'None':
+                lastTime = None
+              if lastTime:
+                break
+            lastTime = datetime.datetime.strptime( lastTime, '%Y-%m-%d %H:%M:%S' ) if lastTime else now
+            okTime = ( exactTime >= startTime and exactTime <= lastTime )
+          else:
+            okTime = True
+          if okTime:
+            ret = self.getJobParameters( jobID, paramList = paramList )
+            if not ret['OK']:
+              return ret
+            attributes.update( ret['Value'] )
+            resultDict['Successful'].setdefault( int( localID ), {} )[int( jobID )] = attributes
+    for localID in localIDs:
+      if localID not in resultDict['Successful']:
+        resultDict['Failed'][localID] = 'localID not found'
+    return S_OK( resultDict )
+
+#############################################################################
   def getJobParameters( self, jobID, paramList = None ):
     """ Get Job Parameters defined for jobID.
         Returns a dictionary with the Job Parameters.
@@ -424,14 +528,9 @@ class JobDB( DB ):
     """
 
     result = self.getJobParameters( jobID, [parameter] )
-    if result['OK']:
-      if result['Value']:
-        value = result['Value'][parameter]
-      else:
-        value = None
-      return S_OK( value )
-    else:
+    if not result['OK']:
       return result
+    return S_OK( result.get( 'Value', {} ).get( parameter ) )
 
 #############################################################################
   def getJobOptParameter( self, jobID, parameter ):
@@ -657,7 +756,7 @@ class JobDB( DB ):
       return ret
     value = ret['Value']
 
-    #FIXME: need to check the validity of attrName
+    # FIXME: need to check the validity of attrName
 
     if update:
       cmd = "UPDATE Jobs SET %s=%s,LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s" % ( attrName, value, jobID )
@@ -1237,7 +1336,7 @@ class JobDB( DB ):
 
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
     voPolicyDict = gConfig.getOptionsDict( '/DIRAC/VOPolicy/%s/%s' % ( vo, setup ) )
-    #voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
+    # voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
     if voPolicyDict['OK']:
       voPolicy = voPolicyDict['Value']
       for param, val in voPolicy.items():
@@ -1294,10 +1393,10 @@ class JobDB( DB ):
        in various tables
     """
 
-    #ret = self._escapeString(jobID)
-    #if not ret['OK']:
+    # ret = self._escapeString(jobID)
+    # if not ret['OK']:
     #  return ret
-    #e_jobID = ret['Value']
+    # e_jobID = ret['Value']
 
     if type( jobIDs ) != type( [] ):
       jobIDList = [jobIDs]
