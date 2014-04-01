@@ -390,6 +390,10 @@ class JobMonitoringHandler( RequestHandler ):
       if result['OK']:
         tqDict = result['Value']
 
+      # If no jobs can be selected after the properties check
+      if not summaryDict.keys():
+        return S_OK( resultDict )
+
       # prepare the standard structure now
       key = summaryDict.keys()[0]
       paramNames = summaryDict[key].keys()
