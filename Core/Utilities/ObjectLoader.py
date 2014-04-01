@@ -1,5 +1,9 @@
+""" An utility to load modules and objects in DIRAC and extensions, being sure that the extensions are considered
+"""
+
+__RCSID__ = "$Id$"
+
 import re
-import os
 import types
 import imp
 import pkgutil
@@ -8,8 +12,13 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List, DIRACSingleton
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
-
 class ObjectLoader( object ):
+  """ Class for loading objects. Example:
+
+      from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+      ol = ObjectLoader()
+      ol.loadObject('TransformationSystem.Client.TransformationClient')
+  """
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__( self, baseModules = False ):
@@ -24,6 +33,7 @@ class ObjectLoader( object ):
   def __rootImport( self, modName, hideExceptions = False ):
     """ Auto search which root module has to be used
     """
+    self.__rootModules.reverse()
     for rootModule in self.__rootModules:
       impName = modName
       if rootModule:
@@ -108,13 +118,13 @@ class ObjectLoader( object ):
       return S_ERROR( "%s does not contain a %s object" % ( importString, objName ) )
 
   def getObjects( self, modulePath, reFilter = None, parentClass = None, recurse = False ):
-    """
-    Search for modules under a certain path
+    """ Search for modules under a certain path
 
-    modulePath is the import string needed to access the parent module. Root modules will be included automatically (like DIRAC). For instance "ConfigurationSystem.Service"
+        modulePath is the import string needed to access the parent module.
+        Root modules will be included automatically (like DIRAC). For instance "ConfigurationSystem.Service"
 
-    reFilter is a regular expression to filter what to load. For instance ".*Handler"
-    parentClass is a class object from which the loaded modules have to import from. For instance RequestHandler
+        reFilter is a regular expression to filter what to load. For instance ".*Handler"
+        parentClass is a class object from which the loaded modules have to import from. For instance RequestHandler
     """
 
     if 'OrderedDict' in dir( collections ):
@@ -143,7 +153,7 @@ class ObjectLoader( object ):
       fsPath = parentModule.__path__[0]
       gLogger.verbose( "Loaded module %s at %s" % ( impPath, fsPath ) )
 
-      for modLoader, modName, isPkg in pkgutil.walk_packages( parentModule.__path__ ):
+      for _modLoader, modName, isPkg in pkgutil.walk_packages( parentModule.__path__ ):
         if reFilter and not reFilter.match( modName ):
           continue
         if isPkg:
@@ -178,4 +188,3 @@ class ObjectLoader( object ):
         modules[ modKeyName ] = modClass
 
     return S_OK( modules )
-
