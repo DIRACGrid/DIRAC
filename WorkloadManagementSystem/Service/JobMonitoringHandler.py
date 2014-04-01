@@ -1,14 +1,7 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
     in the DISET framework
 
     The following methods are available in the Service interface
-
-
-
 """
 
 __RCSID__ = "$Id$"
@@ -363,8 +356,8 @@ class JobMonitoringHandler( RequestHandler ):
 
       summaryJobList = result['Value']
       if not self.globalJobsInfo:      
-        validJobs, invalidJobs, nonauthJobs, ownJobs = self.jobPolicy.evaluateJobRights( summaryJobList,
-                                                                                         RIGHT_GET_INFO )
+        validJobs, _invalidJobs, _nonauthJobs, _ownJobs = self.jobPolicy.evaluateJobRights( summaryJobList,
+                                                                                            RIGHT_GET_INFO )
         summaryJobList = validJobs
       
       result = gJobDB.getAttributesForJobList( summaryJobList, SUMMARY )
