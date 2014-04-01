@@ -1,4 +1,3 @@
-# $HeadURL:  $
 """ Cache
 
 This module provides a generic Cache extended to be used on RSS, RSSCache.
@@ -48,8 +47,8 @@ class Cache( object ):
     
     self.__lifeTime     = int( lifeTime * ( 1 + randomLifeTimeBias ) )
     self.__updateFunc   = updateFunc
-    # The records returned from the cache must be valid at least 10 seconds.
-    self.__validSeconds = 10
+    # The records returned from the cache must be valid at least 30 seconds.
+    self.__validSeconds = 30
     
     # Cache
     self.__cache       = DictCache()
@@ -259,7 +258,7 @@ class RSSCache( Cache ):
     matchKeys = matchKeys[ 'Value' ]
     
     # Gets objects for matched keys. It will return S_ERROR if the cache value
-    # has expired in between. It has 10 valid seconds, which means something was
+    # has expired in between. It has 30 valid seconds, which means something was
     # extremely slow above.
     cacheMatches = self.get( matchKeys )
     if not cacheMatches[ 'OK' ]:
