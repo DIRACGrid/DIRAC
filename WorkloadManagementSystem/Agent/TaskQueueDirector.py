@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -129,11 +128,10 @@ __RCSID__ = "$Id$"
 import random, time, threading
 from DIRAC                                                       import S_OK, S_ERROR, List, Time, abort
 from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
+from DIRAC.Core.Utilities.ObjectLoader                           import ObjectLoader
 from DIRAC.Core.DISET.RPCClient                                  import RPCClient
-from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Base.AgentModule                                 import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources          import getDIRACPlatforms
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals          import getVO, getCSExtensions
-
 from DIRAC.Resources.Computing.ComputingElement                  import getResourceDict
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils           import pilotAgentsDB
 
@@ -396,23 +394,12 @@ class TaskQueueDirector( AgentModule ):
 
     self.log.info( 'Instantiating Director Object:', directorName )
 
-    # In case the importLine is not set, this is looking for a DIRAC extension, if any.
-    # The extension is supposed to be called ExtDIRAC.
-    for ext in getCSExtensions():
-      if ext.lower() == getVO():
-        importLine = ext + self.directorsImportLine
-        break
-
-    try:
-      directorClass_ = getattr( __import__( "%s.%s" % ( importLine, directorName ),
-                                            globals(), locals(), [directorName], -1 ), directorName )
-    except ImportError:
-      importLine = "DIRAC.WorkloadManagementSystem.private"
-      directorClass_ = getattr( __import__( "%s.%s" % ( importLine, directorName ),
-                                            globals(), locals(), [directorName], -1 ), directorName )
-    director = directorClass_( submitPool )
-
-    self.log.verbose( "Director Object instantiated: %s.%s" % ( importLine, directorName ) )
+    # loading the module
+    directorM = ObjectLoader().loadModule( "WorkloadManagementSystem.private.%s" % directorName )
+    if not directorM:
+      return directorM
+    # instantiating the director object passing submitPool
+    director = getattr( directorM['Value'], directorName )( submitPool )
 
     # 2. check the requested ThreadPool (if not defined use the default one)
     directorPool = self.am_getOption( submitPool + '/Pool', 'Default' )
