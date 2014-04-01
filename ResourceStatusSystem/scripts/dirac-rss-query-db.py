@@ -7,10 +7,10 @@
 
     Usage:
       dirac-rss-query-resourcestatusdb
-        --element=            Element family to be Synchronized ( Site, Resource or Node )
+        --element=            Element family to be Synchronized ( Site, Resource, Component, Node )
         --tableType=          A valid table type (Status, Log, History)
         --name=               ElementName (it admits a comma-separated list of element names); None if default
-        --statusType=         StatusType (it admits a comma-separated list of statusTypes
+        --statusType=         StatusType (it admits a comma-separated list of statusTypes 
                                           e.g. ReadAccess,WriteAccess,RemoveAccess ); None if default
         --status=             Status; None if default
         --elementType=        ElementType narrows the search (string, list); None if default
@@ -104,7 +104,7 @@ def parseSwitches():
   if not 'element' in switches:
     error( "element Switch is mandatory but found missing" )
 
-  if not switches[ 'element' ] in ( 'Site', 'Resource', 'Node' ):
+  if not switches[ 'element' ] in ( 'Site', 'Resource', 'Component', 'Node' ):
     error( "'%s' is an invalid argument for switch 'element'" % switches[ 'element' ] )
 
   if not 'tableType' in switches:
@@ -125,8 +125,8 @@ def parseSwitches():
   map( subLogger.debug, switches.iteritems() )
 
   return switches
-
-
+  
+  
 #...............................................................................
 
 
@@ -134,35 +134,35 @@ def checkStatusTypes( statusTypes ):
   '''
     To check if values for 'statusType' are valid
   '''
-
+  
   opsH = Operations().getValue( 'ResourceStatus/Config/StatusTypes/StorageElement' )
   acceptableStatusTypes = opsH.replace( ',', '' ).split()
-
+  
   for statusType in statusTypes:
     if statusType not in acceptableStatusTypes :
-      error( "'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
-             % ( statusType, str( acceptableStatusTypes ) ) )
+      error( "'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s" 
+             % ( statusType, str(acceptableStatusTypes) ) )
 
 
 def unpack( switchDict ):
   '''
     To split and process comma-separated list of values for 'name' and 'statusType'
   '''
-
+ 
   switchDictSet = []
   names = []
-  statusTypes = []
-
+  statusTypes = [] 
+  
   if switchDict[ 'name' ] is not None:
-    names = filter( None, switchDict[ 'name' ].split( ',' ) )
-
+    names = filter( None, switchDict[ 'name' ].split(',') )
+  
   if switchDict[ 'statusType' ] is not None:
-    statusTypes = filter( None, switchDict[ 'statusType' ].split( ',' ) )
+    statusTypes = filter( None, switchDict[ 'statusType' ].split(',') )    
     checkStatusTypes( statusTypes )
 
 
   if len( names ) > 0 and len( statusTypes ) > 0:
-    combinations = [ ( a, b ) for a in names for b in statusTypes ]
+    combinations = [ (a,b) for a in names for b in statusTypes ]
     for combination in combinations:
       n, s = combination
       switchDictClone = switchDict.copy()
@@ -174,7 +174,7 @@ def unpack( switchDict ):
       switchDictClone = switchDict.copy()
       switchDictClone[ 'name' ] = name
       switchDictSet.append( switchDictClone )
-  elif len( names ) == 0 and len( statusTypes ) > 0:
+  elif len( names ) == 0 and len( statusTypes ) > 0:  
     for statusType in statusTypes:
       switchDictClone = switchDict.copy()
       switchDictClone[ 'statusType' ] = statusType
@@ -182,7 +182,7 @@ def unpack( switchDict ):
   elif len( names ) == 0 and len( statusTypes ) == 0:
     switchDictClone = switchDict.copy()
     switchDictClone[ 'name' ] = None
-    switchDictClone[ 'statusType' ] = None
+    switchDictClone[ 'statusType' ] = None      
     switchDictSet.append( switchDictClone )
 
   return switchDictSet
@@ -412,7 +412,7 @@ def run( switchDict ):
   '''
     Main function of the script
   '''
-
+   
   query = switchDict[ 'q' ] if switchDict[ 'q' ] else switchDict['query']
   output = None
 
