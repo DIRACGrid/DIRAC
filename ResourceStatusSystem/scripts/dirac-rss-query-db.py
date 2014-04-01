@@ -8,18 +8,18 @@
     Usage:
       dirac-rss-query-resourcestatusdb
         --element=            Element family to be Synchronized ( Site, Resource, Component, Node )
-        --tableType=          A valid table type (Status, Log, History)
-        --name=               ElementName (it admits a comma-separated list of element names); None if default
-        --statusType=         StatusType (it admits a comma-separated list of statusTypes 
-                                          e.g. ReadAccess,WriteAccess,RemoveAccess ); None if default
-        --status=             Status; None if default
-        --elementType=        ElementType narrows the search (string, list); None if default
+        --tableType=          A valid table argument ( Status, Log, History )
+        --name=               ElementName (it admits a comma-separated list of element names); None by default
+        --statusType=         A valid StatusType argument (it admits a comma-separated list of statusTypes 
+                                             e.g. ReadAccess, WriteAccess, RemoveAccess ); None by default
+        --status=             A valid Status argument ( Active, Probing, Degraded, Banned ); None by default
+        --elementType=        ElementType narrows the search (string, list); None by default
         --reason=             Decision that triggered the assigned status
         --dateEffective=      Time-stamp of downtime announcement
         --lastCheckTime=      Time-stamp setting last time the status & status were checked
-        --tokenOwner=         Owner of the token; None if default
+        --tokenOwner=         Owner of the token; None by default
         --tokenExpiration=    Time-stamp setting validity of token ownership
-        --query=              A valid query type (select, insert, update, add, modify, delete)
+        --query=              A valid query argument ( select, insert, update, add, modify, delete )
 
 
     Verbosity:
@@ -103,23 +103,34 @@ def parseSwitches():
 
   if not 'element' in switches:
     error( "element Switch is mandatory but found missing" )
+  else:
+    switches[ 'element' ] = switches[ 'element' ].title()
 
   if not switches[ 'element' ] in ( 'Site', 'Resource', 'Component', 'Node' ):
     error( "'%s' is an invalid argument for switch 'element'" % switches[ 'element' ] )
 
   if not 'tableType' in switches:
     error( "tableType Switch is mandatory but found missing" )
+  else:
+    switches[ 'tableType' ] = switches[ 'tableType' ].title()
 
   if not switches[ 'tableType' ] in ( 'Status', 'Log', 'History' ):
     error( "'%s' is an invalid argument for switch 'tableType'" % switches[ 'tableType' ] )
 
+  if 'status' in switches and switches[ 'status' ] is not None:
+    switches[ 'status' ] = switches[ 'status' ].title()
+    if not switches[ 'status' ] in ( 'Active', 'Probing', 'Degraded', 'Banned' ):
+      error("'%s' is an invalid argument for switch 'status'" % switches[ 'status' ] )
+
   if not 'query' in switches and not 'q' in switches:
     error( "query Switch is mandatory but found missing" )
+  else:
+    query = ( switches['query'], switches['q'] )
+    switches['query'] = next( item for item in query if item is not None )
+    switches['query'] = switches['query'].lower() 
 
-  if not switches['query'] in ( 'select', 'insert', 'update', 'add', 'modify', 'delete' ) and \
-     not switches['q'] in ( 'select', 'insert', 'update', 'add', 'modify', 'delete' ):
-    argument = switches[ 'query' ] if switches[ 'query' ] else switches['q']
-    error( "'%s' is an invalid argument for switch 'query'" % argument )
+  if not switches['query'] in ( 'select', 'insert', 'update', 'add', 'modify', 'delete' ):
+    error( "'%s' is an invalid argument for switch 'query'" % switches['query'] )
 
   subLogger.debug( "The switches used are:" )
   map( subLogger.debug, switches.iteritems() )
@@ -413,7 +424,7 @@ def run( switchDict ):
     Main function of the script
   '''
    
-  query = switchDict[ 'q' ] if switchDict[ 'q' ] else switchDict['query']
+  query = switchDict['query']
   output = None
 
   # exectue the query request: e.g. if it's a 'select' it executes 'select()'
