@@ -498,7 +498,7 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def setSubmitPools( self, backend ):
+  def setSubmitPool( self, backend ):
     """Developer function.
 
        Choose submission pool on which job is executed e.g. DIRAC, LCG.
@@ -511,8 +511,8 @@ class Job( API ):
 
     if not backend.lower() == 'any':
       if type(backend) == type([]):
-        backend = ";".join(backend)
-      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Submit Pool' )
+        return self._reportError( "SubmitPool cannot be a list" , **kwargs )
+      self._addParameter( self.workflow, 'SubmitPool', 'JDL', backend, 'Submit Pool' )
     return S_OK()
 
   #############################################################################
