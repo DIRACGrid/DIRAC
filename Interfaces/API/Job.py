@@ -84,6 +84,7 @@ class Job( API ):
     self.reqParams = {'MaxCPUTime':   'other.NAME>=VALUE',
                       'MinCPUTime':   'other.NAME<=VALUE',
                       'Site':         'other.NAME=="VALUE"',
+                      'SubmitPools':  'other.NAME=="VALUE"',
                       'Platform':     'other.NAME=="VALUE"',
                       #'BannedSites':  '!Member(other.Site,BannedSites)', #doesn't work unfortunately
                       'BannedSites':  'other.Site!="VALUE"',
@@ -388,7 +389,8 @@ class Job( API ):
 
        Example usage:
 
-       >>> job = Job()
+       >>> job = Job()2014-04-02 12:58:34 UTC SimuDB/SubmitAgent EXCEPT: <type 'exceptions.KeyError'>:'SubmitPools'
+
        >>> job.setInputDataPolicy('download')
 
     """
@@ -509,8 +511,9 @@ class Job( API ):
       return self._reportError( 'Expected string for submitpool', **kwargs )
 
     if not backend.lower() == 'any':
-      self._addParameter( self.workflow, 'SubmitPools', 'JDLReqt', backend, 'Submit Pool' )
-
+        if type(backend) == type([]):
+          backend = ";".join(backend)
+        self._addParameter( self.workflow, 'SubmitPools', 'JDLReqt', backend, 'Submit Pool' )
     return S_OK()
 
   #############################################################################
