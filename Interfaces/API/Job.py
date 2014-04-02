@@ -506,10 +506,10 @@ class Job( API ):
     #should add protection here for list of supported platforms
     kwargs = {'backend':backend}
     if not type( backend ) == type( " " ):
-      return self._reportError( 'Expected string for platform', **kwargs )
+      return self._reportError( 'Expected string for submitpool', **kwargs )
 
     if not backend.lower() == 'any':
-      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Platform ( Operating System )' )
+      self._addParameter( self.workflow, 'SubmitPools', 'JDLReqt', backend, 'Submit Pool' )
 
     return S_OK()
 
