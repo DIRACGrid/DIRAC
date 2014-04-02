@@ -81,13 +81,6 @@ class Job( API ):
     self.addToOutputSandbox = []
     self.addToInputData = []
     self.systemConfig = 'ANY'
-    self.reqParams = {'MaxCPUTime':   'other.NAME>=VALUE',
-                      'MinCPUTime':   'other.NAME<=VALUE',
-                      'Site':         'other.NAME=="VALUE"',
-                      'Platform':     'other.NAME=="VALUE"',
-                      #'BannedSites':  '!Member(other.Site,BannedSites)', #doesn't work unfortunately
-                      'BannedSites':  'other.Site!="VALUE"',
-                      'SystemConfig': 'Member("VALUE",other.CompatiblePlatforms)'}
     ##Add member to handle Parametric jobs
     self.parametric = {}
     self.script = script
