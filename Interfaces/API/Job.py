@@ -390,7 +390,6 @@ class Job( API ):
        Example usage:
 
        >>> job = Job()
-
        >>> job.setInputDataPolicy('download')
 
     """
