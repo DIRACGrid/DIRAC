@@ -37,7 +37,8 @@ def getInstalledExtensions():
   extensions = []
   for extension in getCSExtensions():
     try:
-      extension = '%sDIRAC' % extension
+      if not "DIRAC" in extension: 
+        extension = '%sDIRAC' % extension
       imp.find_module( extension )
       extensions.append( extension )
     except ImportError:
