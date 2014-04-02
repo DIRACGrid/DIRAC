@@ -283,6 +283,7 @@ class TransformationCleaningAgent( AgentModule ):
       return res
     filesFound = res['Value']
     if not filesFound:
+      self.log.info( "No files are registered in the catalog directory %s" % directory )
       return S_OK()
     self.log.info( "Attempting to remove %d possible remnants from the catalog and storage" % len( filesFound ) )
     res = self.dm.removeFile( filesFound, force = True )
@@ -318,7 +319,10 @@ class TransformationCleaningAgent( AgentModule ):
       if not res['OK'] and res['Message'].endswith( 'The supplied path does not exist' ):
         self.log.info( "The supplied directory %s does not exist" % currentDir )
       elif not res['OK']:
-        self.log.error( 'Failed to get directory contents', '%s %s' % ( currentDir, res['Message'] ) )
+        if "No such file or directory" in res['Message']:
+          self.log.info( "%s: %s" % ( currentDir, res['Message'] ) )
+        else:
+          self.log.error( "Failed to get directory %s content: %s" % ( currentDir, res['Message'] ) )
       else:
         dirContents = res['Value']
         activeDirs.extend( dirContents['SubDirs'] )
