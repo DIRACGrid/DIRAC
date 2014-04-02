@@ -513,7 +513,7 @@ class Job( API ):
     if not backend.lower() == 'any':
         if type(backend) == type([]):
           backend = ";".join(backend)
-        self._addParameter( self.workflow, 'SubmitPools', 'JDLReqt', backend, 'Submit Pool' )
+        self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Submit Pool' )
     return S_OK()
 
   #############################################################################
