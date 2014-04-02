@@ -389,7 +389,7 @@ class Job( API ):
 
        Example usage:
 
-       >>> job = Job()2014-04-02 12:58:34 UTC SimuDB/SubmitAgent EXCEPT: <type 'exceptions.KeyError'>:'SubmitPools'
+       >>> job = Job()
 
        >>> job.setInputDataPolicy('download')
 
