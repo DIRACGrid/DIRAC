@@ -84,7 +84,7 @@ class Job( API ):
     self.reqParams = {'MaxCPUTime':   'other.NAME>=VALUE',
                       'MinCPUTime':   'other.NAME<=VALUE',
                       'Site':         'other.NAME=="VALUE"',
-                      'SubmitPools':  'other.NAME=="VALUE"',
+                      'SubmitPool':  'other.NAME=="VALUE"',
                       'Platform':     'other.NAME=="VALUE"',
                       #'BannedSites':  '!Member(other.Site,BannedSites)', #doesn't work unfortunately
                       'BannedSites':  'other.Site!="VALUE"',
