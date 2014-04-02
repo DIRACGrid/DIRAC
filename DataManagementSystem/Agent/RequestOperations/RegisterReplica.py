@@ -62,7 +62,7 @@ class RegisterReplica( OperationHandlerBase ):
         gMonitor.addMark( "RegisterReplicaOK", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", catalog, "", "RegisterReplica" )
 
-        self.log.info( "Replica %s has been registered at %s" % ( lfn, catalog ) )
+        self.log.info( "Replica %s has been registered at %s in %s" % ( lfn, replicaTuple[2], catalog if catalog else 'all catalogs' ) )
         opFile.Status = "Done"
       else:
 
@@ -80,7 +80,7 @@ class RegisterReplica( OperationHandlerBase ):
 
     # # final check
     if failedReplicas:
-      self.log.info( "all replicas processed, %s replicas failed to register" % failedReplicas )
+      self.log.error( "All replicas processed, %s replicas failed to register" % failedReplicas )
       self.operation.Error = "some replicas failed to register"
       return S_ERROR( self.operation.Error )
 
