@@ -510,9 +510,9 @@ class Job( API ):
       return self._reportError( 'Expected string for submitpool', **kwargs )
 
     if not backend.lower() == 'any':
-        if type(backend) == type([]):
-          backend = ";".join(backend)
-        self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Submit Pool' )
+      if type(backend) == type([]):
+        backend = ";".join(backend)
+      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Submit Pool' )
     return S_OK()
 
   #############################################################################
