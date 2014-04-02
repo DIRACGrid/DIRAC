@@ -33,7 +33,6 @@ class ObjectLoader( object ):
   def __rootImport( self, modName, hideExceptions = False ):
     """ Auto search which root module has to be used
     """
-    self.__rootModules.reverse()
     for rootModule in self.__rootModules:
       impName = modName
       if rootModule:
@@ -89,6 +88,9 @@ class ObjectLoader( object ):
       if rootModule[-5:] != "DIRAC" and rootModule not in self.__rootModules:
         self.__rootModules.append( "%sDIRAC" % rootModule )
     self.__rootModules.append( "" )
+
+    # Reversing the order because we want first to look in the extension(s)
+    self.__rootModules.reverse()
 
 
   def loadModule( self, importString ):
