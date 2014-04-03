@@ -9,10 +9,12 @@
       dirac-rss-query-resourcestatusdb
         --element=            Element family to be Synchronized ( Site, Resource, Component, Node )
         --tableType=          A valid table argument ( Status, Log, History )
-        --name=               ElementName (it admits a comma-separated list of element names); None by default
+        --name=               ElementName (it admits a comma-separated list of element names);
+                              None by default
         --statusType=         A valid StatusType argument (it admits a comma-separated list of statusTypes 
-                                             e.g. ReadAccess, WriteAccess, RemoveAccess ); None by default
-        --status=             A valid Status argument ( Active, Probing, Degraded, Banned ); None by default
+                              e.g. ReadAccess, WriteAccess, RemoveAccess ); None by default
+        --status=             A valid Status argument ( Active, Probing, Degraded, Banned, Error, Unknown );
+                              None by default
         --elementType=        ElementType narrows the search (string, list); None by default
         --reason=             Decision that triggered the assigned status
         --dateEffective=      Time-stamp of downtime announcement
@@ -119,7 +121,7 @@ def parseSwitches():
 
   if 'status' in switches and switches[ 'status' ] is not None:
     switches[ 'status' ] = switches[ 'status' ].title()
-    if not switches[ 'status' ] in ( 'Active', 'Probing', 'Degraded', 'Banned' ):
+    if not switches[ 'status' ] in ( 'Active', 'Probing', 'Degraded', 'Banned', 'Error', 'Unknown' ):
       error("'%s' is an invalid argument for switch 'status'" % switches[ 'status' ] )
 
   if not 'query' in switches and not 'q' in switches:
