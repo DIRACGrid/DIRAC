@@ -225,7 +225,7 @@ class DowntimeCommand( Command ):
 
       if len( dtOutages ) > 0:
         result = dtOutages[0]
-      else:
+      elif len( dtWarnings ) > 0:
         result = dtWarnings[0]
 
 
