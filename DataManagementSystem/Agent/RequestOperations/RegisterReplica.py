@@ -70,9 +70,7 @@ class RegisterReplica( OperationHandlerBase ):
         self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", catalog, "", "RegisterReplica" )
 
         reason = registerReplica.get( "Message",
-                                     registerReplica.get( ( "Value",
-                                                          {} ).registerReplica.get( "Failed",
-                                                                                  {} ).get( lfn ) ) )
+                                     registerReplica.get( "Value", {} ).get( "Failed", {} ).get( lfn ) )
         errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
         opFile.Error = errorStr
         self.log.warn( errorStr )
