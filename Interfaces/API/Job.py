@@ -84,6 +84,7 @@ class Job( API ):
     self.reqParams = {'MaxCPUTime':   'other.NAME>=VALUE',
                       'MinCPUTime':   'other.NAME<=VALUE',
                       'Site':         'other.NAME=="VALUE"',
+                      'SubmitPool':  'other.NAME=="VALUE"',
                       'Platform':     'other.NAME=="VALUE"',
                       #'BannedSites':  '!Member(other.Site,BannedSites)', #doesn't work unfortunately
                       'BannedSites':  'other.Site!="VALUE"',
@@ -497,7 +498,7 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def setSubmitPools( self, backend ):
+  def setSubmitPool( self, backend ):
     """Developer function.
 
        Choose submission pool on which job is executed e.g. DIRAC, LCG.
@@ -506,11 +507,12 @@ class Job( API ):
     #should add protection here for list of supported platforms
     kwargs = {'backend':backend}
     if not type( backend ) == type( " " ):
-      return self._reportError( 'Expected string for platform', **kwargs )
+      return self._reportError( 'Expected string for submitpool', **kwargs )
 
     if not backend.lower() == 'any':
-      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Platform ( Operating System )' )
-
+      if type(backend) == type([]):
+        return self._reportError( "SubmitPool cannot be a list" , **kwargs )
+      self._addParameter( self.workflow, 'SubmitPool', 'JDL', backend, 'Submit Pool' )
     return S_OK()
 
   #############################################################################
