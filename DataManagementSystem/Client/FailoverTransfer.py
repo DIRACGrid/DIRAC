@@ -22,8 +22,10 @@
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
+
 from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
 from DIRAC.Resources.Storage.StorageElement                 import StorageElement
+from DIRAC.Resources.Utilities                              import Utils
 from DIRAC.RequestManagementSystem.Client.Request           import Request
 from DIRAC.RequestManagementSystem.Client.Operation         import Operation
 from DIRAC.RequestManagementSystem.Client.File              import File

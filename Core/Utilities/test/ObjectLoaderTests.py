@@ -1,7 +1,5 @@
 import unittest
-from mock import Mock
 
-from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 

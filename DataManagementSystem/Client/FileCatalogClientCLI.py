@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
 """ File Catalog Client Command Line Interface. """
 
 __RCSID__ = "$Id$"
@@ -649,8 +646,6 @@ File Catalog Client $Revision: 1.17 $Date:
     sourceSE = ''
     if len(argss)>2:
       sourceSE=argss[2]
-    if len(argss)>3: 
-      localCache=argss[3]
     try:
       dirac = Dirac()
       result = dirac.replicateFile(lfn,se,sourceSE,printOutput=True)      
