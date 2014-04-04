@@ -1,14 +1,7 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
     in the DISET framework
 
     The following methods are available in the Service interface
-
-
-
 """
 
 __RCSID__ = "$Id$"
@@ -362,9 +355,9 @@ class JobMonitoringHandler( RequestHandler ):
         return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
       summaryJobList = result['Value']
-      if not self.globalJobsInfo:
-        validJobs, invalidJobs, nonauthJobs, ownJobs = self.jobPolicy.evaluateJobRights( summaryJobList,
-                                                                                         RIGHT_GET_INFO )
+      if not self.globalJobsInfo:      
+        validJobs, _invalidJobs, _nonauthJobs, _ownJobs = self.jobPolicy.evaluateJobRights( summaryJobList,
+                                                                                            RIGHT_GET_INFO )
         summaryJobList = validJobs
 
       result = gJobDB.getAttributesForJobList( summaryJobList, SUMMARY )
@@ -389,6 +382,10 @@ class JobMonitoringHandler( RequestHandler ):
       result = gTaskQueueDB.getTaskQueueForJobs( summaryJobList )
       if result['OK']:
         tqDict = result['Value']
+
+      # If no jobs can be selected after the properties check
+      if not summaryDict.keys():
+        return S_OK( resultDict )
 
       # prepare the standard structure now
       key = summaryDict.keys()[0]

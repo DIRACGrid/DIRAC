@@ -44,6 +44,18 @@ NEW: dirac-rms-reset-request command
 *SMS
 FIX: few minor fixes to avoid pylint warnings
 
+[v6r10p21]
+
+*Configuration
+FIX: CSGlobals - allow to specify extensions in xxxDIRAC form in the CS
+
+*Interfaces
+FIX: Job - removed self.reqParams
+FIX: Job - setSubmitPools renamed to setSubmitPool, fixed parameter definition string
+
+*WMS
+FIX: JobMonitorigHandler, JobPolicy - allow JobMonitor property to access job information
+
 [v6r10p20]
 
 *DMS

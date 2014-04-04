@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ JobPolicy encapsulates authorization rules for different groups
     with respect to job related operations
 
@@ -45,6 +41,7 @@ PROPERTY_RIGHTS = {}
 PROPERTY_RIGHTS[ Properties.JOB_ADMINISTRATOR ] = ADMIN_RIGHTS
 PROPERTY_RIGHTS[ Properties.NORMAL_USER ] = [ RIGHT_SUBMIT ]
 PROPERTY_RIGHTS[ Properties.GENERIC_PILOT ] = [ RIGHT_RESCHEDULE ]
+PROPERTY_RIGHTS[ Properties.JOB_MONITOR ] = [ RIGHT_GET_INFO ]
 
 class JobPolicy:
 
@@ -102,6 +99,11 @@ class JobPolicy:
     # Give JobAdmin permission if needed
     if Properties.JOB_ADMINISTRATOR in self.userProperties:
       for r in PROPERTY_RIGHTS[ Properties.JOB_ADMINISTRATOR ]:
+        self.__permissions[ r ] = True
+
+    # Give JobMonitor permission if needed
+    if Properties.JOB_MONITOR in self.userProperties:
+      for r in PROPERTY_RIGHTS[ Properties.JOB_MONITOR ]:
         self.__permissions[ r ] = True
 
     # Give normal user permission if needed
