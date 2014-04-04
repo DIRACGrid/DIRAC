@@ -81,13 +81,6 @@ class Job( API ):
     self.addToOutputSandbox = []
     self.addToInputData = []
     self.systemConfig = 'ANY'
-    self.reqParams = {'MaxCPUTime':   'other.NAME>=VALUE',
-                      'MinCPUTime':   'other.NAME<=VALUE',
-                      'Site':         'other.NAME=="VALUE"',
-                      'Platform':     'other.NAME=="VALUE"',
-                      #'BannedSites':  '!Member(other.Site,BannedSites)', #doesn't work unfortunately
-                      'BannedSites':  'other.Site!="VALUE"',
-                      'SystemConfig': 'Member("VALUE",other.CompatiblePlatforms)'}
     ##Add member to handle Parametric jobs
     self.parametric = {}
     self.script = script
@@ -497,19 +490,19 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def setSubmitPools( self, backend ):
+  def setSubmitPool( self, backend ):
     """Developer function.
 
-       Choose submission pool on which job is executed e.g. DIRAC, LCG.
+       Choose submission pool on which job is executed.
        Default in place for users.
     """
     #should add protection here for list of supported platforms
     kwargs = {'backend':backend}
-    if not type( backend ) == type( " " ):
-      return self._reportError( 'Expected string for platform', **kwargs )
+    if not type( backend ) in types.StringTypes:
+      return self._reportError( 'Expected string for SubmitPool', **kwargs )
 
     if not backend.lower() == 'any':
-      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Platform ( Operating System )' )
+      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Submit Pool' )
 
     return S_OK()
 

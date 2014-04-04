@@ -1051,6 +1051,7 @@ class JobWrapper:
             self.inputSandboxSize += result[ 'Value' ]
 
     if lfns:
+      self.log.info( "Downloading Input SandBox LFNs, number of files to get", len( lfns ) )
       self.__report( 'Running', 'Downloading InputSandbox LFN(s)' )
       lfns = [fname.replace( 'LFN:', '' ).replace( 'lfn:', '' ) for fname in lfns]
       download = self.rm.getFile( lfns )
