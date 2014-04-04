@@ -546,9 +546,9 @@ class FTSJob( Record ):
       toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
 
     if toRegisterDict:
-      self.regTotal += len( toRegisterDict )
+      self._regTotal += len( toRegisterDict )
       register = self._fc.addReplica( toRegisterDict )
-      self.regTime += time.time() - startTime
+      self._regTime += time.time() - startTime
       if not register["OK"]:
         # FIXME: shouldn't be a print!
         for ftsFile in toRegister:

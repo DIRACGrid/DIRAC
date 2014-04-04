@@ -25,7 +25,7 @@ class DMSRequestOperationsBase:
 
     bannedTargets = []
     for targetSE in targetSEs:
-      writeStatus = self.rssSEStatus( targetSE, access )
+      writeStatus = self.rssSEStatus( targetSE, access, retries = 5 )
       if not writeStatus["OK"]:
         self.log.error( writeStatus["Message"] )
         for opFile in self.operation:
