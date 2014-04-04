@@ -490,15 +490,15 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def setSubmitPools( self, backend ):
+  def setSubmitPool( self, backend ):
     """Developer function.
 
-       Choose submission pool on which job is executed e.g. DIRAC, LCG.
+       Choose submission pool on which job is executed.
        Default in place for users.
     """
     #should add protection here for list of supported platforms
     kwargs = {'backend':backend}
-    if not type( backend ) == type( " " ):
+    if not type( backend ) in types.StringTypes:
       return self._reportError( 'Expected string for SubmitPool', **kwargs )
 
     if not backend.lower() == 'any':
