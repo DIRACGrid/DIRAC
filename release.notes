@@ -1,8 +1,9 @@
-[v6r11-pre10]
+[v6r11-pre11]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
 CHANGE: dirac-configure - use Registry helper to get VOMS servers information
+BUGFIX: ObjectLoader - extensions must be looked up first for plug-ins
 
 *Configuration
 CHANGE: Resources.getDIRACPlatform() returns a list of compatible DIRAC platforms
@@ -17,7 +18,8 @@ FIX: AccountingDB, Job - extra checks for invalid values
 NEW: WMS tags to allow jobs require special site/CE/queue properties  
 CHANGES: DownloadInputData, InputDataByProtocol, InputDataResolution - allows to get multiple 
          PFNs for the protocol resolution
-NEW: JobDB, JobMonitoringHandler - added traceJobParameters(s)() methods         
+NEW: JobDB, JobMonitoringHandler - added traceJobParameters(s)() methods     
+CHANGE: TaskQueueDirector - use ObjectLoader to load directors    
 
 *DMS
 NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
@@ -31,6 +33,9 @@ CHANGE: Job - removed setSystemConfig() method
 *Resources
 CHANGE: StorageElement - changes to avoid usage PFNs
 FIX: XROOTStorage, SRM2Storage - changes in PFN construction 
+
+*RSS
+NEW: added commands dirac-rss-query-db and dirac-rss-query-dtcache
 
 *RMS
 CHANGE: ReqDB - added Foreign Keys to ReqDB tables
