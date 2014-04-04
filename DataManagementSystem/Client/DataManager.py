@@ -25,7 +25,7 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
 from DIRAC.Core.Utilities.File import makeGuid, getSize
-from DIRAC.Core.Utilities.List import sortList, randomize
+from DIRAC.Core.Utilities.List import randomize
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getSEsForCountry
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -1649,7 +1649,7 @@ class DataManager( object ):
     res = self.__removePhysicalReplica( storageElementName, lfnsToRemove )
     for lfn, error in res['Value']['Failed'].items():
       failed[lfn] = error
-    for pfn in res['Value']['Successful']:
+    for _pfn in res['Value']['Successful']:
       successful[lfn] = True
     resDict = { 'Successful' : successful, 'Failed' : failed }
     return S_OK( resDict )

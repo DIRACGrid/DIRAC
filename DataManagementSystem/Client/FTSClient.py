@@ -34,7 +34,6 @@ from DIRAC.DataManagementSystem.private.FTSValidator      import FTSValidator
 from DIRAC.DataManagementSystem.Client.DataManager     import DataManager
 # # from Resources
 from DIRAC.Resources.Storage.StorageFactory   import StorageFactory
-from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ########################################################################
 class FTSClient( Client ):

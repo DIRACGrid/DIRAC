@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSFile.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/08 09:28:29
@@ -14,7 +13,6 @@
     class representing a single file in the FTS job
 """
 # for properties
-# pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103
 __RCSID__ = "$Id $"
 # #
 # @file FTSFile.py
