@@ -212,12 +212,25 @@ class DowntimeCommand( Command ):
        
     if not hours:
       # If not hours defined, we want the downtimes running now, which means,
-      # the ones that already started and will finish later.
+      # the ones that already started and will finish later. In case many
+      # overlapping downtimes have been declared, the first one in severity and 
+      # then time order will be selected. 
   
+      dtOutages = []
+      dtWarnings = []
       for dt in uniformResult:
         if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
-          result = dt
-          break        
+          if dt[ 'Severity' ] == 'Outage':
+            dtOutages.append( dt )
+          else:
+            dtWarnings.append( dt )
+
+      if len( dtOutages ) > 0:
+        result = dtOutages[0]
+      elif len( dtWarnings ) > 0:
+        result = dtWarnings[0]
+
+
 
     else:
       # If hours are defined, we want the downtimes starting in the next <hours>

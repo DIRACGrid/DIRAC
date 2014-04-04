@@ -5,7 +5,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                                import S_OK, S_ERROR, gLogger, gConfig
-from  DIRAC.DataManagementSystem.Client.DataManager       import DataManager
+from DIRAC.DataManagementSystem.Client.DataManager       import DataManager
 from DIRAC.Resources.Storage.StorageElement               import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Resources.Utilities                            import Utils
@@ -127,7 +127,6 @@ class DataIntegrityClient( Client ):
       files = len( sePfns[site] )
       gLogger.info( '%s %s' % ( site.ljust( 20 ), str( files ).rjust( 20 ) ) )
 
-    physicalFileMetadata = {}
     for se in sortList( sePfns.keys() ):
       pfns = sePfns[se]
       pfnDict = {}
@@ -513,8 +512,6 @@ class DataIntegrityClient( Client ):
       gLogger.error( errStr )
       return S_ERROR( errStr )
     gLogger.info( "DataIntegrityClient.setFileProblematic: Attempting to update %s files." % len( lfns ) )
-    successful = {}
-    failed = {}
     fileMetadata = {}
     for lfn in lfns:
       fileMetadata[lfn] = {'Prognosis':reason, 'LFN':lfn, 'PFN':'', 'SE':''}

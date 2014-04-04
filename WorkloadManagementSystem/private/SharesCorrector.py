@@ -1,17 +1,12 @@
-########################################################################
-# $HeadURL$
-########################################################################
-""" Pritority corrector for the group and ingroup shares
+""" Priority corrector for the group and ingroup shares
 """
 
 __RCSID__ = "$Id$"
 
-import datetime
-import time as nativetime
-from DIRAC.Core.Utilities import List, Time, ObjectLoader
+from DIRAC.Core.Utilities import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.private.correctors.BaseCorrector import BaseCorrector
-from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC  import gLogger, S_OK, S_ERROR
 
 class SharesCorrector( object ):
 

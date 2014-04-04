@@ -518,7 +518,7 @@ class FTSAgent( AgentModule ):
 
     # # PHASE FOUR - add 'RegisterReplica' Operations
     if toRegister:
-      log.info( "==> found %s Files waiting for registration, adding 'RegisterReplica' operations" )
+      log.info( "==> found %d Files waiting for registration, adding 'RegisterReplica' operations" % len( toRegister ) )
       registerFiles = self.__register( request, operation, toRegister )
       if not registerFiles["OK"]:
         log.error( "unable to create 'RegisterReplica' operations: %s" % registerFiles["Message"] )

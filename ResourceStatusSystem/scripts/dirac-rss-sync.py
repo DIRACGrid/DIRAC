@@ -171,9 +171,10 @@ def initSEs():
       statusTypesList.remove( statusType )
 
       subLogger.debug( [ se,statusType,status,reason ] )
-      result = rssClient.modifyStatusElement( 'Resource', 'Status', name = se,
-                                              statusType = statusType, status = status,
-                                              reason = reason )
+      result = rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = se,
+                                                   statusType = statusType, status = status,
+                                                   elementType = 'StorageElement',
+                                                   reason = reason )
       
       if not result[ 'OK' ]:
         subLogger.error( 'Failed to modify' )
@@ -183,9 +184,10 @@ def initSEs():
     #Backtracking: statusTypes not present on CS
     for statusType in statusTypesList:
 
-      result = rssClient.modifyStatusElement( 'Resource', 'Status', name = se,
-                                              statusType = statusType, status = DEFAULT_STATUS,
-                                              reason = reason )
+      result = rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = se,
+                                                   statusType = statusType, status = DEFAULT_STATUS,
+                                                   elementType = 'StorageElement',
+                                                   reason = reason )
       if not result[ 'OK' ]:
         subLogger.error( 'Error in backtracking for %s,%s,%s' % ( se, statusType, status ) )
         subLogger.error( result[ 'Message' ] )

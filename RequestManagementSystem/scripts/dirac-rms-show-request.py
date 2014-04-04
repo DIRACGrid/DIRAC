@@ -8,6 +8,9 @@ Script.registerSwitch( '', 'Transformation=', '   = transID' )
 Script.registerSwitch( '', 'Tasks=', '   = list of taskIDs' )
 Script.registerSwitch( '', 'Verbose', '   Print more information' )
 Script.registerSwitch( '', 'Full', '   Print full request' )
+Script.registerSwitch( '', 'Status=', '   Select all requests in a given status' )
+Script.registerSwitch( '', 'Since=', '   Associated to --Status, start date (default= 24h ago' )
+Script.registerSwitch( '', 'Until=', '   Associated to --Status, end date (default= now' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
                                      ' %s [option|cfgfile] [requestName|requestID]' % Script.scriptName,
@@ -40,6 +43,7 @@ def prettyPrint( mainItem, key = '', offset = 0 ):
 # # execution
 if __name__ == "__main__":
   from DIRAC.Core.Base.Script import parseCommandLine
+  import datetime
   parseCommandLine()
 
   import DIRAC
@@ -52,6 +56,9 @@ if __name__ == "__main__":
   requests = None
   full = False
   verbose = False
+  status = None
+  until = None
+  since = None
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
       try:
@@ -72,7 +79,27 @@ if __name__ == "__main__":
       full = True
     elif switch[0] == 'Verbose':
       verbose = True
+    elif switch[0] == 'Status':
+      status = switch[1].capitalize()
+    elif switch[0] == 'Since':
+      try:
+        since = datetime.datetime.strptime( switch[1], '%Y-%m-%d' )
+      except:
+        print "Invalid --Since date"
+        DIRAC.exit( 2 )
+    elif switch[0] == 'Until':
+      try:
+        until = datetime.datetime.strptime( switch[1], '%Y-%m-%d' )
+      except:
+        print "Invalid --Until date"
+        DIRAC.exit( 2 )
 
+
+  if status:
+    if not until:
+      until = datetime.datetime.now()
+    if not since:
+      since = until - datetime.timedelta( hours = 24 )
   if transID:
     if not taskIDs:
       Script.showHelp()
@@ -97,81 +124,88 @@ if __name__ == "__main__":
       else:
         requests = [jobName + '_job_%d' % job]
 
-  if not requests:
-    Script.showHelp()
-    DIRAC.exit( 2 )
-
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
   from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
   reqClient = ReqClient()
   ftsClient = FTSClient()
-  for requestName in requests:
-    if requestName:
 
-      try:
-        requestName = reqClient.getRequestName( int( requestName ) )
-        if requestName['OK']:
-          requestName = requestName['Value']
-      except ValueError:
-        pass
+  if status:
+    res = reqClient.getRequestNamesList( [status], limit = 999999999 )
+    if not res['OK']:
+      print "Error getting requests:", res['Message']
+      DIRAC.exit( 2 )
+    requests = [reqName for reqName, _st, updTime in res['Value'] if updTime > since and updTime <= until]
+    print 'Obtained %d requests %s between %s and %s' % ( len( requests ), status, since, until )
+  if not requests:
+    Script.showHelp()
+    DIRAC.exit( 2 )
+  for requestName in [reqN for reqN in requests if reqN]:
+    anyReplication = False
+    if len( requests ) > 1:
+      print '\n==================================='
+    try:
+      requestName = reqClient.getRequestName( int( requestName ) )
+      if requestName['OK']:
+        requestName = requestName['Value']
+    except ValueError:
+      pass
 
-      request = reqClient.peekRequest( requestName )
-      if not request["OK"]:
-        gLogger.error( request["Message"] )
-        DIRAC.exit( -1 )
+    request = reqClient.peekRequest( requestName )
+    if not request["OK"]:
+      gLogger.error( request["Message"] )
+      DIRAC.exit( -1 )
 
-      request = request["Value"]
-      if not request:
-        gLogger.info( "no such request" )
-        DIRAC.exit( 0 )
+    request = request["Value"]
+    if not request:
+      gLogger.info( "no such request" )
+      DIRAC.exit( 0 )
 
-      if full:
-        output = ''
-        prettyPrint( request.toJSON()['Value'] )
-        print output
-      else:
-        anyReplication = False
-        gLogger.always( "Request name='%s' ID=%s Status='%s'%s%s" % ( request.RequestName,
-                                                                         request.RequestID,
-                                                                         request.Status,
-                                                                         ( " Error=%s" % request.Error ) if request.Error and request.Error.strip() else "" ,
-                                                                         ( " Job=%s" % request.JobID ) if request.JobID else "" ) )
+    if full:
+      output = ''
+      prettyPrint( request.toJSON()['Value'] )
+      print output
+    else:
+      gLogger.always( "Request name='%s' ID=%s Status='%s'%s%s" % ( request.RequestName,
+                                                                       request.RequestID,
+                                                                       request.Status,
+                                                                       ( " Error='%s'" % request.Error ) if request.Error and request.Error.strip() else "" ,
+                                                                       ( " Job=%s" % request.JobID ) if request.JobID else "" ) )
+      if verbose:
+        gLogger.always( "Created %s, Updated %s" % ( request.CreationTime, request.LastUpdate ) )
+        if request.OwnerDN:
+          gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
+      for i, op in enumerate( request ):
+        prStr = ''
+        if 'Replicate' in op.Type:
+          anyReplication = True
         if verbose:
-          gLogger.always( "Created %s, Updated %s" % ( request.CreationTime, request.LastUpdate ) )
-          if request.OwnerDN:
-            gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
-        for i, op in enumerate( request ):
-          prStr = ''
-          if 'Replicate' in op.Type:
-            anyReplication = True
-          if verbose:
-            if op.SourceSE:
-              prStr += 'SourceSE: %s' % op.SourceSE
-            if op.TargetSE:
-              prStr += ( ' - ' if prStr else '' ) + 'TargetSE: %s' % op.TargetSE
-            if prStr:
-              prStr += ' - '
-            prStr += 'Created %s, Updated %s' % ( op.CreationTime, op.LastUpdate )
-          gLogger.always( "  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s" % ( i, op.Type, op.OperationID,
-                                                                                               op.Order, op.Status,
-                                                                                               ( " Error=%s" % op.Error ) if op.Error and op.Error.strip() else "",
-                                                                                               ( " Catalog=%s" % op.Catalog ) if op.Catalog else "" ) )
+          if op.SourceSE:
+            prStr += 'SourceSE: %s' % op.SourceSE
+          if op.TargetSE:
+            prStr += ( ' - ' if prStr else '' ) + 'TargetSE: %s' % op.TargetSE
           if prStr:
-            gLogger.always( "      %s" % prStr )
-          for j, f in enumerate( op ):
-            gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s'%s%s" % ( j + 1, f.FileID, f.LFN, f.Status,
-                                                                                 ( " Error=%s" % f.Error ) if f.Error and f.Error.strip() else "",
-                                                                                 ( " Attempts=%d" % f.Attempt ) if f.Attempt > 1 else "" ) )
-      # Check if FTS job exists
-      if anyReplication:
-        res = ftsClient.getFTSJobsForRequest( request.RequestID )
-        if res['OK']:
-          ftsJobs = res['Value']
-          if ftsJobs:
-            gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
-                                                                     for job in ftsJobs] ) )
-          else:
-            print '         No FTS jobs found for that request'
+            prStr += ' - '
+          prStr += 'Created %s, Updated %s' % ( op.CreationTime, op.LastUpdate )
+        gLogger.always( "  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s" % ( i, op.Type, op.OperationID,
+                                                                                             op.Order, op.Status,
+                                                                                             ( " Error='%s'" % op.Error ) if op.Error and op.Error.strip() else "",
+                                                                                             ( " Catalog=%s" % op.Catalog ) if op.Catalog else "" ) )
+        if prStr:
+          gLogger.always( "      %s" % prStr )
+        for j, f in enumerate( op ):
+          gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s'%s%s" % ( j + 1, f.FileID, f.LFN, f.Status,
+                                                                               ( " Error='%s'" % f.Error ) if f.Error and f.Error.strip() else "",
+                                                                               ( " Attempts=%d" % f.Attempt ) if f.Attempt > 1 else "" ) )
+    # Check if FTS job exists
+    if anyReplication:
+      res = ftsClient.getFTSJobsForRequest( request.RequestID )
+      if res['OK']:
+        ftsJobs = res['Value']
+        if ftsJobs:
+          gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
+                                                                   for job in ftsJobs] ) )
+        else:
+          print '         No FTS jobs found for that request'
 
 
 
