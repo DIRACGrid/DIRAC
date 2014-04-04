@@ -76,14 +76,14 @@ class RemoveFile( OperationHandlerBase ):
 
     # # 2nd step - single file removal
     for lfn, opFile in toRemoveDict.items():
-      self.log.info( "processing file %s" % lfn )
+      self.log.info( "removing single file %s" % lfn )
       singleRemoval = self.singleRemoval( opFile )
       if not singleRemoval["OK"]:
-        self.log.error( singleRemoval["Message"] )
+        self.log.error( 'Error removing single file', singleRemoval["Message"] )
         gMonitor.addMark( "RemoveFileFail", 1 )
-        continue
-      self.log.info( "file %s has been removed" % lfn )
-      gMonitor.addMark( "RemoveFileOK", 1 )
+      else:
+        self.log.info( "file %s has been removed" % lfn )
+        gMonitor.addMark( "RemoveFileOK", 1 )
 
     # # set
     failedFiles = [ ( lfn, opFile ) for ( lfn, opFile ) in toRemoveDict.items()
@@ -138,12 +138,12 @@ class RemoveFile( OperationHandlerBase ):
         try:
           fileProxy = self.getProxyForLFN( opFile.LFN )
           if not fileProxy["OK"]:
-            opFile.Error = fileProxy["Message"]
+            opFile.Error = "Error getting owner's proxy : %s" % fileProxy['Message']
           else:
             proxyFile = fileProxy["Value"]
+            self.log.info( "Trying to remove file with owner's proxy (file %s)" % proxyFile )
 
             removeFile = self.replicaManager().removeFile( opFile.LFN, force = True )
-            self.log.always( str( removeFile ) )
 
             if not removeFile["OK"]:
               opFile.Error = str( removeFile["Message"] )
@@ -155,9 +155,11 @@ class RemoveFile( OperationHandlerBase ):
                 error = removeFile["Failed"][opFile.LFN]
                 if type( error ) == dict:
                   error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.items() ] )
-                opFile.Error = error
-                if self.reNotExisting.search( opFile.Error ):
+                if self.reNotExisting.search( error ):
+                  # This should never happen due to the "force" flag
                   opFile.Status = "Done"
+                else:
+                  opFile.Error = error
               else:
                 opFile.Status = "Done"
         finally:

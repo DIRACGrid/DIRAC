@@ -60,24 +60,26 @@ class RegisterReplica( OperationHandlerBase ):
       # # call ReplicaManager
       registerReplica = self.replicaManager().registerReplica( replicaTuple, catalog )
       # # check results
-      if not registerReplica["OK"] or lfn in registerReplica["Value"]["Failed"]:
-
-        gMonitor.addMark( "RegisterReplicaFail", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", catalog, "", "RegisterReplica" )
-
-        reason = registerReplica["Message"] if not registerReplica["OK"] else registerReplica["Value"]["Failed"][lfn]
-        errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
-        opFile.Error = errorStr
-        self.log.warn( errorStr )
-        failedReplicas += 1
-
-      else:
+      if registerReplica["OK"] and lfn in registerReplica["Value"]["Successful"]:
 
         gMonitor.addMark( "RegisterReplicaOK", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", catalog, "", "RegisterReplica" )
 
         self.log.info( "Replica %s has been registered at %s" % ( lfn, catalog ) )
         opFile.Status = "Done"
+      else:
+
+        gMonitor.addMark( "RegisterReplicaFail", 1 )
+        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", catalog, "", "RegisterReplica" )
+
+        reason = registerReplica.get( "Message",
+                                     registerReplica.get( ( "Value",
+                                                          {} ).registerReplica.get( "Failed",
+                                                                                  {} ).get( lfn ) ) )
+        errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
+        opFile.Error = errorStr
+        self.log.warn( errorStr )
+        failedReplicas += 1
 
     # # final check
     if failedReplicas:
