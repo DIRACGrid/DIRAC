@@ -209,14 +209,14 @@ class FTSClient( Client ):
       self.log.error( "getDBSummary: %s" % dbSummary['Message'] )
     return dbSummary
 
-  def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList = None ):
-    """ update status for waiting FTSFiles from 'Waiting#SourceSE' to 'Waiting'
+  def setFTSFilesWaiting( self, operationID, targetSE, opFileIDList = None ):
+    """ update status for waiting FTSFiles from 'Waiting#TargetSE' to 'Waiting'
 
     :param int operationID: ReqDB.Operation.OperationID
-    :param str sourceSE: source SE name
+    :param str targetSE: target SE name
     :param opFileIDList: [ ReqDB.File.FileID, ... ]
     """
-    return self.ftsManager.setFTSFilesWaiting( operationID, sourceSE, opFileIDList )
+    return self.ftsManager.setFTSFilesWaiting( operationID, targetSE, opFileIDList )
 
   def deleteFTSFiles( self, operationID, opFileIDList = None ):
     """ delete FTSFiles for rescheduling
