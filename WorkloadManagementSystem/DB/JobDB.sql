@@ -62,7 +62,7 @@ CREATE TABLE Jobs (
     INDEX (Status,Site),
     MinorStatus VARCHAR(128) NOT NULL DEFAULT 'Initial insertion',
     INDEX (MinorStatus),
-    ApplicationStatus VARCHAR(256) NOT NULL DEFAULT 'Unknown',
+    ApplicationStatus VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     INDEX (ApplicationStatus),
     ApplicationNumStatus INTEGER NOT NULL DEFAULT 0,
     CPUTime FLOAT NOT NULL DEFAULT 0.0,

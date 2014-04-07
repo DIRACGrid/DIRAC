@@ -1501,8 +1501,8 @@ if __name__ == '__main__':
   assert TESTDB._connect()['OK']
 
   TESTDICT = { 'TestTable' : { 'Fields': { 'ID'      : "INTEGER UNIQUE NOT NULL AUTO_INCREMENT",
-                                           'Name'    : "VARCHAR(256) NOT NULL DEFAULT 'Yo'",
-                                           'Surname' : "VARCHAR(256) NOT NULL DEFAULT 'Tu'",
+                                           'Name'    : "VARCHAR(255) NOT NULL DEFAULT 'Yo'",
+                                           'Surname' : "VARCHAR(255) NOT NULL DEFAULT 'Tu'",
                                            'Count'   : "INTEGER NOT NULL DEFAULT 0",
                                            'Time'    : "DATETIME",
                                          },
