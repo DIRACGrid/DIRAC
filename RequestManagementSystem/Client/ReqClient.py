@@ -270,7 +270,7 @@ class ReqClient( Client ):
       self.log.error( "finalizeRequest: failed to get request %s status: %s" % ( requestName, res["Message"] ) )
       return res
     if res["Value"] != "Done":
-      return S_ERROR( "The request %s isn't 'Done', this should never happen, why are we here?" % requestName )
+      return S_ERROR( "The request %s isn't 'Done' but '%s', this should never happen, why are we here?" % ( requestName, res['Value'] ) )
 
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
     monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
