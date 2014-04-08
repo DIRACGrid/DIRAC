@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
   requests = []
   if requestName:
-    requests = [requestName]
+    requests = requestName.split( ',' )
     force = True
   elif resetFailed:
     force = False
