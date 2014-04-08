@@ -240,12 +240,13 @@ class RequestDB( DB ):
     :param str requestName: request's name (default None)
     """
     requestID = None
+    log = self.log.getSubLogger( 'getRequest' if assigned else 'peekRequest' )
     if requestName:
-      self.log.info( "getRequest: selecting request '%s'" % requestName )
+      log.verbose( "selecting request '%s'%s" % ( requestName, ' (Assigned)' if assigned else '' ) )
       reqIDQuery = "SELECT `RequestID`, `Status` FROM `Request` WHERE `RequestName` = '%s';" % str( requestName )
       reqID = self._transaction( reqIDQuery )
       if not reqID["OK"]:
-        self.log.error( "getRequest: %s" % reqID["Message"] )
+        log.error( reqID["Message"] )
         return reqID
       requestID = reqID["Value"][reqIDQuery][0]["RequestID"] if "RequestID" in reqID["Value"][reqIDQuery][0] else None
       status = reqID["Value"][reqIDQuery][0]["Status"] if "Status" in reqID["Value"][reqIDQuery][0] else None
@@ -256,8 +257,8 @@ class RequestDB( DB ):
     else:
       reqIDsQuery = "SELECT `RequestID` FROM `Request` WHERE `Status` = 'Waiting' ORDER BY `LastUpdate` ASC LIMIT 100;"
       reqIDs = self._transaction( reqIDsQuery )
-      if not reqIDs["OK"]:
-        self.log.error( "getRequest: %s" % reqIDs["Message"] )
+      if not reqIDs['OK']:
+        log.error( reqIDs["Message"] )
         return reqIDs
       reqIDs = reqIDs["Value"][reqIDsQuery]
       reqIDs = [ reqID["RequestID"] for reqID in reqIDs ]
@@ -270,11 +271,13 @@ class RequestDB( DB ):
                     "SELECT * FROM `Operation` WHERE `RequestID` = %s;" % requestID ]
     selectReq = self._transaction( selectQuery )
     if not selectReq["OK"]:
-      self.log.error( "getRequest: %s" % selectReq["Message"] )
+      log.error( selectReq["Message"] )
       return S_ERROR( selectReq["Message"] )
     selectReq = selectReq["Value"]
 
     request = Request( selectReq[selectQuery[0]][0] )
+    if not requestName:
+      log.verbose( "selected request '%s'%s" % ( request.RequestName, ' (Assigned)' if assigned else '' ) )
     for records in sorted( selectReq[selectQuery[1]], key = lambda k: k["Order"] ):
       # # order is ro, remove
       del records["Order"]
@@ -282,7 +285,7 @@ class RequestDB( DB ):
       getFilesQuery = "SELECT * FROM `File` WHERE `OperationID` = %s;" % operation.OperationID
       getFiles = self._transaction( getFilesQuery )
       if not getFiles["OK"]:
-        self.log.error( "getRequest: %s" % getFiles["Message"] )
+        log.error( getFiles["Message"] )
         return getFiles
       getFiles = getFiles["Value"][getFilesQuery]
       for getFile in getFiles:
@@ -293,7 +296,7 @@ class RequestDB( DB ):
     if assigned:
       setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s;" % requestID )
       if not setAssigned["OK"]:
-        self.log.error( "getRequest: %s" % setAssigned["Message"] )
+        log.error( "%s" % setAssigned["Message"] )
         return setAssigned
 
     return S_OK( request )

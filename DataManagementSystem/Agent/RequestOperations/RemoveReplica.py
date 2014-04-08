@@ -27,11 +27,10 @@ __RCSID__ = "$Id $"
 import os
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase                    import OperationHandlerBase
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase   import DMSRequestOperationsBase
 
 ########################################################################
-class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
+class RemoveReplica( DMSRequestOperationsBase ):
   """
   .. class:: RemoveReplica
 
@@ -45,7 +44,7 @@ class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
     :param str csPath: CS path for this handler
     """
     # # base class ctor
-    OperationHandlerBase.__init__( self, operation, csPath )
+    DMSRequestOperationsBase.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "RemoveReplicaAtt", "Replica removals attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
@@ -63,7 +62,7 @@ class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
     # # and prepare dict
     toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
 
-    self.log.info( "found %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
+    self.log.info( "todo: %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
     gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
 
     # # check targetSEs for removal

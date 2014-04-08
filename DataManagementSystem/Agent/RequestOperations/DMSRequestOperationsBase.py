@@ -11,8 +11,13 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.Client.Operation             import Operation
 from DIRAC.RequestManagementSystem.Client.File                  import File
 from DIRAC.Resources.Storage.StorageElement                     import StorageElement
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 
-class DMSRequestOperationsBase:
+class DMSRequestOperationsBase( OperationHandlerBase ):
+
+  def __init__( self, operation = None, csPath = None ):
+    OperationHandlerBase.__init__( self, operation, csPath )
+
 
   def checkSEsRSS( self, targetSEs = None, access = 'WriteAccess' ):
     """ check SEs.
@@ -30,7 +35,6 @@ class DMSRequestOperationsBase:
         self.log.error( writeStatus["Message"] )
         for opFile in self.operation:
           opFile.Error = "unknown targetSE: %s" % targetSE
-          opFile.Status = "Failed"
         self.operation.Error = "unknown targetSE: %s" % targetSE
         return S_ERROR( self.operation.Error )
 
@@ -42,7 +46,7 @@ class DMSRequestOperationsBase:
     return S_OK( bannedTargets )
 
 
-  def getRegisterOperation( self, opFile, targetSE ):
+  def getRegisterOperation( self, opFile, targetSE, type = 'RegisterFile', catalog = None ):
     """ add RegisterReplica operation for file
 
     :param File opFile: operation file
@@ -50,8 +54,10 @@ class DMSRequestOperationsBase:
     """
     # # add RegisterReplica operation
     registerOperation = Operation()
-    registerOperation.Type = "RegisterFile"
+    registerOperation.Type = type
     registerOperation.TargetSE = targetSE
+    if catalog:
+      registerOperation.Catalog = catalog
 
     registerFile = File()
     registerFile.LFN = opFile.LFN
