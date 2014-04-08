@@ -11,8 +11,9 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.Client.Operation             import Operation
 from DIRAC.RequestManagementSystem.Client.File                  import File
 from DIRAC.Resources.Storage.StorageElement                     import StorageElement
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 
-class DMSRequestOperationsBase:
+class DMSRequestOperationsBase( OperationHandlerBase ):
 
   def checkSEsRSS( self, targetSEs = None, access = 'WriteAccess' ):
     """ check SEs.

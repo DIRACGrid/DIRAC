@@ -26,12 +26,11 @@ __RCSID__ = "$Id $"
 import os
 # # from DIRAC
 from DIRAC import S_OK, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase                   import OperationHandlerBase
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ########################################################################
-class PhysicalRemoval( OperationHandlerBase, DMSRequestOperationsBase ):
+class PhysicalRemoval( DMSRequestOperationsBase ):
   """
   .. class:: PhysicalRemoval
 

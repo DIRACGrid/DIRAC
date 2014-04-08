@@ -24,13 +24,12 @@ __RCSID__ = "$Id $"
 
 # # imports
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase                    import OperationHandlerBase
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase   import DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
 ########################################################################
-class ReTransfer( OperationHandlerBase, DMSRequestOperationsBase ):
+class ReTransfer( DMSRequestOperationsBase ):
   """
   .. class:: ReTransfer
 
