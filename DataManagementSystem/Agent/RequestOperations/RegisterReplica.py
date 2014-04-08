@@ -79,6 +79,9 @@ class RegisterReplica( DMSRequestOperationsBase ):
           opFile.Status = 'Done'
         else:
           opFile.Error = errorStr
+          # If one targets explicitly a catalog and it fails
+          if catalog and ( 'file does not exist' in opFile.Error.lower() or 'no such file' in opFile.Error.lower() ) :
+            opFile.Status = 'Failed'
           failedReplicas += 1
         self.log.warn( errorStr )
 
