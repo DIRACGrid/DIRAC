@@ -92,7 +92,7 @@ class RegisterReplica( DMSRequestOperationsBase ):
 
     # # if we have new replications to take place, put them at the end
     if registerOperations:
-      self.log.info( "adding %d operatiosn to the request" % len( registerOperations ) )
+      self.log.info( "adding %d operations to the request" % len( registerOperations ) )
     for operation in registerOperations.values():
       self.operation._parent.addOperation( operation )
     # # final check

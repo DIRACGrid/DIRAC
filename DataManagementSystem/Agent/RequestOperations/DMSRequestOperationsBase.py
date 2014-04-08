@@ -15,6 +15,10 @@ from DIRAC.RequestManagementSystem.private.OperationHandlerBase import Operation
 
 class DMSRequestOperationsBase( OperationHandlerBase ):
 
+  def __init__( self, operation = None, csPath = None ):
+    OperationHandlerBase.__init__( self, operation, csPath )
+
+
   def checkSEsRSS( self, targetSEs = None, access = 'WriteAccess' ):
     """ check SEs.
         By default, we check the targetSEs for WriteAccess, but it is configurable
