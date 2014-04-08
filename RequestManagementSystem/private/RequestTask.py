@@ -186,7 +186,9 @@ class RequestTask( object ):
     - ImportError when class cannot be imported
     - TypeError when class isn't inherited from OperationHandlerBase
     """
-    pluginName = self.getPluginName( pluginPath )
+    if "/" in pluginPath:
+      pluginPath = ".".join( [ chunk for chunk in pluginPath.split( "/" ) if chunk ] )
+    pluginName = pluginPath.split( "." )[-1]
     if pluginName not in globals():
       mod = __import__( pluginPath, globals(), fromlist = [ pluginName ] )
       pluginClassObj = getattr( mod, pluginName )
