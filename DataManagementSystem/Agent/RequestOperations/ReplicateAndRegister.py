@@ -23,9 +23,8 @@ __RCSID__ = "$Id $"
 # # imports
 import re
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR, gMonitor
+from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
 
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase                   import OperationHandlerBase
 from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
 from DIRAC.Resources.Storage.StorageElement                                       import StorageElement
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
@@ -100,7 +99,7 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
 
 
 ########################################################################
-class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
+class ReplicateAndRegister( DMSRequestOperationsBase ):
   """
   .. class:: ReplicateAndRegister
 
@@ -337,7 +336,6 @@ class ReplicateAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
         self.log.info( sourceRead["Message"] )
         for opFile in self.operation:
           opFile.Error = sourceRead["Message"]
-          opFile.Status = "Failed"
         self.operation.Error = sourceRead["Message"]
         gMonitor.addMark( "ReplicateAndRegisterAtt", len( self.operation ) )
         gMonitor.addMark( "ReplicateFail", len( self.operation ) )

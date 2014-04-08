@@ -31,7 +31,6 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
         self.log.error( writeStatus["Message"] )
         for opFile in self.operation:
           opFile.Error = "unknown targetSE: %s" % targetSE
-          opFile.Status = "Failed"
         self.operation.Error = "unknown targetSE: %s" % targetSE
         return S_ERROR( self.operation.Error )
 
