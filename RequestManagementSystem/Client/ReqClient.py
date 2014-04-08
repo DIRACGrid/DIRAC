@@ -404,7 +404,7 @@ def prettyPrint( mainItem, key = '', offset = 0 ):
     output += "%s%s%s\n" % ( blanks, key, str( mainItem ) )
   output = output.replace( '[\n%s{' % blanks, '[{' ).replace( '}\n%s]' % blanks, '}]' )
 
-def printRequest( request, status = None, full = False, verbose = True ):
+def printRequest( request, status = None, full = False, verbose = True, terse = False ):
   from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
   global output
   ftsClient = FTSClient()
@@ -421,10 +421,12 @@ def printRequest( request, status = None, full = False, verbose = True ):
                                                                      request.Status, " ('%s' in DB)" % status if status != request.Status else '',
                                                                      ( " Error='%s'" % request.Error ) if request.Error and request.Error.strip() else "" ,
                                                                      ( " Job=%s" % request.JobID ) if request.JobID else "" ) )
-    if verbose:
+    if verbose or terse:
       gLogger.always( "Created %s, Updated %s" % ( request.CreationTime, request.LastUpdate ) )
       if request.OwnerDN:
         gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
+      if terse:
+        return
     for indexOperation in enumerate( request ):
       printOperation( indexOperation, verbose )
   # Check if FTS job exists

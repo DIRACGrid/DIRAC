@@ -7,6 +7,7 @@ Script.registerSwitch( '', 'Job=', '   = JobID' )
 Script.registerSwitch( '', 'Transformation=', '   = transID' )
 Script.registerSwitch( '', 'Tasks=', '   = list of taskIDs' )
 Script.registerSwitch( '', 'Verbose', '   Print more information' )
+Script.registerSwitch( '', 'Terse', '   Only print request status' )
 Script.registerSwitch( '', 'Full', '   Print full request' )
 Script.registerSwitch( '', 'Status=', '   Select all requests in a given status' )
 Script.registerSwitch( '', 'Since=', '   Associated to --Status, start date (default= 24h ago' )
@@ -37,6 +38,7 @@ if __name__ == "__main__":
   status = None
   until = None
   since = None
+  terse = False
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
       try:
@@ -57,6 +59,8 @@ if __name__ == "__main__":
       full = True
     elif switch[0] == 'Verbose':
       verbose = True
+    elif switch[0] == 'Terse':
+      terse = True
     elif switch[0] == 'Status':
       status = switch[1].capitalize()
     elif switch[0] == 'Since':
@@ -138,7 +142,7 @@ if __name__ == "__main__":
 
     status = reqClient.getRequestStatus( requestName ).get( 'Value', 'Unknown' )
 
-    printRequest( request, status = status, full = full, verbose = verbose )
+    printRequest( request, status = status, full = full, verbose = verbose, terse = terse )
 
 
 
