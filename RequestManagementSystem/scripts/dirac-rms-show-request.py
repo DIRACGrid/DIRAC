@@ -160,14 +160,15 @@ if __name__ == "__main__":
       gLogger.info( "no such request" )
       DIRAC.exit( 0 )
 
+    status = reqClient.getRequestStatus( requestName ).get( 'Value', 'Unknown' )
     if full:
       output = ''
       prettyPrint( request.toJSON()['Value'] )
       print output
     else:
-      gLogger.always( "Request name='%s' ID=%s Status='%s'%s%s" % ( request.RequestName,
+      gLogger.always( "Request name='%s' ID=%s Status='%s'%s%s%s" % ( request.RequestName,
                                                                        request.RequestID,
-                                                                       request.Status,
+                                                                       request.Status, " ('%s' in DB)" % status if status != request.Status else '',
                                                                        ( " Error='%s'" % request.Error ) if request.Error and request.Error.strip() else "" ,
                                                                        ( " Job=%s" % request.JobID ) if request.JobID else "" ) )
       if verbose:
