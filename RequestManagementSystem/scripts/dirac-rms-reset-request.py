@@ -20,6 +20,7 @@ if __name__ == "__main__":
   parseCommandLine()
 
   import DIRAC
+  from DIRAC import gLogger
   resetFailed = False
   requestName = ''
   job = None
@@ -75,15 +76,9 @@ if __name__ == "__main__":
   else:
     reset = 0
     notReset = 0
-    freq = 10
-    if len( requests ) > freq:
-      print "Resetting now %d requests (. each %d requests)" % ( len( requests ), freq )
-    else:
-      freq = 0
-    for n, reqName in enumerate( requests ):
-      if freq and ( n % freq ) == 0:
-        sys.stdout.write( '.' )
-        sys.stdout.flush()
+    if len( requests ) > 1:
+      gLogger.always( "Resetting now %d requests" % len( requests ) )
+    for reqName in requests:
       if len( requests ) > 1:
         gLogger.always( '============ Request %s =============' % reqName )
       ret = reqClient.resetFailedRequest( reqName, force = force )
@@ -95,8 +90,6 @@ if __name__ == "__main__":
           reset += 1
         else:
           notReset += 1
-    if freq:
-      print ""
     if reset:
       print "Reset", reset, 'Requests'
     if notReset:
