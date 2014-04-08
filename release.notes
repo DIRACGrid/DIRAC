@@ -108,18 +108,20 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r11-pre11]
+[v6r11-pre12]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
 CHANGE: dirac-configure - use Registry helper to get VOMS servers information
 BUGFIX: ObjectLoader - extensions must be looked up first for plug-ins
+CHANGE: Misc.py - removed obsoleted
 
 *Configuration
 CHANGE: Resources.getDIRACPlatform() returns a list of compatible DIRAC platforms
 NEW: Resources.getDIRACPlatforms() used to access platforms from /Resources/Computing/OSCompatibility
      section
 NEW: Registry - added getVOs() and getVOMSServerInfo()     
+NEW: CE2CSAgent - added VO management
 
 *Accounting
 FIX: AccountingDB, Job - extra checks for invalid values
@@ -139,6 +141,7 @@ FIX: FTSAgent - multiple fixes
 *Interfaces
 CHANGE: Dirac - instantiate SandboxStoreClient and WMSClient when needed, not in the constructor
 CHANGE: Job - removed setSystemConfig() method
+NEW: Job.py - added setTag() interface
 
 *Resources
 CHANGE: StorageElement - changes to avoid usage PFNs

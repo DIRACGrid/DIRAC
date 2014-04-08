@@ -24,13 +24,12 @@ __RCSID__ = "$Id $"
 
 # # imports
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase                    import OperationHandlerBase
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase   import DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
 ########################################################################
-class ReTransfer( OperationHandlerBase, DMSRequestOperationsBase ):
+class ReTransfer( DMSRequestOperationsBase ):
   """
   .. class:: ReTransfer
 
@@ -46,7 +45,7 @@ class ReTransfer( OperationHandlerBase, DMSRequestOperationsBase ):
     :param str csPath: CS path for this handler
     """
     # # base class ctor
-    OperationHandlerBase.__init__( self, operation, csPath )
+    DMSRequestOperationsBase.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "FileReTransferAtt", "File retransfers attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )

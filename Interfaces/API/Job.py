@@ -684,6 +684,30 @@ class Job( API ):
     self._addParameter( self.workflow, 'JobType', 'JDL', jobType, 'User specified type' )
     self.type = jobType
     return S_OK()
+  
+  #############################################################################
+  def setTag( self, tags ):
+    """ Set the Tags job requirements
+    
+        Example usage:
+
+        >>> job = Job()
+        >>> job.setTag( ['WholeNode','8GBMemory'] ) 
+    
+        :param tags: single tag string or a list of tags
+        :type tags: string or list
+    """
+    
+    if type( tags ) in types.StringTypes:
+      tagValue = tags
+    elif type( tags ) == types.ListType:
+      tagValue = ";".join( tags )
+    else:  
+      return self._reportError( 'Expected string or list for job tags', tags = tags )
+
+    self._addParameter( self.workflow, 'Tags', 'JDL', tagValue, 'User specified job tags' )
+    self.tags = tags
+    return S_OK()
 
   #############################################################################
   def _setSoftwareTags( self, tags ):

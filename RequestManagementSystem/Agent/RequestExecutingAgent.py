@@ -113,7 +113,8 @@ class RequestExecutingAgent( AgentModule ):
 
     self.timeOuts = dict()
 
-    self.operationHandlers = []
+    # # handlers dict
+    self.handlersDict = dict()
     for opHandler in opHandlers:
       opHandlerPath = "%s/%s/Location" % ( opHandlersPath, opHandler )
       opLocation = gConfig.getValue( opHandlerPath, "" )
@@ -129,14 +130,12 @@ class RequestExecutingAgent( AgentModule ):
       if fileTimeout:
         self.timeOuts[opHandler]["PerFile"] = fileTimeout
 
-      self.operationHandlers.append( opLocation )
+      self.handlersDict[opHandler] = opLocation
 
     self.log.info( "Operation handlers:" )
-    for itemTuple in enumerate ( self.operationHandlers ):
-      self.log.info( "[%s] %s" % itemTuple )
+    for item in enumerate ( self.handlersDict.items() ):
+      self.log.info( "[%s] %s: %s" % ( item[0], item[1][0], item[1][1] ) )
 
-    # # handlers dict
-    self.handlersDict = dict()
     # # common monitor activity
     gMonitor.registerActivity( "Iteration", "Agent Loops",
                                "RequestExecutingAgent", "Loops/min", gMonitor.OP_SUM )
@@ -220,16 +219,7 @@ class RequestExecutingAgent( AgentModule ):
 
   def initialize( self ):
     """ initialize agent
-
-    at the moment creates handlers dictionary
     """
-    for opHandler in self.operationHandlers:
-      handlerName = opHandler.split( "/" )[-1]
-      self.handlersDict[ handlerName ] = opHandler
-      self.log.debug( "handler '%s' for operation '%s' registered" % ( opHandler, handlerName ) )
-    if not self.handlersDict:
-      self.log.error( "operation handlers not set, check configuration option 'Operations'!" )
-      return S_ERROR( "Operation handlers not set!" )
     return S_OK()
 
   def execute( self ):

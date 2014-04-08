@@ -25,12 +25,11 @@ __RCSID__ = "$Id $"
 
 # # imports
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase                   import OperationHandlerBase
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 ########################################################################
-class PutAndRegister( OperationHandlerBase, DMSRequestOperationsBase ):
+class PutAndRegister( DMSRequestOperationsBase ):
   """
   .. class:: PutAndRegister
 

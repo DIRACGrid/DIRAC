@@ -94,15 +94,19 @@ class CleanReqDBAgent( AgentModule ):
     requestNamesList = requestNamesList["Value"]
     kicked = 0
     for requestName, status, lastUpdate in requestNamesList:
-      if lastUpdate < kickTime:
-        self.log.info( "execute: kick assigned request '%s'" % requestName )
+      reqStatus = self.requestClient().getRequestStatus( requestName )
+      if not reqStatus['OK']:
+        self.log.error( ( "execute: unable to get request status", reqStatus['Message'] ) )
+        continue
+      status = reqStatus['Value']
+      if lastUpdate < kickTime and status == 'Assigned':
         getRequest = self.requestClient().peekRequest( requestName )
         if not getRequest["OK"]:
           self.log.error( "execute: unable to read request '%s': %s" % ( requestName, getRequest["Message"] ) )
           continue
         getRequest = getRequest["Value"]
-        if getRequest:
-          getRequest.Status = "Waiting"
+        if getRequest and getRequest.LastUpdate < kickTime:
+          self.log.info( "execute: kick assigned request '%s' in status %s" % ( requestName, getRequest.Status ) )
           putRequest = self.requestClient().putRequest( getRequest )
           if not putRequest["OK"]:
             self.log.error( "execute: unable to put request '%s': %s" % ( requestName, putRequest["Message"] ) )

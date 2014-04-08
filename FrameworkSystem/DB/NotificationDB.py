@@ -71,7 +71,7 @@ class NotificationDB( DB ):
                                                             'Timestamp' : 'DATETIME NOT NULL',
                                                             'Author' : 'VARCHAR(64) NOT NULL',
                                                             'Comment' : 'BLOB',
-                                                            'Modifications' : 'VARCHAR(256)',
+                                                            'Modifications' : 'VARCHAR(255)',
                                                         },
                                             'Indexes' : { 'AlarmID' : [ 'AlarmId' ] }
                                           }

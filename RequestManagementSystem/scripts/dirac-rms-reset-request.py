@@ -20,6 +20,7 @@ if __name__ == "__main__":
   parseCommandLine()
 
   import DIRAC
+  from DIRAC import gLogger
   resetFailed = False
   requestName = ''
   job = None
@@ -59,13 +60,15 @@ if __name__ == "__main__":
 
   requests = []
   if requestName:
-    requests = [requestName]
+    requests = requestName.split( ',' )
+    force = True
   elif resetFailed:
+    force = False
     res = reqClient.getRequestNamesList( ['Failed'], maxReset );
     if not res['OK']:
         print "Error", res['Message'];
     elif res['Value']:
-      requests = res['Value']
+      requests = [reqName for reqName, _x, _y in res['Value']]
 
   if not requests:
     print "No requests to reset"
@@ -73,37 +76,21 @@ if __name__ == "__main__":
   else:
     reset = 0
     notReset = 0
-    freq = 10
-    if len( requests ) > freq:
-      print "Resetting now %d requests (. each %d requests)" % ( len( requests ), freq )
-    else:
-      freq = 0
+    if len( requests ) > 1:
+      gLogger.always( "Resetting now %d requests" % len( requests ) )
     for reqName in requests:
-      reqName = reqName[0]
-      toReset = True
-      if len( requests ) < maxReset:
-        req = reqClient.peekRequest( reqName ).get( 'Value' )
-        if not req:
-          continue
-        for op in req:
-          if op.Status == 'Failed':
-            if not op.Type.startswith( 'Remove' ):
-              for f in op:
-                if f.Status == 'Failed' and f.Error == 'No such file or directory':
-                  toReset = False
-                  notReset += 1
-                  break
-            break
-      if toReset:
-        ret = reqClient.resetFailedRequest( reqName )
-        if not ret['OK']:
-          print "Error", ret['Message']
-        else:
-          if freq and ( reset % freq ) == 0:
-            sys.stdout.write( '.' )
-            sys.stdout.flush()
+      if len( requests ) > 1:
+        gLogger.always( '============ Request %s =============' % reqName )
+      ret = reqClient.resetFailedRequest( reqName, force = force )
+      if not ret['OK']:
+        notReset += 1
+        print "Error", ret['Message']
+      else:
+        if ret['Value'] != 'Not reset':
           reset += 1
+        else:
+          notReset += 1
     if reset:
-      print "\nReset", reset, 'Requests'
+      print "Reset", reset, 'Requests'
     if notReset:
-      print "Not reset (File doesn't exist) %d requests" % notReset
+      print "Not reset (Request doesn't exist or really Failed) %d requests" % notReset
