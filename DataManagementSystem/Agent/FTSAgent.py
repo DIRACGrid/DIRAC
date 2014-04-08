@@ -184,6 +184,8 @@ class FTSAgent( AgentModule ):
     also finalize request if status == Done
     """
     # # put back request
+    if request.RequestName not in cls.__reqCache:
+      return S_OK()
     put = cls.requestClient().putRequest( request )
     if not put["OK"]:
       return put
@@ -357,6 +359,10 @@ class FTSAgent( AgentModule ):
   def finalize( self ):
     """ finalize processing """
     log = self.log.getSubLogger( "finalize" )
+    if self.__reqCache:
+      log.info( 'putting back %d requests from cache' % len( self.__reqCache ) )
+    else:
+      log.info( 'no requests to put back' )
     for request in self.__reqCache.values():
       put = self.requestClient().putRequest( request )
       if not put["OK"]:
@@ -443,6 +449,7 @@ class FTSAgent( AgentModule ):
       log.error( "operation in a wrong state, expecting 'Scheduled', got %s" % operation.Status )
       return self.putRequest( request )
 
+    log.info( 'start processRequest' )
     # # select  FTSJobs, by default all in TRANS_STATES and INIT_STATES
     ftsJobs = self.ftsClient().getFTSJobsForRequest( request.RequestID )
     if not ftsJobs["OK"]:
@@ -502,19 +509,16 @@ class FTSAgent( AgentModule ):
         log.error( "request is set to 'Failed'" )
         return self.putRequest( request )
 
-    # # PHASE THREE - update Waiting#SourceSE FTSFiles
+    # # PHASE THREE - update Waiting#TargetSE FTSFiles
     if toUpdate:
       log.info( "==> found %s possible FTSFiles to update..." % ( len( toUpdate ) ) )
       byTarget = {}
       for ftsFile in toUpdate:
-        if ftsFile.TargetSE not in byTarget:
-          byTarget.setdefault( ftsFile.TargetSE, [] )
-        byTarget[ftsFile.TargetSE].append( ftsFile.FileID )
+        byTarget.setdefault( ftsFile.TargetSE, [] ).append( ftsFile.FileID )
       for targetSE, fileIDList in byTarget.items():
         update = self.ftsClient().setFTSFilesWaiting( operation.OperationID, targetSE, fileIDList )
         if not update["OK"]:
           log.error( "update FTSFiles failed: %s" % update["Message"] )
-          continue
 
     # # PHASE FOUR - add 'RegisterReplica' Operations
     if toRegister:
@@ -558,6 +562,7 @@ class FTSAgent( AgentModule ):
 
     # # status change? - put back request
     if request.Status != "Scheduled":
+      log.info( "request no longer in 'Scheduled' state, will put it back to ReqDB" )
       put = self.putRequest( request )
       if not put["OK"]:
         log.error( "unable to put back request: %s" % put["Message"] )
@@ -570,7 +575,7 @@ class FTSAgent( AgentModule ):
         log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
         return putJobs
 
-    return self.putRequest( request, clearCache = False )
+    return self.putRequest( request, clearCache = False ) if request.Status == 'Scheduled' else S_OK()
 
   def __reschedule( self, request, operation, toReschedule ):
     """ reschedule list of :toReschedule: files in request for operation :operation:
