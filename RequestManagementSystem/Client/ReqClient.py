@@ -362,8 +362,10 @@ class ReqClient( Client ):
         break
     # Only reset requests that
     if toReset:
-      for op in req:
+      for i, op in enumerate( req ):
         op.Error = ' '
+        if op.Status == 'Failed':
+          printOperation( ( 1, op ) )
         for f in op:
           if f.Status == 'Failed':
             if 'Max attempts limit reached' in f.Error:
@@ -377,3 +379,89 @@ class ReqClient( Client ):
 
       return self.putRequest( req )
     return S_OK( "Not reset" )
+
+#============= Some useful functions to be shared ===========
+
+output = ''
+def prettyPrint( mainItem, key = '', offset = 0 ):
+  global output
+  if key:
+    key += ': '
+  blanks = offset * ' '
+  if mainItem and type( mainItem ) == type( {} ):
+    output += "%s%s%s\n" % ( blanks, key, '{' ) if blanks or key else ''
+    for key in sorted( mainItem ):
+      prettyPrint( mainItem[key], key = key, offset = offset )
+    output += "%s%s\n" % ( blanks, '}' ) if blanks else ''
+  elif mainItem and type( mainItem ) == type( [] ):
+    output += "%s%s%s\n" % ( blanks, key, '[' )
+    for item in mainItem:
+      prettyPrint( item, offset = offset + 2 )
+    output += "%s%s\n" % ( blanks, ']' )
+  elif type( mainItem ) == type( '' ):
+    output += "%s%s'%s'\n" % ( blanks, key, str( mainItem ) )
+  else:
+    output += "%s%s%s\n" % ( blanks, key, str( mainItem ) )
+  output = output.replace( '[\n%s{' % blanks, '[{' ).replace( '}\n%s]' % blanks, '}]' )
+
+def printRequest( request, status = None, full = False, verbose = True ):
+  from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
+  global output
+  ftsClient = FTSClient()
+  anyReplication = False
+  if full:
+    output = ''
+    prettyPrint( request.toJSON()['Value'] )
+    print output
+  else:
+    if not status:
+      status = request.Status
+    gLogger.always( "Request name='%s' ID=%s Status='%s'%s%s%s" % ( request.RequestName,
+                                                                     request.RequestID,
+                                                                     request.Status, " ('%s' in DB)" % status if status != request.Status else '',
+                                                                     ( " Error='%s'" % request.Error ) if request.Error and request.Error.strip() else "" ,
+                                                                     ( " Job=%s" % request.JobID ) if request.JobID else "" ) )
+    if verbose:
+      gLogger.always( "Created %s, Updated %s" % ( request.CreationTime, request.LastUpdate ) )
+      if request.OwnerDN:
+        gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
+    for indexOperation in enumerate( request ):
+      printOperation( indexOperation, verbose )
+  # Check if FTS job exists
+  if anyReplication:
+    res = ftsClient.getFTSJobsForRequest( request.RequestID )
+    if res['OK']:
+      ftsJobs = res['Value']
+      if ftsJobs:
+        gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
+                                                                 for job in ftsJobs] ) )
+      else:
+        print '         No FTS jobs found for that request'
+
+def printOperation( indexOperation, verbose = True ):
+  i, op = indexOperation
+  prStr = ''
+  if 'Replicate' in op.Type:
+    anyReplication = True
+  if verbose:
+    if op.SourceSE:
+      prStr += 'SourceSE: %s' % op.SourceSE
+    if op.TargetSE:
+      prStr += ( ' - ' if prStr else '' ) + 'TargetSE: %s' % op.TargetSE
+    if prStr:
+      prStr += ' - '
+    prStr += 'Created %s, Updated %s' % ( op.CreationTime, op.LastUpdate )
+  gLogger.always( "  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s" % ( i, op.Type, op.OperationID,
+                                                                                       op.Order, op.Status,
+                                                                                       ( " Error='%s'" % op.Error ) if op.Error and op.Error.strip() else "",
+                                                                                       ( " Catalog=%s" % op.Catalog ) if op.Catalog else "" ) )
+  if prStr:
+    gLogger.always( "      %s" % prStr )
+  for indexFile in enumerate( op ):
+    printFile( indexFile )
+
+def printFile( indexFile ):
+  j, f = indexFile
+  gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s'%s%s" % ( j + 1, f.FileID, f.LFN, f.Status,
+                                                                       ( " Error='%s'" % f.Error ) if f.Error and f.Error.strip() else "",
+                                                                       ( " Attempts=%d" % f.Attempt ) if f.Attempt > 1 else "" ) )
