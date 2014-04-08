@@ -57,32 +57,30 @@ class RegisterReplica( OperationHandlerBase ):
       # # call ReplicaManager
       registerReplica = self.dm.registerReplica( replicaTuple, catalog )
       # # check results
-      if registerReplica["OK"] and lfn in registerReplica["Value"]["Successful"]:
-
-        gMonitor.addMark( "RegisterReplicaOK", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", catalog, "", "RegisterReplica" )
-
-        self.log.info( "Replica %s has been registered at %s in %s" % ( lfn, replicaTuple[2], catalog if catalog else 'all catalogs' ) )
-        opFile.Status = "Done"
-      else:
+      if not registerReplica["OK"] or lfn in registerReplica["Value"]["Failed"]:
 
         gMonitor.addMark( "RegisterReplicaFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", catalog, "", "RegisterReplica" )
 
-        reason = registerReplica.get( "Message",
-                                     registerReplica.get( "Value", {} ).get( "Failed", {} ).get( lfn ) )
+        reason = registerReplica["Message"] if not registerReplica["OK"] else registerReplica["Value"]["Failed"][lfn]
         errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
         opFile.Error = errorStr
         self.log.warn( errorStr )
         failedReplicas += 1
 
+      else:
+
+        gMonitor.addMark( "RegisterReplicaOK", 1 )
+        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", catalog, "", "RegisterReplica" )
+
+        self.log.info( "Replica %s has been registered at %s" % ( lfn, catalog ) )
+        opFile.Status = "Done"
+
     # # final check
     if failedReplicas:
-      self.log.error( "All replicas processed, %s replicas failed to register" % failedReplicas )
+      self.log.info( "all replicas processed, %s replicas failed to register" % failedReplicas )
       self.operation.Error = "some replicas failed to register"
       return S_ERROR( self.operation.Error )
 
     return S_OK()
-
-
 
