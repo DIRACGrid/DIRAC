@@ -35,9 +35,9 @@ class AccountingDB( DB ):
     self.__threadPool.daemonize()
     self.catalogTableName = _getTableName( "catalog", "Types" )
     self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE NOT NULL",
-                                                          'keyFields' : "VARCHAR(256) NOT NULL",
-                                                          'valueFields' : "VARCHAR(256) NOT NULL",
-                                                          'bucketsLength' : "VARCHAR(256) NOT NULL",
+                                                          'keyFields' : "VARCHAR(255) NOT NULL",
+                                                          'valueFields' : "VARCHAR(255) NOT NULL",
+                                                          'bucketsLength' : "VARCHAR(255) NOT NULL",
                                                        },
                                              'PrimaryKey' : 'name'
                                            }
