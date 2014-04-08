@@ -62,7 +62,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
     # # and prepare dict
     toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
 
-    self.log.info( "found %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
+    self.log.info( "todo: %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
     gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
 
     # # check targetSEs for removal
