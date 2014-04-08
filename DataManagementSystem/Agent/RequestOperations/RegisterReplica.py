@@ -10,10 +10,10 @@
 __RCSID__ = "$Id $"
 
 from DIRAC import gMonitor, S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
+from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
 
 ########################################################################
-class RegisterReplica( OperationHandlerBase ):
+class RegisterReplica( DMSRequestOperationsBase ):
   """
   .. class:: RegisterReplica
 
