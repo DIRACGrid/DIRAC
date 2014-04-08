@@ -44,7 +44,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
     :param str csPath: CS path for this handler
     """
     # # base class ctor
-    OperationHandlerBase.__init__( self, operation, csPath )
+    DMSRequestOperationsBase.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "RemoveReplicaAtt", "Replica removals attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )

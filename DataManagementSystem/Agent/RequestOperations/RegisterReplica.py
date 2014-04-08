@@ -27,7 +27,7 @@ class RegisterReplica( DMSRequestOperationsBase ):
     :param Operation operation: Operation instance
     :param str csPath: CS path for this handler
     """
-    OperationHandlerBase.__init__( self, operation, csPath )
+    DMSRequestOperationsBase.__init__( self, operation, csPath )
     # # RegisterReplica specific monitor info
     gMonitor.registerActivity( "RegisterReplicaAtt", "Attempted replicas registrations",
                                "RequestExecutingAgent", "Replicas/min", gMonitor.OP_SUM )

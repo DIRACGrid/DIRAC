@@ -43,7 +43,7 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
     :param Operation operation: Operation instance
     :param str csPath: cs config path
     """
-    OperationHandlerBase.__init__( self, operation, csPath )
+    DMSRequestOperationsBase.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "PhysicalRemovalAtt", "Physical file removals attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
