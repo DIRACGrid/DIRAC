@@ -421,14 +421,13 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
                                                                      request.Status, " ('%s' in DB)" % status if status != request.Status else '',
                                                                      ( " Error='%s'" % request.Error ) if request.Error and request.Error.strip() else "" ,
                                                                      ( " Job=%s" % request.JobID ) if request.JobID else "" ) )
-    if verbose or terse:
+    if verbose:
       gLogger.always( "Created %s, Updated %s" % ( request.CreationTime, request.LastUpdate ) )
       if request.OwnerDN:
         gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
-      if terse:
-        return
     for indexOperation in enumerate( request ):
-      printOperation( indexOperation, verbose )
+      if not terse or indexOperation[1].Status == request.Status:
+        printOperation( indexOperation, verbose )
   # Check if FTS job exists
   if anyReplication:
     res = ftsClient.getFTSJobsForRequest( request.RequestID )
