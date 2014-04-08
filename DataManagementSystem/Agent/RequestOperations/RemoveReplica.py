@@ -27,11 +27,10 @@ __RCSID__ = "$Id $"
 import os
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase                    import OperationHandlerBase
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase   import DMSRequestOperationsBase
 
 ########################################################################
-class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
+class RemoveReplica( DMSRequestOperationsBase ):
   """
   .. class:: RemoveReplica
 
