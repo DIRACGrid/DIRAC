@@ -42,7 +42,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
     return S_OK( bannedTargets )
 
 
-  def getRegisterOperation( self, opFile, targetSE ):
+  def getRegisterOperation( self, opFile, targetSE, type = 'RegisterFile', catalog = None ):
     """ add RegisterReplica operation for file
 
     :param File opFile: operation file
@@ -50,8 +50,10 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
     """
     # # add RegisterReplica operation
     registerOperation = Operation()
-    registerOperation.Type = "RegisterFile"
+    registerOperation.Type = type
     registerOperation.TargetSE = targetSE
+    if catalog:
+      registerOperation.Catalog = catalog
 
     registerFile = File()
     registerFile.LFN = opFile.LFN
