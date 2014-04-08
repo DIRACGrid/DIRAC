@@ -413,7 +413,6 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
                 self.log.warn( prString )
 
                 opFile.Error = "Failed to register"
-                opFile.Status = "Failed"
                 # # add register replica operation
                 registerOperation = self.getRegisterOperation( opFile, targetSE )
                 self.request.insertAfter( registerOperation, self.operation )
