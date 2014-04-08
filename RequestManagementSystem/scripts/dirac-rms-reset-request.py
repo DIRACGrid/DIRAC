@@ -84,6 +84,8 @@ if __name__ == "__main__":
       if freq and ( n % freq ) == 0:
         sys.stdout.write( '.' )
         sys.stdout.flush()
+      if len( requests ) > 1:
+        gLogger.always( '============ Request %s =============' % reqName )
       ret = reqClient.resetFailedRequest( reqName, force = force )
       if not ret['OK']:
         notReset += 1

@@ -365,7 +365,7 @@ class ReqClient( Client ):
       for i, op in enumerate( req ):
         op.Error = ' '
         if op.Status == 'Failed':
-          printOperation( ( 1, op ) )
+          printOperation( ( i, op ) )
         for f in op:
           if f.Status == 'Failed':
             if 'Max attempts limit reached' in f.Error:
@@ -412,7 +412,7 @@ def printRequest( request, status = None, full = False, verbose = True ):
   if full:
     output = ''
     prettyPrint( request.toJSON()['Value'] )
-    print output
+    gLogger.always( output )
   else:
     if not status:
       status = request.Status
