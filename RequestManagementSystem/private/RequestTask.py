@@ -254,7 +254,7 @@ class RequestTask( object ):
       handler = self.getHandler( operation )
       if not handler["OK"]:
         self.log.error( "unable to process operation %s: %s" % ( operation.Type, handler["Message"] ) )
-        gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
+        # gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
         operation.Error = handler["Message"]
         break
 
@@ -291,6 +291,7 @@ class RequestTask( object ):
     gMonitor.flush()
 
     # # update request to the RequestDB
+    self.log.info( 'updating request with status %s' % self.request.Status )
     update = self.updateRequest()
     if not update["OK"]:
       self.log.error( update["Message"] )
@@ -304,16 +305,24 @@ class RequestTask( object ):
       gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
+        attempts = 0
         while True:
           finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestName, self.request.JobID )
           if not finalizeRequest["OK"]:
-            self.log.error( "unable to finalize request %s: %s, will retry" % ( self.request.RequestName,
+            if attempts:
+              self.log.error( "unable to finalize request %s: %s, will retry" % ( self.request.RequestName,
                                                                                 finalizeRequest["Message"] ) )
             self.log.verbose( "Waiting 10 seconds" )
+            attempts += 1
+            if attempts == 10:
+              self.log.error( "giving up finalize request after %d attempts" % attempts )
+              return S_ERROR( 'Could not finalize request' )
+
             time.sleep( 10 )
 
           else:
-            self.log.info( "request '%s' is finalized" % self.request.RequestName )
+            self.log.info( "request '%s' is finalized%s" % ( self.request.RequestName,
+                                                            ( ' after %d attempts' % attempts ) if attempts else '' ) )
             break
 
     return S_OK()
