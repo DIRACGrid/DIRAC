@@ -119,6 +119,7 @@ if __name__ == "__main__":
   reqClient = ReqClient()
 
   if status:
+    all = all or status != 'Failed'
     res = reqClient.getRequestNamesList( [status], limit = 999999999 )
     if not res['OK']:
       gLogger.error( "Error getting requests:", res['Message'] )
