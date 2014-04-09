@@ -23,7 +23,7 @@ if __name__ == "__main__":
   import DIRAC
   from DIRAC import gLogger
   resetFailed = False
-  requestName = ''
+  requests = []
   job = None
   all = False
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     args = Script.getPositionalArgs()
 
     if len( args ) == 1:
-      requestName = args[0]
+      requests = args[0].split( ',' )
   else:
     from DIRAC.Interfaces.API.Dirac                              import Dirac
     dirac = Dirac()
@@ -60,12 +60,9 @@ if __name__ == "__main__":
       if not jobName:
         print 'Job %d not found' % job
       else:
-        requestName = jobName + '_job_%d' % job
+        requests = [jobName + '_job_%d' % job]
 
-  requests = []
-  if requestName:
-    requests = requestName.split( ',' )
-  elif resetFailed:
+  if resetFailed:
     all = False
     res = reqClient.getRequestNamesList( ['Failed'], maxReset );
     if not res['OK']:
