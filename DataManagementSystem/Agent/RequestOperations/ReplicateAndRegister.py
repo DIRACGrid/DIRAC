@@ -26,10 +26,11 @@ import re
 from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
 
 from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
-from DIRAC.Resources.Storage.StorageElement                                       import StorageElement
+from DIRAC.DataManagementSystem.Client.DataManager                                import DataManager
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
-from DIRAC.Resources.Catalog.FileCatalog                        import FileCatalog
-from DIRAC.Resources.Utilities                                  import Utils
+
+from DIRAC.Resources.Storage.StorageElement                                       import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog                                          import FileCatalog
 
 def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
   """ filter out banned/invalid source SEs """
@@ -38,8 +39,7 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
   if not logger:
     logger = gLogger
   if not dataManager:
-    from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-    datamanager = DataManager()
+    dataManager = DataManager()
   if not seCache:
     seCache = {}
 
