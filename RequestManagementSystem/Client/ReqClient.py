@@ -356,7 +356,7 @@ class ReqClient( Client ):
       for i, op in enumerate( req ):
         op.Error = ' '
         if op.Status == 'Failed':
-          printOperation( ( i, op ) )
+          printOperation( ( i, op ), onlyFailed =True )
         for f in op:
           if f.Status == 'Failed':
             if 'Max attempts limit reached' in f.Error:
@@ -430,7 +430,7 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
       else:
         print '         No FTS jobs found for that request'
 
-def printOperation( indexOperation, verbose = True ):
+def printOperation( indexOperation, verbose = True, onlyFailed = False ):
   i, op = indexOperation
   prStr = ''
   if 'Replicate' in op.Type:
@@ -450,7 +450,8 @@ def printOperation( indexOperation, verbose = True ):
   if prStr:
     gLogger.always( "      %s" % prStr )
   for indexFile in enumerate( op ):
-    printFile( indexFile )
+    if not onlyFailed or indexFile[1].Status = 'Failed':
+      printFile( indexFile )
 
 def printFile( indexFile ):
   j, f = indexFile
