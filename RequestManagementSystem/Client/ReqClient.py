@@ -338,7 +338,7 @@ class ReqClient( Client ):
         ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )
 
-  def resetFailedRequest( self, requestName, force = False ):
+  def resetFailedRequest( self, requestName, all = False ):
     """ Reset a failed request to "Waiting" status - requestName can also be the RequestID
     """
     try:
@@ -351,17 +351,8 @@ class ReqClient( Client ):
     if not res['OK']:
       return res
     req = res['Value']
-    toReset = True
-    for op in req:
-      if op.Status == 'Failed':
-        if not op.Type.startswith( 'Remove' ):
-          for f in op:
-            if f.Status == 'Failed' and 'no such file or directory' in f.Error.lower() :
-              toReset = force
-              break
-        break
-    # Only reset requests that
-    if toReset:
+    if all or recoverableRequest( req ):
+      # Only reset requests that can be recovered
       for i, op in enumerate( req ):
         op.Error = ' '
         if op.Status == 'Failed':
@@ -466,3 +457,15 @@ def printFile( indexFile ):
   gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s'%s%s" % ( j + 1, f.FileID, f.LFN, f.Status,
                                                                        ( " Error='%s'" % f.Error ) if f.Error and f.Error.strip() else "",
                                                                        ( " Attempts=%d" % f.Attempt ) if f.Attempt > 1 else "" ) )
+
+def recoverableRequest( request ):
+  excludedErrors = ( 'File does not exist', 'No such file or directory',
+                     'sourceSURL equals to targetSURL',
+                     'Max attempts limit reached', 'Max attempts limit reached' )
+  for op in request:
+    if op.Status == 'Failed':
+      for f in op:
+        if f.Status == 'Failed':
+          if [str for str in excludedErrors if str in f.Error]:
+            return False
+          return True
