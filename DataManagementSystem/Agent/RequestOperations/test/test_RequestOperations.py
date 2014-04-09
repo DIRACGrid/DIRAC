@@ -10,7 +10,8 @@ class ReqOpsTestCase( unittest.TestCase ):
   """
   def setUp( self ):
     self.rr = ReplicateAndRegister()
-    self.rr.rm = Mock()
+    fcMock = Mock()
+    self.rr.fc = fcMock
 
   def tearDown( self ):
     pass
@@ -41,7 +42,7 @@ class ReplicateAndRegisterSuccess( ReqOpsTestCase ):
                                               'Size': 5893396937,
                                               'Status': '-'}}}}
     
-    self.rr.rm.getCatalogFileMetadata.return_value = resMeta
+    self.rr.fc.getFileMetadata.return_value = resMeta
 
     file1 = File()
     file1.LFN = '/lhcb/1.dst'

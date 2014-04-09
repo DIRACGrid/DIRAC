@@ -64,7 +64,7 @@ class RegisterReplica( DMSRequestOperationsBase ):
         gMonitor.addMark( "RegisterReplicaFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", catalog, "", "RegisterReplica" )
 
-        reason = registerReplica["Message"] if not registerReplica["OK"] else registerReplica["Value"]["Failed"][lfn]
+        reason = registerFile.get( "Message", registerFile.get( "Value", {} ).get( "Failed", {} ).get( lfn, 'Unknown' ) )
         errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
         if lfn in registerReplica["Value"].get( "Successful", {} ) and type( reason ) == type( {} ):
           # As we managed, let's create a new operation for just the remaining registration
