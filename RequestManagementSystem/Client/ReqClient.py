@@ -356,7 +356,7 @@ class ReqClient( Client ):
       for i, op in enumerate( req ):
         op.Error = ' '
         if op.Status == 'Failed':
-          printOperation( ( i, op ), onlyFailed =True )
+          printOperation( ( i, op ), onlyFailed = True )
         for f in op:
           if f.Status == 'Failed':
             if 'Max attempts limit reached' in f.Error:
@@ -450,7 +450,7 @@ def printOperation( indexOperation, verbose = True, onlyFailed = False ):
   if prStr:
     gLogger.always( "      %s" % prStr )
   for indexFile in enumerate( op ):
-    if not onlyFailed or indexFile[1].Status = 'Failed':
+    if not onlyFailed or indexFile[1].Status == 'Failed':
       printFile( indexFile )
 
 def printFile( indexFile ):
