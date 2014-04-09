@@ -145,8 +145,8 @@ if __name__ == "__main__":
 
     request = request["Value"]
     if not request:
-      gLogger.info( "no such request" )
-      DIRAC.exit( 0 )
+      gLogger.error( "no such request %s" % requestName )
+      continue
 
     if all or recoverableRequest( request ):
       okRequests.append( requestName )
@@ -161,7 +161,7 @@ if __name__ == "__main__":
         dbStatus = reqClient.getRequestStatus( requestName ).get( 'Value', 'Unknown' )
 
         printRequest( request, status = dbStatus, full = full, verbose = verbose, terse = terse )
-  if status:
+  if status and okRequests:
     from DIRAC.Core.Utilities.List import breakListIntoChunks
     gLogger.always( '\nList of %d selected requests:' % len( okRequests ) )
     for reqs in breakListIntoChunks( okRequests, 100 ):
