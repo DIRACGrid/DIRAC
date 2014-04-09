@@ -151,8 +151,8 @@ if __name__ == "__main__":
     if all or recoverableRequest( request ):
       okRequests.append( requestName )
       if reset:
-        gLogger.always( '\============ Request %s =============' % reqName )
-        ret = reqClient.resetFailedRequest( reqName )
+        gLogger.always( '============ Request %s =============' % requestName )
+        ret = reqClient.resetFailedRequest( requestName )
         if not ret['OK']:
           gLogger.error( "Error resetting request %s" % requestName, ret['Message'] )
       else:
