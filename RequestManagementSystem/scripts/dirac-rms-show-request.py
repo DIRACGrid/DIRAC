@@ -87,7 +87,7 @@ if __name__ == "__main__":
     status = 'Failed'
   if status:
     if not until:
-      until = datetime.datetime.now()
+      until = datetime.datetime.utcnow()
     if not since:
       since = until - datetime.timedelta( hours = 24 )
   if transID:
