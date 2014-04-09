@@ -462,7 +462,7 @@ def printFile( indexFile ):
 def recoverableRequest( request ):
   excludedErrors = ( 'File does not exist', 'No such file or directory',
                      'sourceSURL equals to targetSURL',
-                     'Max attempts limit reached', 'Max attempts limit reached' )
+                     'Max attempts limit reached', 'Max attempts reached' )
   for op in request:
     if op.Status == 'Failed':
       for f in op:
