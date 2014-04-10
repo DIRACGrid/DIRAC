@@ -2,6 +2,20 @@
 """ Show request given its name, a jobID or a transformation and a task """
 __RCSID__ = "$Id: $"
 
+import datetime
+def convertDate( date ):
+  try:
+    value = datetime.datetime.strptime( date, '%Y-%m-%d' )
+  except:
+    pass
+  try:
+    value = datetime.datetime.utcnow() - datetime.timedelta( hours = int( 24 * float( date ) ) )
+  except:
+    gLogger.fatal( "Invalid date", date )
+    value = None
+  return value
+
+
 from DIRAC.Core.Base import Script
 Script.registerSwitch( '', 'Job=', '   = JobID' )
 Script.registerSwitch( '', 'Transformation=', '   = transID' )
@@ -10,7 +24,7 @@ Script.registerSwitch( '', 'Verbose', '   Print more information' )
 Script.registerSwitch( '', 'Terse', '   Only print request status' )
 Script.registerSwitch( '', 'Full', '   Print full request' )
 Script.registerSwitch( '', 'Status=', '   Select all requests in a given status' )
-Script.registerSwitch( '', 'Since=', '      Associated to --Status, start date (default= 24h ago' )
+Script.registerSwitch( '', 'Since=', '      Associated to --Status, start date yyyy-mm-dd or nb of days (default= -one day' )
 Script.registerSwitch( '', 'Until=', '      Associated to --Status, end date (default= now' )
 Script.registerSwitch( '', 'All', '      Show all requests with given status (otherwise exclude File does not exist' )
 Script.registerSwitch( '', 'Reset', '      Reset Failed files to Waiting' )
@@ -23,7 +37,6 @@ Script.setUsageMessage( '\n'.join( [ __doc__,
 # # execution
 if __name__ == "__main__":
   from DIRAC.Core.Base.Script import parseCommandLine
-  import datetime
   parseCommandLine()
 
   import DIRAC
@@ -71,17 +84,9 @@ if __name__ == "__main__":
     elif switch[0] == 'Status':
       status = switch[1].capitalize()
     elif switch[0] == 'Since':
-      try:
-        since = datetime.datetime.strptime( switch[1], '%Y-%m-%d' )
-      except:
-        gLogger.fatal( "Invalid --Since date", switch[1] )
-        DIRAC.exit( 2 )
+      since = convertDate( switch[1] )
     elif switch[0] == 'Until':
-      try:
-        until = datetime.datetime.strptime( switch[1], '%Y-%m-%d' )
-      except:
-        gLogger.fatal( "Invalid --Until date", switch[1] )
-        DIRAC.exit( 2 )
+      until = convertDate( switch[1] )
 
   if reset:
     status = 'Failed'
@@ -128,7 +133,8 @@ if __name__ == "__main__":
       DIRAC.exit( 2 )
     requests = [reqName for reqName, _st, updTime in res['Value'] if updTime > since and updTime <= until and reqName]
     gLogger.always( 'Obtained %d requests %s between %s and %s' % ( len( requests ), status, since, until ) )
-  if not requests:
+  elif not requests:
+    gLogger.always( 'No request give....' )
     Script.showHelp()
     DIRAC.exit( 2 )
   okRequests = []
