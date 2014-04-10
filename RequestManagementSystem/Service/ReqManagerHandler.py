@@ -167,13 +167,15 @@ class ReqManagerHandler( RequestHandler ):
     """ Delete the request with the supplied name"""
     return cls.__requestDB.deleteRequest( requestName )
 
-  types_getRequestNamesList = [ ListType, IntType ]
+  types_getRequestNamesList = [ ListType, IntType, StringTypes ]
   @classmethod
-  def export_getRequestNamesList( cls, statusList = None, limit = None ):
+  def export_getRequestNamesList( cls, statusList = None, limit = None, since = None, until = None ):
     """ get requests' names with status in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
-    reqNamesList = cls.__requestDB.getRequestNamesList( statusList, limit )
+    since = since if since else ""
+    until = until if until else ""
+    reqNamesList = cls.__requestDB.getRequestNamesList( statusList, limit, since = since, until = until )
     if not reqNamesList["OK"]:
       gLogger.error( "getRequestNamesList: %s" % reqNamesList["Message"] )
     return reqNamesList
