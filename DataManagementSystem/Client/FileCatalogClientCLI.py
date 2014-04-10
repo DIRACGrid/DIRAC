@@ -1836,6 +1836,8 @@ File Catalog Client $Revision: 1.17 $Date:
       path = self.cwd
     elif path[0] != '/':
       path = self.getPath(path)
+
+    path = path.rstrip( '/' )
       
     if not dirFlag:
       # Have to decide if it is a file or not
@@ -1854,7 +1856,7 @@ File Catalog Client $Revision: 1.17 $Date:
       if result['Value']:
         metaDict = result['MetadataOwner']
         metaTypeDict = result['MetadataType']
-        for meta,value in result['Value'].items():
+        for meta, value in result['Value'].items():
           setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
           prefix = ''
           if setFlag:
