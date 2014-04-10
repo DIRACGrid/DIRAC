@@ -85,6 +85,8 @@ if __name__ == "__main__":
 
   if reset:
     status = 'Failed'
+  if terse:
+    verbose = True
   if status:
     if not until:
       until = datetime.datetime.utcnow()

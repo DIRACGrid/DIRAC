@@ -417,8 +417,8 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
       if request.OwnerDN:
         gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
     for indexOperation in enumerate( request ):
-      if not terse or indexOperation[1].Status == request.Status:
-        printOperation( indexOperation, verbose )
+      if not terse or indexOperation[1].Status == 'Failed':
+        printOperation( indexOperation, verbose, onlyFailed = terse )
   # Check if FTS job exists
   if anyReplication:
     res = ftsClient.getFTSJobsForRequest( request.RequestID )
