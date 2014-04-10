@@ -120,6 +120,7 @@ if __name__ == "__main__":
         gLogger.warn( 'Job %d not found' % job )
       else:
         requests = [jobName + '_job_%d' % job]
+        all = True
 
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
   from DIRAC.RequestManagementSystem.Client.ReqClient import printRequest, recoverableRequest
