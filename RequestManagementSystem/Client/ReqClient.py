@@ -399,7 +399,6 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
   from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
   global output
   ftsClient = FTSClient()
-  anyReplication = False
   if full:
     output = ''
     prettyPrint( request.toJSON()['Value'] )
@@ -417,18 +416,16 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
       if request.OwnerDN:
         gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
     for indexOperation in enumerate( request ):
-      if not terse or indexOperation[1].Status == 'Failed':
+      op = indexOperation[1]
+      if not terse or op.Status == 'Failed':
         printOperation( indexOperation, verbose, onlyFailed = terse )
   # Check if FTS job exists
-  if anyReplication:
-    res = ftsClient.getFTSJobsForRequest( request.RequestID )
-    if res['OK']:
-      ftsJobs = res['Value']
-      if ftsJobs:
-        gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
-                                                                 for job in ftsJobs] ) )
-      else:
-        print '         No FTS jobs found for that request'
+  res = ftsClient.getFTSJobsForRequest( request.RequestID )
+  if res['OK']:
+    ftsJobs = res['Value']
+    if ftsJobs:
+      gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
+                                                               for job in ftsJobs] ) )
 
 def printOperation( indexOperation, verbose = True, onlyFailed = False ):
   i, op = indexOperation
