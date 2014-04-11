@@ -455,7 +455,7 @@ class FTSAgent( AgentModule ):
     if not ftsJobs["OK"]:
       log.error( ftsJobs["Message"] )
       return ftsJobs
-    ftsJobs = ftsJobs.get( "Value", [] )
+    ftsJobs = [ftsJob for ftsJob in ftsJobs.get( "Value", [] ) if ftsJob.Status not in FTSJob.FINALSTATES]
 
     # # Use a try: finally: for making sure FTS jobs are put back before returnin
     try:
