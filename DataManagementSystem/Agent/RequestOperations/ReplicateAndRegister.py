@@ -262,9 +262,11 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
           self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
         elif noReplicas:
           self.log.error( "unable to schedule %s, file doesn't exist" % opFile.LFN )
+          opFile.Error = 'No replicas found'
           opFile.Status = 'Failed'
         elif badReplicas:
           self.log.error( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
+          opFile.Error = 'All replicas have a bad checksum'
           opFile.Status = 'Failed'
         elif noPFN:
           self.log.warn( "unable to schedule %s, could not get a PFN" % opFile.LFN )
