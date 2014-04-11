@@ -20,7 +20,7 @@ from DIRAC.Core.Base import Script
 Script.registerSwitch( '', 'Job=', '   = JobID' )
 Script.registerSwitch( '', 'Transformation=', '   = transID' )
 Script.registerSwitch( '', 'Tasks=', '   = list of taskIDs' )
-Script.registerSwitch( '', 'Verbose', '   Print more information' )
+Script.registerSwitch( '', 'NotVerbose', '   Print more information' )
 Script.registerSwitch( '', 'Terse', '   Only print request status' )
 Script.registerSwitch( '', 'Full', '   Print full request' )
 Script.registerSwitch( '', 'Status=', '   Select all requests in a given status' )
@@ -48,7 +48,7 @@ if __name__ == "__main__":
   tasks = None
   requests = None
   full = False
-  verbose = False
+  verbose = True
   status = None
   until = None
   since = None
@@ -73,8 +73,8 @@ if __name__ == "__main__":
         gLogger.fatal( 'Invalid tasks', switch[1] )
     elif switch[0] == 'Full':
       full = True
-    elif switch[0] == 'Verbose':
-      verbose = True
+    elif switch[0] == 'NotVerbose':
+      verbose = False
     elif switch[0] == 'Terse':
       terse = True
     elif switch[0] == 'All':
