@@ -44,7 +44,7 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
     seCache = {}
 
   log = logger.getSubLogger( "filterReplicas" )
-  ret = { "Valid" : [], "Banned" : [], "Bad" : [], 'NoReplicas':[] }
+  ret = { "Valid" : [], "Banned" : [], "Bad" : [], 'NoReplicas':[], 'NoPFN':[] }
 
   replicas = dataManager.getReplicas( opFile.LFN, allStatus = False )
   if not replicas["OK"]:
@@ -68,7 +68,7 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
     pfn = repSE.getPfnForLfn( opFile.LFN )
     if not pfn["OK"] or opFile.LFN not in pfn['Value']['Successful']:
       log.warn( "unable to create pfn for %s lfn at %s: %s" % ( opFile.LFN, repSEName, pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( opFile.LFN ) ) ) )
-      ret["NoReplicas"].append( repSEName )
+      ret["NoPFN"].append( repSEName )
     else:
       pfn = pfn["Value"]['Successful'][ opFile.LFN ]
 
@@ -254,17 +254,20 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
       bannedReplicas = replicas["Banned"]
       noReplicas = replicas['NoReplicas']
       badReplicas = replicas['Bad']
+      noPFN = replicas['NoPFN']
 
       if not validReplicas:
+        gMonitor.addMark( "FTSScheduleFail" )
         if bannedReplicas:
           self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-          gMonitor.addMark( "FTSScheduleFail" )
         elif noReplicas:
-          self.log.warn( "unable to schedule %s, file doesn't exist" % opFile.LFN )
+          self.log.error( "unable to schedule %s, file doesn't exist" % opFile.LFN )
           opFile.Status = 'Failed'
         elif badReplicas:
-          self.log.warn( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
+          self.log.error( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
           opFile.Status = 'Failed'
+        elif noPFN:
+          self.log.warn( "unable to schedule %s, could not get a PFN" % opFile.LFN )
 
       else:
         validTargets = list( set( self.operation.targetSEList ) - set( validReplicas ) )
