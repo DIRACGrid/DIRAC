@@ -260,14 +260,13 @@ class RequestDB( DB ):
       if not reqAscIDs['OK']:
         log.error( reqAscIDs["Message"] )
         return reqAscIDs
-      reqIDs = set( reqAscIDs["Value"][reqIDsQuery] )
+      reqIDs = set( [reqID['RequestID'] for reqID in reqAscIDs["Value"][reqIDsQuery]] )
       reqIDsQuery = "SELECT `RequestID` FROM `Request` WHERE `Status` = 'Waiting' ORDER BY `LastUpdate` DESC LIMIT 50;"
       reqDescIDs = self._transaction( reqIDsQuery )
       if not reqDescIDs['OK']:
         log.error( reqDescIDs["Message"] )
         return reqDescIDs
-      reqIDs |= set( reqDescIDs["Value"][reqIDsQuery] )
-      reqIDs = [ reqID["RequestID"] for reqID in reqIDs ]
+      reqIDs |= set( [reqID['RequestID'] for reqID in reqAscIDs["Value"][reqIDsQuery]] )
       if not reqIDs:
         return S_OK()
       random.shuffle( reqIDs )
