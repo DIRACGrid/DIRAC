@@ -28,8 +28,9 @@
 from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
 from DIRAC.ResourceStatusSystem.Client         import ResourceManagementClient
-import datetime
+from DIRAC.Core.Utilities                      import Time
 import re
+import datetime
 
 __RCSID__ = '$Id:$'
 
@@ -51,7 +52,7 @@ def registerSwitches():
     ( 'severity=', 'Severity of the downtime (Warning, Outage)' ),
     ( 'description=', 'Description of the downtime' ),
     ( 'link=', 'URL of the downtime announcement' ),
-    ( 'ongoing', 'To force "select" to return only ongoing downtimes' )
+    ( 'ongoing', 'To force "select" to return the ongoing downtimes' )
              )
 
   for switch in switches:
@@ -106,69 +107,6 @@ def parseSwitches():
 
   return ( args, switches )
 
-#...............................................................................
-# UTILS: datetime manipulation
-
-def date2str( date, pattern = None ):
-  '''
-    Convert datetime into string according to a given format pattern
-    if non given, the default format pattern is '%Y-%m-%d %H:%M:%S'
-  '''
-
-  if pattern:
-    return date.strftime( pattern )
-  else:
-    return date.strftime( '%Y-%m-%d %H:%M:%S' )
-
-def str2date( string, pattern = None ):
-  '''
-    Convert string into datetime according to a given format pattern
-    if non given, the default format pattern is '%Y-%m-%d %H:%M:%S'
-  '''
-
-  if pattern:
-    return datetime.datetime.strptime( string, pattern )
-  else:
-    return datetime.datetime.strptime( string, '%Y-%m-%d %H:%M:%S' )
-
-def getEpoch( date ):
-  '''
-    Convert a datetime into Unix Epoch Time
-  '''
-
-  epoch = datetime.datetime.utcfromtimestamp( 0 )
-
-  if type( date ) == str:
-    patterns = []
-    formats = []
-    patterns.append( re.compile( r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}' ) )
-    formats.append( '%Y-%m-%d %H:%M:%S' )
-    patterns.append( re.compile( r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}' ) )
-    formats.append( '%Y-%m-%d %H:%M' )
-    patterns.append( re.compile( r'\d{4}-\d{2}-\d{2} \d{2}' ) )
-    formats.append( '%Y-%m-%d %H' )
-    patterns.append( re.compile( r'\d{4}-\d{2}-\d{2}' ) )
-    formats.append( '%Y-%m-%d' )
-    patterns.append( re.compile( r'\d{4}-\d{2}' ) )
-    formats.append( '%Y-%m' )
-    patterns.append( re.compile( r'\d{4}' ) )
-    formats.append( '%Y' )
-    date = date.replace( '/', '-' )
-    for i in range( len( patterns ) ):
-      if patterns[i].match( date ) is not None:
-        try:
-          date = str2date( date, formats[i] )
-        except:
-          error( "'%s' does not comply with the accepted date format '%%Y[-%%m[-%%d[ %%H[:%%M[:%%S]]]]]'" % date )
-        break
-
-    if type( date ) == str:
-      error( "'%s' does not comply with the accepted date format '%%Y[-%%m[-%%d[ %%H[:%%M[:%%S]]]]]'" % date )
-
-  delta = date - epoch
-
-  return delta.total_seconds()
-
 
 #...............................................................................
 # UTILS: for filtering 'select' output
@@ -182,27 +120,29 @@ def filterDate( selectOutput, start, end ):
   downtimesFiltered = []
 
   if start is not None:
-    start = getEpoch( start )
+    start = Time.fromString( start )
+    start = Time.toEpoch( start )
 
   if end is not None:
-    end = getEpoch( end )
+    end = Time.fromString( end )
+    end = Time.toEpoch( end )
 
   if start is not None and end is not None:
     for dt in downtimes:
-      dtStart = getEpoch( dt[ 'startDate' ] )
-      dtEnd = getEpoch( dt[ 'endDate' ] )
+      dtStart = Time.toEpoch( dt[ 'startDate' ] )
+      dtEnd = Time.toEpoch( dt[ 'endDate' ] )
       if ( dtStart >= start ) and ( dtEnd <= end ):
         downtimesFiltered.append( dt )
 
   elif start is not None and end is None:
     for dt in downtimes:
-      dtStart = getEpoch( dt[ 'startDate' ] )
+      dtStart = Time.toEpoch( dt[ 'startDate' ] )
       if dtStart >= start:
         downtimesFiltered.append( dt )
 
   elif start is None and end is not None:
     for dt in downtimes:
-      dtEnd = getEpoch( dt[ 'endDate' ] )
+      dtEnd = Time.toEpoch( dt[ 'endDate' ] )
       if dtEnd <= end:
         downtimesFiltered.append( dt )
 
@@ -219,11 +159,11 @@ def filterOngoing( selectOutput ):
 
   downtimes = selectOutput
   downtimesFiltered = []
-  currentDate = getEpoch( datetime.datetime.utcnow() )
+  currentDate = Time.toEpoch( Time.dateTime() )
 
   for dt in downtimes:
-    dtStart = getEpoch( dt[ 'startDate' ] )
-    dtEnd = getEpoch( dt[ 'endDate' ] )
+    dtStart = Time.toEpoch( dt[ 'startDate' ] )
+    dtEnd = Time.toEpoch( dt[ 'endDate' ] )
     if ( dtStart <= currentDate ) and ( dtEnd >= currentDate ):
       downtimesFiltered.append( dt )
 
@@ -279,7 +219,7 @@ def printTable( table ):
   for row in table:
     for j, key in enumerate( row ):
       if type( row[key] ) == datetime.datetime:
-        row[key] = date2str( row[key] )
+        row[key] = Time.toString( row[key] )
       if row[key] is None:
         row[key] = ''
       columns[j].append( row[key] )
