@@ -299,7 +299,7 @@ class RequestDB( DB ):
       request.addOperation( operation )
 
     if assigned:
-      setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s;" % requestID )
+      setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned', `LastUpdate`=UTC_TIMESTAMP() WHERE RequestID = %s;" % requestID )
       if not setAssigned["OK"]:
         log.error( "%s" % setAssigned["Message"] )
         return setAssigned
