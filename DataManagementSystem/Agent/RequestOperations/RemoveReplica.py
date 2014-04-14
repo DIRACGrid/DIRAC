@@ -113,12 +113,12 @@ class RemoveReplica( DMSRequestOperationsBase ):
     failed = 0
     for opFile in self.operation:
       if opFile.Status == "Waiting":
-        errors = [ error for error in removalStatus[lfn].values() if error ]
+        errors = list( set( [ error for error in removalStatus[lfn].values() if error ] ) )
         if errors:
-          failed += 1
           opFile.Error = ",".join( errors )
+          # This seems to be the only offending error
           if "Write access not permitted for this credential" in opFile.Error:
-            opFile.Status = "Failed"
+            failed += 1
             continue
         opFile.Status = "Done"
 
@@ -155,9 +155,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
     proxyFile = None
     if "Write access not permitted for this credential" in opFile.Error:
       # # not a DataManger? set status to failed and return
-      if "DataManager" not in self.shifter:
-        opFile.Status = "Failed"
-      else:
+      if "DataManager" in self.shifter:
         # #  you're a data manager - save current proxy and get a new one for LFN and retry
         saveProxy = os.environ["X509_USER_PROXY"]
         try:

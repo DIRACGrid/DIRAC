@@ -256,11 +256,17 @@ class RequestDB( DB ):
         return S_ERROR( "getRequest: status of request '%s' is 'Assigned', request cannot be selected" % requestName )
     else:
       reqIDsQuery = "SELECT `RequestID` FROM `Request` WHERE `Status` = 'Waiting' ORDER BY `LastUpdate` ASC LIMIT 100;"
-      reqIDs = self._transaction( reqIDsQuery )
-      if not reqIDs['OK']:
-        log.error( reqIDs["Message"] )
-        return reqIDs
-      reqIDs = reqIDs["Value"][reqIDsQuery]
+      reqAscIDs = self._transaction( reqIDsQuery )
+      if not reqAscIDs['OK']:
+        log.error( reqAscIDs["Message"] )
+        return reqAscIDs
+      reqIDs = set( reqAscIDs["Value"][reqIDsQuery] )
+      reqIDsQuery = "SELECT `RequestID` FROM `Request` WHERE `Status` = 'Waiting' ORDER BY `LastUpdate` DESC LIMIT 50;"
+      reqDescIDs = self._transaction( reqIDsQuery )
+      if not reqDescIDs['OK']:
+        log.error( reqDescIDs["Message"] )
+        return reqDescIDs
+      reqIDs |= set( reqDescIDs["Value"][reqIDsQuery] )
       reqIDs = [ reqID["RequestID"] for reqID in reqIDs ]
       if not reqIDs:
         return S_OK()

@@ -338,7 +338,7 @@ class ReqClient( Client ):
         ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )
 
-  def resetFailedRequest( self, requestName, force = False ):
+  def resetFailedRequest( self, requestName, all = False ):
     """ Reset a failed request to "Waiting" status - requestName can also be the RequestID
     """
     try:
@@ -351,21 +351,12 @@ class ReqClient( Client ):
     if not res['OK']:
       return res
     req = res['Value']
-    toReset = True
-    for op in req:
-      if op.Status == 'Failed':
-        if not op.Type.startswith( 'Remove' ):
-          for f in op:
-            if f.Status == 'Failed' and 'no such file or directory' in f.Error.lower() :
-              toReset = force
-              break
-        break
-    # Only reset requests that
-    if toReset:
+    if all or recoverableRequest( req ):
+      # Only reset requests that can be recovered
       for i, op in enumerate( req ):
         op.Error = ' '
         if op.Status == 'Failed':
-          printOperation( ( i, op ) )
+          printOperation( ( i, op ), onlyFailed = True )
         for f in op:
           if f.Status == 'Failed':
             if 'Max attempts limit reached' in f.Error:
@@ -408,7 +399,6 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
   from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
   global output
   ftsClient = FTSClient()
-  anyReplication = False
   if full:
     output = ''
     prettyPrint( request.toJSON()['Value'] )
@@ -426,20 +416,18 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
       if request.OwnerDN:
         gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
     for indexOperation in enumerate( request ):
-      if not terse or indexOperation[1].Status == request.Status:
-        printOperation( indexOperation, verbose )
+      op = indexOperation[1]
+      if not terse or op.Status == 'Failed':
+        printOperation( indexOperation, verbose, onlyFailed = terse )
   # Check if FTS job exists
-  if anyReplication:
-    res = ftsClient.getFTSJobsForRequest( request.RequestID )
-    if res['OK']:
-      ftsJobs = res['Value']
-      if ftsJobs:
-        gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
-                                                                 for job in ftsJobs] ) )
-      else:
-        print '         No FTS jobs found for that request'
+  res = ftsClient.getFTSJobsForRequest( request.RequestID )
+  if res['OK']:
+    ftsJobs = res['Value']
+    if ftsJobs:
+      gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
+                                                               for job in ftsJobs] ) )
 
-def printOperation( indexOperation, verbose = True ):
+def printOperation( indexOperation, verbose = True, onlyFailed = False ):
   i, op = indexOperation
   prStr = ''
   if 'Replicate' in op.Type:
@@ -459,10 +447,23 @@ def printOperation( indexOperation, verbose = True ):
   if prStr:
     gLogger.always( "      %s" % prStr )
   for indexFile in enumerate( op ):
-    printFile( indexFile )
+    if not onlyFailed or indexFile[1].Status == 'Failed':
+      printFile( indexFile )
 
 def printFile( indexFile ):
   j, f = indexFile
   gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s'%s%s" % ( j + 1, f.FileID, f.LFN, f.Status,
                                                                        ( " Error='%s'" % f.Error ) if f.Error and f.Error.strip() else "",
                                                                        ( " Attempts=%d" % f.Attempt ) if f.Attempt > 1 else "" ) )
+
+def recoverableRequest( request ):
+  excludedErrors = ( 'File does not exist', 'No such file or directory',
+                     'sourceSURL equals to targetSURL',
+                     'Max attempts limit reached', 'Max attempts reached' )
+  for op in request:
+    if op.Status == 'Failed':
+      for f in op:
+        if f.Status == 'Failed':
+          if [str for str in excludedErrors if str in f.Error]:
+            return False
+          return True
