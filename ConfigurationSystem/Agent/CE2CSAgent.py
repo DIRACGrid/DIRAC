@@ -47,13 +47,15 @@ class CE2CSAgent( AgentModule ):
     self.am_setOption( 'shifterProxy', 'TestManager' )
 
     self.voName = self.am_getOption( 'VirtualOrganization', [] )
+    if not self.voName:
+      vo = getVO()
+      if vo:
+        self.voName = [ vo ] 
     
-    self.log.info( "Agent will manage VO(s) %s" % self.voName )
-    if not self.voName:
-      self.voName = getVO()
-
-    if not self.voName:
-      self.log.fatal( "VO option not defined for agent" )
+    if self.voName:
+      self.log.info( "Agent will manage VO(s) %s" % self.voName )
+    else:
+      self.log.fatal( "VirtualOrganization option not defined for agent" )
       return S_ERROR()
 
     self.csAPI = CSAPI()

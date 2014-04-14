@@ -227,8 +227,11 @@ def ldapCEState( ce, vo, attr = None, host = None ):
       Each ceState is dictionary which contains attributes of ce.
       For example result['Value'][0]['GlueCEStateStatus']
   """
-  filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=*%s*))' % ( ce, vo )
-
+  voFilters = '(GlueCEAccessControlBaseRule=VOMS:/%s/*)' % vo
+  voFilters += '(GlueCEAccessControlBaseRule=VOMS:/%s)' % vo
+  voFilters += '(GlueCEAccessControlBaseRule=VO:%s)' % vo
+  filt = '(&(GlueCEUniqueID=%s*)(|%s))' % ( ce, voFilters )
+  
   result = ldapsearchBDII( filt, attr, host )
 
   if not result['OK']:
@@ -250,7 +253,11 @@ def ldapCEVOView( ce, vo, attr = None, host = None ):
       For example result['Value'][0]['GlueCEStateRunningJobs']
   """
 
-  filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=*%s*))' % ( ce, vo )
+  voFilters = '(GlueCEAccessControlBaseRule=VOMS:/%s/*)' % vo
+  voFilters += '(GlueCEAccessControlBaseRule=VOMS:/%s)' % vo
+  voFilters += '(GlueCEAccessControlBaseRule=VO:%s)' % vo
+  filt = '(&(GlueCEUniqueID=%s*)(|%s))' % ( ce, voFilters )
+  
   result = ldapsearchBDII( filt, attr, host )
 
   if not result['OK']:
@@ -258,7 +265,7 @@ def ldapCEVOView( ce, vo, attr = None, host = None ):
 
   ces = result['Value']
 
-  filt = '(&(objectClass=GlueVOView)(GlueCEAccessControlBaseRule=*%s*))' % vo
+  filt = '(&(objectClass=GlueVOView)(|%s))' % ( voFilters )
   views = []
 
   for ce in ces:
