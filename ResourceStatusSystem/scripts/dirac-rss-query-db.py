@@ -37,6 +37,7 @@ from DIRAC                                                  import gConfig, gLog
 from DIRAC.Core.Base                                        import Script
 from DIRAC.ResourceStatusSystem.Client                      import ResourceStatusClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
+from DIRAC.Core.Utilities                                   import Time
 import datetime
 
 
@@ -181,31 +182,6 @@ def unpack( switchDict ):
 
   return switchDictSet
 
-#...............................................................................
-# UTILS: datetime manipulation
-
-def date2str( date, pattern = None ):
-  '''
-    Convert datetime into string according to a given format pattern
-    if non given, the default format pattern is '%Y-%m-%d %H:%M:%S'
-  '''
-
-  if pattern:
-    return date.strftime( pattern )
-  else:
-    return date.strftime( '%Y-%m-%d %H:%M:%S' )
-
-def str2date( string, pattern = None ):
-  '''
-    Convert string into datetime according to a given format pattern
-    if non given, the default format pattern is '%Y-%m-%d %H:%M:%S'
-  '''
-
-  if pattern:
-    return datetime.datetime.strptime( string, pattern )
-  else:
-    return datetime.datetime.strptime( string, '%Y-%m-%d %H:%M:%S' )
-
 
 
 #...............................................................................
@@ -262,7 +238,7 @@ def printTable( table ):
   for row in table:
     for j, key in enumerate( row ):
       if type( row[key] ) == datetime.datetime:
-        row[key] = date2str( row[key] )
+        row[key] = Time.toString( row[key] )
       if row[key] is None:
         row[key] = ''
       columns[j].append( row[key] )
