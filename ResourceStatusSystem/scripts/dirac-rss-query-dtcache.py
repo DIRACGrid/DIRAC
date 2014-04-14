@@ -51,7 +51,7 @@ def registerSwitches():
     ( 'severity=', 'Severity of the downtime (Warning, Outage)' ),
     ( 'description=', 'Description of the downtime' ),
     ( 'link=', 'URL of the downtime announcement' ),
-    ( 'ongoing', 'To force "select" to return the ongoing downtimes' )
+    ( 'ongoing', 'To force "select" to return only ongoing downtimes' )
              )
 
   for switch in switches:
