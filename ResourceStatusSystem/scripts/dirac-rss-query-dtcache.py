@@ -120,11 +120,17 @@ def filterDate( selectOutput, start, end ):
   downtimesFiltered = []
 
   if start is not None:
-    start = Time.fromString( start )
+    try:
+      start = Time.fromString( start )
+    except:
+      error( "datetime formt is incorrect, pls try [%Y-%m-%d[ %H:%M:%S]]" )
     start = Time.toEpoch( start )
 
   if end is not None:
-    end = Time.fromString( end )
+    try:
+      end = Time.fromString( end )
+    except:
+      error( "datetime formt is incorrect, pls try [%Y-%m-%d[ %H:%M:%S]]" )
     end = Time.toEpoch( end )
 
   if start is not None and end is not None:
