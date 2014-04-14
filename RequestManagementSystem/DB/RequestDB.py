@@ -260,14 +260,13 @@ class RequestDB( DB ):
       if not reqAscIDs['OK']:
         log.error( reqAscIDs["Message"] )
         return reqAscIDs
-      reqIDs = set( reqAscIDs["Value"][reqIDsQuery] )
+      reqIDs = set( [reqID['RequestID'] for reqID in reqAscIDs["Value"][reqIDsQuery]] )
       reqIDsQuery = "SELECT `RequestID` FROM `Request` WHERE `Status` = 'Waiting' ORDER BY `LastUpdate` DESC LIMIT 50;"
       reqDescIDs = self._transaction( reqIDsQuery )
       if not reqDescIDs['OK']:
         log.error( reqDescIDs["Message"] )
         return reqDescIDs
-      reqIDs |= set( reqDescIDs["Value"][reqIDsQuery] )
-      reqIDs = [ reqID["RequestID"] for reqID in reqIDs ]
+      reqIDs |= set( [reqID['RequestID'] for reqID in reqAscIDs["Value"][reqIDsQuery]] )
       if not reqIDs:
         return S_OK()
       random.shuffle( reqIDs )
@@ -300,7 +299,7 @@ class RequestDB( DB ):
       request.addOperation( operation )
 
     if assigned:
-      setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s;" % requestID )
+      setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned', `LastUpdate`=UTC_TIMESTAMP() WHERE RequestID = %s;" % requestID )
       if not setAssigned["OK"]:
         log.error( "%s" % setAssigned["Message"] )
         return setAssigned
