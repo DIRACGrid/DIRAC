@@ -20,10 +20,10 @@ import types
 import re
 
 def makeGuid( fileName = None ):
-  """Utility to create GUID's, if a filename it is provided the
-     GUID will correspond to its hexadecimal md5 checksum
-     the format is capitalized 8-4-4-4-12, otherwise a random seed it is
-     used to create a GUID.
+  """Utility to create GUID's, if a filename is provided the
+     GUID will correspond to its content's hexadecimal md5 checksum.
+     Otherwise a random seed is used to create a GUID.
+     The format is capitalized 8-4-4-4-12.
      
      .. warning::
         Could return None in case of OSError or IOError.
