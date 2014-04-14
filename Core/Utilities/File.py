@@ -20,9 +20,9 @@ import types
 import re
 
 def makeGuid( fileName = None ):
-  """Utility to create GUID's, if a filename is provided the
+  """Utility to create GUID. If a filename is provided the
      GUID will correspond to its content's hexadecimal md5 checksum.
-     Otherwise a random seed is used to create a GUID.
+     Otherwise a random seed is used to create the GUID.
      The format is capitalized 8-4-4-4-12.
      
      .. warning::
@@ -54,8 +54,8 @@ def checkGuid( guid ):
 
      .. warning::
         As we are using GUID produced by various services and some of them could not follow
-        convention this function is passing by a guid which can be made if small caps or even just 
-        have 5 parts of whatever chars of proper lenght.
+        convention, this function is passing by a guid which can be made of lower case chars or even just 
+        have 5 parts of proper length with whatever chars.
 
      :param string guid: string to be checked
      :return: True (False) if supplied string is (not) a valid GUID. 
@@ -90,6 +90,7 @@ def getGlobbedTotalSize( files ):
   """Get total size of a list of files or a single file.
   Globs the parameter to allow regular expressions.
 
+  :params list files: list or tuple of strings of files
   """
   totalSize = 0
   if type( files ) in ( types.ListType, types.TupleType ):
@@ -113,6 +114,8 @@ def getGlobbedTotalSize( files ):
 def getGlobbedFiles( files ):
   """Get list of files or a single file.
   Globs the parameter to allow regular expressions.
+  
+  :params list files: list or tuple of strings of files
   """
   globbedFiles = []
   if type( files ) in ( types.ListType, types.TupleType ):
@@ -135,7 +138,7 @@ def getCommonPath( files ):
   def properSplit( dirPath ):
     """Splitting of path to drive and path parts for non-Unix file systems.
 
-    :param string dirParh: path
+    :param string dirPath: path
     """
     nDrive, nPath = os.path.splitdrive( dirPath )
     return  [ nDrive ] + [ d for d in nPath.split( os.sep ) if d.strip() ]
