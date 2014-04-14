@@ -8,6 +8,7 @@ maxReset = 100
 Script.registerSwitch( '', 'Job=', '   jobID: reset requests for jobID' )
 Script.registerSwitch( '', 'Failed', '  reset Failed requests' )
 Script.registerSwitch( '', 'Maximum=', '   max number of requests to reset' )
+Script.registerSwitch( '', 'All', '   reset requests even if irrecoverable' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
                                      ' %s [option|cfgfile] [requestName|requestID]' % Script.scriptName,
@@ -22,13 +23,16 @@ if __name__ == "__main__":
   import DIRAC
   from DIRAC import gLogger
   resetFailed = False
-  requestName = ''
+  requests = []
   job = None
+  all = False
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
   reqClient = ReqClient()
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Failed':
       resetFailed = True
+    elif switch[0] == 'All':
+      all = True
     elif switch[0] == 'Maximum':
       try:
         maxReset = int( switch[1] )
@@ -44,7 +48,7 @@ if __name__ == "__main__":
     args = Script.getPositionalArgs()
 
     if len( args ) == 1:
-      requestName = args[0]
+      requests = args[0].split( ',' )
   else:
     from DIRAC.Interfaces.API.Dirac                              import Dirac
     dirac = Dirac()
@@ -56,14 +60,10 @@ if __name__ == "__main__":
       if not jobName:
         print 'Job %d not found' % job
       else:
-        requestName = jobName + '_job_%d' % job
+        requests = [jobName + '_job_%d' % job]
 
-  requests = []
-  if requestName:
-    requests = requestName.split( ',' )
-    force = True
-  elif resetFailed:
-    force = False
+  if resetFailed:
+    all = False
     res = reqClient.getRequestNamesList( ['Failed'], maxReset );
     if not res['OK']:
         print "Error", res['Message'];
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     for reqName in requests:
       if len( requests ) > 1:
         gLogger.always( '============ Request %s =============' % reqName )
-      ret = reqClient.resetFailedRequest( reqName, force = force )
+      ret = reqClient.resetFailedRequest( reqName, all = all )
       if not ret['OK']:
         notReset += 1
         print "Error", ret['Message']
@@ -93,4 +93,4 @@ if __name__ == "__main__":
     if reset:
       print "Reset", reset, 'Requests'
     if notReset:
-      print "Not reset (Request doesn't exist or really Failed) %d requests" % notReset
+      print "Not reset (doesn't exist or irrecoverable) %d requests" % notReset

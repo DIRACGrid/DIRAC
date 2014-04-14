@@ -1446,7 +1446,7 @@ class DataManager( object ):
     if not res['OK']:
       return res
     if not res['Value']:
-      errStr = "removaReplica: Write access not permitted for this credential."
+      errStr = "removeReplica: Write access not permitted for this credential."
       self.log.debug( errStr, lfns )
       return S_ERROR( errStr )
     self.log.debug( "removeReplica: Will remove catalogue entry for %s lfns at %s." % ( len( lfns ),

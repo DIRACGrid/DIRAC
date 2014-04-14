@@ -321,7 +321,7 @@ class RequestTask( object ):
         while True:
           finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestName, self.request.JobID )
           if not finalizeRequest["OK"]:
-            if attempts:
+            if not attempts:
               self.log.error( "unable to finalize request %s: %s, will retry" % ( self.request.RequestName,
                                                                                 finalizeRequest["Message"] ) )
             self.log.verbose( "Waiting 10 seconds" )

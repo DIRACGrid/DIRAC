@@ -245,6 +245,7 @@ class Request( Record ):
 
   def __setitem__( self, i, value ):
     """ self[i] = val """
+    self.__operations__._typeCheck( value )
     if self[i].OperationID:
       self.__dirty.append( self[i].OperationID )
     self.__operations__.__setitem__( i, value )

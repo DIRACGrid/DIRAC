@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r11-pre13]
+[v6r11]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality

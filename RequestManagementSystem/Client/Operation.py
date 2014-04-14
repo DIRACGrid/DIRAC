@@ -190,6 +190,7 @@ class Operation( Record ):
 
   def __setitem__( self, i, opFile ):
     """ overwrite opFile """
+    self.__files__._typeCheck( opFile )
     toDelete = self[i]
     if toDelete.FileID:
       self.__dirty.append( toDelete.FileID )
