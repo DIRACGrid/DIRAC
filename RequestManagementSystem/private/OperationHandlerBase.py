@@ -94,7 +94,7 @@ class OperationHandlerBase( object ):
     name = self.__class__.__name__
     # # all options are r/o properties now
     csOptionsDict = gConfig.getOptionsDict( self.csPath )
-    csOptionsDict = csOptionsDict["Value"] if "Value" in csOptionsDict else {}
+    csOptionsDict = csOptionsDict.get( "Value", {} )
 
     for option, value in csOptionsDict.iteritems():
       # # hack to set proper types
