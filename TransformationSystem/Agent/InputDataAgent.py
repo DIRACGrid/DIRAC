@@ -15,6 +15,8 @@ from DIRAC.Resources.Catalog.FileCatalogClient                            import
 from DIRAC.Core.Utilities.List                                            import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations                  import Operations
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = 'Transformation/InputDataAgent'
 
 class InputDataAgent( AgentModule ):
