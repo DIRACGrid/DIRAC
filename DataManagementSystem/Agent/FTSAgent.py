@@ -161,6 +161,10 @@ class FTSAgent( AgentModule ):
     return cls.__seCache[seName]
 
   @classmethod
+  def getSECache( cls ):
+    return cls.__seCache
+
+  @classmethod
   def getRequest( cls, reqName ):
     """ keep Requests in cache """
     if reqName not in cls.__reqCache:
@@ -277,7 +281,7 @@ class FTSAgent( AgentModule ):
 
 
       # # data manager
-    self.dm = DataManager()
+    self.dataManager = DataManager()
 
     log = self.log.getSubLogger( "initialize" )
 
@@ -996,4 +1000,4 @@ class FTSAgent( AgentModule ):
   def __filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
     from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import filterReplicas
-    return filterReplicas( opFile, logger = self.log, datamanager = self.datamanager(), seCache = self.getSEcache )
+    return filterReplicas( opFile, logger = self.log, datamanager = self.dataManager, seCache = self.getSEcache() )
