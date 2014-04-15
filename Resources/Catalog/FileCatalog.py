@@ -29,9 +29,7 @@ class FileCatalog:
     self.readCatalogs = []
     self.writeCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
-    self.vo = vo
-    if not vo:
-      self.vo = getVOfromProxyGroup().get( 'Value', None )
+    self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
     if self.vo:
       self.opHelper = Operations( vo = self.vo )
       if type( catalogs ) in types.StringTypes:
