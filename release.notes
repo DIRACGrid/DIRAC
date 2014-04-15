@@ -1,4 +1,4 @@
-[v6r11-pre14]
+[v6r11-pre15]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
