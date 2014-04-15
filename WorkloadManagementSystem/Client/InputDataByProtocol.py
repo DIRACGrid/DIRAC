@@ -233,7 +233,7 @@ class InputDataByProtocol:
           mdataList.remove( mdata )
           self.log.info( 'No TURL resolved for %s at %s' % ( lfn, mdata['se'] ) )
       if not mdataList:
-        transLFNs.pop( lfn, None )
+        trackLFNs.pop( lfn, None )
         failedReplicas.add( lfn )
       elif lfn in failedReplicas:
         failedReplicas.remove( lfn )
