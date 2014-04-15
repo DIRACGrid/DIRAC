@@ -1,24 +1,22 @@
-# $HeadURL:  $
-''' PilotCommand
+""" PilotCommand
  
   The PilotCommand class is a command class to know about present pilots 
   efficiency.
   
-'''
+"""
 
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient 
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient 
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
 __RCSID__ = '$Id:  $'
 
 class PilotCommand( Command ):
-  '''
+  """
     Pilot "master" Command.    
-  '''
+  """
 
   def __init__( self, args = None, clients = None ):
     
@@ -35,9 +33,9 @@ class PilotCommand( Command ):
       self.rmClient = ResourceManagementClient()
 
   def _storeCommand( self, result ):
-    '''
+    """
       Stores the results of doNew method on the database.
-    '''
+    """
     
     for pilotDict in result:
       
@@ -52,10 +50,10 @@ class PilotCommand( Command ):
     return S_OK()
   
   def _prepareCommand( self ):
-    '''
+    """
       JobCommand requires one arguments:
       - name : <str>      
-    '''
+    """
 
     if not 'name' in self.args:
       return S_ERROR( '"name" not found in self.args' )
@@ -338,68 +336,68 @@ class PilotsWMSCommand( Command ):
 ################################################################################
 ################################################################################
 
-class PilotsEffSimpleCachedCommand( Command ):
-
-  def __init__( self, args = None, clients = None ):
-    
-    super( PilotsEffSimpleCachedCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.apis:
-      self.rsClient = self.apis[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient()      
-    
-    if 'ResourceManagementClient' in self.apis:
-      self.rmClient = self.apis[ 'ResourceManagementClient' ]
-    else:
-      self.emClient = ResourceManagementClient()  
-
-  def doCommand( self ):
-    """
-    Returns simple pilots efficiency
-
-    :attr:`args`:
-       - args[0]: string: should be a ValidElement
-
-       - args[1]: string should be the name of the ValidElement
-
-    returns:
-      {
-        'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-      }
-    """
-    
-    if self.args[0] == 'Service':
-      name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )
-      name        = name[ 'Value' ][ 0 ]
-      granularity = 'Site'
-    elif self.args[0] == 'Site':
-      name        = self.args[1]
-      granularity = self.args[0]
-    else:
-      return self.returnERROR( S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) )
-
-    clientDict = { 
-                  'name'        : name,
-                  'commandName' : 'PilotsEffSimpleEverySites',
-                  'value'       : 'PE_S',
-                  'opt_ID'      : 'NULL',
-                  'meta'        : { 'columns'     : 'Result' }
-                  }
-      
-    res = self.rmClient.getClientCache( **clientDict )
-      
-    if res[ 'OK' ]:               
-      res = res[ 'Value' ] 
-      if res == None or res == []:
-        res = S_OK( 'Idle' )
-      else:
-        res = S_OK( res[ 0 ] )
-
-    else:
-      res = self.returnERROR( res )
-
-    return res
+# class PilotsEffSimpleCachedCommand( Command ):
+#
+#   def __init__( self, args = None, clients = None ):
+#
+#     super( PilotsEffSimpleCachedCommand, self ).__init__( args, clients )
+#
+#     if 'ResourceStatusClient' in self.apis:
+#       self.rsClient = self.apis[ 'ResourceStatusClient' ]
+#     else:
+#       self.rsClient = ResourceStatusClient()
+#
+#     if 'ResourceManagementClient' in self.apis:
+#       self.rmClient = self.apis[ 'ResourceManagementClient' ]
+#     else:
+#       self.emClient = ResourceManagementClient()
+#
+#   def doCommand( self ):
+#     """
+#     Returns simple pilots efficiency
+#
+#     :attr:`args`:
+#        - args[0]: string: should be a ValidElement
+#
+#        - args[1]: string should be the name of the ValidElement
+#
+#     returns:
+#       {
+#         'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+#       }
+#     """
+#
+#     if self.args[0] == 'Service':
+#       name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )
+#       name        = name[ 'Value' ][ 0 ]
+#       granularity = 'Site'
+#     elif self.args[0] == 'Site':
+#       name        = self.args[1]
+#       granularity = self.args[0]
+#     else:
+#       return self.returnERROR( S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) )
+#
+#     clientDict = {
+#                   'name'        : name,
+#                   'commandName' : 'PilotsEffSimpleEverySites',
+#                   'value'       : 'PE_S',
+#                   'opt_ID'      : 'NULL',
+#                   'meta'        : { 'columns'     : 'Result' }
+#                   }
+#
+#     res = self.rmClient.getClientCache( **clientDict )
+#
+#     if res[ 'OK' ]:
+#       res = res[ 'Value' ]
+#       if res == None or res == []:
+#         res = S_OK( 'Idle' )
+#       else:
+#         res = S_OK( res[ 0 ] )
+#
+#     else:
+#       res = self.returnERROR( res )
+#
+#     return res
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

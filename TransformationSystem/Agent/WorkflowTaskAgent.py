@@ -6,6 +6,8 @@ from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAg
 from DIRAC.TransformationSystem.Client.TaskManager          import WorkflowTasks
 from DIRAC.WorkloadManagementSystem.Client.WMSClient        import WMSClient
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 
 class WorkflowTaskAgent( TaskManagerAgentBase ):

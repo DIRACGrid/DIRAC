@@ -8,6 +8,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 COMPONENT_NAME = 'Transformation'
 
+__RCSID__ = '$Id:  $'
+
 class Transformation( API ):
 
   #############################################################################

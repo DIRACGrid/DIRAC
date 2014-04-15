@@ -1,5 +1,7 @@
-''' Transformation Database Client Command Line Interface.
-'''
+""" Transformation Database Client Command Line Interface.
+"""
+
+__RCSID__ = '$Id:  $'
 
 #! /usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
@@ -16,7 +18,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient     import Transform
 
 
 def printDict( dictionary ):
-  ''' Dictionary pretty printing '''
+  """ Dictionary pretty printing """
   key_max = 0
   value_max = 0
   for key, value in dictionary.items():
@@ -42,30 +44,30 @@ class TransformationCLI( cmd.Cmd, API ):
       print "%s  %s" % ( " " * self.indentSpace, valueLine.strip() )
 
   def do_exit( self, args ):
-    ''' Exits the shell.
+    """ Exits the shell.
         usage: exit
-    '''
+    """
     sys.exit( 0 )
 
   def do_quit( self, *args ):
-    ''' Exits the shell.
+    """ Exits the shell.
         Usage: quit
-    '''
+    """
     sys.exit( 0 )
 
   def do_help( self, args ):
-    ''' Default version of the help command
+    """ Default version of the help command
        Usage: help <command>
-       OR use helpall to see description for all commans'''
+       OR use helpall to see description for all commands"""
     cmd.Cmd.do_help( self, args )
 
   # overriting default help command
   def do_helpall( self, args ):
-    '''
+    """
     Shows help information
         Usage: helpall <command>
         If no command is specified all commands are shown
-    '''
+    """
     if len( args ) == 0:
       print "\nAvailable commands:\n"
       attrList = dir( self )
@@ -84,20 +86,20 @@ class TransformationCLI( cmd.Cmd, API ):
       self.printPair( command, obj.__doc__[1:] )
 
   def do_shell( self, args ):
-    '''Execute a shell command
+    """Execute a shell command
 
        usage !<shell_command>
-    '''
+    """
     comm = args
     res = shellCall( 0, comm )
     if res['OK'] and res['Value'][0] == 0:
-      returnCode, stdOut, stdErr = res['Value']
+      _returnCode, stdOut, stdErr = res['Value']
       print "%s\n%s" % ( stdOut, stdErr )
     else:
       print res['Message']
 
   def check_params( self, args, num ):
-    '''Checks if the number of parameters correct'''
+    """Checks if the number of parameters correct"""
     argss = args.split()
     length = len( argss )
     if length < num:
@@ -106,21 +108,10 @@ class TransformationCLI( cmd.Cmd, API ):
     return ( argss, length )
 
   def check_id_or_name( self, id_or_name ):
-    '''resolve name or Id by converting type of argument '''
+    """resolve name or Id by converting type of argument """
     if id_or_name.isdigit():
       return long( id_or_name ) # its look like id
     return id_or_name
-
-  def do_setServer( self, args ):
-    ''' Set the destination server
-
-        usage: setServer serverURL
-    '''
-    argss = args.split()
-    if len( argss ) == 0:
-      print "no server provided"
-    self.serverURL = argss[0]
-    self.server.setServer( self.serverURL )
 
   ####################################################################
   #
@@ -128,19 +119,18 @@ class TransformationCLI( cmd.Cmd, API ):
   #
 
   def do_getall( self, args ):
-    '''Get transformation details
+    """Get transformation details
 
        usage: getall [Status] [Status]
-    '''
+    """
     oTrans = Transformation()
-    oTrans.setServer( self.serverURL )
     oTrans.getTransformations( transStatus = args.split(), printOutput = True )
 
   def do_getStatus( self, args ):
-    '''Get transformation details
+    """Get transformation details
 
        usage: getStatus <transName|ID>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no transformation supplied"
@@ -153,11 +143,11 @@ class TransformationCLI( cmd.Cmd, API ):
         print "%s: %s" % ( transName, res['Value']['Status'] )
 
   def do_setStatus( self, args ):
-    '''Set transformation status
+    """Set transformation status
 
        usage: setStatus  <Status> <transName|ID>
        Status <'New' 'Active' 'Stopped' 'Completed' 'Cleaning'>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 1:
       print "transformation and status not supplied"
@@ -172,10 +162,10 @@ class TransformationCLI( cmd.Cmd, API ):
         print "%s set to %s" % ( transName, status )
 
   def do_start( self, args ):
-    '''Start transformation
+    """Start transformation
 
        usage: start <transName|ID>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no transformation supplied"
@@ -192,10 +182,10 @@ class TransformationCLI( cmd.Cmd, API ):
           print "%s started" % transName
 
   def do_stop( self, args ):
-    '''Stop transformation
+    """Stop transformation
 
        usage: stop <transID|ID>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no transformation supplied"
@@ -211,10 +201,10 @@ class TransformationCLI( cmd.Cmd, API ):
         print "%s stopped" % transName
 
   def do_flush( self, args ):
-    '''Flush transformation
+    """Flush transformation
 
        usage: flush <transName|ID>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no transformation supplied"
@@ -227,10 +217,10 @@ class TransformationCLI( cmd.Cmd, API ):
         print "%s flushing" % transName
 
   def do_get( self, args ):
-    '''Get transformation definition
+    """Get transformation definition
 
     usage: get <transName|ID>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no transformation supplied"
@@ -244,10 +234,10 @@ class TransformationCLI( cmd.Cmd, API ):
       printDict( res['Value'] )
 
   def do_getBody( self, args ):
-    '''Get transformation body
+    """Get transformation body
 
     usage: getBody <transName|ID>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no transformation supplied"
@@ -260,10 +250,10 @@ class TransformationCLI( cmd.Cmd, API ):
       print res['Value']['Body']
 
   def do_getFileStat( self, args ):
-    '''Get transformation file statistics
+    """Get transformation file statistics
 
      usage: getFileStat <transName|ID>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no transformation supplied"
@@ -277,10 +267,10 @@ class TransformationCLI( cmd.Cmd, API ):
       printDict( res['Value'] )
 
   def do_modMask( self, args ):
-    '''Modify transformation input definition
+    """Modify transformation input definition
 
        usage: modInput <mask> <transName|ID>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no transformation supplied"
@@ -295,10 +285,10 @@ class TransformationCLI( cmd.Cmd, API ):
         print "Updated %s filemask" % transName
 
   def do_getFiles( self, args ):
-    '''Get files for the transformation (optionally with a given status)
+    """Get files for the transformation (optionally with a given status)
 
     usage: getFiles <transName|ID> [Status] [Status]
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no transformation supplied"
@@ -322,10 +312,10 @@ class TransformationCLI( cmd.Cmd, API ):
         print "No files found"
 
   def do_getFileStatus( self, args ):
-    '''Get file(s) status for the given transformation
+    """Get file(s) status for the given transformation
 
     usage: getFileStatus <transName|ID> <lfn> [<lfn>...]
-    '''
+    """
     argss = args.split()
     if len( argss ) < 2:
       print "transformation and file not supplied"
@@ -355,10 +345,10 @@ class TransformationCLI( cmd.Cmd, API ):
         print "No files found"
 
   def do_setFileStatus( self, args ):
-    '''Set file status for the given transformation
+    """Set file status for the given transformation
 
     usage: setFileStatus <transName|ID> <lfn> <status>
-    '''
+    """
     argss = args.split()
     if not len( argss ) == 3:
       print "transformation file and status not supplied"
@@ -373,10 +363,10 @@ class TransformationCLI( cmd.Cmd, API ):
       print "Updated file status to %s" % status
 
   def do_resetFile( self, args ):
-    '''Reset file status for the given transformation
+    """Reset file status for the given transformation
 
     usage: resetFile <transName|ID> <lfn>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 1:
       print "transformation and file(s) not supplied"
@@ -422,10 +412,10 @@ class TransformationCLI( cmd.Cmd, API ):
   #
 
   def do_addDirectory( self, args ):
-    '''Add files from the given catalog directory
+    """Add files from the given catalog directory
 
     usage: addDirectory <directory> [directory]
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no directory supplied"
@@ -438,10 +428,10 @@ class TransformationCLI( cmd.Cmd, API ):
         print 'added %s files for %s' % ( res['Value'], directory )
 
   def do_replicas( self, args ):
-    ''' Get replicas for <path>
+    """ Get replicas for <path>
 
         usage: replicas <lfn> [lfn]
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no files supplied"
@@ -461,10 +451,10 @@ class TransformationCLI( cmd.Cmd, API ):
       print outStr
 
   def do_addFile( self, args ):
-    '''Add new files to transformation DB
+    """Add new files to transformation DB
 
     usage: addFile <lfn> [lfn]
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no files supplied"
@@ -484,10 +474,10 @@ class TransformationCLI( cmd.Cmd, API ):
       print "added %s" % lfn
 
   def do_removeFile( self, args ):
-    '''Remove file from transformation DB
+    """Remove file from transformation DB
 
     usage: removeFile <lfn> [lfn]
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 0:
       print "no files supplied"
@@ -503,10 +493,10 @@ class TransformationCLI( cmd.Cmd, API ):
       print "removed %s" % lfn
 
   def do_addReplica( self, args ):
-    ''' Add new replica to the transformation DB
+    """ Add new replica to the transformation DB
 
     usage: addReplica <lfn> <se>
-    '''
+    """
     argss = args.split()
     if not len( argss ) == 2:
       print "no file info supplied"
@@ -526,10 +516,10 @@ class TransformationCLI( cmd.Cmd, API ):
       print "added %s" % lfn
 
   def do_removeReplica( self, args ):
-    '''Remove replica from the transformation DB
+    """Remove replica from the transformation DB
 
     usage: removeReplica <lfn> <se>
-    '''
+    """
     argss = args.split()
     if not len( argss ) == 2:
       print "no file info supplied"
@@ -549,10 +539,10 @@ class TransformationCLI( cmd.Cmd, API ):
       print "removed %s" % lfn
 
   def do_setReplicaStatus( self, args ):
-    '''Set replica status, usually used to mark a replica Problematic
+    """Set replica status, usually used to mark a replica Problematic
 
     usage: setReplicaStatus <lfn> <status> <se>
-    '''
+    """
     argss = args.split()
     if not len( argss ) > 2:
       print "no file info supplied"

@@ -10,6 +10,8 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
 
+__RCSID__ = "$Id$"
+
 class TransformationPlugin( object ):
   """ A TransformationPlugin object should be instantiated by every transformation.
   """

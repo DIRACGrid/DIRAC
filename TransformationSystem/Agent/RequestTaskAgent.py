@@ -6,6 +6,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Client.TaskManager          import RequestTasks
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = 'Transformation/RequestTaskAgent'
 
 class RequestTaskAgent( TaskManagerAgentBase ):
