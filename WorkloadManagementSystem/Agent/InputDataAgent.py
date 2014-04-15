@@ -1,8 +1,3 @@
-########################################################################
-# $HeadURL$
-# File :    InputDataAgent.py
-# Author :  Stuart Paterson
-########################################################################
 """   
   The Input Data Agent queries the file catalog for specified job input data and adds the
   relevant information to the job optimizer parameters to be used during the
@@ -53,7 +48,7 @@ class InputDataAgent( OptimizerModule ):
     
     self.resourceStatus  = ResourceStatus()
     self.resourcesHelper = Resources()
-
+    self.fc = FileCatalog()
     self.seToSiteMapping = {}
     self.lastCScheck = 0
     self.cacheLength = 600
@@ -80,27 +75,16 @@ class InputDataAgent( OptimizerModule ):
     #Check if we already executed this Optimizer and the input data is resolved
     res = self.getOptimizerJobInfo( job, self.am_getModuleParam( 'optimizerName' ) )
     if res['OK'] and len( res['Value'] ):
-      resolvedData = res['Value']
+      pass
     else:
-
       self.log.verbose( 'Job %s has an input data requirement and will be processed' % ( job ) )
       inputData = result['Value']
       result = self.__resolveInputData( job, inputData )
       if not result['OK']:
         self.log.warn( result['Message'] )
         return result
-      resolvedData = result['Value']
-
-    #Now check if banned SE's might prevent jobs to be scheduled
-#    result = self.__checkActiveSEs( job, resolvedData['Value']['Value'] )
-#    if not result['OK']:
-#      # if after checking SE's input data can not be resolved any more
-#      # then keep the job in the same status and update the application status
-#      result = self.jobDB.setJobStatus( job, application = result['Message'] )
-#      return S_OK()
 
     return self.setNextOptimizer( job )
-
 
   #############################################################################
   def __resolveInputData( self, job, inputData ):
@@ -259,7 +243,7 @@ class InputDataAgent( OptimizerModule ):
 
     siteCandidates = []
     i = 0
-    for fileName, sites in fileSEs.items():
+    for _fileName, sites in fileSEs.items():
       if not i:
         siteCandidates = sites
       else:

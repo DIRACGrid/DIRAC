@@ -11,6 +11,8 @@ __RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'Transformation'
 
+__RCSID__ = '$Id:  $'
+
 class Transformation( API ):
 
   #############################################################################

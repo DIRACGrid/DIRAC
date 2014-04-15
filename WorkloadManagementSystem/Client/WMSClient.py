@@ -2,15 +2,14 @@
     methods necessary to communicate with the Workload Management System
 """
 
+import os
+
 from DIRAC                                     import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.DISET.RPCClient                import RPCClient
-from DIRAC.Core.DISET.TransferClient           import TransferClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities                      import File
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
-
-import os
 
 __RCSID__ = "$Id$"
 
@@ -22,25 +21,15 @@ class WMSClient( object ):
 
         Here we also initialize the needed clients and connections
     """
+    
+    self.useCertificates = useCertificates
     self.timeout = timeout
-
-    if not jobManagerClient:
-      self.jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = useCertificates,
-                                   timeout = self.timeout )
-    else:
-      self.jobManager = jobManagerClient
-
-    if not sbRPCClient:
-      sbRPCClient = RPCClient( 'WorkloadManagement/SandboxStore', useCertificates = useCertificates )
-
-    if not sbTransferClient:
-      sbTransferClient = TransferClient( 'WorkloadManagement/SandboxStore', useCertificates = useCertificates )
-
-    self.sandboxClient = SandboxStoreClient( rpcClient = sbRPCClient,
-                                             transferClient = sbTransferClient,
-                                             useCertificates = useCertificates )
-
-    self.jobManagerSafe = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = self.timeout )
+    self.jobManager = jobManagerClient
+    self.sandboxClient = None
+    if sbRPCClient and sbTransferClient:
+      self.sandboxClient = SandboxStoreClient( rpcClient = sbRPCClient,
+                                               transferClient = sbTransferClient,
+                                               useCertificates = useCertificates )
 
 ###############################################################################
 
@@ -96,6 +85,8 @@ class WMSClient( object ):
       return result
 
     if okFiles:
+      if not self.sandboxClient:
+        self.sandboxClient = SandboxStoreClient( useCertificates = self.useCertificates )
       result = self.sandboxClient.uploadFilesAsSandbox( okFiles )
       if not result[ 'OK' ]:
         return result
@@ -130,6 +121,10 @@ class WMSClient( object ):
       return result
 
     # Submit the job now and get the new job ID
+    if not self.jobManager:
+      self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
+                                    useCertificates = self.useCertificates,
+                                    timeout = self.timeout )
     result = self.jobManager.submitJob( classAdJob.asJDL() )
     if 'requireProxyUpload' in result and result['requireProxyUpload']:
       gLogger.warn( "Need to upload the proxy" )
@@ -139,22 +134,38 @@ class WMSClient( object ):
     """ Kill running job.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    return self.jobManagerSafe.killJob( jobID )
+    if not self.jobManager:
+      self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
+                                    useCertificates = self.useCertificates,
+                                    timeout = self.timeout )
+    return self.jobManager.killJob( jobID )
 
   def deleteJob( self, jobID ):
     """ Delete job(s) from the WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    return self.jobManagerSafe.deleteJob( jobID )
+    if not self.jobManager:
+      self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
+                                    useCertificates = self.useCertificates,
+                                    timeout = self.timeout )    
+    return self.jobManager.deleteJob( jobID )
 
   def rescheduleJob( self, jobID ):
     """ Reschedule job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    return self.jobManagerSafe.rescheduleJob( jobID )
+    if not self.jobManager:
+      self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
+                                    useCertificates = self.useCertificates,
+                                    timeout = self.timeout )    
+    return self.jobManager.rescheduleJob( jobID )
 
   def resetJob( self, jobID ):
     """ Reset job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    return self.jobManagerSafe.resetJob( jobID )
+    if not self.jobManager:
+      self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
+                                    useCertificates = self.useCertificates,
+                                    timeout = self.timeout )    
+    return self.jobManager.resetJob( jobID )
