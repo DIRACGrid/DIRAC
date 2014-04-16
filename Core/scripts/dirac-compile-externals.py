@@ -199,11 +199,12 @@ if __name__ == "__main__":
   
   if compDest:
     if os.path.isdir( compDest ):
+      compDest = compDest.rstrip("/")
       oldCompDest = compDest + '.old'
       print "Warning: %s already exists! Backing it up to %s" % ( compDest, oldCompDest )
       if os.path.exists( oldCompDest ):
         shutil.rmtree( oldCompDest )
-      os.renames( compDest, oldCompDest )
+      shutil.move( compDest, oldCompDest )
   
   if not compExtSource:
     workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
