@@ -266,9 +266,10 @@ class RequestDB( DB ):
       if not reqDescIDs['OK']:
         log.error( reqDescIDs["Message"] )
         return reqDescIDs
-      reqIDs |= set( [reqID['RequestID'] for reqID in reqAscIDs["Value"][reqIDsQuery]] )
+      reqIDs |= set( [reqID['RequestID'] for reqID in reqDescIDs["Value"][reqIDsQuery]] )
       if not reqIDs:
         return S_OK()
+      reqIDs = list( reqIDs )
       random.shuffle( reqIDs )
       requestID = reqIDs[0]
 
