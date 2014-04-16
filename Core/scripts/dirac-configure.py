@@ -447,24 +447,25 @@ for vo in vomsDict:
   vomsesLines = []  
   for vomsHost in vomsDirHosts:
     hostFilePath = os.path.join( vomsDirPath, "%s.lsc" % vomsHost )
-    try:
-      DN = vomsDict[vo]['Servers'][vomsHost]['DN']
-      CA = vomsDict[vo]['Servers'][vomsHost]['CA']
-      port = vomsDict[vo]['Servers'][vomsHost]['Port']
-      if not DN or not CA or not port:
-        DIRAC.gLogger.error( 'DN = %s' % DN )
-        DIRAC.gLogger.error( 'CA = %s' % CA )
-        DIRAC.gLogger.error( 'Port = %s' % port )
-        DIRAC.gLogger.error( 'Missing Parameter for %s' % vomsHost )
-        continue
-      fd = open( hostFilePath, "wb" )
-      fd.write( "%s\n%s\n" % ( DN, CA ) )
-      fd.close()
-      vomsesLines.append( '"%s" "%s" "%s" "%s" "%s" "24"' % ( voName, vomsHost, port, DN, voName ) )
-      DIRAC.gLogger.notice( "Created vomsdir file %s" % hostFilePath )
-    except:
-      DIRAC.gLogger.exception( "Could not generate vomsdir file for host", vomsHost )
-      error = "Could not generate vomsdir file for VO %s, host %s" % (voName, vomsHost)
+    if "Servers" in vomsDict[vo]:
+      try:
+        DN = vomsDict[vo]['Servers'][vomsHost]['DN']
+        CA = vomsDict[vo]['Servers'][vomsHost]['CA']
+        port = vomsDict[vo]['Servers'][vomsHost]['Port']
+        if not DN or not CA or not port:
+          DIRAC.gLogger.error( 'DN = %s' % DN )
+          DIRAC.gLogger.error( 'CA = %s' % CA )
+          DIRAC.gLogger.error( 'Port = %s' % port )
+          DIRAC.gLogger.error( 'Missing Parameter for %s' % vomsHost )
+          continue
+        fd = open( hostFilePath, "wb" )
+        fd.write( "%s\n%s\n" % ( DN, CA ) )
+        fd.close()
+        vomsesLines.append( '"%s" "%s" "%s" "%s" "%s" "24"' % ( voName, vomsHost, port, DN, voName ) )
+        DIRAC.gLogger.notice( "Created vomsdir file %s" % hostFilePath )
+      except:
+        DIRAC.gLogger.exception( "Could not generate vomsdir file for host", vomsHost )
+        error = "Could not generate vomsdir file for VO %s, host %s" % (voName, vomsHost)
 
   try:
     vomsesFilePath = os.path.join( vomsesDirPath, voName )
