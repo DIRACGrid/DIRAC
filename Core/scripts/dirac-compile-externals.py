@@ -203,7 +203,7 @@ if __name__ == "__main__":
       print "Warning: %s already exists! Backing it up to %s" % ( compDest, oldCompDest )
       if os.path.exists( oldCompDest ):
         shutil.rmtree( oldCompDest )
-      os.rename( compDest, oldCompDest )
+      os.renames( compDest, oldCompDest )
   
   if not compExtSource:
     workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
