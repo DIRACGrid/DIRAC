@@ -205,3 +205,25 @@ def which( program ):
         return exe_file
 
   return None
+
+def getNumberOfCores():
+  """ Get the number of processor cores
+  """
+  cpuinfoFile = '/proc/cpuinfo'
+  try:
+    cFile = open( cpuinfoFile, 'r' )
+    cpuinfo = cFile.readlines()
+    cFile.close()
+  except:
+    return 0  
+  
+  cores = 0
+  for line in cpuinfo:
+    if line.startswith( 'processor' ):
+      cores += 1
+      
+  return cores    
+  
+  
+  
+  
