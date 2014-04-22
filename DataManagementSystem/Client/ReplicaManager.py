@@ -2504,7 +2504,7 @@ class ReplicaManager( CatalogToStorage ):
     """ get replicas from catalogue """
     res = self.getCatalogReplicas( lfns, allStatus = allStatus )
     
-    useCatalogPFN = Operations().getValue( 'Services/Catalogs/UseCatalogPFN', True )
+    useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
     if not useCatalogPFN:
       if res['OK']:
         se_lfn = {}
