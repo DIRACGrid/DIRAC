@@ -1,3 +1,16 @@
+[v6r10p22]
+
+*CS
+CHANGE: Operations helper - if not given, determine the VO from the current proxy 
+
+*Resources
+FIX: glexecComputingElement - allows Application Failed with Errors results to show through, 
+     rather than be masked by false "glexec CE submission" errors
+     
+*DMS     
+CHANGE: ReplicaManager - in getReplicas() rebuild PFN if 
+        <Operations>/DataManagement/UseCatalogPFN option is set to False ( True by default )
+
 [v6r10p21]
 
 *Configuration
