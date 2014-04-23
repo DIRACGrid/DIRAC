@@ -29,23 +29,20 @@ class FileCatalog:
     self.readCatalogs = []
     self.writeCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
-    self.vo = vo
-    if not vo:
-      result = getVOfromProxyGroup()
-      if not result['OK']:
-        return result
-      self.vo = result['Value']
-    self.opHelper = Operations( vo = self.vo )
-
-    if type( catalogs ) in types.StringTypes:
-      catalogs = [catalogs]
-    if catalogs:
-      res = self._getSelectedCatalogs( catalogs )
+    self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
+    if self.vo:
+      self.opHelper = Operations( vo = self.vo )
+      if type( catalogs ) in types.StringTypes:
+        catalogs = [catalogs]
+      if catalogs:
+        res = self._getSelectedCatalogs( catalogs )
+      else:
+        res = self._getCatalogs()
+      if not res['OK']:
+        self.valid = False
+      elif ( len( self.readCatalogs ) == 0 ) and ( len( self.writeCatalogs ) == 0 ):
+        self.valid = False
     else:
-      res = self._getCatalogs()
-    if not res['OK']:
-      self.valid = False
-    elif ( len( self.readCatalogs ) == 0 ) and ( len( self.writeCatalogs ) == 0 ):
       self.valid = False
 
   def isOK( self ):
@@ -92,23 +89,17 @@ class FileCatalog:
       else:
         for lfn, message in res['Value']['Failed'].items():
           # Save the error message for the failed operations
-          if not failed.has_key( lfn ):
-            failed[lfn] = {}
-          failed[lfn][catalogName] = message
+          failed.setdefault( lfn, {} )[catalogName] = message
           if master:
             # If this is the master catalog then we should not attempt the operation on other catalogs
             fileInfo.pop( lfn )
         for lfn, result in res['Value']['Successful'].items():
           # Save the result return for each file for the successful operations
-          if not successful.has_key( lfn ):
-            successful[lfn] = {}
-          successful[lfn][catalogName] = result
+          successful.setdefault( lfn, {} )[catalogName] = result
     # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
     for catalogName, errorMessage in failedCatalogs:
       for lfn in allLfns:
-        if not failed.has_key( lfn ):
-          failed[lfn] = {}
-        failed[lfn][catalogName] = errorMessage
+        failed.setdefault( lfn, {} )[catalogName] = errorMessage
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -123,22 +114,16 @@ class FileCatalog:
       if res['OK']:
         if 'Successful' in res['Value']:
           for key, item in res['Value']['Successful'].items():
-            if not successful.has_key( key ):
-              successful[key] = item
-              if failed.has_key( key ):
-                failed.pop( key )
+            successful.setdefault( key, item )
+            failed.pop( key, None )
           for key, item in res['Value']['Failed'].items():
-            if not successful.has_key( key ):
+            if key not in successful:
               failed[key] = item
-          if len( failed ) == 0:
-            resDict = {'Failed':failed, 'Successful':successful}
-            return S_OK( resDict )
         else:
           return res
-    if ( len( successful ) == 0 ) and ( len( failed ) == 0 ):
+    if not successful and not failed:
       return S_ERROR( "Failed to perform %s from any catalog" % self.call )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( {'Failed':failed, 'Successful':successful} )
 
   ###########################################################################################
   #
@@ -259,22 +244,17 @@ class FileCatalog:
       optionValue = gConfig.getValue( configPath )
       catalogConfig[option] = optionValue
     # The 'Status' option should be defined (default = 'Active')
-    if not catalogConfig.has_key( 'Status' ):
+    if 'Status' not in catalogConfig:
       warnStr = "FileCatalog._getCatalogConfigDetails: 'Status' option not defined."
       gLogger.warn( warnStr, catalogName )
       catalogConfig['Status'] = 'Active'
     # The 'AccessType' option must be defined
-    if not catalogConfig.has_key( 'AccessType' ):
+    if 'AccessType' not in catalogConfig:
       errStr = "FileCatalog._getCatalogConfigDetails: Required option 'AccessType' not defined."
       gLogger.error( errStr, catalogName )
       return S_ERROR( errStr )
     # Anything other than 'True' in the 'Master' option means it is not
-    if not catalogConfig.has_key( 'Master' ):
-      catalogConfig['Master'] = False
-    elif catalogConfig['Master'] == 'True':
-      catalogConfig['Master'] = True
-    else:
-      catalogConfig['Master'] = False
+    catalogConfig['Master'] = ( catalogConfig.setdefault( 'Master', False ) == 'True' )
     return S_OK( catalogConfig )
 
   def _generateCatalogObject( self, catalogName ):

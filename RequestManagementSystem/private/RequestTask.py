@@ -158,6 +158,14 @@ class RequestTask( object ):
     return S_OK( { "Shifter": isShifter, "ProxyFile": ownerProxyFile } )
 
   @staticmethod
+  def getPluginName( pluginPath ):
+    if not pluginPath:
+      return ''
+    if "/" in pluginPath:
+      pluginPath = ".".join( [ chunk for chunk in pluginPath.split( "/" ) if chunk ] )
+    return pluginPath.split( "." )[-1]
+
+  @staticmethod
   def loadHandler( pluginPath ):
     """ Create an instance of requested plugin class, loading and importing it when needed.
     This function could raise ImportError when plugin cannot be find or TypeError when
@@ -254,7 +262,7 @@ class RequestTask( object ):
       handler = self.getHandler( operation )
       if not handler["OK"]:
         self.log.error( "unable to process operation %s: %s" % ( operation.Type, handler["Message"] ) )
-        gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
+        # gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
         operation.Error = handler["Message"]
         break
 
@@ -262,24 +270,28 @@ class RequestTask( object ):
       # # set shifters list in the handler
       handler.shifter = shifter
       # # and execute
+      pluginName = self.getPluginName( self.handlersDict.get( operation.Type ) )
       try:
-        gMonitor.addMark( "%s%s" % ( operation.Type, "Att" ), 1 )
+        if pluginName:
+          gMonitor.addMark( "%s%s" % ( pluginName, "Att" ), 1 )
         exe = handler()
         if not exe["OK"]:
           self.log.error( "unable to process operation %s: %s" % ( operation.Type, exe["Message"] ) )
-          gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
+          if pluginName:
+            gMonitor.addMark( "%s%s" % ( pluginName, "Fail" ), 1 )
           gMonitor.addMark( "RequestFail", 1 )
       except Exception, error:
         self.log.exception( "hit by exception: %s" % str( error ) )
-        gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
+        if pluginName:
+          gMonitor.addMark( "%s%s" % ( pluginName, "Fail" ), 1 )
         gMonitor.addMark( "RequestFail", 1 )
         break
 
       # # operation status check
-      if operation.Status == "Done":
-        gMonitor.addMark( "%s%s" % ( operation.Type, "OK" ), 1 )
-      elif operation.Status == "Failed":
-        gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
+      if operation.Status == "Done" and pluginName:
+        gMonitor.addMark( "%s%s" % ( pluginName, "OK" ), 1 )
+      elif operation.Status == "Failed" and pluginName:
+        gMonitor.addMark( "%s%s" % ( pluginName, "Fail" ), 1 )
       elif operation.Status in ( "Waiting", "Scheduled" ):
         # # no update for waiting or all files scheduled
         break
@@ -291,6 +303,7 @@ class RequestTask( object ):
     gMonitor.flush()
 
     # # update request to the RequestDB
+    self.log.info( 'updating request with status %s' % self.request.Status )
     update = self.updateRequest()
     if not update["OK"]:
       self.log.error( update["Message"] )
@@ -304,16 +317,24 @@ class RequestTask( object ):
       gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
+        attempts = 0
         while True:
           finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestName, self.request.JobID )
           if not finalizeRequest["OK"]:
-            self.log.error( "unable to finalize request %s: %s, will retry" % ( self.request.RequestName,
+            if not attempts:
+              self.log.error( "unable to finalize request %s: %s, will retry" % ( self.request.RequestName,
                                                                                 finalizeRequest["Message"] ) )
             self.log.verbose( "Waiting 10 seconds" )
+            attempts += 1
+            if attempts == 10:
+              self.log.error( "giving up finalize request after %d attempts" % attempts )
+              return S_ERROR( 'Could not finalize request' )
+
             time.sleep( 10 )
 
           else:
-            self.log.info( "request '%s' is finalized" % self.request.RequestName )
+            self.log.info( "request '%s' is finalized%s" % ( self.request.RequestName,
+                                                            ( ' after %d attempts' % attempts ) if attempts else '' ) )
             break
 
     return S_OK()

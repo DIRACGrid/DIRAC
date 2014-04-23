@@ -270,7 +270,7 @@ class ReqClient( Client ):
       self.log.error( "finalizeRequest: failed to get request %s status: %s" % ( requestName, res["Message"] ) )
       return res
     if res["Value"] != "Done":
-      return S_ERROR( "The request %s isn't 'Done', this should never happen, why are we here?" % requestName )
+      return S_ERROR( "The request %s isn't 'Done' but '%s', this should never happen, why are we here?" % ( requestName, res['Value'] ) )
 
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
     monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
@@ -338,7 +338,7 @@ class ReqClient( Client ):
         ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )
 
-  def resetFailedRequest( self, requestName ):
+  def resetFailedRequest( self, requestName, all = False ):
     """ Reset a failed request to "Waiting" status - requestName can also be the RequestID
     """
     try:
@@ -346,19 +346,124 @@ class ReqClient( Client ):
     except ValueError:
       pass
 
-    res = self.getRequest( requestName )
+    # # we can safely only peek the request as it is Failed and therefore not owned by an agent
+    res = self.peekRequest( requestName )
     if not res['OK']:
       return res
     req = res['Value']
-    req.Status = 'Waiting'
-    for op in req:
-      op.Error = ''
-      if op.Status == 'Failed':
-        op.Status = 'Waiting'
-      for f in op:
-        f.Error = ''
-        if f.Status == 'Failed':
-          f.Attempt += 1
-          f.Status = 'Waiting'
+    if all or recoverableRequest( req ):
+      # Only reset requests that can be recovered
+      for i, op in enumerate( req ):
+        op.Error = ' '
+        if op.Status == 'Failed':
+          printOperation( ( i, op ), onlyFailed = True )
+        for f in op:
+          if f.Status == 'Failed':
+            if 'Max attempts limit reached' in f.Error:
+              f.Attempt = 1
+            else:
+              f.Attempt += 1
+            f.Error = ' '
+            f.Status = 'Waiting'
+        if op.Status == 'Failed':
+          op.Status = 'Waiting'
 
-    return self.putRequest( req )
+      return self.putRequest( req )
+    return S_OK( "Not reset" )
+
+#============= Some useful functions to be shared ===========
+
+output = ''
+def prettyPrint( mainItem, key = '', offset = 0 ):
+  global output
+  if key:
+    key += ': '
+  blanks = offset * ' '
+  if mainItem and type( mainItem ) == type( {} ):
+    output += "%s%s%s\n" % ( blanks, key, '{' ) if blanks or key else ''
+    for key in sorted( mainItem ):
+      prettyPrint( mainItem[key], key = key, offset = offset )
+    output += "%s%s\n" % ( blanks, '}' ) if blanks else ''
+  elif mainItem and type( mainItem ) == type( [] ):
+    output += "%s%s%s\n" % ( blanks, key, '[' )
+    for item in mainItem:
+      prettyPrint( item, offset = offset + 2 )
+    output += "%s%s\n" % ( blanks, ']' )
+  elif type( mainItem ) == type( '' ):
+    output += "%s%s'%s'\n" % ( blanks, key, str( mainItem ) )
+  else:
+    output += "%s%s%s\n" % ( blanks, key, str( mainItem ) )
+  output = output.replace( '[\n%s{' % blanks, '[{' ).replace( '}\n%s]' % blanks, '}]' )
+
+def printRequest( request, status = None, full = False, verbose = True, terse = False ):
+  from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
+  global output
+  ftsClient = FTSClient()
+  if full:
+    output = ''
+    prettyPrint( request.toJSON()['Value'] )
+    gLogger.always( output )
+  else:
+    if not status:
+      status = request.Status
+    gLogger.always( "Request name='%s' ID=%s Status='%s'%s%s%s" % ( request.RequestName,
+                                                                     request.RequestID,
+                                                                     request.Status, " ('%s' in DB)" % status if status != request.Status else '',
+                                                                     ( " Error='%s'" % request.Error ) if request.Error and request.Error.strip() else "" ,
+                                                                     ( " Job=%s" % request.JobID ) if request.JobID else "" ) )
+    if verbose:
+      gLogger.always( "Created %s, Updated %s" % ( request.CreationTime, request.LastUpdate ) )
+      if request.OwnerDN:
+        gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
+    for indexOperation in enumerate( request ):
+      op = indexOperation[1]
+      if not terse or op.Status == 'Failed':
+        printOperation( indexOperation, verbose, onlyFailed = terse )
+  # Check if FTS job exists
+  res = ftsClient.getFTSJobsForRequest( request.RequestID )
+  if res['OK']:
+    ftsJobs = res['Value']
+    if ftsJobs:
+      gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
+                                                               for job in ftsJobs] ) )
+
+def printOperation( indexOperation, verbose = True, onlyFailed = False ):
+  i, op = indexOperation
+  prStr = ''
+  if 'Replicate' in op.Type:
+    anyReplication = True
+  if verbose:
+    if op.SourceSE:
+      prStr += 'SourceSE: %s' % op.SourceSE
+    if op.TargetSE:
+      prStr += ( ' - ' if prStr else '' ) + 'TargetSE: %s' % op.TargetSE
+    if prStr:
+      prStr += ' - '
+    prStr += 'Created %s, Updated %s' % ( op.CreationTime, op.LastUpdate )
+  gLogger.always( "  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s" % ( i, op.Type, op.OperationID,
+                                                                                       op.Order, op.Status,
+                                                                                       ( " Error='%s'" % op.Error ) if op.Error and op.Error.strip() else "",
+                                                                                       ( " Catalog=%s" % op.Catalog ) if op.Catalog else "" ) )
+  if prStr:
+    gLogger.always( "      %s" % prStr )
+  for indexFile in enumerate( op ):
+    if not onlyFailed or indexFile[1].Status == 'Failed':
+      printFile( indexFile )
+
+def printFile( indexFile ):
+  j, f = indexFile
+  gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s'%s%s" % ( j + 1, f.FileID, f.LFN, f.Status,
+                                                                       ( " Error='%s'" % f.Error ) if f.Error and f.Error.strip() else "",
+                                                                       ( " Attempts=%d" % f.Attempt ) if f.Attempt > 1 else "" ) )
+
+def recoverableRequest( request ):
+  excludedErrors = ( 'File does not exist', 'No such file or directory',
+                     'sourceSURL equals to targetSURL',
+                     'Max attempts limit reached', 'Max attempts reached' )
+  for op in request:
+    if op.Status == 'Failed':
+      for f in op:
+        if f.Status == 'Failed':
+          if [str for str in excludedErrors if str in f.Error]:
+            return False
+          return True

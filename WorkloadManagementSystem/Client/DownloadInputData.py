@@ -262,9 +262,9 @@ class DownloadInputData:
     for seName in reps:
       seStatus = self.__storageElement( seName ).getStatus()['Value']
       if seStatus['Read'] and seStatus['DiskSE']:
-        diskSEs.add( localSE )
+        diskSEs.add( seName )
       elif seStatus['Read'] and seStatus['TapeSE']:
-        tapeSEs.add( localSE )
+        tapeSEs.add( seName )
 
     for seName in list( diskSEs ) + list( tapeSEs ):
       if seName in tapeSEs:

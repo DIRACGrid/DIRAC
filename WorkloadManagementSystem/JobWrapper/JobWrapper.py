@@ -225,8 +225,6 @@ class JobWrapper:
     parameters = []
     if self.ceArgs.has_key( 'LocalSE' ):
       parameters.append( ( 'AgentLocalSE', ','.join( self.ceArgs['LocalSE'] ) ) )
-    if self.ceArgs.has_key( 'CompatiblePlatforms' ):
-      parameters.append( ( 'AgentCompatiblePlatforms', ','.join( self.ceArgs['CompatiblePlatforms'] ) ) )
     if self.ceArgs.has_key( 'PilotReference' ):
       parameters.append( ( 'Pilot_Reference', self.ceArgs['PilotReference'] ) )
     if self.ceArgs.has_key( 'CPUScalingFactor' ):
@@ -1053,6 +1051,7 @@ class JobWrapper:
             self.inputSandboxSize += result[ 'Value' ]
 
     if lfns:
+      self.log.info( "Downloading Input SandBox LFNs, number of files to get", len( lfns ) )
       self.__report( 'Running', 'Downloading InputSandbox LFN(s)' )
       lfns = [fname.replace( 'LFN:', '' ).replace( 'lfn:', '' ) for fname in lfns]
       download = self.dm.getFile( lfns )

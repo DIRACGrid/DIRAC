@@ -35,9 +35,9 @@ class AccountingDB( DB ):
     self.__threadPool.daemonize()
     self.catalogTableName = _getTableName( "catalog", "Types" )
     self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE NOT NULL",
-                                                          'keyFields' : "VARCHAR(256) NOT NULL",
-                                                          'valueFields' : "VARCHAR(256) NOT NULL",
-                                                          'bucketsLength' : "VARCHAR(256) NOT NULL",
+                                                          'keyFields' : "VARCHAR(255) NOT NULL",
+                                                          'valueFields' : "VARCHAR(255) NOT NULL",
+                                                          'bucketsLength' : "VARCHAR(255) NOT NULL",
                                                        },
                                              'PrimaryKey' : 'name'
                                            }
@@ -743,45 +743,7 @@ class AccountingDB( DB ):
     keyValues = valuesList[ :numKeys ]
     valuesList = valuesList[ numKeys: ]
     self.log.verbose( "Splitting entry", " in %s buckets" % len( buckets ) )
-    for bucketInfo in buckets:
-      bucketStartTime = bucketInfo[0]
-      bucketProportion = bucketInfo[1]
-      bucketLength = bucketInfo[2]
-      if not self.__oldBucketMethod:
-        result = self.__writeBucket( typeName, bucketStartTime, bucketLength, keyValues,
-                                     valuesList, bucketProportion, connObj = connObj )
-        if not result[ 'OK' ]:
-          return result
-      else:
-        #INSERT!
-        retVal = self.__insertBucket( typeName,
-                                      bucketStartTime,
-                                      bucketLength,
-                                      keyValues,
-                                      valuesList, bucketProportion, connObj = connObj )
-        #If OK insert is successful
-        if retVal[ 'OK' ]:
-          continue
-        #if not OK and NOT duplicate keys error then real error
-        if retVal[ 'Message' ].find( 'Duplicate entry' ) == -1:
-          return retVal
-        #Duplicate keys!!. If that's the case..
-        #Update!
-        for i in range( max( 1, self.__deadLockRetries ) ):
-          retVal = self.__updateBucket( typeName,
-                                        bucketStartTime,
-                                        bucketLength,
-                                        keyValues,
-                                        valuesList, bucketProportion, connObj = connObj )
-          if not retVal[ 'OK' ]:
-            #If failed because of dead lock try restarting
-            if retVal[ 'Message' ].find( "try restarting transaction" ):
-              continue
-            return retVal
-          #If OK, break loop
-          if retVal[ 'OK' ]:
-            break
-    return S_OK()
+    return self.__writeBuckets( typeName, buckets, keyValues, valuesList, connObj = connObj )
 
   def __deleteFromBuckets( self, typeName, startTime, endTime, valuesList, numInsertions, connObj = False ):
     """
@@ -842,7 +804,7 @@ class AccountingDB( DB ):
       sqlFields.append( "`%s`.`%s`" % ( tableName, valueField ) )
     sqlFields.append( "`%s`.`entriesInBucket`" % ( tableName ) )
     cmd = "SELECT %s FROM `%s`" % ( ", ".join( sqlFields ), _getTableName( "bucket", typeName ) )
-    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % ( 
+    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                               tableName,
                                                                               startTime,
                                                                               tableName,
@@ -867,7 +829,7 @@ class AccountingDB( DB ):
                                                                                                bucketValues[-1],
                                                                                                proportion ) )
     cmd += ", ".join( sqlValList )
-    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % ( 
+    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                             tableName,
                                                                             startTime,
                                                                             tableName,
@@ -876,26 +838,34 @@ class AccountingDB( DB ):
     return self._update( cmd, conn = connObj )
 
 
-  def __writeBucket( self, typeName, startTime, bucketLength, keyValues, bucketValues, proportion, connObj = False ):
+  def __writeBuckets( self, typeName, buckets, keyValues, valuesList, connObj = False ):
     """ Insert or update a bucket
     """
     tableName = _getTableName( "bucket", typeName )
     #INSERT PART OF THE QUERY
     sqlFields = [ '`startTime`', '`bucketLength`', '`entriesInBucket`' ]
-    sqlValues = [ startTime, bucketLength, "(%s*%s)" % ( bucketValues[-1], proportion )]
-    sqlUpData = [ "`entriesInBucket`=`entriesInBucket`+(%s*%s)" % ( bucketValues[-1], proportion ) ]
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
       sqlFields.append( "`%s`" % self.dbCatalog[ typeName ][ 'keys' ][ keyPos ] )
-      sqlValues.append( keyValues[ keyPos ] )
+    sqlUpData = [ "`entriesInBucket`=`entriesInBucket`+VALUES(`entriesInBucket`)" ]
     for valPos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
       valueField = "`%s`" % self.dbCatalog[ typeName ][ 'values' ][ valPos ]
-      value = bucketValues[ valPos ]
-      sqlUpData.append( "%s=%s+(%s*%s)" % ( valueField, valueField, value, proportion ) )
       sqlFields.append( valueField )
-      sqlValues.append( "(%s*%s)" % ( bucketValues[ valPos ], proportion ) )
+      sqlUpData.append( "%s=%s+VALUES(%s)" % ( valueField, valueField, valueField ) )
+    valuesGroups = []
+    for bucketInfo in buckets:
+      bStartTime = bucketInfo[0]
+      bProportion = bucketInfo[1]
+      bLength = bucketInfo[2]
+      sqlValues = [ bStartTime, bLength, "(%s*%s)" % ( valuesList[-1], bProportion )]
+      for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
+        sqlValues.append( keyValues[ keyPos ] )
+      for valPos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
+        value = valuesList[ valPos ]
+        sqlValues.append( "(%s*%s)" % ( valuesList[ valPos ], bProportion ) )
+      valuesGroups.append( "( %s )" % ",".join( str( val ) for val in sqlValues ) )
 
     cmd = "INSERT INTO `%s` ( %s ) " % ( _getTableName( "bucket", typeName ), ", ".join( sqlFields ) )
-    cmd += "VALUES ( %s ) " % ", ".join( [ str( val ) for val in sqlValues ] )
+    cmd += "VALUES %s " % ", ".join( valuesGroups)
     cmd += "ON DUPLICATE KEY UPDATE %s" % ", ".join( sqlUpData )
 
     for i in range( max( 1, self.__deadLockRetries ) ):
@@ -910,48 +880,6 @@ class AccountingDB( DB ):
         return result
 
     return S_ERROR( "Cannot update bucket: %s" % result[ 'Message' ] )
-
-
-  def __updateBucket( self, typeName, startTime, bucketLength, keyValues, bucketValues, proportion, connObj = False ):
-    """
-    Update a bucket when coming from the raw insert
-    """
-    tableName = _getTableName( "bucket", typeName )
-    cmd = "UPDATE `%s` SET " % tableName
-    sqlValList = []
-    for pos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
-      valueField = self.dbCatalog[ typeName ][ 'values' ][ pos ]
-      value = bucketValues[ pos ]
-      fullFieldName = "`%s`.`%s`" % ( tableName, valueField )
-      sqlValList.append( "%s=%s+(%s*%s)" % ( fullFieldName, fullFieldName, value, proportion ) )
-    sqlValList.append( "`%s`.`entriesInBucket`=`%s`.`entriesInBucket`+(%s*%s)" % ( tableName,
-                                                                                    tableName,
-                                                                                    bucketValues[-1],
-                                                                                    proportion ) )
-    cmd += ", ".join( sqlValList )
-    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % ( 
-                                                                            tableName,
-                                                                            startTime,
-                                                                            tableName,
-                                                                            bucketLength )
-    cmd += self.__generateSQLConditionForKeys( typeName, keyValues )
-    return self._update( cmd, conn = connObj )
-
-  def __insertBucket( self, typeName, startTime, bucketLength, keyValues, bucketValues, proportion, connObj = False ):
-    """
-    Insert a bucket when coming from the raw insert
-    """
-    sqlFields = [ '`startTime`', '`bucketLength`', '`entriesInBucket`' ]
-    sqlValues = [ startTime, bucketLength, "(%s*%s)" % ( bucketValues[-1], proportion )]
-    for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
-      sqlFields.append( "`%s`" % self.dbCatalog[ typeName ][ 'keys' ][ keyPos ] )
-      sqlValues.append( keyValues[ keyPos ] )
-    for valPos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
-      sqlFields.append( "`%s`" % self.dbCatalog[ typeName ][ 'values' ][ valPos ] )
-      sqlValues.append( "(%s*%s)" % ( bucketValues[ valPos ], proportion ) )
-    cmd = "INSERT INTO `%s` ( %s ) " % ( _getTableName( "bucket", typeName ), ", ".join( sqlFields ) )
-    cmd += "VALUES ( %s )" % ", ".join( [ str( val ) for val in sqlValues ] )
-    return self._update( cmd, conn = connObj )
 
   def __checkFieldsExistsInType( self, typeName, fields, tableType ):
     """
@@ -1123,7 +1051,7 @@ class AccountingDB( DB ):
             if preGenFields[0] != "%s":
               # The default grouping was changed
               preGenFields[1][i] = "`%s`.Value" % _getTableName( "key", typeName, field )
-            else:    
+            else:
               # The default grouping is maintained
               preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
     if sqlLinkList:

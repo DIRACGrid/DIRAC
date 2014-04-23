@@ -111,12 +111,12 @@ class InputDataByProtocol:
         # Check that all replicas are on a valid local SE
         if not [se for se in reps if se in diskSEs.union( tapeSEs )]:
           failedReplicas.add( lfn )
-          continue
-        for seName in diskSEs & set( reps ):
-          newReplicasDict.setdefault( lfn, [] ).append( seName )
-        if not newReplicasDict[lfn] and not ignoreTape:
-          for seName in tapeSEs & set( reps ):
+        else:
+          for seName in diskSEs & set( reps ):
             newReplicasDict.setdefault( lfn, [] ).append( seName )
+          if not newReplicasDict.get( lfn ) and not ignoreTape:
+            for seName in tapeSEs & set( reps ):
+              newReplicasDict.setdefault( lfn, [] ).append( seName )
 
     # Check that all LFNs have at least one replica and GUID
     if failedReplicas:
@@ -233,7 +233,7 @@ class InputDataByProtocol:
           mdataList.remove( mdata )
           self.log.info( 'No TURL resolved for %s at %s' % ( lfn, mdata['se'] ) )
       if not mdataList:
-        transLFNs.pop( lfn, None )
+        trackLFNs.pop( lfn, None )
         failedReplicas.add( lfn )
       elif lfn in failedReplicas:
         failedReplicas.remove( lfn )

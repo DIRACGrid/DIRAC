@@ -398,7 +398,7 @@ class SiteDirector( AgentModule ):
       siteMask = siteName in siteMaskList
 
       if not anySite and siteName not in jobSites:
-        self.log.verbose( "Skipping queue %s at site %s since no workload expected" % (queueName, siteName) )
+        self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )
         continue
       if not siteMask and siteName not in testSites:
         self.log.verbose( "Skipping queue %s at site %s not in the mask" % (queueName, siteName) )
@@ -713,7 +713,7 @@ class SiteDirector( AgentModule ):
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
     if "Tag" in queueDict:
-      tagString = ','.join( queueDict['Tag'] )
+      tagString = ','.join( fromChar( queueDict['Tag'] ) )
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:
@@ -1005,7 +1005,7 @@ EOF
         pA.setValueByKey( 'Jobs', 0 )
       else:
         pA.setValueByKey( 'Jobs', len( pilotDict[pRef]['Jobs'] ) )
-      self.log.info( "Adding accounting record for pilot %s" % pilotDict[pRef][ 'PilotID' ] )
+      self.log.verbose( "Adding accounting record for pilot %s" % pilotDict[pRef][ 'PilotID' ] )
       retVal = gDataStoreClient.addRegister( pA )
       if not retVal[ 'OK' ]:
         self.log.error( 'Failed to send accounting info for pilot ', pRef )

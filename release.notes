@@ -1,27 +1,44 @@
-[v6r11-pre3]
+[v6r11-pre15]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
+CHANGE: dirac-configure - use Registry helper to get VOMS servers information
+BUGFIX: ObjectLoader - extensions must be looked up first for plug-ins
+CHANGE: Misc.py - removed obsoleted
 
 *Configuration
 CHANGE: Resources.getDIRACPlatform() returns a list of compatible DIRAC platforms
 NEW: Resources.getDIRACPlatforms() used to access platforms from /Resources/Computing/OSCompatibility
      section
+NEW: Registry - added getVOs() and getVOMSServerInfo()     
+NEW: CE2CSAgent - added VO management
+
+*Accounting
+FIX: AccountingDB, Job - extra checks for invalid values
 
 *WMS
 NEW: WMS tags to allow jobs require special site/CE/queue properties  
 CHANGES: DownloadInputData, InputDataByProtocol, InputDataResolution - allows to get multiple 
          PFNs for the protocol resolution
+NEW: JobDB, JobMonitoringHandler - added traceJobParameters(s)() methods     
+CHANGE: TaskQueueDirector - use ObjectLoader to load directors    
 
 *DMS
 NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
+FIX: InputDataByProtocol - fix the case where file is only on tape
+FIX: FTSAgent - multiple fixes
 
 *Interfaces
 CHANGE: Dirac - instantiate SandboxStoreClient and WMSClient when needed, not in the constructor
+CHANGE: Job - removed setSystemConfig() method
+NEW: Job.py - added setTag() interface
 
 *Resources
 CHANGE: StorageElement - changes to avoid usage PFNs
 FIX: XROOTStorage, SRM2Storage - changes in PFN construction 
+
+*RSS
+NEW: added commands dirac-rss-query-db and dirac-rss-query-dtcache
 
 *RMS
 CHANGE: ReqDB - added Foreign Keys to ReqDB tables
@@ -29,6 +46,64 @@ NEW: dirac-rms-reset-request command
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p21]
+
+*Configuration
+FIX: CSGlobals - allow to specify extensions in xxxDIRAC form in the CS
+
+*Interfaces
+FIX: Job - removed self.reqParams
+FIX: Job - setSubmitPools renamed to setSubmitPool, fixed parameter definition string
+
+*WMS
+FIX: JobMonitorigHandler, JobPolicy - allow JobMonitor property to access job information
+
+[v6r10p20]
+
+*DMS
+FIX: FTSAgent/Client, ReplicateAndRegister - fixes to properly process failed
+     FTS request scheduling
+
+[v6r10p19]
+
+*DMS
+FIX: FTSAgent - putRequest when leaving processRequest
+FIX: ReplicaManager - bug in getReplicas() in dictionary creation
+
+[v6r10p18]
+
+*DMS
+FIX: ReplicateAndRegister - dictionary items incorrectly called in ftsTransfer()
+
+[v6r10p17]
+
+*RMS
+FIX: RequestDB.py - typo in a table name
+NEW: ReqManagerHandler - added getDistinctValues() to allow selectors in the web page
+
+*DMS
+CHANGE: ReplicaManager - bulk PFN lookup in getReplicas()
+
+[v6r10p16]
+
+*Framework
+NEW: PlottingClient - added curveGraph() function
+
+*Transformation
+FIX: TaskManagerAgentBase - add the missing Scheduled state
+
+*WMS
+FIX: TaskQueueDB - reduced number of lines in the matching parameters printout
+
+*DMS
+FIX: dirac-dms-show-se-status - exit on error in the service call, closes #1840
+
+*Interface
+FIX: API.Job - removed special interpretation of obsoleted JDLreqt type parameters
+
+*Resources
+FIX: SSHComputingElement - increased timeout in getJobStatusOnHost() ssh call, closes #1830
 
 [v6r10p15]
 
@@ -1097,7 +1172,7 @@ FIX: Shifter - pass filePath argument when downloading proxy
 *DMS
 CHANGE: StrategyHandler - move out SourceSE checking to TransferAgent
 CHANGE: ReplicaManager, InputDataAgent - get active replicas
-FIX: StorageElement, SRM2Storage - support for '*Access' statuses, checking results
+FIX: StorageElement, SRM2Storage - support for 'xxxAccess' statuses, checking results
      of return structures
      
 *RSS

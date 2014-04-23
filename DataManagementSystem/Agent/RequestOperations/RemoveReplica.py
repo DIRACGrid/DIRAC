@@ -27,11 +27,10 @@ __RCSID__ = "$Id $"
 import os
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase                    import OperationHandlerBase
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase   import DMSRequestOperationsBase
 
 ########################################################################
-class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
+class RemoveReplica( DMSRequestOperationsBase ):
   """
   .. class:: RemoveReplica
 
@@ -45,7 +44,7 @@ class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
     :param str csPath: CS path for this handler
     """
     # # base class ctor
-    OperationHandlerBase.__init__( self, operation, csPath )
+    DMSRequestOperationsBase.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "RemoveReplicaAtt", "Replica removals attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
@@ -63,7 +62,7 @@ class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
     # # and prepare dict
     toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
 
-    self.log.info( "found %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
+    self.log.info( "todo: %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
     gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
 
     # # check targetSEs for removal
@@ -114,12 +113,12 @@ class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
     failed = 0
     for opFile in self.operation:
       if opFile.Status == "Waiting":
-        errors = [ error for error in removalStatus[lfn].values() if error ]
+        errors = list( set( [ error for error in removalStatus[lfn].values() if error ] ) )
         if errors:
-          failed += 1
           opFile.Error = ",".join( errors )
+          # This seems to be the only offending error
           if "Write access not permitted for this credential" in opFile.Error:
-            opFile.Status = "Failed"
+            failed += 1
             continue
         opFile.Status = "Done"
 
@@ -156,9 +155,7 @@ class RemoveReplica( OperationHandlerBase, DMSRequestOperationsBase ):
     proxyFile = None
     if "Write access not permitted for this credential" in opFile.Error:
       # # not a DataManger? set status to failed and return
-      if "DataManager" not in self.shifter:
-        opFile.Status = "Failed"
-      else:
+      if "DataManager" in self.shifter:
         # #  you're a data manager - save current proxy and get a new one for LFN and retry
         saveProxy = os.environ["X509_USER_PROXY"]
         try:

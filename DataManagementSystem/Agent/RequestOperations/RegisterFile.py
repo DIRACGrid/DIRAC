@@ -77,7 +77,7 @@ class RegisterFile( OperationHandlerBase ):
         gMonitor.addMark( "RegisterFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", catalog, "", "RegisterFile" )
 
-        reason = registerFile["Message"] if not registerFile["OK"] else registerFile["Value"]["Failed"][lfn]
+        reason = registerFile.get( "Message", registerFile.get( "Value", {} ).get( "Failed", {} ).get( lfn, 'Unknown' ) )
         errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
         opFile.Error = errorStr
         self.log.warn( errorStr )

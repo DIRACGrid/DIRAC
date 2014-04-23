@@ -25,7 +25,7 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
 from DIRAC.Core.Utilities.File import makeGuid, getSize
-from DIRAC.Core.Utilities.List import sortList, randomize
+from DIRAC.Core.Utilities.List import randomize
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getSEsForCountry
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -1244,21 +1244,19 @@ class DataManager( object ):
     for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuples:
       fileDict[lfn] = {'PFN':physicalFile, 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
 
-    fileCatalog = self.fc
-
     if catalog:
       fileCatalog = FileCatalog( catalog )
       if not fileCatalog.isOK():
         return S_ERROR( "Can't get FileCatalog %s" % catalog )
+    else:
+      fileCatalog = self.fc
 
     res = fileCatalog.addFile( fileDict )
-
     if not res['OK']:
       errStr = "__registerFile: Completely failed to register files."
       self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
 
-    return S_OK( {'Successful':res['Value']['Successful'], 'Failed':res['Value']['Failed']} )
+    return res
 
   def registerReplica( self, replicaTuple, catalog = '' ):
     """ Register a replica (or list of) supplied in the replicaTuples.
@@ -1448,7 +1446,7 @@ class DataManager( object ):
     if not res['OK']:
       return res
     if not res['Value']:
-      errStr = "removaReplica: Write access not permitted for this credential."
+      errStr = "removeReplica: Write access not permitted for this credential."
       self.log.debug( errStr, lfns )
       return S_ERROR( errStr )
     self.log.debug( "removeReplica: Will remove catalogue entry for %s lfns at %s." % ( len( lfns ),
@@ -1649,7 +1647,7 @@ class DataManager( object ):
     res = self.__removePhysicalReplica( storageElementName, lfnsToRemove )
     for lfn, error in res['Value']['Failed'].items():
       failed[lfn] = error
-    for pfn in res['Value']['Successful']:
+    for _pfn in res['Value']['Successful']:
       successful[lfn] = True
     resDict = { 'Successful' : successful, 'Failed' : failed }
     return S_OK( resDict )
@@ -1660,6 +1658,8 @@ class DataManager( object ):
                                                                                          storageElementName ) )
     storageElement = StorageElement( storageElementName )
     pfnsToRemove = dict( [( storageElement.getPfnForLfn( lfn )['Value'].get( 'Successful', {} ).get( lfn ), lfn ) for lfn in lfnsToRemove] )
+    # In case no PFN was returned for some LFNs
+    pfnsToRemove.pop( None, None )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "__removePhysicalReplica: The storage element is not currently valid."
@@ -1777,7 +1777,7 @@ class DataManager( object ):
   def getActiveReplicas( self, lfns ):
     """ Get all the replicas for the SEs which are in Active status for reading.
     """
-    res = self.fc.getReplicas( lfns, allStatus = False )
+    res = self.getReplicas( lfns, allStatus = False )
     if not res['OK']:
       return res
     replicas = res['Value']
@@ -1803,7 +1803,9 @@ class DataManager( object ):
         replicaDict['Failed'][lfn] = 'Wrong replica info'
         continue
       for se in replicas.keys():
-        if not seReadStatus.setdefault( se, self.__SEActive( se ).get( 'Value', {} ).get( 'Read', False ) ):
+        # Fix the caching
+        readStatus = seReadStatus[se] if se in seReadStatus else seReadStatus.setdefault( se, self.__SEActive( se ).get( 'Value', {} ).get( 'Read', False ) )
+        if not readStatus:
           replicas.pop( se )
 
     return S_OK( replicaDict )
@@ -1857,13 +1859,25 @@ class DataManager( object ):
   #
 
 
-  def getReplicas( self, lfns ):
+  def getReplicas( self, lfns, allStatus = True ):
     """ get replicas from catalogue """
-    res = FileCatalog().getReplicas( lfns, allStatus = True )
+    res = self.fc.getReplicas( lfns, allStatus = allStatus )
     if res['OK']:
-      for lfn, replicas in res['Value']['Successful'].items():
-        for se in replicas:
-          replicas[se] = StorageElement( se ).getPfnForLfn( lfn ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[se] )
+      se_lfn = {}
+      catalogReplicas = res['Value']['Successful']
+
+      # We group the query to getPfnForLfn by storage element to gain in speed
+      for lfn in catalogReplicas:
+        for se in catalogReplicas[lfn]:
+          se_lfn.setdefault( se, [] ).append( lfn )
+
+      for se in se_lfn:
+        seObj = StorageElement( se )
+        succPfn = seObj.getPfnForLfn( se_lfn[se] ).get( 'Value', {} ).get( 'Successful', {} )
+        for lfn in succPfn:
+          # catalogReplicas still points res["value"]["Successful"] so res will be updated
+          catalogReplicas[lfn][se] = succPfn[lfn]
+
     return res
 
 

@@ -36,7 +36,7 @@ CREATE TABLE LoggingInfo (
     SeqNum INTEGER NOT NULL DEFAULT 0,
     Status VARCHAR(32) NOT NULL DEFAULT '',
     MinorStatus VARCHAR(128) NOT NULL DEFAULT '',
-    ApplicationStatus varchar(256) NOT NULL DEFAULT '', 
+    ApplicationStatus varchar(255) NOT NULL DEFAULT '', 
     StatusTime DATETIME NOT NULL ,
     StatusTimeOrder DOUBLE(12,3) NOT NULL,  
     StatusSource VARCHAR(32) NOT NULL DEFAULT 'Unknown',

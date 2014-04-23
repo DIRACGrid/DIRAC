@@ -242,18 +242,17 @@ class TransformationCleaningAgent( AgentModule ):
     :param str storageElement: SE name
     """
     self.log.info( 'Removing the contents of %s at %s' % ( directory, storageElement ) )
-    
+
     se = StorageElement( storageElement )
-    
+
     res = se.getPfnForLfn( [directory] )
     if not res['OK']:
       self.log.error( "Failed to get PFN for directory", res['Message'] )
       return res
-    for directory, error in res['Value']['Failed'].items():
-      self.log.error( 'Failed to obtain directory PFN from LFN', '%s %s' % ( directory, error ) )
-    if res['Value']['Failed']:
+    if directory in res['Value']['Failed']:
+      self.log.verbose( 'Failed to obtain directory PFN from LFN', '%s %s' % ( directory, res['Value']['Failed'][directory] ) )
       return S_ERROR( 'Failed to obtain directory PFN from LFNs' )
-    storageDirectory = res['Value']['Successful'].values()[0]
+    storageDirectory = res['Value']['Successful'][directory]
 
     res = Utils.executeSingleFileOrDirWrapper( se.exists( storageDirectory ) )
     if not res['OK']:
@@ -283,6 +282,7 @@ class TransformationCleaningAgent( AgentModule ):
       return res
     filesFound = res['Value']
     if not filesFound:
+      self.log.info( "No files are registered in the catalog directory %s" % directory )
       return S_OK()
     self.log.info( "Attempting to remove %d possible remnants from the catalog and storage" % len( filesFound ) )
     res = self.dm.removeFile( filesFound, force = True )
@@ -318,7 +318,10 @@ class TransformationCleaningAgent( AgentModule ):
       if not res['OK'] and res['Message'].endswith( 'The supplied path does not exist' ):
         self.log.info( "The supplied directory %s does not exist" % currentDir )
       elif not res['OK']:
-        self.log.error( 'Failed to get directory contents', '%s %s' % ( currentDir, res['Message'] ) )
+        if "No such file or directory" in res['Message']:
+          self.log.info( "%s: %s" % ( currentDir, res['Message'] ) )
+        else:
+          self.log.error( "Failed to get directory %s content: %s" % ( currentDir, res['Message'] ) )
       else:
         dirContents = res['Value']
         activeDirs.extend( dirContents['SubDirs'] )

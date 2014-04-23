@@ -230,28 +230,11 @@ class JobAgent( AgentModule ):
     else:
       jobType = params['JobType']
 
-    if not params.has_key( 'SystemConfig' ):
-      self.log.warn( 'Job has no system configuration defined in JDL parameters' )
-      systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
-      self.log.info( 'Setting system config to /LocalSite/Architecture = %s since it was not specified' % systemConfig )
-      if not systemConfig:
-        self.log.warn( '/LocalSite/Architecture is not defined' )
-      params['SystemConfig'] = systemConfig
-    else:
-      systemConfig = params['SystemConfig']
-      if systemConfig.lower() == 'any':
-        systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
-        self.log.info( 'Setting SystemConfig = /LocalSite/Architecture =',
-                       '"%s" since it was set to "ANY" in the job description' % systemConfig )
-        if not systemConfig:
-          self.log.warn( '/LocalSite/Architecture is not defined' )
-        params['SystemConfig'] = systemConfig
-
     if not params.has_key( 'CPUTime' ):
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
 
     self.log.verbose( 'Job request successful: \n %s' % ( jobRequest['Value'] ) )
-    self.log.info( 'Received JobID=%s, JobType=%s, SystemConfig=%s' % ( jobID, jobType, systemConfig ) )
+    self.log.info( 'Received JobID=%s, JobType=%s' % ( jobID, jobType ) )
     self.log.info( 'OwnerDN: %s JobGroup: %s' % ( ownerDN, jobGroup ) )
     self.jobCount += 1
     try:
@@ -274,15 +257,6 @@ class JobAgent( AgentModule ):
         return self.__rescheduleFailedJob( jobID, result[ 'Message' ], self.stopOnApplicationFailure )
       if 'Value' in result and result[ 'Value' ]:
         proxyChain = result[ 'Value' ]
-
-      # Is this necessary at all?
-      saveJDL = self.__saveJobJDLRequest( jobID, jobJDL )
-      #self.__report(jobID,'Matched','Job Prepared to Submit')
-
-      #resourceParameters = self.__getJDLParameters( resourceJDL )
-      #if not resourceParameters['OK']:
-      #  return resourceParameters
-      #resourceParams = resourceParameters['Value']
 
       software = self.__checkInstallSoftware( jobID, params, ceDict )
       if not software['OK']:
@@ -311,7 +285,7 @@ class JobAgent( AgentModule ):
     for i in range( len( currentTimes ) ):
       currentTimes[i] -= self.initTimes[i]
 
-    utime, stime, cutime, cstime, elapsed = currentTimes
+    utime, stime, cutime, cstime, _elapsed = currentTimes
     cpuTime = utime + stime + cutime + cstime
 
     result = self.timeLeftUtil.getTimeLeft( cpuTime )
@@ -336,7 +310,7 @@ class JobAgent( AgentModule ):
   def __getCPUTimeLeft( self ):
     """Return the TimeLeft as estimated by DIRAC using the Normalization Factor in the Local Config.
     """
-    utime, stime, cutime, cstime, elapsed = os.times()
+    utime, stime, cutime, _cstime, _elapsed = os.times()
     cpuTime = utime + stime + cutime
     self.log.info( 'Current raw CPU time consumed is %s' % cpuTime )
     timeleft = self.timeLeft - cpuTime * self.cpuFactor
@@ -427,8 +401,7 @@ class JobAgent( AgentModule ):
       return moduleInstance
 
     module = moduleInstance['Value']
-    result = module.execute()
-    return result
+    return module.execute()
 
   #############################################################################
   def __submitJob( self, jobID, jobParams, resourceParams, optimizerParams, jobJDL, proxyChain ):
@@ -514,30 +487,6 @@ class JobAgent( AgentModule ):
     signature = __RCSID__
     dPython = sys.executable
 
-    systemConfig = ''
-    if jobParams.has_key( 'SystemConfig' ):
-      systemConfig = jobParams['SystemConfig']
-      self.log.verbose( 'Job system configuration requirement is %s' % ( systemConfig ) )
-      if resourceParams.has_key( 'Root' ):
-        jobPython = '%s/%s/bin/python' % ( resourceParams['Root'], systemConfig )
-        if os.path.exists( jobPython ):
-          self.log.verbose( 'Found local python for job:\n%s' % ( jobPython ) )
-          dPython = jobPython
-        else:
-          if systemConfig == 'ANY':
-            self.log.verbose( 'Using standard available python %s for job' % ( dPython ) )
-          else:
-            self.log.warn( 'Job requested python \n%s\n but this is not available locally' % ( jobPython ) )
-      else:
-        self.log.warn( 'No LocalSite/Root defined' )
-    else:
-      self.log.warn( 'Job has no system configuration requirement' )
-
-    if not systemConfig or systemConfig.lower() == 'any':
-      systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
-      if not systemConfig:
-        self.log.warn( 'Could not establish SystemConfig' )
-
     logLevel = self.defaultLogLevel
     if jobParams.has_key( 'LogLevel' ):
       logLevel = jobParams['LogLevel']
@@ -570,19 +519,6 @@ class JobAgent( AgentModule ):
     jobFile.write( jobFileContents )
     jobFile.close()
     return S_OK( jobExeFile )
-
-  #############################################################################
-  def __saveJobJDLRequest( self, jobID, jobJDL ):
-    """Save job JDL local to JobAgent.
-    """
-    classAdJob = ClassAd( jobJDL )
-    classAdJob.insertAttributeString( 'LocalCE', self.ceName )
-    jdlFileName = jobID + '.jdl'
-    jdlFile = open( jdlFileName, 'w' )
-    jdl = classAdJob.asJDL()
-    jdlFile.write( jdl )
-    jdlFile.close()
-    return S_OK( jdlFileName )
 
   #############################################################################
   def __requestJob( self, ceDict ):

@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
 """ File Catalog Client Command Line Interface. """
 
 __RCSID__ = "$Id$"
@@ -649,8 +646,6 @@ File Catalog Client $Revision: 1.17 $Date:
     sourceSE = ''
     if len(argss)>2:
       sourceSE=argss[2]
-    if len(argss)>3: 
-      localCache=argss[3]
     try:
       dirac = Dirac()
       result = dirac.replicateFile(lfn,se,sourceSE,printOutput=True)      
@@ -1841,6 +1836,8 @@ File Catalog Client $Revision: 1.17 $Date:
       path = self.cwd
     elif path[0] != '/':
       path = self.getPath(path)
+
+    path = path.rstrip( '/' )
       
     if not dirFlag:
       # Have to decide if it is a file or not
@@ -1859,7 +1856,7 @@ File Catalog Client $Revision: 1.17 $Date:
       if result['Value']:
         metaDict = result['MetadataOwner']
         metaTypeDict = result['MetadataType']
-        for meta,value in result['Value'].items():
+        for meta, value in result['Value'].items():
           setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
           prefix = ''
           if setFlag:

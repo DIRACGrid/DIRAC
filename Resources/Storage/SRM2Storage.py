@@ -321,14 +321,13 @@ class SRM2Storage( StorageBase ):
     :param self: self reference
     :param str path:
     """
-    srcFile = os.path.join( os.getcwd(), 'dirac_directory' )
-    dfile = open( srcFile, 'w' )
-    dfile.write( " " )
-    dfile.close()
+    srcFile = os.path.join( os.environ.get( 'TMPDIR', os.environ.get( 'TMP', '/tmp' ) ), 'dirac_directory' )
+    if not os.path.exists( srcFile ):
+      dfile = open( srcFile, 'w' )
+      dfile.write( " " )
+      dfile.close()
     destFile = os.path.join( path, 'dirac_directory.%s' % time.time() )
     res = self.__putFile( srcFile, destFile, 0 )
-    if os.path.exists( srcFile ):
-      os.remove( srcFile )
     self.__executeOperation( destFile, 'removeFile' )
     return res
 

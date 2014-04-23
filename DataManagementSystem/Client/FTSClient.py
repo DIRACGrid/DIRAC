@@ -34,7 +34,6 @@ from DIRAC.DataManagementSystem.private.FTSValidator      import FTSValidator
 from DIRAC.DataManagementSystem.Client.DataManager     import DataManager
 # # from Resources
 from DIRAC.Resources.Storage.StorageFactory   import StorageFactory
-from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ########################################################################
 class FTSClient( Client ):
@@ -235,10 +234,7 @@ class FTSClient( Client ):
     :param list opFileList: list of tuples ( File.toJSON()['Value'], sourcesList, targetList )
     """
 
-    fileIDs = []
-    for fileJSON, _sourceSEs, _targetSEs in opFileList:
-      fileID = int( fileJSON.get( 'FileID' ) )
-      fileIDs.append( fileID )
+    fileIDs = [int( fileJSON.get( 'FileID', 0 ) ) for fileJSON, _sourceSEs, _targetSEs in opFileList ]
     res = self.ftsManager.cleanUpFTSFiles( requestID, fileIDs )
     if not res['OK']:
       self.log.error( "ftsSchedule: %s" % res['Message'] )
@@ -270,7 +266,7 @@ class FTSClient( Client ):
       if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
         ret["Failed"][fileID] = "no active replicas found"
         continue
-      replicaDict = replicaDict["Successful"][lfn] if lfn in replicaDict["Successful"] else {}
+      replicaDict = replicaDict["Successful"].get( lfn, {} )
       # # use valid replicas only
       validReplicasDict = dict( [ ( se, pfn ) for se, pfn in replicaDict.items() if se in sourceSEs ] )
 
@@ -320,21 +316,15 @@ class FTSClient( Client ):
 
     if not ftsFiles:
       self.log.info( "ftsSchedule: no FTSFiles to put for request %d" % requestID )
-      return S_OK()
+      return S_OK( ret )
 
-    ftsFilesJSONList = []
-    for ftsFile in ftsFiles:
-      ftsFilesJSONList.append( ftsFile.toJSON()['Value'] )
+    ftsFilesJSONList = [ftsFile.toJSON()['Value'] for ftsFile in ftsFiles]
     res = self.ftsManager.putFTSFileList( ftsFilesJSONList )
     if not res['OK']:
       self.log.error( "ftsSchedule: %s" % res['Message'] )
       return S_ERROR( "ftsSchedule: %s" % res['Message'] )
 
-    for fileJSON, _sources, _targets in opFileList:
-      lfn = fileJSON.get( "LFN", "" )
-      fileID = fileJSON.get( "FileID", 0 )
-      if fileID not in ret["Failed"]:
-        ret["Successful"].append( int( fileID ) )
+    ret['Successful'] += [ fileID for fileID in fileIDs if fileID not in ret['Failed']]
 
     # # if we land here some files have been properly scheduled
     return S_OK( ret )
@@ -362,20 +352,6 @@ class FTSClient( Client ):
     self.log.error( "_getSurlForLFN: Failed to get SRM compliant storage.", targetSE )
     return S_ERROR( "_getSurlForLFN: Failed to get SRM compliant storage." )
 
-  def _getSurlForPFN( self, sourceSE, pfn ):
-    """Creates the targetSURL for the storage and PFN supplied.
-
-    :param self: self reference
-    :param str sourceSE: source storage element
-    :param str pfn: physical file name
-    """
-    res = StorageElement( sourceSE ).getPfnForProtocol( [pfn] )
-    if not res['OK']:
-      return res
-    if pfn in res['Value']["Failed"]:
-      return S_ERROR( res['Value']["Failed"][pfn] )
-    return S_OK( res['Value']["Successful"][pfn] )
-
   def _getTransferURLs( self, lfn, repDict, replicas, replicaDict ):
     """ prepare TURLs for given LFN and replication tree
 
@@ -400,14 +376,11 @@ class FTSClient( Client ):
     # # get the sourceSURL
     if hopAncestor:
       status = "Waiting#%s" % ( hopAncestor )
-      res = self._getSurlForLFN( hopSourceSE, lfn )
-      if not res['OK']:
-        self.log.error( "_getTransferURLs: %s" % res['Message'] )
-        return res
-      sourceSURL = res['Value']
-    else:
-      res = self._getSurlForPFN( hopSourceSE, replicaDict[hopSourceSE] )
-      sourceSURL = res['Value'] if res['OK'] else replicaDict[hopSourceSE]
+    res = self._getSurlForLFN( hopSourceSE, lfn )
+    sourceSURL = res.get( 'Value', replicaDict.get( hopSourceSE, None ) )
+    if not sourceSURL:
+      self.log.error( "_getTransferURLs: %s" % res['Message'] )
+      return res
 
     return S_OK( ( sourceSURL, targetSURL, status ) )
 

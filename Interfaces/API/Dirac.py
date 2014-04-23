@@ -51,8 +51,7 @@ class Dirac( API ):
   """
 
   #############################################################################
-  def __init__( self, withRepo = False, repoLocation = '', jobManagerClient = False,
-                sbRPCClient = False, sbTransferClient = False, useCertificates = False ):
+  def __init__( self, withRepo = False, repoLocation = '', useCertificates = False ):
     """Internal initialization of the DIRAC API.
     """
     super( Dirac, self ).__init__()
@@ -67,25 +66,12 @@ class Dirac( API ):
         self.jobRepo = False
 
     self.scratchDir = gConfig.getValue( self.section + 'ScratchDir', '/tmp' )
-    self.__clients = {'JobManager':jobManagerClient, 'SBRPC':sbRPCClient, 'SBTransfer':sbTransferClient}
-    self.__useCertificates = useCertificates
+    self.useCertificates = useCertificates
 
     # Determine the default file catalog
     self.defaultFileCatalog = gConfig.getValue( self.section + '/FileCatalog', None )
 
-  #############################################
-  # Client instantiation
-  #############################################
-  def _wmsClient( self ):
-    return self.__clients.setdefault( 'WMS', WMSClient( self.__clients[ 'JobManager' ],
-                                                       self.__clients[ 'SBRPC' ],
-                                                       self.__clients[ 'SBTransfer' ],
-                                                       self.__useCertificates ) )
-  def _sbClient( self ):
-    return self.__clients.setdefault( 'SandboxClient',
-                                      SandboxStoreClient( rpcClient = self.__clients[ 'SBRPC' ],
-                                                          transferClient = self.__clients[ 'SBTransfer' ],
-                                                          useCertificates = self.__useCertificates ) )
+    self.__clients = None
 
   #############################################################################
   # Repository specific methods
@@ -98,7 +84,7 @@ class Dirac( API ):
        >>> print dirac.getRepositoryJobs()
        {'OK': True, 'Value': [1,2,3,4]}
 
-       @return: S_OK,S_ERROR
+       :return S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
@@ -117,7 +103,7 @@ class Dirac( API ):
        >>> print dirac.monitorRepository()
        {'OK': True, 'Value': ''}
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
@@ -149,11 +135,11 @@ class Dirac( API ):
        >>> print dirac.retrieveRepositorySandboxes(requestedStates=['Done','Failed'],destinationDirectory='sandboxes')
        {'OK': True, 'Value': ''}
 
-       @param requestedStates: List of jobs states to be considered
-       @type requestedStates: list of strings
-       @param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
-       @type destinationDirectory: string
-       @return: S_OK,S_ERROR
+       :param requestedStates: List of jobs states to be considered
+       :type requestedStates: list of strings
+       :param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
+       :type destinationDirectory: string
+       :returns: S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
@@ -177,11 +163,11 @@ class Dirac( API ):
        >>> print dirac.retrieveRepositoryData(requestedStates=['Done'],destinationDirectory='outputData')
        {'OK': True, 'Value': ''}
 
-       @param requestedStates: List of jobs states to be considered
-       @type requestedStates: list of strings
-       @param destinationDirectory: The target directory to place sandboxes (a directory is created for each JobID)
-       @type destinationDirectory: string
-       @return: S_OK,S_ERROR
+       :param requestedStates: List of jobs states to be considered
+       :type requestedStates: list of strings
+       :param destinationDirectory: The target directory to place sandboxes (a directory is created for each JobID)
+       :type destinationDirectory: string
+       :returns: S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
@@ -208,7 +194,7 @@ class Dirac( API ):
        >>> print dirac.removeRepository()
        {'OK': True, 'Value': ''}
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
@@ -235,7 +221,7 @@ class Dirac( API ):
        >>> print dirac.resetRepository(jobIDs = [1111,2222,'3333'])
        {'OK': True, 'Value': ''}
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
@@ -266,11 +252,11 @@ class Dirac( API ):
        >>> print dirac.submit(job)
        {'OK': True, 'Value': '12345'}
 
-       @param job: Instance of Job class or JDL string
-       @type job: Job() or string
-       @param mode: Submit job locally with mode = 'wms' (default), 'local' to run workflow or 'agent' to run full Job Wrapper locally
-       @type mode: string
-       @return: S_OK,S_ERROR
+       :param job: Instance of Job class or JDL string
+       :type job: Job() or string
+       :param mode: Submit job locally with mode = 'wms' (default), 'local' to run workflow or 'agent' to run full Job Wrapper locally
+       :type mode: string
+       :returns: S_OK,S_ERROR
     """
     self.__printInfo()
 
@@ -624,13 +610,13 @@ class Dirac( API ):
         'pfn': '<PFN>', 'turl': '<TURL>', 'guid': '3E3E097D-0AC0-DB11-9C0A-00188B770645',
         'se': 'CERN-disk'}}, 'Failed': [], 'OK': True, 'Value': ''}
 
-       @param lfns: Logical File Name(s) to query
-       @type lfns: LFN string or list []
-       @param siteName: DIRAC site name
-       @type siteName: string
-       @param fileName: Catalogue name (can include path)
-       @type fileName: string
-       @return: S_OK,S_ERROR
+       :param lfns: Logical File Name(s) to query
+       :type lfns: LFN string or list []
+       :param siteName: DIRAC site name
+       :type siteName: string
+       :param fileName: Catalogue name (can include path)
+       :type fileName: string
+       :returns: S_OK,S_ERROR
 
     """
     if type( lfns ) == type( " " ):
@@ -780,6 +766,7 @@ class Dirac( API ):
        All output files are written to the local directory.
     """
     # FIXME: Better create an unique local directory for this job
+    # FIXME: This has to reviewed. Probably some of the things here are not needed at all
 
     if disableCopies:
       self.log.verbose( 'DisableLocalJobDirectory is set, leaving everything in local dir' )
@@ -861,15 +848,6 @@ class Dirac( API ):
       if not result['OK']:
         self.log.warn( 'Input data resolution failed' )
         return result
-
-    localArch = None  # If running locally assume the user chose correct platform (could check in principle)
-    if parameters['Value'].has_key( 'SystemConfig' ):
-      if parameters['Value']['SystemConfig']:
-        localArch = parameters['Value']['SystemConfig']
-
-    if localArch:
-      jobParamsDict['CE'] = {}
-      jobParamsDict['CE']['CompatiblePlatforms'] = localArch
 
     softwarePolicy = self.__getVOPolicyModule( 'SoftwareDistModule' )
     if softwarePolicy:
@@ -1062,11 +1040,11 @@ class Dirac( API ):
        'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
        'Failed': {}}}
 
-       @param lfns: Logical File Name(s) to query
-       @type lfns: LFN string or list []
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param lfns: Logical File Name(s) to query
+       :type lfns: LFN string or list []
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( lfns ) == type( " " ):
       lfns = lfns.replace( 'LFN:', '' )
@@ -1111,11 +1089,11 @@ class Dirac( API ):
        'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
        'Failed': {}}}
 
-       @param lfns: Logical File Name(s) to query
-       @type lfns: LFN string or list []
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param lfns: Logical File Name(s) to query
+       :type lfns: LFN string or list []
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( lfns ) == type( " " ):
       lfns = lfns.replace( 'LFN:', '' )
@@ -1159,13 +1137,13 @@ class Dirac( API ):
        {'OK': True, 'Value': [['<LFN>'], ['<LFN>']]}
 
 
-       @param lfns: Logical File Name(s) to split
-       @type lfns: list
-       @param maxFilesPerJob: Number of files per bunch
-       @type maxFilesPerJob: integer
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param lfns: Logical File Name(s) to split
+       :type lfns: list
+       :param maxFilesPerJob: Number of files per bunch
+       :type maxFilesPerJob: integer
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
     sitesForSE = {}
@@ -1192,7 +1170,7 @@ class Dirac( API ):
       return self._errorReport( replicaDict['Value']['Failed'].items()[0], 'Failed to get replica information' )
     siteLfns = {}
     for lfn, reps in replicaDict['Value']['Successful'].items():
-      possibleSites = set( [site for se in reps for site in sitesForSE.setdefault( se, getSitesForSE( se ).get( 'Value', [] ) )] )
+      possibleSites = set( [site for se in reps for site in ( sitesForSE[se] if se in sitesForSE else  sitesForSE.setdefault( se, getSitesForSE( se ).get( 'Value', [] ) ) )] )
       siteLfns.setdefault( ','.join( sorted( possibleSites ) ), [] ).append( lfn )
 
     if '' in siteLfns:
@@ -1218,11 +1196,11 @@ class Dirac( API ):
        {'Status': '-', 'Size': 619475828L, 'GUID': 'E871FBA6-71EA-DC11-8F0C-000E0C4DEB4B', 'CheckSumType': 'AD',
        'CheckSumValue': ''}}, 'Failed': {}}}
 
-       @param lfns: Logical File Name(s) to query
-       @type lfns: LFN string or list []
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param lfns: Logical File Name(s) to query
+       :type lfns: LFN string or list []
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( lfns ) == type( " " ):
       lfns = lfns.replace( 'LFN:', '' )
@@ -1265,13 +1243,13 @@ class Dirac( API ):
         'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'put': 64.246301889419556,
                                                                     'register': 1.1102778911590576}}}}
 
-       @param lfn: Logical File Name (LFN)
-       @type lfn: string
-       @param diracSE: DIRAC SE name e.g. CERN-USER
-       @type diracSE: strin
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param lfn: Logical File Name (LFN)
+       :type lfn: string
+       :param diracSE: DIRAC SE name e.g. CERN-USER
+       :type diracSE: string
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( lfn ) == type( " " ):
       lfn = lfn.replace( 'LFN:', '' )
@@ -1307,11 +1285,11 @@ class Dirac( API ):
        {'OK': True, 'Value':{'Failed': {},
         'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': '/afs/cern.ch/user/p/paterson/w1/DIRAC3/myFile.tar.gz'}}}
 
-       @param lfn: Logical File Name (LFN)
-       @type lfn: string
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param lfn: Logical File Name (LFN)
+       :type lfn: string
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( lfn ) == type( " " ):
       lfn = lfn.replace( 'LFN:', '' )
@@ -1354,17 +1332,17 @@ class Dirac( API ):
        'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'register': 0.44766902923583984,
                                                                   'replicate': 56.42345404624939}}}}
 
-       @param lfn: Logical File Name (LFN)
-       @type lfn: string
-       @param destinationSE: Destination DIRAC SE name e.g. CERN-USER
-       @type destinationSE: string
-       @param sourceSE: Optional source SE
-       @type sourceSE: string
-       @param localCache: Optional path to local cache
-       @type localCache: string
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param lfn: Logical File Name (LFN)
+       :type lfn: string
+       :param destinationSE: Destination DIRAC SE name e.g. CERN-USER
+       :type destinationSE: string
+       :param sourceSE: Optional source SE
+       :type sourceSE: string
+       :param localCache: Optional path to local cache
+       :type localCache: string
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
@@ -1402,15 +1380,15 @@ class Dirac( API ):
        {'OK': True, 'Value':{'Failed': {},
        'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'register': 0.44766902923583984}}}}
 
-       @param lfn: Logical File Name (LFN)
-       @type lfn: string
-       @param destinationSE: Destination DIRAC SE name e.g. CERN-USER
-       @type destinationSE: string
-       @param sourceSE: Optional source SE
-       @type sourceSE: string
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param lfn: Logical File Name (LFN)
+       :type lfn: string
+       :param destinationSE: Destination DIRAC SE name e.g. CERN-USER
+       :type destinationSE: string
+       :param sourceSE: Optional source SE
+       :type sourceSE: string
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( lfn ) == type( " " ):
       lfn = lfn.replace( 'LFN:', '' )
@@ -1444,13 +1422,13 @@ class Dirac( API ):
        >>> print dirac.getAccessURL('/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN-RAW')
        {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
-       @param lfn: Logical File Name (LFN)
-       @type lfn: string or list
-       @param storageElement: DIRAC SE name e.g. CERN-RAW
-       @type storageElement: string
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param lfn: Logical File Name (LFN)
+       :type lfn: string or list
+       :param storageElement: DIRAC SE name e.g. CERN-RAW
+       :type storageElement: string
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( lfn ) == type( " " ):
       lfn = lfn.replace( 'LFN:', '' )
@@ -1478,13 +1456,13 @@ class Dirac( API ):
        {'OK': True, 'Value':{'Failed': {},
        'Successful': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst': {'RFIO': 'castor://...'}}}}
 
-       @param pfn: Physical File Name (PFN)
-       @type pfn: string or list
-       @param storageElement: DIRAC SE name e.g. CERN-RAW
-       @type storageElement: string
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param pfn: Physical File Name (PFN)
+       :type pfn: string or list
+       :param storageElement: DIRAC SE name e.g. CERN-RAW
+       :type storageElement: string
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( pfn ) == type( " " ):
       if re.search( 'LFN:', pfn ):
@@ -1519,13 +1497,13 @@ class Dirac( API ):
        /lhcb/data/CCRC08/RAW/LHCb/CCRC/23341/023341_0000039571.raw','NIKHEF-RAW')
        {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
-       @param pfn: Physical File Name (PFN)
-       @type pfn: string or list
-       @param storageElement: DIRAC SE name e.g. CERN-RAW
-       @type storageElement: string
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param pfn: Physical File Name (PFN)
+       :type pfn: string or list
+       :param storageElement: DIRAC SE name e.g. CERN-RAW
+       :type storageElement: string
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( pfn ) == type( " " ):
       if re.search( 'LFN:', pfn ):
@@ -1559,11 +1537,11 @@ class Dirac( API ):
        >>> print dirac.removeFile('LFN:/lhcb/data/CCRC08/RAW/LHCb/CCRC/22808/022808_0000018443.raw')
        {'OK': True, 'Value':...}
 
-       @param lfn: Logical File Name (LFN)
-       @type lfn: string
-       @param printOutput: Flag to print to stdOut
-       @type printOutput: Boolean
-       @return: S_OK,S_ERROR
+       :param lfn: Logical File Name (LFN)
+       :type lfn: string
+       :param printOutput: Flag to print to stdOut
+       :type printOutput: Boolean
+       :returns: S_OK,S_ERROR
 
     """
     if type( lfn ) in types.StringTypes:
@@ -1587,11 +1565,11 @@ class Dirac( API ):
        >>> print dirac.removeReplica('LFN:/lhcb/user/p/paterson/myDST.dst','CERN-USER')
        {'OK': True, 'Value':...}
 
-       @param lfn: Logical File Name (LFN)
-       @type lfn: string
-       @param storageElement: DIRAC SE Name
-       @type storageElement: string
-       @return: S_OK,S_ERROR
+       :param lfn: Logical File Name (LFN)
+       :type lfn: string
+       :param storageElement: DIRAC SE Name
+       :type storageElement: string
+       :returns: S_OK,S_ERROR
     """
     if type( lfn ) in types.StringTypes:
       lfn = lfn.replace( 'LFN:', '' )
@@ -1613,11 +1591,11 @@ class Dirac( API ):
        >>> print dirac.dataLoggingInfo('/lhcb/data/CCRC08/RAW/LHCb/CCRC/22808/022808_0000018443.raw')
        {'OK': True, 'Value': [('AddedToTransformation', 'Transformation 3', datetime.datetime(2008, 5, 18, 13, 54, 15)]}
 
-       @param lfn: Logical File Name (LFN)
-       @type lfn: string
-       @param printOutput: Optional flag to print result
-       @type printOutput: boolean
-       @return: S_OK,S_ERROR
+       :param lfn: Logical File Name (LFN)
+       :type lfn: string
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( lfn ) == type( " " ):
       lfn = lfn.replace( 'LFN:', '' )
@@ -1672,7 +1650,7 @@ class Dirac( API ):
       return S_ERROR( 'Submission disabled by /LocalSite/DisableSubmission flag for debugging purposes' )
 
     try:
-      jobID = self._wmcClient().submitJob( jdl )
+      jobID = WMSClient().submitJob( jdl )
       # raise 'problem'
     except Exception, x:
       return S_ERROR( "Cannot submit job: %s" % str( x ) )
@@ -1693,11 +1671,11 @@ class Dirac( API ):
        >>> print dirac.getInputSandbox(12345)
        {'OK': True, 'Value': ['Job__Sandbox__.tar.bz2']}
 
-       @param jobID: JobID
-       @type jobID: integer or string
-       @param outputDir: Optional directory for files
-       @type outputDir: string
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: integer or string
+       :param outputDir: Optional directory for files
+       :type outputDir: string
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -1721,7 +1699,7 @@ class Dirac( API ):
     except Exception, x:
       return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
 
-    result = self._sbClient().downloadSandboxForJob( jobID, 'Input', dirPath )
+    result = SandboxStoreClient( useCertificates = self.useCertificates ).downloadSandboxForJob( jobID, 'Input', dirPath )
     if not result[ 'OK' ]:
       self.log.warn( result[ 'Message' ] )
     else:
@@ -1742,13 +1720,13 @@ class Dirac( API ):
        >>> print dirac.getOutputSandbox(12345)
        {'OK': True, 'Value': ['Job__Sandbox__.tar.bz2']}
 
-       @param jobID: JobID
-       @type jobID: integer or string
-       @param outputDir: Optional directory path
-       @type outputDir: string
-       @param oversized: Optionally disable oversized sandbox download
-       @type oversized: boolean
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: integer or string
+       :param outputDir: Optional directory path
+       :type outputDir: string
+       :param oversized: Optionally disable oversized sandbox download
+       :type oversized: boolean
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -1776,7 +1754,7 @@ class Dirac( API ):
       return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
 
     # New download
-    result = self._sbClient().downloadSandboxForJob( jobID, 'Output', dirPath )
+    result = SandboxStoreClient( useCertificates = self.useCertificates ).downloadSandboxForJob( jobID, 'Output', dirPath )
     if result['OK']:
       self.log.info( 'Files retrieved and extracted in %s' % ( dirPath ) )
       if self.jobRepo:
@@ -1842,9 +1820,9 @@ class Dirac( API ):
        >>> print dirac.delete(12345)
        {'OK': True, 'Value': [12345]}
 
-       @param jobID: JobID
-       @type jobID: int, string or list
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int, string or list
+       :returns: S_OK,S_ERROR
 
     """
     if type( jobID ) == type( " " ):
@@ -1858,7 +1836,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self._wmcClient().deleteJob( jobID )
+    result = WMSClient().deleteJob( jobID )
     if result['OK']:
       if self.jobRepo:
         for jobID in result['Value']:
@@ -1877,9 +1855,9 @@ class Dirac( API ):
        >>> print dirac.reschedule(12345)
        {'OK': True, 'Value': [12345]}
 
-       @param jobID: JobID
-       @type jobID: int, string or list
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int, string or list
+       :returns: S_OK,S_ERROR
 
     """
     if type( jobID ) == type( " " ):
@@ -1893,7 +1871,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self._wmcClient().rescheduleJob( jobID )
+    result = WMSClient().rescheduleJob( jobID )
     if result['OK']:
       if self.jobRepo:
         repoDict = {}
@@ -1912,9 +1890,9 @@ class Dirac( API ):
         >>> print dirac.kill(12345)
         {'OK': True, 'Value': [12345]}
 
-       @param jobID: JobID
-       @type jobID: int, string or list
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int, string or list
+       :returns: S_OK,S_ERROR
 
     """
     if type( jobID ) == type( " " ):
@@ -1928,7 +1906,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self._wmcClient().killJob( jobID )
+    result = WMSClient().killJob( jobID )
     if result['OK']:
       if self.jobRepo:
         for jobID in result['Value']:
@@ -1944,9 +1922,9 @@ class Dirac( API ):
        >>> print dirac.status(79241)
        {79241: {'status': 'Done', 'site': 'LCG.CERN.ch'}}
 
-       @param jobID: JobID
-       @type jobID: int, string or list
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int, string or list
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -2005,9 +1983,9 @@ class Dirac( API ):
        {'OK': True, 'Value': {1405:
         ['LFN:/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst']}}
 
-       @param jobID: JobID
-       @type jobID: int, string or list
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int, string or list
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -2046,9 +2024,9 @@ class Dirac( API ):
        >>> dirac.getJobOutputLFNs(1405)
        {'OK':True,'Value':[<LFN>]}
 
-       @param jobID: JobID
-       @type jobID: int or string
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int or string
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -2084,11 +2062,11 @@ class Dirac( API ):
        >>> dirac.getJobOutputData(1405)
        {'OK':True,'Value':[<LFN>]}
 
-       @param jobID: JobID
-       @type jobID: int or string
-       @param outputFiles: Optional files to download
-       @type outputFiles: string or list
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int or string
+       :param outputFiles: Optional files to download
+       :type outputFiles: string or list
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -2161,21 +2139,21 @@ class Dirac( API ):
        >>> dirac.selectJobs( status='Failed', owner='paterson', site='LCG.CERN.ch')
        {'OK': True, 'Value': ['25020', '25023', '25026', '25027', '25040']}
 
-       @param status: Job status
-       @type status: string
-       @param minorStatus: Job minor status
-       @type minorStatus: string
-       @param applicationStatus: Job application status
-       @type applicationStatus: string
-       @param site: Job execution site
-       @type site: string
-       @param owner: Job owner
-       @type owner: string
-       @param jobGroup: Job group
-       @type jobGroup: string
-       @param date: Selection date
-       @type date: string
-       @return: S_OK,S_ERROR
+       :param status: Job status
+       :type status: string
+       :param minorStatus: Job minor status
+       :type minorStatus: string
+       :param applicationStatus: Job application status
+       :type applicationStatus: string
+       :param site: Job execution site
+       :type site: string
+       :param owner: Job owner
+       :type owner: string
+       :param jobGroup: Job group
+       :type jobGroup: string
+       :param date: Selection date
+       :type date: string
+       :returns: S_OK,S_ERROR
     """
     options = {'Status':status, 'MinorStatus':minorStatus, 'ApplicationStatus':applicationStatus, 'Owner':owner,
                'Site':site, 'JobGroup':jobGroup, 'OwnerGroup':ownerGroup }
@@ -2227,13 +2205,13 @@ class Dirac( API ):
        'MinorStatus': '28 / 30', 'Site': 'Unknown', 'HeartBeatTime': 'None', 'ApplicationStatus': 'unknown',
        'JobGroup': '00003403', 'Owner': 'joel', 'SubmissionTime': '2008-12-08 16:41:38'}}}
 
-       @param jobID: JobID
-       @type jobID: int or string
-       @param outputFile: Optional output file
-       @type outputFile: string
-       @param printOutput: Flag to print to stdOut
-       @type printOutput: Boolean
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int or string
+       :param outputFile: Optional output file
+       :type outputFile: string
+       :param printOutput: Flag to print to stdOut
+       :type printOutput: Boolean
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -2318,9 +2296,9 @@ class Dirac( API ):
        >>> dirac.getJobDebugOutput(959209)
        {'OK': True, 'Value': '/afs/cern.ch/user/p/paterson/DEBUG_959209'}
 
-       @param jobID: JobID
-       @type jobID: int or string
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int or string
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -2437,11 +2415,11 @@ class Dirac( API ):
        >>> d.getJobCPUTime(959209)
        {'OK': True, 'Value': {959209: {}}}
 
-       @param jobID: JobID
-       @type jobID: int or string
-       @param printOutput: Flag to print to stdOut
-       @type printOutput: Boolean
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int or string
+       :param printOutput: Flag to print to stdOut
+       :type printOutput: Boolean
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -2492,11 +2470,11 @@ class Dirac( API ):
        'ApplicationStatus': 'Job Finished Successfully',
        'CPUTime': '0.0','DIRACSetup': 'LHCb-Production'}
 
-       @param jobID: JobID
-       @type jobID: int, string or list
-       @param printOutput: Flag to print to stdOut
-       @type printOutput: Boolean
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int, string or list
+       :param printOutput: Flag to print to stdOut
+       :type printOutput: Boolean
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -2532,11 +2510,11 @@ class Dirac( API ):
        {'OK': True, 'Value': {'JobPath': 'JobPath,JobSanity,JobPolicy,InputData,JobScheduling,TaskQueue',
        'JobSanityCheck': 'Job: 768 JDL: OK, InputData: 2 LFNs OK, ','LocalBatchID': 'dc768'}
 
-       @param jobID: JobID
-       @type jobID: int or string
-       @param printOutput: Flag to print to stdOut
-       @type printOutput: Boolean
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int or string
+       :param printOutput: Flag to print to stdOut
+       :type printOutput: Boolean
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -2571,11 +2549,11 @@ class Dirac( API ):
        {'OK': True, 'Value': [('Received', 'JobPath', 'Unknown', '2008-01-29 15:37:09', 'JobPathAgent'),
        ('Checking', 'JobSanity', 'Unknown', '2008-01-29 15:37:14', 'JobSanityAgent')]}
 
-       @param jobID: JobID
-       @type jobID: int or string
-       @param printOutput: Flag to print to stdOut
-       @type printOutput: Boolean
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int or string
+       :param printOutput: Flag to print to stdOut
+       :type printOutput: Boolean
+       :returns: S_OK,S_ERROR
      """
     if type( jobID ) == type( " " ):
       try:
@@ -2621,9 +2599,9 @@ class Dirac( API ):
        >>> print dirac.peek(1484)
        {'OK': True, 'Value': 'Job peek result'}
 
-       @param jobID: JobID
-       @type jobID: int or string
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int or string
+       :returns: S_OK,S_ERROR
     """
     if type( jobID ) == type( " " ):
       try:
@@ -2660,13 +2638,13 @@ class Dirac( API ):
        >>> print dirac.ping('WorkloadManagement','JobManager')
        {'OK': True, 'Value': 'Job ping result'}
 
-       @param system: system
-       @type system: string
-       @param service: service name
-       @type service: string
-       @param printOutput: Flag to print to stdOut
-       @type printOutput: Boolean
-       @return: S_OK,S_ERROR
+       :param system: system
+       :type system: string
+       :param service: service name
+       :type service: string
+       :param printOutput: Flag to print to stdOut
+       :type printOutput: Boolean
+       :returns: S_OK,S_ERROR
     """
     if not type( system ) == type( " " ) and type( service ) == type( " " ):
       return self._errorReport( 'Expected string for system and service to ping()' )
@@ -2701,9 +2679,9 @@ class Dirac( API ):
        >>> print dirac.getJobJDL(12345)
        {'Arguments': 'jobDescription.xml',...}
 
-       @param jobID: JobID
-       @type jobID: int or string
-       @return: S_OK,S_ERROR
+       :param jobID: JobID
+       :type jobID: int or string
+       :returns: S_OK,S_ERROR
 
     """
     if type( jobID ) == type( " " ):

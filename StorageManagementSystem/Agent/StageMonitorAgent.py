@@ -8,7 +8,7 @@ from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataInt
 from DIRAC.Resources.Storage.StorageElement                       import StorageElement
 from DIRAC.AccountingSystem.Client.Types.DataOperation            import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient                import gDataStoreClient
-from DIRAC.Core.Security.Misc                                     import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                                import getProxyInfo
 
 import re
 

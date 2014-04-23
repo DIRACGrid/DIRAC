@@ -22,8 +22,10 @@
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
+
 from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
 from DIRAC.Resources.Storage.StorageElement                 import StorageElement
+from DIRAC.Resources.Utilities                              import Utils
 from DIRAC.RequestManagementSystem.Client.Request           import Request
 from DIRAC.RequestManagementSystem.Client.Operation         import Operation
 from DIRAC.RequestManagementSystem.Client.File              import File
@@ -146,13 +148,13 @@ class FailoverTransfer( object ):
     """ get the accumulated request object
     """
     return self.request
-  
+
   def commitRequest( self ):
     """ Send request to the Request Management Service
-    """     
+    """
     if self.request.isEmpty():
       return S_OK()
-    
+
     isValid = gRequestValidator.validate( self.request )
     if not isValid["OK"]:
       return S_ERROR( "Failover request is not valid: %s" % isValid["Message"] )
@@ -223,11 +225,11 @@ class FailoverTransfer( object ):
       regFile.GUID = fileDict.get( "GUID", "" )
 
       se = StorageElement( targetSE )
-      pfn = Utils.executeSingleFileOrDirWrapper( se.getPfnForLfn( lfn ) )
-      if not pfn["OK"]:
-        self.log.error( "unable to get PFN for LFN: %s" % pfn["Message"] )
+      pfn = se.getPfnForLfn( lfn )
+      if not pfn["OK"] or lfn not in pfn["Value"]['Successful']:
+        self.log.error( "unable to get PFN for LFN: %s" % pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
         return pfn
-      regFile.PFN = pfn["Value"]
+      regFile.PFN = pfn["Value"]['Successful'][lfn]
 
       register.addFile( regFile )
       self.request.addOperation( register )

@@ -214,12 +214,12 @@ class SandboxStoreHandler( RequestHandler ):
       errStr = "Failed to instantiate destination StorageElement"
       gLogger.error( errStr, self.__externalSEName )
       return S_ERROR( errStr )
-    result = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( sbPath ) )
-    if not result['OK']:
+    result = storageElement.getPfnForLfn( sbPath )
+    if not result['OK'] or sbPath not in result['Value']['Successful']:
       errStr = "Failed to generate PFN"
       gLogger.error( errStr, self.__externalSEName )
       return S_ERROR( errStr )
-    destPfn = result['Value']
+    destPfn = result['Value']['Successful'][sbPath]
     return S_OK( ( self.__externalSEName, destPfn ) )
 
   def __sbToHDPath( self, sbPath ):

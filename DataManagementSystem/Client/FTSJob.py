@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSJob.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 13:41:20
@@ -13,8 +12,7 @@
 
     class representing single FTS request
 """
-# for properties
-# pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103
+
 __RCSID__ = "$Id $"
 # #
 # @file FTSJob.py
@@ -88,7 +86,7 @@ class FTSJob( Record ):
     self._regTotal = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
 
-    self.fc = FileCatalog()
+    self._fc = FileCatalog()
 
     self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
 
@@ -548,9 +546,9 @@ class FTSJob( Record ):
       toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
 
     if toRegisterDict:
-      self.regTotal += len( toRegisterDict )
-      register = self.fc.addReplica( toRegisterDict )
-      self.regTime += time.time() - startTime
+      self._regTotal += len( toRegisterDict )
+      register = self._fc.addReplica( toRegisterDict )
+      self._regTime += time.time() - startTime
       if not register["OK"]:
         # FIXME: shouldn't be a print!
         for ftsFile in toRegister:

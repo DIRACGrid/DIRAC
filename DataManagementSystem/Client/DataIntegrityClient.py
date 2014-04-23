@@ -5,7 +5,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                                import S_OK, S_ERROR, gLogger, gConfig
-from  DIRAC.DataManagementSystem.Client.DataManager       import DataManager
+from DIRAC.DataManagementSystem.Client.DataManager       import DataManager
 from DIRAC.Resources.Storage.StorageElement               import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Resources.Utilities                            import Utils
@@ -127,7 +127,6 @@ class DataIntegrityClient( Client ):
       files = len( sePfns[site] )
       gLogger.info( '%s %s' % ( site.ljust( 20 ), str( files ).rjust( 20 ) ) )
 
-    physicalFileMetadata = {}
     for se in sortList( sePfns.keys() ):
       pfns = sePfns[se]
       pfnDict = {}
@@ -269,8 +268,8 @@ class DataIntegrityClient( Client ):
     """
     gLogger.info( 'Obtaining the contents for %s directories at %s' % ( len( lfnDir ), storageElement ) )
 
-    se = StorageElement(storageElement)
-    res = Utils.executeSingleFileOrDirWrapper( se.getPfnForLfn( lfnDir ) )
+    se = StorageElement( storageElement )
+    res = se.getPfnForLfn( lfnDir )
 
     if not res['OK']:
       gLogger.error( "Failed to get PFNs for directories", res['Message'] )
@@ -341,9 +340,9 @@ class DataIntegrityClient( Client ):
         metadata = allFiles[pfn]
         if metadata['Size'] == 0:
           zeroSizeFiles.append( ( metadata['LFN'], pfn, storageElement, 'PFNZeroSize' ) )
-        #if metadata['Lost']:
+        # if metadata['Lost']:
         #  lostFiles.append((metadata['LFN'],pfn,storageElement,'PFNLost'))
-        #if metadata['Unavailable']:
+        # if metadata['Unavailable']:
         #  unavailableFiles.append((metadata['LFN'],pfn,storageElement,'PFNUnavailable'))
     if zeroSizeFiles:
       self.__reportProblematicReplicas( zeroSizeFiles, storageElement, 'PFNZeroSize' )
@@ -513,8 +512,6 @@ class DataIntegrityClient( Client ):
       gLogger.error( errStr )
       return S_ERROR( errStr )
     gLogger.info( "DataIntegrityClient.setFileProblematic: Attempting to update %s files." % len( lfns ) )
-    successful = {}
-    failed = {}
     fileMetadata = {}
     for lfn in lfns:
       fileMetadata[lfn] = {'Prognosis':reason, 'LFN':lfn, 'PFN':'', 'SE':''}
@@ -593,13 +590,12 @@ class DataIntegrityClient( Client ):
 
   def __getRegisteredPFNLFN( self, pfn, storageElement ):
 
-    res = StorageElement( storageElement ).getPfnForProtocol( [pfn], withPort = False )
+    res = StorageElement( storageElement ).getPfnForProtocol( pfn, withPort = False )
     if not res['OK']:
       gLogger.error( "Failed to get registered PFN for physical files", res['Message'] )
       return res
     for pfn, error in res['Value']['Failed'].items():
       gLogger.error( 'Failed to obtain registered PFN for physical file', '%s %s' % ( pfn, error ) )
-    if res['Value']['Failed']:
       return S_ERROR( 'Failed to obtain registered PFNs from physical file' )
     registeredPFN = res['Value']['Successful'][pfn]
     res = Utils.executeSingleFileOrDirWrapper( self.fc.getLFNForPFN( registeredPFN ) )
@@ -719,12 +715,11 @@ class DataIntegrityClient( Client ):
         seName = '%s_MC-DST' % site
 
     problematicDict['SE'] = seName
-    res = se.getPfnForProtocol( [pfn], withPort = False )
+    res = se.getPfnForProtocol( pfn, withPort = False )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     for pfn, error in res['Value']['Failed'].items():
       gLogger.error( 'Failed to obtain registered PFN for physical file', '%s %s' % ( pfn, error ) )
-    if res['Value']['Failed']:
       return S_ERROR( 'Failed to obtain registered PFNs from physical file' )
     problematicDict['PFN'] = res['Value']['Successful'][pfn]
 
