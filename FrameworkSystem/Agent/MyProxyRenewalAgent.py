@@ -19,9 +19,7 @@ class MyProxyRenewalAgent(AgentModule):
     requiredLifeTime = self.am_getOption( "MinimumLifeTime", 3600 )
     renewedLifeTime = self.am_getOption( "RenewedLifeTime", 54000 )
     myProxyServer = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer" , "myproxy.cern.ch" )
-    self.proxyDB = ProxyDB( requireVoms = True,
-                            useMyProxy = True
-                          )
+    self.proxyDB = ProxyDB( useMyProxy = True )
 
     gLogger.info( "Minimum Life time      : %s" % requiredLifeTime )
     gLogger.info( "Life time on renew     : %s" % renewedLifeTime )
