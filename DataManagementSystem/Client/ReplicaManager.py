@@ -2152,6 +2152,7 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "__removeReplica: Completely failed to remove physical files."
       self.log.error( errStr, res['Message'] )
       failed.update( dict.fromkeys( [lfn for lfn, _pfn, _se in replicaTuples if lfn not in failed], res['Message'] ) )
+      successful = {}
     else:
       failed.update( res['Value']['Failed'] )
       successful = res['Value']['Successful']
