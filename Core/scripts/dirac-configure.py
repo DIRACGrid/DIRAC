@@ -426,15 +426,23 @@ if update:
 #Do the vomsdir magic
 # This has to be done for all VOs in the installation
 
+newVOMSLocation = False
 result = DIRAC.gConfig.getSections( "/Registry/VOMS/Servers" )
 if not result['OK']:
-  sys.exit( 0 )
+  # will try the new location
+  result = DIRAC.gConfig.getSections( "/Registry/VO" )
+  if not result['OK']:
+    sys.exit( 0 )
+  newVOMSLocation = True
 
 voList = result[ 'Value' ]
 error = ''
 for voName in voList:
-
-  result = DIRAC.gConfig.getSections( "/Registry/VOMS/Servers/%s" % voName )
+  if newVOMSLocation:
+    vomsPath = "/Registry/VO/%s/VOMSServers/" % voName
+  else:
+    vomsPath = "/Registry/VOMS/Servers/%s" % voName
+  result = DIRAC.gConfig.getSections( vomsPath )
   if not result[ 'OK' ]:
     error = 'No VOMS server define for %s' % voName
     DIRAC.gLogger.error( error )
@@ -454,9 +462,9 @@ for voName in voList:
   for vomsHost in vomsDirHosts:
     hostFilePath = os.path.join( vomsDirPath, "%s.lsc" % vomsHost )
     try:
-      DN = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/DN" % ( voName, vomsHost ), "" )
-      CA = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/CA" % ( voName, vomsHost ), "" )
-      Port = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/Port" % ( voName, vomsHost ), 0 )
+      DN = DIRAC.gConfig.getValue( "%s/%s/DN" % ( vomsPath, vomsHost ), "" )
+      CA = DIRAC.gConfig.getValue( "%s/%s/CA" % ( vomsPath, vomsHost ), "" )
+      Port = DIRAC.gConfig.getValue( "%s/%s/Port" % ( vomsPath, vomsHost ), 0 )
       if not DN or not CA or not Port:
         DIRAC.gLogger.error( 'DN = %s' % DN )
         DIRAC.gLogger.error( 'CA = %s' % CA )
