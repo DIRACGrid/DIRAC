@@ -38,6 +38,7 @@ class CatalogBase( object ):
   """
   def __init__( self ):
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
+    self.useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
 
   def _callFileCatalogFcnSingleFile( self, lfn, method, argsDict = None, catalogs = None ):
     """ A wrapper around :CatalogBase._callFileCatalogFcn: for a single file. It parses
@@ -2503,24 +2504,23 @@ class ReplicaManager( CatalogToStorage ):
   def getReplicas( self, lfns, allStatus = True ):
     """ get replicas from catalogue """
     res = self.getCatalogReplicas( lfns, allStatus = allStatus )
-    
-    useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
-    if not useCatalogPFN:
+
+    if not self.useCatalogPFN:
       if res['OK']:
         se_lfn = {}
         catalogReplicas = res['Value']['Successful']
-  
+
         # We group the query to getPfnForLfn by storage element to gain in speed
         for lfn in catalogReplicas:
           for se in catalogReplicas[lfn]:
             se_lfn.setdefault( se, [] ).append( lfn )
-  
+
         for se in se_lfn:
           succPfn = self.getPfnForLfn( se_lfn[se], se ).get( 'Value', {} ).get( 'Successful', {} )
           for lfn in succPfn:
             # catalogReplicas still points res["value"]["Successful"] so res will be updated
             catalogReplicas[lfn][se] = succPfn[lfn]
-            
+
     return res
 
   def getFileSize( self, lfn ):
