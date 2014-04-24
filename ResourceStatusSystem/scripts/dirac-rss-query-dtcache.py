@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 """
-  dirac-rss-query-downtimecache
+  dirac-rss-query-dtcache
 
-    Add/Remove/Modify a new DownTime for a given Site or Service.
+    Select/Add/Delete a new DownTime entry for a given Site or Service.
 
     Usage:
-      dirac-rss-query-downtimecache
+        dirac-rss-query-dtcache [option] <query>
+
+    Queries:
+        [select|add|delete]
+
+    Options:
         --downtimeID=         The ID of the downtime
         --element=            Element (Site, Service) affected by the downtime
         --name=               Name of the element
@@ -14,9 +19,7 @@
         --severity=           Severity of the downtime (Warning, Outage)
         --description=        Description of the downtime
         --link=               URL of the downtime announcement
-        --dateEffective=      Date of downtime announcement
-        --query=              A valid query type (select, add, delete)
-
+        --ongoing             To force "select" to return the ongoing downtimes
 
     Verbosity:
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
@@ -25,8 +28,9 @@
 from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
 from DIRAC.ResourceStatusSystem.Client         import ResourceManagementClient
+from DIRAC.Core.Utilities                      import Time
+import re
 import datetime
-
 
 __RCSID__ = '$Id:$'
 
@@ -48,13 +52,11 @@ def registerSwitches():
     ( 'severity=', 'Severity of the downtime (Warning, Outage)' ),
     ( 'description=', 'Description of the downtime' ),
     ( 'link=', 'URL of the downtime announcement' ),
-    ( 'dateEffective=', 'Date of downtime announcement' )
+    ( 'ongoing', 'To force "select" to return the ongoing downtimes' )
              )
 
   for switch in switches:
     Script.registerSwitch( '', switch[ 0 ], switch[ 1 ] )
-
-  Script.registerSwitch( "q:", "query=", "A valid query type (select, add, delete)" )
 
 
 def registerUsageMessage():
@@ -62,8 +64,8 @@ def registerUsageMessage():
     Takes the script __doc__ and adds the DIRAC version to it
   '''
 
-  usageMessage = '  DIRAC version: %s' % version
-  #usageMessage += __doc__
+  usageMessage = 'DIRAC version: %s \n' % version
+  usageMessage += __doc__
 
   Script.setUsageMessage( usageMessage )
 
@@ -75,8 +77,12 @@ def parseSwitches():
 
   Script.parseCommandLine( ignoreErrors = True )
   args = Script.getPositionalArgs()
-  if args:
-    error( "Found the following positional args '%s', but we only accept switches" % args )
+  if len( args ) == 0:
+    error( "Missing mandatory 'query' argument" )
+  elif not args[0].lower() in ( 'select', 'add', 'delete' ):
+    error( "Missing mandatory argument" )
+  else:
+    query = args[0].lower()
 
   switches = dict( Script.getUnprocessedSwitches() )
 
@@ -89,26 +95,170 @@ def parseSwitches():
   switches.setdefault( 'severity', None )
   switches.setdefault( 'description', None )
   switches.setdefault( 'link', None )
-  switches.setdefault( 'dateEffective', None )
-  switches.setdefault( 'query', None )
-  switches.setdefault( 'q', None )
 
-  if not 'query' in switches and not 'q' in switches:
-    error( "query Switch is mandatory but found missing" )
+  if query in ( 'add', 'delete' ) and switches['downtimeID'] is None:
+    error( "'downtimeID' switch is mandatory for '%s' but found missing" % query )
 
-  if not switches['query'] in ( 'select', 'add', 'delete' ) and \
-     not switches['q'] in ( 'select', 'add', 'delete' ):
-    argument = switches[ 'query' ] if switches[ 'query' ] else switches['q']
-    error( "'%s' is an invalid argument for switch 'query'" % argument )
+  if query in ( 'add', 'delete' ) and 'ongoing' in switches:
+    error( "'ongoing' switch can be used only with 'select'" )
 
   subLogger.debug( "The switches used are:" )
   map( subLogger.debug, switches.iteritems() )
 
-  return switches
+  return ( args, switches )
+
+
+#...............................................................................
+# UTILS: for filtering 'select' output
+
+def filterDate( selectOutput, start, end ):
+  '''
+    Selects all the downtimes that meet the constraints of 'start' and 'end' dates
+  '''
+
+  downtimes = selectOutput
+  downtimesFiltered = []
+
+  if start is not None:
+    try:
+      start = Time.fromString( start )
+    except:
+      error( "datetime formt is incorrect, pls try [%Y-%m-%d[ %H:%M:%S]]" )
+    start = Time.toEpoch( start )
+
+  if end is not None:
+    try:
+      end = Time.fromString( end )
+    except:
+      error( "datetime formt is incorrect, pls try [%Y-%m-%d[ %H:%M:%S]]" )
+    end = Time.toEpoch( end )
+
+  if start is not None and end is not None:
+    for dt in downtimes:
+      dtStart = Time.toEpoch( dt[ 'startDate' ] )
+      dtEnd = Time.toEpoch( dt[ 'endDate' ] )
+      if ( dtStart >= start ) and ( dtEnd <= end ):
+        downtimesFiltered.append( dt )
+
+  elif start is not None and end is None:
+    for dt in downtimes:
+      dtStart = Time.toEpoch( dt[ 'startDate' ] )
+      if dtStart >= start:
+        downtimesFiltered.append( dt )
+
+  elif start is None and end is not None:
+    for dt in downtimes:
+      dtEnd = Time.toEpoch( dt[ 'endDate' ] )
+      if dtEnd <= end:
+        downtimesFiltered.append( dt )
+
+  else:
+    downtimesFiltered = downtimes
+
+  return downtimesFiltered
+
+
+def filterOngoing( selectOutput ):
+  '''
+    Selects all the ongoing downtimes
+  '''
+
+  downtimes = selectOutput
+  downtimesFiltered = []
+  currentDate = Time.toEpoch( Time.dateTime() )
+
+  for dt in downtimes:
+    dtStart = Time.toEpoch( dt[ 'startDate' ] )
+    dtEnd = Time.toEpoch( dt[ 'endDate' ] )
+    if ( dtStart <= currentDate ) and ( dtEnd >= currentDate ):
+      downtimesFiltered.append( dt )
+
+  return downtimesFiltered
+
+
+def filterDescription( selectOutput, description ):
+  '''
+    Selects all the downtimes that match 'description'
+  '''
+
+  downtimes = selectOutput
+  downtimesFiltered = []
+  if description is not None:
+    for dt in downtimes:
+      if description in dt[ 'description' ]:
+        downtimesFiltered.append( dt )
+  else:
+    downtimesFiltered = downtimes
+
+  return downtimesFiltered
+
+#...............................................................................
+# Utils: for formatting query output and notifications
+
+def error( msg ):
+  '''
+    Format error messages
+  '''
+
+  subLogger.error( "\nERROR:" )
+  subLogger.error( "\t" + msg )
+  subLogger.error( "\tPlease, check documentation below" )
+  Script.showHelp()
+  DIRACExit( 1 )
+
+
+def confirm( query, matches ):
+  '''
+    Format confirmation messages
+  '''
+
+  subLogger.notice( "\nNOTICE: '%s' request successfully executed ( matches' number: %s )! \n" % ( query, matches ) )
+
+def printTable( table ):
+  '''
+    Prints query output on a tabular
+  '''
+
+  columns_names = table[0].keys()
+  columns = [ [c] for c in columns_names ]
+
+  for row in table:
+    for j, key in enumerate( row ):
+      if type( row[key] ) == datetime.datetime:
+        row[key] = Time.toString( row[key] )
+      if row[key] is None:
+        row[key] = ''
+      columns[j].append( row[key] )
+
+  columns_width = []
+  for column in columns:
+    columns_width.append( max( [ len( str( value ) ) for value in column ] ) )
+
+  columns_separator = True
+  for i in range( len( table ) + 1 ):
+    row = ''
+    for j in range( len( columns ) ):
+      row = row + "{:{}}".format( columns[j][i], columns_width[j] ) + " | "
+    row = "| " + row
+    line = "-" * ( len( row ) - 1 )
+
+    if columns_separator:
+      subLogger.notice( line )
+
+    subLogger.notice( row )
+
+    if columns_separator:
+      subLogger.notice( line )
+      columns_separator = False
+
+  subLogger.notice( line )
+
+
 
 #...............................................................................
 
-def select():
+
+def select( switchDict ):
   '''
     Given the switches, request a query 'select' on the ResourceManagementDB
     that gets from DowntimeCache all rows that match the parameters given.
@@ -119,21 +269,32 @@ def select():
   meta = { 'columns' : [ 'downtimeID', 'element', 'name', 'startDate', 'endDate',
                          'severity', 'description', 'link', 'dateEffective' ] }
 
+  result = { 'output': None, 'successful': None, 'message': None, 'match': None }
   output = rmsClient.selectDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],
                                           element = switchDict[ 'element' ],
                                           name = switchDict[ 'name' ],
-                                          startDate = switchDict[ 'startDate' ],
-                                          endDate = switchDict[ 'endDate' ],
+                                          #startDate = switchDict[ 'startDate' ],
+                                          #endDate = switchDict[ 'endDate' ],
                                           severity = switchDict[ 'severity' ],
-                                          description = switchDict[ 'description' ],
-                                          link = switchDict[ 'link' ],
-                                          dateEffective = switchDict[ 'dateEffective' ],
+                                          #description = switchDict[ 'description' ],
+                                          #link = switchDict[ 'link' ],
+                                          #dateEffective = switchDict[ 'dateEffective' ],
                                           meta = meta )
 
-  return output
+  result['output'] = [ dict( zip( output[ 'Columns' ], dt ) ) for dt in output[ 'Value' ] ]
+  if 'ongoing' in switchDict:
+    result['output'] = filterOngoing( result['output'] )
+  else:
+    result['output'] = filterDate( result['output'], switchDict[ 'startDate' ], switchDict[ 'endDate' ] )
+  result['output'] = filterDescription( result['output'], switchDict[ 'description' ] )
+  result['match'] = len( result['output'] )
+  result['successful'] = output['OK']
+  result['message'] = output['Message'] if 'Message' in output else None
+
+  return result
 
 
-def add():
+def add( switchDict ):
   '''
     Given the switches, request a query 'addOrModify' on the ResourceManagementDB
     that inserts or updates-if-duplicated from DowntimeCache.
@@ -141,9 +302,7 @@ def add():
 
   rmsClient = ResourceManagementClient.ResourceManagementClient()
 
-  meta = { 'columns' : [ 'downtimeID', 'element', 'name', 'startDate', 'endDate',
-                         'severity', 'description', 'link', 'dateEffective' ] }
-
+  result = { 'output': None, 'successful': None, 'message': None, 'match': None }
   output = rmsClient.addOrModifyDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],
                                                element = switchDict[ 'element' ],
                                                name = switchDict[ 'name' ],
@@ -151,14 +310,18 @@ def add():
                                                endDate = switchDict[ 'endDate' ],
                                                severity = switchDict[ 'severity' ],
                                                description = switchDict[ 'description' ],
-                                               link = switchDict[ 'link' ],
-                                               dateEffective = switchDict[ 'dateEffective' ],
-                                               meta = meta )
+                                               link = switchDict[ 'link' ]
+                                               #dateEffective = switchDict[ 'dateEffective' ]
+                                              )
 
-  return output
+  result['match'] = int( output['Value'] )
+  result['successful'] = output['OK']
+  result['message'] = output['Message'] if 'Message' in output else None
+
+  return result
 
 
-def delete():
+def delete( switchDict ):
   '''
     Given the switches, request a query 'delete' on the ResourceManagementDB
     that deletes from DowntimeCache all rows that match the parameters given.
@@ -166,10 +329,7 @@ def delete():
 
   rmsClient = ResourceManagementClient.ResourceManagementClient()
 
-  meta = { 'columns' : [ 'downtimeID', 'element', 'name', 'startDate', 'endDate',
-                         'severity', 'description', 'link', 'dateEffective' ] }
-
-
+  result = { 'output': None, 'successful': None, 'message': None, 'match': None }
   output = rmsClient.deleteDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],
                                           element = switchDict[ 'element' ],
                                           name = switchDict[ 'name' ],
@@ -177,88 +337,36 @@ def delete():
                                           endDate = switchDict[ 'endDate' ],
                                           severity = switchDict[ 'severity' ],
                                           description = switchDict[ 'description' ],
-                                          link = switchDict[ 'link' ],
-                                          dateEffective = switchDict[ 'dateEffective' ]
+                                          link = switchDict[ 'link' ]
+                                          #dateEffective = switchDict[ 'dateEffective' ]
                                         )
+  result['match'] = int( output['Value'] )
+  result['successful'] = output['OK']
+  result['message'] = output['Message'] if 'Message' in output else None
 
-  return output
+  return result
+
 
 #...............................................................................
 
-def error( msg ):
-  '''
-    Format error messages
-  '''
-  subLogger.error( "\nERROR:" )
-  subLogger.error( "\t" + msg )
-  subLogger.error( "\tPlease, check documentation below" )
-  Script.showHelp()
-  DIRACExit( 1 )
-
-
-def confirm( query, matches ):
-  if type( matches ) == long:
-    subLogger.notice( "\nNOTICE: '%s' query was successful ( match number: %s )! \n" % ( query, matches ) )
-  else:
-    subLogger.notice( "\nNOTICE: '%s' query was successful ( match number: %d )! \n" % ( query, len( matches ) ) )
-
-
-def printTable( table, columns ):
-  '''
-    Prints query output on a tabular
-  '''
-
-  #columns = tuple( map( lambda x: x.upper(), columns ) )
-  table = list( table )
-  table.insert( 0, columns )
-
-  columns_width = []
-
-  for i in zip( *table ):
-    columns_width.append( max( [ len( str( x ) ) for x in i ] ) )
-
-  columns_separator = True
-
-  for row in table:
-    rowline = "| " + " | ".join( 
-                   "{:{}}".format( row[i].strftime( '%Y-%m-%d %H:%M:%S' ), item ) if type( row[i] ) == datetime.datetime
-                   else "{:{}}".format( row[i], item )
-                   for i, item in enumerate( columns_width )
-                   ) + " |"
-
-    if columns_separator:
-      subLogger.notice( "-" * len( rowline ) )
-
-    subLogger.notice( rowline )
-
-    if columns_separator:
-      subLogger.notice( "-" * len( rowline ) )
-      columns_separator = False
-
-  subLogger.notice( "-" * len( rowline ) )
-
-#...............................................................................
-
-def run( switchDict ):
+def run( args, switchDict ):
   '''
     Main function of the script
   '''
 
-  query = switchDict[ 'q' ] if switchDict['q'] else switchDict['query']
-  output = None
+  query = args[0]
 
-  # exectue the query request: e.g. if it's a 'select' it executes 'select()'
+  # it exectues the query request: e.g. if it's a 'select' it executes 'select()'
   # the same if it is add, delete
-  output = eval( query + '()' )
+  result = eval( query + '( switchDict )' )
 
-  if not output[ 'OK' ]:
-    error( output[ 'Message' ] )
+  if result[ 'successful' ]:
+    if query == 'select' and result['match'] > 0:
+      printTable( result[ 'output' ] )
+    confirm( query, result['match'] )
+  else:
+    error( result[ 'message' ] )
 
-  table = output[ 'Value' ]
-
-  if 'Columns' in output and len( table ) != 0:
-    printTable( table, output[ 'Columns' ] )
-  confirm( query, output[ 'Value' ] )
 
 
 #...............................................................................
@@ -270,10 +378,10 @@ if __name__ == "__main__":
   #Script initialization
   registerSwitches()
   registerUsageMessage()
-  switchDict = parseSwitches()
+  args, switchDict = parseSwitches()
 
   #Run script
-  run( switchDict )
+  run( args, switchDict )
 
   #Bye
   DIRACExit( 0 )
