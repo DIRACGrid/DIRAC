@@ -2238,15 +2238,14 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "__removeCatalogReplica: Completely failed to remove replica."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    for lfn in res['Value']['Successful']:
-      infoStr = "__removeCatalogReplica: Successfully removed replica."
-      self.log.debug( infoStr, lfn )
-    if res['Value']['Successful']:
-      self.log.info( "__removeCatalogReplica: Removed %d replicas" % len( res['Value']['Successful'] ) )
+    success = res['Value']['Successful']
+    if success:
+      self.log.info( "__removeCatalogReplica: Removed %d replicas" % len( success ) )
+      for lfn in success:
+        self.log.debug( "__removeCatalogReplica: Successfully removed replica.", lfn )
     for lfn, error in res['Value']['Failed'].items():
-      errStr = "__removeCatalogReplica: Failed to remove replica."
-      self.log.error( errStr, "%s %s" % ( lfn, error ) )
-    oDataOperation.setValueByKey( 'RegistrationOK', len( res['Value']['Successful'] ) )
+      self.log.error( "__removeCatalogReplica: Failed to remove replica.", "%s %s" % ( lfn, error ) )
+    oDataOperation.setValueByKey( 'RegistrationOK', len( success ) )
     gDataStoreClient.addRegister( oDataOperation )
     return res
 
