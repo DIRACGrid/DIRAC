@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-admin-bdii-ce-voview
+# File :    dirac-admin-bdii-info
 # Author :  Aresh Vedaee
 ########################################################################
 """
-  Check info on BDII for VO view of CE
+  Check info on BDII for a given CE or site
 """
 __RCSID__ = "$Id$"
 import DIRAC
