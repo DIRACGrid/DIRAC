@@ -20,12 +20,13 @@
     after transfer operations.
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC import S_OK, S_ERROR, gLogger
 
 
 from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
 from DIRAC.Resources.Storage.StorageElement                 import StorageElement
-from DIRAC.Resources.Utilities                              import Utils
 from DIRAC.RequestManagementSystem.Client.Request           import Request
 from DIRAC.RequestManagementSystem.Client.Operation         import Operation
 from DIRAC.RequestManagementSystem.Client.File              import File
@@ -39,17 +40,21 @@ class FailoverTransfer( object ):
   """
 
   #############################################################################
-  def __init__( self, requestObject = None ):
+  def __init__( self, requestObject = None, log = None, defaultChecksumType = 'ADLER32' ):
     """ Constructor function, can specify request object to instantiate
         FailoverTransfer or a new request object is created.
     """
-    self.log = gLogger.getSubLogger( "FailoverTransfer" )
+    self.log = log
+    if not self.log:
+      self.log = gLogger.getSubLogger( "FailoverTransfer" )
+    
     self.request = requestObject
-
     if not self.request:
       self.request = Request()
       self.request.RequestName = 'noname_request'
       self.request.SourceComponent = 'FailoverTransfer'
+
+    self.defaultChecksumType = defaultChecksumType
 
   #############################################################################
   def transferAndRegisterFile( self,
@@ -65,7 +70,7 @@ class FailoverTransfer( object ):
     fileGUID = fileMetaDict.get( "GUID", None )
 
     for se in destinationSEList:
-      self.log.info( 'Attempting rm.putAndRegister("%s","%s","%s",guid="%s",catalog="%s")' % ( lfn,
+      self.log.info( "Attempting rm.putAndRegister('%s','%s','%s',guid='%s',catalog='%s')" % ( lfn,
                                                                                                localPath,
                                                                                                se,
                                                                                                fileGUID,
@@ -79,10 +84,12 @@ class FailoverTransfer( object ):
         continue
 
       if not result['Value']['Failed']:
-        self.log.info( 'rm.putAndRegister successfully uploaded %s to %s' % ( fileName, se ) )
+        self.log.info( 'rm.putAndRegister successfully uploaded and registered %s to %s' % ( fileName, se ) )
         return S_OK( {'uploadedSE':se, 'lfn':lfn} )
 
       # Now we know something went wrong
+      self.log.warn( "Didn't manage to do everything, now adding requests for the missing operation" )
+
       errorDict = result['Value']['Failed'][lfn]
       if 'register' not in errorDict:
         self.log.error( 'rm.putAndRegister failed with unknown error', str( errorDict ) )
@@ -179,7 +186,7 @@ class FailoverTransfer( object ):
     trFile.LFN = lfn
 
     cksm = fileMetaDict.get( "Checksum", None )
-    cksmType = fileMetaDict.get( "ChecksumType", None )
+    cksmType = fileMetaDict.get( "ChecksumType", self.defaultChecksumType )
     if cksm and cksmType:
       trFile.Checksum = cksm
       trFile.ChecksumType = cksmType
@@ -220,7 +227,7 @@ class FailoverTransfer( object ):
       regFile = File()
       regFile.LFN = lfn
       regFile.Checksum = fileDict.get( "Checksum", "" )
-      regFile.ChecksumType = fileDict.get( "ChecksumType", "" )
+      regFile.ChecksumType = fileDict.get( "ChecksumType", self.defaultChecksumType )
       regFile.Size = fileDict.get( "Size", 0 )
       regFile.GUID = fileDict.get( "GUID", "" )
 
