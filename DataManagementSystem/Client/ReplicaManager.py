@@ -2132,20 +2132,26 @@ class ReplicaManager( CatalogToStorage ):
       else:
         # This is the PFN as in hte FC
         lfnDict[lfn] = pfn
-    res = self.__removePhysicalReplica( storageElementName, lfnDict.keys() )
+    # Now we should use the constructed PFNs if needed, for the physical removal
+    # Reverse lfnDict into pfnDict with required PFN
+    if self.useCatalogPFN:
+      pfnsDict = dict( zip( lfnDict.values(), lfnDict.keys() ) )
+    else:
+      pfnsDict = dict( [ ( self.getPfnForLfn( lfn, storageElementName )['Value'].get( 'Successful', {} ).get( lfn, lfnDict[lfn] ), lfn ) for lfn in lfnDict] )
+    # removePhysicalReplicas is called with real PFN list
+    res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
     if not res['OK']:
       errStr = "__removeReplica: Failed to remove catalog replicas."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    for lfn, error in res['Value']['Failed'].items():
-      failed[lfn] = error
-    replicaTuples = [( lfn, lfnDict[lfn], storageElementName ) for lfn in res['Value']['Successful']]
-    successful = {}
+    failed.update( dict( [( pfnDict[pfn], error ) for pfn, error in res['Value']['Failed'].items()] ) )
+    # Here we use the FC PFN...
+    replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[lfn]], storageElementName ) for pfn in res['Value']['Successful']]
     res = self.__removeCatalogReplica( replicaTuples )
     if not res['OK']:
       errStr = "__removeReplica: Completely failed to remove physical files."
       self.log.error( errStr, res['Message'] )
-      failed.update( dict.fromkeys( [lfn for lfn in lfnDict if lfn not in failed], errStr ) )
+      failed.update( dict.fromkeys( [lfn for lfn, _pfn, _se in replicaTuples if lfn not in failed], res['Message'] ) )
     else:
       failed.update( res['Value']['Failed'] )
       successful = res['Value']['Successful']
