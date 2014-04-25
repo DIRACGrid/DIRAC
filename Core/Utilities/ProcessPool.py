@@ -12,7 +12,7 @@ ProcessPool creates a pool of worker subprocesses to handle a queue of tasks
 much like the producers/consumers paradigm. Users just need to fill the queue
 with tasks to be executed and worker tasks will execute them.
 
-To construct ProcessPool one first should call its contructor::
+To construct ProcessPool one first should call its constructor::
 
   pool = ProcessPool( minSize, maxSize, maxQueuedRequests )
 
