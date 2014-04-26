@@ -4,6 +4,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import CFG, LockRing, List
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals, Resources
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
 class Operations( object ):
 
@@ -26,10 +27,14 @@ class Operations( object ):
       self.__vo = globalVO
     elif self.__uVO:
       self.__vo = self.__uVO
-    else:
+    elif self.__uGroup:
       self.__vo = Registry.getVOForGroup( self.__uGroup )
       if not self.__vo:
         self.__vo = False
+    else:
+      result = getVOfromProxyGroup()
+      if result['OK']:
+        self.__vo = result['Value']    
     #Set the setup
     self.__setup = False
     if self.__uSetup:

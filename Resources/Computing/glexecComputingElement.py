@@ -434,7 +434,41 @@ os.execl( "$executable" )
       return result
     return self.__analyzeExitCode( result[ 'Value' ] )
 
-  def getDynamicInfo( self ):
+    resultTuple = result['Value']
+    status = resultTuple[0]
+    stdOutput = resultTuple[1]
+    stdError = resultTuple[2]
+    self.log.info( "Status after the glexec execution is %s" % str( status ) )
+    if status >=127:
+      error = S_ERROR( status )
+      error['Value'] = ( status, stdOutput, stdError )
+      return error
+
+    return result
+
+  #############################################################################
+  def glexecLocate( self ):
+    """Try to find glexec on the local system, if not found default to InProcess.
+    """
+    glexecPath = ""
+    if os.environ.has_key( 'OSG_GLEXEC_LOCATION' ):
+      glexecPath = '%s' % ( os.environ['OSG_GLEXEC_LOCATION'] )
+    elif os.environ.has_key( 'GLITE_LOCATION' ):
+      glexecPath = '%s/sbin/glexec' % ( os.environ['GLITE_LOCATION'] )
+    else: #try to locate the excutable in the PATH
+      glexecPath = which( "glexec" )    
+    if not glexecPath:
+      self.log.info( 'Unable to locate glexec, site does not have GLITE_LOCATION nor OSG_GLEXEC_LOCATION defined' )
+      return S_ERROR( 'glexec not found' )
+
+    if not os.path.exists( glexecPath ):
+      self.log.info( 'glexec not found at path %s' % ( glexecPath ) )
+      return S_ERROR( 'glexec not found' )
+
+    return S_OK( glexecPath )
+
+  #############################################################################
+  def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()

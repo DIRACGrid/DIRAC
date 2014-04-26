@@ -5,10 +5,12 @@
 
 '''
 
-from DIRAC                                              import gLogger, S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient                         import RPCClient                   
+from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient                             import RPCClient
 #from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
-from DIRAC.ResourceStatusSystem.Utilities               import RssConfiguration  
+from DIRAC.ResourceStatusSystem.Utilities                   import RssConfiguration
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
+from DIRAC.FrameworkSystem.Client.NotificationClient        import NotificationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 
 from types import StringTypes, ListType
@@ -226,7 +228,12 @@ class ResourceStatusClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self._query( 'delete', locals() )
+
+    result = self._query( 'delete', locals() )
+    if result['OK']:
+      self.notify( 'delete', str( locals() ) )
+    return result
+
   def addOrModifyStatusElement( self, element, tableType, name = None, 
                                 statusType = None, status = None, 
                                 elementType = None, reason = None, 
@@ -273,6 +280,7 @@ class ResourceStatusClient( object ):
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', locals() )
+
   def modifyStatusElement( self, element, tableType, name = None, statusType = None, 
                            status = None, elementType = None, reason = None, 
                            dateEffective = None, lastCheckTime = None, tokenOwner = None, 
@@ -365,6 +373,17 @@ class ResourceStatusClient( object ):
 
   ##############################################################################
   # Protected methods - Use carefully !!
+
+  def notify( self, request, params ):
+    '''
+      Send notification for a given request with its params to the diracAdmin
+    '''
+
+    mail = NotificationClient()
+    address = Operations().getValue( 'ResourceStatus/Notification/DebugGroup/Users' )
+    msg = 'Matching parameters: ' + str( params )
+    sbj = '[NOTIFICATION] DIRAC ResourceStatusDB: ' + request + ' entry'
+    mail.sendMail( address, sbj, msg , address )
 
   def _extermineStatusElement( self, element, name, keepLogs = True ):
     '''
