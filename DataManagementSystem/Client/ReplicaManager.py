@@ -38,6 +38,7 @@ class CatalogBase( object ):
   """
   def __init__( self ):
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
+    self.useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
 
   def _callFileCatalogFcnSingleFile( self, lfn, method, argsDict = None, catalogs = None ):
     """ A wrapper around :CatalogBase._callFileCatalogFcn: for a single file. It parses
@@ -2137,20 +2138,27 @@ class ReplicaManager( CatalogToStorage ):
       else:
         # This is the PFN as in hte FC
         lfnDict[lfn] = pfn
-    res = self.__removePhysicalReplica( storageElementName, lfnDict.keys() )
+    # Now we should use the constructed PFNs if needed, for the physical removal
+    # Reverse lfnDict into pfnDict with required PFN
+    if self.useCatalogPFN:
+      pfnsDict = dict( zip( lfnDict.values(), lfnDict.keys() ) )
+    else:
+      pfnsDict = dict( [ ( self.getPfnForLfn( lfn, storageElementName )['Value'].get( 'Successful', {} ).get( lfn, lfnDict[lfn] ), lfn ) for lfn in lfnDict] )
+    # removePhysicalReplicas is called with real PFN list
+    res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
     if not res['OK']:
       errStr = "__removeReplica: Failed to remove catalog replicas."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    for lfn, error in res['Value']['Failed'].items():
-      failed[lfn] = error
-    replicaTuples = [( lfn, lfnDict[lfn], storageElementName ) for lfn in res['Value']['Successful']]
-    successful = {}
+    failed.update( dict( [( pfnDict[pfn], error ) for pfn, error in res['Value']['Failed'].items()] ) )
+    # Here we use the FC PFN...
+    replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[lfn]], storageElementName ) for pfn in res['Value']['Successful']]
     res = self.__removeCatalogReplica( replicaTuples )
     if not res['OK']:
       errStr = "__removeReplica: Completely failed to remove physical files."
       self.log.error( errStr, res['Message'] )
-      failed.update( dict.fromkeys( [lfn for lfn in lfnDict if lfn not in failed], errStr ) )
+      failed.update( dict.fromkeys( [lfn for lfn, _pfn, _se in replicaTuples if lfn not in failed], res['Message'] ) )
+      successful = {}
     else:
       failed.update( res['Value']['Failed'] )
       successful = res['Value']['Successful']
@@ -2237,15 +2245,14 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "__removeCatalogReplica: Completely failed to remove replica."
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    for lfn in res['Value']['Successful']:
-      infoStr = "__removeCatalogReplica: Successfully removed replica."
-      self.log.debug( infoStr, lfn )
-    if res['Value']['Successful']:
-      self.log.info( "__removeCatalogReplica: Removed %d replicas" % len( res['Value']['Successful'] ) )
+    success = res['Value']['Successful']
+    if success:
+      self.log.info( "__removeCatalogReplica: Removed %d replicas" % len( success ) )
+      for lfn in success:
+        self.log.debug( "__removeCatalogReplica: Successfully removed replica.", lfn )
     for lfn, error in res['Value']['Failed'].items():
-      errStr = "__removeCatalogReplica: Failed to remove replica."
-      self.log.error( errStr, "%s %s" % ( lfn, error ) )
-    oDataOperation.setValueByKey( 'RegistrationOK', len( res['Value']['Successful'] ) )
+      self.log.error( "__removeCatalogReplica: Failed to remove replica.", "%s %s" % ( lfn, error ) )
+    oDataOperation.setValueByKey( 'RegistrationOK', len( success ) )
     gDataStoreClient.addRegister( oDataOperation )
     return res
 
@@ -2505,24 +2512,23 @@ class ReplicaManager( CatalogToStorage ):
   def getReplicas( self, lfns, allStatus = True ):
     """ get replicas from catalogue """
     res = self.getCatalogReplicas( lfns, allStatus = allStatus )
-    
-    useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
-    if not useCatalogPFN:
+
+    if not self.useCatalogPFN:
       if res['OK']:
         se_lfn = {}
         catalogReplicas = res['Value']['Successful']
-  
+
         # We group the query to getPfnForLfn by storage element to gain in speed
         for lfn in catalogReplicas:
           for se in catalogReplicas[lfn]:
             se_lfn.setdefault( se, [] ).append( lfn )
-  
+
         for se in se_lfn:
           succPfn = self.getPfnForLfn( se_lfn[se], se ).get( 'Value', {} ).get( 'Successful', {} )
           for lfn in succPfn:
             # catalogReplicas still points res["value"]["Successful"] so res will be updated
             catalogReplicas[lfn][se] = succPfn[lfn]
-            
+
     return res
 
   def getFileSize( self, lfn ):
