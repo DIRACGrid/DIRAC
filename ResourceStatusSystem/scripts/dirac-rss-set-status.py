@@ -10,11 +10,13 @@
 
 from datetime import datetime, timedelta
 
-from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Base                           import Script
-from DIRAC.Core.Security.ProxyInfo             import getProxyInfo
-from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.PolicySystem   import StateMachine
+from DIRAC                                                  import gConfig, gLogger, exit as DIRACExit, S_OK, version
+from DIRAC.Core.Base                                        import Script
+from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
+from DIRAC.ResourceStatusSystem.Client                      import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.PolicySystem                import StateMachine
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
+
 
 __RCSID__  = '$Id:$'
 
@@ -29,8 +31,8 @@ def registerSwitches():
   
   switches = (
     ( 'element=',     'Element family to be Synchronized ( Site, Resource or Node )' ),
-    ( 'name=',        'Name, name of the element where the change applies' ),
-    ( 'statusType=',  'StatusType, if none applies to all possible statusTypes' ),
+    ( 'name=',        'Name (or comma-separeted list of names) of the element where the change applies' ),
+    ( 'statusType=',  'StatusType (or comma-separeted list of names), if none applies to all possible statusTypes' ),
     ( 'status=',      'Status to be changed' ),
     ( 'reason=',      'Reason to set the Status' ),
              )
@@ -96,6 +98,70 @@ def parseSwitches():
   return switches  
 
 #...............................................................................
+def checkStatusTypes( statusTypes ):
+  '''
+    To check if values for 'statusType' are valid
+  '''
+
+  opsH = Operations().getValue( 'ResourceStatus/Config/StatusTypes/StorageElement' )
+  acceptableStatusTypes = opsH.replace( ',', '' ).split()
+
+  for statusType in statusTypes:
+    if not statusType in acceptableStatusTypes and statusType != 'all':
+      acceptableStatusTypes.append('all')
+      error( "'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
+             % ( statusType, str( acceptableStatusTypes ) ) )
+
+
+  if 'all' in statusType:
+    return acceptableStatusTypes
+  else:
+    return statusTypes
+
+
+def unpack( switchDict ):
+  '''
+    To split and process comma-separated list of values for 'name' and 'statusType'
+  '''
+
+  switchDictSet = []
+  names = []
+  statusTypes = []
+
+  if switchDict[ 'name' ] is not None:
+    names = filter( None, switchDict[ 'name' ].split( ',' ) )
+
+  if switchDict[ 'statusType' ] is not None:
+    statusTypes = filter( None, switchDict[ 'statusType' ].split( ',' ) )
+    statusTypes = checkStatusTypes( statusTypes )
+
+
+  if len( names ) > 0 and len( statusTypes ) > 0:
+    combinations = [ ( a, b ) for a in names for b in statusTypes ]
+    for combination in combinations:
+      n, s = combination
+      switchDictClone = switchDict.copy()
+      switchDictClone[ 'name' ] = n
+      switchDictClone[ 'statusType' ] = s
+      switchDictSet.append( switchDictClone )
+  elif len( names ) > 0 and len( statusTypes ) == 0:
+    for name in names:
+      switchDictClone = switchDict.copy()
+      switchDictClone[ 'name' ] = name
+      switchDictSet.append( switchDictClone )
+  elif len( names ) == 0 and len( statusTypes ) > 0:
+    for statusType in statusTypes:
+      switchDictClone = switchDict.copy()
+      switchDictClone[ 'statusType' ] = statusType
+      switchDictSet.append( switchDictClone )
+  elif len( names ) == 0 and len( statusTypes ) == 0:
+    switchDictClone = switchDict.copy()
+    switchDictClone[ 'name' ] = None
+    switchDictClone[ 'statusType' ] = None
+    switchDictSet.append( switchDictClone )
+
+  return switchDictSet
+
 
 def getTokenOwner():
   '''
@@ -108,7 +174,7 @@ def getTokenOwner():
   userName = proxyInfo[ 'Value' ][ 'username' ]   
   return S_OK( userName )
 
-def setStatus( tokenOwner ):
+def setStatus( switchDict, tokenOwner ):
   '''
     Function that gets the user token, sets the validity for it. Gets the elements
     in the database for a given name and statusType(s). Then updates the status
@@ -156,7 +222,7 @@ def setStatus( tokenOwner ):
 
 #...............................................................................
 
-def run():
+def run( switchDict ):
   '''
     Main function of the script
   '''
@@ -169,7 +235,7 @@ def run():
   
   subLogger.notice( 'TokenOwner is %s' % tokenOwner )
     
-  result = setStatus( tokenOwner )
+  result = setStatus( switchDict, tokenOwner )
   if not result[ 'OK' ]:
     subLogger.error( result[ 'Message' ] )
     DIRACExit( 1 ) 
@@ -184,9 +250,11 @@ if __name__ == "__main__":
   registerSwitches()
   registerUsageMessage()
   switchDict = parseSwitches()
+  switchDictSets = unpack( switchDict )
   
   #Run script
-  run()
+  for switchDict in switchDictSets:
+    run( switchDict )
    
   #Bye
   DIRACExit( 0 )
