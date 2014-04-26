@@ -948,8 +948,12 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     pfnDict = {}
     for lfn, replicas in lfnReplicas.items():
       if storageElementName in replicas:
-        res = self.getPfnForLfn( lfn, storageElementName )
-        pfn = res.get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[storageElementName] )
+        useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
+        if useCatalogPFN:
+          pfn = replicas[storageElementName]
+        else:  
+          res = self.getPfnForLfn( lfn, storageElementName )
+          pfn = res.get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[storageElementName] )
         pfnDict[pfn] = lfn
       else:
         errStr = "_callReplicaSEFcn: File hasn't got replica at supplied Storage Element."
@@ -1335,7 +1339,7 @@ class ReplicaManager( CatalogToStorage ):
     if not res['OK']:
       return res
     for storageElementName in res['Value']:
-      physicalFile = self.getPfnForLfn( lfn, storageElementName ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[storageElementName] )
+      physicalFile = replicas[storageElementName]
       # print '__getFile', physicalFile, replicas[storageElementName]
       res = self.getStorageFile( physicalFile,
                                  storageElementName,
@@ -1791,7 +1795,9 @@ class ReplicaManager( CatalogToStorage ):
           errStr = "%s The storage element is not currently valid." % logStr
           self.log.error( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
-          pfn = storageElement.getPfnForLfn( lfn ).get( 'Value', pfn )
+          #useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
+          #if not useCatalogPFN:
+          #  pfn = storageElement.getPfnForLfn( lfn ).get( 'Value', pfn )
           if storageElement.getRemoteProtocols()['Value']:
             self.log.verbose( "%s Attempting to get source pfns for remote protocols." % logStr )
             res = storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols )
@@ -2268,35 +2274,35 @@ class ReplicaManager( CatalogToStorage ):
     self.log.verbose( "removePhysicalReplica: Attempting to remove %s lfns at %s." % ( len( lfns ),
                                                                                        storageElementName ) )
     self.log.verbose( "removePhysicalReplica: Attempting to resolve replicas." )
-    res = self.fileCatalogue.getReplicas( lfns )
+    res = self.getReplicas( lfns )
     if not res['OK']:
       errStr = "removePhysicalReplica: Completely failed to get replicas for lfns."
       self.log.error( errStr, res['Message'] )
       return res
     failed = res['Value']['Failed']
     successful = {}
-    lfnsToRemove = []
+    pfnDict = {}
     for lfn, repDict in res['Value']['Successful'].items():
       if storageElementName not in repDict:
         # The file doesn't exist at the storage element so don't have to remove it
         successful[lfn] = True
       else:
-        lfnsToRemove.append( lfn )
-    self.log.verbose( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( lfnsToRemove ),
+        sePfn = repDict[storageElementName]
+        pfnDict[sePfn] = lfn
+    self.log.verbose( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( pfnDict ),
                                                                                        storageElementName ) )
-    res = self.__removePhysicalReplica( storageElementName, lfnsToRemove )
-    for lfn, error in res['Value']['Failed'].items():
-      failed[lfn] = error
+    res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
+    for pfn, error in res['Value']['Failed'].items():
+      failed[pfnDict[pfn]] = error
     for pfn in res['Value']['Successful']:
-      successful[lfn] = True
+      successful[pfnDict[pfn]] = True
     resDict = { 'Successful' : successful, 'Failed' : failed }
     return S_OK( resDict )
 
-  def __removePhysicalReplica( self, storageElementName, lfnsToRemove ):
+  def __removePhysicalReplica( self, storageElementName, pfnsToRemove ):
     """ remove replica from storage element """
-    self.log.verbose( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( lfnsToRemove ),
+    self.log.verbose( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ),
                                                                                          storageElementName ) )
-    pfnsToRemove = dict( [( self.getPfnForLfn( lfn, storageElementName )['Value'].get( 'Successful', {} ).get( lfn ), lfn ) for lfn in lfnsToRemove] )
     storageElement = StorageElement( storageElementName )
     res = storageElement.isValid()
     if not res['OK']:
@@ -2308,7 +2314,7 @@ class ReplicaManager( CatalogToStorage ):
                                                         len( pfnsToRemove ) )
     oDataOperation.setStartTime()
     start = time.time()
-    res = storageElement.removeFile( pfnsToRemove.keys() )
+    res = storageElement.removeFile( pfnsToRemove )
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey( 'TransferTime', time.time() - start )
     if not res['OK']:
@@ -2319,25 +2325,21 @@ class ReplicaManager( CatalogToStorage ):
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     else:
-      result = {'Failed':{}, 'Successful':{}}
       for surl, value in res['Value']['Failed'].items():
-        lfn = pfnsToRemove[surl]
         if 'No such file or directory' in value:
-          result['Successful'][lfn] = surl
-        else:
-          result['Failed'][lfn] = value
+          res['Value']['Successful'][surl] = surl
+          res['Value']['Failed'].pop( surl )
       for surl in res['Value']['Successful']:
-        lfn = pfnsToRemove[surl]
         ret = storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False )
         if not ret['OK']:
-          result['Successful'][lfn] = surl
+          res['Value']['Successful'][surl] = surl
         else:
-          result['Successful'][lfn] = ret['Value']
+          res['Value']['Successful'][surl] = ret['Value']
       oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'] ) )
       gDataStoreClient.addRegister( oDataOperation )
       infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
       self.log.verbose( infoStr )
-      return S_OK( result )
+      return res
 
   #########################################################################
   #
