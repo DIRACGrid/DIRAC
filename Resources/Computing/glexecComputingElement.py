@@ -282,7 +282,7 @@ class glexecComputingElement( ComputingElement ):
     stdOutput = resultTuple[1]
     stdError = resultTuple[2]
     self.log.info( "Status after the glexec execution is %s" % str( status ) )
-    if status:
+    if status >=127:
       error = S_ERROR( status )
       error['Value'] = ( status, stdOutput, stdError )
       return error

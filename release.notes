@@ -1,4 +1,4 @@
-[v6r11-pre15]
+[v6r11-pre16]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
@@ -46,6 +46,19 @@ NEW: dirac-rms-reset-request command
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p22]
+
+*CS
+CHANGE: Operations helper - if not given, determine the VO from the current proxy 
+
+*Resources
+FIX: glexecComputingElement - allows Application Failed with Errors results to show through, 
+     rather than be masked by false "glexec CE submission" errors
+     
+*DMS     
+CHANGE: ReplicaManager - in getReplicas() rebuild PFN if 
+        <Operations>/DataManagement/UseCatalogPFN option is set to False ( True by default )
 
 [v6r10p21]
 
