@@ -69,10 +69,10 @@ class SSHTorqueComputingElement( SSHComputingElement ):
 
     ssh = SSH( parameters = self.ceParameters )
 
-    if self.ceParameters.has_key('batchUser') :
+    if self.ceParameters.has_key('BatchUser') :
 
-#      cmd = ["qstat", "-i", "-u", self.ceParameters['batchUser'], self.queue, "|", "grep", self.queue, "|", "wc", "-l"]
-      cmd = ["qselect", "-u", self.ceParameters['batchUser'], "-s", "QW", "|", "wc", "-l"]
+#      cmd = ["qstat", "-i", "-u", self.ceParameters['BatchUser'], self.queue, "|", "grep", self.queue, "|", "wc", "-l"]
+      cmd = ["qselect", "-u", self.ceParameters['BatchUser'], "-s", "QW", "|", "wc", "-l"]
 
       ret = self.__execRemoteSSH( ssh, cmd )
 
@@ -82,8 +82,8 @@ class SSHTorqueComputingElement( SSHComputingElement ):
 
       waitingJobs = int(ret['Value'])
 
-#      cmd = ["qstat", "-r", "-u", self.ceParameters['batchUser'], self.queue, "|", "grep", self.queue, "|", "wc", "-l"]
-      cmd = ["qselect", "-u", self.ceParameters['batchUser'], "-s", "R", "|", "wc", "-l"]
+#      cmd = ["qstat", "-r", "-u", self.ceParameters['BatchUser'], self.queue, "|", "grep", self.queue, "|", "wc", "-l"]
+      cmd = ["qselect", "-u", self.ceParameters['BatchUser'], "-s", "R", "|", "wc", "-l"]
 
       ret = self.__execRemoteSSH( ssh, cmd )
 
