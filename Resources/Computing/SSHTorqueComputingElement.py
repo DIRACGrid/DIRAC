@@ -71,8 +71,6 @@ class SSHTorqueComputingElement( SSHComputingElement ):
 
     ssh = SSH( parameters = self.ceParameters )
 
-    print 'STEFAN',self.ceParameters
-
     if self.ceParameters.has_key('batchUser') :
 
 #      cmd = ["qstat", "-i", "-u", self.ceParameters['batchUser'], self.queue, "|", "grep", self.queue, "|", "wc", "-l"]
@@ -181,6 +179,6 @@ class SSHTorqueComputingElement( SSHComputingElement ):
     output = '%s/DIRACPilot.o%s' % ( self.batchOutput, jobStamp )
     error = '%s/DIRACPilot.e%s' % ( self.batchError, jobStamp )
 
-    return S_OK( (jobStamp, host, output, error) )
+    return S_OK( (jobStamp,host,output,error) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
