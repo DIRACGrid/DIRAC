@@ -39,9 +39,9 @@ class SSH:
     self.key = key
     if not key:
       self.key = parameters.get( 'SSHKey', '' )
-    if not options:
-      self.options = parameters.get( 'SSHOptions', '' )
     self.options = options
+    if not len(options):
+      self.options = parameters.get( 'SSHOptions', '' )
     self.log = gLogger.getSubLogger( 'SSH' )  
 
   def __ssh_call( self, command, timeout ):
