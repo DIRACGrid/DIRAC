@@ -2146,9 +2146,9 @@ class ReplicaManager( CatalogToStorage ):
     # Now we should use the constructed PFNs if needed, for the physical removal
     # Reverse lfnDict into pfnDict with required PFN
     if self.useCatalogPFN:
-      pfnsDict = dict( zip( lfnDict.values(), lfnDict.keys() ) )
+      pfnDict = dict( zip( lfnDict.values(), lfnDict.keys() ) )
     else:
-      pfnsDict = dict( [ ( self.getPfnForLfn( lfn, storageElementName )['Value'].get( 'Successful', {} ).get( lfn, lfnDict[lfn] ), lfn ) for lfn in lfnDict] )
+      pfnDict = dict( [ ( self.getPfnForLfn( lfn, storageElementName )['Value'].get( 'Successful', {} ).get( lfn, lfnDict[lfn] ), lfn ) for lfn in lfnDict] )
     # removePhysicalReplicas is called with real PFN list
     res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
     if not res['OK']:
@@ -2342,7 +2342,7 @@ class ReplicaManager( CatalogToStorage ):
           res['Value']['Successful'][surl] = surl
           res['Value']['Failed'].pop( surl )
       for surl in res['Value']['Successful']:
-        ret = storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False )
+        ret = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False ) )
         if not ret['OK']:
           res['Value']['Successful'][surl] = surl
         else:
