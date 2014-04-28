@@ -22,6 +22,8 @@ CE_NAME = 'SSHTorque'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSHTorqueComputingElement( SSHComputingElement ):
+""" Torque CE interface, via SSH
+"""
 
   #############################################################################
   def __init__( self, ceUniqueID ):
@@ -34,16 +36,11 @@ class SSHTorqueComputingElement( SSHComputingElement ):
     self.mandatoryParameters = MANDATORY_PARAMETERS
 
   #############################################################################
-  def getCEStatus( self ):
-    """ Method to return information on running and pending jobs.
-    """
+  def __execRemoteSSH(self, ssh, cmd) :
+    """ execute command via ssh connection and return stdout in case of success
+    otherwise stderr"""
 
-    result = S_OK()
-    result['SubmittedJobs'] = self.submittedJobs
-
-    ssh = SSH( parameters = self.ceParameters )
-    cmd = ["qstat", "-Q" , self.execQueue ]
-    ret = ssh.sshCall( 10, cmd )
+    ret = ssh.sshCall(10, cmd)
 
     if not ret['OK']:
       self.log.error( 'Timeout', ret['Message'] )
@@ -58,19 +55,68 @@ class SSHTorqueComputingElement( SSHComputingElement ):
     self.log.debug( "stderr:", stderr )
 
     if status:
-      self.log.error( 'Failed qstat execution:', stderr )
+      self.log.error( 'Failed remote execution of command "%s": %s:' % (' '.join(cmd), stderr) )
       return S_ERROR( stderr )
 
-    matched = re.search( self.queue + "\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", stdout )
+    return S_OK(stdout)
 
-    if matched.groups < 6:
-      return S_ERROR( "Error retrieving information from qstat:" + stdout + stderr )
 
-    try:
-      waitingJobs = int( matched.group( 5 ) )
-      runningJobs = int( matched.group( 6 ) )
-    except:
-      return S_ERROR( "Error retrieving information from qstat:" + stdout + stderr )
+  #############################################################################
+  def getCEStatus( self ):
+    """ Method to return information on running and pending jobs.
+    """
+
+    result = S_OK()
+    result['SubmittedJobs'] = self.submittedJobs
+
+    ssh = SSH( parameters = self.ceParameters )
+
+    print 'STEFAN',self.ceParameters
+
+    if self.ceParameters.has_key('batchUser') :
+
+#      cmd = ["qstat", "-i", "-u", self.ceParameters['batchUser'], self.queue, "|", "grep", self.queue, "|", "wc", "-l"]
+      cmd = ["qselect", "-u", self.ceParameters['batchUser'], "-s", "QW", "|", "wc", "-l"]
+
+      ret = self.__execRemoteSSH( ssh, cmd )
+
+      if not ret['OK'] :
+        self.log.error( ret['Message'] )
+        return ret
+
+      waitingJobs = int(ret['Value'])
+
+#      cmd = ["qstat", "-r", "-u", self.ceParameters['batchUser'], self.queue, "|", "grep", self.queue, "|", "wc", "-l"]
+      cmd = ["qselect", "-u", self.ceParameters['batchUser'], "-s", "R", "|", "wc", "-l"]
+
+      ret = self.__execRemoteSSH( ssh, cmd )
+
+      if not ret['OK'] :
+        self.log.error( ret['Message'] )
+        return ret
+
+      runningJobs = int(ret['Value'])
+
+    else :
+
+      cmd = ["qstat", "-Q" , self.execQueue ]
+
+      ret = self.__execRemoteSSH( ssh, cmd )
+
+      if not ret['OK']:
+        self.log.error( ret['Message'] )
+        return ret
+
+      matched = re.search( self.queue + "\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", ret['Value'] )
+
+      if matched.groups < 6:
+        return S_ERROR( "Error retrieving information from qstat:" + ret['Value'] )
+
+      try:
+        waitingJobs = int( matched.group( 5 ) )
+        runningJobs = int( matched.group( 6 ) )
+      except:
+        return S_ERROR( "Error retrieving information from qstat:" + ret['Value'] )
 
     result['WaitingJobs'] = waitingJobs
     result['RunningJobs'] = runningJobs
@@ -135,6 +181,6 @@ class SSHTorqueComputingElement( SSHComputingElement ):
     output = '%s/DIRACPilot.o%s' % ( self.batchOutput, jobStamp )
     error = '%s/DIRACPilot.e%s' % ( self.batchError, jobStamp )
 
-    return S_OK( (jobStamp,host,output,error) )
+    return S_OK( (jobStamp, host, output, error) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
