@@ -22,8 +22,6 @@ CE_NAME = 'SSHTorque'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSHTorqueComputingElement( SSHComputingElement ):
-""" Torque CE interface, via SSH
-"""
 
   #############################################################################
   def __init__( self, ceUniqueID ):
