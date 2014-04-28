@@ -25,7 +25,7 @@ MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSH:
 
-  def __init__( self, user = None, host = None, password = None, key = None, parameters = {} ):
+  def __init__( self, user = None, host = None, password = None, key = None, options = None, parameters = {} ):
 
     self.user = user
     if not user:
@@ -39,6 +39,8 @@ class SSH:
     self.key = key
     if not key:
       self.key = parameters.get( 'SSHKey', '' )
+    if not options:
+      self.options = parameters.get('SSHOptions','')
     self.log = gLogger.getSubLogger( 'SSH' )  
 
   def __ssh_call( self, command, timeout ):
@@ -104,7 +106,8 @@ class SSH:
     key = ''
     if self.key:
       key = ' -i %s ' % self.key
-
+    if self.options:
+      key+= ' -o %s ' % self.options
     pattern = "'===><==='"
     command = 'ssh -q %s -l %s %s "echo %s;%s"' % ( key, self.user, self.host, pattern, command )    
     self.log.debug( "SSH command %s" % command )
@@ -134,7 +137,8 @@ class SSH:
     key = ''
     if self.key:
       key = ' -i %s ' % self.key
-
+    if self.options:
+      key+= ' -o %s ' % self.options
     if upload:
       command = "scp %s %s %s@%s:%s" % ( key, localFile, self.user, self.host, destinationPath )
     else:
