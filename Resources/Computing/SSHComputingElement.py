@@ -107,7 +107,7 @@ class SSH:
     if self.key:
       key = ' -i %s ' % self.key
     if self.options:
-      key+= ' -o %s ' % self.options
+      key+= ' %s ' % self.options
     pattern = "'===><==='"
     command = 'ssh -q %s -l %s %s "echo %s;%s"' % ( key, self.user, self.host, pattern, command )    
     self.log.debug( "SSH command %s" % command )
@@ -138,7 +138,7 @@ class SSH:
     if self.key:
       key = ' -i %s ' % self.key
     if self.options:
-      key+= ' -o %s ' % self.options
+      key+= ' %s ' % self.options
     if upload:
       command = "scp %s %s %s@%s:%s" % ( key, localFile, self.user, self.host, destinationPath )
     else:
