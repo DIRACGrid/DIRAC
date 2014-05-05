@@ -34,398 +34,6 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Resources.Utilities import Utils
 
-
-
-##############################3
-# The code commented under was design originally to modify the code of the ReplicaManager
-# in a backward compatible way. Finally, it will normally not be used, but I keep it here for a little
-# while, just in case...
-
-#
-# class StorageBackwardCompatibility( object ):
-#   """
-#     :class: This class ensures the backward compatibility with the previous implementation
-#             of the RM. It forwards the calls to the StorageElement. It is meant to disappear
-#             asap.
-#   """
-#
-#   __deprecatedArguments = ["singleFile", "singleDirectory"]  # Arguments that are now useless
-#
-#   # Some methods have a different name in the ReplicaManager and the StorageElement...
-#   # We could avoid this static list in the __getattr__ by checking the StorageElement object and so on
-#   # but fine... let's not be too smart, otherwise it becomes unreadable :-)
-#   __equivalentMethodNames = {"getLfnForPfn" : "getPfnPath",
-#                              "getPfnForLfn" : "getPfnForLfn",
-#                              "getPfnForProtocol" : "getPfnForProtocol",
-#                              "getPrestageStorageFileStatus" : "prestageFileStatus",
-#                              "getStorageDirectory" : "getDirectory",
-#                              "getStorageDirectoryIsDirectory" : "isDirectory",
-#                              "getStorageDirectoryMetadata" : "getDirectoryMetadata",
-#                              "getStorageDirectorySize" : "getDirectorySize",
-#                              "getStorageFileAccessUrl" : "getAccessUrl",
-#                              "getStorageFileExists" : "exists",
-#                              "getStorageFile" : "getFile",
-#                              "getStorageFileIsFile" : "isFile",
-#                              "getStorageFileMetadata" : "getFileMetadata",
-#                              "getStorageFileSize" : "getFileSize",
-#                              "getStorageListDirectory" : "listDirectory",
-#                              "pinStorageFile" : "pinFile",
-#                              "prestageStorageFile" : "prestageFile",
-#                              "putStorageDirectory" : "putDirectory",
-#                              "putStorageFile" : "putFile",
-#                              "releaseStorageFile" : "releaseFile",
-#                              "removeStorageDirectory" : "removeDirectory",
-#                              "removeStorageFile" : "removeFile",
-#                              }
-#
-#
-#   # We can set default argument in the __executeFunction which impacts all plugins
-#   __defaultsArguments = { "getAccessUrl" : { "protocol"  : None },
-#                          "getPfnForProtocol" : { "protocol" : "SRM2", "withPort" : True },
-#                           "prestageFile" : { "lifetime" : 86400 },
-#                           "pinFile" : { "lifetime" : 86400 },
-#                           "getFile" : { "localPath": False },
-#                           "getDirectory" : { "localPath" : False },
-#                           "removeDirectory" : { "recursive" : False },
-#                           }
-#
-#   def __init__( self ):
-#     super( StorageBackwardCompatibility, self ).__init__()
-#     self.methodName = None
-#
-#
-#
-#   # We need to keep this because it makes the loop... stupid
-#   def getPfnForLfn( self, lfns, storageElementName ):
-#     """ get PFNs for supplied LFNs at :storageElementName: SE
-#
-#     :param self: self reference
-#     :param list lfns: list of LFNs
-#     :param str stotrageElementName: DIRAC SE name
-#     """
-#     if type( lfns ) == type( '' ):
-#       lfns = [lfns]
-#     storageElement = StorageElement( storageElementName )
-#     res = storageElement.isValid( "getPfnForLfn" )
-#     if not res['OK']:
-#       self.log.debug( "getPfnForLfn: Failed to instantiate StorageElement at %s" % storageElementName )
-#       return res
-#     retDict = { "Successful" : {}, "Failed" : {} }
-#     for lfn in lfns:
-#       res = storageElement.getPfnForLfn( lfn )
-#       if res["OK"]:
-#         retDict["Successful"][lfn] = res["Value"]
-#       else:
-#         retDict["Failed"][lfn] = res["Message"]
-#     return S_OK( retDict )
-#
-#   # We need to keep this because it makes the loop... stupid
-#   def getPfnForProtocol( self, pfns, storageElementName, protocol = "SRM2", withPort = True ):
-#     """ create PFNs strings at :storageElementName: SE using protocol :protocol:
-#
-#     :param self: self reference
-#     :param list pfns: list of PFNs
-#     :param str storageElementName: DIRAC SE name
-#     :param str protocol: protocol name (default: 'SRM2')
-#     :param bool withPort: flag to include port in PFN (default: True)
-#     """
-#     storageElement = StorageElement( storageElementName )
-#     res = storageElement.isValid( "getPfnForProtocol" )
-#     if not res["OK"]:
-#       self.log.debug( "getPfnForProtocol: Failed to instantiate StorageElement at %s" % storageElementName )
-#       return res
-#     retDict = { "Successful" : {}, "Failed" : {}}
-#     for pfn in pfns:
-#       res = storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort )
-#       if res["OK"]:
-#         retDict["Successful"][pfn] = res["Value"]
-#       else:
-#         retDict["Failed"][pfn] = res["Message"]
-#     return S_OK( retDict )
-#
-#   # different order of argument....
-#   def replicateStorageFile( self, physicalFile, size, storageElementName, singleFile = False ):
-#     """ replicate a physical file to a storage element
-#
-#     :param self: self reference
-#     :param mixed physicalFile: dictionary with PFN information
-#     :param int size: size of PFN in bytes
-#     :param str storageElementName: DIRAC SE name
-#     :param bool singleFile: execute for the first PFN only
-#     """
-#     self.methodName = 'replicateFile'
-#     return self.__executeMethod( physicalFile, storageElementName, sourceSize = size, singleFile = singleFile )
-#
-#
-#
-#   def _callStorageElementFcn( self, storageElementName, pfn, method, argsDict = None ):
-#
-#     print "StorageBackwardCompatibility _callStorageElementFcn %s" % method
-#
-#     # We take either the equivalent name, or the name itself
-#     self.methodName = method
-#
-#     kwargs = {}
-#     if argsDict:
-#       kwargs.update( argsDict )
-#     return self.__executeMethod( pfn, storageElementName, **kwargs )
-#
-#   def __executeMethod( self, lfn, storageElementName, *args, **kwargs ):
-#     """ a simple wrapper around the :StorageElement: functionality
-#
-#     :param self: self reference
-#     :param str storageElementName:  DIRAC SE name to be accessed e.g. CERN-DST
-#     :param mixed lfn: contains a single LFN string or a list of LFNs or dictionary containing LFNs
-#     :param dict argsDict: additional keyword arguments that are required for the :method:
-#     """
-#
-#     print "EXECUTE METHOD OF STORAGE BACKWAARD"
-#
-#     removedArgs = {}
-#
-#     self.log.debug( "StorageBackwardCompatibility.__executeMethod : preparing the execution of %s" % ( self.methodName ) )
-#
-#     # args should normaly be empty to avoid problem...
-#     if len( args ):
-#       self.log.debug( "StorageBackwardCompatibility.__executeMethod: args should be empty!%s" % args )
-#
-#
-#     # We check the deprecated arguments
-#     for depArg in StorageBackwardCompatibility.__deprecatedArguments:
-#       if depArg in kwargs:
-#         self.log.debug( "StorageBackwardCompatibility.__executeMethod: %s is not an allowed argument anymore. Please change your code!" % depArg )
-#         removedArgs[depArg] = kwargs[depArg]
-#         del kwargs[depArg]
-#
-#
-#
-#     # Set default argument if any
-#     methDefaultArgs = StorageBackwardCompatibility.__defaultsArguments.get( self.methodName, {} )
-#     for argName in methDefaultArgs:
-#       if argName not in kwargs:
-#         self.log.debug( "StorageBackwardCompatibility.__executeMethod : default argument %s for %s not present.\
-#          Setting value %s." % ( argName, self.methodName, methDefaultArgs[argName] ) )
-#         kwargs[argName] = methDefaultArgs[argName]
-#
-#
-#
-#     storageElement = StorageElement( storageElementName )
-#     res = storageElement.isValid( self.methodName )
-#     if not res['OK']:
-#       errStr = "StorageBackwardCompatibility.__executeMethod: Failed to instantiate Storage Element"
-#       self.log.debug( errStr, "for performing %s at %s." % ( self.methodName, storageElementName ) )
-#       return res
-#
-#     # # get sybmbol
-#     fcFcn = getattr( storageElement, self.methodName ) if hasattr( storageElement, self.methodName ) else None
-#     # # make sure it is callable
-#     fcFcn = fcFcn if callable( fcFcn ) else None
-#     if not fcFcn:
-#       errMsg = "StorageBackwardCompatibility.__executeMethod: '%s' isn't a member function in StorageElement." % self.methodName
-#       self.log.debug( errMsg )
-#       return S_ERROR( errMsg )
-#
-#     # # call it at least
-#     res = fcFcn( lfn, *args, **kwargs )
-#     # # return the output
-#     if not res["OK"]:
-#       errStr = "StorageBackwardCompatibility.__executeMethod: Completely failed to perform %s." % self.methodName
-#       self.log.debug( errStr, '%s : %s' % ( storageElementName, res["Message"] ) )
-#
-#     return res
-#
-#
-#   def __getattr__( self, name ):
-#     print "storage backward : %s" % name
-#     # We take either the equivalent name, or the name itself
-#     self.methodName = StorageBackwardCompatibility.__equivalentMethodNames.get( name, None )
-#
-#     if self.methodName:
-#       return self.__executeMethod
-#
-#     return super( StorageBackwardCompatibility, self ).__getattr__( name )
-#
-#
-#
-#
-#
-#
-# class CatalogBackwardCompatibility( object ):
-#   """
-#     :class: This class ensures the backward compatibility with the previous implementation
-#             of the RM. It forwards the calls to the FileCatalog. It is meant to disappear
-#             asap.
-#   """
-#
-#   __deprecatedArguments = ["singleFile", "singleDirectory", "catalogs"]  # Arguments that are now useless
-#
-#   # Some methods have a different name in the ReplicaManager and the StorageElement...
-#   # We could avoid this static list in the __getattr__ by checking the StorageElement object and so on
-#   # but fine... let's not be too smart, otherwise it becomes unreadable :-)
-#   __equivalentMethodNames = { "addCatalogFile" : "addFile",
-#                               "addCatalogReplica" : "addReplica",
-#                               "createCatalogDirectory" : "createDirectory",
-#                               "createCatalogLink" : "createLink",
-#                               "getCatalogDirectoryMetadata" : "getDirectoryMetadata",
-#                               "getCatalogDirectoryReplicas" : "getDirectoryReplicas",
-#                               "getCatalogDirectorySize" : "getDirectorySize",
-#                               "getCatalogExists" : "exists",
-#                               "getCatalogFileMetadata" : "getFileMetadata",
-#                               "getCatalogFileSize" : "getFileSize",
-#                               "getCatalogIsDirectory" : "isDirectory",
-#                               "getCatalogIsFile" : "isFile",
-#                               "getCatalogIsLink" : "isLink",
-#                               "getCatalogLFNForPFN" : "getLFNForPFN",
-#                               "getCatalogListDirectory" : "listDirectory",
-#                               "getCatalogReadLink" : "readLink",
-#                               "getCatalogReplicas" : "getReplicas",
-#                               "getCatalogReplicaStatus" : "getReplicaStatus",
-#                               "removeCatalogDirectory" : "removeDirectory",
-#                               "removeCatalogLink" : "removeLink",
-#                               "removeCatalogReplica" : "removeReplica",
-#                               "setCatalogReplicaHost" : "setReplicaHost",
-#                               "setCatalogReplicaStatus" : "setReplicaStatus",
-#                              }
-#
-#
-#   # We can set default argument in the __executeFunction which impacts all plugins
-#   __defaultsArguments = { "getReplicas" : { "allStatus"  : False },
-#                           "listDirectory" : { "verbose" : False },
-#                           "removeDirectory" : { "recursive" : False },
-#                           }
-#
-#   def __init__( self ):
-#     super( CatalogBackwardCompatibility, self ).__init__()
-#     self.methodName = None
-#
-#
-#
-#
-#
-#
-#   def removeCatalogFile( self, lfn, singleFile = False, catalogs = None ):
-#     """ remove a file from the FileCatalog
-#
-#     :param self: self reference
-#     :param mixed lfn: LFN as string or list of LFN strings or dict with LFNs as keys
-#     :param bool singleFile: execute for the first LFN only
-#     :param list catalogs: catalogs' names
-#     """
-#     # # make sure lfns are sorted from the longest to the shortest
-#     if type( lfn ) == ListType:
-#       lfn = sorted( lfn, reverse = True )
-#
-#     self.methodName = "removeFile"
-#     return self.__executeMethod( lfn, singleFile = singleFile, catalogs = catalogs )
-#
-#
-#   def _callFileCatalogFcn( self, lfn, method, argsDict = None, catalogs = None ):
-#
-#     print "CatalogBackwardCompatibility _callFileCatalogFcn %s" % method
-#
-#     # We take either the equivalent name, or the name itself
-#     self.methodName = method
-#     kwargs = {"catalogs" : catalogs}
-#     if argsDict:
-#       kwargs.update( argsDict )
-#
-#     return self.__executeMethod( lfn, **kwargs )
-#
-#
-#
-#
-#   def __executeMethod( self, lfn, *args, **kwargs ):
-#     """ a simple wrapper around the :StorageElement: functionality
-#
-#     :param self: self reference
-#     :param str storageElementName:  DIRAC SE name to be accessed e.g. CERN-DST
-#     :param mixed lfn: contains a single LFN string or a list of LFNs or dictionary containing LFNs
-#     :param dict argsDict: additional keyword arguments that are required for the :method:
-#     """
-#
-#     print "EXECUTE METHOD OF CATALOGBACKWAARD"
-#
-#     removedArgs = {}
-#
-#     self.log.debug( "CatalogBackwardCompatibility.__executeMethod : preparing the execution of %s" % ( self.methodName ) )
-#
-#     # args should normaly be empty to avoid problem...
-#     if len( args ):
-#       self.log.debug( "CatalogBackwardCompatibility.__executeMethod: args should be empty!%s" % args )
-#
-#
-#     # We check the deprecated arguments
-#     for depArg in CatalogBackwardCompatibility.__deprecatedArguments:
-#       if depArg in kwargs:
-#         self.log.debug( "CatalogBackwardCompatibility.__executeMethod: %s is not an allowed argument anymore. Please change your code!" % depArg )
-#         removedArgs[depArg] = kwargs[depArg]
-#         del kwargs[depArg]
-#
-#
-#
-#     # Set default argument if any
-#     methDefaultArgs = CatalogBackwardCompatibility.__defaultsArguments.get( self.methodName, {} )
-#     for argName in methDefaultArgs:
-#       if argName not in kwargs:
-#         self.log.debug( "CatalogBackwardCompatibility.__executeMethod : default argument %s for %s not present.\
-#          Setting value %s." % ( argName, self.methodName, methDefaultArgs[argName] ) )
-#         kwargs[argName] = methDefaultArgs[argName]
-#
-#
-#     catalogs = removedArgs.get( "catalogs", list() )
-#     if not catalogs:
-#       catalogs = list()
-#
-#
-#
-#     lfns = None
-#     if not lfn or type( lfn ) not in StringTypes + ( ListType, DictType ):
-#       errStr = "_callFileCatalogFcn: Wrong 'lfn' argument."
-#       self.log.debug( errStr )
-#       return S_ERROR( errStr )
-#     elif type( lfn ) in StringTypes:
-#       lfns = { lfn : False }
-#     elif type( lfn ) == ListType:
-#       lfns = dict.fromkeys( lfn, False )
-#     elif type( lfn ) == DictType:
-#       lfns = lfn.copy()
-#
-#     # # lfns supplied?
-#     if not lfns:
-#       errMsg = "CatalogBackwardCompatibility.__executeMethod: No lfns supplied."
-#       self.log.debug( errMsg )
-#       return S_ERROR( errMsg )
-#     self.log.debug( "CatalogBackwardCompatibility.__executeMethod: Will execute '%s' method with %s lfns." % ( self.methodName, len( lfns ) ) )
-#     # # create FileCatalog instance
-#     fileCatalog = FileCatalog( catalogs = catalogs )
-#     if not fileCatalog.isOK():
-#       return S_ERROR( "CatalogBackwardCompatibility.__executeMethod: Can't get FileCatalogs %s" % catalogs )
-#     # # get symbol
-#     fcFcn = getattr( fileCatalog, self.methodName ) if hasattr( fileCatalog, self.methodName ) else None
-#     # # check if it is callable
-#     fcFcn = fcFcn if callable( fcFcn ) else None
-#     if not fcFcn:
-#       errMsg = "CatalogBackwardCompatibility.__executeMethod: '%s' isn't a member function in FileCatalog." % self.methodName
-#       self.log.debug( errMsg )
-#       return S_ERROR( errMsg )
-#     # # call it at least
-#     res = fcFcn( lfns, **kwargs )
-#     if not res["OK"]:
-#       self.log.debug( "CatalogBackwardCompatibility.__executeMethod: Failed to execute '%s'." % self.methodName, res["Message"] )
-#     return res
-#
-#   def __getattr__( self, name ):
-#
-#     # We take either the equivalent name, or the name itself
-#     self.methodName = CatalogBackwardCompatibility.__equivalentMethodNames.get( name, None )
-#     if self.methodName:
-#       return self.__executeMethod
-#
-#     return super( CatalogBackwardCompatibility, self ).__getattr__( name )
-
-###############################################################################################################################################
-
-
 class DataManager( object ):
   """
   .. class:: DataManager
@@ -444,6 +52,7 @@ class DataManager( object ):
     self.thirdPartyProtocols = ['SRM2', 'DIP']
     self.resourceStatus = ResourceStatus()
     self.ignoreMissingInFC = Operations().getValue( 'DataManagement/IgnoreMissingInFC', False )
+    self.useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -698,9 +307,7 @@ class DataManager( object ):
       return res
     for storageElementName in res['Value']:
       se = StorageElement( storageElementName )
-      physicalFile = se.getPfnForLfn( lfn ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[storageElementName] )
-      # print '__getFile', physicalFile, replicas[storageElementName]
-
+      physicalFile = replicas[storageElementName]
 
       oDataOperation = self.__initialiseAccountingObject( 'getFile', storageElementName, 1 )
       oDataOperation.setStartTime()
@@ -1169,7 +776,7 @@ class DataManager( object ):
           errStr = "%s The storage element is not currently valid." % logStr
           self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
-          pfn = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
+          # pfn = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
           if storageElement.getRemoteProtocols()['Value']:
             self.log.debug( "%s Attempting to get source pfns for remote protocols." % logStr )
             res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
@@ -1482,6 +1089,7 @@ class DataManager( object ):
     """ remove replica """
     lfnDict = {}
     failed = {}
+    se = None if self.useCatalogPFN else StorageElement( storageElementName )  # Placeholder for the StorageElement object
     for lfn, pfn in fileTuple:
       res = self.__verifyOperationWritePermission( lfn )
       if not res['OK'] or not res['Value']:
@@ -1491,20 +1099,31 @@ class DataManager( object ):
       else:
         # This is the PFN as in hte FC
         lfnDict[lfn] = pfn
-    res = self.__removePhysicalReplica( storageElementName, lfnDict.keys() )
+
+    # Now we should use the constructed PFNs if needed, for the physical removal
+    # Reverse lfnDict into pfnDict with required PFN
+    if self.useCatalogPFN:
+      pfnDict = dict( zip( lfnDict.values(), lfnDict.keys() ) )
+    else:
+      pfnDict = dict( [ ( se.getPfnForLfn( lfn )['Value'].get( 'Successful', {} ).get( lfn, lfnDict[lfn] ), lfn ) for lfn in lfnDict] )
+    # removePhysicalReplicas is called with real PFN list
+    res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
+
     if not res['OK']:
       errStr = "__removeReplica: Failed to remove catalog replicas."
       self.log.debug( errStr, res['Message'] )
       return S_ERROR( errStr )
-    for lfn, error in res['Value']['Failed'].items():
-      failed[lfn] = error
-    replicaTuples = [( lfn, lfnDict[lfn], storageElementName ) for lfn in res['Value']['Successful']]
-    successful = {}
+
+    failed.update( dict( [( pfnDict[pfn], error ) for pfn, error in res['Value']['Failed'].items()] ) )
+    # Here we use the FC PFN...
+    replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[lfn]], storageElementName ) for pfn in res['Value']['Successful']]
+
     res = self.__removeCatalogReplica( replicaTuples )
     if not res['OK']:
       errStr = "__removeReplica: Completely failed to remove physical files."
       self.log.debug( errStr, res['Message'] )
-      failed.update( dict.fromkeys( [lfn for lfn in lfnDict if lfn not in failed], errStr ) )
+      failed.update( dict.fromkeys( [lfn for lfn, _pfn, _se in replicaTuples if lfn not in failed], res['Message'] ) )
+      successful = {}
     else:
       failed.update( res['Value']['Failed'] )
       successful = res['Value']['Successful']
@@ -1591,15 +1210,24 @@ class DataManager( object ):
       errStr = "__removeCatalogReplica: Completely failed to remove replica."
       self.log.debug( errStr, res['Message'] )
       return S_ERROR( errStr )
+
+
     for lfn in res['Value']['Successful']:
       infoStr = "__removeCatalogReplica: Successfully removed replica."
       self.log.debug( infoStr, lfn )
     if res['Value']['Successful']:
       self.log.debug( "__removeCatalogReplica: Removed %d replicas" % len( res['Value']['Successful'] ) )
+
+    success = res['Value']['Successful']
+    if success:
+      self.log.info( "__removeCatalogReplica: Removed %d replicas" % len( success ) )
+      for lfn in success:
+        self.log.debug( "__removeCatalogReplica: Successfully removed replica.", lfn )
+
     for lfn, error in res['Value']['Failed'].items():
-      errStr = "__removeCatalogReplica: Failed to remove replica."
-      self.log.debug( errStr, "%s %s" % ( lfn, error ) )
-    oDataOperation.setValueByKey( 'RegistrationOK', len( res['Value']['Successful'] ) )
+      self.log.error( "__removeCatalogReplica: Failed to remove replica.", "%s %s" % ( lfn, error ) )
+
+    oDataOperation.setValueByKey( 'RegistrationOK', len( success ) )
     gDataStoreClient.addRegister( oDataOperation )
     return res
 
@@ -1628,38 +1256,36 @@ class DataManager( object ):
     self.log.debug( "removePhysicalReplica: Attempting to remove %s lfns at %s." % ( len( lfns ),
                                                                                        storageElementName ) )
     self.log.debug( "removePhysicalReplica: Attempting to resolve replicas." )
-    res = self.fc.getReplicas( lfns )
+    res = self.getReplicas( lfns )
     if not res['OK']:
       errStr = "removePhysicalReplica: Completely failed to get replicas for lfns."
       self.log.debug( errStr, res['Message'] )
       return res
     failed = res['Value']['Failed']
     successful = {}
-    lfnsToRemove = []
+    pfnDict = {}
     for lfn, repDict in res['Value']['Successful'].items():
       if storageElementName not in repDict:
         # The file doesn't exist at the storage element so don't have to remove it
         successful[lfn] = True
       else:
-        lfnsToRemove.append( lfn )
-    self.log.debug( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( lfnsToRemove ),
+        sePfn = repDict[storageElementName]
+        pfnDict[sePfn] = lfn
+    self.log.debug( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( pfnDict ),
                                                                                        storageElementName ) )
-    res = self.__removePhysicalReplica( storageElementName, lfnsToRemove )
-    for lfn, error in res['Value']['Failed'].items():
-      failed[lfn] = error
-    for _pfn in res['Value']['Successful']:
-      successful[lfn] = True
+    res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
+    for pfn, error in res['Value']['Failed'].items():
+      failed[pfnDict[pfn]] = error
+    for pfn in res['Value']['Successful']:
+      successful[pfnDict[pfn]] = True
     resDict = { 'Successful' : successful, 'Failed' : failed }
     return S_OK( resDict )
 
-  def __removePhysicalReplica( self, storageElementName, lfnsToRemove ):
+  def __removePhysicalReplica( self, storageElementName, pfnsToRemove ):
     """ remove replica from storage element """
-    self.log.debug( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( lfnsToRemove ),
+    self.log.debug( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ),
                                                                                          storageElementName ) )
     storageElement = StorageElement( storageElementName )
-    pfnsToRemove = dict( [( storageElement.getPfnForLfn( lfn )['Value'].get( 'Successful', {} ).get( lfn ), lfn ) for lfn in lfnsToRemove] )
-    # In case no PFN was returned for some LFNs
-    pfnsToRemove.pop( None, None )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "__removePhysicalReplica: The storage element is not currently valid."
@@ -1670,7 +1296,7 @@ class DataManager( object ):
                                                         len( pfnsToRemove ) )
     oDataOperation.setStartTime()
     start = time.time()
-    res = storageElement.removeFile( pfnsToRemove.keys() )
+    res = storageElement.removeFile( pfnsToRemove )
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey( 'TransferTime', time.time() - start )
     if not res['OK']:
@@ -1681,20 +1307,16 @@ class DataManager( object ):
       self.log.debug( errStr, res['Message'] )
       return S_ERROR( errStr )
     else:
-      result = {'Failed':{}, 'Successful':{}}
       for surl, value in res['Value']['Failed'].items():
-        lfn = pfnsToRemove[surl]
         if 'No such file or directory' in value:
-          result['Successful'][lfn] = surl
-        else:
-          result['Failed'][lfn] = value
+          res['Value']['Successful'][surl] = surl
+          res['Value']['Failed'].pop( surl )
       for surl in res['Value']['Successful']:
-        lfn = pfnsToRemove[surl]
         ret = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( surl, protocol = self.registrationProtocol, withPort = False ) )
         if not ret['OK']:
-          result['Successful'][lfn] = surl
+          res['Value']['Successful'][surl] = surl
         else:
-          result['Successful'][lfn] = ret['Value']
+          res['Value']['Successful'][surl] = ret['Value']
 
       ret = storageElement.getFileSize( res['Value']['Successful'] )
       deletedSize = sum( ret.get( 'Value', {} ).get( 'Successful', {} ).values() )
@@ -1703,7 +1325,7 @@ class DataManager( object ):
       gDataStoreClient.addRegister( oDataOperation )
       infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
       self.log.debug( infoStr )
-      return S_OK( result )
+      return res
 
   #########################################################################
   #
@@ -1862,21 +1484,23 @@ class DataManager( object ):
   def getReplicas( self, lfns, allStatus = True ):
     """ get replicas from catalogue """
     res = self.fc.getReplicas( lfns, allStatus = allStatus )
-    if res['OK']:
-      se_lfn = {}
-      catalogReplicas = res['Value']['Successful']
+    
+    if not self.useCatalogPFN:
+      if res['OK']:
+        se_lfn = {}
+        catalogReplicas = res['Value']['Successful']
 
-      # We group the query to getPfnForLfn by storage element to gain in speed
-      for lfn in catalogReplicas:
-        for se in catalogReplicas[lfn]:
-          se_lfn.setdefault( se, [] ).append( lfn )
+        # We group the query to getPfnForLfn by storage element to gain in speed
+        for lfn in catalogReplicas:
+          for se in catalogReplicas[lfn]:
+            se_lfn.setdefault( se, [] ).append( lfn )
 
-      for se in se_lfn:
-        seObj = StorageElement( se )
-        succPfn = seObj.getPfnForLfn( se_lfn[se] ).get( 'Value', {} ).get( 'Successful', {} )
-        for lfn in succPfn:
-          # catalogReplicas still points res["value"]["Successful"] so res will be updated
-          catalogReplicas[lfn][se] = succPfn[lfn]
+        for se in se_lfn:
+          seObj = StorageElement( se )
+          succPfn = seObj.getPfnForLfn( se_lfn[se] ).get( 'Value', {} ).get( 'Successful', {} )
+          for lfn in succPfn:
+            # catalogReplicas still points res["value"]["Successful"] so res will be updated
+            catalogReplicas[lfn][se] = succPfn[lfn]
 
     return res
 
@@ -1910,30 +1534,38 @@ class DataManager( object ):
     # # good replicas
     lfnReplicas = res["Value"]["Successful"]
     # # store PFN to LFN mapping
-    existingReplicas = []
+    pfnDict = {}
+    se = None  # Placeholder for the StorageElement object
     for lfn, replicas in lfnReplicas.items():
       if storageElementName  in replicas:
-        existingReplicas.append( lfn )
+        if self.useCatalogPFN:
+          pfn = replicas[storageElementName]
+        else:
+          se = se if se else StorageElement( storageElementName )
+          res = se.getPfnForLfn( lfn )
+          pfn = res.get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[storageElementName] )
+        pfnDict[pfn] = lfn
       else:
         errStr = "_callReplicaSEFcn: File hasn't got replica at supplied Storage Element."
         self.log.error( errStr, "%s %s" % ( lfn, storageElementName ) )
         retDict["Failed"][lfn] = errStr
 
     # # call StorageElement function at least
-    se = StorageElement( storageElementName )
+    se = se = se if se else StorageElement( storageElementName )
     fcn = getattr( se, method )
-    res = fcn( existingReplicas, **argsDict )
+    res = fcn( pfnDict.keys(), **argsDict )
     # # check result
     if not res["OK"]:
       errStr = "_callReplicaSEFcn: Failed to execute %s StorageElement method." % method
       self.log.error( errStr, res["Message"] )
       return res
 
-    # # filter out failed nad successful
-    for lfn, lfnRes in res["Value"]["Successful"].items():
-      retDict["Successful"][lfn] = lfnRes
-    for lfn, errorMessage in res["Value"]["Failed"].items():
-      retDict["Failed"][lfn] = errorMessage
+    # # filter out failed and successful
+    for pfn, pfnRes in res["Value"]["Successful"].items():
+      retDict["Successful"][pfnDict[pfn]] = pfnRes
+    for pfn, errorMessage in res["Value"]["Failed"].items():
+      retDict["Failed"][pfnDict[pfn]] = errorMessage
+
     return S_OK( retDict )
 
   def getReplicaIsFile( self, lfn, storageElementName ):
