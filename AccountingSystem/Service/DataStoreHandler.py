@@ -2,24 +2,24 @@
 __RCSID__ = "$Id$"
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
+from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
-gAccountingDB = False
-
-def initializeDataStoreHandler( serviceInfo ):
-  global gAccountingDB
-  gAccountingDB = AccountingDB()
-  gAccountingDB.autoCompactDB()
-  result = gAccountingDB.markAllPendingRecordsAsNotTaken()
-  if not result[ 'OK' ]:
-    return result
-  gThreadScheduler.addPeriodicTask( 60, gAccountingDB.loadPendingRecords )
-  return S_OK()
-
 class DataStoreHandler( RequestHandler ):
+
+  __acDB = False
+
+  @classmethod
+  def initializeHandler( cls, svcInfoDict ):
+    cls.__acDB = MultiAccountingDB( svcInfoDict[ 'serviceSectionPath' ] )
+    cls.__acDB.autoCompactDB()
+    result = cls.__acDB.markAllPendingRecordsAsNotTaken()
+    if not result[ 'OK' ]:
+      return result
+    gThreadScheduler.addPeriodicTask( 60, cls.__acDB.loadPendingRecords )
+    return S_OK()
 
   types_registerType = [ types.StringType, types.ListType, types.ListType, types.ListType ]
   def export_registerType( self, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength ):
@@ -32,8 +32,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      setupTypeName = "%s_%s" % ( setup, typeName )
-      retVal = gAccountingDB.registerType( setupTypeName, definitionKeyFields, definitionAccountingFields, bucketsLength )
+      retVal = self.__acDB.registerType( setup, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength )
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -51,8 +50,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      setupTypeName = "%s_%s" % ( setup, typeName )
-      retVal = gAccountingDB.changeBucketsLength( setupTypeName, bucketsLength )
+      retVal = self.__acDB.changeBucketsLength( setup, typeName, bucketsLength )
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -70,8 +68,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      setupTypeName = "%s_%s" % ( setup, typeName )
-      retVal = gAccountingDB.regenerateBuckets( setupTypeName )
+      retVal = self.__acDB.regenerateBuckets( setup, typeName )
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -84,7 +81,7 @@ class DataStoreHandler( RequestHandler ):
       Get a list of registered types (Only for all powerful admins)
       (Bow before me for I am admin! :)
     """
-    return gAccountingDB.getRegisteredTypes()
+    return self.__acDB.getRegisteredTypes()
 
   types_deleteType = [ types.StringType ]
   def export_deleteType( self, typeName ):
@@ -97,8 +94,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      setupTypeName = "%s_%s" % ( setup, typeName )
-      retVal = gAccountingDB.deleteType( setupTypeName )
+      retVal = self.__acDB.deleteType( setup, typeName )
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -111,10 +107,9 @@ class DataStoreHandler( RequestHandler ):
       Add a record for a type
     """
     setup = self.serviceInfoDict[ 'clientSetup' ]
-    typeName = "%s_%s" % ( setup, typeName )
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
-    return gAccountingDB.insertRecordThroughQueue( typeName, startTime, endTime, valuesList )
+    return self.__acDB.insertRecordThroughQueue( setup, typeName, startTime, endTime, valuesList )
 
   types_commitRegisters = [ types.ListType ]
   def export_commitRegisters( self, entriesList ):
@@ -131,11 +126,10 @@ class DataStoreHandler( RequestHandler ):
           return S_ERROR( "%s field in the records should be %s" % ( i, expectedTypes[i] ) )
     records = []
     for entry in entriesList:
-      typeName = "%s_%s" % ( setup, entry[0] )
       startTime = int( Time.toEpoch( entry[1] ) )
       endTime = int( Time.toEpoch( entry[2] ) )
-      records.append( ( typeName, startTime, endTime, entry[3] ) )
-    return gAccountingDB.insertRecordBundleThroughQueue( records )
+      records.append( ( setup, entry[0], startTime, endTime, entry[3] ) )
+    return self.__acDB.insertRecordBundleThroughQueue( records )
 
 
   types_compactDB = []
@@ -143,7 +137,7 @@ class DataStoreHandler( RequestHandler ):
     """
     Compact the db by grouping buckets
     """
-    return gAccountingDB.compactBuckets()
+    return self.__acDB.compactBuckets()
 
   types_remove = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.ListType ]
   def export_remove( self, typeName, startTime, endTime, valuesList ):
@@ -151,10 +145,9 @@ class DataStoreHandler( RequestHandler ):
       Remove a record for a type
     """
     setup = self.serviceInfoDict[ 'clientSetup' ]
-    typeName = "%s_%s" % ( setup, typeName )
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
-    return gAccountingDB.deleteRecord( typeName, startTime, endTime, valuesList )
+    return self.__acDB.deleteRecord( setup, typeName, startTime, endTime, valuesList )
 
   types_removeRegisters = [ types.ListType ]
   def export_removeRegisters( self, entriesList ):
@@ -171,11 +164,10 @@ class DataStoreHandler( RequestHandler ):
           return S_ERROR( "%s field in the records should be %s" % ( i, expectedTypes[i] ) )
     ok = 0
     for entry in entriesList:
-      typeName = "%s_%s" % ( setup, entry[0] )
       startTime = int( Time.toEpoch( entry[1] ) )
       endTime = int( Time.toEpoch( entry[2] ) )
       record = entry[3]
-      result = gAccountingDB.deleteRecord( typeName, startTime, endTime, record )
+      result = self.__acDB.deleteRecord( setup, entry[0], startTime, endTime, record )
       if not result[ 'OK' ]:
         return S_OK( ok )
       ok += 1

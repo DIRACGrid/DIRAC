@@ -30,17 +30,12 @@ class DBUtils:
       - orderFields -> list of fields to order by, can be in form
                        ( "%s, %s", ( "field1name", "field2name", "field3name" )
     """
-    typeName = "%s_%s" % ( self._setup, typeName )
     validCondDict = {}
     if type( condDict ) == types.DictType:
       for key in condDict:
         if type( condDict[ key ] ) in ( types.ListType, types.TupleType ) and len( condDict[ key ] ) > 0:
           validCondDict[ key ] = condDict[ key ]
-    retVal = self._acDB._getConnection()
-    if not retVal[ 'OK' ]:
-      return retVal
-    connObj = retVal[ 'Value' ]
-    return self._acDB.retrieveBucketedData( typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, connObj = connObj )
+    return self._acDB.retrieveBucketedData( self._setup, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields )
 
   def _getUniqueValues( self, typeName, startTime, endTime, condDict, fieldList ):
     stringList = [ "%s" for field in fieldList ]
@@ -70,8 +65,7 @@ class DBUtils:
     return groupDict
 
   def _getBins( self, typeName, startTime, endTime ):
-    typeName = "%s_%s" % ( self._setup, typeName )
-    return self._acDB.calculateBuckets( typeName, startTime, endTime )
+    return self._acDB.calculateBuckets( self._setup, typeName, startTime, endTime )
 
   def _getBucketLengthForTime( self, typeName, momentEpoch ):
     nowEpoch = Time.toEpoch()
@@ -277,12 +271,7 @@ class DBUtils:
     """
     Get all valid key values in a type
     """
-    retVal = self._acDB._getConnection()
-    if not retVal[ 'OK' ]:
-      return retVal
-    connObj = retVal[ 'Value' ]
-    typeName = "%s_%s" % ( self._setup, typeName )
-    return self._acDB.getKeyValues( typeName, condDict, connObj )
+    return self._acDB.getKeyValues( self._setup, typeName, condDict )
 
   def _calculateProportionalGauges( self, dataDict ):
     """
