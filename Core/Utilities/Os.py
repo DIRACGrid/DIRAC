@@ -8,6 +8,7 @@ __RCSID__ = "$Id$"
 
 from types                          import StringTypes
 import os
+import multiprocessing
 
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall
@@ -205,3 +206,18 @@ def which( program ):
         return exe_file
 
   return None
+
+def getNumberOfCores():
+  """ Get the number of processor cores
+  """
+  cores = 0
+  try:
+    cores = multiprocessing.cpu_count()
+  except:
+    return 0  
+      
+  return cores    
+  
+  
+  
+  
