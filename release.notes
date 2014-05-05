@@ -51,6 +51,11 @@ NEW: dirac-rms-reset-request command
 *SMS
 FIX: few minor fixes to avoid pylint warnings
 
+[v6r10p23]
+
+*Resoures
+CHANGE: SSHComputingElement - allow SSH options to be passed from CS setup of SSH Computing Element
+
 [v6r10p22]
 
 *CS
