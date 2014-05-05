@@ -1627,7 +1627,7 @@ class XROOTStorage( StorageBase ):
     pfnDict['Host'] = self.host
 
     if not pfnDict['Path'].startswith( self.rootdir ):
-      pfnDict['Path'] = os.path.join( self.rootdir, pfnDict['Path'].strip( '/' ) )
+      pfnDict['Path'] = os.path.join( self.rootdir, pfnDict['Path'].rstrip( '/' ) )
 
     # These lines should be checked
     if withPort:
@@ -1663,4 +1663,4 @@ class XROOTStorage( StorageBase ):
     :returns PFN
     """
     return S_OK( { True : 'root://%s:%s/%s' % ( self.host, self.port, self.rootdir ),
-                   False : 'root://%s%s' % ( self.host, self.rootdir ) }[withPort] )
+                   False : 'root://%s/%s' % ( self.host, self.rootdir ) }[withPort] )

@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r11-pre16]
+[v6r11-pre17]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
@@ -132,6 +132,7 @@ CHANGES: DownloadInputData, InputDataByProtocol, InputDataResolution - allows to
          PFNs for the protocol resolution
 NEW: JobDB, JobMonitoringHandler - added traceJobParameters(s)() methods     
 CHANGE: TaskQueueDirector - use ObjectLoader to load directors    
+CHANGE: dirac-pilot - use Python 2.7 by default
 
 *DMS
 NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
@@ -146,6 +147,9 @@ NEW: Job.py - added setTag() interface
 *Resources
 CHANGE: StorageElement - changes to avoid usage PFNs
 FIX: XROOTStorage, SRM2Storage - changes in PFN construction 
+NEW: PoolComputingElement - a CE allowing to manage multi-core slots
+FIX: SSHTorqueComputingElement - specify the remote user for running/waiting jobs 
+     with BatchUser option
 
 *RSS
 NEW: added commands dirac-rss-query-db and dirac-rss-query-dtcache
@@ -156,6 +160,11 @@ NEW: dirac-rms-reset-request command
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p23]
+
+*Resoures
+CHANGE: SSHComputingElement - allow SSH options to be passed from CS setup of SSH Computing Element
 
 [v6r10p22]
 

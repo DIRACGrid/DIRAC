@@ -25,10 +25,10 @@ __RCSID__ = "$Id$"
 CE_NAME = 'SSH'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
-class SSH( object ):
+class SSH:
   """ The SSH interface
   """
-  def __init__( self, user = None, host = None, password = None, key = None, parameters = {} ):
+  def __init__( self, user = None, host = None, password = None, key = None, parameters = {}, options = "" ):
 
     self.user = user
     if not user:
@@ -42,6 +42,9 @@ class SSH( object ):
     self.key = key
     if not key:
       self.key = parameters.get( 'SSHKey', '' )
+    self.options = options
+    if not len(options):
+      self.options = parameters.get( 'SSHOptions', '' )
     self.log = gLogger.getSubLogger( 'SSH' )  
 
   def __ssh_call( self, command, timeout ):
@@ -109,7 +112,7 @@ class SSH( object ):
       key = ' -i %s ' % self.key
 
     pattern = "'===><==='"
-    command = 'ssh -q %s -l %s %s "echo %s;%s"' % ( key, self.user, self.host, pattern, command )    
+    command = 'ssh -q %s -l %s %s %s "echo %s;%s"' % ( key, self.user, self.host, self.options, pattern, command )    
     self.log.debug( "SSH command %s" % command )
     result = self.__ssh_call( command, timeout )    
     self.log.debug( "SSH command result %s" % str( result ) )
@@ -137,9 +140,8 @@ class SSH( object ):
     key = ''
     if self.key:
       key = ' -i %s ' % self.key
-
     if upload:
-      command = "scp %s %s %s@%s:%s" % ( key, localFile, self.user, self.host, destinationPath )
+      command = "scp %s %s %s %s@%s:%s" % ( key, localFile, self.options, self.user, self.host, destinationPath )
     else:
       command = "scp %s %s@%s:%s %s" % ( key, self.user, self.host, destinationPath, localFile )
     self.log.debug( "SCP command %s" % command )
