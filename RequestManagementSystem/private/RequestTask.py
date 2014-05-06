@@ -28,6 +28,7 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security import CS
 
@@ -129,6 +130,10 @@ class RequestTask( object ):
 
     :return: S_OK with name of newly created owner proxy file and shifter name if any
     """
+    
+    # Always use request owner proxy
+    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+    
     self.__managersDict = {}
     shifterProxies = self.__setupManagerProxies()
     if not shifterProxies["OK"]:
