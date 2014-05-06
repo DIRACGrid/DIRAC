@@ -1097,7 +1097,7 @@ class DataManager( object ):
         self.log.debug( errStr, lfn )
         failed[lfn] = errStr
       else:
-        # This is the PFN as in hte FC
+        # This is the PFN as in the FC
         lfnDict[lfn] = pfn
 
     # Now we should use the constructed PFNs if needed, for the physical removal
