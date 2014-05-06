@@ -2,6 +2,7 @@
 
 *Resoures
 CHANGE: SSHComputingElement - allow SSH options to be passed from CS setup of SSH Computing Element
+FIX: SSHComputingElement - use SharedArea path as $HOME by default
 
 [v6r10p22]
 
