@@ -1116,7 +1116,7 @@ class DataManager( object ):
 
     failed.update( dict( [( pfnDict[pfn], error ) for pfn, error in res['Value']['Failed'].items()] ) )
     # Here we use the FC PFN...
-    replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[lfn]], storageElementName ) for pfn in res['Value']['Successful']]
+    replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[pfn]], storageElementName ) for pfn in res['Value']['Successful']]
 
     res = self.__removeCatalogReplica( replicaTuples )
     if not res['OK']:
