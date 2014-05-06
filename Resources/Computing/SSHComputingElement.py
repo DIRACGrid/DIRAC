@@ -171,7 +171,8 @@ class SSHComputingElement( ComputingElement ):
       self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
 
     if 'SharedArea' not in self.ceParameters:
-      self.ceParameters['SharedArea'] = '.'
+      #. isn't a good location, move to $HOME  
+      self.ceParameters['SharedArea'] = '$HOME'
 
     if 'BatchOutput' not in self.ceParameters:
       self.ceParameters['BatchOutput'] = 'data' 
