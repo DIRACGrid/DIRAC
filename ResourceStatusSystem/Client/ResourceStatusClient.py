@@ -231,7 +231,8 @@ class ResourceStatusClient( object ):
 
     result = self._query( 'delete', locals() )
     if result['OK']:
-      self.notify( 'delete', str( locals() ) )
+      if tableType == 'Status':
+        self.notify( 'delete', str( locals() ) )
     return result
 
   def addOrModifyStatusElement( self, element, tableType, name = None, 
@@ -375,15 +376,12 @@ class ResourceStatusClient( object ):
   # Protected methods - Use carefully !!
 
   def notify( self, request, params ):
+    ''' Send notification for a given request with its params to the diracAdmin
     '''
-      Send notification for a given request with its params to the diracAdmin
-    '''
-
-    mail = NotificationClient()
     address = Operations().getValue( 'ResourceStatus/Notification/DebugGroup/Users' )
     msg = 'Matching parameters: ' + str( params )
     sbj = '[NOTIFICATION] DIRAC ResourceStatusDB: ' + request + ' entry'
-    mail.sendMail( address, sbj, msg , address )
+    NotificationClient().sendMail( address, sbj, msg , address )
 
   def _extermineStatusElement( self, element, name, keepLogs = True ):
     '''

@@ -160,7 +160,7 @@ class JobWrapper:
     self.outputSandboxSize = 0
     self.outputDataSize = 0
     self.processedEvents = 0
-    self.wmsAccountingSent = False
+    self.jobAccountingSent = False
 
     self.jobArgs = {}
     self.optArgs = {}
@@ -491,7 +491,7 @@ class JobWrapper:
     # TODO: normalize CPU consumed via scale factor
     cpuString = ' '.join( ['%.2f' % x for x in EXECUTION_RESULT['CPU'] ] )  
     self.log.info( 'EXECUTION_RESULT[CPU] in __getCPU', cpuString )
-    utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
+    utime, stime, cutime, cstime, _elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
     self.log.verbose( "Total CPU time consumed = %s" % ( cpuTime ) )
     result = self.__getCPUHMS( cpuTime )
@@ -1119,10 +1119,10 @@ class JobWrapper:
       return 0
 
   #############################################################################
-  def sendWMSAccounting( self, status = '', minorStatus = '' ):
+  def sendJobAccounting( self, status = '', minorStatus = '' ):
     """Send WMS accounting data.
     """
-    if self.wmsAccountingSent:
+    if self.jobAccountingSent:
       return S_OK()
     if status:
       self.wmsMajorStatus = status
@@ -1134,14 +1134,14 @@ class JobWrapper:
     if not 'CPU' in EXECUTION_RESULT:
       # If the payload has not started execution (error with input data, SW, SB,...)
       # Execution result is not filled use self.initialTiming
-      self.log.info( 'EXECUTION_RESULT[CPU] missing in sendWMSAccounting' )
+      self.log.info( 'EXECUTION_RESULT[CPU] missing in sendJobAccounting' )
       finalStat = os.times()
       EXECUTION_RESULT['CPU'] = []
       for i in range( len( finalStat ) ):
         EXECUTION_RESULT['CPU'].append( finalStat[i] - self.initialTiming[i] )
 
     cpuString = ' '.join( ['%.2f' % x for x in EXECUTION_RESULT['CPU'] ] )  
-    self.log.info( 'EXECUTION_RESULT[CPU] in sendWMSAccounting', cpuString )
+    self.log.info( 'EXECUTION_RESULT[CPU] in sendJobAccounting', cpuString )
 
     utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
@@ -1175,7 +1175,7 @@ class JobWrapper:
     self.accountingReport.setValuesFromDict( acData )
     result = self.accountingReport.commit()
     # Even if it fails a failover request will be created
-    self.wmsAccountingSent = True
+    self.jobAccountingSent = True
     return result
 
   #############################################################################
@@ -1205,26 +1205,31 @@ class JobWrapper:
     if result['OK']:
       if result["Value"]:
         request.addOperation( result["Value"] )
+    else:
+      self.log.warn( 'JobReportFailure', "Could not generate a forwardDISET operation: %s" % result['Message'] )
+      self.log.warn( 'JobReportFailure', "The job won't fail, but the jobLogging info might be incomplete" )
 
     # Accounting part
     if not self.jobID:
-      self.log.verbose( 'No accounting to be sent since running locally' )
+      self.log.debug( 'No accounting to be sent since running locally' )
     else:
-      result = self.sendWMSAccounting( status, minorStatus )
+      result = self.sendJobAccounting( status, minorStatus )
       if not result['OK']:
-        self.log.warn( 'Could not send WMS accounting with result: \n%s' % result )
+        self.log.warn( 'JobAccountingFailure', "Could not send job accounting with result: \n%s" % result['Message'] )
+        self.log.warn( 'JobAccountingFailure', "Trying to build a failover request" )
         if 'rpcStub' in result:
-          self.log.verbose( 'Adding accounting report to failover request object' )
+          self.log.verbose( "Adding accounting report to failover request object" )
           forwardDISETOp = Operation()
           forwardDISETOp.Type = "ForwardDISET"
           forwardDISETOp.Arguments = DEncode.encode( result['rpcStub'] )
           request.addOperation( forwardDISETOp )
+          self.log.verbose( "Added accounting report to failover request object" )
         else:
-          self.log.warn( 'No rpcStub found to construct failover request for WMS accounting report' )
+          self.log.warn( 'JobAccountingFailure', "No rpcStub found to construct failover request for job accounting report" )
+          self.log.warn( 'JobAccountingFailure', "The job won't fail, but the accounting for this job won't be sent" )
 
     # Failover transfer requests
-    failoverRequest = self.failoverTransfer.getRequest()
-    for storedOperation in failoverRequest:
+    for storedOperation in self.failoverTransfer.request:
       request.addOperation( storedOperation )
 
     # Any other requests in the current directory
@@ -1237,30 +1242,31 @@ class JobWrapper:
       for storedOperation in requestStored:
         request.addOperation( storedOperation )
 
-    # The request is ready, send it now
-    isValid = gRequestValidator.validate( request )
-    if not isValid["OK"]:
-      self.log.error( "Failover request is not valid", isValid["Message"] )
-    else:
-      # We try several times to put the request before failing the job: it's very important that requests go through,
-      # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
-      # It's a poor man solution, but I don't see fancy alternatives
-      for counter in range( 10 ):
-        requestClient = ReqClient()
-        result = requestClient.putRequest( request )
-        if result['OK']:
-          resDigest = request.getDigest()
-          digest = resDigest['Value']
-          self.jobReport.setJobParameter( 'PendingRequest', digest )
-          break
-        else:
-          self.log.error( 'Failed to set failover request', '%d: %s. Re-trying...' % ( counter,
-                                                                                       result['Message'] ) )
-          del requestClient
-          time.sleep( counter ** 3 )
-      if not result['OK']:
-        self.__report( 'Failed', 'Failover Request Failed' )    
-      return result
+    if len( request ):
+      # The request is ready, send it now
+      isValid = gRequestValidator.validate( request )
+      if not isValid["OK"]:
+        self.log.error( "Failover request is not valid", isValid["Message"] )
+      else:
+        # We try several times to put the request before failing the job: it's very important that requests go through,
+        # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
+        # It's a poor man solution, but I don't see fancy alternatives
+        for counter in range( 10 ):
+          requestClient = ReqClient()
+          result = requestClient.putRequest( request )
+          if result['OK']:
+            resDigest = request.getDigest()
+            digest = resDigest['Value']
+            self.jobReport.setJobParameter( 'PendingRequest', digest )
+            break
+          else:
+            self.log.error( 'Failed to set failover request', '%d: %s. Re-trying...' % ( counter,
+                                                                                         result['Message'] ) )
+            del requestClient
+            time.sleep( counter ** 3 )
+        if not result['OK']:
+          self.__report( 'Failed', 'Failover Request Failed' )
+        return result
 
     return S_OK()
 

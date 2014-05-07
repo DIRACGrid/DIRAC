@@ -7,7 +7,8 @@ __RCSID__ = "$Id$"
 import os
 import tarfile
 try:
-  import hashlib as md5
+  import hashlib
+  md5 = hashlib
 except:
   import md5
 import tempfile
@@ -16,7 +17,7 @@ import re
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.Resources.Utilities import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
@@ -164,7 +165,7 @@ class SandboxStoreClient( object ):
       return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
     se = StorageElement( SEName )
-    result = Utils.executeSingleFileOrDirWrapper( se.getFile( SEPFN, localPath = tmpSBDir ) )
+    result = returnSingleResult( se.getFile( SEPFN, localPath = tmpSBDir ) )
 
     if not result[ 'OK' ]:
       return result
