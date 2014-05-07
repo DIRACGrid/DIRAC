@@ -399,7 +399,8 @@ class JobWrapper:
         outputs = threadResult['Value']
 
     if EXECUTION_RESULT.has_key( 'CPU' ):
-      self.log.info( 'EXECUTION_RESULT[CPU] in JobWrapper execute', str( EXECUTION_RESULT['CPU'] ) )
+      cpuString = ' '.join( ['%.2f' % x for x in EXECUTION_RESULT['CPU'] ] )  
+      self.log.info( 'EXECUTION_RESULT[CPU] in JobWrapper execute', cpuString )
 
 
     if watchdog.checkError:
@@ -490,7 +491,8 @@ class JobWrapper:
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
     # TODO: normalize CPU consumed via scale factor
-    self.log.info( 'EXECUTION_RESULT[CPU] in __getCPU', str( EXECUTION_RESULT['CPU'] ) )
+    cpuString = ' '.join( ['%.2f' % x for x in EXECUTION_RESULT['CPU'] ] )  
+    self.log.info( 'EXECUTION_RESULT[CPU] in __getCPU', cpuString )
     utime, stime, cutime, cstime, _elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
     self.log.verbose( "Total CPU time consumed = %s" % ( cpuTime ) )
@@ -1140,7 +1142,8 @@ class JobWrapper:
       for i in range( len( finalStat ) ):
         EXECUTION_RESULT['CPU'].append( finalStat[i] - self.initialTiming[i] )
 
-    self.log.info( 'EXECUTION_RESULT[CPU] in sendJobAccounting', str( EXECUTION_RESULT['CPU'] ) )
+    cpuString = ' '.join( ['%.2f' % x for x in EXECUTION_RESULT['CPU'] ] )  
+    self.log.info( 'EXECUTION_RESULT[CPU] in sendJobAccounting', cpuString )
 
     utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
@@ -1363,7 +1366,8 @@ class ExecutionThread( threading.Thread ):
     EXECUTION_RESULT['CPU'] = []
     for i in range( len( finalStat ) ):
       EXECUTION_RESULT['CPU'].append( finalStat[i] - initialStat[i] )
-    gLogger.info( 'EXECUTION_RESULT[CPU] after Execution of spObject.systemCall', str( EXECUTION_RESULT['CPU'] ) )
+    cpuString = ' '.join( ['%.2f' % x for x in EXECUTION_RESULT['CPU'] ] )  
+    gLogger.info( 'EXECUTION_RESULT[CPU] after Execution of spObject.systemCall', cpuString )
     gLogger.info( 'EXECUTION_RESULT[Thread] after Execution of spObject.systemCall', str( EXECUTION_RESULT['Thread'] ) )
 
   #############################################################################
