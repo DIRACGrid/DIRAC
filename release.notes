@@ -1,3 +1,8 @@
+[v6r12-pre1]
+
+*Accounting
+NEW: Allow to have more than one DB for accounting
+
 [v6r11]
 
 *Core
