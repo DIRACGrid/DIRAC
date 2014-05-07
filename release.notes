@@ -1,10 +1,11 @@
-[v6r11-pre17]
+[v6r11-pre18]
 
 *Core
 FIX: Client - fix in __getattr__() to provide dir() functionality
 CHANGE: dirac-configure - use Registry helper to get VOMS servers information
 BUGFIX: ObjectLoader - extensions must be looked up first for plug-ins
 CHANGE: Misc.py - removed obsoleted
+NEW: added returnSingleResult() generic utility by moving it from Resources/Utils module 
 
 *Configuration
 CHANGE: Resources.getDIRACPlatform() returns a list of compatible DIRAC platforms
@@ -28,6 +29,7 @@ CHANGE: dirac-pilot - use Python 2.7 by default
 NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
 FIX: InputDataByProtocol - fix the case where file is only on tape
 FIX: FTSAgent - multiple fixes
+BUGFIX: ReplicateAndRegister - do not ask SE with explicit SRM2 protocol
 
 *Interfaces
 CHANGE: Dirac - instantiate SandboxStoreClient and WMSClient when needed, not in the constructor
@@ -38,8 +40,7 @@ NEW: Job.py - added setTag() interface
 CHANGE: StorageElement - changes to avoid usage PFNs
 FIX: XROOTStorage, SRM2Storage - changes in PFN construction 
 NEW: PoolComputingElement - a CE allowing to manage multi-core slots
-FIX: SSHTorqueComputingElement - specify the remote user for running/waiting jobs 
-     with BatchUser option
+FIX: SSHTorqueComputingElement - specify the SSHUser user for querying running/waiting jobs 
 
 *RSS
 NEW: added commands dirac-rss-query-db and dirac-rss-query-dtcache
@@ -47,6 +48,7 @@ NEW: added commands dirac-rss-query-db and dirac-rss-query-dtcache
 *RMS
 CHANGE: ReqDB - added Foreign Keys to ReqDB tables
 NEW: dirac-rms-reset-request command
+FIX: RequestTask - always execute operations with owner proxy
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
