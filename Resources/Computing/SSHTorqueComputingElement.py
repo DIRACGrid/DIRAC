@@ -16,8 +16,6 @@ from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.Resources.Computing.SSHComputingElement       import SSH 
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 
-import re
-
 CE_NAME = 'SSHTorque'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
@@ -69,50 +67,17 @@ class SSHTorqueComputingElement( SSHComputingElement ):
 
     ssh = SSH( parameters = self.ceParameters )
 
-    if self.ceParameters.has_key('BatchUser') :
-
-#      cmd = ["qstat", "-i", "-u", self.ceParameters['BatchUser'], self.queue, "|", "grep", self.queue, "|", "wc", "-l"]
-      cmd = ["qselect", "-u", self.ceParameters['BatchUser'], "-s", "QW", "|", "wc", "-l"]
-
-      ret = self.__execRemoteSSH( ssh, cmd )
-
-      if not ret['OK'] :
-        self.log.error( ret['Message'] )
-        return ret
-
-      waitingJobs = int(ret['Value'])
-
-#      cmd = ["qstat", "-r", "-u", self.ceParameters['BatchUser'], self.queue, "|", "grep", self.queue, "|", "wc", "-l"]
-      cmd = ["qselect", "-u", self.ceParameters['BatchUser'], "-s", "R", "|", "wc", "-l"]
-
-      ret = self.__execRemoteSSH( ssh, cmd )
-
-      if not ret['OK'] :
-        self.log.error( ret['Message'] )
-        return ret
-
-      runningJobs = int(ret['Value'])
-
-    else :
-
-      cmd = ["qstat", "-Q" , self.execQueue ]
-
-      ret = self.__execRemoteSSH( ssh, cmd )
-
-      if not ret['OK']:
-        self.log.error( ret['Message'] )
-        return ret
-
-      matched = re.search( self.queue + "\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", ret['Value'] )
-
-      if matched.groups < 6:
-        return S_ERROR( "Error retrieving information from qstat:" + ret['Value'] )
-
-      try:
-        waitingJobs = int( matched.group( 5 ) )
-        runningJobs = int( matched.group( 6 ) )
-      except:
-        return S_ERROR( "Error retrieving information from qstat:" + ret['Value'] )
+    user = self.ceParameters['SSHUser']
+    cmd = ["qselect", "-u", user, "-s", "QW", "-q", self.execQueue, "|", "wc", "-l"]
+    cmd += [';'] + ["qselect", "-u", user, "-s", "R", "-q", self.execQueue, "|", "wc", "-l"]
+    ret = self.__execRemoteSSH( ssh, cmd )
+    if not ret['OK'] :
+      self.log.error( ret['Message'] )
+      return ret
+    resultList = ret['Value'].split() 
+    
+    waitingJobs = int(resultList[0])
+    runningJobs = int(resultList[1])
 
     result['WaitingJobs'] = waitingJobs
     result['RunningJobs'] = runningJobs

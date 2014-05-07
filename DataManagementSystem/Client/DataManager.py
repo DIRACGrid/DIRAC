@@ -1097,7 +1097,7 @@ class DataManager( object ):
         self.log.debug( errStr, lfn )
         failed[lfn] = errStr
       else:
-        # This is the PFN as in hte FC
+        # This is the PFN as in the FC
         lfnDict[lfn] = pfn
 
     # Now we should use the constructed PFNs if needed, for the physical removal
@@ -1116,7 +1116,7 @@ class DataManager( object ):
 
     failed.update( dict( [( pfnDict[pfn], error ) for pfn, error in res['Value']['Failed'].items()] ) )
     # Here we use the FC PFN...
-    replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[lfn]], storageElementName ) for pfn in res['Value']['Successful']]
+    replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[pfn]], storageElementName ) for pfn in res['Value']['Successful']]
 
     res = self.__removeCatalogReplica( replicaTuples )
     if not res['OK']:
