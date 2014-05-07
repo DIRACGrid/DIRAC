@@ -5,7 +5,7 @@ import os
 import datetime
 
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
-from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
+from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.AccountingSystem.private.Summaries import Summaries
 from DIRAC.AccountingSystem.private.DataCache import gDataCache
 from DIRAC.AccountingSystem.private.MainReporter import MainReporter
@@ -17,37 +17,9 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 
-gAccountingDB = False
-
-def initializeReportGeneratorHandler( serviceInfo ):
-  global gAccountingDB
-  gAccountingDB = AccountingDB( readOnly = True )
-  #Get data location
-  reportSection = PathFinder.getServiceSection( "Accounting/ReportGenerator" )
-  dataPath = gConfig.getValue( "%s/DataLocation" % reportSection, "data/accountingGraphs" )
-  dataPath = dataPath.strip()
-  if "/" != dataPath[0]:
-    dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
-  gLogger.info( "Data will be written into %s" % dataPath )
-  try:
-    os.makedirs( dataPath )
-  except:
-    pass
-  try:
-    testFile = "%s/acc.jarl.test" % dataPath
-    fd = file( testFile, "w" )
-    fd.close()
-    os.unlink( testFile )
-  except IOError:
-    gLogger.fatal( "Can't write to %s" % dataPath )
-    return S_ERROR( "Data location is not writable" )
-  gDataCache.setGraphsLocation( dataPath )
-  gMonitor.registerActivity( "plotsDrawn", "Drawn plot images", "Accounting reports", "plots", gMonitor.OP_SUM )
-  gMonitor.registerActivity( "reportsRequested", "Generated reports", "Accounting reports", "reports", gMonitor.OP_SUM )
-  return S_OK()
-
 class ReportGeneratorHandler( RequestHandler ):
 
+  __acDB = False
   __reportRequestDict = { 'typeName' : types.StringType,
                         'reportName' : types.StringType,
                         'startTime' : Time._allDateTypes,
@@ -56,6 +28,33 @@ class ReportGeneratorHandler( RequestHandler ):
                         'grouping' : types.StringType,
                         'extraArgs' : types.DictType
                       }
+
+  @classmethod
+  def initializeHandler( cls, serviceInfo ):
+    reportSection = serviceInfo[ 'serviceSectionPath' ]
+    cls.__acDB = MultiAccountingDB( reportSection, readOnly = True )
+    #Get data location
+    dataPath = gConfig.getValue( "%s/DataLocation" % reportSection, "data/accountingGraphs" )
+    dataPath = dataPath.strip()
+    if "/" != dataPath[0]:
+      dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
+    gLogger.info( "Data will be written into %s" % dataPath )
+    try:
+      os.makedirs( dataPath )
+    except:
+      pass
+    try:
+      testFile = "%s/acc.jarl.test" % dataPath
+      fd = file( testFile, "w" )
+      fd.close()
+      os.unlink( testFile )
+    except IOError:
+      gLogger.fatal( "Can't write to %s" % dataPath )
+      return S_ERROR( "Data location is not writable" )
+    gDataCache.setGraphsLocation( dataPath )
+    gMonitor.registerActivity( "plotsDrawn", "Drawn plot images", "Accounting reports", "plots", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "reportsRequested", "Generated reports", "Accounting reports", "reports", gMonitor.OP_SUM )
+    return S_OK()
 
 
 
@@ -114,7 +113,7 @@ class ReportGeneratorHandler( RequestHandler ):
     retVal = self.__checkPlotRequest( reportRequest )
     if not retVal[ 'OK' ]:
       return retVal
-    reporter = MainReporter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    reporter = MainReporter( self.__acDB, self.serviceInfoDict[ 'clientSetup' ] )
     gMonitor.addMark( "plotsDrawn" )
     reportRequest[ 'generatePlot' ] = True
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
@@ -134,7 +133,7 @@ class ReportGeneratorHandler( RequestHandler ):
     retVal = self.__checkPlotRequest( reportRequest )
     if not retVal[ 'OK' ]:
       return retVal
-    reporter = MainReporter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    reporter = MainReporter( self.__acDB, self.serviceInfoDict[ 'clientSetup' ] )
     gMonitor.addMark( "reportsRequested" )
     reportRequest[ 'generatePlot' ] = False
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
@@ -146,7 +145,7 @@ class ReportGeneratorHandler( RequestHandler ):
     Arguments:
       - none
     """
-    reporter = MainReporter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    reporter = MainReporter( self.__acDB, self.serviceInfoDict[ 'clientSetup' ] )
     return reporter.list( typeName )
 
   types_listUniqueKeyValues = [ types.StringType ]
@@ -156,7 +155,7 @@ class ReportGeneratorHandler( RequestHandler ):
     Arguments:
       - none
     """
-    dbUtils = DBUtils( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    dbUtils = DBUtils( self.__acDB, self.serviceInfoDict[ 'clientSetup' ] )
     credDict = self.getRemoteCredentials()
     if typeName in gPoliciesList:
       policyFilter = gPoliciesList[ typeName ]
