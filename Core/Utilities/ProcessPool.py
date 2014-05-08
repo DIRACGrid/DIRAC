@@ -146,7 +146,7 @@ class WorkingProcess( multiprocessing.Process ):
   * when parent process PID is set to 1 (init process, parent process with ProcessPool is dead).
   """
 
-  def __init__( self, pendingQueue, resultsQueue, stopEvent ):
+  def __init__( self, pendingQueue, resultsQueue, stopEvent, keepRunning ):
     """ c'tor
 
     :param self: self refernce
@@ -167,6 +167,8 @@ class WorkingProcess( multiprocessing.Process ):
     self.__resultsQueue = resultsQueue
     ## stop event
     self.__stopEvent = stopEvent
+    ## keep process running until stop event
+    self.__keepRunning = keepRunning
     ## placeholder for watchdog thread
     self.__watchdogThread = None
     ## placeholder for process thread
@@ -258,7 +260,7 @@ class WorkingProcess( multiprocessing.Process ):
         ## idle loop?
         idleLoopCount += 1
         ## 10th idle loop - exit, nothing to do 
-        if idleLoopCount == 10:
+        if idleLoopCount == 10 and not self.__keepRunning:
           return 
         continue
 
@@ -539,7 +541,8 @@ class ProcessPool( object ):
   
   """
   def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10,
-                strictLimits = True, poolCallback=None, poolExceptionCallback=None ):
+                strictLimits = True, poolCallback=None, poolExceptionCallback=None,
+                keepProcessesRunning=True ):
     """ c'tor
 
     :param self: self reference
@@ -570,6 +573,8 @@ class ProcessPool( object ):
     self.__resultsQueue = multiprocessing.Queue( 0 )
     ## stop event
     self.__stopEvent = multiprocessing.Event()
+    ## keep processes running flag
+    self.__keepRunning = keepProcessesRunning
     ## lock 
     self.__prListLock = threading.Lock()
     
@@ -659,7 +664,7 @@ class ProcessPool( object ):
     return counter
 
   def getFreeSlots( self ):
-    """ get number of free slots availablr for workers
+    """ get number of free slots available for workers
 
     :param self: self reference
     """
@@ -672,7 +677,7 @@ class ProcessPool( object ):
     """
     self.__prListLock.acquire()
     try:
-      worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue, self.__stopEvent )
+      worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue, self.__stopEvent, self.__keepRunning )
       while worker.pid == None:
         time.sleep(0.1)
       self.__workersDict[ worker.pid ] = worker
