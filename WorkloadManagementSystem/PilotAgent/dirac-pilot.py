@@ -60,7 +60,7 @@ class CliParams:
     self.userDN = ""
     self.maxCycles = CliParams.MAX_CYCLES
     self.flavour = 'DIRAC'
-    self.gridVersion = '2013-04-22'
+    self.gridVersion = '2014-04-09'
     self.pilotReference = ''
     self.releaseVersion = ''
     self.releaseProject = ''
