@@ -12,10 +12,11 @@ K.C.
 
 import types
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Resources.Catalog.FileCatalog               import FileCatalog
-from DIRAC.Resources.Utilities                         import Utils
+from DIRAC.Resources.Catalog.FileCatalog                 import FileCatalog
 from DIRAC.DataManagementSystem.Client.ReplicaContainers import CatalogReplica
-from DIRAC.Core.Utilities.CFG import CFG
+from DIRAC.Core.Utilities.CFG                            import CFG
+from DIRAC.Core.Utilities.ReturnValues                   import returnSingleResult
+
 
 class File:
 
@@ -123,7 +124,7 @@ class File:
     return S_OK(self.checksum)
 
   def __populateMetadata(self):
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.getFileMetadata( self.lfn ) )
+    res = returnSingleResult( self.fc.getFileMetadata( self.lfn ) )
     if not res['OK']:
       return res
     metadata = res['Value']
@@ -150,7 +151,7 @@ class File:
       for replica in self.catalogReplicas:
         replicas[replica.se] = replica.pfn
       return S_OK(replicas)
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.getCatalogReplicas( self.lfn ) )
+    res = returnSingleResult( self.fc.getCatalogReplicas( self.lfn ) )
     if not res['OK']:
       return res
     replicas = res['Value']
