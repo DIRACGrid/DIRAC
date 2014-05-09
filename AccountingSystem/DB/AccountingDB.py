@@ -8,8 +8,7 @@ import random
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gMonitor, gConfig
 from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
-from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
-from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
+from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
 gSynchro = ThreadSafe.Synchronizer()
@@ -104,7 +103,7 @@ class AccountingDB( DB ):
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't get a list of setups: %s" % retVal[ 'Message' ] )
     setupsList = retVal[ 'Value' ]
-    objectsLoaded = loadObjects( "AccountingSystem/Client/Types", parentClass = BaseAccountingType )
+    objectsLoaded = TypeLoader().getTypes()
 
     #Load the files
     for pythonClassName in sorted( objectsLoaded ):

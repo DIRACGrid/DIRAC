@@ -93,7 +93,7 @@ class FileCatalog( object ):
           failed.setdefault( lfn, {} )[catalogName] = message
           if master:
             # If this is the master catalog then we should not attempt the operation on other catalogs
-            fileInfo.pop( lfn )
+            fileInfo.pop( lfn, None )
         for lfn, result in res['Value']['Successful'].items():
           # Save the result return for each file for the successful operations
           successful.setdefault( lfn, {} )[catalogName] = result
