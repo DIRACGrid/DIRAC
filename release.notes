@@ -28,7 +28,7 @@ CHANGES: DownloadInputData, InputDataByProtocol, InputDataResolution - allows to
          PFNs for the protocol resolution
 NEW: JobDB, JobMonitoringHandler - added traceJobParameters(s)() methods     
 CHANGE: TaskQueueDirector - use ObjectLoader to load directors    
-CHANGE: dirac-pilot - use Python 2.7 by default
+CHANGE: dirac-pilot - use Python 2.7 by default, 2014-04-09 LCG bundles
 
 *DMS
 NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )
