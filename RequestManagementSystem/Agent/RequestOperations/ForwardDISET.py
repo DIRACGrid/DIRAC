@@ -55,6 +55,13 @@ class ForwardDISET( OperationHandlerBase ):
       self.operation.Error = str( error )
       self.operation.Status = "Failed"
       return S_ERROR( str( error ) )
+    
+    # No delegated identities in the requests
+    if 'delegatedDN' in decode[0][1]:
+      decode[0][1].pop('delegatedDN')
+    if 'delegatedGroup' in decode[0][1]:
+      decode[0][1].pop('delegatedGroup')
+    
     forward = executeRPCStub( decode )
     if not forward["OK"]:
       self.log.error( "unable to execute '%s' operation: %s" % ( self.operation.Type, forward["Message"] ) )
