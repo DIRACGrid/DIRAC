@@ -6,7 +6,6 @@
   :synopsis: ProcessPool and related classes
 
 ProcessPool
------------
 
 ProcessPool creates a pool of worker subprocesses to handle a queue of tasks
 much like the producers/consumers paradigm. Users just need to fill the queue
@@ -45,11 +44,11 @@ or alternatively by using ProcessTask instance::
 
 where parameters are:
 
-  :param funcDef: callable py object definition (function, lambda, class with __call__ slot defined
-  :param list args: argument list
-  :param dict kwargs: keyword arguments dictionary
-  :param callback: callback function definition
-  :param exceptionCallback: exception callback function definition
+:param funcDef: callable py object definition (function, lambda, class with __call__ slot defined
+:param list args: argument list
+:param dict kwargs: keyword arguments dictionary
+:param callback: callback function definition
+:param exceptionCallback: exception callback function definition
 
 The callback, exceptionCallbaks and the parameters are all optional. Once task has been added to the pool,
 it will be executed as soon as possible. Worker subprocesses automatically return the return value of the task.
@@ -61,7 +60,7 @@ This method will process the existing return values of the task, even if the tas
 anything. This method has to be called to clean the result queues. To wait until all the requests are finished
 and process their result call::
 
- pool.processAllRequests()
+  pool.processAllRequests()
 
 This function will block until all requests are finished and their result values have been processed.
 
@@ -72,7 +71,6 @@ has to call::
   pool.daemonize()
 
 Callback functions
-------------------
 
 There are two types of callbacks that can be executed for each tasks: exception callback function and
 results callback function. The the firts one is executed when unhandled excpetion has been raised during
