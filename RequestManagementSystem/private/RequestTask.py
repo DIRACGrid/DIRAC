@@ -23,7 +23,7 @@ __RCSID__ = "$Id $"
 # # imports
 import os, time
 # # from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
+from DIRAC import gLogger, S_OK, S_ERROR, gMonitor, gConfig
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
@@ -130,10 +130,6 @@ class RequestTask( object ):
 
     :return: S_OK with name of newly created owner proxy file and shifter name if any
     """
-    
-    # Always use request owner proxy
-    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
-    
     self.__managersDict = {}
     shifterProxies = self.__setupManagerProxies()
     if not shifterProxies["OK"]:
@@ -276,10 +272,16 @@ class RequestTask( object ):
       handler.shifter = shifter
       # # and execute
       pluginName = self.getPluginName( self.handlersDict.get( operation.Type ) )
+      useServerCertificate = gConfig.useServerCertificate()
       try:
         if pluginName:
           gMonitor.addMark( "%s%s" % ( pluginName, "Att" ), 1 )
+        # Always use request owner proxy
+        if useServerCertificate:
+          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
         exe = handler()
+        if useServerCertificate:
+          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
         if not exe["OK"]:
           self.log.error( "unable to process operation %s: %s" % ( operation.Type, exe["Message"] ) )
           if pluginName:
@@ -290,6 +292,8 @@ class RequestTask( object ):
         if pluginName:
           gMonitor.addMark( "%s%s" % ( pluginName, "Fail" ), 1 )
         gMonitor.addMark( "RequestFail", 1 )
+        if useServerCertificate:
+          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
         break
 
       # # operation status check
@@ -343,3 +347,4 @@ class RequestTask( object ):
             break
 
     return S_OK()
+  
