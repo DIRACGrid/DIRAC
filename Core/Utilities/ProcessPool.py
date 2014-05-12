@@ -147,10 +147,13 @@ class WorkingProcess( multiprocessing.Process ):
   def __init__( self, pendingQueue, resultsQueue, stopEvent, keepRunning ):
     """ c'tor
 
-    :param self: self refernce
-    :param multiprocessing.Queue pendingQueue: queue storing ProcessTask before exection
-    :param multiprocessing.Queue resultsQueue: queue storing callbacks and exceptionCallbacks
-    :param multiprocessing.Event stopEvent: event to stop processing
+    :param self: self reference
+    :param : pendingQueue: queue storing ProcessTask before exection
+    :type multiprocessing.Queue pendingQueue
+    :param resultsQueue: queue storing callbacks and exceptionCallbacks
+    :type multiprocessing.Queue 
+    :param  stopEvent: event to stop processing
+    :type multiprocessing.Event
     """
     multiprocessing.Process.__init__( self )
     ## daemonize
@@ -498,7 +501,6 @@ class ProcessPool( object ):
   sub-processes (:WorkingProcess:).
   
   Pool depth
-  ----------
 
   The :ProcessPool: is keeping required number of active workers all the time: slave workers are only created 
   when pendingQueue is being filled with tasks, not exceeding defined min and max limits. When pendingQueue is 
@@ -506,7 +508,6 @@ class ProcessPool( object ):
   self-destroy mechnism after 10 idle loops. 
 
   Processing and communication
-  ----------------------------
 
   The communication between :ProcessPool: instace and slaves is performed using two :multiprocessing.Queues: 
   * pendingQueue, used to push tasks to the workers,
@@ -523,7 +524,6 @@ class ProcessPool( object ):
   separate background thread.
 
   Finalisation
-  ------------
 
   Finsalisation fo task processing is done in several steps:
   * if pool is working in daemon mode, background result processing thread is joined and stopped
