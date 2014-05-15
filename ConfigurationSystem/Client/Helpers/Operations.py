@@ -146,8 +146,8 @@ class Operations( object ):
     - if setup is defined -> whatever is defined will be used as setup
     - if setup is None -> Defaults will be used
     
-    :param option path with respect to the Operations standard path  
-    :type string
+    :param option: path with respect to the Operations standard path  
+    :type option: string
     """
     
     for path in self.__getSearchPaths():

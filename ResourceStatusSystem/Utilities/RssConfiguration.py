@@ -21,21 +21,21 @@ _rssConfigPath = 'ResourceStatus'
 
 class RssConfiguration:
   '''
+  RssConfiguration::
   
-  RssConfiguration:
-  { 
-    Config:
-    { 
-      State        : Active | InActive,
-      Cache        : 300,
-      FromAddress  : 'email@site.domain'
-      StatusType   :
       { 
-        default       : all,
-        StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
-      }  
-    }
-  }          
+        Config:
+        { 
+          State        : Active | InActive,
+          Cache        : 300,
+          FromAddress  : 'email@site.domain'
+          StatusType   :
+          { 
+            default       : all,
+            StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
+          }  
+        }
+      }          
   
   '''
   def __init__( self ):
