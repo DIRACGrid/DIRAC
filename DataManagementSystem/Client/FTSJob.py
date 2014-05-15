@@ -3,14 +3,16 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 13:41:20
 ########################################################################
-""" :mod: FTSJob
-    ============
+""" 
+:mod: FTSJob
 
-    .. module: FTSJob
-    :synopsis: class representing FTS job
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: FTSJob
 
-    class representing single FTS request
+:synopsis: class representing FTS job
+
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+class representing single FTS request
 """
 
 __RCSID__ = "$Id $"

@@ -5,14 +5,17 @@
 # Date: 2011/11/24 13:40:38
 ########################################################################
 
-""" :mod: DIRACSingleton 
-    =======================
+""" 
+:mod: DIRACSingleton 
  
-    .. module: DIRACSingleton
-    :synopsis: metaclass singleton implementation
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: DIRACSingleton
 
-    metaclass singleton implementation
+:synopsis: metaclass singleton implementation
+
+.. moduleauthor: Krzysztof.Ciba@NOSPAMgmail.com
+
+metaclass singleton implementation
+
 """
 
 __RCSID__ = "$Id $"

@@ -3,14 +3,16 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/08 09:28:29
 ########################################################################
-""" :mod: FTSFile
-    =============
+""" 
+:mod: FTSFile
 
-    .. module: FTSFile
-    :synopsis: class representing a single file in the FTS job
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: FTSFile
 
-    class representing a single file in the FTS job
+:synopsis: class representing a single file in the FTS job
+
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+class representing a single file in the FTS job
 """
 # for properties
 __RCSID__ = "$Id $"

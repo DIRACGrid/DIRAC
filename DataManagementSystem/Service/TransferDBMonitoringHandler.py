@@ -3,13 +3,14 @@
 # File: TransferDBMonitoringHandler.py
 ########################################################################
 
-""" :mod: TransferDBMonitoringHandler
-    =================================
+""" 
+:mod: TransferDBMonitoringHandler
 
-    .. module: TransferDBMonitoringHandler
-    :synopsis: Implementation of the TransferDB monitoring service in the DISET framework.
+.. module: TransferDBMonitoringHandler
 
-    :deprecated:
+:synopsis: Implementation of the TransferDB monitoring service in the DISET framework.
+
+:deprecated:
 
 """
 

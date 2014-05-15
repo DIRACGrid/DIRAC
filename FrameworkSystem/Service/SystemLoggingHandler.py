@@ -60,11 +60,13 @@ class SystemLoggingHandler( RequestHandler ):
   #A normal exported function (begins with export_)
   def export_addMessages( self, messagesList, site, nodeFQDN ):
     """ This is the interface to the service
-        inputs:
-           msgList contains a  list of Message Objects.
-        outputs:
+        
+        :param list msgList: contains a  list of Message Objects.
+        :return: :
+           
            S_OK if no exception was raised
            S_ERROR if an exception was raised
+           
     """
     for messageTuple in messagesList:
       messageObject = tupleToMessage( messageTuple )

@@ -3,7 +3,8 @@
 #################################################################
 """
 .. module:: Pfn
-  :synopsis: ProcessPool and related classes
+  
+:synopsis: ProcessPool and related classes
 
 ProcessPool
 
@@ -25,7 +26,7 @@ In case another request is added to the full queue, the execution will
 lock until another request is taken out. The ProcessPool will automatically increase and
 decrease the pool of workers as needed, of course not exceeding above limits.
 
-To add a task to the queue one should execute::
+To add a task to the queue one should execute:::
 
   pool.createAndQueueTask( funcDef,
                            args = ( arg1, arg2, ... ),
@@ -33,13 +34,14 @@ To add a task to the queue one should execute::
                            callback = callbackDef,
                            exceptionCallback = exceptionCallBackDef )
 
-or alternatively by using ProcessTask instance::
+or alternatively by using ProcessTask instance:::
 
-  task = ProcessTask( funcDef ,
+  task = ProcessTask( funcDef,
                       args = ( arg1, arg2, ... )
                       kwargs = { "kwarg1" : value1, .. },
                       callback = callbackDef,
                       exceptionCallback = exceptionCallbackDef )
+                      
   pool.queueTask( task )
 
 where parameters are:

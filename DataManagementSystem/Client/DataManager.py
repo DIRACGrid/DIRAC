@@ -1,10 +1,11 @@
-""" :mod: DataManager
-    =======================
+""" 
+:mod: DataManager
 
-    .. module: DataManager
-    :synopsis: DataManager links the functionalities of StorageElement and FileCatalog.
+.. module: DataManager
 
-    This module consists DataManager and related classes.
+:synopsis: DataManager links the functionalities of StorageElement and FileCatalog.
+
+This module consists DataManager and related classes.
 
 """
 
@@ -1337,12 +1338,10 @@ class DataManager( object ):
 
     :param self: self reference
     :param str lfn: LFN
-    :param :
+    :param str fileName: the full path to the local file
+    :param str diracSE: the Storage Element to which to put the file
+    :param str path: the path on the storage where the file will be put (if not provided the LFN will be used)
 
-        'lfn' is the file LFN
-        'file' is the full path to the local file
-        'diracSE' is the Storage Element to which to put the file
-        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
     # Check that the local file exists
     if not os.path.exists( fileName ):
