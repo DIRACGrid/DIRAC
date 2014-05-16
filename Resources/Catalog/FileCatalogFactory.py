@@ -2,8 +2,8 @@
 # $HeadURL$
 ########################################################################
 __RCSID__ = "$Id$"
-""" FileCatalogFactory class to create file catalog client objects according to the 
-    configuration description 
+""" FileCatalogFactory class to create file catalog client objects according to the
+    configuration description
 """
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -28,7 +28,7 @@ class FileCatalogFactory:
     catalogType = gConfig.getValue( catalogPath + '/CatalogType', catalogName )
     catalogURL = gConfig.getValue( catalogPath + '/CatalogURL', "DataManagement/" + catalogType )
 
-    self.log.verbose( 'Creating %s client' % catalogName )
+    self.log.debug( 'Creating %s client' % catalogName )
 
     objectLoader = ObjectLoader.ObjectLoader()
     result = objectLoader.loadObject( 'Resources.Catalog.%sClient' % catalogType, catalogType + 'Client' )
@@ -56,6 +56,6 @@ class FileCatalogFactory:
       gLogger.exception( errStr, lException = x )
       return S_ERROR( errStr )
 
-    # Catalog module was not loaded  
+    # Catalog module was not loaded
     return S_ERROR( 'No suitable client found for %s' % catalogName )
 
