@@ -22,7 +22,7 @@ import os
 
 class StorageFactory:
 
-  def __init__( self, useProxy=False ):
+  def __init__( self, useProxy = False ):
 
     self.rootConfigPath = '/Resources/StorageElements'
     self.valid = True
@@ -306,12 +306,12 @@ class StorageFactory:
   #
 
   def __generateStorageObject( self, storageName, protocolName, protocol, path = None,
-                              host = None, port = None, spaceToken = None, wsUrl = None, parameters={} ):
-    
+                              host = None, port = None, spaceToken = None, wsUrl = None, parameters = {} ):
+
     storageType = protocolName
     if self.proxy:
       storageType = 'Proxy'
-    
+
     moduleRootPaths = getInstalledExtensions()
     moduleLoaded = False
     path = path.rstrip( '/' )
@@ -320,9 +320,9 @@ class StorageFactory:
     for moduleRootPath in moduleRootPaths:
       if moduleLoaded:
         break
-      gLogger.verbose( "Trying to load from root path %s" % moduleRootPath )
+      gLogger.debug( "Trying to load from root path %s" % moduleRootPath )
       moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Storage", "%sStorage.py" % storageType )
-      gLogger.verbose( "Looking for file %s" % moduleFile )
+      gLogger.debug( "Looking for file %s" % moduleFile )
       if not os.path.isfile( moduleFile ):
         continue
       try:
@@ -346,13 +346,13 @@ class StorageFactory:
         errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s(): %s" % ( moduleName, x )
         gLogger.exception( errStr )
         return S_ERROR( errStr )
-      
+
       # Set extra parameters if any
       if parameters:
         result = storage.setParameters( parameters )
         if not result['OK']:
           return result
-      
+
       # If use proxy, keep the original protocol name
       if self.proxy:
         storage.protocolName = protocolName

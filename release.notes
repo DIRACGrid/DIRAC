@@ -7,6 +7,17 @@ NEW: ReturnValue - added returnSingleResult() utility
 *Accounting
 NEW: Allow to have more than one DB for accounting
 
+[v6r11p1]
+
+*RMS
+FIX: ReqClient - failures due to banned sites are considered to be recoverable
+
+*DMS
+BUGFIX: dirac-dms-replicate-and-register-request - minor bug fixes
+
+*Resources
+FIX: InProcessComputingElement - stop proxy renewal thread for a finished payload
+
 [v6r11]
 
 *Core

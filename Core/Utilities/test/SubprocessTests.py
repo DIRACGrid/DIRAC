@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: SubprocessTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/12/11 18:04:25
@@ -68,11 +67,11 @@ class SubprocessTests(unittest.TestCase):
     
     ## systemCall
     ret = systemCall( timeout=self.timeout, cmdSeq = self.cmd )
-    self.assertEqual( ret, {'Message': 'Timed out after 3 seconds', 'OK': False} )
+    self.assertFalse( ret['OK'] )
     
     ## shellCall
     ret  = shellCall( timeout=self.timeout, cmdSeq = " ".join( self.cmd ) )
-    self.assertEqual( ret, {'Message': 'Timed out after 3 seconds', 'OK': False} )
+    self.assertFalse( ret['OK'] )
 
     def pyfunc( name ):
       time.sleep(10)
@@ -80,7 +79,7 @@ class SubprocessTests(unittest.TestCase):
 
     ## pythonCall
     ret = pythonCall( self.timeout, pyfunc, "Krzysztof" )
-    self.assertEqual( ret, {'Message': 'Timed out after 3 seconds', 'OK': False} )
+    self.assertFalse( ret['OK'] )
 
 ## tests execution
 if __name__ == "__main__":
