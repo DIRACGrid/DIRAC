@@ -17,8 +17,8 @@ define time intervals.
 
 Notice: datetime.timedelta objects allow multiplication and division by interger
 but not by float. Thus:
-  - DIRAC.Times.second * 1.5             is not allowed
-  - DIRAC.Times.second * 3 / 2           is allowed
+- DIRAC.Times.second * 1.5             is not allowed
+- DIRAC.Times.second * 3 / 2           is allowed
 
 An timeInterval class provides a method to check
 if a give datetime is in the defined interval.

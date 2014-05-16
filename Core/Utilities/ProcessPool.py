@@ -3,10 +3,10 @@
 #################################################################
 """
 .. module:: Pfn
-  :synopsis: ProcessPool and related classes
+  
+:synopsis: ProcessPool and related classes
 
 ProcessPool
------------
 
 ProcessPool creates a pool of worker subprocesses to handle a queue of tasks
 much like the producers/consumers paradigm. Users just need to fill the queue
@@ -26,7 +26,7 @@ In case another request is added to the full queue, the execution will
 lock until another request is taken out. The ProcessPool will automatically increase and
 decrease the pool of workers as needed, of course not exceeding above limits.
 
-To add a task to the queue one should execute::
+To add a task to the queue one should execute:::
 
   pool.createAndQueueTask( funcDef,
                            args = ( arg1, arg2, ... ),
@@ -34,22 +34,23 @@ To add a task to the queue one should execute::
                            callback = callbackDef,
                            exceptionCallback = exceptionCallBackDef )
 
-or alternatively by using ProcessTask instance::
+or alternatively by using ProcessTask instance:::
 
-  task = ProcessTask( funcDef ,
+  task = ProcessTask( funcDef,
                       args = ( arg1, arg2, ... )
                       kwargs = { "kwarg1" : value1, .. },
                       callback = callbackDef,
                       exceptionCallback = exceptionCallbackDef )
+                      
   pool.queueTask( task )
 
 where parameters are:
 
-  :param funcDef: callable py object definition (function, lambda, class with __call__ slot defined
-  :param list args: argument list
-  :param dict kwargs: keyword arguments dictionary
-  :param callback: callback function definition
-  :param exceptionCallback: exception callback function definition
+:param funcDef: callable py object definition (function, lambda, class with __call__ slot defined
+:param list args: argument list
+:param dict kwargs: keyword arguments dictionary
+:param callback: callback function definition
+:param exceptionCallback: exception callback function definition
 
 The callback, exceptionCallbaks and the parameters are all optional. Once task has been added to the pool,
 it will be executed as soon as possible. Worker subprocesses automatically return the return value of the task.
@@ -61,7 +62,7 @@ This method will process the existing return values of the task, even if the tas
 anything. This method has to be called to clean the result queues. To wait until all the requests are finished
 and process their result call::
 
- pool.processAllRequests()
+  pool.processAllRequests()
 
 This function will block until all requests are finished and their result values have been processed.
 
@@ -72,7 +73,6 @@ has to call::
   pool.daemonize()
 
 Callback functions
-------------------
 
 There are two types of callbacks that can be executed for each tasks: exception callback function and
 results callback function. The the firts one is executed when unhandled excpetion has been raised during
@@ -149,10 +149,13 @@ class WorkingProcess( multiprocessing.Process ):
   def __init__( self, pendingQueue, resultsQueue, stopEvent, keepRunning ):
     """ c'tor
 
-    :param self: self refernce
-    :param multiprocessing.Queue pendingQueue: queue storing ProcessTask before exection
-    :param multiprocessing.Queue resultsQueue: queue storing callbacks and exceptionCallbacks
-    :param multiprocessing.Event stopEvent: event to stop processing
+    :param self: self reference
+    :param : pendingQueue: queue storing ProcessTask before exection
+    :type multiprocessing.Queue pendingQueue
+    :param resultsQueue: queue storing callbacks and exceptionCallbacks
+    :type multiprocessing.Queue 
+    :param  stopEvent: event to stop processing
+    :type multiprocessing.Event
     """
     multiprocessing.Process.__init__( self )
     ## daemonize
@@ -500,7 +503,6 @@ class ProcessPool( object ):
   sub-processes (:WorkingProcess:).
   
   Pool depth
-  ----------
 
   The :ProcessPool: is keeping required number of active workers all the time: slave workers are only created 
   when pendingQueue is being filled with tasks, not exceeding defined min and max limits. When pendingQueue is 
@@ -508,7 +510,6 @@ class ProcessPool( object ):
   self-destroy mechnism after 10 idle loops. 
 
   Processing and communication
-  ----------------------------
 
   The communication between :ProcessPool: instace and slaves is performed using two :multiprocessing.Queues: 
   * pendingQueue, used to push tasks to the workers,
@@ -525,7 +526,6 @@ class ProcessPool( object ):
   separate background thread.
 
   Finalisation
-  ------------
 
   Finsalisation fo task processing is done in several steps:
   * if pool is working in daemon mode, background result processing thread is joined and stopped

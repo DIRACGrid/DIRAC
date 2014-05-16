@@ -15,7 +15,7 @@ from DIRAC.Core.Security                                 import CS
 def getShifterProxy( shifterType, fileName = False ):
   """
   This method returns a shifter's proxy
-    - shifterType : ProductionManager / DataManager...
+  :param shifterType: ProductionManager / DataManager...
   """
   if fileName:
     try:
@@ -64,7 +64,7 @@ def setupShifterProxyInEnv( shifterType, fileName = False ):
   Return the shifter's proxy and set it up as the default
   proxy via changing the environment
   This method returns a shifter's proxy
-    - shifterType : ProductionManager / DataManager...
+  :param shifterType: ProductionManager / DataManager...
   """
   result = getShifterProxy( shifterType, fileName )
   if not result[ 'OK' ]:

@@ -4,14 +4,16 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/09/27 07:22:15
 ########################################################################
-""" :mod: Graph
-    =======================
+""" 
+:mod: Graph
 
-    .. module: Graph
-    :synopsis: graph
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: Graph
 
-    graph
+:synopsis: graph
+
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+graph
 """
 __RCSID__ = "$Id$"
 # #

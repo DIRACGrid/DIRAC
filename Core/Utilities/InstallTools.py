@@ -18,7 +18,9 @@ The Following Options are used:
 /LocalInstallation/RootPath:        Used instead of rootPath in "run" script if defined (if links are used to named versions)
 /LocalInstallation/InstancePath:    Location where runit and startup directories are created (default rootPath)
 /LocalInstallation/UseVersionsDir:  DIRAC is installed under versions/<Versioned Directory> with a link from pro
+                                    
                                     (This option overwrites RootPath and InstancePath)
+                                    
 /LocalInstallation/Host:            Used when build the URL to be published for the installed service (default: socket.getfqdn())
 /LocalInstallation/RunitDir:        Location where runit directory is created (default InstancePath/runit)
 /LocalInstallation/StartupDir:      Location where startup directory is created (default InstancePath/startup)
@@ -1878,9 +1880,9 @@ def installMySQL():
   """
   Attempt an installation of MySQL
   mode:
-    Master
-    Slave
-    None
+  - Master
+  - Slave
+  - None
   """
   fixMySQLScripts()
 

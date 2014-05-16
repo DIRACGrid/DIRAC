@@ -3,11 +3,13 @@
 # File: LcgFileCatalogProxyHandler.py
 ########################################################################
 
-""" :mod: LcgFileCatalogProxyHandler 
-    ================================
+""" 
+:mod: LcgFileCatalogProxyHandler 
  
-    .. module: LcgFileCatalogProxyHandler
-    :synopsis: This is a service which represents a DISET proxy to the LCG File Catalog    
+.. module: LcgFileCatalogProxyHandler
+
+:synopsis: This is a service which represents a DISET proxy to the LCG File Catalog    
+:deprecated:
 """
 ## imports
 import os

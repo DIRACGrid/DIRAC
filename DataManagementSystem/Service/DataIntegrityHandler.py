@@ -5,9 +5,10 @@
 """ 
 :mod: DataIntegrityHandler
  
+
 .. module: DataIntegrityHandler
-:synopsis: DataIntegrityHandler is the implementation of the Data Integrity service in 
-the DISET framework
+
+:synopsis: DataIntegrityHandler is the implementation of the Data Integrity service in the DISET framework
 """
 
 __RCSID__ = "$Id$"

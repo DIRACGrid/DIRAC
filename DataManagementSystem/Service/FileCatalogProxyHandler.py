@@ -3,11 +3,12 @@
 # File: FileCatalogProxyHandler.py
 ########################################################################
 
-""" :mod: FileCatalogProxyHandler 
-    ================================
+""" 
+:mod: FileCatalogProxyHandler 
  
-    .. module: FileCatalogProxyHandler
-    :synopsis: This is a service which represents a DISET proxy to the File Catalog    
+.. module: FileCatalogProxyHandler
+
+:synopsis: This is a service which represents a DISET proxy to the File Catalog    
 """
 ## imports
 import os
