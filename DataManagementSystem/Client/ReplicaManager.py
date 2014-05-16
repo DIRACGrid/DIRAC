@@ -2364,12 +2364,9 @@ class ReplicaManager( CatalogToStorage ):
 
     :param self: self reference
     :param str lfn: LFN
-    :param :
-
-        'lfn' is the file LFN
-        'file' is the full path to the local file
-        'diracSE' is the Storage Element to which to put the file
-        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
+    :param str fileName: the full path to the local file
+    :param str diracSE: the Storage Element to which to put the file
+    :param str path: the path on the storage where the file will be put (if not provided the LFN will be used)
     """
     # Check that the local file exists
     if not os.path.exists( fileName ):
