@@ -29,7 +29,7 @@ import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Resources.Utilities import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ########################################################################
@@ -64,7 +64,7 @@ class RemovalTask( RequestTask ):
     :param self: self reference
     :param str lfn: LFN
     """
-    dirMeta = Utils.executeSingleFileOrDirWrapper( self.fc.getDirectoryMetadata( lfn ) )
+    dirMeta = returnSingleResult( self.fc.getDirectoryMetadata( lfn ) )
     if not dirMeta["OK"]:
       return dirMeta
     dirMeta = dirMeta["Value"]
@@ -140,7 +140,7 @@ class RemovalTask( RequestTask ):
       for lfn in removalStatus:
         if lfn in failedLfns and "no such file or directory" in str( bulkRemoval["Failed"][lfn] ).lower():
           removalStatus[lfn] = bulkRemoval["Failed"][lfn]
-          removeCatalog = Utils.executeSingleFileOrDirWrapper(self.fc.removeFile( lfn ) )
+          removeCatalog = returnSingleResult(self.fc.removeFile( lfn ) )
           if not removeCatalog["OK"]:
             removalStatus[lfn] = removeCatalog["Message"]
             continue

@@ -6,6 +6,7 @@
 :mod: FileCatalogHandler 
  
 .. module: FileCatalogHandler
+
 :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service 
 """
 

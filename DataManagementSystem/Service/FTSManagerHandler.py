@@ -3,14 +3,16 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/08 14:24:08
 ########################################################################
-""" :mod: FTSManagerHandler
-    =======================
+""" 
+:mod: FTSManagerHandler
 
-    .. module: FTSManagerHandler
-    :synopsis: handler for FTSDB using DISET
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: FTSManagerHandler
 
-    service handler for FTSDB using DISET
+:synopsis: handler for FTSDB using DISET
+
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+service handler for FTSDB using DISET
 """
 
 # #

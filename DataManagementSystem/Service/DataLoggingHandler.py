@@ -4,15 +4,15 @@
 """ 
 :mod: DataLoggingHandler
 
- .. module: DataLoggingHandler
- :synopsis: DataLoggingHandler is the implementation of the Data Logging
-service in the DISET framework.
+.. module: DataLoggingHandler
 
-The following methods are available in the Service interface::
+:synopsis: DataLoggingHandler is the implementation of the Data Logging service in the DISET framework.
 
-* addFileRecord()
-* addFileRecords()
-* getFileLoggingInfo()
+The following methods are available in the Service interface:
+
+- addFileRecord()
+- addFileRecords()
+- getFileLoggingInfo()
 
 """
 

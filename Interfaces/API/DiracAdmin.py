@@ -719,17 +719,19 @@ class DiracAdmin( API ):
                       requestType = None, status = None, operation = None, ownerDN = None,
                       ownerGroup = None, requestStart = 0, limit = 100, printOutput = False ):
     """ Select requests from the request management system. A few notes on the selection criteria:
-        - jobID is the WMS JobID for the request (if applicable)
-        - requestID is assigned during submission of the request
-        - requestName is the corresponding XML file name
-        - requestType e.g. 'transfer'
-        - status e.g. Done
-        - operation e.g. replicateAndRegister
-        - requestStart e.g. the first request to consider (start from 0 by default)
-        - limit e.g. selection limit (default 100)
+        :param jobID: is the WMS JobID for the request (if applicable)
+        :param requestID: is assigned during submission of the request
+        :param requestName: is the corresponding XML file name
+        :param requestType: e.g. 'transfer'
+        :param status: e.g. Done
+        :param operation: e.g. replicateAndRegister
+        :param requestStart: e.g. the first request to consider (start from 0 by default)
+        :param limit: e.g. selection limit (default 100)
 
-       >>> dirac.selectRequests(jobID='4894')
-       {'OK': True, 'Value': [[<Requests>]]}
+        Example::
+
+          >>> dirac.selectRequests(jobID='4894')
+          {'OK': True, 'Value': [[<Requests>]]}
     """
     options = {'RequestID':requestID, 'RequestName':requestName, 'JobID':jobID, 'OwnerDN':ownerDN,
                'OwnerGroup':ownerGroup, 'RequestType':requestType, 'Status':status, 'Operation':operation}
@@ -949,11 +951,11 @@ class DiracAdmin( API ):
   #############################################################################
   def csRegisterUser( self, username, properties ):
     """Registers a user in the CS.
-        - username: Username of the user (easy;)
-        - properties: Dict containing:
-            - DN
-            - groups : list/tuple of groups the user belongs to
-            - <others> : More properties of the user, like mail
+       :param username: Username of the user (easy;)
+       :param properties: Dict containing:
+       - DN
+       - groups : list/tuple of groups the user belongs to
+       - <others> : More properties of the user, like mail
     """
     return self.csAPI.addUser( username, properties )
 

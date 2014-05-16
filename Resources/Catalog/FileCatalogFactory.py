@@ -70,6 +70,6 @@ class FileCatalogFactory:
       gLogger.exception( errStr, lException = x )
       return S_ERROR( errStr )
 
-    # Catalog module was not loaded  
+    # Catalog module was not loaded
     return S_ERROR( 'No suitable client found for %s' % catalogName )
 

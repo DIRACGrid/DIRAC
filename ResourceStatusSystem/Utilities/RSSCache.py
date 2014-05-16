@@ -85,21 +85,41 @@ class Cache( object ):
     
     self.__cacheLock.release( self.__class__.__name__)
   
-  #.............................................................................
-  # Cache getters
-
-  def get( self, cacheKeys ):
-    """
-    Gets values for cacheKeys given, if all are found ( present on the cache and
-    valid ), returns S_OK with the results. If any is not neither present not
-    valid, returns S_ERROR. 
+  def getCacheStatus( self ):
+    '''
+      Return the latest cache status
+    '''
+    self.__rssCacheLock.acquire()
+    if self.__rssCacheStatus:
+      res = dict( [ self.__rssCacheStatus[ 0 ] ] )
+    else:
+      res = {}  
+    self.__rssCacheLock.release()
+    return S_OK( res )
     
+  def getCacheHistory( self ):
+    '''
+      Return the cache updates history
+    '''
+    self.__rssCacheLock.acquire()
+    res = dict( self.__rssCacheStatus )
+    self.__rssCacheLock.release()
+    return S_OK( res )
+    
+  def get( self, resourceKey ):
+    '''
+    Gets the resource(s) status(es). Every resource can have multiple statuses, 
+    so in order to speed up things, we store them on the cache as follows::
+    
+      { (<resourceName>,<resourceStatusType0>) : whatever0,
+        (<resourceName>,<resourceStatusType1>) : whatever1,
+      }    
     :Parameters:
       **cacheKeys** - `list`
         list of keys to be extracted from the cache
         
     :return: S_OK | S_ERROR
-    """
+    '''
 
     result = {}
 

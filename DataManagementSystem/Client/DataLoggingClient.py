@@ -1,8 +1,10 @@
-""" :mod: DataLoggingClient 
-    =======================
+""" 
+:mod: DataLoggingClient 
  
-    .. module: DataLoggingClient
-    :synopsis: client for DataLoggingDB
+.. module: DataLoggingClient
+
+:synopsis: client for DataLoggingDB
+
 """
 
 ## RSCID

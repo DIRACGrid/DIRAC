@@ -1,9 +1,9 @@
 """
-    :mod:  ReqClient
-    ================
+:mod:  ReqClient
 
-    .. module:  ReqClient
-    :synopsis: implementation of client for RequestDB using DISET framework
+.. module:  ReqClient
+
+:synopsis: implementation of client for RequestDB using DISET framework
 """
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -460,10 +460,12 @@ def recoverableRequest( request ):
   excludedErrors = ( 'File does not exist', 'No such file or directory',
                      'sourceSURL equals to targetSURL',
                      'Max attempts limit reached', 'Max attempts reached' )
+  operationErrorsOK = ( 'is banned for', )
   for op in request:
-    if op.Status == 'Failed':
+    if op.Status == 'Failed' and ( not op.Error or not [errStr for errStr in operationErrorsOK if errStr in op.Error] ):
       for f in op:
         if f.Status == 'Failed':
-          if [str for str in excludedErrors if str in f.Error]:
+          if [errStr for errStr in excludedErrors if errStr in f.Error]:
             return False
           return True
+  return True

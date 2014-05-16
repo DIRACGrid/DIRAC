@@ -70,7 +70,7 @@ class FailoverTransfer( object ):
     fileGUID = fileMetaDict.get( "GUID", None )
 
     for se in destinationSEList:
-      self.log.info( "Attempting rm.putAndRegister('%s','%s','%s',guid='%s',catalog='%s')" % ( lfn,
+      self.log.info( "Attempting dm.putAndRegister('%s','%s','%s',guid='%s',catalog='%s')" % ( lfn,
                                                                                                localPath,
                                                                                                se,
                                                                                                fileGUID,
@@ -79,12 +79,12 @@ class FailoverTransfer( object ):
       result = DataManager( catalogs = fileCatalog ).putAndRegister( lfn, localPath, se, guid = fileGUID )
       self.log.verbose( result )
       if not result['OK']:
-        self.log.error( 'rm.putAndRegister failed with message', result['Message'] )
+        self.log.error( 'dm.putAndRegister failed with message', result['Message'] )
         errorList.append( result['Message'] )
         continue
 
       if not result['Value']['Failed']:
-        self.log.info( 'rm.putAndRegister successfully uploaded and registered %s to %s' % ( fileName, se ) )
+        self.log.info( 'dm.putAndRegister successfully uploaded and registered %s to %s' % ( fileName, se ) )
         return S_OK( {'uploadedSE':se, 'lfn':lfn} )
 
       # Now we know something went wrong
@@ -92,7 +92,7 @@ class FailoverTransfer( object ):
 
       errorDict = result['Value']['Failed'][lfn]
       if 'register' not in errorDict:
-        self.log.error( 'rm.putAndRegister failed with unknown error', str( errorDict ) )
+        self.log.error( 'dm.putAndRegister failed with unknown error', str( errorDict ) )
         errorList.append( 'Unknown error while attempting upload to %s' % se )
         continue
 

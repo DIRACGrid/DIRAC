@@ -1,10 +1,11 @@
-""" :mod: DataManager
-    =======================
+""" 
+:mod: DataManager
 
-    .. module: DataManager
-    :synopsis: DataManager links the functionalities of StorageElement and FileCatalog.
+.. module: DataManager
 
-    This module consists DataManager and related classes.
+:synopsis: DataManager links the functionalities of StorageElement and FileCatalog.
+
+This module consists DataManager and related classes.
 
 """
 
@@ -32,7 +33,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Resources.Utilities import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 class DataManager( object ):
   """
@@ -126,7 +127,7 @@ class DataManager( object ):
         failed = True
     if failed:
       return S_ERROR( "Failed to clean storage directory at all SEs" )
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.removeDirectory( folder, recursive = True ) )
+    res = returnSingleResult( self.fc.removeDirectory( folder, recursive = True ) )
     if not res['OK']:
       return res
     return S_OK()
@@ -140,7 +141,7 @@ class DataManager( object ):
     """
 
     se = StorageElement( storageElement )
-    res = Utils.executeSingleFileOrDirWrapper( se.exists( directory ) )
+    res = returnSingleResult( se.exists( directory ) )
 
     if not res['OK']:
       self.log.debug( "Failed to obtain existance of directory", res['Message'] )
@@ -151,7 +152,7 @@ class DataManager( object ):
       self.log.debug( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
 
-    res = Utils.executeSingleFileOrDirWrapper( se.removeDirectory( directory, recursive = True ) )
+    res = returnSingleResult( se.removeDirectory( directory, recursive = True ) )
     if not res['OK']:
       self.log.debug( "Failed to remove storage directory", res['Message'] )
       return res
@@ -172,7 +173,7 @@ class DataManager( object ):
     allFiles = {}
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
-      res = Utils.executeSingleFileOrDirWrapper( self.fc.listDirectory( currentDir ) )
+      res = returnSingleResult( self.fc.listDirectory( currentDir ) )
       activeDirs.remove( currentDir )
 
       if not res['OK']:
@@ -224,7 +225,7 @@ class DataManager( object ):
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
       # We only need the metadata (verbose) if a limit date is given
-      res = Utils.executeSingleFileOrDirWrapper( self.fc.listDirectory( currentDir, verbose = ( days != 0 ) ) )
+      res = returnSingleResult( self.fc.listDirectory( currentDir, verbose = ( days != 0 ) ) )
       activeDirs.remove( currentDir )
       if not res['OK']:
         self.log.debug( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Message'] ) )
@@ -313,7 +314,7 @@ class DataManager( object ):
       oDataOperation.setStartTime()
       startTime = time.time()
 
-      res = Utils.executeSingleFileOrDirWrapper( se.getFile( physicalFile, localPath = os.path.realpath( destinationDir ) ) )
+      res = returnSingleResult( se.getFile( physicalFile, localPath = os.path.realpath( destinationDir ) ) )
 
       getTime = time.time() - startTime
       oDataOperation.setValueByKey( 'TransferTime', getTime )
@@ -431,7 +432,7 @@ class DataManager( object ):
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
     destinationSE = storageElement.getStorageElementName()['Value']
-    res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
+    res = returnSingleResult( storageElement.getPfnForLfn( lfn ) )
     if not res['OK']:
       errStr = "putAndRegister: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -608,7 +609,7 @@ class DataManager( object ):
       destPath = '%s/%s' % ( destPath, os.path.basename( lfn ) )
     else:
       destPath = lfn
-    res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForLfn( destPath ) )
+    res = returnSingleResult( destStorageElement.getPfnForLfn( destPath ) )
     if not res['OK']:
       errStr = "__replicate: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -776,10 +777,10 @@ class DataManager( object ):
           errStr = "%s The storage element is not currently valid." % logStr
           self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
-          # pfn = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
+          # pfn = returnSingleResult( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
           if storageElement.getRemoteProtocols()['Value']:
             self.log.debug( "%s Attempting to get source pfns for remote protocols." % logStr )
-            res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
+            res = returnSingleResult( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
             if res['OK']:
               sourcePfn = res['Value']
               self.log.debug( "%s Attempting to get source file size." % logStr )
@@ -903,7 +904,7 @@ class DataManager( object ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, pfn in replicaTuple:
-          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( pfn, protocol = self.registrationProtocol, withPort = False ) )
+          res = returnSingleResult( destStorageElement.getPfnForProtocol( pfn, protocol = self.registrationProtocol, withPort = False ) )
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
@@ -1312,7 +1313,7 @@ class DataManager( object ):
           res['Value']['Successful'][surl] = surl
           res['Value']['Failed'].pop( surl )
       for surl in res['Value']['Successful']:
-        ret = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( surl, protocol = self.registrationProtocol, withPort = False ) )
+        ret = returnSingleResult( storageElement.getPfnForProtocol( surl, protocol = self.registrationProtocol, withPort = False ) )
         if not ret['OK']:
           res['Value']['Successful'][surl] = surl
         else:
@@ -1337,12 +1338,10 @@ class DataManager( object ):
 
     :param self: self reference
     :param str lfn: LFN
-    :param :
+    :param str fileName: the full path to the local file
+    :param str diracSE: the Storage Element to which to put the file
+    :param str path: the path on the storage where the file will be put (if not provided the LFN will be used)
 
-        'lfn' is the file LFN
-        'file' is the full path to the local file
-        'diracSE' is the Storage Element to which to put the file
-        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
     # Check that the local file exists
     if not os.path.exists( fileName ):
@@ -1367,7 +1366,7 @@ class DataManager( object ):
       errStr = "put: The storage element is not currently valid."
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
-    res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
+    res = returnSingleResult( storageElement.getPfnForLfn( lfn ) )
     if not res['OK']:
       errStr = "put: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
