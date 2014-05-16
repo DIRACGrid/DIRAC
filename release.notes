@@ -1,4 +1,8 @@
-[v6r12-pre1]
+[v6r12-pre2]
+
+*Core
+CHANGE: ProcessPool - do not stop working processes by default
+NEW: ReturnValue - added returnSingleResult() utility 
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
