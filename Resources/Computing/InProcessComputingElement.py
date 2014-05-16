@@ -63,13 +63,11 @@ class InProcessComputingElement( ComputingElement ):
       payloadEnv[ 'X509_USER_PROXY' ] = payloadProxy
 
     self.log.verbose( 'Starting process for monitoring payload proxy' )
-    
-    # Do not renew previous payload proxy, if any
-    taskID = gThreadScheduler.getNextTaskId()
-    if taskID:
-      gThreadScheduler.removeTask( taskID )
-      
-    gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy, taskArgs = ( pilotProxy, payloadProxy ), executions = 0, elapsedTime = 0 )
+
+    renewTask = None
+    result = gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy, taskArgs = ( pilotProxy, payloadProxy ), executions = 0, elapsedTime = 0 )
+    if result[ 'OK' ]:
+      renewTask = result[ 'Value' ]
 
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, 0755 )
@@ -78,6 +76,9 @@ class InProcessComputingElement( ComputingElement ):
     result = systemCall( 0, cmd, callbackFunction = self.sendOutput, env = payloadEnv )
     if payloadProxy:
       os.unlink( payloadProxy )
+
+    if renewTask:
+      gThreadScheduler.removeTask( renewTask )
 
     ret = S_OK()
 
