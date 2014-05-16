@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Resources.Utilities import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 class StorageElement:
   """
@@ -838,8 +838,8 @@ class StorageElement:
     retValue = S_OK( { 'Failed': failed, 'Successful': successful } )
 
     if singleFileOrDir:
-      self.log.verbose( "StorageElement.__executeMethod : use Utils.executeSingleFileOrDirWrapper for backward compatibility. You should fix your code " )
-      retValue = Utils.executeSingleFileOrDirWrapper( retValue )
+      self.log.verbose( "StorageElement.__executeMethod : use returnSingleResult for backward compatibility. You should fix your code " )
+      retValue = returnSingleResult( retValue )
 
     return retValue
 

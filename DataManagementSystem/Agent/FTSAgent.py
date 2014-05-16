@@ -67,7 +67,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog    import FileCatalog
-from DIRAC.Resources.Utilities              import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 # # from Accounting
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
@@ -901,7 +901,7 @@ class FTSAgent( AgentModule ):
       for ftsFile in ftsFileList:
         opFile = File()
         opFile.LFN = ftsFile.LFN
-        pfn = Utils.executeSingleFileOrDirWrapper( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
+        pfn = returnSingleResult( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
         if not pfn["OK"]:
           continue
         opFile.PFN = pfn["Value"]
