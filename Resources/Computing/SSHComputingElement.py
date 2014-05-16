@@ -138,7 +138,7 @@ class SSH:
     if self.key:
       key = ' -i %s ' % self.key
     if upload:
-      command = "scp %s %s %s %s@%s:%s" % ( key, localFile, self.options, self.user, self.host, destinationPath )
+      command = "scp %s %s %s %s@%s:%s" % ( key, self.options, localFile, self.user, self.host, destinationPath )
     else:
       command = "scp %s %s@%s:%s %s" % ( key, self.user, self.host, destinationPath, localFile )
     self.log.debug( "SCP command %s" % command )
