@@ -16,13 +16,10 @@ from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-<<<<<<< HEAD
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus 
 from DIRAC.Resources.Utilities import Utils
-=======
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
->>>>>>> rel-v6r12
 
 class StorageElement:
   """

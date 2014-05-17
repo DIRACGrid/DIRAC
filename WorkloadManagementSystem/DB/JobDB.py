@@ -47,7 +47,7 @@ __RCSID__ = "$Id$"
 import sys, types
 import operator
 
-from DIRAC                                                       import S_OK, S_ERROR, Time
+from DIRAC                                                       import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config                     import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers                    import Registry
 from DIRAC.Core.Base.DB                                          import DB
@@ -1847,16 +1847,9 @@ class JobDB( DB ):
 
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter > self.maxRescheduling:
-<<<<<<< HEAD
       self.log.warn( 'Maximum number of reschedulings is reached', 'Job %s' % jid )
       return self.__failJob( jid, 'Maximum of reschedulings reached',
                              'Maximum number of reschedulings is reached: %s' % self.maxRescheduling )
-=======
-      self.log.warn( 'Maximum number of reschedulings is reached', 'Job %s' % jobID )
-      self.setJobStatus( jobID, status = 'Failed', minor = 'Maximum of reschedulings reached' )
-      return S_ERROR( 'Maximum number of reschedulings is reached: %s' % self.maxRescheduling )
->>>>>>> rel-v6r11
-
 
     # Save the job parameters for later debugging
     result = self.getJobParameters( jid )

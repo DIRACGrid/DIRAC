@@ -22,11 +22,7 @@ import os
 
 class StorageFactory:
 
-<<<<<<< HEAD
   def __init__( self, useProxy=False, vo = None ):
-=======
-  def __init__( self, useProxy = False ):
->>>>>>> rel-v6r12
 
     self.valid = True
     self.proxy = False
