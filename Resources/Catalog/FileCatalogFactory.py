@@ -18,7 +18,7 @@ class FileCatalogFactory:
   def __init__( self ):
     self.log = gLogger.getSubLogger( 'FileCatalogFactory' )
 
-  def createCatalog( self, catalogName, useProxy = False ):
+  def createCatalog( self, catalogName, useProxy = False, catalogConfig = None, vo = None ):
     """ Create a file catalog object from its name and CS description
     """    
     if useProxy:
