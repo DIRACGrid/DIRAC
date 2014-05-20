@@ -1,6 +1,7 @@
 import thread
 import types
-from DIRAC import S_OK, S_ERROR
+import os
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities import CFG, LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -136,27 +137,25 @@ class Operations( object ):
       data[ opName ] = sectionCFG[ opName ]
     return S_OK( data )
 
-  def generatePath( self, option, vo = False, setup = False ):
+  def getPath( self, option, vo = False, setup = False ):
     """
-    Generate the CS path for an option
-    if vo is not defined, the helper's vo will be used for multi VO installations
-    if setup evaluates False (except None) -> The helpers setup will  be used
-    if setup is defined -> whatever is defined will be used as setup
-    if setup is None -> Defaults will be used
+    Generate the CS path for an option:
+    
+    - if vo is not defined, the helper's vo will be used for multi VO installations
+    - if setup evaluates False (except None) -> The helpers setup will  be used
+    - if setup is defined -> whatever is defined will be used as setup
+    - if setup is None -> Defaults will be used
+    
+    :param option: path with respect to the Operations standard path  
+    :type option: string
     """
-    path = "/Operations"
-    if not CSGlobals.getVO():
-      if not vo:
-        vo = self.__vo
-      if vo:
-        path += "/%s" % vo
-    if not setup and setup != None:
-      if not setup:
-        setup = self.__setup
-    if setup:
-      path += "/%s" % setup
-    else:
-      path += "/Defaults" 
-    return "%s/%s" % ( path, option )
+    
+    for path in self.__getSearchPaths():
+      optionPath = os.path.join( path, option )
+      value = gConfig.getValue( optionPath , 'NoValue' )
+      if value != "NoValue":
+        return optionPath
+    return ''  
+    
       
 

@@ -199,7 +199,7 @@ class Job( API ):
        executables may be placed in the lib/ directory if desired. The lib/ directory
        is transferred to the Grid Worker Node before the job executes.
 
-       Files / directories can be specified using the '*' character e.g. *.txt  these
+       Files / directories can be specified using the '*' character e.g. \*.txt  these
        are resolved correctly before job execution on the WN.
 
        Example usage:
@@ -435,7 +435,7 @@ class Job( API ):
        :type lfns: Single string or list of strings ['','']
        :param outputSE: Optional parameter to specify the Storage Element
        :param outputPath: Optional parameter to specify part of the path in the storage (see above)
-       Element to store data or files, e.g. CERN-tape
+                          Element to store data or files, e.g. CERN-tape
        :type outputSE: string or list
        :type outputPath: string
     """

@@ -1,7 +1,22 @@
-[v6r12-pre1]
+[v6r12-pre2]
+
+*Core
+CHANGE: ProcessPool - do not stop working processes by default
+NEW: ReturnValue - added returnSingleResult() utility 
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
+
+[v6r11p1]
+
+*RMS
+FIX: ReqClient - failures due to banned sites are considered to be recoverable
+
+*DMS
+BUGFIX: dirac-dms-replicate-and-register-request - minor bug fixes
+
+*Resources
+FIX: InProcessComputingElement - stop proxy renewal thread for a finished payload
 
 [v6r11]
 
@@ -28,7 +43,7 @@ CHANGES: DownloadInputData, InputDataByProtocol, InputDataResolution - allows to
          PFNs for the protocol resolution
 NEW: JobDB, JobMonitoringHandler - added traceJobParameters(s)() methods     
 CHANGE: TaskQueueDirector - use ObjectLoader to load directors    
-CHANGE: dirac-pilot - use Python 2.7 by default
+CHANGE: dirac-pilot - use Python 2.7 by default, 2014-04-09 LCG bundles
 
 *DMS
 NEW: DataManager to replace ReplicaManager class ( simplification, streamlining )

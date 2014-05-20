@@ -5,10 +5,10 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                                import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.DataManagementSystem.Client.DataManager       import DataManager
+from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
 from DIRAC.Resources.Storage.StorageElement               import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
-from DIRAC.Resources.Utilities                            import Utils
+from DIRAC.Core.Utilities.ReturnValues                    import returnSingleResult
 from DIRAC.Core.Utilities.List                            import sortList
 from DIRAC.Core.Base.Client                               import Client
 import re, os, types
@@ -598,7 +598,7 @@ class DataIntegrityClient( Client ):
       gLogger.error( 'Failed to obtain registered PFN for physical file', '%s %s' % ( pfn, error ) )
       return S_ERROR( 'Failed to obtain registered PFNs from physical file' )
     registeredPFN = res['Value']['Successful'][pfn]
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.getLFNForPFN( registeredPFN ) )
+    res = returnSingleResult( self.fc.getLFNForPFN( registeredPFN ) )
     if ( not res['OK'] ) and re.search( 'No such file or directory', res['Message'] ):
       return S_OK( False )
     return S_OK( res['Value'] )
@@ -609,7 +609,7 @@ class DataIntegrityClient( Client ):
     prognosis = problematicDict['Prognosis']
     problematicDict['Status'] = 'Checked'
 
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.setReplicaStatus( {lfn:problematicDict} ) )
+    res = returnSingleResult( self.fc.setReplicaStatus( {lfn:problematicDict} ) )
 
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
@@ -625,16 +625,16 @@ class DataIntegrityClient( Client ):
     fileID = problematicDict['FileID']
 
 
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.getFileSize( lfn ) )
+    res = returnSingleResult( self.fc.getFileSize( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     catalogSize = res['Value']
-    res = Utils.executeSingleFileOrDirWrapper( StorageElement( se ).getFileSize( pfn ) )
+    res = returnSingleResult( StorageElement( se ).getFileSize( pfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     storageSize = res['Value']
     bkKCatalog = FileCatalog( ['BookkeepingDB'] )
-    res = Utils.executeSingleFileOrDirWrapper( bkKCatalog.getFileSize( lfn ) )
+    res = returnSingleResult( bkKCatalog.getFileSize( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     bookkeepingSize = res['Value']
@@ -643,7 +643,7 @@ class DataIntegrityClient( Client ):
       return self.__updateReplicaToChecked( problematicDict )
     if ( catalogSize == bookkeepingSize ):
       gLogger.info( "CatalogPFNSizeMismatch replica (%d) found to mismatch the bookkeeping also" % fileID )
-      res = Utils.executeSingleFileOrDirWrapper( self.fc.getReplicas( lfn ) )
+      res = returnSingleResult( self.fc.getReplicas( lfn ) )
       if not res['OK']:
         return self.__returnProblematicError( fileID, res )
       if len( res['Value'] ) <= 1:
@@ -673,16 +673,16 @@ class DataIntegrityClient( Client ):
     fileID = problematicDict['FileID']
 
     se = StorageElement( seName )
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.exists( lfn ) )
+    res = returnSingleResult( self.fc.exists( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     if not res['Value']:
       # The file does not exist in the catalog
-      res = Utils.executeSingleFileOrDirWrapper( se.removeFile( pfn ) )
+      res = returnSingleResult( se.removeFile( pfn ) )
       if not res['OK']:
         return self.__returnProblematicError( fileID, res )
       return self.__updateCompletedFiles( 'PFNNotRegistered', fileID )
-    res = Utils.executeSingleFileOrDirWrapper( se.getFileMetadata( pfn ) )
+    res = returnSingleResult( se.getFileMetadata( pfn ) )
     if ( not res['OK'] ) and ( re.search( 'File does not exist', res['Message'] ) ):
       gLogger.info( "PFNNotRegistered replica (%d) found to be missing." % fileID )
       return self.__updateCompletedFiles( 'PFNNotRegistered', fileID )
@@ -723,10 +723,10 @@ class DataIntegrityClient( Client ):
       return S_ERROR( 'Failed to obtain registered PFNs from physical file' )
     problematicDict['PFN'] = res['Value']['Successful'][pfn]
 
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.addReplica( {lfn:problematicDict} ) )
+    res = returnSingleResult( self.fc.addReplica( {lfn:problematicDict} ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.getFileMetadata( lfn ) )
+    res = returnSingleResult( self.fc.getFileMetadata( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     if res['Value']['Size'] != storageMetadata['Size']:
@@ -740,14 +740,14 @@ class DataIntegrityClient( Client ):
     lfn = problematicDict['LFN']
     fileID = problematicDict['FileID']
 
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.exists( lfn ) )
+    res = returnSingleResult( self.fc.exists( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     if res['Value']:
       return self.__updateCompletedFiles( 'LFNCatalogMissing', fileID )
     # Remove the file from all catalogs
     # RF_NOTE : here I can do it because it's a single file, but otherwise I would need to sort the path
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.removeFile( lfn ) )
+    res = returnSingleResult( self.fc.removeFile( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     return self.__updateCompletedFiles( 'LFNCatalogMissing', fileID )
@@ -760,21 +760,21 @@ class DataIntegrityClient( Client ):
     lfn = problematicDict['LFN']
     fileID = problematicDict['FileID']
 
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.exists( lfn ) )
+    res = returnSingleResult( self.fc.exists( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     if not res['Value']:
       gLogger.info( "PFNMissing file (%d) no longer exists in catalog" % fileID )
       return self.__updateCompletedFiles( 'PFNMissing', fileID )
 
-    res = Utils.executeSingleFileOrDirWrapper( StorageElement( se ).exists( pfn ) )
+    res = returnSingleResult( StorageElement( se ).exists( pfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     if res['Value']:
       gLogger.info( "PFNMissing replica (%d) is no longer missing" % fileID )
       return self.__updateReplicaToChecked( problematicDict )
     gLogger.info( "PFNMissing replica (%d) does not exist" % fileID )
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.getReplicas( lfn, allStatus = True ) )
+    res = returnSingleResult( self.fc.getReplicas( lfn, allStatus = True ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     replicas = res['Value']
@@ -790,7 +790,7 @@ class DataIntegrityClient( Client ):
       gLogger.info( "PFNMissing replica (%d) is no longer registered at SE. Resolved." % fileID )
       return self.__updateCompletedFiles( 'PFNMissing', fileID )
     gLogger.info( "PFNMissing replica (%d) does not exist. Removing from catalog..." % fileID )
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.removeReplica( {lfn:problematicDict} ) )
+    res = returnSingleResult( self.fc.removeReplica( {lfn:problematicDict} ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     if len( replicas ) == 1:
@@ -809,7 +809,7 @@ class DataIntegrityClient( Client ):
     se = problematicDict['SE']
     fileID = problematicDict['FileID']
 
-    res = Utils.executeSingleFileOrDirWrapper( StorageElement( se ).getFileMetadata( pfn ) )
+    res = returnSingleResult( StorageElement( se ).getFileMetadata( pfn ) )
     if ( not res['OK'] ) and ( re.search( 'File does not exist', res['Message'] ) ):
       # The file is no longer Unavailable but has now dissapeared completely
       gLogger.info( "PFNUnavailable replica (%d) found to be missing. Updating prognosis" % fileID )
@@ -833,13 +833,13 @@ class DataIntegrityClient( Client ):
 
     se = StorageElement( seName )
 
-    res = Utils.executeSingleFileOrDirWrapper( se.getFileSize( pfn ) )
+    res = returnSingleResult( se.getFileSize( pfn ) )
     if ( not res['OK'] ) and ( re.search( 'File does not exist', res['Message'] ) ):
       gLogger.info( "PFNZeroSize replica (%d) found to be missing. Updating prognosis" % problematicDict['FileID'] )
       return self.changeProblematicPrognosis( fileID, 'PFNMissing' )
     storageSize = res['Value']
     if storageSize == 0:
-      res = Utils.executeSingleFileOrDirWrapper( se.removeFile( pfn ) )
+      res = returnSingleResult( se.removeFile( pfn ) )
 
       if not res['OK']:
         return self.__returnProblematicError( fileID, res )
@@ -852,7 +852,7 @@ class DataIntegrityClient( Client ):
     if not lfn:
       gLogger.info( "PFNZeroSize replica (%d) not registered in catalog. Updating prognosis" % problematicDict['FileID'] )
       return self.changeProblematicPrognosis( fileID, 'PFNNotRegistered' )
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.getFileMetadata( lfn ) )
+    res = returnSingleResult( self.fc.getFileMetadata( lfn ) )
 
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
@@ -870,7 +870,7 @@ class DataIntegrityClient( Client ):
     lfn = problematicDict['LFN']
     fileID = problematicDict['FileID']
 
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.getReplicas( lfn, allStatus = True ) )
+    res = returnSingleResult( self.fc.getReplicas( lfn, allStatus = True ) )
     if res['OK'] and res['Value']:
       gLogger.info( "LFNZeroReplicas file (%d) found to have replicas" % fileID )
     else:
@@ -885,7 +885,7 @@ class DataIntegrityClient( Client ):
           pfnsFound = True
       if not pfnsFound:
         gLogger.info( "LFNZeroReplicas file (%d) did not have storage files. Removing..." % fileID )
-        res = Utils.executeSingleFileOrDirWrapper( self.fc.removeFile( lfn ) )
+        res = returnSingleResult( self.fc.removeFile( lfn ) )
         if not res['OK']:
           gLogger.error( res['Message'] )
           # Increment the number of retries for this file

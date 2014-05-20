@@ -44,7 +44,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Adler import compareAdler
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.Resources.Utilities           import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 # # agent name
 AGENT_NAME = "DataManagement/TransferAgent"
 
@@ -328,7 +328,7 @@ class TransferAgent( RequestAgentBase ):
       if not se:
         se = StorageElement( sourceSE, "SRM2" )
         self.seCache[sourceSE] = se
-      pfn = Utils.executeSingleFileOrDirWrapper( se.getPfnForLfn( lfn ) )
+      pfn = returnSingleResult( se.getPfnForLfn( lfn ) )
       if not pfn["OK"]:
         self.log.warn( "checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) )
         return pfn
