@@ -77,6 +77,8 @@ class RequestExecutingAgent( AgentModule ):
   __poolSleep = 5
   # # placeholder for RequestClient instance
   __requestClient = None
+  # # Size of the bulk if use of getRequests. If 0, use getRequest
+  __bulkRequest = 0
 
   def __init__( self, *args, **kwargs ):
     """ c'tor """
@@ -97,6 +99,8 @@ class RequestExecutingAgent( AgentModule ):
     self.log.info( "ProcessPool sleep time = %d seconds" % self.__poolSleep )
     self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
     self.log.info( "ProcessTask timeout = %d seconds" % self.__taskTimeout )
+    self.__bulkRequest = self.am_getOption( "BulkRequest", 0 )
+    self.log.info( "Bulk request size = %d" % self.__bulkRequest )
 
     # # keep config path and agent name
     self.agentName = self.am_getModuleParam( "fullName" )
@@ -147,6 +151,8 @@ class RequestExecutingAgent( AgentModule ):
     self.__requestCache = dict()
 
     self.FTSMode = self.am_getOption( "FTSMode", False )
+
+
 
   def processPool( self ):
     """ facade for ProcessPool """
@@ -229,65 +235,83 @@ class RequestExecutingAgent( AgentModule ):
     taskCounter = 0
     while taskCounter < self.__requestsPerCycle:
       self.log.debug( "execute: executing %d request in this cycle" % taskCounter )
-      getRequest = self.requestClient().getRequest()
-      if not getRequest["OK"]:
-        self.log.error( "execute: %s" % getRequest["Message"] )
-        break
-      if not getRequest["Value"]:
-        self.log.info( "execute: no more 'Waiting' requests to process" )
-        break
-      # # OK, we've got you
-      request = getRequest["Value"]
-      # # set task id
-      taskID = request.RequestName
-      # # save current request in cache
-      res = self.cacheRequest( request )
-      if not res['OK']:
-        self.log.warn( res['Message'] )
-        continue
-      # # serialize to JSON
-      requestJSON = request.toJSON()
-      if not requestJSON["OK"]:
-        self.log.error( "JSON serialization error: %s" % requestJSON["Message"] )
-        break
-      requestJSON = requestJSON["Value"]
 
-      self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
-                                                                    self.processPool().getNumWorkingProcesses() ) )
+      requestsToExecute = []
 
-      looping = 0
-      while True:
-        if not self.processPool().getFreeSlots():
-          if not looping:
-            self.log.info( "No free slots available in processPool, will wait in steps of %d seconds" % self.__poolSleep )
-          time.sleep( self.__poolSleep )
-          looping += 1
-        else:
-          if looping:
-            self.log.info( "Free slot found after %d seconds" % looping * self.__poolSleep )
-          looping = 0
-          self.log.info( "spawning task for request '%s'" % ( request.RequestName ) )
-          timeOut = self.getTimeout( request )
-          enqueue = self.processPool().createAndQueueTask( RequestTask,
-                                                           kwargs = { "requestJSON" : requestJSON,
-                                                                      "handlersDict" : self.handlersDict,
-                                                                      "csPath" : self.__configPath,
-                                                                      "agentName": self.agentName },
-                                                           taskID = taskID,
-                                                           blocking = True,
-                                                           usePoolCallbacks = True,
-                                                           timeOut = timeOut )
-          if not enqueue["OK"]:
-            self.log.error( enqueue["Message"] )
+      if not self.__bulkRequest:
+        self.log.info( "execute: ask for a single request" )
+        getRequest = self.requestClient().getRequest()
+        if not getRequest["OK"]:
+          self.log.error( "execute: %s" % getRequest["Message"] )
+          break
+        if not getRequest["Value"]:
+          self.log.info( "execute: no more 'Waiting' requests to process" )
+          break
+        requestsToExecute = [getRequest["Value"] ]
+      else:
+        numberOfRequest = min( self.__bulkRequest, self.__requestsPerCycle - taskCounter )
+        self.log.info( "execute: ask for %s requests" % numberOfRequest )
+        getRequests = self.requestClient().getBulkRequests( numberOfRequest )
+        if not getRequests["OK"]:
+          self.log.error( "execute: %s" % getRequests["Message"] )
+          break
+        if not getRequests["Value"]:
+          self.log.info( "execute: no more 'Waiting' requests to process" )
+          break
+        for rId in getRequests["Value"]["Failed"]:
+          self.log.error( "execute: %s" % getRequests["Value"]["Failed"][rId] )
+
+        requestsToExecute = getRequests["Value"]["Successful"].values()
+
+      self.log.info( "execute: will execute %s requests " % len( requestsToExecute ) )
+
+      for request in requestsToExecute:
+        # # set task id
+        taskID = request.RequestName
+        # # save current request in cache
+        self.cacheRequest( request )
+        # # serialize to JSON
+        requestJSON = request.toJSON()
+        if not requestJSON["OK"]:
+          self.log.error( "JSON serialization error: %s" % requestJSON["Message"] )
+          break
+        requestJSON = requestJSON["Value"]
+
+        self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
+                                                                      self.processPool().getNumWorkingProcesses() ) )
+        
+        looping = 0
+        while True:
+          if not self.processPool().getFreeSlots():
+            self.log.info( "No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
+            time.sleep( self.__poolSleep )
+            looping += 1
           else:
-            self.log.debug( "successfully enqueued task '%s'" % taskID )
-            # # update monitor
-            gMonitor.addMark( "Processed", 1 )
-            # # update request counter
-            taskCounter += 1
-            # # task created, a little time kick to proceed
-            time.sleep( 0.1 )
-            break
+            if looping:
+              self.log.info( "Free slot found after %d seconds" % looping * self.__poolSleep )
+            looping = 0
+            self.log.info( "spawning task for request '%s'" % ( request.RequestName ) )
+            timeOut = self.getTimeout( request )
+            enqueue = self.processPool().createAndQueueTask( RequestTask,
+                                                             kwargs = { "requestJSON" : requestJSON,
+                                                                        "handlersDict" : self.handlersDict,
+                                                                        "csPath" : self.__configPath,
+                                                                        "agentName": self.agentName },
+                                                             taskID = taskID,
+                                                             blocking = True,
+                                                             usePoolCallbacks = True,
+                                                             timeOut = timeOut )
+            if not enqueue["OK"]:
+              self.log.error( enqueue["Message"] )
+            else:
+              self.log.debug( "successfully enqueued task '%s'" % taskID )
+              # # update monitor
+              gMonitor.addMark( "Processed", 1 )
+              # # update request counter
+              taskCounter += 1
+              # # task created, a little time kick to proceed
+              time.sleep( 0.1 )
+              break
 
     # # clean return
     return S_OK()
