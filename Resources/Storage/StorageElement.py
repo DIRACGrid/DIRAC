@@ -17,6 +17,8 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.DictCache import DictCache
+
 
 
 
@@ -24,14 +26,17 @@ from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 class StorageElementCache:
 
   def __init__( self ):
-    self.seCache = {}
+    self.seCache = DictCache()
 
   def __call__( self, name, protocols = None, vo = None ):
+    self.seCache.purgeExpired( expiredInSeconds = 60 )
     argTuple = ( name, protocols, vo )
-    seObj = self.seCache.get( argTuple, None )
+    seObj = self.seCache.get( argTuple )
 
     if not seObj:
-      seObj = self.seCache.setdefault( argTuple, StorageElementItem( name, protocols, vo ) )
+      seObj = StorageElementItem( name, protocols, vo )
+      # Add the StorageElement to the cache for 1/2 hour
+      self.seCache.add( argTuple, 1800, seObj )
 
     return seObj
 
