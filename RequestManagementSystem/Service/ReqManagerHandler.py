@@ -78,6 +78,12 @@ class ReqManagerHandler( RequestHandler ):
     """
     requestName = requestJSON.get( "RequestName", "***UNKNOWN***" )
     request = Request( requestJSON )
+    optimized = request.optimize()
+    if optimized.get("Value", False):
+      gLogger.debug( "putRequest: request was optimized" )
+    else:
+      gLogger.debug( "putRequest: request unchanged", optimized.get( "Message", "Nothing could be optimize" ) )
+
     valid = cls.validate( request )
     if not valid["OK"]:
       gLogger.error( "putRequest: request %s not valid: %s" % ( requestName, valid["Message"] ) )
