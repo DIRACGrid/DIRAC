@@ -21,9 +21,10 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.Adler import compareAdler
 
-# FIXME: this is quite dirty, what should be checked is exactly what it is done
-# Put this in CS
-prodsWithMerge = ( 'MCSimulation', 'DataStripping', 'MCStripping', 'DataSwimming', 'WGProduction' )
+
+######  Note1
+######  require an entry in CS 
+#####   
 
 class ConsistencyChecks( object ):
   """ A class for handling some consistency check
@@ -32,8 +33,10 @@ class ConsistencyChecks( object ):
   def __init__( self, interactive = True, transClient = None, dm = None ):
     """ c'tor
 
-        One object for every production/BkQuery/directoriesList...
+        One object for every production/lfnList/directoriesList...
     """
+    #Take production types from CS
+    self.prodsWithMerge = Operations().getValue( 'DataConsistency/DataProcessing', [] )
     self.interactive = interactive
     self.transClient = TransformationClient() if transClient is None else transClient
     self.dm = DataManager() if dm is None else dm
@@ -56,7 +59,6 @@ class ConsistencyChecks( object ):
     self.cachedReplicas = {}
 
     # Results of the checks
-
     self.prcdWithDesc = []
     self.prcdWithoutDesc = []
     self.prcdWithMultDesc = []
@@ -192,24 +194,7 @@ class ConsistencyChecks( object ):
   def _getTSFiles( self ):
     """ Helper function - get files from the TS
     """
-
     selectDict = { 'TransformationID': self.prod}
-    if self._lfns:
-      selectDict['LFN'] = self._lfns
-    elif self.runStatus and self.fromProd:
-      res = self.transClient.getTransformationRuns( {'TransformationID': self.fromProd, 'Status':self.runStatus} )
-      if not res['OK']:
-        gLogger.error( "Failed to get runs for transformation %d" % self.prod )
-      else:
-        if res['Value']:
-          self.runsList.extend( [run['RunNumber'] for run in res['Value'] if run['RunNumber'] not in self.runsList] )
-          gLogger.always( "%d runs selected" % len( res['Value'] ) )
-        elif not self.runsList:
-          gLogger.always( "No runs selected, check completed" )
-          DIRAC.exit( 0 )
-    if not self._lfns and self.runsList:
-      selectDict['RunNumber'] = self.runsList
-
     res = self.transClient.getTransformationFiles( selectDict )
     if not res['OK']:
       gLogger.error( "Failed to get files for transformation %d" % self.prod, res['Message'] )
@@ -271,49 +256,6 @@ class ConsistencyChecks( object ):
 
   ################################################################################
 
-  def checkFC2BK( self, bkCheck = True ):
-    """ check that files present in the FC are also in the BK
-    """
-    if not self.lfns:
-      try:
-        directories = []
-        for dirName in self.__getDirectories():
-          if not dirName.endswith( '/' ):
-            dirName += '/'
-          directories.append( dirName )
-      except RuntimeError, e:
-        return S_ERROR( e )
-      present, notPresent = self.getReplicasPresenceFromDirectoryScan( directories )
-      gLogger.always( '%d files found in the FC' % len( present ) )
-      prStr = ' are in the FC but'
-    else:
-      present, notPresent = self.getReplicasPresence( self.lfns )
-      gLogger.always( 'Out of %d files, %d are in the FC, %d are not' \
-                      % ( len( self.lfns ), len( present ), len( notPresent ) ) )
-      if not present:
-        if bkCheck:
-          gLogger.always( 'No files are in the FC, no check in the BK. Use dirac-dms-check-bkk2fc instead' )
-        return
-      prStr = ''
-
-    if bkCheck:
-      res = self._getBKMetadata( present )
-      self.existLFNsNotInBK = res[0]
-      self.existLFNsBKRepNo = res[1]
-      self.existLFNsBKRepYes = res[2]
-      msg = ''
-      if self.transType:
-        msg = "For prod %s of type %s, " % ( self.prod, self.transType )
-      if self.existLFNsBKRepNo:
-        gLogger.warn( "%s %d files%s have replica = NO in BK" % ( msg, len( self.existLFNsBKRepNo ),
-                                                                 prStr ) )
-      if self.existLFNsNotInBK:
-        gLogger.warn( "%s %d files%s not in BK" % ( msg, len( self.existLFNsNotInBK ), prStr ) )
-    else:
-      self.existLFNsBKRepYes = present
-
-  ################################################################################
-
   def __getDirectories( self ):
     """ get the directories where to look into (they are either given, or taken from the transformation ID
     """
@@ -365,17 +307,26 @@ class ConsistencyChecks( object ):
 
   ################################################################################
 
-  def checkFC2SE( self, bkCheck = True ):
-    self.checkFC2BK( bkCheck = bkCheck )
-    if self.existLFNsBKRepYes or self.existLFNsBKRepNo:
-      repDict = self.compareChecksum( self.existLFNsBKRepYes + self.existLFNsBKRepNo.keys() )
+  def checkFC2SE( self ):
+    #non zero prodID
+    if self.prod:
+      processedLFNs, nonProcessedLFNs, nonProcessedStatuses = self._getTSFiles
+      gLogger.always( 'Found %d processed files and %d non processed%s files (%.1f seconds)' %
+                      ( len( processedLFNs ),
+                        len( nonProcessedLFNs ),
+                        ' (%s)' % ','.join( statuses ) if statuses else '',
+                        ( time.time() - startTime ) ) )
+      repDict = self.compareChecksum( ?????? )
+    else:
+      if self.lfns:  
+        repDict = self.compareChecksum( self.lfns )
       if not repDict['OK']:
         gLogger.error( "Error when comparing checksum", repDict['Message'] )
         return
-      repDict = repDict['Value']
-      self.existLFNsNoSE = repDict['MissingPFN']
-      self.existLFNsBadReplicas = repDict['SomeReplicasCorrupted']
-      self.existLFNsBadFiles = repDict['AllReplicasCorrupted']
+    repDict = repDict['Value']
+    self.existLFNsNoSE = repDict['MissingPFN']
+    self.existLFNsBadReplicas = repDict['SomeReplicasCorrupted']
+    self.existLFNsBadFiles = repDict['AllReplicasCorrupted']
 
   def compareChecksum( self, lfns ):
     """compare the checksum of the file in the FC and the checksum of the physical replicas.
@@ -542,17 +493,6 @@ class ConsistencyChecks( object ):
     """ Getter """
     return self._fileTypesExcluded
   fileTypesExcluded = property( get_fileTypesExcluded, set_fileTypesExcluded )
-
-  def set_bkQuery( self, value ):
-    """ Setter """
-    if type( value ) == type( "" ):
-      self._bkQuery = ast.literal_eval( value )
-    else:
-      self._bkQuery = value
-  def get_bkQuery( self ):
-    """ Getter """
-    return self._bkQuery
-  bkQuery = property( get_bkQuery, set_bkQuery )
 
   def set_lfns( self, value ):
     """ Setter """

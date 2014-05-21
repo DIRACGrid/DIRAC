@@ -4,6 +4,11 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 class ConsistencyChecksTestCase(unittest.TestCase):
   """ Base class for the Consistency Checks test cases
   """
+  def setUp( self ):
+    
+    
+  def tearDown( self ):
+    pass
   
 
 if __name__ == '__main__':
