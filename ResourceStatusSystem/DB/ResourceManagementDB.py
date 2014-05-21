@@ -35,16 +35,17 @@ class ResourceManagementDB( object ):
 
   _tablesDB[ 'DowntimeCache' ] = { 'Fields' :
                       {
-                       'DowntimeID'    : 'VARCHAR(64) NOT NULL',
-                       'Element'       : 'VARCHAR(32) NOT NULL',
-                       'Name'          : 'VARCHAR(64) NOT NULL',
-                       'StartDate'     : 'DATETIME NOT NULL',
-                       'EndDate'       : 'DATETIME NOT NULL',
-                       'Severity'      : 'VARCHAR(32) NOT NULL',
-                       'Description'   : 'VARCHAR(512) NOT NULL',
-                       'Link'          : 'VARCHAR(255) NOT NULL',       
-                       'DateEffective' : 'DATETIME NOT NULL',
-                       'LastCheckTime' : 'DATETIME NOT NULL'     
+                       'DowntimeID'       : 'VARCHAR(64) NOT NULL',
+                       'Element'          : 'VARCHAR(32) NOT NULL',
+                       'Name'             : 'VARCHAR(64) NOT NULL',
+                       'StartDate'        : 'DATETIME NOT NULL',
+                       'EndDate'          : 'DATETIME NOT NULL',
+                       'Severity'         : 'VARCHAR(32) NOT NULL',
+                       'Description'      : 'VARCHAR(512) NOT NULL',
+                       'Link'             : 'VARCHAR(255) NOT NULL',
+                       'DateEffective'    : 'DATETIME NOT NULL',
+                       'LastCheckTime'    : 'DATETIME NOT NULL',
+                       'GOCDBServiceType' : 'VARCHAR(32) NOT NULL'
                       },
                       'PrimaryKey' : [ 'DowntimeID' ]
                                 }
