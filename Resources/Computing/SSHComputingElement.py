@@ -140,7 +140,7 @@ class SSH:
     if upload:
       command = "scp %s %s %s %s@%s:%s" % ( key, self.options, localFile, self.user, self.host, destinationPath )
     else:
-      command = "scp %s %s@%s:%s %s" % ( key, self.user, self.host, destinationPath, localFile )
+      command = "scp %s %s %s@%s:%s %s" % ( key, self.options, self.user, self.host, destinationPath, localFile )
     self.log.debug( "SCP command %s" % command )
     return self.__ssh_call( command, timeout )
 
