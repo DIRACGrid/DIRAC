@@ -5,15 +5,18 @@
 # Date: 2012/07/20 13:18:41
 ########################################################################
 
-""" :mod: RequestProxyHandler 
-    =========================
+""" 
+:mod: RequestProxyHandler 
+=========================
  
-    .. module: RequestProxyHandler
-    :synopsis: RequestProxy service
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: RequestProxyHandler
+  :synopsis: RequestProxy service
 
-    Careful with that axe, Eugene! Some 'transfer' requests are using local fs 
-    and they never should be forwarded to the central RequestManager.  
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+Careful with that axe, Eugene! Some 'transfer' requests are using local fs 
+and they never should be forwarded to the central RequestManager.  
+
 """
 
 __RCSID__ = "$Id$"

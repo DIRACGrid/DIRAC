@@ -4,14 +4,16 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/08/03 15:02:53
 ########################################################################
-""" :mod: File
-    ==========
+""" 
+:mod: File
+==========
 
-    .. module: File
-    :synopsis: RMS operation file
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: File
+  :synopsis: RMS operation file
 
-    operation file
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+operation file
 """
 # for properties
 # pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103

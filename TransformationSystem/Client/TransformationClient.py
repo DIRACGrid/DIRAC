@@ -255,13 +255,15 @@ class TransformationClient( Client, FileCatalogueBase ):
 
   def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False,
                                           rpc = '', url = '', timeout = 120 ):
-    """ sets the file status for LFNs of a transformation
+    """ Sets the file status for LFNs of a transformation
 
         For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
-        - newLFNsStatus is a dictionary with the form:
-          {'/this/is/an/lfn1.txt': 'StatusA', '/this/is/an/lfn2.txt': 'StatusB',  ... }
-          and at this point lfns is not considered
-        - newLFNStatus is a string, that applies to all the LFNs in lfns
+        
+          - newLFNsStatus is a dictionary with the form:
+            {'/this/is/an/lfn1.txt': 'StatusA', '/this/is/an/lfn2.txt': 'StatusB',  ... }
+            and at this point lfns is not considered
+          - newLFNStatus is a string, that applies to all the LFNs in lfns
+
     """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
 

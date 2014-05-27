@@ -4,14 +4,15 @@
 # Date: 2013/04/08 14:29:43
 ########################################################################
 
-""" :mod: FTSClient
-    ===============
+""" 
+:mod: FTSClient
+===============
 
-    .. module: FTSClient
-    :synopsis: FTS client
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: FTSClient
+:synopsis: FTS client
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    FTS client
+FTS client
 """
 
 # #

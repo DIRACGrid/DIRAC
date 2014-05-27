@@ -5,14 +5,15 @@
 # Date: 2012/07/19 08:21:16
 ########################################################################
 
-""" :mod: TypedList 
-    =======================
+"""
+:mod: TypedList 
+=======================
  
-    .. module: TypedList
-    :synopsis: typed list
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: TypedList
+:synopsis: typed list
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    typed list
+typed list
 """
 
 __RCSID__ = "$Id $"

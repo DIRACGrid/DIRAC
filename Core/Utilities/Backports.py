@@ -7,10 +7,11 @@ try:
 except AttributeError:
   #No getcallargs
   def getcallargs(func, *positional, **named):
-    """Get the mapping of arguments to values when calling func(*positional, **named).
+    """
+    Get the mapping of arguments to values when calling ``func(*positional, **named)``.
 
     A dict is returned, with keys the function argument names (including the
-    names of the * and ** arguments, if any), and values the respective bound
+    names of the `*` and `**` arguments, if any), and values the respective bound
     values from 'positional' and 'named'."""
     args, varargs, varkw, defaults = inspect.getargspec(func)
     f_name = func.__name__

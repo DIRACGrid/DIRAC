@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 """ This module contains classes associated to Files.
 
-    The File class contains the member elements: LFN, Status, Size, GUID and Checksum and provides access methods for each (inluding type checking).
+    The File class contains the member elements: LFN, Status, Size, GUID and Checksum and provides access methods for each (including type checking).
 
 PROBABLY OBSOLETE
 K.C.

@@ -3,7 +3,8 @@
 The Data Management Request contains all the necessary information for
 a data management operation.
 
-    :deprecated:
+:deprecated:
+
 """
 import os, xml.dom.minidom, copy, datetime, time
 from types import DictType, ListType, NoneType, StringTypes

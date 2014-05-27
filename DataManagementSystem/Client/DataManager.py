@@ -1,10 +1,11 @@
-""" :mod: DataManager
-    =======================
+""" 
+:mod: DataManager
+=======================
 
-    .. module: DataManager
-    :synopsis: DataManager links the functionalities of StorageElement and FileCatalog.
+.. module: DataManager
+:synopsis: DataManager links the functionalities of StorageElement and FileCatalog.
 
-    This module consists DataManager and related classes.
+This module consists of DataManager and related classes.
 
 """
 
