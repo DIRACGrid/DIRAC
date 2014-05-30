@@ -42,9 +42,9 @@ CREATE TABLE Problematics(
                                           'LastUpdate': 'DATETIME NOT NULL',
                                           'Source': 'VARCHAR(127) NOT NULL DEFAULT "Unknown"',
                                          },
-                             'PrimaryKey': 'FileID',
-                             'Indexes': { 'PS': ['Prognosis', 'Status']
-                                         }
+                            'PrimaryKey': 'FileID',
+                            'Indexes': { 'PS': ['Prognosis', 'Status']},
+                            'Engine': 'InnoDB',
                             }
                }
 
