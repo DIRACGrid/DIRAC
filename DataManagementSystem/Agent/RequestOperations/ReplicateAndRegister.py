@@ -24,6 +24,7 @@ __RCSID__ = "$Id $"
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
+from DIRAC.Core.Utilities.Adler import compareAdler
 
 from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
 from DIRAC.DataManagementSystem.Client.DataManager                                import DataManager
@@ -34,7 +35,6 @@ from DIRAC.Resources.Catalog.FileCatalog                                        
 
 def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
   """ filter out banned/invalid source SEs """
-  from DIRAC.Core.Utilities.Adler import compareAdler
 
   if not logger:
     logger = gLogger
