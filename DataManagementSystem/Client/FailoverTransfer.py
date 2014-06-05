@@ -174,13 +174,17 @@ class FailoverTransfer( object ):
   def _setFileReplicationRequest( self, lfn, targetSE, fileMetaDict, sourceSE = '' ):
     """ Sets a registration request.
     """
-    self.log.info( 'Setting replication request for %s to %s' % ( lfn, targetSE ) )
+    self.log.info( 'Setting replication and registration requests for %s to %s' % ( lfn, targetSE ) )
 
     transfer = Operation()
-    transfer.Type = "ReplicateAndRegister"
+    transfer.Type = "ReplicateFile"
     transfer.TargetSE = targetSE
     if sourceSE:
       transfer.SourceSE = sourceSE
+
+    register = Operation()
+    register.Type = "RegisterFile"
+    register.TargetSE = targetSE
 
     trFile = File()
     trFile.LFN = lfn
@@ -197,9 +201,19 @@ class FailoverTransfer( object ):
     if guid:
       trFile.GUID = guid
 
+    se = StorageElement( targetSE )
+    pfn = se.getPfnForLfn( lfn )
+    if not pfn['OK'] or lfn not in pfn['Value']['Successful']:
+      self.log.error( "unable to get PFN for LFN: %s" % pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
+      return pfn
+
+    trFile.PFN = pfn["Value"]['Successful'][lfn]
+
     transfer.addFile( trFile )
+    register.addFile( trFile )
 
     self.request.addOperation( transfer )
+    self.request.addOperation( register )
 
     return S_OK()
 
