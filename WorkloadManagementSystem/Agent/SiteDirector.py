@@ -605,7 +605,7 @@ class SiteDirector( AgentModule ):
     pilotOptions, pilotsToSubmit = self.__getPilotOptions( queue, pilotsToSubmit )
     if pilotOptions is None:
       return S_ERROR( 'Errors in compiling pilot options' )
-    executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
+    executable = self._writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
     return S_OK( [ executable, pilotsToSubmit ] )
 
 #####################################################################################
@@ -732,7 +732,7 @@ class SiteDirector( AgentModule ):
     return [ pilotOptions, pilotsToSubmit ]
 
 #####################################################################################
-  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = None, httpProxy = '', pilotExecDir = '' ):
+  def _writePilotScript( self, workingDirectory, pilotOptions, proxy = None, httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
     """
     
