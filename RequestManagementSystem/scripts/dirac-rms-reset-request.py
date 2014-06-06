@@ -24,7 +24,7 @@ if __name__ == "__main__":
   from DIRAC import gLogger
   resetFailed = False
   requests = []
-  job = None
+  jobs = []
   all = False
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
   reqClient = ReqClient()
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         pass
     elif switch[0] == 'Job':
       try:
-        job = int( switch[1] )
+        jobs = [int( job ) for job in switch[1].split( ',' )]
       except:
         print "Invalid jobID", switch[1]
 
@@ -50,17 +50,13 @@ if __name__ == "__main__":
     if len( args ) == 1:
       requests = args[0].split( ',' )
   else:
-    from DIRAC.Interfaces.API.Dirac                              import Dirac
-    dirac = Dirac()
-    res = dirac.attributes( job )
+    res = reqClient.getRequestNamesForJobs( jobs )
     if not res['OK']:
-      print "Error getting job parameters", res['Message']
-    else:
-      jobName = res['Value'].get( 'JobName' )
-      if not jobName:
-        print 'Job %d not found' % job
-      else:
-        requests = [jobName + '_job_%d' % job]
+      gLogger.fatal( "Error getting request for jobs", res['Message'] )
+      DIRAC.exit( 2 )
+    if res['Value']['Failed']:
+      gLogger.error( "No request found for jobs %s" % str( res['Value']['Failed'].keys() ) )
+    requests = sorted( res['Value']['Successful'].values() )
 
   if resetFailed:
     all = False
