@@ -807,7 +807,10 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     #   #opener = urllib2.build_opener()
     #  urllib2.install_opener( opener )
     remoteFD = urllib2.urlopen( url )
-    expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
+    remoteInfo = remoteFD.info()
+    expectedBytes = -1
+    if 'Content-Lentgth' in remoteInfo:
+      expectedBytes = long( remoteInfo[ 'Content-Length' ] )
     if fileName:
       localFD = open( fileName, "wb" )
     receivedBytes = 0L
@@ -833,7 +836,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     if fileName:
       localFD.close()
     remoteFD.close()
-    if receivedBytes != expectedBytes:
+    if receivedBytes != expectedBytes and expectedBytes != -1:
       logERROR( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
       return False
   except urllib2.HTTPError, x:
