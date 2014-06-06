@@ -132,12 +132,11 @@ class InstallDIRAC( object ):
     if self.platform:
       self.installOpts.append( '-p "%s"' % self.platform )
 
-
     logDEBUG( 'INSTALL OPTIONS [%s]' % ', '.join( map( str, self.installOpts ) ) )
     
     
+    
   def execute( self ):
-
     try:
       pilotScript = os.path.realpath( __file__ )  # in old python versions __file__ is not defined
     except:
@@ -151,7 +150,6 @@ class InstallDIRAC( object ):
 
     ############################################################################
     # Locate installation script
-
     for path in ( pilotRootPath, originalRootPath, rootPath ):
       installScript = os.path.join( path, installScriptName )
       if os.path.isfile( installScript ):
@@ -160,18 +158,7 @@ class InstallDIRAC( object ):
     if not os.path.isfile( installScript ):
       logERROR( "%s requires %s to exist in one of: %s, %s, %s" % ( pilotScriptName, installScriptName,
                                                             pilotRootPath, originalRootPath, rootPath ) )
-      logINFO( "Trying to download it to %s..." % originalRootPath )
-      try:
-        remoteLocation = "http://lhcbproject.web.cern.ch/lhcbproject/dist/Dirac_project/dirac-install.py"  # this should change
-        remoteFD = urllib2.urlopen( remoteLocation )
-        installScript = os.path.join( originalRootPath, installScriptName )
-        localFD = open( installScript, "w" )
-        localFD.write( remoteFD.read() )
-        localFD.close()
-        remoteFD.close()
-      except Exception, e:
-        logERROR( "Could not download %s..: %s" % ( remoteLocation, str( e ) ) )
-        sys.exit( 1 )
+      sys.exit( 1 )
 
     try:
       os.chmod( installScript, stat.S_IRWXU )  # change permission of the script
@@ -199,6 +186,7 @@ class InstallDIRAC( object ):
     except:
       pass
     logINFO( "Version %s" % __RCSID__ )
+
     
     
 
@@ -531,7 +519,7 @@ class ConfigureDIRAC( object ):
     self.configureOpts.append( '-I' )
 
     # just for test when normal installation
-    __result__ = os.system( "cp /home/dirac/test/dirac-configure.py /home/dirac/test/DIRAC/Core/scripts/dirac-configure.py" )
+    # __result__ = os.system( "cp /home/dirac/test/dirac-configure.py /home/dirac/test/DIRAC/Core/scripts/dirac-configure.py" )
 
     # for test when cvmfs
     #configureCmd = "python %s %s" % ( os.path.join( "/home/dirac/test/", "dirac-configure.py" ), " ".join( self.configureOpts ) )
@@ -857,3 +845,4 @@ def logINFO( msg ):
 if __name__ == "__main__":
     main()
 
+  
