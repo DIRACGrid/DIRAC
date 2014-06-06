@@ -636,12 +636,20 @@ class SiteDirector( AgentModule ):
       self.log.info( 'DIRAC project will be installed by pilots' )
 
     #Request a release
+    # diracVersion = opsHelper.getValue( "Pilot/Version", [] )
+    # if not diracVersion:
+    #  self.log.error( 'Pilot/Version is not defined in the configuration' )
+    #  return [ None, None ]
+    # diracVersion is a list of accepted releases. Just take the first one
+    # pilotOptions.append( '-r %s' % diracVersion[0] )
+
+    # Request the list of accepted release --> needed to check correct release with SetupProject
     diracVersion = opsHelper.getValue( "Pilot/Version", [] )
     if not diracVersion:
       self.log.error( 'Pilot/Version is not defined in the configuration' )
       return [ None, None ]
-    #diracVersion is a list of accepted releases. Just take the first one
-    pilotOptions.append( '-r %s' % diracVersion[0] )
+    # diracVersion is a list of accepted releases
+    pilotOptions.append( '-r %s' % ','.join( str( it ) for it in diracVersion ) )
 
     ownerDN = self.pilotDN
     ownerGroup = self.pilotGroup
@@ -727,7 +735,7 @@ class SiteDirector( AgentModule ):
   def __writePilotScript( self, workingDirectory, pilotOptions, proxy = None, httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
     """
-
+    
     try:
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
@@ -773,11 +781,10 @@ try:
 except Exception, x:
   print >> sys.stderr, x
   sys.exit(-1)
-cmd = "python %(pilotScript)s %(pilotOptions)s"
+  cmd = "python %(pilotScript)s %(pilotOptions)s"
 print 'Executing: ', cmd
 sys.stdout.flush()
 os.system( cmd )
-
 shutil.rmtree( pilotWorkingDirectory )
 
 EOF
