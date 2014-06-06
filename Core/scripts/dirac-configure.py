@@ -28,7 +28,7 @@
   -A --Architecture=<architecture>                 To define /LocalSite/Architecture=<architecture>
   -L --LocalSE=<localse>                           To define /LocalSite/LocalSE=<localse>
   -F --ForceUpdate                                 Forces the update of dirac.cfg, even if it does already exists (use with care)
-  -x --VoFlaf                                      Set the voFlag extension
+  -x --VoFlag                                      Set the voFlag extension
 
   Other arguments will take proper defaults if not defined.
   
@@ -62,7 +62,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 
 import sys, os
