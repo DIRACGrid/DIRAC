@@ -781,11 +781,10 @@ try:
 except Exception, x:
   print >> sys.stderr, x
   sys.exit(-1)
-cmd = "python %(pilotScript)s %(pilotOptions)s"
+  cmd = "python %(pilotScript)s %(pilotOptions)s"
 print 'Executing: ', cmd
 sys.stdout.flush()
 os.system( cmd )
-
 shutil.rmtree( pilotWorkingDirectory )
 
 EOF
