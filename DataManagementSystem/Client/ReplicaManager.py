@@ -1,10 +1,11 @@
-""" :mod: ReplicaManager
-    =======================
+""" 
+:mod: ReplicaManager
 
-    .. module: ReplicaManager
-    :synopsis: ReplicaManager links the functionalities of StorageElement and FileCatalog.
+.. module: ReplicaManager
 
-    This module consists ReplicaManager and related classes.
+:synopsis: ReplicaManager links the functionalities of StorageElement and FileCatalog.
+
+This module consists ReplicaManager and related classes.
 
 """
 
@@ -1423,7 +1424,7 @@ class ReplicaManager( CatalogToStorage ):
       self.log.info( "putAndRegister: Checksum calculated to be %s." % checksum )
     res = self.fileCatalogue.exists( {lfn:guid} )
     if not res['OK']:
-      errStr = "putAndRegister: Completey failed to determine existence of destination LFN."
+      errStr = "putAndRegister: Completely failed to determine existence of destination LFN."
       self.log.error( errStr, lfn )
       return res
     if lfn not in res['Value']['Successful']:
@@ -1487,7 +1488,7 @@ class ReplicaManager( CatalogToStorage ):
     fileTuple = ( lfn, destPfn, size, destinationSE, guid, checksum )
     registerDict = {'LFN':lfn, 'PFN':destPfn, 'Size':size, 'TargetSE':destinationSE, 'GUID':guid, 'Addler':checksum}
     startTime = time.time()
-    res = self.registerFile( fileTuple )
+    res = self.registerFile( fileTuple, catalog = catalog )
     registerTime = time.time() - startTime
     oDataOperation.setValueByKey( 'RegistrationTime', registerTime )
     if not res['OK']:
@@ -1760,6 +1761,37 @@ class ReplicaManager( CatalogToStorage ):
       return S_ERROR( errStr )
     self.log.info( "%s File size determined to be %s." % ( logStr, catalogueSize ) )
 
+    ###########################################################
+    # Check whether the destination storage element is banned
+
+    self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
+
+    usableDestSE = self.resourceStatus.isUsableStorage( destSE, 'WriteAccess' )
+    if not usableDestSE:
+      infoStr = "%s Destination Storage Element is currently unusable for Write" % logStr
+      self.log.info( infoStr, destSE )
+      return S_ERROR( infoStr )
+
+    self.log.info( "%s Destination site not banned for Write." % logStr )
+
+    ###########################################################
+    # Check whether the supplied source SE is sane
+
+    self.log.verbose( "%s: Determining whether source Storage Element is sane." % logStr )
+
+    if sourceSE:
+
+      usableSourceSE = self.resourceStatus.isUsableStorage( sourceSE, 'ReadAccess' )
+
+      if sourceSE not in lfnReplicas:
+        errStr = "%s LFN does not exist at supplied source SE." % logStr
+        self.log.error( errStr, "%s %s" % ( lfn, sourceSE ) )
+        return S_ERROR( errStr )
+      elif not usableSourceSE:
+        infoStr = "%s Supplied source Storage Element is currently unusable for Read." % logStr
+        self.log.info( infoStr, sourceSE )
+        return S_ERROR( infoStr )
+
     self.log.info( "%s Replication initialization successful." % logStr )
 
     resDict = {
@@ -1787,8 +1819,13 @@ class ReplicaManager( CatalogToStorage ):
         self.log.info( "%s %s replica not requested." % ( logStr, diracSE ) )
         continue
 
-      if not self.__SEActive( diracSE ).get( 'Value', {} ).get( 'Read' ):
-        self.log.info( "%s %s is currently not allowed as a source." % ( logStr, diracSE ) )
+      usableDiracSE = self.resourceStatus.isUsableStorage( diracSE, 'ReadAccess' )
+
+      if not usableDiracSE:
+        self.log.info( "%s %s is currently unusable as a source." % ( logStr, diracSE ) )
+
+      # elif diracSE in bannedSources:
+      #  self.log.info( "__resolveBestReplicas: %s is currently banned as a source." % diracSE )
       else:
         self.log.info( "%s %s is available for use." % ( logStr, diracSE ) )
         storageElement = StorageElement( diracSE )
@@ -1985,7 +2022,7 @@ class ReplicaManager( CatalogToStorage ):
 
         'lfn' is the file to be removed
     """
-    if force == None:
+    if force is None:
       force = self.ignoreMissingInFC
     if type( lfn ) == ListType:
       lfns = lfn
@@ -2363,12 +2400,9 @@ class ReplicaManager( CatalogToStorage ):
 
     :param self: self reference
     :param str lfn: LFN
-    :param :
-
-        'lfn' is the file LFN
-        'file' is the full path to the local file
-        'diracSE' is the Storage Element to which to put the file
-        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
+    :param str fileName: the full path to the local file
+    :param str diracSE: the Storage Element to which to put the file
+    :param str path: the path on the storage where the file will be put (if not provided the LFN will be used)
     """
     # Check that the local file exists
     if not os.path.exists( fileName ):
@@ -2451,14 +2485,18 @@ class ReplicaManager( CatalogToStorage ):
         replicaDict['Failed'][lfn] = 'Wrong replica info'
         continue
       for se in replicas.keys():
-        # Fix the caching
-        seStatus = seReadStatus[se] if se in seReadStatus else seReadStatus.setdefault( se, self.__SEActive( se ).get( 'Value', {} ).get( 'Read', False ) )
-        if not seStatus:
+        if se not in seReadStatus:
+          res = self.getSEStatus( se )
+          if res['OK']:
+            seReadStatus[se] = res['Value']['Read']
+          else:
+            seReadStatus[se] = False
+        if not seReadStatus[se]:
           replicas.pop( se )
 
     return S_OK( replicaDict )
 
-  def __SEActive( self, se ):
+  def getSEStatus( self, se ):
     """ check is SE is active """
     result = StorageFactory().getStorageName( se )
     if not result['OK']:

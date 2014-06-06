@@ -10,6 +10,7 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.SiteCEMapping import getCESiteMapping
 from DIRAC.Core.Utilities.SiteSEMapping import getSESiteMapping
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 gSiteData = False
 
@@ -20,14 +21,6 @@ def initializeSiteMapHandler( serviceInfo ):
   return S_OK()
 
 class SiteMapHandler( RequestHandler ):
-
-  # 'SiteMapData' has no 'getSiteMaskStatus' member
-  # types_getSiteMask = []
-  # def export_getSiteMask( self ):
-  #   """
-  #   Get the site mask
-  #   """
-  #   return S_OK( gSiteData.getSiteMaskStatus() )
   
   types_getSitesData = []
   def export_getSitesData( self ):
@@ -122,14 +115,13 @@ class SiteMapData( threading.Thread ):
     return S_OK( sitesData )
         
   def _updateSiteMask( self, sitesData ):
-    result = RPCClient( "WorkloadManagement/WMSAdministrator" ).getSiteMask()
-    if not result[ 'OK' ]:
-      gLogger.error( "Cannot get the site mask", result['Message'] )
-      return result
-    siteMask = result[ 'Value' ]
+    siteStatus = SiteStatus()
     siteMaskStatus = dict( sitesData )
     for site in siteMaskStatus:
-      if site in siteMask:
+      #
+      #FIXME: we are only taking into account ComputingAccess
+      #
+      if siteStatus.isUsableSite( site, 'ComputingAccess' ):
         siteMaskStatus[ site ][ 'siteMaskStatus' ] = 'Allowed'
       else:
         siteMaskStatus[ site ][ 'siteMaskStatus' ] = 'Banned'

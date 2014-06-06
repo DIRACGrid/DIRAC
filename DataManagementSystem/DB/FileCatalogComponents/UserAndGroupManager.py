@@ -7,21 +7,54 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                      import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Security                        import Properties
+from DIRAC               import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Security import Properties
 import time,threading
-from types import *
+from types import IntType, LongType
 
 class UserAndGroupManagerBase:
 
-  def __init__(self,database=None):
-    self.db = database
+  _tables = {} 
+  _tables["FC_Groups"] = { "Fields" :
+                            { 
+                              "GID": "INTEGER NOT NULL AUTO_INCREMENT",
+                              "GroupName": "VARCHAR(127) NOT NULL"
+                            },
+                            "PrimaryKey": ['GID'],
+                            "UniqueIndexes": { "GroupName": ["GroupName"] }
+                          }  
+  _tables["FC_Users"] = { "Fields" :
+                            { 
+                              "UID": "INTEGER NOT NULL AUTO_INCREMENT",
+                              "UserName": "VARCHAR(127) NOT NULL"
+                            },
+                            "PrimaryKey": ['UID'],
+                            "UniqueIndexes": { "UserName": ["UserName"] }
+                          }  
+
+  def __init__( self, database=None ):
+    
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
     self.lock = threading.Lock()
     self._refreshUsers()
     self._refreshGroups()
     
-  def setDatabase(self,database):
+  def _refreshUsers( self ):
+    return S_ERROR( 'Should be implemented in a derived class' )  
+  
+  def _refreshGroups( self ):
+    return S_ERROR( 'Should be implemented in a derived class' )    
+    
+  def setDatabase( self, database ):
     self.db = database
+    result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
+    return result
 
   def getUserAndGroupRight(self, credDict):
     """ Evaluate rights for user and group operations """
@@ -260,64 +293,4 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     self.lock.release()
     return S_OK()
 
-class UserAndGroupManagerCS(UserAndGroupManagerBase):
-
-  def getUserAndGroupID(self,credDict):
-    user = credDict.get('username','anon') 
-    group = credDict.get('group','anon')
-    return S_OK((user,group))
-
-  #####################################################################
-  #
-  #  User related methods
-  #
-  #####################################################################
-
-  def addUser(self,name):
-    return S_OK(name)
-
-  def deleteUser(self,name,force=True):
-    return S_OK()
-
-  def getUsers(self):
-    res = gConfig.getSections('/Registry/Users')    
-    if not res['OK']:
-      return res
-    userDict = {}
-    for user in res['Value']:
-      userDict[user] = user
-    return S_OK(userDict)
-
-  def getUserName(self,uid):
-    return S_OK(uid)
-
-  def findUser(self,user):
-    return S_OK(user)
-
-  #####################################################################
-  #
-  #  Group related methods
-  #
-  #####################################################################
-
-  def addGroup(self,gname):
-    return S_OK(gname)
-
-  def deleteGroup(self,gname,force=True):
-    return S_OK()
-
-  def getGroups(self):
-    res = gConfig.getSections('/Registry/Groups')
-    if not res['OK']:
-      return res
-    groupDict = {}
-    for group in res['Value']: 
-      groupDict[group] = group
-    return S_OK(groupDict)
-
-  def getGroupName(self,gid):
-    return S_OK(gid)
-
-  def findGroup(self,group):
-    return S_OK(group)
   

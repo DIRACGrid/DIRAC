@@ -44,7 +44,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Adler import compareAdler
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.Resources.Utilities           import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 # # agent name
 AGENT_NAME = "DataManagement/TransferAgent"
 
@@ -328,7 +328,7 @@ class TransferAgent( RequestAgentBase ):
       if not se:
         se = StorageElement( sourceSE, "SRM2" )
         self.seCache[sourceSE] = se
-      pfn = Utils.executeSingleFileOrDirWrapper( se.getPfnForLfn( lfn ) )
+      pfn = returnSingleResult( se.getPfnForLfn( lfn ) )
       if not pfn["OK"]:
         self.log.warn( "checkSourceSE: unable to create pfn for %s lfn: %s" % ( lfn, pfn["Message"] ) )
         return pfn
@@ -353,12 +353,14 @@ class TransferAgent( RequestAgentBase ):
     :param str se: SE name
     :param str status: RSS status name
     """
-    rssStatus = self.rssClient().getStorageElementStatus( se, status )
-    if not rssStatus["OK"]:
-      return S_ERROR( "unknown SE: %s" % se )
-    if rssStatus["Value"][se][status] == "Banned":
-      return S_OK( False )
-    return S_OK( True )
+    #rssStatus = self.rssClient().getStorageStatus( se, status )
+    rssStatus = self.rssClient().isUsableStorage( se, status )
+    return S_OK( rssStatus )
+#    if not rssStatus["OK"]:
+#      return S_ERROR( "unknown SE: %s" % se )
+#    if rssStatus["Value"][se][status] == "Banned":
+#      return S_OK( False )
+#    return S_OK( True )
 
   @staticmethod
   def ancestorSortKeys( aDict, aKey = "Ancestor" ):

@@ -1,7 +1,6 @@
 """ StorageManagementDB is a front end to the Stager Database.
 
     There are five tables in the StorageManagementDB: Tasks, CacheReplicas, TaskReplicas, StageRequests.
-
     The Tasks table is the place holder for the tasks that have requested files to be staged.
     These can be from different systems and have different associated call back methods.
     The CacheReplicas table keeps the information on all the CacheReplicas in the system.
@@ -14,8 +13,6 @@ __RCSID__ = "$Id$"
 
 import inspect
 import types
-import threading
-
 from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                           import DB
 from DIRAC.Core.Utilities.List                    import intListToString, stringListToString
@@ -30,18 +27,133 @@ from DIRAC.Core.Utilities.List                    import intListToString, string
 #  - "PinLength" is an Option of the StageRequest Agent that defaults to THROTTLING_TIME
 #  - "DiskCacheTB" is an Option of the StorageElement that defaults to 1 (TB)
 #
-THROTTLING_TIME = 86400
+THROTTLING_TIME  = 86400
 THROTTLING_STEPS = 12
 
 class StorageManagementDB( DB ):
 
+  _tablesDict = {}
+  # Tasks table
+  _tablesDict [ 'Tasks' ] = {
+                             'Fields' : 
+                                       {
+                                        'TaskID'         : 'INTEGER AUTO_INCREMENT',
+                                        'Status'         : 'VARCHAR(32) DEFAULT "New"',
+                                        'Source'         : 'VARCHAR(32) NOT NULL',
+                                        'SubmitTime'     : 'DATETIME NOT NULL',
+                                        'LastUpdate'     : 'DATETIME',
+                                        'CompleteTime'   : 'DATETIME',
+                                        'CallBackMethod' : 'VARCHAR(255)',
+                                        'SourceTaskID'   : 'VARCHAR(32)'
+                                       },
+                             'Indexes'    : { 'TaskID,Status' : [ 'TaskID', 'Status' ] },
+                             'PrimaryKey' : [ 'TaskID', 'Status' ]
+                            }  
+  # TaskReplicas table
+  _tablesDict[ 'TaskReplicas' ] = {
+                                   'Fields' :
+                                             {
+                                              'TaskID'    : 'INTEGER(8) NOT NULL REFERENCES Tasks(TaskID)',
+                                              'ReplicaID' : 'INTEGER(8) NOT NULL REFERENCES CacheReplicas(ReplicaID)'
+                                             },
+                                   'Indexes'    : { 'TaskID,ReplicaID' : [ 'TaskID', 'ReplicaID' ] },
+                                   'PrimaryKey' : [ 'TaskID', 'ReplicaID' ]
+                                  }
+  # FIXME: we have 2 triggers here !!
+  #CREATE TRIGGER taskreplicasAfterInsert AFTER INSERT ON TaskReplicas FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Links=CacheReplicas.Links+1 WHERE CacheReplicas.ReplicaID=NEW.ReplicaID;
+  #CREATE TRIGGER taskreplicasAfterDelete AFTER DELETE ON TaskReplicas FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Links=CacheReplicas.Links-1 WHERE CacheReplicas.ReplicaID=OLD.ReplicaID;
+  # CacheReplicas table
+  _tablesDict[ 'CacheReplicas' ] = {
+                                    'Fields' : 
+                                              {
+                                                'ReplicaID'    : 'INTEGER AUTO_INCREMENT',
+                                                'Type'         : 'VARCHAR(32) NOT NULL',
+                                                'Status'       : 'VARCHAR(32) DEFAULT "New"',
+                                                'SE'           : 'VARCHAR(32) NOT NULL',
+                                                'LFN'          : 'VARCHAR(255) NOT NULL',
+                                                'PFN'          : 'VARCHAR(255)',
+                                                'Size'         : 'BIGINT(60) DEFAULT 0',
+                                                'FileChecksum' : 'VARCHAR(255) NOT NULL',
+                                                'GUID'         : 'VARCHAR(255) NOT NULL',
+                                                'SubmitTime'   : 'DATETIME NOT NULL',
+                                                'LastUpdate'   : 'DATETIME',
+                                                'Reason'       : 'VARCHAR(255)',
+                                                'Links'        : 'INTEGER DEFAULT 0'
+                                               },
+                                    'Indexes'    : { 'ReplicaID,Status,SE' : [ 'ReplicaID', 'Status', 'SE' ] },
+                                    'PrimaryKey' : [ 'ReplicaID', 'LFN', 'SE' ] 
+                                   }
+  # StageRequests table
+  _tablesDict[ 'StageRequests' ] = {
+                                    'Fields' : 
+                                              {
+                                               'ReplicaID'                 : 'INTEGER(8) NOT NULL REFERENCES CacheReplicas(ReplicaID)',
+                                               'StageStatus'               : 'VARCHAR(32) DEFAULT "StageSubmitted"',
+                                               'RequestID'                 : 'VARCHAR(64) DEFAULT ""',
+                                               'StageRequestSubmitTime'    : 'DATETIME NOT NULL',
+                                               'StageRequestCompletedTime' : 'DATETIME',
+                                               'PinLength'                 : 'INTEGER(8)',
+                                               'PinExpiryTime'             : 'DATETIME'                                               
+                                              },
+                                    'Indexes'     : { 'StageStatus' : [ 'StageStatus' ] },
+                                    'ForeignKeys' : { 'ReplicaID' : 'CacheReplicas.ReplicaID' } 
+                                   } 
+
+
+
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
     DB.__init__( self, 'StorageManagementDB', 'StorageManagement/StorageManagementDB', maxQueueSize )
-    self.lock = threading.Lock()
-    self.TASKPARAMS = ['TaskID', 'Status', 'Source', 'SubmitTime', 'LastUpdate', 'CompleteTime', 'CallBackMethod', 'SourceTaskID']
+
+    # FIXME: substitute with self._tablesDict ( but watch out, the order will not be the same ! )
+
+    self.TASKPARAMS    = ['TaskID', 'Status', 'Source', 'SubmitTime', 'LastUpdate', 'CompleteTime', 'CallBackMethod', 'SourceTaskID']
     self.REPLICAPARAMS = ['ReplicaID', 'Type', 'Status', 'SE', 'LFN', 'PFN', 'Size', 'FileChecksum', 'GUID', 'SubmitTime', 'LastUpdate', 'Reason', 'Links']
-    self.STAGEPARAMS = ['ReplicaID', 'StageStatus', 'RequestID', 'StageRequestSubmitTime', 'StageRequestCompletedTime', 'PinLength', 'PinExpiryTime']
-    self.STATES = ['Failed', 'New', 'Waiting', 'Offline', 'StageSubmitted', 'Staged']
+    self.STAGEPARAMS   = ['ReplicaID', 'StageStatus', 'RequestID', 'StageRequestSubmitTime', 'StageRequestCompletedTime', 'PinLength', 'PinExpiryTime']
+    self.STATES        = ['Failed', 'New', 'Waiting', 'Offline', 'StageSubmitted', 'Staged']
+
+
+  def _checkTable( self ):
+    """ _checkTable.
+     
+    Method called on the StorageManagerHandler instead of on the StorageManagementDB constructor
+    to avoid an awful number of unnecessary queries with "show tables".
+    """
+    
+    return self.__createTables()
+
+
+  def __createTables( self ):
+    """ __createTables
+    
+    Writes the schema in the database. If a table is already in the schema, it is
+    skipped to avoid problems trying to create a table that already exists.
+    """
+
+    # Horrible SQL here !!
+    existingTables = self._query( "show tables" )
+    if not existingTables[ 'OK' ]:
+      return existingTables
+    existingTables = [ existingTable[0] for existingTable in existingTables[ 'Value' ] ]
+
+    # Makes a copy of the dictionary _tablesDict
+    tables = {}
+    tables.update( self._tablesDict )
+        
+    for existingTable in existingTables:
+      if existingTable in tables:
+        del tables[ existingTable ]  
+              
+    res = self._createTables( tables )
+    if not res[ 'OK' ]:
+      return res
+    
+    # Human readable S_OK message
+    if res[ 'Value' ] == 0:
+      res[ 'Value' ] = 'No tables created'
+    else:
+      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
+    return res  
+
 
   def __getConnection( self, connection ):
     if connection:
@@ -395,12 +507,12 @@ class StorageManagementDB( DB ):
       return res
     replicaInfo = {}
     for lfn, storageElement, pfn, fileSize, status, lastupdate, reason in res['Value']:
-      replicaInfo[lfn] = {'StorageElement':storageElement, 'PFN':pfn, 'FileSize':fileSize,
+      replicaInfo[lfn] = {'StorageElement':storageElement, 'PFN':pfn, 'FileSize':fileSize, 
                           'Status':status, 'LastUpdate':lastupdate, 'Reason':reason}
     resDict = {'TaskInfo':taskInfo, 'ReplicaInfo':replicaInfo}
     return S_OK( resDict )
 
-  def getTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'SubmitTime', orderAttribute = None,
+  def getTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'SubmitTime', orderAttribute = None, 
                 limit = None, connection = False ):
     """ Get stage requests for the supplied selection with support for web standard structure """
     connection = self.__getConnection( connection )
@@ -734,10 +846,13 @@ class StorageManagementDB( DB ):
     if not updated:
       return S_OK( updated )
     for replicaID in updated:
-      reqSelect = "Select * FROM CacheReplicas WHERE ReplicaID = %d" % ( replicaID )
-      resSelect = self._query( reqSelect )
-      if not resSelect['OK']:
-        gLogger.warn( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'updateReplicaFailure', reqSelect, resSelect['Message'] ) )
+      
+      # FIXME: I really do not get the purpose of the two paragraphs commented out.
+      
+#      reqSelect = "Select * FROM CacheReplicas WHERE ReplicaID = %d" % ( replicaID )
+#      resSelect = self._query( reqSelect )
+#      if not resSelect['OK']:
+#        gLogger.warn( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'updateReplicaFailure', reqSelect, resSelect['Message'] ) )
 
       req = "UPDATE CacheReplicas SET Reason = '%s' WHERE ReplicaID = %d" % ( terminalReplicaIDs[replicaID], replicaID )
       res = self._update( req )
@@ -745,12 +860,13 @@ class StorageManagementDB( DB ):
         gLogger.error( 'StorageManagementDB.updateReplicaFailure: Failed to update replica fail reason.', res['Message'] )
         return res
 
-      replicaIDs = []
-      for record in resSelect['Value']:
-        replicaIDs.append( record[0] )
-        gLogger.verbose( "%s.%s_DB: to_update CacheReplicas =  %s" % ( self._caller(), 'updateReplicaFailure', record ) )
+#      replicaIDs = []
+#      for record in resSelect['Value']:
+#        replicaIDs.append( record[0] )
+#        gLogger.verbose( "%s.%s_DB: to_update CacheReplicas =  %s" % ( self._caller(), 'updateReplicaFailure', record ) )
 
-      reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
+      #reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
+      reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID = %d;" % replicaID
       resSelect1 = self._query( reqSelect1 )
       if not resSelect1['OK']:
         gLogger.warn( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'updateReplicaFailure', reqSelect1, resSelect1['Message'] ) )
@@ -964,44 +1080,43 @@ class StorageManagementDB( DB ):
     gLogger.debug( "StorageManagementDB.setTasksDone: Successfully updated %s Tasks with StageStatus=Done for taskIDs: %s." % ( res['Value'], taskIDs ) )
     return res
 
-  def killTasksBySourceTaskID( self, sourceTaskIDs, connection = False ):
-      """ Given SourceTaskIDs (jobs), this will cancel further staging of files for the corresponding tasks.
-      The "cancel" is actually removing all stager DB records for these jobs.
-      Care must be taken to NOT cancel staging of files that are requested also by other tasks. """
-      connection = self.__getConnection( connection )
-
-      # get the TaskIDs
-      req = "SELECT TaskID from Tasks WHERE SourceTaskID IN (%s);" % intListToString( sourceTaskIDs )
-      res = self._query( req )
+  def killTasksBySourceTaskID(self, sourceTaskIDs, connection = False):
+    """ Given SourceTaskIDs (jobs), this will cancel further staging of files for the corresponding tasks. 
+    The "cancel" is actually removing all stager DB records for these jobs. 
+    Care must be taken to NOT cancel staging of files that are requested also by other tasks. """
+    connection = self.__getConnection( connection )
+      
+    # get the TaskIDs
+    req = "SELECT TaskID from Tasks WHERE SourceTaskID IN (%s);"  % intListToString( sourceTaskIDs )
+    res = self._query( req )
+    if not res['OK']:
+      gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+    taskIDs = [ row[0] for row in res['Value'] ]
+      
+    # ! Make sure to only cancel file staging for files with no relations with other tasks (jobs) but the killed ones
+    req = "SELECT DISTINCT(CR.ReplicaID) FROM TaskReplicas AS TR, CacheReplicas AS CR WHERE TR.TaskID IN (%s) AND CR.Links=1 and TR.ReplicaID=CR.ReplicaID;" % intListToString( taskIDs )
+    res = self._query( req )
+    if not res['OK']:
+      gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+          
+    replicaIDs = [ row[0] for row in res['Value'] ]
+      
+    if replicaIDs:
+      req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString ( replicaIDs )      
+      res = self._update( req, connection )
       if not res['OK']:
-        gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
-      taskIDs = [ row[0] for row in res['Value'] ]
-
-      # ! Make sure to only cancel file staging for files with no relations with other tasks (jobs) but the killed ones
-      req = "SELECT DISTINCT(CR.ReplicaID) FROM TaskReplicas AS TR, CacheReplicas AS CR WHERE TR.TaskID IN (%s) AND CR.Links=1 and TR.ReplicaID=CR.ReplicaID;" % intListToString( taskIDs )
-      res = self._query( req )
+        gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+     
+      req = "DELETE FROM CacheReplicas WHERE ReplicaID in (%s) AND Links=1;" % intListToString ( replicaIDs )
+      res = self._update( req, connection )
       if not res['OK']:
-        gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
-
-
-      replicaIDs = [ row[0] for row in res['Value'] ]
-
-      if replicaIDs:
-        req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString ( replicaIDs )
-        res = self._update( req, connection )
-        if not res['OK']:
-          gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
-
-        req = "DELETE FROM CacheReplicas WHERE ReplicaID in (%s) AND Links=1;" % intListToString ( replicaIDs )
-        res = self._update( req, connection )
-        if not res['OK']:
-          gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
-
-      # Finally, remove the Task and TaskReplicas entries.
-      res = self.removeTasks( taskIDs, connection )
-      return res
-
-  def removeStageRequests( self, replicaIDs, connection = False ):
+        gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+      
+    # Finally, remove the Task and TaskReplicas entries.
+    res = self.removeTasks(taskIDs, connection)
+    return res
+  
+  def removeStageRequests( self, replicaIDs, connection = False):
     connection = self.__getConnection( connection )
     req = "DELETE FROM StageRequests WHERE ReplicaID in (%s);" % intListToString( replicaIDs )
     res = self._update( req, connection )

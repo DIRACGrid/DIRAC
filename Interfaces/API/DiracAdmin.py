@@ -11,15 +11,18 @@ from DIRAC.Core.Base.API                                      import API
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources       import getSites, getSiteFullNames
 from DIRAC.Core.DISET.RPCClient                               import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
-from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteCEMapping
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSA
+from DIRAC.ResourceStatusSystem.Client.SiteStatus             import SiteStatus
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient   import ResourceStatusClient
 
 import os, types
+from datetime import datetime, timedelta
 
 voName = ''
 ret = getProxyInfo( disableVOMS = True )
@@ -56,12 +59,12 @@ class DiracAdmin( API ):
        >>> print diracAdmin.uploadProxy('lhcb_pilot')
        {'OK': True, 'Value': 0L}
 
-       @param group: DIRAC Group
-       @type job: string
-       @return: S_OK,S_ERROR
+       :param group: DIRAC Group
+       :type job: string
+       :returns: S_OK,S_ERROR
 
-       @param permanent: Indefinitely update proxy
-       @type permanent: boolean
+       :param permanent: Indefinitely update proxy
+       :type permanent: boolean
 
     """
     return gProxyManager.uploadProxy( diracGroup = group )
@@ -75,13 +78,13 @@ class DiracAdmin( API ):
        >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
        {'OK': True }
 
-       @param userDN: User DN
-       @type userDN: string
-       @param userGroup: DIRAC Group
-       @type userGroup: string
-       @param persistent: Persistent flag
-       @type persistent: boolean
-       @return: S_OK,S_ERROR
+       :param userDN: User DN
+       :type userDN: string
+       :param userGroup: DIRAC Group
+       :type userGroup: string
+       :param persistent: Persistent flag
+       :type persistent: boolean
+       :returns: S_OK,S_ERROR
     """
     return gProxyManager.setPersistency( userDN, userGroup, persistent )
 
@@ -94,13 +97,13 @@ class DiracAdmin( API ):
        >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
        {'OK': True, 'Value' : True/False }
 
-       @param userDN: User DN
-       @type userDN: string
-       @param userGroup: DIRAC Group
-       @type userGroup: string
-       @param requiredTime: Required life time of the uploaded proxy
-       @type requiredTime: boolean
-       @return: S_OK,S_ERROR
+       :param userDN: User DN
+       :type userDN: string
+       :param userGroup: DIRAC Group
+       :type userGroup: string
+       :param requiredTime: Required life time of the uploaded proxy
+       :type requiredTime: boolean
+       :returns: S_OK,S_ERROR
     """
     return gProxyManager.userHasProxy( userDN, userGroup, requiredTime )
 
@@ -113,11 +116,12 @@ class DiracAdmin( API ):
        >>> print diracAdmin.getSiteMask()
        {'OK': True, 'Value': 0L}
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.getSiteMask()
+    
+    siteStatus = SiteStatus()
+    result = siteStatus.getUsableSites( 'ComputingAccess' )
     if result['OK']:
       sites = result['Value']
       if printOutput:
@@ -128,7 +132,7 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
-  def getBannedSites( self, gridType = [], printOutput = False ):
+  def getBannedSites( self, printOutput = False ):
     """Retrieve current list of banned sites.
 
        Example usage:
@@ -136,34 +140,17 @@ class DiracAdmin( API ):
        >>> print diracAdmin.getBannedSites()
        {'OK': True, 'Value': []}
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    bannedSites = []
-    totalList = []
+    siteStatus = SiteStatus()
 
-    result = wmsAdmin.getSiteMask()
+    result = siteStatus.getUnusableSites( 'ComputingAccess' )
     if not result['OK']:
       self.log.warn( result['Message'] )
       return result
-    sites = result['Value']
+    bannedSites = result['Value']
 
-    if not gridType:
-      result = gConfig.getSections( '/Resources/Sites' )
-      if not result['OK']:
-        return result
-      gridType = result['Value']
-
-    for grid in gridType:
-      result = gConfig.getSections( '/Resources/Sites/%s' % grid )
-      if not result['OK']:
-        return result
-      totalList += result['Value']
-
-    for site in totalList:
-      if not site in sites:
-        bannedSites.append( site )
     bannedSites.sort()
     if printOutput:
       print '\n'.join( bannedSites )
@@ -178,7 +165,7 @@ class DiracAdmin( API ):
        >>> print diracAdmin.getSiteSection('LCG.CERN.ch')
        {'OK': True, 'Value':}
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
     """
     gridType = site.split( '.' )[0]
     if not gConfig.getSections( '/Resources/Sites/%s' % ( gridType ) )['OK']:
@@ -190,6 +177,21 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
+  def getCSDict( self, sectionPath ):
+    """Retrieve a dictionary from the CS for the specified path.
+
+       Example usage:
+
+       >>> print diracAdmin.getCSDict('Resources/Computing/OSCompatibility')
+       {'OK': True, 'Value': {'slc4_amd64_gcc34': 'slc4_ia32_gcc34,slc4_amd64_gcc34', 'slc4_ia32_gcc34': 'slc4_ia32_gcc34'}}
+
+       :returns: S_OK,S_ERROR
+
+    """
+    result = gConfig.getOptionsDict( sectionPath )
+    return result
+
+  #############################################################################
   def addSiteInMask( self, site, comment, printOutput = False ):
     """Adds the site to the site mask.
 
@@ -198,27 +200,56 @@ class DiracAdmin( API ):
        >>> print diracAdmin.addSiteInMask()
        {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
 
     """
-    result = self.__checkSiteIsValid( site )
-    if not result['OK']:
-      return result
-
+    
     mask = self.getSiteMask()
     if not mask['OK']:
       return mask
     siteMask = mask['Value']
     if site in siteMask:
       return S_ERROR( 'Site %s already in mask of allowed sites' % site )
+    
+    result = self.__changeSiteStatus( site, comment, 'ComputingAccess', 
+                                      'Active', printOutput=printOutput)
+    if printOutput:
+      if result['OK']:
+        print 'Allowing %s in site mask' % site
+      else:
+        print "Failed to update status for site %s" % site
+        
+    return result    
+
+  #############################################################################
+  def __changeSiteStatus( self, site, comment, statusType, status, printOutput = False ):
+    """
+      Change the RSS status of the given site
+    """
+    result = self.__checkSiteIsValid( site )
+    if not result['OK']:
+      return result
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.allowSite( site, comment )
     if not result['OK']:
       return result
-
-    if printOutput:
-      print 'Allowing %s in site mask' % site
+    
+    rsc = ResourceStatusClient()
+    proxyInfo = getProxyInfo()
+    if not proxyInfo[ 'OK' ]:
+      return proxyInfo
+    userName = proxyInfo[ 'Value' ][ 'username' ]   
+    
+    tomorrow = datetime.utcnow().replace( microsecond = 0 ) + timedelta( days = 1 )
+  
+    result = rsc.modifyStatusElement( 'Site', 'Status', 
+                                      name = site, 
+                                      statusType = statusType,
+                                      status     = status,
+                                      reason     = comment,  
+                                      tokenOwner = userName, 
+                                      tokenExpiration = tomorrow )
 
     return result
 
@@ -231,20 +262,29 @@ class DiracAdmin( API ):
        >>> print diracAdmin.getSiteMaskLogging('LCG.AUVER.fr')
        {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
     """
     result = self.__checkSiteIsValid( site )
     if not result['OK']:
       return result
-
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.getSiteMaskLogging( site )
+    
+    rssClient = ResourceStatusClient()
+    result = rssClient.selectStatusElement( 'Site', 'History', name = site, 
+                                            statusType = 'ComputingAccess' )
+    
     if not result['OK']:
       return result
 
-    if site:
-      if not result['Value'].has_key( site ):
-        return S_ERROR( 'Site mask information not available for %s' % ( site ) )
+    siteDict = {}
+    for logTuple in result['Value']:
+      status,reason,siteName,dateEffective,dateTokenExpiration,eType,sType,eID,lastCheckTime,author = logTuple
+      result = getSiteFullNames( siteName )
+      if not result['OK']:
+        continue
+      for sName in result['Value']:
+        if site is None or (site and site == sName):
+          siteDict.setdefault( sName, [] )
+          siteDict[sName].append( (status,reason,dateEffective,author,dateTokenExpiration) )
 
     if printOutput:
       if site:
@@ -252,7 +292,6 @@ class DiracAdmin( API ):
       else:
         print '\nAll Site Mask Logging Info\n'
 
-      siteDict = result['Value']
       for site, tupleList in siteDict.items():
         if not site:
           print '\n===> %s\n' % site
@@ -260,7 +299,8 @@ class DiracAdmin( API ):
           print str( tup[0] ).ljust( 8 ) + str( tup[1] ).ljust( 20 ) + \
                '( ' + str( tup[2] ).ljust( len( str( tup[2] ) ) ) + ' )  "' + str( tup[3] ) + '"'
         print ' '
-    return result
+        
+    return S_OK( siteDict )
 
   #############################################################################
   def banSiteFromMask( self, site, comment, printOutput = False ):
@@ -268,62 +308,43 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.banSiteFromMask()
+       >>> print diracAdmin.banSiteFromMask("LCG.CERN.ch", "Job can't access their data")
        {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
 
     """
-    result = self.__checkSiteIsValid( site )
-    if not result['OK']:
-      return result
-
-    mask = self.getSiteMask()
-    if not mask['OK']:
-      return mask
-    siteMask = mask['Value']
-    if not site in siteMask:
-      return S_ERROR( 'Site %s is already banned' % site )
-
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.banSite( site, comment )
-    if not result['OK']:
-      return result
-
+    result = self.__changeSiteStatus( site, comment, 'ComputingAccess', 
+                                     'Banned', printOutput=printOutput)
+    
     if printOutput:
-      print 'Removing %s from site mask' % site
-
-    return result
+      if result['OK']:
+        print 'Banning %s in site mask' % site
+      else:
+        print "Failed to update status for site %s" % site
+        
+    return result    
 
   #############################################################################
   @classmethod
   def __checkSiteIsValid( self, site ):
     """Internal function to check that a site name is valid.
     """
-    sites = getSiteCEMapping()
-    if not sites['OK']:
+    result = getSites()
+    if not result['OK']:
       return S_ERROR( 'Could not get site CE mapping' )
-    siteList = sites['Value'].keys()
-    if not site in siteList:
-      return S_ERROR( 'Specified site %s is not in list of defined sites' % site )
-
-    return S_OK( '%s is valid' % site )
-
-  #############################################################################
-  def clearMask( self ):
-    """Removes all sites from the site mask.  Should be used with care.
-
-       Example usage:
-
-       >>> print diracAdmin.clearMask()
-       {'OK': True, 'Value':''}
-
-       @return: S_OK,S_ERROR
-
-    """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.clearMask()
-    return result
+    siteList = result['Value']
+    if site in siteList:
+      return S_OK( '%s is valid' % site )
+    
+    result = getSites( fullName = True )    
+    if not result['OK']:
+      return S_ERROR( 'Could not get site CE mapping' )
+    siteList = result['Value']
+    if site in siteList:
+      return S_OK( '%s is valid' % site )
+    
+    return S_ERROR( 'Specified site %s is not in list of defined sites' % site )
 
   #############################################################################
   def getServicePorts( self, setup = '', printOutput = False ):
@@ -335,7 +356,7 @@ class DiracAdmin( API ):
        >>> print diracAdmin.getServicePorts()
        {'OK': True, 'Value':''}
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
 
     """
     if not setup:
@@ -394,7 +415,7 @@ class DiracAdmin( API ):
        >>> print diracAdmin.getProxy()
        {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
 
     """
     return gProxyManager.downloadProxy( userDN, userGroup, limited = limited,
@@ -410,7 +431,7 @@ class DiracAdmin( API ):
        >>> print diracAdmin.getVOMSProxy()
        {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
 
     """
     return gProxyManager.downloadVOMSProxy( userDN, userGroup, limited = limited,
@@ -427,7 +448,7 @@ class DiracAdmin( API ):
        >>> print diracAdmin.getVOMSProxy()
        {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :returns: S_OK,S_ERROR
 
     """
 
@@ -441,9 +462,9 @@ class DiracAdmin( API ):
        >>> print dirac.reset(12345)
        {'OK': True, 'Value': [12345]}
 
-       @param job: JobID
-       @type job: integer or list of integers
-       @return: S_OK,S_ERROR
+       :param job: JobID
+       :type job: integer or list of integers
+       :returns: S_OK,S_ERROR
 
     """
     if type( jobID ) == type( " " ):
@@ -470,9 +491,9 @@ class DiracAdmin( API ):
        >>> print dirac.getJobPilotOutput(12345)
        {'OK': True, StdOut:'',StdError:''}
 
-       @param job: JobID
-       @type job: integer or string
-       @return: S_OK,S_ERROR
+       :param job: JobID
+       :type job: integer or string
+       :returns: S_OK,S_ERROR
     """
     if not directory:
       directory = self.currentDir
@@ -523,9 +544,9 @@ class DiracAdmin( API ):
        >>> print dirac.getJobPilotOutput(12345)
        {'OK': True, 'Value': {}}
 
-       @param job: JobID
-       @type job: integer or string
-       @return: S_OK,S_ERROR
+       :param job: JobID
+       :type job: integer or string
+       :returns: S_OK,S_ERROR
     """
     if not type( gridReference ) == type( " " ):
       return self._errorReport( 'Expected string for pilot reference' )
@@ -583,9 +604,9 @@ class DiracAdmin( API ):
        >>> print dirac.getPilotInfo(12345)
        {'OK': True, 'Value': {}}
 
-       @param gridReference: Pilot Job Reference
-       @type gridReference: string
-       @return: S_OK,S_ERROR
+       :param gridReference: Pilot Job Reference
+       :type gridReference: string
+       :returns: S_OK,S_ERROR
     """
     if not type( gridReference ) == type( " " ):
       return self._errorReport( 'Expected string for pilot reference' )
@@ -601,8 +622,8 @@ class DiracAdmin( API ):
        >>> print dirac.getPilotInfo(12345)
        {'OK': True, 'Value': {}}
 
-       @param gridReference: Pilot Job Reference
-       @return: S_OK,S_ERROR
+       :param gridReference: Pilot Job Reference
+       :returns: S_OK,S_ERROR
     """
     if not type( gridReference ) == type( " " ):
       return self._errorReport( 'Expected string for pilot reference' )
@@ -618,9 +639,9 @@ class DiracAdmin( API ):
        >>> print dirac.getPilotLoggingInfo(12345)
        {'OK': True, 'Value': {"The output of the command"}}
 
-       @param gridReference: Gridp pilot job reference Id
-       @type gridReference: string
-       @return: S_OK,S_ERROR
+       :param gridReference: Gridp pilot job reference Id
+       :type gridReference: string
+       :returns: S_OK,S_ERROR
     """
     if type( gridReference ) not in types.StringTypes:
       return self._errorReport( 'Expected string for pilot reference' )
@@ -636,9 +657,9 @@ class DiracAdmin( API ):
        >>> print dirac.getJobPilots()
        {'OK': True, 'Value': {PilotID:{StatusDict}}}
 
-       @param job: JobID
-       @type job: integer or string
-       @return: S_OK,S_ERROR
+       :param job: JobID
+       :type job: integer or string
+       :returns: S_OK,S_ERROR
 
     """
     if type( jobID ) == type( " " ):
@@ -661,9 +682,9 @@ class DiracAdmin( API ):
        >>> print dirac.getPilotSummary()
        {'OK': True, 'Value': {CE:{Status:Count}}}
 
-       @param job: JobID
-       @type job: integer or string
-       @return: S_OK,S_ERROR
+       :param job: JobID
+       :type job: integer or string
+       :returns: S_OK,S_ERROR
     """
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getPilotSummary( startDate, endDate )
@@ -698,17 +719,19 @@ class DiracAdmin( API ):
                       requestType = None, status = None, operation = None, ownerDN = None,
                       ownerGroup = None, requestStart = 0, limit = 100, printOutput = False ):
     """ Select requests from the request management system. A few notes on the selection criteria:
-        - jobID is the WMS JobID for the request (if applicable)
-        - requestID is assigned during submission of the request
-        - requestName is the corresponding XML file name
-        - requestType e.g. 'transfer'
-        - status e.g. Done
-        - operation e.g. replicateAndRegister
-        - requestStart e.g. the first request to consider (start from 0 by default)
-        - limit e.g. selection limit (default 100)
+        :param jobID: is the WMS JobID for the request (if applicable)
+        :param requestID: is assigned during submission of the request
+        :param requestName: is the corresponding XML file name
+        :param requestType: e.g. 'transfer'
+        :param status: e.g. Done
+        :param operation: e.g. replicateAndRegister
+        :param requestStart: e.g. the first request to consider (start from 0 by default)
+        :param limit: e.g. selection limit (default 100)
 
-       >>> dirac.selectRequests(jobID='4894')
-       {'OK': True, 'Value': [[<Requests>]]}
+        Example::
+
+          >>> dirac.selectRequests(jobID='4894')
+          {'OK': True, 'Value': [[<Requests>]]}
     """
     options = {'RequestID':requestID, 'RequestName':requestName, 'JobID':jobID, 'OwnerDN':ownerDN,
                'OwnerGroup':ownerGroup, 'RequestType':requestType, 'Status':status, 'Operation':operation}
@@ -928,11 +951,11 @@ class DiracAdmin( API ):
   #############################################################################
   def csRegisterUser( self, username, properties ):
     """Registers a user in the CS.
-        - username: Username of the user (easy;)
-        - properties: Dict containing:
-            - DN
-            - groups : list/tuple of groups the user belongs to
-            - <others> : More properties of the user, like mail
+       :param username: Username of the user (easy;)
+       :param properties: Dict containing:
+       - DN
+       - groups : list/tuple of groups the user belongs to
+       - <others> : More properties of the user, like mail
     """
     return self.csAPI.addUser( username, properties )
 

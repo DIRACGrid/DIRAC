@@ -25,6 +25,7 @@ from DIRAC                                             import gMonitor
 from DIRAC.Core.Utilities.ThreadScheduler              import gThreadScheduler
 from DIRAC.Core.Security                               import Properties
 from DIRAC.Core.Utilities.DictCache                    import DictCache
+from DIRAC.ResourceStatusSystem.Client.SiteStatus      import SiteStatus
 
 DEBUG = 0
 
@@ -44,10 +45,25 @@ def initializeMatcherHandler( serviceInfo ):
   global gTaskQueueDB
   global gPilotAgentsDB
 
+  # Create JobDB object and initialize its tables.
   gJobDB = JobDB()
+  res = gJobDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
+  
+  # Create JobLoggingDB object and initialize its tables.
   gJobLoggingDB = JobLoggingDB()
-  gTaskQueueDB = TaskQueueDB()
+  res = gJobLoggingDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
+  
+  gTaskQueueDB   = TaskQueueDB()
+  
+  # Create PilotAgentsDB object and initialize its tables.
   gPilotAgentsDB = PilotAgentsDB()
+  res = gPilotAgentsDB._checkTable()
+  if not res[ 'OK' ]:
+    return res
 
   gMonitor.registerActivity( 'matchTime', "Job matching time",
                              'Matching', "secs" , gMonitor.OP_MEAN, 300 )
@@ -299,6 +315,7 @@ class MatcherHandler( RequestHandler ):
   def initialize( self ):
     self.__opsHelper = self.__getOpsHelper()
     self.__limiter = Limiter( self.__opsHelper )
+    self.__siteStatus = SiteStatus()
 
   def __getOpsHelper( self, setup = False, vo = False ):
     if not setup:
@@ -442,10 +459,10 @@ class MatcherHandler( RequestHandler ):
       return S_ERROR( 'Missing Site Name in Resource JDL' )
 
     # Get common site mask and check the agent site
-    result = gJobDB.getSiteMask( siteState = 'Active' )
+    result = self.__siteStatus.getUsableSites( 'ComputingAccess' )
     if not result['OK']:
       return S_ERROR( 'Internal error: can not get site mask' )
-    maskList = result['Value']
+    usableSites = result['Value']
 
     siteName = resourceDict['Site']
     if siteName not in maskList:

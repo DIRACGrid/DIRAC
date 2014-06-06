@@ -13,9 +13,68 @@ from DIRAC.Core.Utilities.List                                            import
 DEBUG = 0
 
 import os
-from types import ListType, TupleType, StringTypes
+from types import StringTypes, ListType, TupleType
 
 class FileManager(FileManagerBase):
+
+  _tables = {}
+  _tables['FC_Files'] = { "Fields": { 
+                                     "FileID": "INT AUTO_INCREMENT",
+                                     "DirID": "INT NOT NULL",
+                                     "Size": "BIGINT UNSIGNED NOT NULL",
+                                     "UID": "SMALLINT UNSIGNED NOT NULL",
+                                     "GID": "TINYINT UNSIGNED NOT NULL",
+                                     "Status": "SMALLINT UNSIGNED NOT NULL",
+                                     "FileName": "VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                    }, 
+                          "PrimaryKey": "FileID",
+                          "Indexes": {
+                                       "DirID": ["DirID"],
+                                       "UID_GID": ["UID","GID"],
+                                       "Status": ["Status"],
+                                       "FileName": ["FileName"],
+                                       "Dir_File": ["DirID","FileName"]
+                                     }  
+                                   }
+  _tables['FC_FileInfo'] = { "Fields": { 
+                                         "FileID": "INTEGER NOT NULL",
+                                         "GUID": "char(36) NOT NULL",
+                                         "Checksum": "VARCHAR(32)",
+                                         "CheckSumType": "ENUM('Adler32','MD5')",
+                                         "Type": "ENUM('File','Link') NOT NULL DEFAULT 'File'",
+                                         "CreationDate": "DATETIME",
+                                         "ModificationDate": "DATETIME",
+                                         "LastAccessDate": "DateTime",
+                                         "Mode": "SMALLINT UNSIGNED NOT NULL DEFAULT 559"
+                                       },
+                             "PrimaryKey": "FileID",
+                             "Indexes": {
+                                          "GUID": ["GUID"]  
+                                        }  
+                            }
+  _tables['FC_Replicas'] = { "Fields": { 
+                                         "RepID": "INT AUTO_INCREMENT",
+                                         "FileID": "INT NOT NULL",
+                                         "SEID": "INTEGER NOT NULL",
+                                         "Status": "SMALLINT UNSIGNED NOT NULL"
+                                       },
+                             "PrimaryKey": "RepID",
+                             "Indexes": {
+                                          "FileID": ["FileID"],
+                                          "SEID": ["SEID"],
+                                          "Status": ["Status"] 
+                                        },
+                             "UniqueIndexes": { "File_SE": ["FileID","SEID"] }
+                            } 
+  _tables['FC_ReplicaInfo'] = { "Fields": { 
+                                            "RepID": "INTEGER NOT NULL AUTO_INCREMENT",
+                                            "RepType": "ENUM ('Master','Replica') NOT NULL DEFAULT 'Master'",
+                                            "CreationDate": "DATETIME",
+                                            "ModificationDate": "DATETIME",
+                                            "PFN": "VARCHAR(1024)"
+                                          },
+                                "PrimaryKey": "RepID"
+                              } 
 
   ######################################################
   #
@@ -221,7 +280,7 @@ class FileManager(FileManagerBase):
     # Add the files
     failed = {}
     insertTuples = []
-    res = self._getStatusInt('AprioriGood',connection=connection)
+    res = self.db.getStatusInt('AprioriGood',connection=connection)
     statusID = 0
     if res['OK']:
       statusID = res['Value']
@@ -356,7 +415,7 @@ class FileManager(FileManagerBase):
     successful = {}
     insertTuples = []
     fileIDLFNs = {}
-    res = self._getStatusInt('AprioriGood')
+    res = self.db.getStatusInt('AprioriGood')
     statusID = 0
     if res['OK']:
       statusID = res['Value']
@@ -527,7 +586,7 @@ class FileManager(FileManagerBase):
     if not status in self.db.validReplicaStatus:
       return S_ERROR( 'Invalid replica status %s' % status )
     connection = self._getConnection(connection)
-    res = self._getStatusInt(status,connection=connection)
+    res = self.db.getStatusInt(status,connection=connection)
     if not res['OK']:
       return res
     statusID = res['Value']
@@ -631,14 +690,14 @@ class FileManager(FileManagerBase):
           repID = tuple_[0]
           repIDDict[repID] = dict(zip(fields,tuple_[1:])) 
           statusID = fileIDDict[repID][2]
-          res = self._getIntStatus(statusID,connection=connection)
+          res = self.db.getIntStatus(statusID,connection=connection)
           if not res['OK']:
             continue
           repIDDict[repID]['Status'] = res['Value']
       else:
         for repID in fileIDDict:
           statusID = fileIDDict[repID][2]
-          res = self._getIntStatus(statusID,connection=connection)
+          res = self.db.getIntStatus(statusID,connection=connection)
           if not res['OK']:
             continue
           repIDDict[repID] = {'Status' : res['Value'] }  

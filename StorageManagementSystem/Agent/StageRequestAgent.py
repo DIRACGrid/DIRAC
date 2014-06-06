@@ -1,15 +1,14 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, S_OK
-
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
+#from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
 from DIRAC.Core.Utilities.List                                    import sortList
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
 from DIRAC.Resources.Storage.StorageElement                       import StorageElement
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import THROTTLING_STEPS, THROTTLING_TIME
-
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources           import Resources
 import re
 
 AGENT_NAME = 'StorageManagement/StageRequestAgent'
@@ -22,6 +21,8 @@ class StageRequestAgent( AgentModule ):
     #self.storageDB = StorageManagementDB()
     # pin lifetime = 1 day
     self.pinLifetime = self.am_getOption( 'PinLifetime', THROTTLING_TIME )
+    # Resources helper
+    self.resources = Resources()
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
@@ -234,7 +235,8 @@ class StageRequestAgent( AgentModule ):
     """ Retrieve cache size for SE
     """
     if not storageElement in self.storageElementCache:
-      self.storageElementCache[storageElement] = gConfig.getValue( "/Resources/StorageElements/%s/DiskCacheTB" % storageElement, 1. ) * 1000. / THROTTLING_STEPS
+      diskCache = self.resources.getStorageElementValue( storageElement, 'DiskCacheTB', 1. )
+      self.storageElementCache[storageElement] = diskCache * 1000. / THROTTLING_STEPS
     return self.storageElementCache[storageElement]
 
   def __add( self, storageElement, size ):
@@ -477,12 +479,12 @@ class StageRequestAgent( AgentModule ):
 
   def __reportProblematicFiles( self, lfns, reason ):
     return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'StageRequestAgent' )
-    if not res['OK']:
-      gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
-      return res
-    if res['Value']['Successful']:
-      gLogger.info( "RequestPreparation.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
-    if res['Value']['Failed']:
-      gLogger.info( "RequestPreparation.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
-    return res
+    #res = self.dataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'StageRequestAgent' )
+    #if not res['OK']:
+    #  gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
+    #  return res
+    #if res['Value']['Successful']:
+    #  gLogger.info( "RequestPreparation.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
+    #if res['Value']['Failed']:
+    #  gLogger.info( "RequestPreparation.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
+    #return res

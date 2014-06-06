@@ -1,8 +1,3 @@
-########################################################################
-# $HeadURL: $
-# File :   JobSchedulingAgent.py
-########################################################################
-
 """   The Job Scheduling Agent takes the information gained from all previous
       optimizers and makes a scheduling decision for the jobs.  Subsequent to this
       jobs are added into a Task Queue by the next optimizer and pilot agents can
@@ -13,20 +8,22 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: $"
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
-from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
-from DIRAC.Core.Utilities.Time import fromString, toEpoch
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-from DIRAC.Resources.Storage.StorageElement                    import StorageElement
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources        import getSiteTier
-from DIRAC.ConfigurationSystem.Client.Helpers                  import Registry
-from DIRAC.Core.Security                                       import Properties
-
-
+import types
 import random
+
+from DIRAC                                                          import S_OK, S_ERROR
+from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
+from DIRAC.Core.Utilities.Time                                      import fromString, toEpoch
+from DIRAC.Core.Utilities                                           import List
+from DIRAC.Core.Security                                            import Properties
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources             import getSiteTier
+from DIRAC.ConfigurationSystem.Client.Helpers                       import Registry
+from DIRAC.Resources.Storage.StorageElement                         import StorageElement
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import StorageManagerClient
+from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                   import SiteStatus
+
 
 class JobScheduling( OptimizerExecutor ):
   """
@@ -49,11 +46,12 @@ class JobScheduling( OptimizerExecutor ):
       cls.__jobDB = JobDB()
     except RuntimeError:
       return S_ERROR( "Cannot connect to JobDB" )
+
+    cls.ex_setOption( "FailedStatus", "Cannot schedule" )
     return S_OK()
 
-
-  def optimizeJob( self, jid, jobState ):
-    #Reschedule delay
+  def __checkReschedules( self, jobState ):
+    # Reschedule delay
     result = jobState.getAttributes( [ 'RescheduleCounter', 'RescheduleTime', 'ApplicationStatus' ] )
     if not result[ 'OK' ]:
       return result
@@ -65,39 +63,76 @@ class JobScheduling( OptimizerExecutor ):
     if reschedules != 0:
       delays = self.ex_getOption( 'RescheduleDelays', [60, 180, 300, 600] )
       delay = delays[ min( reschedules, len( delays ) - 1 ) ]
-      waited = toEpoch() - toEpoch( fromString( attDict[ 'RescheduleTime' ] ) )
+      reschTime = attDict[ 'RescheduleTime' ]
+      if type( reschTime ) == types.StringType:
+        reschTime = fromString( reschTime )
+      waited = toEpoch() - toEpoch( reschTime )
       if waited < delay:
-        return self.__holdJob( jobState, 'On Hold: after rescheduling %s' % reschedules, delay )
+        raise OptimizerExecutor.FreezeTask( 'On Hold: after rescheduling %s' % reschedules, delay )
+    return result
 
-    #Get site requirements
-    result = self.__getSitesRequired( jobState )
+  def _getSitesRequired( self, jobState ):
+    """Returns any candidate sites specified by the job or sites that have been
+       banned and could affect the scheduling decision.
+    """
+
+    result = jobState.getManifest()
+    if not result[ 'OK' ]:
+      return S_ERROR( "Could not retrieve manifest: %s" % result[ 'Message' ] )
+    manifest = result[ 'Value' ]
+
+    banned = set( manifest.getOption( "BannedSites", [] ) )
+    if banned:
+      self.jobLog.info( "Banned %s sites" % ", ".join( banned ) )
+
+    sites = manifest.getOption( "Site", [] )
+    sites = set( [ site for site in sites if site.strip().lower() not in ( "any", "" ) ] )
+
+    if len( sites ) == 1:
+      self.jobLog.info( 'Single chosen site %s specified' % ( list(sites)[0] ) )
+
+    if sites and banned:
+      sites = set.difference( banned )
+      if not sites:
+        return S_ERROR( "Impossible site requirement" )
+
+    return S_OK( ( sites, banned ) )
+
+  def optimizeJob( self, jid, jobState ):
+    result = self.__checkReschedules( jobState )
+    if not result[ 'OK' ]:
+      return result
+    # Get site requirements
+    result = self._getSitesRequired( jobState )
     if not result[ 'OK' ]:
       return result
     userSites, userBannedSites = result[ 'Value' ]
 
-    #Get active and banned sites from DIRAC
-    result = self.__jobDB.getSiteMask( 'Active' )
+    # Get active and banned sites from DIRAC
+    siteStatus = SiteStatus()
+    result = siteStatus.getUsableSites( 'ComputingAccess' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve active sites from JobDB" )
-    wmsActiveSites = result[ 'Value' ]
-    result = self.__jobDB.getSiteMask( 'Banned' )
+    usableSites = result[ 'Value' ]
+    result = siteStatus.getUnusableSites( 'ComputingAccess' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve banned sites from JobDB" )
-    wmsBannedSites = result[ 'Value' ]
+    unusableSites = result[ 'Value' ]
 
-    #If the user has selected any site, filter them and hold the job if not able to run
+    # If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
       result = jobState.getAttribute( "JobType" )
       if not result[ 'OK' ]:
         return S_ERROR( "Could not retrieve job type" )
       jobType = result[ 'Value' ]
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
-        sites = self.__applySiteFilter( userSites, wmsActiveSites, wmsBannedSites )
+        sites = userSites.intersection( usableSites ).difference( unusableSites )
         if not sites:
           if len( userSites ) > 1:
-            return self.__holdJob( jobState, "Requested sites %s are inactive" % ",".join( userSites ) )
+            raise OptimizerExecutor.FreezeTask( "Requested sites %s are inactive" % ", ".join( userSites ) )
           else:
-            return self.__holdJob( jobState, "Requested site %s is inactive" % userSites[0] )
+            raise OptimizerExecutor.FreezeTask( "Requested site %s is inactive" % userSites[0] )
+          
 
     #Get the Input data
     # Third, check if there is input data
@@ -215,37 +250,22 @@ class JobScheduling( OptimizerExecutor ):
     """Returns any candidate sites specified by the job or sites that have been
        banned and could affect the scheduling decision.
     """
-
-    result = jobState.getManifest()
+    result = jobState.getOptParameters()
     if not result[ 'OK' ]:
-      return S_ERROR( "Could not retrieve manifest: %s" % result[ 'Message' ] )
-    manifest = result[ 'Value' ]
+      self.jobLog.error( "Can't retrieve optimizer parameters: %s" % result[ 'Value' ] )
+      return S_ERROR( "Cant retrieve optimizer parameters" )
 
-    bannedSites = manifest.getOption( "BannedSites", [] )
-    if not bannedSites:
-      bannedSites = manifest.getOption( "BannedSite", [] )
-    if bannedSites:
-      self.jobLog.info( "Banned %s sites" % ", ".join( bannedSites ) )
+    dataSites = result[ 'Value' ].get( "DataSites", "" )
+    if dataSites:
+      dataSites = set( List.fromChar( dataSites ) )
+      if userSites:
+        userSites.intersection( dataSites )
+      else:
+        userSites = dataSites
 
-    sites = manifest.getOption( "Site", [] )
-    #TODO: Only accept known sites after removing crap like ANY set in the original manifest
-    sites = [ site for site in sites if site.strip().lower() not in ( "any", "" ) ]
+    #HERE
 
-    if len( sites ) == 1:
-      self.jobLog.info( 'Single chosen site %s specified' % ( sites[0] ) )
-
-    if sites:
-      sites = self.__applySiteFilter( sites, banned = bannedSites )
-      if not sites:
-        return S_ERROR( "Impossible site requirement" )
-
-    return S_OK( ( sites, bannedSites ) )
-
-
-  def __sendToTQ( self, jobState, sites, bannedSites ):
-    """This method sends jobs to the task queue agent and if candidate sites
-       are defined, updates job JDL accordingly.
-    """
+    #Fill in the JobRequirements section
     result = jobState.getManifest()
     if not result[ 'OK' ]:
       return S_ERROR( "Could not retrieve manifest: %s" % result[ 'Message' ] )
@@ -258,32 +278,60 @@ class JobScheduling( OptimizerExecutor ):
     else:
       result = manifest.createSection( reqSection )
     if not result[ 'OK' ]:
-      self.jobLog.error( "Cannot create %s: %s" % reqSection, result[ 'Value' ] )
+      self.jobLog.error( "Cannot create %s: %s" % ( reqSection, result[ 'Message' ] ) )
       return S_ERROR( "Cannot create %s in the manifest" % reqSection )
     reqCfg = result[ 'Value' ]
 
-    if sites:
-      reqCfg.setOption( "Sites", ", ".join( sites ) )
-    if bannedSites:
-      reqCfg.setOption( "BannedSites", ", ".join( bannedSites ) )
+    targetSEs = manifest.getOption( "TargetSEs", "" )
+    if targetSEs:
+      reqCfg.setOption( "SEs", targetSEs )
+    elif userSites:
+      reqCfg.setOption( "Sites", ", ".join( userSites ) )
+    if userBannedSites:
+      reqCfg.setOption( "BannedSites", ", ".join( userBannedSites ) )
 
-    # Job multivalue requirement keys are specified as singles in the job descriptions
-    # but for backward compatibility can be also plurals
-    for key in ( 'SubmitPools', "SubmitPool", "GridMiddleware", "PilotTypes", "PilotType", 
-                 "JobType", "GridRequiredCEs", "GridCE", "Tags" ):
-      reqKey = key
+    for key in ( 'SubmitPools', "GridMiddleware", "PilotTypes", "JobType", "GridRequiredCEs",
+                 "OwnerDN", "OwnerGroup", "VirtualOrganization", 'Priority', 'DIRACSetup',
+                 'CPUTime', 'Tags' ):
       if key == "JobType":
         reqKey = "JobTypes"
       elif key == "GridRequiredCEs" or key == "GridCE":
         reqKey = "GridCEs"
+      elif key == 'Priority':
+        reqkey = 'UserPriority'
+      elif key == "DIRACSetup":
+        reqKey = 'Setup'
       elif key == "SubmitPools" or key == "SubmitPool":
         reqKey = "SubmitPools"    
       elif key == "PilotTypes" or key == "PilotType":
-        reqKey = "PilotTypes"  
-      if key in manifest:
-        reqCfg.setOption( reqKey, ", ".join( manifest.getOption( key, [] ) ) )
+        reqKey = "PilotTypes"    
+      else:
+        reqKey = key
 
-    result = self.__setJobSite( jobState, sites )
+      if key in manifest:
+        reqCfg.setOption( reqKey, manifest.getOption( key, "" ) )
+
+    #Platform
+    userPlatform = manifest.getOption( "Platform" )
+    if userPlatform and userPlatform != 'any':
+      preqs = [ userPlatform ]
+      result = gConfig.getOptionsDict( "/Resources/Computing/OSCompatibility" )
+      if result[ 'OK' ]:
+        compatDict = result[ 'Value' ]
+        for compatPlatform in compatDict:
+          if compatPlatform != userPlatform:
+            if userPlatform in List.fromChar( compatDict[ compatPlatform ] ):
+              preqs.append( compatPlatform )
+      reqCfg.setOption( "Platforms", ", ".join( preqs ) )
+
+    #TODO: FIX THIS CRAP!
+    self._setJobSite( jobState, userSites )
+
+    result = jobState.setStatus( self.ex_getOption( 'WaitingStatus', 'Waiting' ),
+                                 minorStatus = self.ex_getOption( 'WaitingMinorStatus',
+                                                                  'Pilot Agent Submission' ),
+                                 appStatus = "Unknown",
+                                 source = self.ex_optimizerName() )
     if not result[ 'OK' ]:
       return result
 
@@ -477,54 +525,56 @@ class JobScheduling( OptimizerExecutor ):
 
     return S_OK()
 
+    self.jobLog.info( "Done" )
+    return self.sendJobToTQ()
 
-  def __setJobSite( self, jobState, siteList ):
+  def _setJobSite( self, jobState, siteList ):
     """ Set the site attribute
     """
+    site = self._getJobSite( siteList )
+    return jobState.setAttribute( "Site", site )
+
+  def _getJobSite( self, siteList ):
+    """ get the Job site
+    """
+    siteList = list( siteList )
     numSites = len( siteList )
-    if numSites == 0:
+    if numSites == 0 or numSites == 1 and not siteList[0]:
       self.jobLog.info( "Any site is candidate" )
-      return jobState.setAttribute( "Site", "ANY" )
+      return "ANY"
     elif numSites == 1:
       self.jobLog.info( "Only site %s is candidate" % siteList[0] )
-      return jobState.setAttribute( "Site", siteList[0] )
+      return siteList[0]
+    else:
+      tierSite = []
+      siteTierDict = self._getSiteTiers( siteList )
+      for site, tier in siteTierDict.iteritems():
+        if tier == min( siteTierDict.values() ):
+          tierSite.append( site )
 
-    tierSite = []
-    tierLevel = -1
+      if len( tierSite ) == 1:
+        siteName = "Group.%s" % ".".join( tierSite[0].split( "." )[1:] )
+        self.jobLog.info( "Group %s is candidate" % siteName )
+      else:
+        siteName = "Multiple"
+        self.jobLog.info( "Multiple sites are candidate" )
+
+      return siteName
+
+  def _getSiteTiers( self, siteList ):
+    """ retun dict {'Site':Tier}
+    """
+    siteTierDict = {}
     for siteName in siteList:
       result = getSiteTier( siteName )
       if not result[ 'OK' ]:
         self.jobLog.error( "Cannot get tier for site %s" % ( siteName ) )
-        continue
-      siteTier = result[ 'Value' ]
+        siteTier = 2
+      else:
+        siteTier = int( result[ 'Value' ] )
+      siteTierDict.setdefault( siteName, siteTier )
 
-      # FIXME: hack for cases where you get a T0 together with T1(s) in the list of sites and you want to see "multiple"
-      if siteTier == 0:
-        siteTier = 1
-
-      if tierLevel == -1 or tierLevel > siteTier:
-        tierLevel = siteTier
-        tierSite = []
-      if tierLevel == siteTier:
-        tierSite.append( siteName )
-
-    if len( tierSite ) == 1:
-      siteName = "Group.%s" % ".".join( tierSite[0].split( "." )[1:] )
-      self.jobLog.info( "Group %s is candidate" % siteName )
-    else:
-      siteName = "Multiple"
-      self.jobLog.info( "Multiple sites are candidate" )
-
-    return jobState.setAttribute( "Site", siteName )
-
-  def __checkStageAllowed( self, jobState):
-    """Check if the job credentials allow to stage date """
-    result = jobState.getAttribute( "OwnerGroup" )
-    if not result[ 'OK' ]:
-      self.jobLog.error( "Cannot retrieve OwnerGroup from DB: %s" % result[ 'Message' ] )
-      return S_ERROR( "Cannot get OwnerGroup" )
-    group = result[ 'Value' ]
-    return Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup( group )
+    return siteTierDict
 
 
 

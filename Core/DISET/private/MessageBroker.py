@@ -27,6 +27,7 @@ class MessageBroker:
     self.__trInOutLock = threading.Lock()
     self.__msgFactory = MessageFactory()
     self.__log = gLogger.getSubLogger( "MSGBRK" )
+    self.__listenThread = None
     if not transportPool:
       transportPool = getGlobalTransportPool()
     self.__trPool = transportPool
@@ -68,7 +69,7 @@ class MessageBroker:
       gLogger.exception( "Cannot add transport id" )
       result = S_ERROR( "Cannot add transport id" )
     if not result[ 'OK' ]:
-      self.__trPool.remove( trid )
+      self.__trPool.close( trid )
       return result
     return S_OK( trid )
 
@@ -106,8 +107,7 @@ class MessageBroker:
   # Listen to connections
 
   def __startListeningThread( self ):
-    threadDead = self.__listeningForMessages and not self.__listenThread.isAlive()
-    if not self.__listeningForMessages or threadDead:
+    if self.__listenThread is None or not self.__listenThread.isAlive() or not self.__listeningForMessages:
       self.__listeningForMessages = True
       self.__listenThread = threading.Thread( target = self.__listenAutoReceiveConnections )
       self.__listenThread.setDaemon( True )

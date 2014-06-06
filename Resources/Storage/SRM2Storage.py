@@ -1677,6 +1677,26 @@ class SRM2Storage( StorageBase ):
 
     return S_OK( protocolsList )
 
+  def getCurrentStatus(self):
+    """ Get the current status (lcg_stmd), needed for RSS
+    """
+    res = self.__importExternals()
+    if not res['OK']:
+      return S_ERROR("Cannot import externals")
+    if not self.spaceToken:
+      return S_ERROR("Space token not defined for SE")
+    #make the endpoint
+    endpoint = 'httpg://%s:%s%s' % ( self.host, self.port, self.wspath )
+    endpoint = endpoint.replace( '?SFN=', '' )
+    res = pythonCall(10, self.lcg_util.lcg_stmd, self.spaceToken, endpoint, 1, 0)
+    if not res['OK']:
+      return res
+    status, resdict, errmessage = res['Value']
+    if status != 0:
+      return S_ERROR("lcg_util.lcg_stmd failed: %s" % errmessage)
+    
+    return S_OK(resdict[0])
+
 #######################################################################
 #
 # These methods wrap the gfal functionality with the accounting. All these are based on __gfal_operation_wrapper()

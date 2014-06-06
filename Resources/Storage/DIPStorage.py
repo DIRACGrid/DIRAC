@@ -600,4 +600,15 @@ class DIPStorage( StorageBase ):
 
     return S_OK( res['Value']['Successful'][url] )
 
-
+  def getCurrentStatus(self):
+    """ Ask the server the current status (disk usage). Needed for RSS
+    """
+    serviceClient = RPCClient( self.url )
+    res = serviceClient.getAdminInfo()
+    if not res['OK']:
+      return res
+    se_status = {}
+    se_status['totalsize'] = res['Value']['AvailableSpace'] + res['Value']['UsedSpace']
+    se_status['unusedsize'] = res['Value']['AvailableSpace']
+    se_status['guaranteedsize'] = res['Value']['MaxCapacity']
+    return S_OK(se_status)

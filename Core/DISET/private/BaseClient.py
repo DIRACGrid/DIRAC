@@ -214,6 +214,12 @@ and this is thread %s
 
 
   def _connect( self ):
+    deco = self.__threadConfig.getDecorator()
+    if callable( deco ):
+      return deco( self.__innerConnect )()
+    return self.__innerConnect()
+
+  def __innerConnect( self ):
     self.__discoverExtraCredentials()
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus

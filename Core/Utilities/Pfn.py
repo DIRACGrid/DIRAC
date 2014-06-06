@@ -1,18 +1,20 @@
 # $HeadURL$
 
-""" :mod: Pfn 
-    =========
+''' 
+:mod: Pfn 
  
-    .. module: Pfn
-    :synopsis: pfn URI (un)parsing
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-"""
+.. module: Pfn
+
+:synopsis: pfn URI (un)parsing
+
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+'''
 
 __RCSID__ = "$Id$"
 
 ## imports
 import os
-import re
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 

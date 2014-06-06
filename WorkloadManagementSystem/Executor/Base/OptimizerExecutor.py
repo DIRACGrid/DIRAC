@@ -1,12 +1,41 @@
 import threading
-#Because eval(valenc) might require it
+# Because eval(valenc) might require it
 import datetime
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DEncode, List
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
+from DIRAC.WorkloadManagementSystem.Client.JobState.OptimizationTask import OptimizationTask
 
 class OptimizerExecutor( ExecutorModule ):
+
+
+  class FreezeTask( Exception ):
+    def __init__( self, msg, secs = 0 ):
+      self.__msg = msg
+      self.__secs = secs
+    @property
+    def freezeTime( self ):
+      return self.__secs
+    @property
+    def msg( self ):
+      return self.__msg
+
+  class TQTask( Exception ):
+    def __init__( self, msg ):
+      self.__msg = msg
+    @property
+    def msg( self ):
+      return self.__msg
+
+  class SplitTask( Exception ):
+    def __init__( self, manifests ):
+      self.__manifests = manifests
+    @property
+    def manifests( self ):
+      return self.__manifests
+
 
   class JobLog:
 
@@ -35,7 +64,6 @@ class OptimizerExecutor( ExecutorModule ):
     def __getattr__( self, name ):
       return self.LogWrap( self.__log, self.__jid, name )
 
-
   @classmethod
   def initialize( cls ):
     opName = cls.ex_getProperty( 'fullName' )
@@ -45,10 +73,10 @@ class OptimizerExecutor( ExecutorModule ):
     cls.__optimizerName = opName
     maxTasks = cls.ex_getOption( 'Tasks', 1 )
     cls.__jobData = threading.local()
-
     cls.__jobData.jobState = None
     cls.__jobData.jobLog = None
     cls.ex_setProperty( 'optimizerName', cls.__optimizerName )
+    cls.ex_setOption( "FailedStatus", cls.__optimizerName )
     try:
       result = cls.initializeOptimizer()
       if not result[ 'OK' ]:
@@ -63,28 +91,55 @@ class OptimizerExecutor( ExecutorModule ):
   def ex_optimizerName( cls ):
     return cls.__optimizerName
 
-  def initializeOptimizer( self ):
+  @classmethod
+  def initializeOptimizer( cls ):
     return S_OK()
 
-  def processTask( self, jid, jobState ):
+
+  def setManifestsFromParametric( self, manifestList ):
+    self.disableFastTrackForTask()
+    self.__jobData.task.setParametricManifests( manifestList )
+
+  def processTask( self, jid, taskObj ):
+    jobState = taskObj.jobState
+    self.__jobData.task = taskObj
     self.__jobData.jobState = jobState
     self.__jobData.jobLog = self.JobLog( self.log, jid )
     try:
       self.jobLog.info( "Processing" )
-      optResult = self.optimizeJob( jid, jobState )
+      try:
+        optResult = self.optimizeJob( jid, jobState )
+      except self.FreezeTask, excp:
+        fT = excp.freezeTime
+        if fT == 0:
+          fT = self.ex_getOption( "HoldTime", 600 )
+        self.freezeTask( fT )
+        self.jobLog.info( "On hold -> %s" % excp.msg )
+        jobState.setAppStatus( excp.msg, source = self.ex_optimizerName() )
+        optResult = S_OK()
+      except self.TQTask:
+        taskObj.setTQReady()
+        optResult = S_OK()
+      except self.SplitTask, excp:
+        taskObj.splitJobInto( excp.manifests )
+        optResult = S_OK()
+      if not isReturnStructure( optResult ):
+        raise RuntimeError( "Executor does not return S_OK/S_ERROR!" )
+      # Did it go as expected? If not Failed!
+      if not optResult[ 'OK' ]:
+        self.jobLog.info( "Set to Failed/%s" % optResult[ 'Message' ] )
+        minorStatus = self.ex_getOption( "FailedStatus" )
+        return jobState.setStatus( "Failed", minorStatus = minorStatus,
+                                   appStatus = optResult[ 'Message' ],
+                                   source = self.ex_optimizerName() )
       #If the manifest is dirty, update it!
       result = jobState.getManifest()
       if not result[ 'OK' ]:
         return result
       manifest = result[ 'Value' ]
       if manifest.isDirty():
+        manifest.expand()
         jobState.setManifest( manifest )
-      #Did it go as expected? If not Failed!
-      if not optResult[ 'OK' ]:
-        self.jobLog.info( "Set to Failed/%s" % optResult[ 'Message' ] )
-        minorStatus = "%s optimizer" % self.ex_optimizerName()
-        return jobState.setStatus( "Failed", optResult[ 'Message' ], source = self.ex_optimizerName() )
-
       return S_OK()
     finally:
       self.__jobData.jobState = None
@@ -92,6 +147,12 @@ class OptimizerExecutor( ExecutorModule ):
 
   def optimizeJob( self, jid, jobState ):
     raise Exception( "You need to overwrite this method to optimize the job!" )
+
+  def sendJobToTQ( self ):
+    raise self.TQTask( "Sending job to TaskQueue" )
+
+  def splitJob( self, manifests ):
+    raise self.SplitTask( manifests )
 
   def setNextOptimizer( self, jobState = None ):
     if not jobState:
@@ -106,21 +167,9 @@ class OptimizerExecutor( ExecutorModule ):
     except ValueError:
       return S_ERROR( "Optimizer %s is not in the chain!" % opName )
     chainLength = len( opChain )
-    if chainLength - 1 == opIndex:
-      #This is the last optimizer in the chain!
-      result = jobState.setStatus( self.ex_getOption( 'WaitingStatus', 'Waiting' ),
-                                   minorStatus = self.ex_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ),
-                                   appStatus = "Unknown",
-                                   source = opName )
-      if not result[ 'OK' ]:
-        return result
-
-      result = jobState.insertIntoTQ()
-      if not result[ 'OK' ]:
-        return result
-
-      return S_OK()
-    #Keep optimizing!
+    if opIndex == chainLength - 1:
+      return self.sendJobToTQ()
+    # Keep optimizing!
     nextOp = opChain[ opIndex + 1 ]
     self.jobLog.info( "Set to Checking/%s" % nextOp )
     return jobState.setStatus( "Checking", nextOp, source = opName )
@@ -149,20 +198,27 @@ class OptimizerExecutor( ExecutorModule ):
 
   @property
   def jobLog( self ):
-    if not self.__jobData.jobLog:
-      raise RuntimeError( "jobLog can only be invoked inside the optimizeJob function" )
+    try:
+      if not self.__jobData.jobLog:
+        raise RuntimeError( "jobLog can only be invoked inside the optimizeJob function" )
+    except AttributeError:
+      return gLogger
     return self.__jobData.jobLog
 
   def deserializeTask( self, taskStub ):
-    return CachedJobState.deserialize( taskStub )
+    return OptimizationTask.deserialize( taskStub )
 
-  def serializeTask( self, cjs ):
-    return S_OK( cjs.serialize() )
+  def serializeTask( self, taskObj ):
+    return S_OK( taskObj.serialize() )
 
-  def fastTrackDispatch( self, jid, jobState ):
+  def fastTrackDispatch( self, jid, taskObj ):
+    jobState = taskObj.jobState
     result = jobState.getStatus()
     if not result[ 'OK' ]:
       return S_ERROR( "Could not retrieve job status for %s: %s" % ( jid, result[ 'Message' ] ) )
+    if taskObj.splitManifests:
+      self.log.info( "Job has been split. Avoid fast track" )
+      return S_OK()
     status, minorStatus = result[ 'Value' ]
     if status != "Checking":
       self.log.info( "[JID %s] Not in checking state. Avoid fast track" % jid )

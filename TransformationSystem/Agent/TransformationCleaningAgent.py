@@ -16,10 +16,10 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
 from DIRAC.Resources.Catalog.FileCatalogClient                import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient          import WMSClient
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Storage.StorageElement         import StorageElement
-from DIRAC.Resources.Utilities import Utils
-from DIRAC.Resources.Catalog.FileCatalog            import FileCatalog
+from DIRAC.DataManagementSystem.Client.DataManager            import DataManager
+from DIRAC.Resources.Storage.StorageElement                   import StorageElement
+from DIRAC.Core.Utilities.ReturnValues                        import returnSingleResult
+from DIRAC.Resources.Catalog.FileCatalog                      import FileCatalog
 
 # FIXME: double client: only ReqClient will survive in the end
 from DIRAC.RequestManagementSystem.Client.RequestClient       import RequestClient
@@ -200,7 +200,7 @@ class TransformationCleaningAgent( AgentModule ):
       self.log.info( "No output directories found" )
     directories = sorted( directories )
     return S_OK( directories )
-
+  # FIXME If a classmethod, should it not have cls instead of self?
   @classmethod
   def _addDirs( self, transID, newDirs, existingDirs ):
     """ append uniqe :newDirs: list to :existingDirs: list
@@ -254,7 +254,7 @@ class TransformationCleaningAgent( AgentModule ):
       return S_ERROR( 'Failed to obtain directory PFN from LFNs' )
     storageDirectory = res['Value']['Successful'][directory]
 
-    res = Utils.executeSingleFileOrDirWrapper( se.exists( storageDirectory ) )
+    res = returnSingleResult( se.exists( storageDirectory ) )
     if not res['OK']:
       self.log.error( "Failed to obtain existance of directory", res['Message'] )
       return res
@@ -262,7 +262,7 @@ class TransformationCleaningAgent( AgentModule ):
     if not exists:
       self.log.info( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
-    res = Utils.executeSingleFileOrDirWrapper( se.removeDirectory( storageDirectory, recursive = True ) )
+    res = returnSingleResult( se.removeDirectory( storageDirectory, recursive = True ) )
     if not res['OK']:
       self.log.error( "Failed to remove storage directory", res['Message'] )
       return res
@@ -313,7 +313,7 @@ class TransformationCleaningAgent( AgentModule ):
     fc = FileCatalog()
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
-      res = Utils.executeSingleFileOrDirWrapper( fc.listDirectory( currentDir ) )
+      res = returnSingleResult( fc.listDirectory( currentDir ) )
       activeDirs.remove( currentDir )
       if not res['OK'] and res['Message'].endswith( 'The supplied path does not exist' ):
         self.log.info( "The supplied directory %s does not exist" % currentDir )
@@ -336,7 +336,7 @@ class TransformationCleaningAgent( AgentModule ):
     :param str directory: folder name
     """
     self.log.info( "Removing log files found in the directory %s" % directory )
-    res = Utils.executeSingleFileOrDirWrapper( StorageElement( self.logSE ).removeDirectory( directory ) )
+    res = returnSingleResult( StorageElement( self.logSE ).removeDirectory( directory ) )
     if not res['OK']:
       self.log.error( "Failed to remove log files", res['Message'] )
       return res

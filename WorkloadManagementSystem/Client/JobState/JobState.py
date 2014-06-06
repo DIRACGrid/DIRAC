@@ -486,6 +486,19 @@ class JobState( object ):
   def getInputData( self ):
     return JobState.__db.job.getInputData( self.__jid )
 
+  @classmethod
+  def checkInputDataStructure( self, pDict ):
+    if type( pDict ) != types.DictType:
+      return S_ERROR( "Input data has to be a dictionary" )
+    for lfn in pDict:
+      if 'Replicas' not in pDict[ lfn ]:
+        return S_ERROR( "Missing replicas for lfn %s" % lfn )
+        replicas = pDict[ lfn ][ 'Replicas' ]
+        for seName in replicas:
+          if 'SURL' not in replicas or 'Disk' not in replicas:
+            return S_ERROR( "Missing SURL or Disk for %s:%s replica" % ( seName, lfn ) )
+    return S_OK()
+
   right_setInputData = RIGHT_GET_INFO
   @RemoteMethod
   def set_InputData( self, lfnData ):

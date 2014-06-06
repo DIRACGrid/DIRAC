@@ -23,9 +23,10 @@ from DIRAC.Core.Utilities.Time                                 import fromString
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement                    import StorageElement
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources        import getSiteTier
+from DIRAC.Core.Utilities                                      import List  
+from DIRAC.ResourceStatusSystem.Client.SiteStatus              import SiteStatus               
 
-
-from DIRAC                                                     import S_OK, S_ERROR, List
+from DIRAC                                                     import S_OK, S_ERROR
 
 import random
 
@@ -88,22 +89,25 @@ class JobSchedulingAgent( OptimizerModule ):
         msg = 'Impossible Site Requirement'
         return S_ERROR( msg )
 
-    # Second, get the Active and Banned sites from the WMS
+    # Second, get the Active and Banned sites from the RSS
 
-    wmsSites = self.jobDB.getSiteMask( 'Active' )
-    wmsBannedSites = self.jobDB.getSiteMask( 'Banned' )
-    if not ( wmsSites['OK'] and wmsBannedSites['OK'] ):
-      if not wmsSites['OK']:
-        self.log.error( wmsSites['Message'] )
-      if not wmsBannedSites['OK']:
-        self.log.error( wmsBannedSites['Message'] )
+    siteStatus = SiteStatus()
+    
+    usableSites   = siteStatus.getUsableSites( 'ComputingAccess' )
+    unusableSites = siteStatus.getUnusableSites( 'ComputingAccess' )
+    
+    if not ( usableSites['OK'] and unusableSites['OK'] ):
+      if not usableSites['OK']:
+        self.log.error( usableSites['Message'] )
+      if not unusableSites['OK']:
+        self.log.error( unusableSites['Message'] )
       return S_ERROR( 'Can not get Active and Banned Sites from JobDB' )
 
-    wmsSites = wmsSites['Value']
-    wmsBannedSites = wmsBannedSites['Value']
+    usableSites   = usableSites['Value']
+    unusableSites = unusableSites['Value']
 
     if userSites:
-      sites = applySiteRequirements( userSites, wmsSites, wmsBannedSites )
+      sites = applySiteRequirements( userSites, usableSites, unusableSites )
       if not sites:
         # Put on Hold only non-excluded job types
         jobType = classAdJob.getAttributeString( 'JobType' )
@@ -154,7 +158,7 @@ class JobSchedulingAgent( OptimizerModule ):
       msg = 'Impossible Site + InputData Requirement'
       return S_ERROR( msg )
 
-    sites = applySiteRequirements( optSites, wmsSites, wmsBannedSites )
+    sites = applySiteRequirements( optSites, usableSites, unusableSites )
     if not sites:
       msg = 'On Hold: InputData Site is Banned or not Active'
       self.log.info( msg )
@@ -526,14 +530,15 @@ class JobSchedulingAgent( OptimizerModule ):
     """Returns list of site candidates that are in current mask.
     """
 
-    result = self.jobDB.getSiteMask()
+    siteStatus = SiteStatus()
+    result     = siteStatus.getUsableSites( 'ComputingAccess' )  
     if not result['OK']:
       return S_ERROR( 'Could not get site mask' )
 
     sites = []
-    allowedSites = result['Value']
+    usableSites = result['Value']
     for candidate in siteCandidates:
-      if not candidate in allowedSites:
+      if not candidate in usableSites:
         self.log.verbose( '%s is a candidate site for job %s but not in mask' % ( candidate, job ) )
       else:
         sites.append( candidate )

@@ -9,8 +9,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
 from DIRAC.Resources.Utilities.Utils                        import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import Resources
 
-class FileCatalog:
+class FileCatalog( object ):
 
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
@@ -28,10 +29,10 @@ class FileCatalog:
     self.timeout = 180
     self.readCatalogs = []
     self.writeCatalogs = []
-    self.rootConfigPath = '/Resources/FileCatalogs'
     self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
     if self.vo:
       self.opHelper = Operations( vo = self.vo )
+      self.reHelper = Resources( vo = self.vo ) 
       if type( catalogs ) in types.StringTypes:
         catalogs = [catalogs]
       if catalogs:
@@ -41,7 +42,7 @@ class FileCatalog:
       if not res['OK']:
         self.valid = False
       elif ( len( self.readCatalogs ) == 0 ) and ( len( self.writeCatalogs ) == 0 ):
-        self.valid = False
+        self.valid = False  
     else:
       self.valid = False
 
@@ -184,15 +185,20 @@ class FileCatalog:
   def _getCatalogs( self ):
 
     # Get the eligible catalogs first
-    # First, look in the Operations, if nothing defined look in /Resources for backward compatibility
+    # First, look in the Operations, if nothing defined look in /Resources 
     result = self.opHelper.getSections( '/Services/Catalogs' )
     fileCatalogs = []
     operationsFlag = False
+    optCatalogDict = {}
     if result['OK']:
-      fileCatalogs = result['Value']
+      fcs = result['Value']
+      for fc in fcs:
+        fName = self.opHelper.getValue( '/Services/Catalogs/%s/CatalogName' % fc, fc )
+        fileCatalogs.append( fName )
+        optCatalogDict[fName] = fc
       operationsFlag = True
-    else:
-      res = gConfig.getSections( self.rootConfigPath, listOrdered = True )
+    else:   
+      res = self.reHelper.getEligibleResources( 'Catalog' )
       if not res['OK']:
         errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
         gLogger.error( errStr, res['Message'] )
@@ -206,7 +212,7 @@ class FileCatalog:
         return res
       catalogConfig = res['Value']
       if operationsFlag:
-        result = self.opHelper.getOptionsDict( '/Services/Catalogs/%s' % catalogName )
+        result = self.opHelper.getOptionsDict( '/Services/Catalogs/%s' % optCatalogDict[catalogName] )
         if not result['OK']:
           return result
         catalogConfig.update( result['Value'] )
@@ -232,17 +238,13 @@ class FileCatalog:
 
   def _getCatalogConfigDetails( self, catalogName ):
     # First obtain the options that are available
-    catalogConfigPath = '%s/%s' % ( self.rootConfigPath, catalogName )
-    res = gConfig.getOptions( catalogConfigPath )
-    if not res['OK']:
-      errStr = "FileCatalog._getCatalogConfigDetails: Failed to get catalog options."
+    
+    result = self.reHelper.getCatalogOptionsDict( catalogName )
+    if not result['OK']:
+      errStr = "FileCatalog._getCatalogConfigDetails: Failed to get catalog options"
       gLogger.error( errStr, catalogName )
       return S_ERROR( errStr )
-    catalogConfig = {}
-    for option in res['Value']:
-      configPath = '%s/%s' % ( catalogConfigPath, option )
-      optionValue = gConfig.getValue( configPath )
-      catalogConfig[option] = optionValue
+    catalogConfig = result['Value']
     # The 'Status' option should be defined (default = 'Active')
     if 'Status' not in catalogConfig:
       warnStr = "FileCatalog._getCatalogConfigDetails: 'Status' option not defined."

@@ -47,7 +47,7 @@ class State( object ):
 
   def transitionRule( self, nextState ):
     """
-      Method that selects next state, knowing the default and the transitions
+    Method that selects next state, knowing the default and the transitions
     map, and the proposed next state. If <nextState> is in stateMap, goes there.
     If not, then goes to <self.default> if any. Otherwise, goes to <nextState>
     anyway.
@@ -81,7 +81,7 @@ class State( object ):
               
 class StateMachine( object ):
   """
-    StateMachine class that represents the whole state machine with all transitions.
+  StateMachine class that represents the whole state machine with all transitions.
   """
   
   def __init__( self, state = None ):
@@ -125,7 +125,7 @@ class StateMachine( object ):
 
   def setState( self, state ):
     """
-      Makes sure the state is either None or known to the machine
+    Makes sure the state is either None or known to the machine
     
     examples:
       >>> sm0.setState( None )[ 'OK' ]  
@@ -263,7 +263,7 @@ class RSSMachine( StateMachine ):
     
   def levelOfPolicyState( self, policyResult ): 
     """
-      Returns the level of the state associated with the policy, -1 if something
+    Returns the level of the state associated with the policy, -1 if something
     goes wrong. It is mostly used while sorting policies with method `orderPolicyResults`.
     
     examples:

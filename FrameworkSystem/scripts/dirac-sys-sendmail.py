@@ -67,6 +67,7 @@ except:
 if not "To" in headers:
   gLogger.error( "Failed to get 'To:' field from headers %s" % head )
   DIRACexit( 5 )
+
 to = headers[ "To" ]
 
 origin = "%s@%s" %( os.getenv( "LOGNAME" , "dirac" ) , socket.getfqdn() )

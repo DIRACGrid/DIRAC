@@ -4,6 +4,7 @@ __RCSID__ = "$Id$"
 import types
 import copy
 import os
+import string
 try:
   import zipfile
   gZipEnabled = True
@@ -68,6 +69,9 @@ except Exception:
 #START OF CFG MODULE
 
 class CFG( object ):
+
+  class Template( string.Template ):
+    idpattern = r'[\w/]+'
 
   def __init__( self ):
     """
@@ -364,7 +368,7 @@ class CFG( object ):
     pathList = [ dirName.strip() for dirName in path.split( "/" ) if not dirName.strip() == "" ]
     levelsAbove = abs( levelsAbove )
     if len( pathList ) - levelsAbove < 0:
-      return False
+      return None
     if len( pathList ) - levelsAbove == 0:
       lBel = ""
       if levelsAbove > 0:
@@ -376,7 +380,7 @@ class CFG( object ):
       pathList = pathList[:-levelsAbove]
     retDict = self.__recurse( pathList )
     if not retDict:
-      return False
+      return None
     retDict[ 'levelsBelow' ] = levelsBelow
     return retDict
 
@@ -967,6 +971,63 @@ class CFG( object ):
     except Exception:
       return False
 
+  def __allOps( self ):
+    toExplore = [ ( "", self ) ]
+    while toExplore:
+      sPath, sObj = toExplore.pop( 0 )
+      if sPath:
+        sPath = "%s/" % sPath
+      for opName in sObj.listOptions():
+        yield ( sPath + opName, sObj[ opName ] )
+      for secName in sObj.listSections():
+        toExplore.append( ( sPath + secName ), sObj[ secName ] )
+
+  #Real expansion method
+  def __innerExpand( self ):
+    done = {}
+    for secName in self.listSections():
+      secDone = self[ secName ].__innerExpand()
+      for k in secDone:
+        done[ "%s/%s" % ( secName, k ) ] = secDone[ k ]
+
+    toExpand = {}
+    for opName in self.listOptions():
+      opValue = self[ opName ]
+      if opValue.find( CFG.Template.delimiter ) == -1:
+        done[ opName ] = opValue
+        continue
+      toExpand[ opName ] = opValue
+    modifications = 0
+    while True:
+      modified = {}
+      for opName in toExpand:
+        try:
+          newVal = CFG.Template( toExpand[ opName ] ).substitute( done )
+        except:
+          continue
+        modified[ opName ] = newVal
+        done[ opName ] = newVal
+        self.setOption( opName, newVal )
+        modifications += 1
+      if not modified:
+        break
+      for opN in modified:
+        toExpand.pop( opN )
+    return done
+
+  @gCFGSynchro
+  def expand( self ):
+    """
+    Expand all options into themselves
+    a = something-$b
+    b = hello
+
+    will end up with
+    a = something-hello
+    b = hello
+    """
+    self.__innerExpand()
+    return self
 
 
 

@@ -16,7 +16,7 @@ except:
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
@@ -27,6 +27,7 @@ from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 from DIRAC.Core.Utilities.List                             import fromChar
 import os, base64, bz2, tempfile, random, socket, types
 import DIRAC
@@ -64,6 +65,7 @@ class SiteDirector( AgentModule ):
     self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
+    self.siteStatus = SiteStatus()
     return S_OK()
 
   def beginExecution( self ):
@@ -138,12 +140,13 @@ class SiteDirector( AgentModule ):
     if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
       ces = self.am_getOption( 'CEs', [] )
       if not ces:
-        ces = None
-    result = Resources.getQueues( community = self.vo,
-                                  siteList = siteNames,
-                                  ceList = ces,
-                                  ceTypeList = ceTypes,
-                                  mode = 'Direct' )
+        ces = None      
+    self._resources = Resources.Resources( vo = self.vo )  
+    result = self._resources.getEligibleQueuesInfo( siteList = siteNames,
+                                                    ceList = ces,
+                                                    ceTypeList = ceTypes,
+                                                    mode = 'Direct' )
+
     if not result['OK']:
       return result
     resourceDict = result['Value']
@@ -203,6 +206,10 @@ class SiteDirector( AgentModule ):
     ceFactory = ComputingElementFactory()
 
     for site in resourceDict:
+      result = self._resources.getSiteFullName( site )
+      if not result['OK']:
+        continue
+      siteFullName = result['Value']
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
         qDict = ceDict.pop( 'Queues' )
@@ -211,7 +218,7 @@ class SiteDirector( AgentModule ):
           self.queueDict[queueName] = {}
           self.queueDict[queueName]['ParametersDict'] = qDict[queue]
           self.queueDict[queueName]['ParametersDict']['Queue'] = queue
-          self.queueDict[queueName]['ParametersDict']['Site'] = site
+          self.queueDict[queueName]['ParametersDict']['Site'] = siteFullName
           self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv
           self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'unknown' )
           # Evaluate the CPU limit of the queue according to the Glue convention
@@ -269,7 +276,7 @@ class SiteDirector( AgentModule ):
           self.queueDict[queueName]['CE'] = queueCE
           self.queueDict[queueName]['CEName'] = ce
           self.queueDict[queueName]['CEType'] = ceDict['CEType']
-          self.queueDict[queueName]['Site'] = site
+          self.queueDict[queueName]['Site'] = siteFullName
           self.queueDict[queueName]['QueueName'] = queue
           self.queueDict[queueName]['Platform'] = platform
           result = self.queueDict[queueName]['CE'].isValid()
@@ -283,8 +290,8 @@ class SiteDirector( AgentModule ):
             if ceDict['BundleProxy'].lower() in ['true','yes','1']:
               self.queueDict[queueName]['BundleProxy'] = True
 
-          if site not in self.sites:
-            self.sites.append( site )
+          if siteFullName not in self.sites:
+            self.sites.append( siteFullName )
 
     return S_OK()
 
@@ -394,8 +401,8 @@ class SiteDirector( AgentModule ):
       ceType = self.queueDict[queue]['CEType']
       queueName = self.queueDict[queue]['QueueName']
       siteName = self.queueDict[queue]['Site']
+      siteMask = self.siteStatus.isUsableSite( siteName, 'ComputingAccess' )
       platform = self.queueDict[queue]['Platform']
-      siteMask = siteName in siteMaskList
 
       if not anySite and siteName not in jobSites:
         self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )

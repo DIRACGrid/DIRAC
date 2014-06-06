@@ -1,10 +1,13 @@
 import types
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
+
+__RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'Transformation'
 
@@ -414,7 +417,8 @@ class Transformation( API ):
     return S_OK()
 
   def __checkSEs( self, seList ):
-    res = gConfig.getSections( '/Resources/StorageElements' )
+    resources = Resources()
+    res = resources.getEligibleResources( 'Storage' )
     if not res['OK']:
       return self._errorReport( res, 'Failed to get possible StorageElements' )
     missing = []

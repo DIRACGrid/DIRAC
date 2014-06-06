@@ -13,9 +13,24 @@ from types import ListType, StringTypes
 
 class FileManagerBase:
 
+  _base_tables = {}
+  _base_tables['FC_FileAncestors'] = { "Fields":
+                                     { 
+                                       "FileID": "INT NOT NULL DEFAULT 0",
+                                       "AncestorID": "INT NOT NULL DEFAULT 0",
+                                       "AncestorDepth": "INT NOT NULL DEFAULT 0"
+                                     }, 
+                                       "Indexes": {"FileID": ["FileID"], 
+                                                 "AncestorID": ["AncestorID"],
+                                                 "AncestorDepth": ["AncestorDepth"]},
+                                       "UniqueIndexes": { "File_Ancestor": ["FileID","AncestorID"]}  
+                                     } 
+
+
   def __init__( self, database = None ):
-    self.db = database
-    self.statusDict = {}
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
 
   def _getConnection( self, connection ):
     if connection:
@@ -28,7 +43,19 @@ class FileManagerBase:
 
   def setDatabase( self, database ):
     self.db = database
-
+    result = self.db._createTables( self._base_tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._base_tables.keys() ) )
+      return result
+    if result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )
+    result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
+    return result
+  
   def getFileCounters( self, connection = False ):
     connection = self._getConnection( connection )
   
@@ -105,7 +132,7 @@ class FileManagerBase:
     """
     return S_ERROR( "To be implemented on derived class" )
 
-  def _getFileReplicas( self, fileIDs, fields = ['PFN'], connection = False ):
+  def _getFileReplicas( self, fileIDs, fields_input = ['PFN'], connection = False ):
     """To be implemented on derived class
     """
     return S_ERROR( "To be implemented on derived class" )
@@ -286,6 +313,7 @@ class FileManagerBase:
         for lfn, error in res['Value']['Failed'].items():
           toPurge.append( masterLfns[lfn]['FileID'] )
       if toPurge:
+        self._removeFileAncestors( toPurge, connection = connection )
         self._deleteFiles( toPurge, connection = connection )
 
     # Register the replicas
@@ -304,6 +332,7 @@ class FileManagerBase:
         for lfn, error in res['Value']['Failed'].items():
           toPurge.append( masterLfns[lfn]['FileID'] )
       if toPurge:
+        self._removeFileAncestors( toPurge, connection = connection )
         self._deleteFiles( toPurge, connection = connection )
    
     # Add extra replicas for successfully registered LFNs
@@ -475,6 +504,24 @@ class FileManagerBase:
     failed.update(result['Value']['Failed'])
     successful = result['Value']['Successful']
     return S_OK({'Successful':successful,'Failed':failed})                                           
+
+  def _removeFileAncestors(self, fileIDs, connection = False ):
+    """ Remove from the FC_FileAncestors the entries corresponding to the input files"""
+    connection = self._getConnection( connection )
+    successful = {}
+    failed = {}
+    for FileID in fileIDs:
+      res = self.db.deleteEntries( "FC_FileAncestors" , { 'AncestorID' : FileID } )
+      if not res[ 'OK' ]:
+        failed[FileID] = res['Message']
+        continue
+      res = self.db.deleteEntries( "FC_FileAncestors" , { 'FileID' : FileID } )
+      if not res[ 'OK' ]:
+        failed[FileID] = res['Message']
+        continue
+      successful[FileID] = 'OK'
+    #Once could/should? fix the depth of related files.  
+    return S_OK( {'Successful' : successful, 'Failed' : failed} )
     
   def _getFileRelatives( self, lfns, depths, relation, connection = False ):
     connection = self._getConnection( connection )
@@ -631,6 +678,14 @@ class FileManagerBase:
         directorySESizeDict[dirID][seID]['Size'] += size
         directorySESizeDict[dirID][seID]['Files'] += 1
 
+    #Remove files from Ancestor tables
+    res = self._removeFileAncestors(fileIDLfns.keys(), connection = connection )
+    if res['OK'] and res['Value']:
+      for fid in res['Value']['Successful'].keys():
+        successful[fileIDLfns[fid]] = True
+      for fid, reason in res['Value']['Failed'].items():
+        failed[fileIDLfns[fid]] = reason
+        
     # Now do removal  
     res = self._deleteFiles( fileIDLfns.keys(), connection = connection )
     if not res['OK']:

@@ -15,6 +15,7 @@ from DIRAC.Core.Utilities.ThreadPool                            import ThreadPoo
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP                import PEP
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB            import PilotAgentsDB
 
 
 __RCSID__  = '$Id:  $'
@@ -73,7 +74,8 @@ class ElementInspectorAgent( AgentModule ):
     self.rsClient    = ResourceStatusClient()
 
     self.clients[ 'ResourceStatusClient' ]     = self.rsClient
-    self.clients[ 'ResourceManagementClient' ] = ResourceManagementClient() 
+    self.clients[ 'ResourceManagementClient' ] = ResourceManagementClient()
+    self.clients[ 'PilotsDB' ]                 = PilotAgentsDB() 
 
     if not self.elementType:
       return S_ERROR( 'Missing elementType' )

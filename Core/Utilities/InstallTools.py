@@ -18,7 +18,9 @@ The Following Options are used:
 /LocalInstallation/RootPath:        Used instead of rootPath in "run" script if defined (if links are used to named versions)
 /LocalInstallation/InstancePath:    Location where runit and startup directories are created (default rootPath)
 /LocalInstallation/UseVersionsDir:  DIRAC is installed under versions/<Versioned Directory> with a link from pro
+                                    
                                     (This option overwrites RootPath and InstancePath)
+                                    
 /LocalInstallation/Host:            Used when build the URL to be published for the installed service (default: socket.getfqdn())
 /LocalInstallation/RunitDir:        Location where runit directory is created (default InstancePath/runit)
 /LocalInstallation/StartupDir:      Location where startup directory is created (default InstancePath/startup)
@@ -65,11 +67,11 @@ gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat
 import DIRAC
 from DIRAC import rootPath
 from DIRAC import gLogger
-from DIRAC import systemCall
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, \
                                                      cfgInstallSection, ResourcesDefaults, CSGlobals
@@ -336,9 +338,8 @@ def _getCentralCfg( installCfg ):
     centralCfg['DIRAC'].addKey( 'VirtualOrganization', vo, '' )
 
   for section in [ 'Systems', 'Resources',
-                   'Resources/Sites', 'Resources/Sites/DIRAC',
-                   'Resources/Sites/LCG', 'Operations',
-                   'Website', 'Registry' ]:
+                   'Resources/Sites', 'Resources/Domains',
+                   'Operations', 'Website', 'Registry' ]:
     if installCfg.isSection( section ):
       centralCfg.createNewSection( section, contents = installCfg[section] )
 
@@ -1878,9 +1879,9 @@ def installMySQL():
   """
   Attempt an installation of MySQL
   mode:
-    Master
-    Slave
-    None
+  - Master
+  - Slave
+  - None
   """
   fixMySQLScripts()
 

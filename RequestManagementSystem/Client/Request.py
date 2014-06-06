@@ -4,14 +4,16 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/16 13:43:45
 ########################################################################
-""" :mod: Request
-    =============
+""" 
+:mod: Request
 
-    .. module: Request
-    :synopsis: request implementation
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: Request
 
-    request implementation
+:synopsis: request implementation
+
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+request implementation
 """
 # for properties
 # pylint: disable=E0211,W0612,W0142,C0103

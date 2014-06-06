@@ -63,6 +63,7 @@ class Params:
     self.externalsLocation = ""
     self.makeJobs = 1
     self.globalDefaults = ""
+    self.forcedLocations = {}
 
   def setReleases( self, optionValue ):
     self.releasesToBuild = List.fromChar( optionValue )
@@ -111,10 +112,21 @@ class Params:
   def setReleasesCFG( self, optionValue ):
     self.relcfg = optionValue
     return S_OK()
-  
+
   def setGlobalDefaults( self, value ):
     self.globalDefaults = value
     return S_OK()
+
+  def overWriteLocation( self, value ):
+    locSplit = value.split( ":" )
+    if len( locSplit ) < 2:
+      return S_ERROR( "Invalid location. It has to have format <moduleName>:<url> insteaf of %s" % value )
+    modName = locSplit[0]
+    location = ":".join( locSplit[1:] )
+    gLogger.notice( "Forcing location of %s to %s" % ( modName, location ) )
+    self.forcedLocations[ modName ] = location
+    return S_OK()
+
 
   def registerSwitches( self ):
     Script.registerSwitch( "r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
@@ -129,6 +141,7 @@ class Params:
     Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them", cliParams.setExternalsLocation )
     Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
     Script.registerSwitch( 'M:', 'defaultsURL=', 'Where to retrieve the global defaults from', cliParams.setGlobalDefaults )
+    Script.registerSwitch( 'O:', 'overwriteLocation=', 'Force location of modules from where to make the release. Format <moduleName>:<url>', cliParams.overWriteLocation )
 
     Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                         '\nUsage:',
@@ -139,7 +152,7 @@ class DistributionMaker:
 
   def __init__( self, cliParams ):
     self.cliParams = cliParams
-    self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName, 
+    self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName,
                                                globalDefaultsURL = cliParams.globalDefaults )
     self.relConf.setDebugCB( gLogger.info )
     self.relConf.loadProjectDefaults()
@@ -184,17 +197,22 @@ class DistributionMaker:
       dctArgs.append( "-v '%s'" % modVersion )
       gLogger.notice( "Creating tar for %s version %s" % ( modName, modVersion ) )
       #Source
-      result = self.relConf.getModSource( releaseVersion, modName )
-      if not result[ 'OK' ]:
-        return result
-      modSrcTuple = result[ 'Value' ]
-      if modSrcTuple[0]:
-        logMsgVCS = modSrcTuple[0]
-        dctArgs.append( "-z '%s'" % modSrcTuple[0] )
+      if modName in cliParams.forcedLocations:
+        location = cliParams.forcedLocations[ modName ]
+        gLogger.notice( "Source is forced to %s" % location )
+        dctArgs.append( "-u '%s'" % location )
       else:
-        logMsgVCS = "autodiscover"
-      dctArgs.append( "-u '%s'" % modSrcTuple[1] )
-      gLogger.info( "Sources will be retrieved from %s (%s)" % ( modSrcTuple[1], logMsgVCS ) )
+        result = self.relConf.getModSource( releaseVersion, modName )
+        if not result[ 'OK' ]:
+          return result
+        modSrcTuple = result[ 'Value' ]
+        if modSrcTuple[0]:
+          logMsgVCS = modSrcTuple[0]
+          dctArgs.append( "-z '%s'" % modSrcTuple[0] )
+        else:
+          logMsgVCS = "autodiscover"
+        dctArgs.append( "-u '%s'" % modSrcTuple[1] )
+        gLogger.notice( "Sources will be retrieved from %s (%s)" % ( modSrcTuple[1], logMsgVCS ) )
       #Tar destination
       dctArgs.append( "-D '%s'" % self.cliParams.destination )
       if cliParams.debug:

@@ -18,6 +18,8 @@ def voimport( base_mod ):
     Function to import from extensions, if not found, tries from DIRAC.
   '''
   
+  # FIXME: A.T.: Use Core.Utilities.ObjectLoader 
+  
   for ext in gConfig.getValue( 'DIRAC/Extensions', [] ):
   
     try:
@@ -75,9 +77,10 @@ def getCSTree( csPath = '' ):
 def configMatch( candidateParams, configParams ):
   '''
     For a given configuration, the candidate will be rejected if:
-#    - it is missing at least one of the params in the config
-    - if a param of the candidate does not match the config params  
-    - if a candidate param is None, is considered as wildcard
+    
+     - it is missing at least one of the params in the config
+     - if a param of the candidate does not match the config params  
+     - if a candidate param is None, is considered as wildcard
   '''
 
   for key in candidateParams:

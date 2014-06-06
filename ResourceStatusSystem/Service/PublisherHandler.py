@@ -1,32 +1,32 @@
-# $HeadURL $
-""" PublisherHandler
+''' LHCbDIRAC.ResourceStatusSystem.Service.PublisherHandler
 
-This service has been built to provide the RSS web views with all the information
-they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
+   initializePublisherHandler
+   PublisherHandler.__bases__:
+     DIRAC.Core.DISET.RequestHandler.RequestHandler
 
-"""
+'''
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from types    import NoneType
 
-# DIRAC
-from DIRAC                                                      import gLogger, S_OK, gConfig, S_ERROR
+from DIRAC                                                      import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers                   import Resources
 from DIRAC.Core.DISET.RequestHandler                            import RequestHandler
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getSiteForResource
+
+
 
 __RCSID__ = '$Id: PublisherHandler.py 65921 2013-05-14 13:05:43Z ubeda $'
-
-# RSS Clients
 rsClient  = None
 rmClient  = None
 
 def initializePublisherHandler( _serviceInfo ):
-  """
-  Handler initialization in the usual horrible way.
-  """
-  
+  '''
+    Handler initialization in the usual horrible way.
+  '''
   global rsClient 
   rsClient = ResourceStatusClient()
   
@@ -36,43 +36,30 @@ def initializePublisherHandler( _serviceInfo ):
   return S_OK()
   
 class PublisherHandler( RequestHandler ):
-  """
-  RPCServer used to deliver data to the web portal.
+  '''
+    RPCServer used to deliver data to the web portal.
       
-  """  
-
-  def __init__( self, *args, **kwargs ):
-    """
-    Constructor
-    """
-    super( PublisherHandler, self ).__init__( *args, **kwargs )
+    So far it contains only examples, probably some of them will be used by the 
+    web portal, but not all of them.
+  '''  
   
   # ResourceStatusClient .......................................................
   
   types_getSites = []
   def export_getSites( self ):  
-    """
-    Returns list of all sites considered by RSS
-    
-    :return: S_OK( [ sites ] ) | S_ERROR
-    """
-    
+    '''
+      Returns list of all sites considered by RSS
+    '''
     gLogger.info( 'getSites' )
-    return CSHelpers.getSites()
+    return Resources.getSites()
 
   types_getSitesResources = [ ( str, list, NoneType ) ]
   def export_getSitesResources( self, siteNames ):
-    """
-    Returns dictionary with SEs and CEs for the given site(s). If siteNames is
-    None, all sites are taken into account.
     
-    :return: S_OK( { site1 : { ces : [ ces ], 'ses' : [ ses  ] },... } ) | S_ERROR 
-    """
+    resources = Resources.Resources()
     
-    gLogger.info( 'getSitesResources' )
-        
     if siteNames is None:
-      siteNames = CSHelpers.getSites()
+      siteNames = Resources.getSites()
       if not siteNames[ 'OK' ]:
         return siteNames
       siteNames = siteNames[ 'Value' ]
@@ -84,14 +71,12 @@ class PublisherHandler( RequestHandler ):
     
     for siteName in siteNames:
       
-      res = {}      
-      res[ 'ces' ] = CSHelpers.getSiteComputingElements( siteName )
-      # Convert StorageElements to host names
-      ses          = CSHelpers.getSiteStorageElements( siteName )
-      sesHosts     = CSHelpers.getStorageElementsHosts( ses )
+      res = {}         
+      res[ 'ces' ] = resources.getEligibleResources( 'Computing', { 'Site': siteName } )
+      ses          = resources.getEligibleStorageElements( { 'Site': siteName } )
+      sesHosts = CSHelpers.getStorageElementsHosts( ses )
       if not sesHosts[ 'OK' ]:
         return sesHosts
-      # Remove duplicates
       res[ 'ses' ] = list( set( sesHosts[ 'Value' ] ) )
           
       sitesRes[ siteName ] = res
@@ -99,53 +84,43 @@ class PublisherHandler( RequestHandler ):
     return S_OK( sitesRes )
 
   types_getElementStatuses = [ str, ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( str, list, NoneType ), ( str, list, NoneType ),
-                               ( str, list, NoneType ) ]
+                            ( str, list, NoneType ), ( str, list, NoneType ),
+                            ( str, list, NoneType ) ]
   def export_getElementStatuses( self, element, name, elementType, statusType, status, tokenOwner ):
-    """
-    Returns element statuses from the ResourceStatusDB
-    """
-    
-    gLogger.info( 'getElementStatuses' )
-    return rsClient.selectStatusElement( element, 'Status', name = name, elementType = elementType, 
-                                         statusType = statusType, status = status, 
-                                         tokenOwner = tokenOwner ) 
+      return rsClient.selectStatusElement( element, 'Status', name = name, elementType = elementType,
+                                           statusType = statusType, status = status,
+                                           tokenOwner = tokenOwner ) 
 
   types_getElementHistory = [ str, ( str, list, NoneType ), ( str, list, NoneType ), 
-                              ( str, list, NoneType ) ]
+                            ( str, list, NoneType ) ]
   def export_getElementHistory( self, element, name, elementType, statusType ):
-    """
-    Returns element history from ResourceStatusDB
-    """
-    
-    gLogger.info( 'getElementHistory' )
-    columns = [ 'Status', 'DateEffective', 'Reason' ]
-    return rsClient.selectStatusElement( element, 'History', name = name, elementType = elementType,
-                                         statusType = statusType,
-                                         meta = { 'columns' : columns } ) 
+      return rsClient.selectStatusElement( element, 'History', name = name, elementType = elementType,
+                                           statusType = statusType,
+                                           meta = { 'columns' : [ 'Status', 'DateEffective', 'Reason' ] } ) 
 
   types_getElementPolicies = [ str, ( str, list, NoneType ), ( str, list, NoneType ) ]
   def export_getElementPolicies( self, element, name, statusType ):
-    """
-    Returns policies for a given element
-    """
-    
-    gLogger.info( 'getElementPolicies' )
-    columns = [ 'Status', 'PolicyName', 'DateEffective', 'LastCheckTime', 'Reason' ]
     return rmClient.selectPolicyResult( element = element, name = name, 
                                         statusType = statusType, 
-                                        meta = { 'columns' : columns } )
+                                        meta = { 'columns' : [ 'Status', 'PolicyName', 'DateEffective',
+                                                               'LastCheckTime', 'Reason' ]} )
+
+  types_getNodeStatuses = []
+  def export_getNodeStatuses( self ):
+      return rsClient.selectStatusElement( 'Node', 'Status' ) 
 
   types_getTree = [ str, str, str ]
   def export_getTree( self, element, elementType, elementName ):
-    """
-    Given an element, finds its parent site and returns all descendants of that
-    site.
-    """
 
-    gLogger.info( 'getTree' )
+    tree = {}
 
-    site = self.getSite( element, elementType, elementName )        
+    resources = Resources.Resources()
+
+    #site = self.getSite( element, elementType, elementName )
+    result = getSiteForResource( elementName )
+    if not result['OK']:
+      return S_ERROR( 'Can not get site name: %s' % result[ 'Message' ] ) 
+    site = result['Value']       
     if not site:
       return S_ERROR( 'No site' )
     
@@ -154,73 +129,147 @@ class PublisherHandler( RequestHandler ):
     if not siteStatus[ 'OK' ]:
       return siteStatus      
 
-    tree = { site : { 'statusTypes' : dict( siteStatus[ 'Value' ] ) } }
-    
-    ces = CSHelpers.getSiteComputingElements( site )    
+    tree[ site ] = { 'statusTypes' : dict( siteStatus[ 'Value' ] ) }
+      
+    ces = resources.getEligibleResources( 'Computing', { 'Site': site } )
     cesStatus = rsClient.selectStatusElement( 'Resource', 'Status', name = ces,
                                               meta = { 'columns' : [ 'Name', 'StatusType', 'Status'] } )
     if not cesStatus[ 'OK' ]:
       return cesStatus
     
-    ses = CSHelpers.getSiteStorageElements( site )
+    tree[ site ][ 'ces' ] = {}
+    for ceTuple in cesStatus[ 'Value' ]:
+      name, statusType, status = ceTuple
+      if not name in tree[ site ][ 'ces' ]:
+        tree[ site ][ 'ces' ][ name ] = {}
+      tree[ site ][ 'ces' ][ name ][ statusType ] = status   
+    
+    ses = resources.getEligibleStorageElements( { 'Site': site } )
     sesStatus = rsClient.selectStatusElement( 'Resource', 'Status', name = ses,
                                               meta = { 'columns' : [ 'Name', 'StatusType', 'Status'] } )
     if not sesStatus[ 'OK' ]:
-      return sesStatus   
+      return sesStatus
     
-    def feedTree( elementsList ):
-      
-      elements = {}
-      for elementTuple in elementsList[ 'Value' ]:
-        name, statusType, status = elementTuple
-        
-        if not name in elements:
-          elements[ name ] = {}
-        elements[ name ][ statusType ] = status
-      
-      return elements
-    
-    tree[ site ][ 'ces' ] = feedTree( cesStatus )
-    tree[ site ][ 'ses' ] = feedTree( sesStatus )
-    
+    tree[ site ][ 'ses' ] = {}
+    for seTuple in sesStatus[ 'Value' ]:
+      name, statusType, status = seTuple
+      if not name in tree[ site ][ 'ses' ]:
+        tree[ site ][ 'ses' ][ name ] = {}
+      tree[ site ][ 'ses' ][ name ][ statusType ] = status   
+
     return S_OK( tree )
+
+  types_setToken = [ str ] * 7
+  def export_setToken( self, element, name, statusType, token, elementType, username, lastCheckTime ):
+
+    lastCheckTime = datetime.strptime( lastCheckTime, '%Y-%m-%d %H:%M:%S' )
+
+    credentials = self.getRemoteCredentials()
+    gLogger.info( credentials )
+
+    elementInDB =rsClient.selectStatusElement( element, 'Status', name = name,
+                                               statusType = statusType,
+                                               elementType = elementType,
+                                               lastCheckTime = lastCheckTime )
+    if not elementInDB[ 'OK' ]:
+      return elementInDB
+    elif not elementInDB[ 'Value' ]:
+      return S_ERROR( 'Your selection has been modified. Please refresh.' )
+
+
+
+    if token == 'Acquire':
+      tokenOwner = username
+      tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
+    elif token == 'Release':
+      tokenOwner = 'rs_svc'
+      tokenExpiration = datetime.max
+    else:
+      return S_ERROR( '%s is unknown token action' % token )
+
+    reason = 'Token %sd by %s ( web )' % ( token, username )
+
+    newStatus = rsClient.addOrModifyStatusElement( element, 'Status', name = name,
+                                                   statusType = statusType,
+                                                   elementType = elementType,
+                                                   reason = reason,
+                                                   tokenOwner = tokenOwner,
+                                                   tokenExpiration = tokenExpiration )
+    if not newStatus[ 'OK' ]:
+      return newStatus
+
+    return S_OK( reason )
+
+  types_setStatus = [ str ] * 7
+  def export_setStatus( self, element, name, statusType, status, elementType, username, lastCheckTime ):
+
+    lastCheckTime = datetime.strptime( lastCheckTime, '%Y-%m-%d %H:%M:%S' )
+
+    credentials = self.getRemoteCredentials()
+    gLogger.info( credentials )
+
+    elementInDB =rsClient.selectStatusElement( element, 'Status', name = name,
+                                               statusType = statusType,
+                                            #   status = status,
+                                               elementType = elementType,
+                                               lastCheckTime = lastCheckTime )
+    if not elementInDB[ 'OK' ]:
+      return elementInDB
+    elif not elementInDB[ 'Value' ]:
+      return S_ERROR( 'Your selection has been modified. Please refresh.' )
+
+    reason          = 'Status %s forced by %s ( web )' % ( status, username )
+    tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
+
+    newStatus = rsClient.addOrModifyStatusElement( element, 'Status', name = name,
+                                                   statusType = statusType,
+                                                   status = status,
+                                                   elementType = elementType,
+                                                   reason = reason,
+                                                   tokenOwner = username,
+                                                   tokenExpiration = tokenExpiration )
+    if not newStatus[ 'OK' ]:
+      return newStatus
+
+    return S_OK( reason )
+
     
   #-----------------------------------------------------------------------------  
     
-  def getSite( self, element, elementType, elementName ):
-    """
-    Given an element, return its site
-    """
-    
-    if elementType == 'StorageElement':
-      elementType = 'SE'
-
-    domainNames = gConfig.getSections( 'Resources/Sites' )
-    if not domainNames[ 'OK' ]:
-      return domainNames
-    domainNames = domainNames[ 'Value' ]
-  
-    for domainName in domainNames:
-      
-      sites = gConfig.getSections( 'Resources/Sites/%s' % domainName )
-      if not sites[ 'OK' ]:
-        continue
-      
-      for site in sites[ 'Value' ]:
-      
-        elements = gConfig.getValue( 'Resources/Sites/%s/%s/%s' % ( domainName, site, elementType ), '' )
-        if elementName in elements:
-          return site          
-
-    return ''
+#  def getSite( self, element, elementType, elementName ):
+#    
+#    if elementType == 'StorageElement':
+#      elementType = 'SE'
+#
+#    domainNames = gConfig.getSections( 'Resources/Sites' )
+#    if not domainNames[ 'OK' ]:
+#      return domainNames
+#    domainNames = domainNames[ 'Value' ]
+#  
+#    for domainName in domainNames:
+#      
+#      sites = gConfig.getSections( 'Resources/Sites/%s' % domainName )
+#      if not sites[ 'OK' ]:
+#        continue
+#      
+#      for site in sites[ 'Value' ]:
+#      
+#        elements = gConfig.getValue( 'Resources/Sites/%s/%s/%s' % ( domainName, site, elementType ), '' )
+#        if elementName in elements:
+#          return site          
+#
+#    return ''
 
   # ResourceManagementClient ...................................................
   
   types_getDowntimes = [ str, str, str ]
-  def export_getDowntimes( self, element, elementType, name ):
+  def export_getDowntimes( self, element, elementType, elementName ):
     
     if elementType == 'StorageElement':
-      name = CSHelpers.getSEHost( name )
+      result = CSHelpers.getSEProtocolOption( elementName, 'Host' )
+      if not result['OK']:
+        return S_ERROR( 'StorageElement %s host not found' % elementName )
+      name = result['Value']
     
     return rmClient.selectDowntimeCache( element = element, name = name, 
                                          meta = { 'columns' : [ 'StartDate', 'EndDate', 
@@ -229,10 +278,13 @@ class PublisherHandler( RequestHandler ):
 
   types_getCachedDowntimes = [ ( str, NoneType, list ), ( str, NoneType, list ), ( str, NoneType, list ),
                                ( str, NoneType, list ), datetime, datetime ]
-  def export_getCachedDowntimes( self, element, elementType, name, severity, startDate, endDate ):
+  def export_getCachedDowntimes( self, element, elementType, elementName, severity, startDate, endDate ):
     
     if elementType == 'StorageElement':
-      name = CSHelpers.getSEHost( name )
+      result = CSHelpers.getSEProtocolOption( elementName, 'Host' )
+      if not result['OK']:
+        return S_ERROR( 'StorageElement %s host not found' % elementName )
+      name = result['Value']
    
     if startDate > endDate:
       return S_ERROR( 'startDate > endDate' )

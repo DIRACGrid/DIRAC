@@ -32,10 +32,9 @@
     getName()
 
 """
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-import re, types
+from DIRAC import S_OK, S_ERROR
 
-class FileCatalogueBase:
+class FileCatalogueBase( object ):
 
   def __init__( self, name = '' ):
     self.name = name
@@ -44,10 +43,6 @@ class FileCatalogueBase:
     self.name = name
 
   def exists( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   ####################################################################
@@ -56,17 +51,9 @@ class FileCatalogueBase:
   #
 
   def isFile( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def removeFile( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def addFile( self, fileTuple ):
@@ -74,62 +61,24 @@ class FileCatalogueBase:
         (lfn,pfn,size,se,guid)
         A list of tuples may also be supplied.
     """
-    if type( fileTuple ) == types.TupleType:
-      files = [fileTuple]
-    else:
-      files = fileTuple
-    for fileTuple in files:
-      lfn, pfn, size, se, guid = fileTuple
     return S_ERROR( 'Implement me' )
 
   def addReplica( self, replicaTuple ):
-    if type( replicaTuple ) == types.TupleType:
-      replicas = [replicaTuple]
-    else:
-      replicas = replicaTuple
-    for replicaTuple in replicas:
-      lfn, pfn, se = replicaTuple
     return S_ERROR( 'Implement me' )
 
   def getFileMetadata( self, path, ownership = False ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def getReplicas( self, path, directory = 0 ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def removeReplica( self, replicaTuple ):
-    if type( replicaTuple ) == types.TupleType:
-      replicas = [replicaTuple]
-    else:
-      replicas = replicaTuple
-    for replicaTuple in replicas:
-      lfn, se = replicaTuple
     return S_ERROR( 'Implement me' )
 
   def getReplicaStatus( self, replicaTuple ):
-    if type( replicaTuple ) == types.TupleType:
-      replicas = [replicaTuple]
-    else:
-      replicas = replicaTuple
-    for replicaTuple in replicas:
-      lfn, se = replicaTuple
     return S_ERROR( 'Implement me' )
 
   def setReplicaStatus( self, replicaTuple ):
-    if type( replicaTuple ) == types.TupleType:
-      replicas = [replicaTuple]
-    elif type( replicaTuple ) == types.ListType:
-      replicas = replicaTuple
-    else:
-      return S_ERROR( 'LFCClient.setReplicaStatus: Must supply a file tuple or list of file typles' )
     return S_ERROR( 'Implement me' )
 
   def setReplicaHost( self, replicaTuple ):
@@ -137,19 +86,9 @@ class FileCatalogueBase:
         The tuple supplied must be of the following form:
         (lfn,pfn,se,spaceToken)
     """
-    if type( replicaTuple ) == types.TupleType:
-      replicas = [replicaTuple]
-    elif type( replicaTuple ) == types.ListType:
-      replicas = replicaTuple
-    else:
-      return S_ERROR( 'LFCClient.setReplicaHost: Must supply a file tuple or list of file typles' )
     return S_ERROR( 'Implement me' )
 
   def getFileSize( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   ####################################################################
@@ -158,52 +97,24 @@ class FileCatalogueBase:
   #
 
   def createDirectory( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def isDirectory( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def listDirectory( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def removeDirectory( self, path, recursive = False ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def getDirectoryReplicas( self, path, allStatus = False ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def getDirectoryMetadata( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def getDirectorySize( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   ####################################################################
@@ -212,24 +123,12 @@ class FileCatalogueBase:
   #
 
   def isLink( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def createLink( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   def removeLink( self, path ):
-    if type( path ) == types.StringType:
-      paths = [path]
-    else:
-      paths = path
     return S_ERROR( 'Implement me' )
 
   ####################################################################

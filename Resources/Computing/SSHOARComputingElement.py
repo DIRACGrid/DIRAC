@@ -3,18 +3,19 @@
 # File : OARComputingElement.py
 # Author : M. Sapunov
 ########################################################################
+""" OAR CE interface, via SSH
+"""
 
-import os, stat, tempfile, shutil
+from DIRAC.Resources.Computing.SSHComputingElement  import SSHComputingElement
 
-from DIRAC.Resources.Computing.SSHComputingElement  import SSH, SSHComputingElement
-from DIRAC.Resources.Computing.PilotBundle          import bundleProxy
-from DIRAC import rootPath, S_OK, S_ERROR
+__RCSID__ = "$Id$"
 
 CE_NAME = 'SSHOAR'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSHOARComputingElement( SSHComputingElement ):
-
+  """ For OAR submission via SSH
+  """
   #############################################################################
   def __init__( self, ceUniqueID ):
     """ Standard constructor.

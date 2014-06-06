@@ -22,9 +22,8 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
 from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
 from DIRAC.Core.Security                                    import Properties
 from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
-from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob
+from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob, AccountingJob
 from DIRAC.Core.Utilities.CFG                               import CFG
-
 
 import os, sys, re, time
 
@@ -244,7 +243,7 @@ class JobAgent( AgentModule ):
         jobReport.setJobParameter( 'GridCEQueue', self.gridCEQueue, sendFlag = False )
 
       if os.environ.has_key( 'BOINC_JOB_ID' ):
-        # Report BOINC environment 
+        # Report BOINC environment
         for p in ['BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName']:
           jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )
 
@@ -254,7 +253,7 @@ class JobAgent( AgentModule ):
         self.__reportPilotInfo( jobID )
       result = self.__setupProxy( ownerDN, jobGroup )
       if not result[ 'OK' ]:
-        return self.__rescheduleFailedJob( jobID, result[ 'Message' ], self.stopOnApplicationFailure )
+        return self.__rescheduleFailedJob( jobID, result[ 'Message' ], params, self.stopOnApplicationFailure )
       if 'Value' in result and result[ 'Value' ]:
         proxyChain = result[ 'Value' ]
 
@@ -264,7 +263,7 @@ class JobAgent( AgentModule ):
         errorMsg = software['Message']
         if not errorMsg:
           errorMsg = 'Failed software installation'
-        return self.__rescheduleFailedJob( jobID, errorMsg, self.stopOnApplicationFailure )
+        return self.__rescheduleFailedJob( jobID, errorMsg, params, self.stopOnApplicationFailure )
 
       self.log.verbose( 'Before %sCE submitJob()' % ( self.ceName ) )
       submission = self.__submitJob( jobID, params, ceDict, optimizerParams, jobJDL, proxyChain )
@@ -279,7 +278,8 @@ class JobAgent( AgentModule ):
       self.log.verbose( 'After %sCE submitJob()' % ( self.ceName ) )
     except Exception:
       self.log.exception()
-      return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception', self.stopOnApplicationFailure )
+      return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception',
+                                         params, self.stopOnApplicationFailure )
 
     currentTimes = list( os.times() )
     for i in range( len( currentTimes ) ):
@@ -296,7 +296,7 @@ class JobAgent( AgentModule ):
         self.timeLeftError = result['Message']
       else:
         if self.cpuFactor:
-          # if the batch system is not defined used the CPUNormalizationFactor 
+          # if the batch system is not defined used the CPUNormalizationFactor
           # defined locally
           self.timeLeft = self.__getCPUTimeLeft()
     scaledCPUTime = self.timeLeftUtil.getScaledCPU()['Value']
@@ -413,7 +413,8 @@ class JobAgent( AgentModule ):
     if not result['OK']:
       return result
 
-    wrapperFile = result['Value']
+    wrapperData = result[ 'Value' ]
+    wrapperFile = wrapperData[ 'execFile' ]
     self.__report( jobID, 'Matched', 'Submitted To CE' )
 
     wrapperName = os.path.basename( wrapperFile )
@@ -428,7 +429,7 @@ class JobAgent( AgentModule ):
     payloadProxy = proxy['Value']
     # FIXME: how can we set the batchID before we submit, this makes no sense
     batchID = 'dc%s' % ( jobID )
-    submission = self.computingElement.submitJob( wrapperFile, payloadProxy )
+    submission = self.computingElement.submitJob( wrapperFile, payloadProxy, wrapperData )
 
     ret = S_OK( 'Job submitted' )
 
@@ -518,7 +519,17 @@ class JobAgent( AgentModule ):
     jobFile = open( jobExeFile, 'w' )
     jobFile.write( jobFileContents )
     jobFile.close()
-    return S_OK( jobExeFile )
+
+    data = { 'execFile' : jobExeFile,
+             'wrapperTemplate' : self.jobWrapperTemplate,
+             'signature': signature,
+             'wrapperFile' : jobWrapperFile,
+             'logLevel' : logLevel,
+             'jid' : jobID,
+             'datetime': date_time,
+             'jobArgs' : arguments,
+             'sitePython' : siteRootPython }
+    return S_OK( data )
 
   #############################################################################
   def __requestJob( self, ceDict ):
@@ -633,32 +644,58 @@ class JobAgent( AgentModule ):
       return S_OK( message )
 
   #############################################################################
-  def __rescheduleFailedJob( self, jobID, message, stop = True ):
+  def __rescheduleFailedJob( self, jobID, message, jobParams, stop = True ):
     """
     Set Job Status to "Rescheduled" and issue a reschedule command to the Job Manager
     """
-
-    self.log.warn( 'Failure during %s' % ( message ) )
-
-    jobManager = RPCClient( 'WorkloadManagement/JobManager' )
     jobReport = JobReport( int( jobID ), 'JobAgent@%s' % self.siteName )
 
-    #Setting a job parameter does not help since the job will be rescheduled,
-    #instead set the status with the cause and then another status showing the
-    #reschedule operation.
+    rescheduleResult = rescheduleFailedJob( jobID, message, jobReport )
 
-    jobReport.setJobStatus( status = 'Rescheduled',
-                            application = message,
-                            sendFlag = True )
+    self.__sendAccountingRecord( rescheduleResult, message, jobParams )
 
-    self.log.info( 'Job will be rescheduled' )
-    result = jobManager.rescheduleJob( jobID )
-    if not result['OK']:
-      self.log.error( result['Message'] )
-      return self.__finish( 'Problem Rescheduling Job', stop )
+    if rescheduleResult == 'Rescheduled':
+      self.log.info( 'Job Rescheduled %s' % ( jobID ) )
+      return self.__finish( 'Job Rescheduled', stop )
 
-    self.log.info( 'Job Rescheduled %s' % ( jobID ) )
-    return self.__finish( 'Job Rescheduled', stop )
+    return self.__finish( 'Problem Rescheduling Job', stop )
+
+  #############################################################################
+  def __sendAccountingRecord( self, status, minorStatus, jobParams ):
+    """
+    Send Accounting Record for Rescheduled Job
+    """
+    accountingReport = AccountingJob()
+    #Set now as start time
+    accountingReport.setStartTime()
+    #Set now as end time
+    accountingReport.setEndTime()
+    #Fill the data
+    acData = {
+               'User' : jobParams.get( 'Owner', 'unknown' ),
+               'UserGroup' : jobParams.get( 'OwnerGroup', 'unknown' ),
+               'JobGroup' : jobParams.get( 'JobGroup', 'unknown' ),
+               'JobType' : jobParams.get( 'JobType', 'unknown' ),
+               'JobClass' : jobParams.get( 'JobSplitType', 'unknown' ),
+               'ProcessingType' : jobParams.get( 'ProcessingType', 'unknown' ),
+               'FinalMajorStatus' : status,
+               'FinalMinorStatus' : minorStatus,
+               'CPUTime' : 0.0,
+               # Based on the factor to convert raw CPU to Normalized units (based on the CPU Model)
+               'NormCPUTime' : 0.0,
+               'ExecTime' : 0.0,
+               'InputDataSize' : 0.0,
+               'OutputDataSize' : 0.0,
+               'InputDataFiles' : 0.0,
+               'OutputDataFiles' : 0.0,
+               'DiskSpace' : 0.0,
+               'InputSandBoxSize' : 0.0,
+               'OutputSandBoxSize' : 0.0,
+               'ProcessedEvents' : 0.0
+             }
+    accountingReport.setValuesFromDict( acData )
+    accountingReport.commit()
+
 
   #############################################################################
   def finalize( self ):

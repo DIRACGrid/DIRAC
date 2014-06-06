@@ -13,6 +13,7 @@ from DIRAC.ConfigurationSystem.Client.CSAPI             import CSAPI
 from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 class CE2CSAgent( AgentModule ):
 
@@ -100,7 +101,8 @@ class CE2CSAgent( AgentModule ):
 
     knownCEs = self.am_getOption( 'BannedCEs', [] )
 
-    result = gConfig.getSections( '/Resources/Sites' )
+    resources = Resources( self.voName )
+    result    = resources.getEligibleResources( 'Computing', {'CEType':['LCG','CREAM'] } ) 
     if not result['OK']:
       return
     grids = result['Value']

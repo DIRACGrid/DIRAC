@@ -12,13 +12,13 @@ from DIRAC.Core.Security.Properties import FC_MANAGEMENT
 
 class SecurityManagerBase:
 
-  def __init__(self,database=False):
+  def __init__( self, database=None ):
     self.db = database
 
-  def setDatabase(self,database):
+  def setDatabase( self, database ):
     self.db = database
 
-  def getPathPermissions(self,paths,credDict):
+  def getPathPermissions( self, paths, credDict ):
     """ Get path permissions according to the policy
     """
     return S_ERROR('The getPathPermissions method must be implemented in the inheriting class')

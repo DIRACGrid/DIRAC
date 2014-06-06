@@ -10,17 +10,14 @@
 """
 
 from DIRAC.Resources.Computing.SSHComputingElement       import SSHComputingElement
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC.Core.Utilities.List                           import breakListIntoChunks
+from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
 from DIRAC.Core.Utilities.Pfn                            import pfnparse
 from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
-from DIRAC                                               import gConfig, gLogger
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-from DIRAC.Resources.Computing.SSHComputingElement       import SSH 
+from DIRAC                                               import rootPath
 
-import os, sys, time, re, socket, stat, shutil
-import string, shutil, bz2, base64, tempfile, random
+import os, socket
+
+__RCSID__ = "$Id$"
 
 CE_NAME = 'SSHBatch'
 
@@ -96,7 +93,7 @@ class SSHBatchComputingElement( SSHComputingElement ):
         continue
       slots = maxHostJobs - result['Value']['Running']
       if slots > 0:
-        rankHosts.setdefault(slots,[])
+        rankHosts.setdefault(slots, [])
         rankHosts[slots].append( hostName )
       if slots > maxSlots:
         maxSlots = slots
@@ -122,7 +119,7 @@ class SSHBatchComputingElement( SSHComputingElement ):
     # Submit jobs now
     restJobs = numberOfJobs
     submittedJobs = []
-    for slots in range(maxSlots,0,-1):
+    for slots in range(maxSlots, 0, -1):
       if not slots in rankHosts:
         continue
       for host in rankHosts[slots]:        
@@ -157,11 +154,11 @@ class SSHBatchComputingElement( SSHComputingElement ):
       if not result['OK']:
         continue
       host = result['Value']['Host']
-      hostDict.setdefault(host,[])
+      hostDict.setdefault(host, [])
       hostDict[host].append( job )
       
     failed = []  
-    for host,jobIDList in hostDict.items():      
+    for host, jobIDList in hostDict.items():      
       result = self._killJobOnHost( jobIDList, host )
       if not result['OK']:
         failed.extend( jobIDList )
@@ -203,12 +200,12 @@ class SSHBatchComputingElement( SSHComputingElement ):
       if not result['OK']:
         continue
       host = result['Value']['Host']
-      hostDict.setdefault(host,[])
+      hostDict.setdefault(host, [])
       hostDict[host].append( job )
 
     resultDict = {}
     failed = []  
-    for host,jobIDList in hostDict.items():
+    for host, jobIDList in hostDict.items():
       result = self._getJobStatusOnHost( jobIDList, host )
       if not result['OK']:
         failed.extend( jobIDList )

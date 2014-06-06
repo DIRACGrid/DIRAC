@@ -2129,10 +2129,10 @@ class Dirac( API ):
                   site = None, owner = None, ownerGroup = None, jobGroup = None, date = None ):
     """Options correspond to the web-page table columns. Returns the list of JobIDs for
        the specified conditions.  A few notes on the formatting:
-        - date must be specified as yyyy-mm-dd.  By default, the date is today.
-        - jobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
-        - site is the DIRAC site name, e.g. LCG.CERN.ch
-        - owner is the immutable nickname, e.g. paterson
+       - date must be specified as yyyy-mm-dd.  By default, the date is today.
+       - jobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
+       - site is the DIRAC site name, e.g. LCG.CERN.ch
+       - owner is the immutable nickname, e.g. paterson
 
        Example Usage:
 
@@ -2190,6 +2190,28 @@ class Dirac( API ):
       return S_ERROR( 'No jobs selected for conditions: %s' % conditions )
     else:
       return result
+
+  #############################################################################
+  def getJobsInHerd( self, jobID ):
+    """Get all jobs in the same herd as the given one.
+
+       Example Usage:
+
+       >>> dirac.getJobsInHerd( 2342 )
+       {'OK': True, 'Value': [ 2342, 2533, 2534, 2643, 2650 ] }
+
+       :param jobID: JobID
+       :type JobID: int
+       :returns: S_OK,S_ERROR
+       """
+
+    monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
+    result = monitoring.getJobsInHerd( jobID )
+    try:
+      result.pop( 'rpcStub' )
+    except:
+      pass
+    return result
 
   #############################################################################
   def getJobSummary( self, jobID, outputFile = None, printOutput = False ):

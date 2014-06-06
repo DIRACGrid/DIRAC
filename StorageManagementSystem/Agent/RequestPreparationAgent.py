@@ -5,12 +5,10 @@ __RCSID__ = "$Id$"
 from DIRAC import gLogger, S_OK
 
 from DIRAC.Core.Base.AgentModule                                import AgentModule
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient  import StorageManagerClient
 from DIRAC.Resources.Catalog.FileCatalog                        import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient      import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.DataManager              import DataManager
 
-# test 1
 AGENT_NAME = 'StorageManagement/RequestPreparationAgent'
 
 class RequestPreparationAgent( AgentModule ):
@@ -211,12 +209,13 @@ class RequestPreparationAgent( AgentModule ):
 
   def __reportProblematicFiles( self, lfns, reason ):
     return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'RequestPreparationAgent' )
-    if not res['OK']:
-      gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
-      return res
-    if res['Value']['Successful']:
-      gLogger.info( "RequestPreparation.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
-    if res['Value']['Failed']:
-      gLogger.info( "RequestPreparation.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
-    return res
+    #res = self.dataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'RequestPreparationAgent' )
+    #if not res['OK']:
+    #  gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
+    #  return res
+    #if res['Value']['Successful']:
+    #  gLogger.info( "RequestPreparation.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
+    #if res['Value']['Failed']:
+    #  gLogger.info( "RequestPreparation.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
+    #return res
+

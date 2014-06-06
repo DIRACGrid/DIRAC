@@ -182,10 +182,10 @@ class JobDescription:
     cfg = self.__description.getRecursive( section )
     if not cfg:
       return []
-    return cfg.listOptions()
+    return cfg[ 'value' ].listOptions()
 
   def getSectionList( self, section = "" ):
     cfg = self.__description.getRecursive( section )
     if not cfg:
       return []
-    return cfg.listSections()
+    return cfg[ 'value' ].listSections()

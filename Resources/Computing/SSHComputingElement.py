@@ -20,11 +20,14 @@ import os, urllib
 import shutil, tempfile
 from types import StringTypes
 
+__RCSID__ = "$Id$"
+
 CE_NAME = 'SSH'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSH:
-
+  """ The SSH interface
+  """
   def __init__( self, user = None, host = None, password = None, key = None, parameters = {}, options = "" ):
 
     self.user = user
@@ -47,10 +50,10 @@ class SSH:
   def __ssh_call( self, command, timeout ):
 
     try:
-      import pexpect
+      from DIRAC.Resources.Computing import pexpect
       expectFlag = True
     except:
-      from DIRAC import shellCall
+      from DIRAC.Core.Utilities.Subprocess import shellCall
       expectFlag = False
 
     if not timeout:
@@ -63,7 +66,7 @@ class SSH:
   
         i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'assword: '] )
         if i == 0: # Timeout        
-            return S_OK( ( -1, child.before, 'SSH login failed' ) )
+          return S_OK( ( -1, child.before, 'SSH login failed' ) )
         elif i == 1: # SSH does not have the public key. Just accept it.
           child.sendline ( 'yes' )
           child.expect ( 'assword: ' )
@@ -121,14 +124,14 @@ class SSH:
     if ind == -1:
       return result
 
-    status,output,error = result['Value']
+    status, output, error = result['Value']
     output = output[ind+8:]
     if output.startswith('\r'):
       output = output[1:]
     if output.startswith('\n'):
       output = output[1:]  
       
-    result['Value'] = ( status,output,error )
+    result['Value'] = ( status, output, error )
     return result
 
   def scpCall( self, timeout, localFile, destinationPath, upload = True ):
@@ -246,7 +249,7 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.warn( 'Failed creating working directories: %s' % result['Message'][1] )
       return result
-    status,output,error = result['Value']
+    status, output, error = result['Value']
     if status == -1:
       self.log.warn( 'TImeout while creating directories' )
       return S_ERROR( 'TImeout while creating directories' )
@@ -261,7 +264,7 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.warn( 'Failed uploading control script: %s' % result['Message'][1] )
       return result
-    status,output,error = result['Value']
+    status, output, error = result['Value']
     if status != 0:
       if status == -1:
         self.log.warn( 'Timeout while uploading control script' )
@@ -276,7 +279,7 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.warn( 'Failed chmod control script: %s' % result['Message'][1] )
       return result
-    status,output,error = result['Value']
+    status, output, error = result['Value']
     if status != 0:
       if status == -1:
         self.log.warn( 'Timeout while chmod control script' )
@@ -377,7 +380,7 @@ class SSHComputingElement( ComputingElement ):
         batchIDs = outputLines[1:]
         jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+id for id in batchIDs ]    
     else:
-      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
+      return S_ERROR( '\n'.join( [sshStdout, sshStderr] ) )
 
     result = S_OK ( jobIDs )
     self.submittedJobs += len( batchIDs )
@@ -407,7 +410,8 @@ class SSHComputingElement( ComputingElement ):
       jobDict[stamp] = job
     stampList = jobDict.keys()   
 
-    cmd = "bash --login -c '%s/%s kill_job %s %s'" % ( self.sharedArea, self.controlScript, '#'.join( stampList ), self.infoArea )
+    cmd = "bash --login -c '%s/%s kill_job %s %s'" % ( self.sharedArea, self.controlScript, '#'.join( stampList ), 
+                                                       self.infoArea )
     result = ssh.sshCall( 10, cmd )
     if not result['OK']:
       return result
@@ -434,7 +438,7 @@ class SSHComputingElement( ComputingElement ):
           message = outputLines[1]
         return S_ERROR( 'Failed job kill, reason: %s' % message )      
     else:
-      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
+      return S_ERROR( '\n'.join( [sshStdout, sshStderr] ) )
     
     return S_OK()
 
@@ -481,7 +485,7 @@ class SSHComputingElement( ComputingElement ):
             jobStatus, nJobs = line.split( ':::' )
             resultDict[jobStatus] = int( nJobs )    
     else:
-      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
+      return S_ERROR( '\n'.join( [sshStdout, sshStderr] ) )
     
     return S_OK( resultDict )
 
@@ -497,8 +501,8 @@ class SSHComputingElement( ComputingElement ):
     if not resultHost['OK']:
       return resultHost
     
-    result['RunningJobs'] = resultHost['Value'].get( 'Running',0 )
-    result['WaitingJobs'] = resultHost['Value'].get( 'Waiting',0 )
+    result['RunningJobs'] = resultHost['Value'].get( 'Running', 0 )
+    result['WaitingJobs'] = resultHost['Value'].get( 'Waiting', 0 )
     self.log.verbose( 'Waiting Jobs: ', result['WaitingJobs'] )
     self.log.verbose( 'Running Jobs: ', result['RunningJobs'] )
 
@@ -561,7 +565,7 @@ class SSHComputingElement( ComputingElement ):
           if ( len( jbundle ) == 2 ):
             resultDict[jobDict[jbundle[0]]] = jbundle[1]
     else:
-      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
+      return S_ERROR( '\n'.join( [sshStdout, sshStderr] ) )
 
 #    self.log.verbose( ' !!! getUnitJobStatus will return : %s\n' % resultDict )
     return S_OK( resultDict )
@@ -578,7 +582,7 @@ class SSHComputingElement( ComputingElement ):
     output = '%s/%s.out' % ( self.batchOutput, jobStamp )
     error = '%s/%s.out' % ( self.batchError, jobStamp )
 
-    return S_OK( (jobStamp,host,output,error) )
+    return S_OK( (jobStamp, host, output, error) )
 
   def getJobOutput( self, jobID, localDir = None ):
     """ Get the specified job standard output and error files. If the localDir is provided,
@@ -589,7 +593,7 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       return result
     
-    jobStamp,host,outputFile,errorFile = result['Value']
+    jobStamp, host, outputFile, errorFile = result['Value']
     
     self.log.verbose( 'Getting output for jobID %s' % jobID )
 

@@ -10,10 +10,11 @@ from datetime import datetime, timedelta
 
 from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.AccountingSystem.Client.ReportsClient            import ReportsClient
+from DIRAC.ConfigurationSystem.Client.Helpers               import Resources
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command             import Command
 #from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Utilities                   import CSHelpers 
+from DIRAC.ResourceStatusSystem.Utilities                   import CSHelpers
 
 __RCSID__ = '$Id:  $'
 
@@ -520,7 +521,7 @@ class SuccessfullJobsBySiteSplittedCommand( Command ):
 #      if not sources[ 'OK' ]:
 #        return sources 
 #      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()      
+      sites = Resources.getSites()      
       if not sites['OK']:
         return sites
       sites = sites[ 'Value' ]
@@ -601,7 +602,7 @@ class FailedJobsBySiteSplittedCommand( Command ):
 #      if not sources[ 'OK' ]:
 #        return sources 
 #      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()      
+      sites = Resources.getSites()      
       if not sites[ 'OK' ]:
         return sites
       sites = sites[ 'Value' ]
@@ -682,7 +683,7 @@ class SuccessfullPilotsBySiteSplittedCommand( Command ):
 #      if not sources[ 'OK' ]:
 #        return sources 
 #      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()      
+      sites = Resources.getSites()      
       if not sites[ 'OK' ]:
         return sites
       sites = sites[ 'Value' ]
@@ -763,7 +764,7 @@ class FailedPilotsBySiteSplittedCommand( Command ):
 #      if not sources[ 'OK' ]:
 #        return sources 
 #      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()      
+      sites = Resources.getSites()      
       if not sites[ 'OK' ]:
         return sites
       sites = sites[ 'Value' ]
@@ -807,6 +808,8 @@ class SuccessfullPilotsByCESplittedCommand( Command ):
     
     super( SuccessfullPilotsByCESplittedCommand, self ).__init__( args, clients )
     
+    self.resources = Resources.Resources()
+    
     if 'ReportsClient' in self.apis:
       self.rClient = self.apis[ 'ReportsClient' ]
     else:
@@ -846,7 +849,7 @@ class SuccessfullPilotsByCESplittedCommand( Command ):
 #        return CEs 
 #      CEs = [ ce[0] for ce in CEs['Value'] ]
      
-      ces = CSHelpers.getComputingElements()      
+      ces = self.resources.getEligibleResources( 'Computing' )
       if not ces[ 'OK' ]:
         return ces
       ces = ces[ 'Value' ]
@@ -1010,7 +1013,7 @@ class RunningJobsBySiteSplittedCommand( Command ):
 #      if not sources[ 'OK' ]:
 #        return sources 
 #      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()      
+      sites = Resources.getSites()      
       if not sites[ 'OK' ]:
         return sites
       sites = sites[ 'Value' ]

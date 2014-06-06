@@ -10,7 +10,7 @@
 __RCSID__ = "$Id$"
 
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import gLogger, gConfig, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory

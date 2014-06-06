@@ -8,8 +8,7 @@ import random
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gMonitor, gConfig
 from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
-from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
-from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
+from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
 gSynchro = ThreadSafe.Synchronizer()
@@ -104,7 +103,7 @@ class AccountingDB( DB ):
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't get a list of setups: %s" % retVal[ 'Message' ] )
     setupsList = retVal[ 'Value' ]
-    objectsLoaded = loadObjects( "AccountingSystem/Client/Types", parentClass = BaseAccountingType )
+    objectsLoaded = TypeLoader().getTypes()
 
     #Load the files
     for pythonClassName in sorted( objectsLoaded ):
@@ -188,15 +187,28 @@ class AccountingDB( DB ):
     pending = 0
     now = Time.toEpoch()
     recordsPerSlot = self.getCSOption( "RecordsPerSlot", 100 )
-    for typeName in self.dbCatalog:
+    allTypes = self.dbCatalog.keys()
+    random.shuffle( allTypes )
+    for typeName in allTypes:
       self.log.info( "[PENDING] Checking %s" % typeName )
+      sqlTableName = _getTableName( "in", typeName )
+      result = self._query( "SELECT COUNT(id) FROM `%s`" % sqlTableName )
+      if result[ 'OK' ]:
+        incount = result[ 'Value' ][0][0]
+        self.log.info( "%s IN records for %s" % ( incount, typeName ) )
+        try:
+          gMonitor.addMark( "registerwaiting:%s" % typeName, incount )
+        except:
+          pass
+      else:
+        self.log.warn( "Could not count IN records for %s: %s" % ( typeName, result[ 'Value' ] ) )
       pendingInQueue = self.__threadPool.pendingJobs()
       emptySlots = max( 0, 3000 - pendingInQueue )
       self.log.info( "[PENDING] %s in the queue, %d empty slots" % ( pendingInQueue, emptySlots ) )
       if emptySlots < 1:
+        self.log.info( "[PENDING] No more empty slots." )
         continue
       emptySlots = min( 100, emptySlots )
-      sqlTableName = _getTableName( "in", typeName )
       sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
       sqlCond = "WHERE taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
       result = self._query( "SELECT %s FROM `%s` %s ORDER BY id ASC LIMIT %d" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
@@ -276,6 +288,11 @@ class AccountingDB( DB ):
     """
     Register a new type
     """
+    gMonitor.registerActivity( "registerwaiting:%s" % name,
+                               "Records waiting for insertion for %s" % " ".join( name.split( "_" ) ),
+                               "Accounting",
+                               "records",
+                               gMonitor.OP_MEAN )
     gMonitor.registerActivity( "registeradded:%s" % name,
                                "Register added for %s" % " ".join( name.split( "_" ) ),
                                "Accounting",
@@ -1007,10 +1024,16 @@ class AccountingDB( DB ):
     #Calculate time conditions
     sqlTimeCond = []
     if startTime:
+      if tableType == 'bucket':
+        #HACK because MySQL and UNIX do not start epoch at the same time
+        startTime = startTime + 3600
+        startTime = self.calculateBuckets( typeName, startTime, startTime )[0][0]
       sqlTimeCond.append( "`%s`.`startTime` >= %s" % ( tableName, startTime ) )
     if endTime:
       if tableType == "bucket":
         endTimeSQLVar = "startTime"
+        endTime = endTime + 3600
+        endTime = self.calculateBuckets( typeName, endTime, endTime )[0][0]
       else:
         endTimeSQLVar = "endTime"
       sqlTimeCond.append( "`%s`.`%s` <= %s" % ( tableName, endTimeSQLVar, endTime ) )

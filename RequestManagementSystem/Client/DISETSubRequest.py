@@ -9,8 +9,7 @@
 __RCSID__ = "$Id$"
 
 import commands
-from DIRAC.Core.Utilities import DEncode
-from DIRAC import Time
+from DIRAC.Core.Utilities import DEncode, Time
 from DIRAC.Core.Utilities.File import makeGuid
 
 class DISETSubRequest:

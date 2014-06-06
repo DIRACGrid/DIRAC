@@ -6,6 +6,7 @@
 :mod: FileCatalogHandler 
  
 .. module: FileCatalogHandler
+
 :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service 
 """
 
@@ -500,6 +501,12 @@ class FileCatalogHandler( RequestHandler ):
     """ Add a new metadata set
     """
     return gFileCatalogDB.dmeta.getMetadataSet( setName, expandFlag, self.getRemoteCredentials() )
+
+  types_listMetadataSets = []
+  def export_listMetadataSets(self):
+    """ Get the list of metadata sets with their definitions
+    """
+    return gFileCatalogDB.dmeta.listMetadataSets(self.getRemoteCredentials())
 
 #########################################################################################
 #

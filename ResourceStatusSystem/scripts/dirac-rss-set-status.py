@@ -17,7 +17,6 @@ from DIRAC.ResourceStatusSystem.Client                      import ResourceStatu
 from DIRAC.ResourceStatusSystem.PolicySystem                import StateMachine
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 
-
 __RCSID__  = '$Id:$'
 
 subLogger  = None
@@ -251,6 +250,11 @@ if __name__ == "__main__":
   registerUsageMessage()
   switchDict = parseSwitches()
   switchDictSets = unpack( switchDict )
+  
+  from DIRAC                                   import gConfig
+  from DIRAC.Core.Security.ProxyInfo           import getProxyInfo
+  from DIRAC.ResourceStatusSystem.Client       import ResourceStatusClient
+  from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
   
   #Run script
   for switchDict in switchDictSets:

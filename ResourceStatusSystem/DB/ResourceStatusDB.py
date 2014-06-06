@@ -361,7 +361,7 @@ class ResourceStatusDB( object ):
 
   def _logRecord( self, params, meta, isUpdate ):
     '''
-      Method that records every change on a LogTable, if activated on the CS.
+      Method that records every change on a LogTable.
     '''
       
     if not ( 'table' in meta and meta[ 'table' ].endswith( 'Status' ) ):

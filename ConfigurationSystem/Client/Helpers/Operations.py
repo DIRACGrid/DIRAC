@@ -1,8 +1,9 @@
 import thread
 import types
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import CFG, LockRing
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
+import os
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities import CFG, LockRing, List
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals, Resources
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
@@ -136,27 +137,64 @@ class Operations( object ):
       data[ opName ] = sectionCFG[ opName ]
     return S_OK( data )
 
-  def generatePath( self, option, vo = False, setup = False ):
+  def getPath( self, option, vo = False, setup = False ):
     """
-    Generate the CS path for an option
-    if vo is not defined, the helper's vo will be used for multi VO installations
-    if setup evaluates False (except None) -> The helpers setup will  be used
-    if setup is defined -> whatever is defined will be used as setup
-    if setup is None -> Defaults will be used
+    Generate the CS path for an option:
+    
+    - if vo is not defined, the helper's vo will be used for multi VO installations
+    - if setup evaluates False (except None) -> The helpers setup will  be used
+    - if setup is defined -> whatever is defined will be used as setup
+    - if setup is None -> Defaults will be used
+    
+    :param option: path with respect to the Operations standard path  
+    :type option: string
     """
-    path = "/Operations"
-    if not CSGlobals.getVO():
-      if not vo:
-        vo = self.__vo
-      if vo:
-        path += "/%s" % vo
-    if not setup and setup != None:
-      if not setup:
-        setup = self.__setup
-    if setup:
-      path += "/%s" % setup
-    else:
-      path += "/Defaults" 
-    return "%s/%s" % ( path, option )
+    
+    for path in self.__getSearchPaths():
+      optionPath = os.path.join( path, option )
+      value = gConfig.getValue( optionPath , 'NoValue' )
+      if value != "NoValue":
+        return optionPath
+    return ''  
+    
       
-
+  def getSiteMapping( self, resourceType, mapping='' ):
+    """ Get site mapping to resources of a given type 
+    """
+    resultDict = {}
+    
+    if mapping:
+      result = self.getOptions( "SiteTo%sMapping/%s" % ( resourceType, mapping ) )
+      if not result['OK']:
+        return result
+      for site in result['Value']:
+        if site != "UseLocalResources":
+          resultDict[site] = self.getValue( "SiteTo%sMapping/%s/%s" % ( resourceType, mapping, site ), [] )
+      
+    useLocalResources = self.getValue( "SiteTo%sMapping/%s/UseLocalResources" % ( resourceType, mapping), False )
+    if useLocalResources:  
+      reHelper = Resources.Resources( vo = self.__vo )
+      result = reHelper.getEligibleResources( resourceType )
+      if result['OK']:
+        for site in result['Value']:
+          resultDict.setdefault( site, [] )
+          resultDict[site].extend( result['Value'][site] )
+          resultDict[site] = List.uniqueElements( resultDict[site] )
+    
+    return S_OK( resultDict )      
+  
+  def getResourceMapping( self, resourceType, mapping = '' ):
+    """ Get mapping of resources of a given type to sites 
+    """ 
+    result = self.getSiteMapping( resourceType, mapping )
+    if not result['OK']:
+      return result
+    
+    resultDict = {}
+    for site in result['Value']:
+      for resource in result['Value'][site]:
+        resultDict.setdefault( resource, [] )
+        if not site in resultDict[resource]:
+          resultDict[resource].append( site ) 
+    
+    return S_OK( resultDict )        

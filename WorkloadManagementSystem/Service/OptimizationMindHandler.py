@@ -1,9 +1,11 @@
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, ThreadScheduler
+from DIRAC.Core.Security import Properties
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
+from DIRAC.WorkloadManagementSystem.Client.JobState.OptimizationTask import OptimizationTask
 
 class OptimizationMindHandler( ExecutorMindHandler ):
 
@@ -21,10 +23,10 @@ class OptimizationMindHandler( ExecutorMindHandler ):
         jid = int( jid )
       except ValueError:
         self.log.error( "Job ID %s has to be an integer" % jid )
-        continue
+
       #Forget and add task to ensure state is reset
       self.forgetTask( jid )
-      result = self.executeTask( jid, CachedJobState( jid ) )
+      result = self.executeTask( jid, OptimizationTask( jid ) )
       if not result[ 'OK' ]:
         self.log.error( "Could not add job %s to optimization: %s" % ( jid, result[ 'Value' ] ) )
       else:
@@ -70,7 +72,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
         jid = long( jid )
         if jid not in knownJids:
           #Same as before. Check that the state is ok.
-          cls.executeTask( jid, CachedJobState( jid ) )
+          cls.executeTask( jid, OptimizationTask( jid ) )
           added += 1
       log.info( "Added %s/%s jobs for %s state" % ( added, len( jidList ), opState ) )
     return S_OK()
@@ -100,15 +102,51 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return cls.__loadJobs( eTypes )
 
   @classmethod
-  def exec_taskProcessed( cls, jid, jobState, eType ):
-    cls.log.info( "Saving changes for job %s after %s" % ( jid, eType ) )
-    result = jobState.commitChanges()
-    if not result[ 'OK' ]:
-      cls.log.error( "Could not save changes for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
-    return result
+  def __failJob( cls, jid, minorStatus, appStatus = "" ):
+    cls.forgetTask( jid )
+    cls.__jobDB.setJobStatus( jid, "Failed", minorStatus, appStatus )
 
   @classmethod
-  def exec_taskFreeze( cls, jid, jobState, eType ):
+  def __splitJob( cls, jid, manifests ):
+    cls.log.notice( "Splitting job %s" % jid )
+    try:
+      result = cls.__jobDB.insertSplittedManifests( jid, manifests )
+      if not result[ 'OK' ]:
+        cls.__failJob( jid, "Error while splitting", result[ 'Message' ] )
+        return S_ERROR( "Fail splitting" )
+      for jid in result[ 'Value' ]:
+        cls.forgetTask( jid )
+        cls.executeTask( jid, OptimizationTask( jid ) )
+    except Exception, excp:
+      cls.log.exception( "While splitting" )
+      cls.__failJob( jid, "Error while splitting", str( excp ) )
+    return S_OK()
+
+  @classmethod
+  def exec_taskProcessed( cls, jid, taskObj, eType ):
+    cjs = taskObj.jobState
+    cls.log.info( "Saving changes for job %s after %s" % ( jid, eType ) )
+    result = cjs.commitChanges()
+    if not result[ 'OK' ]:
+      cls.log.error( "Could not save changes for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
+      return result
+    if taskObj.splitManifests:
+      return cls.__splitJob( jid, taskObj.splitManifests )
+    if taskObj.tqReady:
+      result = cjs.getManifest()
+      if not result[ 'OK' ]:
+        cls.log.error( "Could not get manifest before inserting into TQ", "%s: %s" % ( jid, result[ 'Message' ] ) )
+        return result
+      manifest = result[ 'Value' ]
+      result = cjs.jobState.insertIntoTQ( manifest )
+      if not result[ 'OK' ]:
+        cls.log.error( "Could not insert into TQ", "%s: %s" % ( jid, result[ 'Message' ] ) )
+      return result
+    return S_OK()
+
+  @classmethod
+  def exec_taskFreeze( cls, jid, taskObj, eType ):
+    jobState = taskObj.jobState
     cls.log.info( "Saving changes for job %s before freezing from %s" % ( jid, eType ) )
     result = jobState.commitChanges()
     if not result[ 'OK' ]:
@@ -116,7 +154,8 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return result
 
   @classmethod
-  def exec_dispatch( cls, jid, jobState, pathExecuted ):
+  def exec_dispatch( cls, jid, taskObj, pathExecuted ):
+    jobState = taskObj.jobState
     result = jobState.getStatus()
     if not result[ 'OK' ]:
       cls.log.error( "Could not get status for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
@@ -146,20 +185,20 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return S_OK( "WorkloadManagement/%s" % minorStatus )
 
   @classmethod
-  def exec_prepareToSend( cls, jid, jobState, eId ):
-    return jobState.recheckValidity()
+  def exec_prepareToSend( cls, jid, taskObj, eId ):
+    return taskObj.jobState.recheckValidity()
 
   @classmethod
-  def exec_serializeTask( cls, jobState ):
-    return S_OK( jobState.serialize() )
+  def exec_serializeTask( cls, taskObj ):
+    return S_OK( taskObj.serialize() )
 
   @classmethod
   def exec_deserializeTask( cls, taskStub ):
-    return CachedJobState.deserialize( taskStub )
+    return OptimizationTask.deserialize( taskStub )
 
   @classmethod
-  def exec_taskError( cls, jid, cachedJobState, errorMsg ):
-    result = cachedJobState.commitChanges()
+  def exec_taskError( cls, jid, taskObj, errorMsg ):
+    result = taskObj.jobState.commitChanges()
     if not result[ 'OK' ]:
       cls.log.error( "Cannot write changes to job %s: %s" % ( jid, result[ 'Message' ] ) )
     jobState = JobState( jid )
@@ -172,3 +211,41 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     cls.log.notice( "Job %s: Setting to Failed|%s" % ( jid, errorMsg ) )
     return jobState.setStatus( "Failed", errorMsg, source = 'OptimizationMindHandler' )
 
+  auth_stageCallback = [ Properties.OPERATOR ]
+  types_stageCallback = ( ( types.StringType, types.IntType, types.LongType ), types.StringType )
+  def export_stageCallback( self, jid, stageStatus ):
+    """ Simple call back method to be used by the stager. """
+    try:
+      jid = int( jid )
+    except ValueError:
+      return S_ERROR( "Job ID is not a number!" )
+
+    failed = False
+    if stageStatus == 'Done':
+      major = 'Checking'
+      minor = 'InputDataValidation'
+    elif stageStatus == 'Failed':
+      major = 'Failed'
+      minor = 'Staging input files failed'
+      failed = True
+    else:
+      return S_ERROR( "%s status not known." % stageStatus )
+
+    result = self.__jobDB.getJobAttributes( jid, ['Status'] )
+    if not result['OK']:
+      return result
+    data = result[ 'Value' ]
+    if not data:
+      return S_OK( 'No Matching Job' )
+    if data[ 'Status' ] != 'Staging':
+      return S_OK( 'Job %s is not in Staging' % jid )
+
+    jobState = JobState( jid )
+    result = jobState.setStatus( major, minor, source = "StagerSystem" )
+    if not result[ 'OK' ]:
+      return result
+
+    if failed:
+      return S_OK()
+
+    return self.executeTask( jid, OptimizationTask( jid ) )

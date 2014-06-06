@@ -1,9 +1,7 @@
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, gLogger
-
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.Base.AgentModule                                import AgentModule
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient  import StorageManagerClient
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 
 AGENT_NAME = 'StorageManagement/RequestFinalizationAgent'

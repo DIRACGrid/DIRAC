@@ -10,6 +10,7 @@ from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModul
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.List                             import uniqueElements
 from DIRAC                                                 import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import Resources
 from DIRAC.DataManagementSystem.Client.DataManager         import DataManager
 from DIRAC.Resources.Catalog.FileCatalog                   import FileCatalog
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import getStorageElementOptions
@@ -45,12 +46,13 @@ class InputDataAgent( OptimizerModule ):
       self.log.exception( msg )
       return S_ERROR( msg + str( e ) )
     
-    self.resourceStatus = ResourceStatus()
+    self.resourceStatus  = ResourceStatus()
+    self.resourcesHelper = Resources()
     self.fc = FileCatalog()
-
     self.seToSiteMapping = {}
     self.lastCScheck = 0
     self.cacheLength = 600
+    
 
     return S_OK()
 
@@ -270,11 +272,11 @@ class InputDataAgent( OptimizerModule ):
             continue
           try:
             #storageElement = StorageElement( se )
-            result = self.resourceStatus.getStorageElementStatus( se, statusType = 'ReadAccess' )
+            result = self.resourceStatus.getStorageStatus( se, statusType = 'ReadAccess' )
             if not result['OK']:
               continue
             seDict[se] = { 'Sites': sites['Value'], 'SEParams': result['Value'][se] }
-            result = getStorageElementOptions( se )
+            result = self.resourcesHelper.getStorageElementOptionsDict( se )
             if not result['OK']:
               continue
             seDict[se]['SEParams'].update(result['Value'])

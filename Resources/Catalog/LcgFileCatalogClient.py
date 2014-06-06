@@ -8,7 +8,9 @@ from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalog
 from DIRAC.Core.Utilities.Time                                import fromEpoch
 from DIRAC.Core.Utilities.List                                import breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getDNForUsername, getVOMSAttributeForGroup, getVOForGroup, getVOOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getDNForUsername, getVOMSAttributeForGroup, \
+                                                                     getVOForGroup, getVOOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 from stat import *
 import os, re, types, time
@@ -141,10 +143,10 @@ def returnCode( error, value = '', errMsg = '' ):
 
 class LcgFileCatalogClient( FileCatalogueBase ):
 
-  def __init__( self, infosys = None, host = None ):
+  def __init__( self, infosys = None, host = None, name='LFC' ):
     global lfc, importedLFC
 
-    FileCatalogueBase.__init__( self, 'LFC' )
+    FileCatalogueBase.__init__( self, name )
 
     if importedLFC == None:
       try:
@@ -160,19 +162,25 @@ class LcgFileCatalogClient( FileCatalogueBase ):
 
     self.valid = importedLFC
 
-    if not infosys:
-      # if not provided, take if from CS
-      infosys = gConfig.getValue( '/Resources/FileCatalogs/LcgFileCatalog/LcgGfalInfosys', '' )
-    if not infosys and 'LCG_GFAL_INFOSYS' in os.environ:
-      # if not in CS take from environ
-      infosys = os.environ['LCG_GFAL_INFOSYS']
+    if not infosys or not host:
+      result = Resources().getCatalogOptionsDict( self.name )
+      catConfig = {}
+      if result['OK']:
+        catConfig = result['Value']
 
-    if not host:
-      # if not provided, take if from CS
-      host = gConfig.getValue( '/Resources/FileCatalogs/LcgFileCatalog/MasterHost', '' )
-    if not host and 'LFC_HOST' in os.environ:
-      # if not in CS take from environ
-      host = os.environ['LFC_HOST']
+      if not infosys:
+        # if not provided, take if from CS
+        infosys = catConfig.get( 'LcgGfalInfosys', '' )
+      if not infosys and 'LCG_GFAL_INFOSYS' in os.environ:
+        # if not in CS take from environ
+        infosys = os.environ['LCG_GFAL_INFOSYS']
+
+      if not host:
+        # if not provided, take if from CS
+        host = catConfig.get( 'MasterHost', '' )
+      if not host and 'LFC_HOST' in os.environ:
+        # if not in CS take from environ
+        host = os.environ['LFC_HOST']
 
     self.host = host
     result = gConfig.getOption( '/DIRAC/Setup' )
@@ -295,6 +303,40 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if created:
       self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
+    return S_OK( resDict )
+
+  def __getClientCertInfo( self ):
+    res = getProxyInfo( False, False )
+    if not res['OK']:
+      gLogger.error( "ReplicaManager.__getClientCertGroup: Failed to get client proxy information.",
+                     res['Message'] )
+      return res
+    proxyInfo = res['Value']
+    gLogger.debug( formatProxyInfoAsString( proxyInfo ) )
+    if not proxyInfo.has_key( 'group' ):
+      errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the group."
+      gLogger.error( errStr )
+      return S_ERROR( errStr )
+    if not proxyInfo.has_key( 'VOMS' ):
+      proxyInfo['VOMS'] = getVOMSAttributeForGroup( proxyInfo['group'] )
+      errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the VOMs information."
+      gLogger.warn( errStr )
+    res = getDNForUsername( proxyInfo['username'] )
+    if not res['OK']:
+      errStr = "ReplicaManager.__getClientCertGroup: Error getting known proxies for user."
+      gLogger.error( errStr, res['Message'] )
+      return S_ERROR( errStr )
+    diracGroup = proxyInfo.get( 'group', 'Unknown' )
+    vo = getVOForGroup( diracGroup )
+    vomsVO = getVOOption( vo, 'VOMSVO', '')
+    resDict = { 'DN'       : proxyInfo['identity'],
+                'Role'     : proxyInfo['VOMS'],
+                'User'     : proxyInfo['username'],
+                'AllDNs'   : res['Value'],
+                'Group'    : diracGroup,
+                'VO'       : vo,
+                'VOMSVO'   : vomsVO
+              }
     return S_OK( resDict )
 
   def __getPathAccess( self, path ):
@@ -467,10 +509,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if not res['OK']:
       return res
     lfns = res['Value']
-    lfnChunks = breakListIntoChunks( lfns.keys(), 1000 )
+    lfnChunks = breakListIntoChunks( lfns.keys(), 2 )
     # If we have less than three groups to query a session doesn't make sense
     created = False
-    if len( lfnChunks ) > 2:
+    if False and len( lfnChunks ) > 2:
       created = self.__openSession()
       if created < 0:
         return S_ERROR( "Error opening LFC session" )

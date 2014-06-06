@@ -24,9 +24,10 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog    import FileCatalog
-from DIRAC.Resources.Utilities import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 # # RCSID
@@ -127,8 +128,6 @@ class FTSRequest( object ):
     self.__cksmType = self.__defaultCksmType
     # # disable checksum test by default
     self.__cksmTest = False
-
-
     # # statuses that prevent submitting to FTS
     self.noSubmitStatus = ( 'Failed', 'Done', 'Staging' )
 
@@ -702,7 +701,7 @@ class FTSRequest( object ):
         continue
       # Fix first the PFN
       pfn = self.oSourceSE.getPfnForLfn( lfn ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[self.sourceSE] )
-      res = Utils.executeSingleFileOrDirWrapper( self.oSourceSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True ) )
+      res = returnSingleResult( self.oSourceSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True ) )
       if not res['OK']:
         gLogger.warn( "resolveSource: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
@@ -1223,7 +1222,7 @@ class FTSRequest( object ):
     self.failedRegistrations = {}
     toRegister = {}
     for lfn in transLFNs:
-      res = Utils.executeSingleFileOrDirWrapper( self.oTargetSE.getPfnForProtocol( self.fileDict[lfn].get( 'Target' ), protocol = 'SRM2', withPort = False ) )
+      res = returnSingleResult( self.oTargetSE.getPfnForProtocol( self.fileDict[lfn].get( 'Target' ), protocol = 'SRM2', withPort = False ) )
       if not res['OK']:
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )

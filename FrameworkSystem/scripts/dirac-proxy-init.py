@@ -167,7 +167,7 @@ class ProxyInit:
     result = ProxyInfo.getProxyInfoAsString( self.__proxyGenerated )
     if not result['OK']:
       gLogger.error( 'Failed to get the new proxy info: %s' % result['Message'] )
-    else:  
+    else:
       gLogger.notice( "Proxy generated:" )
       gLogger.notice( result[ 'Value' ] )
     if self.__uploadedInfo:
@@ -220,6 +220,7 @@ if __name__ == "__main__":
     gLogger.fatal( result[ 'Message' ] )
     sys.exit( 1 )
 
-  pI.printInfo()
+  if piParams.checkWithCS:
+    pI.printInfo()
 
   sys.exit( 0 )

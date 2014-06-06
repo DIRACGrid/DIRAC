@@ -7,7 +7,7 @@ from DIRAC.Core.Utilities.CFG import CFG
 
 import os, time, tempfile, shutil
 
-class JobRepository:
+class JobRepository( object ):
 
   def __init__( self, repository = None ):
     self.location = repository

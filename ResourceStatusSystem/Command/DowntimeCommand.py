@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getGOCSiteName, Resources
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -24,6 +24,8 @@ class DowntimeCommand( Command ):
   def __init__( self, args = None, clients = None ):
     
     super( DowntimeCommand, self ).__init__( args, clients )
+
+    self.resources = Resources()
 
     if 'GOCDBClient' in self.apis:
       self.gClient = self.apis[ 'GOCDBClient' ]
@@ -95,10 +97,10 @@ class DowntimeCommand( Command ):
     # The DIRAC se names mean nothing on the grid, but their hosts do mean.
     elif elementType == 'StorageElement':
       
-      seHost = CSHelpers.getSEHost( elementName )
-      if not seHost:
+      result = CSHelpers.getSEProtocolOption( elementName, 'Host' )
+      if not result['OK']:
         return S_ERROR( 'No seHost for %s' % elementName )
-      elementName = seHost
+      elementName = result['Value']
              
     return S_OK( ( element, elementName, hours ) )
 
@@ -273,7 +275,7 @@ class DowntimeCommand( Command ):
     #if fc[ 'OK' ]:
     #  resources = resources + fc[ 'Value' ]
     
-    ce = CSHelpers.getComputingElements() 
+    ce = self.resources.getEligibleResources( 'Computing' )
     if ce[ 'OK' ]:
       resources = resources + ce[ 'Value' ]
     

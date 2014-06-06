@@ -155,6 +155,15 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                  import gLogger
 from DIRAC                                  import S_OK, S_ERROR
+from DIRAC.Core.Utilities.DataStructures    import MutableStruct
+from DIRAC.Core.Utilities                   import Time
+
+# Get rid of the annoying Deprecation warning of the current MySQLdb
+# FIXME: compile a newer MySQLdb version
+import warnings
+with warnings.catch_warnings():
+  warnings.simplefilter( 'ignore', DeprecationWarning )
+  import MySQLdb
 
 # Get rid of the annoying Deprecation warning of the current MySQLdb
 # FIXME: compile a newer MySQLdb version
@@ -232,6 +241,7 @@ class MySQL:
     """
     Management of connections per thread
     """
+    __connData = MutableStruct( 'ConnData', [ 'conn', 'dbName', 'last', 'intrans' ] )
 
     def __init__( self, host, user, passwd, port = 3306, graceTime = 600 ):
       self.__host = host
@@ -260,28 +270,29 @@ class MySQL:
     def __execute( self, conn, cmd ):
       cursor = conn.cursor()
       res = cursor.execute( cmd )
-      conn.commit()
       cursor.close()
       return res
 
     def get( self, dbName, retries = 10 ):
       retries = max( 0, min( MAXCONNECTRETRY, retries ) )
       self.clean()
-      return self.__getWithRetry( dbName, retries, retries )
+      result = self.__getWithRetry( dbName, retries, retries )
+      if not result[ 'OK' ]:
+        return result
+      return S_OK( result[ 'Value' ].conn )
 
-
-    def __getWithRetry( self, dbName, totalRetries, retriesLeft ):
+    def __getWithRetry( self, dbName, totalRetries = 10, retriesLeft = 10 ):
       sleepTime = 5 * ( totalRetries - retriesLeft )
       if sleepTime > 0:
         time.sleep( sleepTime )
       try:
-        conn, lastName, thid = self.__innerGet()
+        connData, thid = self.__innerGet()
       except MySQLdb.MySQLError, excp:
         if retriesLeft >= 0:
           return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
         return S_ERROR( "Could not connect: %s" % excp )
 
-      if not self.__ping( conn ):
+      if not connData.intrans and not self.__ping( connData.conn ):
         try:
           self.__assigned.pop( thid )
         except KeyError:
@@ -290,21 +301,19 @@ class MySQL:
           return self.__getWithRetry( dbName, totalRetries, retriesLeft )
         return S_ERROR( "Could not connect" )
 
-      if lastName != dbName:
+      if connData.dbName != dbName:
         try:
-          conn.select_db( dbName )
+          connData.conn.select_db( dbName )
+          connData.dbName = dbName
         except MySQLdb.MySQLError, excp:
+          try:
+            self.__assigned.pop( thid ).conn.close()
+          except Exception:
+            pass
           if retriesLeft >= 0:
             return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
           return S_ERROR( "Could not select db %s: %s" % ( dbName, excp ) )
-        try:
-          self.__assigned[ thid ][1] = dbName
-        except KeyError:
-          if retriesLeft >= 0:
-            return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
-          return S_ERROR( "Could not connect" )
-      return S_OK( conn )
-
+      return S_OK( connData )
 
     def __ping( self, conn ):
       try:
@@ -316,30 +325,30 @@ class MySQL:
     def __innerGet( self ):
       thid = self.__thid
       now = time.time()
-      if thid in self.__assigned:
-        data = self.__assigned[ thid ]
-        conn = data[0]
-        data[2] = now
-        return data[0], data[1], thid
-      # Not cached
       try:
-        conn, dbName = self.__spares.pop()
+        data = self.__assigned[ thid ]
+        data.last = now
+        return data, thid
+      except KeyError:
+        pass
+      #Not cached
+      try:
+        connData = self.__spares.pop()
       except IndexError:
-        conn = self.__newConn()
-        dbName = ""
+        connData = self.__connData( self.__newConn(), "", now, False )
 
-      self.__assigned[ thid ] = [ conn, dbName, now ]
-      return conn, dbName, thid
+      self.__assigned[ thid ] = connData
+      return self.__assigned[ thid ], thid
 
     def __pop( self, thid ):
       try:
-        data = self.__assigned.pop( thid )
-        if len( self.__spares ) < self.__maxSpares:
-          self.__spares.append( ( data[0], data[1] ) )
-        else:
-          data[ 0 ].close()
+        connData = self.__assigned.pop( thid )
       except KeyError:
-        pass
+        return
+      if not connData.intrans and len( self.__spares ) < self.__maxSpares:
+        self.__spares.append( connData )
+      else:
+        connData.conn.close()
 
     def clean( self, now = False ):
       if not now:
@@ -348,44 +357,56 @@ class MySQL:
       for thid in list( self.__assigned ):
         if not thid.isAlive():
           self.__pop( thid )
+          continue
         try:
           data = self.__assigned[ thid ]
         except KeyError:
           continue
-        if now - data[2] > self.__graceTime:
+        if now - data.last > self.__graceTime:
           self.__pop( thid )
 
     def transactionStart( self, dbName ):
-      result = self.get( dbName )
+      print "TRANS START"
+      result = self.__getWithRetry( dbName )
       if not result[ 'OK' ]:
         return result
-      conn = result[ 'Value' ]
+      connData = result[ 'Value' ]
       try:
-        return S_OK( self.__execute( conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT" ) )
+        if connData.intrans:
+          raise RuntimeError( "Staring a MySQL transaction inside another one" )
+      	self.__execute( connData.conn, "SET AUTOCOMMIT=0" )
+        self.__execute( connData.conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT" )
+        connData.intrans = True
+        return S_OK()
       except MySQLdb.MySQLError, excp:
         return S_ERROR( "Could not begin transaction: %s" % excp )
 
     def transactionCommit( self, dbName ):
-      result = self.get( dbName )
-      if not result[ 'OK' ]:
-        return result
-      conn = result[ 'Value' ]
-      try:
-        result = self.__execute( conn, "COMMIT" )
-        return S_OK( result )
-      except MySQLdb.MySQLError, excp:
-        return S_ERROR( "Could not commit transaction: %s" % excp )
+      print "TRANS COMMIT"
+      return self.__endTransaction( dbName, True )
 
     def transactionRollback( self, dbName ):
-      result = self.get( dbName )
+      print "TRANS ROLLBACK"
+      return self.__endTransaction( dbName, False )
+
+    def __endTransaction( self, dbName, commit ):
+      result = self.__getWithRetry( dbName )
       if not result[ 'OK' ]:
         return result
-      conn = result[ 'Value' ]
+      connData = result[ 'Value' ]
       try:
-        result = self.__execute( conn, "ROLLBACK" )
+        if not connData.intrans:
+          gLogger.warn( "MySQL connection has reconnected. Transaction may be inconsistent" )
+        if commit:
+          result = connData.conn.commit()
+        else:
+          result = connData.conn.rollback()
+      	self.__execute( connData.conn, "SET AUTOCOMMIT=1" )
+        connData.conn.commit()
+        connData.intrans = False
         return S_OK( result )
       except MySQLdb.MySQLError, excp:
-        return S_ERROR( "Could not rollback transaction: %s" % excp )
+        return S_ERROR( "Could not end transaction: %s" % excp )
 
   __connectionPools = {}
 
@@ -497,7 +518,7 @@ class MySQL:
     if ( tableName, ) in retDict['Value']:
       if not force:
         # the requested exist and table creation is not force, return with error
-        return S_ERROR( 'The requested table already exist' )
+        return S_ERROR( 'Requested table %s already exists' % tableName )
       else:
         cmd = 'DROP TABLE %s' % table
         retDict = self._update( cmd, debug = True )
@@ -534,13 +555,13 @@ class MySQL:
           return retDict
         inEscapeValues.append( retDict['Value'] )
       elif type( value ) == TupleType or type( value ) == ListType:
-        tupleValues = []  
+        tupleValues = []
         for v in list( value ):
           retDict = self.__escapeString( v )
           if not retDict['OK']:
             return retDict
           tupleValues.append( retDict['Value'] )
-        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' ) 
+        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' )
       else:
         retDict = self.__escapeString( str( value ) )
         if not retDict['OK']:
@@ -572,7 +593,6 @@ class MySQL:
       self._connected = True
       return S_OK()
     except Exception, x:
-      print x
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
 
@@ -763,7 +783,7 @@ class MySQL:
           return createView
     return S_OK()
 
-  def _createTables( self, tableDict, force = False ):
+  def _createTables( self, tableDict, force = False, okIfTableExists = True ):
     """
     tableDict:
       tableName: { 'Fields' : { 'Field': 'Description' },
@@ -795,8 +815,10 @@ class MySQL:
         "Engine": use the given DB engine, InnoDB is the default if not present.
       force:
         if True, requested tables are DROP if they exist.
-        if False, returned with S_ERROR if table exist.
-
+        if False (default), tables are not overwritten
+      okIfTableExists:
+        if True (default), returns S_OK if table exists 
+        if False, returns S_ERROR if table exists 
     """
 
     # First check consistency of request
@@ -850,7 +872,7 @@ class MySQL:
                               % ( key, forKey, forTable ) )
 
         if toBeExtracted:
-          self.log.info( 'Table %s ready to be created' % table )
+          self.log.debug( 'Table %s ready to be created' % table )
           extracted = True
           tableList.remove( table )
           tableCreationList[i].append( table )
@@ -858,11 +880,16 @@ class MySQL:
     if tableList:
       return S_ERROR( 'Recursive Foreign Keys in %s' % ', '.join( tableList ) )
 
+    createdTablesList = []
+
     for tableList in tableCreationList:
       for table in tableList:
-        # Check if Table exist
+        # Check if Table exists
         retDict = self.__checkTable( table, force = force )
         if not retDict['OK']:
+          message = 'The requested table already exists'
+          if retDict['Message'] == message and okIfTableExists:
+            continue
           return retDict
 
         thisTable = tableDict[table]
@@ -905,14 +932,15 @@ class MySQL:
         else:
           engine = 'InnoDB'
 
-        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % ( 
+        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % (
                table, ',\n'.join( cmdList ), engine )
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
           return retDict
-        self.log.info( 'Table %s created' % table )
+        self.log.debug( 'Table %s created' % table )
+        createdTablesList.append( table )
 
-    return S_OK()
+    return S_OK( createdTablesList )
 
   def _getFields( self, tableName, outFields = None,
                   inFields = None, inValues = None,
@@ -998,6 +1026,28 @@ class MySQL:
 
   def transactionRollback( self ):
     return self.__connectionPool.transactionRollback( self.__dbName )
+
+  @property
+  def transaction( self ):
+    """ Transaction guard """
+    class TransactionGuard( object ):
+      def __init__( self, db ):
+        self.__db = db
+        self.__ok = False
+      def __enter__( self ):
+        self.__db.transactionStart()
+        def commitWard( *args ):
+          self.__ok = True
+          return args
+        return commitWard
+      def __exit__( self, exType, exValue, traceback ):
+        if exValue or not self.__ok:
+          self.__db.transactionRollback()
+        else:
+          self.__db.transactionCommit()
+    return TransactionGuard( self )
+
+
 
 
 ########################################################################################
@@ -1122,7 +1172,7 @@ class MySQL:
         if type( aName ) in StringTypes:
           attrName = _quotedList( [aName] )
         elif type( aName ) == TupleType:
-          attrName = '('+_quotedList( list( aName ) )+')'   
+          attrName = '('+_quotedList( list( aName ) )+')'
         if not attrName:
           error = 'Invalid condDict argument'
           self.log.warn( 'buildCondition:', error )

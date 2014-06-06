@@ -11,7 +11,9 @@ from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities                   import RssConfiguration
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.FrameworkSystem.Client.NotificationClient        import NotificationClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 
+from types import StringTypes, ListType
 
 __RCSID__ = '$Id:  $'
        
@@ -438,12 +440,25 @@ class ResourceStatusClient( object ):
       gLogger.debug( '"%s" is not a valid element like %s' % ( element, self.validElements ) )
       return S_ERROR( '"%s" is not a valid element like %s' % ( element, self.validElements ) )
     
+    # For Site elements always use the short names
+    if element == "Site" and parameters['name'] is not None:
+      if type( parameters['name'] ) in StringTypes:
+        parameters['name'] = [parameters['name']]
+      if type( parameters['name'] ) == ListType:
+        result = getSites( parameters['name'] )
+        if not result['OK']:
+          gLogger.debug( result['Message'] )            
+          return result
+        parameters['name'] = result['Value']  
+      else:
+        gLogger.debug( 'Invalid site name type: %s' % type( parameters['name'] ) )            
+        return S_ERROR( 'Invalid site name type: %s' % type( parameters['name'] ) )    
+    
     tableType = parameters.pop( 'tableType' )
     #tableName = tableName.replace( 'Element', element )
     tableName = '%s%s' % ( element, tableType )
           
     meta[ 'table' ] = tableName
-    
     gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, parameters, meta ) )  
     userRes = gateFunction( parameters, meta )
     

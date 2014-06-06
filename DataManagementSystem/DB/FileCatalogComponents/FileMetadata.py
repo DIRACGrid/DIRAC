@@ -8,8 +8,10 @@
 
 __RCSID__ = "$Id$"
 
+# import time 
 import types
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
+
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 from DIRAC.Core.Utilities.List import intListToString
 
@@ -18,12 +20,36 @@ FILE_STANDARD_METAKEYS = [ 'SE', 'CreationDate', 'ModificationDate', 'LastAccess
 
 class FileMetadata:
 
+  _tables = {}
+  _tables["FC_FileMeta"] = { "Fields": {
+                                       "FileID": "INTEGER NOT NULL",
+                                       "MetaKey": "VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname'",
+                                       "MetaValue": "VARCHAR(31) NOT NULL DEFAULT 'Noname'"
+                                      },
+                            "UniqueIndexes": { "FileID": ["MetaKey"] }
+                          }
+  
+  _tables["FC_FileMetaFields"] = { "Fields": {
+                                              "MetaID": "INT AUTO_INCREMENT",
+                                              "MetaName": "VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                              "MetaType": "VARCHAR(128) NOT NULL"
+                                             },
+                                   "PrimaryKey": "MetaID"
+                                 }
+
   def __init__(self,database = None):
-          
-    self.db = database
-    
+    self.db = None
+    if database is not None:
+      self.setDatabase( database )
+
   def setDatabase( self, database ):
     self.db = database
+    result = self.db._createTables( self._tables )
+    if not result['OK']:
+      gLogger.error( "Failed to create tables", str( self._tables.keys() ) )
+    elif result['Value']:
+      gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
+    return result
         
 ##############################################################################
 #
@@ -218,7 +244,7 @@ class FileMetadata:
       return result
     metaFields = result['Value']
 
-    stringIDs = ','.join( [ '%s' % id for id in fileIDList ] )
+    stringIDs = ','.join( [ '%s' % id_ for id_ in fileIDList ] )
     metaDict = {}
     for meta in metaFields:
       req = "SELECT Value,FileID FROM FC_FileMeta_%s WHERE FileID in (%s)" % ( meta, stringIDs )

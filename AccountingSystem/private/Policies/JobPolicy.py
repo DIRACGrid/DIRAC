@@ -10,6 +10,9 @@ class JobPolicy:
     self.__executor.addGlobalFilter( self.__checkConditions )
 
   def getListingConditions( self, credDict ):
+    #Send all data, just restrict in the end
+    return {}
+
     condDict = {}
     userProps = credDict[ 'properties' ]
 
@@ -74,8 +77,12 @@ class JobPolicy:
     elif Properties.JOB_MONITOR in userProps:
       return S_OK( dataDict )
     elif Properties.JOB_SHARING in userProps:
+      dataDict[ 'User' ] = [ credDict[ 'username' ] ]
+      dataDict[ 'UserGroup' ] = [ credDict[ 'group' ] ]
       return S_OK( dataDict )
     elif Properties.NORMAL_USER in userProps:
+      dataDict[ 'User' ] = [ credDict[ 'username' ] ]
+      dataDict[ 'UserGroup' ] = [ credDict[ 'group' ] ]
       return S_OK( dataDict )
 
     dataDict[ 'User' ] = []

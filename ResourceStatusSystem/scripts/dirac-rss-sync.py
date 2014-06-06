@@ -18,11 +18,8 @@
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..        
 """
 
-from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
+from DIRAC                                     import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
-from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.PolicySystem   import StateMachine
-from DIRAC.ResourceStatusSystem.Utilities      import CSHelpers, RssConfiguration, Synchronizer
 
 __RCSID__  = '$Id:$'
 
@@ -122,14 +119,11 @@ def initSEs():
     Initializes SEs statuses taking their values from the CS.
   '''
 
-  #WarmUp local copy
-  CSHelpers.warmUp()
-
   subLogger.info( 'Initializing SEs' )
   
-  rssClient = ResourceStatusClient.ResourceStatusClient()
+  resources = Resources()
   
-  ses = CSHelpers.getStorageElements()
+  ses = resources.getEligibleStorageElements()
   if not ses[ 'OK' ]:
     return ses
   ses = ses[ 'Value' ]  
@@ -141,11 +135,14 @@ def initSEs():
   subLogger.debug( statuses )
   subLogger.debug( statusTypes )
   
+  rssClient = ResourceStatusClient.ResourceStatusClient()
+  
   for se in ses:
 
     subLogger.debug( se )
 
-    opts = gConfig.getOptionsDict( '/Resources/StorageElements/%s' % se )
+    #opts = gConfig.getOptionsDict( '/Resources/StorageElements/%s' % se )
+    opts = resources.getStorageElementOptionsDict( se )
     if not opts[ 'OK' ]:
       subLogger.warn( opts[ 'Message' ] )
       continue
@@ -225,6 +222,12 @@ if __name__ == "__main__":
   registerSwitches()
   registerUsageMessage()
   switchDict = parseSwitches()
+  
+  from DIRAC                                              import gConfig
+  from DIRAC.ResourceStatusSystem.Client                  import ResourceStatusClient
+  from DIRAC.ResourceStatusSystem.PolicySystem            import StateMachine
+  from DIRAC.ResourceStatusSystem.Utilities               import RssConfiguration, Synchronizer
+  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
   
   #Run script
   run()

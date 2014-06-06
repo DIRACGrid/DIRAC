@@ -1958,10 +1958,33 @@ File Catalog Client $Revision: 1.17 $Date:
       print ("Error: %s" % result['Message'])            
     else:
       if not result['Value']:
-        print "No entries found"
+        print "Metadata for file or directory found"
+      else:
+        if len(result['Value']['FileMetaFields']):
+          print "\n","File metadata".rjust(20,":")
+          for meta, metatype in result['Value']['FileMetaFields'].items():
+            metatype = metatype.replace("int","integer").replace("INT","integer").replace("VARCHAR(128)","string")
+            print meta.rjust(20),':',metatype
+        if len(result['Value']['DirectoryMetaFields']):
+          print "\n","Directory metadata".rjust(20),":"
+          for meta,metatype in result['Value']['DirectoryMetaFields'].items():
+            metatype = metatype.replace("int","integer").replace("INT","integer").replace("VARCHAR(128)","string")
+            print meta.rjust(20),':',metatype
+
+    result = self.fc.listMetadataSets()
+    if not result['OK']:
+      print 'Error: %s' % result['Message']
+    else:
+      if not result['Value']:
+        print "No Metadata sets defined"
       else:  
-        for meta,_type in result['Value'].items():
-          print meta.rjust(20),':',_type
+        print "\n","Metadata sets".rjust(20),":"
+        for metasetname, values in result['Value'].items():
+          metastr = ''
+          for key,val in values.items():
+            metastr += "%s : %s, " % (key, val)
+          metastr.rstrip(",")  
+          print "%s -> %s" % (metasetname.rjust(20), metastr)
 
   def registerMeta(self,argss):
     """ Add metadata field. 
@@ -2035,17 +2058,22 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
     
-        usage: find <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
+        usage: find [-q] <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
    
     argss = args.split()
     if (len(argss) < 1):
       print self.do_find.__doc__
       return
+    
+    verbose = True
+    if argss[0] == "-q":
+      verbose  = False
+      del argss[0]
+
     path = argss[0]
     path = self.getPath(path)
     del argss[0]
- 
     if argss:
       if argss[0][0] == '{':
         metaDict = eval(argss[0])
@@ -2064,12 +2092,17 @@ File Catalog Client $Revision: 1.17 $Date:
         print dir_
     else:
       print "No matching data found"      
-    if "QueryTime" in result:
+    if verbose and "QueryTime" in result:
       print "QueryTime %.2f sec" % result['QueryTime']  
 
   def complete_find(self, text, line, begidx, endidx):
     result = []
     args = line.split()
+
+    # skip "-q" optional switch
+    if len(args) >= 2 and args[1] == "-q":
+      if len(args) > 2 or line.endswith(" "):
+        del args[1]
 
     # the first argument -- LFN.
     if (1<=len(args)<=2):

@@ -217,7 +217,7 @@ class ReleaseConfig:
       return "\n".join( lines )
 
     def getOptions( self, path = "" ):
-      parentPath = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ][:-1]
+      parentPath = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ]
       if parentPath:
         parent = self.getChild( parentPath )
       else:
@@ -265,6 +265,7 @@ class ReleaseConfig:
       self.__globalDefaultsURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
     self.__globalDefaults = ReleaseConfig.CFG()
     self.__loadedCfgs = []
+    self.__mirrors = {}
     self.__prjDepends = {}
     self.__prjRelCFG = {}
     self.__projectsLoadedBy = {}
@@ -434,6 +435,10 @@ class ReleaseConfig:
     return project in self.__prjRelCFG
 
   def getTarsLocation( self, project ):
+    if project in self.__mirrors:
+      mirror = self.__mirrors[ project ]
+      self.__dbgMsg( "Downloading from mirror: %s" % mirror )
+      return S_OK( mirror )
     defLoc = self.__globalDefaults.get( "Projects/%s/BaseURL" % project, "" )
     if defLoc:
       return S_OK( defLoc )
@@ -512,6 +517,21 @@ class ReleaseConfig:
     return S_OK()
 
 
+  def __checkForMirrors( self, project ):
+    mb = "Projects/%s/Mirrors" % project
+    if not self.__globalDefaults.isSection( mb ):
+      self.__dbgMsg( "No mirrors defined for %s" % project )
+      return
+    mirrors = self.__globalDefaults.getOptions( mb )
+    for mproj in mirrors:
+      if mproj not in self.__mirrors:
+        mirror = self.__globalDefaults.get( "%s/%s" % ( mb, mproj ) )
+        self.__dbgMsg( "Mirror defined for project %s by %s at %s" % ( mproj, project, mirror ) )
+        self.__mirrors[ mproj ] = mirror
+      else:
+        self.__dbgMsg( "Mirror for %s previously defined" % mproj )
+
+
   def loadProjectRelease( self, releases, project = False, sourceURL = False, releaseMode = False, relLocation = False ):
     if not project:
       project = self.__projectName
@@ -524,6 +544,7 @@ class ReleaseConfig:
     if not result[ 'OK' ]:
       self.__dbgMsg( "Could not load defaults for project %s" % project )
       return result
+    self.__checkForMirrors( project )
 
     if project not in self.__prjDepends:
       self.__prjDepends[ project ] = {}
@@ -786,7 +807,10 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     #   #opener = urllib2.build_opener()
     #  urllib2.install_opener( opener )
     remoteFD = urllib2.urlopen( url )
-    expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
+    remoteInfo = remoteFD.info()
+    expectedBytes = -1
+    if 'Content-Lentgth' in remoteInfo:
+      expectedBytes = long( remoteInfo[ 'Content-Length' ] )
     if fileName:
       localFD = open( fileName, "wb" )
     receivedBytes = 0L
@@ -812,7 +836,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     if fileName:
       localFD.close()
     remoteFD.close()
-    if receivedBytes != expectedBytes:
+    if receivedBytes != expectedBytes and expectedBytes != -1:
       logERROR( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
       return False
   except urllib2.HTTPError, x:
@@ -1305,11 +1329,12 @@ def createBashrc():
       lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      'export DIRAC=%s' % proPath,
-                     'export DIRACBIN=%s' % os.path.join( proPath, cliParams.platform, 'bin' ),
-                     'export DIRACSCRIPTS=%s' % os.path.join( proPath, 'scripts' ),
-                     'export DIRACLIB=%s' % os.path.join( proPath, cliParams.platform, 'lib' ),
-                     'export TERMINFO=%s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ),
-                     'export RRD_DEFAULT_FONT=%s' % os.path.join( proPath, cliParams.platform, 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
+                     'export DIRACSCRIPTS=%s' % os.path.join( '$DIRAC', 'scripts' ),
+                     'export DIRACPLAT=`%s`' % os.path.join( '$DIRACSCRIPTS', 'dirac-platform' ),
+                     'export DIRACBIN=%s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'bin' ),
+                     'export DIRACLIB=%s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'lib' ),
+                     'export TERMINFO=%s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'terminfo' ),
+                     'export RRD_DEFAULT_FONT=%s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
       lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
                     'PYTHONPATH=""',
@@ -1353,10 +1378,12 @@ def createCshrc():
       lines.append( 'setenv X509_VOMS_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      'setenv DIRAC %s' % proPath,
-                     'setenv DIRACBIN %s' % os.path.join( proPath, cliParams.platform, 'bin' ),
-                     'setenv DIRACSCRIPTS %s' % os.path.join( proPath, 'scripts' ),
-                     'setenv DIRACLIB %s' % os.path.join( proPath, cliParams.platform, 'lib' ),
-                     'setenv TERMINFO %s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ) ] )
+                     'setenv DIRACSCRIPTS %s' % os.path.join( '$DIRAC', 'scripts' ),
+                     'setenv DIRACPLAT `%s`' % os.path.join( '$DIRACSCRIPTS', 'dirac-platform' ),
+                     'setenv DIRACBIN %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'bin' ),
+                     'setenv DIRACLIB %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'lib' ),
+                     'setenv TERMINFO %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'terminfo' ),
+                     'setenv RRD_DEFAULT_FONT %s' % os.path.join( '$DIRAC', '$DIRACPLAT', 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
       lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
                     'setenv PYTHONPATH',

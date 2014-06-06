@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getGroupsForUser, \
-                                                              getPropertiesForGroup, getUsersInGroup 
+                                                              getPropertiesForGroup, getUsersInGroup
 
 RIGHT_GET_JOB = 'GetJob'
 RIGHT_GET_INFO = 'GetInfo'
@@ -27,7 +27,7 @@ ALL_RIGHTS = [ RIGHT_GET_JOB, RIGHT_GET_INFO, RIGHT_GET_SANDBOX, RIGHT_PUT_SANDB
                RIGHT_RESCHEDULE, RIGHT_GET_STATS, RIGHT_RESET ]
 
 ADMIN_RIGHTS = [ RIGHT_GET_JOB, RIGHT_GET_INFO, RIGHT_GET_SANDBOX, RIGHT_PUT_SANDBOX,
-               RIGHT_CHANGE_STATUS, RIGHT_DELETE, RIGHT_KILL, 
+               RIGHT_CHANGE_STATUS, RIGHT_DELETE, RIGHT_KILL,
                RIGHT_RESCHEDULE, RIGHT_GET_STATS, RIGHT_RESET ]
 
 OWNER_RIGHTS = [ RIGHT_GET_INFO, RIGHT_GET_SANDBOX, RIGHT_PUT_SANDBOX,
@@ -79,14 +79,14 @@ class JobPolicy:
         group = result['Value']['OwnerGroup']
       else:
         return S_ERROR('Job not found')
-    
+
     result = self.getJobPolicy( owner, group )
     return result
 
 ###########################################################################
   def __getUserJobPolicy( self ):
     """ Get the job rights for the primary user for which the JobPolicy object
-        is created 
+        is created
     """
     # Can not do anything by default
     for r in ALL_RIGHTS:
@@ -145,55 +145,55 @@ class JobPolicy:
     nonauthJobList = []
     ownerJobList = []
     userRights = {}
-    
-    result = self.jobDB.getAttributesForJobList( jobList, [ 'Owner', 'OwnerGroup' ] )        
+
+    result = self.jobDB.getAttributesForJobList( jobList, [ 'Owner', 'OwnerGroup' ] )
     if not result['OK']:
       return validJobList, invalidJobList, nonauthJobList, ownerJobList
-    jobDict = result['Value']    
+    jobDict = result['Value']
     for jID in jobList:
       jobID = int( jID )
       if not jobID in jobDict:
         invalidJobList.append( jobID )
-        continue 
+        continue
       owner = jobDict[jobID]['Owner']
       group = jobDict[jobID]['OwnerGroup']
-      
+
       if (owner,group) in userRights:
         rightDict = userRights[ (owner,group) ]
-      else:  
+      else:
         result = self.getUserRightsForJob( jobID, owner=owner, group=group )
         if result['OK']:
           rightDict = result['Value']
           userRights[ (owner,group) ] = rightDict
         else:
           invalidJobList.append( jobID )
-        
+
       if rightDict[right]:
         validJobList.append( jobID )
       else:
         nonauthJobList.append( jobID )
       if owner == self.userName:
         ownerJobList.append( jobID )
-  
+
     return validJobList, invalidJobList, nonauthJobList, ownerJobList
-  
+
   def getControlledUsers( self, right ):
     """ Get users and groups which jobs are subject to the given access right
     """
-    
+
     userGroupList = 'ALL'
     # If allInfo flag is defined we can see info for any job
     if right == RIGHT_GET_INFO and self.allInfo:
-      return S_OK( userGroupList ) 
-    
+      return S_OK( userGroupList )
+
     # Administrators can do everything
     if Properties.JOB_ADMINISTRATOR in self.userProperties:
       return S_OK( userGroupList )
-    
+
     # Inspectors can see info for all the jobs
     if Properties.JOB_MONITOR in self.userProperties and right == RIGHT_GET_INFO:
-      return S_OK( userGroupList )  
-    
+      return S_OK( userGroupList )
+
     userGroupList = []
     # User can do many things with his jobs
     if Properties.NORMAL_USER in self.userProperties and right in OWNER_RIGHTS:
@@ -204,16 +204,12 @@ class JobPolicy:
       for group in groups:
         if 'NormalUser' in getPropertiesForGroup( group, [] ):
           userGroupList.append( ( self.userName, group ) )
-          
+
     # User can do many things with the jobs in the shared group
     if Properties.JOB_SHARING in self.userProperties and right in SHARED_GROUP_RIGHTS:
       sharedUsers = getUsersInGroup( self.userGroup )
       for user in sharedUsers:
         userGroupList.append( ( user, self.userGroup ) )
-        
-    userGroupList = list( set( userGroupList ) )    
-    return S_OK( userGroupList )  
-            
-      
 
-      
+    userGroupList = list( set( userGroupList ) )
+    return S_OK( userGroupList )

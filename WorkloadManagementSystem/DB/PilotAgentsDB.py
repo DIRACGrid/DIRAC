@@ -25,24 +25,137 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC  import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
+import collections
+import threading
+import time
+from types import ListType, IntType, LongType
+
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC                                             import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.DB                                import DB
+from DIRAC.Core.Utilities.SiteCEMapping                import getSiteForCE, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
-from types import *
-import threading, time
+from DIRAC.ResourceStatusSystem.Client.SiteStatus      import SiteStatus
 
 DEBUG = 1
 
 #############################################################################
 class PilotAgentsDB( DB ):
 
+  _tablesDict = {}
+  # PilotAgents table
+  _tablesDict[ 'PilotAgents' ] = { 
+                                  'Fields' : 
+                                            {
+                                             'PilotID'           : 'INTEGER NOT NULL AUTO_INCREMENT',
+                                             'InitialJobID'      : 'INTEGER NOT NULL DEFAULT 0',
+                                             'CurrentJobID'      : 'INTEGER NOT NULL DEFAULT 0',
+                                             'TaskQueueID'       : 'INTEGER NOT NULL DEFAULT "0"',
+                                             'PilotJobReference' : 'VARCHAR(255) NOT NULL DEFAULT "Unknown"',
+                                             'PilotStamp'        : 'VARCHAR(32) NOT NULL DEFAULT ""',
+                                             'DestinationSite'   : 'VARCHAR(128) NOT NULL DEFAULT "NotAssigned"',
+                                             'Queue'             : 'VARCHAR(128) NOT NULL DEFAULT "Unknown"',
+                                             'GridSite'          : 'VARCHAR(128) NOT NULL DEFAULT "Unknown"',
+                                             'Broker'            : 'VARCHAR(128) NOT NULL DEFAULT "Unknown"',
+                                             'OwnerDN'           : 'VARCHAR(255) NOT NULL',
+                                             'OwnerGroup'        : 'VARCHAR(128) NOT NULL',
+                                             'GridType'          : 'VARCHAR(32) NOT NULL DEFAULT "LCG"',
+                                             'BenchMark'         : 'DOUBLE NOT NULL DEFAULT 0.0',
+                                             'SubmissionTime'    : 'DATETIME',
+                                             'LastUpdateTime'    : 'DATETIME',
+                                             'Status'            : 'VARCHAR(32) NOT NULL DEFAULT "Unknown"',
+                                             'StatusReason'      : 'VARCHAR(255) NOT NULL DEFAULT "Unknown"',
+                                             'ParentID'          : 'INTEGER NOT NULL DEFAULT 0',
+                                             'OutputReady'       : 'ENUM ("True","False") NOT NULL DEFAULT "False"',
+                                             'AccountingSent'    : 'ENUM ("True","False") NOT NULL DEFAULT "False"'
+                                            },
+                                  'PrimaryKey' : [ 'PilotID' ],
+                                  'Indexes'    : {
+                                                  'PilotJobReference' : [ 'PilotJobReference' ],
+                                                  'Status'            : [ 'Status' ] 
+                                                 }
+                                 }  
+  # JobToPilotMapping table 
+  _tablesDict[ 'JobToPilotMapping' ] = {
+                                        'Fields' :
+                                                  {
+                                                   'PilotID'   : 'INTEGER NOT NULL',
+                                                   'JobID'     : 'INTEGER NOT NULL',
+                                                   'StartTime' : 'DATETIME NOT NULL'
+                                                  },
+                                        'Indexes' : {
+                                                     'PilotID' : [ 'PilotID' ],
+                                                     'JobID'   : [ 'JobID' ]
+                                                     }
+                                       }
+  # PilotOutput table
+  _tablesDict[ 'PilotOutput' ] = {
+                                  'Fields' : 
+                                            {
+                                             'PilotID'   : 'INTEGER NOT NULL',
+                                             'StdOutput' : 'MEDIUMBLOB',
+                                             'StdError'  : 'MEDIUMBLOB'                                                                                                                        
+                                            },
+                                  'PrimaryKey' : [ 'PilotID' ]
+                                 }
+  # PilotRequirements table
+  _tablesDict[ 'PilotRequirements' ] = {
+                                        'Fields' : 
+                                                  {
+                                                   'PilotID'      : 'INTEGER NOT NULL',
+                                                   'Requirements' : 'BLOB'                                                                                                                        
+                                                  },
+                                        'PrimaryKey' : [ 'PilotID' ]
+                                       }
+   
   def __init__( self, maxQueueSize = 10 ):
 
     DB.__init__( self, 'PilotAgentsDB', 'WorkloadManagement/PilotAgentsDB', maxQueueSize )
     self.lock = threading.Lock()
+
+
+  def _checkTable( self ):
+    """ _checkTable.
+     
+    Method called on the MatcherHandler instead of on the PilotAgentsDB constructor
+    to avoid an awful number of unnecessary queries with "show tables".
+    """
+    
+    return self.__createTables()
+
+
+  def __createTables( self ):
+    """ __createTables
+    
+    Writes the schema in the database. If a table is already in the schema, it is
+    skipped to avoid problems trying to create a table that already exists.
+    """
+
+    # Horrible SQL here !!
+    existingTables = self._query( "show tables" )
+    if not existingTables[ 'OK' ]:
+      return existingTables
+    existingTables = [ existingTable[0] for existingTable in existingTables[ 'Value' ] ]
+
+    # Makes a copy of the dictionary _tablesDict
+    tables = {}
+    tables.update( self._tablesDict )
+        
+    for existingTable in existingTables:
+      if existingTable in tables:
+        del tables[ existingTable ]  
+              
+    res = self._createTables( tables )
+    if not res[ 'OK' ]:
+      return res
+    
+    # Human readable S_OK message
+    if res[ 'Value' ] == 0:
+      res[ 'Value' ] = 'No tables created'
+    else:
+      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
+    return res  
+
 
 ##########################################################################################
   def addPilotTQReference( self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker = 'Unknown',
@@ -204,14 +317,14 @@ class PilotAgentsDB( DB ):
 
     failed = False
     for table in ['PilotAgents', 'PilotOutput', 'PilotRequirements', 'JobToPilotMapping']:
-      idString = ','.join( [ str( id ) for id in pilotIDs ] )
+      idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
       result = self._update( req, conn = conn )
       if not result['OK']:
         failed = table
 
     if failed:
-      return S_ERROR( 'Failed to remove pilot from %s table' % table )
+      return S_ERROR( 'Failed to remove pilot from %s table' % failed )
     else:
       return S_OK()
 
@@ -381,8 +494,8 @@ class PilotAgentsDB( DB ):
     if not result['OK']:
       return S_ERROR( 'Failed to escape error string' )
     e_error = result['Value']
-    req = "INSERT INTO PilotOutput VALUES (%d,%s,%s)" % ( pilotID, e_output, e_error )
-    result = self._update( req )
+    req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%d,%s,%s)" % (pilotID, e_output, e_error)
+    result = self._update(req)
     req = "UPDATE PilotAgents SET OutputReady='True' where PilotID=%d" % pilotID
     result = self._update( req )
     return result
@@ -448,8 +561,8 @@ class PilotAgentsDB( DB ):
                                      gridSite = site )
         if not result['OK']:
           return result
-      req = "INSERT INTO JobToPilotMapping VALUES (%d,%d,UTC_TIMESTAMP())" % ( pilotID, jobID )
-      result = self._update( req )
+      req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID, jobID)
+      result = self._update(req)
       return result
     else:
       return S_ERROR( 'PilotJobReference ' + pilotRef + ' not found' )
@@ -595,6 +708,7 @@ class PilotAgentsDB( DB ):
         return S_ERROR( 'PilotJobReference ' + str( pilotRef ) + ' not found' )
 
 ##########################################################################################
+  #FIXME: investigate it getPilotSummaryShort can replace this method
   def getPilotSummary( self, startdate = '', enddate = '' ):
     """ Get summary of the pilot jobs status by site
     """
@@ -647,6 +761,48 @@ class PilotAgentsDB( DB ):
 
     return S_OK( summary_dict )
 
+  def getPilotSummaryShort( self, startTimeWindow = None, endTimeWindow = None, ce = '' ):
+    """
+    Spin off the method getPilotSummary. It is doing things in such a way that
+    do not make much sense. This method returns the pilots that were updated in the
+    time window [ startTimeWindow, endTimeWindow ), if they are present.
+    """
+    
+    sqlSelect = 'SELECT DestinationSite,Status,count(Status) FROM PilotAgents'
+    
+    whereSelect = []
+    
+    if startTimeWindow is not None:
+      whereSelect.append( ' LastUpdateTime >= "%s"' % startTimeWindow ) 
+    if endTimeWindow is not None:
+      whereSelect.append( ' LastUpdateTime < "%s"' % endTimeWindow )
+    if ce:
+      whereSelect.append( ' DestinationSite = "%s"' % ce )  
+    
+    if whereSelect:
+      sqlSelect += ' WHERE'
+      sqlSelect += ' AND'.join( whereSelect )
+        
+    sqlSelect += ' GROUP BY DestinationSite,Status'
+    
+    resSelect = self._query( sqlSelect )
+    if not resSelect[ 'OK' ]:
+      return resSelect
+
+    result = { 'Total' : collections.defaultdict( int ) }          
+
+    for row in resSelect[ 'Value' ]:
+      
+      ceName, statusName, statusCount = row
+            
+      if not ceName in result:
+        result[ ceName ] = {}
+      result[ ceName ][ statusName ] = int( statusCount )
+      
+      result[ 'Total' ][ statusName ] += int( statusCount )  
+            
+    return S_OK( result )    
+ 
 ##########################################################################################
   def getPilotSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get summary of the pilot jobs status by CE/site in a standard structure
@@ -892,18 +1048,15 @@ class PilotAgentsDB( DB ):
       records = new_records
 
     # Get the Site Mask data
-    client = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = client.getSiteMask()
-    if result['OK']:
-      siteMask = result['Value']
-      for r in records:
-        if r[0] in siteMask:
-          r.append( 'Yes' )
-        else:
-          r.append( 'No' )
-    else:
-      for r in records:
-        r.append( 'Unknown' )
+    siteStatus = SiteStatus()
+    for r in records:
+      #
+      #FIXME: using only ComputingAccess
+      #
+      if siteStatus.isUsableSite( r[0], 'ComputingAccess' ):
+        r.append('Yes')
+      else:
+        r.append('No')
 
     finalDict = {}
     finalDict['TotalRecords'] = len( records )

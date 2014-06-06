@@ -1,9 +1,9 @@
 """
-    :mod:  ReqClient
-    ================
+:mod:  ReqClient
 
-    .. module:  ReqClient
-    :synopsis: implementation of client for RequestDB using DISET framework
+.. module:  ReqClient
+
+:synopsis: implementation of client for RequestDB using DISET framework
 """
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR

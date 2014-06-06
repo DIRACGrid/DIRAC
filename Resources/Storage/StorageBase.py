@@ -160,6 +160,15 @@ class StorageBase:
     """
     return S_ERROR( "Storage.getDirectorySize: implement me!" )
 
+  #############################################################
+  #
+  # These are the methods to get the current storage properties
+  #
+
+  def getCurrentStatus(self, *parms, **kws ):
+    """ Get the current properties: available disk, usage (for RSS)
+    """
+    return S_ERROR("Storage.getCurrentStatus: implement me!")
 
   #############################################################
   #

@@ -38,7 +38,6 @@ def initializeJobMonitoringHandler( serviceInfo ):
 class JobMonitoringHandler( RequestHandler ):
 
   def initialize( self ):
-
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
@@ -91,7 +90,7 @@ class JobMonitoringHandler( RequestHandler ):
     Return Distinct Values of ProductionId job Attribute in WMS
     """
     return gJobDB.getDistinctJobAttributes( 'JobGroup', condDict,
-                                           newer = cutDate )
+                                             newer = cutDate )
 
 ##############################################################################
   types_getSites = []
@@ -502,3 +501,9 @@ class JobMonitoringHandler( RequestHandler ):
     """ Get input data for the specified jobs
     """
     return  gJobDB.getInputData( jobID )
+
+  types_getJobsInHerd = [ ( IntType, LongType ) ]
+  def export_getJobsInHerd( self, jobID ):
+    """ Get jobs in the same herd as this job
+    """
+    return gJobDB.getJobsInHerd( jobID )

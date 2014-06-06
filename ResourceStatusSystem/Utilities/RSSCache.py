@@ -1,95 +1,89 @@
 # $HeadURL:  $
-''' RSSCache
+""" Cache
 
-  Extension of DictCache to be used within RSS
+This module provides a generic Cache extended to be used on RSS, RSSCache.
+This cache features a lazy update method. It will only be updated if it is
+empty and there is a new query. If not, it will remain in its previous state.
+However, Cache class internal cache: DictCache sets a validity to its entries.
+After that, the cache is empty.
+        
+"""
 
-'''
+import itertools
+import random
 
-import datetime
-import threading
-import time
-
-from DIRAC                          import S_OK, S_ERROR 
-from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC                                                 import gLogger, S_OK, S_ERROR 
+from DIRAC.Core.Utilities.DictCache                        import DictCache
+from DIRAC.Core.Utilities.LockRing                         import LockRing
+from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 __RCSID__  = '$Id:  $'
 
-class RSSCache( object ):
-  '''
-    Cache with purgeThread integrated
-  '''
+class Cache( object ):
+  """
+    Cache basic class.
+    
+    WARNING: None of its methods is thread safe. Acquire / Release lock when
+    using them !
+  """
   
-  def __init__( self, lifeTime, updateFunc = None, cacheHistoryLifeTime = None ):
-    '''
+  def __init__( self, lifeTime, updateFunc ):
+    """
     Constructor
-    '''
     
-    self.__lifeTime             = lifeTime
-    # lifetime of the history on hours
-    self.__cacheHistoryLifeTime = ( 1 and cacheHistoryLifeTime ) or 24 
-    self.__updateFunc           = updateFunc
+    :Parameters:
+      **lifeTime** - `int`
+        Lifetime of the elements in the cache ( seconds ! )
+      **updateFunc** - `function`
+        This function MUST return a S_OK | S_ERROR object. In the case of the first,
+        its value must be a dictionary.
     
-    # RSSCache
-    self.__rssCache       = DictCache()
-    self.__rssCacheStatus = [] # ( updateTime, message )
-    self.__rssCacheLock   = threading.Lock()
+    """
     
-    # Create purgeThread
-    self.__refreshStop    = False
-    self.__refreshThread  = threading.Thread( target = self.__refreshCacheThreadRun )
-    self.__refreshThread.setDaemon( True )
+    # We set a 20% of the lifetime randomly, so that if we have thousands of jobs
+    # starting at the same time, all the caches will not end at the same time.
+    randomLifeTimeBias  = 0.2 * random.random()
     
-  def startRefreshThread( self ):  
-    '''
-      Run refresh thread.
-    '''
-    self.__refreshThread.start()
+    self.log            = gLogger.getSubLogger( self.__class__.__name__ )
     
-  def stopRefreshThread( self ):  
-    '''
-      Stop refresh thread.
-    '''
-    self.__refreshStop = True  
+    self.__lifeTime     = int( lifeTime * ( 1 + randomLifeTimeBias ) )
+    self.__updateFunc   = updateFunc
+    # The records returned from the cache must be valid at least 30 seconds.
+    self.__validSeconds = 30
     
-  def isCacheAlive( self ):
-    '''
-      Returns status of the cache refreshing thread 
-    '''  
-    return S_OK( self.__refreshThread.isAlive() )
+    # Cache
+    self.__cache       = DictCache()
+    self.__cacheLock   = LockRing()
+    self.__cacheLock.getLock( self.__class__.__name__ )
+  
+  #.............................................................................
+  # internal cache object getter
+  
+  def cacheKeys( self ):
+    """
+    Cache keys getter
+      
+    :returns: list with valid keys on the cache
+    """
     
-  def setLifeTime( self, lifeTime ):
-    '''
-      Set cache life time
-    '''  
-    self.__lifeTime = lifeTime
+    return self.__cache.getKeys( validSeconds = self.__validSeconds ) 
 
-  def setCacheHistoryLifeTime( self, cacheHistoryLifeTime ):
-    '''
-      Set cache life time
-    '''  
-    self.__cacheHistoryLifeTime = cacheHistoryLifeTime
-  
-  def getCacheKeys( self ):
-    '''
-      List all the keys stored in the cache.
-    '''
-    self.__rssCacheLock.acquire()
-    keys = self.__rssCache.getKeys()
-    self.__rssCacheLock.release()
-    
-    return S_OK( keys )
-  
+  #.............................................................................
+  # acquire / release Locks
+
   def acquireLock( self ):
-    '''
-      Acquires RSSCache lock
-    '''
-    self.__rssCacheLock.acquire()
+    """
+    Acquires Cache lock
+    """
+    
+    self.__cacheLock.acquire( self.__class__.__name__ )
 
   def releaseLock( self ):
-    '''
-      Releases RSSCache lock
-    '''
-    self.__rssCacheLock.release()
+    """
+    Releases Cache lock
+    """
+    
+    self.__cacheLock.release( self.__class__.__name__)
   
   def getCacheStatus( self ):
     '''
@@ -114,121 +108,288 @@ class RSSCache( object ):
     
   def get( self, resourceKey ):
     '''
-      Gets the resource(s) status(es). Every resource can have multiple statuses, 
-      so in order to speed up things, we store them on the cache as follows:
-      
+    Gets the resource(s) status(es). Every resource can have multiple statuses, 
+    so in order to speed up things, we store them on the cache as follows::
+    
       { (<resourceName>,<resourceStatusType0>) : whatever0,
         (<resourceName>,<resourceStatusType1>) : whatever1,
-      }
-    '''
-    
-    #cacheKey = '%s#%s' % ( resourceName, resourceStatusType )
+      }    
+    :Parameters:
+      **cacheKeys** - `list`
+        list of keys to be extracted from the cache
         
-    self.__rssCacheLock.acquire()
-    resourceStatus = self.__rssCache.get( resourceKey )
-    self.__rssCacheLock.release()
-    
-    if resourceStatus:
-      return S_OK( { resourceKey : resourceStatus } )
-    return S_ERROR( 'Cannot get %s' % resourceKey )
-
-  def getBulk( self, resourceKeys ):
-    '''
-      Gets values for resourceKeys in one ATOMIC operation.
+    :return: S_OK | S_ERROR
     '''
 
     result = {}
-    self.__rssCacheLock.acquire()
 
-    for resourceKey in resourceKeys:
+    for cacheKey in cacheKeys:
 
-      resourceRow = self.__rssCache.get( resourceKey )
-      if not resourceRow:
-        return S_ERROR( 'Cannot get %s' % resourceKey )
-      result.update( { resourceKey : resourceRow } )
+      cacheRow = self.__cache.get( cacheKey, validSeconds = self.__validSeconds )
+      if not cacheRow:
+        self.log.error( str( cacheKey ) )
+        return S_ERROR( 'Cannot get %s' % str( cacheKey ) )
+      result.update( { cacheKey : cacheRow } )
       
-    self.__rssCacheLock.release()
     return S_OK( result )
 
-  def resetCache( self ):
-    '''
-      Reset cache.
-    '''
-    self.__rssCacheLock.acquire()
-    self.__rssCache.purgeAll()
-    self.__rssCacheLock.release()
-    
-    return S_OK()
+  #.............................................................................
+  # Cache refreshers
 
   def refreshCache( self ):
-    '''
-      Clears the cache and gets its latest version, not Thread safe !
-      Acquire a lock before using it ! ( and release it afterwards ! )
-    '''
-
-    self.__rssCache.purgeAll()
+    """     
+    Purges the cache and gets fresh data from the update function.
     
-    if self.__updateFunc is None:
-      return S_ERROR( 'RSSCache has no updateFunction' )
+    :return: S_OK | S_ERROR. If the first, its content is the new cache.    
+    """
+
+    self.log.verbose( 'refreshing...' )
+    
+    self.__cache.purgeAll()
+    
     newCache = self.__updateFunc()
     if not newCache[ 'OK' ]:
+      self.log.error( newCache[ 'Message' ] )
       return newCache
     
-    itemsAdded = self.__updateCache( newCache[ 'Value' ] )
-         
-    return itemsAdded
-
-  def refreshCacheAndHistory( self ):
-    '''
-      Method that refreshes the cache and updates the history. Not thread safe,
-      you must acquire a lock before using it, and release it right after !
-    '''  
+    newCache = self.__updateCache( newCache[ 'Value' ] )
     
-    refreshResult = self.refreshCache()
-      
-    now = datetime.datetime.utcnow()
-      
-    if self.__rssCacheStatus:
-      # Check oldest record
-      dateInserted, _message = self.__rssCacheStatus[ -1 ]
-      if dateInserted < now - datetime.timedelta( hours = self.__cacheHistoryLifeTime ):
-        self.__rssCacheStatus.pop()
-          
-    self.__rssCacheStatus.insert( 0, ( now, refreshResult ) )
+    self.log.verbose( 'refreshed' )
+    
+    return newCache
 
-################################################################################
-# Private methods    
+  #.............................................................................
+  # Private methods    
      
   def __updateCache( self, newCache ):
-    '''
-      The new cache must be a dictionary, which should look like:
-      { ( <resourceName>,<resourceStatusType0>) : whatever0,
-        ( <resourceName>,<resourceStatusType1>) : whatever1,
-      }
-    '''
+    """
+    Given the new cache dictionary, updates the internal cache with it. It sets
+    a duration to the entries of <self.__lifeTime> seconds.
     
-    itemsCounter = 0
+    :Parameters:
+      **newCache** - `dict`
+        dictionary containing a new cache
+    
+    :return: dictionary. It is newCache argument.    
+    """
     
     for cacheKey, cacheValue in newCache.items():
-      self.__rssCache.add( cacheKey, self.__lifeTime, value = cacheValue )
-      itemsCounter += 1
-         
-    return S_OK( itemsCounter )
-          
-  def __refreshCacheThreadRun( self ):
-    '''
-      Method that refreshes periodically the cache.
-    '''
+      self.__cache.add( cacheKey, self.__lifeTime, value = cacheValue )
     
-    while not self.__refreshStop:
+    # We are assuming nothing will fail while inserting in the cache. There is
+    # no apparent reason to suspect from that piece of code.     
+    return S_OK( newCache )
+
+#...............................................................................
+
+class RSSCache( Cache ):
+  """
+  The RSSCache is an extension of Cache in which the cache keys are pairs of the
+  form: ( elementName, statusType ).
+  
+  When instantiating one object of RSSCache, we need to specify the RSS elementType
+  it applies, e.g. : StorageElement, ComputingElement, Queue, ...
+  
+  It provides a unique public method `match` which is thread safe. All other 
+  methods are not !!
+  """
+  
+  def __init__( self, elementType, lifeTime, updateFunc ):
+    """
+    Constructor
+    
+    :Parameters:
+      **elementType** - `string`
+        RSS elementType, e.g.: Storage, Computing, Queue... note that one RSSCache
+        can only hold elements of a single elementType to avoid issues while doing
+        the Cartesian product.
+      **lifeTime** - `int`
+        Lifetime of the elements in the cache ( seconds ! )
+      **updateFunc** - `function`
+        This function MUST return a S_OK | S_ERROR object. In the case of the first,
+        its value must follow the dict format: ( key, value ) being key ( elementName,
+        statusType ) and value status.    
+
+    """
+    
+    super( RSSCache, self ).__init__( lifeTime, updateFunc )
+    
+    self.allStatusTypes = RssConfiguration().getConfigStatusType( elementType = elementType )
+  
+  def match( self, elementNames, statusTypes ):  
+    """
+    In first instance, if the cache is invalid, it will request a new one from
+    the server.
+    It make the Cartesian product of elementNames x statusTypes to generate a key
+    set that will be compared against the cache set. If the first is included in 
+    the second, we have a positive match and a dictionary will be returned. Otherwise,
+    we have a cache miss.
+    
+    However, arguments ( elementNames or statusTypes ) can have a None value. If 
+    that is the case, they are considered wildcards.
+    
+    :Parameters:
+      **elementNames** - [ None, `string`, `list` ]
+        name(s) of the elements to be matched
+      **statusTypes** - [ None, `string`, `list` ]
+        name(s) of the statusTypes to be matched
+    
+    :return: S_OK() || S_ERROR()      
+    """
+    
+    self.acquireLock()
+    try:
+      match = self._match( elementNames, statusTypes )
+        
+      if not match[ 'OK' ]:
+        self.log.error( match[ 'Message' ] )
+      return match  
+    finally:
+      # Release lock, no matter what !
+      self.releaseLock()  
+    
+  #.............................................................................
+  # Private methods: NOT THREAD SAFE !!
+  
+  def _match( self, elementNames, statusTypes ):
+    """
+    Method doing the actual work. It must be wrapped around locks to ensure no
+    disaster happens.
+    
+    :Parameters:
+      **elementNames** - [ None, `string`, `list` ]
+        name(s) of the elements to be matched
+      **statusTypes** - [ None, `string`, `list` ]
+        name(s) of the statusTypes to be matched
+    
+    :return: S_OK() || S_ERROR() 
+    """
+    
+    # Gets the entire cache or a new one if it is empty / invalid
+    validCache = self.__getValidCache()
+    if not validCache[ 'OK' ]:
+      return validCache
+    validCache = validCache[ 'Value' ]
+    
+    # Gets matched keys
+    matchKeys = self.__match( validCache, elementNames, statusTypes )
+    
+    if not matchKeys[ 'OK' ]:
+      return matchKeys
+    matchKeys = matchKeys[ 'Value' ]
+    
+    # Gets objects for matched keys. It will return S_ERROR if the cache value
+    # has expired in between. It has 10 valid seconds, which means something was
+    # extremely slow above.
+    cacheMatches = self.get( matchKeys )
+    if not cacheMatches[ 'OK' ]:
+      return cacheMatches  
+       
+    cacheMatches = cacheMatches[ 'Value' ]
+    if not cacheMatches:
+      return S_ERROR( 'Empty cache for: %s, %s' % ( elementNames, statusTypes ) )
+        
+    # We undo the key into <elementName> and <statusType>
+    cacheMatchesDict = self.__getDictFromCacheMatches( cacheMatches )
+    return S_OK( cacheMatchesDict )
+  
+  def __getValidCache( self ):
+    """
+    Obtains the keys on the cache which are valid. If any, returns the complete 
+    valid dictionary. If the list is empty, we assume the cache is invalid or
+    not filled, so we issue a cache refresh and return its data.
+    
+    :return: { ( elementName, statusType ) : status, ... } 
+    """
+    
+    cacheKeys = self.cacheKeys()   
+    # If cache is empty, we refresh it.
+    if not cacheKeys:
+      cache = self.refreshCache()
+    else:
+      cache = self.get( cacheKeys )  
+    
+    return cache
+
+  def __match( self, validCache, elementNames, statusTypes ):
+    """
+    Obtains all keys on the cache ( should not be empty ! ).
+    
+    Gets the sets ( no duplicates ) of elementNames and statusTypes. There is a 
+    slight distinction. A priori we cannot know which are all the elementNames.
+    So, if elementNames is None, we will consider all elementNames in the cacheKeys.
+    However, if statusTypes is None, we will get the standard list from the 
+    ResourceStatus configuration in the CS. 
+    
+    If the cartesian product of our sets is on the cacheKeys set, we have a 
+    positive match.
+    
+    :Parameters:
+      **validCache** - `dict`
+        cache dictionary
+      **elementNames** - [ None, `string`, `list` ]
+        name(s) of the elements to be matched
+      **statusTypes** - [ None, `string`, `list` ]
+        name(s) of the statusTypes to be matched
+    
+    :return: S_OK() || S_ERROR() 
+    """
+
+    cacheKeys = validCache.keys()
+
+    if isinstance( elementNames, str ):       
+      elementNames = [ elementNames ]
+    elif elementNames is None:
+      elementNames = [ cacheKey[0] for cacheKey in cacheKeys ]  
+    # Remove duplicates, makes Cartesian product faster
+    elementNamesSet = set( elementNames )
+    
+    if isinstance( statusTypes, str ):
+      statusTypes = [ statusTypes ]
+    elif statusTypes is None:
+      statusTypes = self.allStatusTypes
+    # Remove duplicates, makes Cartesian product faster
+    statusTypesSet = set( statusTypes )
+
+    cartesianProduct = set( itertools.product( elementNamesSet, statusTypesSet ) )
+
+    # Some users find funny sending empty lists, which will make the cartesianProduct
+    # be []. Problem: [] is always subset, no matter what !
+    
+    if not cartesianProduct:
+      self.log.warn( 'Empty cartesian product' )
+      return S_ERROR( 'Empty cartesian product' )
+    
+    notInCache = list( cartesianProduct.difference( set( cacheKeys ) ) )  
+    if notInCache:
+      self.log.warn( 'Cache misses: %s' % notInCache )
+      return S_ERROR( 'Cache misses: %s' % notInCache )
+    
+    return S_OK( cartesianProduct )
+    
+  @staticmethod  
+  def __getDictFromCacheMatches( cacheMatches ):
+    """
+    Formats the cacheMatches to a format expected by the RSS helpers clients.
+    
+    :Parameters:
+      **cacheMatches** - `dict`
+        cache dictionary of the form { ( elementName, statusType ) : status, ... }
       
-      self.__rssCacheLock.acquire()    
-      self.refreshCacheAndHistory()
-      self.__rssCacheLock.release()
-            
-      time.sleep( self.__lifeTime )  
-            
-    self.__refreshStop = False
-           
-################################################################################
+    
+    :return: dict of the form { elementName : { statusType : status, ... }, ... }        
+    """
+    
+    result = {}
+    
+    for cacheKey, cacheValue in cacheMatches.iteritems():
+      elementName, statusType = cacheKey
+      
+      if not result.has_key( elementName ):
+        result[ elementName ] = {}
+      result[ elementName ][ statusType ] = cacheValue
+    
+    return result
+     
+#...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    

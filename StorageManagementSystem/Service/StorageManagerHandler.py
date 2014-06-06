@@ -12,7 +12,8 @@ storageDB = False
 def initializeStorageManagerHandler( serviceInfo ):
   global storageDB
   storageDB = StorageManagementDB()
-  return S_OK()
+  return storageDB._checkTable()
+  
 
 class StorageManagerHandler( RequestHandler ):
 
@@ -322,6 +323,6 @@ class StorageManagerHandler( RequestHandler ):
     """ Reports breakdown of file number/size in different staging states across storage elements """
     res = storageDB.getCacheReplicasSummary()
     if not res['OK']:
-      gLogger.error(' getCacheReplicasSummary: Failed to retrieve summary from server',res['Message'])
+      gLogger.error(' getCacheReplicasSummary: Failed to retrieve summary from server', res['Message'])
     return res
 

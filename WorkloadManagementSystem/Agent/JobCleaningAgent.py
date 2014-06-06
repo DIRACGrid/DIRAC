@@ -21,7 +21,6 @@ from DIRAC.RequestManagementSystem.Client.ReqClient            import ReqClient
 
 import DIRAC.Core.Utilities.Time as Time
 
-import string
 import time
 import os
 
@@ -55,10 +54,10 @@ class JobCleaningAgent( AgentModule ):
       self.prod_types = agentTSTypes
     else:
       self.prod_types = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
-    gLogger.info('Will exclude the following Production types from cleaning %s'%(string.join(self.prod_types,', ')))
-    self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce',100)
-    self.jobByJob = self.am_getOption('JobByJob',True)
-    self.throttlingPeriod = self.am_getOption('ThrottlingPeriod',0.)
+    gLogger.info('Will exclude the following Production types from cleaning %s' % ( ', '.join(self.prod_types) ) )
+    self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce', 100)
+    self.jobByJob = self.am_getOption('JobByJob', True)
+    self.throttlingPeriod = self.am_getOption('ThrottlingPeriod', 0.)
     return S_OK()
 
   def __getAllowedJobTypes( self ):
@@ -203,7 +202,7 @@ class JobCleaningAgent( AgentModule ):
 
     # Schedule removal of the LFNs now
 
-    for lfn,jobID in lfnDict.items():
+    for lfn, jobID in lfnDict.items():
       result = self.jobDB.getJobAttributes( jobID, ['OwnerDN', 'OwnerGroup'] )
       if not result['OK']:
         failed[jobID] = lfn

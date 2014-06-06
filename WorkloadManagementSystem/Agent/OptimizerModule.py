@@ -57,7 +57,7 @@ class OptimizerModule( AgentModule ):
     return self.initializeOptimizer()
 
   def initializeOptimizer( self ):
-    """ To be overwritten by inheriting class 
+    """ To be overwritten by inheriting class
     """
     return S_OK()
 
@@ -256,8 +256,8 @@ class OptimizerModule( AgentModule ):
     jobGroup = classAdJob.getAttributeString( 'JobGroup' )
     jobType = classAdJob.getAttributeString( 'JobType' )
     jobClass = 'unknown'
-    if classAdJob.lookupAttribute( 'JobSplitType' ):
-      jobClass = classAdJob.getAttributeString( 'JobSplitType' )
+    if classAdJob.lookupAttribute( 'HerdState' ):
+      jobClass = classAdJob.getAttributeString( 'HerdState' )
     inputData = []
     processingType = 'unknown'
     if classAdJob.lookupAttribute( 'ProcessingType' ):

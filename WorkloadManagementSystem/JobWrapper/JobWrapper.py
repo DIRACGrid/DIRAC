@@ -32,7 +32,7 @@ from DIRAC.Core.Utilities.Subprocess                                import Subpr
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
 from DIRAC.Core.Utilities.Adler                                     import fileAdler
-from DIRAC.Core.Utilities                                           import List
+from DIRAC.Core.Utilities                                           import List, Time
 from DIRAC.Core.Utilities                                           import DEncode
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, Time
 
@@ -152,7 +152,7 @@ class JobWrapper:
     self.jobType = 'unknown'
     self.processingType = 'unknown'
     self.userGroup = 'unknown'
-    self.jobClass = 'unknown'
+    self.jobClass = 'Single'
     self.inputDataFiles = 0
     self.outputDataFiles = 0
     self.inputDataSize = 0
@@ -202,8 +202,6 @@ class JobWrapper:
       self.processingType = self.jobArgs['ProcessingType']
     if self.jobArgs.has_key( 'OwnerGroup' ):
       self.userGroup = self.jobArgs['OwnerGroup']
-    if self.jobArgs.has_key( 'JobSplitType' ):
-      self.jobClass = self.jobArgs['JobSplitType']
 
     # Prepare the working directory and cd to there
     if self.jobID:
@@ -1426,12 +1424,12 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
     jobReport.sendStoredStatusInfo()
     jobReport.sendStoredJobParameters()
 
-    gLogger.info( 'Job will be rescheduled after exception during execution of the JobWrapper' )
+    gLogger.info( 'Job will be rescheduled' )
 
     jobManager = RPCClient( 'WorkloadManagement/JobManager' )
     result = jobManager.rescheduleJob( int( jobID ) )
     if not result['OK']:
-      gLogger.warn( result['Message'] )
+      gLogger.error( result['Message'] )
       if 'Maximum number of reschedulings is reached' in result['Message']:
         rescheduleResult = 'Failed'
 

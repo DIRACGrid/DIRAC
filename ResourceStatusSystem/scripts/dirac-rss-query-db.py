@@ -162,7 +162,6 @@ def getToken( key ):
     expirationDate = expirationDate.split('.')[0]
     return expirationDate 
 
-
 def checkStatusTypes( statusTypes ):
   '''
     To check if values for 'statusType' are valid
@@ -248,7 +247,6 @@ def filterReason( selectOutput, reason ):
 
   return elementsFiltered
 
-
 #...............................................................................
 # Utils: for formatting query output and notifications
 
@@ -309,7 +307,6 @@ def printTable( table ):
       columns_separator = False
 
   subLogger.notice( line )
-
 
 #...............................................................................
 
@@ -375,7 +372,6 @@ def add( args, switchDict ):
   result['message'] = output['Message'] if 'Message' in output else None
 
   return result
-
 
 def modify( args, switchDict ):
   '''

@@ -21,32 +21,25 @@ _rssConfigPath = 'ResourceStatus'
 
 class RssConfiguration:
   '''
+  RssConfiguration::
   
-  RssConfiguration:
-  { 
-    Config:
-    { 
-      State        : Active | InActive,
-      Cache        : 300,
-      FromAddress  : 'email@site.domain'
-      StatusType   :
       { 
-        default       : all,
-        StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
-      }  
-    }
-  }          
+        Config:
+        { 
+          State        : Active | InActive,
+          Cache        : 300,
+          FromAddress  : 'email@site.domain'
+          StatusType   :
+          { 
+            default       : all,
+            StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
+          }  
+        }
+      }          
   
   '''
   def __init__( self ):
-    self.opsHelper = Operations() 
-
-  def getConfigState( self, default = 'InActive' ):
-    '''
-      Gets from <pathToRSSConfiguration>/Config the value of State
-    '''
-    
-    return self.opsHelper.getValue( '%s/Config/State' % _rssConfigPath, default )
+    self.opsHelper = Operations()
 
   def getConfigCache( self, default = 300 ):
     '''
@@ -81,7 +74,6 @@ class RssConfiguration:
         return List.fromChar( res[ 'Value' ][ 'default' ] )
         
     return _DEFAULTS
- 
 ## RssConfiguration/Policies ###################################################
 
 def getPolicies():

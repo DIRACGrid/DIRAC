@@ -7,7 +7,7 @@
 
 __RCSID__ = "$Id:  $"
 
-import time, os, types
+import os, types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase     import DirectoryTreeBase
 
@@ -15,6 +15,20 @@ class DirectorySimpleTree(DirectoryTreeBase):
   """ Class managing Directory Tree as a simple self-linked structure with full
       directory path stored in each node
   """
+  
+  _tables = {}
+  _tables["FC_DirectoryTree"] = { "Fields": {
+                                           "DirID": "INTEGER AUTO_INCREMENT",
+                                           "DirName": "VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                           "Parent": "INTEGER NOT NULL"
+                                            },
+                                  "PrimaryKey": "DirID",
+                                  "Indexes": {
+                                              "Parent": ["Parent"],
+                                              "Level": ["Level"]
+                                             },
+                                  "UniqueIndexes": { "DirName": ["DirName"] }
+                             }
   
   def __init__(self,database=None):
     DirectoryTreeBase.__init__(self,database)
@@ -131,7 +145,7 @@ class DirectorySimpleTree(DirectoryTreeBase):
       
     pathString = [ "'"+p+"'" for p in pelements ]
     req = "SELECT DirID FROM FC_DirectoryTree WHERE DirName in (%s) ORDER BY DirID" % pathString
-    result = self._query(req)
+    result = self.db._query(req)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -151,7 +165,7 @@ class DirectorySimpleTree(DirectoryTreeBase):
       dirID = path
         
     req = "SELECD DirID FROM FC_DirectoryTree WHERE Parent=%d" % dirID
-    result = self._query(req)
+    result = self.db._query(req)
     if not result['OK']:
       return result
     if not result['Value']:

@@ -21,6 +21,23 @@ class DirectoryLevelTree(DirectoryTreeBase):
       with full directory path stored in each node 
   """
   
+  _tables = {}
+  _tables["FC_DirectoryLevelTree"] = { "Fields": {
+                                             "DirID": "INTEGER AUTO_INCREMENT",
+                                             "DirName": "VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
+                                             "Parent": "INTEGER NOT NULL",
+                                             "Level": "INT NOT NULL"
+                                            },
+                                 "PrimaryKey": "DirID",
+                                 "Indexes": {
+                                              "Parent": ["Parent"],
+                                              "Level": ["Level"]
+                                            },
+                                  "UniqueIndexes": { "DirName": ["DirName"] }
+                                }
+  for i in range( 1, MAX_LEVELS+1 ):
+    _tables["FC_DirectoryLevelTree"]["Fields"]['LPATH%d' % i] = "SMALLINT NOT NULL DEFAULT 0"
+  
   def __init__(self,database=None):
     DirectoryTreeBase.__init__(self,database)
     self.treeTable = 'FC_DirectoryLevelTree'
@@ -165,7 +182,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     if parentDirID:
       lPath = "LPATH%d" % (level)
       req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d; " % (lPath,parentDirID) 
-      resultLock = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
+      result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
       result = self.db._query(req,conn)
       req = "UPDATE FC_DirectoryLevelTree SET %s=@tmpvar WHERE DirID=%d; " % (lPath,dirID)   
       result = self.db._update(req,conn)
@@ -240,7 +257,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     if type(dirIDList) != ListType:
       dirs = [dirIDList]
       
-    dirListString = ','.join( [ str( d ) for d in dirs ] )
+    dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
 
     req = "SELECT DirID,DirName FROM FC_DirectoryLevelTree WHERE DirID in ( %s )" % dirListString
     result = self.db._query(req)
@@ -406,7 +423,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     parentList = dirs
     while parentList:
       subResult = []
-      dirListString = ','.join( [ str( d ) for d in parentList ] )
+      dirListString = ','.join( [ str(dir_) for dir_ in parentList ] )
       req = 'SELECT DirID from FC_DirectoryLevelTree WHERE Parent in ( %s )' % dirListString
       result = self.db._query(req)
       if not result['OK']:
@@ -439,13 +456,13 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """
     # Find out orphan directories
     treeTable = 'FC_DirectoryLevelTree'
-    req = "SELECT DirID,Parent,Level FROM %s WHERE Parent NOT IN ( SELECT DirID from %s )" % (treeTable,treeTable)
+    req = "SELECT DirID,Parent FROM %s WHERE Parent NOT IN ( SELECT DirID from %s )" % (treeTable,treeTable)
     result = self.db._query( req )
     if not result['OK']:
       return result
 
     parentDict = {}
-    for dirID,parentID,level in result['Value']:
+    for dirID,parentID in result['Value']:
 
       result = self.getDirectoryPath( dirID )
       if not result['OK']:
@@ -502,10 +519,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
       connection = self._getConnection()
       result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE", connection )
       if not result['OK']:
-        resUnlock = self.db._query("UNLOCK TABLES", connection )
+        self.db._query("UNLOCK TABLES", connection )
         return result
       result = self.__rebuildLevelIndexes( parentID, connection)
-      resUnlock = self.db._query("UNLOCK TABLES", connection )       
+      self.db._query("UNLOCK TABLES", connection )       
       
     return S_OK()
 

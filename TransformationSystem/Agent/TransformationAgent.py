@@ -63,9 +63,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.unusedFiles = {}
     self.unusedTimeStamp = {}
 
-    self.debug = False
-    self.transInThread = {}
-
   def initialize( self ):
     """ standard initialize
     """

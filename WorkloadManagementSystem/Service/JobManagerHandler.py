@@ -111,95 +111,16 @@ class JobManagerHandler( RequestHandler ):
     if jobDesc[-1] != "]":
       jobDesc = "%s]" % jobDesc
 
-    # Check if the job is a parameteric one
-    jobClassAd = ClassAd( jobDesc )
-    parametricJob = False
-    if jobClassAd.lookupAttribute( 'Parameters' ):
-      parametricJob = True
-      if jobClassAd.isAttributeList( 'Parameters' ):
-        parameterList = jobClassAd.getListFromExpression( 'Parameters' )
-      else:
-        pStep = 0
-        pFactor = 1
-        pStart = 1
-        nParameters = jobClassAd.getAttributeInt( 'Parameters' )
-        if not nParameters:
-          value = jobClassAd.get_expression( 'Parameters' )
-          return S_ERROR( 'Illegal value for Parameters JDL field: %s' % value )
+    result = gJobDB.insertNewJobIntoDB( jobDesc, self.owner, self.ownerDN, self.ownerGroup, self.diracSetup )
+    if not result['OK']:
+      return result
 
-        if jobClassAd.lookupAttribute( 'ParameterStart' ):
-          value = jobClassAd.get_expression( 'ParameterStart' ).replace( '"', '' )
-          try:
-            pStart = int( value )
-          except:
-            try:
-              pStart = float( value )
-            except:
-              return S_ERROR( 'Illegal value for ParameterStart JDL field: %s' % value )
+    jobID = result['JobID']
+    gLogger.info( 'Job %s added to the JobDB for %s/%s' % ( jobID, self.ownerDN, self.ownerGroup ) )
 
-        if jobClassAd.lookupAttribute( 'ParameterStep' ):
-          pStep = jobClassAd.getAttributeInt( 'ParameterStep' )
-          if not pStep:
-            pStep = jobClassAd.getAttributeFloat( 'ParameterStep' )
-            if not pStep:
-              value = jobClassAd.get_expression( 'ParameterStep' )
-              return S_ERROR( 'Illegal value for ParameterStep JDL field: %s' % value )
-        if jobClassAd.lookupAttribute( 'ParameterFactor' ):
-          pFactor = jobClassAd.getAttributeInt( 'ParameterFactor' )
-          if not pFactor:
-            pFactor = jobClassAd.getAttributeFloat( 'ParameterFactor' )
-            if not pFactor:
-              value = jobClassAd.get_expression( 'ParameterFactor' )
-              return S_ERROR( 'Illegal value for ParameterFactor JDL field: %s' % value )
+    gJobLoggingDB.addLoggingRecord( jobID, result['Status'], result['MinorStatus'], source = 'JobManager' )
 
-        parameterList = list()
-        parameterList.append( pStart )
-        for i in range( nParameters - 1 ):
-          parameterList.append( parameterList[i] * pFactor + pStep )
-
-
-      if len( parameterList ) > self.maxParametricJobs:
-        return S_ERROR( 'The number of parametric jobs exceeded the limit of %d' % self.maxParametricJobs )
-
-      jobDescList = []
-      nParam = len( parameterList ) - 1
-      for n, p in enumerate( parameterList ):
-        newJobDesc = jobDesc.replace( '%s', str( p ) ).replace( '%n', str( n ).zfill( len( str( nParam ) ) ) )
-        newClassAd = ClassAd( newJobDesc )
-        for attr in ['Parameters', 'ParameterStep', 'ParameterFactor']:
-          newClassAd.deleteAttribute( attr )
-        if type( p ) == type ( ' ' ) and p.startswith( '{' ):
-          newClassAd.insertAttributeInt( 'Parameter', str( p ) )
-        else:
-          newClassAd.insertAttributeString( 'Parameter', str( p ) )
-        newClassAd.insertAttributeInt( 'ParameterNumber', n )
-        newJDL = newClassAd.asJDL()
-        jobDescList.append( newJDL )
-    else:
-      jobDescList = [ jobDesc ]
-
-    jobIDList = []
-    for jobDescription in jobDescList:
-      result = gJobDB.insertNewJobIntoDB( jobDescription, self.owner, self.ownerDN, self.ownerGroup, self.diracSetup )
-      if not result['OK']:
-        return result
-
-      jobID = result['JobID']
-      gLogger.info( 'Job %s added to the JobDB for %s/%s' % ( jobID, self.ownerDN, self.ownerGroup ) )
-
-      gJobLoggingDB.addLoggingRecord( jobID, result['Status'], result['MinorStatus'], source = 'JobManager' )
-
-      jobIDList.append( jobID )
-
-    #Set persistency flag
-    retVal = gProxyManager.getUserPersistence( self.ownerDN, self.ownerGroup )
-    if 'Value' not in retVal or not retVal[ 'Value' ]:
-      gProxyManager.setPersistency( self.ownerDN, self.ownerGroup, True )
-
-    if parametricJob:
-      result = S_OK( jobIDList )
-    else:
-      result = S_OK( jobIDList[0] )
+    result = S_OK( jobID )
 
     result['JobID'] = result['Value']
     result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
@@ -406,18 +327,15 @@ class JobManagerHandler( RequestHandler ):
     bad_ids = []
     good_ids = []
     for jobID in validJobList:
-      result = gJobDB.setJobAttribute( jobID, 'RescheduleCounter', -1 )
+      gtaskQueueDB.deleteJob( jobID )
+      result = gJobDB.resetJob( jobID )
       if not result['OK']:
+        self.log.warn( "Could not reset job %d: %s" % ( jobID, result[ 'Message' ] ) )
         bad_ids.append( jobID )
       else:
-        gtaskQueueDB.deleteJob( jobID )
-        #gJobDB.deleteJobFromQueue(jobID)
-        result = gJobDB.rescheduleJob( jobID )
-        if not result['OK']:
-          bad_ids.append( jobID )
-        else:
-          good_ids.append( jobID )
-        gJobLoggingDB.addLoggingRecord( result['JobID'], result['Status'], result['MinorStatus'],
+        good_ids.append( jobID )
+      if 'Status' in result:
+        gJobLoggingDB.addLoggingRecord( jobID, result['Status'], result['MinorStatus'],
                                         application = 'Unknown', source = 'JobManager' )
 
     self.__sendJobsToOptimizationMind( good_ids )

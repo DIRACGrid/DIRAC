@@ -4,14 +4,16 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/07/03 10:33:02
 ########################################################################
-""" :mod: State 
-    =======================
+""" 
+:mod: State 
  
-    .. module: State
-    :synopsis: state machine
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: State
 
-    state machine
+:synopsis: state machine
+
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+state machine
 """
 __RCSID__ = "$Id: $"
 ##
