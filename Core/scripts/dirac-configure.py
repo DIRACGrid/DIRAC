@@ -337,7 +337,7 @@ if not skipCADownload:
       DIRAC.rootPath = os.getcwd()
       DIRAC.gLogger.verbose( 'Change rootPath to', DIRAC.rootPath )
   try:
-    dirName = os.path.join( os.getcwd(), 'etc', 'grid-security', 'certificates' )
+    dirName = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'certificates' )
     if not os.path.exists( dirName ):
       os.makedirs( dirName )
   except:
@@ -345,9 +345,6 @@ if not skipCADownload:
     DIRAC.gLogger.fatal( 'Fail to create directory:', dirName )
     DIRAC.exit( -1 )
   try:
-    if voFlag:
-      DIRAC.rootPath = os.getcwd()
-      DIRAC.gLogger.verbose( 'Change rootPath to', DIRAC.rootPath )
     from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
     bdc = BundleDeliveryClient()
     result = bdc.syncCAs()
