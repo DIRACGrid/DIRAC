@@ -1424,7 +1424,7 @@ class ReplicaManager( CatalogToStorage ):
       self.log.info( "putAndRegister: Checksum calculated to be %s." % checksum )
     res = self.fileCatalogue.exists( {lfn:guid} )
     if not res['OK']:
-      errStr = "putAndRegister: Completey failed to determine existence of destination LFN."
+      errStr = "putAndRegister: Completely failed to determine existence of destination LFN."
       self.log.error( errStr, lfn )
       return res
     if lfn not in res['Value']['Successful']:

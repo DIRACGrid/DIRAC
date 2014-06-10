@@ -34,6 +34,7 @@ class Synchronizer:
     return self.__lock.release()
 
 
+#FIXME: not used
 class WORM:
   """
   Write One - Read Many
