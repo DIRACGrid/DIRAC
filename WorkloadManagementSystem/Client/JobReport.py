@@ -3,6 +3,8 @@
 
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC import S_OK, S_ERROR, Time
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -11,7 +13,6 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 class JobReport( object ):
   """
     .. class:: JobReport
-
   """
 
   def __init__( self, jobid, source = '' ):

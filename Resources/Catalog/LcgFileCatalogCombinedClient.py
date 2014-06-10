@@ -1,5 +1,7 @@
 """ File catalog client for the LFC service combined with multiple read-only mirrors """
 
+__RCSID__ = "$Id$"
+
 import time, os
 
 import DIRAC
@@ -59,7 +61,7 @@ def getLocationOrderedCatalogs( siteName = '' ):
 #  Now the main class
 #
 
-class LcgFileCatalogCombinedClient:
+class LcgFileCatalogCombinedClient( object ):
 
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
