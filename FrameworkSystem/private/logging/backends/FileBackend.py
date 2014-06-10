@@ -6,10 +6,10 @@ from DIRAC.FrameworkSystem.private.logging.backends.BaseBackend import BaseBacke
 
 class FileBackend( BaseBackend ):
   def __init__( self, optionsDictionary ):
+    super(FileBackend, self).__init__(optionsDictionary)
     self._backendName = "file"
     self._filename = optionsDictionary[ 'FileName' ]
-    self._optionsDictionary = optionsDictionary
-    
+
   def doMessage( self, messageObject ):
     try:
       self.file=open( self._filename, 'a' )
