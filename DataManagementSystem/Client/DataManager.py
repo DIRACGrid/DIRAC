@@ -41,13 +41,21 @@ class DataManager( object ):
 
   A DataManager is taking all the actions that impact or require the FileCatalog and the StorageElement together
   """
-  def __init__( self, catalogs = [] ):
+  def __init__( self, catalogs = [], masterCatalogOnly = False ):
     """ c'tor
 
     :param self: self reference
+    :param catalogs: the list of catalog in which to perform the operations. This
+                    list will be ignored if masterCatalogOnly is set to True
+    :param masterCatalogOnly: if set to True, the operations will be performed only on the master catalog.
+                              The catalogs parameter will be ignored.
     """
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
-    self.fc = FileCatalog( catalogs )
+
+
+    catalogsToUse = FileCatalog().getMasterCatalogsName()['Value'] if masterCatalogOnly else catalogs
+
+    self.fc = FileCatalog( catalogsToUse )
     self.accountingClient = None
     self.registrationProtocol = ['SRM2', 'DIP']
     self.thirdPartyProtocols = ['SRM2', 'DIP']
