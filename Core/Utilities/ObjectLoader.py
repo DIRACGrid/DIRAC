@@ -50,7 +50,7 @@ class ObjectLoader( object ):
     return S_OK()
 
 
-  def __recurseImport( self, modName, parentModule = False, hideExceptions = False, fullName = False ):
+  def __recurseImport( self, modName, parentModule = None, hideExceptions = False, fullName = False ):
     """ Internal function to load modules
     """
     if type( modName ) in types.StringTypes:
