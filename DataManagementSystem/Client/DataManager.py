@@ -53,7 +53,7 @@ class DataManager( object ):
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
 
 
-    catalogsToUse = FileCatalog().getMasterCatalogsName()['Value'] if masterCatalogOnly else catalogs
+    catalogsToUse = FileCatalog().getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
 
     self.fc = FileCatalog( catalogsToUse )
     self.accountingClient = None
