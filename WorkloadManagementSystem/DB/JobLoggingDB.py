@@ -13,6 +13,8 @@ from DIRAC                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Base.DB   import DB
 
+__RCSID__ = "$Id$"
+
 # Here for debugging purpose; should be initialized by the containing component
 gLogger.initialize( 'WMS', '/Databases/JobLoggingDB/Test' )
 

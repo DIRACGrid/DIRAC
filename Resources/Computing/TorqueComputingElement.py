@@ -25,7 +25,8 @@ UsedParameters = [ 'ExecQueue', 'SharedArea', 'BatchOutput', 'BatchError', 'User
 MandatoryParameters = [ 'Queue' ]
 
 class TorqueComputingElement( ComputingElement ):
-
+  """ Direct Torque submission
+  """
   mandatoryParameters = MandatoryParameters
 
   #############################################################################
