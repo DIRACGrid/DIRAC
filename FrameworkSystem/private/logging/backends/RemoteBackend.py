@@ -13,6 +13,7 @@ from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 class RemoteBackend( BaseBackend, threading.Thread ):
 
   def __init__( self, optionsDictionary ):
+    BaseBackend.__init__(optionsDictionary)
     threading.Thread.__init__( self )
     self.__interactive = optionsDictionary[ 'Interactive' ]
     self.__sleep = optionsDictionary[ 'SleepTime' ]
