@@ -699,7 +699,7 @@ class DataManager( object ):
     ###########################################################
     # Get the LFN replicas from the file catalogue
     self.log.debug( "%s Attempting to obtain replicas for %s." % ( logStr, lfn ) )
-    res = self.fc.getReplicas( lfn )
+    res = self.getReplicas( lfn )
     if not res[ 'OK' ]:
       errStr = "%s Completely failed to get replicas for LFN." % logStr
       self.log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
@@ -782,6 +782,7 @@ class DataManager( object ):
             res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
             if res['OK']:
               sourcePfn = res['Value']
+              # print pfn, sourcePfn
               self.log.debug( "%s Attempting to get source file size." % logStr )
               res = storageElement.getFileSize( sourcePfn )
               if res['OK']:
@@ -796,7 +797,7 @@ class DataManager( object ):
                     self.log.debug( errStr, "%s %s" % ( diracSE, sourcePfn ) )
                 else:
                   errStr = "%s Failed to get physical file size." % logStr
-                  self.log.debug( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Value']['Failed'][sourcePfn] ) )
+                  self.log.always( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Value']['Failed'][sourcePfn] ) )
               else:
                 errStr = "%s Completely failed to get physical file size." % logStr
                 self.log.debug( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Message'] ) )
