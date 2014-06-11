@@ -755,6 +755,7 @@ class DataManager( object ):
 
     ###########################################################
     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
+    # It's not really the best, but the one authorized
 
     logStr = "__resolveBestReplicas:"
 
