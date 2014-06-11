@@ -1110,7 +1110,7 @@ class DataManager( object ):
     res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
 
     if not res['OK']:
-      errStr = "__removeReplica: Failed to remove catalog replicas."
+      errStr = "__removeReplica: Failed to remove physical replicas."
       self.log.debug( errStr, res['Message'] )
       return S_ERROR( errStr )
 
@@ -1484,7 +1484,7 @@ class DataManager( object ):
   def getReplicas( self, lfns, allStatus = True ):
     """ get replicas from catalogue """
     res = self.fc.getReplicas( lfns, allStatus = allStatus )
-    
+
     if not self.useCatalogPFN:
       if res['OK']:
         se_lfn = {}
