@@ -478,7 +478,7 @@ class ReleaseConfig:
     if not result[ 'OK' ]:
       return result
     self.__prjRelCFG[ project ][ release ] = result[ 'Value' ]
-    self.__dbgMsg( "Loaded relases file %s" % relcfgLoc )
+    self.__dbgMsg( "Loaded releases file %s" % relcfgLoc )
 
     return S_OK( self.__prjRelCFG[ project ][ release ] )
 
@@ -757,6 +757,11 @@ def logERROR( msg ):
     print "%s UTC dirac-install [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
+def logWARN( msg ):
+  for line in msg.split( "\n" ):
+    print "%s UTC dirac-install [WARN] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
+  sys.stdout.flush()
+
 def logNOTICE( msg ):
   for line in msg.split( "\n" ):
     print "%s UTC dirac-install [NOTICE]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
@@ -786,7 +791,13 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     #   #opener = urllib2.build_opener()
     #  urllib2.install_opener( opener )
     remoteFD = urllib2.urlopen( url )
-    expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
+    expectedBytes = 0
+    # Sometimes repositories do not return Content-Length parameter
+    try:
+      expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
+    except Exception, x:
+      logWARN( 'Content-Length parameter not returned, skipping expectedBytes check' )
+        
     if fileName:
       localFD = open( fileName, "wb" )
     receivedBytes = 0L
@@ -812,7 +823,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     if fileName:
       localFD.close()
     remoteFD.close()
-    if receivedBytes != expectedBytes:
+    if receivedBytes != expectedBytes and expectedBytes > 0:
       logERROR( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
       return False
   except urllib2.HTTPError, x:
