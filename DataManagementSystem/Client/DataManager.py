@@ -1296,6 +1296,8 @@ class DataManager( object ):
                                                         len( pfnsToRemove ) )
     oDataOperation.setStartTime()
     start = time.time()
+    ret = storageElement.getFileSize( res['Value']['Successful'] )
+    deletedSize = sum( ret.get( 'Value', {} ).get( 'Successful', {} ).values() )
     res = storageElement.removeFile( pfnsToRemove )
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey( 'TransferTime', time.time() - start )
@@ -1318,8 +1320,6 @@ class DataManager( object ):
         else:
           res['Value']['Successful'][surl] = ret['Value']
 
-      ret = storageElement.getFileSize( res['Value']['Successful'] )
-      deletedSize = sum( ret.get( 'Value', {} ).get( 'Successful', {} ).values() )
       oDataOperation.setValueByKey( 'TransferOK', deletedSize )
 
       gDataStoreClient.addRegister( oDataOperation )
