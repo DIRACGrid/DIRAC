@@ -305,7 +305,8 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         for opFile in self.operation:
           if fileID == opFile.FileID:
             opFile.Status = "Scheduled"
-            self.log.always( "%s has been scheduled for FTS" % opFile.LFN )
+            self.log.debug( "%s has been scheduled for FTS" % opFile.LFN )
+      self.log.info( "%d files have been scheduled to FTS" % len( ftsSchedule['Successful'] ) )
 
       for fileID in ftsSchedule["Failed"]:
         gMonitor.addMark( "FTSScheduleFail", 1 )
