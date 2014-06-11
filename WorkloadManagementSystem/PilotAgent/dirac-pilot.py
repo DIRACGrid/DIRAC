@@ -83,6 +83,10 @@ class InstallDIRAC( object ):
     self.rootPath = ''
 
   def setInstallOpt( self ):
+<<<<<<< HEAD
+=======
+
+>>>>>>> Cleaning of the code
     """Setup installation parameters"""
 
     global rootPath
@@ -132,11 +136,17 @@ class InstallDIRAC( object ):
     if self.platform:
       self.installOpts.append( '-p "%s"' % self.platform )
 
+<<<<<<< HEAD
     logDEBUG( 'INSTALL OPTIONS [%s]' % ', '.join( map( str, self.installOpts ) ) )
     
+=======
+
+    logDEBUG( 'INSTALL OPTIONS [%s]' % ', '.join( map( str, self.installOpts ) ) )
+>>>>>>> Cleaning of the code
     
     
   def execute( self ):
+
     try:
       pilotScript = os.path.realpath( __file__ )  # in old python versions __file__ is not defined
     except:
@@ -150,6 +160,7 @@ class InstallDIRAC( object ):
 
     ############################################################################
     # Locate installation script
+
     for path in ( pilotRootPath, originalRootPath, rootPath ):
       installScript = os.path.join( path, installScriptName )
       if os.path.isfile( installScript ):
@@ -178,6 +189,7 @@ class InstallDIRAC( object ):
     #############################################################################
     # Version print
   def printVersion( self ):
+
     logINFO( "Running %s" % " ".join( sys.argv ) )
     try:
       fd = open( "%s.run" % sys.argv[0], "w" )
