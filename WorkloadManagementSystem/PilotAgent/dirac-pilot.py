@@ -56,6 +56,7 @@ workingDir = os.getcwd()  # it is the directory where the dirac.cfg is created, 
 originalRootPath = os.getcwd()
 installScript = ''
 installScriptName = ''
+SetDebug = False
 
 
 
@@ -65,7 +66,6 @@ def main():
   install.setInstallOpt()
   install.execute()
   diracScript = os.path.join( rootPath, 'scripts' )
-  print 'in diracPilotLast main %s' % rootPath
   configure = ConfigureDIRAC( diracScript = diracScript, rootPath = rootPath, EnviRon = '', noCert = True )
   configure.setConfigureOpt()
   configure.execute()
@@ -83,12 +83,15 @@ class InstallDIRAC( object ):
     self.rootPath = ''
 
   def setInstallOpt( self ):
-    """setta i parametri di installazione"""
+
+    """Setup installation parameters"""
+
     global rootPath
     optList, __args__ = getopt.getopt( sys.argv[1:],
                                "".join( [ opt[0] for opt in cmdOpts ] ),
                                [ opt[1] for opt in cmdOpts ] )
-    print 'PARAMETER [%s]' % ', '.join( map( str, optList ) )
+
+    logDEBUG( 'PARAMETER [%s]' % ', '.join( map( str, optList ) ) )
 
     for o, v in optList:
       if o in ( '-h', '--help' ):
@@ -131,10 +134,11 @@ class InstallDIRAC( object ):
       self.installOpts.append( '-p "%s"' % self.platform )
 
 
-    print 'INSTALL [%s]' % ', '.join( map( str, self.installOpts ) )
+    logDEBUG( 'INSTALL OPTIONS [%s]' % ', '.join( map( str, self.installOpts ) ) )
     
     
   def execute( self ):
+
     try:
       pilotScript = os.path.realpath( __file__ )  # in old python versions __file__ is not defined
     except:
@@ -145,8 +149,10 @@ class InstallDIRAC( object ):
     installScriptName = 'dirac-install.py'
     originalRootPath = os.getcwd()
     rootPath = os.getcwd()
+
     ############################################################################
     # Locate installation script
+
     for path in ( pilotRootPath, originalRootPath, rootPath ):
       installScript = os.path.join( path, installScriptName )
       if os.path.isfile( installScript ):
@@ -186,6 +192,7 @@ class InstallDIRAC( object ):
     #############################################################################
     # Version print
   def printVersion( self ):
+
     logINFO( "Running %s" % " ".join( sys.argv ) )
     try:
       fd = open( "%s.run" % sys.argv[0], "w" )
@@ -200,14 +207,14 @@ class InstallDIRAC( object ):
 
 class ConfigureDIRAC( object ):
   
-  
   def __init__( self, diracScript, rootPath, EnviRon, noCert ):
     """
     diracScript is the path of the script files;
-    rootPath is the local path of DIRAC, it is used as path where to install DIRAC for traditional installation and as path where to create the dirac.cfg for specific installation
+    rootPath is the local path of DIRAC, it is used as path where to install DIRAC for traditional installation and as path where to create the dirac.cfg for VOs specific installation
     EnviRon is a dictionary containing the set-up environment of a specific experiment
     noCert it is True when the setup is not Certification and it is False when the setup is certification
     """
+
     self.configureOpts = []
     self.inProcessOpts = []
     self.jobAgentOpts = []
@@ -222,7 +229,7 @@ class ConfigureDIRAC( object ):
     self.noCert = noCert
     if self.EnviRon:  # if the dictionary containing the environment of LHCbDirac is not empty, the voFlag is set to True to indicate the LHCbVo
       self.voFlag = True
-      print 'voFlag %s' % self.voFlag
+      logDEBUG( 'voFlag %s' % self.voFlag )
     self.ceName = ""
     self.queueName = ""
     self.releaseVersionList = []
@@ -240,14 +247,12 @@ class ConfigureDIRAC( object ):
     self.platform = ""
     self.minDiskSpace = 2560 #MB
     self.dryRun = False
-    self.debug = False
     self.testVOMSOK = False
     self.site = ""
  
   def setInProcessOpts( self ):
+
     global workingDir
-    print 'in set process options rootPath is %s' % rootPath
-    print 'and current dir is %s' % workingDir
     localUid = os.getuid()
     try:
       import pwd
@@ -271,7 +276,7 @@ class ConfigureDIRAC( object ):
     self.jobAgentOpts= ['-o MaxCycles=%s' % self.maxCycles]
     
     # jobAgentOpts.append( '-o CEUniqueID=%s' % JOB_AGENT_CE )
-    if self.debug:
+    if SetDebug:
       self.jobAgentOpts.append( '-o LogLevel=DEBUG' )
 
     if self.userGroup:
@@ -284,6 +289,8 @@ class ConfigureDIRAC( object ):
 
     
   def setConfigureOpt( self ):
+    """Setup configuration parameters"""
+
     optList, __args__ = getopt.getopt( sys.argv[1:],
                                "".join( [ opt[0] for opt in cmdOpts ] ),
                                [ opt[1] for opt in cmdOpts ] )
@@ -303,7 +310,7 @@ class ConfigureDIRAC( object ):
         self.pilotReference = v
       elif o == '-d' or o == '--debug':
         self.configureOpts.append( '-d' )
-        self.debug = True
+        SetDebug = True
       elif o in ( '-S', '--setup' ):
         self.configureOpts.append( '-S "%s"' % v )
       elif o in ( '-C', '--configurationServer' ):
@@ -351,7 +358,7 @@ class ConfigureDIRAC( object ):
 
     if self.PilotReference != 'Unknown':
       self.configureOpts.append( '-o /LocalSite/PilotReference=%s' % self.PilotReference )
-# add options for BOINc
+    # add options for BOINc
     if self.boincUserID:
       self.configureOpts.append( '-o /LocalSite/BoincUserID=%s' % self.boincUserID )
     if self.boincHostID:
@@ -371,9 +378,8 @@ class ConfigureDIRAC( object ):
     if self.voFlag:
       logINFO( 'Setting voFlag to "%s"' % self.voFlag )
       self.configureOpts.append('-x')
-    print 'CONFIGURE [%s]' % ', '.join( map( str, self.configureOpts ) )
-    print 'root path %s' % self.rootPath
-    print 'workingDir %s' % workingDir
+    logDEBUG ( 'CONFIGURE [%s]' % ', '.join( map( str, self.configureOpts ) ) )
+
     
   def setFlavour(self):
 
@@ -483,9 +489,9 @@ class ConfigureDIRAC( object ):
 
 
 
-   #############################################################################
-  # Treat the OSG case
   def OSG ( self ):
+
+    """ Treat the OSG case """
     osgDir = ''
     if self.flavour == "OSG":
       vo = self.releaseProject.replace( 'DIRAC', '' ).upper()
@@ -519,9 +525,7 @@ class ConfigureDIRAC( object ):
       #rootPath = os.getcwd()  
     
   def execute( self ):
-    # ##
-    # Configure DIRAC
-    # ##
+    """ Configure DIRAC """
 
     # Instead of dumping the Full configuration, include all Server in dirac.cfg
 
@@ -543,19 +547,17 @@ class ConfigureDIRAC( object ):
       logERROR( "Could not configure DIRAC" )
       sys.exit( 1 )
 
-# ##
-# Dump the CS to cache in file
-# ##
+    # Dump the CS to cache in file
 
-# cfgFile = os.path.join( rootPath, "etc", "dirac.cfg" )
-# cacheScript = os.path.join( diracScriptsPath, "dirac-configuration-dump-local-cache" )
-# if os.system( "%s -f %s" % ( cacheScript, cfgFile ) ):
-#   logERROR( "Could not dump the CS to %s" % cfgFile )
+    # cfgFile = os.path.join( rootPath, "etc", "dirac.cfg" )
+    # cacheScript = os.path.join( diracScriptsPath, "dirac-configuration-dump-local-cache" )
+    # if os.system( "%s -f %s" % ( cacheScript, cfgFile ) ):
+    #   logERROR( "Could not dump the CS to %s" % cfgFile )
     configureScript = os.path.join( self.diracScriptsPath, "dirac-configure" )
 
-# ##
-# Set the LD_LIBRARY_PATH and PATH
-# ##
+
+    # Set the LD_LIBRARY_PATH and PATH
+
     if not self.platform:
       platformPath = os.path.join(self.rootPath, "DIRAC", "Core", "Utilities", "Platform.py" )
       platFD = open( platformPath, "r" )
@@ -579,23 +581,19 @@ class ConfigureDIRAC( object ):
       os.environ['LD_LIBRARY_PATH'] = "%s" % ( diracLibPath )
       os.environ['PATH'] = '%s:%s:%s' % ( diracBinPath, self.diracScriptsPath, os.getenv( 'PATH' ) )
 
-#
-# Check proxy
-#
+    #########################################################################################################################
+    # Check proxy
 
-    #ret = os.system( 'dirac-proxy-info' )
     retCode, __outData__ = executeAndGetOutput( 'dirac-proxy-info', self.EnviRon )
     if self.testVOMSOK:
       retCode, __outData__ = executeAndGetOutput( 'dirac-proxy-info | grep -q fqan', self.EnviRon )
-      #ret = os.system( 'dirac-proxy-info | grep -q fqan' )
       if retCode != 0:
         retCode, __outData__ = executeAndGetOutput( 'dirac-proxy-info 2>&1 | mail -s "dirac-pilot: missing voms certs at %s" dirac.alarms@gmail.com' % self.site, self.EnviRon )
-        #os.system( 'dirac-proxy-info 2>&1 | mail -s "dirac-pilot: missing voms certs at %s" dirac.alarms@gmail.com' % self.site )
-        #sys.exit( -1 )
+        sys.exit( -1 )
 
-#
-# Set the local architecture
-#
+    ##########################################################################################################################
+    # Set the local architecture
+
     if not self.EnviRon or not self.noCert:  # if traditional installation
       architectureScriptName = "dirac-architecture"
       architectureScript = ""
@@ -619,8 +617,9 @@ class ConfigureDIRAC( object ):
           os.system( "%s -F -o '/LocalSite/Architecture=%s'" % ( configureScript, localArchitecture ) )
         else:
           logERROR( "There was an error calling %s" % architectureScript )
-#
-# Get host and local user info
+
+   ###############################################################################################################################
+   # Get host and local user info
 
     logINFO( 'Uname      = %s' % " ".join( os.uname() ) )
     logINFO( 'Host Name  = %s' % socket.gethostname() )
@@ -670,22 +669,21 @@ class ConfigureDIRAC( object ):
       logINFO( 'Memory (kB)    = %s' % totalMem )
       logINFO( 'FreeMem. (kB)  = %s' % freeMem )
 
-#
-# Disk space check
-#
-    # rootPath e working dir could be different
+   ##############################################################################################################################
+   # Disk space check
+
     #fs = os.statvfs( rootPath )
     fs = os.statvfs( workingDir )
-# bsize;    /* file system block size */
-# frsize;   /* fragment size */
-# blocks;   /* size of fs in f_frsize units */
-# bfree;    /* # free blocks */
-# bavail;   /* # free blocks for non-root */
-# files;    /* # inodes */
-# ffree;    /* # free inodes */
-# favail;   /* # free inodes for non-root */
-# flag;     /* mount flags */
-# namemax;  /* maximum filename length */
+    # bsize;    /* file system block size */
+    # frsize;   /* fragment size */
+    # blocks;   /* size of fs in f_frsize units */
+    # bfree;    /* # free blocks */
+    # bavail;   /* # free blocks for non-root */
+    # files;    /* # inodes */
+    # ffree;    /* # free inodes */
+    # favail;   /* # free inodes for non-root */
+    # flag;     /* mount flags */
+    # namemax;  /* maximum filename length */
     diskSpace = fs[4] * fs[0] / 1024 / 1024
     logINFO( 'DiskSpace (MB) = %s' % diskSpace )
 
@@ -696,9 +694,7 @@ class ConfigureDIRAC( object ):
       
   
   def getCPURequirement(self):
-#
-# Get job CPU requirement and queue normalization
-#
+    """ Get job CPU requirement and queue normalization """
 
     if self.flavour in ['LCG', 'gLite', 'OSG']:
       logINFO( 'CE = %s' % self.CE )
@@ -723,7 +719,6 @@ class ConfigureDIRAC( object ):
       else:
         logERROR( "There was an error calling dirac-wms-get-queue-normalization" )
 
-
       retCode, queueLength = executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % self.CE, self.EnviRon )
       if not retCode:
         queueLength = queueLength.strip().split( ' ' )
@@ -735,41 +730,32 @@ class ConfigureDIRAC( object ):
       else:
         logERROR( "There was an error calling dirac-wms-get-normalized-queue-length" )
         
-
-
-# Instead of using the Average reported by the Site, determine a Normalization
-# os.system( "dirac-wms-cpu-normalization -U" )
+     # Instead of using the Average reported by the Site, determine a Normalization
+     # os.system( "dirac-wms-cpu-normalization -U" )
 
     
   def startJobAgent(self):
-    
+    """Starting of the JobAgent"""
     
 # Find any .cfg file uploaded with the sandbox
-    #global rootPath
-    # SE LHCB USA DIRACSYSCONFIG 
+    
     diracAgentScript = os.path.join( self.rootPath, "scripts", "dirac-agent" )
     if self.EnviRon:
-      self.rootPath=os.getcwd() #should be changed in producion when usign cvmfs but not in certif
-      print 'cambio rootPath'
+      self.rootPath = os.getcwd()  # should be changed in producion when using cvmfs but not in certif
       if not self.noCert:
         diracAgentScript = os.path.join( self.rootPath, "scripts", "dirac-agent" )
     extraCFG = []
-    #for i in os.listdir( self.rootPath ):
-    # cfg = os.path.join( self.rootPath, i )
-    print 'root path e %s' % self.rootPath
     for i in os.listdir( self.rootPath ):
       cfg = os.path.join( self.rootPath, i )
       cfg = os.path.join(cfg,'dirac.cfg')
       if os.path.isfile( cfg ): #and re.search( '.cfg&', cfg ):
-        extraCFG.append( cfg ) # in lhcb is the cfg in cvmfs
+        extraCFG.append( cfg )
 
     #if cliParams.executeCmd:
-    # Execute user command
+      # Execute user command
       #logINFO( "Executing user defined command: %s" % cliParams.executeCmd )
       #sys.exit( os.system( "source bashrc; %s" % cliParams.executeCmd ) / 256 )
 
-    ##############################################################################################3
-    # Start the job agent
     logINFO( 'Starting JobAgent' )
     os.environ['PYTHONUNBUFFERED'] = 'yes'
 
@@ -825,56 +811,36 @@ def pythonpathCheck():
     raise x
 
 
-def executeAndGetOutput(cmd, EnviRon):  # execute a command on the worker node and get the output
-    logINFO('in execute and get output')
+def executeAndGetOutput( cmd, EnviRon ):
+    """ Execute a command on the worker node and get the output"""
+
+    logDEBUG( 'in execute and get output' )
     try:
-      import subprocess
+      import subprocess  # spawn new processes, connect to their input/output/error pipes, and obtain their return codes.
       if EnviRon !='':
-        print "environ not empty"
-        print 'cmd is %s' % cmd
+        logDEBUG( "Experiment environment not empty, cmd is %s" % cmd )
         _p = subprocess.Popen( "%s" % cmd, shell = True, env=EnviRon, stdout = subprocess.PIPE,
                           stderr = subprocess.PIPE, close_fds = False )
         outData = _p.stdout.read().strip()
         returnCode = _p.wait()
         return (returnCode, outData)
       else:
+        logDEBUG( "Proceed with traditional installation, cmd is %s" % cmd )
         _p = subprocess.Popen( "%s" % cmd, shell = True, stdout = subprocess.PIPE,
                           stderr = subprocess.PIPE, close_fds = False )
         outData = _p.stdout.read().strip()
         returnCode = _p.wait()
-        print 'traditional configuration'
         return (returnCode, outData)
     except ImportError:
-      logINFO( "Error importing subprocess" )
+      logERROR( "Error importing subprocess" )
 
 
 
-
-
-
-
-#def executeAndGetOutput(cmd):  # execute a command on the worker node and get the output
-#  try:
-#    import subprocess  # spawn new processes, connect to their input/output/error pipes, and obtain their return codes.
-#    _p = subprocess.Popen( "%s" % cmd, shell = True, stdout = subprocess.PIPE,
-#                          stderr = subprocess.PIPE, close_fds = False )
-#    outData = _p.stdout.read().strip()
-#    returnCode = _p.wait( ) 
-#  except ImportError:
-#    import popen2
-#    _p3 = popen2.Popen3( "%s" % cmd )  # Executes cmd as a sub-process. Returns the file objects (child_stdout, child_stdin, child_stderr).   it is deprecated starting from python 2.7
-#    outData = _p3.fromchild.read().strip()
-#    returnCode = _p3.wait( )
-#  return ( returnCode, outData )
-
-
-
-# ##
+#############################################################################################################################
 # Helper functions
-# ##
 
 def logDEBUG( msg ):
-  # if cliParams.debug:
+  if SetDebug:
     for _line in msg.split( "\n" ):
       print "%s UTC dirac-pilot [DEBUG] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), _line )
     sys.stdout.flush()
@@ -889,11 +855,6 @@ def logINFO( msg ):
     print "%s UTC dirac-pilot [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), _line )
   sys.stdout.flush()
 
-
-
-#
-# further local configuration
-#
 
 if __name__ == "__main__":
     main()
