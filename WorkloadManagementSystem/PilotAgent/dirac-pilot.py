@@ -83,7 +83,6 @@ class InstallDIRAC( object ):
     self.rootPath = ''
 
   def setInstallOpt( self ):
-
     """Setup installation parameters"""
 
     global rootPath
@@ -192,7 +191,6 @@ class InstallDIRAC( object ):
     #############################################################################
     # Version print
   def printVersion( self ):
-
     logINFO( "Running %s" % " ".join( sys.argv ) )
     try:
       fd = open( "%s.run" % sys.argv[0], "w" )
