@@ -144,7 +144,7 @@ def getCEStatus( user ):
   status , output = commands.getstatusoutput( 'oarstat -u %s -J' % user )
   if status != 0:
     print status
-    print stdout
+    print output
     return status
 
   try:
@@ -156,7 +156,7 @@ def getCEStatus( user ):
     return status
 
   if not len( output ) > 0:
-    status = 1024
+    status = 0
     print status
     print ":::".join( ["Waiting",str(waitingJobs)] )
     print ":::".join( ["Running",str(runningJobs)] )
