@@ -576,7 +576,7 @@ class SSHComputingElement( ComputingElement ):
     host = result['Value']['Host']
 
     output = '%s/%s.out' % ( self.batchOutput, jobStamp )
-    error = '%s/%s.out' % ( self.batchError, jobStamp )
+    error = '%s/%s.err' % ( self.batchError, jobStamp )
 
     return S_OK( (jobStamp,host,output,error) )
 
