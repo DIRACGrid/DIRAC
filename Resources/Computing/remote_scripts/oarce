@@ -9,7 +9,7 @@ def submitJob( executable,outputDir,errorDir,nJobs,queue,submitOptions ):
   errFile = os.path.join( errorDir , "%jobid%" )
   jobIDs = []
   for i in range( int(nJobs) ):
-    cmd = "oarsub -O %s -E %s -q %s -n DIRACPilot %s" % ( outFile,
+    cmd = "oarsub -O %s.out -E %s.err -q %s -n DIRACPilot %s" % ( outFile,
                                                           errFile,
                                                           queue,
                                                           #submitOptions,
