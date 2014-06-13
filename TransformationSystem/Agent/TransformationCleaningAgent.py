@@ -44,18 +44,17 @@ class TransformationCleaningAgent( AgentModule ):
     """ c'tor
     """
     AgentModule.__init__( self, *args, **kwargs )
-    # # data manager
-    self.dm = DataManager()
-    # # transformation client
-    self.transClient = TransformationClient()
-    # # wms client
-    self.wmsClient = WMSClient()
-    # # request client
-    self.reqClient = ReqClient()
-    # # file catalog clinet
-    self.metadataClient = FileCatalogClient()
 
-    # # placeholders for CS options
+    # # data manager
+    self.dm = None
+    # # transformation client
+    self.transClient = None
+    # # wms client
+    self.wmsClient = None
+    # # request client
+    self.reqClient = None
+    # # file catalog client
+    self.metadataClient = None
 
     # # transformations types
     self.transformationTypes = None
@@ -108,6 +107,18 @@ class TransformationCleaningAgent( AgentModule ):
     self.log.info( "Will remove logs found on storage element: %s" % self.logSE )
     # # enable/disable execution, should be using CS option Status?? with default value as 'Active'??
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
+
+    # # data manager
+    self.dm = DataManager()
+    # # transformation client
+    self.transClient = TransformationClient()
+    # # wms client
+    self.wmsClient = WMSClient()
+    # # request client
+    self.reqClient = ReqClient()
+    # # file catalog client
+    self.metadataClient = FileCatalogClient()
+
     return S_OK()
 
   #############################################################################
