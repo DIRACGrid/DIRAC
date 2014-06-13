@@ -461,7 +461,7 @@ def recoverableRequest( request ):
   excludedErrors = ( 'File does not exist', 'No such file or directory',
                      'sourceSURL equals to targetSURL',
                      'Max attempts limit reached', 'Max attempts reached' )
-  operationErrorsOK = ( 'is banned for', )
+  operationErrorsOK = ( 'is banned for', 'Failed to perform exists from any catalog' )
   for op in request:
     if op.Status == 'Failed' and ( not op.Error or not [errStr for errStr in operationErrorsOK if errStr in op.Error] ):
       for f in op:

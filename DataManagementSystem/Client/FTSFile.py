@@ -79,7 +79,7 @@ class FTSFile( Record ):
                "ChecksumType": "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'ADLER32'",
                "CreationTime" : "DATETIME",
                "LastUpdate" : "DATETIME",
-               "Size": "INTEGER NOT NULL",
+               "Size": "BIGINT NOT NULL",
                "FTSGUID":  "VARCHAR(64)",
                "SourceSE": "VARCHAR(128) NOT NULL",
                "SourceSURL": "VARCHAR(255) NOT NULL",

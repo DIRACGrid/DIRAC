@@ -26,7 +26,7 @@ Script.registerSwitch( '', 'Full', '   Print full request' )
 Script.registerSwitch( '', 'Status=', '   Select all requests in a given status' )
 Script.registerSwitch( '', 'Since=', '      Associated to --Status, start date yyyy-mm-dd or nb of days (default= -one day' )
 Script.registerSwitch( '', 'Until=', '      Associated to --Status, end date (default= now' )
-Script.registerSwitch( '', 'All', '      Show all requests with given status (otherwise exclude File does not exist' )
+Script.registerSwitch( '', 'All', '      Process all requests (otherwise exclude irrecoverable failures' )
 Script.registerSwitch( '', 'Reset', '      Reset Failed files to Waiting' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
@@ -42,11 +42,11 @@ if __name__ == "__main__":
   import DIRAC
   from DIRAC import gLogger
 
-  job = None
+  jobs = []
   requestName = ""
   transID = None
   tasks = None
-  requests = None
+  requests = []
   full = False
   verbose = True
   status = None
@@ -58,7 +58,7 @@ if __name__ == "__main__":
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
       try:
-        job = int( switch[1] )
+        jobs = [int( job ) for job in switch[1].split( ',' )]
       except:
         gLogger.fatal( "Invalid jobID", switch[1] )
     elif switch[0] == 'Transformation':
@@ -97,36 +97,33 @@ if __name__ == "__main__":
       until = datetime.datetime.utcnow()
     if not since:
       since = until - datetime.timedelta( hours = 24 )
+  from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+  from DIRAC.RequestManagementSystem.Client.ReqClient import printRequest, recoverableRequest
+  reqClient = ReqClient()
   if transID:
     if not taskIDs:
       Script.showHelp()
       DIRAC.exit( 2 )
     requests = ['%08d_%08d' % ( transID, task ) for task in taskIDs]
 
-  elif not job:
+  elif not jobs:
     args = Script.getPositionalArgs()
     if len( args ) == 1:
       all = True
       requests = [reqName for reqName in args[0].split( ',' ) if reqName]
   else:
-    from DIRAC.Interfaces.API.Dirac                              import Dirac
-    dirac = Dirac()
-    res = dirac.attributes( job )
+    res = reqClient.getRequestNamesForJobs( jobs )
     if not res['OK']:
-      gLogger.error( "Error getting job parameters", res['Message'] )
-    else:
-      jobName = res['Value'].get( 'JobName' )
-      if not jobName:
-        gLogger.warn( 'Job %d not found' % job )
-      else:
-        requests = [jobName + '_job_%d' % job]
-        all = True
+      gLogger.fatal( "Error getting request for jobs", res['Message'] )
+      DIRAC.exit( 2 )
+    if res['Value']['Failed']:
+      gLogger.error( "No request found for jobs %s" % str( res['Value']['Failed'].keys() ) )
+    requests = sorted( res['Value']['Successful'].values() )
+    if requests:
+      all = True
 
-  from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-  from DIRAC.RequestManagementSystem.Client.ReqClient import printRequest, recoverableRequest
-  reqClient = ReqClient()
 
-  if status:
+  if status and not requests:
     all = all or status != 'Failed'
     res = reqClient.getRequestNamesList( [status], limit = 999999999 )
     if not res['OK']:
@@ -134,11 +131,12 @@ if __name__ == "__main__":
       DIRAC.exit( 2 )
     requests = [reqName for reqName, _st, updTime in res['Value'] if updTime > since and updTime <= until and reqName]
     gLogger.always( 'Obtained %d requests %s between %s and %s' % ( len( requests ), status, since, until ) )
-  elif not requests:
-    gLogger.always( 'No request give....' )
+  if not requests:
+    gLogger.always( 'No request selected....' )
     Script.showHelp()
     DIRAC.exit( 2 )
   okRequests = []
+  warningPrinted = False
   for requestName in requests:
     try:
       requestName = reqClient.getRequestName( int( requestName ) )
@@ -156,12 +154,17 @@ if __name__ == "__main__":
     if not request:
       gLogger.error( "no such request %s" % requestName )
       continue
+    if status and request.Status != status:
+      if not warningPrinted:
+        gLogger.always( "Some requests are not in status %s" % status )
+        warningPrinted = True
+      continue
 
     if all or recoverableRequest( request ):
       okRequests.append( requestName )
       if reset:
         gLogger.always( '============ Request %s =============' % requestName )
-        ret = reqClient.resetFailedRequest( requestName )
+        ret = reqClient.resetFailedRequest( requestName, all = all )
         if not ret['OK']:
           gLogger.error( "Error resetting request %s" % requestName, ret['Message'] )
       else:

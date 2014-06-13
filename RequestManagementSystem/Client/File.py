@@ -84,7 +84,7 @@ class File( Record ):
                "ChecksumType" : "ENUM('ADLER32', 'MD5', 'SHA1', '') DEFAULT ''",
                "Checksum" : "VARCHAR(255)",
                "GUID" : "VARCHAR(36)",
-               "Size" : "INTEGER",
+               "Size" : "BIGINT",
                "Attempt": "INTEGER",
                "Error" : "VARCHAR(255)" },
              "PrimaryKey" : "FileID",
