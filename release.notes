@@ -1,4 +1,4 @@
-[v6r12-pre2]
+[v6r12-pre3]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -6,6 +6,25 @@ NEW: ReturnValue - added returnSingleResult() utility
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
+
+*Framework
+FIX: Logger - fix FileBackend implementation
+
+*Resources
+NEW: StorageElement - added a cache of already created SE objects
+CHANGE: SSHTorqueComputingElement - mv getCEStatus to remote script
+
+*ResourceStatus
+NEW: ResourceManagementClient/DB, DowntimeCommand - distinguish Disk and Tape storage 
+
+*DMS: DataManager - add masterCatalogOnly flag in the constructor
+
+*RMS
+NEW: Added 'since' and 'until' parameters for getting requests
+NEW: Request - added optimize() method to merge similar operations when
+     first inserting the request
+NEW: ReqClient, RequestDB - added getBulkRequest() interface. RequestExecutingAgent
+     can use it controlled by a special flag     
 
 [v6r11p1]
 
