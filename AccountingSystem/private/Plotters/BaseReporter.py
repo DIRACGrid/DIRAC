@@ -29,7 +29,7 @@ class BaseReporter( DBUtils ):
                 }
 
   _UNITS = { 'time' : ( ( 'seconds', 1, 24 ), ( 'hours', 3600, 24 ), ( 'days', 86400, 15 ), ( 'weeks', 86400 * 7, 10 ), ( 'months', 86400 * 30, 12 ), ( 'years', 86400 * 365, 1 ) ),
-             'cpupower' : ( ( 'HS06 hours', 3600, 24 ), ( 'HS06 days', 86400, 750 ), ( 'kHS06 days', 86400 * 1000, 750 ), ( 'MHS06 days', 86400 * 10**6, 1 ) ),
+             'cpupower' : ( ( 'HS06 hours', 3600, 24 ), ( 'HS06 days', 86400, 750 ), ( 'kHS06 days', 86400 * 1000, 750 ), ( 'MHS06 days', 86400 * 10 ** 6, 1 ) ),
              'bytes' : ( ( 'MB', 10 ** 6, 1000 ), ( 'GB', 10 ** 9, 1000 ), ( 'TB', 10 ** 12, 1000 ), ( 'PB', 10 ** 15, 1 ) ),
              'jobs' : ( ( 'jobs', 1, 1000 ), ( 'kjobs', 10 ** 3, 1000 ), ( 'Mjobs', 10 ** 6, 1 ) ),
              'files' : ( ( 'files', 1, 1000 ), ( 'kfiles', 10 ** 3, 1000 ), ( 'Mfiles', 10 ** 6, 1 ) )
@@ -98,7 +98,7 @@ class BaseReporter( DBUtils ):
                                                                             reportRequest[ 'reportName' ],
                                                                             reportGenerationTime,
                                                                             plotGenerationTime,
-                                                                            ( reportGenerationTime * 100 / plotGenerationTime ) ) )
+                                                                            ( ( reportGenerationTime * 100 / plotGenerationTime )  if plotGenerationTime else 0. ) ) )
     if not retVal[ 'OK' ]:
       return retVal
     plotDict = retVal[ 'Value' ]
@@ -125,13 +125,13 @@ class BaseReporter( DBUtils ):
       return S_ERROR( "Plot function for report %s is not defined" % reportRequest[ 'reportName' ] )
     return gDataCache.getReportPlot( reportRequest, reportHash, reportData, funcObj )
 
-###
+# ##
 # Helper functions for reporters
-###
+# ##
 
   def _getTimedData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict ):
     condDict = {}
-    #Check params
+    # Check params
     if not self._PARAM_CHECK_FOR_NONE in metadataDict:
       metadataDict[ self._PARAM_CHECK_FOR_NONE ] = False
     if not self._PARAM_CONVERT_TO_GRANULARITY in metadataDict:
@@ -140,11 +140,11 @@ class BaseReporter( DBUtils ):
       return S_ERROR( "%s field metadata is invalid" % self._PARAM_CONVERT_TO_GRANULARITY )
     if not self._PARAM_CALCULATE_PROPORTIONAL_GAUGES in metadataDict:
       metadataDict[ self._PARAM_CALCULATE_PROPORTIONAL_GAUGES ] = False
-    #Make safe selections
+    # Make safe selections
     for keyword in self._typeKeyFields:
       if keyword in preCondDict:
         condDict[ keyword ] = preCondDict[ keyword ]
-    #Query!
+    # Query!
     timeGrouping = ( "%%s, %s" % groupingFields[0], [ 'startTime' ] + groupingFields[1] )
     retVal = self._retrieveBucketedData( self._typeName,
                                           startTime,
@@ -158,7 +158,7 @@ class BaseReporter( DBUtils ):
       return retVal
     dataDict = self._groupByField( 0, retVal[ 'Value' ] )
     coarsestGranularity = self._getBucketLengthForTime( self._typeName, startTime )
-    #Transform!
+    # Transform!
     for keyField in dataDict:
       if metadataDict[ self._PARAM_CHECK_FOR_NONE ]:
         dataDict[ keyField ] = self._convertNoneToZero( dataDict[ keyField ] )
@@ -179,11 +179,11 @@ class BaseReporter( DBUtils ):
 
   def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict = None, reduceFunc = False ):
     condDict = {}
-    #Make safe selections
+    # Make safe selections
     for keyword in self._typeKeyFields:
       if keyword in preCondDict:
         condDict[ keyword ] = preCondDict[ keyword ]
-    #Query!
+    # Query!
     retVal = self._retrieveBucketedData( self._typeName,
                                           startTime,
                                           endTime,
@@ -200,7 +200,7 @@ class BaseReporter( DBUtils ):
         dataDict[ key ] = dataDict[ key ][0][0]
       else:
         dataDict[ key ] = reduceFunc( *dataDict[ key ][0] )
-    #HACK to allow serialization of the type because MySQL decides to return data in a non python standard format
+    # HACK to allow serialization of the type because MySQL decides to return data in a non python standard format
     for key in dataDict:
       dataDict[ key ] = float( dataDict[ key ] )
     return S_OK( dataDict )
@@ -209,7 +209,7 @@ class BaseReporter( DBUtils ):
     if len( groupingFields ) == 3:
       return groupingFields[2]
     if len( groupingFields[1] ) == 1:
-      #If there's only one field, then we send the sql representation in pos 0
+      # If there's only one field, then we send the sql representation in pos 0
       return groupingFields[0]
     else:
       return "CONCAT( %s )" % ", ".join( [ "%s, '-'" % sqlRep for sqlRep in groupingFields[0] ] )
@@ -234,16 +234,16 @@ class BaseReporter( DBUtils ):
         if maxValue / unitDivFactor < unitThreshold:
           break
       unitData = selectedUnits[ unit ][ unitIndex ]
-    #Apply divFactor to all units
+    # Apply divFactor to all units
     graphDataDict, maxValue = self._divideByFactor( copy.deepcopy( reportDataDict ), unitData[1] )
     if unitData == baseUnitData:
       reportDataDict = graphDataDict
     else:
       reportDataDict, dummyMaxValue = self._divideByFactor( reportDataDict, baseUnitData[1] )
     return reportDataDict, graphDataDict, maxValue, unitData[0]
-##
+# #
 # Plotting
-##
+# #
 
   def __checkPlotMetadata( self, metadata ):
     if self._EA_WIDTH in self._extraArgs and self._extraArgs[ self._EA_WIDTH ]:
