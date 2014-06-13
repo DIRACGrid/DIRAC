@@ -1,9 +1,9 @@
 # $HeadURL$
 """
 SystemLoggingHandler is the implementation of the Logging service
-    in the DISET framework
+in the DISET framework.
 
-    The following methods are available in the Service interface
+The following methods are available in the Service interface::
 
     addMessages()
 
@@ -39,8 +39,9 @@ class SystemLoggingHandler( RequestHandler ):
   """
 
   def __addMessage( self, messageObject, site, nodeFQDN ):
-    """  This is the function that actually adds the Message to 
-         the log Database
+    """  
+    This is the function that actually adds the Message to 
+    the log Database
     """
     credentials = self.getRemoteCredentials()
     if credentials.has_key( 'DN' ):
@@ -59,14 +60,17 @@ class SystemLoggingHandler( RequestHandler ):
   types_addMessages = [ ListType, StringTypes, StringTypes ]
   #A normal exported function (begins with export_)
   def export_addMessages( self, messagesList, site, nodeFQDN ):
-    """ This is the interface to the service
-        
-        :param list msgList: contains a  list of Message Objects.
-        :return: :
+    """ 
+    This is the interface to the service
+    Inputs:
            
-           S_OK if no exception was raised
-           S_ERROR if an exception was raised
+      msgList contains a list of Message Objects.
            
+    Outputs:
+           
+      S_OK if no exception was raised
+      S_ERROR if an exception was raised
+
     """
     for messageTuple in messagesList:
       messageObject = tupleToMessage( messageTuple )

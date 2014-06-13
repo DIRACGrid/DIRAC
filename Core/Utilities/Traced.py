@@ -4,19 +4,17 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/08/08 13:29:18
 ########################################################################
-""" 
+"""
 :mod: Traced
  
 .. module: Traced
-
 :synopsis: watched mutable metaclass
-
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 watched mutable metaclass tracing all updated indexes or keys
 """
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id: $"
 
 ##
 # @file Traced.py

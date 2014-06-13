@@ -9,8 +9,7 @@
 :mod: Operation
 
 .. module: Operation
-
-:synopsis: Operation implementation
+  :synopsis: Operation implementation
 
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 

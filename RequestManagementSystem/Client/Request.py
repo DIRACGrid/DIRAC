@@ -8,8 +8,7 @@
 :mod: Request
 
 .. module: Request
-
-:synopsis: request implementation
+  :synopsis: request implementation
 
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 

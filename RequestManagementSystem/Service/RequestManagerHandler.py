@@ -6,9 +6,10 @@
 :mod: RequestManagerHandler 
 
 .. module: RequestManagerHandler
+  :synopsis: Implementation of the RequestDB service in the DISET framework
 
-:synopsis: Implementation of the RequestDB service in the DISET framework
 :deprecated:
+
 """
 
 __RCSID__ = "$Id$"

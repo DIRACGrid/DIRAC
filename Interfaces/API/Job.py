@@ -199,7 +199,7 @@ class Job( API ):
        executables may be placed in the lib/ directory if desired. The lib/ directory
        is transferred to the Grid Worker Node before the job executes.
 
-       Files / directories can be specified using the '*' character e.g. \*.txt  these
+       Files / directories can be specified using the `*` character e.g. `*.txt`  these
        are resolved correctly before job execution on the WN.
 
        Example usage:
@@ -266,7 +266,7 @@ class Job( API ):
   def setOutputSandbox( self, files ):
     """Helper function.
 
-       Specify output sandbox files.  If specified files are over 10MB, these
+       Specify output sandbox files. If specified files are over 10MB, these
        may be uploaded to Grid storage with a notification returned in the
        output sandbox.
 
@@ -438,6 +438,7 @@ class Job( API ):
                           Element to store data or files, e.g. CERN-tape
        :type outputSE: string or list
        :type outputPath: string
+  
     """
     if outputSE == None:
       outputSE = []

@@ -7,12 +7,11 @@
 :mod: FTSManagerHandler
 
 .. module: FTSManagerHandler
-
-:synopsis: handler for FTSDB using DISET
+  :synopsis: handler for FTSDB using DISET
 
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-service handler for FTSDB using DISET
+Service handler for FTSDB using DISET
 """
 
 # #

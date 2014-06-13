@@ -6,8 +6,8 @@
 :mod: StorageElementHandler 
 
 .. module: StorageElementHandler
-
-:synopsis: StorageElementHandler is the implementation of a simple StorageElement service in the DISET framework
+  :synopsis: StorageElementHandler is the implementation of a simple StorageElement
+  service in the DISET framework
 
 The following methods are available in the Service interface
 

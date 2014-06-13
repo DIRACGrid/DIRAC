@@ -4,14 +4,11 @@
 :mod: Pfn 
  
 .. module: Pfn
-
 :synopsis: pfn URI (un)parsing
-
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-
 """
 
-__RCSID__ = "$Id$"
+__RCSID__ = "$Id:$"
 
 ## imports
 import os
@@ -19,7 +16,8 @@ import os
 from DIRAC import S_OK, S_ERROR, gLogger
 
 def pfnunparse( pfnDict ):
-  """ create pfn URI from pfnDict
+  """ 
+  Create PFN URI from pfnDict
 
   :param dict pfnDict: 
   """
@@ -70,7 +68,8 @@ def pfnunparse( pfnDict ):
   return S_OK( pfn )
 
 def pfnparse( pfn ):
-  """ parse pfn and save all bits of information into dictionary
+  """ 
+  Parse pfn and save all bits of information into dictionary
 
   :param str pfn: pfn string
   """

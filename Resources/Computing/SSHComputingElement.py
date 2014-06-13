@@ -138,9 +138,9 @@ class SSH:
     if self.key:
       key = ' -i %s ' % self.key
     if upload:
-      command = "scp %s %s %s %s@%s:%s" % ( key, localFile, self.options, self.user, self.host, destinationPath )
+      command = "scp %s %s %s %s@%s:%s" % ( key, self.options, localFile, self.user, self.host, destinationPath )
     else:
-      command = "scp %s %s@%s:%s %s" % ( key, self.user, self.host, destinationPath, localFile )
+      command = "scp %s %s %s@%s:%s %s" % ( key, self.options, self.user, self.host, destinationPath, localFile )
     self.log.debug( "SCP command %s" % command )
     return self.__ssh_call( command, timeout )
 
@@ -576,7 +576,7 @@ class SSHComputingElement( ComputingElement ):
     host = result['Value']['Host']
 
     output = '%s/%s.out' % ( self.batchOutput, jobStamp )
-    error = '%s/%s.out' % ( self.batchError, jobStamp )
+    error = '%s/%s.err' % ( self.batchError, jobStamp )
 
     return S_OK( (jobStamp,host,output,error) )
 

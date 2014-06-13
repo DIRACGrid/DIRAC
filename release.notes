@@ -26,6 +26,36 @@ NEW: Request - added optimize() method to merge similar operations when
 NEW: ReqClient, RequestDB - added getBulkRequest() interface. RequestExecutingAgent
      can use it controlled by a special flag     
 
+[v6r11p2]
+
+*Core
+FIX: dirac-install - skip expectedBytes check if Content-Length not returned by server
+FIX: AgentModule - demote message "Cycle had an error:" to warning
+
+*Accounting
+FIX: BaseReporter - protect against division by zero
+
+*DMS
+CHANGE: FileCatalogClientCLI - quite "-q" option in find command
+FIX: DataManager - bug fix in __initializeReplication()
+FIX: DataManager - less verbose log message 
+FIX: DataManager - report the size of removed files only for successfully removed ones
+FIX: File, FTSFile, FTSJob - SQL tables schema change: Size filed INTEGER -> BIGINT
+
+*RMS
+FIX: dirac-rms-reset-request, dirac-rms-show-request - fixes
+FIX: ForwardDISET - execute with trusted host certificate
+
+*Resources
+FIX: SSHComputingElement - SSHOptions are parsed at the wrong place
+NEW: ComputingElement - evaluate the number of available cores if relevant
+
+*WMS
+NEW: JobMonitoringHander - added export_getOwnerGroup() interface
+
+*TMS
+CHANGE: TransformationCleaningAgent - instantiation of clients moved in the initialize()
+
 [v6r11p1]
 
 *RMS

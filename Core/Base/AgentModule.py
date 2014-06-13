@@ -363,7 +363,7 @@ class AgentModule:
     if cycleResult[ 'OK' ]:
       self.log.notice( " Cycle was successful" )
     else:
-      self.log.error( " Cycle had an error:", cycleResult[ 'Message' ] )
+      self.log.warn( " Cycle had an error:", cycleResult[ 'Message' ] )
     self.log.notice( "-"*40 )
     #Update number of cycles
     self.monitor.setComponentExtraParam( 'cycles', self.__moduleProperties[ 'cyclesDone' ] )

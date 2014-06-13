@@ -1,7 +1,9 @@
 # $HeadURL:  $
-''' RssConfiguration
-
-  Module that collects utility functions.
+''' 
+:mod: RssConfiguration
+======================
+  
+Module that collects utility functions.
 
 '''
 
@@ -23,19 +25,19 @@ class RssConfiguration:
   '''
   RssConfiguration::
   
+    { 
+      Config:
       { 
-        Config:
+        State        : Active | InActive,
+        Cache        : 300,
+        FromAddress  : 'email@site.domain'
+        StatusType   :
         { 
-          State        : Active | InActive,
-          Cache        : 300,
-          FromAddress  : 'email@site.domain'
-          StatusType   :
-          { 
-            default       : all,
-            StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
-          }  
-        }
-      }          
+          default       : all,
+          StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
+        }  
+      }
+    }          
   
   '''
   def __init__( self ):

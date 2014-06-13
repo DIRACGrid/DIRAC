@@ -437,6 +437,16 @@ class ComputingElement:
     project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
     if project:
       ceDict['ReleaseProject'] = project
+      
+    result = self.getCEStatus()
+    if result['OK']:
+      if 'AvailableCores' in result:
+        cores = result['AvailableCores']
+        if cores > 1:
+          tagList = []
+          for i in range( 2, cores+1 ):
+            tagList.append( '%dCore' % i )
+          ceDict['Tag'] = tagList  
 
     return S_OK( ceDict )
 
