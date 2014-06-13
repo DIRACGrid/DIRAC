@@ -53,8 +53,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.uploadProxy('lhcb_pilot')
-       {'OK': True, 'Value': 0L}
+         >>> print diracAdmin.uploadProxy('lhcb_pilot')
+         {'OK': True, 'Value': 0L}
 
        @param group: DIRAC Group
        @type job: string
@@ -72,8 +72,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
-       {'OK': True }
+         >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
+         {'OK': True }
 
        @param userDN: User DN
        @type userDN: string
@@ -91,8 +91,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
-       {'OK': True, 'Value' : True/False }
+         >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
+         {'OK': True, 'Value' : True/False }
 
        @param userDN: User DN
        @type userDN: string
@@ -110,8 +110,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.getSiteMask()
-       {'OK': True, 'Value': 0L}
+         >>> print diracAdmin.getSiteMask()
+         {'OK': True, 'Value': 0L}
 
        @return: S_OK,S_ERROR
 
@@ -133,8 +133,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.getBannedSites()
-       {'OK': True, 'Value': []}
+         >>> print diracAdmin.getBannedSites()
+         {'OK': True, 'Value': []}
 
        @return: S_OK,S_ERROR
 
@@ -175,8 +175,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.getSiteSection('LCG.CERN.ch')
-       {'OK': True, 'Value':}
+         >>> print diracAdmin.getSiteSection('LCG.CERN.ch')
+         {'OK': True, 'Value':}
 
        @return: S_OK,S_ERROR
     """
@@ -195,8 +195,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.addSiteInMask()
-       {'OK': True, 'Value': }
+         >>> print diracAdmin.addSiteInMask()
+         {'OK': True, 'Value': }
 
        @return: S_OK,S_ERROR
 
@@ -228,8 +228,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.getSiteMaskLogging('LCG.AUVER.fr')
-       {'OK': True, 'Value': }
+         >>> print diracAdmin.getSiteMaskLogging('LCG.AUVER.fr')
+         {'OK': True, 'Value': }
 
        @return: S_OK,S_ERROR
     """
@@ -268,8 +268,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.banSiteFromMask()
-       {'OK': True, 'Value': }
+         >>> print diracAdmin.banSiteFromMask()
+         {'OK': True, 'Value': }
 
        @return: S_OK,S_ERROR
 
@@ -315,8 +315,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.clearMask()
-       {'OK': True, 'Value':''}
+         >>> print diracAdmin.clearMask()
+         {'OK': True, 'Value':''}
 
        @return: S_OK,S_ERROR
 
@@ -332,8 +332,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.getServicePorts()
-       {'OK': True, 'Value':''}
+         >>> print diracAdmin.getServicePorts()
+         {'OK': True, 'Value':''}
 
        @return: S_OK,S_ERROR
 
@@ -391,8 +391,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.getProxy()
-       {'OK': True, 'Value': }
+         >>> print diracAdmin.getProxy()
+         {'OK': True, 'Value': }
 
        @return: S_OK,S_ERROR
 
@@ -407,8 +407,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.getVOMSProxy()
-       {'OK': True, 'Value': }
+         >>> print diracAdmin.getVOMSProxy()
+         {'OK': True, 'Value': }
 
        @return: S_OK,S_ERROR
 
@@ -424,8 +424,8 @@ class DiracAdmin( API ):
 
        Example usage:
 
-       >>> print diracAdmin.getVOMSProxy()
-       {'OK': True, 'Value': }
+         >>> print diracAdmin.getVOMSProxy()
+         {'OK': True, 'Value': }
 
        @return: S_OK,S_ERROR
 
@@ -438,8 +438,10 @@ class DiracAdmin( API ):
     """Reset a job or list of jobs in the WMS.  This operation resets the reschedule
        counter for a job or list of jobs and allows them to run as new.
 
-       >>> print dirac.reset(12345)
-       {'OK': True, 'Value': [12345]}
+       Example::
+       
+         >>> print dirac.reset(12345)
+         {'OK': True, 'Value': [12345]}
 
        @param job: JobID
        @type job: integer or list of integers
@@ -467,8 +469,8 @@ class DiracAdmin( API ):
        The output will be retrieved in a local directory unless
        otherwise specified.
 
-       >>> print dirac.getJobPilotOutput(12345)
-       {'OK': True, StdOut:'',StdError:''}
+         >>> print dirac.getJobPilotOutput(12345)
+         {'OK': True, StdOut:'',StdError:''}
 
        @param job: JobID
        @type job: integer or string
@@ -520,8 +522,8 @@ class DiracAdmin( API ):
   def getPilotOutput( self, gridReference, directory = '' ):
     """Retrieve the pilot output  (std.out and std.err) for an existing job in the WMS.
 
-       >>> print dirac.getJobPilotOutput(12345)
-       {'OK': True, 'Value': {}}
+         >>> print dirac.getJobPilotOutput(12345)
+         {'OK': True, 'Value': {}}
 
        @param job: JobID
        @type job: integer or string
@@ -580,8 +582,8 @@ class DiracAdmin( API ):
   def getPilotInfo( self, gridReference ):
     """Retrieve info relative to a pilot reference
 
-       >>> print dirac.getPilotInfo(12345)
-       {'OK': True, 'Value': {}}
+         >>> print dirac.getPilotInfo(12345)
+         {'OK': True, 'Value': {}}
 
        @param gridReference: Pilot Job Reference
        @type gridReference: string
@@ -598,8 +600,8 @@ class DiracAdmin( API ):
   def killPilot( self, gridReference ):
     """Kill the pilot specified
 
-       >>> print dirac.getPilotInfo(12345)
-       {'OK': True, 'Value': {}}
+         >>> print dirac.getPilotInfo(12345)
+         {'OK': True, 'Value': {}}
 
        @param gridReference: Pilot Job Reference
        @return: S_OK,S_ERROR
@@ -615,8 +617,8 @@ class DiracAdmin( API ):
   def getPilotLoggingInfo( self, gridReference ):
     """Retrieve the pilot logging info for an existing job in the WMS.
 
-       >>> print dirac.getPilotLoggingInfo(12345)
-       {'OK': True, 'Value': {"The output of the command"}}
+         >>> print dirac.getPilotLoggingInfo(12345)
+         {'OK': True, 'Value': {"The output of the command"}}
 
        @param gridReference: Gridp pilot job reference Id
        @type gridReference: string
@@ -633,8 +635,8 @@ class DiracAdmin( API ):
     """Extract the list of submitted pilots and their status for a given
        jobID from the WMS.  Useful information is printed to the screen.
 
-       >>> print dirac.getJobPilots()
-       {'OK': True, 'Value': {PilotID:{StatusDict}}}
+         >>> print dirac.getJobPilots()
+         {'OK': True, 'Value': {PilotID:{StatusDict}}}
 
        @param job: JobID
        @type job: integer or string
@@ -658,8 +660,8 @@ class DiracAdmin( API ):
     """Retrieve the pilot output for an existing job in the WMS.  Summary is
        printed at INFO level, full dictionary of results also returned.
 
-       >>> print dirac.getPilotSummary()
-       {'OK': True, 'Value': {CE:{Status:Count}}}
+         >>> print dirac.getPilotSummary()
+         {'OK': True, 'Value': {CE:{Status:Count}}}
 
        @param job: JobID
        @type job: integer or string
@@ -697,18 +699,20 @@ class DiracAdmin( API ):
   def selectRequests( self, jobID = None, requestID = None, requestName = None,
                       requestType = None, status = None, operation = None, ownerDN = None,
                       ownerGroup = None, requestStart = 0, limit = 100, printOutput = False ):
-    """ Select requests from the request management system. A few notes on the selection criteria:
-        - jobID is the WMS JobID for the request (if applicable)
-        - requestID is assigned during submission of the request
-        - requestName is the corresponding XML file name
-        - requestType e.g. 'transfer'
-        - status e.g. Done
-        - operation e.g. replicateAndRegister
-        - requestStart e.g. the first request to consider (start from 0 by default)
-        - limit e.g. selection limit (default 100)
+    """Select requests from the request management system. A few notes on the selection criteria:
+    
+         - jobID is the WMS JobID for the request (if applicable)
+         - requestID is assigned during submission of the request
+         - requestName is the corresponding XML file name
+         - requestType e.g. 'transfer'
+         - status e.g. Done
+         - operation e.g. replicateAndRegister
+         - requestStart e.g. the first request to consider (start from 0 by default)
+         - limit e.g. selection limit (default 100)
 
        >>> dirac.selectRequests(jobID='4894')
        {'OK': True, 'Value': [[<Requests>]]}
+       
     """
     options = {'RequestID':requestID, 'RequestName':requestName, 'JobID':jobID, 'OwnerDN':ownerDN,
                'OwnerGroup':ownerGroup, 'RequestType':requestType, 'Status':status, 'Operation':operation}
@@ -761,7 +765,8 @@ class DiracAdmin( API ):
 
   #############################################################################
   def getRequestSummary( self, printOutput = False ):
-    """ Get a summary of the requests in the request DB.
+    """ 
+    Get a summary of the requests in the request DB.
     """
     requestClient = RPCClient( "RequestManagement/centralURL", timeout = 120 )
     result = requestClient.getDBSummary()
@@ -776,8 +781,9 @@ class DiracAdmin( API ):
 
   #############################################################################
   def getExternalPackageVersions( self ):
-    """ Simple function that attempts to obtain the external versions for
-        the local DIRAC installation (frequently needed for debugging purposes).
+    """ 
+    Simple function that attempts to obtain the external versions for
+    the local DIRAC installation (frequently needed for debugging purposes).
     """
     gLogger.info( 'DIRAC version v%dr%d build %d' % ( DIRAC.majorVersion, DIRAC.minorVersion, DIRAC.patchLevel ) )
     try:
@@ -816,7 +822,8 @@ class DiracAdmin( API ):
 
   #############################################################################
   def getSiteProtocols( self, site, printOutput = False ):
-    """Allows to check the defined protocols for each site SE.
+    """
+    Allows to check the defined protocols for each site SE.
     """
     result = self.__checkSiteIsValid( site )
     if not result['OK']:
@@ -853,7 +860,8 @@ class DiracAdmin( API ):
 
   #############################################################################
   def setSiteProtocols( self, site, protocolsList, printOutput = False ):
-    """Allows to set the defined protocols for each SE for a given site.
+    """
+    Allows to set the defined protocols for each SE for a given site.
     """
     result = self.__checkSiteIsValid( site )
     if not result['OK']:
@@ -909,120 +917,140 @@ class DiracAdmin( API ):
 
   #############################################################################
   def csSetOption( self, optionPath, optionValue ):
-    """Function to modify an existing value in the CS.
+    """
+    Function to modify an existing value in the CS.
     """
     return self.csAPI.setOption( optionPath, optionValue )
 
   #############################################################################
   def csSetOptionComment( self, optionPath, comment ):
-    """Function to modify an existing value in the CS.
+    """
+    Function to modify an existing value in the CS.
     """
     return self.csAPI.setOptionComment( optionPath, comment )
 
   #############################################################################
   def csModifyValue( self, optionPath, newValue ):
-    """Function to modify an existing value in the CS.
+    """
+    Function to modify an existing value in the CS.
     """
     return self.csAPI.modifyValue( optionPath, newValue )
 
   #############################################################################
   def csRegisterUser( self, username, properties ):
-    """Registers a user in the CS.
+    """
+    Registers a user in the CS.
+    
         - username: Username of the user (easy;)
         - properties: Dict containing:
             - DN
             - groups : list/tuple of groups the user belongs to
             - <others> : More properties of the user, like mail
+    
     """
     return self.csAPI.addUser( username, properties )
 
   #############################################################################
   def csDeleteUser( self, user ):
-    """Deletes a user from the CS. Can take a list of users
+    """
+    Deletes a user from the CS. Can take a list of users
     """
     return self.csAPI.deleteUsers( user )
 
   #############################################################################
   def csModifyUser( self, username, properties, createIfNonExistant = False ):
-    """Modify a user in the CS. Takes the same params as in addUser and applies
-      the changes
+    """
+    Modify a user in the CS. Takes the same params as in addUser and 
+    applies the changes
     """
     return self.csAPI.modifyUser( username, properties, createIfNonExistant )
 
   #############################################################################
   def csListUsers( self, group = False ):
-    """Lists the users in the CS. If no group is specified return all users.
+    """
+    Lists the users in the CS. If no group is specified return all users.
     """
     return self.csAPI.listUsers( group )
 
   #############################################################################
   def csDescribeUsers( self, mask = False ):
-    """List users and their properties in the CS.
-        If a mask is given, only users in the mask will be returned
+    """
+    List users and their properties in the CS.
+    If a mask is given, only users in the mask will be returned
     """
     return self.csAPI.describeUsers( mask )
 
   #############################################################################
   def csModifyGroup( self, groupname, properties, createIfNonExistant = False ):
-    """Modify a user in the CS. Takes the same params as in addGroup and applies
-      the changes
+    """
+    Modify a user in the CS. Takes the same params as in addGroup and applies
+    the changes
     """
     return self.csAPI.modifyGroup( groupname, properties, createIfNonExistant )
 
   #############################################################################
   def csListHosts( self ):
-    """Lists the hosts in the CS
+    """
+    Lists the hosts in the CS
     """
     return self.csAPI.listHosts()
 
   #############################################################################
   def csDescribeHosts( self, mask = False ):
-    """Gets extended info for the hosts in the CS
+    """
+    Gets extended info for the hosts in the CS
     """
     return self.csAPI.describeHosts( mask )
 
   #############################################################################
   def csModifyHost( self, hostname, properties, createIfNonExistant = False ):
-    """Modify a host in the CS. Takes the same params as in addHost and applies
-      the changes
+    """
+    Modify a host in the CS. Takes the same params as in addHost and applies
+    the changes
     """
     return self.csAPI.modifyHost( hostname, properties, createIfNonExistant )
 
   #############################################################################
   def csListGroups( self ):
-    """Lists groups in the CS
+    """
+    Lists groups in the CS
     """
     return self.csAPI.listGroups()
 
   #############################################################################
   def csDescribeGroups( self, mask = False ):
-    """List groups and their properties in the CS.
-        If a mask is given, only groups in the mask will be returned
+    """
+    List groups and their properties in the CS.
+    If a mask is given, only groups in the mask will be returned
     """
     return self.csAPI.describeGroups( mask )
 
   #############################################################################
   def csSyncUsersWithCFG( self, usersCFG ):
-    """Synchronize users in cfg with its contents
+    """
+    Synchronize users in cfg with its contents
     """
     return self.csAPI.syncUsersWithCFG( usersCFG )
 
   #############################################################################
   def csCommitChanges( self, sortUsers = True ):
-    """Commit the changes in the CS
+    """
+    Commit the changes in the CS
     """
     return self.csAPI.commitChanges( sortUsers = False )
 
   #############################################################################
   def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True ):
-    """ Send mail to specified address with body.
+    """ 
+    Send mail to specified address with body.
     """
     notification = NotificationClient()
     return notification.sendMail( address, subject, body, fromAddress, localAttempt )
 
   #############################################################################
   def sendSMS( self, userName, body, fromAddress = None ):
-    """ Send mail to specified address with body.
+    """ 
+    Send mail to specified address with body.
     """
     if len( body ) > 160:
       return S_ERROR( 'Exceeded maximum SMS length of 160 characters' )
@@ -1031,43 +1059,50 @@ class DiracAdmin( API ):
 
   #############################################################################
   def getBDIISite( self, site, host = None ):
-    """Get information about site from BDII at host
+    """
+    Get information about site from BDII at host
     """
     return ldapSite( site, host = host )
 
   #############################################################################
   def getBDIICluster( self, ce, host = None ):
-    """Get information about ce from BDII at host
+    """
+    Get information about ce from BDII at host
     """
     return ldapCluster( ce, host = host )
 
   #############################################################################
   def getBDIICE( self, ce, host = None ):
-    """Get information about ce from BDII at host
+    """
+    Get information about ce from BDII at host
     """
     return ldapCE( ce, host = host )
 
   #############################################################################
   def getBDIIService( self, ce, host = None ):
-    """Get information about ce from BDII at host
+    """
+    Get information about ce from BDII at host
     """
     return ldapService( ce, host = host )
 
   #############################################################################
   def getBDIICEState( self, ce, useVO = voName, host = None ):
-    """Get information about ce state from BDII at host
+    """
+    Get information about ce state from BDII at host
     """
     return ldapCEState( ce, useVO, host = host )
 
   #############################################################################
   def getBDIICEVOView( self, ce, useVO = voName, host = None ):
-    """Get information about ce voview from BDII at host
+    """
+    Get information about ce voview from BDII at host
     """
     return ldapCEVOView( ce, useVO, host = host )
 
   #############################################################################
   def getBDIISA( self, site, useVO = voName, host = None ):
-    """Get information about SA  from BDII at host
+    """
+    Get information about SA  from BDII at host
     """
     return ldapSA( site, useVO, host = host )
 

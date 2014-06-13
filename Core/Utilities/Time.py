@@ -8,15 +8,17 @@ It provides common interface to UTC timestamps,
 converter to string types and back.
 
 The following datetime classes are used in the returned objects:
-- dateTime  = datetime.datetime
-- date      = datetime.date
-- time      = datetime.timedelta
+
+  - dateTime  = datetime.datetime
+  - date      = datetime.date
+  - time      = datetime.timedelta
 
 Useful timedelta constant are also provided to
 define time intervals.
 
 Notice: datetime.timedelta objects allow multiplication and division by interger
 but not by float. Thus:
+
   - DIRAC.Times.second * 1.5             is not allowed
   - DIRAC.Times.second * 3 / 2           is allowed
 

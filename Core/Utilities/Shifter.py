@@ -1,7 +1,8 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-""" Handling the donwload of the shifter Proxy
+""" 
+Handling the download of the shifter Proxy
 """
 __RCSID__ = "$Id$"
 
@@ -15,7 +16,9 @@ from DIRAC.Core.Security                                 import CS
 def getShifterProxy( shifterType, fileName = False ):
   """
   This method returns a shifter's proxy
+  
     - shifterType : ProductionManager / DataManager...
+
   """
   if fileName:
     try:
@@ -62,9 +65,11 @@ def getShifterProxy( shifterType, fileName = False ):
 def setupShifterProxyInEnv( shifterType, fileName = False ):
   """
   Return the shifter's proxy and set it up as the default
-  proxy via changing the environment
+  proxy via changing the environment. 
   This method returns a shifter's proxy
+
     - shifterType : ProductionManager / DataManager...
+
   """
   result = getShifterProxy( shifterType, fileName )
   if not result[ 'OK' ]:

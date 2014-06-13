@@ -1,7 +1,9 @@
 # $HeadURL:  $
-''' RssConfiguration
-
-  Module that collects utility functions.
+''' 
+:mod: RssConfiguration
+======================
+  
+Module that collects utility functions.
 
 '''
 
@@ -22,20 +24,21 @@ _rssConfigPath = 'ResourceStatus'
 class RssConfiguration:
   '''
   
-  RssConfiguration:
-  { 
-    Config:
+  RssConfiguration::
+  
     { 
-      State        : Active | InActive,
-      Cache        : 300,
-      FromAddress  : 'email@site.domain'
-      StatusType   :
+      Config:
       { 
-        default       : all,
-        StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
-      }  
-    }
-  }          
+        State        : Active | InActive,
+        Cache        : 300,
+        FromAddress  : 'email@site.domain'
+        StatusType   :
+        { 
+          default       : all,
+          StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
+        }  
+      }
+    }          
   
   '''
   def __init__( self ):

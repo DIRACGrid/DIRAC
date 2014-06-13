@@ -5,14 +5,16 @@
 # Date: 2012/07/24 12:12:05
 ########################################################################
 
-""" :mod: Operation
-    ===============
+""" 
+:mod: Operation
+===============
 
-    .. module: Operation
-    :synopsis: Operation implementation
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: Operation
+  :synopsis: Operation implementation
 
-    Operation implementation
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+Operation implementation
 """
 # for properties
 # pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103

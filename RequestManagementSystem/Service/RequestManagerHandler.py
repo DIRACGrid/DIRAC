@@ -2,12 +2,15 @@
 # $HeadURL $
 # File: RequestManagerHandler.py
 ########################################################################
-""" :mod: RequestManagerHandler 
-    ===========================
+""" 
+:mod: RequestManagerHandler 
+===========================
 
-    .. module: RequestManagerHandler
-    :synopsis: Implementation of the RequestDB service in the DISET framework
-    :deprecated:
+.. module: RequestManagerHandler
+  :synopsis: Implementation of the RequestDB service in the DISET framework
+
+:deprecated:
+
 """
 
 __RCSID__ = "$Id$"

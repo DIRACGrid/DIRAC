@@ -2129,15 +2129,16 @@ class Dirac( API ):
                   site = None, owner = None, ownerGroup = None, jobGroup = None, date = None ):
     """Options correspond to the web-page table columns. Returns the list of JobIDs for
        the specified conditions.  A few notes on the formatting:
-        - date must be specified as yyyy-mm-dd.  By default, the date is today.
-        - jobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
-        - site is the DIRAC site name, e.g. LCG.CERN.ch
-        - owner is the immutable nickname, e.g. paterson
+        
+         - date must be specified as yyyy-mm-dd.  By default, the date is today.
+         - jobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
+         - site is the DIRAC site name, e.g. LCG.CERN.ch
+         - owner is the immutable nickname, e.g. paterson
 
        Example Usage:
 
-       >>> dirac.selectJobs( status='Failed', owner='paterson', site='LCG.CERN.ch')
-       {'OK': True, 'Value': ['25020', '25023', '25026', '25027', '25040']}
+         >>> dirac.selectJobs( status='Failed', owner='paterson', site='LCG.CERN.ch')
+         {'OK': True, 'Value': ['25020', '25023', '25026', '25027', '25040']}
 
        :param status: Job status
        :type status: string

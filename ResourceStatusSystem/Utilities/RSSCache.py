@@ -1,9 +1,11 @@
 # $HeadURL:  $
-''' RSSCache
+""" 
+:mod: RSSCache
+==============
 
-  Extension of DictCache to be used within RSS
+Extension of DictCache to be used within RSS
 
-'''
+"""
 
 import datetime
 import threading
@@ -16,7 +18,7 @@ __RCSID__  = '$Id:  $'
 
 class RSSCache( object ):
   '''
-    Cache with purgeThread integrated
+  Cache with purgeThread integrated
   '''
   
   def __init__( self, lifeTime, updateFunc = None, cacheHistoryLifeTime = None ):
@@ -41,37 +43,37 @@ class RSSCache( object ):
     
   def startRefreshThread( self ):  
     '''
-      Run refresh thread.
+    Run refresh thread.
     '''
     self.__refreshThread.start()
     
   def stopRefreshThread( self ):  
     '''
-      Stop refresh thread.
+    Stop refresh thread.
     '''
     self.__refreshStop = True  
     
   def isCacheAlive( self ):
     '''
-      Returns status of the cache refreshing thread 
+    Returns status of the cache refreshing thread 
     '''  
     return S_OK( self.__refreshThread.isAlive() )
     
   def setLifeTime( self, lifeTime ):
     '''
-      Set cache life time
+    Set cache life time
     '''  
     self.__lifeTime = lifeTime
 
   def setCacheHistoryLifeTime( self, cacheHistoryLifeTime ):
     '''
-      Set cache life time
+    Set cache life time
     '''  
     self.__cacheHistoryLifeTime = cacheHistoryLifeTime
   
   def getCacheKeys( self ):
     '''
-      List all the keys stored in the cache.
+    List all the keys stored in the cache.
     '''
     self.__rssCacheLock.acquire()
     keys = self.__rssCache.getKeys()
@@ -81,19 +83,19 @@ class RSSCache( object ):
   
   def acquireLock( self ):
     '''
-      Acquires RSSCache lock
+    Acquires RSSCache lock
     '''
     self.__rssCacheLock.acquire()
 
   def releaseLock( self ):
     '''
-      Releases RSSCache lock
+    Releases RSSCache lock
     '''
     self.__rssCacheLock.release()
   
   def getCacheStatus( self ):
     '''
-      Return the latest cache status
+    Return the latest cache status
     '''
     self.__rssCacheLock.acquire()
     if self.__rssCacheStatus:
@@ -105,7 +107,7 @@ class RSSCache( object ):
     
   def getCacheHistory( self ):
     '''
-      Return the cache updates history
+    Return the cache updates history
     '''
     self.__rssCacheLock.acquire()
     res = dict( self.__rssCacheStatus )
@@ -114,12 +116,13 @@ class RSSCache( object ):
     
   def get( self, resourceKey ):
     '''
-      Gets the resource(s) status(es). Every resource can have multiple statuses, 
-      so in order to speed up things, we store them on the cache as follows:
+    Gets the resource(s) status(es). Every resource can have multiple statuses, 
+    so in order to speed up things, we store them on the cache as follows:
       
       { (<resourceName>,<resourceStatusType0>) : whatever0,
         (<resourceName>,<resourceStatusType1>) : whatever1,
       }
+      
     '''
     
     #cacheKey = '%s#%s' % ( resourceName, resourceStatusType )
@@ -134,7 +137,7 @@ class RSSCache( object ):
 
   def getBulk( self, resourceKeys ):
     '''
-      Gets values for resourceKeys in one ATOMIC operation.
+    Gets values for resourceKeys in one ATOMIC operation.
     '''
 
     result = {}
@@ -152,7 +155,7 @@ class RSSCache( object ):
 
   def resetCache( self ):
     '''
-      Reset cache.
+    Reset cache.
     '''
     self.__rssCacheLock.acquire()
     self.__rssCache.purgeAll()
@@ -162,8 +165,8 @@ class RSSCache( object ):
 
   def refreshCache( self ):
     '''
-      Clears the cache and gets its latest version, not Thread safe !
-      Acquire a lock before using it ! ( and release it afterwards ! )
+    Clears the cache and gets its latest version, not Thread safe !
+    Acquire a lock before using it ! ( and release it afterwards ! )
     '''
 
     self.__rssCache.purgeAll()
@@ -180,8 +183,8 @@ class RSSCache( object ):
 
   def refreshCacheAndHistory( self ):
     '''
-      Method that refreshes the cache and updates the history. Not thread safe,
-      you must acquire a lock before using it, and release it right after !
+    Method that refreshes the cache and updates the history. Not thread safe,
+    you must acquire a lock before using it, and release it right after !
     '''  
     
     refreshResult = self.refreshCache()
@@ -201,10 +204,12 @@ class RSSCache( object ):
      
   def __updateCache( self, newCache ):
     '''
-      The new cache must be a dictionary, which should look like:
+    The new cache must be a dictionary, which should look like::
+    
       { ( <resourceName>,<resourceStatusType0>) : whatever0,
         ( <resourceName>,<resourceStatusType1>) : whatever1,
       }
+    
     '''
     
     itemsCounter = 0
@@ -217,7 +222,7 @@ class RSSCache( object ):
           
   def __refreshCacheThreadRun( self ):
     '''
-      Method that refreshes periodically the cache.
+    Method that refreshes periodically the cache.
     '''
     
     while not self.__refreshStop:

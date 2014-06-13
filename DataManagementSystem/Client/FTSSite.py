@@ -3,16 +3,18 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/15 12:33:08
 ########################################################################
-""" :mod: FTSSite
-    =============
+"""
+:mod: FTSSite
+=============
 
-    .. module: FTSSite
-    :synopsis: class representing FTS site
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: FTSSite
+  :synopsis: class representing FTS site
 
-    class representing FTS site
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    we need this one to know which site is a part of FTS infrastructure
+Class representing FTS site
+
+We need this one to know which site is a part of FTS infrastructure
 """
 # #
 # @file FTSSite.py

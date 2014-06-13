@@ -1,8 +1,9 @@
-""" :mod: DataLoggingClient 
-    =======================
+""" 
+:mod: DataLoggingClient 
+=======================
  
-    .. module: DataLoggingClient
-    :synopsis: client for DataLoggingDB
+.. module: DataLoggingClient
+:synopsis: client for DataLoggingDB
 """
 
 ## RSCID
@@ -18,8 +19,7 @@ class DataLoggingClient( Client ):
   rpc client for DataLoggingDB 
   """
   def __init__( self, **kwargs  ):
-    """ c'tor
-
+    """
     :param self: self reference
     :param str url: service URL
     """
