@@ -125,6 +125,30 @@ class ReqClient( Client ):
       return getRequest
     return S_OK( Request( getRequest["Value"] ) )
 
+  def getBulkRequests( self, numberOfRequest = 10 ):
+    """ get bulk requests from RequestDB
+
+    :param self: self reference
+    :param str numberOfRequest: size of the bulk (default 10)
+
+    :return: S_OK( Successful : { requestID, RequestInstance }, Failed : message  ) or S_ERROR
+    """
+    self.log.debug( "getRequests: attempting to get request." )
+    getRequests = self.requestManager().getBulkRequests( numberOfRequest )
+    if not getRequests["OK"]:
+      self.log.error( "getRequests: unable to get '%s' requests: %s" % ( numberOfRequest, getRequests["Message"] ) )
+      return getRequests
+    # No Request returned
+    if not getRequests["Value"]:
+      return getRequests
+    # No successful Request
+    if not getRequests["Value"]["Successful"]:
+      return getRequests
+
+    jsonReq = getRequests["Value"]["Successful"]
+    reqInstances = dict( ( rId, Request( jsonReq[rId] ) ) for rId in jsonReq )
+    return S_OK( {"Successful" : reqInstances, "Failed" : getRequests["Value"]["Failed"] } )
+
   def peekRequest( self, requestName ):
     """ peek request """
     self.log.debug( "peekRequest: attempting to get request." )

@@ -129,6 +129,34 @@ class ReqManagerHandler( RequestHandler ):
       return toJSON
     return S_OK()
 
+
+  types_getBulkRequests = [ IntType ]
+  @classmethod
+  def export_getBulkRequests( cls, numberOfRequest = 10 ):
+    """ Get a request of given type from the database
+        :param numberOfRequest : size of the bulk (default 10)
+
+        :return S_OK( {Failed : message, Successful : list of Request.toJSON()} )
+    """
+    getRequests = cls.__requestDB.getBulkRequests( numberOfRequest )
+    if not getRequests["OK"]:
+      gLogger.error( "getRequests: %s" % getRequests["Message"] )
+      return getRequests
+    if getRequests["Value"]:
+      getRequests = getRequests["Value"]
+      toJSONDict = {"Successful" : {}, "Failed" : {}}
+
+      for rId in getRequests:
+        toJSON = getRequests[rId].toJSON()
+        if not toJSON["OK"]:
+          gLogger.error( toJSON["Message"] )
+          toJSONDict["Failed"][rId] = toJSON["Message"]
+        else:
+          toJSONDict["Successful"][rId] = toJSON["Value"]
+      return S_OK( toJSONDict )
+    return S_OK()
+
+
   types_peekRequest = [ StringTypes ]
   @classmethod
   def export_peekRequest( cls, requestName = "" ):
