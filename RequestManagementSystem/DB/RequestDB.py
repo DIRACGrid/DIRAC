@@ -314,12 +314,14 @@ class RequestDB( DB ):
     """
     return self.getRequest( requestName, False )
 
-  def getRequestNamesList( self, statusList = None, limit = None ):
+  def getRequestNamesList( self, statusList = None, limit = None, since = None, until = None ):
     """ select requests with status in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
+    sinceReq = " AND LastUpdate > %s " % since  if since else ""
+    untilReq = " AND LastUpdate < %s " % until if until else ""
     query = "SELECT `RequestName`, `Status`, `LastUpdate` FROM `Request` WHERE "\
-      " `Status` IN (%s) ORDER BY `LastUpdate` ASC LIMIT %s;" % ( stringListToString( statusList ), limit )
+      " `Status` IN (%s) %s %s ORDER BY `LastUpdate` ASC LIMIT %s;" % ( stringListToString( statusList ), sinceReq, untilReq, limit )
     reqNamesList = self._query( query )
     if not reqNamesList["OK"]:
       self.log.error( "getRequestNamesList: %s" % reqNamesList["Message"] )

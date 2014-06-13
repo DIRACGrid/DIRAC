@@ -13,6 +13,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
+import datetime
 
 class ReqClient( Client ):
   """
@@ -158,11 +159,14 @@ class ReqClient( Client ):
                                                                              deleteRequest["Message"] ) )
     return deleteRequest
 
-  def getRequestNamesList( self, statusList = None, limit = None ):
+  def getRequestNamesList( self, statusList = None, limit = None, since = None, until = None ):
     """ get at most :limit: request names with statuses in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
-    return self.requestManager().getRequestNamesList( statusList, limit )
+    since = since.strftime( '%Y-%m-%d' ) if since else ""
+    until = until.strftime( '%Y-%m-%d' ) if until else ""
+
+    return self.requestManager().getRequestNamesList( statusList, limit, since, until )
 
   def getScheduledRequest( self, operationID ):
     """ get scheduled request given its scheduled OperationID """
