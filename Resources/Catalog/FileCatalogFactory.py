@@ -1,7 +1,5 @@
-########################################################################
-# $HeadURL$
-########################################################################
 __RCSID__ = "$Id$"
+
 """ FileCatalogFactory class to create file catalog client objects according to the
     configuration description
 """
@@ -39,6 +37,7 @@ class FileCatalogFactory:
     catalogClass = result['Value']
 
     try:
+      # FIXME: is it really needed? This is the factory, can't this be moved out?
       if catalogType in [ 'LcgFileCatalogCombined', 'LcgFileCatalog' ]:
         # The LFC special case
         infoSys = gConfig.getValue( catalogPath + '/LcgGfalInfosys', '' )
