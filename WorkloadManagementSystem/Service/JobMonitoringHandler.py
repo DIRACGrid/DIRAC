@@ -507,3 +507,12 @@ class JobMonitoringHandler( RequestHandler ):
     """ Get jobs in the same herd as this job
     """
     return gJobDB.getJobsInHerd( jobID )
+  
+  ##############################################################################
+  types_getOwnerGroup = []
+  @staticmethod
+  def export_getOwnerGroup ():
+    """
+    Return Distinct Values of OwnerGroup from the JobsDB
+    """
+    return gJobDB.getDistinctJobAttributes( 'OwnerGroup' )
