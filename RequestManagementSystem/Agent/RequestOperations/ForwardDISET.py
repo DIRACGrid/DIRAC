@@ -23,10 +23,11 @@ __RCSID__ = "$Id $"
 # @brief Definition of ForwardDISET class.
 
 # # imports
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.Core.DISET.RPCClient import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 ########################################################################
 class ForwardDISET( OperationHandlerBase ):
@@ -55,7 +56,15 @@ class ForwardDISET( OperationHandlerBase ):
       self.operation.Error = str( error )
       self.operation.Status = "Failed"
       return S_ERROR( str( error ) )
+    
+    # ForwardDiset is supposed to be used with a host certificate
+    useServerCertificate = gConfig.useServerCertificate()
+    if not useServerCertificate:
+      gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
     forward = executeRPCStub( decode )
+    if useServerCertificate:
+      gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
+    
     if not forward["OK"]:
       self.log.error( "unable to execute '%s' operation: %s" % ( self.operation.Type, forward["Message"] ) )
       self.operation.Error = forward["Message"]
